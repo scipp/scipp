@@ -1,7 +1,7 @@
 
 /*
-This is an implementation of std::span from P0122R7
-http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0122r7.pdf
+This is an implementation of C++20's std::span
+http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/n4820.pdf
 */
 
 //          Copyright Tristan Brindle 2018.
@@ -14,6 +14,7 @@ http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0122r7.pdf
 
 #include <array>
 #include <cstddef>
+#include <cstdint>
 #include <type_traits>
 
 #ifndef TCB_SPAN_NO_EXCEPTIONS
@@ -32,16 +33,6 @@ http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2018/p0122r7.pdf
 
 #ifndef TCB_SPAN_NAMESPACE_NAME
 #define TCB_SPAN_NAMESPACE_NAME tcb
-#endif
-
-#ifdef TCB_SPAN_STD_COMPLIANT_MODE
-#define TCB_SPAN_NO_DEPRECATION_WARNINGS
-#endif
-
-#ifndef TCB_SPAN_NO_DEPRECATION_WARNINGS
-#define TCB_SPAN_DEPRECATED_FOR(msg) [[deprecated(msg)]]
-#else
-#define TCB_SPAN_DEPRECATED_FOR(msg)
 #endif
 
 #if __cplusplus >= 201703L || (defined(_MSVC_LANG) && _MSVC_LANG >= 201703L)
@@ -97,11 +88,22 @@ inline void contract_violation(const char* msg)
 #define TCB_SPAN_INLINE_VAR
 #endif
 
-#if defined(TCB_SPAN_HAVE_CPP14) ||                                                 \
+#if defined(TCB_SPAN_HAVE_CPP14) ||                                            \
     (defined(__cpp_constexpr) && __cpp_constexpr >= 201304)
+#define TCB_SPAN_HAVE_CPP14_CONSTEXPR
+#endif
+
+#if defined(TCB_SPAN_HAVE_CPP14_CONSTEXPR)
 #define TCB_SPAN_CONSTEXPR14 constexpr
 #else
 #define TCB_SPAN_CONSTEXPR14
+#endif
+
+#if defined(TCB_SPAN_HAVE_CPP14_CONSTEXPR) &&                                  \
+    (!defined(_MSC_VER) || _MSC_VER > 1900)
+#define TCB_SPAN_CONSTEXPR_ASSIGN constexpr
+#else
+#define TCB_SPAN_CONSTEXPR_ASSIGN
 #endif
 
 #if defined(TCB_SPAN_NO_CONTRACT_CHECKING)
@@ -134,35 +136,41 @@ using byte = std::byte;
 using byte = unsigned char;
 #endif
 
-TCB_SPAN_INLINE_VAR constexpr std::ptrdiff_t dynamic_extent = -1;
+#if defined(TCB_SPAN_HAVE_CPP17)
+#define TCB_SPAN_NODISCARD [[nodiscard]]
+#else
+#define TCB_SPAN_NODISCARD
+#endif
 
-template <typename ElementType, std::ptrdiff_t Extent = dynamic_extent>
+TCB_SPAN_INLINE_VAR constexpr std::size_t dynamic_extent = SIZE_MAX;
+
+template <typename ElementType, std::size_t Extent = dynamic_extent>
 class span;
 
 namespace detail {
 
-template <typename E, std::ptrdiff_t S>
+template <typename E, std::size_t S>
 struct span_storage {
     constexpr span_storage() noexcept = default;
 
-    constexpr span_storage(E* ptr, std::ptrdiff_t /*unused*/) noexcept
-        : ptr(ptr)
+    constexpr span_storage(E* p_ptr, std::size_t /*unused*/) noexcept
+       : ptr(p_ptr)
     {}
 
     E* ptr = nullptr;
-    static constexpr std::ptrdiff_t size = S;
+    static constexpr std::size_t size = S;
 };
 
 template <typename E>
 struct span_storage<E, dynamic_extent> {
     constexpr span_storage() noexcept = default;
 
-    constexpr span_storage(E* ptr, std::ptrdiff_t size) noexcept
-        : ptr(ptr), size(size)
+    constexpr span_storage(E* p_ptr, std::size_t p_size) noexcept
+        : ptr(p_ptr), size(p_size)
     {}
 
     E* ptr = nullptr;
-    std::ptrdiff_t size = 0;
+    std::size_t size = 0;
 };
 
 // Reimplementation of C++17 std::size() and std::data()
@@ -222,7 +230,7 @@ using uncvref_t =
 template <typename>
 struct is_span : std::false_type {};
 
-template <typename T, std::ptrdiff_t S>
+template <typename T, std::size_t S>
 struct is_span<span<T, S>> : std::true_type {};
 
 template <typename>
@@ -254,7 +262,11 @@ struct is_container_element_type_compatible : std::false_type {};
 
 template <typename T, typename E>
 struct is_container_element_type_compatible<
-    T, E, void_t<decltype(detail::data(std::declval<T>()))>>
+    T, E,
+    typename std::enable_if<
+        !std::is_same<typename std::remove_cv<decltype(
+                          detail::data(std::declval<T>()))>::type,
+                      void>::value>::type>
     : std::is_convertible<
           remove_pointer_t<decltype(detail::data(std::declval<T>()))> (*)[],
           E (*)[]> {};
@@ -267,11 +279,8 @@ struct is_complete<T, decltype(sizeof(T))> : std::true_type {};
 
 } // namespace detail
 
-template <typename ElementType, std::ptrdiff_t Extent>
+template <typename ElementType, std::size_t Extent>
 class span {
-    static_assert(Extent == dynamic_extent || Extent >= 0,
-                  "A span must have an extent greater than or equal to zero, "
-                  "or a dynamic extent");
     static_assert(std::is_object<ElementType>::value,
                   "A span's ElementType must be an object type (not a "
                   "reference type or void)");
@@ -287,24 +296,26 @@ public:
     // constants and types
     using element_type = ElementType;
     using value_type = typename std::remove_cv<ElementType>::type;
-    using index_type = std::ptrdiff_t;
+    using size_type = std::size_t;
     using difference_type = std::ptrdiff_t;
-    using pointer = ElementType*;
-    using reference = ElementType&;
+    using pointer = element_type*;
+    using const_pointer = const element_type*;
+    using reference = element_type&;
     using iterator = pointer;
-    using const_iterator = const ElementType*;
+    using const_iterator = const_pointer;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-    static constexpr index_type extent = Extent;
+    static constexpr size_type extent = Extent;
 
     // [span.cons], span constructors, copy, assignment, and destructor
-    template <std::ptrdiff_t E = Extent,
-              typename std::enable_if<E <= 0, int>::type = 0>
+    template <
+        std::size_t E = Extent,
+        typename std::enable_if<(E == dynamic_extent || E <= 0), int>::type = 0>
     constexpr span() noexcept
     {}
 
-    TCB_SPAN_CONSTEXPR11 span(pointer ptr, index_type count)
+    TCB_SPAN_CONSTEXPR11 span(pointer ptr, size_type count)
         : storage_(ptr, count)
     {
         TCB_SPAN_EXPECT(extent == dynamic_extent || count == extent);
@@ -314,72 +325,64 @@ public:
         : storage_(first_elem, last_elem - first_elem)
     {
         TCB_SPAN_EXPECT(extent == dynamic_extent ||
-                        last_elem - first_elem == extent);
+                        last_elem - first_elem ==
+                            static_cast<std::ptrdiff_t>(extent));
     }
 
-    template <
-        std::size_t N, std::ptrdiff_t E = Extent,
-        typename std::enable_if<
-            (E == dynamic_extent || static_cast<std::ptrdiff_t>(N) == E) &&
-                detail::is_container_element_type_compatible<
-                    element_type (&)[N], ElementType>::value,
-            int>::type = 0>
+    template <std::size_t N, std::size_t E = Extent,
+              typename std::enable_if<
+                  (E == dynamic_extent || N == E) &&
+                      detail::is_container_element_type_compatible<
+                          element_type (&)[N], ElementType>::value,
+                  int>::type = 0>
     constexpr span(element_type (&arr)[N]) noexcept : storage_(arr, N)
     {}
 
-    template <
-        std::size_t N, std::ptrdiff_t E = Extent,
-        typename std::enable_if<
-            (E == dynamic_extent || static_cast<std::ptrdiff_t>(N) == E) &&
-                detail::is_container_element_type_compatible<
-                    std::array<value_type, N>&, ElementType>::value,
-            int>::type = 0>
+    template <std::size_t N, std::size_t E = Extent,
+              typename std::enable_if<
+                  (E == dynamic_extent || N == E) &&
+                      detail::is_container_element_type_compatible<
+                          std::array<value_type, N>&, ElementType>::value,
+                  int>::type = 0>
     TCB_SPAN_ARRAY_CONSTEXPR span(std::array<value_type, N>& arr) noexcept
         : storage_(arr.data(), N)
     {}
 
-    template <
-        std::size_t N, std::ptrdiff_t E = Extent,
-        typename std::enable_if<
-            (E == dynamic_extent || static_cast<std::ptrdiff_t>(N) == E) &&
-                detail::is_container_element_type_compatible<
-                    const std::array<value_type, N>&, ElementType>::value,
-            int>::type = 0>
+    template <std::size_t N, std::size_t E = Extent,
+              typename std::enable_if<
+                  (E == dynamic_extent || N == E) &&
+                      detail::is_container_element_type_compatible<
+                          const std::array<value_type, N>&, ElementType>::value,
+                  int>::type = 0>
     TCB_SPAN_ARRAY_CONSTEXPR span(const std::array<value_type, N>& arr) noexcept
         : storage_(arr.data(), N)
     {}
 
-    template <typename Container,
-              typename std::enable_if<
-                  detail::is_container<Container>::value &&
-                      detail::is_container_element_type_compatible<
-                          Container&, ElementType>::value,
-                  int>::type = 0>
-    TCB_SPAN_CONSTEXPR11 span(Container& cont)
+    template <
+        typename Container, std::size_t E = Extent,
+        typename std::enable_if<
+            E == dynamic_extent && detail::is_container<Container>::value &&
+                detail::is_container_element_type_compatible<
+                    Container&, ElementType>::value,
+            int>::type = 0>
+    constexpr span(Container& cont)
         : storage_(detail::data(cont), detail::size(cont))
-    {
-        TCB_SPAN_EXPECT(extent == dynamic_extent ||
-                        static_cast<std::ptrdiff_t>(detail::size(cont)) ==
-                            extent);
-    }
+    {}
 
-    template <typename Container,
-              typename std::enable_if<
-                  detail::is_container<Container>::value &&
-                      detail::is_container_element_type_compatible<
-                          const Container&, ElementType>::value,
-                  int>::type = 0>
-    TCB_SPAN_CONSTEXPR11 span(const Container& cont)
+    template <
+        typename Container, std::size_t E = Extent,
+        typename std::enable_if<
+            E == dynamic_extent && detail::is_container<Container>::value &&
+                detail::is_container_element_type_compatible<
+                    const Container&, ElementType>::value,
+            int>::type = 0>
+    constexpr span(const Container& cont)
         : storage_(detail::data(cont), detail::size(cont))
-    {
-        TCB_SPAN_EXPECT(extent == dynamic_extent ||
-                        static_cast<std::ptrdiff_t>(detail::size(cont)) ==
-                            extent);
-    }
+    {}
 
     constexpr span(const span& other) noexcept = default;
 
-    template <typename OtherElementType, std::ptrdiff_t OtherExtent,
+    template <typename OtherElementType, std::size_t OtherExtent,
               typename std::enable_if<
                   (Extent == OtherExtent || Extent == dynamic_extent) &&
                       std::is_convertible<OtherElementType (*)[],
@@ -391,100 +394,81 @@ public:
 
     ~span() noexcept = default;
 
-    TCB_SPAN_CONSTEXPR14 span& operator=(const span& other) noexcept = default;
+    TCB_SPAN_CONSTEXPR_ASSIGN span&
+    operator=(const span& other) noexcept = default;
 
     // [span.sub], span subviews
-    template <std::ptrdiff_t Count>
+    template <std::size_t Count>
     TCB_SPAN_CONSTEXPR11 span<element_type, Count> first() const
     {
-        TCB_SPAN_EXPECT(Count >= 0 && Count <= size());
+        TCB_SPAN_EXPECT(Count <= size());
         return {data(), Count};
     }
 
-    template <std::ptrdiff_t Count>
+    template <std::size_t Count>
     TCB_SPAN_CONSTEXPR11 span<element_type, Count> last() const
     {
-        TCB_SPAN_EXPECT(Count >= 0 && Count <= size());
+        TCB_SPAN_EXPECT(Count <= size());
         return {data() + (size() - Count), Count};
     }
 
-    template <std::ptrdiff_t Offset, std::ptrdiff_t Count = dynamic_extent>
+    template <std::size_t Offset, std::size_t Count = dynamic_extent>
     using subspan_return_t =
         span<ElementType, Count != dynamic_extent
                               ? Count
                               : (Extent != dynamic_extent ? Extent - Offset
                                                           : dynamic_extent)>;
 
-    template <std::ptrdiff_t Offset, std::ptrdiff_t Count = dynamic_extent>
+    template <std::size_t Offset, std::size_t Count = dynamic_extent>
     TCB_SPAN_CONSTEXPR11 subspan_return_t<Offset, Count> subspan() const
     {
-        TCB_SPAN_EXPECT((Offset >= 0 && Offset <= size()) &&
-                        (Count == dynamic_extent ||
-                         (Count >= 0 && Offset + Count <= size())));
+        TCB_SPAN_EXPECT(Offset <= size() &&
+                        (Count == dynamic_extent || Offset + Count <= size()));
         return {data() + Offset,
-                Count != dynamic_extent
-                    ? Count
-                    : (Extent != dynamic_extent ? Extent - Offset
-                                                : size() - Offset)};
+                Count != dynamic_extent ? Count : size() - Offset};
     }
 
     TCB_SPAN_CONSTEXPR11 span<element_type, dynamic_extent>
-    first(index_type count) const
+    first(size_type count) const
     {
-        TCB_SPAN_EXPECT(count >= 0 && count <= size());
+        TCB_SPAN_EXPECT(count <= size());
         return {data(), count};
     }
 
     TCB_SPAN_CONSTEXPR11 span<element_type, dynamic_extent>
-    last(index_type count) const
+    last(size_type count) const
     {
-        TCB_SPAN_EXPECT(count >= 0 && count <= size());
+        TCB_SPAN_EXPECT(count <= size());
         return {data() + (size() - count), count};
     }
 
     TCB_SPAN_CONSTEXPR11 span<element_type, dynamic_extent>
-    subspan(index_type offset, index_type count = dynamic_extent) const
+    subspan(size_type offset, size_type count = dynamic_extent) const
     {
-        TCB_SPAN_EXPECT((offset >= 0 && offset <= size()) &&
-                        (count == dynamic_extent ||
-                         (count >= 0 && offset + count <= size())));
+        TCB_SPAN_EXPECT(offset <= size() &&
+                        (count == dynamic_extent || offset + count <= size()));
         return {data() + offset,
                 count == dynamic_extent ? size() - offset : count};
     }
 
     // [span.obs], span observers
-    constexpr index_type size() const noexcept { return storage_.size; }
+    constexpr size_type size() const noexcept { return storage_.size; }
 
-    constexpr index_type size_bytes() const noexcept
+    constexpr size_type size_bytes() const noexcept
     {
         return size() * sizeof(element_type);
     }
 
-    constexpr bool empty() const noexcept { return size() == 0; }
-
-    // [span.elem], span element access
-    TCB_SPAN_CONSTEXPR11 reference operator[](index_type idx) const
+    TCB_SPAN_NODISCARD constexpr bool empty() const noexcept
     {
-        TCB_SPAN_EXPECT(idx >= 0 && idx < size());
-        return *(data() + idx);
+        return size() == 0;
     }
 
-    /* Extension: not in P0122 */
-#ifndef TCB_SPAN_STD_COMPLIANT_MODE
-    TCB_SPAN_CONSTEXPR14 reference at(index_type idx) const
+    // [span.elem], span element access
+    TCB_SPAN_CONSTEXPR11 reference operator[](size_type idx) const
     {
-#ifndef TCB_SPAN_NO_EXCEPTIONS
-        if (idx < 0 || idx >= size()) {
-            char msgbuf[64] = {
-                0,
-            };
-            std::snprintf(msgbuf, sizeof(msgbuf),
-                          "Index %td is out of range for span of size %td", idx,
-                          size());
-            throw std::out_of_range{msgbuf};
-        }
-#endif // TCB_SPAN_NO_EXCEPTIONS
-        return this->operator[](idx);
+        TCB_SPAN_EXPECT(idx < size());
+        return *(data() + idx);
     }
 
     TCB_SPAN_CONSTEXPR11 reference front() const
@@ -498,16 +482,6 @@ public:
         TCB_SPAN_EXPECT(!empty());
         return *(data() + (size() - 1));
     }
-
-#endif // TCB_SPAN_STD_COMPLIANT_MODE
-
-#ifndef TCB_SPAN_NO_FUNCTION_CALL_OPERATOR
-    TCB_SPAN_DEPRECATED_FOR("Use operator[] instead")
-    constexpr reference operator()(index_type idx) const
-    {
-        return this->operator[](idx);
-    }
-#endif // TCB_SPAN_NO_FUNCTION_CALL_OPERATOR
 
     constexpr pointer data() const noexcept { return storage_.ptr; }
 
@@ -540,6 +514,10 @@ public:
         return const_reverse_iterator(cbegin());
     }
 
+    friend constexpr iterator begin(span s) noexcept { return s.begin(); }
+
+    friend constexpr iterator end(span s) noexcept { return s.end(); }
+
 private:
     storage_type storage_{};
 };
@@ -564,7 +542,7 @@ span(const Container&)->span<const typename Container::value_type>;
 
 #endif // TCB_HAVE_DEDUCTION_GUIDES
 
-template <typename ElementType, std::ptrdiff_t Extent>
+template <typename ElementType, std::size_t Extent>
 constexpr span<ElementType, Extent>
 make_span(span<ElementType, Extent> s) noexcept
 {
@@ -603,147 +581,25 @@ make_span(const Container& cont)
     return {cont};
 }
 
-/* Comparison operators */
-// Implementation note: the implementations of == and < are equivalent to
-// 4-legged std::equal and std::lexicographical_compare respectively
-
-template <typename T, std::ptrdiff_t X, typename U, std::ptrdiff_t Y>
-TCB_SPAN_CONSTEXPR14 bool operator==(span<T, X> lhs, span<U, Y> rhs)
-{
-    if (lhs.size() != rhs.size()) {
-        return false;
-    }
-
-    for (std::ptrdiff_t i = 0; i < lhs.size(); i++) {
-        if (lhs[i] != rhs[i]) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-template <typename T, std::ptrdiff_t X, typename U, std::ptrdiff_t Y>
-TCB_SPAN_CONSTEXPR14 bool operator!=(span<T, X> lhs, span<U, Y> rhs)
-{
-    return !(lhs == rhs);
-}
-
-template <typename T, std::ptrdiff_t X, typename U, std::ptrdiff_t Y>
-TCB_SPAN_CONSTEXPR14 bool operator<(span<T, X> lhs, span<U, Y> rhs)
-{
-    // No std::min to avoid dragging in <algorithm>
-    const std::ptrdiff_t size =
-        lhs.size() < rhs.size() ? lhs.size() : rhs.size();
-
-    for (std::ptrdiff_t i = 0; i < size; i++) {
-        if (lhs[i] < rhs[i]) {
-            return true;
-        }
-        if (lhs[i] > rhs[i]) {
-            return false;
-        }
-    }
-    return lhs.size() < rhs.size();
-}
-
-template <typename T, std::ptrdiff_t X, typename U, std::ptrdiff_t Y>
-TCB_SPAN_CONSTEXPR14 bool operator<=(span<T, X> lhs, span<U, Y> rhs)
-{
-    return !(rhs < lhs);
-}
-
-template <typename T, std::ptrdiff_t X, typename U, std::ptrdiff_t Y>
-TCB_SPAN_CONSTEXPR14 bool operator>(span<T, X> lhs, span<U, Y> rhs)
-{
-    return rhs < lhs;
-}
-
-template <typename T, std::ptrdiff_t X, typename U, std::ptrdiff_t Y>
-TCB_SPAN_CONSTEXPR14 bool operator>=(span<T, X> lhs, span<U, Y> rhs)
-{
-    return !(lhs < rhs);
-}
-
-template <typename ElementType, std::ptrdiff_t Extent>
-span<const byte, ((Extent == dynamic_extent)
-                      ? dynamic_extent
-                      : (static_cast<ptrdiff_t>(sizeof(ElementType)) * Extent))>
+template <typename ElementType, std::size_t Extent>
+span<const byte, ((Extent == dynamic_extent) ? dynamic_extent
+                                             : sizeof(ElementType) * Extent)>
 as_bytes(span<ElementType, Extent> s) noexcept
 {
     return {reinterpret_cast<const byte*>(s.data()), s.size_bytes()};
 }
 
 template <
-    class ElementType, ptrdiff_t Extent,
+    class ElementType, size_t Extent,
     typename std::enable_if<!std::is_const<ElementType>::value, int>::type = 0>
-span<byte, ((Extent == dynamic_extent)
-                ? dynamic_extent
-                : (static_cast<ptrdiff_t>(sizeof(ElementType)) * Extent))>
+span<byte, ((Extent == dynamic_extent) ? dynamic_extent
+                                       : sizeof(ElementType) * Extent)>
 as_writable_bytes(span<ElementType, Extent> s) noexcept
 {
     return {reinterpret_cast<byte*>(s.data()), s.size_bytes()};
 }
 
-/* Extension: nonmember subview operations */
-
-#ifndef TCB_SPAN_STD_COMPLIANT_MODE
-
-template <std::ptrdiff_t Count, typename T>
-TCB_SPAN_CONSTEXPR11 auto first(T& t)
-    -> decltype(make_span(t).template first<Count>())
-{
-    return make_span(t).template first<Count>();
-}
-
-template <std::ptrdiff_t Count, typename T>
-TCB_SPAN_CONSTEXPR11 auto last(T& t)
-    -> decltype(make_span(t).template last<Count>())
-{
-    return make_span(t).template last<Count>();
-}
-
-template <std::ptrdiff_t Offset, std::ptrdiff_t Count = dynamic_extent,
-          typename T>
-TCB_SPAN_CONSTEXPR11 auto subspan(T& t)
-    -> decltype(make_span(t).template subspan<Offset, Count>())
-{
-    return make_span(t).template subspan<Offset, Count>();
-}
-
-template <typename T>
-TCB_SPAN_CONSTEXPR11 auto first(T& t, std::ptrdiff_t count)
-    -> decltype(make_span(t).first(count))
-{
-    return make_span(t).first(count);
-}
-
-template <typename T>
-TCB_SPAN_CONSTEXPR11 auto last(T& t, std::ptrdiff_t count)
-    -> decltype(make_span(t).last(count))
-{
-    return make_span(t).last(count);
-}
-
-template <typename T>
-TCB_SPAN_CONSTEXPR11 auto subspan(T& t, std::ptrdiff_t offset,
-                                  std::ptrdiff_t count = dynamic_extent)
-    -> decltype(make_span(t).subspan(offset, count))
-{
-    return make_span(t).subspan(offset, count);
-}
-
-#endif // TCB_SPAN_STD_COMPLIANT_MODE
-
-} // namespace TCB_SPAN_NAMESPACE_NAME
-
-/* Extension: support for C++17 structured bindings */
-
-#ifndef TCB_SPAN_STD_COMPLIANT_MODE
-
-namespace TCB_SPAN_NAMESPACE_NAME {
-
-template <std::ptrdiff_t N, typename E, std::ptrdiff_t S>
+template <std::size_t N, typename E, std::size_t S>
 constexpr auto get(span<E, S> s) -> decltype(s[N])
 {
     return s[N];
@@ -753,20 +609,23 @@ constexpr auto get(span<E, S> s) -> decltype(s[N])
 
 namespace std {
 
-template <typename E, ptrdiff_t S>
-class tuple_size<TCB_SPAN_NAMESPACE_NAME::span<E, S>> : public integral_constant<size_t, S> {};
+template <typename ElementType, size_t Extent>
+class tuple_size<TCB_SPAN_NAMESPACE_NAME::span<ElementType, Extent>>
+    : public integral_constant<size_t, Extent> {};
 
-template <typename E>
-class tuple_size<TCB_SPAN_NAMESPACE_NAME::span<E, TCB_SPAN_NAMESPACE_NAME::dynamic_extent>>; // not defined
+template <typename ElementType>
+class tuple_size<TCB_SPAN_NAMESPACE_NAME::span<
+    ElementType, TCB_SPAN_NAMESPACE_NAME::dynamic_extent>>; // not defined
 
-template <size_t N, typename E, ptrdiff_t S>
-class tuple_element<N, TCB_SPAN_NAMESPACE_NAME::span<E, S>> {
+template <size_t I, typename ElementType, size_t Extent>
+class tuple_element<I, TCB_SPAN_NAMESPACE_NAME::span<ElementType, Extent>> {
 public:
-    using type = E;
+    static_assert(Extent != TCB_SPAN_NAMESPACE_NAME::dynamic_extent &&
+                      I < Extent,
+                  "");
+    using type = ElementType;
 };
 
 } // end namespace std
-
-#endif // TCB_SPAN_STD_COMPLIANT_MODE
 
 #endif // TCB_SPAN_HPP_INCLUDED
