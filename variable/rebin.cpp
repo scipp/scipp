@@ -17,8 +17,6 @@ bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
   return edges[dim] == toMatch[dim];
 }
 
-bool is1D(Dimensions edges) { return edges.shape().size() == 1; }
-
 template <typename T>
 void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
                      Variable &newT, const VariableConstView &oldCoordT,
@@ -72,38 +70,9 @@ Variable rebin(const VariableConstView &var, const Dim dim,
   // to avoid this since it increases complexity. Instead, densities could
   // always be computed on-the-fly for visualization, if required.
   core::expect::unit_any_of(var, {units::counts, units::one});
-
-  /*
-  auto do_rebin = [dim](auto &&outT, auto &&oldT, auto &&oldCoordT,
-                        auto &&newCoordT) {
-    // Dimensions of *this and old are guaranteed to be the same.
-    const auto &out_dims = outT.dims();
-
-    // dimension along which the data is being rebinned
-    const bool rebin_dim_valid = out_dims.inner() == dim;
-
-    const bool input_valid = isBinEdge(dim, oldCoordT.dims(), oldT.dims());
-
-    const bool output_valid =
-        is1D(newCoordT.dims()) && isBinEdge(dim, newCoordT.dims(), out_dims);
-
-    if (rebin_dim_valid && input_valid && output_valid) {
-      rebinInner(dim, oldT, outT, oldCoordT, newCoordT);
-      if (oldT.hasVariances())
-        rebinInner(dim, oldT, outT, oldCoordT, newCoordT, true);
-    } else if (!rebin_dim_valid) {
-      // TODO the new coord should be 1D or the same dim as newCoord.
-      throw std::runtime_error(
-          "The new coord should be the same dimensions as the output coord.");
-    } else if (!input_valid) {
-      throw std::runtime_error(
-          "The input does not have coordinates with bin-edges.");
-    } else if (!output_valid) {
-      throw std::runtime_error(
-          "The output is not 1D or does not have coordinates with bin-edges.");
-    }
-  };
-  */
+  if (!isBinEdge(dim, oldCoord.dims(), var.dims()))
+    throw except::BinEdgeError(
+        "The input does not have coordinates with bin-edges.");
 
   if (var.dims().inner() == dim) {
     using namespace rebin_inner_detail;
