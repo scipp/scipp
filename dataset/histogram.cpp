@@ -51,8 +51,9 @@ DataArray histogram(const DataArrayConstView &events,
                          args<double, float, event_list<double>, double>,
                          args<double, float, event_list<double>, float>,
                          args<double, double, event_list<float>, double>>>(
-              dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
-              events_.data(), binEdges_, element::histogram);
+              dtype<double>, dim_, binEdges_.dims()[dim_] - 1,
+              events_.coords()[dim_], events_.data(), binEdges_,
+              element::histogram);
         },
         dim_of_coord(events.coords()[dim], dim), dim, binEdges);
   } else if (!is_histogram(events, dim)) {
@@ -70,7 +71,8 @@ DataArray histogram(const DataArrayConstView &events,
                          args<float, double, float, double>,
                          args<double, float, double, float>,
                          args<float, float, float, float>>>(
-              dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
+              dtype<double>, dim_, binEdges_.dims()[dim_] - 1,
+              events_.coords()[dim_],
               mask ? VariableConstView(masked) : events_.data(), binEdges_,
               element::histogram);
         },

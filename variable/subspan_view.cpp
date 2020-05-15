@@ -10,7 +10,7 @@ namespace scipp::variable {
 /// Helper returning vector of subspans with given length.
 template <class T>
 auto make_subspans(const span<T> &data, const scipp::index span_len) {
-  const auto len = data.size() / span_len;
+  const auto len = scipp::size(data) / span_len;
   std::vector<span<T>> spans;
   spans.reserve(len);
   for (scipp::index i = 0; i < len; ++i)
@@ -72,8 +72,8 @@ auto invoke_subspan_view(const DType dtype, Args &&... args) {
 }
 
 template <class Var> Variable subspan_view_impl(Var &var, const Dim dim) {
-  return invoke_subspan_view<double, float, int64_t, int32_t>(var.dtype(), var,
-                                                              dim);
+  return invoke_subspan_view<double, float, int64_t, int32_t, bool>(var.dtype(),
+                                                                    var, dim);
 }
 
 /// Return Variable containing mutable spans over given dimension as elements.

@@ -110,9 +110,9 @@ Variable rebin(const VariableConstView &var, const Dim dim,
     return transform_subspan<std::tuple<
         args<double, double, double, double>, args<float, float, float, float>,
         args<float, double, float, double>, args<float, float, float, double>,
-        args<bool, double, bool, double>>>(dim, newCoord.dims()[dim] - 1,
-                                           newCoord, var, oldCoord,
-                                           core::element::rebin);
+        args<bool, double, bool, double>>>(var.dtype(), dim,
+                                           newCoord.dims()[dim] - 1, newCoord,
+                                           var, oldCoord, core::element::rebin);
 
   } else {
     auto dims = var.dims();
