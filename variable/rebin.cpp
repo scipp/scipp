@@ -2,11 +2,13 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock, Igor Gudich
+#include "scipp/core/element/rebin.h"
 #include "scipp/units/except.h"
 #include "scipp/variable/apply.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
+#include "scipp/variable/transform_subspan.h"
 
 namespace scipp::variable {
 
@@ -118,6 +120,12 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
   }
 }
 
+namespace rebin_inner_detail {
+template <class Out, class OutEdge, class In, class InEdge>
+using args = std::tuple<span<Out>, span<const OutEdge>, span<const In>,
+                        span<const InEdge>>;
+}
+
 Variable rebin(const VariableConstView &var, const Dim dim,
                const VariableConstView &oldCoord,
                const VariableConstView &newCoord) {
@@ -126,6 +134,7 @@ Variable rebin(const VariableConstView &var, const Dim dim,
   // always be computed on-the-fly for visualization, if required.
   core::expect::unit_any_of(var, {units::counts, units::one});
 
+  /*
   auto do_rebin = [dim](auto &&outT, auto &&oldT, auto &&oldCoordT,
                         auto &&newCoordT) {
     // Dimensions of *this and old are guaranteed to be the same.
@@ -155,16 +164,26 @@ Variable rebin(const VariableConstView &var, const Dim dim,
           "The output is not 1D or does not have coordinates with bin-edges.");
     }
   };
+  */
 
-  auto dims = var.dims();
-  dims.resize(dim, newCoord.dims()[dim] - 1);
-  Variable rebinned(var, dims);
-  if (rebinned.dims().inner() == dim) {
-    using mask_rebinning_t = std::tuple<bool, bool, double, double>;
+  if (var.dims().inner() == dim) {
+    using namespace rebin_inner_detail;
+    /*
     apply_in_place<double, float, std::tuple<float, float, double, double>,
                    std::tuple<float, float, float, double>, mask_rebinning_t>(
         do_rebin, rebinned, var, oldCoord, newCoord);
+        */
+    return transform_subspan<std::tuple<
+        args<double, double, double, double>, args<float, float, float, float>,
+        args<float, double, float, double>, args<float, float, float, double>,
+        args<bool, double, bool, double>>>(dim, newCoord.dims()[dim] - 1,
+                                           newCoord, var, oldCoord,
+                                           core::element::rebin);
+
   } else {
+    auto dims = var.dims();
+    dims.resize(dim, newCoord.dims()[dim] - 1);
+    Variable rebinned(var, dims);
     if (newCoord.dims().ndim() > 1)
       throw std::runtime_error(
           "Not inner rebin works only for 1d coordinates for now.");
@@ -175,8 +194,8 @@ Variable rebin(const VariableConstView &var, const Dim dim,
     else
       throw std::runtime_error(
           "Rebinning is possible only for double and float types.");
+    return rebinned;
   }
-  return rebinned;
 }
 
 } // namespace scipp::variable
