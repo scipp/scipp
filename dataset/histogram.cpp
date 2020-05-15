@@ -3,8 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/histogram.h"
-#include "scipp/common/numeric.h"
-#include "scipp/core/histogram.h"
+#include "scipp/core/element/histogram.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
@@ -18,80 +17,6 @@ using namespace scipp::core;
 using namespace scipp::variable;
 
 namespace scipp::dataset {
-
-namespace {
-constexpr auto value = [](const auto &v, const scipp::index idx) {
-  using V = std::decay_t<decltype(v)>;
-  if constexpr (is_ValueAndVariance_v<V>) {
-    if constexpr (std::is_arithmetic_v<typename V::value_type>) {
-      static_cast<void>(idx);
-      return v.value;
-    } else {
-      return v.value[idx];
-    }
-  } else
-    return v.values[idx];
-};
-constexpr auto variance = [](const auto &v, const scipp::index idx) {
-  using V = std::decay_t<decltype(v)>;
-  if constexpr (is_ValueAndVariance_v<V>) {
-    if constexpr (std::is_arithmetic_v<typename V::value_type>) {
-      static_cast<void>(idx);
-      return v.variance;
-    } else {
-      return v.variance[idx];
-    }
-  } else
-    return v.variances[idx];
-};
-} // namespace
-
-static constexpr auto make_histogram = overloaded{
-    [](auto &data, const auto &events, const auto &weights, const auto &edges) {
-      // Special implementation for linear bins. Gives a 1x to 20x speedup
-      // for few and many events per histogram, respectively.
-      if (scipp::numeric::is_linspace(edges)) {
-        const auto [offset, nbin, scale] = core::linear_edge_params(edges);
-        for (scipp::index i = 0; i < scipp::size(events); ++i) {
-          const auto x = events[i];
-          const double bin = (x - offset) * scale;
-          if (bin >= 0.0 && bin < nbin) {
-            const auto b = static_cast<scipp::index>(bin);
-            const auto w = value(weights, i);
-            const auto e = variance(weights, i);
-            data.value[b] += w;
-            data.variance[b] += e;
-          }
-        }
-      } else {
-        core::expect::histogram::sorted_edges(edges);
-        for (scipp::index i = 0; i < scipp::size(events); ++i) {
-          const auto x = events[i];
-          auto it = std::upper_bound(edges.begin(), edges.end(), x);
-          if (it != edges.end() && it != edges.begin()) {
-            const auto b = --it - edges.begin();
-            const auto w = value(weights, i);
-            const auto e = variance(weights, i);
-            data.value[b] += w;
-            data.variance[b] += e;
-          }
-        }
-      }
-    },
-    [](const units::Unit &events_unit, const units::Unit &weights_unit,
-       const units::Unit &edge_unit) {
-      if (events_unit != edge_unit)
-        throw except::UnitError("Bin edges must have same unit as the events "
-                                "input coordinate.");
-      if (weights_unit != units::counts && weights_unit != units::dimensionless)
-        throw except::UnitError("Weights of event data must be "
-                                "`units::counts` or `units::dimensionless`.");
-      return weights_unit;
-    },
-    transform_flags::expect_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>,
-    transform_flags::expect_variance_arg<2>,
-    transform_flags::expect_no_variance_arg<3>};
 
 namespace histogram_events_detail {
 template <class Out, class Coord, class Weight, class Edge>
@@ -127,7 +52,7 @@ DataArray histogram(const DataArrayConstView &events,
                          args<double, float, event_list<double>, float>,
                          args<double, double, event_list<float>, double>>>(
               dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
-              events_.data(), binEdges_, make_histogram);
+              events_.data(), binEdges_, element::histogram);
         },
         dim_of_coord(events.coords()[dim], dim), dim, binEdges);
   } else if (!is_histogram(events, dim)) {
@@ -147,7 +72,7 @@ DataArray histogram(const DataArrayConstView &events,
                          args<float, float, float, float>>>(
               dim_, binEdges_.dims()[dim_] - 1, events_.coords()[dim_],
               mask ? VariableConstView(masked) : events_.data(), binEdges_,
-              make_histogram);
+              element::histogram);
         },
         dim, binEdges);
   } else {
