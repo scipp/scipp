@@ -19,67 +19,6 @@ bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
 
 bool is1D(Dimensions edges) { return edges.shape().size() == 1; }
 
-template <class T> class VariableConceptT;
-template <class DataType, class OldCoordType, class NewCoordType>
-// Special rebin version for rebinning inner dimension to a joint new coord.
-static void rebinInner(const Dim dim, const VariableConceptT<DataType> &oldT,
-                       VariableConceptT<DataType> &newT,
-                       const VariableConceptT<OldCoordType> &oldCoordT,
-                       const VariableConceptT<NewCoordType> &newCoordT,
-                       bool variances = false) {
-  scipp::span<const DataType> oldData;
-  scipp::span<DataType> newData;
-  if (variances) {
-    oldData = oldT.variances();
-    newData = newT.variances();
-  } else {
-    oldData = oldT.values();
-    newData = newT.values();
-  }
-  const auto oldSize = oldT.dims()[dim];
-  const auto newSize = newT.dims()[dim];
-  const auto count = oldT.dims().volume() / oldSize;
-  const auto &xold = oldCoordT.values();
-  const auto &xnew = newCoordT.values();
-  // This function assumes that dimensions between coord and data either
-  // match, or coord is 1D.
-  const bool jointOld = oldCoordT.dims().shape().size() == 1;
-  const bool jointNew = newCoordT.dims().shape().size() == 1;
-  for (scipp::index c = 0; c < count; ++c) {
-    scipp::index iold = 0;
-    scipp::index inew = 0;
-    const scipp::index oldEdgeOffset = jointOld ? 0 : c * (oldSize + 1);
-    const scipp::index newEdgeOffset = jointNew ? 0 : c * (newSize + 1);
-    const auto oldOffset = c * oldSize;
-    const auto newOffset = c * newSize;
-    while ((iold < oldSize) && (inew < newSize)) {
-      auto xo_low = xold[oldEdgeOffset + iold];
-      auto xo_high = xold[oldEdgeOffset + iold + 1];
-      auto xn_low = xnew[newEdgeOffset + inew];
-      auto xn_high = xnew[newEdgeOffset + inew + 1];
-
-      if (xn_high <= xo_low)
-        inew++; /* old and new bins do not overlap */
-      else if (xo_high <= xn_low)
-        iold++; /* old and new bins do not overlap */
-      else {
-        // delta is the overlap of the bins on the x axis
-        auto delta = std::min<double>(xn_high, xo_high) -
-                     std::max<double>(xn_low, xo_low);
-
-        auto owidth = xo_high - xo_low;
-        newData[newOffset + inew] += oldData[oldOffset + iold] * delta / owidth;
-
-        if (xn_high > xo_high) {
-          iold++;
-        } else {
-          inew++;
-        }
-      }
-    }
-  }
-}
-
 template <typename T>
 void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
                      Variable &newT, const VariableConstView &oldCoordT,
@@ -168,11 +107,6 @@ Variable rebin(const VariableConstView &var, const Dim dim,
 
   if (var.dims().inner() == dim) {
     using namespace rebin_inner_detail;
-    /*
-    apply_in_place<double, float, std::tuple<float, float, double, double>,
-                   std::tuple<float, float, float, double>, mask_rebinning_t>(
-        do_rebin, rebinned, var, oldCoord, newCoord);
-        */
     return transform_subspan<std::tuple<
         args<double, double, double, double>, args<float, float, float, float>,
         args<float, double, float, double>, args<float, float, float, double>,
