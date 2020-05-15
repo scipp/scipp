@@ -17,8 +17,8 @@ namespace scipp::core::element {
 static constexpr auto rebin = overloaded{
     [](const auto &data_new, const auto &xnew, const auto &data_old,
        const auto &xold) {
-      const auto oldSize = scipp::size(xold);
-      const auto newSize = scipp::size(xnew);
+      const auto oldSize = scipp::size(xold) - 1;
+      const auto newSize = scipp::size(xnew) - 1;
       scipp::index iold = 0;
       scipp::index inew = 0;
       while ((iold < oldSize) && (inew < newSize)) {
