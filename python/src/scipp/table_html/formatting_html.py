@@ -114,7 +114,7 @@ def _format_events(var, has_variances):
 
 def _ordered_dict(data):
     data_ordered = collections.OrderedDict(
-                   sorted(data.items(), key=lambda t: str(t[0])))
+        sorted(data.items(), key=lambda t: str(t[0])))
     return data_ordered
 
 
@@ -418,8 +418,7 @@ def summarize_data(dataset):
             name,
             var,
             has_attrs=has_attrs,
-            bin_edges=find_bin_edges(var, dataset)
-                      if has_attrs else None))
+            bin_edges=find_bin_edges(var, dataset) if has_attrs else None))
                       for name, var in _ordered_dict(dataset).items())
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 

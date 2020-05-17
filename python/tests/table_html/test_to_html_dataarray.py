@@ -231,13 +231,20 @@ def dataarray_for_repr_test():
     y = sc.Variable(['y'], values=np.arange(2.0), unit=sc.units.m)
     x = sc.Variable(['x'], values=np.arange(3.0), unit=sc.units.m)
     d = sc.DataArray(data=sc.Variable(dims=['y', 'x'],
-                     values=np.random.rand(2, 3)),
+                                      values=np.random.rand(2, 3)),
                      coords={
-                        'yyy': y,
-                        'xxx': x,
-                        'aux': sc.Variable(['x'], values=np.random.rand(3))},
-                     attrs={'attr_zz': x, 'attr_aa': y},
-                     masks={'mask_zz': x, 'mask_aa': y})
+                         'yyy': y,
+                         'xxx': x,
+                         'aux': sc.Variable(['x'], values=np.random.rand(3))
+                     },
+                     attrs={
+                         'attr_zz': x,
+                         'attr_aa': y
+                     },
+                     masks={
+                         'mask_zz': x,
+                         'mask_aa': y
+                     })
     return d
 
 
