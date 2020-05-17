@@ -801,39 +801,3 @@ def test_iteration():
     expected = ['a', 'b']
     for k in d:
         assert k in expected
-
-def test_dataset_repr(): 
-    d = sc.Dataset()
-    d['z'] = sc.Variable(['x'], values=[1.0])
-    d['a'] = sc.Variable(['x'], values=[1.0])
-    d.attrs['attr1'] = sc.Variable(1.0)
-    d.attrs['attr2'] = sc.Variable(1.0)
-    d.attrs['attr0'] = sc.Variable(1.0)
-    d.masks['zz_mask'] = sc.Variable(dims=['x'], values=np.array([True]))
-    d.masks['aa_mask'] = sc.Variable(dims=['x'], values=np.array([True]))
-
-    header_repr = "<bound method PyCapsule.__repr__ of <scipp.Dataset>\n"
-    header_html = "<bound method make_html of <scipp.Dataset>\n"
-
-    # must check against actual __repr__ to make sure ordering is correct
-    expected = \
-        "Dimensions: {{x, 1}}\nAttributes:\n"\
-        "    attr0                     float64    [dimensionless]  ()"\
-        "  [1.000000]\n"\
-        "    attr1                     float64    [dimensionless]  ()"\
-        "  [1.000000]\n"\
-        "    attr2                     float64    [dimensionless]  ()"\
-        "  [1.000000]\n"\
-        "Masks:\n"\
-        "    aa_mask                   bool       [dimensionless]  (x)"\
-        "  [True]\n"\
-        "    zz_mask                   bool       [dimensionless]  (x)"\
-        "  [True]\n"\
-        "Data:\n"\
-        "    a                         float64    [dimensionless]  (x)"\
-        "  [1.000000]\n"\
-        "    z                         float64    [dimensionless]  (x)"\
-        "  [1.000000]\n\n>"
-
-    assert header_repr + expected == str(d.__repr__)
-    assert header_html + expected == str(d._repr_html_)

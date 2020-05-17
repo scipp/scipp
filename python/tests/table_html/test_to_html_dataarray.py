@@ -43,7 +43,7 @@ def test_basic(dims, lengths):
     assert_dims_section(data, dim_section)
 
     data_names = [
-        dims[0],
+        LABEL_NAME,
         "",  # dataarray does not have a data name
         MASK_NAME,
         ATTR_NAME
@@ -99,7 +99,7 @@ def test_events(dims, lengths):
     # the original dim used as a label (dim[0]) is not shown,
     # instead the events dim is shown
     assert_section(coord_section,
-                   dims[0],
+                   LABEL_NAME,
                    dims,
                    in_dtype,
                    in_unit,
@@ -156,7 +156,7 @@ def test_bin_edge(dims, lengths):
     dim_section = sections.pop(0)
     assert_dims_section(data, dim_section)
 
-    data_names = [dims[0], MASK_NAME]
+    data_names = [LABEL_NAME, MASK_NAME]
 
     for section, name in zip(sections, data_names):
         assert_section(section,
@@ -216,7 +216,7 @@ def test_bin_edge_and_events(dims, lengths):
     dim_section = sections.pop(0)
     assert_dims_section(data, dim_section)
 
-    data_names = [dims[0], MASK_NAME]
+    data_names = [LABEL_NAME, MASK_NAME]
 
     for section, name in zip(sections, data_names):
         assert_section(section,
@@ -225,3 +225,33 @@ def test_bin_edge_and_events(dims, lengths):
                        in_dtype,
                        in_unit,
                        has_bin_edges=True)
+
+
+def dataarray_for_repr_test():
+    y = sc.Variable(['y'], values=np.arange(2.0), unit=sc.units.m)
+    x = sc.Variable(['x'], values=np.arange(3.0), unit=sc.units.m)
+    d = sc.DataArray(data=sc.Variable(dims=['y', 'x'],
+                     values=np.random.rand(2, 3)),
+                     coords={
+                        'yyy': y,
+                        'xxx': x,
+                        'aux': sc.Variable(['x'], values=np.random.rand(3))},
+                     attrs={'attr_zz': x, 'attr_aa': y},
+                     masks={'mask_zz': x, 'mask_aa': y})
+    return d
+
+
+def test_dataarray_repr():
+    repr = dataarray_for_repr_test().__repr__()
+    # make sure the ordering is correct
+    assert repr.find("yyy") > repr.find("xxx") > repr.find("aux")
+    assert repr.find('attr_zz') > repr.find('attr_aa')
+    assert repr.find('mask_zz') > repr.find('mask_aa')
+
+
+def test_dataarray_repr_html():
+    repr = dataarray_for_repr_test()._repr_html_()
+    # make sure the ordering is correct
+    assert repr.find("yyy") > repr.find("xxx") > repr.find("aux")
+    assert repr.find('attr_zz') > repr.find('attr_aa')
+    assert repr.find('mask_zz') > repr.find('mask_aa')
