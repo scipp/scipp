@@ -1012,30 +1012,23 @@ TEST(TransformFlagsTest, variance_on_arg_in_place) {
       var_no_variance, var_no_variance, op_arg_1_has_flags));
 }
 
-namespace {
-template <typename T, typename Base> struct OpInPlace : public Base {
-  template <class A, class B>
-  constexpr void operator()(A &&, const B &) const noexcept {}
-  using types = pair_self_t<T>;
-};
-} // namespace
-
 TEST(TransformFlagsTest, expect_in_variance_if_out_variance) {
 
   auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
   auto var_no_variance = makeVariable<double>(Values{1});
-  using Op =
-      OpInPlace<double, transform_flags::expect_in_variance_if_out_variance_t>;
+  constexpr auto inplace_op = [](auto &&x, const auto &y) { x += y; };
+  constexpr auto op = overloaded{
+      transform_flags::expect_in_variance_if_out_variance, inplace_op};
   EXPECT_THROW(transform_in_place<std::tuple<double>>(var_with_variance,
-                                                      var_no_variance, Op{}),
+                                                      var_no_variance, op),
                except::VariancesError);
   EXPECT_THROW(transform_in_place<std::tuple<double>>(var_no_variance,
-                                                      var_with_variance, Op{}),
+                                                      var_with_variance, op),
                except::VariancesError);
+  EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(var_no_variance,
+                                                         var_no_variance, op));
   EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
-      var_no_variance, var_no_variance, Op{}));
-  EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
-      var_with_variance, var_with_variance, Op{}));
+      var_with_variance, var_with_variance, op));
 }
 
 TEST(TransformFlagsTest, expect_all_or_none_have_variance) {

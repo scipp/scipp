@@ -44,8 +44,12 @@ template <class Types, class Op, class... Var>
       (std::is_base_of_v<
            core::transform_flags::expect_in_variance_if_out_variance_t, Op> &&
        (var.hasVariances() || ...));
-  Variable out = variance ? Variable(type, dims, Values{}, Variances{})
-                          : Variable(type, dims);
+  Variable out =
+      variance ? Variable(type, dims,
+                          Values(dims.volume(), core::default_init_elements),
+                          Variances(dims.volume(), core::default_init_elements))
+               : Variable(type, dims,
+                          Values(dims.volume(), core::default_init_elements));
 
   const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
 
@@ -68,7 +72,10 @@ template <class Types, class Op, class... Var>
 ///    (first) argument is the "out" argument, as used in `transform_in_place`.
 /// 3. The tuple of supported type combinations must include the type of the out
 ///    argument as the first type in the inner tuples. The output type must be
-///    passed at runtime as the first argument.
+///    passed at runtime as the first argument. `transform_subspan` DOES NOT
+///    DEFAULT INITIALIZE the output array, i.e., `Op` must take care of
+///    initializating the respective subspans. This is done for improved
+///    performance, avoiding streaming/writing to memory twice.
 /// 4. The output type and the type of non-events inputs that depend on `dim`
 ///    must be specified as `span<T>`. The user-provided lambda is called with a
 ///    span of values for these arguments.
