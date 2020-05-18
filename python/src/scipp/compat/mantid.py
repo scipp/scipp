@@ -385,11 +385,7 @@ def _convert_MatrixWorkspace_info(ws):
     if common_bins:
         coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
     else:
-        coord = sc.Variable([spec_dim, dim],
-                            shape=(ws.getNumberHistograms(), len(ws.readX(0))),
-                            unit=unit)
-        for i in range(ws.getNumberHistograms()):
-            coord[spec_dim, i].values = ws.readX(i)
+        coord = sc.Variable([spec_dim, dim], values=ws.extractX(), unit=unit)
 
     info = {
         "coords": {
@@ -465,10 +461,9 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
     coords_labs_data = _convert_MatrixWorkspace_info(ws)
     _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
     coords_labs_data["data"] = sc.Variable([spec_dim, dim],
-                                           shape=(ws.getNumberHistograms(),
-                                                  len(ws.readY(0))),
                                            unit=data_unit,
-                                           variances=True)
+                                           values=ws.extractY(),
+                                           variances=ws.extractE())
     array = detail.move_to_data_array(**coords_labs_data)
 
     if ws.hasAnyMaskedBins():
@@ -476,17 +471,12 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
             make_bin_masks(common_bins, spec_dim, dim, ws.blocksize(),
                            ws.getNumberHistograms()))
         bin_masks = array.masks["bin"]
-        # set all the bin masks now - they're all the same
         if common_bins:
             set_common_bins_masks(bin_masks, dim, ws.maskedBinsIndices(0))
+        else:
+            for i in range(ws.getNumberHistograms()):
+                set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
 
-    data = array.data
-    for i in range(ws.getNumberHistograms()):
-        data[spec_dim, i].values = ws.readY(i)
-        data[spec_dim, i].variances = np.power(ws.readE(i), 2)
-
-        if not common_bins and ws.hasMaskedBins(i):
-            set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
     # Avoid creating dimensions that are not required since this mostly an
     # artifact of inflexible data structures and gets in the way when working
     # with scipp.
