@@ -9,6 +9,7 @@
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
+#include "scipp/core/element/util.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/transform_common.h"
 
@@ -17,16 +18,7 @@ namespace scipp::core::element {
 static constexpr auto rebin = overloaded{
     [](const auto &data_new, const auto &xnew, const auto &data_old,
        const auto &xold) {
-      if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(data_old)>>) {
-        for (auto &x : data_new.value)
-          x = 0.0;
-        for (auto &x : data_new.variance)
-          x = 0.0;
-      } else {
-        for (auto &x : data_new)
-          x = 0.0;
-      }
-
+      zero(data_new);
       const auto oldSize = scipp::size(xold) - 1;
       const auto newSize = scipp::size(xnew) - 1;
       scipp::index iold = 0;
