@@ -22,4 +22,3 @@ template <class T> void zero(const core::ValueAndVariance<span<T>> &data) {
 }
 
 } // namespace scipp::core::element
-
