@@ -134,6 +134,59 @@ template <class T> void bind_convert_with_calibration(py::module &m) {
       py::call_guard<py::gil_scoped_release>(), doc);
 }
 
+void bind_TofBeamline(py::module &m) {
+  py::class_<TofBeamline>(m, "TofBeamline")
+      .def(py::init<const std::vector<std::string> &,
+                    const std::optional<std::string> &>(),
+           py::arg("path"), py::arg("scatter"))
+      .def(
+          "convert",
+          [](const TofBeamline &self, const DataArrayConstView &data,
+             const Dim from, const Dim to, const bool scatter) {
+            return self.convert(DataArray(data), from, to, scatter);
+          },
+          py::arg("data"), py::arg("from"), py::arg("to"), py::arg("scatter"),
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "convert",
+          [](const TofBeamline &self, py::object &obj, const Dim from,
+             const Dim to, const bool scatter, DataArray &out) {
+            auto &data = obj.cast<DataArray &>();
+            if (&data != &out)
+              throw std::runtime_error(
+                  "Currently only out=<input> is supported");
+            data = self.convert(std::move(data), from, to, scatter);
+            return obj;
+          },
+          py::arg("data"), py::arg("from"), py::arg("to"), py::arg("scatter"),
+          py::arg("out"), py::call_guard<py::gil_scoped_release>());
+}
+
+void bind_ElasticScattering(py::module &m) {
+  py::class_<ElasticScattering>(m, "ElasticScattering")
+      .def(py::init<const std::string &>(), py::arg("theta"))
+      .def(
+          "convert",
+          [](const ElasticScattering &self, const DatasetConstView &data,
+             const Dim from,
+             const Dim to) { return self.convert(Dataset(data), from, to); },
+          py::arg("data"), py::arg("from"), py::arg("to"),
+          py::call_guard<py::gil_scoped_release>())
+      .def(
+          "convert",
+          [](const ElasticScattering &self, py::object &obj, const Dim from,
+             const Dim to, Dataset &out) {
+            auto &data = obj.cast<Dataset &>();
+            if (&data != &out)
+              throw std::runtime_error(
+                  "Currently only out=<input> is supported");
+            data = self.convert(std::move(data), from, to);
+            return obj;
+          },
+          py::arg("data"), py::arg("from"), py::arg("to"), py::arg("out"),
+          py::call_guard<py::gil_scoped_release>());
+}
+
 void bind_diffraction(py::module &m) {
   auto diffraction = m.def_submodule("neutron_diffraction");
   bind_convert_with_calibration<dataset::DataArray>(diffraction);
@@ -147,6 +200,8 @@ void init_neutron(py::module &m) {
   bind_convert<dataset::Dataset>(neutron);
   bind_beamline<dataset::DataArray>(neutron);
   bind_beamline<dataset::Dataset>(neutron);
+  bind_TofBeamline(neutron);
+  bind_ElasticScattering(neutron);
 
   // This is deliberately `m` and not `neutron` due to how nested imports work
   // in Python in combination with mixed C++/Python modules.

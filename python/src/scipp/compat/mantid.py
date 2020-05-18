@@ -449,7 +449,7 @@ def convert_monitors_ws(ws, converter, **ignored):
             single_monitor = converter(monitor_ws)
         # Remove redundant information that is duplicated from workspace
         # We get this extra information from the generic converter reuse
-        del single_monitor.coords['sample_position']
+        #del single_monitor.coords['sample_position']
         del single_monitor.coords['detector_info']
         del single_monitor.attrs['run']
         del single_monitor.attrs['sample']

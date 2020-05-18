@@ -64,6 +64,8 @@ template <class T> static Variable l2(const T &d) {
 }
 
 template <class T> static Variable scattering_angle(const T &d) {
+  if (d.coords().contains(Dim("theta")))
+    return Variable(d.coords()[Dim("theta")]);
   return 0.5 * units::one * two_theta(d);
 }
 

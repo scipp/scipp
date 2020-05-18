@@ -224,4 +224,64 @@ Dataset convert(const DatasetConstView &d, const Dim from, const Dim to) {
   return convert(Dataset(d), from, to);
 }
 
+TofBeamline::TofBeamline(const std::vector<std::string> &path,
+                         const std::optional<std::string> &scatter)
+    : m_path(path), m_scatter(scatter) {
+  if (!scatter)
+    throw std::runtime_error(
+        "TofBeamline for non-scattering case not implemented yet.");
+  if (*scatter != "sample_position")
+    throw std::runtime_error("Custom scattered name not implemented yet.");
+  if (path != std::vector<std::string>{"source_position", "sample_position",
+                                       "position"})
+    throw std::runtime_error("Custom path not implemented yet.");
+}
+
+template <class T>
+T TofBeamline::do_convert(T d, const Dim from, const Dim to,
+                          const bool scatter) const {
+  if (from != Dim::Tof)
+    throw std::runtime_error(
+        "TofBeamline only supports conversion from time-of-flight ('tof').");
+  if (scatter) {
+    auto out = neutron::convert(std::move(d), from, to);
+    out.coords().set(Dim("theta"), scattering_angle(out));
+    return out;
+  } else {
+    Variable sample(d.coords()[Dim("sample_position")]);
+    d.coords().erase(Dim("sample_position"));
+    auto out = neutron::convert(std::move(d), from, to);
+    out.attrs().set("sample_position", std::move(sample));
+    return out;
+  }
+}
+
+DataArray TofBeamline::convert(dataset::DataArray d, const Dim from,
+                               const Dim to, const bool scatter) const {
+  return do_convert(std::move(d), from, to, scatter);
+}
+
+Dataset TofBeamline::convert(dataset::Dataset d, const Dim from, const Dim to,
+                             const bool scatter) const {
+  return do_convert(std::move(d), from, to, scatter);
+}
+
+ElasticScattering::ElasticScattering(const std::string &theta)
+    : m_theta(theta) {}
+
+template <class T>
+T ElasticScattering::do_convert(T d, const Dim from, const Dim to) const {
+  return neutron::convert(std::move(d), from, to);
+}
+
+DataArray ElasticScattering::convert(DataArray d, const Dim from,
+                                     const Dim to) const {
+  return do_convert(std::move(d), from, to);
+}
+
+Dataset ElasticScattering::convert(Dataset d, const Dim from,
+                                   const Dim to) const {
+  return do_convert(std::move(d), from, to);
+}
+
 } // namespace scipp::neutron
