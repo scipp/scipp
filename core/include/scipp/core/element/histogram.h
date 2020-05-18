@@ -44,6 +44,10 @@ constexpr auto variance = [](const auto &v, const scipp::index idx) {
 static constexpr auto histogram = overloaded{
     [](const auto &data, const auto &events, const auto &weights,
        const auto &edges) {
+      for (auto &x : data.value)
+        x = 0.0;
+      for (auto &x : data.variance)
+        x = 0.0;
       // Special implementation for linear bins. Gives a 1x to 20x speedup
       // for few and many events per histogram, respectively.
       if (scipp::numeric::is_linspace(edges)) {
