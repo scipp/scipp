@@ -46,10 +46,10 @@ template <class Types, class Op, class... Var>
        (var.hasVariances() || ...));
   Variable out =
       variance ? Variable(type, dims,
-                          Values{dims.volume(), core::default_init_elements},
-                          Variances{dims.volume(), core::default_init_elements})
+                          Values(dims.volume(), core::default_init_elements),
+                          Variances(dims.volume(), core::default_init_elements))
                : Variable(type, dims,
-                          Values{dims.volume(), core::default_init_elements});
+                          Values(dims.volume(), core::default_init_elements));
 
   const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
 
