@@ -1,6 +1,7 @@
 # Original source from
 # https://github.com/jsignell/xarray/blob/1d960933ab252e0f79f7e050e6c9261d55568057/xarray/core/formatting_html.py
 
+import collections
 import operator
 import os
 import uuid
@@ -111,6 +112,12 @@ def _format_events(var, has_variances):
     return _make_row(", ".join([row for row in s]))
 
 
+def _ordered_dict(data):
+    data_ordered = collections.OrderedDict(
+        sorted(data.items(), key=lambda t: str(t[0])))
+    return data_ordered
+
+
 def inline_variable_repr(var, has_variances=False):
     if is_data_events(var):
         return _format_events(var, has_variances)
@@ -168,7 +175,8 @@ def format_dims(dims, sizes, coords):
 
 def summarize_attrs_simple(attrs):
     attrs_dl = "".join(f"<dt><span>{escape(name)} :</span></dt>"
-                       f"<dd>{values}</dd>" for name, values in attrs.items())
+                       f"<dd>{values}</dd>"
+                       for name, values in _ordered_dict(attrs).items())
 
     return f"<dl class='xr-attrs'>{attrs_dl}</dl>"
 
@@ -176,7 +184,7 @@ def summarize_attrs_simple(attrs):
 def summarize_attrs(attrs):
     attrs_li = "".join(f"<li class='xr-var-item'>\
             {summarize_variable(name, values, has_attrs=False)}</li>"
-                       for name, values in attrs.items())
+                       for name, values in _ordered_dict(attrs).items())
     return f"<ul class='xr-var-list'>{attrs_li}</ul>"
 
 
@@ -210,7 +218,8 @@ def find_bin_edges(var, ds):
 def summarize_coords(coords, ds=None):
     vars_li = "".join("<li class='xr-var-item'>"
                       f"{summarize_coord(dim, var, ds)}"
-                      "</span></li>" for dim, var in coords.items())
+                      "</span></li>"
+                      for dim, var in _ordered_dict(coords).items())
 
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
@@ -410,7 +419,7 @@ def summarize_data(dataset):
             var,
             has_attrs=has_attrs,
             bin_edges=find_bin_edges(var, dataset) if has_attrs else None))
-                      for name, var in dataset.items())
+                      for name, var in _ordered_dict(dataset).items())
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 

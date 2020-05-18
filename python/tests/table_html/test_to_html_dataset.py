@@ -5,7 +5,8 @@ from bs4 import BeautifulSoup
 import scipp as sc
 from scipp.table_html import make_html
 
-from .common import ATTR_NAME, MASK_NAME, assert_dims_section, assert_section
+from .common import ATTR_NAME, LABEL_NAME, MASK_NAME,\
+                    assert_dims_section, assert_section
 
 
 @pytest.mark.parametrize("dims, lengths",
@@ -34,7 +35,7 @@ def test_basic(dims, lengths):
     },
                          coords={
                              dims[0]: bin_edges,
-                             "label": bin_edges
+                             LABEL_NAME: bin_edges,
                          },
                          attrs={"attr": data},
                          masks={"mask": bin_edges})
@@ -62,7 +63,7 @@ def test_basic(dims, lengths):
     dim_section = sections.pop(0)
     assert_dims_section(data, dim_section)
 
-    data_names = [dims[0], MASK_NAME]
+    data_names = [LABEL_NAME, MASK_NAME]
 
     for section, name in zip(sections, data_names):
         assert_section(section,
@@ -110,3 +111,31 @@ def test_events_does_not_repeat_dense_coords():
     # check that each dim is only present once
     assert ["z" in var.text for var in variables].count(True) == 1
     assert ["y" in var.text for var in variables].count(True) == 1
+
+
+def dataset_for_repr_test():
+    d = sc.Dataset()
+    d['z1'] = sc.Variable(['x'], values=[1.0])
+    d['a1'] = sc.Variable(['x'], values=[1.0])
+    d.attrs['attr1'] = sc.Variable(1.0)
+    d.attrs['attr2'] = sc.Variable(1.0)
+    d.attrs['attr0'] = sc.Variable(1.0)
+    d.masks['zz_mask'] = sc.Variable(dims=['x'], values=np.array([True]))
+    d.masks['aa_mask'] = sc.Variable(dims=['x'], values=np.array([True]))
+    return d
+
+
+def test_dataset_repr():
+    repr = dataset_for_repr_test().__repr__()
+    # make sure the ordering is correct
+    assert repr.find("z1") > repr.find("a1")
+    assert repr.find("attr2") > repr.find("attr1") > repr.find("attr0")
+    assert repr.find("zz_mask") > repr.find("aa_mask")
+
+
+def test_dataset_repr_html():
+    repr = dataset_for_repr_test()._repr_html_()
+    # make sure the ordering is correct
+    assert repr.find("z1") > repr.find("a1")
+    assert repr.find("attr2") > repr.find("attr1") > repr.find("attr0")
+    assert repr.find("zz_mask") > repr.find("aa_mask")
