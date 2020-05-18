@@ -142,8 +142,8 @@ VariableView mean(const VariableConstView &var, const Dim dim,
 }
 
 template <class Op>
-void reduce_impl(const VariableView &out, const VariableConstView &var) {
-  accumulate_in_place(out, var, Op{});
+void reduce_impl(const VariableView &out, const VariableConstView &var, Op op) {
+  accumulate_in_place(out, var, op);
 }
 
 /// Reduction for idempotent operations such that op(a,a) = a.
@@ -153,30 +153,30 @@ void reduce_impl(const VariableView &out, const VariableConstView &var) {
 /// `max`. Note that masking is not supported here since it would make creation
 /// of a sensible starting value difficult.
 template <class Op>
-Variable reduce_idempotent(const VariableConstView &var, const Dim dim) {
+Variable reduce_idempotent(const VariableConstView &var, const Dim dim, Op op) {
   Variable out(var.slice({dim, 0}));
-  reduce_impl<Op>(out, var);
+  reduce_impl(out, var, op);
   return out;
 }
 
 void any_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl<core::element::or_equals>(out, var);
+  reduce_impl(out, var, core::element::or_equals);
 }
 
 Variable any(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent<core::element::or_equals>(var, dim);
+  return reduce_idempotent(var, dim, core::element::or_equals);
 }
 
 void all_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl<core::element::and_equals>(out, var);
+  reduce_impl(out, var, core::element::and_equals);
 }
 
 Variable all(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent<core::element::and_equals>(var, dim);
+  return reduce_idempotent(var, dim, core::element::and_equals);
 }
 
 void max_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl<core::element::max_equals>(out, var);
+  reduce_impl(out, var, core::element::max_equals);
 }
 
 /// Return the maximum along given dimension.
@@ -184,11 +184,11 @@ void max_impl(const VariableView &out, const VariableConstView &var) {
 /// Variances are not considered when determining the maximum. If present, the
 /// variance of the maximum element is returned.
 Variable max(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent<core::element::max_equals>(var, dim);
+  return reduce_idempotent(var, dim, core::element::max_equals);
 }
 
 void min_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl<core::element::min_equals>(out, var);
+  reduce_impl(out, var, core::element::min_equals);
 }
 
 /// Return the minimum along given dimension.
@@ -196,7 +196,7 @@ void min_impl(const VariableView &out, const VariableConstView &var) {
 /// Variances are not considered when determining the minimum. If present, the
 /// variance of the minimum element is returned.
 Variable min(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent<core::element::min_equals>(var, dim);
+  return reduce_idempotent(var, dim, core::element::min_equals);
 }
 
 /// Return the maximum along all dimensions.

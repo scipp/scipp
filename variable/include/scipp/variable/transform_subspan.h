@@ -31,7 +31,7 @@ static constexpr auto maybe_subspan = [](VariableConstView &var,
 } // namespace transform_subspan_detail
 
 template <class Types, class Op, class... Var>
-[[nodiscard]] Variable transform_subspan_impl(const Dim dim,
+[[nodiscard]] Variable transform_subspan_impl(const DType type, const Dim dim,
                                               const scipp::index size, Op op,
                                               Var... var) {
   using namespace transform_subspan_detail;
@@ -39,15 +39,13 @@ template <class Types, class Op, class... Var>
   auto dims =
       merge(var.dims().contains(dim) ? erase(var.dims(), dim) : var.dims()...);
   dims.addInner(dim, size);
-  // This will cause failure below unless the output type (first type in inner
-  // tuple) is the same in all inner tuples.
-  using OutT =
-      typename std::tuple_element_t<0,
-                                    std::tuple_element_t<0, Types>>::value_type;
-  Variable out =
-      std::is_base_of_v<core::transform_flags::expect_variance_arg_t<0>, Op>
-          ? makeVariable<OutT>(Dimensions{dims}, Values{}, Variances{})
-          : makeVariable<OutT>(Dimensions{dims});
+  const bool variance =
+      std::is_base_of_v<core::transform_flags::expect_variance_arg_t<0>, Op> ||
+      (std::is_base_of_v<
+           core::transform_flags::expect_in_variance_if_out_variance_t, Op> &&
+       (var.hasVariances() || ...));
+  Variable out = variance ? Variable(type, dims, Values{}, Variances{})
+                          : Variable(type, dims);
 
   const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
 
@@ -69,26 +67,27 @@ template <class Types, class Op, class... Var>
 /// 2. The overload handling the data has one extra argument. This additional
 ///    (first) argument is the "out" argument, as used in `transform_in_place`.
 /// 3. The tuple of supported type combinations must include the type of the out
-///    argument as the first type in the inner tuples. Currently all supported
-///    combinations must have the same output type.
+///    argument as the first type in the inner tuples. The output type must be
+///    passed at runtime as the first argument.
 /// 4. The output type and the type of non-events inputs that depend on `dim`
 ///    must be specified as `span<T>`. The user-provided lambda is called with a
 ///    span of values for these arguments.
 /// 5. Use the flag transform_flags::expect_variance_arg<0> to control whether
 ///    the output should have variances or not.
 template <class Types, class Op>
-[[nodiscard]] Variable transform_subspan(const Dim dim, const scipp::index size,
+[[nodiscard]] Variable transform_subspan(const DType type, const Dim dim,
+                                         const scipp::index size,
                                          const VariableConstView &var1,
                                          const VariableConstView &var2, Op op) {
-  return transform_subspan_impl<Types>(dim, size, op, var1, var2);
+  return transform_subspan_impl<Types>(type, dim, size, op, var1, var2);
 }
 
 template <class Types, class Op>
-[[nodiscard]] Variable transform_subspan(const Dim dim, const scipp::index size,
-                                         const VariableConstView &var1,
-                                         const VariableConstView &var2,
-                                         const VariableConstView &var3, Op op) {
-  return transform_subspan_impl<Types>(dim, size, op, var1, var2, var3);
+[[nodiscard]] Variable
+transform_subspan(const DType type, const Dim dim, const scipp::index size,
+                  const VariableConstView &var1, const VariableConstView &var2,
+                  const VariableConstView &var3, Op op) {
+  return transform_subspan_impl<Types>(type, dim, size, op, var1, var2, var3);
 }
 
 } // namespace scipp::variable

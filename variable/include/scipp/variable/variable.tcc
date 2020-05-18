@@ -24,11 +24,18 @@ template <class T, class C> auto &requireT(C &concept) {
   }
 }
 
+template <class T> struct is_span : std::false_type {};
+template <class T> struct is_span<scipp::span<T>> : std::true_type {};
+template <class T> inline constexpr bool is_span_v = is_span<T>::value;
+
 template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
   if constexpr (std::is_same_v<typename T1::value_type, Eigen::Quaterniond>)
     return std::equal(
         view1.begin(), view1.end(), view2.begin(), view2.end(),
         [](auto &a, auto &b) { return a.coeffs() == b.coeffs(); });
+  else if constexpr(is_span_v<typename T1::value_type>)
+    return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end(),
+        [](auto &a, auto &b) { return equal(a,b); });
   else
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }

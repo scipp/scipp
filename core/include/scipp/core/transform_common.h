@@ -73,8 +73,10 @@ template <int N> static constexpr auto expect_variance_arg = []() {};
 template <int N> using expect_variance_arg_t = decltype(expect_variance_arg<N>);
 
 /// Add this to overloaded operator to indicate that the in-place operation
-/// requires inputs to have a variance of the output has a variance.
-struct expect_in_variance_if_out_variance_t {};
+/// requires inputs to have a variance if the output has a variance.
+static constexpr auto expect_in_variance_if_out_variance = []() {};
+using expect_in_variance_if_out_variance_t =
+    decltype(expect_in_variance_if_out_variance);
 
 static constexpr auto expect_all_or_none_have_variance = []() {};
 using expect_all_or_none_have_variance_t =

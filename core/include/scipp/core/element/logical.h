@@ -4,25 +4,18 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/common/overloaded.h"
+#include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core::element {
 
-struct and_equals {
-  template <class A, class B>
-  constexpr void operator()(A &&a, const B &b) const
-      noexcept(noexcept(a &= b)) {
-    a &= b;
-  }
-  using types = pair_self_t<bool>;
-};
-struct or_equals {
-  template <class A, class B>
-  constexpr void operator()(A &&a, const B &b) const
-      noexcept(noexcept(a |= b)) {
-    a |= b;
-  }
-  using types = pair_self_t<bool>;
-};
+constexpr auto and_equals = overloaded{
+    arg_list<bool>,
+    [](auto &&a, const auto &b) noexcept(noexcept(a &= b)) { a &= b; }};
+
+constexpr auto or_equals = overloaded{
+    arg_list<bool>,
+    [](auto &&a, const auto &b) noexcept(noexcept(a |= b)) { a |= b; }};
 
 } // namespace scipp::core::element
