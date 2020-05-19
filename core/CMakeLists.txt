@@ -27,6 +27,7 @@ set(INC_FILES
     include/scipp/core/element/rebin.h
     include/scipp/core/element/trigonometry.h
     include/scipp/core/element/unary_operations.h
+    include/scipp/core/element/util.h
 )
 
 set(SRC_FILES

@@ -117,7 +117,7 @@ Variable filter(const Variable &var, const Variable &filter) {
   // Note: Could copy larger chunks of applicable for better(?) performance.
   // Note: This implementation is inefficient, since we need to cast to concrete
   // type for *every* slice. Should be combined into a single virtual call.
-  for (scipp::index iIn = 0; iIn < mask.size(); ++iIn)
+  for (scipp::index iIn = 0; iIn < scipp::size(mask); ++iIn)
     if (mask[iIn])
       out.data().copy(var.data(), dim, iOut++, iIn, iIn + 1);
   return out;
