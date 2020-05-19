@@ -476,7 +476,7 @@ def convert_Workspace2D_to_data_array(ws, advanced_geometry=False, **ignored):
         ws, advanced_geometry=advanced_geometry)
     _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
     stddev2 = ws.extractE()
-    np.multiply(stddev2, stddev2, out=stddev2) # much faster than np.power
+    np.multiply(stddev2, stddev2, out=stddev2)  # much faster than np.power
     coords_labs_data["data"] = sc.Variable([spec_dim, dim],
                                            unit=data_unit,
                                            values=ws.extractY(),
