@@ -768,6 +768,9 @@ def load(filename="",
     :param str mantid_alg: Mantid algorithm to use for loading. Default is
                            `Load`.
     :param dict mantid_args: Dict of keyword arguments to forward to Mantid.
+    :param bool advanced_geometry: If True, load the full detector geometry
+                                   including shapes and rotations. If False,
+                                   load only the detector position.
     :raises: If the Mantid workspace type returned by the Mantid loader is not
              either EventWorkspace or Workspace2D.
     :return: A Dataset containing the neutron event/histogram data and the
@@ -814,6 +817,9 @@ def load_component_info(ds, file, advanced_geometry=False):
     :param ds: Dataset on which the component info will be added as coords.
     :param file: File from which the IDF will be loaded.
                  This can be anything that mantid.Load can load.
+    :param bool advanced_geometry: If True, load the full detector geometry
+                                   including shapes and rotations. If False,
+                                   load only the detector position.
     """
     with run_mantid_alg('Load', file) as ws:
         source_pos, sample_pos = make_component_info(ws)
