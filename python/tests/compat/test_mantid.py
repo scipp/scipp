@@ -154,9 +154,12 @@ class TestMantidConversion(unittest.TestCase):
         # delta = sc.sum(converted_mantid - converted, 'spectrum')
 
     @staticmethod
-    def _mask_bins_and_spectra(ws, xmin, xmax, num_spectra):
+    def _mask_bins_and_spectra(ws, xmin, xmax, num_spectra, indices=None):
         import mantid.simpleapi as mantid
-        masked_ws = mantid.MaskBins(ws, XMin=xmin, XMax=xmax)
+        masked_ws = mantid.MaskBins(ws,
+                                    XMin=xmin,
+                                    XMax=xmax,
+                                    InputWorkspaceIndexSet=indices)
 
         # mask the first 3 spectra
         for i in range(num_spectra):
@@ -186,6 +189,30 @@ class TestMantidConversion(unittest.TestCase):
         np.testing.assert_array_equal(ds.masks["spectrum"].values[0:3],
                                       [True, True, True])
 
+    def test_Workspace2D_common_bins_not_common_masks(self):
+        import mantid.simpleapi as mantid
+        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
+        ws_x = ws.readX(0)
+
+        # mask first 3 bins in first 3 spectra, range is taken as [XMin, XMax)
+        masked_ws = self._mask_bins_and_spectra(ws,
+                                                xmin=ws_x[0],
+                                                xmax=ws_x[3],
+                                                num_spectra=3,
+                                                indices='0-2')
+
+        self.assertTrue(masked_ws.isCommonBins())
+
+        ds = mantidcompat.convert_Workspace2D_to_data_array(masked_ws)
+
+        mask = sc.Variable(dims=ds.dims, shape=ds.shape, dtype=sc.dtype.bool)
+        mask['spectrum', 0:3]['tof', 0:3] |= sc.Variable(value=True)
+        assert ds.masks['bin'] == mask
+
+        np.testing.assert_array_equal(ds.masks["spectrum"].values[0:3],
+                                      [True, True, True])
+
     def test_Workspace2D_not_common_bins_masks(self):
         import mantid.simpleapi as mantid
         eventWS = mantid.CloneWorkspace(self.base_event_ws)
@@ -196,7 +223,11 @@ class TestMantidConversion(unittest.TestCase):
                                  EFixed=0.1231)
 
         # these X values will mask different number of bins
-        masked_ws = self._mask_bins_and_spectra(ws, -214, -192, num_spectra=3)
+        masked_ws = self._mask_bins_and_spectra(ws,
+                                                -214,
+                                                -192,
+                                                num_spectra=3,
+                                                indices='0-40')
 
         self.assertFalse(masked_ws.isCommonBins())
 

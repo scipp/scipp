@@ -57,15 +57,6 @@ def make_sample(ws):
     return sc.Variable(value=deepcopy(ws.sample()))
 
 
-def make_bin_masks(common_bins, spec_dim, dim, num_bins, num_spectra):
-    if common_bins:
-        return sc.Variable([dim], shape=(num_bins, ), dtype=sc.dtype.bool)
-    else:
-        return sc.Variable([spec_dim, dim],
-                           shape=(num_spectra, num_bins),
-                           dtype=sc.dtype.bool)
-
-
 def make_component_info(ws):
     component_info = ws.componentInfo()
 
@@ -470,13 +461,16 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
 
     if ws.hasAnyMaskedBins():
         array.masks["bin"] = detail.move(
-            make_bin_masks(common_bins, spec_dim, dim, ws.blocksize(),
-                           ws.getNumberHistograms()))
+                sc.Variable(dims=array.dims,
+                           shape=array.shape,
+                           dtype=sc.dtype.bool))
         bin_masks = array.masks["bin"]
-        if common_bins:
-            set_common_bins_masks(bin_masks, dim, ws.maskedBinsIndices(0))
-        else:
-            for i in range(ws.getNumberHistograms()):
+        #if common_bins:
+        #    set_common_bins_masks(bin_masks, dim, ws.maskedBinsIndices(0))
+        #else:
+        for i in range(ws.getNumberHistograms()):
+             # maskedBinsIndices throws instead of returning empty list
+            if ws.hasMaskedBins(i):
                 set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
 
     # Avoid creating dimensions that are not required since this mostly an
