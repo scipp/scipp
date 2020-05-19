@@ -440,7 +440,6 @@ def convert_monitors_ws(ws, converter, **ignored):
 
 
 def convert_Workspace2D_to_data_array(ws, **ignored):
-    common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
 
@@ -456,10 +455,10 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
 
     if ws.hasAnyMaskedBins():
         bin_mask = sc.Variable(dims=array.dims,
-                           shape=array.shape,
-                           dtype=sc.dtype.bool)
+                               shape=array.shape,
+                               dtype=sc.dtype.bool)
         for i in range(ws.getNumberHistograms()):
-             # maskedBinsIndices throws instead of returning empty list
+            # maskedBinsIndices throws instead of returning empty list
             if ws.hasMaskedBins(i):
                 set_bin_masks(bin_mask, dim, i, ws.maskedBinsIndices(i))
         common_mask = sc.all(bin_mask, 'spectrum')
