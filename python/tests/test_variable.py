@@ -496,6 +496,8 @@ def test_binary_divide():
     assert np.array_equal(c.values, data / data / data)
     c /= b_slice
     assert np.array_equal(c.values, data / data / data / data)
+    c = 2.0 / a
+    assert np.array_equal(c.values, 2.0 / data)
 
 
 def test_in_place_binary_or():
