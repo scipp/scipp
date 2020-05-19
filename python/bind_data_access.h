@@ -176,8 +176,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
               typename std::remove_reference_t<decltype(view_)>::value_type;
           if constexpr (std::is_trivial_v<T>) {
             auto &data = obj.cast<const py::array_t<T>>();
-            bool except = (dims.shape().size() != data.ndim());
-            for (int i = 0; i < dims.shape().size(); ++i)
+            bool except = (scipp::size(dims.shape()) != data.ndim());
+            for (scipp::index i = 0; i < scipp::size(dims.shape()); ++i)
               except |= (dims.shape()[i] != data.shape()[i]);
             if (except)
               throw except::DimensionError("The shape of the provided data "

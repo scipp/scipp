@@ -57,15 +57,6 @@ def make_sample(ws):
     return sc.Variable(value=deepcopy(ws.sample()))
 
 
-def make_bin_masks(common_bins, spec_dim, dim, num_bins, num_spectra):
-    if common_bins:
-        return sc.Variable([dim], shape=(num_bins, ), dtype=sc.dtype.bool)
-    else:
-        return sc.Variable([spec_dim, dim],
-                           shape=(num_spectra, num_bins),
-                           dtype=sc.dtype.bool)
-
-
 def make_component_info(ws):
     component_info = ws.componentInfo()
 
@@ -386,11 +377,6 @@ def init_spec_axis(ws):
     return dim, sc.Variable([dim], values=values, unit=unit, dtype=dtype)
 
 
-def set_common_bins_masks(bin_masks, dim, masked_bins):
-    for masked_bin in masked_bins:
-        bin_masks[dim, masked_bin].value = True
-
-
 def set_bin_masks(bin_masks, dim, index, masked_bins):
     for masked_bin in masked_bins:
         bin_masks['spectrum', index][dim, masked_bin].value = True
@@ -408,11 +394,7 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
     if common_bins:
         coord = sc.Variable([dim], values=ws.readX(0), unit=unit)
     else:
-        coord = sc.Variable([spec_dim, dim],
-                            shape=(ws.getNumberHistograms(), len(ws.readX(0))),
-                            unit=unit)
-        for i in range(ws.getNumberHistograms()):
-            coord[spec_dim, i].values = ws.readX(i)
+        coord = sc.Variable([spec_dim, dim], values=ws.extractX(), unit=unit)
 
     info = {
         "coords": {
@@ -482,36 +464,34 @@ def convert_monitors_ws(ws, converter, **ignored):
 
 
 def convert_Workspace2D_to_data_array(ws, advanced_geometry=False, **ignored):
-    common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
 
     coords_labs_data = _convert_MatrixWorkspace_info(
         ws, advanced_geometry=advanced_geometry)
     _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
+    stddev2 = ws.extractE()
+    np.power(stddev2, 2, out=stddev2)
     coords_labs_data["data"] = sc.Variable([spec_dim, dim],
-                                           shape=(ws.getNumberHistograms(),
-                                                  len(ws.readY(0))),
                                            unit=data_unit,
-                                           variances=True)
+                                           values=ws.extractY(),
+                                           variances=stddev2)
     array = detail.move_to_data_array(**coords_labs_data)
 
     if ws.hasAnyMaskedBins():
-        array.masks["bin"] = detail.move(
-            make_bin_masks(common_bins, spec_dim, dim, ws.blocksize(),
-                           ws.getNumberHistograms()))
-        bin_masks = array.masks["bin"]
-        # set all the bin masks now - they're all the same
-        if common_bins:
-            set_common_bins_masks(bin_masks, dim, ws.maskedBinsIndices(0))
+        bin_mask = sc.Variable(dims=array.dims,
+                               shape=array.shape,
+                               dtype=sc.dtype.bool)
+        for i in range(ws.getNumberHistograms()):
+            # maskedBinsIndices throws instead of returning empty list
+            if ws.hasMaskedBins(i):
+                set_bin_masks(bin_mask, dim, i, ws.maskedBinsIndices(i))
+        common_mask = sc.all(bin_mask, 'spectrum')
+        if common_mask == sc.any(bin_mask, 'spectrum'):
+            array.masks["bin"] = detail.move(common_mask)
+        else:
+            array.masks["bin"] = detail.move(bin_mask)
 
-    data = array.data
-    for i in range(ws.getNumberHistograms()):
-        data[spec_dim, i].values = ws.readY(i)
-        data[spec_dim, i].variances = np.power(ws.readE(i), 2)
-
-        if not common_bins and ws.hasMaskedBins(i):
-            set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
     # Avoid creating dimensions that are not required since this mostly an
     # artifact of inflexible data structures and gets in the way when working
     # with scipp.
@@ -881,7 +861,7 @@ def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
 
     assert len(y.shape) == 2, "Currently can only handle 2D data."
 
-    e = e if e is not None else np.sqrt(y)
+    e = np.sqrt(e) if e is not None else np.sqrt(y)
 
     unitX = validate_dim_and_get_mantid_string(coord_dim)
 
