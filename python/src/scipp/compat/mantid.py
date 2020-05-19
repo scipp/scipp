@@ -216,7 +216,29 @@ def _quat_from_vectors(vec1, vec2):
     return sc.Variable(value=q)
 
 
-def get_detector_properties(ws, source_pos, sample_pos):
+def get_detector_pos(ws):
+    nHist = ws.getNumberHistograms()
+    pos = np.zeros([nHist, 3])
+
+    spec_info = ws.spectrumInfo()
+    for i in range(nHist):
+        if spec_info.hasDetectors(i):
+            p = spec_info.position(i)
+            pos[i, :] = [p.X(), p.Y(), p.Z()]
+        else:
+            pos[i, :] = [np.nan, np.nan, np.nan]
+    return sc.Variable(['spectrum'],
+                       values=pos,
+                       unit=sc.units.m,
+                       dtype=sc.dtype.vector_3_float64)
+
+
+def get_detector_properties(ws,
+                            source_pos,
+                            sample_pos,
+                            advanced_geometry=False):
+    if not advanced_geometry:
+        return (get_detector_pos(ws), None, None)
     spec_info = ws.spectrumInfo()
     det_info = ws.detectorInfo()
     comp_info = ws.componentInfo()
@@ -374,12 +396,13 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
         bin_masks['spectrum', index][dim, masked_bin].value = True
 
 
-def _convert_MatrixWorkspace_info(ws):
+def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
     common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     source_pos, sample_pos = make_component_info(ws)
     det_info = make_detector_info(ws)
-    pos, rot, shp = get_detector_properties(ws, source_pos, sample_pos)
+    pos, rot, shp = get_detector_properties(
+        ws, source_pos, sample_pos, advanced_geometry=advanced_geometry)
     spec_dim, spec_coord = init_spec_axis(ws)
 
     if common_bins:
@@ -409,7 +432,8 @@ def _convert_MatrixWorkspace_info(ws):
                 value=ws.componentInfo().name(ws.componentInfo().root()))
         },
     }
-    if not np.all(np.isnan(pos.values)):
+    if not np.all(np.isnan(
+            pos.values)) and rot is not None and shp is not None:
         info["attrs"].update({"rotation": rot, "shape": shp})
 
     if source_pos is not None:
@@ -457,12 +481,13 @@ def convert_monitors_ws(ws, converter, **ignored):
     return monitors
 
 
-def convert_Workspace2D_to_data_array(ws, **ignored):
+def convert_Workspace2D_to_data_array(ws, advanced_geometry=False, **ignored):
     common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
 
-    coords_labs_data = _convert_MatrixWorkspace_info(ws)
+    coords_labs_data = _convert_MatrixWorkspace_info(
+        ws, advanced_geometry=advanced_geometry)
     _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
     coords_labs_data["data"] = sc.Variable([spec_dim, dim],
                                            shape=(ws.getNumberHistograms(),
@@ -500,6 +525,7 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
 def convert_EventWorkspace_to_data_array(ws,
                                          load_pulse_times=True,
                                          realign_events=False,
+                                         advanced_geometry=False,
                                          **ignored):
     from mantid.api import EventType
 
@@ -535,7 +561,8 @@ def convert_EventWorkspace_to_data_array(ws,
             weights[spec_dim, i].values = sp.getWeights()
             weights[spec_dim, i].variances = sp.getWeightErrors()
 
-    coords_labs_data = _convert_MatrixWorkspace_info(ws)
+    coords_labs_data = _convert_MatrixWorkspace_info(
+        ws, advanced_geometry=advanced_geometry)
     bin_edges = coords_labs_data["coords"][dim]
     coords_labs_data["coords"][dim] = coord
 
@@ -706,7 +733,8 @@ def load(filename="",
          instrument_filename=None,
          error_connection=None,
          mantid_alg='Load',
-         mantid_args=None):
+         mantid_args=None,
+         advanced_geometry=False):
     """
     Wrapper function to provide a load method for a Nexus file, hiding mantid
     specific code from the scipp interface. All other keyword arguments not
@@ -769,10 +797,11 @@ def load(filename="",
         return from_mantid(data_ws,
                            load_pulse_times=load_pulse_times,
                            realign_events=realign_events,
-                           error_connection=error_connection)
+                           error_connection=error_connection,
+                           advanced_geometry=advanced_geometry)
 
 
-def load_component_info(ds, file):
+def load_component_info(ds, file, advanced_geometry=False):
     """
     Adds the component info coord into the dataset. The following are added:
 
@@ -791,10 +820,13 @@ def load_component_info(ds, file):
 
         ds.coords["source_position"] = source_pos
         ds.coords["sample_position"] = sample_pos
-        pos, rot, shp = get_detector_properties(ws, source_pos, sample_pos)
+        pos, rot, shp = get_detector_properties(
+            ws, source_pos, sample_pos, advanced_geometry=advanced_geometry)
         ds.coords["position"] = pos
-        ds.attrs["rotation"] = rot
-        ds.attrs["shape"] = shp
+        if rot is not None:
+            ds.attrs["rotation"] = rot
+        if shp is not None:
+            ds.attrs["shape"] = shp
 
 
 def validate_dim_and_get_mantid_string(unit_dim):
