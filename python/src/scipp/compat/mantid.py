@@ -355,11 +355,6 @@ def init_spec_axis(ws):
     return dim, sc.Variable([dim], values=values, unit=unit, dtype=dtype)
 
 
-def set_common_bins_masks(bin_masks, dim, masked_bins):
-    for masked_bin in masked_bins:
-        bin_masks[dim, masked_bin].value = True
-
-
 def set_bin_masks(bin_masks, dim, index, masked_bins):
     for masked_bin in masked_bins:
         bin_masks['spectrum', index][dim, masked_bin].value = True
@@ -460,18 +455,18 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
     array = detail.move_to_data_array(**coords_labs_data)
 
     if ws.hasAnyMaskedBins():
-        array.masks["bin"] = detail.move(
-                sc.Variable(dims=array.dims,
+        bin_mask = sc.Variable(dims=array.dims,
                            shape=array.shape,
-                           dtype=sc.dtype.bool))
-        bin_masks = array.masks["bin"]
-        #if common_bins:
-        #    set_common_bins_masks(bin_masks, dim, ws.maskedBinsIndices(0))
-        #else:
+                           dtype=sc.dtype.bool)
         for i in range(ws.getNumberHistograms()):
              # maskedBinsIndices throws instead of returning empty list
             if ws.hasMaskedBins(i):
-                set_bin_masks(bin_masks, dim, i, ws.maskedBinsIndices(i))
+                set_bin_masks(bin_mask, dim, i, ws.maskedBinsIndices(i))
+        common_mask = sc.all(bin_mask, 'spectrum')
+        if common_mask == sc.any(bin_mask, 'spectrum'):
+            array.masks["bin"] = detail.move(common_mask)
+        else:
+            array.masks["bin"] = detail.move(bin_mask)
 
     # Avoid creating dimensions that are not required since this mostly an
     # artifact of inflexible data structures and gets in the way when working
