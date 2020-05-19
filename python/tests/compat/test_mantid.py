@@ -51,6 +51,9 @@ class TestMantidConversion(unittest.TestCase):
             "2012-05-21T15:14:56.279289666",
         )
         self.assertEqual(d.data.unit, sc.units.counts)
+        for i in range(ws.getNumberHistograms()):
+            assert np.all(np.equal(d.values[i], ws.readY(i)))
+            assert np.all(np.equal(d.variances[i], np.power(ws.readE(i), 2)))
 
     def test_EventWorkspace(self):
         import mantid.simpleapi as mantid
@@ -524,7 +527,8 @@ def test_to_workspace_2d(param_dim):
     for i in range(expected_number_spectra):
         np.testing.assert_array_equal(ws.readX(i), x['spectrum', i])
         np.testing.assert_array_equal(ws.readY(i), y['spectrum', i])
-        np.testing.assert_array_equal(ws.readE(i), y['spectrum', i].variances)
+        np.testing.assert_array_equal(ws.readE(i),
+                                      np.sqrt(y['spectrum', i].variances))
 
 
 if __name__ == "__main__":

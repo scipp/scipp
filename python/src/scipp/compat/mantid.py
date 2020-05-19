@@ -460,10 +460,12 @@ def convert_Workspace2D_to_data_array(ws, **ignored):
 
     coords_labs_data = _convert_MatrixWorkspace_info(ws)
     _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
+    stddev2 = ws.extractE()
+    np.power(stddev2, 2, out=stddev2)
     coords_labs_data["data"] = sc.Variable([spec_dim, dim],
                                            unit=data_unit,
                                            values=ws.extractY(),
-                                           variances=ws.extractE())
+                                           variances=stddev2)
     array = detail.move_to_data_array(**coords_labs_data)
 
     if ws.hasAnyMaskedBins():
@@ -839,7 +841,7 @@ def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
 
     assert len(y.shape) == 2, "Currently can only handle 2D data."
 
-    e = e if e is not None else np.sqrt(y)
+    e = np.sqrt(e) if e is not None else np.sqrt(y)
 
     unitX = validate_dim_and_get_mantid_string(coord_dim)
 
