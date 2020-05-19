@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/core/parallel.h"
 #include "scipp/variable/variable.h"
 
 #include "pybind11.h"
@@ -29,10 +30,14 @@ void copy_flattened_1d(const py::array_t<T> &data, View &&view) {
 template <class T, class View>
 void copy_flattened_2d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
-  auto it = view.begin();
-  for (ssize_t i = 0; i < r.shape(0); ++i)
-    for (ssize_t j = 0; j < r.shape(1); ++j, ++it)
-      *it = r(i, j);
+  const auto begin = view.begin();
+  core::parallel::parallel_for(
+      core::parallel::blocked_range(0, r.shape(0)), [&](const auto &range) {
+        auto it = begin + range.begin() * r.shape(1);
+        for (ssize_t i = range.begin(); i < range.end(); ++i)
+          for (ssize_t j = 0; j < r.shape(1); ++j, ++it)
+            *it = r(i, j);
+      });
 }
 
 template <class T, class View>

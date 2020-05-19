@@ -24,8 +24,13 @@ template <class T> struct MakeVariable {
     py::buffer_info info = valuesT.request();
     Dimensions dims(labels, {info.shape.begin(), info.shape.end()});
     auto var = variances
-                   ? makeVariable<T>(Dimensions{dims}, Values{}, Variances{})
-                   : makeVariable<T>(Dimensions(dims));
+                   ? makeVariable<T>(
+                         Dimensions{dims},
+                         Values(dims.volume(), core::default_init_elements),
+                         Variances(dims.volume(), core::default_init_elements))
+                   : makeVariable<T>(
+                         Dimensions(dims),
+                         Values(dims.volume(), core::default_init_elements));
     copy_flattened<T>(valuesT, var.template values<T>());
     if (variances) {
       py::array_t<T> variancesT(*variances);
