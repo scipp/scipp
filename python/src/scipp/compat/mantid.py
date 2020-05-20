@@ -215,7 +215,9 @@ def get_detector_pos(ws):
     for i in range(nHist):
         if spec_info.hasDetectors(i):
             p = spec_info.position(i)
-            pos[i, :] = [p.X(), p.Y(), p.Z()]
+            pos[i, 0] = p.X()
+            pos[i, 1] = p.Y()
+            pos[i, 2] = p.Z()
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
     return sc.Variable(['spectrum'],
@@ -386,7 +388,6 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
     common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     source_pos, sample_pos = make_component_info(ws)
-    det_info = make_detector_info(ws)
     pos, rot, shp = get_detector_properties(
         ws, source_pos, sample_pos, advanced_geometry=advanced_geometry)
     spec_dim, spec_coord = init_spec_axis(ws)
@@ -400,8 +401,7 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
         "coords": {
             dim: coord,
             spec_dim: spec_coord,
-            "position": pos,
-            "detector_info": det_info
+            "position": pos
         },
         "masks": {},
         "attrs": {
@@ -414,8 +414,12 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
                 value=ws.componentInfo().name(ws.componentInfo().root()))
         },
     }
-    if not np.all(np.isnan(
-            pos.values)) and rot is not None and shp is not None:
+
+    if advanced_geometry:
+        info["coords"]["detector_info"] = make_detector_info(ws)
+
+    if rot is not None and shp is not None and not np.all(np.isnan(
+            pos.values)):
         info["attrs"].update({"rotation": rot, "shape": shp})
 
     if source_pos is not None:
@@ -456,7 +460,8 @@ def convert_monitors_ws(ws, converter, **ignored):
         # Remove redundant information that is duplicated from workspace
         # We get this extra information from the generic converter reuse
         del single_monitor.coords['sample_position']
-        del single_monitor.coords['detector_info']
+        if 'detector_info' in single_monitor.coords:
+            del single_monitor.coords['detector_info']
         del single_monitor.attrs['run']
         del single_monitor.attrs['sample']
         monitors.append((comp_info.name(det_index), single_monitor))
@@ -471,7 +476,7 @@ def convert_Workspace2D_to_data_array(ws, advanced_geometry=False, **ignored):
         ws, advanced_geometry=advanced_geometry)
     _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
     stddev2 = ws.extractE()
-    np.power(stddev2, 2, out=stddev2)
+    np.multiply(stddev2, stddev2, out=stddev2)  # much faster than np.power
     coords_labs_data["data"] = sc.Variable([spec_dim, dim],
                                            unit=data_unit,
                                            values=ws.extractY(),
