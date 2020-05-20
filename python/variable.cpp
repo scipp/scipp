@@ -191,6 +191,10 @@ of variances.)");
           "__rmul__",
           [](Variable &a, double &b) { return a * (b * units::one); },
           py::is_operator())
+      .def(
+          "__rtruediv__",
+          [](Variable &a, double &b) { return (b * units::one) / a; },
+          py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
   bind_init_list(variable);
