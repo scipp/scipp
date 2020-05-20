@@ -107,3 +107,13 @@ To run the Python tests, run (in the ``python/`` directory):
 
   cd python
   PYTHONPATH=$PYTHONPATH:./install python3 -m pytest
+
+Building Documentation
+----------------------
+
+- Run ``python3 data/fetch_neutron_data.py``
+- cd to a directory where the docs should be built (e.g. ``mkdir -p build/docs && cd build/docs``)
+- Activate a conda environment with Mantid or ensure Mantid is in your ``PYTHONPATH``
+- If Mantid is unavailable (e.g. on Windows) edit ``docs/conf.py`` and include
+``nbsphinx_allow_errors = True``. Take care to not commit this change though.
+- Run ``sphinx-build scipp/src/docs .``
