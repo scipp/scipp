@@ -4,10 +4,30 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/common/overloaded.h"
 #include "scipp/common/span.h"
+#include "scipp/core/element/arg_list.h"
 #include "scipp/core/value_and_variance.h"
+#include "scipp/units/except.h"
+#include "scipp/units/unit.h"
+
+#include <stddef.h>
 
 namespace scipp::core::element {
+
+/// Sets any masked elements to 0 to handle special FP vals
+constexpr auto convertMaskedToZero = overloaded{
+    core::element::arg_list<std::tuple<double, bool>, std::tuple<float, bool>,
+                            std::tuple<bool, bool>, std::tuple<int64_t, bool>,
+                            std::tuple<int32_t, bool>>,
+    [](const auto &a, bool isMasked) { return isMasked ? decltype(a){0} : a; },
+    [](const scipp::units::Unit &a, const scipp::units::Unit &b) {
+      if (b != scipp::units::dimensionless) {
+        throw except::UnitError("Expected mask to contain dimensionless units");
+      }
+
+      return a;
+    }};
 
 /// Set the elements referenced by a span to 0
 template <class T> void zero(const scipp::span<T> &data) {
