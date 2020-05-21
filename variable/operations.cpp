@@ -104,7 +104,7 @@ Variable filter(const Variable &var, const Variable &filter) {
   const auto dim = filter.dims().labels()[0];
   auto mask = filter.values<bool>();
 
-  const scipp::index removed = std::count(mask.begin(), mask.end(), 0);
+  const scipp::index removed = std::count(mask.begin(), mask.end(), false);
   if (removed == 0)
     return var;
 

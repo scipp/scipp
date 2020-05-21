@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cmath>
+#include <type_traits>
 
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
@@ -37,13 +38,29 @@ static constexpr auto rebin = overloaded{
           const auto delta = std::min<double>(xn_high, xo_high) -
                              std::max<double>(xn_low, xo_low);
           const auto owidth = xo_high - xo_low;
-          const auto scale = delta / owidth;
-          if constexpr (is_ValueAndVariance_v<
-                            std::decay_t<decltype(data_old)>>) {
+
+          constexpr bool isValAndVariance =
+              is_ValueAndVariance_v<std::decay_t<decltype(data_old)>>;
+
+          if constexpr (isValAndVariance) {
+            // Avoid implicit promotion and demotion when multiplying by scale
+            const auto scale =
+                std::remove_reference_t<decltype(data_new.value[0])>(delta /
+                                                                     owidth);
             data_new.value[inew] += data_old.value[iold] * scale;
             data_new.variance[inew] += data_old.variance[iold] * scale;
           } else {
-            data_new[inew] += data_old[iold] * scale;
+            if constexpr (!isValAndVariance &&
+                          std::is_same_v<
+                              std::remove_reference_t<decltype(data_new[0])>,
+                              bool>) {
+              data_new[inew] = data_new[inew] || data_old[iold];
+            } else {
+
+              const auto scale = std::remove_reference_t<decltype(data_new[0])>(
+                  delta / owidth);
+              data_new[inew] += data_old[iold] * scale;
+            }
           }
           if (xn_high > xo_high) {
             iold++;
