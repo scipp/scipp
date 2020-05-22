@@ -65,6 +65,13 @@ TEST_F(GroupbyTest, copy) {
   EXPECT_EQ(two_groups.copy(1), d.slice({Dim::X, 2, 3}));
 }
 
+TEST_F(GroupbyTest, fail_2d_coord) {
+  d.setCoord(Dim("2d"), makeVariable<float>(Dims{Dim::X, Dim::Z}, Shape{2, 2}));
+  EXPECT_NO_THROW(groupby(d, Dim("labels2")));
+  EXPECT_THROW(groupby(d, Dim("labels2")).sum(Dim::X),
+               except::CoordMismatchError);
+}
+
 TEST_F(GroupbyTest, dataset_1d_and_2d) {
   Dataset expected;
   Dim dim("labels2");
@@ -140,7 +147,7 @@ TEST_F(GroupbyMaskedTest, sum) {
   EXPECT_EQ(result, expected);
 }
 
-TEST_F(GroupbyMaskedTest, sum_irrelvant_mask) {
+TEST_F(GroupbyMaskedTest, sum_irrelevant_mask) {
   Dataset expected;
   const Dim dim("labels2");
   expected.setData("a", makeVariable<double>(Dimensions{dim, 2}, units::m,
