@@ -504,8 +504,8 @@ TEST(GroupbyFlattenTest, flatten_coord_and_data) {
   EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
 }
 
-TEST(GroupbyFlattenTest, flatten_with_mask) {
-  DataArray a{
+struct GroupbyEventsWithMaskTest : public ::testing::Test {
+  const DataArray a{
       make_events_in() * (1.5 * units::one),
       {{Dim::X, make_events_in()},
        {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3})},
@@ -513,15 +513,24 @@ TEST(GroupbyFlattenTest, flatten_with_mask) {
                                             Values{1, 1, 3})}},
       {{"mask_y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
                                      Values{false, true, false})}}};
-
-  bool mask = true;
-  DataArray expected{
+  const bool mask = true;
+  const DataArray expected{
       make_events_out(mask) * (1.5 * units::one),
       {{Dim::X, make_events_out(mask)},
        {Dim("labels"), makeVariable<double>(Dims{Dim("labels")}, Shape{2},
                                             units::m, Values{1, 3})}}};
+};
 
+TEST_F(GroupbyEventsWithMaskTest, flatten) {
   EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
+}
+
+TEST_F(GroupbyEventsWithMaskTest, sum_realigned) {
+  const auto edges =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 10});
+  const auto realigned = unaligned::realign(a, {{Dim::X, edges}});
+  const auto summed = groupby(realigned, Dim("labels")).sum(Dim::Y);
+  EXPECT_EQ(summed.unaligned(), expected);
 }
 
 struct GroupbyLogicalTest : public ::testing::Test {
