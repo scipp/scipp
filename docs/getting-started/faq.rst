@@ -56,3 +56,20 @@ This was a deliberate choice for the early milestones.
 We chose to focus first on delivering a decent API and tested implementation.
 After these basics and the codebase have been consolidated, our roadmap contains more performance-related work and parallelization.
 Rest assured that we have undertaken steps during the design and prototyping process to ensure that the architecture and data structures are compatible with higher performance needs.
+
+Installation
+------------
+
+I can't import scipp!
+~~~~~~~~~~~~~~~~~~~~~
+
+On Windows, after installing ``scipp`` using ``conda``, attempting to ``import scipp`` may sometimes fail with
+
+.. code-block:: python
+
+  > import scipp as sc
+  > ImportError: DLL load failed: The specified module could not be found.
+
+This issue is Windows specific and fixing it requires downloading and installing a recent version of the Microsoft Visual C++ Redistributable for
+Visual Studio 2019.
+It can be downloaded from `Microsoft's official site <https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads>`_.
