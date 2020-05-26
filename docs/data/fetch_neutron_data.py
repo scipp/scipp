@@ -7,7 +7,8 @@ import subprocess as sp
 
 
 def download_file(source, destination):
-    command = "wget -O {} {}".format(destination, source)
+    print(f"Downloading: {source}")
+    command = "wget -nv -O {} {}".format(destination, source)
     status = sp.run(command, shell=True).returncode
     if status != 0:
         raise RuntimeError("Can't load {} to {}.".format(source, destination))
