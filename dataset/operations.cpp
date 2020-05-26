@@ -103,7 +103,7 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
 }
 
 DataArray flatten(const DataArrayConstView &a, const Dim dim) {
-  return apply_or_copy_dim(
+  return apply_to_data_and_drop_dim(
       a,
       overloaded{no_realigned_support,
                  [](const auto &x, const Dim dim_, const auto &mask_) {
@@ -190,7 +190,7 @@ UnalignedData resize(Dimensions dims, const DataArrayConstView &unaligned,
 
 DataArray resize(const DataArrayConstView &a, const Dim dim,
                  const scipp::index size) {
-  return apply_or_copy_dim(
+  return apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return resize(_...); }, dim, size);
 }
 
