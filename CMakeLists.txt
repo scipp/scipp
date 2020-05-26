@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later Copyright (c) 2019 Scipp
 # contributors (https://github.com/scipp)
-cmake_minimum_required(VERSION 3.10.2)
+cmake_minimum_required(VERSION 3.13)
 project(scipp)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -50,6 +50,9 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
 
 find_package(Sanitizers REQUIRED)
 
+# MP : Parallel compile, add before any targets so all use it
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-MP>)
+
 include(GTest)
 include(boost)
 include(Eigen)
@@ -98,41 +101,7 @@ option(WITH_CTEST "Enable ctest integration of tests" ON)
 option(DYNAMIC_LIB "Build shared libraries" OFF)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
-include(CheckIPOSupported)
-check_ipo_supported(RESULT result OUTPUT output)
-if(result)
-  if(NOT DEFINED CMAKE_INTERPROCEDURAL_OPTIMIZATION)
-    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION
-        TRUE
-        CACHE BOOL "Link-time optimization: ON/OFF" FORCE
-    )
-  endif()
-  message("IPO set to ${CMAKE_INTERPROCEDURAL_OPTIMIZATION}")
-else()
-  set(CMAKE_INTERPROCEDURAL_OPTIMIZATION
-      FALSE
-      CACHE BOOL "Link-time optimization: ON/OFF" FORCE
-  )
-  message(WARNING "IPO is not supported: ${output}")
-endif()
-
-# See https://github.com/pybind/pybind11/issues/1604
-set(INTERPROCEDURAL_OPTIMIZATION_TESTS FALSE)
-if(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fsized-deallocation")
-  if(APPLE)
-    add_compile_definitions(_APPLE_CLANG_)
-  else()
-    # For some reason clang6 on ubuntu18 can't link parts with different
-    # INTERPROCEDURAL_OPTIMIZATION flag.
-    set(INTERPROCEDURAL_OPTIMIZATION_TESTS
-        ${CMAKE_INTERPROCEDURAL_OPTIMIZATION}
-    )
-  endif()
-  set(CMAKE_CXX_VISIBILITY_PRESET hidden)
-  # Reduces binary size of, e.g., libscipp-core.so by several MB.
-  set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
-endif()
+include(IPO)
 
 # Optimization flags
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
@@ -171,10 +140,12 @@ if(NOT WIN32)
     $<$<COMPILE_LANGUAGE:CXX>:-Woverloaded-virtual>
     $<$<COMPILE_LANGUAGE:CXX>:-fno-operator-names>
   )
-
 endif(NOT WIN32)
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
+
+# permissive- : Std compilant parsing, warnings (W3) set by CMake defaults
+add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-permissive->)
 
 enable_testing()
 
