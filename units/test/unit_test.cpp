@@ -102,7 +102,6 @@ TEST(UnitTest, divide) {
   EXPECT_EQ(t / one, t);
   EXPECT_EQ(l / l, one);
   EXPECT_EQ(l / t, v);
-  EXPECT_THROW(one / v, except::UnitError);
 }
 
 TEST(UnitTest, divide_counts) {
