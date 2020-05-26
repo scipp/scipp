@@ -129,16 +129,6 @@ UnalignedData sum(Dimensions dims, const DataArrayConstView &unaligned,
   dims.erase(dim);
   return {dims, flatten(unaligned, dim)};
 }
-
-UnalignedData mean(Dimensions, const DataArrayConstView &, const Dim,
-                   const MasksConstView &) {
-  throw std::runtime_error("Mean for realigned data not implemented yet.");
-}
-
-UnalignedData rebin(Dimensions, const DataArrayConstView &, const Dim,
-                    const VariableConstView &, const VariableConstView &) {
-  throw std::runtime_error("Rebin for realigned data not implemented yet.");
-}
 } // namespace
 
 DataArray sum(const DataArrayConstView &a, const Dim dim) {
@@ -157,7 +147,9 @@ Dataset sum(const DatasetConstView &d, const Dim dim) {
 
 DataArray mean(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(
-      a, [](auto &&... _) { return mean(_...); }, dim, a.masks());
+      a,
+      overloaded{no_realigned_support, [](auto &&... _) { return mean(_...); }},
+      dim, a.masks());
 }
 
 Dataset mean(const DatasetConstView &d, const Dim dim) {
@@ -168,7 +160,10 @@ Dataset mean(const DatasetConstView &d, const Dim dim) {
 DataArray rebin(const DataArrayConstView &a, const Dim dim,
                 const VariableConstView &coord) {
   auto rebinned = apply_to_data_and_drop_dim(
-      a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
+      a,
+      overloaded{no_realigned_support,
+                 [](auto &&... _) { return rebin(_...); }},
+      dim, a.coords()[dim], coord);
 
   for (auto &&[name, mask] : a.masks()) {
     if (mask.dims().contains(dim))
@@ -186,9 +181,10 @@ Dataset rebin(const DatasetConstView &d, const Dim dim,
 }
 
 namespace {
-Dimensions resize(Dimensions dims, const Dim dim, const scipp::index size) {
+UnalignedData resize(Dimensions dims, const DataArrayConstView &unaligned,
+                     const Dim dim, const scipp::index size) {
   dims.resize(dim, size);
-  return dims;
+  return {dims, resize(unaligned, dim, size)};
 }
 } // namespace
 
