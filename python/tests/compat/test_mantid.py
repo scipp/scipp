@@ -53,7 +53,7 @@ class TestMantidConversion(unittest.TestCase):
         self.assertEqual(d.data.unit, sc.units.counts)
         for i in range(ws.getNumberHistograms()):
             assert np.all(np.equal(d.values[i], ws.readY(i)))
-            assert np.all(np.equal(d.variances[i], np.power(ws.readE(i), 2)))
+            assert np.all(np.equal(d.variances[i], ws.readE(i) * ws.readE(i)))
 
     def test_EventWorkspace(self):
         import mantid.simpleapi as mantid
