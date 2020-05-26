@@ -12,6 +12,7 @@ add_executable(
   subspan_view_test.cpp
   transform_test.cpp
   trigonometry_test.cpp
+  util_test.cpp
   variable_concept_test.cpp
   variable_custom_type_test.cpp
   variable_keyword_args_constructor_test.cpp
