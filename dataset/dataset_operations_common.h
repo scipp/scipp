@@ -37,8 +37,6 @@ static inline void expectAlignedCoord(const Dim coord_dim,
 static constexpr auto no_realigned_support = []() {};
 using no_realigned_support_t = decltype(no_realigned_support);
 
-/// Create new data array by applying Func to everything depending on dim, copy
-/// otherwise.
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
                                  const Dim dim, Args &&... args) {
@@ -86,6 +84,16 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
   }
 }
 
+/// Helper for creating operations that return an object with modified data with
+/// a dropped dimension or different dimension extent.
+///
+/// Examples are mostly reduction operations such as `sum` (dropping a
+/// dimension), or `resize` (altering a dimension extent). Creates new data
+/// array by applying `func` to data and dropping coords/masks/attrs depending
+/// on dim. The exception are multi-dimensional coords that depend on `dim`,
+/// with two cases: (1) If the coord is a coord for `dim`, `func` is applied to
+/// it, (2) if the coords is a coords for a dimension other than `dim`, a
+/// CoordMismatchError is thrown.
 template <class Func, class... Args>
 DataArray apply_to_data_and_drop_dim(const DataArrayConstView &a, Func func,
                                      const Dim dim, Args &&... args) {
@@ -93,6 +101,12 @@ DataArray apply_to_data_and_drop_dim(const DataArrayConstView &a, Func func,
                                       std::forward<Args>(args)...);
 }
 
+/// Helper for creating operations that return an object with a dropped
+/// dimension or different dimension extent.
+///
+/// In contrast to `apply_to_data_and_drop_dim`, `func` is applied to the input
+/// array, not just its data. This is useful for more complex operations such as
+/// `histogram`, which require access to coords when computing output data.
 template <class Func, class... Args>
 DataArray apply_and_drop_dim(const DataArrayConstView &a, Func func,
                              const Dim dim, Args &&... args) {
