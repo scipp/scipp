@@ -6,6 +6,7 @@
 
 #include "scipp/variable/event.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/dataset_util.h"
@@ -20,16 +21,33 @@ using namespace scipp::dataset;
 namespace scipp::neutron {
 
 template <class T, class Op>
-T convert_generic(T &&d, const Dim from, const Dim to, Op op,
+T convert_generic(T &&d, const Dim from, const Dim to,
+                  const ConvertRealign realign, Op op,
                   const VariableConstView &arg) {
   using core::element::arg_list;
   const auto op_ = overloaded{
       arg_list<std::pair<double, double>, std::pair<float, double>>, op};
+  const auto items = iter(d);
+  const bool any_aligned =
+      std::any_of(items.begin(), items.end(),
+                  [](const auto &item) { return item.hasData(); });
   // 1. Transform coordinate
   if (d.coords().contains(from)) {
-    if (!d.coords()[from].dims().contains(arg.dims()))
-      d.coords().set(from, broadcast(d.coords()[from], arg.dims()));
-    transform_in_place(d.coords()[from], arg, op_);
+    const auto coord = d.coords()[from];
+    if (realign == ConvertRealign::None || any_aligned) {
+      // Cannot realign if any item has aligned (histogrammed) data
+      if (!coord.dims().contains(arg.dims()))
+        d.coords().set(from, broadcast(coord, arg.dims()));
+      transform_in_place(coord, arg, op_);
+    } else {
+      // Unit conversion may swap what min and max are, so we treat them jointly
+      // as extrema and extract min and max at the end.
+      auto extrema = concatenate(broadcast(min(coord, from), arg.dims()),
+                                 broadcast(max(coord, from), arg.dims()), from);
+      transform_in_place(extrema, arg, op_);
+      d.coords().set(
+          from, linspace(min(extrema), max(extrema), from, coord.dims()[from]));
+    }
   }
   // 2. Transform realigned items
   for (const auto &item : iter(d))
@@ -41,9 +59,10 @@ T convert_generic(T &&d, const Dim from, const Dim to, Op op,
 
 template <class T>
 static T convert_with_factor(T &&d, const Dim from, const Dim to,
+                             const ConvertRealign realign,
                              const Variable &factor) {
   return convert_generic(
-      std::forward<T>(d), from, to,
+      std::forward<T>(d), from, to, realign,
       [](auto &coord, const auto &c) { coord *= c; }, factor);
 }
 
@@ -119,7 +138,9 @@ Dataset tofToDeltaE(const Dataset &d) {
 }
 */
 
-template <class T> T convert_impl(T d, const Dim from, const Dim to) {
+template <class T>
+T convert_impl(T d, const Dim from, const Dim to,
+               const ConvertRealign realign) {
   for (const auto &item : iter(d))
     if (item.hasData())
       core::expect::notCountDensity(item.unit());
@@ -134,30 +155,33 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
   // to `transform`) and are not readily stored as function pointers or
   // std::function.
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
-    return convert_with_factor(std::move(d), from, to,
+    return convert_with_factor(std::move(d), from, to, realign,
                                constants::tof_to_dspacing(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
-    return convert_with_factor(std::move(d), from, to,
+    return convert_with_factor(std::move(d), from, to, realign,
                                reciprocal(constants::tof_to_dspacing(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Wavelength))
-    return convert_with_factor(std::move(d), from, to,
+    return convert_with_factor(std::move(d), from, to, realign,
                                constants::tof_to_wavelength(d));
   if ((from == Dim::Wavelength) && (to == Dim::Tof))
-    return convert_with_factor(std::move(d), from, to,
+    return convert_with_factor(std::move(d), from, to, realign,
                                reciprocal(constants::tof_to_wavelength(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Energy))
-    return convert_generic(std::move(d), from, to, conversions::tof_to_energy,
+    return convert_generic(std::move(d), from, to, realign,
+                           conversions::tof_to_energy,
                            constants::tof_to_energy(d));
   if ((from == Dim::Energy) && (to == Dim::Tof))
-    return convert_generic(std::move(d), from, to, conversions::energy_to_tof,
+    return convert_generic(std::move(d), from, to, realign,
+                           conversions::energy_to_tof,
                            constants::tof_to_energy(d));
 
   // lambda <-> Q conversion is symmetric
   if (((from == Dim::Wavelength) && (to == Dim::Q)) ||
       ((from == Dim::Q) && (to == Dim::Wavelength)))
-    return convert_generic(std::move(d), from, to, conversions::wavelength_to_q,
+    return convert_generic(std::move(d), from, to, realign,
+                           conversions::wavelength_to_q,
                            constants::wavelength_to_q(d));
 
   throw except::UnitError(
@@ -206,22 +230,26 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
 }
 } // namespace
 
-DataArray convert(DataArray d, const Dim from, const Dim to) {
-  return swap_tof_related_labels_and_attrs(convert_impl(std::move(d), from, to),
-                                           from, to);
+DataArray convert(DataArray d, const Dim from, const Dim to,
+                  const ConvertRealign realign) {
+  return swap_tof_related_labels_and_attrs(
+      convert_impl(std::move(d), from, to, realign), from, to);
 }
 
-DataArray convert(const DataArrayConstView &d, const Dim from, const Dim to) {
-  return convert(DataArray(d), from, to);
+DataArray convert(const DataArrayConstView &d, const Dim from, const Dim to,
+                  const ConvertRealign realign) {
+  return convert(DataArray(d), from, to, realign);
 }
 
-Dataset convert(Dataset d, const Dim from, const Dim to) {
-  return swap_tof_related_labels_and_attrs(convert_impl(std::move(d), from, to),
-                                           from, to);
+Dataset convert(Dataset d, const Dim from, const Dim to,
+                const ConvertRealign realign) {
+  return swap_tof_related_labels_and_attrs(
+      convert_impl(std::move(d), from, to, realign), from, to);
 }
 
-Dataset convert(const DatasetConstView &d, const Dim from, const Dim to) {
-  return convert(Dataset(d), from, to);
+Dataset convert(const DatasetConstView &d, const Dim from, const Dim to,
+                const ConvertRealign realign) {
+  return convert(Dataset(d), from, to, realign);
 }
 
 } // namespace scipp::neutron

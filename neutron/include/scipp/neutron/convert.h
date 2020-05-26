@@ -10,13 +10,19 @@
 
 namespace scipp::neutron {
 
-SCIPP_NEUTRON_EXPORT dataset::DataArray convert(dataset::DataArray d,
-                                                const Dim from, const Dim to);
+enum class ConvertRealign { None, Linear };
+
 SCIPP_NEUTRON_EXPORT dataset::DataArray
-convert(const dataset::DataArrayConstView &d, const Dim from, const Dim to);
-SCIPP_NEUTRON_EXPORT dataset::Dataset convert(dataset::Dataset d,
-                                              const Dim from, const Dim to);
+convert(dataset::DataArray d, const Dim from, const Dim to,
+        const ConvertRealign realign = ConvertRealign::None);
+SCIPP_NEUTRON_EXPORT dataset::DataArray
+convert(const dataset::DataArrayConstView &d, const Dim from, const Dim to,
+        const ConvertRealign realign = ConvertRealign::None);
 SCIPP_NEUTRON_EXPORT dataset::Dataset
-convert(const dataset::DatasetConstView &d, const Dim from, const Dim to);
+convert(dataset::Dataset d, const Dim from, const Dim to,
+        const ConvertRealign realign = ConvertRealign::None);
+SCIPP_NEUTRON_EXPORT dataset::Dataset
+convert(const dataset::DatasetConstView &d, const Dim from, const Dim to,
+        const ConvertRealign realign = ConvertRealign::None);
 
 } // namespace scipp::neutron
