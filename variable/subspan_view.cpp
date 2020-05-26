@@ -7,39 +7,36 @@
 
 namespace scipp::variable {
 
-/// Helper returning vector of subspans with given length.
+/// Helper returning vector of subspans from begin to end
 template <class T>
-auto make_subspans(const span<T> &data, const scipp::index span_len) {
-  const auto len = scipp::size(data) / span_len;
+auto make_subspans(const ElementArrayView<T> &first,
+                   const ElementArrayView<T> &last) {
+  const auto len = first.size();
   std::vector<span<T>> spans;
   spans.reserve(len);
   for (scipp::index i = 0; i < len; ++i)
-    spans.emplace_back(data.subspan(span_len * i, span_len));
+    spans.emplace_back(scipp::span(&first[i], &last[i] + 1));
   return spans;
-}
-
-template <class T>
-auto make_subspans(const ElementArrayView<T> &data,
-                   const scipp::index span_len) {
-  return make_subspans(scipp::span(data.data(), data.data() + data.size()),
-                       span_len);
 }
 
 /// Return Variable containing spans over given dimension as elements.
 template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
-  if (dim != var.dims().inner())
-    throw except::DimensionError(
-        "View over subspan can only be created for inner dimension.");
-  if (!var.data().isContiguous())
-    throw except::DimensionError(
-        "View over subspan can only be created for contiguous range of data.");
-
   using E = std::remove_const_t<T>;
-  constexpr static auto values_view = [](auto &v) {
-    return make_subspans(v.template values<E>(), v.dims()[v.dims().inner()]);
+  const auto len = var.dims()[dim];
+  // Check that stride in `dim` is 1
+  if (len > 0 && var.template values<E>().data() + 1 !=
+                     var.slice({dim, 1}).template values<E>().data())
+    throw except::DimensionError(
+        "View over subspan can only be created for contiguous "
+        "range of data.");
+
+  const auto values_view = [dim, len](auto &v) {
+    return make_subspans(v.slice({dim, 0}).template values<E>(),
+                         v.slice({dim, len - 1}).template values<E>());
   };
-  constexpr static auto variances_view = [](auto &v) {
-    return make_subspans(v.template variances<E>(), v.dims()[v.dims().inner()]);
+  const auto variances_view = [dim, len](auto &v) {
+    return make_subspans(v.slice({dim, 0}).template variances<E>(),
+                         v.slice({dim, len - 1}).template variances<E>());
   };
 
   auto dims = var.dims();
