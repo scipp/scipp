@@ -31,6 +31,9 @@ For a more up-to-date version, the `scipp/label/dev` channel can be used instead
 
    $ conda install -c conda-forge -c scipp/label/dev scipp
 
+.. note::
+   Instaling ``scipp`` on Windows requires ``Microsoft Visual Studio 2019 C++ Runtime`` installed.
+   Visit https://support.microsoft.com/en-us/help/2977003/the-latest-supported-visual-c-downloads for the up to date version of the library.
 
 After installation the module ``scipp`` can be imported in Python.
 Note that only the bare essential dependencies are installed.
