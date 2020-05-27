@@ -2,9 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/reduction.h"
 #include "scipp/variable/reduction.h"
-#include "scipp/variable/variable.h"
 
 using namespace scipp;
 using namespace scipp::dataset;

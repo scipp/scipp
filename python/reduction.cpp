@@ -5,14 +5,32 @@
 #include "docstring.h"
 #include "pybind11.h"
 
-#include "scipp/dataset/dataset.h"
-#include "scipp/variable/operations.h"
+#include "scipp/dataset/reduction.h"
+#include "scipp/variable/reduction.h"
 
 using namespace scipp;
 using namespace scipp::variable;
 using namespace scipp::dataset;
 
 namespace py = pybind11;
+
+template <class T> void bind_flatten(py::module &m) {
+  m.def("flatten",
+        py::overload_cast<const typename T::const_view_type &, const Dim>(
+            &flatten),
+        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+        Docstring()
+            .description("Flatten the specified dimension into event lists, "
+                         "equivalent to summing dense data.")
+            .raises("If the dimension does not exist, or if x does not contain "
+                    "event lists.")
+            .seealso(":py:func:`scipp.sum`")
+            .returns("The flattened data.")
+            .rtype<T>()
+            .template param<T>("x", "Data container to flatten.")
+            .param("dim", "Dimension over which to flatten.", "Dim")
+            .c_str());
+}
 
 template <class T> Docstring docstring_mean() {
   return Docstring()
@@ -168,6 +186,10 @@ template <class T> void bind_any(py::module &m) {
 }
 
 void init_reduction(py::module &m) {
+  bind_flatten<Variable>(m);
+  bind_flatten<DataArray>(m);
+  bind_flatten<Dataset>(m);
+
   bind_mean<Variable>(m);
   bind_mean<DataArray>(m);
   bind_mean<Dataset>(m);
