@@ -13,6 +13,7 @@ add_executable(
   element_histogram_test.cpp
   element_trigonometry_test.cpp
   element_unary_operations_test.cpp
+  element_util_test.cpp
   value_and_variance_test.cpp
   view_index_test.cpp
 )

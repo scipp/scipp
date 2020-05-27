@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
-#include <gtest/gtest.h>
-#include <vector>
-
 #include "scipp/dataset/dataset.h"
+
+#include <gtest/gtest.h>
+#include <limits>
+#include <vector>
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -23,6 +24,25 @@ TEST(SumTest, masked_data_array) {
   EXPECT_EQ(sum(a, Dim::Y).data(), sumY);
   EXPECT_FALSE(sum(a, Dim::X).masks().contains("mask"));
   EXPECT_TRUE(sum(a, Dim::Y).masks().contains("mask"));
+}
+
+TEST(SumTest, masked_data_with_special_vals) {
+  const auto var = makeVariable<double>(
+      Dimensions{{Dim::Y, 2}, {Dim::X, 2}}, units::m,
+      Values{1.0, std::numeric_limits<double>::quiet_NaN(), 3.0, 4.0});
+  const auto mask = makeVariable<bool>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
+                                       Values{false, true, false, false});
+
+  DataArray a(var);
+  a.masks().set("mask", mask);
+
+  const auto sumX =
+      makeVariable<double>(Dimensions{Dim::Y, 2}, units::m, Values{1.0, 7.0});
+  const auto sumY =
+      makeVariable<double>(Dimensions{Dim::X, 2}, units::m, Values{4.0, 4.0});
+
+  EXPECT_EQ(sum(a, Dim::X).data(), sumX);
+  EXPECT_EQ(sum(a, Dim::Y).data(), sumY);
 }
 
 TEST(SumTest, masked_data_array_two_masks) {

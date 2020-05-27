@@ -39,6 +39,9 @@ Transform two variables with two type combinations:
 - ``a`` of type ``double`` and ``b`` of type ``double``
 
 Since ``+`` is defined for ``units::Unit`` the same lambda can be used for data and unit.
+If we needed to handle the unit manually (for example no operator which accepts it) we can use
+``overloaded`` as shown in example 2.
+
 This call to ``transform`` will add the two variables (or variable views) ``a`` and ``b`` and return a new variable.
 
 .. code-block:: cpp
@@ -47,12 +50,13 @@ This call to ``transform`` will add the two variables (or variable views) ``a`` 
         std::tuple<std::tuple<double, float>, std::tuple<double, double>>>(
         a, b, [](const auto &a_, const auto &b_) { return a_ + b_; });
 
+
 Example 2 
 ~~~~~~~~~
 
-In-place transform with two variables and special unit handling, using the help ``overloaded``, to define an "overloaded" lambda:
-This call to ``transform_in_place``  accepts two variables (or variable views) ``a`` and ``b``.
-``a`` is modified in-place, no new variable is returned.
+This call to ``transform_in_place`` accepts two variables (or variable views) ``a`` and ``b``.
+``a`` is modified in-place, no new variable is returned. The example also has
+special unit handling using ``overloaded``, to define an "overloaded" lambda.
 
 .. code-block:: cpp
 
@@ -70,11 +74,30 @@ Note that the template argument ``std::tuple<bool>`` is equivalent to ``std::tup
 Recommended usage
 -----------------
 
-For improved testability and maintainability it is recommended to define the operator stand-alone instead of inline.
-The list of supported types can also be provided in this manner.
+- For improved testability and maintainability it is recommended to define the operator stand-alone instead of inline.
+- Specifying types on the element wise operator allows them to be omitted from 
+``transform`` and ``transform_in_place``.
+- Use ``arg_list`` to define list of supported type combinations as shown below.
 
-- Use ``arg_list`` to define list of supported type combinations.
+.. code-block:: cpp
+
+  // This will accept two arguments of double, bool / float, int64_t / ...etc.
+  overloaded{arg_list<std::tuple<double, bool>,
+                      std::tuple<float, int64_t)t>,
+                      std::tuple<int32_t, double>  // Any other type pairs you support
+                      >
+                      [](auto &a, auto &b) { /* Get double/bool...etc. pairs here */ },
+                      [](const units::Unit &a, const units::Unit &b) { /* Unit handling */ }
+             };
+
 - Flags in ``transform_flags.h`` can be used to, e.g., prevent code generation if an argument has variances.
+- If pairs of the same type are required use ``pair_self_t`` for example:
+
+.. code-block:: cpp
+
+  // Equivalent to tuple<bool, bool>, tuple<double, double> ....
+  transform<pair_self_t<bool, double, int32_t, ...etc>>(...);
+
 
 Example
 ~~~~~~~
@@ -101,4 +124,6 @@ If operation is added to ``namespace scipp::variable``, define:
 
 - Here, variances for the first argument are disabled explicitly.
 - Unit tests should be written independently for ``scipp::core::element::my_op``.
+- The lambdas for ``overloaded`` can be tested separately, i.e. test unit handling
+then test value handling for supported types
 - ``scipp::variable::my_op`` should only have essential tests relying on correctness of ``transform`` and ``scipp::core::element::my_op``.
