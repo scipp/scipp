@@ -56,13 +56,6 @@ TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {
   EXPECT_EQ(sum, dataset["data_zyx"]);
 }
 
-TEST(DataArrayTest, reciprocal) {
-  DatasetFactory3D factory;
-  const auto dataset = factory.make();
-  DataArray array(dataset["data_zyx"]);
-  EXPECT_EQ(reciprocal(array).data(), reciprocal(array.data()));
-}
-
 auto make_events() {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   var.setUnit(units::us);
