@@ -221,22 +221,6 @@ Dataset &Dataset::operator/=(const DatasetConstView &other) {
   return apply(core::element::divide_equals{}, *this, other);
 }
 
-Dataset &Dataset::operator+=(const Dataset &other) {
-  return apply(core::element::plus_equals{}, *this, other);
-}
-
-Dataset &Dataset::operator-=(const Dataset &other) {
-  return apply(core::element::minus_equals{}, *this, other);
-}
-
-Dataset &Dataset::operator*=(const Dataset &other) {
-  return apply(core::element::times_equals{}, *this, other);
-}
-
-Dataset &Dataset::operator/=(const Dataset &other) {
-  return apply(core::element::divide_equals{}, *this, other);
-}
-
 DatasetView DatasetView::operator+=(const DataArrayConstView &other) const {
   return apply_with_delay(core::element::plus_equals{}, *this, other);
 }
@@ -285,38 +269,6 @@ DatasetView DatasetView::operator/=(const DatasetConstView &other) const {
   return apply(core::element::divide_equals{}, *this, other);
 }
 
-DatasetView DatasetView::operator+=(const Dataset &other) const {
-  return apply(core::element::plus_equals{}, *this, other);
-}
-
-DatasetView DatasetView::operator-=(const Dataset &other) const {
-  return apply(core::element::minus_equals{}, *this, other);
-}
-
-DatasetView DatasetView::operator*=(const Dataset &other) const {
-  return apply(core::element::times_equals{}, *this, other);
-}
-
-DatasetView DatasetView::operator/=(const Dataset &other) const {
-  return apply(core::element::divide_equals{}, *this, other);
-}
-
-Dataset operator+(const Dataset &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
-}
-
-Dataset operator+(const Dataset &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
-}
-
-Dataset operator+(const Dataset &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
-}
-
-Dataset operator+(const DatasetConstView &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
-}
-
 Dataset operator+(const DatasetConstView &lhs, const DatasetConstView &rhs) {
   return apply_with_broadcast(plus, lhs, rhs);
 }
@@ -325,19 +277,7 @@ Dataset operator+(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
   return apply_with_broadcast(plus, lhs, rhs);
 }
 
-Dataset operator+(const DataArrayConstView &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
-}
-
 Dataset operator+(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
-}
-
-Dataset operator+(const Dataset &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
-}
-
-Dataset operator+(const VariableConstView &lhs, const Dataset &rhs) {
   return apply_with_broadcast(plus, lhs, rhs);
 }
 
@@ -349,22 +289,6 @@ Dataset operator+(const VariableConstView &lhs, const DatasetConstView &rhs) {
   return apply_with_broadcast(plus, lhs, rhs);
 }
 
-Dataset operator-(const Dataset &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
-}
-
-Dataset operator-(const Dataset &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
-}
-
-Dataset operator-(const Dataset &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
-}
-
-Dataset operator-(const DatasetConstView &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
-}
-
 Dataset operator-(const DatasetConstView &lhs, const DatasetConstView &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
@@ -373,19 +297,7 @@ Dataset operator-(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
 
-Dataset operator-(const DataArrayConstView &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
-}
-
 Dataset operator-(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
-}
-
-Dataset operator-(const Dataset &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
-}
-
-Dataset operator-(const VariableConstView &lhs, const Dataset &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
 
@@ -397,22 +309,6 @@ Dataset operator-(const VariableConstView &lhs, const DatasetConstView &rhs) {
   return apply_with_broadcast(minus, lhs, rhs);
 }
 
-Dataset operator*(const Dataset &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
-}
-
-Dataset operator*(const Dataset &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
-}
-
-Dataset operator*(const Dataset &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
-}
-
-Dataset operator*(const DatasetConstView &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
-}
-
 Dataset operator*(const DatasetConstView &lhs, const DatasetConstView &rhs) {
   return apply_with_broadcast(times, lhs, rhs);
 }
@@ -421,19 +317,7 @@ Dataset operator*(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
   return apply_with_broadcast(times, lhs, rhs);
 }
 
-Dataset operator*(const DataArrayConstView &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
-}
-
 Dataset operator*(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
-}
-
-Dataset operator*(const Dataset &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
-}
-
-Dataset operator*(const VariableConstView &lhs, const Dataset &rhs) {
   return apply_with_broadcast(times, lhs, rhs);
 }
 
@@ -445,22 +329,6 @@ Dataset operator*(const VariableConstView &lhs, const DatasetConstView &rhs) {
   return apply_with_broadcast(times, lhs, rhs);
 }
 
-Dataset operator/(const Dataset &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
-}
-
-Dataset operator/(const Dataset &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
-}
-
-Dataset operator/(const Dataset &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
-}
-
-Dataset operator/(const DatasetConstView &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
-}
-
 Dataset operator/(const DatasetConstView &lhs, const DatasetConstView &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
@@ -469,19 +337,7 @@ Dataset operator/(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
 
-Dataset operator/(const DataArrayConstView &lhs, const Dataset &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
-}
-
 Dataset operator/(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
-}
-
-Dataset operator/(const Dataset &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
-}
-
-Dataset operator/(const VariableConstView &lhs, const Dataset &rhs) {
   return apply_with_broadcast(divide, lhs, rhs);
 }
 
