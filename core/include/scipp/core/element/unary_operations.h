@@ -35,13 +35,13 @@ constexpr auto nan_to_num =
                },
                unit_check_and_return};
 
-constexpr auto nan_to_num_out_arg = overloaded{
-    transform_flags::expect_all_or_none_have_variance,
-    [](auto &x, const auto y, const auto &repl) {
-      using std::isnan;
-      x = isnan(y) ? repl : y;
-    },
-    unit_check_and_assign};
+constexpr auto nan_to_num_out_arg =
+    overloaded{transform_flags::expect_all_or_none_have_variance,
+               [](auto &x, const auto y, const auto &repl) {
+                 using std::isnan;
+                 x = isnan(y) ? repl : y;
+               },
+               unit_check_and_assign};
 
 constexpr auto positive_inf_to_num =
     overloaded{transform_flags::expect_all_or_none_have_variance,

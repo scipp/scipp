@@ -15,7 +15,6 @@
 
 namespace scipp::dataset {
 
-
 DataArray flatten(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(
       a,
