@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
-#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/reduction.h"
 
 #include <gtest/gtest.h>
 #include <limits>

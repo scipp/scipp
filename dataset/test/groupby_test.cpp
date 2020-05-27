@@ -3,6 +3,8 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/groupby.h"
+#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/dataset/unaligned.h"
 #include "scipp/variable/arithmetic.h"
 

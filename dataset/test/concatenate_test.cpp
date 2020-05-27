@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
 
 using namespace scipp;

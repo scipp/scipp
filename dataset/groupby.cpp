@@ -14,6 +14,8 @@
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
+#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
 #include "dataset_operations_common.h"

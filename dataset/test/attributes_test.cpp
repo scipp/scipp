@@ -3,6 +3,8 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/shape.h"
 
 #include "dataset_test_common.h"
 

@@ -12,6 +12,7 @@ set(INC_FILES
     include/scipp/variable/misc_operations.h
     include/scipp/variable/operations.h
     include/scipp/variable/reduction.h
+    include/scipp/variable/shape.h
     include/scipp/variable/string.h
     include/scipp/variable/subspan_view.h
     include/scipp/variable/transform.h
@@ -34,6 +35,7 @@ set(SRC_FILES
     operations.cpp
     rebin.cpp
     reduction.cpp
+    shape.cpp
     string.cpp
     subspan_view.cpp
     trigonometry.cpp

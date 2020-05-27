@@ -6,6 +6,7 @@
 #include "pybind11.h"
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/dataset/sort.h"
 #include "scipp/variable/operations.h"
 

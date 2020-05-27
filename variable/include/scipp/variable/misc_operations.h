@@ -25,26 +25,15 @@ split(const Variable &var, const Dim dim,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable abs(Variable &&var);
 SCIPP_VARIABLE_EXPORT VariableView abs(const VariableConstView &var,
                                        const VariableView &out);
-SCIPP_VARIABLE_EXPORT Variable broadcast(const VariableConstView &var,
-                                         const Dimensions &dims);
-SCIPP_VARIABLE_EXPORT Variable concatenate(const VariableConstView &a1,
-                                           const VariableConstView &a2,
-                                           const Dim dim);
 SCIPP_VARIABLE_EXPORT Variable dot(const VariableConstView &a,
                                    const VariableConstView &b);
 SCIPP_VARIABLE_EXPORT Variable filter(const Variable &var,
                                       const Variable &filter);
 SCIPP_VARIABLE_EXPORT Variable norm(const VariableConstView &var);
-SCIPP_VARIABLE_EXPORT Variable
-permute(const Variable &var, const Dim dim,
-        const std::vector<scipp::index> &indices);
 SCIPP_VARIABLE_EXPORT Variable rebin(const VariableConstView &var,
                                      const Dim dim,
                                      const VariableConstView &oldCoord,
                                      const VariableConstView &newCoord);
-SCIPP_VARIABLE_EXPORT Variable resize(const VariableConstView &var,
-                                      const Dim dim, const scipp::index size);
-SCIPP_VARIABLE_EXPORT Variable reverse(Variable var, const Dim dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sqrt(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sqrt(Variable &&var);
 SCIPP_VARIABLE_EXPORT VariableView sqrt(const VariableConstView &var,
