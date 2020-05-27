@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/rebin.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
 

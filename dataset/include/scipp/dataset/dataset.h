@@ -7,7 +7,6 @@
 #include <functional>
 #include <iosfwd>
 #include <map>
-#include <optional>
 #include <string>
 #include <unordered_map>
 
@@ -806,11 +805,6 @@ SCIPP_DATASET_EXPORT DataArray astype(const DataArrayConstView &var,
 
 SCIPP_DATASET_EXPORT Dataset merge(const DatasetConstView &a,
                                    const DatasetConstView &b);
-
-SCIPP_DATASET_EXPORT DataArray rebin(const DataArrayConstView &a, const Dim dim,
-                                     const VariableConstView &coord);
-SCIPP_DATASET_EXPORT Dataset rebin(const DatasetConstView &d, const Dim dim,
-                                   const VariableConstView &coord);
 
 /// Return one of the inputs if they are the same, throw otherwise.
 template <class T> T same(const T &a, const T &b) {

@@ -12,6 +12,7 @@ set(INC_FILES
     include/scipp/variable/math.h
     include/scipp/variable/misc_operations.h
     include/scipp/variable/operations.h
+    include/scipp/variable/rebin.h
     include/scipp/variable/reduction.h
     include/scipp/variable/shape.h
     include/scipp/variable/string.h

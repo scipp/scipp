@@ -17,10 +17,6 @@ split(const Variable &var, const Dim dim,
       const std::vector<scipp::index> &indices);
 SCIPP_VARIABLE_EXPORT Variable filter(const Variable &var,
                                       const Variable &filter);
-SCIPP_VARIABLE_EXPORT Variable rebin(const VariableConstView &var,
-                                     const Dim dim,
-                                     const VariableConstView &oldCoord,
-                                     const VariableConstView &newCoord);
 
 SCIPP_VARIABLE_EXPORT VariableView
 nan_to_num(const VariableConstView &var, const VariableConstView &replacement,

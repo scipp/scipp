@@ -38,29 +38,6 @@ Dataset merge(const DatasetConstView &a, const DatasetConstView &b) {
                  union_(a.masks(), b.masks()), union_(a.attrs(), b.attrs()));
 }
 
-DataArray rebin(const DataArrayConstView &a, const Dim dim,
-                const VariableConstView &coord) {
-  auto rebinned = apply_to_data_and_drop_dim(
-      a,
-      overloaded{no_realigned_support,
-                 [](auto &&... _) { return rebin(_...); }},
-      dim, a.coords()[dim], coord);
-
-  for (auto &&[name, mask] : a.masks()) {
-    if (mask.dims().contains(dim))
-      rebinned.masks().set(name, rebin(mask, dim, a.coords()[dim], coord));
-  }
-
-  rebinned.coords().set(dim, coord);
-  return rebinned;
-}
-
-Dataset rebin(const DatasetConstView &d, const Dim dim,
-              const VariableConstView &coord) {
-  return apply_to_items(
-      d, [](auto &&... _) { return rebin(_...); }, dim, coord);
-}
-
 /// Return a deep copy of a DataArray or of a DataArrayView.
 DataArray copy(const DataArrayConstView &array, const AttrPolicy attrPolicy) {
   return DataArray(array, attrPolicy);

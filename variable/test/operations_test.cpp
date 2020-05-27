@@ -488,22 +488,6 @@ TEST(EventsVariable, concatenate) {
                                                   Values{}, Variances{}));
 }
 
-#ifdef SCIPP_UNITS_NEUTRON
-TEST(Variable, rebin) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
-  var.setUnit(units::counts);
-  const auto oldEdge =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, 2.0, 3.0});
-  const auto newEdge =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 3.0});
-  auto rebinned = rebin(var, Dim::X, oldEdge, newEdge);
-  ASSERT_EQ(rebinned.dims().shape().size(), 1);
-  ASSERT_EQ(rebinned.dims().volume(), 1);
-  ASSERT_EQ(rebinned.values<double>().size(), 1);
-  EXPECT_EQ(rebinned.values<double>()[0], 3.0);
-}
-#endif
-
 TEST(Variable, sum) {
   const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                         units::m, Values{1.0, 2.0, 3.0, 4.0});

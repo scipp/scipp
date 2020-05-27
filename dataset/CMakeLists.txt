@@ -7,6 +7,7 @@ set(INC_FILES
     include/scipp/dataset/dataset_index.h
     include/scipp/dataset/except.h
     include/scipp/dataset/math.h
+    include/scipp/dataset/rebin.h
     include/scipp/dataset/reduction.h
     include/scipp/dataset/shape.h
     include/scipp/dataset/sort.h
@@ -25,6 +26,7 @@ set(SRC_FILES
     map_view.cpp
     math.cpp
     operations.cpp
+    rebin.cpp
     reduction.cpp
     shape.cpp
     sort.cpp
