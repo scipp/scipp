@@ -70,9 +70,9 @@ static constexpr auto make_value = [](auto &&view) -> decltype(auto) {
 ///
 /// For dimension-coords, this is the same as the key, for non-dimension-coords
 /// (labels) we adopt the convention that they are "label" their inner
-/// dimension.
+/// dimension. Returns Dim::Invalid for 0-D var or var containing event lists.
 template <class T, class Key> Dim dim_of_coord(const T &var, const Key &key) {
-  if (contains_events(var))
+  if (contains_events(var) || var.dims().ndim() == 0)
     return Dim::Invalid;
   if constexpr (std::is_same_v<Key, Dim>) {
     const bool is_dimension_coord = var.dims().contains(key);

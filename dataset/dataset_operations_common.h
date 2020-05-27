@@ -34,17 +34,26 @@ static inline void expectAlignedCoord(const Dim coord_dim,
         to_string(operation_dim) + " Terminating operation.");
 }
 
+static constexpr auto no_realigned_support = []() {};
+using no_realigned_support_t = decltype(no_realigned_support);
+
 template <bool ApplyToData, class Func, class... Args>
-DataArray apply_and_drop_dim_impl(const DataArrayConstView &a, Func func,
-                                  const Dim dim, Args &&... args) {
+DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
+                                 const Dim dim, Args &&... args) {
   std::map<Dim, Variable> coords;
-  for (auto &&[d, coord] : a.coords()) {
-    // Check coordinates will NOT be dropped
+  // Note the `copy` call, ensuring that the return value of the ternary
+  // operator can be moved. Without `copy`, the result of `func` is always
+  // copied.
+  for (auto &&[d, coord] : a.coords())
     if (coord.dims().ndim() == 0 || dim_of_coord(coord, d) != dim) {
       expectAlignedCoord(d, coord, dim);
-      coords.emplace(d, coord);
+      if constexpr (ApplyToData) {
+        coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim, args...)
+                                                     : copy(coord));
+      } else {
+        coords.emplace(d, coord);
+      }
     }
-  }
 
   std::map<std::string, Variable> attrs;
   for (auto &&[name, attr] : a.attrs())
@@ -58,76 +67,51 @@ DataArray apply_and_drop_dim_impl(const DataArrayConstView &a, Func func,
 
   if constexpr (ApplyToData) {
     if (a.hasData()) {
-      return DataArray(func(a.data(), dim, std::forward<Args>(args)...),
-                       std::move(coords), std::move(masks), std::move(attrs),
-                       a.name());
+      return DataArray(func(a.data(), dim, args...), std::move(coords),
+                       std::move(masks), std::move(attrs), a.name());
     } else {
-      return DataArray(
-          func(a.dims(), a.unaligned(), dim, std::forward<Args>(args)...),
-          std::move(coords), std::move(masks), std::move(attrs), a.name());
+      if constexpr (std::is_base_of_v<no_realigned_support_t, Func>)
+        throw std::logic_error("Operation cannot handle realigned data.");
+      else
+        return DataArray(func(a.dims(), a.unaligned(), dim, args...),
+                         std::move(coords), std::move(masks), std::move(attrs),
+                         a.name());
     }
-  } else
+  } else {
     return DataArray(func(a, dim, std::forward<Args>(args)...),
                      std::move(coords), std::move(masks), std::move(attrs),
                      a.name());
-}
-
-static constexpr auto no_realigned_support = []() {};
-using no_realigned_support_t = decltype(no_realigned_support);
-
-/// Create new data array by applying Func to everything depending on dim, copy
-/// otherwise.
-template <class Func, class... Args>
-DataArray apply_or_copy_dim(const DataArrayConstView &a, Func func,
-                            const Dim dim, Args &&... args) {
-  Dimensions drop({dim, a.dims()[dim]});
-  std::map<Dim, Variable> coords;
-  // Note the `copy` call, ensuring that the return value of the ternary
-  // operator can be moved. Without `copy`, the result of `func` is always
-  // copied.
-  for (auto &&[d, coord] : a.coords())
-    if (contains_events(coord) || coord.dims() != drop)
-      coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim, args...)
-                                                   : copy(coord));
-
-  std::map<std::string, Variable> attrs;
-  for (auto &&[name, attr] : a.attrs())
-    if (attr.dims() != drop)
-      attrs.emplace(name, attr.dims().contains(dim) ? func(attr, dim, args...)
-                                                    : copy(attr));
-
-  std::map<std::string, Variable> masks;
-  for (auto &&[name, mask] : a.masks())
-    if (mask.dims() != drop)
-      masks.emplace(name, mask.dims().contains(dim) ? func(mask, dim, args...)
-                                                    : copy(mask));
-
-  if (a.hasData()) {
-    return DataArray(func(a.data(), dim, args...), std::move(coords),
-                     std::move(masks), std::move(attrs), a.name());
-  } else {
-    if constexpr (std::is_base_of_v<no_realigned_support_t, Func>)
-      throw std::logic_error("Operation cannot handle realigned data.");
-    else
-      return DataArray(UnalignedData{func(a.dims(), dim, args...),
-                                     func(a.unaligned(), dim, args...)},
-                       std::move(coords), std::move(masks), std::move(attrs),
-                       a.name());
   }
 }
 
+/// Helper for creating operations that return an object with modified data with
+/// a dropped dimension or different dimension extent.
+///
+/// Examples are mostly reduction operations such as `sum` (dropping a
+/// dimension), or `resize` (altering a dimension extent). Creates new data
+/// array by applying `func` to data and dropping coords/masks/attrs depending
+/// on dim. The exception are multi-dimensional coords that depend on `dim`,
+/// with two cases: (1) If the coord is a coord for `dim`, `func` is applied to
+/// it, (2) if the coords is a coords for a dimension other than `dim`, a
+/// CoordMismatchError is thrown.
 template <class Func, class... Args>
 DataArray apply_to_data_and_drop_dim(const DataArrayConstView &a, Func func,
                                      const Dim dim, Args &&... args) {
-  return apply_and_drop_dim_impl<true>(a, func, dim,
-                                       std::forward<Args>(args)...);
+  return apply_or_copy_dim_impl<true>(a, func, dim,
+                                      std::forward<Args>(args)...);
 }
 
+/// Helper for creating operations that return an object with a dropped
+/// dimension or different dimension extent.
+///
+/// In contrast to `apply_to_data_and_drop_dim`, `func` is applied to the input
+/// array, not just its data. This is useful for more complex operations such as
+/// `histogram`, which require access to coords when computing output data.
 template <class Func, class... Args>
 DataArray apply_and_drop_dim(const DataArrayConstView &a, Func func,
                              const Dim dim, Args &&... args) {
-  return apply_and_drop_dim_impl<false>(a, func, dim,
-                                        std::forward<Args>(args)...);
+  return apply_or_copy_dim_impl<false>(a, func, dim,
+                                       std::forward<Args>(args)...);
 }
 
 template <class Func, class... Args>
