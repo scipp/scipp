@@ -12,32 +12,15 @@ namespace scipp::variable {
 SCIPP_VARIABLE_EXPORT Variable astype(const VariableConstView &var,
                                       const DType type);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-reciprocal(const VariableConstView &var);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reciprocal(Variable &&var);
-SCIPP_VARIABLE_EXPORT VariableView reciprocal(const VariableConstView &var,
-                                              const VariableView &out);
-
 SCIPP_VARIABLE_EXPORT std::vector<Variable>
 split(const Variable &var, const Dim dim,
       const std::vector<scipp::index> &indices);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable abs(const VariableConstView &var);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable abs(Variable &&var);
-SCIPP_VARIABLE_EXPORT VariableView abs(const VariableConstView &var,
-                                       const VariableView &out);
-SCIPP_VARIABLE_EXPORT Variable dot(const VariableConstView &a,
-                                   const VariableConstView &b);
 SCIPP_VARIABLE_EXPORT Variable filter(const Variable &var,
                                       const Variable &filter);
-SCIPP_VARIABLE_EXPORT Variable norm(const VariableConstView &var);
 SCIPP_VARIABLE_EXPORT Variable rebin(const VariableConstView &var,
                                      const Dim dim,
                                      const VariableConstView &oldCoord,
                                      const VariableConstView &newCoord);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sqrt(const VariableConstView &var);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sqrt(Variable &&var);
-SCIPP_VARIABLE_EXPORT VariableView sqrt(const VariableConstView &var,
-                                        const VariableView &out);
 
 SCIPP_VARIABLE_EXPORT VariableView
 nan_to_num(const VariableConstView &var, const VariableConstView &replacement,

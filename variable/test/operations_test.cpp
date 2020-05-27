@@ -6,7 +6,7 @@
 #include "fix_typed_test_suite_warnings.h"
 #include "test_macros.h"
 
-#include "scipp/core/element/unary_operations.h"
+#include "scipp/core/element/math.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/variable.h"

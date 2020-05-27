@@ -57,57 +57,6 @@ Variable filter(const Variable &var, const Variable &filter) {
   return out;
 }
 
-Variable reciprocal(const VariableConstView &var) {
-  return transform(var, element::reciprocal);
-}
-
-Variable reciprocal(Variable &&var) {
-  auto out(std::move(var));
-  reciprocal(out, out);
-  return out;
-}
-
-VariableView reciprocal(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, element::reciprocal_out_arg);
-  return out;
-}
-
-Variable abs(const VariableConstView &var) {
-  return transform<double, float>(var, element::abs);
-}
-
-Variable abs(Variable &&var) {
-  abs(var, var);
-  return std::move(var);
-}
-
-VariableView abs(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, element::abs_out_arg);
-  return out;
-}
-
-Variable norm(const VariableConstView &var) {
-  return transform(var, element::norm);
-}
-
-Variable sqrt(const VariableConstView &var) {
-  return transform<double, float>(var, element::sqrt);
-}
-
-Variable sqrt(Variable &&var) {
-  sqrt(var, var);
-  return std::move(var);
-}
-
-VariableView sqrt(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, element::sqrt_out_arg);
-  return out;
-}
-
-Variable dot(const VariableConstView &a, const VariableConstView &b) {
-  return transform(a, b, element::dot);
-}
-
 /// Return a deep copy of a Variable or of a VariableView.
 Variable copy(const VariableConstView &var) { return Variable(var); }
 
