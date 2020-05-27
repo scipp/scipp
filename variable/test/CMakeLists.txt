@@ -7,6 +7,7 @@ add_executable(
   comparison_test.cpp
   indexed_slice_view_test.cpp
   operations_test.cpp
+  rebin_test.cpp
   reduce_logical_test.cpp
   reduce_various_test.cpp
   subspan_view_test.cpp

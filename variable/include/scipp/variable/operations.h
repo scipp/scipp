@@ -6,6 +6,8 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/logical.h"
+#include "scipp/variable/math.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/trigonometry.h"

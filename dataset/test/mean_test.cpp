@@ -6,9 +6,8 @@
 #include "test_macros.h"
 
 #include "scipp/core/except.h"
-#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/reduction.h"
 #include "scipp/variable/reduction.h"
-#include "scipp/variable/variable.h"
 
 using namespace scipp;
 using namespace scipp::dataset;

@@ -5,6 +5,7 @@
 
 #include "dataset_test_common.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/reduction.h"
 #include "test_macros.h"
 
 using namespace scipp;
@@ -114,31 +115,4 @@ TEST(DatasetOperationsTest, mean_three_dims) {
   ASSERT_EQ(result["data_xy"].data(),
             makeVariable<double>(Dims{Dim::Z, Dim::Y}, Shape{2, 2},
                                  Values{6, 8, 6, 8}));
-}
-
-TEST(DatasetOperationsTest, rebin) {
-  Dataset ds;
-  ds.setCoord(Dim::X, makeVariable<double>(Dimensions{Dim::X, 6},
-                                           Values{1, 2, 3, 4, 5, 6}));
-  ds.setData("data_x", makeVariable<double>(Dimensions{Dim::X, 5},
-                                            Values{1, 2, 3, 4, 5}));
-
-  ds.setMask("mask_x",
-             makeVariable<bool>(Dimensions{Dim::X, 5},
-                                Values{false, false, true, false, false}));
-  ds.setMask("mask_y",
-             makeVariable<bool>(Dimensions{Dim::Y, 5},
-                                Values{false, false, true, false, false}));
-
-  const auto edges =
-      makeVariable<double>(Dimensions{Dim::X, 3}, Values{1, 3, 5});
-  const Dataset result = rebin(ds, Dim::X, edges);
-
-  ASSERT_EQ(result["data_x"].data(),
-            makeVariable<double>(Dimensions{Dim::X, 2}, Values{3, 7}));
-  ASSERT_EQ(result["data_x"].masks()["mask_x"],
-            makeVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true}));
-  // the Y masks should not have been touched
-  ASSERT_EQ(ds.masks().size(), 2);
-  ASSERT_EQ(ds.masks()["mask_y"].dims(), Dimensions(Dim::Y, 5));
 }

@@ -2,8 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
+#include "scipp/dataset/reduction.h"
 #include "scipp/dataset/unaligned.h"
 
 using namespace scipp;

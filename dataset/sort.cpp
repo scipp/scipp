@@ -6,6 +6,7 @@
 
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/except.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/dataset/sort.h"
 #include "scipp/variable/indexed_slice_view.h"
 

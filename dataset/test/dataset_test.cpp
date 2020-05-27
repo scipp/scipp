@@ -10,6 +10,7 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/reduction.h"
 #include "scipp/dataset/unaligned.h"
 #include "scipp/variable/operations.h"
 

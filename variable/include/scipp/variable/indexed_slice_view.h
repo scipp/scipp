@@ -10,7 +10,7 @@
 
 #include <scipp/units/unit.h>
 
-#include "scipp/variable/misc_operations.h"
+#include "scipp/variable/shape.h"
 
 namespace scipp::variable {
 

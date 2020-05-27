@@ -425,8 +425,4 @@ DataArray astype(const DataArrayConstView &var, const DType type) {
                    var.attrs());
 }
 
-DataArray reciprocal(const DataArrayConstView &a) {
-  return DataArray(reciprocal(a.data()), a.coords(), a.masks(), a.attrs());
-}
-
 } // namespace scipp::dataset

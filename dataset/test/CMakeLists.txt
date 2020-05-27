@@ -22,6 +22,7 @@ add_executable(
   except_test.cpp
   groupby_test.cpp
   histogram_test.cpp
+  math_test.cpp
   masks_view_test.cpp
   mean_test.cpp
   merge_test.cpp

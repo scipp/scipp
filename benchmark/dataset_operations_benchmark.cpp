@@ -8,6 +8,7 @@
 #include "common.h"
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/reduction.h"
 
 using namespace scipp;
 using namespace scipp::core;

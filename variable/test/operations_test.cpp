@@ -6,7 +6,7 @@
 #include "fix_typed_test_suite_warnings.h"
 #include "test_macros.h"
 
-#include "scipp/core/element/unary_operations.h"
+#include "scipp/core/element/math.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/variable.h"
@@ -487,22 +487,6 @@ TEST(EventsVariable, concatenate) {
   EXPECT_EQ(var, makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{5},
                                                   Values{}, Variances{}));
 }
-
-#ifdef SCIPP_UNITS_NEUTRON
-TEST(Variable, rebin) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
-  var.setUnit(units::counts);
-  const auto oldEdge =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, 2.0, 3.0});
-  const auto newEdge =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 3.0});
-  auto rebinned = rebin(var, Dim::X, oldEdge, newEdge);
-  ASSERT_EQ(rebinned.dims().shape().size(), 1);
-  ASSERT_EQ(rebinned.dims().volume(), 1);
-  ASSERT_EQ(rebinned.values<double>().size(), 1);
-  EXPECT_EQ(rebinned.values<double>()[0], 3.0);
-}
-#endif
 
 TEST(Variable, sum) {
   const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
