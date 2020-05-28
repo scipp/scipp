@@ -12,11 +12,7 @@
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
 
-namespace scipp::core {
-
-/// Operators to be used with transform and transform_in_place to implement
-/// operations for Variable.
-namespace element {
+namespace scipp::core::element {
 
 constexpr auto abs = [](const auto x) noexcept {
   using std::abs;
@@ -67,6 +63,4 @@ constexpr auto reciprocal_out_arg = overloaded{
     },
     [](units::Unit &x, const units::Unit &y) { x = units::one / y; }};
 
-} // namespace element
-
-} // namespace scipp::core
+} // namespace scipp::core::element
