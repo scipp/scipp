@@ -43,6 +43,11 @@ template <class T>
 MismatchError(const core::Dimensions &, const T &)
     -> MismatchError<core::Dimensions>;
 
+using TypeMismatchError = MismatchError<core::DType>;
+
+template <class T>
+MismatchError(const core::DType &, const T &) -> MismatchError<core::DType>;
+
 struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
   DimensionError(const std::string &msg);
   DimensionError(scipp::index expectedDim, scipp::index userDim);

@@ -191,10 +191,7 @@ DataArray histogram(const DataArrayConstView &realigned) {
 }
 
 Dataset histogram(const DatasetConstView &realigned) {
-  Dataset out;
-  for (const auto &item : realigned)
-    out.setData(item.name(), histogram(item));
-  return out;
+  return apply_to_items(realigned, [](auto &item) { return histogram(item); });
 }
 
 } // namespace scipp::dataset
