@@ -120,14 +120,22 @@ DataArray apply_to_items(const DataArrayConstView &d, Func func,
   return func(d, std::forward<Args>(args)...);
 }
 
+template <class... Args>
+bool copy_attr(const VariableConstView &attr, const Dim dim, const Args &...) {
+  return !attr.dims().contains(dim);
+}
+template <class... Args>
+bool copy_attr(const VariableConstView &, const Args &...) {
+  return true;
+}
+
 template <class Func, class... Args>
-Dataset apply_to_items(const DatasetConstView &d, Func func, const Dim dim,
-                       Args &&... args) {
+Dataset apply_to_items(const DatasetConstView &d, Func func, Args &&... args) {
   Dataset result;
   for (const auto &data : d)
-    result.setData(data.name(), func(data, dim, std::forward<Args>(args)...));
+    result.setData(data.name(), func(data, std::forward<Args>(args)...));
   for (auto &&[name, attr] : d.attrs())
-    if (!attr.dims().contains(dim))
+    if (copy_attr(attr, args...))
       result.setAttr(name, attr);
   return result;
 }

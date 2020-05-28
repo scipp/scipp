@@ -107,7 +107,8 @@ DataArray filter(const DataArrayConstView &array, const Dim dim,
                                                  : copy(array.data()),
                    std::move(coords), array.masks(),
                    attrPolicy == AttrPolicy::Keep ? array.attrs()
-                                                  : empty.attrs()};
+                                                  : empty.attrs(),
+                   array.name()};
 }
 
 Variable map(const DataArrayConstView &function, const VariableConstView &x,
