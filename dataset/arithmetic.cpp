@@ -174,99 +174,99 @@ auto apply_with_broadcast(const Op &op, const VariableConstView &a,
 }
 
 Dataset &Dataset::operator+=(const DataArrayConstView &other) {
-  return apply_with_delay(core::element::plus_equals{}, *this, other);
+  return apply_with_delay(core::element::plus_equals, *this, other);
 }
 
 Dataset &Dataset::operator-=(const DataArrayConstView &other) {
-  return apply_with_delay(core::element::minus_equals{}, *this, other);
+  return apply_with_delay(core::element::minus_equals, *this, other);
 }
 
 Dataset &Dataset::operator*=(const DataArrayConstView &other) {
-  return apply_with_delay(core::element::times_equals{}, *this, other);
+  return apply_with_delay(core::element::times_equals, *this, other);
 }
 
 Dataset &Dataset::operator/=(const DataArrayConstView &other) {
-  return apply_with_delay(core::element::divide_equals{}, *this, other);
+  return apply_with_delay(core::element::divide_equals, *this, other);
 }
 
 Dataset &Dataset::operator+=(const VariableConstView &other) {
-  return apply_with_delay(core::element::plus_equals{}, *this, other);
+  return apply_with_delay(core::element::plus_equals, *this, other);
 }
 
 Dataset &Dataset::operator-=(const VariableConstView &other) {
-  return apply_with_delay(core::element::minus_equals{}, *this, other);
+  return apply_with_delay(core::element::minus_equals, *this, other);
 }
 
 Dataset &Dataset::operator*=(const VariableConstView &other) {
-  return apply_with_delay(core::element::times_equals{}, *this, other);
+  return apply_with_delay(core::element::times_equals, *this, other);
 }
 
 Dataset &Dataset::operator/=(const VariableConstView &other) {
-  return apply_with_delay(core::element::divide_equals{}, *this, other);
+  return apply_with_delay(core::element::divide_equals, *this, other);
 }
 
 Dataset &Dataset::operator+=(const DatasetConstView &other) {
-  return apply(core::element::plus_equals{}, *this, other);
+  return apply(core::element::plus_equals, *this, other);
 }
 
 Dataset &Dataset::operator-=(const DatasetConstView &other) {
-  return apply(core::element::minus_equals{}, *this, other);
+  return apply(core::element::minus_equals, *this, other);
 }
 
 Dataset &Dataset::operator*=(const DatasetConstView &other) {
-  return apply(core::element::times_equals{}, *this, other);
+  return apply(core::element::times_equals, *this, other);
 }
 
 Dataset &Dataset::operator/=(const DatasetConstView &other) {
-  return apply(core::element::divide_equals{}, *this, other);
+  return apply(core::element::divide_equals, *this, other);
 }
 
 DatasetView DatasetView::operator+=(const DataArrayConstView &other) const {
-  return apply_with_delay(core::element::plus_equals{}, *this, other);
+  return apply_with_delay(core::element::plus_equals, *this, other);
 }
 
 DatasetView DatasetView::operator-=(const DataArrayConstView &other) const {
-  return apply_with_delay(core::element::minus_equals{}, *this, other);
+  return apply_with_delay(core::element::minus_equals, *this, other);
 }
 
 DatasetView DatasetView::operator*=(const DataArrayConstView &other) const {
-  return apply_with_delay(core::element::times_equals{}, *this, other);
+  return apply_with_delay(core::element::times_equals, *this, other);
 }
 
 DatasetView DatasetView::operator/=(const DataArrayConstView &other) const {
-  return apply_with_delay(core::element::divide_equals{}, *this, other);
+  return apply_with_delay(core::element::divide_equals, *this, other);
 }
 
 DatasetView DatasetView::operator+=(const VariableConstView &other) const {
-  return apply_with_delay(core::element::plus_equals{}, *this, other);
+  return apply_with_delay(core::element::plus_equals, *this, other);
 }
 
 DatasetView DatasetView::operator-=(const VariableConstView &other) const {
-  return apply_with_delay(core::element::minus_equals{}, *this, other);
+  return apply_with_delay(core::element::minus_equals, *this, other);
 }
 
 DatasetView DatasetView::operator*=(const VariableConstView &other) const {
-  return apply_with_delay(core::element::times_equals{}, *this, other);
+  return apply_with_delay(core::element::times_equals, *this, other);
 }
 
 DatasetView DatasetView::operator/=(const VariableConstView &other) const {
-  return apply_with_delay(core::element::divide_equals{}, *this, other);
+  return apply_with_delay(core::element::divide_equals, *this, other);
 }
 
 DatasetView DatasetView::operator+=(const DatasetConstView &other) const {
-  return apply(core::element::plus_equals{}, *this, other);
+  return apply(core::element::plus_equals, *this, other);
 }
 
 DatasetView DatasetView::operator-=(const DatasetConstView &other) const {
-  return apply(core::element::minus_equals{}, *this, other);
+  return apply(core::element::minus_equals, *this, other);
 }
 
 DatasetView DatasetView::operator*=(const DatasetConstView &other) const {
-  return apply(core::element::times_equals{}, *this, other);
+  return apply(core::element::times_equals, *this, other);
 }
 
 DatasetView DatasetView::operator/=(const DatasetConstView &other) const {
-  return apply(core::element::divide_equals{}, *this, other);
+  return apply(core::element::divide_equals, *this, other);
 }
 
 Dataset operator+(const DatasetConstView &lhs, const DatasetConstView &rhs) {

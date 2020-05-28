@@ -461,6 +461,11 @@ struct augment {
     return insert_events(tuple);
   }
 
+  template <class... T>
+  static auto insert_events_in_place(const std::tuple<std::tuple<T>...> &) {
+    return std::tuple_cat(std::tuple<std::tuple<T>...>{},
+                          optional_events_t<event_list<T>>{}...);
+  }
   template <class... First, class... Second>
   static auto
   insert_events_in_place(const std::tuple<std::tuple<First, Second>...> &) {
@@ -468,6 +473,11 @@ struct augment {
         std::tuple<std::tuple<First, Second>...>{},
         optional_events_pair_t<event_list<First>, Second>{}...,
         optional_events_pair_t<event_list<First>, event_list<Second>>{}...);
+  }
+  template <class... T>
+  static auto insert_events(const std::tuple<std::tuple<T>...> &) {
+    return std::tuple_cat(std::tuple<std::tuple<T>...>{},
+                          optional_events_t<event_list<T>>{}...);
   }
   template <class... First, class... Second>
   static auto insert_events(const std::tuple<std::tuple<First, Second>...> &) {
@@ -756,7 +766,10 @@ template <bool dry_run> struct in_place {
       } else {
         // Note that if only one of the inputs is events it must be the one
         // being transformed in-place, so there are only three cases here.
-        variable::visit(augment::insert_events_in_place(std::tuple<Ts...>{}))
+        variable::visit(
+            augment::insert_events_in_place(
+                std::tuple<
+                    visit_detail::maybe_duplicate<Ts, Var, Other...>...>{}))
             .apply(makeTransformInPlace(
                        overloaded_events{op, TransformEventsInPlace{}}),
                    var.data(), other.data()...);
@@ -860,9 +873,12 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
     if constexpr ((is_any_events<Ts>::value || ...) || sizeof...(Vars) > 2) {
       out = visit_impl<Ts...>::apply(Transform{op}, vars.data()...);
     } else {
-      out = variable::visit(augment::insert_events(std::tuple<Ts...>{}))
-                .apply(Transform{overloaded_events{op, TransformEvents{}}},
-                       vars.data()...);
+      out =
+          variable::visit(
+              augment::insert_events(
+                  std::tuple<visit_detail::maybe_duplicate<Ts, Vars...>...>{}))
+              .apply(Transform{overloaded_events{op, TransformEvents{}}},
+                     vars.data()...);
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes ", vars...);
