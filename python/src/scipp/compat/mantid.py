@@ -350,8 +350,10 @@ def get_detector_properties(ws,
                             dtype=sc.dtype.vector_3_float64))
 
 
-def _get_dtype_from_values(values):
-    if hasattr(values, 'dtype'):
+def _get_dtype_from_values(values, coerce_floats_to_ints):
+    if coerce_floats_to_ints and np.all(np.mod(values, 1.0) == 0.0):
+        dtype = sc.dtype.int32
+    elif hasattr(values, 'dtype'):
         dtype = values.dtype
     else:
         if len(values) > 0:
@@ -375,7 +377,7 @@ def init_spec_axis(ws):
     axis = ws.getAxis(1)
     dim, unit = validate_and_get_unit(axis.getUnit().unitID())
     values = axis.extractValues()
-    dtype = _get_dtype_from_values(values)
+    dtype = _get_dtype_from_values(values, dim == 'spectrum')
     return dim, sc.Variable([dim], values=values, unit=unit, dtype=dtype)
 
 
