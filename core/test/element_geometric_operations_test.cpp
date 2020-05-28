@@ -32,20 +32,14 @@ TEST(ElementPositionTest, zip_position_values) {
   EXPECT_EQ((Eigen::Vector3d(1, 2, 3)), geometry::position(1.0, 2.0, 3.0));
 }
 
-template <typename T> class ElementPositionNTest : public ::testing::Test {};
-
-template <int I> using component = geometry::detail::component<I>;
-
-using types = ::testing::Types<component<0>, component<1>, component<2>>;
-TYPED_TEST_SUITE(ElementPositionNTest, types);
-
-TYPED_TEST(ElementPositionNTest, unzip_position) {
-  using T = TypeParam;
-  constexpr auto component = T::overloads;
+TEST(ElementPositionNTest, unzip_position) {
   Eigen::Vector3d a{1.0, 2.0, 3.0};
-  units::Unit m(units::m);
-  EXPECT_EQ(component(a), a[T::value]);
-  EXPECT_EQ(geometry::detail::component<T::value>::overloads(m), m);
+  EXPECT_EQ(geometry::x(a), a[0]);
+  EXPECT_EQ(geometry::y(a), a[1]);
+  EXPECT_EQ(geometry::z(a), a[2]);
+  EXPECT_EQ(geometry::x(units::m), units::m);
+  EXPECT_EQ(geometry::y(units::m), units::m);
+  EXPECT_EQ(geometry::z(units::m), units::m);
 }
 
 TEST(ElementRotationTest, rotate_vector) {

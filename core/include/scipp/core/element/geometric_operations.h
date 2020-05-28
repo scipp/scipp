@@ -8,14 +8,9 @@
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
 
-namespace scipp::core {
-
 /// Operators to be used with transform and transform_in_place to implement
 /// geometric operations for Variable.
-
-namespace element {
-
-namespace geometry {
+namespace scipp::core::element::geometry {
 
 constexpr auto position = overloaded{
     arg_list<double>,
@@ -33,16 +28,15 @@ constexpr auto position = overloaded{
     }};
 
 namespace detail {
-template <int N> struct component {
-  static constexpr auto overloads = overloaded{
-      arg_list<Eigen::Vector3d>, [](const auto &pos) { return pos[N]; },
-      [](const units::Unit &u) { return u; }};
-  enum { value = N };
-};
+template <int N>
+static constexpr auto component =
+    overloaded{arg_list<Eigen::Vector3d>,
+               [](const auto &pos) { return pos[N]; },
+               [](const units::Unit &u) { return u; }};
 } // namespace detail
-constexpr auto x = detail::component<0>::overloads;
-constexpr auto y = detail::component<1>::overloads;
-constexpr auto z = detail::component<2>::overloads;
+constexpr auto x = detail::component<0>;
+constexpr auto y = detail::component<1>;
+constexpr auto z = detail::component<2>;
 
 constexpr auto rotate = overloaded{
     arg_list<std::tuple<Eigen::Vector3d, Eigen::Quaterniond>>,
@@ -62,8 +56,4 @@ constexpr auto rotate_out_arg = overloaded{
       u_out = u_pos;
     }};
 
-} // namespace geometry
-
-} // namespace element
-
-} // namespace scipp::core
+} // namespace scipp::core::element::geometry
