@@ -352,7 +352,7 @@ def get_detector_properties(ws,
 
 def _get_dtype_from_values(values, coerce_floats_to_ints):
     if coerce_floats_to_ints and np.all(np.mod(values, 1.0) == 0.0):
-        dtype = sc.dtype.int64
+        dtype = sc.dtype.int32
     elif hasattr(values, 'dtype'):
         dtype = values.dtype
     else:
