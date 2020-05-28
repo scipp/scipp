@@ -69,7 +69,7 @@ void sum_impl(const VariableView &summed, const VariableConstView &var) {
                             "`flatten` for event data.");
   accumulate_in_place<
       pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>,
-      pair_custom_t<std::pair<int64_t, bool>>>(
+      pair_custom_t<std::tuple<int64_t, bool>>>(
       summed, var, [](auto &&a, auto &&b) { a += b; });
 }
 

@@ -13,11 +13,11 @@
 namespace scipp::core {
 
 template <class... Ts> struct pair_self {
-  using type = std::tuple<std::pair<Ts, Ts>...>;
+  using type = std::tuple<std::tuple<Ts, Ts>...>;
 };
 template <class... Ts> struct pair_custom { using type = std::tuple<Ts...>; };
 template <class... Ts> struct pair_ {
-  template <class RHS> using type = std::tuple<std::pair<Ts, RHS>...>;
+  template <class RHS> using type = std::tuple<std::tuple<Ts, RHS>...>;
 };
 
 template <class... Ts> using pair_self_t = typename pair_self<Ts...>::type;
@@ -27,7 +27,7 @@ using pair_numerical_with_t =
     typename pair_<double, float, int64_t, int32_t>::type<RHS>;
 
 template <class... Ts> struct pair_product {
-  template <class T> using type = std::tuple<std::pair<T, Ts>...>;
+  template <class T> using type = std::tuple<std::tuple<T, Ts>...>;
 };
 
 template <class... Ts>
@@ -42,7 +42,7 @@ using arithmetic_type_pairs_with_bool =
 
 using arithmetic_and_matrix_type_pairs = decltype(
     std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                   std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>>()));
+                   std::tuple<std::tuple<Eigen::Vector3d, Eigen::Vector3d>>()));
 
 static constexpr auto dimensionless_unit_check =
     [](units::Unit &varUnit, const units::Unit &otherUnit) {

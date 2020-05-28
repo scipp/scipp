@@ -436,18 +436,18 @@ struct optional_events_pair<T1, T2, std::tuple<Known...>> {
   using type =
       std::conditional_t<std::disjunction_v<std::is_same<T1, Known>...> &&
                              std::disjunction_v<std::is_same<T2, Known>...>,
-                         std::tuple<std::pair<T1, T2>>, std::tuple<>>;
+                         std::tuple<std::tuple<T1, T2>>, std::tuple<>>;
 };
-using supported_event_tupes =
+using supported_event_types =
     std::tuple<double, float, int64_t, int32_t, bool, event_list<double>,
                event_list<float>, event_list<int64_t>, event_list<int32_t>,
                event_list<bool>>;
 template <class T>
 using optional_events_t =
-    typename optional_events<T, supported_event_tupes>::type;
+    typename optional_events<T, supported_event_types>::type;
 template <class T1, class T2>
 using optional_events_pair_t =
-    typename optional_events_pair<T1, T2, supported_event_tupes>::type;
+    typename optional_events_pair<T1, T2, supported_event_types>::type;
 
 /// Augment a tuple of types with the corresponding events types, if they exist.
 struct augment {
@@ -463,16 +463,16 @@ struct augment {
 
   template <class... First, class... Second>
   static auto
-  insert_events_in_place(const std::tuple<std::pair<First, Second>...> &) {
+  insert_events_in_place(const std::tuple<std::tuple<First, Second>...> &) {
     return std::tuple_cat(
-        std::tuple<std::pair<First, Second>...>{},
+        std::tuple<std::tuple<First, Second>...>{},
         optional_events_pair_t<event_list<First>, Second>{}...,
         optional_events_pair_t<event_list<First>, event_list<Second>>{}...);
   }
   template <class... First, class... Second>
-  static auto insert_events(const std::tuple<std::pair<First, Second>...> &) {
+  static auto insert_events(const std::tuple<std::tuple<First, Second>...> &) {
     return std::tuple_cat(
-        std::tuple<std::pair<First, Second>...>{},
+        std::tuple<std::tuple<First, Second>...>{},
         optional_events_pair_t<First, event_list<Second>>{}...,
         optional_events_pair_t<event_list<First>, Second>{}...,
         optional_events_pair_t<event_list<First>, event_list<Second>>{}...);
@@ -501,10 +501,6 @@ template <class... Ts> overloaded_events(Ts...) -> overloaded_events<Ts...>;
 template <class T>
 struct is_any_events : std::conditional_t<core::is_events<T>::value,
                                           std::true_type, std::false_type> {};
-template <class... Ts>
-struct is_any_events<std::pair<Ts...>>
-    : std::conditional_t<(core::is_events<Ts>::value || ...), std::true_type,
-                         std::false_type> {};
 template <class... Ts>
 struct is_any_events<std::tuple<Ts...>>
     : std::conditional_t<(core::is_events<Ts>::value || ...), std::true_type,

@@ -27,7 +27,7 @@ TEST(TransformEventsAndDenseTest, two_args) {
   auto dense_view = subspan_view(dense, Dim::X);
 
   const auto result =
-      transform<pair_custom_t<std::pair<event_list<double>, span<double>>>>(
+      transform<pair_custom_t<std::tuple<event_list<double>, span<double>>>>(
           var, dense_view,
           overloaded{
               [](const auto &a, const auto &b) {
