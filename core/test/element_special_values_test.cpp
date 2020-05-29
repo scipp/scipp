@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/core/element/unary_operations.h"
+#include "scipp/core/element/special_values.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/unit.h"
 
