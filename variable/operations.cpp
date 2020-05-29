@@ -3,7 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element/geometric_operations.h"
-#include "scipp/core/element/unary_operations.h"
+#include "scipp/core/element/special_values.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/transform.h"
 
