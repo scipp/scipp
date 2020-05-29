@@ -55,6 +55,7 @@ Documentation
    user-guide/unaligned-data
    user-guide/groupby
    user-guide/how_to
+   user-guide/tips-tricks-and-anti-patterns
 
 .. toctree::
    :caption: Event data
