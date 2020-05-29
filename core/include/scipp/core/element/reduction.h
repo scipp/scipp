@@ -5,7 +5,10 @@
 #pragma once
 
 #include "scipp/common/overloaded.h"
+#include "scipp/core/dtype.h"
 #include "scipp/core/element/arg_list.h"
+#include "scipp/core/except.h"
+#include "scipp/units/unit.h"
 
 namespace scipp::core::element {
 

@@ -14,6 +14,7 @@ add_executable(
   element_histogram_test.cpp
   element_logical_test.cpp
   element_math_test.cpp
+  element_reduction_test.cpp
   element_trigonometry_test.cpp
   element_unary_operations_test.cpp
   element_util_test.cpp
