@@ -252,6 +252,10 @@ public:
 
   template <class VarOrView>
   void set(const typename Base::key_type key, VarOrView var) const {
+    if (Base::contains(key) &&
+        &Base::m_items.at(key).underlying() == &var.underlying()) {
+      return;
+    }
     m_access.set(key, typename Base::mapped_type(std::move(var)));
   }
 
