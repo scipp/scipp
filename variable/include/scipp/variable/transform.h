@@ -420,15 +420,14 @@ struct optional_events<T, std::tuple<Known...>> {
                                   std::tuple<T>, std::tuple<>>;
 };
 
-/*
- * std::tuple_cat does not work correctly on with clang-7.
- * Issue with Eigen::Vector3d
- */
+// std::tuple_cat does not work correctly on with clang-7. Issue with
+// Eigen::Vector3d.
 template <typename T, typename...> struct tuple_cat { using type = T; };
 template <template <typename...> class C, typename... Ts1, typename... Ts2,
           typename... Ts3>
 struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
     : public tuple_cat<C<Ts1..., Ts2...>, Ts3...> {};
+template <class... Ts> using tuple_cat_t = typename tuple_cat<Ts...>::type;
 
 template <class T1, class T2, class Handle> struct optional_events_pair;
 template <class T1, class T2, class... Known>
@@ -452,8 +451,8 @@ using optional_events_pair_t =
 /// Augment a tuple of types with the corresponding events types, if they exist.
 struct augment {
   template <class... Ts> static auto insert_events(const std::tuple<Ts...> &) {
-    return typename tuple_cat<std::tuple<Ts...>,
-                              optional_events_t<event_list<Ts>>...>::type{};
+    return tuple_cat_t<std::tuple<Ts...>,
+                       optional_events_t<event_list<Ts>>...>{};
   }
 
   template <class... Ts>
@@ -463,29 +462,29 @@ struct augment {
 
   template <class... T>
   static auto insert_events_in_place(const std::tuple<std::tuple<T>...> &) {
-    return std::tuple_cat(std::tuple<std::tuple<T>...>{},
-                          optional_events_t<event_list<T>>{}...);
+    return tuple_cat_t<std::tuple<std::tuple<T>...>,
+                       optional_events_t<event_list<T>>...>{};
   }
   template <class... First, class... Second>
   static auto
   insert_events_in_place(const std::tuple<std::tuple<First, Second>...> &) {
-    return std::tuple_cat(
-        std::tuple<std::tuple<First, Second>...>{},
-        optional_events_pair_t<event_list<First>, Second>{}...,
-        optional_events_pair_t<event_list<First>, event_list<Second>>{}...);
+    return tuple_cat_t<
+        std::tuple<std::tuple<First, Second>...>,
+        optional_events_pair_t<event_list<First>, Second>...,
+        optional_events_pair_t<event_list<First>, event_list<Second>>...>{};
   }
   template <class... T>
   static auto insert_events(const std::tuple<std::tuple<T>...> &) {
-    return std::tuple_cat(std::tuple<std::tuple<T>...>{},
-                          optional_events_t<event_list<T>>{}...);
+    return tuple_cat_t<std::tuple<std::tuple<T>...>,
+                       optional_events_t<event_list<T>>...>{};
   }
   template <class... First, class... Second>
   static auto insert_events(const std::tuple<std::tuple<First, Second>...> &) {
-    return std::tuple_cat(
-        std::tuple<std::tuple<First, Second>...>{},
-        optional_events_pair_t<First, event_list<Second>>{}...,
-        optional_events_pair_t<event_list<First>, Second>{}...,
-        optional_events_pair_t<event_list<First>, event_list<Second>>{}...);
+    return tuple_cat_t<
+        std::tuple<std::tuple<First, Second>...>,
+        optional_events_pair_t<First, event_list<Second>>...,
+        optional_events_pair_t<event_list<First>, Second>...,
+        optional_events_pair_t<event_list<First>, event_list<Second>>...>{};
   }
 };
 
