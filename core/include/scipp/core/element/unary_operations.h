@@ -12,15 +12,15 @@
 
 namespace scipp::core::element {
 
-constexpr auto replace_special =
-    overloaded{transform_flags::expect_all_or_none_have_variance,
-               [](const units::Unit &x, const units::Unit &repl) {
-                 expect::equals(x, repl);
-                 return x;
-               }};
+constexpr auto replace_special = overloaded{
+    arg_list<double, float>, transform_flags::expect_all_or_none_have_variance,
+    [](const units::Unit &x, const units::Unit &repl) {
+      expect::equals(x, repl);
+      return x;
+    }};
 
 constexpr auto replace_special_out_arg = overloaded{
-    transform_flags::expect_all_or_none_have_variance,
+    arg_list<double, float>, transform_flags::expect_all_or_none_have_variance,
     [](units::Unit &a, const units::Unit &b, const units::Unit &repl) {
       expect::equals(b, repl);
       a = b;
