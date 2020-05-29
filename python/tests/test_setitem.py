@@ -26,3 +26,11 @@ def test_setitem_required_for_inplace_ops():
     d['x', 1:]['a'] *= 1.5  # DatasetView.__setitem__(string)
     d['a']['x', 1:] *= 1.5  # DatasetView.__setitem__(slice)
     d['x', 1:]['y', 1:] *= 1.5  # DatasetView.__setitem__(slice)
+
+
+def test_setitem_coords_required_for_inplace_ops():
+    var = sc.Variable(['x'], shape=(4, ))
+    d = sc.Dataset()
+    d.coords['x'] = var
+    d['x', :].coords['x'] += 1.0
+    assert d['x', :].coords['x'] == var + 1.0
