@@ -13,7 +13,8 @@ namespace scipp::core::element {
 
 constexpr auto add_types =
     arg_list<double, float, int64_t, int32_t, Eigen::Vector3d,
-             std::tuple<double, float>, std::tuple<int64_t, int32_t>>;
+             std::tuple<double, float>, std::tuple<int64_t, int32_t>,
+             std::tuple<int64_t, bool>>;
 
 constexpr auto plus_equals =
     overloaded{add_types, [](auto &&a, const auto &b) { a += b; }};
