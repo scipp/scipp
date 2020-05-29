@@ -2,10 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <cmath>
-
-#include "scipp/core/except.h"
-
 #include "scipp/core/element/logical.h"
 #include "scipp/variable/logical.h"
 #include "scipp/variable/transform.h"
