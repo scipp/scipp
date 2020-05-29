@@ -160,19 +160,19 @@ Variable reduce_idempotent(const VariableConstView &var, const Dim dim, Op op) {
 }
 
 void any_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl(out, var, core::element::or_equals);
+  reduce_impl(out, var, core::element::logical_or_equals);
 }
 
 Variable any(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::or_equals);
+  return reduce_idempotent(var, dim, core::element::logical_or_equals);
 }
 
 void all_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl(out, var, core::element::and_equals);
+  reduce_impl(out, var, core::element::logical_and_equals);
 }
 
 Variable all(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::and_equals);
+  return reduce_idempotent(var, dim, core::element::logical_and_equals);
 }
 
 void max_impl(const VariableView &out, const VariableConstView &var) {

@@ -6,6 +6,7 @@
 
 #include <tuple>
 
+#include "scipp/common/overloaded.h"
 #include "scipp/core/except.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/core/values_and_variances.h"
@@ -51,11 +52,15 @@ static constexpr auto dimensionless_unit_check =
     };
 
 static constexpr auto dimensionless_unit_check_return =
-    [](const units::Unit &aUnit, const units::Unit &bUnit) {
-      expect::equals(aUnit, units::dimensionless);
-      expect::equals(bUnit, units::dimensionless);
-      return aUnit;
-    };
+    overloaded{[](const units::Unit &a) {
+                 expect::equals(a, units::one);
+                 return units::one;
+               },
+               [](const units::Unit &a, const units::Unit &b) {
+                 expect::equals(a, units::one);
+                 expect::equals(b, units::one);
+                 return units::one;
+               }};
 
 /// Flags for transform, added as overloads to the operator. These are never
 /// actually called since flag presence is checked via the base class of the
