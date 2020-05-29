@@ -34,3 +34,12 @@ TEST_F(ElementArithmeticTest, divide_equals) {
   divide_equals(val, b);
   EXPECT_EQ(val, a / b);
 }
+
+TEST_F(ElementArithmeticTest, non_in_place) {
+  EXPECT_EQ(plus(a, b), a + b);
+  EXPECT_EQ(minus(a, b), a - b);
+  EXPECT_EQ(times(a, b), a * b);
+  EXPECT_EQ(divide(a, b), a / b);
+}
+
+TEST_F(ElementArithmeticTest, unary_minus) { EXPECT_EQ(unary_minus(a), -a); }
