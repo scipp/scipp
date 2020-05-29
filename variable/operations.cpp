@@ -2,12 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <cmath>
-
-#include "scipp/core/dtype.h"
 #include "scipp/core/element/geometric_operations.h"
 #include "scipp/core/element/unary_operations.h"
-#include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/transform.h"
 
@@ -107,16 +103,16 @@ Variable neg_inf_to_num(const VariableConstView &var,
 namespace geometry {
 Variable position(const VariableConstView &x, const VariableConstView &y,
                   const VariableConstView &z) {
-  return transform<std::tuple<double>>(x, y, z, element::geometry::position);
+  return transform(x, y, z, element::geometry::position);
 }
 Variable x(const VariableConstView &pos) {
-  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::x);
+  return transform(pos, element::geometry::x);
 }
 Variable y(const VariableConstView &pos) {
-  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::y);
+  return transform(pos, element::geometry::y);
 }
 Variable z(const VariableConstView &pos) {
-  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::z);
+  return transform(pos, element::geometry::z);
 }
 Variable rotate(const VariableConstView &pos, const VariableConstView &rot) {
   return transform(pos, rot, element::geometry::rotate);
