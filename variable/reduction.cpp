@@ -7,6 +7,7 @@
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/core/element/comparison.h"
 #include "scipp/core/element/logical.h"
+#include "scipp/core/element/reduction.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/event.h"
 #include "scipp/variable/except.h"
@@ -17,10 +18,6 @@
 using namespace scipp::core;
 
 namespace scipp::variable {
-
-namespace flatten_detail {
-template <class T> using args = std::tuple<event_list<T>, event_list<T>, bool>;
-}
 
 void flatten_impl(const VariableView &summed, const VariableConstView &var,
                   const VariableConstView &mask) {
@@ -36,19 +33,7 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
   event::reserve(summed, summed_sizes);
 
   // 2. Flatten dimension(s) by concatenating along events dim.
-  using namespace flatten_detail;
-  accumulate_in_place<
-      std::tuple<args<double>, args<float>, args<int64_t>, args<int32_t>>>(
-      summed, var, mask,
-      overloaded{
-          [](auto &a, const auto &b, const auto &mask_) {
-            if (mask_)
-              a.insert(a.end(), b.begin(), b.end());
-          },
-          [](units::Unit &a, const units::Unit &b, const units::Unit &mask_) {
-            core::expect::equals(mask_, units::one);
-            core::expect::equals(a, b);
-          }});
+  accumulate_in_place(summed, var, mask, element::flatten);
 }
 
 /// Flatten dimension by concatenating along events dimension.
