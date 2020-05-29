@@ -10,32 +10,26 @@
 
 namespace scipp::core::element {
 
-constexpr auto logical_and_equals =
-    overloaded{arg_list<bool>, dimensionless_unit_check,
-               [](auto &&a, const auto &b) { a = a && b; }};
+constexpr auto logical =
+    overloaded{arg_list<bool>, dimensionless_unit_check_return};
 
-constexpr auto logical_or_equals =
-    overloaded{arg_list<bool>, dimensionless_unit_check,
-               [](auto &&a, const auto &b) { a = a || b; }};
-
-constexpr auto logical_xor_equals =
-    overloaded{arg_list<bool>, dimensionless_unit_check,
-               [](auto &&a, const auto &b) { a = a != b; }};
-
-constexpr auto logical_and = overloaded{
-    arg_list<bool>, dimensionless_unit_check_return,
-    [](const auto &var_, const auto &other_) { return var_ && other_; }};
-
-constexpr auto logical_or = overloaded{
-    arg_list<bool>, dimensionless_unit_check_return,
-    [](const auto &var_, const auto &other_) { return var_ || other_; }};
-
-constexpr auto logical_xor = overloaded{
-    arg_list<bool>, dimensionless_unit_check_return,
-    [](const auto &var_, const auto &other_) { return var_ != other_; }};
-
+constexpr auto logical_and =
+    overloaded{logical, [](const auto &a, const auto &b) { return a && b; }};
+constexpr auto logical_or =
+    overloaded{logical, [](const auto &a, const auto &b) { return a || b; }};
+constexpr auto logical_xor =
+    overloaded{logical, [](const auto &a, const auto &b) { return a != b; }};
 constexpr auto logical_not =
-    overloaded{arg_list<bool>, dimensionless_unit_check_return,
-               [](const auto &current) { return !current; }};
+    overloaded{logical, [](const auto &x) { return !x; }};
+
+constexpr auto logical_inplace =
+    overloaded{arg_list<bool>, dimensionless_unit_check};
+
+constexpr auto logical_and_equals =
+    overloaded{logical_inplace, [](auto &&a, const auto &b) { a = a && b; }};
+constexpr auto logical_or_equals =
+    overloaded{logical_inplace, [](auto &&a, const auto &b) { a = a || b; }};
+constexpr auto logical_xor_equals =
+    overloaded{logical_inplace, [](auto &&a, const auto &b) { a = a != b; }};
 
 } // namespace scipp::core::element

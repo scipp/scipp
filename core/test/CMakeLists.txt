@@ -12,6 +12,7 @@ add_executable(
   element_event_operations_test.cpp
   element_geometric_operations_test.cpp
   element_histogram_test.cpp
+  element_logical_test.cpp
   element_math_test.cpp
   element_trigonometry_test.cpp
   element_unary_operations_test.cpp
