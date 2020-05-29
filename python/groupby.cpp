@@ -117,14 +117,14 @@ void init_groupby(py::module &m) {
   bind_groupby<DataArray>(m, "GroupByDataArray");
   bind_groupby<Dataset>(m, "GroupByDataset");
 
-  m.def("choose", choose, py::arg("key"), py::arg("dim"), py::arg("choices"),
+  m.def("choose", choose, py::arg("key"), py::arg("choices"), py::arg("dim"),
         py::call_guard<py::gil_scoped_release>(),
         Docstring()
             .description(".")
             .returns(".")
             .rtype<DataArray>()
             .param("key", ".", "Variable")
-            .param("dim", ".", "Dim")
             .param("choices", ".", "DataArray")
+            .param("dim", ".", "Dim")
             .c_str());
 }

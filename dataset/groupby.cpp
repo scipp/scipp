@@ -432,8 +432,8 @@ constexpr auto slice_by_value = [](const auto &x, const Dim dim,
   throw std::runtime_error("Given key not found in coord.");
 };
 
-DataArray choose(const VariableConstView &key, const Dim dim,
-                 const DataArrayConstView &choices) {
+DataArray choose(const VariableConstView &key,
+                 const DataArrayConstView &choices, const Dim dim) {
   const auto grouping = call_groupby(key, key, dim);
   const Dim target_dim = key.dims().inner();
   auto out = resize(choices, dim, key.dims()[target_dim]);
