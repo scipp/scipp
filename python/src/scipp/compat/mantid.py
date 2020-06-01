@@ -504,7 +504,7 @@ def convert_Workspace2D_to_data_array(ws, advanced_geometry=False, **ignored):
     # with scipp.
     if len(spec_coord.values) == 1:
         if 'position' in array.coords:
-            array.coords['position'] = array.coords['position'][spec_dim, 0].copy()
+            array.coords['position'] = array.coords['position'][spec_dim, 0]
         array = array[spec_dim, 0].copy()
     return array
 
