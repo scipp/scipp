@@ -38,7 +38,9 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
   if (py::str(static_cast<py::handle>(type))
           .contains("<U")) // TODO is where normal way to do that ?
     return scipp::core::dtype<std::string>;
-  throw std::runtime_error("Unsupported numpy dtype.");
+  throw std::runtime_error("Unsupported numpy dtype.\n"
+                           "Supported types are: bool, float32, float64,"
+                           " int32, int64 and string");
 }
 
 scipp::core::DType scipp_dtype(const py::object &type) {
