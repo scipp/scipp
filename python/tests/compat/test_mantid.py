@@ -564,5 +564,55 @@ def test_to_workspace_2d(param_dim):
                                       np.sqrt(y['spectrum', i].variances))
 
 
+@pytest.mark.skipif(not mantid_is_available(),
+                    reason='Mantid framework is unavailable')
+def test_to_workspace_2d_handles_single_spectra():
+    from mantid.simpleapi import mtd
+    mtd.clear()
+
+    expected_x = [0., 1., 2.]
+    expected_y = [10., 20., 30.]
+    expected_e = [4., 4., 4.]
+
+    x = sc.Variable(['tof'], values=expected_x)
+    y = sc.Variable(['tof'], values=expected_y, variances=expected_e)
+
+    ws = sc.compat.mantid.to_workspace_2d(x.values, y.values, y.variances,
+                                          "tof")
+
+    assert ws.getNumberHistograms() == 1
+
+    assert np.equal(ws.readX(0), expected_x).all()
+    assert np.equal(ws.readY(0), expected_y).all()
+    assert np.equal(ws.readE(0), np.sqrt(expected_e)).all()
+
+
+@pytest.mark.skipif(not mantid_is_available(),
+                    reason='Mantid framework is unavailable')
+def test_to_workspace_2d_handles_single_x_array():
+    from mantid.simpleapi import mtd
+    mtd.clear()
+
+    expected_x = [0., 1., 2.]
+    expected_y = [[10., 20., 30.], [40., 50., 60.]]
+    expected_e = [[4., 4., 4.], [4., 4., 4.]]
+
+    x = sc.Variable(['tof'], values=expected_x)
+    y = sc.Variable(['spectrum', 'tof'],
+                    values=np.array(expected_y),
+                    variances=np.array(expected_e))
+
+    ws = sc.compat.mantid.to_workspace_2d(x.values, y.values, y.variances,
+                                          "tof")
+
+    assert ws.getNumberHistograms() == 2
+    assert np.equal(ws.readX(0), expected_x).all()
+    assert np.equal(ws.readX(1), expected_x).all()
+
+    for i, (y_vals, e_vals) in enumerate(zip(expected_y, expected_e)):
+        assert np.equal(ws.readY(i), y_vals).all()
+        assert np.equal(ws.readE(i), np.sqrt(e_vals)).all()
+
+
 if __name__ == "__main__":
     unittest.main()
