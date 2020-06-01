@@ -18,6 +18,7 @@ public:
 
   void set(const Dim &key, Variable var) const;
   void erase(const Dim &key) const;
+  bool writeable() const { return m_parent != nullptr; }
 
 private:
   Dataset *m_parent;
@@ -31,6 +32,7 @@ public:
 
   void set(const std::string &key, Variable var) const;
   void erase(const std::string &key) const;
+  bool writeable() const { return m_parent != nullptr; }
 
 private:
   Dataset *m_parent;
@@ -45,6 +47,7 @@ public:
 
   void set(const std::string &key, Variable var) const;
   void erase(const std::string &key) const;
+  bool writeable() const { return m_parent != nullptr; }
 
 private:
   Dataset *m_parent;
