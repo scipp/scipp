@@ -19,8 +19,6 @@ using DatasetViewTypes =
     ::testing::Types<Dataset &, const Dataset &, DatasetView, DatasetConstView>;
 TYPED_TEST_SUITE(DatasetViewTest, DatasetViewTypes);
 
-template <typename T> void info(T);
-
 TYPED_TEST(DatasetViewTest, empty) {
   Dataset d;
   auto &&view = TestFixture::access(d);
@@ -158,19 +156,4 @@ TYPED_TEST(DatasetViewTest, iterators) {
 
   ASSERT_NO_THROW(++it);
   ASSERT_EQ(it, view.end());
-}
-
-using MutableDatasetViewTypes = ::testing::Types<Dataset &, DatasetView>;
-
-template <typename T> using MutableDatasetViewTest = DatasetViewTest<T>;
-TYPED_TEST_SUITE(MutableDatasetViewTest, MutableDatasetViewTypes);
-
-TYPED_TEST(MutableDatasetViewTest, test_coords_assignment) {
-  Dataset ds;
-  ds.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{2}));
-  const auto orig(ds);
-  auto accessor = TestFixture::access(ds);
-  // self-assign, do nothing for both Dataset and DatasetView
-  accessor.coords().set(Dim::X, ds.coords()[Dim::X]);
-  EXPECT_EQ(ds, accessor);
 }

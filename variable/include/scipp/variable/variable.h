@@ -167,7 +167,6 @@ public:
   VariableConcept &data() & { return *m_object; }
 
   void setVariances(Variable v);
-  auto &underlying() const { return *this; }
 
 private:
   template <class... Ts, class... Args>
