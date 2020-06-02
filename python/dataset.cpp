@@ -58,7 +58,7 @@ void bind_mutable_view(py::module &m, const std::string &name) {
       .def("__setitem__",
            [](T &self, const typename T::key_type key,
               const VariableConstView &var) {
-             if (self.contains(key))
+             if (self.contains(key) && self[key].dims() == var.dims())
                self[key].assign(var);
              else
                self.set(key, var);
