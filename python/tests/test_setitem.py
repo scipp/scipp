@@ -29,8 +29,10 @@ def test_setitem_required_for_inplace_ops():
 
 
 def test_setitem_coords_required_for_inplace_ops():
+    import numpy as np
     var = sc.Variable(['x'], shape=(4, ))
     d = sc.Dataset()
     d.coords['x'] = var
-    d['x', :].coords['x'] += 1.0
-    assert d['x', :].coords['x'] == var + 1.0
+    d['x', 2:].coords['x'] += 1.0
+    # assignment 
+    assert d['x',:].coords['x'].values == np.arange([0, 0, 1, 1])

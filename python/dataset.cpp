@@ -12,6 +12,7 @@
 #include "scipp/dataset/rebin.h"
 #include "scipp/dataset/sort.h"
 #include "scipp/dataset/unaligned.h"
+#include <iostream>
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
@@ -58,7 +59,9 @@ void bind_mutable_view(py::module &m, const std::string &name) {
       .def("__setitem__",
            [](T &self, const typename T::key_type key,
               const VariableConstView &var) {
-             if (self.contains(key) && self[key].dims() == var.dims())
+             if (self.contains(key) &&
+                 self[key].dims().ndim() == var.dims().ndim() &&
+                 self[key].dims().contains(var.dims()))
                self[key].assign(var);
              else
                self.set(key, var);
