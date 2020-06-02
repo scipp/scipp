@@ -5,31 +5,38 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/shape.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
 
-TEST(ConcatenateTest, simple_1d) {
+class Concatenate1DTest : public ::testing::Test {
+protected:
+  Concatenate1DTest() {
+    a.setCoord(Dim::X,
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+    a.setData("data_1",
+              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
+    a.setCoord(Dim("label_1"),
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
+    a.setMask("mask_1", makeVariable<bool>(Dims{Dim::X}, Shape{3},
+                                           Values{false, true, false}));
+
+    b.setCoord(Dim::X,
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6}));
+    b.setData("data_1",
+              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{14, 15, 16}));
+    b.setCoord(Dim("label_1"),
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{24, 25, 26}));
+    b.setMask("mask_1", makeVariable<bool>(Dims{Dim::X}, Shape{3},
+                                           Values{false, true, false}));
+  }
+
   Dataset a;
-  a.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  a.setData("data_1",
-            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
-  a.setCoord(Dim("label_1"),
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
-  a.setMask("mask_1", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                         Values{false, true, false}));
-
   Dataset b;
-  b.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6}));
-  b.setData("data_1",
-            makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{14, 15, 16}));
-  b.setCoord(Dim("label_1"),
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{24, 25, 26}));
-  b.setMask("mask_1", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                         Values{false, true, false}));
+};
 
+TEST_F(Concatenate1DTest, simple_1d) {
   const auto d = concatenate(a, b, Dim::X);
 
   EXPECT_EQ(d.coords()[Dim::X], makeVariable<int>(Dims{Dim::X}, Shape{6},
@@ -43,6 +50,25 @@ TEST(ConcatenateTest, simple_1d) {
   EXPECT_EQ(d.masks()["mask_1"],
             makeVariable<bool>(Dims{Dim::X}, Shape{6},
                                Values{false, true, false, false, true, false}));
+}
+
+TEST_F(Concatenate1DTest, to_2d_with_0d_coord) {
+  a.setCoord(Dim("label_0d"), makeVariable<int>(Values{1}));
+  b.setCoord(Dim("label_0d"), makeVariable<int>(Values{2}));
+  const auto ab = concatenate(a, b, Dim::Y);
+  EXPECT_EQ(ab["data_1"].data(),
+            concatenate(a["data_1"].data(), b["data_1"].data(), Dim::Y));
+  const auto aba = concatenate(ab, a, Dim::Y);
+  EXPECT_EQ(
+      aba["data_1"].data(),
+      concatenate(concatenate(a["data_1"].data(), b["data_1"].data(), Dim::Y),
+                  a["data_1"].data(), Dim::Y));
+  const auto aab = concatenate(a, ab, Dim::Y);
+  EXPECT_EQ(
+      aab["data_1"].data(),
+      concatenate(a["data_1"].data(),
+                  concatenate(a["data_1"].data(), b["data_1"].data(), Dim::Y),
+                  Dim::Y));
 }
 
 TEST(ConcatenateTest, simple_1d_histogram) {
