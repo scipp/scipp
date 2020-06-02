@@ -34,5 +34,5 @@ def test_setitem_coords_required_for_inplace_ops():
     d = sc.Dataset()
     d.coords['x'] = var
     d['x', 2:].coords['x'] += 1.0
-    # assignment 
-    assert d['x',:].coords['x'].values == np.arange([0, 0, 1, 1])
+    # assignment
+    assert d['x', :].coords['x'].values == np.arange([0, 0, 1, 1])
