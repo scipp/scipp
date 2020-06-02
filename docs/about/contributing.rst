@@ -14,7 +14,7 @@ Asking and discussing first is generally always a good idea, since our road map 
 Scope
 -----
 
-While scipp is in practice developed neutron-data reduction, the scipp library itself must be kept generic.
+While scipp is in practice developed for neutron-data reduction, the scipp library itself must be kept generic.
 We therefore restrict what can go into scipp as follows:
 
 * ``scipp`` shall contain only generic functionality.
