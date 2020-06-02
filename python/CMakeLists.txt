@@ -39,6 +39,7 @@ add_sanitizers(_scipp)
 set(PY_FILES
     scipp/src/__init__.py
     scipp/src/extend_units.py
+    scipp/src/object_list.py
     scipp/src/show.py
     scipp/src/table.py
     scipp/src/compat/mantid.py
