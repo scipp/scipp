@@ -32,4 +32,5 @@ endif()
 add_subdirectory(
   ${CMAKE_BINARY_DIR}/googlebenchmark-src
   ${CMAKE_BINARY_DIR}/googlebenchmark-build
+  EXCLUDE_FROM_ALL
 )
