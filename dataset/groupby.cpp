@@ -432,6 +432,10 @@ constexpr auto slice_by_value = [](const auto &x, const Dim dim,
   throw std::runtime_error("Given key not found in coord.");
 };
 
+/// Similar to numpy.choose, but choose based on *values* in `key`.
+///
+/// Chooses slices of `choices` along `dim`, based on values of dimension-coord
+/// for `dim`.
 DataArray choose(const VariableConstView &key,
                  const DataArrayConstView &choices, const Dim dim) {
   const auto grouping = call_groupby(key, key, dim);
