@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/dataset/groupby.h"
+#include "scipp/dataset/choose.h"
 
 using namespace scipp;
 
@@ -19,5 +19,5 @@ TEST(ChooseTest, simple_1d) {
                                           Variances{5, 4, 4, 5, 5}),
                      {{Dim::X, key}});
 
-  EXPECT_EQ(choose(key, Dim::X, choices), expected);
+  EXPECT_EQ(choose(key, choices, Dim::X), expected);
 }

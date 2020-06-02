@@ -82,8 +82,4 @@ SCIPP_DATASET_EXPORT GroupBy<Dataset> groupby(const DatasetConstView &dataset,
                                               const VariableConstView &variable,
                                               const VariableConstView &bins);
 
-SCIPP_DATASET_EXPORT DataArray choose(const VariableConstView &key,
-                                      const DataArrayConstView &choices,
-                                      const Dim dim);
-
 } // namespace scipp::dataset

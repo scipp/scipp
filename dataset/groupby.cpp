@@ -11,6 +11,7 @@
 #include "scipp/variable/indexed_slice_view.h"
 #include "scipp/variable/operations.h"
 
+#include "scipp/dataset/choose.h"
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"

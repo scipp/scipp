@@ -4,6 +4,7 @@ pybind11_add_module(
   _scipp
   SHARED
   SYSTEM
+  choose.cpp
   comparison.cpp
   counts.cpp
   dataset.cpp
