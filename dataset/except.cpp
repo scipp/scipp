@@ -10,7 +10,8 @@ namespace scipp::dataset::expect {
 void coordsAreSuperset(const DataArrayConstView &a,
                        const DataArrayConstView &b) {
   for (const auto &[dim, coord] : b.coords())
-    if (a.coords()[dim] != coord)
+    if (a.dims().contains(dim) && b.dims().contains(dim) &&
+        a.coords()[dim] != coord)
       throw except::CoordMismatchError("Expected coords to match.");
 }
 

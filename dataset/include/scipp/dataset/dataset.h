@@ -95,6 +95,7 @@ public:
   const detail::slice_list &slices() const noexcept { return m_slices; }
 
   auto &underlying() const { return m_data->second; }
+  DataArrayConstView parent() const;
 
   std::vector<std::pair<Dim, Variable>> slice_bounds() const;
 

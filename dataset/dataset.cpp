@@ -521,6 +521,10 @@ void DataArrayView::setUnit(const units::Unit unit) const {
   throw except::UnalignedError("Realigned data, cannot set unit.");
 }
 
+DataArrayConstView DataArrayConstView::parent() const {
+  return m_dataset->operator[](name());
+}
+
 template <class MapView> MapView DataArrayConstView::makeView() const {
   auto map_parent = [](const DataArrayConstView &self) -> auto & {
     if constexpr (std::is_same_v<MapView, CoordsConstView>)
@@ -530,8 +534,12 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
     else
       return self.m_data->second.attrs; // item attrs, not dataset attrs
   };
-  auto items = makeViewItems<MapView>(dims(), map_parent(*this));
-  if (!m_data->second.data && hasData()) {
+  const bool is_view_of_unaligned = !m_data->second.data && hasData();
+  const auto dims = is_view_of_unaligned
+                        ? m_data->second.unaligned->data.data().dims()
+                        : parent().dims();
+  auto items = makeViewItems<MapView>(dims, map_parent(*this));
+  if (is_view_of_unaligned) {
     // This is a view of the unaligned content of a realigned data array.
     decltype(*this) unaligned = m_data->second.unaligned->data;
     auto unalignedItems =
@@ -550,8 +558,11 @@ template <class MapView> MapView DataArrayView::makeView() const {
     else
       return self.m_mutableData->second.attrs; // item attrs, not dataset attrs
   };
-  auto items = makeViewItems<MapView>(dims(), map_parent(*this));
   const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
+  const auto dims = is_view_of_unaligned
+                        ? m_mutableData->second.unaligned->data.data().dims()
+                        : parent().dims();
+  auto items = makeViewItems<MapView>(dims, map_parent(*this));
   DataArray *unaligned_ptr{nullptr};
   if (is_view_of_unaligned) {
     unaligned_ptr = &m_mutableData->second.unaligned->data;
@@ -713,9 +724,9 @@ DatasetView::DatasetView(Dataset &dataset)
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsConstView DatasetConstView::coords() const noexcept {
-  return CoordsConstView(
-      makeViewItems<CoordsConstView>(dimensions(), m_dataset->m_coords),
-      slices());
+  return CoordsConstView(makeViewItems<CoordsConstView>(dataset().dimensions(),
+                                                        m_dataset->m_coords),
+                         slices());
 }
 
 /// Return a view to all coordinates of the dataset slice.
@@ -723,39 +734,39 @@ CoordsConstView DatasetConstView::coords() const noexcept {
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsView DatasetView::coords() const noexcept {
-  return CoordsView(
-      CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
-      makeViewItems<CoordsConstView>(dimensions(), m_mutableDataset->m_coords),
-      slices());
+  return CoordsView(CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
+                    makeViewItems<CoordsConstView>(dataset().dimensions(),
+                                                   m_mutableDataset->m_coords),
+                    slices());
 }
 
 /// Return a const view to all attributes of the dataset slice.
 AttrsConstView DatasetConstView::attrs() const noexcept {
   return AttrsConstView(
-      makeViewItems<AttrsConstView>(dimensions(), m_dataset->m_attrs),
+      makeViewItems<AttrsConstView>(dataset().dimensions(), m_dataset->m_attrs),
       slices());
 }
 
 /// Return a view to all attributes of the dataset slice.
 AttrsView DatasetView::attrs() const noexcept {
-  return AttrsView(
-      AttrAccess(slices().empty() ? m_mutableDataset : nullptr),
-      makeViewItems<AttrsConstView>(dimensions(), m_mutableDataset->m_attrs),
-      slices());
+  return AttrsView(AttrAccess(slices().empty() ? m_mutableDataset : nullptr),
+                   makeViewItems<AttrsConstView>(dataset().dimensions(),
+                                                 m_mutableDataset->m_attrs),
+                   slices());
 }
 /// Return a const view to all masks of the dataset slice.
 MasksConstView DatasetConstView::masks() const noexcept {
   return MasksConstView(
-      makeViewItems<MasksConstView>(dimensions(), m_dataset->m_masks),
+      makeViewItems<MasksConstView>(dataset().dimensions(), m_dataset->m_masks),
       slices());
 }
 
 /// Return a view to all masks of the dataset slice.
 MasksView DatasetView::masks() const noexcept {
-  return MasksView(
-      MaskAccess(slices().empty() ? m_mutableDataset : nullptr),
-      makeViewItems<MasksConstView>(dimensions(), m_mutableDataset->m_masks),
-      slices());
+  return MasksView(MaskAccess(slices().empty() ? m_mutableDataset : nullptr),
+                   makeViewItems<MasksConstView>(dataset().dimensions(),
+                                                 m_mutableDataset->m_masks),
+                   slices());
 }
 
 bool DatasetConstView::contains(const std::string &name) const noexcept {
