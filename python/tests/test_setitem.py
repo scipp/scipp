@@ -35,4 +35,5 @@ def test_setitem_coords_required_for_inplace_ops():
     d.coords['x'] = var
     d['x', 2:].coords['x'] += 1.0
     # assignment
-    assert d['x', :].coords['x'].values == np.arange([0, 0, 1, 1])
+    expected_values = np.array([0, 0, 1, 1])
+    assert np.allclose(d['x', :].coords['x'].values, expected_values)

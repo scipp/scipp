@@ -12,7 +12,6 @@
 #include "scipp/dataset/rebin.h"
 #include "scipp/dataset/sort.h"
 #include "scipp/dataset/unaligned.h"
-#include <iostream>
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
