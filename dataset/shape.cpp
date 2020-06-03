@@ -24,14 +24,17 @@ typename View::value_type join_edges(const View &a, const View &b,
 }
 
 namespace {
+constexpr auto is_bin_edges = [](const auto &coord, const auto &dims,
+                                 const Dim dim) {
+  return coord.dims().contains(dim) && coord.dims()[dim] != dims.at(dim);
+};
 template <class T1, class T2, class DimT>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
             const DimT &dimsB) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
   for (const auto &[key, a_] : a) {
     if (dim_of_coord(a_, key) == dim) {
-      if ((a_.dims()[dim] == dimsA.at(dim)) !=
-          (b[key].dims()[dim] == dimsB.at(dim))) {
+      if (is_bin_edges(a_, dimsA, dim) != is_bin_edges(b[key], dimsB, dim)) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
       } else if (a_.dims()[dim] == dimsA.at(dim)) {

@@ -29,16 +29,12 @@ General
    :toctree: ../generated
 
    abs
-   all
-   any
    concatenate
+   choose
    dot
    filter
    histogram
-   max
-   mean
    merge
-   min
    nan_to_num
    norm
    rebin
@@ -46,29 +42,34 @@ General
    reshape
    sort
    sqrt
-   sum
 
-Group-by (split-apply-combine)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Comparison
+~~~~~~~~~~
 
 .. autosummary::
    :toctree: ../generated
 
-   groupby
-   GroupByDataArray.all
-   GroupByDataArray.any
-   GroupByDataArray.flatten
-   GroupByDataArray.max
-   GroupByDataArray.mean
-   GroupByDataArray.min
-   GroupByDataArray.sum
-   GroupByDataset.all
-   GroupByDataset.any
-   GroupByDataset.flatten
-   GroupByDataset.max
-   GroupByDataset.mean
-   GroupByDataset.min
-   GroupByDataset.sum
+   less
+   greater
+   less_equal
+   greater_equal
+   equal
+   not_equal
+
+Reduction
+~~~~~~~~~
+
+Reduction operations are operations to remove one or more dimension, e.g., by performing a sum over all elements along a dimension.
+
+.. autosummary::
+   :toctree: ../generated
+
+   all
+   any
+   max
+   mean
+   min
+   sum
 
 Trigonometric
 ~~~~~~~~~~~~~
@@ -95,18 +96,27 @@ Geometric
    geometry.y
    geometry.z
 
-Comparison
-~~~~~~~~~~
+Group-by (split-apply-combine)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
    :toctree: ../generated
 
-   less
-   greater
-   less_equal
-   greater_equal
-   equal
-   not_equal
+   groupby
+   GroupByDataArray.all
+   GroupByDataArray.any
+   GroupByDataArray.flatten
+   GroupByDataArray.max
+   GroupByDataArray.mean
+   GroupByDataArray.min
+   GroupByDataArray.sum
+   GroupByDataset.all
+   GroupByDataset.any
+   GroupByDataset.flatten
+   GroupByDataset.max
+   GroupByDataset.mean
+   GroupByDataset.min
+   GroupByDataset.sum
 
 Counts
 ~~~~~~
