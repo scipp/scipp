@@ -15,27 +15,27 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 static constexpr auto or_op_ = overloaded{
-    [](const auto &var_, const auto &other_) -> bool { return var_ || other_; },
+    [](const auto &var_, const auto &other_) -> bool { return var_ | other_; },
     dimensionless_unit_check_return};
 
 static constexpr auto or_equals_ =
-    overloaded{[](auto &var_, const auto &other_) { var_ = var_ || other_; },
+    overloaded{[](auto &var_, const auto &other_) { var_ |= other_; },
                dimensionless_unit_check};
 
 static constexpr auto and_op_ = overloaded{
-    [](const auto &var_, const auto &other_) -> bool { return var_ && other_; },
+    [](const auto &var_, const auto &other_) -> bool { return var_ & other_; },
     dimensionless_unit_check_return};
 
 static constexpr auto and_equals_ =
-    overloaded{[](auto &var_, const auto &other_) { var_ = var_ && other_; },
+    overloaded{[](auto &var_, const auto &other_) { var_ &= other_; },
                dimensionless_unit_check};
 
 static constexpr auto xor_op_ = overloaded{
-    [](const auto &var_, const auto &other_) -> bool { return var_ != other_; },
+    [](const auto &var_, const auto &other_) -> bool { return var_ ^ other_; },
     dimensionless_unit_check_return};
 
 static constexpr auto xor_equals_ =
-    overloaded{[](auto &var_, const auto &other_) { var_ = var_ != other_; },
+    overloaded{[](auto &var_, const auto &other_) { var_ ^= other_; },
                dimensionless_unit_check};
 
 template <class T1, class T2> T1 &or_equals(T1 &variable, const T2 &other) {
