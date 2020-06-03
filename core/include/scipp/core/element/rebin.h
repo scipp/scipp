@@ -13,6 +13,29 @@
 #include "scipp/core/element/util.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/transform_common.h"
+#include "scipp/core/value_and_variance.h"
+
+namespace {
+/** Tag dispatching is used to deduce the underlying type since
+ * there isn't an easy way to do this with constexpr, since
+ * we need the decltype to use tricks like conditional_t
+ * but we need to know the type to figure out if we need T[0] or T.value[0].
+ */
+template <typename T,
+          bool = scipp::core::is_ValueAndVariance_v<std::decay_t<T>>>
+struct get_ElemT {};
+
+template <typename T> struct get_ElemT<T, false> {
+  using type =
+      std::remove_cv_t<std::remove_reference_t<decltype(std::declval<T>()[0])>>;
+};
+
+template <typename T> struct get_ElemT<T, true> {
+  using type = std::remove_cv_t<
+      std::remove_reference_t<decltype(std::declval<T>().value[0])>>;
+};
+
+} // namespace
 
 namespace scipp::core::element {
 
@@ -42,23 +65,18 @@ static constexpr auto rebin = overloaded{
           constexpr bool isValAndVariance =
               is_ValueAndVariance_v<std::decay_t<decltype(data_old)>>;
 
+          // Avoid implicit promotion and demotion by getting the underlying
+          // type, which is also used later to handle bool specially
+          using ElemT = typename get_ElemT<decltype(data_new)>::type;
+          const ElemT scale = delta / owidth;
+
           if constexpr (isValAndVariance) {
-            // Avoid implicit promotion and demotion when multiplying by scale
-            const auto scale =
-                std::remove_reference_t<decltype(data_new.value[0])>(delta /
-                                                                     owidth);
             data_new.value[inew] += data_old.value[iold] * scale;
             data_new.variance[inew] += data_old.variance[iold] * scale;
           } else {
-            if constexpr (!isValAndVariance &&
-                          std::is_same_v<
-                              std::remove_reference_t<decltype(data_new[0])>,
-                              bool>) {
+            if constexpr (std::is_same_v<ElemT, bool>) {
               data_new[inew] = data_new[inew] || data_old[iold];
             } else {
-
-              const auto scale = std::remove_reference_t<decltype(data_new[0])>(
-                  delta / owidth);
               data_new[inew] += data_old[iold] * scale;
             }
           }
