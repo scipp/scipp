@@ -554,7 +554,7 @@ def convert_EventWorkspace_to_data_array(ws,
     coords_labs_data["coords"][dim] = coord
 
     if load_pulse_times:
-        coords_labs_data["coords"]["pulse_times"] = labs
+        coords_labs_data["coords"]["pulse-time"] = labs
     if contains_weighted_events:
         coords_labs_data["data"] = weights
     else:
