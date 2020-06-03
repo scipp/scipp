@@ -689,3 +689,21 @@ TYPED_TEST(DataArrayView3DTest, slice_with_edges) {
     }
   }
 }
+
+TEST(DataArraySliceTest, coord) {
+  const auto x =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  DataArray a(x, {{Dim::X, x}});
+  EXPECT_EQ(a.slice({Dim::X, 0, 1}).coords()[Dim::X], x.slice({Dim::X, 0, 1}));
+  EXPECT_EQ(a.slice({Dim::X, 1}).coords()[Dim::X], x.slice({Dim::X, 1}));
+}
+
+TEST(DataArraySliceTest, coord_edges) {
+  const auto data =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  const auto x =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5});
+  DataArray a(data, {{Dim::X, x}});
+  EXPECT_EQ(a.slice({Dim::X, 0, 1}).coords()[Dim::X], x.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(a.slice({Dim::X, 1}).coords()[Dim::X], x.slice({Dim::X, 1, 3}));
+}
