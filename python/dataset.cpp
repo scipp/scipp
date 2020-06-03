@@ -57,7 +57,14 @@ void bind_mutable_view(py::module &m, const std::string &name) {
            py::keep_alive<0, 1>())
       .def("__setitem__",
            [](T &self, const typename T::key_type key,
-              const VariableConstView &var) { self.set(key, var); })
+              const VariableConstView &var) {
+             if (self.contains(key) &&
+                 self[key].dims().ndim() == var.dims().ndim() &&
+                 self[key].dims().contains(var.dims()))
+               self[key].assign(var);
+             else
+               self.set(key, var);
+           })
       // This additional setitem allows us to do things like
       // d.attrs["a"] = scipp.detail.move(scipp.Variable())
       .def("__setitem__",
