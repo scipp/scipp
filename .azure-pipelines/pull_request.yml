@@ -54,7 +54,7 @@ stages:
               conda env create -f scipp-developer.yml
               # TODO: source activate does not work (see https://github.com/conda/conda/issues/9566)
               echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
-              mkdir "$(build_dir)" "$(install_dir)" "$(docs_build_dir)"
+              mkdir -p  "$(build_dir)" "$(install_dir)" "$(docs_build_dir)"
             displayName: 'Configure build environment'
           - bash: |
               set -ex
@@ -101,7 +101,7 @@ stages:
               set -ex
               cd docs
               python data/fetch_neutron_data.py
-              mkdir "$HOME/.mantid"
+              mkdir -p  "$HOME/.mantid"
               echo -e "usagereports.enabled=0\ndatasearch.directories=$(pwd)/data" > "$HOME/.mantid/Mantid.user.properties"
               # Build documentation, redirecting doctrees to avoid size bloat in build documentation
               PYTHONPATH="$PYTHONPATH:$(install_dir)" sphinx-build -d $(mktemp -d) . "$(docs_build_dir)"
@@ -138,7 +138,7 @@ stages:
               conda env create -f scipp-developer-no-mantid.yml
               # TODO: source activate does not work (see https://github.com/conda/conda/issues/9566)
               echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
-              mkdir "$(build_dir)" "$(install_dir)"
+              mkdir -p  "$(build_dir)" "$(install_dir)"
             displayName: 'Configure build environment'
           - bash: |
               set -ex
@@ -192,7 +192,7 @@ stages:
               set -ex
               conda --version
               conda env create -f scipp-developer-no-mantid.yml
-              mkdir "$(build_dir)" "$(install_dir)"
+              mkdir -p  "$(build_dir)" "$(install_dir)"
             displayName: 'Configure build environment'
           - bash: |
               set -ex
