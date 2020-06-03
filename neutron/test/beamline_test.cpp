@@ -23,9 +23,9 @@ Dataset makeDatasetWithBeamline() {
   components.setData("position", makeVariable<Eigen::Vector3d>(
                                      Dims{Dim::Row}, Shape{2}, units::m,
                                      Values{source_pos, sample_pos}));
-  beamline.setCoord(Dim("source_position"), makeVariable<Eigen::Vector3d>(
+  beamline.setCoord(Dim("source-position"), makeVariable<Eigen::Vector3d>(
                                                 units::m, Values{source_pos}));
-  beamline.setCoord(Dim("sample_position"), makeVariable<Eigen::Vector3d>(
+  beamline.setCoord(Dim("sample-position"), makeVariable<Eigen::Vector3d>(
                                                 units::m, Values{sample_pos}));
   // TODO Need fuzzy comparison for variables to write a convenient test with
   // detectors away from the axes.

@@ -191,7 +191,7 @@ T convert_impl(T d, const Dim from, const Dim to,
 namespace {
 template <class T>
 T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
-  auto fields = {"position", "source_position", "sample_position"};
+  auto fields = {"position", "source-position", "sample-position"};
   // TODO Add `extract` methods to do this in one step and avoid copies?
   if (from == Dim::Tof) {
     for (const auto &field : fields) {

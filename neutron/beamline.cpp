@@ -32,17 +32,17 @@ template <class T> static auto source_position(const T &d) {
 }
 
 template <class T> static auto sample_position(const T &d) {
-  if (d.coords().contains(Dim("sample_position")))
-    return d.coords()[Dim("sample_position")];
+  if (d.coords().contains(Dim("sample-position")))
+    return d.coords()[Dim("sample-position")];
   else
-    return d.attrs()["sample_position"];
+    return d.attrs()["sample-position"];
 }
 
 template <class T> static Variable flight_path_length(const T &d) {
   // If there is no sample this returns the straight distance from the source,
   // as required, e.g., for monitors.
-  if (d.coords().contains(Dim("sample_position")) ||
-      d.attrs().contains("sample_position"))
+  if (d.coords().contains(Dim("sample-position")) ||
+      d.attrs().contains("sample-position"))
     return l1(d) + l2(d);
   else
     return norm(position(d) - source_position(d));
