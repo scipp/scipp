@@ -39,7 +39,6 @@ static constexpr auto rebin = overloaded{
           const auto delta = std::min<double>(xn_high, xo_high) -
                              std::max<double>(xn_low, xo_low);
           const auto owidth = xo_high - xo_low;
-
           const auto scale = delta / owidth;
           if constexpr (is_ValueAndVariance_v<
                             std::decay_t<decltype(data_old)>>) {
