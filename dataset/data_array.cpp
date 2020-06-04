@@ -317,9 +317,33 @@ DataArray &DataArray::operator/=(const VariableConstView &other) {
   return *this;
 }
 
+auto coord_union(const DataArrayConstView &a, const DataArrayConstView &b) {
+  std::map<Dim, Variable> out;
+  // check dim coords
+  // keep matching dim coords
+  const auto ac = a.coords();
+  const auto bc = b.coords();
+  for (const auto &[key, item] : ac) {
+    const auto it = bc.find(key);
+    if (a.dims().contains(key)) {
+      if (b.dims().contains(key) && it != bc.end())
+        core::expect::equals(item, it->second); // dim-coords must match
+    } else if (it != bc.end() && item != it->second) {
+      continue; // drop if mismatching coord in b
+    }
+    out.emplace(key, item);
+  }
+  for (const auto &[key, item] : bc)
+    if (b.dims().contains(key) &&   // dim coord of b
+        (!a.dims().contains(key) || // ... but not of a
+         ac.find(key) == ac.end())) // ... or not in a
+      out.emplace(key, item);
+  return out;
+}
+
 DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
   if (a.hasData() && b.hasData()) {
-    return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
+    return DataArray(a.data() + b.data(), coord_union(a, b),
                      union_or(a.masks(), b.masks()));
   } else {
     DataArray out(a);
@@ -330,7 +354,7 @@ DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
 
 DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
   if (a.hasData() && b.hasData()) {
-    return {a.data() - b.data(), union_(a.coords(), b.coords()),
+    return {a.data() - b.data(), coord_union(a, b),
             union_or(a.masks(), b.masks())};
   } else {
     DataArray out(a);
@@ -372,10 +396,10 @@ template <class Op>
 DataArray apply_mul_or_div(Op op, const DataArrayConstView &a,
                            const DataArrayConstView &b) {
   if (unaligned::is_realigned_events(a) || unaligned::is_realigned_events(b))
-    return {events_dense_op(op, a, b), union_(a.coords(), b.coords()),
+    return {events_dense_op(op, a, b), coord_union(a, b),
             union_or(a.masks(), b.masks())};
   else
-    return {op(a.data(), b.data()), union_(a.coords(), b.coords()),
+    return {op(a.data(), b.data()), coord_union(a, b),
             union_or(a.masks(), b.masks())};
 }
 } // namespace

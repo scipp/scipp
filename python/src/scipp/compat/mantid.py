@@ -11,6 +11,8 @@ import numpy as np
 from .. import detail
 from .._scipp import core as sc
 
+spec_dim = 'position'
+
 
 @contextmanager
 def run_mantid_alg(alg, *args, **kwargs):
@@ -171,7 +173,7 @@ def validate_and_get_unit(unit, allow_empty=False):
             'Q^2',
             sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)
         ],
-        "Label": ['spectrum', sc.units.dimensionless],
+        "Label": [spec_dim, sc.units.dimensionless],
         "Empty": ['empty', sc.units.dimensionless],
         "Counts": ['counts', sc.units.counts]
     }
@@ -220,7 +222,7 @@ def get_detector_pos(ws):
             pos[i, 2] = p.Z()
         else:
             pos[i, :] = [np.nan, np.nan, np.nan]
-    return sc.Variable(['spectrum'],
+    return sc.Variable([spec_dim],
                        values=pos,
                        unit=sc.units.m,
                        dtype=sc.dtype.vector_3_float64)
@@ -305,10 +307,10 @@ def get_detector_properties(ws,
         pos = sc.geometry.position(averaged["x"].data, averaged["y"].data,
                                    averaged["z"].data)
         return (sc.geometry.rotate(pos, inv_rot),
-                sc.Variable(['spectrum'],
+                sc.Variable([spec_dim],
                             values=det_rot,
                             dtype=sc.dtype.quaternion_float64),
-                sc.Variable(['spectrum'],
+                sc.Variable([spec_dim],
                             values=det_bbox,
                             unit=sc.units.m,
                             dtype=sc.dtype.vector_3_float64))
@@ -337,14 +339,14 @@ def get_detector_properties(ws,
                 pos[i, :] = [np.nan, np.nan, np.nan]
                 det_rot[i, :] = [np.nan, np.nan, np.nan, np.nan]
                 det_bbox[i, :] = [np.nan, np.nan, np.nan]
-        return (sc.Variable(['spectrum'],
+        return (sc.Variable([spec_dim],
                             values=pos,
                             unit=sc.units.m,
                             dtype=sc.dtype.vector_3_float64),
-                sc.Variable(['spectrum'],
+                sc.Variable([spec_dim],
                             values=det_rot,
                             dtype=sc.dtype.quaternion_float64),
-                sc.Variable(['spectrum'],
+                sc.Variable([spec_dim],
                             values=det_bbox,
                             unit=sc.units.m,
                             dtype=sc.dtype.vector_3_float64))
@@ -377,13 +379,13 @@ def init_spec_axis(ws):
     axis = ws.getAxis(1)
     dim, unit = validate_and_get_unit(axis.getUnit().unitID())
     values = axis.extractValues()
-    dtype = _get_dtype_from_values(values, dim == 'spectrum')
+    dtype = _get_dtype_from_values(values, dim == spec_dim)
     return dim, sc.Variable([dim], values=values, unit=unit, dtype=dtype)
 
 
 def set_bin_masks(bin_masks, dim, index, masked_bins):
     for masked_bin in masked_bins:
-        bin_masks['spectrum', index][dim, masked_bin].value = True
+        bin_masks[spec_dim, index][dim, masked_bin].value = True
 
 
 def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
@@ -493,8 +495,8 @@ def convert_Workspace2D_to_data_array(ws, advanced_geometry=False, **ignored):
             # maskedBinsIndices throws instead of returning empty list
             if ws.hasMaskedBins(i):
                 set_bin_masks(bin_mask, dim, i, ws.maskedBinsIndices(i))
-        common_mask = sc.all(bin_mask, 'spectrum')
-        if common_mask == sc.any(bin_mask, 'spectrum'):
+        common_mask = sc.all(bin_mask, spec_dim)
+        if common_mask == sc.any(bin_mask, spec_dim):
             array.masks["bin"] = detail.move(common_mask)
         else:
             array.masks["bin"] = detail.move(bin_mask)
