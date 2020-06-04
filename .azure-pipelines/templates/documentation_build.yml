@@ -36,7 +36,7 @@ jobs:
           cd docs
           source activate scipp-developer
           python data/fetch_neutron_data.py
-          mkdir $HOME/.mantid
+          mkdir -p  $HOME/.mantid
           echo -e "usagereports.enabled=0\ndatasearch.directories=$(pwd)/data" > $HOME/.mantid/Mantid.user.properties
           # Build documentation, redirecting doctrees to avoid size bloat in build documentation
           sphinx-build -d "$(mktemp -d)" . "$(docs_build_dir)"
