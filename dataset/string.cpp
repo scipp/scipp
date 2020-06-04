@@ -43,6 +43,9 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
     s << format_variable(name, data.data(), datasetDims);
   else
     s << tab << name << '\n';
+  if (data.unaligned().hasData())
+    s << format_variable(name + " (unaligned)", data.unaligned().data(),
+                         datasetDims);
   // TODO need something similar, but for unaligned coord content
   /*
   bool eventsCoords = false;

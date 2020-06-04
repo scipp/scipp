@@ -135,8 +135,8 @@ def retrieve(var, variances=False, single=False):
 def _short_data_repr_html_non_events(var, variances=False):
     if hasattr(var, "data"):
         if var.data is None:
-            return "Realigned data based on unaligned content."
-            "Use `histogram` to obtain values."
+            return "(unaligned) " + repr(
+                retrieve(var.unaligned.data, variances))
         return repr(retrieve(var.data, variances))
     else:
         return repr(retrieve(var, variances))
