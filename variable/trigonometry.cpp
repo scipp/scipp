@@ -80,7 +80,7 @@ VariableView tan(const VariableConstView &var, const VariableView &out) {
 }
 
 Variable asin(const VariableConstView &var) {
-  return transform<double, float>(var, element::asin);
+  return transform(var, element::asin);
 }
 
 Variable asin(Variable &&var) {
@@ -95,7 +95,7 @@ VariableView asin(const VariableConstView &var, const VariableView &out) {
 }
 
 Variable acos(const VariableConstView &var) {
-  return transform<double, float>(var, element::acos);
+  return transform(var, element::acos);
 }
 
 Variable acos(Variable &&var) {
@@ -110,7 +110,7 @@ VariableView acos(const VariableConstView &var, const VariableView &out) {
 }
 
 Variable atan(const VariableConstView &var) {
-  return transform<double, float>(var, element::atan);
+  return transform(var, element::atan);
 }
 
 Variable atan(Variable &&var) {
@@ -125,13 +125,12 @@ VariableView atan(const VariableConstView &var, const VariableView &out) {
 }
 
 Variable atan2(const VariableConstView &y, const VariableConstView &x) {
-  return transform<std::tuple<double, float>>(y, x, element::atan2);
+  return transform(y, x, element::atan2);
 }
 
 VariableView atan2(const VariableConstView &y, const VariableConstView &x,
                    const VariableView &out) {
-  transform_in_place<std::tuple<double, float>>(out, y, x,
-                                                element::atan2_out_arg);
+  transform_in_place(out, y, x, element::atan2_out_arg);
   return out;
 }
 

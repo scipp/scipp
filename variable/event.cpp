@@ -60,10 +60,10 @@ Variable sizes(const VariableConstView &events) {
   // variances if any of the inputs has variances.
   auto sizes = makeVariable<scipp::index>(events.dims());
   accumulate_in_place<
-      core::pair_custom_t<std::pair<scipp::index, event_list<double>>>,
-      core::pair_custom_t<std::pair<scipp::index, event_list<float>>>,
-      core::pair_custom_t<std::pair<scipp::index, event_list<int64_t>>>,
-      core::pair_custom_t<std::pair<scipp::index, event_list<int32_t>>>>(
+      core::pair_custom_t<std::tuple<scipp::index, event_list<double>>>,
+      core::pair_custom_t<std::tuple<scipp::index, event_list<float>>>,
+      core::pair_custom_t<std::tuple<scipp::index, event_list<int64_t>>>,
+      core::pair_custom_t<std::tuple<scipp::index, event_list<int32_t>>>>(
       sizes, events,
       overloaded{[](scipp::index &c, const auto &list) { c = list.size(); },
                  core::transform_flags::expect_no_variance_arg<0>});
@@ -77,10 +77,10 @@ Variable sizes(const VariableConstView &events) {
 /// without apparent negative effect on the other cases.
 void reserve(const VariableView &events, const VariableConstView &capacity) {
   transform_in_place<
-      core::pair_custom_t<std::pair<event_list<double>, scipp::index>>,
-      core::pair_custom_t<std::pair<event_list<float>, scipp::index>>,
-      core::pair_custom_t<std::pair<event_list<int64_t>, scipp::index>>,
-      core::pair_custom_t<std::pair<event_list<int32_t>, scipp::index>>>(
+      core::pair_custom_t<std::tuple<event_list<double>, scipp::index>>,
+      core::pair_custom_t<std::tuple<event_list<float>, scipp::index>>,
+      core::pair_custom_t<std::tuple<event_list<int64_t>, scipp::index>>,
+      core::pair_custom_t<std::tuple<event_list<int32_t>, scipp::index>>>(
       events, capacity,
       overloaded{[](auto &&events_, const scipp::index capacity_) {
                    if (capacity_ > 2 * scipp::size(events_))

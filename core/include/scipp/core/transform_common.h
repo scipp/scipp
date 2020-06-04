@@ -6,6 +6,7 @@
 
 #include <tuple>
 
+#include "scipp/common/overloaded.h"
 #include "scipp/core/except.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/core/values_and_variances.h"
@@ -13,11 +14,11 @@
 namespace scipp::core {
 
 template <class... Ts> struct pair_self {
-  using type = std::tuple<std::pair<Ts, Ts>...>;
+  using type = std::tuple<std::tuple<Ts, Ts>...>;
 };
 template <class... Ts> struct pair_custom { using type = std::tuple<Ts...>; };
 template <class... Ts> struct pair_ {
-  template <class RHS> using type = std::tuple<std::pair<Ts, RHS>...>;
+  template <class RHS> using type = std::tuple<std::tuple<Ts, RHS>...>;
 };
 
 template <class... Ts> using pair_self_t = typename pair_self<Ts...>::type;
@@ -27,7 +28,7 @@ using pair_numerical_with_t =
     typename pair_<double, float, int64_t, int32_t>::type<RHS>;
 
 template <class... Ts> struct pair_product {
-  template <class T> using type = std::tuple<std::pair<T, Ts>...>;
+  template <class T> using type = std::tuple<std::tuple<T, Ts>...>;
 };
 
 template <class... Ts>
@@ -42,7 +43,7 @@ using arithmetic_type_pairs_with_bool =
 
 using arithmetic_and_matrix_type_pairs = decltype(
     std::tuple_cat(std::declval<arithmetic_type_pairs>(),
-                   std::tuple<std::pair<Eigen::Vector3d, Eigen::Vector3d>>()));
+                   std::tuple<std::tuple<Eigen::Vector3d, Eigen::Vector3d>>()));
 
 static constexpr auto dimensionless_unit_check =
     [](units::Unit &varUnit, const units::Unit &otherUnit) {
@@ -51,11 +52,15 @@ static constexpr auto dimensionless_unit_check =
     };
 
 static constexpr auto dimensionless_unit_check_return =
-    [](const units::Unit &aUnit, const units::Unit &bUnit) {
-      expect::equals(aUnit, units::dimensionless);
-      expect::equals(bUnit, units::dimensionless);
-      return aUnit;
-    };
+    overloaded{[](const units::Unit &a) {
+                 expect::equals(a, units::one);
+                 return units::one;
+               },
+               [](const units::Unit &a, const units::Unit &b) {
+                 expect::equals(a, units::one);
+                 expect::equals(b, units::one);
+                 return units::one;
+               }};
 
 /// Flags for transform, added as overloads to the operator. These are never
 /// actually called since flag presence is checked via the base class of the

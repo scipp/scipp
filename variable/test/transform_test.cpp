@@ -203,10 +203,10 @@ TEST_F(TransformBinaryTest, dense_mixed_type) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
   const auto b = makeVariable<float>(Values{3.3});
 
-  const auto ab = transform<pair_custom_t<std::pair<double, float>>>(a, b, op);
-  const auto ba = transform<pair_custom_t<std::pair<float, double>>>(b, a, op);
-  transform_in_place<pair_custom_t<std::pair<double, float>>>(a, b,
-                                                              op_in_place);
+  const auto ab = transform<pair_custom_t<std::tuple<double, float>>>(a, b, op);
+  const auto ba = transform<pair_custom_t<std::tuple<float, double>>>(b, a, op);
+  transform_in_place<pair_custom_t<std::tuple<double, float>>>(a, b,
+                                                               op_in_place);
 
   EXPECT_TRUE(equals(a.values<double>(), {1.1 * 3.3f, 2.2 * 3.3f}));
   EXPECT_EQ(ab, ba);
@@ -357,17 +357,17 @@ TEST(TransformTest, mixed_precision) {
   auto base_f = makeVariable<float>(Values{1.0});
   auto op = [](const auto a, const auto b) { return a + b; };
   const auto sum_fd =
-      transform<pair_custom_t<std::pair<float, double>>>(base_f, d, op);
+      transform<pair_custom_t<std::tuple<float, double>>>(base_f, d, op);
   const auto sum_dd =
-      transform<pair_custom_t<std::pair<double, double>>>(base_d, d, op);
+      transform<pair_custom_t<std::tuple<double, double>>>(base_d, d, op);
   EXPECT_NE(sum_fd.values<double>()[0], 1.0f);
   EXPECT_EQ(sum_fd.values<double>()[0], 1.0f + 1e-12);
   EXPECT_NE(sum_dd.values<double>()[0], 1.0);
   EXPECT_EQ(sum_dd.values<double>()[0], 1.0 + 1e-12);
   const auto sum_ff =
-      transform<pair_custom_t<std::pair<float, float>>>(base_f, f, op);
+      transform<pair_custom_t<std::tuple<float, float>>>(base_f, f, op);
   const auto sum_df =
-      transform<pair_custom_t<std::pair<double, float>>>(base_d, f, op);
+      transform<pair_custom_t<std::tuple<double, float>>>(base_d, f, op);
   EXPECT_EQ(sum_ff.values<float>()[0], 1.0f);
   EXPECT_EQ(sum_ff.values<float>()[0], 1.0f + 1e-12f);
   EXPECT_NE(sum_df.values<double>()[0], 1.0);
@@ -380,13 +380,13 @@ TEST(TransformTest, mixed_precision_in_place) {
   auto sum_d = makeVariable<double>(Values{1.0});
   auto sum_f = makeVariable<float>(Values{1.0});
   auto op = [](auto &a, const auto b) { a += b; };
-  transform_in_place<pair_custom_t<std::pair<float, double>>>(sum_f, d, op);
-  transform_in_place<pair_custom_t<std::pair<double, double>>>(sum_d, d, op);
+  transform_in_place<pair_custom_t<std::tuple<float, double>>>(sum_f, d, op);
+  transform_in_place<pair_custom_t<std::tuple<double, double>>>(sum_d, d, op);
   EXPECT_EQ(sum_f.values<float>()[0], 1.0f);
   EXPECT_NE(sum_d.values<double>()[0], 1.0);
   EXPECT_EQ(sum_d.values<double>()[0], 1.0 + 1e-12);
-  transform_in_place<pair_custom_t<std::pair<float, float>>>(sum_f, f, op);
-  transform_in_place<pair_custom_t<std::pair<double, float>>>(sum_d, f, op);
+  transform_in_place<pair_custom_t<std::tuple<float, float>>>(sum_f, f, op);
+  transform_in_place<pair_custom_t<std::tuple<double, float>>>(sum_d, f, op);
   EXPECT_EQ(sum_f.values<float>()[0], 1.0f);
   EXPECT_NE(sum_d.values<double>()[0], 1.0 + 1e-12);
   EXPECT_EQ(sum_d.values<double>()[0], 1.0 + 1e-12 + 1e-12);
@@ -720,7 +720,7 @@ TEST_F(TransformBinaryTest, broadcast_events_val_var_with_val) {
   set_events_variances<double>(a, {{5, 6, 7}, {8}});
   const auto b = makeVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
 
-  const auto ab = transform<pair_custom_t<std::pair<double, float>>>(a, b, op);
+  const auto ab = transform<pair_custom_t<std::tuple<double, float>>>(a, b, op);
 
   auto a0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
                                  Variances{5, 6, 7});
@@ -757,7 +757,7 @@ TEST_F(TransformBinaryTest, fail_dimension_reduction) {
   set_events_variances<double>(a, {{5, 6, 7}, {8}});
   const auto b = makeVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
 
-  EXPECT_THROW((transform_in_place<pair_custom_t<std::pair<double, float>>>(
+  EXPECT_THROW((transform_in_place<pair_custom_t<std::tuple<double, float>>>(
                    a, b, op_in_place)),
                except::NotFoundError);
 }

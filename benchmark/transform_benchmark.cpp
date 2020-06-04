@@ -12,7 +12,7 @@
 using namespace scipp;
 using namespace scipp::variable;
 
-using Types = std::tuple<std::pair<double, double>>;
+using Types = std::tuple<double>;
 
 template <bool in_place, class Func>
 void run(benchmark::State &state, Func func, bool variances = false) {

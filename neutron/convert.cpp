@@ -25,8 +25,7 @@ T convert_generic(T &&d, const Dim from, const Dim to,
                   const ConvertRealign realign, Op op,
                   const VariableConstView &arg) {
   using core::element::arg_list;
-  const auto op_ = overloaded{
-      arg_list<std::pair<double, double>, std::pair<float, double>>, op};
+  const auto op_ = overloaded{arg_list<double, std::tuple<float, double>>, op};
   const auto items = iter(d);
   const bool any_aligned =
       std::any_of(items.begin(), items.end(),

@@ -7,6 +7,7 @@
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/core/element/comparison.h"
 #include "scipp/core/element/logical.h"
+#include "scipp/core/element/reduction.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/event.h"
 #include "scipp/variable/except.h"
@@ -17,10 +18,6 @@
 using namespace scipp::core;
 
 namespace scipp::variable {
-
-namespace flatten_detail {
-template <class T> using args = std::tuple<event_list<T>, event_list<T>, bool>;
-}
 
 void flatten_impl(const VariableView &summed, const VariableConstView &var,
                   const VariableConstView &mask) {
@@ -36,19 +33,7 @@ void flatten_impl(const VariableView &summed, const VariableConstView &var,
   event::reserve(summed, summed_sizes);
 
   // 2. Flatten dimension(s) by concatenating along events dim.
-  using namespace flatten_detail;
-  accumulate_in_place<
-      std::tuple<args<double>, args<float>, args<int64_t>, args<int32_t>>>(
-      summed, var, mask,
-      overloaded{
-          [](auto &a, const auto &b, const auto &mask_) {
-            if (mask_)
-              a.insert(a.end(), b.begin(), b.end());
-          },
-          [](units::Unit &a, const units::Unit &b, const units::Unit &mask_) {
-            core::expect::equals(mask_, units::one);
-            core::expect::equals(a, b);
-          }});
+  accumulate_in_place(summed, var, mask, element::flatten);
 }
 
 /// Flatten dimension by concatenating along events dimension.
@@ -67,10 +52,7 @@ void sum_impl(const VariableView &summed, const VariableConstView &var) {
   if (contains_events(var))
     throw except::TypeError("`sum` can only be used for dense data, use "
                             "`flatten` for event data.");
-  accumulate_in_place<
-      pair_self_t<double, float, int64_t, int32_t, Eigen::Vector3d>,
-      pair_custom_t<std::pair<int64_t, bool>>>(
-      summed, var, [](auto &&a, auto &&b) { a += b; });
+  accumulate_in_place(summed, var, element::plus_equals);
 }
 
 Variable sum(const VariableConstView &var, const Dim dim) {
@@ -105,10 +87,7 @@ VariableView sum(const VariableConstView &var, const Dim dim,
 Variable mean_impl(const VariableConstView &var, const Dim dim,
                    const VariableConstView &masks_sum) {
   auto summed = sum(var, dim);
-
-  auto scale = 1.0 * units::one /
-               (makeVariable<double>(Values{var.dims()[dim]}) - masks_sum);
-
+  auto scale = 1.0 * units::one / (var.dims()[dim] * units::one - masks_sum);
   if (isInt(var.dtype()))
     summed = summed * scale;
   else
@@ -124,11 +103,7 @@ VariableView mean_impl(const VariableConstView &var, const Dim dim,
         "Cannot calculate mean in-place when output dtype is integer");
 
   sum(var, dim, out);
-
-  auto scale = 1.0 * units::one /
-               (makeVariable<double>(Values{var.dims()[dim]}) - masks_sum);
-
-  out *= scale;
+  out *= 1.0 * units::one / (var.dims()[dim] * units::one - masks_sum);
   return out;
 }
 
@@ -160,19 +135,19 @@ Variable reduce_idempotent(const VariableConstView &var, const Dim dim, Op op) {
 }
 
 void any_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl(out, var, core::element::or_equals);
+  reduce_impl(out, var, core::element::logical_or_equals);
 }
 
 Variable any(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::or_equals);
+  return reduce_idempotent(var, dim, core::element::logical_or_equals);
 }
 
 void all_impl(const VariableView &out, const VariableConstView &var) {
-  reduce_impl(out, var, core::element::and_equals);
+  reduce_impl(out, var, core::element::logical_and_equals);
 }
 
 Variable all(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::and_equals);
+  return reduce_idempotent(var, dim, core::element::logical_and_equals);
 }
 
 void max_impl(const VariableView &out, const VariableConstView &var) {

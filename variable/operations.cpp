@@ -2,12 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <cmath>
-
-#include "scipp/core/dtype.h"
 #include "scipp/core/element/geometric_operations.h"
-#include "scipp/core/element/unary_operations.h"
-#include "scipp/variable/except.h"
+#include "scipp/core/element/special_values.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/transform.h"
 
@@ -63,60 +59,53 @@ Variable copy(const VariableConstView &var) { return Variable(var); }
 VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {
-  transform_in_place<std::tuple<double, float>>(out, var, replacement,
-                                                element::nan_to_num_out_arg);
+  transform_in_place(out, var, replacement, element::nan_to_num_out_arg);
   return out;
 }
 
 VariableView positive_inf_to_num(const VariableConstView &var,
                                  const VariableConstView &replacement,
                                  const VariableView &out) {
-  transform_in_place<std::tuple<double, float>>(
-      out, var, replacement, element::positive_inf_to_num_out_arg);
+  transform_in_place(out, var, replacement,
+                     element::positive_inf_to_num_out_arg);
   return out;
 }
 VariableView negative_inf_to_num(const VariableConstView &var,
                                  const VariableConstView &replacement,
                                  const VariableView &out) {
-  transform_in_place<std::tuple<double, float>>(
-      out, var, replacement, element::negative_inf_to_num_out_arg);
-
+  transform_in_place(out, var, replacement,
+                     element::negative_inf_to_num_out_arg);
   return out;
 }
 
 Variable nan_to_num(const VariableConstView &var,
                     const VariableConstView &replacement) {
-
-  return transform<std::tuple<double, float>>(var, replacement,
-                                              element::nan_to_num);
+  return transform(var, replacement, element::nan_to_num);
 }
 
 Variable pos_inf_to_num(const VariableConstView &var,
                         const VariableConstView &replacement) {
-
-  return transform<std::tuple<double, float>>(var, replacement,
-                                              element::positive_inf_to_num);
+  return transform(var, replacement, element::positive_inf_to_num);
 }
 
 Variable neg_inf_to_num(const VariableConstView &var,
                         const VariableConstView &replacement) {
-  return transform<std::tuple<double, float>>(var, replacement,
-                                              element::negative_inf_to_num);
+  return transform(var, replacement, element::negative_inf_to_num);
 }
 
 namespace geometry {
 Variable position(const VariableConstView &x, const VariableConstView &y,
                   const VariableConstView &z) {
-  return transform<std::tuple<double>>(x, y, z, element::geometry::position);
+  return transform(x, y, z, element::geometry::position);
 }
 Variable x(const VariableConstView &pos) {
-  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::x);
+  return transform(pos, element::geometry::x);
 }
 Variable y(const VariableConstView &pos) {
-  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::y);
+  return transform(pos, element::geometry::y);
 }
 Variable z(const VariableConstView &pos) {
-  return transform<std::tuple<Eigen::Vector3d>>(pos, element::geometry::z);
+  return transform(pos, element::geometry::z);
 }
 Variable rotate(const VariableConstView &pos, const VariableConstView &rot) {
   return transform(pos, rot, element::geometry::rotate);

@@ -420,15 +420,14 @@ struct optional_events<T, std::tuple<Known...>> {
                                   std::tuple<T>, std::tuple<>>;
 };
 
-/*
- * std::tuple_cat does not work correctly on with clang-7.
- * Issue with Eigen::Vector3d
- */
+// std::tuple_cat does not work correctly on with clang-7. Issue with
+// Eigen::Vector3d.
 template <typename T, typename...> struct tuple_cat { using type = T; };
 template <template <typename...> class C, typename... Ts1, typename... Ts2,
           typename... Ts3>
 struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
     : public tuple_cat<C<Ts1..., Ts2...>, Ts3...> {};
+template <class... Ts> using tuple_cat_t = typename tuple_cat<Ts...>::type;
 
 template <class T1, class T2, class Handle> struct optional_events_pair;
 template <class T1, class T2, class... Known>
@@ -436,24 +435,24 @@ struct optional_events_pair<T1, T2, std::tuple<Known...>> {
   using type =
       std::conditional_t<std::disjunction_v<std::is_same<T1, Known>...> &&
                              std::disjunction_v<std::is_same<T2, Known>...>,
-                         std::tuple<std::pair<T1, T2>>, std::tuple<>>;
+                         std::tuple<std::tuple<T1, T2>>, std::tuple<>>;
 };
-using supported_event_tupes =
+using supported_event_types =
     std::tuple<double, float, int64_t, int32_t, bool, event_list<double>,
                event_list<float>, event_list<int64_t>, event_list<int32_t>,
                event_list<bool>>;
 template <class T>
 using optional_events_t =
-    typename optional_events<T, supported_event_tupes>::type;
+    typename optional_events<T, supported_event_types>::type;
 template <class T1, class T2>
 using optional_events_pair_t =
-    typename optional_events_pair<T1, T2, supported_event_tupes>::type;
+    typename optional_events_pair<T1, T2, supported_event_types>::type;
 
 /// Augment a tuple of types with the corresponding events types, if they exist.
 struct augment {
   template <class... Ts> static auto insert_events(const std::tuple<Ts...> &) {
-    return typename tuple_cat<std::tuple<Ts...>,
-                              optional_events_t<event_list<Ts>>...>::type{};
+    return tuple_cat_t<std::tuple<Ts...>,
+                       optional_events_t<event_list<Ts>>...>{};
   }
 
   template <class... Ts>
@@ -461,21 +460,31 @@ struct augment {
     return insert_events(tuple);
   }
 
-  template <class... First, class... Second>
-  static auto
-  insert_events_in_place(const std::tuple<std::pair<First, Second>...> &) {
-    return std::tuple_cat(
-        std::tuple<std::pair<First, Second>...>{},
-        optional_events_pair_t<event_list<First>, Second>{}...,
-        optional_events_pair_t<event_list<First>, event_list<Second>>{}...);
+  template <class... T>
+  static auto insert_events_in_place(const std::tuple<std::tuple<T>...> &) {
+    return tuple_cat_t<std::tuple<std::tuple<T>...>,
+                       optional_events_t<event_list<T>>...>{};
   }
   template <class... First, class... Second>
-  static auto insert_events(const std::tuple<std::pair<First, Second>...> &) {
-    return std::tuple_cat(
-        std::tuple<std::pair<First, Second>...>{},
-        optional_events_pair_t<First, event_list<Second>>{}...,
-        optional_events_pair_t<event_list<First>, Second>{}...,
-        optional_events_pair_t<event_list<First>, event_list<Second>>{}...);
+  static auto
+  insert_events_in_place(const std::tuple<std::tuple<First, Second>...> &) {
+    return tuple_cat_t<
+        std::tuple<std::tuple<First, Second>...>,
+        optional_events_pair_t<event_list<First>, Second>...,
+        optional_events_pair_t<event_list<First>, event_list<Second>>...>{};
+  }
+  template <class... T>
+  static auto insert_events(const std::tuple<std::tuple<T>...> &) {
+    return tuple_cat_t<std::tuple<std::tuple<T>...>,
+                       optional_events_t<event_list<T>>...>{};
+  }
+  template <class... First, class... Second>
+  static auto insert_events(const std::tuple<std::tuple<First, Second>...> &) {
+    return tuple_cat_t<
+        std::tuple<std::tuple<First, Second>...>,
+        optional_events_pair_t<First, event_list<Second>>...,
+        optional_events_pair_t<event_list<First>, Second>...,
+        optional_events_pair_t<event_list<First>, event_list<Second>>...>{};
   }
 };
 
@@ -501,10 +510,6 @@ template <class... Ts> overloaded_events(Ts...) -> overloaded_events<Ts...>;
 template <class T>
 struct is_any_events : std::conditional_t<core::is_events<T>::value,
                                           std::true_type, std::false_type> {};
-template <class... Ts>
-struct is_any_events<std::pair<Ts...>>
-    : std::conditional_t<(core::is_events<Ts>::value || ...), std::true_type,
-                         std::false_type> {};
 template <class... Ts>
 struct is_any_events<std::tuple<Ts...>>
     : std::conditional_t<(core::is_events<Ts>::value || ...), std::true_type,
@@ -760,7 +765,10 @@ template <bool dry_run> struct in_place {
       } else {
         // Note that if only one of the inputs is events it must be the one
         // being transformed in-place, so there are only three cases here.
-        variable::visit(augment::insert_events_in_place(std::tuple<Ts...>{}))
+        variable::visit(
+            augment::insert_events_in_place(
+                std::tuple<
+                    visit_detail::maybe_duplicate<Ts, Var, Other...>...>{}))
             .apply(makeTransformInPlace(
                        overloaded_events{op, TransformEventsInPlace{}}),
                    var.data(), other.data()...);
@@ -864,9 +872,12 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
     if constexpr ((is_any_events<Ts>::value || ...) || sizeof...(Vars) > 2) {
       out = visit_impl<Ts...>::apply(Transform{op}, vars.data()...);
     } else {
-      out = variable::visit(augment::insert_events(std::tuple<Ts...>{}))
-                .apply(Transform{overloaded_events{op, TransformEvents{}}},
-                       vars.data()...);
+      out =
+          variable::visit(
+              augment::insert_events(
+                  std::tuple<visit_detail::maybe_duplicate<Ts, Vars...>...>{}))
+              .apply(Transform{overloaded_events{op, TransformEvents{}}},
+                     vars.data()...);
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes ", vars...);

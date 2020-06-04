@@ -6,53 +6,58 @@
 
 #include <Eigen/Dense>
 
+#include "scipp/common/overloaded.h"
+#include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core::element {
 
-struct plus_equals {
-  template <class A, class B>
-  constexpr void operator()(A &&a, const B &b) const
-      noexcept(noexcept(a += b)) {
-    a += b;
-  }
-  using types = decltype(std::tuple_cat(
-      pair_self_t<double, float, int32_t, int64_t, Eigen::Vector3d>{},
-      pair_custom_t<std::pair<double, float>, std::pair<int64_t, int32_t>>{}));
+constexpr auto add_inplace_types =
+    arg_list<double, float, int64_t, int32_t, Eigen::Vector3d,
+             std::tuple<double, float>, std::tuple<int64_t, int32_t>,
+             std::tuple<int64_t, bool>>;
+
+constexpr auto plus_equals =
+    overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};
+constexpr auto minus_equals =
+    overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};
+
+constexpr auto mul_inplace_types =
+    arg_list<double, float, int64_t, int32_t, std::tuple<double, float>,
+             std::tuple<float, double>, std::tuple<int64_t, int32_t>,
+             std::tuple<Eigen::Vector3d, double>>;
+
+constexpr auto times_equals =
+    overloaded{mul_inplace_types, [](auto &&a, const auto &b) { a *= b; }};
+constexpr auto divide_equals =
+    overloaded{mul_inplace_types, [](auto &&a, const auto &b) { a /= b; }};
+
+template <class... Ts> struct add_types_t {
+  constexpr void operator()() const noexcept;
+  using types = arithmetic_and_matrix_type_pairs;
 };
-struct minus_equals {
-  template <class A, class B>
-  constexpr void operator()(A &&a, const B &b) const
-      noexcept(noexcept(a -= b)) {
-    a -= b;
-  }
-  using types = decltype(std::tuple_cat(
-      pair_self_t<double, float, int32_t, int64_t, Eigen::Vector3d>{},
-      pair_custom_t<std::pair<double, float>, std::pair<int64_t, int32_t>>{}));
+
+template <class... Ts> struct times_types_t {
+  constexpr void operator()() const noexcept;
+  using types = arithmetic_type_pairs_with_bool;
 };
-struct times_equals {
-  template <class A, class B>
-  constexpr void operator()(A &&a, const B &b) const
-      noexcept(noexcept(a *= b)) {
-    a *= b;
-  }
-  using types = decltype(std::tuple_cat(
-      pair_self_t<double, float, int32_t, int64_t>{},
-      pair_custom_t<std::pair<double, float>, std::pair<float, double>,
-                    std::pair<int64_t, int32_t>,
-                    std::pair<Eigen::Vector3d, double>>{},
-      pair_numerical_with_t<bool>{}));
+
+template <class... Ts> struct divide_types_t {
+  constexpr void operator()() const noexcept;
+  using types = arithmetic_type_pairs;
 };
-struct divide_equals {
-  template <class A, class B>
-  constexpr void operator()(A &&a, const B &b) const
-      noexcept(noexcept(a /= b)) {
-    a /= b;
-  }
-  using types = decltype(std::tuple_cat(
-      pair_self_t<double, float, int32_t, int64_t>{},
-      pair_custom_t<std::pair<double, float>, std::pair<int64_t, int32_t>,
-                    std::pair<Eigen::Vector3d, double>>{}));
-};
+
+constexpr auto plus =
+    overloaded{add_types_t{}, [](const auto a, const auto b) { return a + b; }};
+constexpr auto minus =
+    overloaded{add_types_t{}, [](const auto a, const auto b) { return a - b; }};
+constexpr auto times = overloaded{
+    times_types_t{}, [](const auto a, const auto b) { return a * b; }};
+constexpr auto divide = overloaded{
+    divide_types_t{}, [](const auto a, const auto b) { return a / b; }};
+
+constexpr auto unary_minus =
+    overloaded{arg_list<double, float, int64_t, int32_t, Eigen::Vector3d>,
+               [](const auto x) { return -x; }};
 
 } // namespace scipp::core::element

@@ -2,15 +2,9 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <cmath>
-
-#include "scipp/core/dtype.h"
 #include "scipp/core/element/math.h"
-#include "scipp/variable/except.h"
 #include "scipp/variable/math.h"
 #include "scipp/variable/transform.h"
-
-#include "operations_common.h"
 
 using namespace scipp::core;
 

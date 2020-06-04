@@ -7,13 +7,16 @@ add_executable(
   dimensions_test.cpp
   element_array_test.cpp
   element_array_view_test.cpp
+  element_arithmetic_test.cpp
   element_comparison_test.cpp
   element_event_operations_test.cpp
   element_geometric_operations_test.cpp
   element_histogram_test.cpp
+  element_logical_test.cpp
   element_math_test.cpp
+  element_reduction_test.cpp
+  element_special_values_test.cpp
   element_trigonometry_test.cpp
-  element_unary_operations_test.cpp
   element_util_test.cpp
   value_and_variance_test.cpp
   view_index_test.cpp
