@@ -12,7 +12,7 @@ stages:
     jobs:
       - job: 'linux'
         displayName: 'Linux'
-        timeoutInMinutes: 60
+        timeoutInMinutes: 80
         strategy:
           matrix:
             Python36:
