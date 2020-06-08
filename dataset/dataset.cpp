@@ -52,6 +52,17 @@ auto makeViewItems(const Dims &dims, T1 &coords) {
   return items;
 }
 
+template <class Item, class Dims, class Coords>
+void addAttrsFromCoords(Item &items, const Dims &parentDims, const Dims &dims,
+                        Coords &coords) {
+  for (auto &&[dim, coord] : coords) {
+    const auto &coordDims = coord.dims();
+    if (!coordDims.empty() && contains(parentDims, coordDims.inner()) &&
+        !contains(dims, coordDims.inner()))
+      items.emplace(dim.name(), makeViewItem(coord));
+  }
+}
+
 Dataset::Dataset(const DatasetConstView &view)
     : Dataset(view, view.coords(), view.masks(), view.attrs()) {}
 
@@ -462,6 +473,15 @@ void DataArray::setName(const std::string &name) {
   map.insert(std::move(node));
 }
 
+Dimensions DataArrayConstView::parentDims() const noexcept {
+  if (underlying().data)
+    return underlying().data.dims();
+  else if (hasData()) // view of unaligned content
+    return underlying().unaligned->data.dims();
+  else
+    return underlying().unaligned->dims;
+}
+
 /// Return an ordered mapping of dimension labels to extents.
 Dimensions DataArrayConstView::dims() const noexcept {
   if (hasData())
@@ -537,6 +557,8 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
   }
+  if constexpr (std::is_same_v<MapView, AttrsConstView>)
+    addAttrsFromCoords(items, parentDims(), dims(), m_dataset->m_coords);
   return MapView(std::move(items), slices());
 }
 
@@ -559,6 +581,8 @@ template <class MapView> MapView DataArrayView::makeView() const {
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
   }
+  if constexpr (std::is_same_v<MapView, AttrsView>)
+    addAttrsFromCoords(items, parentDims(), dims(), m_mutableDataset->m_coords);
   if constexpr (std::is_same_v<MapView, AttrsView>) {
     // Note: Unlike for CoordAccess and MaskAccess this is *not* unconditionally
     // disabled with nullptr since it sets/erase attributes of the *item*.
@@ -730,17 +754,20 @@ CoordsView DatasetView::coords() const noexcept {
 
 /// Return a const view to all attributes of the dataset slice.
 AttrsConstView DatasetConstView::attrs() const noexcept {
-  return AttrsConstView(
-      makeViewItems<AttrsConstView>(dimensions(), m_dataset->m_attrs),
-      slices());
+  auto items = makeViewItems<AttrsConstView>(dimensions(), m_dataset->m_attrs);
+  addAttrsFromCoords(items, m_dataset->dimensions(), dimensions(),
+                     m_dataset->m_coords);
+  return AttrsConstView(std::move(items), slices());
 }
 
 /// Return a view to all attributes of the dataset slice.
 AttrsView DatasetView::attrs() const noexcept {
-  return AttrsView(
-      AttrAccess(slices().empty() ? m_mutableDataset : nullptr),
-      makeViewItems<AttrsConstView>(dimensions(), m_mutableDataset->m_attrs),
-      slices());
+  auto items =
+      makeViewItems<AttrsConstView>(dimensions(), m_mutableDataset->m_attrs);
+  addAttrsFromCoords(items, m_dataset->dimensions(), dimensions(),
+                     m_mutableDataset->m_coords);
+  return AttrsView(AttrAccess(slices().empty() ? m_mutableDataset : nullptr),
+                   std::move(items), slices());
 }
 /// Return a const view to all masks of the dataset slice.
 MasksConstView DatasetConstView::masks() const noexcept {

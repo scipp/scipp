@@ -9,6 +9,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/arithmetic.h"
 #include "test_macros.h"
 
 using namespace scipp;
@@ -688,4 +689,39 @@ TYPED_TEST(DataArrayView3DTest, slice_with_edges) {
       }
     }
   }
+}
+
+class CoordToAttrMappingTest : public ::testing::Test {
+protected:
+  Variable x = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  DataArray a{x, {{Dim::X, x}}};
+};
+
+template <class T> void test_coord_to_attr_mapping(T &o) {
+  EXPECT_FALSE(o.attrs().contains("x"));
+  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).attrs().contains("x"));
+  EXPECT_TRUE(o.slice({Dim::X, 2}).attrs().contains("x"));
+  EXPECT_EQ(o.slice({Dim::X, 2}).attrs()["x"], 3.0 * units::one);
+  EXPECT_TRUE(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).attrs().contains("x"));
+  EXPECT_EQ(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).attrs()["x"],
+            3.0 * units::one);
+}
+
+TEST_F(CoordToAttrMappingTest, DataArrayView) {
+  test_coord_to_attr_mapping(a);
+}
+
+TEST_F(CoordToAttrMappingTest, DataArrayConstView) {
+  const DataArray &const_a = a;
+  test_coord_to_attr_mapping(const_a);
+}
+
+TEST_F(CoordToAttrMappingTest, DatasetView) {
+  Dataset d({{"a", a}});
+  test_coord_to_attr_mapping(d);
+}
+
+TEST_F(CoordToAttrMappingTest, DatasetConstView) {
+  const Dataset d({{"a", a}});
+  test_coord_to_attr_mapping(d);
 }
