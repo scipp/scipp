@@ -317,10 +317,19 @@ DataArray &DataArray::operator/=(const VariableConstView &other) {
   return *this;
 }
 
+auto intersection(const AttrsConstView &a, const AttrsConstView &b) {
+  std::map<std::string, Variable> out;
+  for (const auto &[key, item] : a)
+    if (const auto it = b.find(key); it != b.end() && it->second == item)
+      out.emplace(key, item);
+  return out;
+}
+
 DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
   if (a.hasData() && b.hasData()) {
     return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
-                     union_or(a.masks(), b.masks()));
+                     union_or(a.masks(), b.masks()),
+                     intersection(a.attrs(), b.attrs()));
   } else {
     DataArray out(a);
     out += b; // No broadcast possible for now
@@ -331,7 +340,7 @@ DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
 DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
   if (a.hasData() && b.hasData()) {
     return {a.data() - b.data(), union_(a.coords(), b.coords()),
-            union_or(a.masks(), b.masks())};
+            union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
   } else {
     DataArray out(a);
     out -= b; // No broadcast possible for now
@@ -373,10 +382,10 @@ DataArray apply_mul_or_div(Op op, const DataArrayConstView &a,
                            const DataArrayConstView &b) {
   if (unaligned::is_realigned_events(a) || unaligned::is_realigned_events(b))
     return {events_dense_op(op, a, b), union_(a.coords(), b.coords()),
-            union_or(a.masks(), b.masks())};
+            union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
   else
     return {op(a.data(), b.data()), union_(a.coords(), b.coords()),
-            union_or(a.masks(), b.masks())};
+            union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
 }
 } // namespace
 
