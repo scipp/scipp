@@ -23,12 +23,12 @@ using slice_list =
 template <class T> void do_make_slice(T &slice, const slice_list &slices) {
   for (const auto &[params, extent] : slices) {
     if (slice.dims().contains(params.dim())) {
-      const auto new_end = params.end() + slice.dims()[params.dim()] - extent;
-      const auto pointSlice = (new_end == -1);
-      if (pointSlice) {
-        slice = slice.slice(Slice{params.dim(), params.begin()});
+      if (slice.dims()[params.dim()] == extent) {
+        slice = slice.slice(params);
       } else {
-        slice = slice.slice(Slice{params.dim(), params.begin(), new_end});
+        slice = slice.slice(
+            Slice{params.dim(), params.begin(),
+                  params.end() == -1 ? params.begin() + 2 : params.end() + 1});
       }
     }
   }
