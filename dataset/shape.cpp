@@ -57,8 +57,6 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 
 DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                       const Dim dim) {
-  if (!a.dims().contains(dim) && a == b)
-    return DataArray{a};
   return DataArray(a.hasData() || b.hasData()
                        ? concatenate(a.data(), b.data(), dim)
                        : Variable{},
