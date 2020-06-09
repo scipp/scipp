@@ -357,10 +357,15 @@ TEST_F(GroupbyWithBinsTest, single_bin) {
       makeVariable<double>(Dims{Dim::Z}, Shape{2}, units::m, Values{1.0, 5.0});
   const auto groups = groupby(d, Dim("labels2"), bins);
 
-  // Non-range slice drops Dim::Z and the corresponding coord (the edges), so
-  // the result must be equal to a global `sum` or `mean`.
-  EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}), sum(d, Dim::X));
-  EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}), mean(d, Dim::X));
+  // Non-range slice drops Dim::Z, so the result must be equal to a global `sum`
+  // or `mean` with the corresponding coord (the edges) attr added.
+  const auto add_bins = [&bins](auto data) {
+    data["a"].attrs().set("z", bins);
+    data["b"].attrs().set("z", bins);
+    return data;
+  };
+  EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}), add_bins(sum(d, Dim::X)));
+  EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}), add_bins(mean(d, Dim::X)));
 }
 
 TEST_F(GroupbyWithBinsTest, two_bin) {
@@ -368,16 +373,26 @@ TEST_F(GroupbyWithBinsTest, two_bin) {
                                    Values{1.0, 2.0, 5.0});
   const auto groups = groupby(d, Dim("labels2"), bins);
 
+  const auto add_bins = [&bins](auto data, const scipp::index bin) {
+    data["a"].attrs().set("z", bins.slice({Dim::Z, bin, bin + 2}));
+    data["b"].attrs().set("z", bins.slice({Dim::Z, bin, bin + 2}));
+    return data;
+  };
+
   auto group0 =
       concatenate(d.slice({Dim::X, 0, 2}), d.slice({Dim::X, 4, 5}), Dim::X);
   // concatenate does currently not preserve attributes
   group0.setAttr("a", "scalar", d["a"].attrs()["scalar"]);
-  EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}), sum(group0, Dim::X));
-  EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}), mean(group0, Dim::X));
+  EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}),
+            add_bins(sum(group0, Dim::X), 0));
+  EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}),
+            add_bins(mean(group0, Dim::X), 0));
 
   const auto group1 = d.slice({Dim::X, 2, 4});
-  EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 1}), sum(group1, Dim::X));
-  EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 1}), mean(group1, Dim::X));
+  EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 1}),
+            add_bins(sum(group1, Dim::X), 1));
+  EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 1}),
+            add_bins(mean(group1, Dim::X), 1));
 }
 
 TEST_F(GroupbyWithBinsTest, dataset_variable) {
