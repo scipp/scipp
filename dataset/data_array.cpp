@@ -317,14 +317,6 @@ DataArray &DataArray::operator/=(const VariableConstView &other) {
   return *this;
 }
 
-auto intersection(const AttrsConstView &a, const AttrsConstView &b) {
-  std::map<std::string, Variable> out;
-  for (const auto &[key, item] : a)
-    if (const auto it = b.find(key); it != b.end() && it->second == item)
-      out.emplace(key, item);
-  return out;
-}
-
 DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
   if (a.hasData() && b.hasData()) {
     return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
