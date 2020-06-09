@@ -25,10 +25,10 @@ template <class T> static auto position(const T &d) {
 }
 
 template <class T> static auto source_position(const T &d) {
-  if (d.coords().contains(Dim("source_position")))
-    return d.coords()[Dim("source_position")];
+  if (d.coords().contains(Dim("source-position")))
+    return d.coords()[Dim("source-position")];
   else
-    return d.attrs()["source_position"];
+    return d.attrs()["source-position"];
 }
 
 template <class T> static auto sample_position(const T &d) {

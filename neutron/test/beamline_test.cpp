@@ -73,7 +73,7 @@ TEST_F(BeamlineTest, scattering_angle) {
 
 TEST_F(BeamlineTest, no_sample) {
   Dataset d(dataset);
-  d.coords().erase(Dim("sample_position"));
+  d.coords().erase(Dim("sample-position"));
   ASSERT_THROW(l1(d), except::NotFoundError);
   ASSERT_THROW(l2(d), except::NotFoundError);
   ASSERT_THROW(scattering_angle(d), except::NotFoundError);
