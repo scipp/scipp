@@ -12,7 +12,6 @@ using namespace scipp::core;
 namespace py = pybind11;
 
 void init_detail(py::module &m) {
-
   py::class_<MoveableVariable>(m, "MoveableVariable");
   py::class_<MoveableDataArray>(m, "MoveableDataArray");
 

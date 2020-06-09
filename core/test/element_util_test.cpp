@@ -36,7 +36,6 @@ TEST(ElementUtilTest, convertMaskedToZero_handles_units) {
 
   for (const auto &unit :
        {scipp::units::m, scipp::units::dimensionless, scipp::units::s}) {
-
     // Unit 'a' should always be preserved
     EXPECT_EQ(convertMaskedToZero(unit, dimensionless), unit);
   }

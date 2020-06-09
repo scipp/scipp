@@ -382,7 +382,6 @@ TEST_F(GroupbyWithBinsTest, two_bin) {
 }
 
 TEST_F(GroupbyWithBinsTest, dataset_variable) {
-
   auto bins =
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, units::Unit(units::m),
                            Values{0.0, 1.0, 2.0, 3.0});
