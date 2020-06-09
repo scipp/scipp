@@ -164,15 +164,19 @@ DataArray histogram(const DataArrayConstView &realigned) {
                                   return realigned_dims.count(item.first);
                                 }),
                  bounds.end());
+    DataArray out;
     if (bounds.empty())
-      return histogram(realigned.unaligned(),
-                       unaligned::realigned_event_coord(realigned));
+      out = histogram(realigned.unaligned(),
+                      unaligned::realigned_event_coord(realigned));
     else {
       // Copy to drop events out of slice bounds
       DataArray sliced(realigned);
-      return histogram(sliced.unaligned(),
-                       unaligned::realigned_event_coord(realigned));
+      out = histogram(sliced.unaligned(),
+                      unaligned::realigned_event_coord(realigned));
     }
+    for (const auto &[name, attr] : realigned.attrs())
+      out.attrs().set(name, std::move(attr));
+    return out;
   }
   std::optional<DataArray> filtered;
   // If `realigned` is sliced we need to copy the unaligned content to "apply"
