@@ -21,13 +21,13 @@ template <class T> void bind_positions(py::module &m) {
     :return: A variable containing the detector pixel positions.
     :rtype: Variable)");
 
-  m.def("source-position", py::overload_cast<T>(source_position), R"(
+  m.def("source_position", py::overload_cast<T>(source_position), R"(
     Extract the neutron source position from a data array or a dataset.
 
     :return: A scalar variable containing the source position.
     :rtype: Variable)");
 
-  m.def("sample-position", py::overload_cast<T>(sample_position), R"(
+  m.def("sample_position", py::overload_cast<T>(sample_position), R"(
     Extract the sample position from a data array or a dataset.
 
     :return: A scalar variable containing the sample position.
