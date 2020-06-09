@@ -273,7 +273,10 @@ def test_slice():
             'b': sc.Variable(1.0)
         },
         coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
-    expected = sc.Dataset({'a': sc.Variable(1.0)})
+    expected = sc.Dataset({
+        'a':
+        sc.DataArray(1.0 * sc.units.one, attrs={'x': 1.0 * sc.units.one})
+    })
 
     assert d['x', 1] == expected
     assert 'a' in d['x', 1]
@@ -281,6 +284,9 @@ def test_slice():
 
 
 def test_chained_slicing():
+    x = sc.Variable(dims=['x'], values=np.arange(11.0))
+    y = sc.Variable(dims=['y'], values=np.arange(11.0))
+    z = sc.Variable(dims=['z'], values=np.arange(11.0))
     d = sc.Dataset(
         {
             'a':
@@ -291,9 +297,9 @@ def test_chained_slicing():
                         values=np.arange(0.0, 10.0, 0.1).reshape(10, 10))
         },
         coords={
-            'x': sc.Variable(dims=['x'], values=np.arange(11.0)),
-            'y': sc.Variable(dims=['y'], values=np.arange(11.0)),
-            'z': sc.Variable(dims=['z'], values=np.arange(11.0))
+            'x': x,
+            'y': y,
+            'z': z
         })
 
     expected = sc.Dataset()
@@ -301,6 +307,10 @@ def test_chained_slicing():
     expected['a'] = sc.Variable(dims=['y'],
                                 values=np.arange(501.0, 600.0, 10.0))
     expected['b'] = sc.Variable(1.5)
+    expected['a'].attrs['x'] = x['x', 1:3]
+    expected['b'].attrs['x'] = x['x', 1:3]
+    expected['a'].attrs['z'] = z['z', 5:7]
+    expected['b'].attrs['z'] = z['z', 5:7]
 
     assert d['x', 1]['z', 5] == expected
 
