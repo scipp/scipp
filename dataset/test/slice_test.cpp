@@ -306,9 +306,17 @@ TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
   const auto pos = GetParam();
   auto datasetWithEdges = dataset;
   datasetWithEdges.setCoord(Dim::X, makeRandom({Dim::X, 5}));
-  EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}), reference(pos));
-  EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}),
-            dataset.slice({Dim::X, pos}));
+  auto expected = reference(pos);
+  // Non-range slice converts coord to attr
+  for (const auto &name :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
+    expected[name].attrs().set(
+        "labels_x",
+        datasetWithEdges.coords()[Dim("labels_x")].slice({Dim::X, pos}));
+    expected[name].attrs().set(
+        "x", datasetWithEdges.coords()[Dim("x")].slice({Dim::X, pos, pos + 2}));
+  }
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}), expected);
 }
 
 TEST_P(Dataset3DTest_slice_y, slice) {
