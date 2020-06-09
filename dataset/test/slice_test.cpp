@@ -744,9 +744,7 @@ template <class T> void test_dataset_coord_to_attr_mapping(T &o) {
             3.0 * units::one);
 }
 
-TEST_F(CoordToAttrMappingTest, DataArrayView) {
-  test_coord_to_attr_mapping(a);
-}
+TEST_F(CoordToAttrMappingTest, DataArrayView) { test_coord_to_attr_mapping(a); }
 
 TEST_F(CoordToAttrMappingTest, DataArrayConstView) {
   const DataArray &const_a = a;
