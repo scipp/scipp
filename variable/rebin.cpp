@@ -30,6 +30,7 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
   // coord is 1D.
   int iold = 0;
   int inew = 0;
+  const bool is_bool = newT.dtype() == dtype<bool>;
   while ((iold < oldSize) && (inew < newSize)) {
     auto xo_low = xold[iold];
     auto xo_high = xold[iold + 1];
@@ -41,13 +42,16 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
     else if (xo_high <= xn_low)
       iold++; /* old and new bins do not overlap */
     else {
-      // delta is the overlap of the bins on the x axis
-      auto delta = std::min(xn_high, xo_high) - std::max(xn_low, xo_low);
-
-      auto owidth = xo_high - xo_low;
-      newT.slice({dim, inew}) +=
-          astype(oldT.slice({dim, iold}) * ((delta / owidth) * units::one),
-                 newT.dtype());
+      if (is_bool) {
+        newT.slice({dim, inew}) |= oldT.slice({dim, iold});
+      } else {
+        // delta is the overlap of the bins on the x axis
+        auto delta = std::min(xn_high, xo_high) - std::max(xn_low, xo_low);
+        auto owidth = xo_high - xo_low;
+        newT.slice({dim, inew}) +=
+            astype(oldT.slice({dim, iold}) * ((delta / owidth) * units::one),
+                   newT.dtype());
+      }
       if (xn_high > xo_high) {
         iold++;
       } else {

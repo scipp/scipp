@@ -8,7 +8,7 @@ from .render import render_plot
 from .slicer import Slicer
 from .tools import centers_to_edges, edges_to_centers, parse_params
 from ..utils import name_with_unit
-from .._scipp.core import Variable, histogram as scipp_histogram
+from .._scipp import core as sc
 
 # Other imports
 import numpy as np
@@ -98,6 +98,15 @@ class Slicer2d(Slicer):
         self.vminmax = {"vmin": vmin, "vmax": vmax}
         self.global_vmin = np.Inf
         self.global_vmax = np.NINF
+        self.image_resolution = 0.64 * config.plot.dpi / 96.0
+        self.image_resolution = [int(self.image_resolution * config.plot.width),
+                                 int(self.image_resolution * config.plot.height)]
+        self.xrebin = None
+        self.yrebin = None
+        self.xedges = None
+        self.yedges = None
+        self.xwidth = None
+        self.ywidth = None
 
         # Get or create matplotlib axes
         self.fig = None
@@ -251,6 +260,40 @@ class Slicer2d(Slicer):
                 axparams[but_val]["dim"] = dim
 
         extent_array = np.array(list(self.extent.values())).flatten()
+        self.xrebin = sc.Variable(dims=[axparams['x']["dim"]], values=np.linspace(extent_array[0], extent_array[1], self.image_resolution[0]+1), unit=self.slider_x[self.name][axparams['x']["dim"]].unit)
+        self.yrebin = sc.Variable(dims=[axparams['y']["dim"]], values=np.linspace(extent_array[2], extent_array[3], self.image_resolution[1]+1), unit=self.slider_x[self.name][axparams['y']["dim"]].unit)
+        self.image_dx = self.xrebin.values[1] - self.xrebin.values[0]
+        self.image_dy = self.yrebin.values[1] - self.yrebin.values[0]
+
+        if not self.histograms[self.name][self.xrebin.dims[0]]:
+            # self.xedges = centers_to_edges(self.data_array.coords[self.xrebin.dims[0]].values)
+            self.xedges = sc.Variable(
+                dims=self.xrebin.dims,
+                values=centers_to_edges(
+                    self.data_array.coords[self.xrebin.dims[0]].values),
+                unit=self.data_array.coords[self.xrebin.dims[0]].unit)
+        else:
+            self.xedges = self.data_array.coords[self.xrebin.dims[0]]
+        if not self.histograms[self.name][self.yrebin.dims[0]]:
+            self.yedges = sc.Variable(
+                dims=self.yrebin.dims,
+                values=centers_to_edges(
+                    self.data_array.coords[self.yrebin.dims[0]].values),
+                unit=self.data_array.coords[self.yrebin.dims[0]].unit)
+        else:
+            self.yedges = self.data_array.coords[self.yrebin.dims[0]]
+
+            # ye = centers_to_edges(vslice.coords[self.yrebin.dims[0]].values)
+            # vslice.coords[self.yrebin.dims[0]] = sc.Variable(
+            #     dims=self.yrebin.dims, values=ye,
+            #     unit=vslice.coords[self.yrebin.dims[0]].unit)
+        self.xwidth = sc.Variable(
+                dims=self.xedges.dims,
+                values=np.ediff1d(self.xedges.values) / self.image_dx)
+        self.ywidth = sc.Variable(
+                dims=self.yedges.dims,
+                values=np.ediff1d(self.yedges.values) / self.image_dy)
+
         for key in self.ax.keys():
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
@@ -274,19 +317,19 @@ class Slicer2d(Slicer):
         Slice data according to new slider value.
         """
         vslice = self.data_array
-        if self.params["masks"][self.name]["show"]:
-            mslice = self.masks
+        # if self.params["masks"][self.name]["show"]:
+        #     mslice = self.masks
         # Slice along dimensions with active sliders
         button_dims = [None, None]
         for dim, val in self.slider.items():
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_x[self.name][dim], val.value)
-                vslice = vslice[val.dim, val.value]
-                # At this point, after masks were combined, all their
-                # dimensions should be contained in the data_array.dims.
-                if self.params["masks"][self.name]["show"]:
-                    mslice = mslice[val.dim, val.value]
+                vslice = vslice[val.dim, val.value:val.value+1]
+                # # At this point, after masks were combined, all their
+                # # dimensions should be contained in the data_array.dims.
+                # if self.params["masks"][self.name]["show"]:
+                #     mslice = mslice[val.dim, val.value]
             else:
                 button_dims[self.buttons[dim].value.lower() == "x"] = val.dim
 
@@ -294,8 +337,66 @@ class Slicer2d(Slicer):
         slice_dims = vslice.dims
         transp = slice_dims != button_dims
 
+        # if self.params["masks"][self.name]["show"]:
+        #     shape_list = [self.shapes[self.name][bdim] for bdim in button_dims]
+        #     # Use scipp's automatic broadcast functionality to broadcast
+        #     # lower dimension masks to higher dimensions.
+        #     # TODO: creating a Variable here could become expensive when
+        #     # sliders are being used. We could consider performing the
+        #     # automatic broadcasting once and store it in the Slicer class,
+        #     # but this could create a large memory overhead if the data is
+        #     # large.
+        #     # Here, the data is at most 2D, so having the Variable creation
+        #     # and broadcasting should remain cheap.
+        #     msk = sc.Variable(dims=button_dims,
+        #                    values=np.ones(shape_list, dtype=np.int32))
+        #     msk *= sc.Variable(dims=mslice.dims,
+        #                     values=mslice.values.astype(np.int32))
+
+        autoscale_cbar = False
+        if vslice.unaligned is not None:
+            vslice = sc.histogram(vslice)
+            autoscale_cbar = True
+
+        vslice = vslice.copy()
+
+        # Check for non bin-edge coords
+        # if (not self.histograms[self.name][self.xrebin.dims[0]] or
+        #     not self.histograms[self.name][self.yrebin.dims[0]]):
+        #     vslice = vslice.copy()
+        if not self.histograms[self.name][self.xrebin.dims[0]]:
+            # xe = centers_to_edges(vslice.coords[self.xrebin.dims[0]].values)
+            vslice.coords[self.xrebin.dims[0]] = self.xedges
+        if not self.histograms[self.name][self.yrebin.dims[0]]:
+            # ye = centers_to_edges(vslice.coords[self.yrebin.dims[0]].values)
+            vslice.coords[self.yrebin.dims[0]] = self.yedges
+
+        # Artificially set units to counts so we can use rebin
+        vslice.unit = sc.units.counts
+
+        # The scaling by bin width and rebin operations below modify the
+        # variances in the data, so here we have to manually split the values
+        # and variances into separate Variables. We store them in a dict.
+        to_image = {}
+        if self.params["variances"][self.name]["show"]:
+            eslice = vslice.copy()
+            eslice.values = eslice.variances
+            eslice.variances = None
+            vslice.variances = None
+            eslice *= self.xwidth * self.ywidth
+            eslice = sc.rebin(eslice, self.xrebin.dims[0], self.xrebin)
+            eslice = sc.rebin(eslice, self.yrebin.dims[0], self.yrebin)
+            to_image["variances"] = np.sqrt(eslice.values)
+
+        # Scale by bin width and then rebin in both directions
+        vslice *= self.xwidth * self.ywidth
+        vslice = sc.rebin(vslice, self.xrebin.dims[0], self.xrebin)
+        vslice = sc.rebin(vslice, self.yrebin.dims[0], self.yrebin)
+        to_image["values"] = vslice.values
+
         if self.params["masks"][self.name]["show"]:
-            shape_list = [self.shapes[self.name][bdim] for bdim in button_dims]
+            mslice = sc.combine_masks(vslice.masks, vslice.dims,
+                                           vslice.shape)
             # Use scipp's automatic broadcast functionality to broadcast
             # lower dimension masks to higher dimensions.
             # TODO: creating a Variable here could become expensive when
@@ -305,20 +406,19 @@ class Slicer2d(Slicer):
             # large.
             # Here, the data is at most 2D, so having the Variable creation
             # and broadcasting should remain cheap.
-            msk = Variable(dims=button_dims,
-                           values=np.ones(shape_list, dtype=np.int32))
-            msk *= Variable(dims=mslice.dims,
+            msk = sc.Variable(dims=vslice.dims,
+                           values=np.ones(vslice.shape, dtype=np.int32))
+            msk *= sc.Variable(dims=mslice.dims,
                             values=mslice.values.astype(np.int32))
-
-        autoscale_cbar = False
-        if vslice.unaligned is not None:
-            vslice = scipp_histogram(vslice)
-            autoscale_cbar = True
+            # mask = (vslice / mask)
+            # if transp:
+            #     msk = sc.transpose(msk, button_dims)
 
         for key in self.ax.keys():
-            arr = getattr(vslice, key)
-            if key == "variances":
-                arr = np.sqrt(arr)
+            # arr = getattr(vslice, key)
+            arr = to_image[key]
+            # if key == "variances":
+            #     arr = np.sqrt(arr)
             if transp:
                 arr = arr.T
             self.im[key].set_data(arr)
@@ -332,8 +432,13 @@ class Slicer2d(Slicer):
                 self.params[key][self.name]["norm"] = cbar_params["norm"]
                 self.im[key].set_norm(self.params[key][self.name]["norm"])
             if self.params["masks"][self.name]["show"]:
+                # masked_data = vslice / msk
                 self.im[self.get_mask_key(key)].set_data(
                     self.mask_to_float(msk.values, arr))
+                # msk = getattr(mask, key)
+                # if transp:
+                #     msk = msk.T
+                # self.im[self.get_mask_key(key)].set_data(msk)
                 self.im[self.get_mask_key(key)].set_norm(
                     self.params[key][self.name]["norm"])
 
