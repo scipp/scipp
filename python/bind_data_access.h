@@ -176,10 +176,9 @@ template <class... Ts> class as_ElementArrayViewImpl {
               typename std::remove_reference_t<decltype(view_)>::value_type;
           if constexpr (std::is_trivial_v<T>) {
             auto &data = obj.cast<const py::array_t<T>>();
-            bool except = (scipp::size(dims.shape()) != data.ndim());
-            for (scipp::index i = 0; i < scipp::size(dims.shape()); ++i)
-              except |= (dims.shape()[i] != data.shape()[i]);
-            if (except)
+            const auto &shape = dims.shape();
+            if (!std::equal(shape.begin(), shape.end(), data.shape(),
+                            data.shape() + data.ndim()))
               throw except::DimensionError("The shape of the provided data "
                                            "does not match the existing "
                                            "object.");
