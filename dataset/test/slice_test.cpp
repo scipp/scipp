@@ -707,6 +707,20 @@ template <class T> void test_coord_to_attr_mapping(T &o) {
             3.0 * units::one);
 }
 
+template <class T> void test_dataset_coord_to_attr_mapping(T &o) {
+  EXPECT_FALSE(o.attrs().contains("x"));
+  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).attrs().contains("x"));
+  // No mapping to attrs of *dataset*
+  EXPECT_FALSE(o.slice({Dim::X, 2}).attrs().contains("x"));
+  // Mapped "aligned" coord of dataset to attr (unaligned coord) of item
+  EXPECT_TRUE(o.slice({Dim::X, 2})["a"].attrs().contains("x"));
+  EXPECT_EQ(o.slice({Dim::X, 2})["a"].attrs()["x"], 3.0 * units::one);
+  EXPECT_TRUE(
+      o.slice({Dim::X, 2, 3}).slice({Dim::X, 0})["a"].attrs().contains("x"));
+  EXPECT_EQ(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0})["a"].attrs()["x"],
+            3.0 * units::one);
+}
+
 TEST_F(CoordToAttrMappingTest, DataArrayView) {
   test_coord_to_attr_mapping(a);
 }
@@ -718,10 +732,10 @@ TEST_F(CoordToAttrMappingTest, DataArrayConstView) {
 
 TEST_F(CoordToAttrMappingTest, DatasetView) {
   Dataset d({{"a", a}});
-  test_coord_to_attr_mapping(d);
+  test_dataset_coord_to_attr_mapping(d);
 }
 
 TEST_F(CoordToAttrMappingTest, DatasetConstView) {
   const Dataset d({{"a", a}});
-  test_coord_to_attr_mapping(d);
+  test_dataset_coord_to_attr_mapping(d);
 }

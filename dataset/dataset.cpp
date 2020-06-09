@@ -767,20 +767,17 @@ CoordsView DatasetView::coords() const noexcept {
 
 /// Return a const view to all attributes of the dataset slice.
 AttrsConstView DatasetConstView::attrs() const noexcept {
-  auto items = makeViewItems<AttrsConstView>(dimensions(), m_dataset->m_attrs);
-  addAttrsFromCoords(items, m_dataset->dimensions(), dimensions(),
-                     m_dataset->m_coords);
-  return AttrsConstView(std::move(items), slices());
+  return AttrsConstView(
+      makeViewItems<AttrsConstView>(dimensions(), m_dataset->m_attrs),
+      slices());
 }
 
 /// Return a view to all attributes of the dataset slice.
 AttrsView DatasetView::attrs() const noexcept {
-  auto items =
-      makeViewItems<AttrsConstView>(dimensions(), m_mutableDataset->m_attrs);
-  addAttrsFromCoords(items, m_dataset->dimensions(), dimensions(),
-                     m_mutableDataset->m_coords);
-  return AttrsView(AttrAccess(slices().empty() ? m_mutableDataset : nullptr),
-                   std::move(items), slices());
+  return AttrsView(
+      AttrAccess(slices().empty() ? m_mutableDataset : nullptr),
+      makeViewItems<AttrsConstView>(dimensions(), m_mutableDataset->m_attrs),
+      slices());
 }
 /// Return a const view to all masks of the dataset slice.
 MasksConstView DatasetConstView::masks() const noexcept {
