@@ -22,6 +22,7 @@ Features
 * Instrument view working on doc pages.
 * Made it simpler to add new ``dtype`` and support ``transform`` for all types.
 * Comparison functions such as ``less``, ``greater_equal``, ...
+* Internal cleanup and documentation additions.
 
 Contributors
 ~~~~~~~~~~~~
