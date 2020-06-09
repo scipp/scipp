@@ -52,6 +52,13 @@ auto makeViewItems(const Dims &dims, T1 &coords) {
   return items;
 }
 
+template <class Item, class Dims, class Attrs>
+void addOrthogonalAttrs(Item &items, const Dims &parentDims, Attrs &attrs) {
+  for (auto &&[name, attr] : attrs)
+    if (!parentDims.contains(attr.dims()))
+      items.emplace(name, makeViewItem(attr));
+}
+
 template <class Item, class Dims, class Coords>
 void addAttrsFromCoords(Item &items, const Dims &parentDims, const Dims &dims,
                         Coords &coords) {
@@ -274,9 +281,7 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 void Dataset::setAttr(const std::string &name, const std::string &attrName,
                       Variable attr) {
   scipp::expect::contains(*this, name);
-  if (!operator[](name).dims().contains(attr.dims()))
-    throw except::DimensionError(
-        "Attribute dimensions must match and not exceed dimensions of data.");
+  setDims(attr.dims());
   m_data[name].attrs.insert_or_assign(attrName, std::move(attr));
 }
 
@@ -556,6 +561,11 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
+  } else {
+    // Attributes are per-item in dataset and may exceed data dims, e.g., for
+    // storing bounds when creating a copy of a non-range slice of a histogram.
+    if constexpr (std::is_same_v<MapView, AttrsConstView>)
+      addOrthogonalAttrs(items, parentDims(), map_parent(*this));
   }
   if constexpr (std::is_same_v<MapView, AttrsConstView>)
     addAttrsFromCoords(items, parentDims(), dims(), m_dataset->m_coords);
@@ -580,6 +590,9 @@ template <class MapView> MapView DataArrayView::makeView() const {
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
+  } else {
+    if constexpr (std::is_same_v<MapView, AttrsView>)
+      addOrthogonalAttrs(items, parentDims(), map_parent(*this));
   }
   if constexpr (std::is_same_v<MapView, AttrsView>)
     addAttrsFromCoords(items, parentDims(), dims(), m_mutableDataset->m_coords);
