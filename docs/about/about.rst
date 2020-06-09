@@ -8,7 +8,7 @@ References and citations
 
 An article about scipp has been published in the conference proceedings of ICANS, see `Scipp: Scientific data handling with labeled multi-dimensional arrays for C++ and Python <https://content.iospress.com/articles/journal-of-neutron-research/jnr190131>`_ .
 
-A significant amount of changes, such as multi-threading and support for realigned (event) data, has gone into scipp since the publication to we recommend to also cite the scipp documentation pages.
+A significant amount of changes such as multi-threading and support for realigned (event) data has gone into scipp since the publication so we recommend to also cite the scipp documentation pages.
 
 License
 -------
