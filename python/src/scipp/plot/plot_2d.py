@@ -223,6 +223,8 @@ class Slicer2d(Slicer):
     def update_axes(self):
         # Go through the buttons and select the right coordinates for the axes
         axparams = {"x": {}, "y": {}}
+        print(self.slider_x)
+        print(self.buttons)
         for dim, button in self.buttons.items():
             if self.slider[dim].disabled:
                 but_val = button.value.lower()
@@ -267,8 +269,9 @@ class Slicer2d(Slicer):
 
         if not self.histograms[self.name][self.xrebin.dims[0]]:
             # self.xedges = centers_to_edges(self.data_array.coords[self.xrebin.dims[0]].values)
+            # print("[self.slider_x[self.xrebin.dims[0]].dims[0]]", [self.slider_x[self.name][self.xrebin.dims[0]].dims[0]])
             self.xedges = sc.Variable(
-                dims=self.xrebin.dims,
+                dims=[self.slider_x[self.name][self.xrebin.dims[0]].dims[0]],
                 values=centers_to_edges(
                     self.data_array.coords[self.xrebin.dims[0]].values),
                 unit=self.data_array.coords[self.xrebin.dims[0]].unit)
@@ -276,7 +279,7 @@ class Slicer2d(Slicer):
             self.xedges = self.data_array.coords[self.xrebin.dims[0]]
         if not self.histograms[self.name][self.yrebin.dims[0]]:
             self.yedges = sc.Variable(
-                dims=self.yrebin.dims,
+                dims=[self.slider_x[self.name][self.yrebin.dims[0]].dims[0]],
                 values=centers_to_edges(
                     self.data_array.coords[self.yrebin.dims[0]].values),
                 unit=self.data_array.coords[self.yrebin.dims[0]].unit)
@@ -288,10 +291,10 @@ class Slicer2d(Slicer):
             #     dims=self.yrebin.dims, values=ye,
             #     unit=vslice.coords[self.yrebin.dims[0]].unit)
         self.xwidth = sc.Variable(
-                dims=self.xedges.dims,
+                dims=self.xrebin.dims,
                 values=np.ediff1d(self.xedges.values) / self.image_dx)
         self.ywidth = sc.Variable(
-                dims=self.yedges.dims,
+                dims=self.yrebin.dims,
                 values=np.ediff1d(self.yedges.values) / self.image_dy)
 
         for key in self.ax.keys():
@@ -317,6 +320,7 @@ class Slicer2d(Slicer):
         Slice data according to new slider value.
         """
         vslice = self.data_array
+        print("vslice 1", vslice)
         # if self.params["masks"][self.name]["show"]:
         #     mslice = self.masks
         # Slice along dimensions with active sliders
@@ -332,6 +336,8 @@ class Slicer2d(Slicer):
                 #     mslice = mslice[val.dim, val.value]
             else:
                 button_dims[self.buttons[dim].value.lower() == "x"] = val.dim
+        print("button_dims", button_dims)
+        print("vslice 2", vslice)
 
         # Check if dimensions of arrays agree, if not, plot the transpose
         slice_dims = vslice.dims
@@ -357,22 +363,35 @@ class Slicer2d(Slicer):
         if vslice.unaligned is not None:
             vslice = sc.histogram(vslice)
             autoscale_cbar = True
+        print("vslice 2.1", vslice)
 
         vslice = vslice.copy()
+        print("vslice 2.2", vslice)
+        print(self.histograms)
 
         # Check for non bin-edge coords
         # if (not self.histograms[self.name][self.xrebin.dims[0]] or
         #     not self.histograms[self.name][self.yrebin.dims[0]]):
         #     vslice = vslice.copy()
+        # print(vslice.coords["somelabels"])
         if not self.histograms[self.name][self.xrebin.dims[0]]:
             # xe = centers_to_edges(vslice.coords[self.xrebin.dims[0]].values)
+            print("self.xrebin.dims[0]", self.xrebin.dims[0])
+            print("self.xedges", self.xedges)
             vslice.coords[self.xrebin.dims[0]] = self.xedges
+        # print(vslice.coords["somelabels"])
+        print("vslice 2.25", vslice)
         if not self.histograms[self.name][self.yrebin.dims[0]]:
             # ye = centers_to_edges(vslice.coords[self.yrebin.dims[0]].values)
+            print("self.yrebin.dims[0]", self.yrebin.dims[0])
+            print("self.yedges", self.yedges)
             vslice.coords[self.yrebin.dims[0]] = self.yedges
+        print("vslice 2.3", vslice)
 
         # Artificially set units to counts so we can use rebin
         vslice.unit = sc.units.counts
+        print("vslice 3", vslice)
+
 
         # The scaling by bin width and rebin operations below modify the
         # variances in the data, so here we have to manually split the values
@@ -389,6 +408,8 @@ class Slicer2d(Slicer):
             to_image["variances"] = np.sqrt(eslice.values)
 
         # Scale by bin width and then rebin in both directions
+        print(vslice)
+        print(self.xwidth)
         vslice *= self.xwidth * self.ywidth
         vslice = sc.rebin(vslice, self.xrebin.dims[0], self.xrebin)
         vslice = sc.rebin(vslice, self.yrebin.dims[0], self.yrebin)
