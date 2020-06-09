@@ -246,7 +246,13 @@ TEST_F(AttributesTest, unaligned_not_mapped_into_aligned) {
   EXPECT_TRUE(d["a"].unaligned().attrs().empty());
 }
 
-TEST_F(AttributesTest, unaligned_set_via_aligned_fails) {
+// We have removed the check in Dataset::setAttr preventing insertion of attrs
+// exceeding data dims. This is now more in line with how coords are handled,
+// and is required for storing edges of a single bin created from a non-range
+// slice. However, it leaves this peculiarity of allowing insertion of an
+// attribute that depends on an dimension of unaligned content, without implying
+// actual relation, i.e., extents are unrelated.
+TEST_F(AttributesTest, DISABLED_unaligned_set_via_aligned_fails) {
   auto d = testdata::make_dataset_realigned_x_to_y();
   EXPECT_ANY_THROW(
       d["a"].attrs().set("x", makeVariable<double>(Dims{Dim::X}, Shape{3})));
