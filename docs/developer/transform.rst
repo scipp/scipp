@@ -75,8 +75,7 @@ Recommended usage
 -----------------
 
 - For improved testability and maintainability it is recommended to define the operator stand-alone instead of inline.
-- Specifying types on the element wise operator allows them to be omitted from 
-``transform`` and ``transform_in_place``.
+- Specifying types on the element wise operator allows them to be omitted from ``transform`` and ``transform_in_place``.
 - Use ``arg_list`` to define list of supported type combinations as shown below.
 
 .. code-block:: cpp
@@ -124,6 +123,5 @@ If operation is added to ``namespace scipp::variable``, define:
 
 - Here, variances for the first argument are disabled explicitly.
 - Unit tests should be written independently for ``scipp::core::element::my_op``.
-- The lambdas for ``overloaded`` can be tested separately, i.e. test unit handling
-then test value handling for supported types
+- The lambdas for ``overloaded`` can be tested separately, i.e. test unit handling then test value handling for supported types
 - ``scipp::variable::my_op`` should only have essential tests relying on correctness of ``transform`` and ``scipp::core::element::my_op``.
