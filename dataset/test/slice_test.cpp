@@ -267,7 +267,14 @@ INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_events,
 
 TEST_P(Dataset3DTest_slice_x, slice) {
   const auto pos = GetParam();
-  EXPECT_EQ(dataset.slice({Dim::X, pos}), reference(pos));
+  auto expected = reference(pos);
+  // Non-range slice converts coord to attr
+  for (const auto &name :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
+    for (const auto &attr : {"x", "labels_x"})
+      expected[name].attrs().set(
+          attr, dataset.coords()[Dim(attr)].slice({Dim::X, pos}));
+  EXPECT_EQ(dataset.slice({Dim::X, pos}), expected);
 }
 
 TEST_P(Dataset3DTest_slice_events, slice) {
@@ -321,6 +328,10 @@ TEST_P(Dataset3DTest_slice_y, slice) {
                     dataset["data_zyx"].data().slice({Dim::Y, pos}));
   reference.setData("data_xyz",
                     dataset["data_xyz"].data().slice({Dim::Y, pos}));
+  for (const auto &name : {"data_xy", "data_zyx", "data_xyz"})
+    for (const auto &attr : {"y", "labels_xy"})
+      reference[name].attrs().set(
+          attr, dataset.coords()[Dim(attr)].slice({Dim::Y, pos}));
 
   EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
@@ -341,6 +352,10 @@ TEST_P(Dataset3DTest_slice_z, slice) {
                     dataset["data_zyx"].data().slice({Dim::Z, pos}));
   reference.setData("data_xyz",
                     dataset["data_xyz"].data().slice({Dim::Z, pos}));
+  for (const auto &name : {"data_zyx", "data_xyz"})
+    for (const auto &attr : {"z", "labels_z"})
+      reference[name].attrs().set(
+          attr, dataset.coords()[Dim(attr)].slice({Dim::Z, pos}));
 
   EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
 }
