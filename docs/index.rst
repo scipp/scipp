@@ -121,5 +121,6 @@ Documentation
    :caption: About
    :maxdepth: 3
 
+   about/about
    about/contributing
    about/release-notes
