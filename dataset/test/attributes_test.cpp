@@ -76,13 +76,6 @@ TEST_F(AttributesTest, dataset_events_item_attrs) {
   ASSERT_EQ(d["events"].attrs().size(), 0);
 }
 
-TEST_F(AttributesTest, dataset_item_attrs_dimensions_exceeding_data) {
-  Dataset d;
-  d.setData("scalar", scalar);
-  EXPECT_THROW(d["scalar"].attrs().set("x", varX), except::DimensionError);
-  ASSERT_FALSE(d["scalar"].attrs().contains("x"));
-}
-
 TEST_F(AttributesTest, slice_dataset_item_attrs) {
   Dataset d;
   d.setData("a", varZX);
