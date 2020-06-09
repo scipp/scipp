@@ -80,23 +80,24 @@ Recommended usage
 
 .. code-block:: cpp
 
-  // This will accept two arguments of double, bool / float, int64_t / ...etc.
+  // This will accept two arguments of
+  // (a) double and bool,
+  // (b) float and int64_t,
+  // (c) int32_t and double, and
+  // (d) double and double.
+  // Note the special last argument to `arg_list`, which could be written also as
+  // `std::tuple<double, double>`: If all arguments are the same it suffices to list
+  // it directly instead of providing a tuple.
+  // More type tuples can be listed as required.
   overloaded{arg_list<std::tuple<double, bool>,
-                      std::tuple<float, int64_t)t>,
-                      std::tuple<int32_t, double>  // Any other type pairs you support
-                      >
+                      std::tuple<float, int64_t>,
+                      std::tuple<int32_t, double>,
+                      double>
                       [](auto &a, auto &b) { /* Get double/bool...etc. pairs here */ },
                       [](const units::Unit &a, const units::Unit &b) { /* Unit handling */ }
              };
 
 - Flags in ``transform_flags.h`` can be used to, e.g., prevent code generation if an argument has variances.
-- If pairs of the same type are required use ``pair_self_t`` for example:
-
-.. code-block:: cpp
-
-  // Equivalent to tuple<bool, bool>, tuple<double, double> ....
-  transform<pair_self_t<bool, double, int32_t, ...etc>>(...);
-
 
 Example
 ~~~~~~~
