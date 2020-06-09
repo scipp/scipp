@@ -3,8 +3,40 @@
 Release Notes
 =============
 
-Changes since v0.2
+Changes since v0.3
 ------------------
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+* ``scipp.neutron.load`` must use ``advanced_geometry=True`` option for loading ``detector_info`` and pixel shapes.
+* Normalization of event data cannot be done directly any more, must use ``realign``.
+
+Features
+~~~~~~~~
+
+* New realign functionality.
+* Support for event-filtering.
+* Support for subtraction and addition for (realigned) event data.
+* ``scipp.neutron``: Instrument view with advanced geometry support, showing correct pixel shapes.
+* Instrument view working on doc pages.
+* Made it simpler to add new ``dtype`` and support ``transform`` for all types.
+* Comparison functions such as ``less``, ``greater_equal``, ...
+
+Contributors
+~~~~~~~~~~~~
+
+Owen Arnold,
+David Fairbrother,
+Simon Heybrock,
+Daniel Nixon,
+Pawel Ptasznik,
+Piotr Rozyczko,
+and Neil Vaytet
+
+
+v0.3 (March 2020)
+-----------------
 
 * Many bug fixes and small additions
 * Multi-threading with TBB for many operations.
@@ -12,6 +44,14 @@ Changes since v0.2
 * Remove ``Dim`` labels in favor of plain strings. Connected to this, the ``labels`` property for data arrays and datasets has been removed. Use ``coords`` instead.
 * Start to support ``out`` arguments (not everywhere yet)
 * ``scipp.neutron``: Instrument view added
+
+Contributors in this release:
+Owen Arnold,
+Simon Heybrock,
+Daniel Nixon,
+Dimitar Tasev,
+and Neil Vaytet
+
 
 v0.2 (December 2019)
 --------------------
