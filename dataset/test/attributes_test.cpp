@@ -6,6 +6,7 @@
 #include "scipp/dataset/rebin.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
+#include "scipp/variable/arithmetic.h"
 
 #include "dataset_test_common.h"
 
@@ -103,13 +104,31 @@ TEST_F(AttributesTest, slice_dataset_item_attrs) {
   ASSERT_TRUE(d["a"].slice({Dim::Y, 0, 1}).attrs().contains("x"));
 }
 
-TEST_F(AttributesTest, binary_ops) {
+TEST_F(AttributesTest, binary_ops_matching_attrs_preserved) {
   Dataset d;
   d.setData("a", varX);
   d["a"].attrs().set("a_attr", scalar);
   d.attrs().set("dataset_attr", scalar);
 
   for (const auto &result : {d + d, d - d, d * d, d / d}) {
+    EXPECT_EQ(result.attrs(), d.attrs());
+    EXPECT_EQ(result["a"].attrs(), d["a"].attrs());
+  }
+}
+
+TEST_F(AttributesTest, binary_ops_mismatching_attrs_dropped) {
+  Dataset d1;
+  d1.setData("a", varX);
+  d1["a"].attrs().set("a_attr", scalar);
+  d1.attrs().set("dataset_attr", scalar);
+  Dataset d2;
+  d2.setData("a", varX);
+  d2["a"].attrs().set("a_attr", scalar + scalar); // mismatching content
+  d2.attrs().set("dataset_attr", scalar + scalar);
+  d2["a"].attrs().set("a_attr2", scalar); // mismatching name
+  d2.attrs().set("dataset_attr2", scalar);
+
+  for (const auto &result : {d1 + d2, d1 - d2, d1 * d2, d1 / d2}) {
     EXPECT_TRUE(result.attrs().empty());
     EXPECT_TRUE(result["a"].attrs().empty());
   }

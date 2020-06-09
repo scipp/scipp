@@ -147,6 +147,8 @@ auto apply_with_broadcast(const Op &op, const A &a,
   Dataset res;
   for (const auto &item : a)
     res.setData(item.name(), op(item, b));
+  for (auto &[name, attr] : intersection(a.attrs(), b.attrs()))
+    res.setAttr(name, std::move(attr));
   return res;
 }
 
@@ -156,6 +158,8 @@ auto apply_with_broadcast(const Op &op, const DataArrayConstView &a,
   Dataset res;
   for (const auto &item : b)
     res.setData(item.name(), op(a, item));
+  for (auto &[name, attr] : intersection(a.attrs(), b.attrs()))
+    res.setAttr(name, std::move(attr));
   return res;
 }
 
