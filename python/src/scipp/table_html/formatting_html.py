@@ -220,33 +220,28 @@ def summarize_coords(coords, ds=None):
                       f"{summarize_coord(dim, var, ds)}"
                       "</span></li>"
                       for dim, var in _ordered_dict(coords).items())
-
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
-
-
-def _extract_events(x):
-    """
-    Returns the (key, value) pairs where value has a events dim
-    :param x: dict-like, e.g., coords view or masks view
-    """
-    return {
-        key: value
-        for key, value in x.items() if sc.contains_events(value)
-    }
 
 
 def _make_inline_attributes(var, has_attrs):
     disabled = "disabled"
     attrs_ul = ""
-    if not has_attrs:
-        return disabled, attrs_ul
     attrs_sections = []
-    if hasattr(var, "coords"):
-        events_coords = _extract_events(var.coords)
-        if events_coords:
-            attrs_sections.append(coord_section(events_coords))
-            disabled = ""
-    if hasattr(var, "attrs"):
+
+    if hasattr(var, "data") and var.data is None:
+        content = dataset_repr(var.unaligned)
+        content = f"<div class='xr-var-attrs'><span>{content}</span></div>"
+        hint = 'data is realigned, expand to view underlying unaligned content'
+        section = collapsible_section('Unaligned',
+                                      inline_details=hint,
+                                      details=content,
+                                      n_items=1,
+                                      enabled=True,
+                                      collapsed=True)
+        attrs_sections.append(section)
+        disabled = ""
+
+    if has_attrs and hasattr(var, "attrs"):
         if len(var.attrs) > 0:
             attrs_sections.append(attr_section(var.attrs))
             disabled = ""
