@@ -292,72 +292,6 @@ def _format_common(is_index):
     return cssclass_idx, attrs_id, attrs_icon, data_id, data_icon
 
 
-def _variable_format(name, dims_str, dtype, unit, preview, variances_preview,
-                     attrs_ul, disabled, data_repr, is_index, has_attrs):
-    """
-    Formats the variable data into the format expected when displaying
-    as a standalone Variable. This happens when a single Variable or
-    DataArray is displayed.
-    """
-    cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(
-        is_index)
-
-    html = [
-        f"<div class='sc-var-name'><span{cssclass_idx}>{dims_str}</span>"
-        "</div>",
-        f"<div class='xr-var-dtype'>{escape(dtype)}</div>",
-        f"<div class='xr-var-unit'>{escape(unit)}</div>",
-        f"<div class='xr-value-preview xr-preview'><span>{preview}</span>",
-        "{}</div>".format(f'<span>{variances_preview}</span>'
-                          if variances_preview is not None else ''),
-        f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
-        f"type='checkbox' {disabled}>",
-        f"<label for='{attrs_id}' "
-        f"class='{'' if has_attrs else 'xr-hide-icon'}'"
-        " title='Show/Hide attributes'>",
-        f"{attrs_icon}</label>",
-        f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>",
-        f"<label for='{data_id}' title='Show/Hide data repr'>",
-        f"{data_icon}</label>",
-        f"<div class='xr-var-attrs'>{attrs_ul}</div>" if attrs_ul else "",
-        f"<pre class='xr-var-data'>{data_repr}</pre>",
-    ]
-    return "".join(html)
-
-
-def _dataset_format(name, dims_str, dtype, unit, preview, variances_preview,
-                    attrs_ul, disabled, data_repr, is_index, has_attrs):
-    """
-    Formats the variable data into the format expected when displaying
-    as part of a dataset.
-    """
-    cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(
-        is_index)
-
-    html = [
-        f"<div class='xr-var-name'><span{cssclass_idx}>{escape(name)}</span>"
-        "</div>",
-        f"<div class='xr-var-dims'>{escape(dims_str)}</div>",
-        f"<div class='xr-var-dtype'>{escape(dtype)}</div>",
-        f"<div class='xr-var-unit'>{escape(unit)}</div>",
-        f"<div class='xr-value-preview xr-preview'><span>{preview}</span>",
-        "{}</div>".format(f'<span>{variances_preview}</span>'
-                          if variances_preview is not None else ''),
-        f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
-        f"type='checkbox' {disabled}>",
-        f"<label for='{attrs_id}' "
-        f"class='{'' if has_attrs else 'xr-hide-icon'}'"
-        " title='Show/Hide attributes'>",
-        f"{attrs_icon}</label>",
-        f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>",
-        f"<label for='{data_id}' title='Show/Hide data repr'>",
-        f"{data_icon}</label>",
-        f"<div class='xr-var-attrs'>{attrs_ul}</div>" if attrs_ul else "",
-        f"<pre class='xr-var-data'>{data_repr}</pre>",
-    ]
-    return "".join(html)
-
-
 def _prepare_variable_info(name,
                            var,
                            is_index=False,
@@ -403,12 +337,47 @@ def summarize_variable(name,
                        has_attrs=False,
                        bin_edges=None,
                        add_dim_size=False):
+    """
+    Formats the variable data into the format expected when displaying
+    as a standalone variable (when a single variable or data array is
+    displayed) or as part of a dataset.
+    """
+    name, dims_str, dtype, unit, preview, variances_preview, attrs_ul, disabled, data_repr, is_index, has_attrs = _prepare_variable_info(
+        name, var, is_index, has_attrs, bin_edges, add_dim_size)
+
+    cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(
+        is_index)
+
     if name is None:
-        return _variable_format(*_prepare_variable_info(
-            name, var, is_index, has_attrs, bin_edges, add_dim_size))
+        html = [
+            f"<div class='sc-var-name'><span{cssclass_idx}>{dims_str}</span>"
+            "</div>"
+        ]
     else:
-        return _dataset_format(*_prepare_variable_info(
-            name, var, is_index, has_attrs, bin_edges, add_dim_size))
+        html = [
+            f"<div class='xr-var-name'><span{cssclass_idx}>{escape(name)}"
+            "</span></div>",
+            f"<div class='xr-var-dims'>{escape(dims_str)}</div>"
+        ]
+    html += [
+        f"<div class='xr-var-dtype'>{escape(dtype)}</div>",
+        f"<div class='xr-var-unit'>{escape(unit)}</div>",
+        f"<div class='xr-value-preview xr-preview'><span>{preview}</span>",
+        "{}</div>".format(f'<span>{variances_preview}</span>'
+                          if variances_preview is not None else ''),
+        f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
+        f"type='checkbox' {disabled}>",
+        f"<label for='{attrs_id}' "
+        f"class='{'' if has_attrs else 'xr-hide-icon'}'"
+        " title='Show/Hide attributes'>",
+        f"{attrs_icon}</label>",
+        f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>",
+        f"<label for='{data_id}' title='Show/Hide data repr'>",
+        f"{data_icon}</label>",
+        f"<div class='xr-var-attrs'>{attrs_ul}</div>" if attrs_ul else "",
+        f"<pre class='xr-var-data'>{data_repr}</pre>",
+    ]
+    return "".join(html)
 
 
 def summarize_data(dataset):
