@@ -523,6 +523,46 @@ class TestMantidConversion(unittest.TestCase):
                 mantidcompat.validate_dim_and_get_mantid_string(i)
 
 
+@pytest.mark.skipif(not mantid_is_available(),
+                    reason='Mantid framework is unavailable')
+@pytest.mark.parametrize(
+    "param_dim",
+    ('tof', 'wavelength', 'E', 'd-spacing', 'Q', 'Q^2', 'Delta-E'))
+def test_data_array_to_ws(param_dim):
+    from mantid.simpleapi import mtd
+    mtd.clear()
+
+    data_len = 2
+    expected_bins = data_len + 1
+    expected_number_spectra = 10
+
+    y = sc.Variable(['spectrum', param_dim],
+                    values=np.random.rand(expected_number_spectra, data_len),
+                    variances=np.random.rand(expected_number_spectra,
+                                             data_len))
+
+    x = sc.Variable(['spectrum', param_dim],
+                    values=np.arange(expected_number_spectra * expected_bins,
+                                     dtype=np.float64).reshape(
+                                         (expected_number_spectra,
+                                          expected_bins)))
+
+    to_conv = sc.DataArray(data=y, coords={param_dim: x})
+
+    ws = sc.compat.mantid.data_array_to_workspace_2d(to_conv, param_dim)
+
+    assert len(ws.readX(0)) == expected_bins
+    assert ws.getNumberHistograms() == expected_number_spectra
+    # check that no workspaces have been leaked in the ADS
+    assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
+
+    for i in range(expected_number_spectra):
+        np.testing.assert_array_equal(ws.readX(i), x['spectrum', i])
+        np.testing.assert_array_equal(ws.readY(i), y['spectrum', i])
+        np.testing.assert_array_equal(ws.readE(i),
+                                      np.sqrt(y['spectrum', i].variances))
+
+
 @pytest.mark.skipif(not memory_is_at_least_gb(16),
                     reason='Insufficient virtual memory')
 @pytest.mark.skipif(not mantid_is_available(),
