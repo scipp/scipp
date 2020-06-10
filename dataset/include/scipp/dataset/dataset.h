@@ -438,8 +438,8 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 
   for (const auto &[key, item] : b) {
     if (const auto it = a.find(key); it != a.end()){
-      core::expect::equals(item, it->second, key);}
-    else
+      core::expect::equals(item, it->second, key);
+    } else
       out.emplace(key, item);
   }
   return out;

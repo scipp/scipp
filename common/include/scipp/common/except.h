@@ -29,7 +29,6 @@ template <class T> struct MismatchError : public Error<T> {
   MismatchError(const A &a, const B &b, const std::string &c)
       : Error<T>(a,  " expected to be equal to " + to_string(b) +
                  "Mismatched coordinate: " + c) {}
-
 };
 
 } // namespace scipp::except
