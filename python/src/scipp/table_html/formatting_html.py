@@ -368,8 +368,7 @@ def collapsible_section(name,
                         details="",
                         n_items=None,
                         enabled=True,
-                        collapsed=False,
-                        has_attrs=False):
+                        collapsed=False):
     # "unique" id to expand/collapse the section
     data_id = "section-" + str(uuid.uuid4())
 
