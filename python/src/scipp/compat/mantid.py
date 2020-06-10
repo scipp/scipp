@@ -880,13 +880,26 @@ def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
             "as detailed in the installation instructions (https://scipp."
             "github.io/getting-started/installation.html)")
 
-    assert len(y.shape) == 2, "Currently can only handle 2D data."
+    assert (len(y.shape) == 2 or len(y.shape) == 1), \
+        "Currently can only handle 2D data."
 
     e = np.sqrt(e) if e is not None else np.sqrt(y)
+
+    # Convert a single array (e.g. single spectra) into 2d format
+    if len(y.shape) == 1:
+        y = np.array([y])
+
+    if len(e.shape) == 1:
+        e = np.array([e])
 
     unitX = validate_dim_and_get_mantid_string(coord_dim)
 
     nspec = y.shape[0]
+    if len(x.shape) == 1:
+        # SCIPP is using a  1:n spectra coord mapping, Mantid needs
+        # a 1:1 mapping so expand this out
+        x = np.broadcast_to(x, shape=(nspec, len(x)))
+
     nbins = x.shape[1]
     nitems = y.shape[1]
 
