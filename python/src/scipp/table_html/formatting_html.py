@@ -292,27 +292,17 @@ def _format_common(is_index):
     return cssclass_idx, attrs_id, attrs_icon, data_id, data_icon
 
 
-def _prepare_variable_info(name,
-                           var,
-                           is_index=False,
-                           has_attrs=False,
-                           bin_edges=None,
-                           add_dim_size=False):
+def summarize_variable(name,
+                       var,
+                       is_index=False,
+                       has_attrs=False,
+                       bin_edges=None,
+                       add_dim_size=False):
     """
-    :param name: Name of the variable
-    :param var: The variable itself, used to display dtype, unit, values, attrs
-    :param is_index: If the variable is an index - used to bold
-                     coordinates that represent the indices of
-                     a dimension that the data contains
-
-    :param has_attrs: If the variable is for a section that cannot contain
-                      attributes, then this hides the show/hide button.
-
-    :param bin_edges: List of Dimensions that are bin-edges
-    :param add_dim_size: If True the dimenion sizes will be appended in the
-                         dimension string
+    Formats the variable data into the format expected when displaying
+    as a standalone variable (when a single variable or data array is
+    displayed) or as part of a dataset.
     """
-
     dims_str = escape(f"({_make_dim_str(var, bin_edges, add_dim_size)})")
     dtype = repr(var.dtype)
     unit = '' if var.unit == sc.units.dimensionless else repr(var.unit)
@@ -326,24 +316,6 @@ def _prepare_variable_info(name,
         variances_preview = inline_variable_repr(var, has_variances=True)
         data_repr += f"<br><br>Variances:<br>\
                        <div>{short_data_repr_html(var)}</div>"
-
-    return (name, dims_str, dtype, unit, preview, variances_preview, attrs_ul,
-            disabled, data_repr, is_index, has_attrs)
-
-
-def summarize_variable(name,
-                       var,
-                       is_index=False,
-                       has_attrs=False,
-                       bin_edges=None,
-                       add_dim_size=False):
-    """
-    Formats the variable data into the format expected when displaying
-    as a standalone variable (when a single variable or data array is
-    displayed) or as part of a dataset.
-    """
-    name, dims_str, dtype, unit, preview, variances_preview, attrs_ul, disabled, data_repr, is_index, has_attrs = _prepare_variable_info(
-        name, var, is_index, has_attrs, bin_edges, add_dim_size)
 
     cssclass_idx, attrs_id, attrs_icon, data_id, data_icon = _format_common(
         is_index)
