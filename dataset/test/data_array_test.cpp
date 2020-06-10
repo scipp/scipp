@@ -62,7 +62,7 @@ TEST(DataArrayTest, fail_op_non_matching_coords) {
   auto data = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
   DataArray da_1(data, {{Dim::X, coord_1}, {Dim::Y, data}});
   DataArray da_2(data, {{Dim::X, coord_2}, {Dim::Y, data}});
-   // Fail because coordinates mismatched
+  // Fail because coordinates mismatched
   EXPECT_THROW(da_1 + da_2, except::VariableMismatchError);
   EXPECT_THROW(da_1 - da_2, except::VariableMismatchError);
 }
