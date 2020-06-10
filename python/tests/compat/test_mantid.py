@@ -293,10 +293,10 @@ class TestMantidConversion(unittest.TestCase):
             assert isinstance(monitor, sc.DataArray)
             assert monitor.shape == [200001]
             assert 'position' in monitor.coords
-            assert 'source_position' in monitor.coords
+            assert 'source-position' in monitor.coords
             # This is essential, otherwise unit conversion assumes scattering
             # from sample:
-            assert 'sample_position' not in monitor.coords
+            assert 'sample-position' not in monitor.coords
             # Absence of the following is not crucial, but currently there is
             # no need for these, and it avoid duplication:
             assert 'detector_info' not in monitor.coords
@@ -383,8 +383,8 @@ class TestMantidConversion(unittest.TestCase):
         # check that no workspaces have been leaked in the ADS
         assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
 
-        self.assertTrue("source_position" in ds.coords)
-        self.assertTrue("sample_position" in ds.coords)
+        self.assertTrue("source-position" in ds.coords)
+        self.assertTrue("sample-position" in ds.coords)
         self.assertTrue("position" in ds.coords)
 
     def test_to_workspace_2d_no_error(self):

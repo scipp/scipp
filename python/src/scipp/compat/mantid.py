@@ -425,10 +425,10 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
         info["attrs"].update({"rotation": rot, "shape": shp})
 
     if source_pos is not None:
-        info["coords"]["source_position"] = source_pos
+        info["coords"]["source-position"] = source_pos
 
     if sample_pos is not None:
-        info["coords"]["sample_position"] = sample_pos
+        info["coords"]["sample-position"] = sample_pos
 
     if ws.detectorInfo().hasMaskedDetectors():
         spectrum_info = ws.spectrumInfo()
@@ -461,7 +461,7 @@ def convert_monitors_ws(ws, converter, **ignored):
             single_monitor = converter(monitor_ws)
         # Remove redundant information that is duplicated from workspace
         # We get this extra information from the generic converter reuse
-        del single_monitor.coords['sample_position']
+        del single_monitor.coords['sample-position']
         if 'detector_info' in single_monitor.coords:
             del single_monitor.coords['detector_info']
         del single_monitor.attrs['run']
@@ -554,7 +554,7 @@ def convert_EventWorkspace_to_data_array(ws,
     coords_labs_data["coords"][dim] = coord
 
     if load_pulse_times:
-        coords_labs_data["coords"]["pulse_times"] = labs
+        coords_labs_data["coords"]["pulse-time"] = labs
     if contains_weighted_events:
         coords_labs_data["data"] = weights
     else:
@@ -799,8 +799,8 @@ def load_component_info(ds, file, advanced_geometry=False):
     """
     Adds the component info coord into the dataset. The following are added:
 
-    - source_position
-    - sample_position
+    - source-position
+    - sample-position
     - detector positions
     - detector rotations
     - detector shapes
@@ -819,8 +819,8 @@ def load_component_info(ds, file, advanced_geometry=False):
     with run_mantid_alg('Load', file) as ws:
         source_pos, sample_pos = make_component_info(ws)
 
-        ds.coords["source_position"] = source_pos
-        ds.coords["sample_position"] = sample_pos
+        ds.coords["source-position"] = source_pos
+        ds.coords["sample-position"] = sample_pos
         pos, rot, shp = get_detector_properties(
             ws, source_pos, sample_pos, advanced_geometry=advanced_geometry)
         ds.coords["position"] = pos
