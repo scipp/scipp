@@ -203,10 +203,10 @@ def test_1D_scalar_access_fail():
         var.value = 1.2
 
 
-def test_1D_scalar_access_shape_mismatch_fail():
+def test_1D_access_shape_mismatch_fail():
     var = sc.Variable(dims=['x'], shape=(2, ))
     with pytest.raises(RuntimeError):
-        var.value = 1.2
+        var.values = 1.2
 
 
 def test_1D_access():
