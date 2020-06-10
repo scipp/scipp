@@ -304,7 +304,6 @@ def summarize_variable(name,
     displayed) or as part of a dataset.
     """
     dims_str = escape(f"({_make_dim_str(var, bin_edges, add_dim_size)})")
-    dtype = repr(var.dtype)
     unit = '' if var.unit == sc.units.dimensionless else repr(var.unit)
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs)
@@ -332,7 +331,7 @@ def summarize_variable(name,
             f"<div class='xr-var-dims'>{escape(dims_str)}</div>"
         ]
     html += [
-        f"<div class='xr-var-dtype'>{escape(dtype)}</div>",
+        f"<div class='xr-var-dtype'>{escape(repr(var.dtype))}</div>",
         f"<div class='xr-var-unit'>{escape(unit)}</div>",
         f"<div class='xr-value-preview xr-preview'><span>{preview}</span>",
         "{}</div>".format(f'<span>{variances_preview}</span>'
