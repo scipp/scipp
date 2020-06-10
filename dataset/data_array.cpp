@@ -319,7 +319,6 @@ DataArray &DataArray::operator/=(const VariableConstView &other) {
 
 DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
   if (a.hasData() && b.hasData()) {
-    expect::coordsAreSuperset(a, b);
     return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
                      union_or(a.masks(), b.masks()));
   } else {
@@ -331,7 +330,6 @@ DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
 
 DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
   if (a.hasData() && b.hasData()) {
-    expect::coordsAreSuperset(a, b);
     return {a.data() - b.data(), union_(a.coords(), b.coords()),
             union_or(a.masks(), b.masks())};
   } else {
@@ -373,7 +371,6 @@ namespace {
 template <class Op>
 DataArray apply_mul_or_div(Op op, const DataArrayConstView &a,
                            const DataArrayConstView &b) {
-  expect::coordsAreSuperset(a, b);
   if (unaligned::is_realigned_events(a) || unaligned::is_realigned_events(b))
     return {events_dense_op(op, a, b), union_(a.coords(), b.coords()),
             union_or(a.masks(), b.masks())};

@@ -17,5 +17,4 @@ void coordsAreSuperset(const DataArrayConstView &a,
       throw except::CoordMismatchError(msg);
     }
 }
-
 } // namespace scipp::dataset::expect

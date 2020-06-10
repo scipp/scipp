@@ -120,6 +120,13 @@ template <class A, class B> void equals(const A &a, const B &b) {
     throw scipp::except::MismatchError(a, b);
 }
 
+template <class A, class B, class C> void equals(const A &a, const B &b, const C &var) {
+  if (a != b){
+   using core::to_string;
+   throw scipp::except::MismatchError(a, b, to_string(var));
+  }
+}
+
 template <class A, class B>
 void equals_any_of(const A &a, const std::initializer_list<B> possible) {
   if (std::find(possible.begin(), possible.end(), a) == possible.end())
