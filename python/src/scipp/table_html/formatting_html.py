@@ -433,11 +433,6 @@ coord_section = partial(
     max_items_collapse=25,
 )
 
-label_section = partial(_mapping_section,
-                        name="Labels",
-                        details_func=summarize_coords,
-                        max_items_collapse=10)
-
 mask_section = partial(_mapping_section,
                        name="Masks",
                        details_func=summarize_coords,
