@@ -35,27 +35,22 @@ std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
 
 constexpr const char *tab = "    ";
 
+template <class D>
+std::string do_to_string(const D &dataset, const std::string &id,
+                         const Dimensions &dims, const std::string &shift = "");
+
 template <class Key>
 auto format_data_view(const Key &name, const DataArrayConstView &data,
                       const Dimensions &datasetDims = Dimensions()) {
   std::stringstream s;
   if (data.hasData())
     s << format_variable(name, data.data(), datasetDims);
-  else
-    s << tab << name << '\n';
-  // TODO need something similar, but for unaligned coord content
-  /*
-  bool eventsCoords = false;
-  for (const auto &[dim, coord] : data.coords())
-    if (coord.dims().events()) {
-      if (!eventsCoords) {
-        s << tab << tab << "Events coords:\n";
-        eventsCoords = true;
-      }
-      s << format_variable(std::string(tab) + std::string(tab) + to_string(dim),
-                           coord.data(), datasetDims);
-    }
-    */
+  else {
+    s << tab << name << " (data not histogrammed yet)\n";
+    s << tab << "Unaligned:\n";
+    s << do_to_string(data.unaligned(), "", data.unaligned().dims(),
+                      std::string(tab) + tab);
+  }
 
   if (!data.attrs().empty()) {
     s << tab << "Attributes:\n";
@@ -79,13 +74,14 @@ template <class T> auto sorted(const T &map) {
 
 template <class D>
 std::string do_to_string(const D &dataset, const std::string &id,
-                         const Dimensions &dims) {
+                         const Dimensions &dims, const std::string &shift) {
   std::stringstream s;
-  s << id + '\n';
-  s << "Dimensions: " << to_string(dims) << '\n';
+  if (!id.empty())
+    s << shift << id + '\n';
+  s << shift << "Dimensions: " << to_string(dims) << '\n';
 
   if (!dataset.coords().empty()) {
-    s << "Coordinates:\n";
+    s << shift << "Coordinates:\n";
     const auto map = dataset.coords();
 
     // Elsewhere we just need a vector of Dataset attributes,
@@ -97,31 +93,31 @@ std::string do_to_string(const D &dataset, const std::string &id,
       elem.push_back(p);
     }
     for (const auto &[name, var] : sorted(elem))
-      s << format_variable(name, var, dims);
+      s << shift << format_variable(name, var, dims);
   }
   if (!dataset.attrs().empty()) {
-    s << "Attributes:\n";
+    s << shift << "Attributes:\n";
     for (const auto &[name, var] : sorted(dataset.attrs()))
-      s << format_variable(name, var, dims);
+      s << shift << format_variable(name, var, dims);
   }
   if (!dataset.masks().empty()) {
-    s << "Masks:\n";
+    s << shift << "Masks:\n";
 
     for (const auto &[name, var] : sorted(dataset.masks()))
-      s << format_variable(name, var, dims);
+      s << shift << format_variable(name, var, dims);
   }
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataArrayConstView>) {
-    s << "Data:\n" << format_data_view(dataset.name(), dataset);
+    s << shift << "Data:\n" << format_data_view(dataset.name(), dataset);
   } else {
     if (!dataset.empty())
-      s << "Data:\n";
+      s << shift << "Data:\n";
     std::set<std::string> sorted_items;
     for (const auto &item : dataset)
       sorted_items.insert(item.name());
     for (const auto &name : sorted_items)
-      s << format_data_view(name, dataset[name], dims);
+      s << shift << format_data_view(name, dataset[name], dims);
   }
 
   s << '\n';
