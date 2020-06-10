@@ -101,12 +101,12 @@ class Slicer2d(Slicer):
         self.image_resolution = 0.64 * config.plot.dpi / 96.0
         self.image_resolution = [int(self.image_resolution * config.plot.width),
                                  int(self.image_resolution * config.plot.height)]
-        self.xrebin = None
-        self.yrebin = None
-        self.xedges = None
-        self.yedges = None
-        self.xwidth = None
-        self.ywidth = None
+        self.xyrebin = {}
+        # self.yrebin = None
+        self.xyedges = {}
+        # self.yedges = None
+        self.xywidth = {}
+        # self.ywidth = None
 
         # Get or create matplotlib axes
         self.fig = None
@@ -262,40 +262,67 @@ class Slicer2d(Slicer):
                 axparams[but_val]["dim"] = dim
 
         extent_array = np.array(list(self.extent.values())).flatten()
-        self.xrebin = sc.Variable(dims=[axparams['x']["dim"]], values=np.linspace(extent_array[0], extent_array[1], self.image_resolution[0]+1), unit=self.slider_x[self.name][axparams['x']["dim"]].unit)
-        self.yrebin = sc.Variable(dims=[axparams['y']["dim"]], values=np.linspace(extent_array[2], extent_array[3], self.image_resolution[1]+1), unit=self.slider_x[self.name][axparams['y']["dim"]].unit)
-        self.image_dx = self.xrebin.values[1] - self.xrebin.values[0]
-        self.image_dy = self.yrebin.values[1] - self.yrebin.values[0]
 
-        if not self.histograms[self.name][self.xrebin.dims[0]]:
-            # self.xedges = centers_to_edges(self.data_array.coords[self.xrebin.dims[0]].values)
+        self.xyrebin["x"] = sc.Variable(
+            dims=[axparams['x']["dim"]],
+            values=np.linspace(
+                extent_array[0], extent_array[1], self.image_resolution[0]+1),
+            unit=self.slider_x[self.name][axparams['x']["dim"]].unit)
+        self.xyrebin["y"] = sc.Variable(
+            dims=[axparams['y']["dim"]],
+            values=np.linspace(
+                extent_array[2], extent_array[3], self.image_resolution[1]+1),
+            unit=self.slider_x[self.name][axparams['y']["dim"]].unit)
+        self.image_dx = self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]
+        self.image_dy = self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]
+
+        if not self.histograms[self.name][self.xyrebin["x"].dims[0]]:
+            # # self.xedges = centers_to_edges(self.data_array.coords[self.xrebin.dims[0]].values)
             # print("[self.slider_x[self.xrebin.dims[0]].dims[0]]", [self.slider_x[self.name][self.xrebin.dims[0]].dims[0]])
-            self.xedges = sc.Variable(
-                dims=[self.slider_x[self.name][self.xrebin.dims[0]].dims[0]],
+            # print("self.xrebin.dims[0]", self.xrebin.dims[0])
+            # # self.xedges = sc.Variable(
+            # #     dims=[self.slider_x[self.name][self.xrebin.dims[0]].dims[0]],
+            # #     values=centers_to_edges(
+            # #         self.data_array.coords[self.xrebin.dims[0]].values),
+            # #     unit=self.data_array.coords[self.xrebin.dims[0]].unit)
+            self.xyedges["x"] = sc.Variable(
+                dims=self.xyrebin["x"].dims,
                 values=centers_to_edges(
-                    self.data_array.coords[self.xrebin.dims[0]].values),
-                unit=self.data_array.coords[self.xrebin.dims[0]].unit)
+                    self.data_array.coords[self.xyrebin["x"].dims[0]].values),
+                unit=self.data_array.coords[self.xyrebin["x"].dims[0]].unit)
+
         else:
-            self.xedges = self.data_array.coords[self.xrebin.dims[0]]
-        if not self.histograms[self.name][self.yrebin.dims[0]]:
-            self.yedges = sc.Variable(
-                dims=[self.slider_x[self.name][self.yrebin.dims[0]].dims[0]],
+            self.xyedges["x"] = self.data_array.coords[self.xyrebin["x"].dims[0]]
+        if not self.histograms[self.name][self.xyrebin["y"].dims[0]]:
+            # self.yedges = sc.Variable(
+            #     dims=[self.slider_x[self.name][self.yrebin.dims[0]].dims[0]],
+            #     values=centers_to_edges(
+            #         self.data_array.coords[self.yrebin.dims[0]].values),
+            #     unit=self.data_array.coords[self.yrebin.dims[0]].unit)
+            self.xyedges["y"] = sc.Variable(
+                dims=self.xyrebin["y"].dims,
                 values=centers_to_edges(
-                    self.data_array.coords[self.yrebin.dims[0]].values),
-                unit=self.data_array.coords[self.yrebin.dims[0]].unit)
+                    self.data_array.coords[self.xyrebin["y"].dims[0]].values),
+                unit=self.data_array.coords[self.xyrebin["y"].dims[0]].unit)
         else:
-            self.yedges = self.data_array.coords[self.yrebin.dims[0]]
+            self.xyedges["y"] = self.data_array.coords[self.xyrebin["y"].dims[0]]
 
             # ye = centers_to_edges(vslice.coords[self.yrebin.dims[0]].values)
             # vslice.coords[self.yrebin.dims[0]] = sc.Variable(
             #     dims=self.yrebin.dims, values=ye,
             #     unit=vslice.coords[self.yrebin.dims[0]].unit)
-        self.xwidth = sc.Variable(
-                dims=self.xrebin.dims,
-                values=np.ediff1d(self.xedges.values) / self.image_dx)
-        self.ywidth = sc.Variable(
-                dims=self.yrebin.dims,
-                values=np.ediff1d(self.yedges.values) / self.image_dy)
+
+        print("==============================")
+        print(self.xyedges)
+        # print(self.yedges)
+        print("===============================")
+
+        self.xywidth["x"] = sc.Variable(
+                dims=self.xyrebin["x"].dims,
+                values=np.ediff1d(self.xyedges["x"].values) / self.image_dx)
+        self.xywidth["y"] = sc.Variable(
+                dims=self.xyrebin["y"].dims,
+                values=np.ediff1d(self.xyedges["y"].values) / self.image_dy)
 
         for key in self.ax.keys():
             with warnings.catch_warnings():
@@ -319,8 +346,8 @@ class Slicer2d(Slicer):
         """
         Slice data according to new slider value.
         """
-        vslice = self.data_array
-        print("vslice 1", vslice)
+        dslice = self.data_array
+        # print("vslice 1", dslice)
         # if self.params["masks"][self.name]["show"]:
         #     mslice = self.masks
         # Slice along dimensions with active sliders
@@ -329,7 +356,7 @@ class Slicer2d(Slicer):
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_x[self.name][dim], val.value)
-                vslice = vslice[val.dim, val.value:val.value+1]
+                dslice = dslice[val.dim, val.value:val.value+1]
                 # # At this point, after masks were combined, all their
                 # # dimensions should be contained in the data_array.dims.
                 # if self.params["masks"][self.name]["show"]:
@@ -337,10 +364,11 @@ class Slicer2d(Slicer):
             else:
                 button_dims[self.buttons[dim].value.lower() == "x"] = val.dim
         print("button_dims", button_dims)
-        print("vslice 2", vslice)
+        print("buttons", self.buttons)
+        # print("vslice 2", dslice)
 
         # Check if dimensions of arrays agree, if not, plot the transpose
-        slice_dims = vslice.dims
+        slice_dims = dslice.dims
         transp = slice_dims != button_dims
 
         # if self.params["masks"][self.name]["show"]:
@@ -360,59 +388,82 @@ class Slicer2d(Slicer):
         #                     values=mslice.values.astype(np.int32))
 
         autoscale_cbar = False
-        if vslice.unaligned is not None:
-            vslice = sc.histogram(vslice)
+        if dslice.unaligned is not None:
+            dslice = sc.histogram(dslice)
             autoscale_cbar = True
-        print("vslice 2.1", vslice)
+        # print("vslice 2.1", dslice)
 
-        vslice = vslice.copy()
-        print("vslice 2.2", vslice)
-        print(self.histograms)
+        # dslice = dslice.data.copy()
+        # dslice.unit = sc.units.counts
+        # print("vslice 2.2", vslice)
+        # print(self.histograms)
 
-        # Check for non bin-edge coords
-        # if (not self.histograms[self.name][self.xrebin.dims[0]] or
-        #     not self.histograms[self.name][self.yrebin.dims[0]]):
-        #     vslice = vslice.copy()
-        # print(vslice.coords["somelabels"])
-        if not self.histograms[self.name][self.xrebin.dims[0]]:
-            # xe = centers_to_edges(vslice.coords[self.xrebin.dims[0]].values)
-            print("self.xrebin.dims[0]", self.xrebin.dims[0])
-            print("self.xedges", self.xedges)
-            vslice.coords[self.xrebin.dims[0]] = self.xedges
-        # print(vslice.coords["somelabels"])
-        print("vslice 2.25", vslice)
-        if not self.histograms[self.name][self.yrebin.dims[0]]:
-            # ye = centers_to_edges(vslice.coords[self.yrebin.dims[0]].values)
-            print("self.yrebin.dims[0]", self.yrebin.dims[0])
-            print("self.yedges", self.yedges)
-            vslice.coords[self.yrebin.dims[0]] = self.yedges
-        print("vslice 2.3", vslice)
+        # Make a new slice with bin edges and counts (for rebin), and with
+        # aux coordinates if requested
+        vslice = sc.DataArray(coords={self.xyedges["x"].dims[0]: self.xyedges["x"],
+                                      self.xyedges["y"].dims[0]: self.xyedges["y"]},
+                              data=sc.Variable(
+                                  dims=button_dims,
+                                  values=dslice.values,
+                                  variances=dslice.variances,
+                                  unit=sc.units.counts))
+        print(" vslice 1 ====================")
+        print(vslice)
+        # vslice.coords[self.xedges.dims[0]] = self.xedges
+        # vslice.coords[self.yedges.dims[0]] = self.yedges
+        
 
-        # Artificially set units to counts so we can use rebin
-        vslice.unit = sc.units.counts
-        print("vslice 3", vslice)
+        # # # Check for non bin-edge coords
+        # # # if (not self.histograms[self.name][self.xrebin.dims[0]] or
+        # # #     not self.histograms[self.name][self.yrebin.dims[0]]):
+        # # #     vslice = vslice.copy()
+        # # # print(vslice.coords["somelabels"])
+        # # if not self.histograms[self.name][self.xrebin.dims[0]]:
+        # #     # xe = centers_to_edges(vslice.coords[self.xrebin.dims[0]].values)
+        # #     print("self.xrebin.dims[0]", self.xrebin.dims[0])
+        # #     print("self.xedges", self.xedges)
+        # #     vslice.coords[self.xrebin.dims[0]] = self.xedges
+        # # # print(vslice.coords["somelabels"])
+        # # print("vslice 2.25", vslice)
+        # # if not self.histograms[self.name][self.yrebin.dims[0]]:
+        # #     # ye = centers_to_edges(vslice.coords[self.yrebin.dims[0]].values)
+        # #     print("self.yrebin.dims[0]", self.yrebin.dims[0])
+        # #     print("self.yedges", self.yedges)
+        # #     vslice.coords[self.yrebin.dims[0]] = self.yedges
+        # # print("vslice 2.3", vslice)
+
+        # # Artificially set units to counts so we can use rebin
+        # vslice.values = dslice.values
+        # vslice.variances = dslice.variances
+        # vslice.unit = sc.units.counts
+        # # print("vslice 3", vslice)
 
 
         # The scaling by bin width and rebin operations below modify the
         # variances in the data, so here we have to manually split the values
         # and variances into separate Variables. We store them in a dict.
+        #
+        # TODO: Having to rebin once for values and once for variances
+        # potentially slows things down quite a bit. In the future, we should
+        # use resample instead of rebin, once it will be implemented.
         to_image = {}
         if self.params["variances"][self.name]["show"]:
             eslice = vslice.copy()
             eslice.values = eslice.variances
             eslice.variances = None
             vslice.variances = None
-            eslice *= self.xwidth * self.ywidth
-            eslice = sc.rebin(eslice, self.xrebin.dims[0], self.xrebin)
-            eslice = sc.rebin(eslice, self.yrebin.dims[0], self.yrebin)
+            eslice *= self.xywidth["x"] * self.xywidth["y"]
+            eslice = sc.rebin(eslice, self.xyrebin["x"].dims[0], self.xyrebin["x"])
+            eslice = sc.rebin(eslice, self.xyrebin["y"].dims[0], self.xyrebin["y"])
             to_image["variances"] = np.sqrt(eslice.values)
 
         # Scale by bin width and then rebin in both directions
+        print(" vslice 2 ====================")
         print(vslice)
-        print(self.xwidth)
-        vslice *= self.xwidth * self.ywidth
-        vslice = sc.rebin(vslice, self.xrebin.dims[0], self.xrebin)
-        vslice = sc.rebin(vslice, self.yrebin.dims[0], self.yrebin)
+        # print(self.xwidth)
+        vslice *= self.xywidth["x"] * self.xywidth["y"]
+        vslice = sc.rebin(vslice, self.xyrebin["x"].dims[0], self.xyrebin["x"])
+        vslice = sc.rebin(vslice, self.xyrebin["y"].dims[0], self.xyrebin["y"])
         to_image["values"] = vslice.values
 
         if self.params["masks"][self.name]["show"]:

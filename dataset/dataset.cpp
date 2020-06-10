@@ -9,6 +9,7 @@
 #include "scipp/dataset/unaligned.h"
 
 #include "dataset_operations_common.h"
+#include <iostream>
 
 namespace scipp::dataset {
 
@@ -195,6 +196,10 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
   } else {
     auto &heldExtent = it->second;
     if (extents::isUnknownEdgeState(heldExtent)) {
+      std::cout << "isSame: " << extents::isSame(extent, heldExtent) << std::endl;
+      std::cout << "oneLarger: " << extents::oneLarger(extent, heldExtent) << std::endl;
+      std::cout << "oneSmaller :" << extents::oneSmaller(extent, heldExtent) << std::endl;
+      std::cout << "isCoord: " << isCoord << std::endl;
       if (extents::isSame(extent, heldExtent)) { // Do nothing
       } else if (extents::oneLarger(extent, heldExtent) && isCoord) {
         heldExtent = extents::shrink(extent);
@@ -223,8 +228,10 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
 /// be "resized" in this way.
 void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
   auto tmp = m_dims;
-  for (const auto dim : dims.labels())
+  for (const auto dim : dims.labels()) {
+    std::cout << dim << "," << coordDim << std::endl;
     extents::setExtent(tmp, dim, dims[dim], dim == coordDim);
+  }
   m_dims = tmp;
 }
 
