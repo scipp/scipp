@@ -9,12 +9,10 @@ namespace scipp::dataset::expect {
 
 void coordsAreSuperset(const DataArrayConstView &a,
                        const DataArrayConstView &b) {
-  for (const auto &[dim, coord] : b.coords())
-    if (a.coords()[dim] != coord) {
-      const std::string msg = "Mismatched coordinates: \"" + to_string(dim) +
-                              "\"\n" + to_string(a.coords()[dim]) +
-                              to_string(b.coords()[dim]);
-      throw except::CoordMismatchError(msg);
-    }
+  const auto &a_coords = a.coords();
+  for (const auto &b_coord : b.coords())
+    if (a.coords()[b_coord.first] != b_coord.second)
+      throw except::CoordMismatchError(*a_coords.find(b_coord.first), b_coord);
 }
+
 } // namespace scipp::dataset::expect

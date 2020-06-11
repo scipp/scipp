@@ -75,10 +75,6 @@ struct SCIPP_CORE_EXPORT SliceError : public std::out_of_range {
   using std::out_of_range::out_of_range;
 };
 
-struct SCIPP_CORE_EXPORT CoordMismatchError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
-
 struct SCIPP_CORE_EXPORT VariancesError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
@@ -118,14 +114,6 @@ namespace scipp::core::expect {
 template <class A, class B> void equals(const A &a, const B &b) {
   if (a != b)
     throw scipp::except::MismatchError(a, b);
-}
-
-template <class A, class B, class C>
-void equals(const A &a, const B &b, const C &var) {
-  if (a != b) {
-    using core::to_string;
-    throw scipp::except::MismatchError(a, b, to_string(var));
-  }
 }
 
 template <class A, class B>
