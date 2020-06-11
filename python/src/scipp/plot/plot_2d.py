@@ -324,13 +324,19 @@ class Slicer2d(Slicer):
         Slice data according to new slider value.
         """
         dslice = self.data_array
+        if self.params["masks"][self.name]["show"]:
+            mslice = self.masks
         # Slice along dimensions with active sliders
         button_dims = [None, None]
         for dim, val in self.slider.items():
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_x[self.name][dim], val.value)
-                dslice = dslice[val.dim, val.value:val.value+1]
+                dslice = dslice[val.dim, val.value]
+                # At this point, after masks were combined, all their
+                # dimensions should be contained in the data_array.dims.
+                if self.params["masks"][self.name]["show"]:
+                    mslice = mslice[val.dim, val.value]
             else:
                 # Get the dimensions of the dimension-coordinates, since
                 # buttons can contain non-dimension coordinates
@@ -360,17 +366,15 @@ class Slicer2d(Slicer):
 
         # Also include the masks
         if self.params["masks"][self.name]["show"]:
-            masks = sc.combine_masks(dslice.masks, dslice.dims,
-                                           dslice.shape)
             mslice_dims = []
-            for dim in masks.dims:
+            for dim in mslice.dims:
                 if dim == button_dims[0]:
                     mslice_dims.append(self.xyedges["y"].dims[0])
                 elif dim == button_dims[1]:
                     mslice_dims.append(self.xyedges["x"].dims[0])
                 else:
                     mslice_dims.append(dim)
-            vslice.masks["all"] = sc.Variable(dims=mslice_dims, values=masks.values)
+            vslice.masks["all"] = sc.Variable(dims=mslice_dims, values=mslice.values)
 
         # The scaling by bin width and rebin operations below modify the
         # variances in the data, so here we have to manually split the values
