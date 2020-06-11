@@ -292,7 +292,7 @@ class Slicer2d(Slicer):
                 unit=self.data_array.coords[self.xyrebin["x"].dims[0]].unit)
 
         else:
-            self.xyedges["x"] = self.data_array.coords[self.xyrebin["x"].dims[0]]
+            self.xyedges["x"] = self.data_array.coords[self.xyrebin["x"].dims[0]].copy()
         if not self.histograms[self.name][self.xyrebin["y"].dims[0]]:
             # self.yedges = sc.Variable(
             #     dims=[self.slider_x[self.name][self.yrebin.dims[0]].dims[0]],
@@ -305,7 +305,7 @@ class Slicer2d(Slicer):
                     self.data_array.coords[self.xyrebin["y"].dims[0]].values),
                 unit=self.data_array.coords[self.xyrebin["y"].dims[0]].unit)
         else:
-            self.xyedges["y"] = self.data_array.coords[self.xyrebin["y"].dims[0]]
+            self.xyedges["y"] = self.data_array.coords[self.xyrebin["y"].dims[0]].copy()
 
             # ye = centers_to_edges(vslice.coords[self.yrebin.dims[0]].values)
             # vslice.coords[self.yrebin.dims[0]] = sc.Variable(
@@ -418,6 +418,7 @@ class Slicer2d(Slicer):
         #                               self.xyedges["y"].dims[0]: self.xyedges["y"].shape})
         # print([self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]])
         # print(transp)
+        print(dslice)
 
         vslice = sc.DataArray(coords={self.xyedges["x"].dims[0]: self.xyedges["x"],
                                       self.xyedges["y"].dims[0]: self.xyedges["y"]},
