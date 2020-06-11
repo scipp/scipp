@@ -312,10 +312,10 @@ class Slicer2d(Slicer):
             #     dims=self.yrebin.dims, values=ye,
             #     unit=vslice.coords[self.yrebin.dims[0]].unit)
 
-        print("==============================")
-        print(self.xyedges)
-        # print(self.yedges)
-        print("===============================")
+        # print("==============================")
+        # print(self.xyedges)
+        # # print(self.yedges)
+        # print("===============================")
 
         self.xywidth["x"] = sc.Variable(
                 dims=self.xyrebin["x"].dims,
@@ -362,14 +362,17 @@ class Slicer2d(Slicer):
                 # if self.params["masks"][self.name]["show"]:
                 #     mslice = mslice[val.dim, val.value]
             else:
-                button_dims[self.buttons[dim].value.lower() == "x"] = val.dim
-        print("button_dims", button_dims)
-        print("buttons", self.buttons)
+                # button_dims[self.buttons[dim].value.lower() == "x"] = val.dim
+                button_dims[self.buttons[dim].value.lower() == "x"] = self.slider_x[self.name][val.dim].dims[0]
+        # print("button_dims", button_dims)
+        # print("buttons", self.buttons)
         # print("vslice 2", dslice)
 
         # Check if dimensions of arrays agree, if not, plot the transpose
         slice_dims = dslice.dims
         transp = slice_dims != button_dims
+        # transp = [self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]] != button_dims
+        print(slice_dims, button_dims)
 
         # if self.params["masks"][self.name]["show"]:
         #     shape_list = [self.shapes[self.name][bdim] for bdim in button_dims]
@@ -400,15 +403,40 @@ class Slicer2d(Slicer):
 
         # Make a new slice with bin edges and counts (for rebin), and with
         # aux coordinates if requested
+        # values = dslice.values
+        # variances = dslice.variances
+        # if transp:
+        #     values = values.T
+        #     variances =
+        xy = "xy"
+        print([self.xyedges[xy[transp]].dims[0], self.xyedges[xy[not transp]].dims[0]])
+        print([self.xyedges[xy[not transp]].dims[0], self.xyedges[xy[transp]].dims[0]])
+        print([self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]])
+        print(dslice.dims)
+        print(dslice.shape)
+        print({self.xyedges["x"].dims[0]: self.xyedges["x"].shape,
+                                      self.xyedges["y"].dims[0]: self.xyedges["y"].shape})
+        print([self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]])
+        print(transp)
+
         vslice = sc.DataArray(coords={self.xyedges["x"].dims[0]: self.xyedges["x"],
                                       self.xyedges["y"].dims[0]: self.xyedges["y"]},
                               data=sc.Variable(
-                                  dims=button_dims,
+                                  # dims=[self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]],
+                                  dims=[self.xyedges[xy[not transp]].dims[0], self.xyedges[xy[transp]].dims[0]],
                                   values=dslice.values,
                                   variances=dslice.variances,
                                   unit=sc.units.counts))
-        print(" vslice 1 ====================")
-        print(vslice)
+
+        # vslice = sc.DataArray(data=sc.Variable(
+        #                           dims=[self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]],
+        #                           values=dslice.values,
+        #                           variances=dslice.variances,
+        #                           unit=sc.units.counts))
+
+
+        # print(" vslice 1 ====================")
+        # print(vslice)
         # vslice.coords[self.xedges.dims[0]] = self.xedges
         # vslice.coords[self.yedges.dims[0]] = self.yedges
         
@@ -458,8 +486,8 @@ class Slicer2d(Slicer):
             to_image["variances"] = np.sqrt(eslice.values)
 
         # Scale by bin width and then rebin in both directions
-        print(" vslice 2 ====================")
-        print(vslice)
+        # print(" vslice 2 ====================")
+        # print(vslice)
         # print(self.xwidth)
         vslice *= self.xywidth["x"] * self.xywidth["y"]
         vslice = sc.rebin(vslice, self.xyrebin["x"].dims[0], self.xyrebin["x"])
