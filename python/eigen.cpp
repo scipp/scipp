@@ -10,7 +10,6 @@
 namespace py = pybind11;
 
 void init_eigen(py::module &m) {
-
   py::class_<Eigen::Quaterniond>(m, "Quat", py::buffer_protocol())
       // Note that when constructing a Quat from a buffer array, the order of
       // the input coefficients is [x, y, z, w], as returned by the `coeffs()`

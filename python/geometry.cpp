@@ -32,7 +32,6 @@ void bind_component(const std::string xyz, Function func, py::module &gm) {
 }
 
 void init_geometry(py::module &m) {
-
   auto geom_m = m.def_submodule("geometry");
 
   geom_m.def(

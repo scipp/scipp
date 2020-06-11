@@ -1,10 +1,10 @@
 .. _contributing:
 
-Contributing to xcipp
+Contributing to scipp
 =====================
 
 Overview
-~~~~~~~~
+--------
 
 Contributions, bug reports, and ideas are always welcome.
 The following section outlines the scope of scipp.

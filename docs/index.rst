@@ -110,15 +110,18 @@ Documentation
    developer/getting-started
    developer/tooling
    developer/dependencies
-   developer/api
-   developer/customizing
+   developer/coding-conventions
    developer/how-to
    developer/transform
    developer/constructing_variables
    developer/variable_implementation
+   developer/customizing
+   developer/api
 
 .. toctree::
    :caption: About
    :maxdepth: 3
 
+   about/about
+   about/contributing
    about/release-notes

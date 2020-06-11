@@ -1013,7 +1013,6 @@ TEST(TransformFlagsTest, variance_on_arg_in_place) {
 }
 
 TEST(TransformFlagsTest, expect_in_variance_if_out_variance) {
-
   auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
   auto var_no_variance = makeVariable<double>(Values{1});
   constexpr auto inplace_op = [](auto &&x, const auto &y) { x += y; };

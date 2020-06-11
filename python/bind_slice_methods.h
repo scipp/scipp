@@ -18,7 +18,6 @@ using namespace scipp::variable;
 using namespace scipp::dataset;
 
 template <class T> auto dim_extent(const T &object, const Dim dim) {
-
   if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
     scipp::index extent = -1;
     if (object.dimensions().count(dim) > 0)

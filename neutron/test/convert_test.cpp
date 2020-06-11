@@ -170,7 +170,6 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
     EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
     EXPECT_EQ(data.unit(), units::counts);
   } else {
-
     ASSERT_TRUE(dspacing.contains("events"));
     const auto &events = dspacing["events"];
     ASSERT_EQ(events.dims(), Dimensions(Dim::Spectrum, 2));

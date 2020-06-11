@@ -128,7 +128,6 @@ protected:
 };
 
 TEST_F(RebinMask1DTest, mask_1d) {
-
   const auto edges =
       makeVariable<double>(Dimensions{Dim::X, 5}, Values{1, 3, 5, 7, 10});
   const auto expected = makeVariable<bool>(Dimensions{Dim::X, 4},
