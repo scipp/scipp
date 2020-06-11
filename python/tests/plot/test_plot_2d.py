@@ -53,6 +53,11 @@ def test_plot_2d_with_masks():
     plot(d)
 
 
+def test_plot_2d_with_masks_and_labels():
+    d = make_dense_dataset(ndim=2, masks=True, labels=True)
+    plot(d, axes=['x', "somelabels"])
+
+
 def test_plot_2d_events_data_with_int_bins():
     d = make_events_dataset(ndim=2)
     plot(d, bins={'tof': 50})
