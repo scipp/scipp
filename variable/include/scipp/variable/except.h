@@ -20,8 +20,4 @@ template <class T>
 MismatchError(const variable::VariableConstView &, const T &)
     -> MismatchError<variable::Variable>;
 
-template <class T>
-MismatchError(const variable::VariableConstView &, const T &,
-              const std::string &) -> MismatchError<variable::Variable>;
-
 } // namespace scipp::except
