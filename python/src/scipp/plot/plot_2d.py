@@ -223,8 +223,8 @@ class Slicer2d(Slicer):
     def update_axes(self):
         # Go through the buttons and select the right coordinates for the axes
         axparams = {"x": {}, "y": {}}
-        print(self.slider_x)
-        print(self.buttons)
+        # print(self.slider_x)
+        # print(self.buttons)
         for dim, button in self.buttons.items():
             if self.slider[dim].disabled:
                 but_val = button.value.lower()
@@ -369,10 +369,10 @@ class Slicer2d(Slicer):
         # print("vslice 2", dslice)
 
         # Check if dimensions of arrays agree, if not, plot the transpose
-        slice_dims = dslice.dims
-        transp = slice_dims != button_dims
+        # slice_dims = dslice.dims
+        transp = dslice.dims != button_dims
         # transp = [self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]] != button_dims
-        print(slice_dims, button_dims)
+        # print(slice_dims, button_dims)
 
         # if self.params["masks"][self.name]["show"]:
         #     shape_list = [self.shapes[self.name][bdim] for bdim in button_dims]
@@ -402,22 +402,22 @@ class Slicer2d(Slicer):
         # print(self.histograms)
 
         # Make a new slice with bin edges and counts (for rebin), and with
-        # aux coordinates if requested
+        # non-dimension coordinates if requested
         # values = dslice.values
         # variances = dslice.variances
         # if transp:
         #     values = values.T
         #     variances =
         xy = "xy"
-        print([self.xyedges[xy[transp]].dims[0], self.xyedges[xy[not transp]].dims[0]])
-        print([self.xyedges[xy[not transp]].dims[0], self.xyedges[xy[transp]].dims[0]])
-        print([self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]])
-        print(dslice.dims)
-        print(dslice.shape)
-        print({self.xyedges["x"].dims[0]: self.xyedges["x"].shape,
-                                      self.xyedges["y"].dims[0]: self.xyedges["y"].shape})
-        print([self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]])
-        print(transp)
+        # print([self.xyedges[xy[transp]].dims[0], self.xyedges[xy[not transp]].dims[0]])
+        # print([self.xyedges[xy[not transp]].dims[0], self.xyedges[xy[transp]].dims[0]])
+        # print([self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]])
+        # print(dslice.dims)
+        # print(dslice.shape)
+        # print({self.xyedges["x"].dims[0]: self.xyedges["x"].shape,
+        #                               self.xyedges["y"].dims[0]: self.xyedges["y"].shape})
+        # print([self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]])
+        # print(transp)
 
         vslice = sc.DataArray(coords={self.xyedges["x"].dims[0]: self.xyedges["x"],
                                       self.xyedges["y"].dims[0]: self.xyedges["y"]},
@@ -427,6 +427,20 @@ class Slicer2d(Slicer):
                                   values=dslice.values,
                                   variances=dslice.variances,
                                   unit=sc.units.counts))
+
+        if self.params["masks"][self.name]["show"]:
+            masks = sc.combine_masks(dslice.masks, dslice.dims,
+                                           dslice.shape)
+            mslice_dims = []
+            for dim in masks.dims:
+                if dim == button_dims[0]:
+                    mslice_dims.append(self.xyedges["y"].dims[0])
+                elif dim == button_dims[1]:
+                    mslice_dims.append(self.xyedges["x"].dims[0])
+                else:
+                    mslice_dims.append(dim)
+            vslice.masks["all"] = sc.Variable(dims=mslice_dims, values=masks.values)
+            print(vslice)
 
         # vslice = sc.DataArray(data=sc.Variable(
         #                           dims=[self.xyedges["y"].dims[0], self.xyedges["x"].dims[0]],
@@ -495,8 +509,9 @@ class Slicer2d(Slicer):
         to_image["values"] = vslice.values
 
         if self.params["masks"][self.name]["show"]:
-            mslice = sc.combine_masks(vslice.masks, vslice.dims,
-                                           vslice.shape)
+            # mslice = sc.combine_masks(vslice.masks, vslice.dims,
+            #                                vslice.shape)
+            mslice = vslice.masks["all"]
             # Use scipp's automatic broadcast functionality to broadcast
             # lower dimension masks to higher dimensions.
             # TODO: creating a Variable here could become expensive when
@@ -506,13 +521,16 @@ class Slicer2d(Slicer):
             # large.
             # Here, the data is at most 2D, so having the Variable creation
             # and broadcasting should remain cheap.
+            print("vslice.dims", vslice.dims, vslice.shape)
+            print("mslice.dims", mslice.dims, mslice.shape)
             msk = sc.Variable(dims=vslice.dims,
                            values=np.ones(vslice.shape, dtype=np.int32))
             msk *= sc.Variable(dims=mslice.dims,
                             values=mslice.values.astype(np.int32))
             # mask = (vslice / mask)
-            # if transp:
-            #     msk = sc.transpose(msk, button_dims)
+            msk = msk.values
+            if transp:
+                msk = msk.T
 
         for key in self.ax.keys():
             # arr = getattr(vslice, key)
@@ -533,8 +551,12 @@ class Slicer2d(Slicer):
                 self.im[key].set_norm(self.params[key][self.name]["norm"])
             if self.params["masks"][self.name]["show"]:
                 # masked_data = vslice / msk
+                print(msk)
+                # print(np.amin(msk.values), np.amax(msk.values))
+                # if transp:
+                #     msk = msk.T
                 self.im[self.get_mask_key(key)].set_data(
-                    self.mask_to_float(msk.values, arr))
+                    self.mask_to_float(msk, arr))
                 # msk = getattr(mask, key)
                 # if transp:
                 #     msk = msk.T
