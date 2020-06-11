@@ -99,8 +99,10 @@ class Slicer2d(Slicer):
         self.global_vmin = np.Inf
         self.global_vmax = np.NINF
         self.image_resolution = 0.64 * config.plot.dpi / 96.0
-        self.image_resolution = [int(self.image_resolution * config.plot.width),
-                                 int(self.image_resolution * config.plot.height)]
+        self.image_resolution = [
+            int(self.image_resolution * config.plot.width),
+            int(self.image_resolution * config.plot.height)
+        ]
         self.xyrebin = {}
         self.xyedges = {}
         self.xywidth = {}
@@ -260,16 +262,18 @@ class Slicer2d(Slicer):
         # Create coordinate axes for resampled array to be used as image
         self.xyrebin["x"] = sc.Variable(
             dims=[axparams['x']["dim"]],
-            values=np.linspace(
-                extent_array[0], extent_array[1], self.image_resolution[0]+1),
+            values=np.linspace(extent_array[0], extent_array[1],
+                               self.image_resolution[0] + 1),
             unit=self.slider_x[self.name][axparams['x']["dim"]].unit)
         self.xyrebin["y"] = sc.Variable(
             dims=[axparams['y']["dim"]],
-            values=np.linspace(
-                extent_array[2], extent_array[3], self.image_resolution[1]+1),
+            values=np.linspace(extent_array[2], extent_array[3],
+                               self.image_resolution[1] + 1),
             unit=self.slider_x[self.name][axparams['y']["dim"]].unit)
-        self.image_dx = self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]
-        self.image_dy = self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]
+        self.image_dx = self.xyrebin["x"].values[1] - self.xyrebin["x"].values[
+            0]
+        self.image_dy = self.xyrebin["y"].values[1] - self.xyrebin["y"].values[
+            0]
 
         # Create bin-edge coordinates in the case of non bin-edges, since rebin
         # only accepts bin edges.
@@ -293,15 +297,14 @@ class Slicer2d(Slicer):
         else:
             self.xyedges["y"] = self.slider_x[self.name][ydims[0]].copy()
 
-
         # Compute bin widths for normalization pre-rebin in order to retain the
         # pixel values instead of spreading the data over the pixels.
         self.xywidth["x"] = sc.Variable(
-                dims=self.xyrebin["x"].dims,
-                values=np.ediff1d(self.xyedges["x"].values) / self.image_dx)
+            dims=self.xyrebin["x"].dims,
+            values=np.ediff1d(self.xyedges["x"].values) / self.image_dx)
         self.xywidth["y"] = sc.Variable(
-                dims=self.xyrebin["y"].dims,
-                values=np.ediff1d(self.xyedges["y"].values) / self.image_dy)
+            dims=self.xyrebin["y"].dims,
+            values=np.ediff1d(self.xyedges["y"].values) / self.image_dy)
 
         # Set axes limits and ticks
         for key in self.ax.keys():
@@ -343,7 +346,8 @@ class Slicer2d(Slicer):
             else:
                 # Get the dimensions of the dimension-coordinates, since
                 # buttons can contain non-dimension coordinates
-                button_dims[self.buttons[dim].value.lower() == "x"] = self.slider_x[self.name][val.dim].dims[0]
+                button_dims[self.buttons[dim].value.lower() ==
+                            "x"] = self.slider_x[self.name][val.dim].dims[0]
 
         # Check if dimensions of arrays agree, if not, plot the transpose
         transp = dslice.dims != button_dims
@@ -359,13 +363,17 @@ class Slicer2d(Slicer):
         # Make a new slice with bin edges and counts (for rebin), and with
         # non-dimension coordinates if requested.
         xy = "xy"
-        vslice = sc.DataArray(coords={self.xyedges["x"].dims[0]: self.xyedges["x"],
-                                      self.xyedges["y"].dims[0]: self.xyedges["y"]},
-                              data=sc.Variable(
-                                  dims=[self.xyedges[xy[not transp]].dims[0], self.xyedges[xy[transp]].dims[0]],
-                                  values=dslice.values,
-                                  variances=dslice.variances,
-                                  unit=sc.units.counts))
+        vslice = sc.DataArray(coords={
+            self.xyedges["x"].dims[0]: self.xyedges["x"],
+            self.xyedges["y"].dims[0]: self.xyedges["y"]
+        },
+                              data=sc.Variable(dims=[
+                                  self.xyedges[xy[not transp]].dims[0],
+                                  self.xyedges[xy[transp]].dims[0]
+                              ],
+                                               values=dslice.values,
+                                               variances=dslice.variances,
+                                               unit=sc.units.counts))
 
         # Also include the masks
         if self.params["masks"][self.name]["show"]:
@@ -377,7 +385,8 @@ class Slicer2d(Slicer):
                     mslice_dims.append(self.xyedges["x"].dims[0])
                 else:
                     mslice_dims.append(dim)
-            vslice.masks["all"] = sc.Variable(dims=mslice_dims, values=mslice.values)
+            vslice.masks["all"] = sc.Variable(dims=mslice_dims,
+                                              values=mslice.values)
 
         # The scaling by bin width and rebin operations below modify the
         # variances in the data, so here we have to manually split the values
@@ -393,8 +402,10 @@ class Slicer2d(Slicer):
             eslice.variances = None
             vslice.variances = None
             eslice *= self.xywidth["x"] * self.xywidth["y"]
-            eslice = sc.rebin(eslice, self.xyrebin["x"].dims[0], self.xyrebin["x"])
-            eslice = sc.rebin(eslice, self.xyrebin["y"].dims[0], self.xyrebin["y"])
+            eslice = sc.rebin(eslice, self.xyrebin["x"].dims[0],
+                              self.xyrebin["x"])
+            eslice = sc.rebin(eslice, self.xyrebin["y"].dims[0],
+                              self.xyrebin["y"])
             to_image["variances"] = np.sqrt(eslice.values)
 
         # Scale by bin width and then rebin in both directions
@@ -415,9 +426,9 @@ class Slicer2d(Slicer):
             # Here, the data is at most 2D, so having the Variable creation
             # and broadcasting should remain cheap.
             msk = sc.Variable(dims=vslice.dims,
-                           values=np.ones(vslice.shape, dtype=np.int32))
+                              values=np.ones(vslice.shape, dtype=np.int32))
             msk *= sc.Variable(dims=mslice.dims,
-                            values=mslice.values.astype(np.int32))
+                               values=mslice.values.astype(np.int32))
             msk = msk.values
             if transp:
                 msk = msk.T
