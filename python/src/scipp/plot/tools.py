@@ -30,8 +30,14 @@ def centers_to_edges(x):
     """
     Convert array centers to edges
     """
-    e = edges_to_centers(x)
-    return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
+    if len(x) < 2:
+        dx = 0.5 * abs(x[0])
+        if dx == 0.0:
+            dx = 0.5
+        return np.array([x[0] - dx, x[0] + dx])
+    else:
+        e = edges_to_centers(x)
+        return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
 
 
 def parse_params(params=None,

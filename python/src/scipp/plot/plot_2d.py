@@ -273,23 +273,25 @@ class Slicer2d(Slicer):
 
         # Create bin-edge coordinates in the case of non bin-edges, since rebin
         # only accepts bin edges.
-        if not self.histograms[self.name][self.xyrebin["x"].dims[0]]:
+        xdims = self.xyrebin["x"].dims
+        if not self.histograms[self.name][xdims[0]]:
             self.xyedges["x"] = sc.Variable(
-                dims=self.xyrebin["x"].dims,
+                dims=xdims,
                 values=centers_to_edges(
-                    self.slider_x[self.name][self.xyrebin["x"].dims[0]].values),
-                unit=self.slider_x[self.name][self.xyrebin["x"].dims[0]].unit)
+                    self.slider_x[self.name][xdims[0]].values),
+                unit=self.slider_x[self.name][xdims[0]].unit)
 
         else:
-            self.xyedges["x"] = self.slider_x[self.name][self.xyrebin["x"].dims[0]].copy()
-        if not self.histograms[self.name][self.xyrebin["y"].dims[0]]:
+            self.xyedges["x"] = self.slider_x[self.name][xdims[0]].copy()
+        ydims = self.xyrebin["y"].dims
+        if not self.histograms[self.name][ydims[0]]:
             self.xyedges["y"] = sc.Variable(
-                dims=self.xyrebin["y"].dims,
+                dims=ydims,
                 values=centers_to_edges(
-                    self.slider_x[self.name][self.xyrebin["y"].dims[0]].values),
-                unit=self.slider_x[self.name][self.xyrebin["y"].dims[0]].unit)
+                    self.slider_x[self.name][ydims[0]].values),
+                unit=self.slider_x[self.name][ydims[0]].unit)
         else:
-            self.xyedges["y"] = self.slider_x[self.name][self.xyrebin["y"].dims[0]].copy()
+            self.xyedges["y"] = self.slider_x[self.name][ydims[0]].copy()
 
 
         # Compute bin widths for normalization pre-rebin in order to retain the
