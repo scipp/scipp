@@ -277,19 +277,20 @@ class Slicer2d(Slicer):
             self.xyedges["x"] = sc.Variable(
                 dims=self.xyrebin["x"].dims,
                 values=centers_to_edges(
-                    self.data_array.coords[self.xyrebin["x"].dims[0]].values),
-                unit=self.data_array.coords[self.xyrebin["x"].dims[0]].unit)
+                    self.slider_x[self.name][self.xyrebin["x"].dims[0]].values),
+                unit=self.slider_x[self.name][self.xyrebin["x"].dims[0]].unit)
 
         else:
-            self.xyedges["x"] = self.data_array.coords[self.xyrebin["x"].dims[0]].copy()
+            self.xyedges["x"] = self.slider_x[self.name][self.xyrebin["x"].dims[0]].copy()
         if not self.histograms[self.name][self.xyrebin["y"].dims[0]]:
             self.xyedges["y"] = sc.Variable(
                 dims=self.xyrebin["y"].dims,
                 values=centers_to_edges(
-                    self.data_array.coords[self.xyrebin["y"].dims[0]].values),
-                unit=self.data_array.coords[self.xyrebin["y"].dims[0]].unit)
+                    self.slider_x[self.name][self.xyrebin["y"].dims[0]].values),
+                unit=self.slider_x[self.name][self.xyrebin["y"].dims[0]].unit)
         else:
-            self.xyedges["y"] = self.data_array.coords[self.xyrebin["y"].dims[0]].copy()
+            self.xyedges["y"] = self.slider_x[self.name][self.xyrebin["y"].dims[0]].copy()
+
 
         # Compute bin widths for normalization pre-rebin in order to retain the
         # pixel values instead of spreading the data over the pixels.

@@ -18,7 +18,7 @@ def plot(scipp_obj,
          bins=None,
          **kwargs):
     """
-    Wrapper function to plot any kind of dataset
+    Wrapper function to plot any kind of scipp object.
     """
 
     # Delayed imports
