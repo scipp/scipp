@@ -795,9 +795,9 @@ TYPED_TEST(DatasetBinaryOpTest, events_dataarrayconstview_coord_mismatch) {
       make_events_with_coords_and_labels({3.3, 4.4}, {1.0, 2.1});
 
   ASSERT_THROW(TestFixture::op(dataset_a, dataset_b["events"]),
-               except::VariableMismatchError);
+               except::CoordMismatchError);
   ASSERT_THROW(TestFixture::op(dataset_a["events"], dataset_b),
-               except::VariableMismatchError);
+               except::CoordMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
@@ -818,7 +818,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::VariableMismatchError);
+               except::CoordMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest,
@@ -839,7 +839,7 @@ TYPED_TEST(DatasetBinaryOpTest,
   }
 
   EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::VariableMismatchError);
+               except::CoordMismatchError);
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstview_rhs) {
