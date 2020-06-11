@@ -59,21 +59,26 @@ def test_plot_2d_with_masks_and_labels():
 
 
 def test_plot_2d_events_data_with_int_bins():
-    d = make_events_dataset(ndim=2)
+    d = make_events_dataset(ndim=1)
     plot(d, bins={'tof': 50})
 
 
 def test_plot_2d_events_data_with_nparray_bins():
-    d = make_events_dataset(ndim=2)
+    d = make_events_dataset(ndim=1)
     plot(d, bins={'tof': np.linspace(0.0, 105.0, 50)})
 
 
 def test_plot_2d_events_data_with_Variable_bins():
-    d = make_events_dataset(ndim=2)
+    d = make_events_dataset(ndim=1)
     bins = sc.Variable(['tof'],
                        values=np.linspace(0.0, 105.0, 50),
                        unit=sc.units.us)
     plot(d, bins={'tof': bins})
+
+
+def test_plot_2d_events_data_with_nparray_bins_and_extra_dim():
+    d = make_events_dataset(ndim=2)
+    plot(d, bins={'tof': np.linspace(0.0, 105.0, 50)})
 
 
 def test_plot_variable_2d():
