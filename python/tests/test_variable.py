@@ -203,6 +203,12 @@ def test_1D_scalar_access_fail():
         var.value = 1.2
 
 
+def test_1D_access_shape_mismatch_fail():
+    var = sc.Variable(dims=['x'], shape=(2, ))
+    with pytest.raises(RuntimeError):
+        var.values = 1.2
+
+
 def test_1D_access():
     var = sc.Variable(dims=['x'], shape=(2, ))
     assert len(var.values) == 2
