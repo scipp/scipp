@@ -430,20 +430,6 @@ private:
   detail::dataset_item_map m_data;
 };
 
-template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
-  std::map<typename T1::key_type, typename T1::mapped_type> out;
-
-  for (const auto &[key, item] : a)
-    out.emplace(key, item);
-  for (const auto &[key, item] : b) {
-    if (const auto it = a.find(key); it != a.end())
-      core::expect::equals(item, it->second);
-    else
-      out.emplace(key, item);
-  }
-  return out;
-}
-
 /// Const view for Dataset, implementing slicing and item selection.
 class SCIPP_DATASET_EXPORT DatasetConstView {
   struct make_const_view {

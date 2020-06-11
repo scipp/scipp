@@ -3,8 +3,13 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
+#include <string>
 
-#include "scipp/variable/variable.h"
+#include "scipp/units/dim.h"
+
+namespace scipp::variable {
+class Variable;
+}
 
 namespace scipp::dataset {
 
@@ -16,7 +21,7 @@ public:
   CoordAccess(Dataset *parent, DataArray *unaligned = nullptr)
       : m_parent(parent), m_unaligned(unaligned) {}
 
-  void set(const Dim &key, Variable var) const;
+  void set(const Dim &key, variable::Variable var) const;
   void erase(const Dim &key) const;
 
 private:
@@ -29,7 +34,7 @@ public:
   MaskAccess(Dataset *parent, DataArray *unaligned = nullptr)
       : m_parent(parent), m_unaligned(unaligned) {}
 
-  void set(const std::string &key, Variable var) const;
+  void set(const std::string &key, variable::Variable var) const;
   void erase(const std::string &key) const;
 
 private:
@@ -43,7 +48,7 @@ public:
              DataArray *unaligned = nullptr)
       : m_parent(parent), m_name(name), m_unaligned(unaligned) {}
 
-  void set(const std::string &key, Variable var) const;
+  void set(const std::string &key, variable::Variable var) const;
   void erase(const std::string &key) const;
 
 private:

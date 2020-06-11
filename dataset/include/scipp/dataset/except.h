@@ -30,6 +30,7 @@ using DatasetError = Error<dataset::Dataset>;
 
 using DataArrayMismatchError = MismatchError<dataset::DataArray>;
 using DatasetMismatchError = MismatchError<dataset::Dataset>;
+using CoordMismatchError = MismatchError<std::pair<Dim, VariableConstView>>;
 
 template <class T>
 MismatchError(const dataset::DatasetConstView &, const T &)
@@ -37,6 +38,12 @@ MismatchError(const dataset::DatasetConstView &, const T &)
 template <class T>
 MismatchError(const dataset::DataArrayConstView &, const T &)
     -> MismatchError<dataset::DataArray>;
+template <class T>
+MismatchError(const std::pair<Dim, VariableConstView> &, const T &)
+    -> MismatchError<std::pair<Dim, VariableConstView>>;
+template <class T>
+MismatchError(const std::pair<std::string, VariableConstView> &, const T &)
+    -> MismatchError<std::pair<std::string, VariableConstView>>;
 
 } // namespace scipp::except
 
