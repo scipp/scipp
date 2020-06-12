@@ -6,6 +6,7 @@
 #include "scipp/dataset/rebin.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
+#include "scipp/variable/arithmetic.h"
 
 #include "dataset_test_common.h"
 
@@ -75,13 +76,6 @@ TEST_F(AttributesTest, dataset_events_item_attrs) {
   ASSERT_EQ(d["events"].attrs().size(), 0);
 }
 
-TEST_F(AttributesTest, dataset_item_attrs_dimensions_exceeding_data) {
-  Dataset d;
-  d.setData("scalar", scalar);
-  EXPECT_THROW(d["scalar"].attrs().set("x", varX), except::DimensionError);
-  ASSERT_FALSE(d["scalar"].attrs().contains("x"));
-}
-
 TEST_F(AttributesTest, slice_dataset_item_attrs) {
   Dataset d;
   d.setData("a", varZX);
@@ -103,13 +97,31 @@ TEST_F(AttributesTest, slice_dataset_item_attrs) {
   ASSERT_TRUE(d["a"].slice({Dim::Y, 0, 1}).attrs().contains("x"));
 }
 
-TEST_F(AttributesTest, binary_ops) {
+TEST_F(AttributesTest, binary_ops_matching_attrs_preserved) {
   Dataset d;
   d.setData("a", varX);
   d["a"].attrs().set("a_attr", scalar);
   d.attrs().set("dataset_attr", scalar);
 
   for (const auto &result : {d + d, d - d, d * d, d / d}) {
+    EXPECT_EQ(result.attrs(), d.attrs());
+    EXPECT_EQ(result["a"].attrs(), d["a"].attrs());
+  }
+}
+
+TEST_F(AttributesTest, binary_ops_mismatching_attrs_dropped) {
+  Dataset d1;
+  d1.setData("a", varX);
+  d1["a"].attrs().set("a_attr", scalar);
+  d1.attrs().set("dataset_attr", scalar);
+  Dataset d2;
+  d2.setData("a", varX);
+  d2["a"].attrs().set("a_attr", scalar + scalar); // mismatching content
+  d2.attrs().set("dataset_attr", scalar + scalar);
+  d2["a"].attrs().set("a_attr2", scalar); // mismatching name
+  d2.attrs().set("dataset_attr2", scalar);
+
+  for (const auto &result : {d1 + d2, d1 - d2, d1 * d2, d1 / d2}) {
     EXPECT_TRUE(result.attrs().empty());
     EXPECT_TRUE(result["a"].attrs().empty());
   }
@@ -227,7 +239,13 @@ TEST_F(AttributesTest, unaligned_not_mapped_into_aligned) {
   EXPECT_TRUE(d["a"].unaligned().attrs().empty());
 }
 
-TEST_F(AttributesTest, unaligned_set_via_aligned_fails) {
+// We have removed the check in Dataset::setAttr preventing insertion of attrs
+// exceeding data dims. This is now more in line with how coords are handled,
+// and is required for storing edges of a single bin created from a non-range
+// slice. However, it leaves this peculiarity of allowing insertion of an
+// attribute that depends on an dimension of unaligned content, without implying
+// actual relation, i.e., extents are unrelated.
+TEST_F(AttributesTest, DISABLED_unaligned_set_via_aligned_fails) {
   auto d = testdata::make_dataset_realigned_x_to_y();
   EXPECT_ANY_THROW(
       d["a"].attrs().set("x", makeVariable<double>(Dims{Dim::X}, Shape{3})));

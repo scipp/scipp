@@ -200,9 +200,9 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
   }
 
   ASSERT_EQ(dspacing.attrs()["position"], tof.coords()[Dim("position")]);
-  ASSERT_EQ(dspacing.attrs()["source-position"],
+  ASSERT_EQ(dspacing.coords()[Dim("source-position")],
             tof.coords()[Dim("source-position")]);
-  ASSERT_EQ(dspacing.attrs()["sample-position"],
+  ASSERT_EQ(dspacing.coords()[Dim("sample-position")],
             tof.coords()[Dim("sample-position")]);
 }
 
@@ -315,11 +315,8 @@ TEST_P(ConvertTest, Tof_to_Wavelength) {
     EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]), d1[2] * 1e-3);
   }
 
-  ASSERT_EQ(wavelength.attrs()["position"], tof.coords()[Dim("position")]);
-  ASSERT_EQ(wavelength.attrs()["source-position"],
-            tof.coords()[Dim("source-position")]);
-  ASSERT_EQ(wavelength.attrs()["sample-position"],
-            tof.coords()[Dim("sample-position")]);
+  for (const auto &name : {"position", "source-position", "sample-position"})
+    ASSERT_EQ(wavelength.coords()[Dim(name)], tof.coords()[Dim(name)]);
 }
 
 TEST_P(ConvertTest, Wavelength_to_Tof) {
@@ -462,11 +459,8 @@ TEST_P(ConvertTest, Tof_to_Energy_Elastic) {
                 e1[2] * 1e-3);
   }
 
-  ASSERT_EQ(energy.attrs()["position"], tof.coords()[Dim("position")]);
-  ASSERT_EQ(energy.attrs()["source-position"],
-            tof.coords()[Dim("source-position")]);
-  ASSERT_EQ(energy.attrs()["sample-position"],
-            tof.coords()[Dim("sample-position")]);
+  for (const auto &name : {"position", "source-position", "sample-position"})
+    ASSERT_EQ(energy.coords()[Dim(name)], tof.coords()[Dim(name)]);
 }
 
 TEST_P(ConvertTest, Energy_to_Tof_Elastic) {

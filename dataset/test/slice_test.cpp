@@ -9,6 +9,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/arithmetic.h"
 #include "test_macros.h"
 
 using namespace scipp;
@@ -266,7 +267,14 @@ INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_events,
 
 TEST_P(Dataset3DTest_slice_x, slice) {
   const auto pos = GetParam();
-  EXPECT_EQ(dataset.slice({Dim::X, pos}), reference(pos));
+  auto expected = reference(pos);
+  // Non-range slice converts coord to attr
+  for (const auto &name :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
+    for (const auto &attr : {"x", "labels_x"})
+      expected[name].attrs().set(
+          attr, dataset.coords()[Dim(attr)].slice({Dim::X, pos}));
+  EXPECT_EQ(dataset.slice({Dim::X, pos}), expected);
 }
 
 TEST_P(Dataset3DTest_slice_events, slice) {
@@ -298,9 +306,17 @@ TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
   const auto pos = GetParam();
   auto datasetWithEdges = dataset;
   datasetWithEdges.setCoord(Dim::X, makeRandom({Dim::X, 5}));
-  EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}), reference(pos));
-  EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}),
-            dataset.slice({Dim::X, pos}));
+  auto expected = reference(pos);
+  // Non-range slice converts coord to attr
+  for (const auto &name :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
+    expected[name].attrs().set(
+        "labels_x",
+        datasetWithEdges.coords()[Dim("labels_x")].slice({Dim::X, pos}));
+    expected[name].attrs().set(
+        "x", datasetWithEdges.coords()[Dim("x")].slice({Dim::X, pos, pos + 2}));
+  }
+  EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}), expected);
 }
 
 TEST_P(Dataset3DTest_slice_y, slice) {
@@ -320,6 +336,10 @@ TEST_P(Dataset3DTest_slice_y, slice) {
                     dataset["data_zyx"].data().slice({Dim::Y, pos}));
   reference.setData("data_xyz",
                     dataset["data_xyz"].data().slice({Dim::Y, pos}));
+  for (const auto &name : {"data_xy", "data_zyx", "data_xyz"})
+    for (const auto &attr : {"y", "labels_xy"})
+      reference[name].attrs().set(
+          attr, dataset.coords()[Dim(attr)].slice({Dim::Y, pos}));
 
   EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
@@ -340,6 +360,10 @@ TEST_P(Dataset3DTest_slice_z, slice) {
                     dataset["data_zyx"].data().slice({Dim::Z, pos}));
   reference.setData("data_xyz",
                     dataset["data_xyz"].data().slice({Dim::Z, pos}));
+  for (const auto &name : {"data_zyx", "data_xyz"})
+    for (const auto &attr : {"z", "labels_z"})
+      reference[name].attrs().set(
+          attr, dataset.coords()[Dim(attr)].slice({Dim::Z, pos}));
 
   EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
 }
@@ -688,4 +712,51 @@ TYPED_TEST(DataArrayView3DTest, slice_with_edges) {
       }
     }
   }
+}
+
+class CoordToAttrMappingTest : public ::testing::Test {
+protected:
+  Variable x = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  DataArray a{x, {{Dim::X, x}}};
+};
+
+template <class T> void test_coord_to_attr_mapping(T &o) {
+  EXPECT_FALSE(o.attrs().contains("x"));
+  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).attrs().contains("x"));
+  EXPECT_TRUE(o.slice({Dim::X, 2}).attrs().contains("x"));
+  EXPECT_EQ(o.slice({Dim::X, 2}).attrs()["x"], 3.0 * units::one);
+  EXPECT_TRUE(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).attrs().contains("x"));
+  EXPECT_EQ(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).attrs()["x"],
+            3.0 * units::one);
+}
+
+template <class T> void test_dataset_coord_to_attr_mapping(T &o) {
+  EXPECT_FALSE(o.attrs().contains("x"));
+  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).attrs().contains("x"));
+  // No mapping to attrs of *dataset*
+  EXPECT_FALSE(o.slice({Dim::X, 2}).attrs().contains("x"));
+  // Mapped "aligned" coord of dataset to attr (unaligned coord) of item
+  EXPECT_TRUE(o.slice({Dim::X, 2})["a"].attrs().contains("x"));
+  EXPECT_EQ(o.slice({Dim::X, 2})["a"].attrs()["x"], 3.0 * units::one);
+  EXPECT_TRUE(
+      o.slice({Dim::X, 2, 3}).slice({Dim::X, 0})["a"].attrs().contains("x"));
+  EXPECT_EQ(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0})["a"].attrs()["x"],
+            3.0 * units::one);
+}
+
+TEST_F(CoordToAttrMappingTest, DataArrayView) { test_coord_to_attr_mapping(a); }
+
+TEST_F(CoordToAttrMappingTest, DataArrayConstView) {
+  const DataArray &const_a = a;
+  test_coord_to_attr_mapping(const_a);
+}
+
+TEST_F(CoordToAttrMappingTest, DatasetView) {
+  Dataset d({{"a", a}});
+  test_dataset_coord_to_attr_mapping(d);
+}
+
+TEST_F(CoordToAttrMappingTest, DatasetConstView) {
+  const Dataset d({{"a", a}});
+  test_dataset_coord_to_attr_mapping(d);
 }

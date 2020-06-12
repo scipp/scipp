@@ -402,8 +402,7 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
     info = {
         "coords": {
             dim: coord,
-            spec_dim: spec_coord,
-            "position": pos
+            spec_dim: spec_coord
         },
         "masks": {},
         "attrs": {
@@ -419,6 +418,9 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
 
     if advanced_geometry:
         info["coords"]["detector_info"] = make_detector_info(ws)
+
+    if not np.all(np.isnan(pos.values)):
+        info["coords"].update({"position": pos})
 
     if rot is not None and shp is not None and not np.all(np.isnan(
             pos.values)):
