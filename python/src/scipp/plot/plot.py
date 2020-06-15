@@ -5,6 +5,7 @@
 # Scipp imports
 from .._scipp import core as sc
 from .sciplot import SciPlot
+from .tools import make_fake_coord
 
 
 def plot(scipp_obj,
@@ -32,7 +33,10 @@ def plot(scipp_obj,
         for name in sorted(scipp_obj.keys()):
             inventory[name] = scipp_obj[name]
     elif tp is sc.Variable or tp is sc.VariableView:
-        inventory[str(tp)] = sc.DataArray(data=scipp_obj)
+        coords = {}
+        for dim, size in zip(scipp_obj.dims, scipp_obj.shape):
+            coords[dim] = make_fake_coord(dim, size)
+        inventory[str(tp)] = sc.DataArray(data=scipp_obj, coords=coords)
     elif tp is sc.DataArray or tp is sc.DataArrayView:
         inventory[scipp_obj.name] = scipp_obj
     elif tp is dict:

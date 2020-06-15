@@ -72,6 +72,9 @@ class Slicer:
         # Record which variables are histograms along which dimension
         self.histograms = {}
 
+        self.slider_axformatter = {}
+        self.slider_axlocator = {}
+
         for name, array in self.scipp_obj_dict.items():
 
             self.data_array = array
@@ -118,6 +121,8 @@ class Slicer:
             self.slider_ticks[name] = {}
             # Store labels for sliders if any
             self.slider_labels[name] = {}
+            self.slider_axformatter[name] = {}
+            self.slider_axlocator[name] = {}
 
             # Process axes dimensions
             if axes is None:
@@ -129,9 +134,10 @@ class Slicer:
 
             # Iterate through axes and collect dimensions
             for ax in axes:
-                dim, var, ticks = self.axis_label_and_ticks(ax, array, name)
+                dim, var, formatter, locator = self.axis_label_and_ticks(ax, array, name)
                 self.slider_x[name][dim] = var
-                self.slider_ticks[name][dim] = ticks
+                self.slider_axformatter[name][dim] = formatter
+                self.slider_axlocator[name][dim] = locator
                 self.slider_nx[name][dim] = self.shapes[name][dim]
 
             # Save information on histograms
@@ -255,53 +261,81 @@ class Slicer:
         """
         Get dimensions and label (if present) from requested axis
         """
-        ticks = None
+        formatter = ticker.ScalarFormatter()
+        locator = ticker.AutoLocator()
         dim = axis
         # Convert to Dim object?
         if isinstance(dim, str):
             dim = Dim(dim)
         make_fake_coord = False
         fake_unit = None
-        if not data_array.coords.__contains__(dim):
-            make_fake_coord = True
-        else:
-            tp = data_array.coords[dim].dtype
-            if tp == dtype.vector_3_float64:
-                make_fake_coord = True
-                ticks = {
-                    "formatter":
-                    lambda x: "(" + ",".join(
-                        [value_to_string(item, precision=2)
-                         for item in x]) + ")"
-                }
-            elif tp == dtype.string:
-                make_fake_coord = True
-                ticks = {"formatter": lambda x: x}
-            if make_fake_coord:
-                fake_unit = data_array.coords[dim].unit
-                ticks["coord"] = data_array.coords[dim]
-        if make_fake_coord:
-            args = {"values": np.arange(self.shapes[name][dim])}
-            if fake_unit is not None:
-                args["unit"] = fake_unit
-            var = Variable([dim], **args)
-        else:
-            var = data_array.coords[dim]
+        # if not data_array.coords.__contains__(dim):
+        #     make_fake_coord = True
+        # else:
+        #     tp = data_array.coords[dim].dtype
+        #     if tp == dtype.vector_3_float64:
+        #         make_fake_coord = True
+        #         ticks = {
+        #             "formatter":
+        #             lambda x: "(" + ",".join(
+        #                 [value_to_string(item, precision=2)
+        #                  for item in x]) + ")"
+        #         }
+        #     elif tp == dtype.string:
+        #         make_fake_coord = True
+        #         ticks = {"formatter": lambda x: x}
+        #     if make_fake_coord:
+        #         fake_unit = data_array.coords[dim].unit
+        #         ticks["coord"] = data_array.coords[dim]
+
+        tp = data_array.coords[dim].dtype
+#         if tp == dtype.vector_3_float64:
+#             make_fake_coord = True
+#             ticks = {
+#                 "formatter":
+#                 lambda x: "(" + ",".join(
+#                     [value_to_string(item, precision=2)
+#                      for item in x]) + ")"
+#             }
+#             def format_fn(tick_val, tick_pos):
+#     if int(tick_val) in xs:
+#         return labels[int(tick_val)]
+#     else:
+#         return ''
+
+
+# ax.xaxis.set_major_formatter(FuncFormatter(format_fn))
+# ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+        if tp == dtype.string:
+            # make_fake_coord = True
+            ticks = {"formatter": lambda x: x}
+        # if make_fake_coord:
+        #     fake_unit = data_array.coords[dim].unit
+        #     ticks["coord"] = data_array.coords[dim]
+
+
+        # if make_fake_coord:
+        #     args = {"values": np.arange(self.shapes[name][dim])}
+        #     if fake_unit is not None:
+        #         args["unit"] = fake_unit
+        #     var = Variable([dim], **args)
+        # else:
+        var = data_array.coords[dim]
         return dim, var, ticks
 
-    def get_custom_ticks(self, ax, dim, xy="x"):
-        """
-        Return a list of string to be used as axis tick labels in the case of
-        strings or vectors as one axis coordinate.
-        """
-        getticks = getattr(ax, "get_{}ticks".format(xy))
-        xticks = getticks()
-        if xticks[2] - xticks[1] < 1:
-            ax.xaxis.set_major_locator(ticker.MultipleLocator(1.0))
-            xticks = getticks()
-        new_ticks = [""] * len(xticks)
-        for i, x in enumerate(xticks):
-            if x >= 0 and x < self.slider_nx[self.name][dim]:
-                new_ticks[i] = self.slider_ticks[self.name][dim]["formatter"](
-                    self.slider_ticks[self.name][dim]["coord"].values[int(x)])
-        return new_ticks
+    # def get_custom_ticks(self, ax, dim, xy="x"):
+    #     """
+    #     Return a list of string to be used as axis tick labels in the case of
+    #     strings or vectors as one axis coordinate.
+    #     """
+    #     getticks = getattr(ax, "get_{}ticks".format(xy))
+    #     xticks = getticks()
+    #     if xticks[2] - xticks[1] < 1:
+    #         ax.xaxis.set_major_locator(ticker.MultipleLocator(1.0))
+    #         xticks = getticks()
+    #     new_ticks = [""] * len(xticks)
+    #     for i, x in enumerate(xticks):
+    #         if x >= 0 and x < self.slider_nx[self.name][dim]:
+    #             new_ticks[i] = self.slider_ticks[self.name][dim]["formatter"](
+    #                 self.slider_ticks[self.name][dim]["coord"].values[int(x)])
+    #     return new_ticks

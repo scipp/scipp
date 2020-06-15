@@ -76,6 +76,7 @@ def parse_params(params=None,
         if parsed["vmax"] is None:
             parsed["vmax"] = sc.max(variable).value
         need_norm = True
+        print("scipp", parsed)
     # Use numpy to get min and max
     if array is not None:
         if parsed["vmin"] is None or parsed["vmax"] is None:
@@ -89,7 +90,8 @@ def parse_params(params=None,
         if parsed["vmax"] is None:
             parsed["vmax"] = valid.max()
         need_norm = True
-
+        print("numpy", parsed)
+ 
     if need_norm:
         if min_val is not None:
             parsed["vmin"] = min(parsed["vmin"], min_val)
@@ -108,3 +110,10 @@ def parse_params(params=None,
             "tmp", [parsed["color"], parsed["color"]])
 
     return parsed
+
+
+def make_fake_coord(dim, size, unit=None):
+    args = {"values": np.arange(size)}
+    if unit is not None:
+        args["unit"] = unit
+    return Variable(dims=[dim], **args)
