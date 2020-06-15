@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
-from .tools import parse_params
+from .tools import parse_params, make_fake_coord
 from ..utils import name_with_unit, value_to_string
 from .._scipp.core import combine_masks, Variable, Dim, dtype
 
@@ -264,10 +264,11 @@ class Slicer:
         formatter = ticker.ScalarFormatter()
         locator = ticker.AutoLocator()
         dim = axis
+        dimdim = data_array.coords[dim].dims[0]
         # Convert to Dim object?
         if isinstance(dim, str):
             dim = Dim(dim)
-        make_fake_coord = False
+        need_fake_coord = False
         fake_unit = None
         # if not data_array.coords.__contains__(dim):
         #     make_fake_coord = True
@@ -308,7 +309,19 @@ class Slicer:
 # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
         if tp == dtype.string:
             # make_fake_coord = True
-            ticks = {"formatter": lambda x: x}
+            # ticks = {"formatter": lambda x: x}
+            var = make_fake_coord(dim, self.shapes[name][dim],
+                unit=data_array.coords[dim].unit)
+            formatter = ticker.FuncFormatter(lambda val, pos : self.scipp_obj_dict[name].coords[dim].values[int(val)] if (int(val) >= 0 and int(val) < self.shapes[name][dim]) else "")
+            locator = ticker.MaxNLocator(integer=True)
+
+
+    #         def format_fn(tick_val, tick_pos):
+    # if int(tick_val) in xs:
+    #     return labels[int(tick_val)]
+    # else:
+    #     return ''
+
         # if make_fake_coord:
         #     fake_unit = data_array.coords[dim].unit
         #     ticks["coord"] = data_array.coords[dim]
@@ -319,9 +332,23 @@ class Slicer:
         #     if fake_unit is not None:
         #         args["unit"] = fake_unit
         #     var = Variable([dim], **args)
-        # else:
-        var = data_array.coords[dim]
-        return dim, var, ticks
+
+        elif dim != dimdim: # non-dimension coordinate
+            print("in here", dim, dimdim)
+            var = data_array.coords[dimdim]
+            print(var)
+            # idx = lambda arr, v, : (np.abs(arr - v)).argmin()
+            formatter = ticker.FuncFormatter(lambda val, pos : data_array.coords[dim].values[np.abs(data_array.coords[dimdim].values - val).argmin()])
+            # formatter = ticker.FuncFormatter(
+                # lambda val, pos : self.scipp_obj_dict[name].coords[dim].values.sum())
+            # formatter = ticker.FuncFormatter(lambda val, pos : self.scipp_obj_dict[name].coords[dim].values[2])
+            print(formatter)
+
+
+
+        else:
+            var = data_array.coords[dim]
+        return dim, var, formatter, locator
 
     # def get_custom_ticks(self, ax, dim, xy="x"):
     #     """

@@ -116,4 +116,4 @@ def make_fake_coord(dim, size, unit=None):
     args = {"values": np.arange(size)}
     if unit is not None:
         args["unit"] = unit
-    return Variable(dims=[dim], **args)
+    return sc.Variable(dims=[dim], **args)
