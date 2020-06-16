@@ -318,12 +318,25 @@ class Slicer2d(Slicer):
                 self.ax[key].set_ylim(axparams["y"]["lims"])
             self.ax[key].set_xlabel(axparams["x"]["labels"])
             self.ax[key].set_ylabel(axparams["y"]["labels"])
+        #             self.ax.xaxis.set_major_formatter(self.slider_axformatter[self.name][dim][self.logx])
+        # self.ax.xaxis.set_major_locator(self.slider_axlocator[self.name][dim][self.logx])
+
+            print(axparams)
+            print(self.slider_x[self.name])
+            # print(self.slider_x[self.name]['y'])
+
             for xy, param in axparams.items():
-                if self.slider_ticks[self.name][param["dim"]] is not None:
-                    getattr(self.ax[key], "set_{}ticklabels".format(xy))(
-                        self.get_custom_ticks(ax=self.ax[key],
-                                              dim=param["dim"],
-                                              xy=xy))
+                getattr(self.ax[key], "{}axis".format(xy)).set_major_formatter(self.slider_axformatter[self.name][dim][getattr(self, "log{}".format(xy))])
+                print(self.slider_axlocator[self.name][dim][getattr(self, "log{}".format(xy))])
+                getattr(self.ax[key], "{}axis".format(xy)).set_major_locator(self.slider_axlocator[self.name][dim][getattr(self, "log{}".format(xy))])
+                
+                # self.ax.xaxis.set_major_locator(self.slider_axlocator[self.name][dim][self.logx])
+
+                # if self.slider_ticks[self.name][param["dim"]] is not None:
+                #     getattr(self.ax[key], "set_{}ticklabels".format(xy))(
+                #         self.get_custom_ticks(ax=self.ax[key],
+                #                               dim=param["dim"],
+                #                               xy=xy))
         return
 
     def update_slice(self, change):
