@@ -387,6 +387,18 @@ TEST(ElementArrayViewTest, slicing_view_of_view_collapse_and_broadcast) {
                      {1, 1, 13, 13}));
 }
 
+TEST(ElementArrayViewTest,
+     slicing_view_of_view_collapse_and_broadcast_ignore_dim) {
+  Dimensions dataDims{Dim::X, 2};
+  Dimensions viewDims{Dim::X, 2};
+  Dimensions target{{Dim::X, Dim::Y}, {2, 2}};
+  const auto data = range(2);
+  ElementArrayView base(data.data(), 0, viewDims, dataDims);
+  // Cannot slice Y, so ignored. Broadcast Y.
+  EXPECT_TRUE(equals(ElementArrayView<const int32_t>(base, target, Dim::Y, 0),
+                     {0, 0, 1, 1}));
+}
+
 TEST(ElementArrayViewTest, slicing_view_of_view_bad_broadcast) {
   Dimensions dataDims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
   Dimensions baseDims{{Dim::X, Dim::Y, Dim::Z}, {2, 1, 4}};
