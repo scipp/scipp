@@ -261,8 +261,12 @@ class Slicer:
         """
         Get dimensions and label (if present) from requested axis
         """
-        formatter = ticker.ScalarFormatter()
-        locator = ticker.AutoLocator()
+
+        # Create some default axis tick formatter, depending on whether log
+        # for that axis will be True or False
+        formatter = {False: ticker.ScalarFormatter(), True: ticker.LogFormatterSciNotation()}
+        locator = {False: ticker.AutoLocator(), True: ticker.LogLocator()}
+
         dim = axis
         dimdim = data_array.coords[dim].dims[0]
         # Convert to Dim object?
@@ -312,8 +316,9 @@ class Slicer:
             # ticks = {"formatter": lambda x: x}
             var = make_fake_coord(dim, self.shapes[name][dim],
                 unit=data_array.coords[dim].unit)
-            formatter = ticker.FuncFormatter(lambda val, pos : self.scipp_obj_dict[name].coords[dim].values[int(val)] if (int(val) >= 0 and int(val) < self.shapes[name][dim]) else "")
-            locator = ticker.MaxNLocator(integer=True)
+            form = ticker.FuncFormatter(lambda val, pos : self.scipp_obj_dict[name].coords[dim].values[int(val)] if (int(val) >= 0 and int(val) < self.shapes[name][dim]) else "")
+            formatter.update({False: form, True: form})
+            locator[False] = ticker.MaxNLocator(integer=True)
 
 
     #         def format_fn(tick_val, tick_pos):
@@ -338,7 +343,8 @@ class Slicer:
             var = data_array.coords[dimdim]
             print(var)
             # idx = lambda arr, v, : (np.abs(arr - v)).argmin()
-            formatter = ticker.FuncFormatter(lambda val, pos : data_array.coords[dim].values[np.abs(data_array.coords[dimdim].values - val).argmin()])
+            form = ticker.FuncFormatter(lambda val, pos : value_to_string(data_array.coords[dim].values[np.abs(data_array.coords[dimdim].values - val).argmin()]))
+            formatter.update({False: form, True: form})
             # formatter = ticker.FuncFormatter(
                 # lambda val, pos : self.scipp_obj_dict[name].coords[dim].values.sum())
             # formatter = ticker.FuncFormatter(lambda val, pos : self.scipp_obj_dict[name].coords[dim].values[2])

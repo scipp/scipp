@@ -132,6 +132,7 @@ class Slicer1d(Slicer):
 
         self.names = []
         self.ylim = [np.Inf, np.NINF]
+        self.logx = logx
         self.logy = logy
         for name, var in self.scipp_obj_dict.items():
             self.names.append(name)
@@ -147,7 +148,7 @@ class Slicer1d(Slicer):
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_ylim(self.ylim)
 
-        if logx:
+        if self.logx:
             self.ax.set_xscale("log")
         if self.logy:
             self.ax.set_yscale("log")
@@ -345,8 +346,8 @@ class Slicer1d(Slicer):
 
         self.ax.set_xlabel(
             name_with_unit(self.slider_x[self.name][dim], name=str(dim)))
-        self.ax.xaxis.set_major_formatter(self.slider_axformatter[self.name][dim])
-        self.ax.xaxis.set_major_locator(self.slider_axlocator[self.name][dim])
+        self.ax.xaxis.set_major_formatter(self.slider_axformatter[self.name][dim][self.logx])
+        self.ax.xaxis.set_major_locator(self.slider_axlocator[self.name][dim][self.logx])
         # if self.slider_ticks[self.name][dim] is not None:
         #     self.ax.set_xticklabels(self.get_custom_ticks(self.ax, dim))
         return
