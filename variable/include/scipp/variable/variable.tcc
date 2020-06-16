@@ -541,7 +541,10 @@ public:
   ElementArrayView<const value_type>
   valuesView(const Dimensions &dims, const Dim dim,
              const scipp::index begin) const override {
-    return {m_values, dims, dim, begin};
+    if (this->dims().contains(dim))
+      return {m_values, dims, dim, begin};
+    else
+      return {m_values, dims};
   }
 
   ElementArrayView<value_type> variancesView(const Dimensions &dims) override {
