@@ -282,9 +282,9 @@ class Slicer:
         #         make_fake_coord = True
         #         ticks = {
         #             "formatter":
-        #             lambda x: "(" + ",".join(
-        #                 [value_to_string(item, precision=2)
-        #                  for item in x]) + ")"
+                    # lambda x: "(" + ",".join(
+                    #     [value_to_string(item, precision=2)
+                    #      for item in x]) + ")"
         #         }
         #     elif tp == dtype.string:
         #         make_fake_coord = True
@@ -311,7 +311,18 @@ class Slicer:
 
 # ax.xaxis.set_major_formatter(FuncFormatter(format_fn))
 # ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        if tp == dtype.string:
+        if tp == dtype.vector_3_float64:
+            var = make_fake_coord(dim, self.shapes[name][dim],
+                unit=data_array.coords[dim].unit)
+            print("made a fake coord", var)
+            form = ticker.FuncFormatter(lambda val, pos : "(" + ",".join(
+                [value_to_string(item, precision=2)
+                         for item in self.scipp_obj_dict[name].coords[dim].values[int(val)]]) + ")" if (int(val) >= 0 and int(val) < self.shapes[name][dim]) else "")
+            formatter.update({False: form, True: form})
+            locator[False] = ticker.MaxNLocator(integer=True)
+
+
+        elif tp == dtype.string:
             # make_fake_coord = True
             # ticks = {"formatter": lambda x: x}
             var = make_fake_coord(dim, self.shapes[name][dim],

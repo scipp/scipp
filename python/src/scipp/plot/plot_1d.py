@@ -348,8 +348,12 @@ class Slicer1d(Slicer):
             name_with_unit(self.slider_x[self.name][dim], name=str(dim)))
         self.ax.xaxis.set_major_formatter(self.slider_axformatter[self.name][dim][self.logx])
         self.ax.xaxis.set_major_locator(self.slider_axlocator[self.name][dim][self.logx])
-        # if self.slider_ticks[self.name][dim] is not None:
-        #     self.ax.set_xticklabels(self.get_custom_ticks(self.ax, dim))
+        # print(self.ax.get_xticklabels()[0])
+        # self.ax.set_xticklabels(self.ax.get_xticklabels(), rotation=45)
+        # if self.slider_axrotator[self.name][dim] is not None:
+        #     self.ax.set_xticklabels(self.ax.get_xticklabels(), **self.slider_axrotator[self.name][dim])
+        # # if self.slider_ticks[self.name][dim] is not None:
+        # #     self.ax.set_xticklabels(self.get_custom_ticks(self.ax, dim))
         return
 
     def slice_data(self, var, name):
