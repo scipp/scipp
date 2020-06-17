@@ -10,6 +10,7 @@
 
 #include <boost/units/systems/angle/degrees.hpp>
 #include <boost/units/systems/si.hpp>
+#include <boost/units/systems/si/prefixes.hpp>
 #include <boost/units/unit.hpp>
 
 #include "scipp-units_export.h"
@@ -46,19 +47,21 @@ constexpr scipp::index unit_index(Unit unit, std::tuple<Units...>) {
 } // namespace detail
 
 namespace boost_units {
+typedef decltype(boost::units::si::nano * boost::units::si::seconds) nanosecond;
 static constexpr boost::units::si::dimensionless dimensionless;
 static constexpr boost::units::si::length m;
 static constexpr boost::units::si::time s;
 static constexpr boost::units::si::mass kg;
 static constexpr boost::units::si::temperature K;
 static constexpr boost::units::si::plane_angle rad;
+static constexpr nanosecond ns;
 static constexpr decltype(boost::units::degree::plane_angle{} *
                           dimensionless) deg;
 
 struct supported_units {
   using type = decltype(detail::make_unit(
       std::make_tuple(m, dimensionless / m, us, dimensionless / us, angstrom,
-                      dimensionless / angstrom),
+                      dimensionless / angstrom, ns, dimensionless / ns),
       std::make_tuple(dimensionless, rad, deg, rad / deg, deg / rad, counts,
                       dimensionless / counts, s, kg, meV, dimensionless / s,
                       counts / us, counts / angstrom, counts / meV, m *m *m,
@@ -138,5 +141,6 @@ constexpr Unit angstrom{boost_units::angstrom};
 constexpr Unit meV{boost_units::meV};
 constexpr Unit us{boost_units::us};
 constexpr Unit c{boost_units::c};
+constexpr Unit ns{boost_units::ns};
 
 } // namespace scipp::units

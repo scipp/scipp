@@ -118,6 +118,20 @@ TEST(Variable, operator_plus_equal_non_arithmetic_type) {
   EXPECT_THROW(a += a, except::TypeError);
 }
 
+TEST(Variable, operator_plus_equal_time_type) {
+  std::chrono::nanoseconds ns10;
+  ns10 = std::chrono::nanoseconds{10};
+  auto a = makeVariable<std::chrono::system_clock::time_point>(
+      Dims{Dim::X}, Shape{1},
+      Values{std::chrono::system_clock::time_point{ns10}});
+  auto a_ref = int64_t(11) * units::ns;
+  // this currently fails, needs implementing operators between
+  // Variable<time_point> and int_64/32. This will return Variable<int64_t>
+  // with units::ns. Or Variable<std::chrono::duration>?
+  // a += 1;
+  // EXPECT_EQ(a.values<int64_t>()[0], a_ref);
+}
+
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   auto b = makeVariable<int64_t>(Dims{Dim::X}, Shape{1}, Values{2});

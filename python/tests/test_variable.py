@@ -139,6 +139,17 @@ def test_create_1D_vector_3_float64():
     assert var.dtype == sc.dtype.vector_3_float64
     assert var.unit == sc.units.m
 
+def test_create_datetime64():
+    var = sc.Variable(dims=['x'],
+                      values=[120, 121],
+                      unit=sc.units.us,
+                      dtype=sc.dtype.datetime64)
+    assert len(var.values) == 2
+    np.testing.assert_array_equal(var.values[0], 120)
+    np.testing.assert_array_equal(var.values[1], 121)
+    assert var.dims == ['x']
+    assert var.dtype == sc.dtype.datetime64
+    assert var.unit == sc.units.ns
 
 def test_create_2D_inner_size_3():
     var = sc.Variable(dims=['x', 'y'],
