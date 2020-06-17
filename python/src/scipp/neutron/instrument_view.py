@@ -472,7 +472,8 @@ class InstrumentView:
                     [self.det_pos.shape[0], 3], dtype=np.float32))
             })
         points_material = self.p3.PointsMaterial(vertexColors='VertexColors',
-                                                 size=self.camera_pos * self._pixel_size,
+                                                 size=self.camera_pos *
+                                                 self._pixel_size,
                                                  transparent=True)
         points = self.p3.Points(geometry=points_geometry,
                                 material=points_material)
