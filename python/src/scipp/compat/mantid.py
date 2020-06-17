@@ -5,11 +5,14 @@
 import re
 from copy import deepcopy
 from contextlib import contextmanager
+import uuid
 
 import numpy as np
 
 from .. import detail
+from ..utils import is_data_array
 from .._scipp import core as sc
+from .._scipp.core import contains_events
 
 
 @contextmanager
@@ -23,9 +26,8 @@ def run_mantid_alg(alg, *args, **kwargs):
             "as detailed in the installation instructions (https://scipp."
             "github.io/getting-started/installation.html)")
     # Deal with multiple calls to this function, which may have conflicting
-    # names in the global AnalysisDataService.
-    run_mantid_alg.workspace_id += 1
-    ws_name = f'scipp.run_mantid_alg.{run_mantid_alg.workspace_id}'
+    # names in the global AnalysisDataService by using uuid.
+    ws_name = f'scipp.run_mantid_alg.{uuid.uuid4()}'
     # Deal with non-standard ways to define the prefix of output workspaces
     if alg == 'Fit':
         kwargs['Output'] = ws_name
@@ -40,9 +42,6 @@ def run_mantid_alg(alg, *args, **kwargs):
         for name in AnalysisDataService.Instance().getObjectNames():
             if name.startswith(ws_name):
                 mantid.DeleteWorkspace(name)
-
-
-run_mantid_alg.workspace_id = 0
 
 
 def get_pos(pos):
@@ -855,33 +854,29 @@ def validate_dim_and_get_mantid_string(unit_dim):
         return known_units[user_k]
 
 
-def data_array_to_workspace_2d(data_array, dim, instrument_file=None):
-    return to_workspace_2d(x=data_array.coords[dim].values,
-                           y=data_array.values,
-                           e=data_array.variances,
-                           coord_dim=dim,
-                           instrument_file=instrument_file)
-
-
-def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
+def to_mantid(data, dim, instrument_file=None):
     """
-    Use the values provided to create a Mantid workspace.
+    Convert data to a Mantid workspace.
 
     The Mantid layout expect the spectra to be the Outer-most dimension,
     i.e. y.shape[0]. If that is not the case you might have to transpose
     your data to fit that, otherwise it will not be aligned correctly in the
     Mantid workspace.
 
-    :param x: Data to be used as X for the Mantid workspace.
-    :param y: Data to be used as Y for the Mantid workspace.
-    :param e: Data to be used as error for the Mantid workspace.
-              If `None` the np.sqrt of y will be used.
-    :param coord_dim: Dim of the coordinate, to be set as the equivalent
-                      UnitX on the Mantid workspace.
+    :param data: Data to be converted.
+    :param dim: Coord to use for Mantid's first axis (X).
     :param instrument_file: Instrument file that will be
                             loaded into the workspace
-    :returns: Workspace2D containing the data for X, Y and E
+    :returns: Workspace containing converted data. The concrete workspace type
+              may differ depending on the content of `data`.
     """
+    if not is_data_array(data):
+        raise RuntimeError(
+            "Currently only data arrays can be converted to a Mantid workspace"
+        )
+    if data.data is None or contains_events(data):
+        raise RuntimeError(
+            "Currently only histogrammed data can be converted.")
     try:
         import mantid.simpleapi as mantid
     except ImportError:
@@ -889,6 +884,9 @@ def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
             "Mantid Python API was not found, please install Mantid framework "
             "as detailed in the installation instructions (https://scipp."
             "github.io/getting-started/installation.html)")
+    x = data.coords[dim].values
+    y = data.values
+    e = data.variances
 
     assert (len(y.shape) == 2 or len(y.shape) == 1), \
         "Currently can only handle 2D data."
@@ -902,7 +900,7 @@ def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
     if len(e.shape) == 1:
         e = np.array([e])
 
-    unitX = validate_dim_and_get_mantid_string(coord_dim)
+    unitX = validate_dim_and_get_mantid_string(dim)
 
     nspec = y.shape[0]
     if len(x.shape) == 1:
@@ -917,6 +915,8 @@ def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
                                         NVectors=nspec,
                                         XLength=nbins,
                                         YLength=nitems)
+    if data.unit != sc.units.counts:
+        ws.setDistribution(True)
 
     for i in range(nspec):
         ws.setX(i, x[i])
@@ -934,43 +934,54 @@ def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
     return ws
 
 
-def fit(ws, function, workspace_index, start_x, end_x):
+def _table_to_data_array(table, key, value, stddev):
+    stddevs = table[stddev].values
+    dim = 'parameter'
+    coord = table[key].data.copy()
+    coord.rename_dims({'row': dim})
+    return sc.DataArray(data=sc.Variable(dims=[dim],
+                                         values=table[value].values,
+                                         variances=stddevs * stddevs),
+                        coords={dim: coord})
+
+
+def _fit_workspace(ws, mantid_args):
     """
     Performs a fit on the workspace.
 
     :param ws: The workspace on which the fit will be performed
-    :param function: The function used for the fit. This is anything
-                     that mantid.Fit's Function parameter can handle.
-    :param workspace_index: Workspace index which will be fitted.
-    :param start_x: Start X for the fit
-    :param end_x: End X for the fit
     :returns: Dataset containing all of Fit's outputs
     """
     with run_mantid_alg('Fit',
-                        Function=function,
                         InputWorkspace=ws,
-                        WorkspaceIndex=int(workspace_index),
-                        StartX=start_x,
-                        EndX=end_x,
+                        **mantid_args,
                         CreateOutput=True) as fit:
-        ds = sc.Dataset(data={
-            'workspace':
-            sc.Variable(convert_Workspace2D_to_data_array(
-                fit.OutputWorkspace)),
-            'parameters':
-            sc.Variable(convert_TableWorkspace_to_dataset(
-                fit.OutputParameters)),
-            'normalised_covariance_matrix':
-            sc.Variable(
-                convert_TableWorkspace_to_dataset(
-                    fit.OutputNormalisedCovarianceMatrix)),
-        },
-                        attrs={
-                            'status': sc.Variable(fit.OutputStatus),
-                            'chi2_over_DoF':
-                            sc.Variable(fit.OutputChi2overDoF),
-                            'function': sc.Variable(str(fit.Function)),
-                            'cost_function': sc.Variable(fit.CostFunction)
-                        })
+        # This is assuming that all parameters are dimensionless. If this is
+        # not the case we should use a dataset with a scalar variable per
+        # parameter instead. Or better, a dict of scalar variables?
+        parameters = convert_TableWorkspace_to_dataset(fit.OutputParameters)
+        parameters = _table_to_data_array(parameters,
+                                          key='Name',
+                                          value='Value',
+                                          stddev='Error')
+        out = convert_Workspace2D_to_data_array(fit.OutputWorkspace)
+        data = sc.Dataset()
+        data['data'] = out['empty', 0]
+        data['calculated'] = out['empty', 1]
+        data['diff'] = out['empty', 2]
+        parameters.attrs['status'] = sc.Variable(fit.OutputStatus)
+        parameters.attrs['chi^2/d.o.f.'] = sc.Variable(fit.OutputChi2overDoF)
+        parameters.attrs['function'] = sc.Variable(str(fit.Function))
+        parameters.attrs['cost-function'] = sc.Variable(fit.CostFunction)
+        return parameters, data
 
-        return ds
+
+def fit(data, mantid_args):
+    if len(data.dims) != 1 or 'WorkspaceIndex' in mantid_args:
+        raise RuntimeError(
+            "Only 1D fitting is supported. Use scipp slicing and do not"
+            "provide a WorkspaceIndex.")
+    dim = data.dims[0]
+    ws = to_mantid(data, dim)
+    mantid_args['workspace_index'] = 0
+    return _fit_workspace(ws, mantid_args)
