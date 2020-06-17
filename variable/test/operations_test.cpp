@@ -484,15 +484,8 @@ TEST(Variable, concatenate_from_slices_with_broadcast) {
                            Variances{0.0, 0.1, 0.2, 0.3});
   auto out = concatenate(var.slice(Slice(Dim::X, 1, 4)),
                          var.slice(Slice(Dim::X, 0, 3)), Dim::Y);
-  EXPECT_EQ(out.dims().at(Dim::X), 3);
-  EXPECT_EQ(out.dims().at(Dim::Y), 2);
-  const auto values = out.values<double>();
-  const auto variances = out.variances<double>();
   std::vector<double> expected{0.1, 0.2, 0.3, 0.0, 0.1, 0.2};
-  EXPECT_TRUE(std::equal(values.begin(), values.end(), expected.begin(),
-                         expected.end()));
-  EXPECT_TRUE(std::equal(variances.begin(), variances.end(), expected.begin(),
-                         expected.end()));
+  EXPECT_EQ(out, makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3}, Values{expected}, Variances{expected});
 }
 
 TEST(EventsVariable, concatenate) {
