@@ -31,6 +31,7 @@ def instrument_view(scipp_obj=None,
                     continuous_update=True,
                     dim="tof",
                     rendering="Full",
+                    pixel_size=0.0005,
                     background="#f0f0f0"):
     """
     Plot a 2D or 3D view of the instrument.
@@ -59,6 +60,7 @@ def instrument_view(scipp_obj=None,
                         continuous_update=continuous_update,
                         dim=dim,
                         rendering=rendering,
+                        pixel_size=pixel_size,
                         background=background)
 
     render_plot(widgets=iv.box, filename=filename)
@@ -81,7 +83,9 @@ class InstrumentView:
                  continuous_update=None,
                  dim=None,
                  rendering=None,
+                 pixel_size=0.0005,
                  background=None):
+        self._pixel_size = pixel_size
 
         # Delayed imports to avoid hard dependencies
         self.widgets = importlib.import_module("ipywidgets")
@@ -468,7 +472,7 @@ class InstrumentView:
                     [self.det_pos.shape[0], 3], dtype=np.float32))
             })
         points_material = self.p3.PointsMaterial(vertexColors='VertexColors',
-                                                 size=self.camera_pos * 0.05,
+                                                 size=self.camera_pos * self._pixel_size,
                                                  transparent=True)
         points = self.p3.Points(geometry=points_geometry,
                                 material=points_material)
