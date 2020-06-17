@@ -214,7 +214,9 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
     iterDims.resize(dim, delta);
 
   const auto &otherT = requireT<const VariableConceptT>(other);
-  auto otherView = otherT.valuesView(iterDims, dim, otherBegin);
+  // Pass invalid dimension to prevent slicing when non-range slice
+  auto otherView =
+      otherT.valuesView(iterDims, delta == 1 ? Dim::Invalid : dim, otherBegin);
   // Four cases for minimizing use of ElementArrayView --- just copy contiguous
   // range where possible.
   if (this->isContiguous() && iterDims.isContiguousIn(this->dims())) {
