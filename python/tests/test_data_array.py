@@ -44,6 +44,27 @@ def test_init():
     assert len(d.masks) == 1
 
 
+def test_init_from_variable_views():
+    var = sc.Variable(['x'], values=np.arange(5))
+    a = sc.DataArray(data=var,
+                     coords={'x': var},
+                     attrs={'meta': var},
+                     masks={'mask1': sc.less(var, sc.Variable(value=3))})
+    b = sc.DataArray(data=a.data,
+                     coords={'x': a.coords['x']},
+                     attrs={'meta': a.attrs['meta']},
+                     masks={'mask1': a.masks['mask1']})
+    assert a == b
+
+    # Ensure mix of Variables and Variable views work
+    c = sc.DataArray(data=a.data,
+                     coords={'x': var},
+                     attrs={'meta': a.attrs['meta']},
+                     masks={'mask1': a.masks['mask1']})
+
+    assert a == c
+
+
 def test_coords():
     da = make_dataarray()
     assert len(dict(da.coords)) == 3
