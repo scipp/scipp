@@ -867,7 +867,8 @@ def to_mantid(data, dim, instrument_file=None):
     :param dim: Coord to use for Mantid's first axis (X).
     :param instrument_file: Instrument file that will be
                             loaded into the workspace
-    :returns: Workspace containing converted data. The concrete workspace type may differ depending on the content of `data`.
+    :returns: Workspace containing converted data. The concrete workspace type
+              may differ depending on the content of `data`.
     """
     if not is_data_array(data):
         raise RuntimeError(

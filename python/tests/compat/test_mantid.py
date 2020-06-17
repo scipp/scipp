@@ -429,7 +429,7 @@ class TestMantidConversion(unittest.TestCase):
         Tests that the fit executes, and the outputs
         are moved into the dataset. Does not check the fit values.
         """
-        from mantid.simpleapi import Load, mtd
+        from mantid.simpleapi import mtd
         mtd.clear()
 
         data = sc.neutron.load(filename=MantidDataHelper.find_file(
