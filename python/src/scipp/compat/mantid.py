@@ -5,6 +5,7 @@
 import re
 from copy import deepcopy
 from contextlib import contextmanager
+import uuid
 
 import numpy as np
 
@@ -25,9 +26,8 @@ def run_mantid_alg(alg, *args, **kwargs):
             "as detailed in the installation instructions (https://scipp."
             "github.io/getting-started/installation.html)")
     # Deal with multiple calls to this function, which may have conflicting
-    # names in the global AnalysisDataService.
-    run_mantid_alg.workspace_id += 1
-    ws_name = f'scipp.run_mantid_alg.{run_mantid_alg.workspace_id}'
+    # names in the global AnalysisDataService by using uuid.
+    ws_name = f'scipp.run_mantid_alg.{uuid.uuid4()}'
     # Deal with non-standard ways to define the prefix of output workspaces
     if alg == 'Fit':
         kwargs['Output'] = ws_name
@@ -42,9 +42,6 @@ def run_mantid_alg(alg, *args, **kwargs):
         for name in AnalysisDataService.Instance().getObjectNames():
             if name.startswith(ws_name):
                 mantid.DeleteWorkspace(name)
-
-
-run_mantid_alg.workspace_id = 0
 
 
 def get_pos(pos):
