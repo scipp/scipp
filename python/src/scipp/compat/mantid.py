@@ -855,6 +855,14 @@ def validate_dim_and_get_mantid_string(unit_dim):
         return known_units[user_k]
 
 
+def data_array_to_workspace_2d(data_array, dim, instrument_file=None):
+    return to_workspace_2d(x=data_array.coords[dim].values,
+                           y=data_array.values,
+                           e=data_array.variances,
+                           coord_dim=dim,
+                           instrument_file=instrument_file)
+
+
 def to_workspace_2d(x, y, e, coord_dim, instrument_file=None):
     """
     Use the values provided to create a Mantid workspace.

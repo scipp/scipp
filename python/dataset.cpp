@@ -331,13 +331,16 @@ void init_dataset(py::module &m) {
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, masks, and attributes.)");
   dataArray.def(py::init<const DataArrayConstView &>());
-  dataArray.def(py::init<Variable, std::map<Dim, Variable>,
-                         std::map<std::string, Variable>,
-                         std::map<std::string, Variable>>(),
+  dataArray.def(py::init([](VariableConstView data,
+                            std::map<Dim, VariableConstView> coords,
+                            std::map<std::string, VariableConstView> masks,
+                            std::map<std::string, VariableConstView> attrs) {
+                  return DataArray{Variable{data}, coords, masks, attrs};
+                }),
                 py::arg("data") = Variable{},
-                py::arg("coords") = std::map<Dim, Variable>{},
-                py::arg("masks") = std::map<std::string, Variable>{},
-                py::arg("attrs") = std::map<std::string, Variable>{});
+                py::arg("coords") = std::map<Dim, VariableConstView>{},
+                py::arg("masks") = std::map<std::string, VariableConstView>{},
+                py::arg("attrs") = std::map<std::string, VariableConstView>{});
 
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>());
