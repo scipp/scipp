@@ -478,6 +478,17 @@ TEST(Variable, concatenate_unit_fail) {
   EXPECT_NO_THROW(concatenate(a, b, Dim::X));
 }
 
+TEST(Variable, concatenate_from_slices_with_broadcast) {
+  auto var =
+      makeVariable<double>(Dimensions{Dim::X, 4}, Values{0.0, 0.1, 0.2, 0.3},
+                           Variances{0.0, 0.1, 0.2, 0.3});
+  auto out = concatenate(var.slice(Slice(Dim::X, 1, 4)),
+                         var.slice(Slice(Dim::X, 0, 3)), Dim::Y);
+  EXPECT_EQ(out, makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                      Values{0.1, 0.2, 0.3, 0.0, 0.1, 0.2},
+                                      Variances{0.1, 0.2, 0.3, 0.0, 0.1, 0.2}));
+}
+
 TEST(EventsVariable, concatenate) {
   const auto a = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
                                                   Values{}, Variances{});
