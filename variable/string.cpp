@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <set>
+#include <chrono>
 
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"
@@ -62,6 +63,7 @@ auto apply(const DType dtype, Args &&... args) {
     return formatterRegistry().format(args...);
   return core::callDType<Callable>(
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
+                 std::chrono::system_clock::time_point,
                  event_list<double>, event_list<float>, event_list<int64_t>,
                  event_list<int32_t>, Eigen::Vector3d, Eigen::Quaterniond>{},
       dtype, std::forward<Args>(args)...);

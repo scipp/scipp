@@ -23,6 +23,7 @@ TEST(UnitTest, constants) {
   EXPECT_EQ(units::meV, Unit(units::boost_units::meV));
   EXPECT_EQ(units::us, Unit(units::boost_units::us));
   EXPECT_EQ(units::c, Unit(units::boost_units::c));
+  EXPECT_EQ(units::ns, Unit(units::boost_units::ns));
 }
 
 TEST(UnitTest, c) {
@@ -127,6 +128,9 @@ TEST(UnitTest, conversion_factors) {
                                                    units::boost_units::us);
   boost::units::quantity<units::detail::tof::tof> h(9.0 *
                                                     boost::units::si::seconds);
+  boost::units::quantity<boost::units::si::time> i(
+      20 * units::boost_units::ns);
+                                                      
   EXPECT_DOUBLE_EQ(a.value(), 2.0);
   EXPECT_DOUBLE_EQ(b.value(), 3.0e-10);
   EXPECT_DOUBLE_EQ(c.value(), 4.0e10);
@@ -137,6 +141,7 @@ TEST(UnitTest, conversion_factors) {
                        boost::units::si::constants::codata::e.value().value());
   EXPECT_DOUBLE_EQ(g.value(), 8.0e-6);
   EXPECT_DOUBLE_EQ(h.value(), 9.0e6);
+  EXPECT_EQ(i.value(), 2e-08);
 }
 
 TEST(UnitTest, neutron_units) {
