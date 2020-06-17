@@ -480,14 +480,18 @@ TEST(Variable, concatenate_unit_fail) {
 
 TEST(Variable, concatenate_from_slices_with_broadcast) {
   auto var =
-      makeVariable<double>(Dimensions{Dim::X, 4}, Values{0.0, 0.1, 0.2, 0.3});
+      makeVariable<double>(Dimensions{Dim::X, 4}, Values{0.0, 0.1, 0.2, 0.3},
+                           Variances{0.0, 0.1, 0.2, 0.3});
   auto out = concatenate(var.slice(Slice(Dim::X, 1, 4)),
                          var.slice(Slice(Dim::X, 0, 3)), Dim::Y);
   EXPECT_EQ(out.dims().at(Dim::X), 3);
   EXPECT_EQ(out.dims().at(Dim::Y), 2);
-  auto values = out.values<double>();
+  const auto values = out.values<double>();
+  const auto variances = out.variances<double>();
   std::vector<double> expected{0.1, 0.2, 0.3, 0.0, 0.1, 0.2};
   EXPECT_TRUE(std::equal(values.begin(), values.end(), expected.begin(),
+                         expected.end()));
+  EXPECT_TRUE(std::equal(variances.begin(), variances.end(), expected.begin(),
                          expected.end()));
 }
 

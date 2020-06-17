@@ -238,7 +238,9 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
   }
   // TODO Avoid code duplication for variances.
   if (this->hasVariances()) {
-    auto otherVariances = otherT.variancesView(iterDims, dim, otherBegin);
+    // Pass invalid dimension to prevent slicing when non-range slice
+    auto otherVariances = otherT.variancesView(
+        iterDims, delta == 1 ? Dim::Invalid : dim, otherBegin);
     if (this->isContiguous() && iterDims.isContiguousIn(this->dims())) {
       auto target = variances(dim, offset, offset + delta);
       if (other.isContiguous() && iterDims.isContiguousIn(other.dims())) {
