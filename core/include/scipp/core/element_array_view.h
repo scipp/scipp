@@ -71,12 +71,7 @@ public:
         m_targetDimensions(targetDimensions) {
     expectCanBroadcastFromTo(other.m_targetDimensions, m_targetDimensions);
     m_dimensions = other.m_dimensions;
-<<<<<<< Updated upstream
-    if (begin != 0 || dim != Dim::Invalid)
-=======
-
     if (dim != Dim::Invalid)
->>>>>>> Stashed changes
       m_offset += begin * m_dimensions.offset(dim);
     // See implementation of ViewIndex regarding this relabeling.
     for (const auto label : m_dimensions.labels())
