@@ -479,9 +479,9 @@ TEST(Variable, concatenate_unit_fail) {
 }
 
 TEST(Variable, concatenate_from_slices_with_broadcast) {
-  auto var =
-      makeVariable<double>(Dimensions{Dim::X, 4}, Values{0.0, 0.1, 0.2, 0.3},
-                           Variances{0.0, 0.1, 0.2, 0.3});
+  auto input_v = {0.0, 0.1, 0.2, 0.3};
+  auto var = makeVariable<double>(Dimensions{Dim::X, 4}, Values(input_v),
+                                  Variances(input_v));
   auto out = concatenate(var.slice(Slice(Dim::X, 1, 4)),
                          var.slice(Slice(Dim::X, 0, 3)), Dim::Y);
   auto expected = {0.1, 0.2, 0.3, 0.0, 0.1, 0.2};
