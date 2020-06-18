@@ -99,6 +99,9 @@ Geometric
 Group-by (split-apply-combine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Reduction
+---------
+
 .. autosummary::
    :toctree: ../generated
 
@@ -117,6 +120,15 @@ Group-by (split-apply-combine)
    GroupByDataset.mean
    GroupByDataset.min
    GroupByDataset.sum
+
+Other
+-----
+
+.. autosummary::
+   :toctree: ../generated
+
+   GroupByDataArray.copy
+   GroupByDataset.copy
 
 Counts
 ~~~~~~
