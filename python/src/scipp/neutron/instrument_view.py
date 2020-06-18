@@ -31,7 +31,7 @@ def instrument_view(scipp_obj=None,
                     continuous_update=True,
                     dim="tof",
                     rendering="Full",
-                    pixel_size=0.0005,
+                    pixel_size=0.02,
                     background="#f0f0f0"):
     """
     Plot a 2D or 3D view of the instrument.
@@ -83,7 +83,7 @@ class InstrumentView:
                  continuous_update=None,
                  dim=None,
                  rendering=None,
-                 pixel_size=0.0005,
+                 pixel_size=None,
                  background=None):
         self._pixel_size = pixel_size
 
@@ -472,8 +472,7 @@ class InstrumentView:
                     [self.det_pos.shape[0], 3], dtype=np.float32))
             })
         points_material = self.p3.PointsMaterial(vertexColors='VertexColors',
-                                                 size=self.camera_pos *
-                                                 self._pixel_size,
+                                                 size=self._pixel_size,
                                                  transparent=True)
         points = self.p3.Points(geometry=points_geometry,
                                 material=points_material)
@@ -798,7 +797,7 @@ class InstrumentView:
         return
 
     def generate_3d_axes_ticks(self):
-        tick_size = self.camera_pos * 0.05
+        tick_size = 10.0 * self._pixel_size
         axticks = self.p3.Group()
         axticks.add(self.make_axis_tick("0", [0, 0, 0], size=tick_size))
         for i in range(3):
