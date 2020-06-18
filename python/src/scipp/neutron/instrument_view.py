@@ -394,9 +394,12 @@ class InstrumentView:
         self.change_rendering({"new": self.select_rendering.value})
 
         # Add camera controller
-        self.controller = self.p3.OrbitControls(controlling=self.camera,
-                                                target=self._look_at)
-        self.camera.lookAt(self._look_at)
+        if self._look_at is not None:
+            self.controller = self.p3.OrbitControls(controlling=self.camera,
+                                                    target=self._look_at)
+            self.camera.lookAt(self._look_at)
+        else:
+            self.controller = self.p3.OrbitControls(controlling=self.camera)
 
         # Render the scene into a widget
         self.renderer = self.p3.Renderer(camera=self.camera,
@@ -772,12 +775,20 @@ class InstrumentView:
             self.camera.position = new_cam_pos
             if self._camera_pos is not None:
                 self.camera.position = self._camera_pos
-            self.renderer.controls = [
-                self.p3.OrbitControls(controlling=self.camera,
-                                      target=self._look_at,
-                                      enableRotate=projection.startswith("3D"))
-            ]
-            self.camera.lookAt(self._look_at)
+            if self._look_at is not None:
+                self.renderer.controls = [
+                    self.p3.OrbitControls(
+                        controlling=self.camera,
+                        target=self._look_at,
+                        enableRotate=projection.startswith("3D"))
+                ]
+                self.camera.lookAt(self._look_at)
+            else:
+                self.renderer.controls = [
+                    self.p3.OrbitControls(
+                        controlling=self.camera,
+                        enableRotate=projection.startswith("3D"))
+                ]
 
         self.geometry.attributes["position"].array = xyz
 
