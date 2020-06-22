@@ -46,6 +46,8 @@ General
 Comparison
 ~~~~~~~~~~
 
+Comparison operators compare element-wise and *ignore variances*.
+
 .. autosummary::
    :toctree: ../generated
 
