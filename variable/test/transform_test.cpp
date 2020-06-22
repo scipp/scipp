@@ -1070,5 +1070,5 @@ TEST(TransformFlagsTest, expect_all_or_none_have_variance_in_place) {
 
 TEST(TransformEigenTest, is_eigen_type_test) {
   EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Vector3d>);
-  EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Quaterniond>);
+  EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Matrix3d>);
 }

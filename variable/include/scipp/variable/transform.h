@@ -78,7 +78,6 @@ struct is_eigen_type<Eigen::Matrix<T, Rows, Cols>> : std::true_type {};
 template <class T, int Rows, int Cols>
 struct is_eigen_type<event_list<Eigen::Matrix<T, Rows, Cols>>>
     : std::true_type {};
-template <> struct is_eigen_type<Eigen::Quaterniond> : std::true_type {};
 template <class T>
 inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
 
