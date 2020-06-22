@@ -148,16 +148,93 @@ constexpr auto operator/(const T1 a, const ValueAndVariance<T2> b) noexcept {
                                            (b.value * b.value)};
 }
 
-template <class T>
-constexpr auto operator==(const ValueAndVariance<T> a,
-                          const ValueAndVariance<T> b) noexcept {
-  return a.value == b.value && a.variance == b.variance;
+// Comparison operators. Note that all of these IGNORE VARIANCES
+template <class A, class B>
+constexpr auto operator==(const ValueAndVariance<A> a,
+                          const ValueAndVariance<B> b) noexcept {
+  return a.value == b.value;
 }
-template <class T>
-constexpr auto operator!=(const ValueAndVariance<T> a,
-                          const ValueAndVariance<T> b) noexcept {
+template <class A, class B>
+constexpr auto operator==(const ValueAndVariance<A> a, const B b) noexcept {
+  return a.value == b;
+}
+template <class A, class B>
+constexpr auto operator==(const A a, const ValueAndVariance<B> b) noexcept {
+  return a == b.value;
+}
+
+template <class A, class B>
+constexpr auto operator!=(const ValueAndVariance<A> a,
+                          const ValueAndVariance<B> b) noexcept {
   return !(a == b);
 }
+
+template <class A, class B>
+constexpr auto operator!=(const ValueAndVariance<A> a, const B b) noexcept {
+  return !(a == b);
+}
+
+template <class A, class B>
+constexpr auto operator!=(const A a, const ValueAndVariance<B> b) noexcept {
+  return !(a == b);
+}
+
+template <class A, class B>
+constexpr auto operator<(const ValueAndVariance<A> a,
+                         const ValueAndVariance<B> b) noexcept {
+  return a.value < b.value;
+}
+template <class A, class B>
+constexpr auto operator<(const ValueAndVariance<A> a, const B b) noexcept {
+  return a.value < b;
+}
+template <class A, class B>
+constexpr auto operator<(const A a, const ValueAndVariance<B> b) noexcept {
+  return a < b.value;
+}
+
+template <class A, class B>
+constexpr auto operator<=(const ValueAndVariance<A> a,
+                          const ValueAndVariance<B> b) noexcept {
+  return a.value <= b.value;
+}
+template <class A, class B>
+constexpr auto operator<=(const ValueAndVariance<A> a, const B b) noexcept {
+  return a.value <= b;
+}
+template <class A, class B>
+constexpr auto operator<=(const A a, const ValueAndVariance<B> b) noexcept {
+  return a <= b.value;
+}
+
+template <class A, class B>
+constexpr auto operator>(const ValueAndVariance<A> a,
+                         const ValueAndVariance<B> b) noexcept {
+  return a.value > b.value;
+}
+template <class A, class B>
+constexpr auto operator>(const ValueAndVariance<A> a, const B b) noexcept {
+  return a.value > b;
+}
+template <class A, class B>
+constexpr auto operator>(const A a, const ValueAndVariance<B> b) noexcept {
+  return a > b.value;
+}
+
+template <class A, class B>
+constexpr auto operator>=(const ValueAndVariance<A> a,
+                          const ValueAndVariance<B> b) noexcept {
+  return a.value >= b.value;
+}
+template <class A, class B>
+constexpr auto operator>=(const ValueAndVariance<A> a, const B b) noexcept {
+  return a.value >= b;
+}
+template <class A, class B>
+constexpr auto operator>=(const A a, const ValueAndVariance<B> b) noexcept {
+  return a >= b.value;
+}
+// end comparison operators
 
 template <class T>
 constexpr auto min(const ValueAndVariance<T> a,
