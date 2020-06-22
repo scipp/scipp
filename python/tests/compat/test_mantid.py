@@ -515,7 +515,7 @@ class TestMantidConversion(unittest.TestCase):
                 mantidcompat.validate_dim_and_get_mantid_string(i)
 
 
-def test_to_quat_from_vectors():
+def test_to_rot_from_vectors():
     a = sc.Variable(value=[1, 0, 0], dtype=sc.dtype.vector_3_float64)
     b = sc.Variable(value=[0, 1, 0], dtype=sc.dtype.vector_3_float64)
     rot = mantidcompat._rot_from_vectors(a.value, b.value)
