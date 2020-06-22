@@ -118,21 +118,16 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
                                  values.cast<std::vector<std::string>>(), unit);
     }
 
-    if (dtypeTag == core::dtype<Eigen::Vector3d> ||
-        dtypeTag == core::dtype<Eigen::Quaterniond>) {
+    if (dtypeTag == core::dtype<Eigen::Vector3d>) {
       std::vector<scipp::index> shape(values.shape(),
                                       values.shape() + values.ndim() - 1);
-      if (dtypeTag == core::dtype<Eigen::Vector3d>) {
-        return init_1D_no_variance(
-            labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
-      } else {
-        const auto &arr = values.cast<std::vector<std::vector<double>>>();
-        std::vector<Eigen::Quaterniond> qvec;
-        qvec.reserve(arr.size());
-        for (size_t i = 0; i < arr.size(); i++)
-          qvec.emplace_back(arr[i].data());
-        return init_1D_no_variance(labels, shape, qvec, unit);
-      }
+      return init_1D_no_variance(
+          labels, shape, values.cast<std::vector<Eigen::Vector3d>>(), unit);
+    } else if (dtypeTag == core::dtype<Eigen::Matrix3d>) {
+      std::vector<scipp::index> shape(values.shape(),
+                                      values.shape() + values.ndim() - 2);
+      return init_1D_no_variance(
+          labels, shape, values.cast<std::vector<Eigen::Matrix3d>>(), unit);
     }
   }
 
@@ -149,7 +144,7 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
       double, float, int64_t, int32_t, bool, event_list<double>,
       event_list<float>, event_list<int64_t>, event_list<int32_t>, DataArray,
       Dataset, Eigen::Vector3d,
-      Eigen::Quaterniond>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
-                                                          labels, shape, unit,
-                                                          variances);
+      Eigen::Matrix3d>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
+                                                       labels, shape, unit,
+                                                       variances);
 }

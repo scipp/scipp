@@ -502,19 +502,6 @@ class TestMantidConversion(unittest.TestCase):
                 np.isclose(moved_det_position.values,
                            unmoved_det_positions.values)))
 
-    def test_to_quat_from_vectors(self):
-        a = np.array([1, 0, 0])
-        b = np.array([0, 1, 0])
-        q_var = mantidcompat._quat_from_vectors(a, b)
-        q = q_var.value
-        self.assertTrue(
-            np.allclose(b, q.to_rotation_matrix().dot(a), rtol=0.0, atol=1e-9))
-        # other direction
-        q_var = mantidcompat._quat_from_vectors(b, a)
-        q = q_var.value
-        self.assertTrue(
-            np.allclose(a, q.to_rotation_matrix().dot(b), rtol=0.0, atol=1e-9))
-
     def test_validate_units(self):
         acceptable = ["wavelength", sc.Dim.Wavelength]
         for i in acceptable:
@@ -526,6 +513,15 @@ class TestMantidConversion(unittest.TestCase):
         for i in not_acceptable:
             with self.assertRaises(RuntimeError):
                 mantidcompat.validate_dim_and_get_mantid_string(i)
+
+
+def test_to_quat_from_vectors():
+    a = sc.Variable(value=[1, 0, 0], dtype=sc.dtype.vector_3_float64)
+    b = sc.Variable(value=[0, 1, 0], dtype=sc.dtype.vector_3_float64)
+    rot = mantidcompat._rot_from_vectors(a.value, b.value)
+    assert np.allclose((rot * a).value, b.value)
+    rot = mantidcompat._rot_from_vectors(b.value, a.value)
+    assert np.allclose((rot * b).value, a.value)
 
 
 @pytest.mark.skipif(not memory_is_at_least_gb(16),

@@ -705,8 +705,8 @@ class InstrumentView:
                     unit=sc.units.m,
                     dtype=sc.dtype.vector_3_float64)
 
-            vertices = sc.geometry.rotate(
-                vertices, self.hist_data_array[self.key].attrs["rotation"])
+            vertices = self.hist_data_array[
+                self.key].attrs["rotation"] * vertices
 
             pixel_pos = np.array((vertices + self.det_pos).values,
                                  dtype=np.float32)
