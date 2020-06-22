@@ -52,11 +52,11 @@ def test_variable_1D_vector_3_float64_from_numpy():
 
 
 def test_matrix_from_quat_coeffs_list():
-    rot = sc.rotation_matrix_from_quaternion_coeffs([1, 2, 3, 4])
+    sc.rotation_matrix_from_quaternion_coeffs([1, 2, 3, 4])
 
 
 def test_matrix_from_quat_coeffs_numpy():
-    rot = sc.rotation_matrix_from_quaternion_coeffs(np.arange(4))
+    sc.rotation_matrix_from_quaternion_coeffs(np.arange(4))
 
 
 def test_variable_0D_matrix():
