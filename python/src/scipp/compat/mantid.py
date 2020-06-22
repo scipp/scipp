@@ -194,7 +194,7 @@ def _to_spherical(pos, output):
     sc.atan2(sc.geometry.y(pos), sc.geometry.x(pos), output["p"].data)
 
 
-def _quat_from_vectors(vec1, vec2):
+def _rot_from_vectors(vec1, vec2):
     a = sc.Variable(value=vec1 / np.linalg.norm(vec1),
                     dtype=sc.dtype.vector_3_float64)
     b = sc.Variable(value=vec2 / np.linalg.norm(vec2),
@@ -202,7 +202,8 @@ def _quat_from_vectors(vec1, vec2):
     c = sc.Variable(value=np.cross(a.value, b.value),
                     dtype=sc.dtype.vector_3_float64)
     angle = sc.acos(sc.dot(a, b)).value
-    q = sc.Quat(list(c.value * np.sin(angle / 2)) + [np.cos(angle / 2)])
+    q = sc.rotation_matrix_from_quaternion_coeffs(
+        list(c.value * np.sin(angle / 2)) + [np.cos(angle / 2)])
     return sc.Variable(value=q)
 
 
@@ -235,14 +236,14 @@ def get_detector_properties(ws,
     det_info = ws.detectorInfo()
     comp_info = ws.componentInfo()
     nspec = len(spec_info)
-    det_rot = np.zeros([nspec, 4])
+    det_rot = np.zeros([nspec, 3, 3])
     det_bbox = np.zeros([nspec, 3])
 
     if sample_pos is not None and source_pos is not None:
         total_detectors = spec_info.detectorCount()
         act_beam = (sample_pos - source_pos).values
-        rot = _quat_from_vectors(act_beam, [0, 0, 1])
-        inv_rot = _quat_from_vectors([0, 0, 1], act_beam)
+        rot = _rot_from_vectors(act_beam, [0, 0, 1])
+        inv_rot = _rot_from_vectors([0, 0, 1], act_beam)
 
         pos_d = sc.Dataset()
         # Create empty to hold position info for all spectra detectors
@@ -276,14 +277,18 @@ def get_detector_properties(ws,
                     y_values[idx] = p.Y()
                     z_values[idx] = p.Z()
                     idx += 1
-                    quats.append([r.imagI(), r.imagJ(), r.imagK(), r.real()])
+                    quats.append(
+                        np.array([r.imagI(),
+                                  r.imagJ(),
+                                  r.imagK(),
+                                  r.real()]))
                     bboxes.append(s.getBoundingBox().width())
-                det_rot[i, :] = np.mean(quats, axis=0)
+                det_rot[i, :] = sc.rotation_matrix_from_quaternion_coeffs(
+                    np.mean(quats, axis=0))
                 det_bbox[i, :] = np.sum(bboxes, axis=0)
 
-        rot_pos = sc.geometry.rotate(
-            sc.geometry.position(pos_d["x"].data, pos_d["y"].data,
-                                 pos_d["z"].data), rot)
+        rot_pos = rot * sc.geometry.position(pos_d["x"].data, pos_d["y"].data,
+                                             pos_d["z"].data)
 
         _to_spherical(rot_pos, pos_d)
 
@@ -303,10 +308,10 @@ def get_detector_properties(ws,
 
         pos = sc.geometry.position(averaged["x"].data, averaged["y"].data,
                                    averaged["z"].data)
-        return (sc.geometry.rotate(pos, inv_rot),
+        return (inv_rot * pos,
                 sc.Variable(['spectrum'],
                             values=det_rot,
-                            dtype=sc.dtype.quaternion_float64),
+                            dtype=sc.dtype.matrix_3_float64),
                 sc.Variable(['spectrum'],
                             values=det_bbox,
                             unit=sc.units.m,
@@ -327,10 +332,15 @@ def get_detector_properties(ws,
                     r = det_info.rotation(det_idx)
                     s = comp_info.shape(det_idx)
                     vec3s.append([p.X(), p.Y(), p.Z()])
-                    quats.append([r.imagI(), r.imagJ(), r.imagK(), r.real()])
+                    quats.append(
+                        np.array([r.imagI(),
+                                  r.imagJ(),
+                                  r.imagK(),
+                                  r.real()]))
                     bboxes.append(s.getBoundingBox().width())
                 pos[i, :] = np.mean(vec3s, axis=0)
-                det_rot[i, :] = np.mean(quats, axis=0)
+                det_rot[i, :] = sc.rotation_matrix_from_quaterion_cooffs(
+                    np.mean(quats, axis=0))
                 det_bbox[i, :] = np.sum(bboxes, axis=0)
             else:
                 pos[i, :] = [np.nan, np.nan, np.nan]
@@ -342,7 +352,7 @@ def get_detector_properties(ws,
                             dtype=sc.dtype.vector_3_float64),
                 sc.Variable(['spectrum'],
                             values=det_rot,
-                            dtype=sc.dtype.quaternion_float64),
+                            dtype=sc.dtype.matrix_3_float64),
                 sc.Variable(['spectrum'],
                             values=det_bbox,
                             unit=sc.units.m,

@@ -75,13 +75,11 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
                 b.cast<Eigen::Vector3d>(),
                 v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
                 unit);
-          } else if (info.ndim == 1 &&
-                     scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
-            return do_init_0D<Eigen::Quaterniond>(
-                Eigen::Quaterniond(b.cast<std::vector<double>>().data()),
-                v ? std::optional(Eigen::Quaterniond(
-                        v->cast<std::vector<double>>().data()))
-                  : std::nullopt,
+          } else if (info.ndim == 2 &&
+                     scipp_dtype(dtype) == core::dtype<Eigen::Matrix3d>) {
+            return do_init_0D<Eigen::Matrix3d>(
+                b.cast<Eigen::Matrix3d>(),
+                v ? std::optional(v->cast<Eigen::Matrix3d>()) : std::nullopt,
                 unit);
           } else {
             throw scipp::except::VariableError(
@@ -117,13 +115,6 @@ void bind_init_0D_list_eigen(py::class_<Variable> &c) {
               variance ? std::optional(variance->cast<Eigen::Vector3d>())
                        : std::nullopt,
               unit);
-        } else if (scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
-          return do_init_0D<Eigen::Quaterniond>(
-              Eigen::Quaterniond(value.cast<std::vector<double>>().data()),
-              variance ? std::optional(Eigen::Quaterniond(
-                             variance->cast<std::vector<double>>().data()))
-                       : std::nullopt,
-              unit);
         } else {
           throw scipp::except::VariableError(
               "Cannot create 0D Variable from list of values with this dtype.");
@@ -156,7 +147,7 @@ of variances.)");
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
-  bind_init_0D<Eigen::Quaterniond>(variable);
+  bind_init_0D<Eigen::Matrix3d>(variable);
   variable.def(py::init<const VariableView &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},

@@ -160,8 +160,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return {Getter::template get<Dataset>(view)};
     if (type == dtype<Eigen::Vector3d>)
       return {Getter::template get<Eigen::Vector3d>(view)};
-    if (type == dtype<Eigen::Quaterniond>)
-      return {Getter::template get<Eigen::Quaterniond>(view)};
+    if (type == dtype<Eigen::Matrix3d>)
+      return {Getter::template get<Eigen::Matrix3d>(view)};
     if (type == dtype<scipp::python::PyObject>)
       return {Getter::template get<scipp::python::PyObject>(view)};
     throw std::runtime_error("not implemented for this type.");
@@ -368,7 +368,7 @@ public:
 using as_ElementArrayView = as_ElementArrayViewImpl<
     double, float, int64_t, int32_t, bool, std::string, event_list<double>,
     event_list<float>, event_list<int64_t>, DataArray, Dataset, Eigen::Vector3d,
-    Eigen::Quaterniond, scipp::python::PyObject>;
+    Eigen::Matrix3d, scipp::python::PyObject>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {

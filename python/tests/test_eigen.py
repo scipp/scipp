@@ -51,83 +51,55 @@ def test_variable_1D_vector_3_float64_from_numpy():
     assert var.unit == sc.units.m
 
 
-def test_quaternion_float64_from_list():
-    quat = sc.Quat([1, 2, 3, 4])
-    assert quat.x() == 1.0
-    assert quat.y() == 2.0
-    assert quat.z() == 3.0
-    assert quat.w() == 4.0
-    np.testing.assert_array_equal(quat.coeffs(), [1, 2, 3, 4])
+def test_matrix_from_quat_coeffs_list():
+    sc.rotation_matrix_from_quaternion_coeffs([1, 2, 3, 4])
 
 
-def test_quaternion_float64_from_numpy():
-    quat = sc.Quat(np.arange(4.0))
-    assert quat.x() == 0.0
-    assert quat.y() == 1.0
-    assert quat.z() == 2.0
-    assert quat.w() == 3.0
-    np.testing.assert_array_equal(quat.coeffs(), [0, 1, 2, 3])
+def test_matrix_from_quat_coeffs_numpy():
+    sc.rotation_matrix_from_quaternion_coeffs(np.arange(4))
 
 
-def test_quaternion_float64_eq_ne():
-    quat1 = sc.Quat([0, 1, 2, 3])
-    quat2 = sc.Quat(np.arange(4.0))
-    quat3 = sc.Quat([1, 2, 3, 4])
-    assert quat1 == quat2
-    assert quat1 != quat3
-    assert quat2 != quat3
-
-
-def test_variable_0D_quaternion_float64_from_quat():
-    quat = sc.Quat(np.arange(4.0))
-    var = sc.Variable(value=quat, unit=sc.units.m)
-    assert var.value == quat
-    assert var.dtype == sc.dtype.quaternion_float64
-    assert var.unit == sc.units.m
-
-
-def test_variable_0D_quaternion_float64_from_list():
-    var = sc.Variable(value=[1, 2, 3, 4],
+def test_variable_0D_matrix():
+    # Use known rotation (180 deg around z) to check correct construction
+    rot = sc.Variable(value=sc.rotation_matrix_from_quaternion_coeffs(
+        [0, 0, 1, 0]),
+                      unit=sc.units.one,
+                      dtype=sc.dtype.matrix_3_float64)
+    vec = sc.Variable(value=[1, 2, 3],
                       unit=sc.units.m,
-                      dtype=sc.dtype.quaternion_float64)
-    np.testing.assert_array_equal(var.value.coeffs(), [1, 2, 3, 4])
-    assert var.dtype == sc.dtype.quaternion_float64
-    assert var.unit == sc.units.m
+                      dtype=sc.dtype.vector_3_float64)
+    rotated = sc.Variable(value=[-1, -2, 3],
+                          unit=sc.units.m,
+                          dtype=sc.dtype.vector_3_float64)
+    assert rot * vec == rotated
 
 
-def test_variable_0D_quaternion_float64_from_numpy():
-    var = sc.Variable(value=np.arange(4.0),
+def test_variable_0D_matrix_from_numpy():
+    var = sc.Variable(value=np.arange(9).reshape(3, 3),
                       unit=sc.units.m,
-                      dtype=sc.dtype.quaternion_float64)
-    np.testing.assert_array_equal(var.value.coeffs(), [0, 1, 2, 3])
-    assert var.dtype == sc.dtype.quaternion_float64
+                      dtype=sc.dtype.matrix_3_float64)
+    np.testing.assert_array_equal(var.value, np.arange(9).reshape(3, 3))
+    assert var.dtype == sc.dtype.matrix_3_float64
     assert var.unit == sc.units.m
 
 
-def test_variable_1D_quaternion_float64_from_list():
-    var = sc.Variable(['tof'],
-                      values=[[1, 2, 3, 4], [5, 6, 7, 8], [9, 10, 11, 12]],
-                      unit=sc.units.us,
-                      dtype=sc.dtype.quaternion_float64)
-    assert len(var.values) == 3
-    np.testing.assert_array_equal(var.values[0], [1, 2, 3, 4])
-    np.testing.assert_array_equal(var.values[1], [5, 6, 7, 8])
-    np.testing.assert_array_equal(var.values[2], [9, 10, 11, 12])
-    assert var.dims == ['tof']
-    assert var.dtype == sc.dtype.quaternion_float64
-    assert var.unit == sc.units.us
-
-
-def test_variable_1D_quaternion_float64_from_numpy():
-    data = np.array([np.arange(4.0), np.arange(5.0, 9.0), np.arange(1.0, 5.0)])
+def test_variable_1D_matrix_from_numpy():
+    data = np.array([
+        np.arange(9.0).reshape(3, 3),
+        np.arange(5.0, 14.0).reshape(3, 3),
+        np.arange(1.0, 10.0).reshape(3, 3)
+    ])
     var = sc.Variable(['tof'],
                       values=data,
                       unit=sc.units.us,
-                      dtype=sc.dtype.quaternion_float64)
+                      dtype=sc.dtype.matrix_3_float64)
     assert len(var.values) == 3
-    np.testing.assert_array_equal(var.values[0], [0, 1, 2, 3])
-    np.testing.assert_array_equal(var.values[1], [5, 6, 7, 8])
-    np.testing.assert_array_equal(var.values[2], [1, 2, 3, 4])
+    np.testing.assert_array_equal(var.values[0],
+                                  [[0, 1, 2], [3, 4, 5], [6, 7, 8]])
+    np.testing.assert_array_equal(var.values[1],
+                                  [[5, 6, 7], [8, 9, 10], [11, 12, 13]])
+    np.testing.assert_array_equal(var.values[2],
+                                  [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     assert var.dims == ['tof']
-    assert var.dtype == sc.dtype.quaternion_float64
+    assert var.dtype == sc.dtype.matrix_3_float64
     assert var.unit == sc.units.us

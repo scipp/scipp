@@ -1360,14 +1360,12 @@ TEST(VariableTest, rotate) {
   Eigen::Quaterniond rot2(5.5, 6.6, 7.7, 8.8);
   rot1.normalize();
   rot2.normalize();
-  const Variable rot = makeVariable<Eigen::Quaterniond>(
-      Dims{Dim::X}, Shape{2}, units::one, Values{rot1, rot2});
-  auto vec_new = geometry::rotate(vec, rot);
+  const Variable rot = makeVariable<Eigen::Matrix3d>(
+      Dims{Dim::X}, Shape{2}, units::one,
+      Values{rot1.toRotationMatrix(), rot2.toRotationMatrix()});
+  auto vec_new = rot * vec;
   const auto rotated = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{2}, units::m,
-      Values{rot1._transformVector(vec1), rot2._transformVector(vec2)});
+      Values{rot1.toRotationMatrix() * vec1, rot2.toRotationMatrix() * vec2});
   EXPECT_EQ(vec_new, rotated);
-  VariableView vec_new2 = geometry::rotate(vec, rot, vec);
-  EXPECT_EQ(vec_new2, rotated);
-  EXPECT_EQ(vec, rotated);
 }
