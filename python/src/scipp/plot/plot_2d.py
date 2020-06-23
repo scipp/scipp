@@ -19,12 +19,9 @@ import warnings
 
 def plot_2d(scipp_obj_dict=None,
             axes=None,
-            # values=None,
-            # variances=None,
             masks=None,
             filename=None,
             figsize=None,
-            # mpl_axes=None,
             ax=None,
             cax=None,
             aspect=None,
@@ -45,10 +42,7 @@ def plot_2d(scipp_obj_dict=None,
 
     sv = Slicer2d(scipp_obj_dict=scipp_obj_dict,
                   axes=axes,
-                  # values=values,
-                  # variances=variances,
                   masks=masks,
-                  # mpl_axes=mpl_axes,
                   ax=ax,
                   cax=cax,
                   aspect=aspect,
@@ -71,10 +65,7 @@ class Slicer2d(Slicer):
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
-                 # values=None,
-                 # variances=None,
                  masks=None,
-                 # mpl_axes=None,
                  ax=None,
                  cax=None,
                  aspect=None,
@@ -89,8 +80,6 @@ class Slicer2d(Slicer):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
-                         # values=values,
-                         # variances=variances,
                          masks=masks,
                          cmap=cmap,
                          log=log,
@@ -132,52 +121,10 @@ class Slicer2d(Slicer):
                 sharex=True,
                 sharey=True)
 
-        # cax = [None] * (1 + self.params["variances"][self.name]["show"])
-        # if mpl_axes is not None:
-        #     if isinstance(mpl_axes, dict):
-        #         ax = [None, None]
-        #         for key, val in mpl_axes.items():
-        #             if key == "ax" or key == "ax_values":
-        #                 ax[0] = val
-        #             if key == "cax" or key == "cax_values":
-        #                 cax[0] = val
-        #             if key == "ax_variances":
-        #                 ax[1] = val
-        #             if key == "cax_variances":
-        #                 cax[1] = val
-        #     else:
-        #         # Case where only a single axis is given
-        #         ax = [mpl_axes]
-        # else:
-        #     self.fig, ax = plt.subplots(
-        #         1,
-        #         1 + self.params["variances"][self.name]["show"],
-        #         figsize=(config.plot.width / config.plot.dpi,
-        #                  config.plot.height /
-        #                  (1.0 + self.params["variances"][self.name]["show"]) /
-        #                  config.plot.dpi),
-        #         dpi=config.plot.dpi,
-        #         sharex=True,
-        #         sharey=True)
-        #     if not self.params["variances"][self.name]["show"]:
-        #         ax = [ax]
-
-        # self.ax = dict()
-        # self.cax = dict()
         self.im = dict()
-        self.cbar = None # dict()
-
-        # self.ax["values"] = ax[0]
-        # self.cax["values"] = cax[0]
-        # panels = ["values"]
-        # if self.params["variances"][self.name]["show"]:
-        #     self.ax["variances"] = ax[1]
-        #     self.cax["variances"] = cax[1]
-        #     panels.append("variances")
+        self.cbar = None
 
         extent_array = np.array(list(self.extent.values())).flatten()
-        # for key in panels:
-        #     if self.params[key][self.name]["show"]:
         self.im["values"] = self.ax.imshow(
             [[1.0, 1.0], [1.0, 1.0]],
             norm=self.params["values"][self.name]["norm"],
@@ -187,8 +134,6 @@ class Slicer2d(Slicer):
             interpolation="nearest",
             cmap=self.params["values"][self.name]["cmap"])
         self.ax.set_title(self.name)
-        # self.ax[key].set_title(self.name if key ==
-        #                        "values" else "std dev.")
         if self.params["values"][self.name]["cbar"]:
             self.cbar = plt.colorbar(self.im["values"],
                                           ax=self.ax,
@@ -332,7 +277,6 @@ class Slicer2d(Slicer):
             values=np.ediff1d(self.xyedges["y"].values) / self.image_dy)
 
         # Set axes limits and ticks
-        # for key in self.ax.keys():
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             self.im["values"].set_extent(extent_array)
@@ -342,29 +286,11 @@ class Slicer2d(Slicer):
             self.ax.set_ylim(axparams["y"]["lims"])
         self.ax.set_xlabel(axparams["x"]["labels"])
         self.ax.set_ylabel(axparams["y"]["labels"])
-    # #             self.ax.xaxis.set_major_formatter(self.slider_axformatter[self.name][dim][self.logx])
-    # # self.ax.xaxis.set_major_locator(self.slider_axlocator[self.name][dim][self.logx])
-
-    #     print(axparams)
-    #     print(self.slider_x[self.name])
-    #     # print(self.slider_x[self.name]['y'])
 
         for xy, param in axparams.items():
-            print(xy)
             getattr(self.ax, "{}axis".format(xy)).set_major_formatter(self.slider_axformatter[self.name][param["dim"]][getattr(self, "log{}".format(xy))])
-            print('log', getattr(self, "log{}".format(xy)))
-            print("paramdim", param["dim"])
-            print(self.slider_axformatter[self.name][param["dim"]][getattr(self, "log{}".format(xy))])
-            print(self.slider_axlocator[self.name][param["dim"]][getattr(self, "log{}".format(xy))])
             getattr(self.ax, "{}axis".format(xy)).set_major_locator(self.slider_axlocator[self.name][param["dim"]][getattr(self, "log{}".format(xy))])
-            
-            # self.ax.xaxis.set_major_locator(self.slider_axlocator[self.name][dim][self.logx])
 
-            # if self.slider_ticks[self.name][param["dim"]] is not None:
-            #     getattr(self.ax[key], "set_{}ticklabels".format(xy))(
-            #         self.get_custom_ticks(ax=self.ax[key],
-            #                               dim=param["dim"],
-            #                               xy=xy))
         return
 
     def update_slice(self, change):
@@ -430,31 +356,10 @@ class Slicer2d(Slicer):
             vslice.masks["all"] = sc.Variable(dims=mslice_dims,
                                               values=mslice.values)
 
-        # # The scaling by bin width and rebin operations below modify the
-        # # variances in the data, so here we have to manually split the values
-        # # and variances into separate Variables. We store them in a dict.
-        # #
-        # # TODO: Having to rebin once for values and once for variances
-        # # potentially slows things down quite a bit. In the future, we should
-        # # use resample instead of rebin, once it will be implemented.
-        # to_image = {}
-        # if self.params["variances"][self.name]["show"]:
-        #     eslice = vslice.copy()
-        #     eslice.values = eslice.variances
-        #     eslice.variances = None
-        #     vslice.variances = None
-        #     eslice *= self.xywidth["x"] * self.xywidth["y"]
-        #     eslice = sc.rebin(eslice, self.xyrebin["x"].dims[0],
-        #                       self.xyrebin["x"])
-        #     eslice = sc.rebin(eslice, self.xyrebin["y"].dims[0],
-        #                       self.xyrebin["y"])
-        #     to_image["variances"] = np.sqrt(eslice.values)
-
         # Scale by bin width and then rebin in both directions
         vslice *= self.xywidth["x"] * self.xywidth["y"]
         vslice = sc.rebin(vslice, self.xyrebin["x"].dims[0], self.xyrebin["x"])
         vslice = sc.rebin(vslice, self.xyrebin["y"].dims[0], self.xyrebin["y"])
-        # to_image["values"] = vslice.values
 
         if self.params["masks"][self.name]["show"]:
             mslice = vslice.masks["all"]
@@ -475,7 +380,6 @@ class Slicer2d(Slicer):
             if transp:
                 msk = msk.T
 
-        # for key in self.ax.keys():
         arr = vslice.values
         if transp:
             arr = arr.T
@@ -498,11 +402,7 @@ class Slicer2d(Slicer):
         return
 
     def toggle_masks(self, change):
-        # for key in self.ax.keys():
         self.im["masks"].set_visible(change["new"])
         change["owner"].description = "Hide masks" if change["new"] else \
             "Show masks"
         return
-
-    # def get_mask_key(self, key):
-    #     return key + "_masks"
