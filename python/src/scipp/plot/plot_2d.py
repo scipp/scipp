@@ -113,10 +113,11 @@ class Slicer2d(Slicer):
         self.ax = ax
         self.cax = cax
         if self.ax is None:
-            self.fig, self.ax = plt.subplots(1, 1,
+            self.fig, self.ax = plt.subplots(
+                1,
+                1,
                 figsize=(config.plot.width / config.plot.dpi,
-                         config.plot.height /
-                         config.plot.dpi),
+                         config.plot.height / config.plot.dpi),
                 dpi=config.plot.dpi,
                 sharex=True,
                 sharey=True)
@@ -136,8 +137,8 @@ class Slicer2d(Slicer):
         self.ax.set_title(self.name)
         if self.params["values"][self.name]["cbar"]:
             self.cbar = plt.colorbar(self.im["values"],
-                                          ax=self.ax,
-                                          cax=self.cax)
+                                     ax=self.ax,
+                                     cax=self.cax)
             self.cbar.ax.set_ylabel(
                 name_with_unit(var=self.data_array, name=""))
         if self.cax is None:
@@ -288,8 +289,12 @@ class Slicer2d(Slicer):
         self.ax.set_ylabel(axparams["y"]["labels"])
 
         for xy, param in axparams.items():
-            getattr(self.ax, "{}axis".format(xy)).set_major_formatter(self.slider_axformatter[self.name][param["dim"]][getattr(self, "log{}".format(xy))])
-            getattr(self.ax, "{}axis".format(xy)).set_major_locator(self.slider_axlocator[self.name][param["dim"]][getattr(self, "log{}".format(xy))])
+            getattr(self.ax, "{}axis".format(xy)).set_major_formatter(
+                self.slider_axformatter[self.name][param["dim"]][getattr(
+                    self, "log{}".format(xy))])
+            getattr(self.ax, "{}axis".format(xy)).set_major_locator(
+                self.slider_axlocator[self.name][param["dim"]][getattr(
+                    self, "log{}".format(xy))])
 
         return
 
@@ -392,12 +397,11 @@ class Slicer2d(Slicer):
             self.global_vmin = cbar_params["vmin"]
             self.global_vmax = cbar_params["vmax"]
             self.params["values"][self.name]["norm"] = cbar_params["norm"]
-            self.im["values"].set_norm(self.params["values"][self.name]["norm"])
-        if self.params["masks"][self.name]["show"]:
-            self.im["masks"].set_data(
-                self.mask_to_float(msk, arr))
-            self.im["masks"].set_norm(
+            self.im["values"].set_norm(
                 self.params["values"][self.name]["norm"])
+        if self.params["masks"][self.name]["show"]:
+            self.im["masks"].set_data(self.mask_to_float(msk, arr))
+            self.im["masks"].set_norm(self.params["values"][self.name]["norm"])
 
         return
 

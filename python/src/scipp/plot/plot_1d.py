@@ -20,7 +20,6 @@ import warnings
 
 def plot_1d(scipp_obj_dict=None,
             axes=None,
-            # values=None,
             errorbars=None,
             masks={"color": "k"},
             filename=None,
@@ -43,7 +42,6 @@ def plot_1d(scipp_obj_dict=None,
 
     sv = Slicer1d(scipp_obj_dict=scipp_obj_dict,
                   axes=axes,
-                  # values=values,
                   errorbars=errorbars,
                   masks=masks,
                   mpl_axes=mpl_axes,
@@ -62,7 +60,6 @@ class Slicer1d(Slicer):
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
-                 # values=None,
                  errorbars=None,
                  masks=None,
                  mpl_axes=None,
@@ -73,8 +70,6 @@ class Slicer1d(Slicer):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
-                         # values=values,
-                         # variances=variances,
                          masks=masks,
                          button_options=['X'])
 
@@ -346,14 +341,11 @@ class Slicer1d(Slicer):
 
         self.ax.set_xlabel(
             name_with_unit(self.slider_x[self.name][dim], name=str(dim)))
-        self.ax.xaxis.set_major_formatter(self.slider_axformatter[self.name][dim][self.logx])
-        self.ax.xaxis.set_major_locator(self.slider_axlocator[self.name][dim][self.logx])
-        # print(self.ax.get_xticklabels()[0])
-        # self.ax.set_xticklabels(self.ax.get_xticklabels(), rotation=45)
-        # if self.slider_axrotator[self.name][dim] is not None:
-        #     self.ax.set_xticklabels(self.ax.get_xticklabels(), **self.slider_axrotator[self.name][dim])
-        # # if self.slider_ticks[self.name][dim] is not None:
-        # #     self.ax.set_xticklabels(self.get_custom_ticks(self.ax, dim))
+        self.ax.xaxis.set_major_formatter(
+            self.slider_axformatter[self.name][dim][self.logx])
+        self.ax.xaxis.set_major_locator(
+            self.slider_axlocator[self.name][dim][self.logx])
+
         return
 
     def slice_data(self, var, name):

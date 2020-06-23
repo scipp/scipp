@@ -5,7 +5,7 @@
 from .. import config
 from .tools import parse_params, make_fake_coord
 from ..utils import name_with_unit, value_to_string
-from .._scipp.core import combine_masks, Variable, Dim, dtype
+from .._scipp.core import combine_masks, Dim, dtype
 
 # Other imports
 import numpy as np
@@ -121,7 +121,8 @@ class Slicer:
 
             # Iterate through axes and collect dimensions
             for ax in axes:
-                dim, var, formatter, locator = self.axis_label_and_ticks(ax, array, name)
+                dim, var, formatter, locator = self.axis_label_and_ticks(
+                    ax, array, name)
                 self.slider_x[name][dim] = var
                 self.slider_axformatter[name][dim] = formatter
                 self.slider_axlocator[name][dim] = locator
@@ -252,7 +253,10 @@ class Slicer:
 
         # Create some default axis tick formatter, depending on whether log
         # for that axis will be True or False
-        formatter = {False: ticker.ScalarFormatter(), True: ticker.LogFormatterSciNotation()}
+        formatter = {
+            False: ticker.ScalarFormatter(),
+            True: ticker.LogFormatterSciNotation()
+        }
         locator = {False: ticker.AutoLocator(), True: ticker.LogLocator()}
 
         dim = axis
@@ -260,30 +264,36 @@ class Slicer:
         # Convert to Dim object?
         if isinstance(dim, str):
             dim = Dim(dim)
-        need_fake_coord = False
-        fake_unit = None
 
         tp = data_array.coords[dim].dtype
 
         if tp == dtype.vector_3_float64:
-            var = make_fake_coord(dim, self.shapes[name][dim],
-                unit=data_array.coords[dim].unit)
-            form = ticker.FuncFormatter(lambda val, pos : "(" + ",".join(
-                [value_to_string(item, precision=2)
-                         for item in self.scipp_obj_dict[name].coords[dim].values[int(val)]]) + ")" if (int(val) >= 0 and int(val) < self.shapes[name][dim]) else "")
+            var = make_fake_coord(dim,
+                                  self.shapes[name][dim],
+                                  unit=data_array.coords[dim].unit)
+            form = ticker.FuncFormatter(lambda val, pos: "(" + ",".join([
+                value_to_string(item, precision=2) for item in self.
+                scipp_obj_dict[name].coords[dim].values[int(val)]
+            ]) + ")" if (int(val) >= 0 and int(val) < self.shapes[name][dim])
+                                        else "")
             formatter.update({False: form, True: form})
             locator[False] = ticker.MaxNLocator(integer=True)
 
         elif tp == dtype.string:
-            var = make_fake_coord(dim, self.shapes[name][dim],
-                unit=data_array.coords[dim].unit)
-            form = ticker.FuncFormatter(lambda val, pos : self.scipp_obj_dict[name].coords[dim].values[int(val)] if (int(val) >= 0 and int(val) < self.shapes[name][dim]) else "")
+            var = make_fake_coord(dim,
+                                  self.shapes[name][dim],
+                                  unit=data_array.coords[dim].unit)
+            form = ticker.FuncFormatter(lambda val, pos: self.scipp_obj_dict[
+                name].coords[dim].values[int(val)] if (int(val) >= 0 and int(
+                    val) < self.shapes[name][dim]) else "")
             formatter.update({False: form, True: form})
             locator[False] = ticker.MaxNLocator(integer=True)
 
-        elif dim != dim_coord_dim: # non-dimension coordinate
+        elif dim != dim_coord_dim:  # non-dimension coordinate
             var = data_array.coords[dim_coord_dim]
-            form = ticker.FuncFormatter(lambda val, pos : value_to_string(data_array.coords[dim].values[np.abs(data_array.coords[dim_coord_dim].values - val).argmin()]))
+            form = ticker.FuncFormatter(lambda val, pos: value_to_string(
+                data_array.coords[dim].values[np.abs(data_array.coords[
+                    dim_coord_dim].values - val).argmin()]))
             formatter.update({False: form, True: form})
         else:
             var = data_array.coords[dim]

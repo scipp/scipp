@@ -91,7 +91,7 @@ def parse_params(params=None,
             parsed["vmax"] = valid.max()
         need_norm = True
         print("numpy", parsed)
- 
+
     if need_norm:
         if min_val is not None:
             parsed["vmin"] = min(parsed["vmin"], min_val)

@@ -22,8 +22,6 @@ except ImportError:
 
 def plot_3d(scipp_obj_dict=None,
             axes=None,
-            # values=None,
-            # variances=None,
             masks=None,
             filename=None,
             figsize=None,
@@ -48,8 +46,6 @@ def plot_3d(scipp_obj_dict=None,
 
     sv = Slicer3d(scipp_obj_dict=scipp_obj_dict,
                   axes=axes,
-                  # values=values,
-                  # variances=variances,
                   masks=masks,
                   cmap=cmap,
                   log=log,
@@ -67,8 +63,6 @@ class Slicer3d(Slicer):
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
-                 # values=None,
-                 # variances=None,
                  masks=None,
                  cmap=None,
                  log=None,
@@ -79,8 +73,6 @@ class Slicer3d(Slicer):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
-                         # values=values,
-                         # variances=variances,
                          masks=masks,
                          cmap=cmap,
                          log=log,
@@ -97,18 +89,10 @@ class Slicer3d(Slicer):
         self.fig = ipv.figure(width=config.plot.width,
                               height=config.plot.height,
                               animation=0)
-        # self.scalar_map = dict()
 
-        # panels = ["values"]
-        # if self.params["variances"][self.name]["show"]:
-        #     panels.append("variances")
-
-        # for key in panels:
         self.scalar_map = cm.ScalarMappable(
             norm=self.params["values"][self.name]["norm"],
             cmap=self.params["values"][self.name]["cmap"])
-        # self.members["surfaces"][key] = {}
-        # self.members["wireframes"][key] = {}
 
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
 
@@ -320,9 +304,6 @@ class Slicer3d(Slicer):
         button_values = [
             self.buttons[dim].value.lower() for dim in vslice.dims
         ]
-        # if variances:
-        #     values = vslice.variances
-        # else:
         values = vslice.values
         if ord(button_values[0]) > ord(button_values[1]):
             values = values.T
