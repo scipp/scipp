@@ -20,8 +20,8 @@ import warnings
 
 def plot_1d(scipp_obj_dict=None,
             axes=None,
-            values=None,
-            variances=None,
+            # values=None,
+            errorbars=None,
             masks={"color": "k"},
             filename=None,
             figsize=None,
@@ -43,8 +43,8 @@ def plot_1d(scipp_obj_dict=None,
 
     sv = Slicer1d(scipp_obj_dict=scipp_obj_dict,
                   axes=axes,
-                  values=values,
-                  variances=variances,
+                  # values=values,
+                  errorbars=errorbars,
                   masks=masks,
                   mpl_axes=mpl_axes,
                   mpl_line_params=mpl_line_params,
@@ -62,8 +62,8 @@ class Slicer1d(Slicer):
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
-                 values=None,
-                 variances=None,
+                 # values=None,
+                 errorbars=None,
                  masks=None,
                  mpl_axes=None,
                  mpl_line_params=None,
@@ -73,8 +73,8 @@ class Slicer1d(Slicer):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
-                         values=values,
-                         variances=variances,
+                         # values=values,
+                         # variances=variances,
                          masks=masks,
                          button_options=['X'])
 
@@ -95,22 +95,22 @@ class Slicer1d(Slicer):
             self.ax.grid()
 
         # Determine whether error bars should be plotted or not
-        self.variances = {}
+        self.errorbars = {}
         for name, var in self.scipp_obj_dict.items():
             if var.unaligned is not None:
-                self.variances[name] = var.unaligned.variances is not None
+                self.errorbars[name] = var.unaligned.variances is not None
                 self.input_contains_unaligned_data = True
             else:
-                self.variances[name] = var.variances is not None
-        if variances is not None:
-            if isinstance(variances, bool):
+                self.errorbars[name] = var.variances is not None
+        if errorbars is not None:
+            if isinstance(errorbars, bool):
                 for name, var in self.scipp_obj_dict.items():
-                    self.variances[name] &= variances
-            elif isinstance(variances, dict):
-                for name, v in variances.items():
+                    self.errorbars[name] &= errorbars
+            elif isinstance(errorbars, dict):
+                for name, v in errorbars.items():
                     if name in self.scipp_obj_dict:
-                        self.variances[
-                            name] = variances[name] and self.scipp_obj_dict[
+                        self.errorbars[
+                            name] = errorbars[name] and self.scipp_obj_dict[
                                 name].variances is not None
                     else:
                         print("Warning: key {} was not found in list of "
@@ -118,7 +118,7 @@ class Slicer1d(Slicer):
                                   name))
             else:
                 raise TypeError("Unsupported type for argument "
-                                "'variances': {}".format(type(variances)))
+                                "'errorbars': {}".format(type(errorbars)))
 
         # Initialise container for returning matplotlib objects
         self.members.update({
@@ -140,7 +140,7 @@ class Slicer1d(Slicer):
                 self.ylim = self.get_ylim(var=var,
                                           ymin=self.ylim[0],
                                           ymax=self.ylim[1],
-                                          errorbars=self.variances[name])
+                                          errorbars=self.errorbars[name])
             ylab = name_with_unit(var=var, name="")
 
         if (self.mpl_axes is None) and (var.values is not None):
@@ -323,7 +323,7 @@ class Slicer1d(Slicer):
                                       })
 
             # Add error bars
-            if self.variances[name]:
+            if self.errorbars[name]:
                 if self.histograms[name][dim]:
                     err_x = edges_to_centers(new_x)
                 else:
@@ -369,7 +369,7 @@ class Slicer1d(Slicer):
             self.ylim = self.get_ylim(var=vslice,
                                       ymin=self.ylim[0],
                                       ymax=self.ylim[1],
-                                      errorbars=self.variances[name])
+                                      errorbars=self.errorbars[name])
         return vslice
 
     def slice_masks(self):
@@ -396,7 +396,7 @@ class Slicer1d(Slicer):
                     msk = np.concatenate((msk[0:1], msk))
                 self.members["masks"][name].set_ydata(
                     self.mask_to_float(msk, vals))
-            if self.variances[name]:
+            if self.errorbars[name]:
                 coll = self.members["error_y"][name].get_children()[0]
                 coll.set_segments(
                     self.change_segments_y(coll.get_segments(), vslice.values,
@@ -425,7 +425,7 @@ class Slicer1d(Slicer):
             self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
             self.ax.lines[-1].set_url(owner.id)
             self.ax.lines[-1].set_zorder(1)
-        if self.variances[lab]:
+        if self.errorbars[lab]:
             err = self.members["error_y"][lab].get_children()
             self.ax.collections.append(cp.copy(err[0]))
             self.ax.collections[-1].set_color(

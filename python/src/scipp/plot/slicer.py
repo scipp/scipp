@@ -16,8 +16,8 @@ class Slicer:
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
-                 values=None,
-                 variances=None,
+                 # values=None,
+                 # errorbars=None,
                  masks=None,
                  cmap=None,
                  log=None,
@@ -80,20 +80,19 @@ class Slicer:
             self.data_array = array
             self.name = name
 
-            self.params["values"][name] = parse_params(params=values,
-                                                       globs=globs,
+            self.params["values"][name] = parse_params(globs=globs,
                                                        variable=array.data)
 
-            self.params["variances"][name] = {"show": False}
-            if array.variances is not None:
-                self.params["variances"][name].update(
-                    parse_params(params=variances,
-                                 defaults={"show": False},
-                                 globs=globs,
-                                 variable=Variable(dims=array.dims,
-                                                   values=np.sqrt(
-                                                       array.variances),
-                                                   unit=array.unit)))
+            # self.params["variances"][name] = {"show": False}
+            # if array.variances is not None:
+            #     self.params["variances"][name].update(
+            #         parse_params(params=variances,
+            #                      defaults={"show": False},
+            #                      globs=globs,
+            #                      variable=Variable(dims=array.dims,
+            #                                        values=np.sqrt(
+            #                                            array.variances),
+            #                                        unit=array.unit)))
 
             self.params["masks"][name] = parse_params(params=masks,
                                                       defaults={

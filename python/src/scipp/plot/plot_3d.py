@@ -22,8 +22,8 @@ except ImportError:
 
 def plot_3d(scipp_obj_dict=None,
             axes=None,
-            values=None,
-            variances=None,
+            # values=None,
+            # variances=None,
             masks=None,
             filename=None,
             figsize=None,
@@ -48,8 +48,8 @@ def plot_3d(scipp_obj_dict=None,
 
     sv = Slicer3d(scipp_obj_dict=scipp_obj_dict,
                   axes=axes,
-                  values=values,
-                  variances=variances,
+                  # values=values,
+                  # variances=variances,
                   masks=masks,
                   cmap=cmap,
                   log=log,
@@ -67,8 +67,8 @@ class Slicer3d(Slicer):
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
-                 values=None,
-                 variances=None,
+                 # values=None,
+                 # variances=None,
                  masks=None,
                  cmap=None,
                  log=None,
@@ -79,8 +79,8 @@ class Slicer3d(Slicer):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
-                         values=values,
-                         variances=variances,
+                         # values=values,
+                         # variances=variances,
                          masks=masks,
                          cmap=cmap,
                          log=log,
@@ -91,24 +91,24 @@ class Slicer3d(Slicer):
                          button_options=['X', 'Y', 'Z'])
 
         self.cube = None
-        self.members.update({"surfaces": {}, "wireframes": {}, "fig": {}})
+        self.members.update({"surfaces": {}, "wireframes": {}})
 
         # Initialise Figure and VBox objects
         self.fig = ipv.figure(width=config.plot.width,
                               height=config.plot.height,
                               animation=0)
-        self.scalar_map = dict()
+        # self.scalar_map = dict()
 
-        panels = ["values"]
-        if self.params["variances"][self.name]["show"]:
-            panels.append("variances")
+        # panels = ["values"]
+        # if self.params["variances"][self.name]["show"]:
+        #     panels.append("variances")
 
-        for key in panels:
-            self.scalar_map[key] = cm.ScalarMappable(
-                norm=self.params[key][self.name]["norm"],
-                cmap=self.params[key][self.name]["cmap"])
-            self.members["surfaces"][key] = {}
-            self.members["wireframes"][key] = {}
+        # for key in panels:
+        self.scalar_map = cm.ScalarMappable(
+            norm=self.params["values"][self.name]["norm"],
+            cmap=self.params["values"][self.name]["cmap"])
+        # self.members["surfaces"][key] = {}
+        # self.members["wireframes"][key] = {}
 
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
 
@@ -157,7 +157,7 @@ class Slicer3d(Slicer):
         self.box = widgets.VBox(self.box)
         self.box.layout.align_items = 'center'
 
-        self.members["fig"]["values"] = self.fig
+        self.members["fig"] = self.fig
 
         return
 
@@ -315,15 +315,15 @@ class Slicer3d(Slicer):
                     self.check_transpose(vslice).flatten())
         return
 
-    def check_transpose(self, vslice, variances=False):
+    def check_transpose(self, vslice):
         # Check if dimensions of arrays agree, if not, plot the transpose
         button_values = [
             self.buttons[dim].value.lower() for dim in vslice.dims
         ]
-        if variances:
-            values = vslice.variances
-        else:
-            values = vslice.values
+        # if variances:
+        #     values = vslice.variances
+        # else:
+        values = vslice.values
         if ord(button_values[0]) > ord(button_values[1]):
             values = values.T
         return values
