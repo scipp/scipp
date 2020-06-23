@@ -98,6 +98,108 @@ TEST(ValueAndVarianceTest, binary_divide_equals) {
             lhs.variance);
 }
 
+TEST(ValueAndVarianceTest, comparison) {
+  ValueAndVariance a1{1.0, 2.0};
+  ValueAndVariance a2{1.0, 3.0}; // same as a1 but difference variance
+  ValueAndVariance b{2.0, 2.0};
+
+  EXPECT_TRUE(a1 == a1);
+  EXPECT_TRUE(a1 == a2);
+  EXPECT_FALSE(a1 == b);
+
+  EXPECT_FALSE(a1 != a1);
+  EXPECT_FALSE(a1 != a2);
+  EXPECT_TRUE(a1 != b);
+
+  EXPECT_FALSE(a1 < a1);
+  EXPECT_FALSE(a1 < a2);
+  EXPECT_TRUE(a1 < b);
+  EXPECT_FALSE(b < a1);
+
+  EXPECT_FALSE(a1 > a1);
+  EXPECT_FALSE(a1 > a2);
+  EXPECT_FALSE(a1 > b);
+  EXPECT_TRUE(b > a1);
+
+  EXPECT_TRUE(a1 <= a1);
+  EXPECT_TRUE(a1 <= a2);
+  EXPECT_TRUE(a1 <= b);
+  EXPECT_FALSE(b <= a1);
+
+  EXPECT_TRUE(a1 >= a1);
+  EXPECT_TRUE(a1 >= a2);
+  EXPECT_FALSE(a1 >= b);
+  EXPECT_TRUE(b >= a1);
+}
+
+TEST(ValueAndVarianceTest, comparison_no_variance_lhs) {
+  ValueAndVariance a1{1.0, 2.0};
+  ValueAndVariance a2{1.0, 3.0}; // same as a1 but difference variance
+  ValueAndVariance b{2.0, 2.0};
+
+  EXPECT_TRUE(a1.value == a1);
+  EXPECT_TRUE(a1.value == a2);
+  EXPECT_FALSE(a1.value == b);
+
+  EXPECT_FALSE(a1.value != a1);
+  EXPECT_FALSE(a1.value != a2);
+  EXPECT_TRUE(a1.value != b);
+
+  EXPECT_FALSE(a1.value < a1);
+  EXPECT_FALSE(a1.value < a2);
+  EXPECT_TRUE(a1.value < b);
+  EXPECT_FALSE(b.value < a1);
+
+  EXPECT_FALSE(a1.value > a1);
+  EXPECT_FALSE(a1.value > a2);
+  EXPECT_FALSE(a1.value > b);
+  EXPECT_TRUE(b.value > a1);
+
+  EXPECT_TRUE(a1.value <= a1);
+  EXPECT_TRUE(a1.value <= a2);
+  EXPECT_TRUE(a1.value <= b);
+  EXPECT_FALSE(b.value <= a1);
+
+  EXPECT_TRUE(a1.value >= a1);
+  EXPECT_TRUE(a1.value >= a2);
+  EXPECT_FALSE(a1.value >= b);
+  EXPECT_TRUE(b.value >= a1);
+}
+
+TEST(ValueAndVarianceTest, comparison_no_variance_rhs) {
+  ValueAndVariance a1{1.0, 2.0};
+  ValueAndVariance a2{1.0, 3.0}; // same as a1 but difference variance
+  ValueAndVariance b{2.0, 2.0};
+
+  EXPECT_TRUE(a1 == a1.value);
+  EXPECT_TRUE(a1 == a2.value);
+  EXPECT_FALSE(a1 == b.value);
+
+  EXPECT_FALSE(a1 != a1.value);
+  EXPECT_FALSE(a1 != a2.value);
+  EXPECT_TRUE(a1 != b.value);
+
+  EXPECT_FALSE(a1 < a1.value);
+  EXPECT_FALSE(a1 < a2.value);
+  EXPECT_TRUE(a1 < b.value);
+  EXPECT_FALSE(b < a1.value);
+
+  EXPECT_FALSE(a1 > a1.value);
+  EXPECT_FALSE(a1 > a2.value);
+  EXPECT_FALSE(a1 > b.value);
+  EXPECT_TRUE(b > a1.value);
+
+  EXPECT_TRUE(a1 <= a1.value);
+  EXPECT_TRUE(a1 <= a2.value);
+  EXPECT_TRUE(a1 <= b.value);
+  EXPECT_FALSE(b <= a1.value);
+
+  EXPECT_TRUE(a1 >= a1.value);
+  EXPECT_TRUE(a1 >= a2.value);
+  EXPECT_FALSE(a1 >= b.value);
+  EXPECT_TRUE(b >= a1.value);
+}
+
 /* This test suite tests for equality between ValueAndVariance-scalar binary
  * operations and the equivalent ValueAndVariance-ValueAndVariance operation. */
 /* The assumption is made that ValueAndVariance-ValueAndVariance binary
