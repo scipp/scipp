@@ -409,7 +409,6 @@ GroupBy<Dataset> groupby(const DatasetConstView &dataset, const Dim dim,
 GroupBy<Dataset> groupby(const DatasetConstView &dataset,
                          const VariableConstView &key,
                          const VariableConstView &bins) {
-
   for (const auto &n : dataset.dimensions()) {
     Dimensions dims(n.first, n.second);
     if (dims.contains(key.dims()))

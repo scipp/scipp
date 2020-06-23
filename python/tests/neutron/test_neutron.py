@@ -25,10 +25,10 @@ def make_dataset_with_beamline():
     d.coords['position'].values[2] = [0, 0, 1]
     d.coords['position'].values[3] = [-1, 0, 0]
 
-    d.coords['source_position'] = sc.Variable(value=np.array([0, 0, -10]),
+    d.coords['source-position'] = sc.Variable(value=np.array([0, 0, -10]),
                                               dtype=sc.dtype.vector_3_float64,
                                               unit=sc.units.m)
-    d.coords['sample_position'] = sc.Variable(value=np.array([0, 0, 0]),
+    d.coords['sample-position'] = sc.Variable(value=np.array([0, 0, 0]),
                                               dtype=sc.dtype.vector_3_float64,
                                               unit=sc.units.m)
     return d

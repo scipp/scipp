@@ -31,17 +31,6 @@ TEST(ElementComparisonTest, unit) {
   EXPECT_THROW(comparison(rad, m), except::UnitError);
 }
 
-template <int T, typename Op> bool is_no_variance_arg() {
-  return std::is_base_of_v<core::transform_flags::expect_no_variance_arg_t<T>,
-                           Op>;
-}
-
-TEST(ElementComparisonTest, value_only_arguments) {
-  using Op = decltype(comparison);
-  EXPECT_TRUE((is_no_variance_arg<0, Op>())) << " y has variance ";
-  EXPECT_TRUE((is_no_variance_arg<1, Op>())) << " x has variance ";
-}
-
 TYPED_TEST(ElementLessTest, value) {
   using T = TypeParam;
   T y = 1;

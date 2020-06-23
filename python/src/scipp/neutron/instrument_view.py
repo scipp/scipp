@@ -31,6 +31,9 @@ def instrument_view(scipp_obj=None,
                     continuous_update=True,
                     dim="tof",
                     rendering="Full",
+                    pixel_size=0.02,
+                    camera_pos=None,
+                    look_at=None,
                     background="#f0f0f0"):
     """
     Plot a 2D or 3D view of the instrument.
@@ -59,6 +62,9 @@ def instrument_view(scipp_obj=None,
                         continuous_update=continuous_update,
                         dim=dim,
                         rendering=rendering,
+                        pixel_size=pixel_size,
+                        camera_pos=camera_pos,
+                        look_at=look_at,
                         background=background)
 
     render_plot(widgets=iv.box, filename=filename)
@@ -81,7 +87,13 @@ class InstrumentView:
                  continuous_update=None,
                  dim=None,
                  rendering=None,
+                 pixel_size=None,
+                 camera_pos=None,
+                 look_at=None,
                  background=None):
+        self._pixel_size = pixel_size
+        self._camera_pos = camera_pos
+        self._look_at = look_at
 
         # Delayed imports to avoid hard dependencies
         self.widgets = importlib.import_module("ipywidgets")
@@ -382,7 +394,12 @@ class InstrumentView:
         self.change_rendering({"new": self.select_rendering.value})
 
         # Add camera controller
-        self.controller = self.p3.OrbitControls(controlling=self.camera)
+        if self._look_at is not None:
+            self.controller = self.p3.OrbitControls(controlling=self.camera,
+                                                    target=self._look_at)
+            self.camera.lookAt(self._look_at)
+        else:
+            self.controller = self.p3.OrbitControls(controlling=self.camera)
 
         # Render the scene into a widget
         self.renderer = self.p3.Renderer(camera=self.camera,
@@ -468,7 +485,7 @@ class InstrumentView:
                     [self.det_pos.shape[0], 3], dtype=np.float32))
             })
         points_material = self.p3.PointsMaterial(vertexColors='VertexColors',
-                                                 size=self.camera_pos * 0.05,
+                                                 size=self._pixel_size,
                                                  transparent=True)
         points = self.p3.Points(geometry=points_geometry,
                                 material=points_material)
@@ -688,8 +705,8 @@ class InstrumentView:
                     unit=sc.units.m,
                     dtype=sc.dtype.vector_3_float64)
 
-            vertices = sc.geometry.rotate(
-                vertices, self.hist_data_array[self.key].attrs["rotation"])
+            vertices = self.hist_data_array[
+                self.key].attrs["rotation"] * vertices
 
             pixel_pos = np.array((vertices + self.det_pos).values,
                                  dtype=np.float32)
@@ -756,10 +773,22 @@ class InstrumentView:
                 new_cam_pos = [0, 0, self.camera_pos]
 
             self.camera.position = new_cam_pos
-            self.renderer.controls = [
-                self.p3.OrbitControls(controlling=self.camera,
-                                      enableRotate=projection.startswith("3D"))
-            ]
+            if self._camera_pos is not None:
+                self.camera.position = self._camera_pos
+            if self._look_at is not None:
+                self.renderer.controls = [
+                    self.p3.OrbitControls(
+                        controlling=self.camera,
+                        target=self._look_at,
+                        enableRotate=projection.startswith("3D"))
+                ]
+                self.camera.lookAt(self._look_at)
+            else:
+                self.renderer.controls = [
+                    self.p3.OrbitControls(
+                        controlling=self.camera,
+                        enableRotate=projection.startswith("3D"))
+                ]
 
         self.geometry.attributes["position"].array = xyz
 
@@ -793,7 +822,7 @@ class InstrumentView:
         return
 
     def generate_3d_axes_ticks(self):
-        tick_size = self.camera_pos * 0.05
+        tick_size = 10.0 * self._pixel_size
         axticks = self.p3.Group()
         axticks.add(self.make_axis_tick("0", [0, 0, 0], size=tick_size))
         for i in range(3):

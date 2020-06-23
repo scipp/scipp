@@ -293,10 +293,10 @@ class TestMantidConversion(unittest.TestCase):
             assert isinstance(monitor, sc.DataArray)
             assert monitor.shape == [200001]
             assert 'position' in monitor.coords
-            assert 'source_position' in monitor.coords
+            assert 'source-position' in monitor.coords
             # This is essential, otherwise unit conversion assumes scattering
             # from sample:
-            assert 'sample_position' not in monitor.coords
+            assert 'sample-position' not in monitor.coords
             # Absence of the following is not crucial, but currently there is
             # no need for these, and it avoid duplication:
             assert 'detector_info' not in monitor.coords
@@ -383,8 +383,8 @@ class TestMantidConversion(unittest.TestCase):
         # check that no workspaces have been leaked in the ADS
         assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
 
-        self.assertTrue("source_position" in ds.coords)
-        self.assertTrue("sample_position" in ds.coords)
+        self.assertTrue("source-position" in ds.coords)
+        self.assertTrue("sample-position" in ds.coords)
         self.assertTrue("position" in ds.coords)
 
     def test_to_workspace_2d_no_error(self):
@@ -409,9 +409,9 @@ class TestMantidConversion(unittest.TestCase):
                             expected_number_spectra * expected_bins,
                             dtype=np.float64).reshape(
                                 (expected_number_spectra, expected_bins)))
+        data = sc.DataArray(data=y, coords={param_dim: x})
 
-        ws = sc.compat.mantid.to_workspace_2d(x.values, y.values, None,
-                                              param_dim)
+        ws = sc.compat.mantid.to_mantid(data, param_dim)
 
         assert len(ws.readX(0)) == expected_bins
         assert ws.getNumberHistograms() == expected_number_spectra
@@ -424,29 +424,34 @@ class TestMantidConversion(unittest.TestCase):
             np.testing.assert_array_equal(ws.readE(i),
                                           np.sqrt(y['spectrum', i].values))
 
-    def test_fit_executes(self):
+    def test_fit(self):
         """
         Tests that the fit executes, and the outputs
         are moved into the dataset. Does not check the fit values.
         """
-        from mantid.simpleapi import Load, mtd
+        from mantid.simpleapi import mtd
         mtd.clear()
 
-        ws = Load(MantidDataHelper.find_file("iris26176_graphite002_sqw.nxs"),
-                  StoreInADS=False)
+        data = sc.neutron.load(filename=MantidDataHelper.find_file(
+            "iris26176_graphite002_sqw.nxs"))
 
-        fit_ds = sc.compat.mantid.fit(ws, 'name=LinearBackground,A0=0,A1=1', 0,
-                                      0, 3)
+        params, diff = sc.compat.mantid.fit(
+            data['Q', 0],
+            mantid_args={
+                'Function': 'name=LinearBackground,A0=0,A1=1',
+                'StartX': 0,
+                'EndX': 3
+            })
 
         # check that no workspaces have been leaked in the ADS
-        self.assertEqual(len(mtd), 0, mtd.getObjectNames())
-        self.assertTrue("workspace" in fit_ds)
-        self.assertTrue("normalised_covariance_matrix" in fit_ds)
-        self.assertTrue("parameters" in fit_ds)
-        self.assertTrue("cost_function" in fit_ds.attrs)
-        self.assertTrue("function" in fit_ds.attrs)
-        self.assertTrue("status" in fit_ds.attrs)
-        self.assertTrue("chi2_over_DoF" in fit_ds.attrs)
+        assert len(mtd) == 0
+        assert 'data' in diff
+        assert 'calculated' in diff
+        assert 'diff' in diff
+        assert 'status' in params.attrs
+        assert 'function' in params.attrs
+        assert 'cost-function' in params.attrs
+        assert 'chi^2/d.o.f.' in params.attrs
 
     def test_set_run(self):
         import mantid.simpleapi as mantid
@@ -497,19 +502,6 @@ class TestMantidConversion(unittest.TestCase):
                 np.isclose(moved_det_position.values,
                            unmoved_det_positions.values)))
 
-    def test_to_quat_from_vectors(self):
-        a = np.array([1, 0, 0])
-        b = np.array([0, 1, 0])
-        q_var = mantidcompat._quat_from_vectors(a, b)
-        q = q_var.value
-        self.assertTrue(
-            np.allclose(b, q.to_rotation_matrix().dot(a), rtol=0.0, atol=1e-9))
-        # other direction
-        q_var = mantidcompat._quat_from_vectors(b, a)
-        q = q_var.value
-        self.assertTrue(
-            np.allclose(a, q.to_rotation_matrix().dot(b), rtol=0.0, atol=1e-9))
-
     def test_validate_units(self):
         acceptable = ["wavelength", sc.Dim.Wavelength]
         for i in acceptable:
@@ -521,6 +513,15 @@ class TestMantidConversion(unittest.TestCase):
         for i in not_acceptable:
             with self.assertRaises(RuntimeError):
                 mantidcompat.validate_dim_and_get_mantid_string(i)
+
+
+def test_to_rot_from_vectors():
+    a = sc.Variable(value=[1, 0, 0], dtype=sc.dtype.vector_3_float64)
+    b = sc.Variable(value=[0, 1, 0], dtype=sc.dtype.vector_3_float64)
+    rot = mantidcompat._rot_from_vectors(a.value, b.value)
+    assert np.allclose((rot * a).value, b.value)
+    rot = mantidcompat._rot_from_vectors(b.value, a.value)
+    assert np.allclose((rot * b).value, a.value)
 
 
 @pytest.mark.skipif(not memory_is_at_least_gb(16),
@@ -548,9 +549,9 @@ def test_to_workspace_2d(param_dim):
                                      dtype=np.float64).reshape(
                                          (expected_number_spectra,
                                           expected_bins)))
+    data = sc.DataArray(data=y, coords={param_dim: x})
 
-    ws = sc.compat.mantid.to_workspace_2d(x.values, y.values, y.variances,
-                                          param_dim)
+    ws = sc.compat.mantid.to_mantid(data, param_dim)
 
     assert len(ws.readX(0)) == expected_bins
     assert ws.getNumberHistograms() == expected_number_spectra
@@ -562,6 +563,56 @@ def test_to_workspace_2d(param_dim):
         np.testing.assert_array_equal(ws.readY(i), y['spectrum', i])
         np.testing.assert_array_equal(ws.readE(i),
                                       np.sqrt(y['spectrum', i].variances))
+
+
+@pytest.mark.skipif(not mantid_is_available(),
+                    reason='Mantid framework is unavailable')
+def test_to_workspace_2d_handles_single_spectra():
+    from mantid.simpleapi import mtd
+    mtd.clear()
+
+    expected_x = [0., 1., 2.]
+    expected_y = [10., 20., 30.]
+    expected_e = [4., 4., 4.]
+
+    x = sc.Variable(['tof'], values=expected_x)
+    y = sc.Variable(['tof'], values=expected_y, variances=expected_e)
+    data = sc.DataArray(data=y, coords={'tof': x})
+
+    ws = sc.compat.mantid.to_mantid(data, "tof")
+
+    assert ws.getNumberHistograms() == 1
+
+    assert np.equal(ws.readX(0), expected_x).all()
+    assert np.equal(ws.readY(0), expected_y).all()
+    assert np.equal(ws.readE(0), np.sqrt(expected_e)).all()
+
+
+@pytest.mark.skipif(not mantid_is_available(),
+                    reason='Mantid framework is unavailable')
+def test_to_workspace_2d_handles_single_x_array():
+    from mantid.simpleapi import mtd
+    mtd.clear()
+
+    expected_x = [0., 1., 2.]
+    expected_y = [[10., 20., 30.], [40., 50., 60.]]
+    expected_e = [[4., 4., 4.], [4., 4., 4.]]
+
+    x = sc.Variable(['tof'], values=expected_x)
+    y = sc.Variable(['spectrum', 'tof'],
+                    values=np.array(expected_y),
+                    variances=np.array(expected_e))
+    data = sc.DataArray(data=y, coords={'tof': x})
+
+    ws = sc.compat.mantid.to_mantid(data, "tof")
+
+    assert ws.getNumberHistograms() == 2
+    assert np.equal(ws.readX(0), expected_x).all()
+    assert np.equal(ws.readX(1), expected_x).all()
+
+    for i, (y_vals, e_vals) in enumerate(zip(expected_y, expected_e)):
+        assert np.equal(ws.readY(i), y_vals).all()
+        assert np.equal(ws.readE(i), np.sqrt(e_vals)).all()
 
 
 if __name__ == "__main__":

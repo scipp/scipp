@@ -10,6 +10,31 @@
 
 namespace scipp::dataset {
 
+template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
+  std::map<typename T1::key_type, typename T1::mapped_type> out;
+
+  for (const auto &[key, item] : a)
+    out.emplace(key, item);
+
+  for (const auto &item : b) {
+    if (const auto it = a.find(item.first); it != a.end()) {
+      core::expect::equals(item, *it);
+    } else
+      out.emplace(item.first, item.second);
+  }
+  return out;
+}
+
+/// Return intersection of maps, i.e., all items with matching names that
+/// have matching content.
+template <class Map> auto intersection(const Map &a, const Map &b) {
+  std::map<std::string, Variable> out;
+  for (const auto &[key, item] : a)
+    if (const auto it = b.find(key); it != b.end() && it->second == item)
+      out.emplace(key, item);
+  return out;
+}
+
 /// Return a copy of map-like objects such as CoordView.
 template <class T> auto copy_map(const T &map) {
   std::map<typename T::key_type, typename T::mapped_type> out;
@@ -26,7 +51,7 @@ static inline void expectAlignedCoord(const Dim coord_dim,
   // possibility that the coordinates actually align along the operation
   // dimension.
   if (var.dims().ndim() > 1)
-    throw except::CoordMismatchError(
+    throw except::DimensionError(
         "VariableConstView Coord/Label has more than one dimension "
         "associated with " +
         to_string(coord_dim) +

@@ -52,6 +52,24 @@ auto makeViewItems(const Dims &dims, T1 &coords) {
   return items;
 }
 
+template <class Item, class Dims, class Attrs>
+void addOrthogonalAttrs(Item &items, const Dims &parentDims, Attrs &attrs) {
+  for (auto &&[name, attr] : attrs)
+    if (!parentDims.contains(attr.dims()))
+      items.emplace(name, makeViewItem(attr));
+}
+
+template <class Item, class Dims, class Coords>
+void addAttrsFromCoords(Item &items, const Dims &parentDims, const Dims &dims,
+                        Coords &coords) {
+  for (auto &&[dim, coord] : coords) {
+    const auto &coordDims = coord.dims();
+    if (!coordDims.empty() && contains(parentDims, coordDims.inner()) &&
+        !contains(dims, coordDims.inner()))
+      items.emplace(dim.name(), makeViewItem(coord));
+  }
+}
+
 Dataset::Dataset(const DatasetConstView &view)
     : Dataset(view, view.coords(), view.masks(), view.attrs()) {}
 
@@ -263,9 +281,7 @@ void Dataset::setAttr(const std::string &attrName, Variable attr) {
 void Dataset::setAttr(const std::string &name, const std::string &attrName,
                       Variable attr) {
   scipp::expect::contains(*this, name);
-  if (!operator[](name).dims().contains(attr.dims()))
-    throw except::DimensionError(
-        "Attribute dimensions must match and not exceed dimensions of data.");
+  setDims(attr.dims());
   m_data[name].attrs.insert_or_assign(attrName, std::move(attr));
 }
 
@@ -404,7 +420,6 @@ Dataset Dataset::slice(const Slice s) const && {
 
 /// Rename dimension `from` to `to`.
 void Dataset::rename(const Dim from, const Dim to) {
-
   if ((from != to) && (m_dims.count(to) != 0))
     throw except::DimensionError("Duplicate dimension.");
 
@@ -461,6 +476,15 @@ void DataArray::setName(const std::string &name) {
   auto node = map.extract(map.begin());
   node.key() = name;
   map.insert(std::move(node));
+}
+
+Dimensions DataArrayConstView::parentDims() const noexcept {
+  if (underlying().data)
+    return underlying().data.dims();
+  else if (hasData()) // view of unaligned content
+    return underlying().unaligned->data.dims();
+  else
+    return underlying().unaligned->dims;
 }
 
 /// Return an ordered mapping of dimension labels to extents.
@@ -537,7 +561,14 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
+  } else {
+    // Attributes are per-item in dataset and may exceed data dims, e.g., for
+    // storing bounds when creating a copy of a non-range slice of a histogram.
+    if constexpr (std::is_same_v<MapView, AttrsConstView>)
+      addOrthogonalAttrs(items, parentDims(), map_parent(*this));
   }
+  if constexpr (std::is_same_v<MapView, AttrsConstView>)
+    addAttrsFromCoords(items, parentDims(), dims(), m_dataset->m_coords);
   return MapView(std::move(items), slices());
 }
 
@@ -559,7 +590,12 @@ template <class MapView> MapView DataArrayView::makeView() const {
     auto unalignedItems =
         makeViewItems<MapView>(unaligned.dims(), map_parent(unaligned));
     items.insert(unalignedItems.begin(), unalignedItems.end());
+  } else {
+    if constexpr (std::is_same_v<MapView, AttrsView>)
+      addOrthogonalAttrs(items, parentDims(), map_parent(*this));
   }
+  if constexpr (std::is_same_v<MapView, AttrsView>)
+    addAttrsFromCoords(items, parentDims(), dims(), m_mutableDataset->m_coords);
   if constexpr (std::is_same_v<MapView, AttrsView>) {
     // Note: Unlike for CoordAccess and MaskAccess this is *not* unconditionally
     // disabled with nullptr since it sets/erase attributes of the *item*.

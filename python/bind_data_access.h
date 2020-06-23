@@ -160,8 +160,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return {Getter::template get<Dataset>(view)};
     if (type == dtype<Eigen::Vector3d>)
       return {Getter::template get<Eigen::Vector3d>(view)};
-    if (type == dtype<Eigen::Quaterniond>)
-      return {Getter::template get<Eigen::Quaterniond>(view)};
+    if (type == dtype<Eigen::Matrix3d>)
+      return {Getter::template get<Eigen::Matrix3d>(view)};
     if (type == dtype<scipp::python::PyObject>)
       return {Getter::template get<scipp::python::PyObject>(view)};
     throw std::runtime_error("not implemented for this type.");
@@ -176,10 +176,9 @@ template <class... Ts> class as_ElementArrayViewImpl {
               typename std::remove_reference_t<decltype(view_)>::value_type;
           if constexpr (std::is_trivial_v<T>) {
             auto &data = obj.cast<const py::array_t<T>>();
-            bool except = (scipp::size(dims.shape()) != data.ndim());
-            for (scipp::index i = 0; i < scipp::size(dims.shape()); ++i)
-              except |= (dims.shape()[i] != data.shape()[i]);
-            if (except)
+            const auto &shape = dims.shape();
+            if (!std::equal(shape.begin(), shape.end(), data.shape(),
+                            data.shape() + data.ndim()))
               throw except::DimensionError("The shape of the provided data "
                                            "does not match the existing "
                                            "object.");
@@ -369,7 +368,7 @@ public:
 using as_ElementArrayView = as_ElementArrayViewImpl<
     double, float, int64_t, int32_t, bool, std::string, event_list<double>,
     event_list<float>, event_list<int64_t>, DataArray, Dataset, Eigen::Vector3d,
-    Eigen::Quaterniond, scipp::python::PyObject>;
+    Eigen::Matrix3d, scipp::python::PyObject>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {

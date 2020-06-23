@@ -63,7 +63,7 @@ auto apply(const DType dtype, Args &&... args) {
   return core::callDType<Callable>(
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
                  event_list<double>, event_list<float>, event_list<int64_t>,
-                 event_list<int32_t>, Eigen::Vector3d, Eigen::Quaterniond>{},
+                 event_list<int32_t>, Eigen::Vector3d, Eigen::Matrix3d>{},
       dtype, std::forward<Args>(args)...);
 }
 
@@ -92,6 +92,15 @@ std::string to_string(const Variable &variable) {
 
 std::string to_string(const VariableConstView &variable) {
   return format_variable(std::string("<scipp.VariableView>"), variable);
+}
+
+std::string to_string(const std::pair<Dim, VariableConstView> &coord) {
+  using units::to_string;
+  return to_string(coord.first) + ":\n" + to_string(coord.second);
+}
+
+std::string to_string(const std::pair<std::string, VariableConstView> &coord) {
+  return coord.first + ":\n" + to_string(coord.second);
 }
 
 void FormatterRegistry::emplace(const DType key,

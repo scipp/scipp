@@ -39,7 +39,10 @@ template <class... Ts> struct add_types_t {
 
 template <class... Ts> struct times_types_t {
   constexpr void operator()() const noexcept;
-  using types = arithmetic_type_pairs_with_bool;
+  using types = decltype(std::tuple_cat(
+      std::declval<arithmetic_type_pairs_with_bool>(),
+      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>(),
+      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>()));
 };
 
 template <class... Ts> struct divide_types_t {

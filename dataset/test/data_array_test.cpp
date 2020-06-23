@@ -56,6 +56,17 @@ TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {
   EXPECT_EQ(sum, dataset["data_zyx"]);
 }
 
+TEST(DataArrayTest, fail_op_non_matching_coords) {
+  auto coord_1 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  auto coord_2 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
+  auto data = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 4});
+  DataArray da_1(data, {{Dim::X, coord_1}, {Dim::Y, data}});
+  DataArray da_2(data, {{Dim::X, coord_2}, {Dim::Y, data}});
+  // Fail because coordinates mismatched
+  EXPECT_THROW(da_1 + da_2, except::CoordMismatchError);
+  EXPECT_THROW(da_1 - da_2, except::CoordMismatchError);
+}
+
 auto make_events() {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   var.setUnit(units::us);
@@ -102,9 +113,9 @@ TEST(DataArrayRealignedEventsArithmeticTest, fail_events_op_non_histogram) {
   DataArray not_hist(data, {{Dim::X, coord}});
 
   // Fail due to coord mismatch between event coord and dense coord
-  EXPECT_THROW(events * not_hist, except::VariableMismatchError);
-  EXPECT_THROW(not_hist * events, except::VariableMismatchError);
-  EXPECT_THROW(events / not_hist, except::VariableMismatchError);
+  EXPECT_THROW(events * not_hist, except::CoordMismatchError);
+  EXPECT_THROW(not_hist * events, except::CoordMismatchError);
+  EXPECT_THROW(events / not_hist, except::CoordMismatchError);
 
   const auto realigned = unaligned::realign(
       events, {{Dim::X, Variable{not_hist.coords()[Dim::X]}}});

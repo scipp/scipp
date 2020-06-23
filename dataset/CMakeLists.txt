@@ -4,14 +4,23 @@ set(TARGET_NAME "scipp-dataset")
 set(INC_FILES
     include/scipp/dataset/choose.h
     include/scipp/dataset/counts.h
+    include/scipp/dataset/dataset_access.h
     include/scipp/dataset/dataset.h
     include/scipp/dataset/dataset_index.h
+    include/scipp/dataset/dataset_util.h
+    include/scipp/dataset/event.h
     include/scipp/dataset/except.h
+    include/scipp/dataset/groupby.h
+    include/scipp/dataset/histogram.h
+    include/scipp/dataset/map_view_forward.h
+    include/scipp/dataset/map_view.h
     include/scipp/dataset/math.h
     include/scipp/dataset/rebin.h
     include/scipp/dataset/reduction.h
     include/scipp/dataset/shape.h
     include/scipp/dataset/sort.h
+    include/scipp/dataset/string.h
+    include/scipp/dataset/unaligned.h
 )
 
 set(SRC_FILES

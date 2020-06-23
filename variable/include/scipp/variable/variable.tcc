@@ -29,11 +29,7 @@ template <class T> struct is_span<scipp::span<T>> : std::true_type {};
 template <class T> inline constexpr bool is_span_v = is_span<T>::value;
 
 template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
-  if constexpr (std::is_same_v<typename T1::value_type, Eigen::Quaterniond>)
-    return std::equal(
-        view1.begin(), view1.end(), view2.begin(), view2.end(),
-        [](auto &a, auto &b) { return a.coeffs() == b.coeffs(); });
-  else if constexpr(is_span_v<typename T1::value_type>)
+  if constexpr(is_span_v<typename T1::value_type>)
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end(),
         [](auto &a, auto &b) { return equal(a,b); });
   else
@@ -214,7 +210,9 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
     iterDims.resize(dim, delta);
 
   const auto &otherT = requireT<const VariableConceptT>(other);
-  auto otherView = otherT.valuesView(iterDims, dim, otherBegin);
+  // Pass invalid dimension to prevent slicing when non-range slice
+  auto otherView =
+      otherT.valuesView(iterDims, delta == 1 ? Dim::Invalid : dim, otherBegin);
   // Four cases for minimizing use of ElementArrayView --- just copy contiguous
   // range where possible.
   if (this->isContiguous() && iterDims.isContiguousIn(this->dims())) {
@@ -236,7 +234,9 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
   }
   // TODO Avoid code duplication for variances.
   if (this->hasVariances()) {
-    auto otherVariances = otherT.variancesView(iterDims, dim, otherBegin);
+    // Pass invalid dimension to prevent slicing when non-range slice
+    auto otherVariances = otherT.variancesView(
+        iterDims, delta == 1 ? Dim::Invalid : dim, otherBegin);
     if (this->isContiguous() && iterDims.isContiguousIn(this->dims())) {
       auto target = variances(dim, offset, offset + delta);
       if (other.isContiguous() && iterDims.isContiguousIn(other.dims())) {

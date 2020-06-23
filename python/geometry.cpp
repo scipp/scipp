@@ -32,7 +32,6 @@ void bind_component(const std::string xyz, Function func, py::module &gm) {
 }
 
 void init_geometry(py::module &m) {
-
   auto geom_m = m.def_submodule("geometry");
 
   geom_m.def(
@@ -58,34 +57,4 @@ void init_geometry(py::module &m) {
   bind_component("x", x, geom_m);
   bind_component("y", y, geom_m);
   bind_component("z", z, geom_m);
-
-  auto doc =
-      Docstring()
-          .description(
-              "Rotate a Variable of type vector_3_float64 using a Variable "
-              "of type quaternion_float64.")
-          .raises("If the units of the rotations are dimensionless.")
-          .returns("Variable containing the rotated position vectors")
-          .rtype("Variable")
-          .param("pos", "Variable containing xyz position vectors.", "Variable")
-          .param("rot", "Variable containing rotation quaternions.",
-                 "Variable");
-
-  geom_m.def(
-      "rotate",
-      [](const VariableConstView &pos, const VariableConstView &rot) {
-        return rotate(pos, rot);
-      },
-      py::arg("pos"), py::arg("rot"), py::call_guard<py::gil_scoped_release>(),
-      doc.c_str());
-
-  geom_m.def(
-      "rotate",
-      [](const VariableConstView &pos, const VariableConstView &rot,
-         const VariableView &out) { return rotate(pos, rot, out); },
-      py::arg("pos"), py::arg("rot"), py::arg("out"),
-      py::call_guard<py::gil_scoped_release>(),
-      doc.rtype("VariableView")
-          .param("out", "Output buffer", "Variable")
-          .c_str());
 }

@@ -478,6 +478,17 @@ TEST(Variable, concatenate_unit_fail) {
   EXPECT_NO_THROW(concatenate(a, b, Dim::X));
 }
 
+TEST(Variable, concatenate_from_slices_with_broadcast) {
+  auto input_v = {0.0, 0.1, 0.2, 0.3};
+  auto var = makeVariable<double>(Dimensions{Dim::X, 4}, Values(input_v),
+                                  Variances(input_v));
+  auto out = concatenate(var.slice(Slice(Dim::X, 1, 4)),
+                         var.slice(Slice(Dim::X, 0, 3)), Dim::Y);
+  auto expected = {0.1, 0.2, 0.3, 0.0, 0.1, 0.2};
+  EXPECT_EQ(out, makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                      Values(expected), Variances(expected)));
+}
+
 TEST(EventsVariable, concatenate) {
   const auto a = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
                                                   Values{}, Variances{});
@@ -1349,14 +1360,12 @@ TEST(VariableTest, rotate) {
   Eigen::Quaterniond rot2(5.5, 6.6, 7.7, 8.8);
   rot1.normalize();
   rot2.normalize();
-  const Variable rot = makeVariable<Eigen::Quaterniond>(
-      Dims{Dim::X}, Shape{2}, units::one, Values{rot1, rot2});
-  auto vec_new = geometry::rotate(vec, rot);
+  const Variable rot = makeVariable<Eigen::Matrix3d>(
+      Dims{Dim::X}, Shape{2}, units::one,
+      Values{rot1.toRotationMatrix(), rot2.toRotationMatrix()});
+  auto vec_new = rot * vec;
   const auto rotated = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{2}, units::m,
-      Values{rot1._transformVector(vec1), rot2._transformVector(vec2)});
+      Values{rot1.toRotationMatrix() * vec1, rot2.toRotationMatrix() * vec2});
   EXPECT_EQ(vec_new, rotated);
-  VariableView vec_new2 = geometry::rotate(vec, rot, vec);
-  EXPECT_EQ(vec_new2, rotated);
-  EXPECT_EQ(vec, rotated);
 }

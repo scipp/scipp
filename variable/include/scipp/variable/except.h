@@ -8,6 +8,7 @@
 
 #include "scipp-variable_export.h"
 #include "scipp/common/except.h"
+#include "scipp/core/except.h"
 #include "scipp/variable/string.h"
 
 namespace scipp::except {

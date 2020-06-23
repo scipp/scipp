@@ -40,6 +40,8 @@ Mantid Compatibility
    :toctree: ../generated
 
    from_mantid
+   to_mantid
+   fit
 
 Unit Conversion
 ~~~~~~~~~~~~~~~

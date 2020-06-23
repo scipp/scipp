@@ -23,9 +23,9 @@ Dataset makeDatasetWithBeamline() {
   components.setData("position", makeVariable<Eigen::Vector3d>(
                                      Dims{Dim::Row}, Shape{2}, units::m,
                                      Values{source_pos, sample_pos}));
-  beamline.setCoord(Dim("source_position"), makeVariable<Eigen::Vector3d>(
+  beamline.setCoord(Dim("source-position"), makeVariable<Eigen::Vector3d>(
                                                 units::m, Values{source_pos}));
-  beamline.setCoord(Dim("sample_position"), makeVariable<Eigen::Vector3d>(
+  beamline.setCoord(Dim("sample-position"), makeVariable<Eigen::Vector3d>(
                                                 units::m, Values{sample_pos}));
   // TODO Need fuzzy comparison for variables to write a convenient test with
   // detectors away from the axes.
@@ -73,7 +73,7 @@ TEST_F(BeamlineTest, scattering_angle) {
 
 TEST_F(BeamlineTest, no_sample) {
   Dataset d(dataset);
-  d.coords().erase(Dim("sample_position"));
+  d.coords().erase(Dim("sample-position"));
   ASSERT_THROW(l1(d), except::NotFoundError);
   ASSERT_THROW(l2(d), except::NotFoundError);
   ASSERT_THROW(scattering_angle(d), except::NotFoundError);

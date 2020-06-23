@@ -57,8 +57,6 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 
 DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                       const Dim dim) {
-  if (!a.dims().contains(dim) && a == b)
-    return DataArray{a};
   return DataArray(a.hasData() || b.hasData()
                        ? concatenate(a.data(), b.data(), dim)
                        : Variable{},
@@ -74,8 +72,12 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
       concat(a.masks(), b.masks(), dim, a.dimensions(), b.dimensions()),
       std::map<std::string, Variable>());
   for (const auto &item : a)
-    if (b.contains(item.name()))
-      result.setData(item.name(), concatenate(item, b[item.name()], dim));
+    if (b.contains(item.name())) {
+      if (!item.dims().contains(dim) && item == b[item.name()])
+        result.setData(item.name(), item);
+      else
+        result.setData(item.name(), concatenate(item, b[item.name()], dim));
+    }
   return result;
 }
 

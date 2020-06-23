@@ -1,10 +1,10 @@
 .. _contributing:
 
-Contributing to xcipp
+Contributing to scipp
 =====================
 
 Overview
-~~~~~~~~
+--------
 
 Contributions, bug reports, and ideas are always welcome.
 The following section outlines the scope of scipp.
@@ -29,3 +29,8 @@ We therefore restrict what can go into scipp as follows:
   * Published research such as absorption corrections.
 
   Examples of functionality that shall not be added to ``scipp.neutron`` are handling of facility-specific file types or data layouts, or instrument-specific correction algorithms.
+
+Security
+--------
+
+Given the low (yet non-zero) chance of an issue in Scipp that affects the security of a larger system, secutity related issues should be raised via GitHub issues in the same way as "normal" bug reports.

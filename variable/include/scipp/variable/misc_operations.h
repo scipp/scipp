@@ -41,11 +41,6 @@ position(const VariableConstView &x, const VariableConstView &y,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable x(const VariableConstView &pos);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable y(const VariableConstView &pos);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable z(const VariableConstView &pos);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-rotate(const VariableConstView &pos, const VariableConstView &rot);
-SCIPP_VARIABLE_EXPORT VariableView rotate(const VariableConstView &pos,
-                                          const VariableConstView &rot,
-                                          const VariableView &out);
 
 } // namespace geometry
 

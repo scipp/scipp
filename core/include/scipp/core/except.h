@@ -75,10 +75,6 @@ struct SCIPP_CORE_EXPORT SliceError : public std::out_of_range {
   using std::out_of_range::out_of_range;
 };
 
-struct SCIPP_CORE_EXPORT CoordMismatchError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
-
 struct SCIPP_CORE_EXPORT VariancesError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };

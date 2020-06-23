@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <set>
+
 #include "scipp/core/element/arg_list.h"
 
 #include "scipp/variable/event.h"
@@ -190,11 +192,11 @@ T convert_impl(T d, const Dim from, const Dim to,
 namespace {
 template <class T>
 T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
-  auto fields = {"position", "source_position", "sample_position"};
-  // TODO Add `extract` methods to do this in one step and avoid copies?
-  if (from == Dim::Tof) {
-    for (const auto &field : fields) {
-      if (x.coords().contains(Dim(field))) {
+  const auto to_attr = [&](const auto field) {
+    if (!x.coords().contains(Dim(field)))
+      return;
+    if constexpr (std::is_same_v<std::decay_t<T>, Dataset>)
+      for (const auto &item : iter(x))
         // TODO This is an unfortunate duplication of attributes. It is
         // (currently?) required due to a limitation of handling attributes of
         // Dataset and its items *independently* (no mapping of dataset
@@ -203,27 +205,35 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
         // a subsequent unit conversion of an item on its own would not be
         // possible. It needs to be determined if there is a better way to
         // handle attributes so this can be avoided.
-        if constexpr (std::is_same_v<std::decay_t<T>, Dataset>)
-          for (const auto &item : iter(x))
-            item.attrs().set(field, x.coords()[Dim(field)]);
-        x.attrs().set(field, x.coords()[Dim(field)]);
-        x.coords().erase(Dim(field));
+        item.attrs().set(field, x.coords()[Dim(field)]);
+    x.attrs().set(field, x.coords()[Dim(field)]);
+    x.coords().erase(Dim(field));
+  };
+  const auto to_coord = [&](const auto field) {
+    if (!x.attrs().contains(field))
+      return;
+    x.coords().set(Dim(field), x.attrs()[field]);
+    x.attrs().erase(field);
+    if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
+      for (const auto &item : iter(x)) {
+        core::expect::equals(x.coords()[Dim(field)], item.attrs()[field]);
+        item.attrs().erase(field);
       }
     }
-  }
-  if (to == Dim::Tof) {
-    for (const auto &field : fields) {
-      if (x.attrs().contains(field)) {
-        x.coords().set(Dim(field), x.attrs()[field]);
-        x.attrs().erase(field);
-        if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
-          for (const auto &item : iter(x)) {
-            core::expect::equals(x.coords()[Dim(field)], item.attrs()[field]);
-            item.attrs().erase(field);
-          }
-        }
-      }
-    }
+  };
+  // Will be replaced by explicit flag
+  bool scatter = x.coords().contains(Dim("sample-position"));
+  if (scatter) {
+    std::set<Dim> pos_invariant{Dim::DSpacing, Dim::Q};
+    if (pos_invariant.count(to))
+      to_attr("position");
+    if (pos_invariant.count(from))
+      to_coord("position");
+  } else {
+    if (to == Dim::Tof)
+      to_coord("position");
+    else
+      to_attr("position");
   }
   return std::move(x);
 }

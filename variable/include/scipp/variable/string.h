@@ -25,6 +25,10 @@ SCIPP_VARIABLE_EXPORT std::ostream &operator<<(std::ostream &os,
 
 SCIPP_VARIABLE_EXPORT std::string to_string(const Variable &variable);
 SCIPP_VARIABLE_EXPORT std::string to_string(const VariableConstView &variable);
+SCIPP_VARIABLE_EXPORT std::string
+to_string(const std::pair<Dim, VariableConstView> &coord);
+SCIPP_VARIABLE_EXPORT std::string
+to_string(const std::pair<std::string, VariableConstView> &attr);
 
 SCIPP_VARIABLE_EXPORT std::string
 format_variable(const std::string &key, const VariableConstView &variable,

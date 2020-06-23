@@ -46,6 +46,8 @@ General
 Comparison
 ~~~~~~~~~~
 
+Comparison operators compare element-wise and *ignore variances*.
+
 .. autosummary::
    :toctree: ../generated
 
@@ -99,6 +101,9 @@ Geometric
 Group-by (split-apply-combine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Reduction
+---------
+
 .. autosummary::
    :toctree: ../generated
 
@@ -117,6 +122,15 @@ Group-by (split-apply-combine)
    GroupByDataset.mean
    GroupByDataset.min
    GroupByDataset.sum
+
+Other
+-----
+
+.. autosummary::
+   :toctree: ../generated
+
+   GroupByDataArray.copy
+   GroupByDataset.copy
 
 Counts
 ~~~~~~

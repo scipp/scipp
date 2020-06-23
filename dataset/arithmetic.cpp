@@ -6,6 +6,8 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/transform.h"
 
+#include "dataset_operations_common.h"
+
 using namespace scipp::core;
 
 namespace scipp::dataset {
@@ -134,6 +136,8 @@ auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
   for (const auto &item : b)
     if (const auto it = a.find(item.name()); it != a.end())
       res.setData(item.name(), op(*it, item));
+  for (auto &[name, attr] : intersection(a.attrs(), b.attrs()))
+    res.setAttr(name, std::move(attr));
   return res;
 }
 
@@ -143,6 +147,8 @@ auto apply_with_broadcast(const Op &op, const A &a,
   Dataset res;
   for (const auto &item : a)
     res.setData(item.name(), op(item, b));
+  for (auto &[name, attr] : intersection(a.attrs(), b.attrs()))
+    res.setAttr(name, std::move(attr));
   return res;
 }
 
@@ -152,6 +158,8 @@ auto apply_with_broadcast(const Op &op, const DataArrayConstView &a,
   Dataset res;
   for (const auto &item : b)
     res.setData(item.name(), op(a, item));
+  for (auto &[name, attr] : intersection(a.attrs(), b.attrs()))
+    res.setAttr(name, std::move(attr));
   return res;
 }
 
