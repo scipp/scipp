@@ -23,11 +23,6 @@ def test_plot_sliceviewer():
     plot(d)
 
 
-def test_plot_sliceviewer_with_variances():
-    d = make_dense_dataset(ndim=3, variances=True)
-    plot(d, variances=True)
-
-
 def test_plot_sliceviewer_with_two_sliders():
     d = make_dense_dataset(ndim=4)
     plot(d)
@@ -46,11 +41,6 @@ def test_plot_sliceviewer_with_labels():
 def test_plot_sliceviewer_with_3d_projection():
     d = make_dense_dataset(ndim=3)
     plot(d, projection="3d")
-
-
-def test_plot_sliceviewer_with_3d_projection_with_variances():
-    d = make_dense_dataset(ndim=3, variances=True)
-    plot(d, projection="3d", variances=True)
 
 
 @pytest.mark.skip(reason="3D plotting with labels is currently broken after"

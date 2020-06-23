@@ -70,11 +70,10 @@ def test_plot_1d_two_entries_hide_variances():
     d["Background"] = sc.Variable(['tof'],
                                   values=2.0 * np.random.rand(50),
                                   unit=sc.units.counts)
-    plot(d, variances=False)
+    plot(d, errorbars=False)
     # When variances are not present, the plot does not fail, is silently does
     # not show variances
-    print(d)
-    plot(d, variances={"Sample": False, "Background": True})
+    plot(d, errorbars={"Sample": False, "Background": True})
 
 
 def test_plot_1d_three_entries_with_labels():

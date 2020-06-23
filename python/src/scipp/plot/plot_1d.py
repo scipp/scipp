@@ -24,7 +24,7 @@ def plot_1d(scipp_obj_dict=None,
             masks={"color": "k"},
             filename=None,
             figsize=None,
-            mpl_axes=None,
+            ax=None,
             mpl_line_params=None,
             logx=False,
             logy=False,
@@ -44,13 +44,13 @@ def plot_1d(scipp_obj_dict=None,
                   axes=axes,
                   errorbars=errorbars,
                   masks=masks,
-                  mpl_axes=mpl_axes,
+                  ax=ax,
                   mpl_line_params=mpl_line_params,
                   logx=logx or logxy,
                   logy=logy or logxy,
                   grid=grid)
 
-    if mpl_axes is None:
+    if ax is None:
         render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
 
     return sv.members
@@ -62,7 +62,7 @@ class Slicer1d(Slicer):
                  axes=None,
                  errorbars=None,
                  masks=None,
-                 mpl_axes=None,
+                 ax=None,
                  mpl_line_params=None,
                  logx=False,
                  logy=False,
@@ -75,17 +75,18 @@ class Slicer1d(Slicer):
 
         self.scipp_obj_dict = scipp_obj_dict
         self.fig = None
-        self.mpl_axes = mpl_axes
+        self.ax = ax
+        self.mpl_axes = False
         self.input_contains_unaligned_data = False
-        if self.mpl_axes is not None:
-            self.ax = self.mpl_axes
-        else:
+        if self.ax is None:
             self.fig, self.ax = plt.subplots(
                 1,
                 1,
                 figsize=(config.plot.width / config.plot.dpi,
                          config.plot.height / config.plot.dpi),
                 dpi=config.plot.dpi)
+        else:
+            self.mpl_axes = True
         if grid:
             self.ax.grid()
 
@@ -138,7 +139,7 @@ class Slicer1d(Slicer):
                                           errorbars=self.errorbars[name])
             ylab = name_with_unit(var=var, name="")
 
-        if (self.mpl_axes is None) and (var.values is not None):
+        if (not self.mpl_axes) and (var.values is not None):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_ylim(self.ylim)
@@ -245,7 +246,7 @@ class Slicer1d(Slicer):
         return
 
     def update_axes(self, dim):
-        if self.mpl_axes is None:
+        if not self.mpl_axes:
             self.ax.lines = []
             self.ax.collections = []
             self.members.update({
@@ -331,7 +332,7 @@ class Slicer1d(Slicer):
                     zorder=10,
                     fmt="none")
 
-        if self.mpl_axes is None:
+        if not self.mpl_axes:
             deltax = 0.05 * (xmax - xmin)
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
@@ -393,7 +394,7 @@ class Slicer1d(Slicer):
                 coll.set_segments(
                     self.change_segments_y(coll.get_segments(), vslice.values,
                                            np.sqrt(vslice.variances)))
-        if self.input_contains_unaligned_data and (self.mpl_axes is None):
+        if self.input_contains_unaligned_data and (not self.mpl_axes):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_ylim(self.ylim)

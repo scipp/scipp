@@ -118,9 +118,7 @@ class Slicer2d(Slicer):
                 1,
                 figsize=(config.plot.width / config.plot.dpi,
                          config.plot.height / config.plot.dpi),
-                dpi=config.plot.dpi,
-                sharex=True,
-                sharey=True)
+                dpi=config.plot.dpi)
 
         self.im = dict()
         self.cbar = None

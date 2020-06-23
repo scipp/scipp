@@ -76,7 +76,6 @@ def parse_params(params=None,
         if parsed["vmax"] is None:
             parsed["vmax"] = sc.max(variable).value
         need_norm = True
-        print("scipp", parsed)
     # Use numpy to get min and max
     if array is not None:
         if parsed["vmin"] is None or parsed["vmax"] is None:
@@ -90,7 +89,6 @@ def parse_params(params=None,
         if parsed["vmax"] is None:
             parsed["vmax"] = valid.max()
         need_norm = True
-        print("numpy", parsed)
 
     if need_norm:
         if min_val is not None:

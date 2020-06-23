@@ -28,19 +28,9 @@ def test_plot_2d_image_with_labels():
     plot(d, axes=['x', "somelabels"])
 
 
-def test_plot_2d_image_with_variances():
-    d = make_dense_dataset(ndim=2, variances=True)
-    plot(d, variances=True)
-
-
 def test_plot_2d_image_with_filename():
     d = make_dense_dataset(ndim=2)
     plot(d, filename="image.pdf")
-
-
-def test_plot_2d_image_with_variances_with_filename():
-    d = make_dense_dataset(ndim=2, variances=True)
-    plot(d, variances=True, filename="val_and_var.pdf")
 
 
 def test_plot_2d_image_with_bin_edges():

@@ -247,11 +247,11 @@ class Slicer3d(Slicer):
                                                           color="red")
                 self.wireframes[key].visible = False
                 self.surfaces[key] = ipv.plot_surface(**surf_args)
-                self.members["wireframes"]["values"][key] = \
+                self.members["wireframes"][key] = \
                     self.wireframes[key]
-                self.members["surfaces"]["values"][key] = self.surfaces[key]
+                self.members["surfaces"][key] = self.surfaces[key]
 
-            self.surfaces[key].color = self.scalar_map["values"].to_rgba(
+            self.surfaces[key].color = self.scalar_map.to_rgba(
                 self.check_transpose(val["slice"]).flatten())
 
         return
@@ -295,7 +295,7 @@ class Slicer3d(Slicer):
                 self.slider_x[self.name][dim].values[index])
 
             self.surfaces[self.buttons[dim].value.lower()].color = \
-                self.scalar_map["values"].to_rgba(
+                self.scalar_map.to_rgba(
                     self.check_transpose(vslice).flatten())
         return
 
