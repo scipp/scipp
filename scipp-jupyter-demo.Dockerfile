@@ -53,13 +53,11 @@ RUN conda install --yes \
 RUN pip install --upgrade nbconvert
 
 # Get code for SANS direct-beam iteration demo
-RUN OWD=$(pwd) && \
-    cd "/home/$NB_USER/code" && \
+RUN cd "/home/$NB_USER/code" && \
     git clone https://github.com/scipp/ess.git && \
     cd ess/sans && \
     git checkout direct-beam-cleanup && \
     python make_config.py -f "/home/$NB_USER/data" && \
-    cd $OWD && \
     ln -s "/home/$NB_USER/code/ess/sans" "/home/$NB_USER/sans-demo"
 
 # Add the tutorials and user guide notebooks
