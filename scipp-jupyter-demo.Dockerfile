@@ -2,8 +2,8 @@ FROM jupyter/base-notebook
 
 # Avoid using passwords for jupyter notebook
 USER root
-RUN apt-get update
-RUN apt-get install -y libgl1 libglu1-mesa && \
+RUN apt-get update && \
+    apt-get install -y libgl1 libglu1-mesa git && \
     apt-get clean
 RUN sed -i "s/jupyter notebook/jupyter notebook --NotebookApp.token='' --NotebookApp.password=''/" /usr/local/bin/start-notebook.sh
 
@@ -11,6 +11,7 @@ USER $NB_USER
 
 # Remove default "work" directory
 RUN rm -r "/home/$NB_USER/work"
+RUN mkdir -p "/home/$NB_USER/code"
 RUN mkdir -p "/home/$NB_USER/data"
 
 # Add datafiles needed for neutron tutorials
@@ -23,6 +24,15 @@ RUN wget --quiet -O "/home/$NB_USER/data/PG3_4844_event.nxs" "${FTPURL}${PG3_484
     wget --quiet -O "/home/$NB_USER/data/PG3_4866_event.nxs" "${FTPURL}${PG3_4866_HASH}" && \
     wget --quiet -O "/home/$NB_USER/data/PG3_4871_event.nxs" "${FTPURL}${PG3_4871_HASH}" && \
     wget --quiet -O "/home/$NB_USER/data/GEM40979.raw" "${FTPURL}${GEM40979_HASH}"
+# Datafiles for SANS direct-beam iteration demo
+ARG SANSURL="https://github.com/ess-dmsc-dram/loki_tube_scripts/raw/update-raw-files/test/test_data/"
+RUN wget --quiet -P "/home/$NB_USER/data" "${SANSURL}LARMOR00049334.nxs" && \
+    wget --quiet -P "/home/$NB_USER/data" "${SANSURL}LARMOR00049335.nxs" && \
+    wget --quiet -P "/home/$NB_USER/data" "${SANSURL}LARMOR00049338.nxs" && \
+    wget --quiet -P "/home/$NB_USER/data" "${SANSURL}LARMOR00049339.nxs" && \
+    wget --quiet -P "/home/$NB_USER/data" "${SANSURL}DirectBeam_20feb_full_v3.dat" && \
+    wget --quiet -P "/home/$NB_USER/data" "${SANSURL}ModeratorStdDev_TS2_SANS_LETexptl_07Aug2015.txt"
+
 
 # Install Scipp and dependencies
 RUN conda install --yes \
@@ -41,6 +51,14 @@ RUN conda install --yes \
 
 # Avoid weird tornado AttributeError
 RUN pip install --upgrade nbconvert
+
+# Get code for SANS direct-beam iteration demo
+RUN cd "/home/$NB_USER/code" && \
+    git clone https://github.com/scipp/ess.git && \
+    cd ess/sans && \
+    git checkout direct-beam-cleanup && \
+    python make_config.py -f "/home/$NB_USER/data" && \
+    ln -s "/home/$NB_USER/code/ess/sans" "/home/$NB_USER/sans-demo"
 
 # Add the tutorials and user guide notebooks
 ADD 'docs/event-data/' "/home/$NB_USER/event-data"
