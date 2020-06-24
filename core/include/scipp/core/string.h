@@ -5,7 +5,9 @@
 #pragma once
 
 #include <chrono>
+#include <iomanip>
 #include <map>
+#include <sstream>
 #include <string>
 
 #include <Eigen/Dense>
@@ -60,10 +62,20 @@ template <class T> std::string element_to_string(const T &item) {
     return {'"' + item + "\", "};
   else if constexpr (std::is_same_v<T, bool>)
     return core::to_string(item) + ", ";
-  else if constexpr (std::is_same_v<T, std::chrono::system_clock::time_point>)
-    // This probably needs some careful extraction, not just .count()
-    return core::to_string(item.time_since_epoch().count()) + ", ";
-  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+
+  else if constexpr (std::is_same_v<T, std::chrono::system_clock::time_point>) {
+    // This returns regular timestamp with nanoseconds
+    // e.g. 2020-06-24 14:36:07.9792296
+    auto time = std::chrono::system_clock::to_time_t(item);
+    auto tm = *std::gmtime(&time);
+    auto epoch = item.time_since_epoch();
+    auto ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(epoch).count() %
+        1000000000;
+    std::stringstream ss;
+    ss << std::put_time(&tm, "%F %T.") << ns;
+    return core::to_string(ss.str()) + ", ";
+  } else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
     return {"(" + to_string(item[0]) + ", " + to_string(item[1]) + ", " +
             to_string(item[2]) + "), "};
   else if constexpr (std::is_same_v<T, Eigen::Quaterniond>)

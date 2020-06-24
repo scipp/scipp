@@ -1112,16 +1112,6 @@ TEST(VariableTest, datetime_dtype) {
   EXPECT_EQ(dt.dtype(), dtype<std::chrono::system_clock::time_point>);
 }
 
-// TEST(VariableTest, datetime_variable) {
-//   std::chrono::nanoseconds ns10;
-//   ns10 = std::chrono::nanoseconds { 10 };
-//   auto dt = makeVariable<std::chrono::system_clock::time_point>(Dims(),
-//   Shape(),
-//                          units::ns,
-//                          Values{std::chrono::system_clock::time_point{ns10}});
-//   EXPECT_EQ(std::chrono::system_clock::time_point{ns10}*units::ns, dt)
-// }
-
 TEST(VariableTest, construct_time_unit) {
   Variable refMult =
       makeVariable<int64_t>(Dims(), Shape(), units::ns, Values{1000});
