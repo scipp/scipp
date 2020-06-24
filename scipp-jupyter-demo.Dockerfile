@@ -25,7 +25,7 @@ RUN wget --quiet -O "/home/$NB_USER/data/PG3_4844_event.nxs" "${FTPURL}${PG3_484
     wget --quiet -O "/home/$NB_USER/data/PG3_4871_event.nxs" "${FTPURL}${PG3_4871_HASH}" && \
     wget --quiet -O "/home/$NB_USER/data/GEM40979.raw" "${FTPURL}${GEM40979_HASH}"
 # Datafiles for SANS direct-beam iteration demo
-ARG SANSURL="https://github.com/ess-dmsc-dram/loki_tube_scripts/raw/update-raw-files/test/test_data/"
+ARG SANSURL="https://github.com/ess-dmsc-dram/loki_tube_scripts/raw/master/test/test_data/"
 RUN wget --quiet -P "/home/$NB_USER/data" "${SANSURL}LARMOR00049334.nxs" && \
     wget --quiet -P "/home/$NB_USER/data" "${SANSURL}LARMOR00049335.nxs" && \
     wget --quiet -P "/home/$NB_USER/data" "${SANSURL}LARMOR00049338.nxs" && \
