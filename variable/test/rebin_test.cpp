@@ -21,6 +21,25 @@ TEST(Variable, rebin) {
   EXPECT_EQ(rebinned.values<double>()[0], 3.0);
 }
 
+TEST(Variable, rebin_outer) {
+  auto var = makeVariable<double>(Dimensions{{Dim::Y, 6}, {Dim::X, 2}},
+                                  Values{1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
+  var.setUnit(units::counts);
+  const auto oldEdge =
+      makeVariable<double>(Dims{Dim::Y}, Shape{7}, Values{1, 2, 3, 4, 5, 6, 7});
+  const auto newEdge =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 3, 8});
+  auto rebinned = rebin(var, Dim::Y, oldEdge, newEdge);
+  ASSERT_EQ(rebinned.dims().volume(), 4);
+  ASSERT_EQ(rebinned.values<double>().size(), 4);
+
+  auto expected = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
+                                       Values{4, 6, 14, 18});
+  expected.setUnit(units::counts);
+
+  ASSERT_EQ(rebinned, expected);
+}
+
 class RebinMask1DTest : public ::testing::Test {
 protected:
   Variable x = makeVariable<double>(Dimensions{Dim::X, 11},
@@ -53,17 +72,14 @@ TEST_F(RebinMask1DTest, mask_weights_1d) {
   ASSERT_EQ(result, expected);
 }
 
-class RebinMask2DTest : public ::testing::Test {
-protected:
+TEST(Variable, rebin_mask_2d) {
   Variable x = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 6}},
                                     Values{1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
 
   Variable mask = makeVariable<bool>(Dimensions{{Dim::Y, 2}, {Dim::X, 5}},
                                      Values{false, true, false, false, true,
                                             false, false, true, false, false});
-};
 
-TEST_F(RebinMask2DTest, mask_weights_2d) {
   const auto edges = makeVariable<double>(Dimensions{Dim::X, 5},
                                           Values{1.0, 3.0, 4.0, 5.5, 6.0});
   const auto expected = makeVariable<bool>(
@@ -71,6 +87,26 @@ TEST_F(RebinMask2DTest, mask_weights_2d) {
       Values{true, false, true, true, false, true, false, false});
 
   const auto result = rebin(mask, Dim::X, x, edges);
+
+  ASSERT_EQ(result, expected);
+}
+
+TEST(Variable, rebin_mask_outer) {
+  const auto mask =
+      makeVariable<bool>(Dimensions{{Dim::Y, 5}, {Dim::X, 2}},
+                         Values{false, true, false, false, true, false, false,
+                                true, false, false});
+
+  const auto oldEdge =
+      makeVariable<double>(Dimensions{Dim::Y, 6}, Values{1, 2, 3, 4, 5, 6});
+
+  const auto newEdge =
+      makeVariable<double>(Dimensions{Dim::Y, 4}, Values{0.0, 2.0, 3.5, 6.5});
+  const auto expected =
+      makeVariable<bool>(Dimensions{{Dim::Y, 3}, {Dim::X, 2}},
+                         Values{false, true, true, false, true, true});
+
+  const auto result = rebin(mask, Dim::Y, oldEdge, newEdge);
 
   ASSERT_EQ(result, expected);
 }
