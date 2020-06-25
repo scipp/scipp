@@ -14,13 +14,25 @@ namespace scipp::core::element {
 
 constexpr auto add_inplace_types =
     arg_list<double, float, int64_t, int32_t, Eigen::Vector3d,
+             std::tuple<scipp::core::time_point, int64_t>,
              std::tuple<double, float>, std::tuple<int64_t, int32_t>,
              std::tuple<int64_t, bool>>;
 
-constexpr auto plus_equals =
-    overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};
-constexpr auto minus_equals =
-    overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};
+constexpr auto plus_equals = overloaded{
+    add_inplace_types,
+    [](auto &&a, const auto &b) { a += b; },
+    [](scipp::core::time_point &a, const int64_t &b) {
+      a += std::chrono::duration<int64_t>(b);
+    },
+};
+
+constexpr auto minus_equals = overloaded{
+    add_inplace_types,
+    [](auto &&a, const auto &b) { a -= b; },
+    [](scipp::core::time_point &a, const int64_t &b) {
+      a -= std::chrono::duration<int64_t>(b);
+    },
+};
 
 constexpr auto mul_inplace_types =
     arg_list<double, float, int64_t, int32_t, std::tuple<double, float>,

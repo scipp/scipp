@@ -128,9 +128,8 @@ TEST(UnitTest, conversion_factors) {
                                                    units::boost_units::us);
   boost::units::quantity<units::detail::tof::tof> h(9.0 *
                                                     boost::units::si::seconds);
-  boost::units::quantity<boost::units::si::time> i(
-      20 * units::boost_units::ns);
-                                                      
+  boost::units::quantity<boost::units::si::time> i(20 * units::boost_units::ns);
+
   EXPECT_DOUBLE_EQ(a.value(), 2.0);
   EXPECT_DOUBLE_EQ(b.value(), 3.0e-10);
   EXPECT_DOUBLE_EQ(c.value(), 4.0e10);

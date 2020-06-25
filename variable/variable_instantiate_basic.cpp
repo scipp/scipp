@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <chrono>
 #include <string>
 #include <chrono>
 
@@ -16,7 +17,7 @@ INSTANTIATE_VARIABLE(float32, float)
 INSTANTIATE_VARIABLE(int64, int64_t)
 INSTANTIATE_VARIABLE(int32, int32_t)
 INSTANTIATE_VARIABLE(bool, bool)
-INSTANTIATE_VARIABLE(datetime64, std::chrono::system_clock::time_point)
+INSTANTIATE_VARIABLE(datetime64, scipp::core::time_point)
 INSTANTIATE_VARIABLE(vector_3_float64, Eigen::Vector3d)
 INSTANTIATE_VARIABLE(quaternion_float64, Eigen::Quaterniond)
 INSTANTIATE_VARIABLE(event_list_float64, event_list<double>)

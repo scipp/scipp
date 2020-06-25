@@ -47,7 +47,7 @@ constexpr scipp::index unit_index(Unit unit, std::tuple<Units...>) {
 } // namespace detail
 
 namespace boost_units {
-typedef decltype(boost::units::si::nano*boost::units::si::seconds) nanosecond;
+typedef decltype(boost::units::si::nano * boost::units::si::seconds) nanosecond;
 static constexpr boost::units::si::dimensionless dimensionless;
 static constexpr boost::units::si::length m;
 static constexpr boost::units::si::time s;

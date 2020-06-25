@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <chrono>
 #include <variant>
 #include <chrono>
 
@@ -150,7 +151,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
     if (type == dtype<std::string>)
       return {Getter::template get<std::string>(view)};
     if (type == dtype<std::chrono::system_clock::time_point>)
-      return {Getter::template get<std::chrono::system_clock::time_point>(view)};
+      return {
+          Getter::template get<std::chrono::system_clock::time_point>(view)};
     if (type == dtype<event_list<double>>)
       return {Getter::template get<event_list<double>>(view)};
     if (type == dtype<event_list<float>>)
@@ -369,7 +371,8 @@ public:
 };
 
 using as_ElementArrayView = as_ElementArrayViewImpl<
-    double, float, int64_t, int32_t, bool, std::string, std::chrono::system_clock::time_point, event_list<double>,
+    double, float, int64_t, int32_t, bool, std::string,
+    std::chrono::system_clock::time_point, event_list<double>,
     event_list<float>, event_list<int64_t>, DataArray, Dataset, Eigen::Vector3d,
     Eigen::Quaterniond, scipp::python::PyObject>;
 
