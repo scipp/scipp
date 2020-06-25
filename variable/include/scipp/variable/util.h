@@ -13,4 +13,8 @@ SCIPP_VARIABLE_EXPORT Variable linspace(const VariableConstView &start,
                                         const VariableConstView &stop,
                                         const Dim dim, const scipp::index num);
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable values(const VariableConstView &x);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+variances(const VariableConstView &x);
+
 } // namespace scipp::variable

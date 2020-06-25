@@ -6,6 +6,8 @@
 #include "make_events.h"
 #include "test_macros.h"
 
+#include "scipp/core/element/arg_list.h"
+
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
@@ -990,6 +992,15 @@ TEST(TransformFlagsTest, variance_on_arg) {
                except::VariancesError);
   EXPECT_NO_THROW((out = transform<std::tuple<double>>(
                        var_no_variance, var_no_variance, all_args_with_flag)));
+}
+
+TEST(TransformFlagsTest, no_out_variance) {
+  constexpr auto op =
+      overloaded{transform_flags::no_out_variance, element::arg_list<double>,
+                 [](const auto) { return true; },
+                 [](const units::Unit &) { return units::one; }};
+  const auto var = makeVariable<double>(Values{1.0}, Variances{1.0});
+  EXPECT_EQ(transform(var, op), true * units::one);
 }
 
 TEST(TransformFlagsTest, variance_on_arg_in_place) {

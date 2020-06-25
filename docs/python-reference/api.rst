@@ -42,6 +42,8 @@ General
    reshape
    sort
    sqrt
+   values
+   variances
 
 Comparison
 ~~~~~~~~~~
