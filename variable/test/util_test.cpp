@@ -79,7 +79,7 @@ TEST(LinspaceTest, increasing_2d) {
 }
 
 TEST(UtilTest, values_variances) {
-  const auto var = makeVariable<double>(Values{1}, Variances{2});
-  EXPECT_EQ(values(var), 1.0 * units::one);
-  EXPECT_EQ(variances(var), 2.0 * units::one);
+  const auto var = makeVariable<double>(Values{1}, Variances{2}, units::m);
+  EXPECT_EQ(values(var), 1.0 * units::m);
+  EXPECT_EQ(variances(var), 2.0 * (units::m * units::m));
 }
