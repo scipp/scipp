@@ -97,13 +97,16 @@ class Slicer2d(Slicer):
         self.global_vmin = np.Inf
         self.global_vmax = np.NINF
         if resolution is not None:
-            self.image_resolution = resolution
+            if isinstance(resolution, int):
+                self.image_resolution = {"x": resolution, "y": resolution}
+            else:
+                self.image_resolution = resolution
         else:
             self.image_resolution = 0.64 * config.plot.dpi / 96.0
-            self.image_resolution = [
-                int(self.image_resolution * config.plot.width),
-                int(self.image_resolution * config.plot.height)
-            ]
+            self.image_resolution = {
+                "x": int(self.image_resolution * config.plot.width),
+                "y": int(self.image_resolution * config.plot.height)
+            }
         self.xyrebin = {}
         self.xyedges = {}
         self.xywidth = {}
@@ -227,53 +230,35 @@ class Slicer2d(Slicer):
 
         extent_array = np.array(list(self.extent.values())).flatten()
 
-        # Create coordinate axes for resampled array to be used as image
-        self.xyrebin["x"] = sc.Variable(
-            dims=[axparams['x']["dim"]],
-            values=np.linspace(extent_array[0], extent_array[1],
-                               self.image_resolution[0] + 1),
-            unit=self.slider_x[self.name][axparams['x']["dim"]].unit)
-        self.xyrebin["y"] = sc.Variable(
-            dims=[axparams['y']["dim"]],
-            values=np.linspace(extent_array[2], extent_array[3],
-                               self.image_resolution[1] + 1),
-            unit=self.slider_x[self.name][axparams['y']["dim"]].unit)
-        self.image_dx = self.xyrebin["x"].values[1] - self.xyrebin["x"].values[
-            0]
-        self.image_dy = self.xyrebin["y"].values[1] - self.xyrebin["y"].values[
-            0]
+        for xy, param in axparams.items():
+            # Create coordinate axes for resampled array to be used as image
+            offset = 2 * (xy == "y")
+            self.xyrebin[xy] = sc.Variable(
+                dims=[param["dim"]],
+                values=np.linspace(extent_array[0 + offset],
+                                   extent_array[1 + offset],
+                                   self.image_resolution[xy] + 1),
+                unit=self.slider_x[self.name][param["dim"]].unit)
 
-        # Create bin-edge coordinates in the case of non bin-edges, since rebin
-        # only accepts bin edges.
-        xdims = self.xyrebin["x"].dims
-        if not self.histograms[self.name][xdims[0]]:
-            self.xyedges["x"] = sc.Variable(
-                dims=xdims,
-                values=centers_to_edges(
-                    self.slider_x[self.name][xdims[0]].values),
-                unit=self.slider_x[self.name][xdims[0]].unit)
-        else:
-            self.xyedges["x"] = self.slider_x[self.name][xdims[0]].astype(
-                sc.dtype.float64)
-        ydims = self.xyrebin["y"].dims
-        if not self.histograms[self.name][ydims[0]]:
-            self.xyedges["y"] = sc.Variable(
-                dims=ydims,
-                values=centers_to_edges(
-                    self.slider_x[self.name][ydims[0]].values),
-                unit=self.slider_x[self.name][ydims[0]].unit)
-        else:
-            self.xyedges["y"] = self.slider_x[self.name][ydims[0]].astype(
-                sc.dtype.float64)
+            # Create bin-edge coordinates in the case of non bin-edges, since
+            # rebin only accepts bin edges.
+            xydims = self.xyrebin[xy].dims
+            if not self.histograms[self.name][xydims[0]]:
+                self.xyedges[xy] = sc.Variable(
+                    dims=xydims,
+                    values=centers_to_edges(
+                        self.slider_x[self.name][xydims[0]].values),
+                    unit=self.slider_x[self.name][xydims[0]].unit)
+            else:
+                self.xyedges[xy] = self.slider_x[self.name][xydims[0]].astype(
+                    sc.dtype.float64)
 
-        # Compute bin widths for normalization pre-rebin in order to retain the
-        # pixel values instead of spreading the data over the pixels.
-        self.xywidth["x"] = sc.Variable(
-            dims=self.xyrebin["x"].dims,
-            values=np.ediff1d(self.xyedges["x"].values) / self.image_dx)
-        self.xywidth["y"] = sc.Variable(
-            dims=self.xyrebin["y"].dims,
-            values=np.ediff1d(self.xyedges["y"].values) / self.image_dy)
+            # Pixel widths used for scaling before rebin step
+            self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
+                                self.xyedges[xy][param["dim"], :-1]) / (
+                                    self.xyrebin[xy][param["dim"], 1] -
+                                    self.xyrebin[xy][param["dim"], 0])
+            self.xywidth[xy].unit = sc.units.one
 
         # Set axes limits and ticks
         with warnings.catch_warnings():
