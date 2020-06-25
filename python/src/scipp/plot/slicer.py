@@ -260,41 +260,49 @@ class Slicer:
         locator = {False: ticker.AutoLocator(), True: ticker.LogLocator()}
 
         dim = axis
-        dim_coord_dim = data_array.coords[dim].dims[0]
         # Convert to Dim object?
         if isinstance(dim, str):
             dim = Dim(dim)
 
-        tp = data_array.coords[dim].dtype
+        if dim in data_array.coords:
 
-        if tp == dtype.vector_3_float64:
-            var = make_fake_coord(dim,
-                                  self.shapes[name][dim],
-                                  unit=data_array.coords[dim].unit)
-            form = ticker.FuncFormatter(lambda val, pos: "(" + ",".join([
-                value_to_string(item, precision=2) for item in self.
-                scipp_obj_dict[name].coords[dim].values[int(val)]
-            ]) + ")" if (int(val) >= 0 and int(val) < self.shapes[name][dim])
-                                        else "")
-            formatter.update({False: form, True: form})
-            locator[False] = ticker.MaxNLocator(integer=True)
+            dim_coord_dim = data_array.coords[dim].dims[0]
+            tp = data_array.coords[dim].dtype
 
-        elif tp == dtype.string:
-            var = make_fake_coord(dim,
-                                  self.shapes[name][dim],
-                                  unit=data_array.coords[dim].unit)
-            form = ticker.FuncFormatter(lambda val, pos: self.scipp_obj_dict[
-                name].coords[dim].values[int(val)] if (int(val) >= 0 and int(
-                    val) < self.shapes[name][dim]) else "")
-            formatter.update({False: form, True: form})
-            locator[False] = ticker.MaxNLocator(integer=True)
+            if tp == dtype.vector_3_float64:
+                var = make_fake_coord(dim,
+                                      self.shapes[name][dim],
+                                      unit=data_array.coords[dim].unit)
+                form = ticker.FuncFormatter(lambda val, pos: "(" + ",".join([
+                    value_to_string(item, precision=2) for item in self.
+                    scipp_obj_dict[name].coords[dim].values[int(val)]
+                ]) + ")" if (int(val) >= 0 and int(val) < self.shapes[name][
+                    dim]) else "")
+                formatter.update({False: form, True: form})
+                locator[False] = ticker.MaxNLocator(integer=True)
 
-        elif dim != dim_coord_dim:  # non-dimension coordinate
-            var = data_array.coords[dim_coord_dim]
-            form = ticker.FuncFormatter(lambda val, pos: value_to_string(
-                data_array.coords[dim].values[np.abs(data_array.coords[
-                    dim_coord_dim].values - val).argmin()]))
-            formatter.update({False: form, True: form})
+            elif tp == dtype.string:
+                var = make_fake_coord(dim,
+                                      self.shapes[name][dim],
+                                      unit=data_array.coords[dim].unit)
+                form = ticker.FuncFormatter(
+                    lambda val, pos: self.scipp_obj_dict[name].coords[
+                        dim].values[int(val)] if (int(val) >= 0 and int(
+                            val) < self.shapes[name][dim]) else "")
+                formatter.update({False: form, True: form})
+                locator[False] = ticker.MaxNLocator(integer=True)
+
+            elif dim != dim_coord_dim:  # non-dimension coordinate
+                var = data_array.coords[dim_coord_dim]
+                form = ticker.FuncFormatter(lambda val, pos: value_to_string(
+                    data_array.coords[dim].values[np.abs(data_array.coords[
+                        dim_coord_dim].values - val).argmin()]))
+                formatter.update({False: form, True: form})
+            else:
+                var = data_array.coords[dim]
+
         else:
-            var = data_array.coords[dim]
+            # dim not found in data_array.coords
+            var = make_fake_coord(dim, self.shapes[name][dim])
+
         return dim, var, formatter, locator
