@@ -43,16 +43,23 @@ template <class T> void zero(const core::ValueAndVariance<span<T>> &data) {
 }
 
 constexpr auto values =
-    overloaded{core::element::arg_list<double, float>, [](const auto &x) {
+    overloaded{transform_flags::no_out_variance,
+               core::element::arg_list<double, float>, [](const auto &x) {
                  if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
                    return x.value;
                  else
                    return x;
                }};
 
-constexpr auto variances = overloaded{core::element::arg_list<double, float>,
-                                      transform_flags::expect_variance_arg<0>,
-                                      [](const auto &x) { return x.variance; },
-                                      [](const units::Unit &u) { return u; }};
+constexpr auto variances = overloaded{
+    transform_flags::no_out_variance, core::element::arg_list<double, float>,
+    transform_flags::expect_variance_arg<0>,
+    [](const auto &x) {
+      if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+        return x.variance;
+      else
+        return x; // unreachable but required for instantiation
+    },
+    [](const units::Unit &u) { return u * u; }};
 
 } // namespace scipp::core::element

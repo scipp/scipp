@@ -70,6 +70,6 @@ TEST(ElementUtilTest, values_variances) {
   EXPECT_EQ(values(units::m), units::m);
   EXPECT_EQ(values(x), 1.0);
   EXPECT_EQ(values(1.2), 1.2);
-  EXPECT_EQ(variances(units::m), units::m);
+  EXPECT_EQ(variances(units::m), units::m * units::m);
   EXPECT_EQ(variances(x), 2.0);
 }

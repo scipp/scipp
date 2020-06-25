@@ -3,10 +3,12 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/util.h"
+#include "scipp/core/element/util.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
+#include "scipp/variable/transform.h"
 
 using namespace scipp::core;
 
@@ -37,6 +39,13 @@ Variable linspace(const VariableConstView &start, const VariableConstView &stop,
             range);
   out.slice({dim, num - 1}).assign(stop); // endpoint included
   return out;
+}
+
+Variable values(const VariableConstView &x) {
+  return transform(x, element::values);
+}
+Variable variances(const VariableConstView &x) {
+  return transform(x, element::variances);
 }
 
 } // namespace scipp::variable
