@@ -12,6 +12,7 @@
 #include <limits>
 #include <vector>
 
+using namespace scipp;
 using namespace scipp::core::element;
 
 TEST(ElementUtilTest, convertMaskedToZero_masks_special_vals) {
@@ -62,4 +63,13 @@ TEST(ElementUtilTest, convertMaskedToZero_accepts_all_types) {
       std::is_same_v<decltype(convertMaskedToZero(int32_t{}, true)), int32_t>);
   static_assert(
       std::is_same_v<decltype(convertMaskedToZero(int64_t{}, true)), int64_t>);
+}
+
+TEST(ElementUtilTest, values_variances) {
+  ValueAndVariance x{1.0, 2.0};
+  EXPECT_EQ(values(units::m), units::m);
+  EXPECT_EQ(values(x), 1.0);
+  EXPECT_EQ(values(1.2), 1.2);
+  EXPECT_EQ(variances(units::m), units::m);
+  EXPECT_EQ(variances(x), 2.0);
 }
