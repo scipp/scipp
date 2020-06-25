@@ -1000,3 +1000,27 @@ def test_equal():
 def test_not_equal():
     var = sc.Variable()
     assert_export(sc.not_equal, x=var, y=var)
+
+
+def test_radd_int():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3])
+    assert (var + 1).dtype == var.dtype
+    assert (1 + var).dtype == var.dtype
+
+
+def test_rsub_int():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3])
+    assert (var - 1).dtype == var.dtype
+    assert (1 - var).dtype == var.dtype
+
+
+def test_rmul_int():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3])
+    assert (var * 1).dtype == var.dtype
+    assert (1 * var).dtype == var.dtype
+
+
+def test_rtruediv_int():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3])
+    assert (var / 1).dtype == var.dtype
+    assert (1 / var).dtype == var.dtype
