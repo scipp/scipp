@@ -56,7 +56,7 @@ RUN pip install --upgrade nbconvert
 RUN cd "/home/$NB_USER/code" && \
     git clone https://github.com/scipp/ess.git && \
     cd ess/sans && \
-    git checkout direct-beam-cleanup && \
+    git checkout direct-beam-annotated && \
     python make_config.py -f "/home/$NB_USER/data" && \
     ln -s "/home/$NB_USER/code/ess/sans" "/home/$NB_USER/sans-demo"
 
