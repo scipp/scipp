@@ -30,7 +30,11 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
   // coord is 1D.
   int iold = 0;
   int inew = 0;
-  const bool is_bool = newT.dtype() == core::dtype<bool>;
+  // TODO: Using dtype<bool> does not seem to compile on Windows. It is not
+  // clear why that is, since dtype<double> is working below.
+  // We use the longer syntax below which compiles instead of:
+  // const bool is_bool = newT.dtype() == dtype<bool>;
+  const bool is_bool = newT.dtype().index == std::type_index(typeid(bool));
   while ((iold < oldSize) && (inew < newSize)) {
     auto xo_low = xold[iold];
     auto xo_high = xold[iold + 1];
