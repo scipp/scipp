@@ -4,11 +4,12 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <tuple>
+
 #include "scipp/common/overloaded.h"
 #include "scipp/core/except.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/core/values_and_variances.h"
-#include <tuple>
 
 namespace scipp::core {
 

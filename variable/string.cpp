@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include <chrono>
 #include <set>
-#include <chrono>
 
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"
