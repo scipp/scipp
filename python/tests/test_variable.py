@@ -647,6 +647,11 @@ def test_sqrt_out():
     assert_export(sc.sqrt, var, var)
 
 
+def test_values_variances():
+    assert_export(sc.values, sc.Variable())
+    assert_export(sc.variances, sc.Variable())
+
+
 def test_sum():
     var = sc.Variable(dims=['x', 'y'],
                       values=np.array([[0.1, 0.3], [0.2, 0.6]]),
