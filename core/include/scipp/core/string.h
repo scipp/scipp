@@ -9,7 +9,6 @@
 #include <map>
 #include <sstream>
 #include <string>
-#include <chrono>
 
 #include <Eigen/Dense>
 
@@ -64,7 +63,7 @@ template <class T> std::string element_to_string(const T &item) {
   else if constexpr (std::is_same_v<T, bool>)
     return core::to_string(item) + ", ";
 
-  else if constexpr (std::is_same_v<T, std::chrono::system_clock::time_point>) {
+  else if constexpr (std::is_same_v<T, scipp::core::time_point>) {
     // This returns regular timestamp with nanoseconds
     // e.g. 2020-06-24 14:36:07.9792296
     auto time = std::chrono::system_clock::to_time_t(item);
@@ -74,7 +73,7 @@ template <class T> std::string element_to_string(const T &item) {
         std::chrono::duration_cast<std::chrono::nanoseconds>(epoch).count() %
         1000000000;
     std::stringstream ss;
-    ss << std::put_time(&tm, "%F %T.") << ns;
+    ss << std::put_time(&tm, "%FT%T.") << ns;
     return core::to_string(ss.str()) + ", ";
   } else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
     return {"(" + to_string(item[0]) + ", " + to_string(item[1]) + ", " +

@@ -2,9 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <chrono>
 #include <string>
-#include <chrono>
 
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable.tcc"

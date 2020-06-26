@@ -4,12 +4,10 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <chrono>
 #include <optional>
 #include <string>
 #include <utility>
 #include <vector>
-#include <chrono>
 
 #include <Eigen/Dense>
 
@@ -225,9 +223,8 @@ template <class... Ts>
 Variable::Variable(const DType &type, Ts &&... args)
     : Variable{
           construct<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-                    Eigen::Quaterniond, std::string,
-                    std::chrono::system_clock::time_point, event_list<double>,
-                    event_list<float>, event_list<int64_t>,
+                    Eigen::Quaterniond, std::string, scipp::core::time_point,
+                    event_list<double>, event_list<float>, event_list<int64_t>,
                     event_list<int32_t>>(type, std::forward<Ts>(args)...)} {}
 
 /// Non-mutable view into (a subset of) a Variable.

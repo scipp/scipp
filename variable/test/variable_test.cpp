@@ -1107,9 +1107,9 @@ TEST(VariableTest, construct_mult_dev_unit) {
 }
 
 TEST(VariableTest, datetime_dtype) {
-  auto dt = makeVariable<std::chrono::system_clock::time_point>(
-      Values{std::chrono::system_clock::time_point{}});
-  EXPECT_EQ(dt.dtype(), dtype<std::chrono::system_clock::time_point>);
+  auto dt =
+      makeVariable<scipp::core::time_point>(Values{scipp::core::time_point{}});
+  EXPECT_EQ(dt.dtype(), dtype<scipp::core::time_point>);
 }
 
 TEST(VariableTest, construct_time_unit) {

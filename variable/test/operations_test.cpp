@@ -120,7 +120,7 @@ TEST(Variable, operator_plus_equal_non_arithmetic_type) {
 
 TEST(Variable, operator_plus_equal_time_type) {
   auto now = std::chrono::system_clock::now();
-  auto a = makeVariable<std::chrono::system_clock::time_point>(
+  auto a = makeVariable<scipp::core::time_point>(
       Shape{1}, units::Unit{units::ns}, Values{now});
   const auto copy(a);
   EXPECT_THROW(a += float(1.0) * units::ns, except::TypeError);
