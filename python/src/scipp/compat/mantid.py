@@ -426,7 +426,7 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
     }
 
     if advanced_geometry:
-        info["coords"]["detector_info"] = make_detector_info(ws)
+        info["coords"]["detector-info"] = make_detector_info(ws)
 
     if not np.all(np.isnan(pos.values)):
         info["coords"].update({"position": pos})
@@ -473,8 +473,8 @@ def convert_monitors_ws(ws, converter, **ignored):
         # Remove redundant information that is duplicated from workspace
         # We get this extra information from the generic converter reuse
         del single_monitor.coords['sample-position']
-        if 'detector_info' in single_monitor.coords:
-            del single_monitor.coords['detector_info']
+        if 'detector-info' in single_monitor.coords:
+            del single_monitor.coords['detector-info']
         del single_monitor.attrs['run']
         del single_monitor.attrs['sample']
         monitors.append((comp_info.name(det_index), single_monitor))

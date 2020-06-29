@@ -15,6 +15,7 @@
 namespace scipp::core::element {
 
 constexpr auto comparison = overloaded{
+    transform_flags::no_out_variance,
     arg_list<double, float, int64_t, int32_t, std::tuple<int64_t, int32_t>,
              std::tuple<int32_t, int64_t>>,
     [](const units::Unit &x, const units::Unit &y) {
