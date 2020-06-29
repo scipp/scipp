@@ -340,8 +340,7 @@ Mostly equivalent to Variable, see there for details.)");
       },
       py::call_guard<py::gil_scoped_release>(),
       Docstring()
-          .description(
-              "Check if the values of a variable are evenly spaced.")
+          .description("Check if the values of a variable are evenly spaced.")
           .returns("Returns True if the variable contains regularly spaced "
                    "values, False otherwise.")
           .rtype("bool")

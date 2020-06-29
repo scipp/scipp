@@ -157,14 +157,14 @@ class Slicer2d(Slicer):
         return
 
     def make_default_imshow(self, cmap):
-        return self.ax.imshow(
-            [[1.0, 1.0], [1.0, 1.0]],
-            norm=self.params["values"][self.name]["norm"],
-            extent=np.array(list(self.extent.values())).flatten(),
-            origin="lower",
-            aspect=self.aspect,
-            interpolation="nearest",
-            cmap=cmap)
+        return self.ax.imshow([[1.0, 1.0], [1.0, 1.0]],
+                              norm=self.params["values"][self.name]["norm"],
+                              extent=np.array(list(
+                                  self.extent.values())).flatten(),
+                              origin="lower",
+                              aspect=self.aspect,
+                              interpolation="nearest",
+                              cmap=cmap)
 
     def update_buttons(self, owner, event, dummy):
         toggle_slider = False
@@ -312,8 +312,10 @@ class Slicer2d(Slicer):
             vslice = sc.histogram(vslice)
             autoscale_cbar = True
 
-        is_not_linspace = {"x": not sc.is_linspace(self.xyedges["x"]),
-                           "y": not sc.is_linspace(self.xyedges["y"])}
+        is_not_linspace = {
+            "x": not sc.is_linspace(self.xyedges["x"]),
+            "y": not sc.is_linspace(self.xyedges["y"])
+        }
 
         if np.any(list(is_not_linspace.values())):
             # Make a new slice with bin edges and counts (for rebin), and with
@@ -346,10 +348,12 @@ class Slicer2d(Slicer):
         # Scale by bin width and then rebin in both directions
         if is_not_linspace["x"]:
             vslice *= self.xywidth["x"]
-            vslice = sc.rebin(vslice, self.xyrebin["x"].dims[0], self.xyrebin["x"])
+            vslice = sc.rebin(vslice, self.xyrebin["x"].dims[0],
+                              self.xyrebin["x"])
         if is_not_linspace["y"]:
             vslice *= self.xywidth["y"]
-            vslice = sc.rebin(vslice, self.xyrebin["y"].dims[0], self.xyrebin["y"])
+            vslice = sc.rebin(vslice, self.xyrebin["y"].dims[0],
+                              self.xyrebin["y"])
 
         # Remember to replace masks slice after rebin
         if np.any(list(is_not_linspace.values())):
