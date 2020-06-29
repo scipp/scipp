@@ -48,6 +48,24 @@ def test_plot_2d_with_masks_and_labels():
     plot(d, axes=['x', "somelabels"])
 
 
+def test_plot_2d_image_with_non_regular_bin_edges():
+    d = make_dense_dataset(ndim=2, binedges=True)
+    d.coords['tof'].values = d.coords['tof'].values**2
+    plot(d)
+
+
+def test_plot_2d_image_with_non_regular_bin_edges_resolution():
+    d = make_dense_dataset(ndim=2, binedges=True)
+    d.coords['tof'].values = d.coords['tof'].values**2
+    plot(d, resolution=128)
+
+
+def test_plot_2d_image_with_non_regular_bin_edges_with_masks():
+    d = make_dense_dataset(ndim=2, masks=True, binedges=True)
+    d.coords['tof'].values = d.coords['tof'].values**2
+    plot(d)
+
+
 def test_plot_2d_events_data_with_int_bins():
     d = make_events_dataset(ndim=1)
     plot(d, bins={'tof': 50})
