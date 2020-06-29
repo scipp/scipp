@@ -26,8 +26,7 @@ struct SCIPP_CORE_EXPORT DType {
   bool operator!=(const DType &t) const noexcept { return index != t.index; }
   bool operator<(const DType &t) const noexcept { return index < t.index; }
 };
-template <class T>
-SCIPP_CORE_EXPORT inline DType dtype{std::type_index(typeid(T))};
+template <class T> inline DType dtype{std::type_index(typeid(T))};
 
 bool isInt(DType tp);
 

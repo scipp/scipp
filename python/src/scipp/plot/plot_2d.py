@@ -102,10 +102,9 @@ class Slicer2d(Slicer):
             else:
                 self.image_resolution = resolution
         else:
-            self.image_resolution = 0.64 * config.plot.dpi / 96.0
             self.image_resolution = {
-                "x": int(self.image_resolution * config.plot.width),
-                "y": int(self.image_resolution * config.plot.height)
+                "x": config.plot.width,
+                "y": config.plot.height
             }
         self.xyrebin = {}
         self.xyedges = {}
@@ -126,15 +125,8 @@ class Slicer2d(Slicer):
         self.im = dict()
         self.cbar = None
 
-        extent_array = np.array(list(self.extent.values())).flatten()
-        self.im["values"] = self.ax.imshow(
-            [[1.0, 1.0], [1.0, 1.0]],
-            norm=self.params["values"][self.name]["norm"],
-            extent=extent_array,
-            origin="lower",
-            aspect=self.aspect,
-            interpolation="nearest",
-            cmap=self.params["values"][self.name]["cmap"])
+        self.im["values"] = self.make_default_imshow(
+            self.params["values"][self.name]["cmap"])
         self.ax.set_title(self.name)
         if self.params["values"][self.name]["cbar"]:
             self.cbar = plt.colorbar(self.im["values"],
@@ -147,13 +139,7 @@ class Slicer2d(Slicer):
         self.members["images"] = self.im["values"]
         self.members["colorbar"] = self.cbar
         if self.params["masks"][self.name]["show"]:
-            self.im["masks"] = self.ax.imshow(
-                [[1.0, 1.0], [1.0, 1.0]],
-                extent=extent_array,
-                norm=self.params["values"][self.name]["norm"],
-                origin="lower",
-                interpolation="nearest",
-                aspect=self.aspect,
+            self.im["masks"] = self.make_default_imshow(
                 cmap=self.params["masks"][self.name]["cmap"])
         if self.logx:
             self.ax.set_xscale("log")
@@ -169,6 +155,16 @@ class Slicer2d(Slicer):
         self.members["ax"] = self.ax
 
         return
+
+    def make_default_imshow(self, cmap):
+        return self.ax.imshow(
+            [[1.0, 1.0], [1.0, 1.0]],
+            norm=self.params["values"][self.name]["norm"],
+            extent=np.array(list(self.extent.values())).flatten(),
+            origin="lower",
+            aspect=self.aspect,
+            interpolation="nearest",
+            cmap=cmap)
 
     def update_buttons(self, owner, event, dummy):
         toggle_slider = False
@@ -285,7 +281,7 @@ class Slicer2d(Slicer):
         """
         Slice data according to new slider value.
         """
-        dslice = self.data_array
+        vslice = self.data_array
         if self.params["masks"][self.name]["show"]:
             mslice = self.masks
         # Slice along dimensions with active sliders
@@ -294,7 +290,7 @@ class Slicer2d(Slicer):
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_x[self.name][dim], val.value)
-                dslice = dslice[val.dim, val.value]
+                vslice = vslice[val.dim, val.value]
                 # At this point, after masks were combined, all their
                 # dimensions should be contained in the data_array.dims.
                 if self.params["masks"][self.name]["show"]:
@@ -306,51 +302,61 @@ class Slicer2d(Slicer):
                             "x"] = self.slider_x[self.name][val.dim].dims[0]
 
         # Check if dimensions of arrays agree, if not, plot the transpose
-        transp = dslice.dims != button_dims
+        transp = vslice.dims != button_dims
 
         # In the case of unaligned data, we may want to auto-scale the colorbar
         # as we slice through dimensions. Colorbar limits are allowed to grow
         # but not shrink.
         autoscale_cbar = False
-        if dslice.unaligned is not None:
-            dslice = sc.histogram(dslice)
+        if vslice.unaligned is not None:
+            vslice = sc.histogram(vslice)
             autoscale_cbar = True
 
-        # Make a new slice with bin edges and counts (for rebin), and with
-        # non-dimension coordinates if requested.
-        xy = "xy"
-        vslice = sc.DataArray(coords={
-            self.xyedges["x"].dims[0]: self.xyedges["x"],
-            self.xyedges["y"].dims[0]: self.xyedges["y"]
-        },
-                              data=sc.Variable(dims=[
-                                  self.xyedges[xy[not transp]].dims[0],
-                                  self.xyedges[xy[transp]].dims[0]
-                              ],
-                                               values=dslice.values,
-                                               variances=dslice.variances,
-                                               unit=sc.units.counts))
+        is_not_linspace = {"x": not sc.is_linspace(self.xyedges["x"]),
+                           "y": not sc.is_linspace(self.xyedges["y"])}
 
-        # Also include the masks
-        if self.params["masks"][self.name]["show"]:
-            mslice_dims = []
-            for dim in mslice.dims:
-                if dim == button_dims[0]:
-                    mslice_dims.append(self.xyedges["y"].dims[0])
-                elif dim == button_dims[1]:
-                    mslice_dims.append(self.xyedges["x"].dims[0])
-                else:
-                    mslice_dims.append(dim)
-            vslice.masks["all"] = sc.Variable(dims=mslice_dims,
-                                              values=mslice.values)
+        if np.any(list(is_not_linspace.values())):
+            # Make a new slice with bin edges and counts (for rebin), and with
+            # non-dimension coordinates if requested.
+            xy = "xy"
+            vslice = sc.DataArray(coords={
+                self.xyedges["x"].dims[0]: self.xyedges["x"],
+                self.xyedges["y"].dims[0]: self.xyedges["y"]
+            },
+                                  data=sc.Variable(dims=[
+                                      self.xyedges[xy[not transp]].dims[0],
+                                      self.xyedges[xy[transp]].dims[0]
+                                  ],
+                                                   values=vslice.values,
+                                                   unit=sc.units.counts))
+
+            # Also include the masks
+            if self.params["masks"][self.name]["show"]:
+                mslice_dims = []
+                for dim in mslice.dims:
+                    if dim == button_dims[0]:
+                        mslice_dims.append(self.xyedges["y"].dims[0])
+                    elif dim == button_dims[1]:
+                        mslice_dims.append(self.xyedges["x"].dims[0])
+                    else:
+                        mslice_dims.append(dim)
+                vslice.masks["all"] = sc.Variable(dims=mslice_dims,
+                                                  values=mslice.values)
 
         # Scale by bin width and then rebin in both directions
-        vslice *= self.xywidth["x"] * self.xywidth["y"]
-        vslice = sc.rebin(vslice, self.xyrebin["x"].dims[0], self.xyrebin["x"])
-        vslice = sc.rebin(vslice, self.xyrebin["y"].dims[0], self.xyrebin["y"])
+        if is_not_linspace["x"]:
+            vslice *= self.xywidth["x"]
+            vslice = sc.rebin(vslice, self.xyrebin["x"].dims[0], self.xyrebin["x"])
+        if is_not_linspace["y"]:
+            vslice *= self.xywidth["y"]
+            vslice = sc.rebin(vslice, self.xyrebin["y"].dims[0], self.xyrebin["y"])
+
+        # Remember to replace masks slice after rebin
+        if np.any(list(is_not_linspace.values())):
+            if self.params["masks"][self.name]["show"]:
+                mslice = vslice.masks["all"]
 
         if self.params["masks"][self.name]["show"]:
-            mslice = vslice.masks["all"]
             # Use scipp's automatic broadcast functionality to broadcast
             # lower dimension masks to higher dimensions.
             # TODO: creating a Variable here could become expensive when
