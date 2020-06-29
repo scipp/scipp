@@ -299,7 +299,7 @@ class TestMantidConversion(unittest.TestCase):
             assert 'sample-position' not in monitor.coords
             # Absence of the following is not crucial, but currently there is
             # no need for these, and it avoid duplication:
-            assert 'detector_info' not in monitor.coords
+            assert 'detector-info' not in monitor.coords
             assert 'run' not in monitor.attrs
             assert 'sample' not in monitor.attrs
 

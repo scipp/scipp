@@ -9,7 +9,8 @@ Changes since v0.3
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
-* ``scipp.neutron.load`` must use ``advanced_geometry=True`` option for loading ``detector_info`` and pixel shapes.
+* Coord and attributes names for neutron data have been standardized, now using hyphens instead of underscore, except for subscripts. Affected examples: ``pulse-time`` (previously ``pulse_times``), ``source-position`` (previously ``source_position``), ``sample-position`` (previously ``sample_position``), ``detector-info`` (previously ``detector_info``).
+* ``scipp.neutron.load`` must use ``advanced_geometry=True`` option for loading ``detector-info`` and pixel shapes.
 * Normalization of event data cannot be done directly any more, must use ``realign``.
 
 Features
