@@ -155,24 +155,17 @@ template <class T> void bind_max(py::module &m) {
           .c_str());
 }
 
-template <class T> Docstring docstring_bool_dim(const std::string op) {
+template <class T> Docstring docstring_bool(const std::string op) {
   return Docstring()
-      .description("Element-wise " + op + " over the specified dimension.")
-      .raises("If the dimension does not exist, or if the dtype is not bool.")
+      .description(
+          "Element-wise " + op +
+          " over the specified dimension or all dimensions if not provided.")
+      .raises("If the input dimension to reduce (optional) does not exist, or "
+              "if the dtype is not bool.")
       .returns("The " + op + " combination of the input values.")
       .rtype<T>()
       .template param<T>("x", "Data to reduce.")
-      .param("dim", "Dimension to reduce.", "Dim");
-}
-
-template <class T> Docstring docstring_bool(const std::string op) {
-  return Docstring()
-      .description("Element-wise " + op +
-                   " over all of the input's dimensions.")
-      .raises("If the dtype has no " + op + ", e.g., if it is a string.")
-      .returns("The " + op + " combination of the input values.")
-      .rtype<T>()
-      .template param<T>("x", "Data to reduce.");
+      .param("dim", "Dimension to reduce (optional).", "Dim");
 }
 
 template <class T> void bind_all(py::module &m) {
@@ -186,7 +179,7 @@ template <class T> void bind_all(py::module &m) {
         return all(x, dim);
       },
       py::arg("all"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      docstring_bool_dim<T>("AND").c_str());
+      docstring_bool<T>("AND").c_str());
 }
 
 template <class T> void bind_any(py::module &m) {
@@ -200,7 +193,7 @@ template <class T> void bind_any(py::module &m) {
         return any(x, dim);
       },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      docstring_bool_dim<T>("OR").c_str());
+      docstring_bool<T>("OR").c_str());
 }
 
 void init_reduction(py::module &m) {
