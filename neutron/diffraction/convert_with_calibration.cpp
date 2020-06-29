@@ -28,12 +28,12 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
 
   // 1. There may be a grouping of detectors, in which case we need to apply it
   // to the cal information first.
-  if (d.coords().contains(Dim("detector_info"))) {
-    // 1a. Merge cal with detector_info, which contains information on how `d`
+  if (d.coords().contains(Dim("detector-info"))) {
+    // 1a. Merge cal with detector-info, which contains information on how `d`
     // groups its detectors. At the same time, the coord comparison in `merge`
     // ensures that detector IDs of `d` match those of `cal` .
     const auto &detector_info =
-        d.coords()[Dim("detector_info")].template value<Dataset>();
+        d.coords()[Dim("detector-info")].template value<Dataset>();
     cal = merge(detector_info, cal);
     // Masking and grouping information in the calibration table interferes with
     // `groupby.mean`, dropping.
@@ -45,7 +45,7 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
     // data.
     // We are hard-coding some information here: the existence of "spectra",
     // since we require labels named "spectrum" and a corresponding dimension.
-    // Given that this is in a branch that is access only if "detector_info" is
+    // Given that this is in a branch that is access only if "detector-info" is
     // present this should probably be ok.
     cal = groupby(cal, Dim("spectrum")).mean(Dim::Detector);
   } else if (!has_dim(d, cal["tzero"].dims().inner())) {
