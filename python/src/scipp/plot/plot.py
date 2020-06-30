@@ -8,7 +8,6 @@ from .sciplot import SciPlot
 
 
 def plot(scipp_obj,
-         # collapse=None,
          projection=None,
          axes=None,
          color=None,
@@ -23,7 +22,6 @@ def plot(scipp_obj,
 
     # Delayed imports
     from .tools import get_line_param
-    # from .plot_collapse import plot_collapse
     from .dispatch import dispatch
 
     inventory = dict()
@@ -121,12 +119,6 @@ def plot(scipp_obj,
     # Plot all the subsets
     output = SciPlot()
     for key, val in tobeplotted.items():
-        # if collapse is not None:
-        #     output[key] = plot_collapse(data_array=val["scipp_obj_dict"][key],
-        #                                 dim=collapse,
-        #                                 axes=val["axes"],
-        #                                 **kwargs)
-        # else:
             output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
                                    name=key,
                                    ndim=val["ndims"],
