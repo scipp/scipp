@@ -148,7 +148,8 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
   return core::CallDType<
       double, float, int64_t, int32_t, bool, event_list<double>,
       event_list<float>, event_list<int64_t>, scipp::core::time_point,
-      event_list<int32_t>, DataArray, Dataset, Eigen::Vector3d,
+      event_list<int32_t>, event_list<scipp::core::time_point>, DataArray,
+      Dataset, Eigen::Vector3d,
       Eigen::Quaterniond>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
                                                           labels, shape, unit,
                                                           variances);

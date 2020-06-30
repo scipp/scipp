@@ -55,6 +55,7 @@ std::string to_string(const MutableView<T, U> &mutableView) {
 }
 
 template <class T> std::string array_to_string(const T &arr);
+const std::string to_iso_date(const scipp::core::time_point &tem);
 
 template <class T> std::string element_to_string(const T &item) {
   using std::to_string;
@@ -64,17 +65,7 @@ template <class T> std::string element_to_string(const T &item) {
     return core::to_string(item) + ", ";
 
   else if constexpr (std::is_same_v<T, scipp::core::time_point>) {
-    // This returns regular timestamp with nanoseconds
-    // e.g. 2020-06-24 14:36:07.9792296
-    auto time = std::chrono::system_clock::to_time_t(item);
-    auto tm = *std::gmtime(&time);
-    auto epoch = item.time_since_epoch();
-    auto ns =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(epoch).count() %
-        1000000000;
-    std::stringstream ss;
-    ss << std::put_time(&tm, "%FT%T.") << ns;
-    return core::to_string(ss.str()) + ", ";
+    return core::to_string(to_iso_date(item)) + ", ";
   } else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
     return {"(" + to_string(item[0]) + ", " + to_string(item[1]) + ", " +
             to_string(item[2]) + "), "};

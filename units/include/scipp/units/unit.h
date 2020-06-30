@@ -47,7 +47,7 @@ constexpr scipp::index unit_index(Unit unit, std::tuple<Units...>) {
 } // namespace detail
 
 namespace boost_units {
-typedef decltype(boost::units::si::nano * boost::units::si::seconds) nanosecond;
+using nanosecond = decltype(boost::units::si::nano * boost::units::si::seconds);
 static constexpr boost::units::si::dimensionless dimensionless;
 static constexpr boost::units::si::length m;
 static constexpr boost::units::si::time s;
@@ -61,7 +61,7 @@ static constexpr decltype(boost::units::degree::plane_angle{} *
 struct supported_units {
   using type = decltype(detail::make_unit(
       std::make_tuple(m, dimensionless / m, us, dimensionless / us, angstrom,
-                      dimensionless / angstrom, ns, dimensionless / ns),
+                      dimensionless / angstrom),
       std::make_tuple(dimensionless, rad, deg, rad / deg, deg / rad, counts,
                       dimensionless / counts, s, kg, meV, dimensionless / s,
                       counts / us, counts / angstrom, counts / meV, m *m *m,
@@ -69,7 +69,7 @@ struct supported_units {
                       kg *m / s, m / s, c, c *m, meV / c, dimensionless / c, K,
                       us / angstrom, us / (angstrom * angstrom),
                       us / (m * angstrom), angstrom / us, (m * angstrom) / us,
-                      dimensionless / meV)));
+                      ns, dimensionless / meV)));
 };
 struct counts_unit {
   using type = decltype(boost_units::counts);

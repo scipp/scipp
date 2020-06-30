@@ -23,5 +23,6 @@ INSTANTIATE_VARIABLE(event_list_float32, event_list<float>)
 INSTANTIATE_VARIABLE(event_list_int64, event_list<int64_t>)
 INSTANTIATE_VARIABLE(event_list_int32, event_list<int32_t>)
 INSTANTIATE_VARIABLE(event_list_bool, event_list<bool>)
+INSTANTIATE_VARIABLE(event_list_datetime64, event_list<scipp::core::time_point>)
 
 } // namespace scipp::variable
