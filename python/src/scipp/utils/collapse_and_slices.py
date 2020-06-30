@@ -58,8 +58,8 @@ def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
         key = ""
         for s in line:
             vslice = vslice[s[0], s[1]]
-            key += "{}-{}-".format(str(s[0]), s[1])
-        all_slices[key] = vslice
+            key += "{}:{}-".format(str(s[0]), s[1])
+        all_slices[key[:-1]] = vslice
 
     return all_slices
 
@@ -89,7 +89,6 @@ def collapse(scipp_obj, keep):
             slice_shape[d] = size
             volume *= size
 
-    print(slice_dims, slice_shape, volume)
     return _to_slices(scipp_obj, slice_dims, slice_shape, volume)
 
 
