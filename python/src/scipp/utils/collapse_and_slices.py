@@ -5,28 +5,8 @@
 # Other imports
 import numpy as np
 
-# Scipp imports
-from .dispatch import dispatch
-from .tools import get_line_param
 
-
-def plot_collapse(data_array, name=None, dim=None, filename=None, **kwargs):
-    """
-    Collapse higher dimensions into a 1D plot.
-    """
-
-    dims = data_array.dims
-    shape = data_array.shape
-
-    # Gather list of dimensions that are to be collapsed
-    slice_dims = []
-    volume = 1
-    slice_shape = dict()
-    for d, size in zip(dims, shape):
-        if d != dim:
-            slice_dims.append(d)
-            slice_shape[d] = size
-            volume *= size
+def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
 
     # Create container to collect all 1D slices as 1D variables
     all_slices = dict()
@@ -72,29 +52,61 @@ def plot_collapse(data_array, name=None, dim=None, filename=None, **kwargs):
         np.transpose(np.array(slice_list, dtype=np.dtype('O'))),
         (volume, len(slice_dims), 2))
 
-    mpl_line_params = {
-        "color": {},
-        "marker": {},
-        "linestyle": {},
-        "linewidth": {}
-    }
-    # Extract each entry from the slice_list, make temporary dataset and add to
-    # input dictionary for plot_1d
+    # Extract each entry from the slice_list
     for i, line in enumerate(slice_list):
-        vslice = data_array
+        vslice = scipp_obj
         key = ""
         for s in line:
             vslice = vslice[s[0], s[1]]
             key += "{}-{}-".format(str(s[0]), s[1])
         all_slices[key] = vslice
-        for p in mpl_line_params.keys():
-            mpl_line_params[p][key] = get_line_param(name=p, index=i)
 
-    # Send the newly created dictionary of
-    # DataArrayView to the plot_1d function
-    return dispatch(scipp_obj_dict=all_slices,
-                    ndim=1,
-                    mpl_line_params=mpl_line_params,
-                    **kwargs)
+    return all_slices
 
-    return
+
+def collapse(scipp_obj, keep):
+    """
+    Collapse higher dimensions into a dict of 1D DataArrays.
+
+    :param [scipp_obj]: Dataset or DataArray to be split into slices.
+    :type [scipp_obj]: Dataset or DataArray
+    :param [kepp]: Dimension to be preserved.
+    :type [dim]: str
+    :return: A dictionary holding 1D slices of the input object.
+    :rtype: dict
+    """
+
+    dims = scipp_obj.dims
+    shape = scipp_obj.shape
+
+    # Gather list of dimensions that are to be collapsed
+    slice_dims = []
+    volume = 1
+    slice_shape = dict()
+    for d, size in zip(dims, shape):
+        if d != keep:
+            slice_dims.append(d)
+            slice_shape[d] = size
+            volume *= size
+
+    print(slice_dims, slice_shape, volume)
+    return _to_slices(scipp_obj, slice_dims, slice_shape, volume)
+
+
+def slices(scipp_obj, dim):
+    """
+    Slice input along given dim into a dict of 1D DataArrays.
+
+    :param [scipp_obj]: Dataset or DataArray to be split into slices.
+    :type [scipp_obj]: Dataset or DataArray
+    :param [dim]: Dimension along which to slice.
+    :type [dim]: str
+    :return: A dictionary holding slices of the input object.
+    :rtype: dict
+    """
+
+    slice_dims = [dim]
+    volume = scipp_obj.shape[scipp_obj.dims.index(dim)]
+    slice_shape = {dim: volume}
+
+    return _to_slices(scipp_obj, slice_dims, slice_shape, volume)
