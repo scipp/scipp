@@ -119,13 +119,13 @@ def plot(scipp_obj,
     # Plot all the subsets
     output = SciPlot()
     for key, val in tobeplotted.items():
-            output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                                   name=key,
-                                   ndim=val["ndims"],
-                                   projection=projection,
-                                   axes=val["axes"],
-                                   mpl_line_params=val["mpl_line_params"],
-                                   bins=bins,
-                                   **kwargs)
+        output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
+                               name=key,
+                               ndim=val["ndims"],
+                               projection=projection,
+                               axes=val["axes"],
+                               mpl_line_params=val["mpl_line_params"],
+                               bins=bins,
+                               **kwargs)
 
     return output
