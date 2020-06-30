@@ -5,27 +5,64 @@
 
 import numpy as np
 import scipp as sc
-import scipp.utils as su
 
 
-
-def test_collapse():
+def make_dataset():
     N = 40
     M = 2
     L = 2
     x = np.arange(N).astype(np.float64)
     b = 0.5 * N
-    a = 4.0*np.random.random([L, M, N])
-    a[1, 1, :] = np.abs(10.0 * np.cos((x-b)*2.0/b))
+    a = 4.0 * np.random.random([L, M, N])
+    a[1, 1, :] = np.abs(10.0 * np.cos((x - b) * 2.0 / b))
+    v = 0.1 * np.random.random([L, M, N])
     d = sc.Dataset()
     d.coords['tof'] = sc.Variable(['tof'], values=x, unit=sc.units.us)
-    d.coords['x'] = sc.Variable(['x'], values=np.arange(M).astype(np.float64),
-                                   unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=np.arange(L).astype(np.float64),
-                                   unit=sc.units.m)
-    d['sample'] = sc.Variable(['y', 'x', 'tof'], values=a,
-                               variances=0.1*np.random.random([L, M, N]))
+    d.coords['x'] = sc.Variable(['x'],
+                                values=np.arange(M).astype(np.float64),
+                                unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'],
+                                values=np.arange(L).astype(np.float64),
+                                unit=sc.units.m)
+    d['sample'] = sc.Variable(['y', 'x', 'tof'], values=a, variances=v)
+    return d
 
+
+def test_collapse_data_array():
+
+    d = make_dataset()
     collapsed = sc.collapse(d['sample'], keep='tof')
 
-    # assert collapsed["]
+    assert collapsed['y:0-x:0'] == d['sample']['y', 0]['x', 0]
+    assert collapsed['y:1-x:0'] == d['sample']['y', 1]['x', 0]
+    assert collapsed['y:0-x:1'] == d['sample']['y', 0]['x', 1]
+    assert collapsed['y:1-x:1'] == d['sample']['y', 1]['x', 1]
+
+
+def test_collapse_dataset():
+
+    d = make_dataset()
+    collapsed = sc.collapse(d, keep='tof')
+
+    assert collapsed['x:0-y:0'] == d['y', 0]['x', 0]
+    assert collapsed['x:0-y:1'] == d['y', 1]['x', 0]
+    assert collapsed['x:1-y:0'] == d['y', 0]['x', 1]
+    assert collapsed['x:1-y:1'] == d['y', 1]['x', 1]
+
+
+def test_slices_data_array():
+
+    d = make_dataset()
+    collapsed = sc.slices(d['sample'], dim='x')
+
+    assert collapsed['x:0'] == d['sample']['x', 0]
+    assert collapsed['x:1'] == d['sample']['x', 1]
+
+
+def test_slices_dataset():
+
+    d = make_dataset()
+    collapsed = sc.slices(d, dim='x')
+
+    assert collapsed['x:0'] == d['x', 0]
+    assert collapsed['x:1'] == d['x', 1]
