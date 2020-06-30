@@ -178,7 +178,7 @@ template <class T> void bind_all(py::module &m) {
       [](const typename T::const_view_type &x, const Dim dim) {
         return all(x, dim);
       },
-      py::arg("all"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
       docstring_bool<T>("AND").c_str());
 }
 
