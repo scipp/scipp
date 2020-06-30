@@ -99,3 +99,15 @@ def test_plot_realigned_3d():
     tbins = sc.Variable(dims=['tof'], unit=sc.units.us, values=np.arange(100.))
     r = sc.realign(d, {'tof': tbins})
     plot(r)
+
+
+def test_plot_4d_with_masks():
+    data = sc.DataArray(
+        data=sc.Variable(dims=['pack', 'tube', 'straw', 'pixel'],
+                         values=np.random.rand(2,8,7,256)),
+        coords={})
+    data += sc.Variable(dims=['pixel'],
+                        values=np.sin(np.linspace(0,3.14, num=256)))
+    data.masks['tube_ends'] = sc.Variable(dims=['pixel'],
+                                          values=np.full(256, False))
+    plot(data)

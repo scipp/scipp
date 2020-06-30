@@ -293,7 +293,8 @@ class Slicer2d(Slicer):
                 vslice = vslice[val.dim, val.value]
                 # At this point, after masks were combined, all their
                 # dimensions should be contained in the data_array.dims.
-                if self.params["masks"][self.name]["show"]:
+                if self.params["masks"][
+                        self.name]["show"] and dim in mslice.dims:
                     mslice = mslice[val.dim, val.value]
             else:
                 # Get the dimensions of the dimension-coordinates, since
