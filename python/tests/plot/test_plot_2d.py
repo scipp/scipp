@@ -18,6 +18,38 @@ def test_plot_2d_image():
     plot(d)
 
 
+def test_plot_2d_image_with_log():
+    d = make_dense_dataset(ndim=2)
+    plot(d, log=True)
+
+
+def test_plot_2d_image_with_vmin_vmax():
+    d = make_dense_dataset(ndim=2)
+    plot(d, vmin=0.1, vmax=0.9)
+
+
+def test_plot_2d_image_with_vmin_vmax_with_log():
+    d = make_dense_dataset(ndim=2)
+    plot(d, vmin=0.1, vmax=0.9, log=True)
+
+
+def test_plot_2d_image_with_with_nan():
+    d = make_dense_dataset(ndim=2)
+    d["Sample"].values[0, 0] = np.nan
+    plot(d)
+
+
+def test_plot_2d_image_with_with_nan_with_log():
+    d = make_dense_dataset(ndim=2)
+    d["Sample"].values[0, 0] = np.nan
+    plot(d, log=True)
+
+
+def test_plot_2d_image_with_cmap():
+    d = make_dense_dataset(ndim=2)
+    plot(d, cmap="jet")
+
+
 def test_plot_2d_image_with_axes():
     d = make_dense_dataset(ndim=2)
     plot(d, axes=['tof', 'x'])
