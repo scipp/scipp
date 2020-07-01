@@ -40,10 +40,18 @@ def test_collapse_data_array():
 def test_collapse_dataset():
     d = make_dataset()
     collapsed = sc.collapse(d, keep='tof')
-    assert collapsed['x:0-y:0'] == d['y', 0]['x', 0]
-    assert collapsed['x:0-y:1'] == d['y', 1]['x', 0]
-    assert collapsed['x:1-y:0'] == d['y', 0]['x', 1]
-    assert collapsed['x:1-y:1'] == d['y', 1]['x', 1]
+    # In a Dataset, the order of the dims is not fixed
+    first_key = list(collapsed.keys())[0]
+    if first_key.startswith('x'):
+        dim1 = 'x'
+        dim2 = 'y'
+    else:
+        dim1 = 'y'
+        dim2 = 'x'
+    assert collapsed['{}:0-{}:0'.format(dim1, dim2)] == d[dim2, 0][dim1, 0]
+    assert collapsed['{}:0-{}:1'.format(dim1, dim2)] == d[dim2, 1][dim1, 0]
+    assert collapsed['{}:1-{}:0'.format(dim1, dim2)] == d[dim2, 0][dim1, 1]
+    assert collapsed['{}:1-{}:1'.format(dim1, dim2)] == d[dim2, 1][dim1, 1]
 
 
 def test_slices_data_array():
