@@ -128,6 +128,9 @@ public:
   }
   auto &operator[](const scipp::index i) const { return *(begin() + i); }
 
+  auto &front() const { return *begin(); }
+  auto &back() const { return *(begin() + (size() - 1)); }
+
   const T *data() const { return m_variable + m_offset; }
   T *data() { return m_variable + m_offset; }
 
