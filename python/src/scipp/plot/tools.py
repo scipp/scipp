@@ -4,6 +4,7 @@
 
 # Scipp imports
 from .. import config
+from .._scipp import core as sc
 
 # Other imports
 import numpy as np
