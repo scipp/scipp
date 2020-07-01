@@ -6,7 +6,7 @@
 from .. import config
 from .render import render_plot
 from .slicer import Slicer
-from ..utils import name_with_unit
+from .._utils import name_with_unit
 
 # Other imports
 import numpy as np
