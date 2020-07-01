@@ -11,7 +11,7 @@ from html import escape
 import numpy as np
 
 from .._scipp import core as sc
-from ..utils import is_data_events
+from ..utils.is_type import is_dataset, is_data_events
 
 CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
 with open(CSS_FILE_PATH, 'r') as f:
@@ -24,10 +24,6 @@ with open(ICONS_SVG_PATH, 'r') as f:
 BIN_EDGE_LABEL = "[bin-edge]"
 VARIANCE_PREFIX = "σ² = "
 SPARSE_PREFIX = "len={}"
-
-
-def _is_dataset(x):
-    return isinstance(x, sc.Dataset) or isinstance(x, sc.DatasetView)
 
 
 def _format_array(data, size, ellipsis_after, do_ellide=True):
@@ -347,7 +343,7 @@ def summarize_variable(name,
 
 
 def summarize_data(dataset):
-    has_attrs = _is_dataset(dataset)
+    has_attrs = is_dataset(dataset)
     vars_li = "".join("<li class='xr-var-item'>{}</li>".format(
         summarize_variable(
             name,

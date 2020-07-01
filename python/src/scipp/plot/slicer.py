@@ -4,7 +4,7 @@
 
 from .. import config
 from .tools import parse_params, make_fake_coord
-from ..utils import name_with_unit, value_to_string
+from ..utils.to_string import name_with_unit, value_to_string
 from .._scipp.core import combine_masks, Dim, dtype
 
 # Other imports

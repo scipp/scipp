@@ -7,7 +7,7 @@ from .. import config
 from .render import render_plot
 from .slicer import Slicer
 from .tools import centers_to_edges, edges_to_centers, parse_params
-from ..utils import name_with_unit
+from ..utils.to_string import name_with_unit
 from .._scipp import core as sc
 
 # Other imports

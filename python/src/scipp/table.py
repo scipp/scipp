@@ -5,8 +5,8 @@
 
 # Scipp imports
 from . import config
-from .utils import (value_to_string, name_with_unit, is_dataset_or_array,
-                    is_dataset, is_variable)
+from .utils.to_string import value_to_string, name_with_unit
+from .utils.is_type import is_dataset_or_array, is_dataset, is_variable
 from ._scipp import core as sc
 
 

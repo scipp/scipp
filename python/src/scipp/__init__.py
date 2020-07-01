@@ -20,7 +20,7 @@ from . import plot
 from .extend_units import *
 from .table_html import to_html, make_html
 from .object_list import _repr_html_
-from .utils import collapse, slices
+from .utils.collapse_and_slices import collapse, slices
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(VariableConstView, '_repr_html_', make_html)

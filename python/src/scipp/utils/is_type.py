@@ -3,29 +3,28 @@
 # @file
 # @author Neil Vaytet
 
-from .._scipp.core import (Variable, VariableView, Dataset, DatasetView,
-                           DataArray, DataArrayView, contains_events)
+from .._scipp import core as sc
 
 
 def is_variable(obj):
     """
     Return True if the input is of type scipp.core.Variable.
     """
-    return isinstance(obj, Variable) or isinstance(obj, VariableView)
+    return isinstance(obj, sc.Variable) or isinstance(obj, sc.VariableView)
 
 
 def is_dataset(obj):
     """
     Return True if the input is of type scipp.core.Variable.
     """
-    return isinstance(obj, Dataset) or isinstance(obj, DatasetView)
+    return isinstance(obj, sc.Dataset) or isinstance(obj, sc.DatasetView)
 
 
 def is_data_array(obj):
     """
     Return True if the input is of type scipp.core.Variable.
     """
-    return isinstance(obj, DataArray) or isinstance(obj, DataArrayView)
+    return isinstance(obj, sc.DataArray) or isinstance(obj, sc.DataArrayView)
 
 
 def is_dataset_or_array(obj):
@@ -39,5 +38,5 @@ def is_data_events(obj):
     if hasattr(obj, "data"):
         if obj.data is None:
             return False
-        return contains_events(obj.data)
-    return contains_events(obj)
+        return sc.contains_events(obj.data)
+    return sc.contains_events(obj)
