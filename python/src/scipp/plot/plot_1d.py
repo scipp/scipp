@@ -7,7 +7,7 @@ from .. import config
 from .render import render_plot
 from .slicer import Slicer
 from .tools import edges_to_centers
-from ..utils.to_string import name_with_unit
+from .._utils import name_with_unit
 from .._scipp.core import histogram as scipp_histogram
 
 # Other imports

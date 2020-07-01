@@ -5,8 +5,7 @@
 
 # Scipp imports
 from . import config
-from .utils.to_string import value_to_string, name_with_unit
-from .utils.is_type import is_dataset_or_array, is_dataset, is_variable
+from . import _utils as su
 from ._scipp import core as sc
 
 
@@ -37,7 +36,7 @@ def _make_table_unit_headers(dict_of_variables, text_style):
         for name, val in section.items():
             html.append("<th {} colspan='{}'>{}</th>".format(
                 text_style, 1 + (val.variances is not None),
-                name_with_unit(val, name=name)))
+                su.name_with_unit(val, name=name)))
     return "".join(html)
 
 
@@ -67,10 +66,10 @@ def _make_value_rows(dict_of_variables, is_bin_centers, index, base_style,
                         html.append("<td {}></td>".format(edge_style))
             else:
                 html.append("<td rowspan='2' {}>{}</td>".format(
-                    base_style, value_to_string(val.values[index])))
+                    base_style, su.value_to_string(val.values[index])))
                 if val.variances is not None:
                     html.append("<td rowspan='2' {}>{}</td>".format(
-                        base_style, value_to_string(val.variances[index])))
+                        base_style, su.value_to_string(val.variances[index])))
 
     return "".join(html)
 
@@ -87,10 +86,11 @@ def _make_trailing_cells(dict_of_variables, is_bin_centers, index, size,
                         html.append("<td {}></td>".format(edge_style))
                 else:
                     html.append("<td rowspan='2' {}>{}</td>".format(
-                        base_style, value_to_string(val.values[index])))
+                        base_style, su.value_to_string(val.values[index])))
                     if val.variances is not None:
                         html.append("<td rowspan='2' {}>{}</td>".format(
-                            base_style, value_to_string(val.variances[index])))
+                            base_style,
+                            su.value_to_string(val.variances[index])))
 
     return "".join(html)
 
@@ -147,10 +147,10 @@ def _table_from_dict_of_variables(dict_of_variables,
         for key, section in dict_of_variables.items():
             for name, val in section.items():
                 html += "<td {}>{}</td>".format(base_style,
-                                                value_to_string(val.value))
+                                                su.value_to_string(val.value))
                 if val.variances is not None:
                     html += "<td {}>{}</td>".format(
-                        base_style, value_to_string(val.variance))
+                        base_style, su.value_to_string(val.variance))
         html += "</tr>"
     else:
         row_end = min(size, row_start + max_rows)
@@ -205,9 +205,9 @@ class TableViewer:
         self.headers = 0
         self.trigger_update = True
 
-        if is_dataset_or_array(scipp_obj):
+        if su.is_dataset_or_array(scipp_obj):
             self.headers = 2
-            if is_dataset(scipp_obj):
+            if su.is_dataset(scipp_obj):
                 iterlist = scipp_obj
             else:
                 iterlist = {scipp_obj.name: scipp_obj}
@@ -239,7 +239,7 @@ class TableViewer:
             ndims = len(scipp_obj.shape)
             if ndims < 2:
                 group = "{}D Variables".format(ndims)
-                if is_variable(scipp_obj):
+                if su.is_variable(scipp_obj):
                     self.headers = 1
                     key = str(scipp_obj.dims[0])
                     var = scipp_obj

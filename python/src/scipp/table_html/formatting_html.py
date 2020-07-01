@@ -11,7 +11,7 @@ from html import escape
 import numpy as np
 
 from .._scipp import core as sc
-from ..utils.is_type import is_dataset, is_data_events
+from .._utils import is_dataset, is_data_events
 
 CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
 with open(CSS_FILE_PATH, 'r') as f:
