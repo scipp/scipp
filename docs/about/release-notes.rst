@@ -12,6 +12,9 @@ Breaking changes
 * Coord and attributes names for neutron data have been standardized, now using hyphens instead of underscore, except for subscripts. Affected examples: ``pulse-time`` (previously ``pulse_times``), ``source-position`` (previously ``source_position``), ``sample-position`` (previously ``sample_position``), ``detector-info`` (previously ``detector_info``).
 * ``scipp.neutron.load`` must use ``advanced_geometry=True`` option for loading ``detector-info`` and pixel shapes.
 * Normalization of event data cannot be done directly any more, must use ``realign``.
+* Plotting variances in 2D has been removed, and the API for using ``matplotlib`` axes has been simplified slightly, since we no longer have axes for variances:
+  * Before: ``plot(..., mpl_axes={"ax": myax0, "cax": myax1})``
+  * After: ``plot(..., ax=myax0, cax=myax1)``
 
 Features
 ~~~~~~~~
