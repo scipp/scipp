@@ -60,19 +60,9 @@ def test_plot_2d_image_with_labels():
     plot(d, axes=['x', "somelabels"])
 
 
-def test_plot_2d_image_with_variances():
-    d = make_dense_dataset(ndim=2, variances=True)
-    plot(d, variances=True)
-
-
 def test_plot_2d_image_with_filename():
     d = make_dense_dataset(ndim=2)
     plot(d, filename="image.pdf")
-
-
-def test_plot_2d_image_with_variances_with_filename():
-    d = make_dense_dataset(ndim=2, variances=True)
-    plot(d, variances=True, filename="val_and_var.pdf")
 
 
 def test_plot_2d_image_with_bin_edges():
@@ -85,22 +75,50 @@ def test_plot_2d_with_masks():
     plot(d)
 
 
+def test_plot_2d_with_masks_and_labels():
+    d = make_dense_dataset(ndim=2, masks=True, labels=True)
+    plot(d, axes=['x', "somelabels"])
+
+
+def test_plot_2d_image_with_non_regular_bin_edges():
+    d = make_dense_dataset(ndim=2, binedges=True)
+    d.coords['tof'].values = d.coords['tof'].values**2
+    plot(d)
+
+
+def test_plot_2d_image_with_non_regular_bin_edges_resolution():
+    d = make_dense_dataset(ndim=2, binedges=True)
+    d.coords['tof'].values = d.coords['tof'].values**2
+    plot(d, resolution=128)
+
+
+def test_plot_2d_image_with_non_regular_bin_edges_with_masks():
+    d = make_dense_dataset(ndim=2, masks=True, binedges=True)
+    d.coords['tof'].values = d.coords['tof'].values**2
+    plot(d)
+
+
 def test_plot_2d_events_data_with_int_bins():
-    d = make_events_dataset(ndim=2)
+    d = make_events_dataset(ndim=1)
     plot(d, bins={'tof': 50})
 
 
 def test_plot_2d_events_data_with_nparray_bins():
-    d = make_events_dataset(ndim=2)
+    d = make_events_dataset(ndim=1)
     plot(d, bins={'tof': np.linspace(0.0, 105.0, 50)})
 
 
 def test_plot_2d_events_data_with_Variable_bins():
-    d = make_events_dataset(ndim=2)
+    d = make_events_dataset(ndim=1)
     bins = sc.Variable(['tof'],
                        values=np.linspace(0.0, 105.0, 50),
                        unit=sc.units.us)
     plot(d, bins={'tof': bins})
+
+
+def test_plot_2d_events_data_with_nparray_bins_and_extra_dim():
+    d = make_events_dataset(ndim=2)
+    plot(d, bins={'tof': np.linspace(0.0, 105.0, 50)})
 
 
 def test_plot_variable_2d():

@@ -5,6 +5,8 @@
 
 #include "scipp/units/unit.h"
 
+#include "scipp/common/numeric.h"
+
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
@@ -326,4 +328,21 @@ Mostly equivalent to Variable, see there for details.)");
                           const std::vector<scipp::index> &>(&split),
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
+
+  m.def(
+      "is_linspace",
+      [](const VariableConstView &x) {
+        if (x.dims().ndim() != 1)
+          throw scipp::except::VariableError(
+              "is_linspace can only be called on a 1D Variable.");
+        else
+          return scipp::numeric::is_linspace(x.template values<double>());
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Check if the values of a variable are evenly spaced.")
+          .returns("Returns True if the variable contains regularly spaced "
+                   "values, False otherwise.")
+          .rtype("bool")
+          .c_str());
 }

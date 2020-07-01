@@ -23,11 +23,6 @@ def test_plot_sliceviewer():
     plot(d)
 
 
-def test_plot_sliceviewer_with_variances():
-    d = make_dense_dataset(ndim=3, variances=True)
-    plot(d, variances=True)
-
-
 def test_plot_sliceviewer_with_two_sliders():
     d = make_dense_dataset(ndim=4)
     plot(d)
@@ -46,11 +41,6 @@ def test_plot_sliceviewer_with_labels():
 def test_plot_sliceviewer_with_3d_projection():
     d = make_dense_dataset(ndim=3)
     plot(d, projection="3d")
-
-
-def test_plot_sliceviewer_with_3d_projection_with_variances():
-    d = make_dense_dataset(ndim=3, variances=True)
-    plot(d, projection="3d", variances=True)
 
 
 @pytest.mark.skip(reason="3D plotting with labels is currently broken after"
@@ -109,3 +99,15 @@ def test_plot_realigned_3d():
     tbins = sc.Variable(dims=['tof'], unit=sc.units.us, values=np.arange(100.))
     r = sc.realign(d, {'tof': tbins})
     plot(r)
+
+
+def test_plot_4d_with_masks():
+    data = sc.DataArray(data=sc.Variable(
+        dims=['pack', 'tube', 'straw', 'pixel'],
+        values=np.random.rand(2, 8, 7, 256)),
+                        coords={})
+    data += sc.Variable(dims=['pixel'],
+                        values=np.sin(np.linspace(0, 3.14, num=256)))
+    data.masks['tube_ends'] = sc.Variable(dims=['pixel'],
+                                          values=np.full(256, False))
+    plot(data)
