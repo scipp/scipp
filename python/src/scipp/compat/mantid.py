@@ -10,7 +10,7 @@ import uuid
 import numpy as np
 
 from .. import detail
-from ..utils import is_data_array
+from .._utils import is_data_array
 from .._scipp import core as sc
 from .._scipp.core import contains_events
 

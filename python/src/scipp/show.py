@@ -7,7 +7,7 @@ import colorsys
 import numpy as np
 from ._scipp import core as sc
 from . import config
-from .utils import is_data_array
+from ._utils import is_data_array
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.

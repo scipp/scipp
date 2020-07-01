@@ -8,7 +8,7 @@ from ..plot.render import render_plot
 from ..plot.sciplot import SciPlot
 from ..plot.events import histogram_events_data, make_bins
 from ..plot.tools import parse_params
-from ..utils import name_with_unit, value_to_string
+from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc, neutron as sn
 
 # Other imports
