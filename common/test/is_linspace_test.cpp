@@ -49,6 +49,11 @@ TEST(IsLinspaceTest, size_3) {
   ASSERT_TRUE(is_linspace(std::vector<int32_t>({1, 2, 3})));
 }
 
+TEST(IsLinspaceTest, negative_front) {
+  ASSERT_TRUE(
+      is_linspace(std::vector<double>({-3.0, -2.0, -1.0, 0.0, 1.0, 2.0})));
+}
+
 TEST(IsLinspaceTest, std_iota) {
   std::vector<double> range(1e5);
   std::iota(range.begin(), range.end(), 1e-9);
