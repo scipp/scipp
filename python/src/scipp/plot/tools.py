@@ -4,7 +4,6 @@
 
 # Scipp imports
 from .. import config
-from .._scipp import core as sc
 
 # Other imports
 import numpy as np
@@ -63,25 +62,14 @@ def parse_params(params=None,
             parsed[key] = val
 
     need_norm = False
-    # Use scipp functions to get min and max
+    # TODO: sc.min/max currently return nan if the first value in the
+    # variable array is a nan. Until sc.nanmin/nanmax are implemented, we fall
+    # back to using numpy, both when a Variable and a numpy array are supplied.
     if variable is not None:
-        if parsed["vmin"] is None:
-            parsed["vmin"] = sc.min(variable).value
-        if parsed["vmax"] is None:
-            parsed["vmax"] = sc.max(variable).value
+        _find_min_max(variable.values, parsed)
         need_norm = True
-    # Use numpy to get min and max
     if array is not None:
-        if parsed["vmin"] is None or parsed["vmax"] is None:
-            if parsed["log"]:
-                with np.errstate(divide="ignore", invalid="ignore"):
-                    valid = np.ma.log10(array)
-            else:
-                valid = np.ma.masked_invalid(array, copy=False)
-        if parsed["vmin"] is None:
-            parsed["vmin"] = valid.min()
-        if parsed["vmax"] is None:
-            parsed["vmax"] = valid.max()
+        _find_min_max(array, parsed)
         need_norm = True
 
     if need_norm:
@@ -102,3 +90,16 @@ def parse_params(params=None,
             "tmp", [parsed["color"], parsed["color"]])
 
     return parsed
+
+
+def _find_min_max(array, params):
+    if params["vmin"] is None or params["vmax"] is None:
+        if params["log"]:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                valid = np.ma.log10(array)
+        else:
+            valid = np.ma.masked_invalid(array, copy=False)
+    if params["vmin"] is None:
+        params["vmin"] = valid.min()
+    if params["vmax"] is None:
+        params["vmax"] = valid.max()
