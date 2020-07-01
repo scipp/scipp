@@ -66,7 +66,12 @@ def _to_slices(scipp_obj, slice_dims, slice_shape, volume):
 
 def collapse(scipp_obj, keep):
     """
-    Collapse higher dimensions into a dict of 1D DataArrays.
+    Slice down the input object until only the supplied `keep` dimension is
+    left (effectively 'collapsing' all but one dimension), and return a
+    `dict` of 1D slices. A common use for this is plotting spectra from
+    detectors where most pixels contain noise, but one specific channel
+    contains a strong signal. The `plot` function accepts a `dict` of data
+    arrays.
 
     :param [scipp_obj]: Dataset or DataArray to be split into slices.
     :type [scipp_obj]: Dataset or DataArray
@@ -94,7 +99,7 @@ def collapse(scipp_obj, keep):
 
 def slices(scipp_obj, dim):
     """
-    Slice input along given dim into a dict of 1D DataArrays.
+    Slice input along given dim, and return all the slices in a `dict`.
 
     :param [scipp_obj]: Dataset or DataArray to be split into slices.
     :type [scipp_obj]: Dataset or DataArray
