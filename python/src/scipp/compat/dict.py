@@ -8,7 +8,14 @@ from .._scipp import core as sc
 
 def to_dict(scipp_obj):
     """
-    Convert a scipp object (Variable, DataArray or Dataset) to a Python dict.
+    Convert a scipp object (Variable, DataArray or Dataset) to a python dict.
+
+    :param scipp_obj: A Variable, DataArray or Dataset to be converted to a
+                      python dict.
+    :type scipp_obj: Union[Variable, DataArray, Dataset]
+    :return: A dict containing all the information necessary to fully define
+             the supplied scipp object.
+    :rtype: dict
     """
     if su.is_variable(scipp_obj):
         return _variable_to_dict(scipp_obj)
@@ -31,7 +38,7 @@ def to_dict(scipp_obj):
 
 def _variable_to_dict(v):
     """
-    Convert a scipp Variable to a Python dict.
+    Convert a scipp Variable to a python dict.
     """
     return {
         "dims": _dims_to_strings(v.dims),
@@ -45,7 +52,7 @@ def _variable_to_dict(v):
 
 def _data_array_to_dict(da):
     """
-    Convert a scipp DataArray to a Python dict.
+    Convert a scipp DataArray to a python dict.
     """
     out = {"coords": {}, "masks": {}, "attrs": {}}
     for key in out.keys():
@@ -71,7 +78,17 @@ def _dims_to_strings(dims):
 
 def from_dict(dict_obj):
     """
-    Convert a Python dict to a scipp Variable, DataArray or Dataset.
+    Convert a python dict to a scipp Variable, DataArray or Dataset.
+    If the input keys contain both `'coords'` and `'data'`, then a DataArray is
+    returned.
+    If the input keys contain both `'dims'` and `'values'`, as Variable is
+    returned.
+    Otherwise, a Dataset is returned.
+
+    :param dict_obj: A python dict to be converted to a scipp object.
+    :type dict_obj: dict
+    :return: A scipp Variable, DataArray or Dataset.
+    :rtype: Union[Variable, DataArray, Dataset]
     """
     if {"coords", "data"}.issubset(set(dict_obj.keys())):
         # Case of a DataArray-like dict (most-likely)
@@ -89,7 +106,7 @@ def from_dict(dict_obj):
 
 def _dict_to_variable(d):
     """
-    Convert a Python dict to a scipp Variable.
+    Convert a python dict to a scipp Variable.
     """
     out = {}
     for key, item in d.items():
@@ -100,7 +117,7 @@ def _dict_to_variable(d):
 
 def _dict_to_data_array(d):
     """
-    Convert a Python dict to a scipp DataArray.
+    Convert a python dict to a scipp DataArray.
     """
     out = {"coords": {}, "masks": {}, "attrs": {}}
     for key in out.keys():
