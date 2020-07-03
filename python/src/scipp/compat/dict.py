@@ -58,14 +58,11 @@ def _data_array_to_dict(da):
     for key in out.keys():
         for name, item in getattr(da, key).items():
             out[key][str(name)] = _variable_to_dict(item)
-    out["data"] = _variable_to_dict(da.data)
-    out["values"] = da.values
-    out["variances"] = da.variances
-    out["dims"] = _dims_to_strings(da.dims)
-    out["shape"] = da.shape
+    if da.unaligned is not None:
+        out["unaligned"] = _data_array_to_dict(da.unaligned)
+    else:
+        out["data"] = _variable_to_dict(da.data)
     out["name"] = da.name
-    out["unit"] = da.unit
-    out["dtype"] = da.dtype
     return out
 
 
@@ -90,10 +87,12 @@ def from_dict(dict_obj):
     :return: A scipp Variable, DataArray or Dataset.
     :rtype: Variable, DataArray, or Dataset
     """
-    if {"coords", "data"}.issubset(set(dict_obj.keys())):
+    if ({"coords", "data"}.issubset(set(dict_obj.keys())) or
+        {"coords", "unaligned"}.issubset(set(dict_obj.keys()))):
         # Case of a DataArray-like dict (most-likely)
         return _dict_to_data_array(dict_obj)
-    elif {"dims", "values"}.issubset(set(dict_obj.keys())):
+    elif ({"dims", "values"}.issubset(set(dict_obj.keys())) or
+          {"dims", "shape"}.issubset(set(dict_obj.keys()))):
         # Case of a Variable-like dict (most-likely)
         return _dict_to_variable(dict_obj)
     else:
@@ -109,9 +108,14 @@ def _dict_to_variable(d):
     Convert a python dict to a scipp Variable.
     """
     out = {}
-    for key, item in d.items():
-        if key != "shape":
-            out[key] = item
+    # The Variable constructor does not accept both `shape` and `values`. If
+    # `values` is present, remove `shape` from the list.
+    keylist = list(d.keys())
+    if "values" in keylist and "shape" in keylist:
+        keylist.remove("shape")
+
+    for key in keylist:
+        out[key] = d[key]
     return sc.Variable(**out)
 
 
@@ -119,13 +123,18 @@ def _dict_to_data_array(d):
     """
     Convert a python dict to a scipp DataArray.
     """
+    if ("data" not in d) and ("unaligned" not in d):
+        raise KeyError("To create a Dataset, the supplied dict must contain "
+                       "either 'data' or 'unaligned'. "
+                       "Got {}.".format(d.keys()))
     out = {"coords": {}, "masks": {}, "attrs": {}}
     for key in out.keys():
         if key in d:
             for name, item in d[key].items():
                 out[key][name] = _dict_to_variable(item)
+    if "unaligned" in d:
+        out["unaligned"] = _dict_to_data_array(d["unaligned"])
+    else:
+        out["data"] = _dict_to_variable(d["data"])
 
-    return sc.DataArray(data=_dict_to_variable(d["data"]),
-                        coords=out["coords"],
-                        masks=out["masks"],
-                        attrs=out["attrs"])
+    return sc.DataArray(**out)
