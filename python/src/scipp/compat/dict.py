@@ -12,7 +12,7 @@ def to_dict(scipp_obj):
 
     :param scipp_obj: A Variable, DataArray or Dataset to be converted to a
                       python dict.
-    :type scipp_obj: Union[Variable, DataArray, Dataset]
+    :type scipp_obj: Variable, DataArray, or Dataset
     :return: A dict containing all the information necessary to fully define
              the supplied scipp object.
     :rtype: dict
@@ -88,7 +88,7 @@ def from_dict(dict_obj):
     :param dict_obj: A python dict to be converted to a scipp object.
     :type dict_obj: dict
     :return: A scipp Variable, DataArray or Dataset.
-    :rtype: Union[Variable, DataArray, Dataset]
+    :rtype: Variable, DataArray, or Dataset
     """
     if {"coords", "data"}.issubset(set(dict_obj.keys())):
         # Case of a DataArray-like dict (most-likely)
