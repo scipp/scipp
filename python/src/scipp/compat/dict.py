@@ -124,7 +124,7 @@ def _dict_to_data_array(d):
     Convert a python dict to a scipp DataArray.
     """
     if ("data" not in d) and ("unaligned" not in d):
-        raise KeyError("To create a Dataset, the supplied dict must contain "
+        raise KeyError("To create a DataArray, the supplied dict must contain "
                        "either 'data' or 'unaligned'. "
                        "Got {}.".format(d.keys()))
     out = {"coords": {}, "masks": {}, "attrs": {}}
