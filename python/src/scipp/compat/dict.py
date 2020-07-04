@@ -87,12 +87,12 @@ def from_dict(dict_obj):
     :return: A scipp Variable, DataArray or Dataset.
     :rtype: Variable, DataArray, or Dataset
     """
-    if ({"coords", "data"}.issubset(set(dict_obj.keys())) or
-        {"coords", "unaligned"}.issubset(set(dict_obj.keys()))):
+    if ({"coords", "data"}.issubset(set(dict_obj.keys()))
+            or {"coords", "unaligned"}.issubset(set(dict_obj.keys()))):
         # Case of a DataArray-like dict (most-likely)
         return _dict_to_data_array(dict_obj)
-    elif ({"dims", "values"}.issubset(set(dict_obj.keys())) or
-          {"dims", "shape"}.issubset(set(dict_obj.keys()))):
+    elif ({"dims", "values"}.issubset(set(dict_obj.keys()))
+          or {"dims", "shape"}.issubset(set(dict_obj.keys()))):
         # Case of a Variable-like dict (most-likely)
         return _dict_to_variable(dict_obj)
     else:
