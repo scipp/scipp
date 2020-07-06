@@ -2,6 +2,7 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .. import detail
 from .. import _utils as su
 from .._scipp import core as sc
 
@@ -215,9 +216,12 @@ def _dict_to_data_array(d):
         if key in d:
             for name, item in d[key].items():
                 out[key][name] = _dict_to_variable(item)
+    unaligned = None
     if "unaligned" in d:
-        out["unaligned"] = _dict_to_data_array(d["unaligned"])
+        unaligned = _dict_to_data_array(d["unaligned"])
     else:
         out["data"] = _dict_to_variable(d["data"])
-
-    return sc.DataArray(**out)
+    da = detail.move_to_data_array(**out)
+    if unaligned is not None:
+        da.unaligned = detail.move(unaligned)
+    return da
