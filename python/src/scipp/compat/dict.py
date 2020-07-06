@@ -5,6 +5,10 @@
 from .. import _utils as su
 from .._scipp import core as sc
 
+import numpy as np
+from collections import defaultdict
+from itertools import product
+
 
 def to_dict(scipp_obj):
     """
@@ -36,18 +40,53 @@ def to_dict(scipp_obj):
         return out
 
 
+def _vec_parser(x, shp):
+    """
+    Parse vector_3_float to 2D numpy array
+    """
+    return np.array(x)
+
+
+def _event_parser(x, shp):
+    """
+    Parse event list data to numpy array of numpy arrays
+    """
+    return np.reshape([np.array(x[i]) for i in range(len(x))], shp)
+
+
 def _variable_to_dict(v):
     """
     Convert a scipp Variable to a python dict.
     """
-    return {
+    out = {
         "dims": _dims_to_strings(v.dims),
         "shape": v.shape,
-        "values": v.values,
-        "variances": v.variances,
         "unit": v.unit,
         "dtype": v.dtype
     }
+
+    # Use defaultdict to return the raw values/variances by default
+    dtype_parser = defaultdict(lambda: lambda x, y: x)
+    # Using raw dtypes as dict keys doesn't appear to work, so we need to
+    # convert to strings.
+    dtype_parser.update({
+        str(sc.dtype.vector_3_float64): _vec_parser,
+        str(sc.dtype.matrix_3_float64): _vec_parser,
+        str(sc.dtype.string): _vec_parser,
+        str(sc.dtype.event_list_float32): _event_parser,
+        str(sc.dtype.event_list_float64): _event_parser
+    })
+
+    str_dtype = str(v.dtype)
+
+    # Check if variable is 0D:
+    suffix = "s" if len(out["dims"]) > 0 else ""
+    out["value" + suffix] = dtype_parser[str_dtype](getattr(
+        v, "value" + suffix), v.shape)
+    var = getattr(v, "variance" + suffix)
+    out["variance" + suffix] = dtype_parser[str_dtype](
+        var, v.shape) if var is not None else None
+    return out
 
 
 def _data_array_to_dict(da):
@@ -87,12 +126,15 @@ def from_dict(dict_obj):
     :return: A scipp Variable, DataArray or Dataset.
     :rtype: Variable, DataArray, or Dataset
     """
-    if ({"coords", "data"}.issubset(set(dict_obj.keys()))
-            or {"coords", "unaligned"}.issubset(set(dict_obj.keys()))):
+    keys_as_set = set(dict_obj.keys())
+    if ({"coords", "data"}.issubset(keys_as_set)
+            or {"coords", "unaligned"}.issubset(keys_as_set)):
         # Case of a DataArray-like dict (most-likely)
         return _dict_to_data_array(dict_obj)
-    elif ({"dims", "values"}.issubset(set(dict_obj.keys()))
-          or {"dims", "shape"}.issubset(set(dict_obj.keys()))):
+    elif (keys_as_set.issubset(
+        {"dims", "values", "variances", "unit", "dtype", "shape"})
+          or keys_as_set.issubset(
+              {"value", "variance", "unit", "dtype", "shape", "dims"})):
         # Case of a Variable-like dict (most-likely)
         return _dict_to_variable(dict_obj)
     else:
@@ -107,16 +149,57 @@ def _dict_to_variable(d):
     """
     Convert a python dict to a scipp Variable.
     """
-    out = {}
     # The Variable constructor does not accept both `shape` and `values`. If
-    # `values` is present, remove `shape` from the list.
+    # `values` is present, remove `shape` from the list. Also remove `dims` in
+    # the case of a 0D variable.
     keylist = list(d.keys())
+    if "value" in keylist:
+        if "shape" in keylist:
+            keylist.remove("shape")
+        if "dims" in keylist:
+            keylist.remove("dims")
     if "values" in keylist and "shape" in keylist:
         keylist.remove("shape")
+    out = {}
 
-    for key in keylist:
-        out[key] = d[key]
-    return sc.Variable(**out)
+    is_event_data = False
+    if "dtype" in keylist:
+        is_event_data = str(d["dtype"]).startswith("event_list_float")
+
+    # TODO: maybe this constructor would be worth adding to the scipp module
+    # itself?
+    if is_event_data:
+        if "shape" not in d:
+            shp = d["values"].shape
+        else:
+            shp = d["shape"]
+
+        var = sc.Variable(dims=d["dims"],
+                          shape=shp,
+                          dtype=getattr(sc.dtype, str(d["dtype"])))
+
+        ndim = len(d["dims"])
+        indices = tuple()
+        for i in range(ndim):
+            indices += range(shp[i]),
+        # Now construct all indices combinations using itertools
+        for ind in product(*indices):
+            # And for each indices combination, slice the original data
+            vslice = var
+            aslice = d["values"]
+            for i in range(ndim):
+                vslice = vslice[d["dims"][i], ind[i]]
+                aslice = aslice[ind[i]]
+            vslice.values = aslice
+        return var
+
+    else:
+        for key in keylist:
+            if key == "dtype" and isinstance(d[key], str):
+                out[key] = getattr(sc.dtype, d[key])
+            else:
+                out[key] = d[key]
+        return sc.Variable(**out)
 
 
 def _dict_to_data_array(d):

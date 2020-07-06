@@ -21,10 +21,78 @@ def test_variable_to_dict():
     assert var_dict["dtype"] == var.dtype
 
 
+def test_variable_0D_to_dict():
+    var = 12.0 * sc.units.one
+    var_dict = sc.to_dict(var)
+    assert var_dict["dims"] == []
+    assert var_dict["shape"] == []
+    assert var_dict["value"] == 12.0
+
+
+def test_variable_vector_to_dict():
+    var = sc.Variable(['x'],
+                      values=np.random.random([10, 3]),
+                      dtype=sc.dtype.vector_3_float64)
+    var_dict = sc.to_dict(var)
+    assert var_dict["dims"] == ['x']
+    assert var_dict["shape"] == [10]
+    assert var_dict["values"].shape == (10, 3)
+    assert var_dict["dtype"] == sc.dtype.vector_3_float64
+
+
+def test_variable_0D_vector_to_dict():
+    var = sc.Variable(value=[1, 2, 3], dtype=sc.dtype.vector_3_float64)
+    var_dict = sc.to_dict(var)
+    assert var_dict["dims"] == []
+    assert var_dict["shape"] == []
+    assert np.array_equal(var_dict["value"], [1, 2, 3])
+    assert var_dict["dtype"] == sc.dtype.vector_3_float64
+
+
+def test_variable_matrix_to_dict():
+    data = np.array([
+        np.arange(9.0).reshape(3, 3),
+        np.arange(5.0, 14.0).reshape(3, 3),
+        np.arange(1.0, 10.0).reshape(3, 3),
+        np.arange(2.0, 11.0).reshape(3, 3)
+    ])
+    var = sc.Variable(['x'],
+                      values=data,
+                      unit=sc.units.m,
+                      dtype=sc.dtype.matrix_3_float64)
+    var_dict = sc.to_dict(var)
+    assert var_dict["shape"] == [4]
+    assert var_dict["values"].shape == (4, 3, 3)
+    assert var_dict["dtype"] == sc.dtype.matrix_3_float64
+
+
+def test_variable_0D_matrix_to_dict():
+    var = sc.Variable(value=np.arange(1, 10).reshape(3, 3),
+                      dtype=sc.dtype.matrix_3_float64)
+    var_dict = sc.to_dict(var)
+    assert var_dict["dims"] == []
+    assert var_dict["shape"] == []
+    assert np.array_equal(var_dict["value"], [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
+    assert var_dict["dtype"] == sc.dtype.matrix_3_float64
+
+
+def test_variable_event_to_dict():
+    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
+    var['x', 1].values.append(42)
+    var['x', 0].values.extend(np.ones(3))
+    var['x', 3].values = np.ones(6)
+    var_dict = sc.to_dict(var)
+    assert var_dict["shape"] == [4]
+    assert np.array_equal(var_dict["values"][0], [1, 1, 1])
+    assert np.array_equal(var_dict["values"][1], [42])
+    assert len(var_dict["values"][2]) == 0
+    assert np.array_equal(var_dict["values"][3], [1, 1, 1, 1, 1, 1])
+
+
 def test_variable_from_dict():
     var_dict = {
         "dims": ['x'],
-        "values": np.arange(10.),
+        "values": np.random.random(10),
         "variances": np.random.random(10)
     }
     var = sc.from_dict(var_dict)
@@ -35,11 +103,143 @@ def test_variable_from_dict():
     assert var.unit == sc.units.one
 
 
+def test_variable_0D_from_dict():
+    var_dict = {"value": 17., "variance": 0.2}
+    var = sc.from_dict(var_dict)
+    assert var.dims == []
+    assert var.shape == []
+    assert var.value == 17.0
+    assert var.variance == 0.2
+    assert var.unit == sc.units.one
+
+
+def test_variable_vector_from_dict():
+    var_dict = {
+        "dims": ['x'],
+        "values": np.arange(6).reshape(2, 3),
+        "dtype": "vector_3_float64"
+    }
+    var = sc.from_dict(var_dict)
+    assert var.dims == var_dict["dims"]
+    assert var.shape == [2]
+    assert np.array_equal(np.array(var.values), [[0, 1, 2], [3, 4, 5]])
+    assert var.unit == sc.units.one
+    assert var.dtype == sc.dtype.vector_3_float64
+
+
+def test_variable_0D_vector_from_dict():
+    var_dict = {"value": [1, 2, 3], "dtype": "vector_3_float64"}
+    var = sc.from_dict(var_dict)
+    assert var.dims == []
+    assert var.shape == []
+    assert np.array_equal(np.array(var.values), [1, 2, 3])
+    assert var.unit == sc.units.one
+    assert var.dtype == sc.dtype.vector_3_float64
+
+
+def test_variable_matrix_from_dict():
+    var_dict = {
+        "dims": ['x'],
+        "values": np.arange(18).reshape(2, 3, 3),
+        "dtype": "matrix_3_float64"
+    }
+    var = sc.from_dict(var_dict)
+    assert var.dims == var_dict["dims"]
+    assert var.shape == [2]
+    assert np.array_equal(np.array(var.values), var_dict["values"])
+    assert var.unit == sc.units.one
+    assert var.dtype == sc.dtype.matrix_3_float64
+
+
+def test_variable_matrix_from_dict():
+    var_dict = {
+        "dims": ['x'],
+        "values": np.arange(18).reshape(2, 3, 3),
+        "dtype": "matrix_3_float64"
+    }
+    var = sc.from_dict(var_dict)
+    assert var.dims == var_dict["dims"]
+    assert var.shape == [2]
+    assert np.array_equal(np.array(var.values), var_dict["values"])
+    assert var.unit == sc.units.one
+    assert var.dtype == sc.dtype.matrix_3_float64
+
+
+def test_variable_event_from_dict():
+    var_dict = {
+        'dims': ['x'],
+        'dtype':
+        'event_list_float64',
+        'values':
+        np.array([
+            np.array([1., 1., 1.]),
+            np.array([42.]),
+            np.array([]),
+            np.array([1., 1., 1., 1., 1., 1.])
+        ])
+    }
+    var = sc.from_dict(var_dict)
+    assert var.dims == ['x']
+    assert var.shape == [4]
+    assert np.array_equal(var['x', 0].values, [1., 1., 1.])
+    assert np.array_equal(var['x', 1].values, [42.])
+    assert len(var['x', 2].values) == 0
+    assert np.array_equal(var['x', 3].values, [1., 1., 1., 1., 1., 1.])
+    assert var.unit == sc.units.one
+    assert var.dtype == sc.dtype.event_list_float64
+
+
 def test_variable_round_trip():
     var = sc.Variable(dims=["x"],
                       values=np.arange(10.),
                       variances=np.random.random(10),
                       unit=sc.units.m)
+    assert var == sc.from_dict(sc.to_dict(var))
+
+
+def test_variable_0D_round_trip():
+    var = 12.0 * sc.units.one
+    print(sc.to_dict(var))
+    assert var == sc.from_dict(sc.to_dict(var))
+
+
+def test_variable_vector_round_trip():
+    var = sc.Variable(['x'],
+                      values=np.random.random([10, 3]),
+                      dtype=sc.dtype.vector_3_float64)
+    assert var == sc.from_dict(sc.to_dict(var))
+
+
+def test_variable_0D_vector_round_trip():
+    var = sc.Variable(value=[1, 2, 3], dtype=sc.dtype.vector_3_float64)
+    assert var == sc.from_dict(sc.to_dict(var))
+
+
+def test_variable_matrix_round_trip():
+    data = np.array([
+        np.arange(9.0).reshape(3, 3),
+        np.arange(5.0, 14.0).reshape(3, 3),
+        np.arange(1.0, 10.0).reshape(3, 3),
+        np.arange(2.0, 11.0).reshape(3, 3)
+    ])
+    var = sc.Variable(['x'],
+                      values=data,
+                      unit=sc.units.m,
+                      dtype=sc.dtype.matrix_3_float64)
+    assert var == sc.from_dict(sc.to_dict(var))
+
+
+def test_variable_0D_matrix_round_trip():
+    var = sc.Variable(value=np.arange(1, 10).reshape(3, 3),
+                      dtype=sc.dtype.matrix_3_float64)
+    assert var == sc.from_dict(sc.to_dict(var))
+
+
+def test_variable_event_round_trip():
+    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
+    var['x', 1].values.append(42)
+    var['x', 0].values.extend(np.ones(3))
+    var['x', 3].values = np.ones(6)
     assert var == sc.from_dict(sc.to_dict(var))
 
 
