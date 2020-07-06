@@ -151,16 +151,15 @@ def test_variable_matrix_from_dict():
     assert var.dtype == sc.dtype.matrix_3_float64
 
 
-def test_variable_matrix_from_dict():
+def test_variable_0D_matrix_from_dict():
     var_dict = {
-        "dims": ['x'],
-        "values": np.arange(18).reshape(2, 3, 3),
+        "value": np.arange(9).reshape(3, 3),
         "dtype": "matrix_3_float64"
     }
     var = sc.from_dict(var_dict)
-    assert var.dims == var_dict["dims"]
-    assert var.shape == [2]
-    assert np.array_equal(np.array(var.values), var_dict["values"])
+    assert var.dims == []
+    assert var.shape == []
+    assert np.array_equal(np.array(var.value), var_dict["value"])
     assert var.unit == sc.units.one
     assert var.dtype == sc.dtype.matrix_3_float64
 
