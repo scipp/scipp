@@ -78,6 +78,7 @@ class Slicer1d(Slicer):
         self.ax = ax
         self.mpl_axes = False
         self.input_contains_unaligned_data = False
+        self.current_xcenters = None
         if self.ax is None:
             self.fig, self.ax = plt.subplots(
                 1,
@@ -177,23 +178,21 @@ class Slicer1d(Slicer):
 
         return
 
+    def get_finite_y(self, arr):
+        if self.logy:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                arr = np.log10(arr, out=arr)
+        subset = np.where(np.isfinite(arr))
+        return arr[subset]
+
     def get_ylim(self, var=None, ymin=None, ymax=None, errorbars=False):
         if errorbars:
-            err = np.sqrt(var.variances)
+            err = self.vars_to_err(var.variances)
         else:
             err = 0.0
 
-        if self.logy:
-            with np.errstate(divide="ignore", invalid="ignore"):
-                arr = np.log10(var.values - err)
-                subset = np.where(np.isfinite(arr))
-                ymin_new = np.amin(arr[subset])
-                arr = np.log10(var.values + err)
-                subset = np.where(np.isfinite(arr))
-                ymax_new = np.amax(arr[subset])
-        else:
-            ymin_new = np.nanmin(var.values - err)
-            ymax_new = np.nanmax(var.values + err)
+        ymin_new = np.amin(self.get_finite_y(var.values - err))
+        ymax_new = np.amax(self.get_finite_y(var.values + err))
 
         dy = 0.05 * (ymax_new - ymin_new)
         ymin_new -= dy
@@ -321,13 +320,13 @@ class Slicer1d(Slicer):
             # Add error bars
             if self.errorbars[name]:
                 if self.histograms[name][dim]:
-                    err_x = edges_to_centers(new_x)
+                    self.current_xcenters = edges_to_centers(new_x)
                 else:
-                    err_x = new_x
+                    self.current_xcenters = new_x
                 self.members["error_y"][name] = self.ax.errorbar(
-                    err_x,
+                    self.current_xcenters,
                     ydata,
-                    yerr=np.sqrt(vslice.variances),
+                    yerr=self.vars_to_err(vslice.variances),
                     color=self.mpl_line_params["color"][name],
                     zorder=10,
                     fmt="none")
@@ -392,8 +391,8 @@ class Slicer1d(Slicer):
             if self.errorbars[name]:
                 coll = self.members["error_y"][name].get_children()[0]
                 coll.set_segments(
-                    self.change_segments_y(coll.get_segments(), vslice.values,
-                                           np.sqrt(vslice.variances)))
+                    self.change_segments_y(self.current_xcenters,
+                                           vslice.values, vslice.variances))
         if self.input_contains_unaligned_data and (not self.mpl_axes):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
@@ -468,11 +467,10 @@ class Slicer1d(Slicer):
         self.fig.canvas.draw_idle()
         return
 
-    def change_segments_y(self, s, y, e):
-        # TODO: this can be optimized to substitute the y values in-place in
-        # the original segments array
-        arr1 = np.array(s).flatten()[::2]
-        arr2 = np.array([y - np.sqrt(e), y + np.sqrt(e)]).T.flatten()
+    def change_segments_y(self, x, y, e):
+        e = self.vars_to_err(e)
+        arr1 = np.repeat(x, 2)
+        arr2 = np.array([y - e, y + e]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
     def toggle_masks(self, change):
@@ -481,3 +479,10 @@ class Slicer1d(Slicer):
         change["owner"].description = "Hide masks" if change["new"] else \
             "Show masks"
         return
+
+    def vars_to_err(self, v):
+        with np.errstate(invalid="ignore"):
+            v = np.sqrt(v)
+        non_finites = np.where(np.logical_not(np.isfinite(v)))
+        v[non_finites] = 0.0
+        return v
