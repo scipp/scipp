@@ -193,8 +193,69 @@ class Slicer3d(Slicer):
                                          controls=[self.controller],
                                          width=config.plot.width,
                                          height=config.plot.height)
+                                         # antialias=True)
 
-        self.box = widgets.VBox([self.renderer, widgets.VBox(self.vbox)])
+
+
+        # Controls
+        self.add_cut_planes = {}
+        self.add_cut_planes['x'] = widgets.Button(
+            description='X',
+            disabled=False,
+            button_style='', # 'success', 'info', 'warning', 'danger' or ''
+            icon='fa-cube',
+            tooltip="X-plane",
+            layout={'width': "50px"})
+        self.add_cut_planes['y'] = widgets.Button(
+            description='Y',
+            disabled=False,
+            button_style='', # 'success', 'info', 'warning', 'danger' or ''
+            icon='fa-cube',
+            tooltip="Y-plane",
+            layout={'width': "50px"})
+        self.add_cut_planes['z'] = widgets.Button(
+            description='Z',
+            disabled=False,
+            button_style='', # 'success', 'info', 'warning', 'danger' or ''
+            icon='fa-cube',
+            tooltip="Z-plane",
+            layout={'width': "50px"})
+        self.add_cut_planes['cx'] = widgets.Button(
+            description='X',
+            disabled=False,
+            button_style='', # 'success', 'info', 'warning', 'danger' or ''
+            icon='fa-toggle-on',
+            tooltip="Cylinder-X",
+            layout={'width': "50px"})
+        self.add_cut_planes['cy'] = widgets.Button(
+            description='Y',
+            disabled=False,
+            button_style='', # 'success', 'info', 'warning', 'danger' or ''
+            icon='fa-toggle-on',
+            tooltip="Cylinder-Y",
+            layout={'width': "50px"})
+        self.add_cut_planes['cz'] = widgets.Button(
+            description='Z',
+            disabled=False,
+            button_style='', # 'success', 'info', 'warning', 'danger' or ''
+            icon='fa-toggle-on',
+            tooltip="Cylinder-Z",
+            layout={'width': "50px"})
+        self.add_cut_planes['r'] = widgets.Button(
+            description='R',
+            disabled=False,
+            button_style='', # 'success', 'info', 'warning', 'danger' or ''
+            icon='fa-circle-o',
+            tooltip="Sphere",
+            layout={'width': "50px"})
+        self.cut_plane_controls = widgets.HBox(
+            [widgets.Label(value="Add a cut surface ")] +
+            list(self.add_cut_planes.values()))
+
+
+
+        self.box = widgets.VBox([self.renderer, widgets.VBox(self.vbox),
+            self.cut_plane_controls])
 
         return
 

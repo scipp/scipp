@@ -143,6 +143,7 @@ class Slicer:
         self.buttons = dict()
         self.showhide = dict()
         self.button_axis_to_dim = dict()
+        self.continuous_update = dict()
         # Default starting index for slider
         indx = 0
 
@@ -168,6 +169,14 @@ class Slicer:
                 disabled=(i >= self.ndim - len(button_options)))
             labvalue = self.make_slider_label(self.slider_x[self.name][dim],
                                               indx)
+            self.continuous_update[dim] = widgets.Checkbox(
+            value=True,
+            tooltip="Continuous update",
+            indent=False,
+            layout={"width": "initial"})
+            self.continuous_update[dim].observe(self.toggle_continuous_update,
+                                       names="value")
+
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
                 labvalue = dim_str
@@ -189,6 +198,7 @@ class Slicer:
             setattr(self.buttons[dim], "dim", dim)
             setattr(self.buttons[dim], "old_value", self.buttons[dim].value)
             setattr(self.slider[dim], "dim", dim)
+            setattr(self.continuous_update[dim], "dim", dim)
 
             if self.ndim == 1:
                 self.buttons[dim].layout.display = 'none'
@@ -212,7 +222,7 @@ class Slicer:
             # Add an observer to the slider
             self.slider[dim].observe(self.update_slice, names="value")
             # Add the row of slider + buttons
-            row = [self.slider[dim], self.lab[dim], self.buttons[dim]]
+            row = [self.slider[dim], self.lab[dim], self.continuous_update[dim], self.buttons[dim]]
             # if (len(button_options) == 3) and (not volume):
             #     row += [
             #         widgets.HTML(value="&nbsp;&nbsp;&nbsp;&nbsp;"),
@@ -307,3 +317,7 @@ class Slicer:
             var = make_fake_coord(dim, self.shapes[name][dim])
 
         return dim, var, formatter, locator
+
+    def toggle_continuous_update(self, change):
+        self.slider[change["owner"].dim].continuous_update = change["new"]
+        return
