@@ -126,6 +126,8 @@ TEST(Variable, operator_plus_equal_time_type) {
   EXPECT_THROW(a += float(1.0) * units::ns, except::TypeError);
   EXPECT_NO_THROW(a += int64_t(1) * units::ns);
   EXPECT_NE(a, copy);
+  EXPECT_NO_THROW(a += int32_t(1) * units::ns);
+  EXPECT_NE(a, copy);
 }
 
 TEST(Variable, operator_minus_equal_time_type) {
@@ -135,6 +137,8 @@ TEST(Variable, operator_minus_equal_time_type) {
   const auto copy(a);
   EXPECT_THROW(a -= float(1.0) * units::ns, except::TypeError);
   EXPECT_NO_THROW(a -= int64_t(1) * units::ns);
+  EXPECT_NE(a, copy);
+  EXPECT_NO_THROW(a -= int32_t(1) * units::ns);
   EXPECT_NE(a, copy);
 }
 

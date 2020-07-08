@@ -2,9 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/string.h"
+#include <iomanip>
+#include <sstream>
+
 #include "scipp/core/dimensions.h"
 #include "scipp/core/slice.h"
+#include "scipp/core/string.h"
 
 namespace scipp::core {
 

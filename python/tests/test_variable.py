@@ -139,8 +139,8 @@ def test_create_1D_vector_3_float64():
     assert var.dtype == sc.dtype.vector_3_float64
     assert var.unit == sc.units.m
 
-# This test will be enabled once datetime64 is available with pybind
-def notest_create_datetime64():
+@pytest.mark.skip(reason="enable once datetime64 is available with pybind")
+def test_create_datetime64():
     var = sc.Variable(dims=['x'],
                       values=[120, 121],
                       unit=sc.units.ns,
