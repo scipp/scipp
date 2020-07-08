@@ -65,7 +65,7 @@ def plot_3d(scipp_obj_dict=None,
                   aspect=aspect,
                   background=background)
 
-    render_plot(widgets=sv.renderer, filename=filename)
+    render_plot(widgets=sv.box, filename=filename)
 
     return SciPlot(sv.members)
 
@@ -118,7 +118,11 @@ class Slicer3d(Slicer):
         # self.surfaces = dict()
 
         coords = list(self.slider_x[self.name].values())
-        x, y, z = np.meshgrid(coords[0], coords[1], coords[2], indexing='ij')
+        coords = []
+        for dim, val in self.slider.items():
+            if val.disabled:
+                coords.append(self.slider_x[self.name][dim].values)
+        x, y, z = np.meshgrid(*coords, indexing='ij')
         self.positions = np.array([x.ravel(), y.ravel(), z.ravel()]).T
 
         # #====================================================================
@@ -167,7 +171,7 @@ class Slicer3d(Slicer):
                                                 aspect=config.plot.width /
                                                 config.plot.height)
 
-        self.axes_3d = p3.AxesHelper(10.0)
+        self.axes_3d = p3.AxesHelper(100.0)
         self.scene = p3.Scene(
             children=[self.camera, self.axes_3d, self.points],
             background=background)
@@ -189,6 +193,8 @@ class Slicer3d(Slicer):
                                          controls=[self.controller],
                                          width=config.plot.width,
                                          height=config.plot.height)
+
+        self.box = widgets.VBox([self.renderer, widgets.VBox(self.vbox)])
 
         return
 
@@ -365,25 +371,70 @@ void main() {
 
     # Define function to update wireframes
     def update_slice(self, change):
-        if self.buttons[change["owner"].dim].value is None:
-            self.update_cube(update_coordinates=False)
-        else:
-            # Update only one slice
-            # The dimensions to be sliced have been saved in slider_dims
-            # slice_indices = {"x": 0, "y": 1, "z": 2}
-            dim = change["owner"].dim
-            self.lab[dim].value = self.make_slider_label(
-                self.slider_x[self.name][dim], change["new"])
+        # if self.buttons[change["owner"].dim].value is None:
+        #     self.update_cube(update_coordinates=False)
+        # else:
+        #     # Update only one slice
+        #     # The dimensions to be sliced have been saved in slider_dims
+        #     # slice_indices = {"x": 0, "y": 1, "z": 2}
+        #     dim = change["owner"].dim
+        #     self.lab[dim].value = self.make_slider_label(
+        #         self.slider_x[self.name][dim], change["new"])
 
-            # Now move slice
-            ax_dim = self.buttons[dim].value.lower()
-            self.wireframes[ax_dim].visible = True
-            setattr(
-                self.wireframes[ax_dim], ax_dim,
-                getattr(self.wireframes[ax_dim], ax_dim) * 0.0 +
-                self.slider_x[self.name][dim].values[change["new"]])
+        #     # Now move slice
+        #     ax_dim = self.buttons[dim].value.lower()
+        #     self.wireframes[ax_dim].visible = True
+        #     setattr(
+        #         self.wireframes[ax_dim], ax_dim,
+        #         getattr(self.wireframes[ax_dim], ax_dim) * 0.0 +
+        #         self.slider_x[self.name][dim].values[change["new"]])
 
-            self.last_changed_slider_dim = dim
+        #     self.last_changed_slider_dim = dim
+
+        vslice = self.data_array
+        # if self.params["masks"][self.name]["show"]:
+        #     mslice = self.masks
+        # Slice along dimensions with active sliders
+        button_dims = [None, None, None]
+        for dim, val in self.slider.items():
+            if not val.disabled:
+                self.lab[dim].value = self.make_slider_label(
+                    self.slider_x[self.name][dim], val.value)
+                vslice = vslice[val.dim, val.value]
+                # # At this point, after masks were combined, all their
+                # # dimensions should be contained in the data_array.dims.
+                # if self.params["masks"][
+                #         self.name]["show"] and dim in mslice.dims:
+                #     mslice = mslice[val.dim, val.value]
+            else:
+                # Get the dimensions of the dimension-coordinates, since
+                # buttons can contain non-dimension coordinates
+                button_dims[self.buttons[dim].value.lower() ==
+                            "x"] = self.slider_x[self.name][val.dim].dims[0]
+
+        # arr = self.hist_data_array[self.key][self.slider_dim,
+        #                                      change["new"]].values
+        # if self.select_rendering.value == "Full":
+        #     arr = np.repeat(arr, self.nverts, axis=0)
+        # colors = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
+        colors = self.scalar_map.to_rgba(vslice.values.flatten()).astype(np.float32)
+        # if self.key in self.masks_variables and self.masks_params[
+        #         self.key]["show"]:
+        #     msk = self.masks_variables[self.key].values
+        #     if self.select_rendering.value == "Full":
+        #         msk = np.repeat(msk, self.nverts, axis=0)
+        #     masks_inds = np.where(msk)
+        #     masks_colors = self.masks_scalar_map.to_rgba(
+        #         arr[masks_inds]).astype(np.float32)
+        #     colors[masks_inds] = masks_colors
+
+        self.points_geometry.attributes["color"].array = colors[:, :3]
+
+        # self.label.value = name_with_unit(
+        #     var=self.hist_data_array[self.key].coords[self.slider_dim],
+        #     name=value_to_string(self.hist_data_array[self.key].coords[
+        #         self.slider_dim].values[change["new"]]))
+
         return
 
     # Define function to update surfaces
