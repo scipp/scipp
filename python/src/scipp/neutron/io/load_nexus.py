@@ -195,6 +195,14 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False):
 def load_positions(filename, entry='/'):
 
     instrument = {}
+    pattern = 'transformations/location'
+
+    lx = []
+    ly = []
+    lz = []
+
+    # nmax = 8
+    # i = 0
 
     with h5py.File(filename, "r", libver='latest', swmr=True) as f:
 
@@ -217,6 +225,28 @@ def load_positions(filename, entry='/'):
         for item in contents:
 
             print(item)
+            if item.endswith(pattern) and (item.count('detector') > 0):
+                # i += 1
+                root = item.replace(pattern, '')
+                pos = f[item][()] * np.array(f[item].attrs['vector'])
+                
+                xoffset = f[root + 'x_pixel_offset'][()].astype(np.float64) + pos[0]
+                yoffset = f[root + 'y_pixel_offset'][()].astype(np.float64) + pos[1]
+                zoffset = f[root + 'z_pixel_offset'][()].astype(np.float64) + pos[2]
+
+                # positions = np.array([xoffset, yoffset, zoffset]).T
+                # print(positions)
+                # break
+                # return xoffset, yoffset, zoffset
+                lx.append(xoffset)
+                ly.append(yoffset)
+                lz.append(zoffset)
+
+                # if i > nmax:
+                #     return np.concatenate(lx), np.concatenate(ly), np.concatenate(lz)
+
+            # for key, value in f[item].attrs.items():
+            #     print(key, value)
 
             # # print(item)
             # for key in fields.keys():
@@ -230,3 +260,4 @@ def load_positions(filename, entry='/'):
             #                 spec_min = min(spec_min, entries[key][root].min())
             #                 spec_max = max(spec_max, entries[key][root].max())
             #                 spec_num.append(np.unique(entries[key][root]))
+    return np.array([np.concatenate(lx), np.concatenate(ly), np.concatenate(lz)]).T
