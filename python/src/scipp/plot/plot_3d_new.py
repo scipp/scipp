@@ -8,6 +8,8 @@ from .render import render_plot
 from ..plot.sciplot import SciPlot
 from .slicer import Slicer
 from .._utils import name_with_unit
+from .._scipp import core as sc
+
 
 # Other imports
 import numpy as np
@@ -117,13 +119,26 @@ class Slicer3d(Slicer):
         # self.wireframes = dict()
         # self.surfaces = dict()
 
-        coords = list(self.slider_x[self.name].values())
-        coords = []
-        for dim, val in self.slider.items():
-            if val.disabled:
-                coords.append(self.slider_x[self.name][dim].values)
-        x, y, z = np.meshgrid(*coords, indexing='ij')
-        self.positions = np.array([x.ravel(), y.ravel(), z.ravel()]).T
+        # coords = list(self.slider_x[self.name].values())
+        self.positions = None
+        print(self.slider_x)
+        for dim, coord in self.data_array.coords.items():
+            # if dim 
+            print(coord.dtype, sc.dtype.vector_3_float64)
+            if coord.dtype == sc.dtype.vector_3_float64:
+                # positions_found = dim
+                self.positions = np.array(coord.values)
+                break
+        # if positions_found is not None:
+        #     self.positions = np.array(self.slider_x[self.name][positions_found].values)
+        # else:
+        if self.positions is None:
+            coords = []
+            for dim, val in self.slider.items():
+                if val.disabled:
+                    coords.append(self.slider_x[self.name][dim].values)
+            x, y, z = np.meshgrid(*coords, indexing='ij')
+            self.positions = np.array([x.ravel(), y.ravel(), z.ravel()]).T
 
         # #====================================================================
         # wframes = self.get_outlines()
