@@ -153,4 +153,5 @@ void init_units_neutron(py::module &m) {
   units.attr("rad") = units::rad;
   units.attr("s") = units::s;
   units.attr("us") = units::us;
+  units.attr("ns") = units::ns;
 }
