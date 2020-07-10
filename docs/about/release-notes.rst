@@ -26,10 +26,12 @@ Features
 * New realign functionality.
 * Support for event-filtering.
 * Support for subtraction and addition for (realigned) event data.
+* Non-range slicing changed to preserve coords as attrs rather than dropping
 * ``scipp.neutron``: Instrument view with advanced geometry support, showing correct pixel shapes.
 * Instrument view working on doc pages.
 * Made it simpler to add new ``dtype`` and support ``transform`` for all types.
 * Comparison functions such as ``less``, ``greater_equal``, ...
+* ``all`` and ``any`` can work over all dimensions as well as explicitly provided dimension argument
 * Internal cleanup and documentation additions.
 
 Contributors
