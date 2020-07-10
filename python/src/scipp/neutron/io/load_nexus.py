@@ -134,9 +134,82 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False):
     print("Spec map:", timer() - start)
 
 
+    # ids = sc.Variable(['x'], values=data['event_id'])
+    # temp = sc.Dataset()
+    # temp['tof'] = sc.Variable(['x'], values=data['event_time_offset'])
+    # temp['ids'] = ids
 
 
-    # return
+    start = timer()
+    # sort = sc.sort(temp, ids)
+    # print(temp)
+    indices = np.argsort(data["event_id"])
+    print("ArgSort:", timer() - start)
+    start = timer()
+    data['event_id'] = data['event_id'][indices]
+    data['event_time_offset'] = data['event_time_offset'][indices]
+    print("Sort indexing:", timer() - start)
+    diff = np.ediff1d(data['event_id'])
+    print(diff)
+    locs = np.where(diff > 0)[0]
+    print(locs)
+    print(np.ediff1d(locs))
+    n_events_per_id = np.concatenate([locs[0:1], np.ediff1d(locs)])
+    locs = np.concatenate([[0], locs, [len(data['event_id'])]])
+
+
+
+    var = sc.Variable(dims=['spectrum'],
+                      shape=[nspec],
+                      dtype=sc.dtype.event_list_float64)
+
+
+    weights = sc.Variable(
+        dims=['spectrum'],
+        shape=[nspec],
+        unit=sc.units.counts,
+        dtype=sc.dtype.event_list_float64,
+        variances=True)
+    # for i in range(nspec):
+    #     ones = np.ones(len(var['spectrum', i].values))
+    #     weights['spectrum', i].values = ones
+    #     weights['spectrum', i].variances = ones
+
+
+
+    start = timer()
+    # for key, item in entries["event_id"].items():
+    #     print(key)
+    print(len(locs))
+    print(nspec)
+    print(locs[-1])
+    for n in range(nspec):
+        # ispec = spec_map[it]
+        # print(n)
+        # print(locs[n])
+        var['spectrum', n].values.extend(data["event_time_offset"][locs[n]:locs[n+1]])
+        ones = np.ones_like(var['spectrum', n].values)
+        weights['spectrum', n].values = ones
+        weights['spectrum', n].variances = ones
+
+        # break
+    print("Filling events:", timer() - start)
+    print(var)
+    specs = sc.Variable(dims=['spectrum'], values=np.arange(nspec), dtype=sc.dtype.int32)
+    ids = sc.Variable(dims=['spectrum'], values=spec_num, dtype=sc.dtype.int32)
+    da = sc.DataArray(data=weights,
+                      coords={
+                          'spectrum': specs,
+                          'ids': ids,
+                          'tof': var
+                      })
+    da.coords['tof'].unit = sc.units.us
+
+
+
+
+    return da
+
 
 
 
