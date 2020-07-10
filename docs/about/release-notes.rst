@@ -20,6 +20,7 @@ Features
 * ``all`` and ``any`` can work over all dimensions as well as explicitly provided dimension argument
 * It is now possible to convert between Scipp objects and Python dictionaries using ``to_dict`` and ``from_dict``.
 * New functions ``collapse`` and ``slices`` can be use to split one or more dimensions of a DataArray to a dict of DataArrays.
+* You can now inspect the global object list of via the ``repr`` for scipp showing Datasets DataArrays and Variables
 * Internal cleanup and documentation additions.
 
 Noteable bug fixes
