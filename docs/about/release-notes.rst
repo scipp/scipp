@@ -19,6 +19,11 @@ Features
 * Comparison functions such as ``less``, ``greater_equal``, ...
 * ``all`` and ``any`` can work over all dimensions as well as explicitly provided dimension argument
 * Internal cleanup and documentation additions.
+  
+Noteable bug fixes
+~~~~~~~~~~~~~~~~~~
+
+* Several fixes in the plotting (non-regular bins, colorbar limits, axes tick labels from unaligned coordinates, etc...)
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
