@@ -20,7 +20,7 @@ Features
 * ``all`` and ``any`` can work over all dimensions as well as explicitly provided dimension argument
 * Internal cleanup and documentation additions.
 
-Breaking changes since v0.3
+Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * Coord and attributes names for neutron data have been standardized, now using hyphens instead of underscore, except for subscripts. Affected examples: ``pulse-time`` (previously ``pulse_times``), ``source-position`` (previously ``source_position``), ``sample-position`` (previously ``sample_position``), ``detector-info`` (previously ``detector_info``).
