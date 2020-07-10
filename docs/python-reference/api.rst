@@ -29,8 +29,9 @@ General
    :toctree: ../generated
 
    abs
-   concatenate
    choose
+   collapse
+   concatenate
    dot
    filter
    histogram
@@ -40,6 +41,7 @@ General
    rebin
    reciprocal
    reshape
+   slices
    sort
    sqrt
    values
