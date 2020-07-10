@@ -116,6 +116,99 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False):
                             spec_num.append(np.unique(entries[key][root]))
     print("Reading file:", timer() - start)
 
+    data = {}
+    for key, item in entries.items():
+        data[key] = np.concatenate(list(item.values()))
+
+    for key, item in data.items():
+        print(key, item.shape)
+
+    start = timer()
+    spec_num = np.unique(np.concatenate(spec_num).ravel())
+    spec_map = {val: key for (key, val) in enumerate(spec_num)}
+    nspec = len(spec_num)
+    data['spectrum'] = np.zeros_like(data['event_id'])
+    for i in range(nspec):
+        data['spectrum'][i] = spec_map[data['event_id'][i]]
+    print(data)
+    print("Spec map:", timer() - start)
+
+
+
+
+    # return
+
+
+
+
+
+
+    specs = sc.Variable(dims=['spectrum'], values=np.arange(nspec), dtype=sc.dtype.int32)
+
+
+    # var = sc.Variable(dims=['x'],
+    #                   shape=[1],
+    #                   dtype=sc.dtype.event_list_float64,
+    #                   unit=sc.units.us)
+    # var['x', 0].values.append(data['event_time_offset'])
+
+    da = sc.DataArray(data=sc.Variable(dims=['x'], values=np.ones_like(data['event_time_offset'])),
+          coords={'x': sc.Variable(dims=['x'], values=data['event_time_offset']),
+          'spectrum': sc.Variable(dims=['x'], values=data['spectrum'])})
+
+    grouped = sc.groupby(da, 'spectrum', bins=specs).flatten('x')
+    print(grouped)
+    return
+
+
+    var = sc.Variable(dims=['spectrum'],
+                      shape=[nspec],
+                      dtype=sc.dtype.event_list_float64)
+
+    start = timer()
+    for key, item in entries["event_id"].items():
+        print(key)
+        for n, it in enumerate(item):
+            ispec = spec_map[it]
+            var['spectrum',
+                ispec].values.append(entries["event_time_offset"][key][n])
+        # break
+    print("Filling events:", timer() - start)
+    print(var)
+
+    weights = sc.Variable(
+        dims=['spectrum'],
+        shape=[nspec],
+        unit=sc.units.counts,
+        dtype=sc.dtype.event_list_float64,
+        variances=True)
+    for i in range(nspec):
+        ones = np.ones(len(var['spectrum', i].values))
+        weights['spectrum', i].values = ones
+        weights['spectrum', i].variances = ones
+
+    da = sc.DataArray(data=weights,
+                      coords={
+                          'spectrum': specs,
+                          'ids': ids,
+                          'tof': var
+                      })
+    da.coords['tof'].unit = sc.units.us
+
+    return da
+
+
+
+
+
+
+
+
+
+
+
+
+
     #         if fields[key]["entry"] is None:
     #             for p in fields[key]["pattern"]:
     #                 if item.endswith(p):
@@ -145,41 +238,39 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False):
     #               "Max={}".format(np.shape(fields[key]["data"]),
     #                               np.amin(fields[key]["data"]),
     #                               np.amax(fields[key]["data"])))
-    print(spec_min, spec_max)
 
-    print(len(spec_num))
-    spec_num = np.unique(np.concatenate(spec_num).ravel())
-    print(spec_num.shape)
 
-    nspec = len(spec_num)
 
-    spec_map = {val: key for (key, val) in enumerate(spec_num)}
 
-    ids = sc.Variable(dims=['spectrum'], values=spec_num, dtype=sc.dtype.int32)
 
-    var = sc.Variable(dims=['spectrum'],
-                      shape=[nspec],
-                      dtype=sc.dtype.event_list_float64)
 
-    start = timer()
-    for key, item in entries["event_id"].items():
-        print(key)
-        for n, it in enumerate(item):
-            ispec = spec_map[it]
-            var['spectrum',
-                ispec].values.append(entries["event_time_offset"][key][n])
-        # break
-    print("Filling events:", timer() - start)
-    print(var)
 
-    da = sc.DataArray(data=sc.Variable(['spectrum'], values=np.ones(nspec)),
-                      coords={
-                          'spectrum': ids,
-                          'tof': var
-                      })
-    da.coords['tof'].unit = sc.units.us
+    # print(spec_min, spec_max)
 
-    return da
+    # print(len(spec_num))
+    # spec_num = np.unique(np.concatenate(spec_num).ravel())
+    # print(spec_num.shape)
+
+    # nspec = len(spec_num)
+
+    # ids_bins = sc.Variable(['ids'], values=np.arange(spec_min, spec_max + 1))
+
+    
+
+    # spec_map = {val: key for (key, val) in enumerate(spec_num)}
+
+    # ids = sc.Variable(dims=['spectrum'], values=spec_num, dtype=sc.dtype.int32)
+
+
+
+
+
+
+
+
+
+
+
 
 
 # def __convert_id(ids, nx, id_offset=0):
