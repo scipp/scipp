@@ -75,7 +75,7 @@ def collapse(scipp_obj, keep):
 
     :param [scipp_obj]: Dataset or DataArray to be split into slices.
     :type [scipp_obj]: Dataset or DataArray
-    :param [kepp]: Dimension to be preserved.
+    :param [keep]: Dimension to be preserved.
     :type [dim]: str
     :return: A dictionary holding 1D slices of the input object.
     :rtype: dict
