@@ -24,6 +24,11 @@ stages:
               # Run quiet diff to fail the job if any formatting was done (see man git-diff)
               git diff --quiet
             displayName: 'Run clang-format'
+          - bash: |
+              set -ex
+              docker build ./tools -f ./tools/cppcheck.Dockerfile -t scipp_cppcheck
+              docker run --rm -v "$PWD":/data scipp_cppcheck
+            displayName: 'Run cppcheck'
 
       - job: 'cmake_checks'
         displayName: 'CMake Checks'
