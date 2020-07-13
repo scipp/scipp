@@ -12,6 +12,9 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False):
     Note that the patterns are listed in order of preference,
     i.e. if more than one is present in the file, the data will be read
     from the first one found.
+
+    Usage example:
+      data = sc.neutron.load_nexus('PG3_4844_event.nxs')
     """
     total_time = timer()
 
