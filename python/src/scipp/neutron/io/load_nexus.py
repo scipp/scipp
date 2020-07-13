@@ -16,10 +16,7 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False):
     total_time = timer()
 
     fields = {}
-    fields["event_id"] = {
-        "pattern": ["event_id"],
-        "dtype": np.int32
-    }
+    fields["event_id"] = {"pattern": ["event_id"], "dtype": np.int32}
     fields["event_time_offset"] = {
         "pattern": ["event_time_offset"],
         "dtype": np.float64
@@ -28,15 +25,12 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False):
         "pattern": ["event_time_zero"],
         "dtype": np.float64
     }
-    fields["event_index"] = {
-        "pattern": ["event_index"],
-        "dtype": np.float64
-    }
-    entries = { key: {} for key in fields}
+    fields["event_index"] = {"pattern": ["event_index"], "dtype": np.float64}
+    entries = {key: {} for key in fields}
 
-    spec_min = np.Inf # Min spectrum number
-    spec_max = 0 # Max spectrum number
-    spec_num = [] # List of unique spectral numbers
+    spec_min = np.Inf  # Min spectrum number
+    spec_max = 0  # Max spectrum number
+    spec_num = []  # List of unique spectral numbers
 
     start = timer()
     with h5py.File(filename, "r", libver='latest', swmr=True) as f:
@@ -100,24 +94,26 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False):
                       shape=[nspec],
                       dtype=sc.dtype.event_list_float64)
     # Weights are set to one by default
-    weights = sc.Variable(
-        dims=['spectrum'],
-        shape=[nspec],
-        unit=sc.units.counts,
-        dtype=sc.dtype.event_list_float64,
-        variances=True)
+    weights = sc.Variable(dims=['spectrum'],
+                          shape=[nspec],
+                          unit=sc.units.counts,
+                          dtype=sc.dtype.event_list_float64,
+                          variances=True)
 
     # Populate event list chunk by chunk
     start = timer()
     for n in range(nspec):
-        var['spectrum', n].values.extend(data["event_time_offset"][locs[n]:locs[n+1]])
+        var['spectrum', n].values.extend(
+            data["event_time_offset"][locs[n]:locs[n + 1]])
         ones = np.ones_like(var['spectrum', n].values)
         weights['spectrum', n].values = ones
         weights['spectrum', n].variances = ones
     print("Filling events:", timer() - start)
 
     # arange variable for spectra indices
-    specs = sc.Variable(dims=['spectrum'], values=np.arange(nspec), dtype=sc.dtype.int32)
+    specs = sc.Variable(dims=['spectrum'],
+                        values=np.arange(nspec),
+                        dtype=sc.dtype.int32)
     # Also store the indices in the output? Are they every needed?
     ids = sc.Variable(dims=['spectrum'], values=spec_num, dtype=sc.dtype.int32)
     # Put everything together in a DataArray
@@ -137,7 +133,7 @@ def load_positions(filename, entry='/', dim='position'):
     """
     Usage:
       d = sc.Dataset()
-      d.coords['position'] = sc.neutron.load_positions('LOKI_Tube_Definition.hdf5')
+      d.coords['position'] = sc.neutron.load_positions('LOKI_Definition.hdf5')
     """
 
     # TODO: We need to think about how to link the correct position to the
@@ -172,7 +168,9 @@ def load_positions(filename, entry='/', dim='position'):
                     else:
                         positions[x].append(np.zeros(size))
 
-    array = np.array([np.concatenate(positions['x']),
-                      np.concatenate(positions['y']),
-                      np.concatenate(positions['z'])]).T
+    array = np.array([
+        np.concatenate(positions['x']),
+        np.concatenate(positions['y']),
+        np.concatenate(positions['z'])
+    ]).T
     return sc.Variable([dim], values=array, dtype=sc.dtype.vector_3_float64)
