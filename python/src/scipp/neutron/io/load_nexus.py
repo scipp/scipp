@@ -6,7 +6,8 @@ from os.path import join
 from timeit import default_timer as timer
 
 
-def load_nexus(filename, entry="/", verbose=False, convert_ids=False):
+def load_nexus(filename, entry="/", verbose=False, convert_ids=False,
+               instrument_file=None):
     """
     Load a hdf/nxs file and return required information.
     Note that the patterns are listed in order of preference,
@@ -19,7 +20,7 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False):
     total_time = timer()
 
     fields = {}
-    fields["event_id"] = {"pattern": ["event_id"], "dtype": np.int32}
+    fields["event_id"] = {"pattern": ["event_id"], "dtype": np.int64}
     fields["event_time_offset"] = {
         "pattern": ["event_time_offset"],
         "dtype": np.float64
@@ -128,6 +129,13 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False):
                       })
     da.coords['tof'].unit = sc.units.us
 
+    # Load positions?
+    start = timer()
+    if instrument_file is None:
+        instrument_file = filename
+    da.coords['position'] = load_positions(instrument_file, dim='spectrum')
+    print("Loading positions:", timer() - start)
+
     print("Total time:", timer() - total_time)
     return da
 
@@ -156,6 +164,7 @@ def load_positions(filename, entry='/', dim='position'):
         for item in contents:
 
             if item.endswith(pattern) and (item.count('detector') > 0):
+                print(item)
                 root = item.replace(pattern, '')
                 pos = f[item][()] * np.array(f[item].attrs['vector'])
                 offsets = {x: None for x in xyz}
@@ -163,7 +172,7 @@ def load_positions(filename, entry='/', dim='position'):
                 for i, x in enumerate(xyz):
                     entry = join(root, '{}_pixel_offset'.format(x))
                     if entry in f:
-                        offsets[x] = f[entry][()].astype(np.float64) + pos[i]
+                        offsets[x] = f[entry][()].astype(np.float64).ravel() + pos[i]
                         size = len(offsets[x])
                 for i, x in enumerate(xyz):
                     if offsets[x] is not None:
