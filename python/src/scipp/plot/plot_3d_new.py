@@ -111,7 +111,8 @@ class Slicer3d(Slicer):
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
 
         # # Store min/max for each dimension for invisible scatter
-        self.xminmax = {}
+        # self.xminmax = {}
+        # self.center_of_mass = [0, 0, 0]
         # for dim, var in self.slider_x[self.name].items():
         #     self.xminmax[dim] = [var.values[0], var.values[-1]]
         # self.set_axes_range()
@@ -182,17 +183,27 @@ class Slicer3d(Slicer):
 
         # self.members["fig"] = self.fig
 
+        self.xminmax, self.center_of_mass = self.get_spatial_extents()
+
         # self.points_geometry, self.points_material, self.points = 
         self.create_points_geometry()
 
         self.outline, self.axticks = self.create_outline()
 
-        # Create the threejs scene with ambient light and camera
-        self.camera = p3.PerspectiveCamera(position=[1, 1, 1],
+        # Define camera
+        camera_lookat = self.center_of_mass
+        # print(self.center_of_mass)
+        # print(np.diff(list(self.xminmax.values()), axis=1))
+        camera_pos = np.array(self.center_of_mass) + 1.2 * np.diff(list(self.xminmax.values()), axis=1).ravel()
+        # print(camera_pos)
+        # print(list(camera_pos))
+        self.camera = p3.PerspectiveCamera(position=list(camera_pos),
+                                           lookAt=camera_lookat,
                                                 aspect=config.plot.width /
                                                 config.plot.height)
 
-        self.axes_3d = p3.AxesHelper(100.0)
+        self.axes_3d = p3.AxesHelper(10.0 * np.linalg.norm(camera_pos))
+        # Create the threejs scene
         self.scene = p3.Scene(
             children=[self.camera, self.axes_3d, self.points, self.outline, self.axticks],
             background=background)
@@ -339,6 +350,18 @@ void main() {
 #     polygonOffsetFactor = -4
 )
 
+    def get_spatial_extents(self):
+        # Find extents of points in 3D
+        xminmax = {}
+        for i, x in enumerate('xyz'):
+            xminmax[x] = [np.amin(self.positions[:, i]) - 0.5*self.pixel_size, np.amax(self.positions[:, i]) + 0.5*self.pixel_size]
+        center_of_mass = [
+                0.5*np.sum(xminmax['x']),
+                0.5*np.sum(xminmax['y']),
+                0.5*np.sum(xminmax['z'])]
+        return xminmax, center_of_mass
+
+
     def create_outline(self):
         """
         Make a wireframe cube with tick labels
@@ -384,7 +407,7 @@ void main() {
                             # nmax=20,
                             # range_start=0):
 
-        max_extent = np.amax(np.diff(list(self.xminmax.values()), axis=1))
+        max_extent = np.amax(np.diff(list(self.xminmax.values()), axis=1).ravel())
         print(max_extent)
         # return
         tick_size = 0.05 * max_extent
