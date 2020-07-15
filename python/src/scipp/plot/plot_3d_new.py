@@ -7,7 +7,7 @@ from .. import config
 from .render import render_plot
 from ..plot.sciplot import SciPlot
 from .slicer import Slicer
-from .._utils import name_with_unit
+from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 
 
@@ -17,7 +17,7 @@ import ipywidgets as widgets
 from matplotlib import cm
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-from matplotlib import ticker
+# from matplotlib import ticker
 from matplotlib.backends import backend_agg
 import PIL as pil
 import pythreejs as p3
@@ -111,7 +111,7 @@ class Slicer3d(Slicer):
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
 
         # # Store min/max for each dimension for invisible scatter
-        # self.xminmax = dict()
+        self.xminmax = {}
         # for dim, var in self.slider_x[self.name].items():
         #     self.xminmax[dim] = [var.values[0], var.values[-1]]
         # self.set_axes_range()
@@ -121,6 +121,7 @@ class Slicer3d(Slicer):
 
         # coords = list(self.slider_x[self.name].values())
         self.positions = None
+        self.pixel_size = 1.0
         print(self.slider_x)
         for dim, coord in self.data_array.coords.items():
             # if dim 
@@ -139,6 +140,9 @@ class Slicer3d(Slicer):
                     coords.append(self.slider_x[self.name][dim].values)
             x, y, z = np.meshgrid(*coords, indexing='ij')
             self.positions = np.array([x.ravel(), y.ravel(), z.ravel()]).T
+            self.pixel_size = coords[0][1] - coords[0][0]
+        print('self.pixel_size', self.pixel_size)
+        print(coords[0][1] , coords[0][0])
 
         # #====================================================================
         # wframes = self.get_outlines()
@@ -181,6 +185,8 @@ class Slicer3d(Slicer):
         # self.points_geometry, self.points_material, self.points = 
         self.create_points_geometry()
 
+        self.outline, self.axticks = self.create_outline()
+
         # Create the threejs scene with ambient light and camera
         self.camera = p3.PerspectiveCamera(position=[1, 1, 1],
                                                 aspect=config.plot.width /
@@ -188,7 +194,7 @@ class Slicer3d(Slicer):
 
         self.axes_3d = p3.AxesHelper(100.0)
         self.scene = p3.Scene(
-            children=[self.camera, self.axes_3d, self.points],
+            children=[self.camera, self.axes_3d, self.points, self.outline, self.axticks],
             background=background)
 
         # # Call the rendering which will create the mesh and points objects
@@ -289,7 +295,7 @@ class Slicer3d(Slicer):
                     # dtype=np.float32))
             })
         self.points_material = p3.PointsMaterial(vertexColors='VertexColors',
-                                                 # size=self._pixel_size,
+                                                 size=self.pixel_size,
                                                  transparent=True)
         # points_material = self.create_points_material()
         self.points = p3.Points(geometry=self.points_geometry,
@@ -332,6 +338,90 @@ void main() {
 #     polygonOffset = True,
 #     polygonOffsetFactor = -4
 )
+
+    def create_outline(self):
+        """
+        Make a wireframe cube with tick labels
+        """
+
+        # Find extents of points in 3D
+        for i, x in enumerate('xyz'):
+            self.xminmax[x] = [np.amin(self.positions[:, i]) - 0.5*self.pixel_size, np.amax(self.positions[:, i]) + 0.5*self.pixel_size]
+
+        box_geometry = p3.BoxBufferGeometry(
+            self.xminmax['x'][1] - self.xminmax['x'][0],
+            self.xminmax['y'][1] - self.xminmax['y'][0],
+            self.xminmax['z'][1] - self.xminmax['z'][0])
+        edges = p3.EdgesGeometry( box_geometry )
+        outline = p3.LineSegments(geometry=edges, material=p3.LineBasicMaterial(color='#000000'),
+            position=[
+                0.5*np.sum(self.xminmax['x']),
+                0.5*np.sum(self.xminmax['y']),
+                0.5*np.sum(self.xminmax['z'])])
+
+        axticks = self.generate_axis_ticks()
+
+        return outline, axticks
+
+
+    def make_axis_tick(self, string, position, color="black", size=1.0):
+        sm = p3.SpriteMaterial(map=p3.TextTexture(
+            string=string, color=color, size=300, squareTexture=True),
+                                    transparent=True)
+        return p3.Sprite(material=sm,
+                              position=position,
+                              scaleToTexture=True,
+                              scale=[size, size, size])
+
+
+    def generate_axis_ticks(self):
+                            # group=None,
+                            # xmin=0,
+                            # xmax=1,
+                            # axis=0,
+                            # size=1,
+                            # offset=None,
+                            # nmax=20,
+                            # range_start=0):
+
+        max_extent = np.amax(np.diff(list(self.xminmax.values()), axis=1))
+        print(max_extent)
+        # return
+        tick_size = 0.05 * max_extent
+        axticks = p3.Group()
+        iden = np.identity(3, dtype=np.float32)
+        ticker = mpl.ticker.MaxNLocator(10)
+        # axticks.add(self.make_axis_tick("0", [0, 0, 0], size=tick_size))
+        offsets = {'x': [0, self.xminmax['y'][0], self.xminmax['z'][0]],
+                   'y': [self.xminmax['x'][0], 0, self.xminmax['z'][0]],
+                   'z': [self.xminmax['x'][0], self.xminmax['y'][0], 0]}
+
+        for axis, x in enumerate('xyz'):
+            # ticker = self.mpl_ticker.MaxNLocator(10)
+            ticks = ticker.tick_values(self.xminmax[x][0], self.xminmax[x][1])
+            # iden = np.identity(3, dtype=np.float32)
+            for i in range(1, len(ticks)):
+            # for tick in ticks:
+                tick_pos = iden[axis] * ticks[i] + offsets[x]#s[i]
+                # if offset is not None:
+                #     tick_pos += offset
+                axticks.add(
+                    self.make_axis_tick(string=value_to_string(ticks[i], precision=1),
+                                        position=tick_pos.tolist(),
+                                        size=tick_size))
+        return axticks
+
+    # def generate_3d_axes_ticks(self):
+    #     tick_size = 10.0 * self._pixel_size
+    #     axticks = self.p3.Group()
+    #     axticks.add(self.make_axis_tick("0", [0, 0, 0], size=tick_size))
+    #     for i in range(3):
+    #         self.generate_axis_ticks(group=axticks,
+    #                                  xmin=self.camera_pos * 0.1,
+    #                                  xmax=self.camera_pos * 10.0,
+    #                                  axis=i,
+    #                                  size=tick_size,
+    #                                  range_start=1)
 
 
     def update_buttons(self, owner, event, dummy):
