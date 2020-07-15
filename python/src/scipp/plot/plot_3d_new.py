@@ -233,9 +233,9 @@ class Slicer3d(Slicer):
 
         # Controls
 
-        self.opacity_slider = widgets.FloatRangeSlider(min=0,
+        self.opacity_slider = widgets.FloatRangeSlider(min=0.0,
                                                        max=1.0,
-                                                       value=[0, 1],
+                                                       value=[0.1, 1],
                                                        step=0.01,
                                                        description="Opacity",
                                                        continuous_update=False)
@@ -252,7 +252,7 @@ class Slicer3d(Slicer):
         # self.opacity_upper_link = widgets.link((self.opacity_slider, 'upper'), (self.opacity_upper_value, 'value'))
 
 
-        self.cut_plane_buttons = widgets.ToggleButtons(
+        self.cut_surface_buttons = widgets.ToggleButtons(
             options=[('X ', 0), ('Y ', 1), ('Z ', 2),
                      (' X ', 3), (' Y ', 4), (' Z ', 5),
                      ('R ', 6)],
@@ -264,7 +264,7 @@ class Slicer3d(Slicer):
             icons=(['cube'] * 3) + (['toggle-on'] * 3) + ['circle-o'],
             style={"button_width": "55px"}
         )
-        self.cut_plane_buttons.observe(self.update_cut_plane_buttons, names="value")
+        self.cut_surface_buttons.observe(self.update_cut_surface_buttons, names="value")
 
         # self.add_cut_planes = {}
         # self.add_cut_planes['x'] = widgets.Button(
@@ -331,14 +331,14 @@ class Slicer3d(Slicer):
         self.cut_surface_thickness = widgets.FloatText(value=0.05 * box_size.max(),
             layout={"width": "50px"})
         # 
-        self.cut_plane_controls = widgets.HBox([self.cut_plane_buttons, self.cut_slider,
+        self.cut_surface_controls = widgets.HBox([self.cut_surface_buttons, self.cut_slider,
             self.cut_checkbox, self.cut_surface_thickness])
 
 
 
         self.box = widgets.VBox([self.renderer, widgets.VBox(self.vbox),
             widgets.HBox([self.opacity_slider, self.opacity_checkbox]),
-            self.cut_plane_controls])
+            self.cut_surface_controls])
 
         return
 
@@ -497,9 +497,12 @@ void main() {
     #     self.points_material.opacity = change["new"][1]
     def update_opacity(self, change):
         # self.points_material.opacity = change["new"][1]
-        arr = self.points_geometry.attributes["rgba_color"].array
-        arr[:, 3] = change["new"][1]
-        self.points_geometry.attributes["rgba_color"].array = arr
+        if self.cut_surface_buttons.value is None:
+            arr = self.points_geometry.attributes["rgba_color"].array
+            arr[:, 3] = change["new"][1]
+            self.points_geometry.attributes["rgba_color"].array = arr
+        else:
+            self.update_cut_surface({"new": self.cut_slider.value})
 
     # def generate_3d_axes_ticks(self):
     #     tick_size = 10.0 * self._pixel_size
@@ -517,7 +520,7 @@ void main() {
     #     self.cut_slider.continuous_update = change["new"]
     #     return
 
-    def update_cut_plane_buttons(self, change):
+    def update_cut_surface_buttons(self, change):
         if change["new"] is None:
             self.cut_slider.disabled = True
             self.cut_checkbox.disabled = True
@@ -529,8 +532,8 @@ void main() {
             # self.update_cut_surface({"new"})
 
     def update_cut_slider_bounds(self):
-        if self.cut_plane_buttons.value < 3:
-            minmax = self.xminmax["xyz"[self.cut_plane_buttons.value]]
+        if self.cut_surface_buttons.value < 3:
+            minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
             self.cut_slider.min = minmax[0]
             self.cut_slider.max = minmax[1]
             self.cut_slider.value = 0.5 * (minmax[0] + minmax[1])
@@ -538,14 +541,14 @@ void main() {
 
     def update_cut_surface(self, change):
         newc = None
-        if self.cut_plane_buttons.value < 3:
+        if self.cut_surface_buttons.value < 3:
             newc = np.where(np.abs(
-                self.positions[:, self.cut_plane_buttons.value] - change["new"]) < self.cut_surface_thickness.value, 1.0, 0.01)
+                self.positions[:, self.cut_surface_buttons.value] - change["new"]) < self.cut_surface_thickness.value, self.opacity_slider.upper, self.opacity_slider.lower)
         # newc = np.where(np.abs(np.sqrt(
         #     pos[:, 0]*pos[:, 0] + pos[:, 1]*pos[:, 1]) - change["new"]) < 0.5, 1.0, 0.0)
         c3 = self.points_geometry.attributes["rgba_color"].array
-        print(np.shape(c3))
-        print(np.shape(newc))
+        # print(np.shape(c3))
+        # print(np.shape(newc))
         c3[:, 3] = newc
         self.points_geometry.attributes["rgba_color"].array = c3
 
