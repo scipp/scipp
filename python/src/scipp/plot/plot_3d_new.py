@@ -190,11 +190,13 @@ class Slicer3d(Slicer):
 
         self.outline, self.axticks = self.create_outline()
 
+        box_size = np.diff(list(self.xminmax.values()), axis=1).ravel()
+
         # Define camera
         camera_lookat = self.center_of_mass
         # print(self.center_of_mass)
         # print(np.diff(list(self.xminmax.values()), axis=1))
-        camera_pos = np.array(self.center_of_mass) + 1.2 * np.diff(list(self.xminmax.values()), axis=1).ravel()
+        camera_pos = np.array(self.center_of_mass) + 1.2 * box_size
         # print(camera_pos)
         # print(list(camera_pos))
         self.camera = p3.PerspectiveCamera(position=list(camera_pos),
@@ -262,6 +264,7 @@ class Slicer3d(Slicer):
             icons=(['cube'] * 3) + (['toggle-on'] * 3) + ['circle-o'],
             style={"button_width": "55px"}
         )
+        self.cut_plane_buttons.observe(self.update_cut_plane_buttons, names="value")
 
         # self.add_cut_planes = {}
         # self.add_cut_planes['x'] = widgets.Button(
@@ -313,18 +316,23 @@ class Slicer3d(Slicer):
         #     icon='fa-circle-o',
         #     tooltip="Sphere",
         #     layout={'width': "50px"})
-        self.cut_slider = widgets.FloatSlider(min=0, max=1, disabled=False,
+        self.cut_slider = widgets.FloatSlider(min=0, max=1, disabled=True,
             layout={"width": "200px"})
         self.cut_checkbox = widgets.Checkbox(
             value=True,
             tooltip="Continuous update",
             indent=False,
-            layout={"width": "initial"})
+            layout={"width": "initial"},
+            disabled=True)
         self.cut_checkbox_link = widgets.jslink((self.cut_checkbox, 'value'), (self.cut_slider, 'continuous_update'))
-        # self.cut_checkbox.observe(self.toggle_cut_continuous_update,
-        #                                names="value")
+        self.cut_slider.observe(self.update_cut_surface,
+                                       names="value")
+
+        self.cut_surface_thickness = widgets.FloatText(value=0.05 * box_size.max(),
+            layout={"width": "50px"})
+        # 
         self.cut_plane_controls = widgets.HBox([self.cut_plane_buttons, self.cut_slider,
-            self.cut_checkbox])
+            self.cut_checkbox, self.cut_surface_thickness])
 
 
 
@@ -343,8 +351,7 @@ class Slicer3d(Slicer):
                 'position':
                 p3.BufferAttribute(array=self.positions),
                 'rgba_color':
-                p3.BufferAttribute(array=self.scalar_map.to_rgba(
-                    self.data_array.values.flatten()))
+                p3.BufferAttribute(array=self.slice_data(None))
                 # 'color':
                 # p3.BufferAttribute(array=self.scalar_map.to_rgba(
                 #     self.data_array.values.flatten())[:, :3])
@@ -510,6 +517,39 @@ void main() {
     #     self.cut_slider.continuous_update = change["new"]
     #     return
 
+    def update_cut_plane_buttons(self, change):
+        if change["new"] is None:
+            self.cut_slider.disabled = True
+            self.cut_checkbox.disabled = True
+        else:
+            if change["old"] is None:
+                self.cut_slider.disabled = False
+                self.cut_checkbox.disabled = False
+            self.update_cut_slider_bounds()
+            # self.update_cut_surface({"new"})
+
+    def update_cut_slider_bounds(self):
+        if self.cut_plane_buttons.value < 3:
+            minmax = self.xminmax["xyz"[self.cut_plane_buttons.value]]
+            self.cut_slider.min = minmax[0]
+            self.cut_slider.max = minmax[1]
+            self.cut_slider.value = 0.5 * (minmax[0] + minmax[1])
+
+
+    def update_cut_surface(self, change):
+        newc = None
+        if self.cut_plane_buttons.value < 3:
+            newc = np.where(np.abs(
+                self.positions[:, self.cut_plane_buttons.value] - change["new"]) < self.cut_surface_thickness.value, 1.0, 0.01)
+        # newc = np.where(np.abs(np.sqrt(
+        #     pos[:, 0]*pos[:, 0] + pos[:, 1]*pos[:, 1]) - change["new"]) < 0.5, 1.0, 0.0)
+        c3 = self.points_geometry.attributes["rgba_color"].array
+        print(np.shape(c3))
+        print(np.shape(newc))
+        c3[:, 3] = newc
+        self.points_geometry.attributes["rgba_color"].array = c3
+
+
 
     def update_buttons(self, owner, event, dummy):
         for dim, button in self.buttons.items():
@@ -622,8 +662,8 @@ void main() {
 
         return
 
-    # Define function to update wireframes
-    def update_slice(self, change):
+    def slice_data(self, change):
+
         # if self.buttons[change["owner"].dim].value is None:
         #     self.update_cube(update_coordinates=False)
         # else:
@@ -670,7 +710,7 @@ void main() {
         # if self.select_rendering.value == "Full":
         #     arr = np.repeat(arr, self.nverts, axis=0)
         # colors = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
-        colors = self.scalar_map.to_rgba(vslice.values.flatten()).astype(np.float32)
+        return self.scalar_map.to_rgba(vslice.values.flatten()).astype(np.float32)
         # if self.key in self.masks_variables and self.masks_params[
         #         self.key]["show"]:
         #     msk = self.masks_variables[self.key].values
@@ -681,7 +721,13 @@ void main() {
         #         arr[masks_inds]).astype(np.float32)
         #     colors[masks_inds] = masks_colors
 
-        self.points_geometry.attributes["rgba_color"].array = colors#[:, :3]
+    # Define function to update wireframes
+    def update_slice(self, change):
+
+
+        new_colors = self.slice_data(change)
+        new_colors[:, 3] = self.points_geometry.attributes["rgba_color"].array[:, 3]
+        self.points_geometry.attributes["rgba_color"].array = new_colors
 
         # self.label.value = name_with_unit(
         #     var=self.hist_data_array[self.key].coords[self.slider_dim],
