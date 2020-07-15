@@ -238,59 +238,81 @@ class Slicer3d(Slicer):
                                                        description="Opacity")
         self.opacity_slider.observe(self.update_opacity, names="value")
 
-        self.add_cut_planes = {}
-        self.add_cut_planes['x'] = widgets.Button(
-            description='X',
-            disabled=False,
+        self.cut_plane_buttons = widgets.ToggleButtons(
+            options=[('X ', 0), ('Y ', 1), ('Z ', 2),
+                     (' X ', 3), (' Y ', 4), (' Z ', 5),
+                     ('R ', 6)],
+            description='Cut surface:',
             button_style='', # 'success', 'info', 'warning', 'danger' or ''
-            icon='fa-cube',
-            tooltip="X-plane",
-            layout={'width': "50px"})
-        self.add_cut_planes['y'] = widgets.Button(
-            description='Y',
-            disabled=False,
-            button_style='', # 'success', 'info', 'warning', 'danger' or ''
-            icon='fa-cube',
-            tooltip="Y-plane",
-            layout={'width': "50px"})
-        self.add_cut_planes['z'] = widgets.Button(
-            description='Z',
-            disabled=False,
-            button_style='', # 'success', 'info', 'warning', 'danger' or ''
-            icon='fa-cube',
-            tooltip="Z-plane",
-            layout={'width': "50px"})
-        self.add_cut_planes['cx'] = widgets.Button(
-            description='X',
-            disabled=False,
-            button_style='', # 'success', 'info', 'warning', 'danger' or ''
-            icon='fa-toggle-on',
-            tooltip="Cylinder-X",
-            layout={'width': "50px"})
-        self.add_cut_planes['cy'] = widgets.Button(
-            description='Y',
-            disabled=False,
-            button_style='', # 'success', 'info', 'warning', 'danger' or ''
-            icon='fa-toggle-on',
-            tooltip="Cylinder-Y",
-            layout={'width': "50px"})
-        self.add_cut_planes['cz'] = widgets.Button(
-            description='Z',
-            disabled=False,
-            button_style='', # 'success', 'info', 'warning', 'danger' or ''
-            icon='fa-toggle-on',
-            tooltip="Cylinder-Z",
-            layout={'width': "50px"})
-        self.add_cut_planes['r'] = widgets.Button(
-            description='R',
-            disabled=False,
-            button_style='', # 'success', 'info', 'warning', 'danger' or ''
-            icon='fa-circle-o',
-            tooltip="Sphere",
-            layout={'width': "50px"})
-        self.cut_plane_controls = widgets.HBox(
-            [widgets.Label(value="Cut surface:")] +
-            list(self.add_cut_planes.values()))
+            tooltips=['X-plane', 'Y-plane', 'Z-plane', 'Cylinder-X',
+                      'Cylinder-Y', 'Cylinder-Z', 'Sphere'],
+            icons=(['cube'] * 3) + (['toggle-on'] * 3) + ['circle-o'],
+            style={"button_width": "55px"}
+        )
+
+        # self.add_cut_planes = {}
+        # self.add_cut_planes['x'] = widgets.Button(
+        #     description='X',
+        #     disabled=False,
+        #     button_style='', # 'success', 'info', 'warning', 'danger' or ''
+        #     icon='fa-cube',
+        #     tooltip="X-plane",
+        #     layout={'width': "50px"})
+        # self.add_cut_planes['y'] = widgets.Button(
+        #     description='Y',
+        #     disabled=False,
+        #     button_style='', # 'success', 'info', 'warning', 'danger' or ''
+        #     icon='fa-cube',
+        #     tooltip="Y-plane",
+        #     layout={'width': "50px"})
+        # self.add_cut_planes['z'] = widgets.Button(
+        #     description='Z',
+        #     disabled=False,
+        #     button_style='', # 'success', 'info', 'warning', 'danger' or ''
+        #     icon='fa-cube',
+        #     tooltip="Z-plane",
+        #     layout={'width': "50px"})
+        # self.add_cut_planes['cx'] = widgets.Button(
+        #     description='X',
+        #     disabled=False,
+        #     button_style='', # 'success', 'info', 'warning', 'danger' or ''
+        #     icon='fa-toggle-on',
+        #     tooltip="Cylinder-X",
+        #     layout={'width': "50px"})
+        # self.add_cut_planes['cy'] = widgets.Button(
+        #     description='Y',
+        #     disabled=False,
+        #     button_style='', # 'success', 'info', 'warning', 'danger' or ''
+        #     icon='fa-toggle-on',
+        #     tooltip="Cylinder-Y",
+        #     layout={'width': "50px"})
+        # self.add_cut_planes['cz'] = widgets.Button(
+        #     description='Z',
+        #     disabled=False,
+        #     button_style='', # 'success', 'info', 'warning', 'danger' or ''
+        #     icon='fa-toggle-on',
+        #     tooltip="Cylinder-Z",
+        #     layout={'width': "50px"})
+        # self.add_cut_planes['r'] = widgets.Button(
+        #     description='R',
+        #     disabled=False,
+        #     button_style='', # 'success', 'info', 'warning', 'danger' or ''
+        #     icon='fa-circle-o',
+        #     tooltip="Sphere",
+        #     layout={'width': "50px"})
+        self.cut_slider = widgets.FloatSlider(min=0, max=1, disabled=False, readout=False)
+        self.cut_value = widgets.FloatText(value=0, disabled=False, layout={"width": "80px"})
+        self.link = widgets.jslink((self.cut_slider, 'value'), (self.cut_value, 'value'))
+        self.cut_checkbox = widgets.Checkbox(
+            value=True,
+            tooltip="Continuous update",
+            indent=False,
+            layout={"width": "initial"})
+        self.link2 = widgets.jslink((self.cut_checkbox, 'value'), (self.cut_slider, 'continuous_update'))
+        # self.cut_checkbox.observe(self.toggle_cut_continuous_update,
+        #                                names="value")
+        self.cut_plane_controls = widgets.HBox([self.cut_plane_buttons, self.cut_slider,
+            self.cut_value, self.cut_checkbox])
 
 
 
@@ -419,10 +441,10 @@ void main() {
         max_extent = np.amax(np.diff(list(self.xminmax.values()), axis=1).ravel())
         print(max_extent)
         # return
-        tick_size = 0.05 * max_extent
+        tick_size = 0.1 * max_extent
         axticks = p3.Group()
         iden = np.identity(3, dtype=np.float32)
-        ticker = mpl.ticker.MaxNLocator(10)
+        ticker = mpl.ticker.MaxNLocator(5)
         # axticks.add(self.make_axis_tick("0", [0, 0, 0], size=tick_size))
         offsets = {'x': [0, self.xminmax['y'][0], self.xminmax['z'][0]],
                    'y': [self.xminmax['x'][0], 0, self.xminmax['z'][0]],
@@ -432,7 +454,7 @@ void main() {
             # ticker = self.mpl_ticker.MaxNLocator(10)
             ticks = ticker.tick_values(self.xminmax[x][0], self.xminmax[x][1])
             # iden = np.identity(3, dtype=np.float32)
-            for i in range(1, len(ticks)):
+            for i in range(2, len(ticks)):
             # for tick in ticks:
                 tick_pos = iden[axis] * ticks[i] + offsets[x]#s[i]
                 # if offset is not None:
@@ -441,6 +463,13 @@ void main() {
                     self.make_axis_tick(string=value_to_string(ticks[i], precision=1),
                                         position=tick_pos.tolist(),
                                         size=tick_size))
+        # Add bottom corner
+        tick_pos = iden[0] * ticks[1] + offsets['x']
+        axticks.add(
+            self.make_axis_tick(string=value_to_string(ticks[1], precision=1),
+                                position=tick_pos.tolist(),
+                                size=tick_size))
+
         return axticks
 
     def update_opacity(self, change):
@@ -457,6 +486,10 @@ void main() {
     #                                  axis=i,
     #                                  size=tick_size,
     #                                  range_start=1)
+
+    # def toggle_cut_continuous_update(self, change):
+    #     self.cut_slider.continuous_update = change["new"]
+    #     return
 
 
     def update_buttons(self, owner, event, dummy):
