@@ -109,6 +109,8 @@ class Slicer3d(Slicer):
             cmap=self.params["values"][self.name]["cmap"])
 
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
+        self.remaining_axes = ["x", "y"]
+        self.remaining_inds = [0, 1]
 
         # # Store min/max for each dimension for invisible scatter
         # self.xminmax = {}
@@ -537,6 +539,23 @@ void main() {
             self.cut_slider.min = minmax[0]
             self.cut_slider.max = minmax[1]
             self.cut_slider.value = 0.5 * (minmax[0] + minmax[1])
+        elif self.cut_surface_buttons.value < 6:
+            j = self.cut_surface_buttons.value - 3
+            remaining_axes = self.permutations["xyz"[j]]
+            # self.remaining_axes.remove(self.cut_surface_buttons.value - 3)
+            self.remaining_inds = [(j + 1) % 2, (j + 2) % 2]
+            # self.remaining_inds.remove(self.cut_surface_buttons.value - 3)
+            # minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
+            # minxy = np.amin([self.xminmax[remains[0]][0], self.xminmax[remains[1]][0]])
+            # maxxy = np.amax([self.xminmax[remains[0]][1], self.xminmax[remains[1]][1]])
+            rmax = np.abs([self.xminmax[remaining_axes[0]][0],
+                           self.xminmax[remaining_axes[1]][0],
+                           self.xminmax[remaining_axes[0]][1],
+                           self.xminmax[remaining_axes[1]][1]]).max()
+            self.cut_slider.min = 0
+            self.cut_slider.max = rmax * np.sqrt(2.0)
+            self.cut_slider.value = 0.5 * self.cut_slider.max
+
 
 
     def update_cut_surface(self, change):
@@ -544,8 +563,10 @@ void main() {
         if self.cut_surface_buttons.value < 3:
             newc = np.where(np.abs(
                 self.positions[:, self.cut_surface_buttons.value] - change["new"]) < self.cut_surface_thickness.value, self.opacity_slider.upper, self.opacity_slider.lower)
-        # newc = np.where(np.abs(np.sqrt(
-        #     pos[:, 0]*pos[:, 0] + pos[:, 1]*pos[:, 1]) - change["new"]) < 0.5, 1.0, 0.0)
+        elif self.cut_surface_buttons.value < 6:
+            newc = np.where(np.abs(np.sqrt(
+                self.positions[:, self.remaining_inds[0]] * self.positions[:, self.remaining_inds[0]] +
+                self.positions[:, self.remaining_inds[1]] * self.positions[:, self.remaining_inds[1]]) - change["new"]) < self.cut_surface_thickness.value, self.opacity_slider.upper, self.opacity_slider.lower)
         c3 = self.points_geometry.attributes["rgba_color"].array
         # print(np.shape(c3))
         # print(np.shape(newc))
