@@ -230,6 +230,14 @@ class Slicer3d(Slicer):
 
 
         # Controls
+
+        self.opacity_slider = widgets.FloatRangeSlider(min=0,
+                                                       max=1.0,
+                                                       value=[0, 1],
+                                                       step=0.01,
+                                                       description="Opacity")
+        self.opacity_slider.observe(self.update_opacity, names="value")
+
         self.add_cut_planes = {}
         self.add_cut_planes['x'] = widgets.Button(
             description='X',
@@ -281,12 +289,13 @@ class Slicer3d(Slicer):
             tooltip="Sphere",
             layout={'width': "50px"})
         self.cut_plane_controls = widgets.HBox(
-            [widgets.Label(value="Add a cut surface ")] +
+            [widgets.Label(value="Cut surface:")] +
             list(self.add_cut_planes.values()))
 
 
 
         self.box = widgets.VBox([self.renderer, widgets.VBox(self.vbox),
+            self.opacity_slider,
             self.cut_plane_controls])
 
         return
@@ -433,6 +442,9 @@ void main() {
                                         position=tick_pos.tolist(),
                                         size=tick_size))
         return axticks
+
+    def update_opacity(self, change):
+        self.points_material.opacity = change["new"][1]
 
     # def generate_3d_axes_ticks(self):
     #     tick_size = 10.0 * self._pixel_size
