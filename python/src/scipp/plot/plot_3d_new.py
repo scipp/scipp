@@ -235,8 +235,20 @@ class Slicer3d(Slicer):
                                                        max=1.0,
                                                        value=[0, 1],
                                                        step=0.01,
-                                                       description="Opacity")
+                                                       description="Opacity",
+                                                       continuous_update=False)
         self.opacity_slider.observe(self.update_opacity, names="value")
+        self.opacity_checkbox = widgets.Checkbox(
+            value=self.opacity_slider.continuous_update,
+            tooltip="Continuous update",
+            indent=False,
+            layout={"width": "initial"})
+        self.opacity_checkbox_link = widgets.jslink((self.opacity_checkbox, 'value'), (self.opacity_slider, 'continuous_update'))
+        # self.opacity_lower_value = widgets.FloatText(value=0, layout={"width": "50px"})
+        # self.opacity_upper_value = widgets.FloatText(value=1, layout={"width": "50px"})
+        # self.opacity_lower_link = widgets.link((self.opacity_slider, 'lower'), (self.opacity_lower_value, 'value'))
+        # self.opacity_upper_link = widgets.link((self.opacity_slider, 'upper'), (self.opacity_upper_value, 'value'))
+
 
         self.cut_plane_buttons = widgets.ToggleButtons(
             options=[('X ', 0), ('Y ', 1), ('Z ', 2),
@@ -302,24 +314,22 @@ class Slicer3d(Slicer):
         #     tooltip="Sphere",
         #     layout={'width': "50px"})
         self.cut_slider = widgets.FloatSlider(min=0, max=1, disabled=False,
-            readout=False, layout={"width": "200px"})
-        self.cut_value = widgets.FloatText(value=0, disabled=False, layout={"width": "80px"})
-        self.link = widgets.jslink((self.cut_slider, 'value'), (self.cut_value, 'value'))
+            layout={"width": "200px"})
         self.cut_checkbox = widgets.Checkbox(
             value=True,
             tooltip="Continuous update",
             indent=False,
             layout={"width": "initial"})
-        self.link2 = widgets.jslink((self.cut_checkbox, 'value'), (self.cut_slider, 'continuous_update'))
+        self.cut_checkbox_link = widgets.jslink((self.cut_checkbox, 'value'), (self.cut_slider, 'continuous_update'))
         # self.cut_checkbox.observe(self.toggle_cut_continuous_update,
         #                                names="value")
         self.cut_plane_controls = widgets.HBox([self.cut_plane_buttons, self.cut_slider,
-            self.cut_value, self.cut_checkbox])
+            self.cut_checkbox])
 
 
 
         self.box = widgets.VBox([self.renderer, widgets.VBox(self.vbox),
-            self.opacity_slider,
+            widgets.HBox([self.opacity_slider, self.opacity_checkbox]),
             self.cut_plane_controls])
 
         return
