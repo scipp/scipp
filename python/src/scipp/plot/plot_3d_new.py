@@ -242,6 +242,7 @@ class Slicer3d(Slicer):
             options=[('X ', 0), ('Y ', 1), ('Z ', 2),
                      (' X ', 3), (' Y ', 4), (' Z ', 5),
                      ('R ', 6)],
+            value=None,
             description='Cut surface:',
             button_style='', # 'success', 'info', 'warning', 'danger' or ''
             tooltips=['X-plane', 'Y-plane', 'Z-plane', 'Cylinder-X',
@@ -300,7 +301,8 @@ class Slicer3d(Slicer):
         #     icon='fa-circle-o',
         #     tooltip="Sphere",
         #     layout={'width': "50px"})
-        self.cut_slider = widgets.FloatSlider(min=0, max=1, disabled=False, readout=False)
+        self.cut_slider = widgets.FloatSlider(min=0, max=1, disabled=False,
+            readout=False, layout={"width": "200px"})
         self.cut_value = widgets.FloatText(value=0, disabled=False, layout={"width": "80px"})
         self.link = widgets.jslink((self.cut_slider, 'value'), (self.cut_value, 'value'))
         self.cut_checkbox = widgets.Checkbox(
@@ -330,16 +332,18 @@ class Slicer3d(Slicer):
             attributes={
                 'position':
                 p3.BufferAttribute(array=self.positions),
-                # 'rgba_color':
-                'color':
+                'rgba_color':
                 p3.BufferAttribute(array=self.scalar_map.to_rgba(
-                    self.data_array.values.flatten())[:, :3])
+                    self.data_array.values.flatten()))
+                # 'color':
+                # p3.BufferAttribute(array=self.scalar_map.to_rgba(
+                #     self.data_array.values.flatten())[:, :3])
                     # dtype=np.float32))
             })
-        self.points_material = p3.PointsMaterial(vertexColors='VertexColors',
-                                                 size=self.pixel_size,
-                                                 transparent=True)
-        # points_material = self.create_points_material()
+        # self.points_material = p3.PointsMaterial(vertexColors='VertexColors',
+        #                                          size=self.pixel_size,
+        #                                          transparent=True)
+        self.points_material = self.create_points_material()
         self.points = p3.Points(geometry=self.points_geometry,
                                 material=self.points_material)
         # return points_geometry, points_material, points
@@ -363,7 +367,7 @@ void main(){
     yDelta = pow(position[1] - cameraPosition[1], 2.0);
     zDelta = pow(position[2] - cameraPosition[2], 2.0);
     delta = pow(xDelta + yDelta + zDelta, 0.5);
-    gl_PointSize = 100.0 / delta;
+    gl_PointSize = 300.0 / delta;
 }
 ''',
     fragmentShader='''
@@ -472,8 +476,13 @@ void main() {
 
         return axticks
 
+    # def update_opacity(self, change):
+    #     self.points_material.opacity = change["new"][1]
     def update_opacity(self, change):
-        self.points_material.opacity = change["new"][1]
+        # self.points_material.opacity = change["new"][1]
+        arr = self.points_geometry.attributes["rgba_color"].array
+        arr[:, 3] = change["new"][1]
+        self.points_geometry.attributes["rgba_color"].array = arr
 
     # def generate_3d_axes_ticks(self):
     #     tick_size = 10.0 * self._pixel_size
@@ -662,7 +671,7 @@ void main() {
         #         arr[masks_inds]).astype(np.float32)
         #     colors[masks_inds] = masks_colors
 
-        self.points_geometry.attributes["color"].array = colors[:, :3]
+        self.points_geometry.attributes["rgba_color"].array = colors#[:, :3]
 
         # self.label.value = name_with_unit(
         #     var=self.hist_data_array[self.key].coords[self.slider_dim],
