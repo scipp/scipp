@@ -141,7 +141,7 @@ class Slicer3d(Slicer):
             for dim, val in self.slider.items():
                 if val.disabled:
                     coords.append(self.slider_x[self.name][dim].values)
-            x, y, z = np.meshgrid(*coords, indexing='ij')
+            z, y, x = np.meshgrid(*coords, indexing='ij')
             self.positions = np.array([x.ravel(), y.ravel(), z.ravel()]).T
             self.pixel_size = coords[0][1] - coords[0][0]
         print('self.pixel_size', self.pixel_size)
@@ -186,6 +186,7 @@ class Slicer3d(Slicer):
         # self.members["fig"] = self.fig
 
         self.xminmax, self.center_of_mass = self.get_spatial_extents()
+        # print("self.xminmax", self.xminmax)
 
         # self.points_geometry, self.points_material, self.points = 
         self.create_points_geometry()
@@ -196,15 +197,16 @@ class Slicer3d(Slicer):
 
         # Define camera
         camera_lookat = self.center_of_mass
+        print("camera_lookat", camera_lookat)
         # print(self.center_of_mass)
         # print(np.diff(list(self.xminmax.values()), axis=1))
         camera_pos = np.array(self.center_of_mass) + 1.2 * box_size
         # print(camera_pos)
         # print(list(camera_pos))
         self.camera = p3.PerspectiveCamera(position=list(camera_pos),
-                                           lookAt=camera_lookat,
                                                 aspect=config.plot.width /
                                                 config.plot.height)
+        # self.camera.lookAt(camera_lookat)
 
         self.axes_3d = p3.AxesHelper(10.0 * np.linalg.norm(camera_pos))
         # Create the threejs scene
@@ -221,7 +223,9 @@ class Slicer3d(Slicer):
         #                                             target=self._look_at)
         #     self.camera.lookAt(self._look_at)
         # else:
-        self.controller = p3.OrbitControls(controlling=self.camera)
+        self.controller = p3.OrbitControls(controlling=self.camera,
+            target=camera_lookat)
+        self.camera.lookAt(camera_lookat)
 
         # Render the scene into a widget
         self.renderer = p3.Renderer(camera=self.camera,
@@ -536,8 +540,12 @@ void main() {
     def update_cut_slider_bounds(self):
         if self.cut_surface_buttons.value < 3:
             minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
-            self.cut_slider.min = minmax[0]
-            self.cut_slider.max = minmax[1]
+            if minmax[0] < self.cut_slider.max:
+                self.cut_slider.min = minmax[0]
+                self.cut_slider.max = minmax[1]
+            else:
+                self.cut_slider.max = minmax[1]
+                self.cut_slider.min = minmax[0]
             self.cut_slider.value = 0.5 * (minmax[0] + minmax[1])
         elif self.cut_surface_buttons.value < 6:
             j = self.cut_surface_buttons.value - 3
