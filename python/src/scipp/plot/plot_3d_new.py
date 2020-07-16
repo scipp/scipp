@@ -113,7 +113,7 @@ class Slicer3d(Slicer):
         self.masks_scalar_map = None
         if self.params["masks"][self.name]["show"]:
             self.masks_scalar_map = cm.ScalarMappable(
-                norm=self.params["masks"][self.name]["norm"],
+                norm=self.params["values"][self.name]["norm"],
                 cmap=self.params["masks"][self.name]["cmap"])
 
 
@@ -838,10 +838,11 @@ void main() {
         return
 
     def toggle_masks(self, change):
-        # self.im["masks"].set_visible(change["new"])
-        # change["owner"].description = "Hide masks" if change["new"] else \
-        #     "Show masks"
-        print(change)
+        self.params["masks"][self.name]["show"] = change["new"]
+        change["owner"].description = "Hide masks" if change["new"] else \
+            "Show masks"
+        self.update_slice(None)
+        # print(change)
         return
 
 
