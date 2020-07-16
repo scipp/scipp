@@ -471,7 +471,7 @@ void main() {
     def update_cut_slider_bounds(self):
         # Cartesian X, Y, Z
         if self.cut_surface_buttons.value < 3:
-            minmax = self.xminmax["xyz" [self.cut_surface_buttons.value]]
+            minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
             if minmax[0] < self.cut_slider.max:
                 self.cut_slider.min = minmax[0]
                 self.cut_slider.max = minmax[1]
@@ -482,7 +482,7 @@ void main() {
         # Cylindrical X, Y, Z
         elif self.cut_surface_buttons.value < 6:
             j = self.cut_surface_buttons.value - 3
-            remaining_axes = self.permutations["xyz" [j]]
+            remaining_axes = self.permutations["xyz"[j]]
             self.remaining_inds = [(j + 1) % 3, (j + 2) % 3]
             rmax = np.abs([
                 self.xminmax[remaining_axes[0]][0],
@@ -603,8 +603,9 @@ void main() {
         Update colors of points.
         """
         new_colors = self.slice_data(change)
-        new_colors[:, 3] = self.points_geometry.attributes[
-            "rgba_color"].array[:, 3]
+        new_colors[:,
+                   3] = self.points_geometry.attributes["rgba_color"].array[:,
+                                                                            3]
         self.points_geometry.attributes["rgba_color"].array = new_colors
         return
 
