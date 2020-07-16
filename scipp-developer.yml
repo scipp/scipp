@@ -15,13 +15,14 @@ dependencies:
 
   # Run
   - appdirs
-  - pythreejs
   - ipywidgets
   - mantid-framework
   - matplotlib
   - numpy >=1.15.3
+  - Pillow
   - python
   - python-configuration
+  - pythreejs
   - pyyaml
   - tbb
 

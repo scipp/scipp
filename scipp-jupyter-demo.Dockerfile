@@ -40,11 +40,12 @@ RUN conda install --yes \
       -c scipp/label/dev \
       -c dannixon \
       ipython \
-      pythreejs \
       ipywidgets \
       mantid-framework \
       matplotlib \
+      Pillow \
       python=3.7 \
+      pythreejs \
       scipp && \
     conda clean -afy
 

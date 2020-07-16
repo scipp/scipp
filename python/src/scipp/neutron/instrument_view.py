@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from ..plot import plot
 from .._scipp import core as sc
 
 
@@ -48,6 +47,8 @@ class InstrumentView:
                  axes=None,
                  pixel_size=None,
                  **kwargs):
+
+        from ..plot import plot
 
         if sc.contains_events(scipp_obj) and bins is None:
             bins = {dim: 256}

@@ -21,13 +21,14 @@ Run
 ---
 
   - ``appdirs`` (system application directory helper, used in user configuration loading)
-  - ``pythreejs`` * (3D plotting library)
   - ``ipywidgets`` * (interactive Jupyter notebook widgets)
   - ``mantid-framework`` * (used for Mantid interoperability)
   - ``matplotlib`` * (plotting library)
   - ``numpy`` >=1.15.3
+  - ``Pillow`` (Python Imaging Library)
   - ``python``
   - ``python-configuration`` (configuration file parser, used in user configuration loading)
+  - ``pythreejs`` * (3D plotting library)
   - ``pyyaml`` (YAML parser, used for ?)
   - ``tbb`` (Intel TBB runtime, used for single node multithreading)
 
