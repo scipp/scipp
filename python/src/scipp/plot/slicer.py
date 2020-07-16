@@ -355,3 +355,6 @@ class Slicer:
     def toggle_continuous_update(self, change):
         self.slider[change["owner"].dim].continuous_update = change["new"]
         return
+
+    def update_buttons(self, change):
+        return

@@ -110,6 +110,12 @@ class Slicer3d(Slicer):
         self.scalar_map = cm.ScalarMappable(
             norm=self.params["values"][self.name]["norm"],
             cmap=self.params["values"][self.name]["cmap"])
+        self.masks_scalar_map = None
+        if self.params["masks"][self.name]["show"]:
+            self.masks_scalar_map = cm.ScalarMappable(
+                norm=self.params["masks"][self.name]["norm"],
+                cmap=self.params["masks"][self.name]["cmap"])
+
 
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
         self.remaining_axes = ["x", "y"]
@@ -627,116 +633,116 @@ void main() {
 
 
 
-    def update_buttons(self, owner, event, dummy):
-        for dim, button in self.buttons.items():
-            if (button.value == owner.value) and (dim != owner.dim):
-                button.value = owner.old_value
-                button.old_value = button.value
-        owner.old_value = owner.value
-        # Show all surfaces, hide all wireframes
-        for key in self.surfaces.keys():
-            self.surfaces[key].visible = True
-            self.wireframes[key].visible = False
-        # Update the show/hide checkboxes
-        for dim, button in self.buttons.items():
-            ax_dim = button.value
-            if ax_dim is not None:
-                ax_dim = ax_dim.lower()
-            self.showhide[dim].value = (button.value is not None)
-            self.showhide[dim].disabled = (button.value is None)
-            self.showhide[dim].description = "hide"
-            if button.value is None:
-                self.showhide[dim].button_style = ""
-            else:
-                self.showhide[dim].button_style = "success"
-                self.button_axis_to_dim[ax_dim] = dim
+    # def update_buttons(self, owner, event, dummy):
+    #     for dim, button in self.buttons.items():
+    #         if (button.value == owner.value) and (dim != owner.dim):
+    #             button.value = owner.old_value
+    #             button.old_value = button.value
+    #     owner.old_value = owner.value
+    #     # Show all surfaces, hide all wireframes
+    #     for key in self.surfaces.keys():
+    #         self.surfaces[key].visible = True
+    #         self.wireframes[key].visible = False
+    #     # Update the show/hide checkboxes
+    #     for dim, button in self.buttons.items():
+    #         ax_dim = button.value
+    #         if ax_dim is not None:
+    #             ax_dim = ax_dim.lower()
+    #         self.showhide[dim].value = (button.value is not None)
+    #         self.showhide[dim].disabled = (button.value is None)
+    #         self.showhide[dim].description = "hide"
+    #         if button.value is None:
+    #             self.showhide[dim].button_style = ""
+    #         else:
+    #             self.showhide[dim].button_style = "success"
+    #             self.button_axis_to_dim[ax_dim] = dim
 
-        self.fig.meshes = []
-        self.set_axes_range()
-        self.update_axes()
-        # self.box.children = tuple([ipv.gcc()] + self.vbox)
+    #     self.fig.meshes = []
+    #     self.set_axes_range()
+    #     self.update_axes()
+    #     # self.box.children = tuple([ipv.gcc()] + self.vbox)
 
-        return
+    #     return
 
-    def update_axes(self):
-        # Go through the buttons and select the right coordinates for the axes
-        titles = dict()
-        buttons_dims = {"x": None, "y": None, "z": None}
-        for dim, button in self.buttons.items():
-            if button.value is not None:
-                titles[button.value.lower()] = name_with_unit(
-                    self.slider_x[self.name][dim], name=str(dim))
-                # buttons_dims[button.value.lower()] = button.dim
-                buttons_dims[button.value.lower()] = dim
+    # def update_axes(self):
+    #     # Go through the buttons and select the right coordinates for the axes
+    #     titles = dict()
+    #     buttons_dims = {"x": None, "y": None, "z": None}
+    #     for dim, button in self.buttons.items():
+    #         if button.value is not None:
+    #             titles[button.value.lower()] = name_with_unit(
+    #                 self.slider_x[self.name][dim], name=str(dim))
+    #             # buttons_dims[button.value.lower()] = button.dim
+    #             buttons_dims[button.value.lower()] = dim
 
-        self.fig.xlabel = titles["x"]
-        self.fig.ylabel = titles["y"]
-        self.fig.zlabel = titles["z"]
+    #     self.fig.xlabel = titles["x"]
+    #     self.fig.ylabel = titles["y"]
+    #     self.fig.zlabel = titles["z"]
 
-        self.update_cube()
+    #     self.update_cube()
 
-        return
+    #     return
 
-    def update_cube(self, update_coordinates=True):
-        # The dimensions to be sliced have been saved in slider_dims
-        self.cube = self.data_array
-        self.last_changed_slider_dim = None
-        # Slice along dimensions with buttons who have no value, i.e. the
-        # dimension is not used for any axis. This reduces the data volume to
-        # a 3D cube.
-        for dim, val in self.slider.items():
-            if self.buttons[dim].value is None:
-                self.lab[dim].value = self.make_slider_label(
-                    self.slider_x[self.name][dim], val.value)
-                self.cube = self.cube[dim, val.value]
+    # def update_cube(self, update_coordinates=True):
+    #     # The dimensions to be sliced have been saved in slider_dims
+    #     self.cube = self.data_array
+    #     self.last_changed_slider_dim = None
+    #     # Slice along dimensions with buttons who have no value, i.e. the
+    #     # dimension is not used for any axis. This reduces the data volume to
+    #     # a 3D cube.
+    #     for dim, val in self.slider.items():
+    #         if self.buttons[dim].value is None:
+    #             self.lab[dim].value = self.make_slider_label(
+    #                 self.slider_x[self.name][dim], val.value)
+    #             self.cube = self.cube[dim, val.value]
 
-        # The dimensions to be sliced have been saved in slider_dims
-        button_dim = dict()
-        vslices = dict()
-        # Slice along dimensions with sliders who have a button value
-        for dim, val in self.slider.items():
-            if self.buttons[dim].value is not None:
-                s = self.buttons[dim].value.lower()
-                button_dim[s] = dim
-                self.lab[dim].value = self.make_slider_label(
-                    self.slider_x[self.name][dim], val.value)
-                vslices[s] = {
-                    "slice": self.cube[dim, val.value],
-                    "loc": self.slider_x[self.name][dim].values[val.value]
-                }
+    #     # The dimensions to be sliced have been saved in slider_dims
+    #     button_dim = dict()
+    #     vslices = dict()
+    #     # Slice along dimensions with sliders who have a button value
+    #     for dim, val in self.slider.items():
+    #         if self.buttons[dim].value is not None:
+    #             s = self.buttons[dim].value.lower()
+    #             button_dim[s] = dim
+    #             self.lab[dim].value = self.make_slider_label(
+    #                 self.slider_x[self.name][dim], val.value)
+    #             vslices[s] = {
+    #                 "slice": self.cube[dim, val.value],
+    #                 "loc": self.slider_x[self.name][dim].values[val.value]
+    #             }
 
-        # Now make 3 slices
-        wframes = None
-        meshes = None
-        if update_coordinates:
-            wframes = self.get_outlines()
-            meshes = self.get_meshes()
-        surf_args = dict.fromkeys(self.permutations)
-        wfrm_args = dict.fromkeys(self.permutations)
+    #     # Now make 3 slices
+    #     wframes = None
+    #     meshes = None
+    #     if update_coordinates:
+    #         wframes = self.get_outlines()
+    #         meshes = self.get_meshes()
+    #     surf_args = dict.fromkeys(self.permutations)
+    #     wfrm_args = dict.fromkeys(self.permutations)
 
-        for key, val in sorted(vslices.items()):
-            if update_coordinates:
-                perm = self.permutations[key]
-                surf_args[key] = np.ones_like(meshes[key][perm[0]]) * \
-                    val["loc"]
-                wfrm_args[key] = np.ones_like(wframes[key][perm[0]]) * \
-                    val["loc"]
-                for p in perm:
-                    surf_args[p] = meshes[key][p]
-                    wfrm_args[p] = wframes[key][p]
+    #     for key, val in sorted(vslices.items()):
+    #         if update_coordinates:
+    #             perm = self.permutations[key]
+    #             surf_args[key] = np.ones_like(meshes[key][perm[0]]) * \
+    #                 val["loc"]
+    #             wfrm_args[key] = np.ones_like(wframes[key][perm[0]]) * \
+    #                 val["loc"]
+    #             for p in perm:
+    #                 surf_args[p] = meshes[key][p]
+    #                 wfrm_args[p] = wframes[key][p]
 
-                self.wireframes[key] = ipv.plot_wireframe(**wfrm_args,
-                                                          color="red")
-                self.wireframes[key].visible = False
-                self.surfaces[key] = ipv.plot_surface(**surf_args)
-                self.members["wireframes"][key] = \
-                    self.wireframes[key]
-                self.members["surfaces"][key] = self.surfaces[key]
+    #             self.wireframes[key] = ipv.plot_wireframe(**wfrm_args,
+    #                                                       color="red")
+    #             self.wireframes[key].visible = False
+    #             self.surfaces[key] = ipv.plot_surface(**surf_args)
+    #             self.members["wireframes"][key] = \
+    #                 self.wireframes[key]
+    #             self.members["surfaces"][key] = self.surfaces[key]
 
-            self.surfaces[key].color = self.scalar_map.to_rgba(
-                self.check_transpose(val["slice"]).flatten())
+    #         self.surfaces[key].color = self.scalar_map.to_rgba(
+    #             self.check_transpose(val["slice"]).flatten())
 
-        return
+    #     return
 
     def slice_data(self, change):
 
@@ -761,8 +767,8 @@ void main() {
         #     self.last_changed_slider_dim = dim
 
         self.vslice = self.data_array
-        # if self.params["masks"][self.name]["show"]:
-        #     mslice = self.masks
+        if self.params["masks"][self.name]["show"]:
+            mslice = self.masks
         # Slice along dimensions with active sliders
         button_dims = [None, None, None]
         for dim, val in self.slider.items():
@@ -770,11 +776,11 @@ void main() {
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_x[self.name][dim], val.value)
                 self.vslice = self.vslice[val.dim, val.value]
-                # # At this point, after masks were combined, all their
-                # # dimensions should be contained in the data_array.dims.
-                # if self.params["masks"][
-                #         self.name]["show"] and dim in mslice.dims:
-                #     mslice = mslice[val.dim, val.value]
+                # At this point, after masks were combined, all their
+                # dimensions should be contained in the data_array.dims.
+                if self.params["masks"][
+                        self.name]["show"] and dim in mslice.dims:
+                    mslice = mslice[val.dim, val.value]
             else:
                 # Get the dimensions of the dimension-coordinates, since
                 # buttons can contain non-dimension coordinates
@@ -786,17 +792,35 @@ void main() {
         # if self.select_rendering.value == "Full":
         #     arr = np.repeat(arr, self.nverts, axis=0)
         # colors = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
+
+        # self.vslice = self.vslice.values.flatten()
+        # colors = self.scalar_map.to_rgba(self.vslice).astype(np.float32)
+
+
+        if self.params["masks"][self.name]["show"]:
+            msk = sc.Variable(dims=self.vslice.dims,
+                              values=np.ones(self.vslice.shape, dtype=np.int32))
+            msk *= sc.Variable(dims=mslice.dims,
+                               values=mslice.values.astype(np.int32))
+            msk = msk.values
+
         self.vslice = self.vslice.values.flatten()
-        return self.scalar_map.to_rgba(self.vslice).astype(np.float32)
-        # if self.key in self.masks_variables and self.masks_params[
-        #         self.key]["show"]:
-        #     msk = self.masks_variables[self.key].values
-        #     if self.select_rendering.value == "Full":
-        #         msk = np.repeat(msk, self.nverts, axis=0)
-        #     masks_inds = np.where(msk)
-        #     masks_colors = self.masks_scalar_map.to_rgba(
-        #         arr[masks_inds]).astype(np.float32)
-        #     colors[masks_inds] = masks_colors
+        colors = self.scalar_map.to_rgba(self.vslice).astype(np.float32)
+
+        if self.params["masks"][self.name]["show"]:
+
+            # if transp:
+            #     msk = msk.T
+            # msk = self.masks.values
+            # if self.select_rendering.value == "Full":
+            #     msk = np.repeat(msk, self.nverts, axis=0)
+            masks_inds = np.where(msk.flatten())
+            masks_colors = self.masks_scalar_map.to_rgba(
+                self.vslice[masks_inds]).astype(np.float32)
+            colors[masks_inds] = masks_colors
+
+        return colors
+
 
     # Define function to update wireframes
     def update_slice(self, change):
@@ -813,95 +837,103 @@ void main() {
 
         return
 
-    # Define function to update surfaces
-    def update_surface(self, event):
-        dim = self.last_changed_slider_dim
-        if dim is not None:
-            # Now move slice
-            index = self.slider[dim].value
-            vslice = self.cube[dim, index]
-            ax_dim = self.buttons[dim].value.lower()
-            self.wireframes[ax_dim].visible = False
-
-            setattr(
-                self.surfaces[ax_dim], ax_dim,
-                getattr(self.surfaces[ax_dim], ax_dim) * 0.0 +
-                self.slider_x[self.name][dim].values[index])
-
-            self.surfaces[self.buttons[dim].value.lower()].color = \
-                self.scalar_map.to_rgba(
-                    self.check_transpose(vslice).flatten())
+    def toggle_masks(self, change):
+        # self.im["masks"].set_visible(change["new"])
+        # change["owner"].description = "Hide masks" if change["new"] else \
+        #     "Show masks"
+        print(change)
         return
 
-    def check_transpose(self, vslice):
-        # Check if dimensions of arrays agree, if not, plot the transpose
-        button_values = [
-            self.buttons[dim].value.lower() for dim in vslice.dims
-        ]
-        values = vslice.values
-        if ord(button_values[0]) > ord(button_values[1]):
-            values = values.T
-        return values
 
-    def update_showhide(self, owner):
-        owner.value = not owner.value
-        owner.description = "hide" if owner.value else "show"
-        owner.button_style = "success" if owner.value else "danger"
-        ax_dim = self.buttons[owner.dim].value.lower()
-        self.surfaces[ax_dim].visible = owner.value
-        return
+    # # Define function to update surfaces
+    # def update_surface(self, event):
+    #     dim = self.last_changed_slider_dim
+    #     if dim is not None:
+    #         # Now move slice
+    #         index = self.slider[dim].value
+    #         vslice = self.cube[dim, index]
+    #         ax_dim = self.buttons[dim].value.lower()
+    #         self.wireframes[ax_dim].visible = False
 
-    def get_outlines(self):
-        outlines = dict()
-        for key, val in self.permutations.items():
-            outlines[key] = dict()
-            outlines[key][val[0]], outlines[key][val[1]] = np.meshgrid(
-                self.xminmax[self.button_axis_to_dim[val[0]]],
-                self.xminmax[self.button_axis_to_dim[val[1]]],
-                indexing="ij")
-        return outlines
+    #         setattr(
+    #             self.surfaces[ax_dim], ax_dim,
+    #             getattr(self.surfaces[ax_dim], ax_dim) * 0.0 +
+    #             self.slider_x[self.name][dim].values[index])
 
-    def get_meshes(self):
-        meshes = dict()
-        for key, val in self.permutations.items():
-            meshes[key] = dict()
-            meshes[key][val[0]], meshes[key][val[1]] = np.meshgrid(
-                self.slider_x[self.name][self.button_axis_to_dim[
-                    val[0]]].values,
-                self.slider_x[self.name][self.button_axis_to_dim[
-                    val[1]]].values,
-                indexing="ij")
-        return meshes
+    #         self.surfaces[self.buttons[dim].value.lower()].color = \
+    #             self.scalar_map.to_rgba(
+    #                 self.check_transpose(vslice).flatten())
+    #     return
 
-    def set_axes_range(self):
-        if self.aspect == "equal":
-            max_size = 0.0
-            dx = {"x": 0, "y": 0, "z": 0}
-            for ax in dx.keys():
-                dx[ax] = np.ediff1d(self.xminmax[self.button_axis_to_dim[ax]])
-            max_size = np.amax(list(dx.values()))
-            arrays = dict()
-            for ax, size in dx.items():
-                diff = max_size - size
-                arrays[ax] = [
-                    self.xminmax[self.button_axis_to_dim[ax]][0] - 0.5 * diff,
-                    self.xminmax[self.button_axis_to_dim[ax]][1] + 0.5 * diff
-                ]
+    # def check_transpose(self, vslice):
+    #     # Check if dimensions of arrays agree, if not, plot the transpose
+    #     button_values = [
+    #         self.buttons[dim].value.lower() for dim in vslice.dims
+    #     ]
+    #     values = vslice.values
+    #     if ord(button_values[0]) > ord(button_values[1]):
+    #         values = values.T
+    #     return values
 
-            outl_x, outl_y, outl_z = np.meshgrid(arrays["x"],
-                                                 arrays["y"],
-                                                 arrays["z"],
-                                                 indexing="ij")
-        elif self.aspect == "auto":
-            outl_x, outl_y, outl_z = np.meshgrid(
-                self.xminmax[self.button_axis_to_dim["x"]],
-                self.xminmax[self.button_axis_to_dim["y"]],
-                self.xminmax[self.button_axis_to_dim["z"]],
-                indexing="ij")
-        else:
-            raise RuntimeError("Unknown aspect ratio: {}".format(self.aspect))
+    # def update_showhide(self, owner):
+    #     owner.value = not owner.value
+    #     owner.description = "hide" if owner.value else "show"
+    #     owner.button_style = "success" if owner.value else "danger"
+    #     ax_dim = self.buttons[owner.dim].value.lower()
+    #     self.surfaces[ax_dim].visible = owner.value
+    #     return
 
-        self.fig.xlim = list(outl_x.flatten()[[0, -1]])
-        self.fig.ylim = list(outl_y.flatten()[[0, -1]])
-        self.fig.zlim = list(outl_z.flatten()[[0, -1]])
-        return
+    # def get_outlines(self):
+    #     outlines = dict()
+    #     for key, val in self.permutations.items():
+    #         outlines[key] = dict()
+    #         outlines[key][val[0]], outlines[key][val[1]] = np.meshgrid(
+    #             self.xminmax[self.button_axis_to_dim[val[0]]],
+    #             self.xminmax[self.button_axis_to_dim[val[1]]],
+    #             indexing="ij")
+    #     return outlines
+
+    # def get_meshes(self):
+    #     meshes = dict()
+    #     for key, val in self.permutations.items():
+    #         meshes[key] = dict()
+    #         meshes[key][val[0]], meshes[key][val[1]] = np.meshgrid(
+    #             self.slider_x[self.name][self.button_axis_to_dim[
+    #                 val[0]]].values,
+    #             self.slider_x[self.name][self.button_axis_to_dim[
+    #                 val[1]]].values,
+    #             indexing="ij")
+    #     return meshes
+
+    # def set_axes_range(self):
+    #     if self.aspect == "equal":
+    #         max_size = 0.0
+    #         dx = {"x": 0, "y": 0, "z": 0}
+    #         for ax in dx.keys():
+    #             dx[ax] = np.ediff1d(self.xminmax[self.button_axis_to_dim[ax]])
+    #         max_size = np.amax(list(dx.values()))
+    #         arrays = dict()
+    #         for ax, size in dx.items():
+    #             diff = max_size - size
+    #             arrays[ax] = [
+    #                 self.xminmax[self.button_axis_to_dim[ax]][0] - 0.5 * diff,
+    #                 self.xminmax[self.button_axis_to_dim[ax]][1] + 0.5 * diff
+    #             ]
+
+    #         outl_x, outl_y, outl_z = np.meshgrid(arrays["x"],
+    #                                              arrays["y"],
+    #                                              arrays["z"],
+    #                                              indexing="ij")
+    #     elif self.aspect == "auto":
+    #         outl_x, outl_y, outl_z = np.meshgrid(
+    #             self.xminmax[self.button_axis_to_dim["x"]],
+    #             self.xminmax[self.button_axis_to_dim["y"]],
+    #             self.xminmax[self.button_axis_to_dim["z"]],
+    #             indexing="ij")
+    #     else:
+    #         raise RuntimeError("Unknown aspect ratio: {}".format(self.aspect))
+
+    #     self.fig.xlim = list(outl_x.flatten()[[0, -1]])
+    #     self.fig.ylim = list(outl_y.flatten()[[0, -1]])
+    #     self.fig.zlim = list(outl_z.flatten()[[0, -1]])
+    #     return
