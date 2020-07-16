@@ -82,7 +82,7 @@ class Slicer3d(Slicer):
 
         self.vslice = None
         self.current_cut_surface_value = None
-        self.cut_slider_steps = 100.
+        self.cut_slider_steps = 50.
         self.cbar_image = widgets.Image()
 
         # Prepare colormaps
@@ -108,7 +108,7 @@ class Slicer3d(Slicer):
         self.pixel_size = 1.0
         for coord in self.data_array.coords.values():
             if coord.dtype == sc.dtype.vector_3_float64:
-                self.positions = np.array(coord.values)
+                self.positions = np.array(coord.values, dtype=np.float32)
                 break
         # If no positions are found, create a meshgrid from coordinate axes.
         if self.positions is None:
@@ -117,7 +117,8 @@ class Slicer3d(Slicer):
                 if val.disabled:
                     coords.append(self.slider_x[self.name][dim].values)
             z, y, x = np.meshgrid(*coords, indexing='ij')
-            self.positions = np.array([x.ravel(), y.ravel(), z.ravel()]).T
+            self.positions = np.array(
+                [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
             self.pixel_size = coords[0][1] - coords[0][0]
 
         # Find spatial and value limits

@@ -150,7 +150,6 @@ class Slicer:
         contains_vectors = None
         if len(button_options) == 3:
             for dim, coord in self.data_array.coords.items():
-                print('coord.dtype', coord.dtype)
                 if coord.dtype == dtype.vector_3_float64:
                     contains_vectors = dim
                     break
