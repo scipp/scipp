@@ -314,9 +314,9 @@ void main(){
     yDelta = (position[1]-cameraPosition[1]) * (position[1]-cameraPosition[1]);
     zDelta = (position[2]-cameraPosition[2]) * (position[2]-cameraPosition[2]);
     delta = pow(xDelta + yDelta + zDelta, 0.5);
-    gl_PointSize = 300.0 * %f / delta;
+    gl_PointSize = %f / delta;
 }
-''' % (self.pixel_size, ),
+''' % (300.0 * self.pixel_size, ),
                                  fragmentShader='''
 precision highp float;
 varying vec4 vColor;
