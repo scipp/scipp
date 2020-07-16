@@ -38,28 +38,21 @@ def test_plot_sliceviewer_with_labels():
     plot(d, axes=['x', 'y', "somelabels"])
 
 
-def test_plot_sliceviewer_with_3d_projection():
+def test_plot_projection_3d():
     d = make_dense_dataset(ndim=3)
     plot(d, projection="3d")
 
 
-@pytest.mark.skip(reason="3D plotting with labels is currently broken after"
-                  "dims API refactor.")
-def test_plot_sliceviewer_with_3d_projection_with_labels():
+def test_plot_projection_3d_with_labels():
     d = make_dense_dataset(ndim=3, labels=True)
     plot(d, projection="3d", axes=['x', 'y', "somelabels"])
 
 
-def test_plot_3d_with_filename():
-    d = make_dense_dataset(ndim=3)
-    plot(d, projection="3d", filename="a3dplot.html")
-
-
 def test_plot_convenience_methods():
     d = make_dense_dataset(ndim=3)
-    sc.plot.image(d)
-    sc.plot.threeslice(d)
     sc.plot.superplot(d)
+    sc.plot.image(d)
+    sc.plot.scatter3d(d)
 
 
 @pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
