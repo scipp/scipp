@@ -99,6 +99,7 @@ class Slicer3d(Slicer):
         self.cube = None
         self.members.update({"surfaces": {}, "wireframes": {}})
         self.vslice = None
+        self.current_cut_surface_value = None
         # self.cut_surface_not_updated = False
 
         # # Initialise Figure and VBox objects
@@ -276,6 +277,7 @@ class Slicer3d(Slicer):
             layout={'width': '350px'}
         )
         self.cut_surface_buttons.observe(self.update_cut_surface_buttons, names="value")
+        self.cut_surface_buttons.on_msg(self.check_if_reset_needed)
 
         # self.add_cut_planes = {}
         # self.add_cut_planes['x'] = widgets.Button(
@@ -531,10 +533,18 @@ void main() {
     #     self.cut_slider.continuous_update = change["new"]
     #     return
 
+
+    def check_if_reset_needed(self, owner, content, buffers):
+        if owner.value == self.current_cut_surface_value:
+            self.cut_surface_buttons.value = None
+        self.current_cut_surface_value = owner.value
+
     def update_cut_surface_buttons(self, change):
+        # print(change)
         if change["new"] is None:
             self.cut_slider.disabled = True
             self.cut_checkbox.disabled = True
+            self.update_opacity({"new": self.opacity_slider.value})
         else:
             if change["old"] is None:
                 self.cut_slider.disabled = False
