@@ -107,24 +107,38 @@ class Slicer3d(Slicer):
 
         # Search the coordinates to see if one contains vectors. If so, it will
         # be used as position vectors.
+        self.axlabels = {"x": "", "y": "", "z": ""}
         self.positions = None
         self.pixel_size = pixel_size
         for coord in self.data_array.coords.values():
             if coord.dtype == sc.dtype.vector_3_float64 and len(
                     coord.dims) > 0:
                 self.positions = np.array(coord.values, dtype=np.float32)
+                self.axlabels.update({
+                    "x": name_with_unit(coord, name="X"),
+                    "y": name_with_unit(coord, name="Y"),
+                    "z": name_with_unit(coord, name="Z")
+                })
                 break
         # If no positions are found, create a meshgrid from coordinate axes.
         if self.positions is None:
             coords = []
+            labels = []
             for dim, val in self.slider.items():
                 if val.disabled:
                     coords.append(self.slider_x[self.name][dim].values)
+                    labels.append(name_with_unit(
+                        self.slider_x[self.name][dim]))
             z, y, x = np.meshgrid(*coords, indexing='ij')
             self.positions = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
             if self.pixel_size is None:
                 self.pixel_size = coords[0][1] - coords[0][0]
+            self.axlabels.update({
+                "x": labels[0],
+                "y": labels[1],
+                "z": labels[2]
+            })
 
         # Find spatial and value limits
         self.xminmax, self.center_of_mass = self.get_spatial_extents()
@@ -343,9 +357,9 @@ void main() {
                 0.5 * np.sum(self.xminmax['z'])
             ])
 
-        axticks = self.generate_axis_ticks()
+        ticks_and_labels = self.generate_axis_ticks_and_labels()
 
-        return outline, axticks
+        return outline, ticks_and_labels
 
     def make_axis_tick(self, string, position, color="black", size=1.0):
         """
@@ -361,7 +375,7 @@ void main() {
                          scaleToTexture=True,
                          scale=[size, size, size])
 
-    def generate_axis_ticks(self):
+    def generate_axis_ticks_and_labels(self):
         """
         Create ticklabels on outline edges
         """
@@ -369,7 +383,7 @@ void main() {
         max_extent = np.amax(
             np.diff(list(self.xminmax.values()), axis=1).ravel())
         tick_size = 0.05 * max_extent
-        axticks = p3.Group()
+        ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker = mpl.ticker.MaxNLocator(5)
         offsets = {
@@ -383,12 +397,19 @@ void main() {
             for tick in ticks:
                 if tick >= self.xminmax[x][0] and tick <= self.xminmax[x][1]:
                     tick_pos = iden[axis] * tick + offsets[x]
-                    axticks.add(
+                    ticks_and_labels.add(
                         self.make_axis_tick(string=value_to_string(
                             tick, precision=1),
                                             position=tick_pos.tolist(),
                                             size=tick_size))
-        return axticks
+            ticks_and_labels.add(
+                self.make_axis_tick(
+                    string=self.axlabels[x],
+                    position=(iden[axis] * 0.5 * np.sum(self.xminmax[x]) +
+                              offsets[x]).tolist(),
+                    size=tick_size * 0.3 * len(self.axlabels[x])))
+
+        return ticks_and_labels
 
     def create_colorbar(self):
         """
