@@ -260,13 +260,15 @@ class Slicer3d(Slicer):
             layout={"width": "200px"},
             disabled=True,
             description="Surface thickness:",
-            style = {'description_width': 'initial'})
+            style={'description_width': 'initial'})
 
         # Put widgets into boxes
         self.cut_surface_controls = widgets.HBox([
-            self.cut_surface_buttons, widgets.VBox([
+            self.cut_surface_buttons,
+            widgets.VBox([
                 widgets.HBox([self.cut_slider, self.cut_checkbox]),
-            self.cut_surface_thickness])
+                self.cut_surface_thickness
+            ])
         ])
 
         self.box = widgets.VBox([
