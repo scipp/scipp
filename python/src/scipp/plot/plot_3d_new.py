@@ -98,6 +98,8 @@ class Slicer3d(Slicer):
 
         self.cube = None
         self.members.update({"surfaces": {}, "wireframes": {}})
+        self.vslice = None
+        # self.cut_surface_not_updated = False
 
         # # Initialise Figure and VBox objects
         # self.fig = ipv.figure(width=config.plot.width,
@@ -186,6 +188,8 @@ class Slicer3d(Slicer):
         # self.members["fig"] = self.fig
 
         self.xminmax, self.center_of_mass = self.get_spatial_extents()
+
+        self.vminmax = [sc.min(self.data_array.data).value, sc.max(self.data_array.data).value]
         # print("self.xminmax", self.xminmax)
 
         # self.points_geometry, self.points_material, self.points = 
@@ -193,14 +197,14 @@ class Slicer3d(Slicer):
 
         self.outline, self.axticks = self.create_outline()
 
-        box_size = np.diff(list(self.xminmax.values()), axis=1).ravel()
+        self.box_size = np.diff(list(self.xminmax.values()), axis=1).ravel()
 
         # Define camera
         camera_lookat = self.center_of_mass
         print("camera_lookat", camera_lookat)
         # print(self.center_of_mass)
         # print(np.diff(list(self.xminmax.values()), axis=1))
-        camera_pos = np.array(self.center_of_mass) + 1.2 * box_size
+        camera_pos = np.array(self.center_of_mass) + 1.2 * self.box_size
         # print(camera_pos)
         # print(list(camera_pos))
         self.camera = p3.PerspectiveCamera(position=list(camera_pos),
@@ -259,16 +263,17 @@ class Slicer3d(Slicer):
 
 
         self.cut_surface_buttons = widgets.ToggleButtons(
-            options=[('X ', 0), ('Y ', 1), ('Z ', 2),
+            options=[('X ', 0), ('Y ', 1), ('Z ', 2), ('R ', 6),
                      (' X ', 3), (' Y ', 4), (' Z ', 5),
-                     ('R ', 6)],
+                    ('', 7)],
             value=None,
             description='Cut surface:',
             button_style='', # 'success', 'info', 'warning', 'danger' or ''
-            tooltips=['X-plane', 'Y-plane', 'Z-plane', 'Cylinder-X',
-                      'Cylinder-Y', 'Cylinder-Z', 'Sphere'],
-            icons=(['cube'] * 3) + (['toggle-on'] * 3) + ['circle-o'],
-            style={"button_width": "55px"}
+            tooltips=['X-plane', 'Y-plane', 'Z-plane', 'Sphere', 'Cylinder-X',
+                      'Cylinder-Y', 'Cylinder-Z', 'Value'],
+            icons=(['cube'] * 3) + ['circle-o'] + (['toggle-on'] * 3) + ['magic'],
+            style={"button_width": "55px"},
+            layout={'width': '350px'}
         )
         self.cut_surface_buttons.observe(self.update_cut_surface_buttons, names="value")
 
@@ -322,7 +327,7 @@ class Slicer3d(Slicer):
         #     icon='fa-circle-o',
         #     tooltip="Sphere",
         #     layout={'width': "50px"})
-        self.cut_slider = widgets.FloatSlider(min=0, max=1, disabled=True,
+        self.cut_slider = widgets.FloatSlider(min=0, max=1, disabled=True, value=0.5,
             layout={"width": "200px"})
         self.cut_checkbox = widgets.Checkbox(
             value=True,
@@ -334,7 +339,7 @@ class Slicer3d(Slicer):
         self.cut_slider.observe(self.update_cut_surface,
                                        names="value")
 
-        self.cut_surface_thickness = widgets.FloatText(value=0.05 * box_size.max(),
+        self.cut_surface_thickness = widgets.FloatText(value=0.05 * self.box_size.max(),
             layout={"width": "50px"})
         # 
         self.cut_surface_controls = widgets.HBox([self.cut_surface_buttons, self.cut_slider,
@@ -538,6 +543,7 @@ void main() {
             # self.update_cut_surface({"new"})
 
     def update_cut_slider_bounds(self):
+        # self.cut_surface_not_updated = True
         if self.cut_surface_buttons.value < 3:
             minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
             if minmax[0] < self.cut_slider.max:
@@ -568,11 +574,24 @@ void main() {
             self.cut_slider.min = 0
             self.cut_slider.max = rmax * np.sqrt(3.0)
             self.cut_slider.value = 0.5 * self.cut_slider.max
+        elif self.cut_surface_buttons.value == 7:
+            # print('1', self.cut_surface_not_updated)
+            self.cut_slider.min = self.vminmax[0]
+            self.cut_slider.max = self.vminmax[1]
+            self.cut_slider.value = 0.5 * (self.vminmax[0] + self.vminmax[1])
 
-
+        if self.cut_surface_buttons.value < 7:
+            self.cut_surface_thickness.value = 0.05 * self.box_size.max()
+        else:
+            self.cut_surface_thickness.value = 0.05 * (self.vminmax[1] - self.vminmax[0])
+        # print(self.cut_slider.value, old_slider_value)
+        # if self.cut_surface_not_updated:
+        #     self.update_cut_surface({"new": self.cut_slider.value})
 
 
     def update_cut_surface(self, change):
+        # print('2', self.cut_surface_not_updated)
+        # print(change)
         newc = None
         if self.cut_surface_buttons.value < 3:
             newc = np.where(np.abs(
@@ -586,11 +605,15 @@ void main() {
                 self.positions[:, 0] * self.positions[:, 0] +
                 self.positions[:, 1] * self.positions[:, 1] +
                 self.positions[:, 2] * self.positions[:, 2]) - change["new"]) < self.cut_surface_thickness.value, self.opacity_slider.upper, self.opacity_slider.lower)
+        elif self.cut_surface_buttons.value == 7:
+            newc = np.where(np.abs(self.vslice - change["new"]) < self.cut_surface_thickness.value, self.opacity_slider.upper, self.opacity_slider.lower)
         c3 = self.points_geometry.attributes["rgba_color"].array
         # print(np.shape(c3))
         # print(np.shape(newc))
         c3[:, 3] = newc
         self.points_geometry.attributes["rgba_color"].array = c3
+        # self.cut_surface_not_updated = False
+        # print('3', self.cut_surface_not_updated)
 
 
 
@@ -727,7 +750,7 @@ void main() {
 
         #     self.last_changed_slider_dim = dim
 
-        vslice = self.data_array
+        self.vslice = self.data_array
         # if self.params["masks"][self.name]["show"]:
         #     mslice = self.masks
         # Slice along dimensions with active sliders
@@ -736,7 +759,7 @@ void main() {
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_x[self.name][dim], val.value)
-                vslice = vslice[val.dim, val.value]
+                self.vslice = self.vslice[val.dim, val.value]
                 # # At this point, after masks were combined, all their
                 # # dimensions should be contained in the data_array.dims.
                 # if self.params["masks"][
@@ -753,7 +776,8 @@ void main() {
         # if self.select_rendering.value == "Full":
         #     arr = np.repeat(arr, self.nverts, axis=0)
         # colors = self.scalar_map[self.key].to_rgba(arr).astype(np.float32)
-        return self.scalar_map.to_rgba(vslice.values.flatten()).astype(np.float32)
+        self.vslice = self.vslice.values.flatten()
+        return self.scalar_map.to_rgba(self.vslice).astype(np.float32)
         # if self.key in self.masks_variables and self.masks_params[
         #         self.key]["show"]:
         #     msk = self.masks_variables[self.key].values
