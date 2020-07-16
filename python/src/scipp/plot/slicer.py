@@ -155,6 +155,15 @@ class Slicer:
             # if len(button_options) == 3 and (not volume):
             #     indx = (self.slider_nx[self.name][dim] - 1) // 2
             dim_str = str(dim)
+            # Determine if slider should be disabled or not:
+            # In the case of 3d projection, disable sliders that are for
+            # dims < 3, or sliders that contain vectors
+            disabled = False
+            if len(button_options) == 3 and (self.slider_x[self.name][dim].dtype == dtype.vector_3_float64):
+                disabled = True
+            elif i >= self.ndim - len(button_options):
+                disabled = True
+
             # Add an IntSlider to slide along the z dimension of the array
             self.slider[dim] = widgets.IntSlider(
                 value=indx,
@@ -166,7 +175,8 @@ class Slicer:
                 readout=False,
                 # disabled=((i >= self.ndim - len(button_options))
                 #           and ((len(button_options) < 3) or volume)))
-                disabled=(i >= self.ndim - len(button_options)))
+                # disabled=(i >= self.ndim - len(button_options))
+                disabled=disabled)
             labvalue = self.make_slider_label(self.slider_x[self.name][dim],
                                               indx)
             self.continuous_update[dim] = widgets.Checkbox(
@@ -179,6 +189,10 @@ class Slicer:
 
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
+                self.continuous_update[dim].layout.display = 'none'
+                # This is a trick to turn the label into the coordinate name
+                # because when we hide the slider, the slider description is
+                # also hidden
                 labvalue = dim_str
             # Add a label widget to display the value of the z coordinate
             self.lab[dim] = widgets.Label(value=labvalue)
@@ -200,9 +214,18 @@ class Slicer:
             setattr(self.slider[dim], "dim", dim)
             setattr(self.continuous_update[dim], "dim", dim)
 
+            # Hide buttons and labels for 1d variables
             if self.ndim == 1:
                 self.buttons[dim].layout.display = 'none'
                 self.lab[dim].layout.display = 'none'
+
+            # Hide buttons and inactive sliders for 3d projection
+            if len(button_options) == 3:
+                self.buttons[dim].layout.display = 'none'
+                if self.slider[dim].disabled:
+                    self.slider[dim].layout.display = 'none'
+                    self.continuous_update[dim].layout.display = 'none'
+                    self.lab[dim].layout.display = 'none'
 
             # if (len(button_options) == 3) and (not volume):
             #     self.showhide[dim] = widgets.Button(
