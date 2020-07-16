@@ -31,7 +31,8 @@ def plot_3d(scipp_obj_dict=None,
             vmin=None,
             vmax=None,
             color=None,
-            background="#f0f0f0"):
+            background="#f0f0f0",
+            pixel_size=1.0):
     """
     Plot a 3D point cloud through a N dimensional dataset.
     For every dimension above 3, a slider is created to adjust the position of
@@ -49,7 +50,8 @@ def plot_3d(scipp_obj_dict=None,
                   vmax=vmax,
                   color=color,
                   aspect=aspect,
-                  background=background)
+                  background=background,
+                  pixel_size=pixel_size)
 
     render_plot(widgets=sv.box, filename=filename)
 
@@ -67,7 +69,8 @@ class Slicer3d(Slicer):
                  vmax=None,
                  color=None,
                  aspect=None,
-                 background=None):
+                 background=None,
+                 pixel_size=None):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
@@ -105,9 +108,10 @@ class Slicer3d(Slicer):
         # Search the coordinates to see if one contains vectors. If so, it will
         # be used as position vectors.
         self.positions = None
-        self.pixel_size = 1.0
+        self.pixel_size = pixel_size
         for coord in self.data_array.coords.values():
-            if coord.dtype == sc.dtype.vector_3_float64:
+            if coord.dtype == sc.dtype.vector_3_float64 and len(
+                    coord.dims) > 0:
                 self.positions = np.array(coord.values, dtype=np.float32)
                 break
         # If no positions are found, create a meshgrid from coordinate axes.
@@ -119,7 +123,8 @@ class Slicer3d(Slicer):
             z, y, x = np.meshgrid(*coords, indexing='ij')
             self.positions = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
-            self.pixel_size = coords[0][1] - coords[0][0]
+            if self.pixel_size is None:
+                self.pixel_size = coords[0][1] - coords[0][0]
 
         # Find spatial and value limits
         self.xminmax, self.center_of_mass = self.get_spatial_extents()
@@ -288,9 +293,9 @@ void main(){
     yDelta = (position[1]-cameraPosition[1]) * (position[1]-cameraPosition[1]);
     zDelta = (position[2]-cameraPosition[2]) * (position[2]-cameraPosition[2]);
     delta = pow(xDelta + yDelta + zDelta, 0.5);
-    gl_PointSize = 300.0 / delta;
+    gl_PointSize = 300.0 * %f / delta;
 }
-''',
+''' % (self.pixel_size, ),
                                  fragmentShader='''
 precision highp float;
 varying vec4 vColor;
@@ -363,7 +368,7 @@ void main() {
 
         max_extent = np.amax(
             np.diff(list(self.xminmax.values()), axis=1).ravel())
-        tick_size = 0.1 * max_extent
+        tick_size = 0.05 * max_extent
         axticks = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker = mpl.ticker.MaxNLocator(5)
@@ -375,20 +380,14 @@ void main() {
 
         for axis, x in enumerate('xyz'):
             ticks = ticker.tick_values(self.xminmax[x][0], self.xminmax[x][1])
-            for i in range(2, len(ticks)):
-                tick_pos = iden[axis] * ticks[i] + offsets[x]
-                axticks.add(
-                    self.make_axis_tick(string=value_to_string(ticks[i],
-                                                               precision=1),
-                                        position=tick_pos.tolist(),
-                                        size=tick_size))
-        # Add bottom corner
-        tick_pos = iden[0] * ticks[1] + offsets['x']
-        axticks.add(
-            self.make_axis_tick(string=value_to_string(ticks[1], precision=1),
-                                position=tick_pos.tolist(),
-                                size=tick_size))
-
+            for tick in ticks:
+                if tick >= self.xminmax[x][0] and tick <= self.xminmax[x][1]:
+                    tick_pos = iden[axis] * tick + offsets[x]
+                    axticks.add(
+                        self.make_axis_tick(string=value_to_string(
+                            tick, precision=1),
+                                            position=tick_pos.tolist(),
+                                            size=tick_size))
         return axticks
 
     def create_colorbar(self):

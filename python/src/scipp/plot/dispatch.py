@@ -4,7 +4,7 @@
 
 from .plot_1d import plot_1d
 from .plot_2d import plot_2d
-from .plot_3d_new import plot_3d
+from .plot_3d import plot_3d
 from .events import histogram_events_data
 
 
