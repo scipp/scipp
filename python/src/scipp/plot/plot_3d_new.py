@@ -555,6 +555,12 @@ void main() {
             self.cut_slider.min = 0
             self.cut_slider.max = rmax * np.sqrt(2.0)
             self.cut_slider.value = 0.5 * self.cut_slider.max
+        elif self.cut_surface_buttons.value == 6:
+            rmax = np.abs(list(self.xminmax.values())).max()
+            self.cut_slider.min = 0
+            self.cut_slider.max = rmax * np.sqrt(3.0)
+            self.cut_slider.value = 0.5 * self.cut_slider.max
+
 
 
 
@@ -567,6 +573,11 @@ void main() {
             newc = np.where(np.abs(np.sqrt(
                 self.positions[:, self.remaining_inds[0]] * self.positions[:, self.remaining_inds[0]] +
                 self.positions[:, self.remaining_inds[1]] * self.positions[:, self.remaining_inds[1]]) - change["new"]) < self.cut_surface_thickness.value, self.opacity_slider.upper, self.opacity_slider.lower)
+        elif self.cut_surface_buttons.value == 6:
+            newc = np.where(np.abs(np.sqrt(
+                self.positions[:, 0] * self.positions[:, 0] +
+                self.positions[:, 1] * self.positions[:, 1] +
+                self.positions[:, 2] * self.positions[:, 2]) - change["new"]) < self.cut_surface_thickness.value, self.opacity_slider.upper, self.opacity_slider.lower)
         c3 = self.points_geometry.attributes["rgba_color"].array
         # print(np.shape(c3))
         # print(np.shape(newc))
