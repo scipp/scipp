@@ -257,13 +257,16 @@ class Slicer3d(Slicer):
         # Allow to change the thickness of the cut surface
         self.cut_surface_thickness = widgets.FloatText(
             value=0.05 * self.box_size.max(),
-            layout={"width": "70px"},
-            disabled=True)
+            layout={"width": "200px"},
+            disabled=True,
+            description="Surface thickness:",
+            style = {'description_width': 'initial'})
 
         # Put widgets into boxes
         self.cut_surface_controls = widgets.HBox([
-            self.cut_surface_buttons, self.cut_slider, self.cut_checkbox,
-            self.cut_surface_thickness
+            self.cut_surface_buttons, widgets.VBox([
+                widgets.HBox([self.cut_slider, self.cut_checkbox]),
+            self.cut_surface_thickness])
         ])
 
         self.box = widgets.VBox([
@@ -327,8 +330,7 @@ void main() {
 ''',
             vertexColors='VertexColors',
             transparent=True,
-            depthTest=False,
-            alphaTest=0.5)
+            depthTest=True)
 
     def get_spatial_extents(self):
         """
@@ -448,6 +450,7 @@ void main() {
             arr = self.points_geometry.attributes["rgba_color"].array
             arr[:, 3] = change["new"][1]
             self.points_geometry.attributes["rgba_color"].array = arr
+            self.points_material.depthTest = change["new"][1] == 1.0
         else:
             self.update_cut_surface({"new": self.cut_slider.value})
 
@@ -463,6 +466,7 @@ void main() {
             self.cut_surface_thickness.disabled = True
             self.update_opacity({"new": self.opacity_slider.value})
         else:
+            self.points_material.depthTest = False
             if change["old"] is None:
                 self.cut_slider.disabled = False
                 self.cut_checkbox.disabled = False
