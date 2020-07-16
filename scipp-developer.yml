@@ -15,8 +15,7 @@ dependencies:
 
   # Run
   - appdirs
-  - ipyevents
-  - ipyvolume
+  - pythreejs
   - ipywidgets
   - mantid-framework
   - matplotlib

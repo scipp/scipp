@@ -15,8 +15,7 @@ dependencies:
 
   # Run
   - appdirs
-  - ipyevents
-  - ipyvolume
+  - pythreejs
   - ipywidgets
   - matplotlib
   - numpy >=1.15.3

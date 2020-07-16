@@ -39,9 +39,8 @@ RUN conda install --yes \
       -c conda-forge \
       -c scipp/label/dev \
       -c dannixon \
-      ipyevents \
       ipython \
-      ipyvolume \
+      pythreejs \
       ipywidgets \
       mantid-framework \
       matplotlib \

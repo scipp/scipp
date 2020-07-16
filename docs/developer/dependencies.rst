@@ -21,8 +21,7 @@ Run
 ---
 
   - ``appdirs`` (system application directory helper, used in user configuration loading)
-  - ``ipyevents`` * (HID event processor, used for Jupyter notebook widgets)
-  - ``ipyvolume`` * (3D plotting library)
+  - ``pythreejs`` * (3D plotting library)
   - ``ipywidgets`` * (interactive Jupyter notebook widgets)
   - ``mantid-framework`` * (used for Mantid interoperability)
   - ``matplotlib`` * (plotting library)
