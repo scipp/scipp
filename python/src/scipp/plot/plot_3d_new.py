@@ -543,7 +543,7 @@ void main() {
             j = self.cut_surface_buttons.value - 3
             remaining_axes = self.permutations["xyz"[j]]
             # self.remaining_axes.remove(self.cut_surface_buttons.value - 3)
-            self.remaining_inds = [(j + 1) % 2, (j + 2) % 2]
+            self.remaining_inds = [(j + 1) % 3, (j + 2) % 3]
             # self.remaining_inds.remove(self.cut_surface_buttons.value - 3)
             # minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
             # minxy = np.amin([self.xminmax[remains[0]][0], self.xminmax[remains[1]][0]])
