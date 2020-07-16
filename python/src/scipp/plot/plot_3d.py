@@ -257,7 +257,7 @@ class Slicer3d(Slicer):
         # Allow to change the thickness of the cut surface
         self.cut_surface_thickness = widgets.FloatText(
             value=0.05 * self.box_size.max(),
-            layout={"width": "50px"},
+            layout={"width": "70px"},
             disabled=True)
 
         # Put widgets into boxes
@@ -299,7 +299,8 @@ class Slicer3d(Slicer):
         """
         Define custom raw shader for point cloud to allow to RGBA color format.
         """
-        return p3.ShaderMaterial(vertexShader='''
+        return p3.ShaderMaterial(
+            vertexShader='''
 precision highp float;
 attribute vec4 rgba_color;
 varying vec3 mypos;
@@ -316,18 +317,18 @@ void main(){
     delta = pow(xDelta + yDelta + zDelta, 0.5);
     gl_PointSize = %f / delta;
 }
-''' % (300.0 * self.pixel_size, ),
-                                 fragmentShader='''
+''' % (500.0 * self.pixel_size, ),  # the value of 500 is from trial and error
+            fragmentShader='''
 precision highp float;
 varying vec4 vColor;
 void main() {
     gl_FragColor = vColor;
 }
 ''',
-                                 vertexColors='VertexColors',
-                                 transparent=True,
-                                 depthTest=False,
-                                 alphaTest=0.5)
+            vertexColors='VertexColors',
+            transparent=True,
+            depthTest=False,
+            alphaTest=0.5)
 
     def get_spatial_extents(self):
         """

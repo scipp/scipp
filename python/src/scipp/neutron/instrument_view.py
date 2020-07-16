@@ -4,6 +4,7 @@
 
 # Scipp imports
 from .._scipp import core as sc
+from .. import _utils as su
 
 
 def instrument_view(scipp_obj=None,
@@ -50,8 +51,14 @@ class InstrumentView:
 
         from ..plot import plot
 
-        if sc.contains_events(scipp_obj) and bins is None:
-            bins = {dim: 256}
+        if su.is_dataset(scipp_obj):
+            for name, da in scipp_obj.items():
+                bins = self._check_for_events(da, bins, dim)
+        elif su.is_data_array(scipp_obj):
+            bins = self._check_for_events(scipp_obj, bins, dim)
+        else:
+            raise RuntimeError("Instrument view only accepts a Dataset "
+                               "or a DataArray as an input.")
 
         self.sciplot = plot(scipp_obj,
                             projection="3d",
@@ -60,3 +67,8 @@ class InstrumentView:
                             pixel_size=pixel_size,
                             **kwargs)
         return
+
+    def _check_for_events(self, obj, bins, dim):
+        if sc.contains_events(obj) and bins is None:
+            bins = {dim: 256}
+        return bins
