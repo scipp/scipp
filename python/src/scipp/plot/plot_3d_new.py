@@ -129,7 +129,7 @@ class Slicer3d(Slicer):
         self.positions = None
         self.pixel_size = 1.0
         print(self.slider_x)
-        for dim, coord in self.data_array.coords.items():
+        for coord in self.data_array.coords.values():
             # if dim 
             print(coord.dtype, sc.dtype.vector_3_float64)
             if coord.dtype == sc.dtype.vector_3_float64:
@@ -148,7 +148,7 @@ class Slicer3d(Slicer):
             self.positions = np.array([x.ravel(), y.ravel(), z.ravel()]).T
             self.pixel_size = coords[0][1] - coords[0][0]
         print('self.pixel_size', self.pixel_size)
-        print(coords[0][1] , coords[0][0])
+        # print(coords[0][1] , coords[0][0])
 
         # #====================================================================
         # wframes = self.get_outlines()

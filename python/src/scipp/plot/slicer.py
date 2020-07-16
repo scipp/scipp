@@ -147,6 +147,15 @@ class Slicer:
         # Default starting index for slider
         indx = 0
 
+        # Additional check for 3d projection: if position vectors are present
+        contains_vectors = None
+        if len(button_options) == 3:
+            for dim, coord in self.data_array.coords.items():
+                print('coord.dtype', coord.dtype)
+                if coord.dtype == dtype.vector_3_float64:
+                    contains_vectors = dim
+                    break
+
         # Now begin loop to construct sliders
         button_values = [None] * (self.ndim - len(button_options)) + \
             button_options[::-1]
@@ -159,8 +168,10 @@ class Slicer:
             # In the case of 3d projection, disable sliders that are for
             # dims < 3, or sliders that contain vectors
             disabled = False
-            if len(button_options) == 3 and (self.slider_x[self.name][dim].dtype == dtype.vector_3_float64):
-                disabled = True
+            if contains_vectors is not None:
+                # print(contains_vectors, self.slider_x[self.name][dim].dtype)
+                disabled = dim == contains_vectors
+                    # disabled = True
             elif i >= self.ndim - len(button_options):
                 disabled = True
 
