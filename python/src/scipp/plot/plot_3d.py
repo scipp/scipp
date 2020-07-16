@@ -95,11 +95,11 @@ class Slicer3d(Slicer):
         self.cmap = cm.get_cmap(self.params["values"][self.name]["cmap"])
         self.cmap.set_bad(color=nan_color)
         self.scalar_map = cm.ScalarMappable(
-            norm=self.params["values"][self.name]["norm"],
-            cmap=self.cmap)
+            norm=self.params["values"][self.name]["norm"], cmap=self.cmap)
         self.masks_scalar_map = None
         if self.params["masks"][self.name]["show"]:
-            self.masks_cmap = cm.get_cmap(self.params["masks"][self.name]["cmap"])
+            self.masks_cmap = cm.get_cmap(
+                self.params["masks"][self.name]["cmap"])
             self.masks_cmap.set_bad(color=nan_color)
             self.masks_scalar_map = cm.ScalarMappable(
                 norm=self.params["values"][self.name]["norm"],
