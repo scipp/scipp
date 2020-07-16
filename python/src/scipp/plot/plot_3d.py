@@ -32,6 +32,7 @@ def plot_3d(scipp_obj_dict=None,
             vmax=None,
             color=None,
             background="#f0f0f0",
+            nan_color="#d3d3d3",
             pixel_size=1.0):
     """
     Plot a 3D point cloud through a N dimensional dataset.
@@ -51,6 +52,7 @@ def plot_3d(scipp_obj_dict=None,
                   color=color,
                   aspect=aspect,
                   background=background,
+                  nan_color=nan_color,
                   pixel_size=pixel_size)
 
     render_plot(widgets=sv.box, filename=filename)
@@ -70,6 +72,7 @@ class Slicer3d(Slicer):
                  color=None,
                  aspect=None,
                  background=None,
+                 nan_color=None,
                  pixel_size=None):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
@@ -89,14 +92,18 @@ class Slicer3d(Slicer):
         self.cbar_image = widgets.Image()
 
         # Prepare colormaps
+        self.cmap = cm.get_cmap(self.params["values"][self.name]["cmap"])
+        self.cmap.set_bad(color=nan_color)
         self.scalar_map = cm.ScalarMappable(
             norm=self.params["values"][self.name]["norm"],
-            cmap=self.params["values"][self.name]["cmap"])
+            cmap=self.cmap)
         self.masks_scalar_map = None
         if self.params["masks"][self.name]["show"]:
+            self.masks_cmap = cm.get_cmap(self.params["masks"][self.name]["cmap"])
+            self.masks_cmap.set_bad(color=nan_color)
             self.masks_scalar_map = cm.ScalarMappable(
                 norm=self.params["values"][self.name]["norm"],
-                cmap=self.params["masks"][self.name]["cmap"])
+                cmap=self.masks_cmap)
 
         # Generate the colorbar image
         self.create_colorbar()

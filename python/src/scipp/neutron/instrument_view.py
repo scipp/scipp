@@ -10,17 +10,9 @@ from .._scipp import core as sc
 def instrument_view(scipp_obj=None,
                     dim="tof",
                     bins=None,
-                    axes=None,
-                    masks=None,
-                    filename=None,
-                    aspect=None,
-                    cmap=None,
-                    log=False,
-                    vmin=None,
-                    vmax=None,
-                    color=None,
-                    background="#f0f0f0",
-                    pixel_size=0.1):
+                    axes=['tof', 'position'],
+                    pixel_size=0.1,
+                    **kwargs):
     """
     Plot a 3D view of the instrument, using the 'position` coordinate as the
     detector vector positions.
@@ -42,15 +34,8 @@ def instrument_view(scipp_obj=None,
                         dim=dim,
                         bins=bins,
                         axes=axes,
-                        masks=masks,
-                        aspect=aspect,
-                        cmap=cmap,
-                        log=log,
-                        vmin=vmin,
-                        vmax=vmax,
-                        color=color,
-                        background=background,
-                        pixel_size=pixel_size)
+                        pixel_size=pixel_size,
+                        **kwargs)
 
     return iv.sciplot
 
@@ -61,15 +46,8 @@ class InstrumentView:
                  dim=None,
                  bins=None,
                  axes=None,
-                 masks=None,
-                 aspect=None,
-                 cmap=None,
-                 log=False,
-                 vmin=None,
-                 vmax=None,
-                 color=None,
-                 background=None,
-                 pixel_size=None):
+                 pixel_size=None,
+                 **kwargs):
 
         if sc.contains_events(scipp_obj) and bins is None:
             bins = {dim: 256}
@@ -77,6 +55,7 @@ class InstrumentView:
         self.sciplot = plot(scipp_obj,
                             projection="3d",
                             bins=bins,
-                            axes=['tof', 'position'],
-                            pixel_size=pixel_size)
+                            axes=axes,
+                            pixel_size=pixel_size,
+                            **kwargs)
         return

@@ -60,5 +60,5 @@ def image(dataset, **kwargs):
     return plot(dataset, projection="2d", **kwargs)
 
 
-def threeslice(dataset, **kwargs):
+def scatter3d(dataset, **kwargs):
     return plot(dataset, projection="3d", **kwargs)
