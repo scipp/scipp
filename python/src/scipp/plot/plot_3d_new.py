@@ -16,7 +16,7 @@ import numpy as np
 import ipywidgets as widgets
 from matplotlib import cm
 import matplotlib as mpl
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 # from matplotlib import ticker
 from matplotlib.backends import backend_agg
 import PIL as pil
@@ -100,6 +100,8 @@ class Slicer3d(Slicer):
         self.members.update({"surfaces": {}, "wireframes": {}})
         self.vslice = None
         self.current_cut_surface_value = None
+        self.cut_slider_steps = 100.
+        self.cbar_image = widgets.Image()
         # self.cut_surface_not_updated = False
 
         # # Initialise Figure and VBox objects
@@ -116,6 +118,10 @@ class Slicer3d(Slicer):
                 norm=self.params["values"][self.name]["norm"],
                 cmap=self.params["masks"][self.name]["cmap"])
 
+
+
+        # Generate the colorbar image
+        self.create_colorbar()
 
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
         self.remaining_axes = ["x", "y"]
@@ -255,7 +261,7 @@ class Slicer3d(Slicer):
                                                        value=[0.1, 1],
                                                        step=0.01,
                                                        description="Opacity",
-                                                       continuous_update=False)
+                                                       continuous_update=True)
         self.opacity_slider.observe(self.update_opacity, names="value")
         self.opacity_checkbox = widgets.Checkbox(
             value=self.opacity_slider.continuous_update,
@@ -336,7 +342,7 @@ class Slicer3d(Slicer):
         #     tooltip="Sphere",
         #     layout={'width': "50px"})
         self.cut_slider = widgets.FloatSlider(min=0, max=1, disabled=True, value=0.5,
-            layout={"width": "200px"})
+            layout={"width": "300px"})
         self.cut_checkbox = widgets.Checkbox(
             value=True,
             tooltip="Continuous update",
@@ -348,14 +354,14 @@ class Slicer3d(Slicer):
                                        names="value")
 
         self.cut_surface_thickness = widgets.FloatText(value=0.05 * self.box_size.max(),
-            layout={"width": "50px"})
+            layout={"width": "50px"}, disabled=True)
         # 
         self.cut_surface_controls = widgets.HBox([self.cut_surface_buttons, self.cut_slider,
             self.cut_checkbox, self.cut_surface_thickness])
 
 
 
-        self.box = widgets.VBox([self.renderer, widgets.VBox(self.vbox),
+        self.box = widgets.VBox([widgets.HBox([self.renderer, self.cbar_image]), widgets.VBox(self.vbox),
             widgets.HBox([self.opacity_slider, self.opacity_checkbox]),
             self.cut_surface_controls])
 
@@ -512,6 +518,27 @@ void main() {
 
         return axticks
 
+
+    def create_colorbar(self):
+        height_inches = config.plot.height / config.plot.dpi
+        fig = mpl.figure.Figure(figsize=(height_inches * 0.2,
+                                              height_inches),
+                                     dpi=config.plot.dpi)
+        canvas = backend_agg.FigureCanvasAgg(fig)
+        ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
+        cb1 = mpl.colorbar.ColorbarBase(
+            ax, cmap=cm.get_cmap(self.params["values"][self.name]["cmap"]),
+            norm=self.params["values"][self.name]["norm"])
+        cb1.set_label(
+            name_with_unit(var=self.data_array, name=""))
+        canvas.draw()
+        image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
+        shp = list(fig.canvas.get_width_height())[::-1] + [3]
+        self.cbar_image.value = pil.Image.fromarray(
+            image.reshape(shp))._repr_png_()
+
+
+
     # def update_opacity(self, change):
     #     self.points_material.opacity = change["new"][1]
     def update_opacity(self, change):
@@ -550,11 +577,13 @@ void main() {
         if change["new"] is None:
             self.cut_slider.disabled = True
             self.cut_checkbox.disabled = True
+            self.cut_surface_thickness.disabled = True
             self.update_opacity({"new": self.opacity_slider.value})
         else:
             if change["old"] is None:
                 self.cut_slider.disabled = False
                 self.cut_checkbox.disabled = False
+                self.cut_surface_thickness.disabled = False
             self.update_cut_slider_bounds()
             # self.update_cut_surface({"new"})
 
@@ -600,6 +629,7 @@ void main() {
             self.cut_surface_thickness.value = 0.05 * self.box_size.max()
         else:
             self.cut_surface_thickness.value = 0.05 * (self.vminmax[1] - self.vminmax[0])
+        self.cut_slider.step = (self.cut_slider.max - self.cut_slider.min) / self.cut_slider_steps
         # print(self.cut_slider.value, old_slider_value)
         # if self.cut_surface_not_updated:
         #     self.update_cut_surface({"new": self.cut_slider.value})
