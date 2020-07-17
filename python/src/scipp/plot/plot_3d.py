@@ -7,6 +7,7 @@ from .. import config
 from .render import render_plot
 from ..plot.sciplot import SciPlot
 from .slicer import Slicer
+from .tools import edges_to_centers
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 
@@ -133,7 +134,10 @@ class Slicer3d(Slicer):
             labels = []
             for dim, val in self.slider.items():
                 if val.disabled:
-                    coords.append(self.slider_x[self.name][dim].values)
+                    arr = self.slider_x[self.name][dim].values
+                    if self.histograms[self.name][dim]:
+                        arr = edges_to_centers(arr)
+                    coords.append(arr)
                     labels.append(name_with_unit(
                         self.slider_x[self.name][dim]))
             z, y, x = np.meshgrid(*coords, indexing='ij')
@@ -241,9 +245,10 @@ class Slicer3d(Slicer):
         # Add slider to control position of cut surface
         self.cut_slider = widgets.FloatSlider(min=0,
                                               max=1,
+                                              description="Position:",
                                               disabled=True,
                                               value=0.5,
-                                              layout={"width": "300px"})
+                                              layout={"width": "350px"})
         self.cut_checkbox = widgets.Checkbox(value=True,
                                              tooltip="Continuous update",
                                              indent=False,
@@ -257,9 +262,9 @@ class Slicer3d(Slicer):
         # Allow to change the thickness of the cut surface
         self.cut_surface_thickness = widgets.FloatText(
             value=0.05 * self.box_size.max(),
-            layout={"width": "200px"},
+            layout={"width": "150px"},
             disabled=True,
-            description="Surface thickness:",
+            description="Thickness:",
             style={'description_width': 'initial'})
 
         # Put widgets into boxes
@@ -452,7 +457,7 @@ void main() {
             arr = self.points_geometry.attributes["rgba_color"].array
             arr[:, 3] = change["new"][1]
             self.points_geometry.attributes["rgba_color"].array = arr
-            self.points_material.depthTest = change["new"][1] == 1.0
+            self.points_material.depthTest = change["new"][1] > 0.9
         else:
             self.update_cut_surface({"new": self.cut_slider.value})
 
