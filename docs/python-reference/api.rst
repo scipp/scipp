@@ -29,8 +29,9 @@ General
    :toctree: ../generated
 
    abs
-   concatenate
    choose
+   collapse
+   concatenate
    dot
    filter
    histogram
@@ -40,6 +41,7 @@ General
    rebin
    reciprocal
    reshape
+   slices
    sort
    sqrt
    values
@@ -146,3 +148,12 @@ This can be converted into a counts (frequency) density, e.g., for visualization
 
    counts_to_density
    density_to_counts
+
+Compatibility
+~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   to_dict
+   from_dict

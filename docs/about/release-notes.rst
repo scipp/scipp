@@ -3,8 +3,30 @@
 Release Notes
 =============
 
-Changes since v0.3
-------------------
+v0.4 (July 2020)
+----------------
+
+Features
+~~~~~~~~
+
+* New realign functionality.
+* Support for event-filtering.
+* Support for subtraction and addition for (realigned) event data.
+* Non-range slicing changed to preserve coords as attrs rather than dropping
+* ``scipp.neutron``: Instrument view with advanced geometry support, showing correct pixel shapes.
+* Instrument view working on doc pages.
+* Made it simpler to add new ``dtype`` and support ``transform`` for all types.
+* Comparison functions such as ``less``, ``greater_equal``, ...
+* ``all`` and ``any`` can work over all dimensions as well as explicitly provided dimension argument
+* It is now possible to convert between Scipp objects and Python dictionaries using ``to_dict`` and ``from_dict``.
+* New functions ``collapse`` and ``slices`` can be use to split one or more dimensions of a DataArray to a dict of DataArrays.
+* You can now inspect the global object list of via the ``repr`` for scipp showing Datasets, DataArrays and Variables
+* Internal cleanup and documentation additions.
+
+Noteable bug fixes
+~~~~~~~~~~~~~~~~~~
+
+* Several fixes in the plotting (non-regular bins, colorbar limits, axes tick labels from unaligned coordinates, etc...)
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -15,22 +37,9 @@ Breaking changes
 * Plotting variances in 2D has been removed, and the API for using ``matplotlib`` axes has been simplified slightly, since we no longer have axes for variances:
   * Before: ``plot(..., mpl_axes={"ax": myax0, "cax": myax1})``
   * After: ``plot(..., ax=myax0, cax=myax1)``
-* Plot with keyword argument `collapse` has been removed in favour of two more generic free functions that return a ``dict`` of data arrays that can then directly be passed to the ``plot`` function:
+* Plot with keyword argument ``collapse`` has been removed in favour of two more generic free functions that return a ``dict`` of data arrays that can then directly be passed to the ``plot`` function:
   * ``collapse(d, keep='x')`` slices all dimensions away to keep only ``'x'``, thus always returning 1D slices.
   * ``slices(d, dim='x')`` slices along dimension ``'x'``, returning slices with ``ndim-1`` dimensions contaiing all dimensions other than ``'x'``.
-
-
-Features
-~~~~~~~~
-
-* New realign functionality.
-* Support for event-filtering.
-* Support for subtraction and addition for (realigned) event data.
-* ``scipp.neutron``: Instrument view with advanced geometry support, showing correct pixel shapes.
-* Instrument view working on doc pages.
-* Made it simpler to add new ``dtype`` and support ``transform`` for all types.
-* Comparison functions such as ``less``, ``greater_equal``, ...
-* Internal cleanup and documentation additions.
 
 Contributors
 ~~~~~~~~~~~~
