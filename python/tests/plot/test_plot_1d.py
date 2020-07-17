@@ -109,6 +109,19 @@ def test_plot_sliceviewer_with_1d_projection():
     plot(d, projection="1d")
 
 
+def test_plot_sliceviewer_with_1d_projection_with_nans():
+    d = make_dense_dataset(ndim=3, binedges=True, variances=True)
+    d['Sample'].values = np.where(d['Sample'].values < -0.8, np.nan,
+                                  d['Sample'].values)
+    d['Sample'].variances = np.where(d['Sample'].values < 0., np.nan,
+                                     d['Sample'].variances)
+    p = plot(d, projection='1d')
+    # Move the sliders
+    p['tof.x.y.counts']['widgets']['sliders']['tof'].value = 10
+    p['tof.x.y.counts']['widgets']['sliders']['x'].value = 10
+    p['tof.x.y.counts']['widgets']['sliders']['y'].value = 10
+
+
 def test_plot_1d_events_data_with_bool_bins():
     d = make_events_dataset(ndim=1)
     plot(d, bins={'tof': True})
