@@ -66,10 +66,21 @@ template <class... Ts> struct divide_types_t {
   using types = arithmetic_type_pairs;
 };
 
-constexpr auto plus =
-    overloaded{add_types_t{}, [](const auto a, const auto b) { return a + b; }};
-constexpr auto minus =
-    overloaded{add_types_t{}, [](const auto a, const auto b) { return a - b; }};
+constexpr auto plus = overloaded{
+    add_types_t{}, [](const auto a, const auto b) { return a + b; },
+    [](const scipp::core::time_point &a, const scipp::core::time_point &b) {
+      // a + b for time_point is undefined. Can't throw from here
+      // so return false
+      (void)a;
+      (void)b;
+      return false;
+    }};
+constexpr auto minus = overloaded{
+    add_types_t{}, [](const auto a, const auto b) { return a - b; },
+    [](const scipp::core::time_point &a, const scipp::core::time_point &b) {
+      return std::chrono::duration_cast<std::chrono::nanoseconds>(a - b)
+          .count();
+    }};
 constexpr auto times = overloaded{
     times_types_t{}, [](const auto a, const auto b) { return a * b; }};
 constexpr auto divide = overloaded{

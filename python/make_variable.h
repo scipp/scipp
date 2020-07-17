@@ -120,8 +120,9 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
     if (dtypeTag == core::dtype<scipp::core::time_point>) {
       std::vector<scipp::index> shape(values.shape(),
                                       values.shape() + values.ndim());
-      return init_1D_no_variance(labels, shape,
-                                 values.cast<std::vector<scipp::core::time_point>>(), unit);
+      return init_1D_no_variance(
+          labels, shape, values.cast<std::vector<scipp::core::time_point>>(),
+          unit);
     }
     if (dtypeTag == core::dtype<Eigen::Vector3d> ||
         dtypeTag == core::dtype<Eigen::Quaterniond>) {
