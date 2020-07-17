@@ -146,9 +146,9 @@ class Slicer3d(Slicer):
             if self.pixel_size is None:
                 self.pixel_size = coords[0][1] - coords[0][0]
             self.axlabels.update({
-                "x": labels[0],
+                "z": labels[0],
                 "y": labels[1],
-                "z": labels[2]
+                "x": labels[2]
             })
 
         # Find spatial and value limits
