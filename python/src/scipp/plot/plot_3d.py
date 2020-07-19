@@ -99,7 +99,8 @@ class Slicer3d(Slicer):
             "Ycylinder": 4,
             "Zcylinder": 5,
             "Sphere": 6,
-            "Value": 7}
+            "Value": 7
+        }
 
         # Prepare colormaps
         self.cmap = cm.get_cmap(self.params["values"][self.name]["cmap"])
