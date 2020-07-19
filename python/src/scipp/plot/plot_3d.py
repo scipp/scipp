@@ -91,6 +91,15 @@ class Slicer3d(Slicer):
         self.current_cut_surface_value = None
         self.cut_slider_steps = 50.
         self.cbar_image = widgets.Image()
+        self.cut_options = {
+            "Xplane": 0,
+            "Yplane": 1,
+            "Zplane": 2,
+            "Xcylinder": 3,
+            "Ycylinder": 4,
+            "Zcylinder": 5,
+            "Sphere": 6,
+            "Value": 7}
 
         # Prepare colormaps
         self.cmap = cm.get_cmap(self.params["values"][self.name]["cmap"])
@@ -221,9 +230,17 @@ class Slicer3d(Slicer):
         # - Cylindrical X, Y, Z (cylinder major axis)
         # - Sperical R
         # - Value-based iso-surface
+        # Note additional spaces required in cylindrical names because
+        # options must be unique.
         self.cut_surface_buttons = widgets.ToggleButtons(
-            options=[('X ', 0), ('Y ', 1), ('Z ', 2), ('R ', 6), (' X ', 3),
-                     (' Y ', 4), (' Z ', 5), ('', 7)],
+            options=[('X ', self.cut_options["Xplane"]),
+                     ('Y ', self.cut_options["Yplane"]),
+                     ('Z ', self.cut_options["Zplane"]),
+                     ('R ', self.cut_options["Sphere"]),
+                     (' X ', self.cut_options["Xcylinder"]),
+                     (' Y ', self.cut_options["Ycylinder"]),
+                     (' Z ', self.cut_options["Zcylinder"]),
+                     ('', self.cut_options["Value"])],
             value=None,
             description='Cut surface:',
             button_style='',
@@ -482,7 +499,7 @@ void main() {
 
     def update_cut_slider_bounds(self):
         # Cartesian X, Y, Z
-        if self.cut_surface_buttons.value < 3:
+        if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
             minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
             if minmax[0] < self.cut_slider.max:
                 self.cut_slider.min = minmax[0]
@@ -492,7 +509,7 @@ void main() {
                 self.cut_slider.min = minmax[0]
             self.cut_slider.value = 0.5 * (minmax[0] + minmax[1])
         # Cylindrical X, Y, Z
-        elif self.cut_surface_buttons.value < 6:
+        elif self.cut_surface_buttons.value < self.cut_options["Sphere"]:
             j = self.cut_surface_buttons.value - 3
             remaining_axes = self.permutations["xyz"[j]]
             self.remaining_inds = [(j + 1) % 3, (j + 2) % 3]
@@ -506,20 +523,20 @@ void main() {
             self.cut_slider.max = rmax * np.sqrt(2.0)
             self.cut_slider.value = 0.5 * self.cut_slider.max
         # Spherical
-        elif self.cut_surface_buttons.value == 6:
+        elif self.cut_surface_buttons.value == self.cut_options["Sphere"]:
             rmax = np.abs(list(self.xminmax.values())).max()
             self.cut_slider.min = 0
             self.cut_slider.max = rmax * np.sqrt(3.0)
             self.cut_slider.value = 0.5 * self.cut_slider.max
         # Value iso-surface
-        elif self.cut_surface_buttons.value == 7:
+        elif self.cut_surface_buttons.value == self.cut_options["Value"]:
             self.cut_slider.min = self.vminmax[0]
             self.cut_slider.max = self.vminmax[1]
             self.cut_slider.value = 0.5 * (self.vminmax[0] + self.vminmax[1])
 
         # Remember to reset surface thickness when changing between spatial
         # slicing and value slicing
-        if self.cut_surface_buttons.value < 7:
+        if self.cut_surface_buttons.value < self.cut_options["Value"]:
             self.cut_surface_thickness.value = 0.05 * self.box_size.max()
         else:
             self.cut_surface_thickness.value = 0.05 * (self.vminmax[1] -
@@ -533,13 +550,13 @@ void main() {
     def update_cut_surface(self, change):
         newc = None
         # Cartesian X, Y, Z
-        if self.cut_surface_buttons.value < 3:
+        if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
             newc = np.where(
                 np.abs(self.positions[:, self.cut_surface_buttons.value] -
                        change["new"]) < self.cut_surface_thickness.value,
                 self.opacity_slider.upper, self.opacity_slider.lower)
         # Cylindrical X, Y, Z
-        elif self.cut_surface_buttons.value < 6:
+        elif self.cut_surface_buttons.value < self.cut_options["Sphere"]:
             newc = np.where(
                 np.abs(
                     np.sqrt(self.positions[:, self.remaining_inds[0]] *
@@ -549,7 +566,7 @@ void main() {
                     change["new"]) < self.cut_surface_thickness.value,
                 self.opacity_slider.upper, self.opacity_slider.lower)
         # Spherical
-        elif self.cut_surface_buttons.value == 6:
+        elif self.cut_surface_buttons.value == self.cut_options["Sphere"]:
             newc = np.where(
                 np.abs(
                     np.sqrt(self.positions[:, 0] * self.positions[:, 0] +
@@ -558,7 +575,7 @@ void main() {
                     change["new"]) < self.cut_surface_thickness.value,
                 self.opacity_slider.upper, self.opacity_slider.lower)
         # Value iso-surface
-        elif self.cut_surface_buttons.value == 7:
+        elif self.cut_surface_buttons.value == self.cut_options["Value"]:
             newc = np.where(
                 np.abs(self.vslice - change["new"]) <
                 self.cut_surface_thickness.value, self.opacity_slider.upper,
