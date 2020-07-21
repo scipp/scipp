@@ -52,6 +52,8 @@ TEST_F(ElementArithmeticTest, non_in_place) {
   EXPECT_EQ(minus(a, b), a - b);
   EXPECT_EQ(times(a, b), a * b);
   EXPECT_EQ(divide(a, b), a / b);
+  EXPECT_EQ(plus(now_copy, now), false);
+  EXPECT_EQ(minus(now_copy, now), 0);
 }
 
 TEST_F(ElementArithmeticTest, unary_minus) { EXPECT_EQ(unary_minus(a), -a); }

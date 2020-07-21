@@ -22,10 +22,7 @@ constexpr auto add_inplace_types =
 constexpr auto plus_equals = overloaded{
     add_inplace_types,
     [](auto &&a, const auto &b) { a += b; },
-    [](scipp::core::time_point &a, const int64_t &b) {
-      a += std::chrono::duration<int64_t>(b);
-    },
-    [](scipp::core::time_point &a, const int32_t &b) {
+    [](scipp::core::time_point &a, const auto &b) {
       a += std::chrono::duration<int64_t>(b);
     },
 };
@@ -33,10 +30,7 @@ constexpr auto plus_equals = overloaded{
 constexpr auto minus_equals = overloaded{
     add_inplace_types,
     [](auto &&a, const auto &b) { a -= b; },
-    [](scipp::core::time_point &a, const int64_t &b) {
-      a -= std::chrono::duration<int64_t>(b);
-    },
-    [](scipp::core::time_point &a, const int32_t &b) {
+    [](scipp::core::time_point &a, const auto &b) {
       a -= std::chrono::duration<int64_t>(b);
     },
 };
