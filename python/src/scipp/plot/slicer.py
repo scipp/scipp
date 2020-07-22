@@ -186,9 +186,8 @@ class Slicer:
                 description="Continuous update",
                 indent=False,
                 layout={"width": "20px"})
-            widgets.jslink(
-            (self.continuous_update[dim], 'value'),
-            (self.slider[dim], 'continuous_update'))
+            widgets.jslink((self.continuous_update[dim], 'value'),
+                           (self.slider[dim], 'continuous_update'))
 
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'

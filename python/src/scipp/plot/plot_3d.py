@@ -288,7 +288,8 @@ class Slicer3d(Slicer):
             disabled=True,
             description="Thickness:",
             style={'description_width': 'initial'})
-        self.cut_surface_thickness.observe(self.update_cut_surface, names="value")
+        self.cut_surface_thickness.observe(self.update_cut_surface,
+                                           names="value")
 
         # Put widgets into boxes
         self.cut_surface_controls = widgets.HBox([
