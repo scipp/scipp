@@ -35,7 +35,8 @@ def plot_3d(scipp_obj_dict=None,
             background="#f0f0f0",
             nan_color="#d3d3d3",
             pixel_size=1.0,
-            tick_size=None):
+            tick_size=None,
+            show_outline=True):
     """
     Plot a 3D point cloud through a N dimensional dataset.
     For every dimension above 3, a slider is created to adjust the position of
@@ -56,7 +57,8 @@ def plot_3d(scipp_obj_dict=None,
                   background=background,
                   nan_color=nan_color,
                   pixel_size=pixel_size,
-                  tick_size=tick_size)
+                  tick_size=tick_size,
+                  show_outline=show_outline)
 
     render_plot(widgets=sv.box, filename=filename)
 
@@ -77,7 +79,8 @@ class Slicer3d(Slicer):
                  background=None,
                  nan_color=None,
                  pixel_size=None,
-                 tick_size=None):
+                 tick_size=None,
+                 show_outline=True):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
@@ -210,16 +213,27 @@ class Slicer3d(Slicer):
                                     width=config.plot.width,
                                     height=config.plot.height)
 
+        # Update visibility of outline according to keyword arg
+        self.outline.visible = show_outline
+        self.axticks.visible = show_outline
+
         # Opacity slider: top value controls opacity if no cut surface is
         # active. If a cut curface is present, the upper slider is the opacity
         # of the slice, while the lower slider value is the opacity of the
         # data not in the cut surface.
-        self.opacity_slider = widgets.FloatRangeSlider(min=0.0,
-                                                       max=1.0,
-                                                       value=[0.1, 1],
-                                                       step=0.01,
-                                                       description="Opacity",
-                                                       continuous_update=True)
+        self.opacity_slider = widgets.FloatRangeSlider(
+            min=0.0,
+            max=1.0,
+            value=[0.1, 1],
+            step=0.01,
+            description="Opacity slider: When no cut surface is active, the max "
+            "value of the range slider controls the overall "
+            "opacity, and the lower value has no effect. "
+            "When a cut surface is present, the max "
+            "value is the opacity of the slice, while the min "
+            "value is the opacity of the background.",
+            continuous_update=True,
+            style={'description_width': '60px'})
         self.opacity_slider.observe(self.update_opacity, names="value")
         self.opacity_checkbox = widgets.Checkbox(
             value=self.opacity_slider.continuous_update,
@@ -229,6 +243,13 @@ class Slicer3d(Slicer):
         self.opacity_checkbox_link = widgets.jslink(
             (self.opacity_checkbox, 'value'),
             (self.opacity_slider, 'continuous_update'))
+
+        self.toggle_outline_button = widgets.ToggleButton(value=show_outline,
+                                                          description='',
+                                                          button_style='')
+        self.toggle_outline_button.observe(self.toggle_outline, names="value")
+        # Run a trigger to update button text
+        self.toggle_outline({"new": show_outline})
 
         # Add buttons to provide a choice of different cut surfaces:
         # - Cartesian X, Y, Z
@@ -303,8 +324,10 @@ class Slicer3d(Slicer):
         self.box = widgets.VBox([
             widgets.HBox([self.renderer, self.cbar_image]),
             widgets.VBox(self.vbox),
-            widgets.HBox([self.opacity_slider, self.opacity_checkbox]),
-            self.cut_surface_controls
+            widgets.HBox([
+                self.opacity_slider, self.opacity_checkbox,
+                self.toggle_outline_button
+            ]), self.cut_surface_controls
         ])
 
         # Update list of members to be returned in the SciPlot object
@@ -480,6 +503,12 @@ void main() {
             arr = self.points_geometry.attributes["rgba_color"].array
             arr[:, 3] = change["new"][1]
             self.points_geometry.attributes["rgba_color"].array = arr
+            # There is a strange effect with point clouds and opacities.
+            # Results are best when depthTest is False, at low opacities.
+            # But when opacities are high, the points appear in the order
+            # they were drawn, and not in the order they are with respect
+            # to the camera position. So for high opacities, we switch to
+            # depthTest = True.
             self.points_material.depthTest = change["new"][1] > 0.9
         else:
             self.update_cut_surface({"new": self.cut_slider.value})
@@ -656,3 +685,9 @@ void main() {
             "Show masks"
         self.update_slice(None)
         return
+
+    def toggle_outline(self, change):
+        self.outline.visible = change["new"]
+        self.axticks.visible = change["new"]
+        desc = "Hide" if change["new"] else "Show"
+        self.toggle_outline_button.description = desc + " outline"
