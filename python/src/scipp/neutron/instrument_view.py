@@ -12,7 +12,6 @@ def instrument_view(scipp_obj=None,
                     bins=None,
                     axes=['tof', 'position'],
                     pixel_size=0.1,
-                    tick_size=None,
                     **kwargs):
     """
     Plot a 3D view of the instrument, using the 'position` coordinate as the
@@ -36,7 +35,6 @@ def instrument_view(scipp_obj=None,
                         bins=bins,
                         axes=axes,
                         pixel_size=pixel_size,
-                        tick_size=tick_size,
                         **kwargs)
 
     return iv.sciplot
@@ -49,29 +47,66 @@ class InstrumentView:
                  bins=None,
                  axes=None,
                  pixel_size=None,
-                 tick_size=None,
                  **kwargs):
 
         from ..plot import plot
 
-        if su.is_dataset(scipp_obj):
-            for name, da in scipp_obj.items():
-                bins = self._check_for_events(da, bins, dim)
-        elif su.is_data_array(scipp_obj):
-            bins = self._check_for_events(scipp_obj, bins, dim)
+        new_bins = bins
+
+        if bins is not None:
+            if su.is_dataset(scipp_obj):
+                ds = sc.Dataset()
+                for name, da in scipp_obj.items():
+                    ds[name], new_bins = self._rebin_histogram_data(
+                        da, bins, dim)
+                scipp_obj = ds
+            elif su.is_data_array(scipp_obj):
+                scipp_obj, new_bins = self._rebin_histogram_data(
+                    scipp_obj, bins, dim)
+            else:
+                self._raise_input_error()
         else:
-            raise RuntimeError("Instrument view only accepts a Dataset "
-                               "or a DataArray as an input.")
+            if su.is_dataset(scipp_obj):
+                for name, da in scipp_obj.items():
+                    new_bins = self._make_default_bins_for_events(
+                        da, bins, dim)
+            elif su.is_data_array(scipp_obj):
+                new_bins = self._make_default_bins_for_events(
+                    scipp_obj, bins, dim)
+            else:
+                self._raise_input_error()
 
         self.sciplot = plot(scipp_obj,
                             projection="3d",
-                            bins=bins,
+                            bins=new_bins,
                             axes=axes,
                             pixel_size=pixel_size,
                             **kwargs)
         return
 
-    def _check_for_events(self, obj, bins, dim):
-        if sc.contains_events(obj) and bins is None:
+    def _make_default_bins_for_events(self, obj, bins, dim):
+        """
+        If the DataArray contains events but no bins are specified,
+        return a default of 1 bin.
+        """
+        if sc.contains_events(obj):
             bins = {dim: 1}
         return bins
+
+    def _rebin_histogram_data(self, obj, bins, dim):
+        """
+        If the DataArray contains histogrammed data and bins are specified,
+        then rebin the data.
+        """
+        if not sc.contains_events(obj):
+            # Once data has been histogrammed, we return None as the new bins,
+            # since the plot function expects event data if bins are specified.
+            return sc.rebin(obj, dim,
+                            su.make_bins(data_array=obj, bins=bins,
+                                         dim=dim)), None
+        else:
+            return obj, bins
+
+    def _raise_input_error(self):
+        raise RuntimeError("Instrument view only accepts a Dataset "
+                           "or a DataArray as an input.")

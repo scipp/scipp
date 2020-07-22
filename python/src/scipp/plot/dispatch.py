@@ -2,7 +2,7 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .events import histogram_events_data
+from .._utils import histogram_events_data
 
 
 def dispatch(scipp_obj_dict,

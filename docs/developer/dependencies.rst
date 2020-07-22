@@ -25,10 +25,10 @@ Run
   - ``mantid-framework`` * (used for Mantid interoperability)
   - ``matplotlib`` * (plotting library)
   - ``numpy`` >=1.15.3
-  - ``Pillow`` (Python Imaging Library)
+  - ``Pillow`` (Python Imaging Library, used in plot_3d to create colorbar)
   - ``python``
   - ``python-configuration`` (configuration file parser, used in user configuration loading)
-  - ``pythreejs`` * (3D plotting library)
+  - ``pythreejs`` * (3D plotting library, used in plot_3d and instrument_view)
   - ``pyyaml`` (YAML parser, used for ?)
   - ``tbb`` (Intel TBB runtime, used for single node multithreading)
 
