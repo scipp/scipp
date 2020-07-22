@@ -226,12 +226,11 @@ class Slicer3d(Slicer):
             max=1.0,
             value=[0.1, 1],
             step=0.01,
-            description="Opacity slider: When no cut surface is active, the max "
-            "value of the range slider controls the overall "
-            "opacity, and the lower value has no effect. "
-            "When a cut surface is present, the max "
-            "value is the opacity of the slice, while the min "
-            "value is the opacity of the background.",
+            description="Opacity slider: When no cut surface is active, the "
+            "max value of the range slider controls the overall opacity, "
+            "and the lower value has no effect. When a cut surface is "
+            "present, the max value is the opacity of the slice, while the "
+            "min value is the opacity of the background.",
             continuous_update=True,
             style={'description_width': '60px'})
         self.opacity_slider.observe(self.update_opacity, names="value")
