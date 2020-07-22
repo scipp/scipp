@@ -95,7 +95,7 @@ class Slicer3d(Slicer):
 
         self.vslice = None
         self.current_cut_surface_value = None
-        self.cut_slider_steps = 50.
+        self.cut_slider_steps = 10.
         self.cbar_image = widgets.Image()
         self.cut_options = {
             "Xplane": 0,
@@ -303,14 +303,18 @@ class Slicer3d(Slicer):
         self.cut_slider.observe(self.update_cut_surface, names="value")
 
         # Allow to change the thickness of the cut surface
-        self.cut_surface_thickness = widgets.FloatText(
+        self.cut_surface_thickness = widgets.BoundedFloatText(
             value=0.05 * self.box_size.max(),
+            min=0,
             layout={"width": "150px"},
             disabled=True,
             description="Thickness:",
             style={'description_width': 'initial'})
         self.cut_surface_thickness.observe(self.update_cut_surface,
                                            names="value")
+        self.cut_thickness_link = widgets.jslink(
+            (self.cut_slider, 'step'), (self.cut_surface_thickness, 'value'))
+        self.cut_slider.observe(self.update_cut_surface, names="value")
 
         # Put widgets into boxes
         self.cut_surface_controls = widgets.HBox([
@@ -569,16 +573,8 @@ void main() {
             self.cut_slider.max = self.vminmax[1]
             self.cut_slider.value = 0.5 * (self.vminmax[0] + self.vminmax[1])
 
-        # Remember to reset surface thickness when changing between spatial
-        # slicing and value slicing
-        if self.cut_surface_buttons.value < self.cut_options["Value"]:
-            self.cut_surface_thickness.value = 0.05 * self.box_size.max()
-        else:
-            self.cut_surface_thickness.value = 0.05 * (self.vminmax[1] -
-                                                       self.vminmax[0])
-
         # Update slider step to avoid too fine granularity which slows down
-        # interaction.
+        # interaction. Slice thickness is linked to the step via jslink.
         self.cut_slider.step = (self.cut_slider.max -
                                 self.cut_slider.min) / self.cut_slider_steps
 
@@ -589,7 +585,7 @@ void main() {
         if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
             newc = np.where(
                 np.abs(self.positions[:, self.cut_surface_buttons.value] -
-                       target) < self.cut_surface_thickness.value,
+                       target) < 0.5 * self.cut_surface_thickness.value,
                 self.opacity_slider.upper, self.opacity_slider.lower)
         # Cylindrical X, Y, Z
         elif self.cut_surface_buttons.value < self.cut_options["Sphere"]:
@@ -599,7 +595,7 @@ void main() {
                             self.positions[:, self.remaining_inds[0]] +
                             self.positions[:, self.remaining_inds[1]] *
                             self.positions[:, self.remaining_inds[1]]) -
-                    target) < self.cut_surface_thickness.value,
+                    target) < 0.5 * self.cut_surface_thickness.value,
                 self.opacity_slider.upper, self.opacity_slider.lower)
         # Spherical
         elif self.cut_surface_buttons.value == self.cut_options["Sphere"]:
@@ -608,14 +604,14 @@ void main() {
                     np.sqrt(self.positions[:, 0] * self.positions[:, 0] +
                             self.positions[:, 1] * self.positions[:, 1] +
                             self.positions[:, 2] * self.positions[:, 2]) -
-                    target) < self.cut_surface_thickness.value,
+                    target) < 0.5 * self.cut_surface_thickness.value,
                 self.opacity_slider.upper, self.opacity_slider.lower)
         # Value iso-surface
         elif self.cut_surface_buttons.value == self.cut_options["Value"]:
             newc = np.where(
                 np.abs(self.vslice - target) <
-                self.cut_surface_thickness.value, self.opacity_slider.upper,
-                self.opacity_slider.lower)
+                0.5 * self.cut_surface_thickness.value,
+                self.opacity_slider.upper, self.opacity_slider.lower)
 
         # Unfortunately, one cannot edit the value of the geometry array
         # in-place, as this does not trigger an update on the threejs side.
