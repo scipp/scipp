@@ -12,6 +12,7 @@ def instrument_view(scipp_obj=None,
                     bins=None,
                     axes=['tof', 'position'],
                     pixel_size=0.1,
+                    tick_size=None,
                     **kwargs):
     """
     Plot a 3D view of the instrument, using the 'position` coordinate as the
@@ -35,6 +36,7 @@ def instrument_view(scipp_obj=None,
                         bins=bins,
                         axes=axes,
                         pixel_size=pixel_size,
+                        tick_size=tick_size,
                         **kwargs)
 
     return iv.sciplot
@@ -47,6 +49,7 @@ class InstrumentView:
                  bins=None,
                  axes=None,
                  pixel_size=None,
+                 tick_size=None,
                  **kwargs):
 
         from ..plot import plot
@@ -70,5 +73,5 @@ class InstrumentView:
 
     def _check_for_events(self, obj, bins, dim):
         if sc.contains_events(obj) and bins is None:
-            bins = {dim: 256}
+            bins = {dim: 1}
         return bins

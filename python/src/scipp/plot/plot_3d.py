@@ -34,7 +34,8 @@ def plot_3d(scipp_obj_dict=None,
             color=None,
             background="#f0f0f0",
             nan_color="#d3d3d3",
-            pixel_size=1.0):
+            pixel_size=1.0,
+            tick_size=None):
     """
     Plot a 3D point cloud through a N dimensional dataset.
     For every dimension above 3, a slider is created to adjust the position of
@@ -54,7 +55,8 @@ def plot_3d(scipp_obj_dict=None,
                   aspect=aspect,
                   background=background,
                   nan_color=nan_color,
-                  pixel_size=pixel_size)
+                  pixel_size=pixel_size,
+                  tick_size=tick_size)
 
     render_plot(widgets=sv.box, filename=filename)
 
@@ -74,7 +76,8 @@ class Slicer3d(Slicer):
                  aspect=None,
                  background=None,
                  nan_color=None,
-                 pixel_size=None):
+                 pixel_size=None,
+                 tick_size=None):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
@@ -128,6 +131,7 @@ class Slicer3d(Slicer):
         self.axlabels = {"x": "", "y": "", "z": ""}
         self.positions = None
         self.pixel_size = pixel_size
+        self.tick_size = tick_size
         for coord in self.data_array.coords.values():
             if coord.dtype == sc.dtype.vector_3_float64 and len(
                     coord.dims) > 0:
@@ -415,9 +419,9 @@ void main() {
         """
         Create ticklabels on outline edges
         """
-
-        tick_size = 0.05 * np.amin(
-            np.diff(list(self.xminmax.values()), axis=1).ravel())
+        if self.tick_size is None:
+            self.tick_size = 0.05 * np.amin(
+                np.diff(list(self.xminmax.values()), axis=1).ravel())
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker = mpl.ticker.MaxNLocator(5)
@@ -436,13 +440,13 @@ void main() {
                         self.make_axis_tick(string=value_to_string(
                             tick, precision=1),
                                             position=tick_pos.tolist(),
-                                            size=tick_size))
+                                            size=self.tick_size))
             ticks_and_labels.add(
                 self.make_axis_tick(
                     string=self.axlabels[x],
                     position=(iden[axis] * 0.5 * np.sum(self.xminmax[x]) +
                               offsets[x]).tolist(),
-                    size=tick_size * 0.3 * len(self.axlabels[x])))
+                    size=self.tick_size * 0.3 * len(self.axlabels[x])))
 
         return ticks_and_labels
 
