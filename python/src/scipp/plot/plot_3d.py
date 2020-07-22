@@ -219,9 +219,9 @@ class Slicer3d(Slicer):
         self.opacity_slider.observe(self.update_opacity, names="value")
         self.opacity_checkbox = widgets.Checkbox(
             value=self.opacity_slider.continuous_update,
-            tooltip="Continuous update",
+            description="Continuous update",
             indent=False,
-            layout={"width": "initial"})
+            layout={"width": "20px"})
         self.opacity_checkbox_link = widgets.jslink(
             (self.opacity_checkbox, 'value'),
             (self.opacity_slider, 'continuous_update'))
@@ -268,9 +268,9 @@ class Slicer3d(Slicer):
                                               value=0.5,
                                               layout={"width": "350px"})
         self.cut_checkbox = widgets.Checkbox(value=True,
-                                             tooltip="Continuous update",
+                                             description="Continuous update",
                                              indent=False,
-                                             layout={"width": "initial"},
+                                             layout={"width": "20px"},
                                              disabled=True)
         self.cut_checkbox_link = widgets.jslink(
             (self.cut_checkbox, 'value'),
@@ -284,6 +284,7 @@ class Slicer3d(Slicer):
             disabled=True,
             description="Thickness:",
             style={'description_width': 'initial'})
+        self.cut_surface_thickness.observe(self.update_cut_surface, names="value")
 
         # Put widgets into boxes
         self.cut_surface_controls = widgets.HBox([
@@ -550,11 +551,12 @@ void main() {
 
     def update_cut_surface(self, change):
         newc = None
+        target = self.cut_slider.value
         # Cartesian X, Y, Z
         if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
             newc = np.where(
                 np.abs(self.positions[:, self.cut_surface_buttons.value] -
-                       change["new"]) < self.cut_surface_thickness.value,
+                       target) < self.cut_surface_thickness.value,
                 self.opacity_slider.upper, self.opacity_slider.lower)
         # Cylindrical X, Y, Z
         elif self.cut_surface_buttons.value < self.cut_options["Sphere"]:
@@ -564,7 +566,7 @@ void main() {
                             self.positions[:, self.remaining_inds[0]] +
                             self.positions[:, self.remaining_inds[1]] *
                             self.positions[:, self.remaining_inds[1]]) -
-                    change["new"]) < self.cut_surface_thickness.value,
+                    target) < self.cut_surface_thickness.value,
                 self.opacity_slider.upper, self.opacity_slider.lower)
         # Spherical
         elif self.cut_surface_buttons.value == self.cut_options["Sphere"]:
@@ -573,12 +575,12 @@ void main() {
                     np.sqrt(self.positions[:, 0] * self.positions[:, 0] +
                             self.positions[:, 1] * self.positions[:, 1] +
                             self.positions[:, 2] * self.positions[:, 2]) -
-                    change["new"]) < self.cut_surface_thickness.value,
+                    target) < self.cut_surface_thickness.value,
                 self.opacity_slider.upper, self.opacity_slider.lower)
         # Value iso-surface
         elif self.cut_surface_buttons.value == self.cut_options["Value"]:
             newc = np.where(
-                np.abs(self.vslice - change["new"]) <
+                np.abs(self.vslice - target) <
                 self.cut_surface_thickness.value, self.opacity_slider.upper,
                 self.opacity_slider.lower)
 
@@ -637,6 +639,8 @@ void main() {
                    3] = self.points_geometry.attributes["rgba_color"].array[:,
                                                                             3]
         self.points_geometry.attributes["rgba_color"].array = new_colors
+        if self.cut_surface_buttons.value == self.cut_options["Value"]:
+            self.update_cut_surface(None)
         return
 
     def toggle_masks(self, change):

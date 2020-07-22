@@ -183,11 +183,12 @@ class Slicer:
                                               indx)
             self.continuous_update[dim] = widgets.Checkbox(
                 value=True,
-                tooltip="Continuous update",
+                description="Continuous update",
                 indent=False,
-                layout={"width": "initial"})
-            self.continuous_update[dim].observe(self.toggle_continuous_update,
-                                                names="value")
+                layout={"width": "20px"})
+            widgets.jslink(
+            (self.continuous_update[dim], 'value'),
+            (self.slider[dim], 'continuous_update'))
 
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
@@ -324,10 +325,6 @@ class Slicer:
             var = make_fake_coord(dim, self.shapes[name][dim])
 
         return dim, var, formatter, locator
-
-    def toggle_continuous_update(self, change):
-        self.slider[change["owner"].dim].continuous_update = change["new"]
-        return
 
     def update_buttons(self, change):
         return
