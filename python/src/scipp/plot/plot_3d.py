@@ -416,9 +416,8 @@ void main() {
         Create ticklabels on outline edges
         """
 
-        max_extent = np.amax(
+        tick_size = 0.05 * np.amin(
             np.diff(list(self.xminmax.values()), axis=1).ravel())
-        tick_size = 0.05 * max_extent
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker = mpl.ticker.MaxNLocator(5)
