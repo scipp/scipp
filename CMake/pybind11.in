@@ -12,5 +12,8 @@ ExternalProject_Add(pybind11
   CONFIGURE_COMMAND ""
   BUILD_COMMAND     ""
   INSTALL_COMMAND   ""
+  COMMAND
+    "${CMAKE_COMMAND}" -E copy ${CMAKE_SOURCE_DIR}/CMake/chrono.h
+     ${CMAKE_BINARY_DIR}/pybind11-src/include/pybind11/chrono.h
   TEST_COMMAND      ""
 )
