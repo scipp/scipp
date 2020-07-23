@@ -48,6 +48,12 @@
   grid-template-columns: 150px auto auto auto 1fr 20px 20px;
 }
 
+.xr-sections div,
+.xr-sections ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 .xr-section-item {
   display: contents;
 }
