@@ -80,7 +80,7 @@ def test_plot_projection_3d_with_vectors():
                                   dtype=sc.dtype.vector_3_float64)
     d.coords['tof'] = sc.Variable(['tof'], values=tof)
     d['a'] = sc.Variable(['tof', 'xyz'], values=a)
-    plot(d, projection="3d")
+    plot(d, projection="3d", positions="xyz")
 
 
 def test_plot_convenience_methods():
