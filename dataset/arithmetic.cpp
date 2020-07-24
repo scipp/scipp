@@ -28,29 +28,25 @@ void dry_run_op(const DataArrayView &a, const DataArrayConstView &b, Op op) {
 DataArrayView DataArrayView::operator+=(const DataArrayConstView &other) const {
   expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
-  data() += other.data();
-  return *this;
+  return *this += other.data();
 }
 
 DataArrayView DataArrayView::operator-=(const DataArrayConstView &other) const {
   expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
-  data() -= other.data();
-  return *this;
+  return *this -= other.data();
 }
 
 DataArrayView DataArrayView::operator*=(const DataArrayConstView &other) const {
   expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
-  data() *= other.data();
-  return *this;
+  return *this *= other.data();
 }
 
 DataArrayView DataArrayView::operator/=(const DataArrayConstView &other) const {
   expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
-  data() /= other.data();
-  return *this;
+  return *this /= other.data();
 }
 
 DataArrayView DataArrayView::operator+=(const VariableConstView &other) const {
