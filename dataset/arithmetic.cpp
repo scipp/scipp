@@ -73,20 +73,6 @@ DataArrayView DataArrayView::operator/=(const VariableConstView &other) const {
   return *this;
 }
 
-constexpr static auto plus = [](const auto &a, const auto &b) { return a + b; };
-
-constexpr static auto minus = [](const auto &a, const auto &b) {
-  return a - b;
-};
-
-constexpr static auto times = [](const auto &a, const auto &b) {
-  return a * b;
-};
-
-constexpr static auto divide = [](const auto &a, const auto &b) {
-  return a / b;
-};
-
 template <class Op, class A, class B>
 auto &apply(const Op &op, A &a, const B &b) {
   for (const auto &item : b)
@@ -278,83 +264,83 @@ DatasetView DatasetView::operator/=(const DatasetConstView &other) const {
 }
 
 Dataset operator+(const DatasetConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
+  return apply_with_broadcast(core::element::plus, lhs, rhs);
 }
 
 Dataset operator+(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
+  return apply_with_broadcast(core::element::plus, lhs, rhs);
 }
 
 Dataset operator+(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
+  return apply_with_broadcast(core::element::plus, lhs, rhs);
 }
 
 Dataset operator+(const DatasetConstView &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
+  return apply_with_broadcast(core::element::plus, lhs, rhs);
 }
 
 Dataset operator+(const VariableConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
+  return apply_with_broadcast(core::element::plus, lhs, rhs);
 }
 
 Dataset operator-(const DatasetConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
+  return apply_with_broadcast(core::element::minus, lhs, rhs);
 }
 
 Dataset operator-(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
+  return apply_with_broadcast(core::element::minus, lhs, rhs);
 }
 
 Dataset operator-(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
+  return apply_with_broadcast(core::element::minus, lhs, rhs);
 }
 
 Dataset operator-(const DatasetConstView &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
+  return apply_with_broadcast(core::element::minus, lhs, rhs);
 }
 
 Dataset operator-(const VariableConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
+  return apply_with_broadcast(core::element::minus, lhs, rhs);
 }
 
 Dataset operator*(const DatasetConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
+  return apply_with_broadcast(core::element::times, lhs, rhs);
 }
 
 Dataset operator*(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
+  return apply_with_broadcast(core::element::times, lhs, rhs);
 }
 
 Dataset operator*(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
+  return apply_with_broadcast(core::element::times, lhs, rhs);
 }
 
 Dataset operator*(const DatasetConstView &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
+  return apply_with_broadcast(core::element::times, lhs, rhs);
 }
 
 Dataset operator*(const VariableConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
+  return apply_with_broadcast(core::element::times, lhs, rhs);
 }
 
 Dataset operator/(const DatasetConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
+  return apply_with_broadcast(core::element::divide, lhs, rhs);
 }
 
 Dataset operator/(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
+  return apply_with_broadcast(core::element::divide, lhs, rhs);
 }
 
 Dataset operator/(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
+  return apply_with_broadcast(core::element::divide, lhs, rhs);
 }
 
 Dataset operator/(const DatasetConstView &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
+  return apply_with_broadcast(core::element::divide, lhs, rhs);
 }
 
 Dataset operator/(const VariableConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
+  return apply_with_broadcast(core::element::divide, lhs, rhs);
 }
 
 } // namespace scipp::dataset
