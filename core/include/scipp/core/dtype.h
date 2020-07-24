@@ -6,9 +6,9 @@
 #include <boost/container/small_vector.hpp>
 #include <typeindex>
 
-#include "time_point.h"
 #include "scipp-core_export.h"
 #include "scipp/common/span.h"
+#include "scipp/core/time_point.h"
 
 namespace scipp::core {
 

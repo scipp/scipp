@@ -19,15 +19,10 @@ constexpr auto add_inplace_types =
              std::tuple<double, float>, std::tuple<int64_t, int32_t>,
              std::tuple<int64_t, bool>>;
 
-constexpr auto plus_equals = overloaded{
-    add_inplace_types,
-    [](auto &&a, const auto &b) { a += b; },
-};
-
-constexpr auto minus_equals = overloaded{
-    add_inplace_types,
-    [](auto &&a, const auto &b) { a -= b; },
-};
+constexpr auto plus_equals =
+    overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};
+constexpr auto minus_equals =
+    overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};
 
 constexpr auto mul_inplace_types =
     arg_list<double, float, int64_t, int32_t, std::tuple<double, float>,
@@ -54,14 +49,10 @@ template <class... Ts> struct divide_types_t {
   using types = arithmetic_type_pairs;
 };
 
-constexpr auto plus = overloaded{
-    add_types_t{},
-    [](const auto a, const auto b) { return a + b; },
-};
+constexpr auto plus =
+    overloaded{add_types_t{}, [](const auto a, const auto b) { return a + b; }};
 constexpr auto minus =
-    overloaded{add_types_t{}, [](const auto a, const auto b) { return a - b; },
-               [](const scipp::core::time_point &a,
-                  const scipp::core::time_point &b) { return a - b; }};
+    overloaded{add_types_t{}, [](const auto a, const auto b) { return a - b; }};
 constexpr auto times = overloaded{
     times_types_t{}, [](const auto a, const auto b) { return a * b; }};
 constexpr auto divide = overloaded{

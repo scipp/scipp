@@ -15,8 +15,8 @@ protected:
   const double b = 2.3;
   double val = a;
 
-  const int32_t a_int32 = int32_t(1);
-  const int64_t a_int64 = int64_t(1);
+  const int32_t a_int32 = static_cast<int32_t>(1);
+  const int64_t a_int64 = static_cast<int64_t>(1);
   scipp::core::time_point now = scipp::core::time_point();
 };
 

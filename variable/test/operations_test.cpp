@@ -123,10 +123,10 @@ TEST(Variable, operator_plus_equal_time_type) {
   auto a = makeVariable<scipp::core::time_point>(
       Shape{1}, units::Unit{units::ns}, Values{now});
   const auto copy(a);
-  EXPECT_THROW(a += float(1.0) * units::ns, except::TypeError);
-  EXPECT_NO_THROW(a += int64_t(1) * units::ns);
+  EXPECT_THROW(a += static_cast<float>(1.0) * units::ns, except::TypeError);
+  EXPECT_NO_THROW(a += static_cast<int64_t>(1) * units::ns);
   EXPECT_NE(a, copy);
-  EXPECT_NO_THROW(a += int32_t(1) * units::ns);
+  EXPECT_NO_THROW(a += static_cast<int32_t>(1) * units::ns);
   EXPECT_NE(a, copy);
 }
 
@@ -135,10 +135,10 @@ TEST(Variable, operator_minus_equal_time_type) {
   auto a = makeVariable<scipp::core::time_point>(
       Shape{1}, units::Unit{units::ns}, Values{now});
   const auto copy(a);
-  EXPECT_THROW(a -= float(1.0) * units::ns, except::TypeError);
-  EXPECT_NO_THROW(a -= int64_t(1) * units::ns);
+  EXPECT_THROW(a -= static_cast<float>(1.0) * units::ns, except::TypeError);
+  EXPECT_NO_THROW(a -= static_cast<int64_t>(1) * units::ns);
   EXPECT_NE(a, copy);
-  EXPECT_NO_THROW(a -= int32_t(1) * units::ns);
+  EXPECT_NO_THROW(a -= static_cast<int32_t>(1) * units::ns);
   EXPECT_NE(a, copy);
 }
 
