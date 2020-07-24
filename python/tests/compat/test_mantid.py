@@ -615,5 +615,15 @@ def test_to_workspace_2d_handles_single_x_array():
         assert np.equal(ws.readE(i), np.sqrt(e_vals)).all()
 
 
+def test_from_mask_workspace():
+    from mantid.simpleapi import LoadMask
+    mask = LoadMask('HYS', 'HYS_mask.xml')
+    da = sc.compat.mantid.from_mantid(mask)
+    assert 'mask' in da.masks
+    assert da.data == da.masks['mask']
+    assert da.data.dtype == sc.dtype.bool
+    assert da.dims == ['spectrum', 'empty']
+
+
 if __name__ == "__main__":
     unittest.main()

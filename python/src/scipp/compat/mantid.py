@@ -481,19 +481,29 @@ def convert_monitors_ws(ws, converter, **ignored):
     return monitors
 
 
-def convert_Workspace2D_to_data_array(ws, advanced_geometry=False, **ignored):
+def convert_Workspace2D_to_data_array(ws,
+                                      advanced_geometry=False,
+                                      as_mask_workspace=False,
+                                      **ignored):
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
 
     coords_labs_data = _convert_MatrixWorkspace_info(
         ws, advanced_geometry=advanced_geometry)
     _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
-    stddev2 = ws.extractE()
-    np.multiply(stddev2, stddev2, out=stddev2)  # much faster than np.power
-    coords_labs_data["data"] = sc.Variable([spec_dim, dim],
-                                           unit=data_unit,
-                                           values=ws.extractY(),
-                                           variances=stddev2)
+    if as_mask_workspace:
+        coords_labs_data["data"] = sc.Variable([spec_dim, dim],
+                                               unit=data_unit,
+                                               values=ws.extractY(),
+                                               dtype=sc.dtype.bool)
+        coords_labs_data["masks"] = {'mask': coords_labs_data["data"].copy()}
+    else:
+        stddev2 = ws.extractE()
+        np.multiply(stddev2, stddev2, out=stddev2)  # much faster than np.power
+        coords_labs_data["data"] = sc.Variable([spec_dim, dim],
+                                               unit=data_unit,
+                                               values=ws.extractY(),
+                                               variances=stddev2)
     array = detail.move_to_data_array(**coords_labs_data)
 
     if ws.hasAnyMaskedBins():
@@ -676,7 +686,9 @@ def from_mantid(workspace, **kwargs):
     scipp_obj = None  # This is either a Dataset or DataArray
     monitor_ws = None
     workspaces_to_delete = []
-    if workspace.id() == 'Workspace2D' or workspace.id() == 'RebinnedOutput':
+    w_id = workspace.id()
+    is_mask_ws = w_id == 'MaskWorkspace'
+    if w_id == 'Workspace2D' or w_id == 'RebinnedOutput' or is_mask_ws:
         n_monitor = 0
         spec_info = workspace.spectrumInfo()
         for i in range(len(spec_info)):
@@ -688,17 +700,17 @@ def from_mantid(workspace, **kwargs):
             workspace, monitor_ws = mantid.ExtractMonitors(workspace)
             workspaces_to_delete.append(workspace)
             workspaces_to_delete.append(monitor_ws)
-        scipp_obj = convert_Workspace2D_to_data_array(workspace, **kwargs)
-    elif workspace.id() == 'EventWorkspace':
+        scipp_obj = convert_Workspace2D_to_data_array(
+            workspace, as_mask_workspace=is_mask_ws, **kwargs)
+    elif w_id == 'EventWorkspace':
         scipp_obj = convert_EventWorkspace_to_data_array(workspace, **kwargs)
-    elif workspace.id() == 'TableWorkspace':
+    elif w_id == 'TableWorkspace':
         scipp_obj = convert_TableWorkspace_to_dataset(workspace, **kwargs)
-    elif workspace.id() == 'MDHistoWorkspace':
+    elif w_id == 'MDHistoWorkspace':
         scipp_obj = convert_MDHistoWorkspace_to_data_array(workspace, **kwargs)
 
     if scipp_obj is None:
-        raise RuntimeError('Unsupported workspace type {}'.format(
-            workspace.id()))
+        raise RuntimeError('Unsupported workspace type {}'.format(w_id))
 
     # TODO Is there ever a case where a Workspace2D has a separate monitor
     # workspace? This is not handled by ExtractMonitors above, I think.
@@ -711,8 +723,11 @@ def from_mantid(workspace, **kwargs):
                 pass
 
     if monitor_ws is not None:
-        if monitor_ws.id() == 'Workspace2D':
-            converter = convert_Workspace2D_to_data_array
+        if monitor_ws.id() == 'MaskWorkspace' or monitor_ws.id(
+        ) == 'Workspace2D':
+            from functools import partial
+            converter = partial(convert_Workspace2D_to_data_array,
+                                as_mask_workspace=is_mask_ws)
         elif monitor_ws.id() == 'EventWorkspace':
             converter = convert_EventWorkspace_to_data_array
 
