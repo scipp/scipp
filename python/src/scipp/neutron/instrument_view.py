@@ -8,32 +8,31 @@ from .. import _utils as su
 
 
 def instrument_view(scipp_obj=None,
-                    dim="tof",
                     bins=None,
-                    axes=['tof', 'position'],
+                    positions="position",
                     pixel_size=0.1,
                     **kwargs):
     """
-    Plot a 3D view of the instrument, using the 'position` coordinate as the
+    Plot a 3D view of the instrument, using the `position` coordinate as the
     detector vector positions.
+    Use the `positions` argument to change the vectors used as pixel positions.
     Sliders are added to navigate extra dimensions.
-    In the case of event data, the dimension given by the `dim` keyword
-    argument is histogrammed (with a default number of bins if `bins` is not
-    specified). Since this is designed for neutron science, the default
-    dimension is neutron time-of-flight ('tof'), but this could be anything
-    (wavelength, temperature...)
+    In the case of event data, histogramming is performed according to the
+    `bins` keyword argument. `bins` can be a dict of
+    {dimension: nbins OR ndarray}, or directly the underlying nbins OR ndarray.
+    Since this is designed for neutron science, the default dimension is
+    neutron time-of-flight ('tof'), if bins is not a dict.
 
     Example:
 
     import scipp.neutron as sn
     sample = sn.load(filename="PG3_4844_event.nxs")
-    sn.instrument_view(sample)
+    sn.instrument_view(sample, bins=256)
     """
 
     iv = InstrumentView(scipp_obj=scipp_obj,
-                        dim=dim,
                         bins=bins,
-                        axes=axes,
+                        positions=positions,
                         pixel_size=pixel_size,
                         **kwargs)
 
@@ -41,11 +40,21 @@ def instrument_view(scipp_obj=None,
 
 
 class InstrumentView:
+    """
+    The logic for the bins control is the following:
+    1. If the input data contains events, and bins is None, then a default of
+       1 bin along the "tof" dimension is generated.
+    2. If the input data is histogrammed, and bins is None, bins remains None.
+    3. If bins is not None, and bins is not a dict, then bins becomes
+       {"tof": bins}.
+    4. If bins is not None, and the input data is histogrammed, each dimension
+       in the bins.keys() of the input data is rebinned according to the
+       corresponding bins.values(). bins is then forwarded as None to plot_3d.
+    """
     def __init__(self,
                  scipp_obj=None,
-                 dim=None,
                  bins=None,
-                 axes=None,
+                 positions=None,
                  pixel_size=None,
                  **kwargs):
 
@@ -57,55 +66,56 @@ class InstrumentView:
             if su.is_dataset(scipp_obj):
                 ds = sc.Dataset()
                 for name, da in scipp_obj.items():
-                    ds[name], new_bins = self._rebin_histogram_data(
-                        da, bins, dim)
+                    ds[name], new_bins = self._rebin_histogram_data(da, bins)
                 scipp_obj = ds
             elif su.is_data_array(scipp_obj):
                 scipp_obj, new_bins = self._rebin_histogram_data(
-                    scipp_obj, bins, dim)
+                    scipp_obj, bins)
             else:
                 self._raise_input_error()
         else:
             if su.is_dataset(scipp_obj):
                 for name, da in scipp_obj.items():
-                    new_bins = self._make_default_bins_for_events(
-                        da, bins, dim)
+                    new_bins = self._make_default_bins_for_events(da, bins)
             elif su.is_data_array(scipp_obj):
-                new_bins = self._make_default_bins_for_events(
-                    scipp_obj, bins, dim)
+                new_bins = self._make_default_bins_for_events(scipp_obj, bins)
             else:
                 self._raise_input_error()
 
         self.sciplot = plot(scipp_obj,
                             projection="3d",
                             bins=new_bins,
-                            axes=axes,
+                            positions=positions,
                             pixel_size=pixel_size,
                             **kwargs)
         return
 
-    def _make_default_bins_for_events(self, obj, bins, dim):
+    def _make_default_bins_for_events(self, obj, bins):
         """
         If the DataArray contains events but no bins are specified,
         return a default of 1 bin.
         """
         if sc.contains_events(obj):
-            bins = {dim: 1}
+            bins = {"tof": 1}
         return bins
 
-    def _rebin_histogram_data(self, obj, bins, dim):
+    def _rebin_histogram_data(self, obj, bins):
         """
         If the DataArray contains histogrammed data and bins are specified,
         then rebin the data.
         """
+        new_bins = bins
+        if not isinstance(bins, dict):
+            new_bins = {"tof": bins}
         if not sc.contains_events(obj):
+            for dim, val in new_bins.items():
+                obj = sc.rebin(obj, dim,
+                               su.make_bins(data_array=obj, bins=val, dim=dim))
             # Once data has been histogrammed, we return None as the new bins,
             # since the plot function expects event data if bins are specified.
-            return sc.rebin(obj, dim,
-                            su.make_bins(data_array=obj, bins=bins,
-                                         dim=dim)), None
+            return obj, None
         else:
-            return obj, bins
+            return obj, new_bins
 
     def _raise_input_error(self):
         raise RuntimeError("Instrument view only accepts a Dataset "

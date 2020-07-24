@@ -23,7 +23,8 @@ class Slicer:
                  vmax=None,
                  color=None,
                  button_options=None,
-                 aspect=None):
+                 aspect=None,
+                 positions=None):
 
         import ipywidgets as widgets
 
@@ -113,6 +114,10 @@ class Slicer:
             # Process axes dimensions
             if axes is None:
                 axes = array.dims
+            # Replace positions in axes if positions set
+            if positions is not None:
+                axes[axes.index(
+                    self.data_array.coords[positions].dims[0])] = positions
             # Protect against duplicate entries in axes
             if len(axes) != len(set(axes)):
                 raise RuntimeError("Duplicate entry in axes: {}".format(axes))
@@ -146,14 +151,15 @@ class Slicer:
         # Default starting index for slider
         indx = 0
 
-        # Additional check for 3d projection: if position vectors are present
-        contains_vectors = None
-        if len(button_options) == 3:
-            for dim, coord in self.data_array.coords.items():
-                if coord.dtype == dtype.vector_3_float64 and len(
-                        coord.dims) > 0:
-                    contains_vectors = dim
-                    break
+        # Additional condition if positions kwarg set
+        positions_dim = None
+        if len(button_options) == 3 and positions is not None:
+            if self.data_array.coords[
+                    positions].dtype == dtype.vector_3_float64:
+                positions_dim = positions
+            else:
+                raise RuntimeError(
+                    "Supplied positions coordinate does not contain vectors.")
 
         # Now begin loop to construct sliders
         button_values = [None] * (self.ndim - len(button_options)) + \
@@ -164,8 +170,8 @@ class Slicer:
             # In the case of 3d projection, disable sliders that are for
             # dims < 3, or sliders that contain vectors
             disabled = False
-            if contains_vectors is not None:
-                disabled = dim == contains_vectors
+            if positions_dim is not None:
+                disabled = dim == positions_dim
             elif i >= self.ndim - len(button_options):
                 disabled = True
 

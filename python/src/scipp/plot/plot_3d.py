@@ -22,6 +22,7 @@ import pythreejs as p3
 
 
 def plot_3d(scipp_obj_dict=None,
+            positions=None,
             axes=None,
             masks=None,
             filename=None,
@@ -46,6 +47,7 @@ def plot_3d(scipp_obj_dict=None,
     """
 
     sv = Slicer3d(scipp_obj_dict=scipp_obj_dict,
+                  positions=positions,
                   axes=axes,
                   masks=masks,
                   cmap=cmap,
@@ -68,6 +70,7 @@ def plot_3d(scipp_obj_dict=None,
 class Slicer3d(Slicer):
     def __init__(self,
                  scipp_obj_dict=None,
+                 positions=None,
                  axes=None,
                  masks=None,
                  cmap=None,
@@ -83,6 +86,7 @@ class Slicer3d(Slicer):
                  show_outline=True):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
+                         positions=positions,
                          axes=axes,
                          masks=masks,
                          cmap=cmap,
@@ -135,18 +139,16 @@ class Slicer3d(Slicer):
         self.positions = None
         self.pixel_size = pixel_size
         self.tick_size = tick_size
-        for coord in self.data_array.coords.values():
-            if coord.dtype == sc.dtype.vector_3_float64 and len(
-                    coord.dims) > 0:
-                self.positions = np.array(coord.values, dtype=np.float32)
-                self.axlabels.update({
-                    "x": name_with_unit(coord, name="X"),
-                    "y": name_with_unit(coord, name="Y"),
-                    "z": name_with_unit(coord, name="Z")
-                })
-                break
-        # If no positions are found, create a meshgrid from coordinate axes.
-        if self.positions is None:
+        if positions is not None:
+            coord = self.data_array.coords[positions]
+            self.positions = np.array(coord.values, dtype=np.float32)
+            self.axlabels.update({
+                "x": name_with_unit(coord, name="X"),
+                "y": name_with_unit(coord, name="Y"),
+                "z": name_with_unit(coord, name="Z")
+            })
+        else:
+            # If no positions are supplied, create a meshgrid from coordinate axes.
             coords = []
             labels = []
             for dim, val in self.slider.items():
