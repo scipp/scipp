@@ -148,7 +148,8 @@ class Slicer3d(Slicer):
                 "z": name_with_unit(coord, name="Z")
             })
         else:
-            # If no positions are supplied, create a meshgrid from coordinate axes.
+            # If no positions are supplied, create a meshgrid from coordinate
+            # axes.
             coords = []
             labels = []
             for dim, val in self.slider.items():
