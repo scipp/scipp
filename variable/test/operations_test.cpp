@@ -119,7 +119,7 @@ TEST(Variable, operator_plus_equal_non_arithmetic_type) {
 }
 
 TEST(Variable, operator_plus_equal_time_type) {
-  auto now = std::chrono::system_clock::now();
+  auto now = 0;
   auto a = makeVariable<scipp::core::time_point>(
       Shape{1}, units::Unit{units::ns}, Values{now});
   const auto copy(a);
@@ -131,7 +131,7 @@ TEST(Variable, operator_plus_equal_time_type) {
 }
 
 TEST(Variable, operator_minus_equal_time_type) {
-  auto now = std::chrono::system_clock::now();
+  auto now = 0;
   auto a = makeVariable<scipp::core::time_point>(
       Shape{1}, units::Unit{units::ns}, Values{now});
   const auto copy(a);

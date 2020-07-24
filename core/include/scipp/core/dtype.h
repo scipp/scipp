@@ -4,9 +4,9 @@
 /// @author Simon Heybrock
 #pragma once
 #include <boost/container/small_vector.hpp>
-#include <chrono>
 #include <typeindex>
 
+#include "time_point.h"
 #include "scipp-core_export.h"
 #include "scipp/common/span.h"
 
@@ -48,8 +48,6 @@ template <class T> constexpr bool canHaveVariances() noexcept {
          std::is_same_v<U, span<const float>> ||
          std::is_same_v<U, span<double>> || std::is_same_v<U, span<float>>;
 }
-
-using time_point = std::chrono::system_clock::time_point;
 
 } // namespace scipp::core
 

@@ -48,16 +48,16 @@ std::map<DType, std::string> &dtypeNameRegistry() {
   return registry;
 }
 
-const std::string to_iso_date(const scipp::core::time_point &item){
-  auto time = std::chrono::system_clock::to_time_t(item);
-  auto tm = *std::gmtime(&time);
-  auto epoch = item.time_since_epoch();
-  auto ns =
-      std::chrono::duration_cast<std::chrono::nanoseconds>(epoch).count() %
-      1000000000;
-  std::stringstream ss;
-  ss << std::put_time(&tm, "%FT%T.") << ns;
-  return ss.str();
-}
+// const std::string to_iso_date(const scipp::core::time_point &item){
+//   auto time = std::chrono::system_clock::to_time_t(item);
+//   auto tm = *std::gmtime(&time);
+//   auto epoch = item.time_since_epoch();
+//   auto ns =
+//       std::chrono::duration_cast<std::chrono::nanoseconds>(epoch).count() %
+//       1000000000;
+//   std::stringstream ss;
+//   ss << std::put_time(&tm, "%FT%T.") << ns;
+//   return ss.str();
+// }
 
 } // namespace scipp::core

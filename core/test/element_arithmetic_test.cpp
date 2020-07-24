@@ -17,24 +17,21 @@ protected:
 
   const int32_t a_int32 = int32_t(1);
   const int64_t a_int64 = int64_t(1);
-  std::chrono::system_clock::time_point now = std::chrono::system_clock::now();
-  std::chrono::system_clock::time_point now_copy = now;
+  scipp::core::time_point now = scipp::core::time_point();
 };
 
 TEST_F(ElementArithmeticTest, plus_equals) {
   plus_equals(val, b);
   EXPECT_EQ(val, a + b);
   EXPECT_NO_THROW(plus_equals(now, a_int32));
-  EXPECT_NO_THROW(plus_equals(now_copy, a_int64));
-  EXPECT_TRUE(now == now_copy);
+  EXPECT_NO_THROW(plus_equals(now, a_int64));
 }
 
 TEST_F(ElementArithmeticTest, minus_equals) {
   minus_equals(val, b);
   EXPECT_EQ(val, a - b);
-  EXPECT_NO_THROW(plus_equals(now, a_int32));
-  EXPECT_NO_THROW(plus_equals(now_copy, a_int64));
-  EXPECT_TRUE(now == now_copy);
+  EXPECT_NO_THROW(minus_equals(now, a_int32));
+  EXPECT_NO_THROW(minus_equals(now, a_int64));
 }
 
 TEST_F(ElementArithmeticTest, times_equals) {
@@ -52,8 +49,7 @@ TEST_F(ElementArithmeticTest, non_in_place) {
   EXPECT_EQ(minus(a, b), a - b);
   EXPECT_EQ(times(a, b), a * b);
   EXPECT_EQ(divide(a, b), a / b);
-  EXPECT_EQ(plus(now_copy, now), false);
-  EXPECT_EQ(minus(now_copy, now), 0);
+  EXPECT_EQ(minus(now, now), 0);
 }
 
 TEST_F(ElementArithmeticTest, unary_minus) { EXPECT_EQ(unary_minus(a), -a); }

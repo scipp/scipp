@@ -22,17 +22,11 @@ constexpr auto add_inplace_types =
 constexpr auto plus_equals = overloaded{
     add_inplace_types,
     [](auto &&a, const auto &b) { a += b; },
-    [](scipp::core::time_point &a, const auto &b) {
-      a += std::chrono::duration<int64_t>(b);
-    },
 };
 
 constexpr auto minus_equals = overloaded{
     add_inplace_types,
     [](auto &&a, const auto &b) { a -= b; },
-    [](scipp::core::time_point &a, const auto &b) {
-      a -= std::chrono::duration<int64_t>(b);
-    },
 };
 
 constexpr auto mul_inplace_types =
@@ -61,20 +55,13 @@ template <class... Ts> struct divide_types_t {
 };
 
 constexpr auto plus = overloaded{
-    add_types_t{}, [](const auto a, const auto b) { return a + b; },
-    [](const scipp::core::time_point &a, const scipp::core::time_point &b) {
-      // a + b for time_point is undefined. Can't throw from here
-      // so return false
-      (void)a;
-      (void)b;
-      return false;
-    }};
-constexpr auto minus = overloaded{
-    add_types_t{}, [](const auto a, const auto b) { return a - b; },
-    [](const scipp::core::time_point &a, const scipp::core::time_point &b) {
-      return std::chrono::duration_cast<std::chrono::nanoseconds>(a - b)
-          .count();
-    }};
+    add_types_t{},
+    [](const auto a, const auto b) { return a + b; },
+};
+constexpr auto minus =
+    overloaded{add_types_t{}, [](const auto a, const auto b) { return a - b; },
+               [](const scipp::core::time_point &a,
+                  const scipp::core::time_point &b) { return a - b; }};
 constexpr auto times = overloaded{
     times_types_t{}, [](const auto a, const auto b) { return a * b; }};
 constexpr auto divide = overloaded{
