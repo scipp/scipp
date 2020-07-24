@@ -39,7 +39,7 @@ public:
     return m_duration == time.time_since_epoch();
   }
   bool operator!=(const time_point &time) const noexcept {
-    return !(m_duration == time.time_since_epoch());
+    return m_duration != time.time_since_epoch();
   }
   bool operator<(const time_point &time) const noexcept {
     return m_duration < time.time_since_epoch();
