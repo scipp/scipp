@@ -232,6 +232,16 @@
   text-align:right;
 }
 
+.xr-sections .xr-section-item .xr-section-summary,
+.xr-sections .xr-section-item .xr-section-inline-details,
+.xr-section-item .xr-var-list .xr-var-item > div,
+.xr-section-item .xr-var-list .xr-var-item > label,
+.xr-section-details .xr-var-list .xr-var-item > div,
+.xr-section-details .xr-var-list .xr-var-item > label {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 .xr-var-name,
 .xr-var-dims,
 .xr-var-dtype,
