@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform.h"
 
 #include "dataset_operations_common.h"
@@ -12,17 +13,79 @@ using namespace scipp::core;
 
 namespace scipp::dataset {
 
-template <class Op>
-void dry_run_op(const DataArrayView &a, const VariableConstView &b, Op op) {
-  // This dry run relies on the knowledge that the implementation of operations
-  // for variable simply calls transform_in_place and nothing else.
-  variable::dry_run::transform_in_place(a.data(), b, op);
+DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
+  if (a.hasData() && b.hasData()) {
+    return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
+                     union_or(a.masks(), b.masks()),
+                     intersection(a.attrs(), b.attrs()));
+  } else {
+    DataArray out(a);
+    out += b; // No broadcast possible for now
+    return out;
+  }
 }
 
-template <class Op>
-void dry_run_op(const DataArrayView &a, const DataArrayConstView &b, Op op) {
-  expect::coordsAreSuperset(a, b);
-  dry_run_op(a, b.data(), op);
+DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
+  if (a.hasData() && b.hasData()) {
+    return {a.data() - b.data(), union_(a.coords(), b.coords()),
+            union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
+  } else {
+    DataArray out(a);
+    out -= b; // No broadcast possible for now
+    return out;
+  }
+}
+
+DataArray operator+(const DataArrayConstView &a, const VariableConstView &b) {
+  return DataArray(a.data() + b, a.coords(), a.masks(), a.attrs());
+}
+
+DataArray operator-(const DataArrayConstView &a, const VariableConstView &b) {
+  return DataArray(a.data() - b, a.coords(), a.masks(), a.attrs());
+}
+
+DataArray operator*(const DataArrayConstView &a, const VariableConstView &b) {
+  return DataArray(a.data() * b, a.coords(), a.masks(), a.attrs());
+}
+
+DataArray operator/(const DataArrayConstView &a, const VariableConstView &b) {
+  return DataArray(a.data() / b, a.coords(), a.masks(), a.attrs());
+}
+
+DataArray operator+(const VariableConstView &a, const DataArrayConstView &b) {
+  return DataArray(a + b.data(), b.coords(), b.masks(), b.attrs());
+}
+
+DataArray operator-(const VariableConstView &a, const DataArrayConstView &b) {
+  return DataArray(a - b.data(), b.coords(), b.masks(), b.attrs());
+}
+
+DataArray operator*(const VariableConstView &a, const DataArrayConstView &b) {
+  return DataArray(a * b.data(), b.coords(), b.masks(), b.attrs());
+}
+
+DataArray operator/(const VariableConstView &a, const DataArrayConstView &b) {
+  return DataArray(a / b.data(), b.coords(), b.masks(), b.attrs());
+}
+
+DataArray &DataArray::operator+=(const VariableConstView &other) {
+  data() += other;
+  return *this;
+}
+
+DataArray &DataArray::operator-=(const VariableConstView &other) {
+  data() -= other;
+  return *this;
+}
+
+DataArray &DataArray::operator*=(const VariableConstView &other) {
+  data() *= other;
+  return *this;
+}
+
+DataArray &DataArray::operator/=(const VariableConstView &other) {
+  data() /= other;
+  return *this;
 }
 
 DataArrayView DataArrayView::operator+=(const DataArrayConstView &other) const {
@@ -67,6 +130,19 @@ DataArrayView DataArrayView::operator*=(const VariableConstView &other) const {
 DataArrayView DataArrayView::operator/=(const VariableConstView &other) const {
   data() /= other;
   return *this;
+}
+
+template <class Op>
+void dry_run_op(const DataArrayView &a, const VariableConstView &b, Op op) {
+  // This dry run relies on the knowledge that the implementation of operations
+  // for variable simply calls transform_in_place and nothing else.
+  variable::dry_run::transform_in_place(a.data(), b, op);
+}
+
+template <class Op>
+void dry_run_op(const DataArrayView &a, const DataArrayConstView &b, Op op) {
+  expect::coordsAreSuperset(a, b);
+  dry_run_op(a, b.data(), op);
 }
 
 template <class Op, class A, class B>

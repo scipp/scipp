@@ -319,49 +319,6 @@ DataArray &DataArray::operator/=(const DataArrayConstView &other) {
   return events_dense_op_inplace(Divide{}, *this, other);
 }
 
-DataArray &DataArray::operator+=(const VariableConstView &other) {
-  data() += other;
-  return *this;
-}
-
-DataArray &DataArray::operator-=(const VariableConstView &other) {
-  data() -= other;
-  return *this;
-}
-
-DataArray &DataArray::operator*=(const VariableConstView &other) {
-  data() *= other;
-  return *this;
-}
-
-DataArray &DataArray::operator/=(const VariableConstView &other) {
-  data() /= other;
-  return *this;
-}
-
-DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
-  if (a.hasData() && b.hasData()) {
-    return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
-                     union_or(a.masks(), b.masks()),
-                     intersection(a.attrs(), b.attrs()));
-  } else {
-    DataArray out(a);
-    out += b; // No broadcast possible for now
-    return out;
-  }
-}
-
-DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
-  if (a.hasData() && b.hasData()) {
-    return {a.data() - b.data(), union_(a.coords(), b.coords()),
-            union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
-  } else {
-    DataArray out(a);
-    out -= b; // No broadcast possible for now
-    return out;
-  }
-}
-
 template <class Op>
 auto events_dense_op(Op op, const DataArrayConstView &a,
                      const DataArrayConstView &b) {
@@ -409,38 +366,6 @@ DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {
 
 DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
   return apply_mul_or_div(Divide{}, a, b);
-}
-
-DataArray operator+(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() + b, a.coords(), a.masks(), a.attrs());
-}
-
-DataArray operator-(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() - b, a.coords(), a.masks(), a.attrs());
-}
-
-DataArray operator*(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() * b, a.coords(), a.masks(), a.attrs());
-}
-
-DataArray operator/(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() / b, a.coords(), a.masks(), a.attrs());
-}
-
-DataArray operator+(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a + b.data(), b.coords(), b.masks(), b.attrs());
-}
-
-DataArray operator-(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a - b.data(), b.coords(), b.masks(), b.attrs());
-}
-
-DataArray operator*(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a * b.data(), b.coords(), b.masks(), b.attrs());
-}
-
-DataArray operator/(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a / b.data(), b.coords(), b.masks(), b.attrs());
 }
 
 DataArray astype(const DataArrayConstView &var, const DType type) {
