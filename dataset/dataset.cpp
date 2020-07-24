@@ -864,28 +864,6 @@ DatasetView DatasetView::slice(const Slice s) const {
   return sliced;
 }
 
-/// Return true if the dataset proxies have identical content.
-bool operator==(const DataArrayConstView &a, const DataArrayConstView &b) {
-  if (a.hasData() != b.hasData())
-    return false;
-  if (a.hasVariances() != b.hasVariances())
-    return false;
-  if (a.coords() != b.coords())
-    return false;
-  if (a.masks() != b.masks())
-    return false;
-  if (a.attrs() != b.attrs())
-    return false;
-  if (a.hasData())
-    return a.data() == b.data();
-  else
-    return a.dims() == b.dims() && a.unaligned() == b.unaligned();
-}
-
-bool operator!=(const DataArrayConstView &a, const DataArrayConstView &b) {
-  return !operator==(a, b);
-}
-
 template <class A, class B> bool dataset_equals(const A &a, const B &b) {
   if (a.size() != b.size())
     return false;
