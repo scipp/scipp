@@ -48,12 +48,6 @@
   grid-template-columns: 150px auto auto auto 1fr 20px 20px;
 }
 
-.xr-sections div,
-.xr-sections ul {
-  margin-top: 0;
-  margin-bottom: 0;
-}
-
 .xr-section-item {
   display: contents;
 }
@@ -236,6 +230,16 @@
 }
 .xr-var-preview-variances{
   text-align:right;
+}
+
+.xr-sections .xr-section-item .xr-section-summary,
+.xr-sections .xr-section-item .xr-section-inline-details,
+.xr-section-item .xr-var-list .xr-var-item > div,
+.xr-section-item .xr-var-list .xr-var-item > label,
+.xr-section-details .xr-var-list .xr-var-item > div,
+.xr-section-details .xr-var-list .xr-var-item > label {
+  margin-top: 0;
+  margin-bottom: 0;
 }
 
 .xr-var-name,
