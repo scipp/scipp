@@ -8,6 +8,7 @@
 #include "scipp/core/except.h"
 #include "scipp/variable/event.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -1143,13 +1144,13 @@ TEST(TransposeTest, make_transposed_2d) {
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                   Values{1, 3, 5, 2, 4, 6},
                                   Variances{11, 13, 15, 12, 14, 16});
-  EXPECT_EQ(var.transpose({Dim::Y, Dim::X}), ref);
-  EXPECT_EQ(constVar.transpose({Dim::Y, Dim::X}), ref);
+  EXPECT_EQ(transpose(var, {Dim::Y, Dim::X}), ref);
+  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::X}), ref);
 
-  EXPECT_THROW(constVar.transpose({Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(constVar.transpose({Dim::Y}), except::DimensionError);
-  EXPECT_THROW(var.transpose({Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(var.transpose({Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(var, {Dim::Z}), except::DimensionError);
 }
 
 TEST(TransposeTest, make_transposed_multiple_d) {
@@ -1162,13 +1163,13 @@ TEST(TransposeTest, make_transposed_multiple_d) {
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::Z, Dim::X}, Shape{2, 1, 3},
                                   Values{1, 3, 5, 2, 4, 6},
                                   Variances{11, 13, 15, 12, 14, 16});
-  EXPECT_EQ(var.transpose({Dim::Y, Dim::Z, Dim::X}), ref);
-  EXPECT_EQ(constVar.transpose({Dim::Y, Dim::Z, Dim::X}), ref);
+  EXPECT_EQ(transpose(var, {Dim::Y, Dim::Z, Dim::X}), ref);
+  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::Z, Dim::X}), ref);
 
-  EXPECT_THROW(constVar.transpose({Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(constVar.transpose({Dim::Y}), except::DimensionError);
-  EXPECT_THROW(var.transpose({Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(var.transpose({Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW(transpose(var, {Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(var, {Dim::Z}), except::DimensionError);
 }
 
 TEST(TransposeTest, reverse) {
@@ -1181,8 +1182,8 @@ TEST(TransposeTest, reverse) {
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                   Values{1, 3, 5, 2, 4, 6},
                                   Variances{11, 13, 15, 12, 14, 16});
-  auto tvar = var.transpose();
-  auto tconstVar = constVar.transpose();
+  auto tvar = transpose(var);
+  auto tconstVar = transpose(constVar);
   static_assert(
       std::is_same_v<VariableConstView, std::decay_t<decltype(tconstVar)>>);
   static_assert(std::is_same_v<VariableView, decltype(tvar)>);
@@ -1202,8 +1203,8 @@ TEST(TransposeTest, reverse) {
   static_assert(std::is_same_v<Variable, decltype(v)>);
   EXPECT_EQ(v, ref);
 
-  EXPECT_EQ(var.transpose().transpose(), var);
-  EXPECT_EQ(constVar.transpose().transpose(), var);
+  EXPECT_EQ(transpose(var).transpose(), var);
+  EXPECT_EQ(transpose(constVar).transpose(), var);
 
   Variable dummy = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 1},
                                         Values{0, 0}, Variances{1, 1});

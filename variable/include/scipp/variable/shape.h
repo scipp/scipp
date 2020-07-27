@@ -27,4 +27,9 @@ SCIPP_VARIABLE_EXPORT VariableView reshape(Variable &var,
 SCIPP_VARIABLE_EXPORT Variable reshape(Variable &&var, const Dimensions &dims);
 SCIPP_VARIABLE_EXPORT Variable reshape(const VariableConstView &view,
                                        const Dimensions &dims);
+
+SCIPP_VARIABLE_EXPORT VariableConstView
+transpose(const Variable &var, const std::vector<Dim> &dims = {});
+SCIPP_VARIABLE_EXPORT VariableView transpose(Variable &var,
+                                             const std::vector<Dim> &dims = {});
 } // namespace scipp::variable
