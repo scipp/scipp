@@ -132,8 +132,6 @@ public:
   VariableView slice(const Slice slice) &;
   Variable slice(const Slice slice) &&;
 
-  // Note: the same issue as for reshape above
-  Variable transpose(const std::vector<Dim> &dims = {}) &&;
   void rename(const Dim from, const Dim to);
 
   bool operator==(const VariableConstView &other) const;

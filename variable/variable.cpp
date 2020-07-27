@@ -150,10 +150,6 @@ VariableView VariableView::slice(const Slice slice) const {
   return VariableView(*this, slice.dim(), slice.begin(), slice.end());
 }
 
-Variable Variable::transpose(const std::vector<Dim> &dims) && {
-  return Variable(VariableConstView(*this).transpose(dims));
-}
-
 VariableConstView
 VariableConstView::transpose(const std::vector<Dim> &dims) const {
   auto transposed(*this);

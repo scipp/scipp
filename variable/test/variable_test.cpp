@@ -1196,10 +1196,9 @@ TEST(TransposeTest, reverse) {
   static_assert(std::is_same_v<VariableView, decltype(tview)>);
   EXPECT_EQ(tconstView, ref);
   EXPECT_EQ(tview, ref);
-  auto v = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
-                                Values{1, 2, 3, 4, 5, 6},
-                                Variances{11, 12, 13, 14, 15, 16})
-               .transpose();
+  auto v = transpose(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                          Values{1, 2, 3, 4, 5, 6},
+                                          Variances{11, 12, 13, 14, 15, 16}));
   static_assert(std::is_same_v<Variable, decltype(v)>);
   EXPECT_EQ(v, ref);
 
