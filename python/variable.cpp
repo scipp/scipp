@@ -290,7 +290,7 @@ Mostly equivalent to Variable, see there for details.)");
       [](const VariableView &self, const std::vector<Dim> &labels,
          const py::tuple &shape) {
         Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-        return self.reshape(dims);
+        return reshape(self, dims);
       },
       py::arg("x"), py::arg("dims"), py::arg("shape"),
       Docstring()

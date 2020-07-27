@@ -150,28 +150,6 @@ VariableView VariableView::slice(const Slice slice) const {
   return VariableView(*this, slice.dim(), slice.begin(), slice.end());
 }
 
-VariableConstView Variable::reshape(const Dimensions &dims) const & {
-  return {*this, dims};
-}
-
-VariableView Variable::reshape(const Dimensions &dims) & {
-  return {*this, dims};
-}
-
-Variable Variable::reshape(const Dimensions &dims) && {
-  Variable reshaped(std::move(*this));
-  reshaped.setDims(dims);
-  return reshaped;
-}
-
-Variable VariableConstView::reshape(const Dimensions &dims) const {
-  // In general a variable slice is not contiguous. Therefore we cannot reshape
-  // without making a copy (except for special cases).
-  Variable reshaped(*this);
-  reshaped.setDims(dims);
-  return reshaped;
-}
-
 VariableConstView Variable::transpose(const std::vector<Dim> &dims) const & {
   return VariableConstView(*this).transpose(dims);
 }

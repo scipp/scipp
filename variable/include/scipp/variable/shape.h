@@ -20,5 +20,11 @@ permute(const Variable &var, const Dim dim,
 SCIPP_VARIABLE_EXPORT Variable resize(const VariableConstView &var,
                                       const Dim dim, const scipp::index size);
 SCIPP_VARIABLE_EXPORT Variable reverse(Variable var, const Dim dim);
-
+SCIPP_VARIABLE_EXPORT VariableConstView reshape(const Variable &var,
+                                                const Dimensions &dims);
+SCIPP_VARIABLE_EXPORT VariableView reshape(Variable &var,
+                                           const Dimensions &dims);
+SCIPP_VARIABLE_EXPORT Variable reshape(Variable &&var, const Dimensions &dims);
+SCIPP_VARIABLE_EXPORT Variable reshape(const VariableConstView &view,
+                                       const Dimensions &dims);
 } // namespace scipp::variable

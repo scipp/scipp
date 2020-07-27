@@ -132,16 +132,6 @@ public:
   VariableView slice(const Slice slice) &;
   Variable slice(const Slice slice) &&;
 
-  VariableConstView reshape(const Dimensions &dims) const &;
-  VariableView reshape(const Dimensions &dims) &;
-  // Note: Do we have to delete the `const &&` version? Consider
-  //   const Variable var;
-  //   std::move(var).reshape({});
-  // This calls `reshape() const &` but in this case it is not a temporary and
-  // will not go out of scope, so that is ok (unless someone changes var and
-  // expects the reshaped view to be still valid).
-  Variable reshape(const Dimensions &dims) &&;
-
   VariableConstView transpose(const std::vector<Dim> &dims = {}) const &;
   VariableView transpose(const std::vector<Dim> &dims = {}) &;
   // Note: the same issue as for reshape above
@@ -249,9 +239,6 @@ public:
   VariableConstView slice(const Slice slice) const;
 
   VariableConstView transpose(const std::vector<Dim> &dims = {}) const;
-  // Note the return type. Reshaping a non-contiguous slice cannot return a
-  // slice in general so we must return a copy of the data.
-  Variable reshape(const Dimensions &dims) const;
 
   units::Unit unit() const { return m_variable->unit(); }
 
