@@ -139,15 +139,28 @@ Variable reshape(const VariableConstView &view, const Dimensions &dims) {
 }
 
 VariableView transpose(Variable &var, const std::vector<Dim> &dims) {
-  return VariableView(var).transpose(dims);
+  return transpose(VariableView(var), dims);
 }
 
 VariableConstView transpose(const Variable &var, const std::vector<Dim> &dims) {
-  return VariableConstView(var).transpose(dims);
+  return transpose(VariableConstView(var), dims);
 }
 
 Variable transpose(Variable &&var, const std::vector<Dim> &dims) {
-  return Variable(VariableConstView(var).transpose(dims));
+  return Variable(transpose(VariableConstView(var), dims));
+}
+
+VariableConstView transpose(const VariableConstView &view,
+                            const std::vector<Dim> &dims) {
+  auto transposed(view);
+  transposed.m_view = view.data().transpose(dims);
+  return transposed;
+}
+
+VariableView transpose(const VariableView &view, const std::vector<Dim> &dims) {
+  auto transposed(view);
+  transposed.m_view = view.data().transpose(dims);
+  return transposed;
 }
 
 } // namespace scipp::variable

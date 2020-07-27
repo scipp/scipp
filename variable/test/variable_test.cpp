@@ -1189,8 +1189,8 @@ TEST(TransposeTest, reverse) {
   static_assert(std::is_same_v<VariableView, decltype(tvar)>);
   EXPECT_EQ(tvar, ref);
   EXPECT_EQ(tconstVar, ref);
-  auto tview = VariableView(var).transpose();
-  auto tconstView = VariableConstView(constVar).transpose();
+  auto tview = transpose(VariableView(var));
+  auto tconstView = transpose(VariableConstView(constVar));
   static_assert(
       std::is_same_v<VariableConstView, std::decay_t<decltype(tconstView)>>);
   static_assert(std::is_same_v<VariableView, decltype(tview)>);
@@ -1202,8 +1202,8 @@ TEST(TransposeTest, reverse) {
   static_assert(std::is_same_v<Variable, decltype(v)>);
   EXPECT_EQ(v, ref);
 
-  EXPECT_EQ(transpose(var).transpose(), var);
-  EXPECT_EQ(transpose(constVar).transpose(), var);
+  EXPECT_EQ(transpose(transpose(var)), var);
+  EXPECT_EQ(transpose(transpose(constVar)), var);
 
   Variable dummy = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 1},
                                         Values{0, 0}, Variances{1, 1});

@@ -150,19 +150,6 @@ VariableView VariableView::slice(const Slice slice) const {
   return VariableView(*this, slice.dim(), slice.begin(), slice.end());
 }
 
-VariableConstView
-VariableConstView::transpose(const std::vector<Dim> &dims) const {
-  auto transposed(*this);
-  transposed.m_view = data().transpose(dims);
-  return transposed;
-}
-
-VariableView VariableView::transpose(const std::vector<Dim> &dims) const {
-  auto transposed(*this);
-  transposed.m_view = data().transpose(dims);
-  return transposed;
-}
-
 std::vector<scipp::index> VariableConstView::strides() const {
   const auto parent = m_variable->dims();
   std::vector<scipp::index> strides;

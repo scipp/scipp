@@ -234,8 +234,6 @@ public:
 
   VariableConstView slice(const Slice slice) const;
 
-  VariableConstView transpose(const std::vector<Dim> &dims = {}) const;
-
   units::Unit unit() const { return m_variable->unit(); }
 
   // Note: Returning by value to avoid issues with referencing a temporary
@@ -275,6 +273,7 @@ public:
 
   auto &underlying() const { return *m_variable; }
 
+  VariableConceptHandle m_view; // TODO should be protected
 protected:
   friend class Variable;
 
@@ -282,7 +281,6 @@ protected:
   template <class T> const ElementArrayView<const T> castVariances() const;
 
   const Variable *m_variable{nullptr};
-  VariableConceptHandle m_view;
 };
 
 /** Mutable view into (a subset of) a Variable.
@@ -301,9 +299,6 @@ public:
                const scipp::index begin, const scipp::index end = -1);
 
   VariableView slice(const Slice slice) const;
-
-  VariableView transpose(const std::vector<Dim> &dims = {}) const;
-
   using VariableConstView::data;
 
   VariableConcept &data() const && = delete;
