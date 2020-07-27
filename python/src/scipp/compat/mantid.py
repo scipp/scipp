@@ -684,7 +684,8 @@ def from_mantid(workspace, **kwargs):
     monitor_ws = None
     workspaces_to_delete = []
     w_id = workspace.id()
-    if w_id == 'Workspace2D' or w_id == 'RebinnedOutput' or w_id == 'MaskWorkspace':
+    if (w_id == 'Workspace2D' or w_id == 'RebinnedOutput'
+            or w_id == 'MaskWorkspace'):
         n_monitor = 0
         spec_info = workspace.spectrumInfo()
         for i in range(len(spec_info)):
