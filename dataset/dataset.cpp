@@ -70,6 +70,18 @@ void addAttrsFromCoords(Item &items, const Dims &parentDims, const Dims &dims,
   }
 }
 
+/// Add masks that have become unaligned by slicing.
+template <class Item, class Dims, class Coords>
+void addMasks(Item &items, const Dims &parentDims, const Dims &dims,
+              Coords &coords) {
+  for (auto &&[name, coord] : coords) {
+    const auto &coordDims = coord.dims();
+    if (!coordDims.empty() && contains(parentDims, coordDims.inner()) &&
+        !contains(dims, coordDims.inner()))
+      items.emplace(name, makeViewItem(coord));
+  }
+}
+
 Dataset::Dataset(const DatasetConstView &view)
     : Dataset(view, view.coords(), view.masks(), view.attrs()) {}
 
@@ -569,6 +581,8 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
   }
   if constexpr (std::is_same_v<MapView, AttrsConstView>)
     addAttrsFromCoords(items, parentDims(), dims(), m_dataset->m_coords);
+  if constexpr (std::is_same_v<MapView, MasksConstView>)
+    addMasks(items, parentDims(), dims(), m_dataset->m_masks);
   return MapView(std::move(items), slices());
 }
 
@@ -596,6 +610,8 @@ template <class MapView> MapView DataArrayView::makeView() const {
   }
   if constexpr (std::is_same_v<MapView, AttrsView>)
     addAttrsFromCoords(items, parentDims(), dims(), m_mutableDataset->m_coords);
+  if constexpr (std::is_same_v<MapView, MasksView>)
+    addMasks(items, parentDims(), dims(), m_mutableDataset->m_masks);
   if constexpr (std::is_same_v<MapView, AttrsView>) {
     // Note: Unlike for CoordAccess and MaskAccess this is *not* unconditionally
     // disabled with nullptr since it sets/erase attributes of the *item*.
