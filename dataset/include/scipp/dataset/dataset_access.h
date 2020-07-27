@@ -31,14 +31,16 @@ private:
 
 class MaskAccess {
 public:
-  MaskAccess(Dataset *parent, DataArray *unaligned = nullptr)
-      : m_parent(parent), m_unaligned(unaligned) {}
+  MaskAccess(Dataset *parent, const std::string *name = nullptr,
+             DataArray *unaligned = nullptr)
+      : m_parent(parent), m_name(name), m_unaligned(unaligned) {}
 
   void set(const std::string &key, variable::Variable var) const;
   void erase(const std::string &key) const;
 
 private:
   Dataset *m_parent;
+  const std::string *m_name;
   DataArray *m_unaligned;
 };
 

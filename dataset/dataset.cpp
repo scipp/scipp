@@ -300,9 +300,17 @@ void Dataset::setAttr(const std::string &name, const std::string &attrName,
 /// Set (insert or replace) the masks for the given mask name.
 ///
 /// Note that the mask name has no relation to names of data items.
-void Dataset::setMask(const std::string &masksName, Variable mask) {
+void Dataset::setMask(const std::string &maskName, Variable mask) {
   setDims(mask.dims());
-  m_masks.insert_or_assign(masksName, std::move(mask));
+  m_masks.insert_or_assign(maskName, std::move(mask));
+}
+
+/// Set (insert or replace) an mask for item with given name.
+void Dataset::setMask(const std::string &name, const std::string &maskName,
+                      Variable mask) {
+  scipp::expect::contains(*this, name);
+  setDims(mask.dims());
+  m_data[name].masks.insert_or_assign(maskName, std::move(mask));
 }
 
 void Dataset::setData_impl(const std::string &name, detail::DatasetData &&data,
@@ -323,15 +331,17 @@ void Dataset::setData_impl(const std::string &name, detail::DatasetData &&data,
 /// attributes, unless AttrPolicy::Keep is specified.
 void Dataset::setData(const std::string &name, Variable data,
                       const AttrPolicy attrPolicy) {
-  setData_impl(name, detail::DatasetData{std::move(data), {}, {}}, attrPolicy);
+  setData_impl(name, detail::DatasetData{std::move(data), {}, {}, {}},
+               attrPolicy);
 }
 
 /// Private helper for constructor of DataArray and setData
 void Dataset::setData(const std::string &name, UnalignedData &&data) {
-  setData_impl(name,
-               detail::DatasetData{
-                   {}, std::make_unique<UnalignedData>(std::move(data)), {}},
-               AttrPolicy::Drop);
+  setData_impl(
+      name,
+      detail::DatasetData{
+          {}, std::make_unique<UnalignedData>(std::move(data)), {}, {}},
+      AttrPolicy::Drop);
 }
 
 /// Set (insert or replace) data from a DataArray with a given name, avoiding
@@ -402,9 +412,15 @@ void Dataset::eraseAttr(const std::string &name, const std::string &attrName) {
   erase_from_map(m_data[name].attrs, attrName);
 }
 
-/// Removes an attribute for the given attribute name.
+/// Remove mask with given name.
 void Dataset::eraseMask(const std::string &maskName) {
   erase_from_map(m_masks, maskName);
+}
+
+/// Remove mask with given mask name from the given item.
+void Dataset::eraseMask(const std::string &name, const std::string &maskName) {
+  scipp::expect::contains(*this, name);
+  erase_from_map(m_data[name].masks, maskName);
 }
 
 /// Return const slice of the dataset along given dimension with given extents.
@@ -612,17 +628,17 @@ template <class MapView> MapView DataArrayView::makeView() const {
     addAttrsFromCoords(items, parentDims(), dims(), m_mutableDataset->m_coords);
   if constexpr (std::is_same_v<MapView, MasksView>)
     addMasks(items, parentDims(), dims(), m_mutableDataset->m_masks);
-  if constexpr (std::is_same_v<MapView, AttrsView>) {
-    // Note: Unlike for CoordAccess and MaskAccess this is *not* unconditionally
-    // disabled with nullptr since it sets/erase attributes of the *item*.
-    return MapView(AttrAccess(slices().empty() ? m_mutableDataset : nullptr,
-                              &name(), unaligned_ptr),
-                   std::move(items), slices());
-  } else {
+  if constexpr (std::is_same_v<MapView, CoordsView>) {
     // Access disabled with nullptr since views of dataset items or slices of
     // data arrays may not set or erase coords.
     return MapView({unaligned_ptr ? m_mutableDataset : nullptr, unaligned_ptr},
                    std::move(items), slices());
+  } else {
+    // Note: Unlike for CoordAccess this is *not* unconditionally disabled with
+    // nullptr since it sets/erase attributes/masks of the *item*.
+    return MapView(
+        {slices().empty() ? m_mutableDataset : nullptr, &name(), unaligned_ptr},
+        std::move(items), slices());
   }
 }
 
