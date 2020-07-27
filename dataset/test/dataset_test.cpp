@@ -352,7 +352,7 @@ TEST(DatasetTest, construct_from_slice_without_mask) {
 }
 
 TEST(DatasetTest, DISABLED_construct_from_slice) {
-  // Disabled since we cannot store unaligned masks yet.
+  // Disabled since we cannot preserve unaligned masks in copy yet.
   DatasetFactory3D factory;
   const auto dataset = factory.make();
   const auto slice = dataset.slice({Dim::X, 1});
