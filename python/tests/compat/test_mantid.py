@@ -617,12 +617,13 @@ def test_to_workspace_2d_handles_single_x_array():
 
 def test_from_mask_workspace():
     from mantid.simpleapi import LoadMask
-    mask = LoadMask('HYS', 'HYS_mask.xml')
+    from os import path
+    dir_path = path.dirname(path.realpath(__file__))
+    mask = LoadMask('HYS', path.join(dir_path, 'HYS_mask.xml'))
     da = sc.compat.mantid.from_mantid(mask)
-    assert 'mask' in da.masks
-    assert da.data == da.masks['mask']
     assert da.data.dtype == sc.dtype.bool
     assert da.dims == ['spectrum', 'empty']
+    assert da.variances is None
 
 
 if __name__ == "__main__":
