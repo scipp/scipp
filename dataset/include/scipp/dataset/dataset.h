@@ -513,10 +513,6 @@ public:
 
 protected:
   explicit DatasetConstView() : m_dataset(nullptr) {}
-  template <class T>
-  static std::pair<boost::container::small_vector<DataArrayView, 8>,
-                   detail::slice_list>
-  slice_items(const T &view, const Slice slice);
   const Dataset *m_dataset;
   boost::container::small_vector<DataArrayView, 8> m_items;
   void expectValidKey(const std::string &name) const;
