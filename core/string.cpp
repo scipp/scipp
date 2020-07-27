@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <iomanip>
 #include <sstream>
+#include <chrono>
 
 #include "scipp/core/dimensions.h"
 #include "scipp/core/slice.h"
@@ -48,16 +49,30 @@ std::map<DType, std::string> &dtypeNameRegistry() {
   return registry;
 }
 
-// const std::string to_iso_date(const scipp::core::time_point &item){
-//   auto time = std::chrono::system_clock::to_time_t(item);
-//   auto tm = *std::gmtime(&time);
-//   auto epoch = item.time_since_epoch();
-//   auto ns =
-//       std::chrono::duration_cast<std::chrono::nanoseconds>(epoch).count() %
-//       1000000000;
-//   std::stringstream ss;
-//   ss << std::put_time(&tm, "%FT%T.") << ns;
-//   return ss.str();
-// }
+const std::string to_iso_date(const scipp::core::time_point &item,
+                              const std::string &unit) {
+  int64_t ts = item.time_since_epoch();
+
+  if (unit == "ns") {
+    int64_t conv = 1000000000;
+    // time representation of the timestamp
+    int64_t time = ts / conv;
+    auto tm = *std::gmtime(&time);
+    // nanoseconds part
+    std::chrono::duration<int64_t, std::nano> dur(ts);
+    auto ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(dur).count() %
+        conv;
+    std::stringstream ss;
+    ss << std::put_time(&tm, "%FT%T.") << std::setw(9) << std::setfill('0')
+       << ns << std::endl;
+    return ss.str();
+  } else {
+    auto tm = *std::gmtime(&ts);
+    std::stringstream ss;
+    ss << std::put_time(&tm, "%FT%T") << std::endl;
+    return ss.str();
+  }
+}
 
 } // namespace scipp::core
