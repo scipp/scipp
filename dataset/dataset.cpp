@@ -597,8 +597,11 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
   }
   if constexpr (std::is_same_v<MapView, AttrsConstView>)
     addAttrsFromCoords(items, parentDims(), dims(), m_dataset->m_coords);
-  if constexpr (std::is_same_v<MapView, MasksConstView>)
+  if constexpr (std::is_same_v<MapView, MasksConstView>) {
+    auto unalignedItems = makeViewItems<MapView>(dims(), m_data->second.masks);
+    items.insert(unalignedItems.begin(), unalignedItems.end());
     addMasks(items, parentDims(), dims(), m_dataset->m_masks);
+  }
   return MapView(std::move(items), slices());
 }
 
@@ -626,8 +629,12 @@ template <class MapView> MapView DataArrayView::makeView() const {
   }
   if constexpr (std::is_same_v<MapView, AttrsView>)
     addAttrsFromCoords(items, parentDims(), dims(), m_mutableDataset->m_coords);
-  if constexpr (std::is_same_v<MapView, MasksView>)
+  if constexpr (std::is_same_v<MapView, MasksView>) {
+    auto unalignedItems =
+        makeViewItems<MapView>(dims(), m_mutableData->second.masks);
+    items.insert(unalignedItems.begin(), unalignedItems.end());
     addMasks(items, parentDims(), dims(), m_mutableDataset->m_masks);
+  }
   if constexpr (std::is_same_v<MapView, CoordsView>) {
     // Access disabled with nullptr since views of dataset items or slices of
     // data arrays may not set or erase coords.

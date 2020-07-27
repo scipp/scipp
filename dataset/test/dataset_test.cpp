@@ -157,6 +157,17 @@ TEST(DatasetTest, setMask) {
   ASSERT_EQ(d.masks().size(), 2);
 }
 
+TEST(DatasetTest, set_item_mask) {
+  Dataset d;
+  const auto var =
+      makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false});
+  d.setData("x", makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+  d.setData("scalar", 1.2 * units::one);
+  d["x"].masks().set("unaligned", var);
+  EXPECT_FALSE(d.masks().contains("unaligned"));
+  EXPECT_TRUE(d["x"].masks().contains("unaligned"));
+}
+
 TEST(DatasetTest, setData_with_and_without_variances) {
   Dataset d;
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
