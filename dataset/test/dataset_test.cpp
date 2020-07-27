@@ -159,10 +159,10 @@ TEST(DatasetTest, setMask) {
 
 TEST(DatasetTest, set_item_mask) {
   Dataset d;
-  const auto var =
-      makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false});
   d.setData("x", makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
   d.setData("scalar", 1.2 * units::one);
+  const auto var =
+      makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false});
   d["x"].masks().set("unaligned", var);
   EXPECT_FALSE(d.masks().contains("unaligned"));
   EXPECT_TRUE(d["x"].masks().contains("unaligned"));
@@ -481,15 +481,15 @@ TEST(DatasetTest, erase_attrs) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
-  auto attrs = Variable(ds.attrs()["attr_x"]);
+  auto attr = Variable(ds.attrs()["attr_x"]);
   ds.eraseAttr("attr_x");
   EXPECT_FALSE(ds.attrs().contains("attr_x"));
-  ds.setAttr("attr_x", attrs);
+  ds.setAttr("attr_x", attr);
   EXPECT_EQ(ref, ds);
 
   ds.attrs().erase("attr_x");
   EXPECT_FALSE(ds.attrs().contains("attr_x"));
-  ds.setAttr("attr_x", attrs);
+  ds.setAttr("attr_x", attr);
   EXPECT_EQ(ref, ds);
 }
 
@@ -507,6 +507,28 @@ TEST(DatasetTest, erase_masks) {
   EXPECT_FALSE(ds.masks().contains("masks_x"));
   ds.setMask("masks_x", mask);
   EXPECT_EQ(ref, ds);
+}
+
+TEST(DatasetTest, set_erase_item_attr) {
+  DatasetFactory3D factory;
+  auto ds = factory.make();
+  const auto attr = Variable(ds.attrs()["attr_x"]);
+  ds["data_x"].attrs().set("item-attr", attr);
+  EXPECT_FALSE(ds.attrs().contains("item-attr"));
+  EXPECT_TRUE(ds["data_x"].attrs().contains("item-attr"));
+  ds["data_x"].attrs().erase("item-attr");
+  EXPECT_FALSE(ds["data_x"].attrs().contains("item-attr"));
+}
+
+TEST(DatasetTest, set_erase_item_mask) {
+  DatasetFactory3D factory;
+  auto ds = factory.make();
+  const auto mask = Variable(ds.masks()["masks_x"]);
+  ds["data_x"].masks().set("item-mask", mask);
+  EXPECT_FALSE(ds.masks().contains("item-mask"));
+  EXPECT_TRUE(ds["data_x"].masks().contains("item-mask"));
+  ds["data_x"].masks().erase("item-mask");
+  EXPECT_FALSE(ds["data_x"].masks().contains("item-mask"));
 }
 
 struct DatasetRenameTest : public ::testing::Test {
