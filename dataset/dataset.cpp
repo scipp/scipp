@@ -834,21 +834,38 @@ const DataArrayView &DatasetView::operator[](const std::string &name) const {
   return getitem(*this, name);
 }
 
+// This is a member so it gets access to a private constructor of DataArrayView.
+template <class T>
+std::pair<boost::container::small_vector<DataArrayView, 8>, detail::slice_list>
+DatasetConstView::slice_items(const T &view, const Slice slice) {
+  const auto currentDims = view.dimensions();
+  core::expect::validSlice(currentDims, slice);
+  auto slices = view.slices();
+  slices.emplace_back(slice, currentDims.at(slice.dim()));
+  boost::container::small_vector<DataArrayView, 8> items;
+  for (const auto &item : view) {
+    if (item.dims().contains(slice.dim()))
+      items.emplace_back(DataArrayView(item.slice(slice)));
+    else
+      items.emplace_back(DataArrayView(std::decay_t<decltype(item)>(item)));
+  }
+  return std::pair{std::move(items), std::move(slices)};
+}
+
 /// Return a slice of the dataset view.
 DatasetConstView DatasetConstView::slice(const Slice s) const {
-  const auto dims = dimensions();
-  core::expect::validSlice(dims, s);
-  DatasetConstView sliced(*this);
-  sliced.m_slices.emplace_back(s, dims.at(s.dim()));
+  DatasetConstView sliced;
+  sliced.m_dataset = m_dataset;
+  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, s);
   return sliced;
 }
 
 /// Return a slice of the dataset view.
 DatasetView DatasetView::slice(const Slice s) const {
-  const auto dims = dimensions();
-  core::expect::validSlice(dims, s);
-  DatasetView sliced(*this);
-  sliced.m_slices.emplace_back(s, dims.at(s.dim()));
+  DatasetView sliced;
+  sliced.m_dataset = m_dataset;
+  sliced.m_mutableDataset = m_mutableDataset;
+  std::tie(sliced.m_items, sliced.m_slices) = slice_items(*this, s);
   return sliced;
 }
 
