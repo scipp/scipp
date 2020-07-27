@@ -4,6 +4,7 @@
 
 # Scipp imports
 from .._scipp import core as sc
+from .. import _utils as su
 from .sciplot import SciPlot
 from .tools import make_fake_coord
 
@@ -26,24 +27,24 @@ def plot(scipp_obj,
     from .dispatch import dispatch
 
     inventory = dict()
-    tp = type(scipp_obj)
-    if tp is sc.Dataset or tp is sc.DatasetView:
+    if su.is_dataset(scipp_obj):
         for name in sorted(scipp_obj.keys()):
             inventory[name] = scipp_obj[name]
-    elif tp is sc.Variable or tp is sc.VariableView:
+    elif su.is_variable(scipp_obj):
         coords = {}
         for dim, size in zip(scipp_obj.dims, scipp_obj.shape):
             coords[dim] = make_fake_coord(dim, size)
-        inventory[str(tp)] = sc.DataArray(data=scipp_obj, coords=coords)
-    elif tp is sc.DataArray or tp is sc.DataArrayView:
+        inventory[str(type(scipp_obj))] = sc.DataArray(data=scipp_obj,
+                                                       coords=coords)
+    elif su.is_data_array(scipp_obj):
         inventory[scipp_obj.name] = scipp_obj
-    elif tp is dict:
+    elif isinstance(scipp_obj, dict):
         inventory = scipp_obj
     else:
         raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
                            "a Dataset, a DataArray, a Variable (and their "
                            "respective proxies), and a dict of "
-                           "DataArrays.".format(tp))
+                           "DataArrays.".format(type(scipp_obj)))
 
     # Prepare container for matplotlib line parameters
     line_params = {

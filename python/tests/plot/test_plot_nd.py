@@ -38,28 +38,56 @@ def test_plot_sliceviewer_with_labels():
     plot(d, axes=['x', 'y', "somelabels"])
 
 
-def test_plot_sliceviewer_with_3d_projection():
+def test_plot_sliceviewer_with_binedges():
+    d = make_dense_dataset(ndim=3, binedges=True)
+    plot(d)
+
+
+def test_plot_projection_3d():
     d = make_dense_dataset(ndim=3)
     plot(d, projection="3d")
 
 
-@pytest.mark.skip(reason="3D plotting with labels is currently broken after"
-                  "dims API refactor.")
-def test_plot_sliceviewer_with_3d_projection_with_labels():
+def test_plot_projection_3d_with_labels():
     d = make_dense_dataset(ndim=3, labels=True)
     plot(d, projection="3d", axes=['x', 'y', "somelabels"])
 
 
-def test_plot_3d_with_filename():
-    d = make_dense_dataset(ndim=3)
-    plot(d, projection="3d", filename="a3dplot.html")
+def test_plot_projection_3d_with_bin_edges():
+    d = make_dense_dataset(ndim=3, binedges=True)
+    plot(d, projection="3d")
+
+
+def test_plot_projection_3d_with_masks():
+    d = make_dense_dataset(ndim=3, masks=True)
+    plot(d, projection="3d")
+
+
+def test_plot_projection_3d_with_vectors():
+    N = 1000
+    M = 100
+    theta = np.random.random(N) * np.pi
+    phi = np.random.random(N) * 2.0 * np.pi
+    r = 10.0 + (np.random.random(N) - 0.5)
+    x = r * np.sin(theta) * np.sin(phi)
+    y = r * np.sin(theta) * np.cos(phi)
+    z = r * np.cos(theta)
+    tof = np.arange(M).astype(np.float)
+    a = np.arange(M * N).reshape([M, N]) * np.sin(y)
+    d = sc.Dataset()
+    d.coords['xyz'] = sc.Variable(['xyz'],
+                                  values=np.array([x, y, z]).T,
+                                  dtype=sc.dtype.vector_3_float64)
+    d.coords['tof'] = sc.Variable(['tof'], values=tof)
+    d['a'] = sc.Variable(['tof', 'xyz'], values=a)
+    plot(d, projection="3d", positions="xyz")
 
 
 def test_plot_convenience_methods():
     d = make_dense_dataset(ndim=3)
-    sc.plot.image(d)
-    sc.plot.threeslice(d)
     sc.plot.superplot(d)
+    sc.plot.image(d)
+    sc.plot.scatter3d(d)
 
 
 @pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
@@ -106,8 +134,21 @@ def test_plot_4d_with_masks():
         dims=['pack', 'tube', 'straw', 'pixel'],
         values=np.random.rand(2, 8, 7, 256)),
                         coords={})
+    a = np.sin(np.linspace(0, 3.14, num=256))
+    data += sc.Variable(dims=['pixel'], values=a)
+    data.masks['tube_ends'] = sc.Variable(dims=['pixel'],
+                                          values=np.where(
+                                              a > 0.5, True, False))
+    plot(data)
+
+
+def test_plot_4d_with_masks_projection_3d():
+    data = sc.DataArray(data=sc.Variable(
+        dims=['pack', 'tube', 'straw', 'pixel'],
+        values=np.random.rand(2, 8, 7, 256)),
+                        coords={})
     data += sc.Variable(dims=['pixel'],
                         values=np.sin(np.linspace(0, 3.14, num=256)))
     data.masks['tube_ends'] = sc.Variable(dims=['pixel'],
                                           values=np.full(256, False))
-    plot(data)
+    plot(data, projection="3d")

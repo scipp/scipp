@@ -15,13 +15,13 @@ dependencies:
 
   # Run
   - appdirs
-  - ipyevents
-  - ipyvolume
   - ipywidgets
   - matplotlib
   - numpy >=1.15.3
+  - Pillow
   - python
   - python-configuration
+  - pythreejs
   - pyyaml
   - tbb
 
