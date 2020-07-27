@@ -615,6 +615,8 @@ def test_to_workspace_2d_handles_single_x_array():
         assert np.equal(ws.readE(i), np.sqrt(e_vals)).all()
 
 
+@pytest.mark.skipif(not mantid_is_available(),
+                    reason='Mantid framework is unavailable')
 def test_from_mask_workspace():
     from mantid.simpleapi import LoadMask
     from os import path
