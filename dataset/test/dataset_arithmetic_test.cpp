@@ -929,22 +929,6 @@ TEST(DatasetSetData, dense_to_empty) {
   EXPECT_EQ(dense["data_x"].data(), ds["data_x"].data());
 }
 
-TEST(DatasetSetData, labels) {
-  auto dense = datasetFactory().make();
-  dense.setCoord(
-      Dim("l"),
-      makeVariable<double>(
-          Dims{Dim::X}, Shape{dense.coords()[Dim::X].values<double>().size()}));
-  auto d = Dataset(dense.slice({Dim::Y, 0}));
-  dense.setData("data_x_1", dense["data_x"]);
-  EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
-
-  d.setCoord(Dim("l1"), makeVariable<double>(
-                            Dims{Dim::X},
-                            Shape{d.coords()[Dim::X].values<double>().size()}));
-  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), except::NotFoundError);
-}
-
 TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
   auto good = make_events_variable_with_variance<double>();
   set_events_values<double>(good, {{1, 2, 3}, {4}});
