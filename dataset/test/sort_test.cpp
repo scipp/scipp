@@ -52,12 +52,14 @@ TEST(SortTest, dataset_1d) {
                                        Values{3, 1, 2}, Variances{6, 4, 5}));
   expected.setData("b", makeVariable<double>(Dims{Dim::X}, Shape{3}, units::s,
                                              Values{0.3, 0.1, 0.2}));
-  expected.setData("scalar", makeVariable<double>(Values{1.2}));
   expected.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
                                                  units::m, Values{3, 1, 2}));
 
   const auto key =
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{10, 20, -1});
 
+  // Note that the result does not contain `scalar`. Is this a bug or a feature?
+  // - Should we throw if there is any scalar data/coord?
+  // - Should we preserve scalars?
   EXPECT_EQ(sort(d, key), expected);
 }
