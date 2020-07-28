@@ -31,24 +31,17 @@ constexpr auto contains = [](const auto &dims, const Dim dim) {
 template <class View, class Dims, class T1>
 auto makeViewItems(const Dims &dims, T1 &coords) {
   typename View::holder_type items;
-  for (auto &item : coords) {
-    // We preserve only items that are part of the space spanned by the
-    // provided parent dimensions.
-    auto contained = [&dims](const auto &item2) {
-      const auto &coordDims = item2.second.dims();
-      if constexpr (std::is_same_v<typename View::key_type, Dim>) {
-        const bool is_dimension_coord =
-            !contains_events(item2.second) && coordDims.contains(item2.first);
-        return coordDims.empty() || contains_events(item2.second) ||
-               (is_dimension_coord ? contains(dims, item2.first)
-                                   : contains(dims, coordDims.inner()));
-      } else
-        return coordDims.empty() || contains(dims, coordDims.inner());
-    };
-    if (contained(item)) {
+  // We preserve only items that are part of the space spanned by the
+  // provided parent dimensions.
+  auto contained = [&dims](const auto &item2) {
+    for (const Dim dim : item2.second.dims().labels())
+      if (!contains(dims, dim))
+        return false;
+    return true;
+  };
+  for (auto &item : coords)
+    if (contained(item))
       items.emplace(item.first, makeViewItem(item.second));
-    }
-  }
   return items;
 }
 
@@ -573,6 +566,34 @@ void DataArrayView::setUnit(const units::Unit unit) const {
   throw except::UnalignedError("Realigned data, cannot set unit.");
 }
 
+auto unaligned_by_dim_slice = [](const auto &item, const Dim dim) {
+  const auto &[key, var] = item;
+  if constexpr (std::is_same_v<std::decay_t<decltype(key)>, Dim>) {
+    const bool is_dimension_coord =
+        !contains_events(var) && var.dims().contains(key);
+    return !contains_events(var) && var.dims().contains(dim) &&
+           (is_dimension_coord ? key == dim : var.dims().inner() == dim);
+  } else {
+    return !contains_events(var) && var.dims().inner() == dim;
+  }
+};
+template <class Items>
+void erase_if_unaligned_by_dim_slice(Items &items, const Dim dim) {
+  for (auto it = items.begin(); it != items.end();) {
+    if (unaligned_by_dim_slice(*it, dim))
+      it = items.erase(it);
+    else
+      ++it;
+  }
+}
+
+template <class Items, class Slices>
+void erase_if_unaligned_by_dim_slices(Items &items, const Slices &slices) {
+  for (const auto &slice : slices)
+    if (!slice.first.isRange())
+      erase_if_unaligned_by_dim_slice(items, slice.first.dim());
+}
+
 template <class MapView> MapView DataArrayConstView::makeView() const {
   auto map_parent = [](const DataArrayConstView &self) -> auto & {
     if constexpr (std::is_same_v<MapView, CoordsConstView>)
@@ -582,7 +603,8 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
     else
       return self.m_data->second.attrs; // item attrs, not dataset attrs
   };
-  auto items = makeViewItems<MapView>(dims(), map_parent(*this));
+  auto items = makeViewItems<MapView>(parentDims(), map_parent(*this));
+  erase_if_unaligned_by_dim_slices(items, slices());
   if (!m_data->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
     decltype(*this) unaligned = m_data->second.unaligned->data;
@@ -614,7 +636,8 @@ template <class MapView> MapView DataArrayView::makeView() const {
     else
       return self.m_mutableData->second.attrs; // item attrs, not dataset attrs
   };
-  auto items = makeViewItems<MapView>(dims(), map_parent(*this));
+  auto items = makeViewItems<MapView>(parentDims(), map_parent(*this));
+  erase_if_unaligned_by_dim_slices(items, slices());
   const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
   DataArray *unaligned_ptr{nullptr};
   if (is_view_of_unaligned) {
@@ -788,9 +811,10 @@ DatasetView::DatasetView(Dataset &dataset)
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsConstView DatasetConstView::coords() const noexcept {
-  return CoordsConstView(
-      makeViewItems<CoordsConstView>(dimensions(), m_dataset->m_coords),
-      slices());
+  auto items = makeViewItems<CoordsConstView>(m_dataset->dimensions(),
+                                              m_dataset->m_coords);
+  erase_if_unaligned_by_dim_slices(items, slices());
+  return CoordsConstView(std::move(items), slices());
 }
 
 /// Return a view to all coordinates of the dataset slice.
@@ -798,10 +822,11 @@ CoordsConstView DatasetConstView::coords() const noexcept {
 /// This view includes "dimension-coordinates" as well as
 /// "non-dimension-coordinates" ("labels").
 CoordsView DatasetView::coords() const noexcept {
-  return CoordsView(
-      CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
-      makeViewItems<CoordsConstView>(dimensions(), m_mutableDataset->m_coords),
-      slices());
+  auto items = makeViewItems<CoordsConstView>(m_mutableDataset->dimensions(),
+                                              m_mutableDataset->m_coords);
+  erase_if_unaligned_by_dim_slices(items, slices());
+  return CoordsView(CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
+                    std::move(items), slices());
 }
 
 /// Return a const view to all attributes of the dataset slice.
