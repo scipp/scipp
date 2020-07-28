@@ -566,6 +566,7 @@ void DataArrayView::setUnit(const units::Unit unit) const {
   throw except::UnalignedError("Realigned data, cannot set unit.");
 }
 
+namespace {
 auto unaligned_by_dim_slice = [](const auto &item, const Dim dim) {
   const auto &[key, var] = item;
   if constexpr (std::is_same_v<std::decay_t<decltype(key)>, Dim>) {
@@ -574,9 +575,10 @@ auto unaligned_by_dim_slice = [](const auto &item, const Dim dim) {
     return !contains_events(var) && var.dims().contains(dim) &&
            (is_dimension_coord ? key == dim : var.dims().inner() == dim);
   } else {
-    return !contains_events(var) && var.dims().inner() == dim;
+    return false;
   }
 };
+
 template <class Items>
 void erase_if_unaligned_by_dim_slice(Items &items, const Dim dim) {
   for (auto it = items.begin(); it != items.end();) {
@@ -593,6 +595,7 @@ void erase_if_unaligned_by_dim_slices(Items &items, const Slices &slices) {
     if (!slice.first.isRange())
       erase_if_unaligned_by_dim_slice(items, slice.first.dim());
 }
+} // namespace
 
 template <class MapView> MapView DataArrayConstView::makeView() const {
   auto map_parent = [](const DataArrayConstView &self) -> auto & {
