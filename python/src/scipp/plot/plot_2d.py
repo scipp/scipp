@@ -101,6 +101,8 @@ class Slicer2d(Slicer):
         self.transp = False
         self.xlim_updated = False
         self.ylim_updated = False
+        self.current_lims = {"x": np.zeros(2), "y": np.zeros(2)}
+        self.output = widgets.Label()
         if resolution is not None:
             if isinstance(resolution, int):
                 self.image_resolution = {"x": resolution, "y": resolution}
@@ -154,7 +156,8 @@ class Slicer2d(Slicer):
         # Call update_slice once to make the initial image
         self.update_axes()
         self.update_slice(None)
-        self.vbox = widgets.VBox(self.vbox)
+        # self.output = widgets.Label()
+        self.vbox = widgets.VBox(self.vbox + [self.output])
         self.vbox.layout.align_items = 'center'
         self.members["fig"] = self.fig
         self.members["ax"] = self.ax
@@ -233,6 +236,8 @@ class Slicer2d(Slicer):
                 self.axparams[but_val]["dim"] = dim
 
         extent_array = np.array(list(self.extent.values())).flatten()
+        self.current_lims['x'] = extent_array[:2]
+        self.current_lims['y'] = extent_array[2:]
 
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled array to be used as image
@@ -430,46 +435,63 @@ class Slicer2d(Slicer):
             self.update_bins_from_axes_limits()
 
     def update_bins_from_axes_limits(self):
+        self.ax.set_title("haha")
         self.xlim_updated = False
         self.ylim_updated = False
-        xylims = {"x": self.ax.get_xlim(),
-                  "y": self.ax.get_ylim()}
-        self.ax.set_title("{}\n{}".format(str(xylims["x"]), str(xylims["y"])))
-        # self.fig.text(np.random.rand(), np.random.rand(), str(np.random.rand()))
-        for xy, param in self.axparams.items():
-            # Create coordinate axes for resampled array to be used as image
-            # offset = 2 * (xy == "y")
-            self.xyrebin[xy] = sc.Variable(
-                dims=[param["dim"]],
-                values=np.linspace(xylims[xy][0],
-                                   xylims[xy][1],
-                                   self.image_resolution[xy] + 1),
-                unit=self.slider_x[self.name][param["dim"]].unit)
+        self.output.value = "scipp"
+        xylims = {"x": np.array(self.ax.get_xlim()),
+                  "y": np.array(self.ax.get_ylim())}
 
-            # # # Create bin-edge coordinates in the case of non bin-edges, since
-            # # # rebin only accepts bin edges.
-            # # xydims = self.xyrebin[xy].dims
-            # # if not self.histograms[self.name][xydims[0]]:
-            # #     self.xyedges[xy] = sc.Variable(
-            # #         dims=xydims,
-            # #         values=centers_to_edges(
-            # #             self.slider_x[self.name][xydims[0]].values),
-            # #         unit=self.slider_x[self.name][xydims[0]].unit)
-            # # else:
-            # #     self.xyedges[xy] = self.slider_x[self.name][xydims[0]].astype(
-            # #         sc.dtype.float64)
+        dx = self.current_lims["x"][1] - self.current_lims["x"][0]
+        dy = self.current_lims["y"][1] - self.current_lims["y"][0]
+        self.output.value = str(np.array(xylims.values()).flatten())
+        # new_lims = np.array(list(xylims.values())).flatten()
+        diffx = np.abs(self.current_lims["x"] - xylims["x"]) / dx
+        diffy = np.abs(self.current_lims["y"] - xylims["y"]) / dy
+        diff = diffx.sum() + diffy.sum()
+        # diff = np.sum(
+        #     np.abs(self.current_lims - new_lims) /
+        #     np.abs(self.current_lims))
+        self.ax.set_title(str(diff))
+        # return
+        if diff > 0.1:
+            self.current_lims = xylims
+            # self.ax.set_title("{}\n{}".format(str(xylims["x"]), str(xylims["y"])))
+            # self.fig.text(np.random.rand(), np.random.rand(), str(np.random.rand()))
+            for xy, param in self.axparams.items():
+                # Create coordinate axes for resampled array to be used as image
+                # offset = 2 * (xy == "y")
+                self.xyrebin[xy] = sc.Variable(
+                    dims=[param["dim"]],
+                    values=np.linspace(xylims[xy][0],
+                                       xylims[xy][1],
+                                       self.image_resolution[xy] + 1),
+                    unit=self.slider_x[self.name][param["dim"]].unit)
 
-            # Pixel widths used for scaling before rebin step
-            self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
-                                self.xyedges[xy][param["dim"], :-1]) / (
-                                    self.xyrebin[xy][param["dim"], 1] -
-                                    self.xyrebin[xy][param["dim"], 0])
-            self.xywidth[xy].unit = sc.units.one
-        dslice = self.resample_image()
-        arr = dslice.values
-        if self.transp:
-            arr = arr.T
-        self.im["values"].set_data(arr)
+                # # # Create bin-edge coordinates in the case of non bin-edges, since
+                # # # rebin only accepts bin edges.
+                # # xydims = self.xyrebin[xy].dims
+                # # if not self.histograms[self.name][xydims[0]]:
+                # #     self.xyedges[xy] = sc.Variable(
+                # #         dims=xydims,
+                # #         values=centers_to_edges(
+                # #             self.slider_x[self.name][xydims[0]].values),
+                # #         unit=self.slider_x[self.name][xydims[0]].unit)
+                # # else:
+                # #     self.xyedges[xy] = self.slider_x[self.name][xydims[0]].astype(
+                # #         sc.dtype.float64)
+
+                # Pixel widths used for scaling before rebin step
+                self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
+                                    self.xyedges[xy][param["dim"], :-1]) / (
+                                        self.xyrebin[xy][param["dim"], 1] -
+                                        self.xyrebin[xy][param["dim"], 0])
+                self.xywidth[xy].unit = sc.units.one
+            dslice = self.resample_image()
+            arr = dslice.values
+            if self.transp:
+                arr = arr.T
+            self.im["values"].set_data(arr)
 
 
 
@@ -507,12 +529,13 @@ class Slicer2d(Slicer):
 
         # Scale by bin width and then rebin in both directions
         # if is_not_linspace["x"]:
+        self.output.value = str(self.xyrebin["x"])
         dslice *= self.xywidth["x"]#*self.xywidth["y"]
         dslice = sc.rebin(dslice, self.xyrebin["x"].dims[0],
                               self.xyrebin["x"])
-        # if is_not_linspace["y"]:
-        dslice *= self.xywidth["y"]
-        dslice = sc.rebin(dslice, self.xyrebin["y"].dims[0],
-                              self.xyrebin["y"])
+        # # if is_not_linspace["y"]:
+        # dslice *= self.xywidth["y"]
+        # dslice = sc.rebin(dslice, self.xyrebin["y"].dims[0],
+        #                       self.xyrebin["y"])
 
         return dslice
