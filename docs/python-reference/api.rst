@@ -29,8 +29,9 @@ General
    :toctree: ../generated
 
    abs
-   concatenate
    choose
+   collapse
+   concatenate
    dot
    filter
    histogram
@@ -40,11 +41,16 @@ General
    rebin
    reciprocal
    reshape
+   slices
    sort
    sqrt
+   values
+   variances
 
 Comparison
 ~~~~~~~~~~
+
+Comparison operators compare element-wise and *ignore variances*.
 
 .. autosummary::
    :toctree: ../generated
@@ -99,6 +105,9 @@ Geometric
 Group-by (split-apply-combine)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+Reduction
+---------
+
 .. autosummary::
    :toctree: ../generated
 
@@ -118,6 +127,15 @@ Group-by (split-apply-combine)
    GroupByDataset.min
    GroupByDataset.sum
 
+Other
+-----
+
+.. autosummary::
+   :toctree: ../generated
+
+   GroupByDataArray.copy
+   GroupByDataset.copy
+
 Counts
 ~~~~~~
 
@@ -130,3 +148,12 @@ This can be converted into a counts (frequency) density, e.g., for visualization
 
    counts_to_density
    density_to_counts
+
+Compatibility
+~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   to_dict
+   from_dict

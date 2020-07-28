@@ -111,6 +111,18 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
   groupBy.def("max", &GroupBy<T>::max, py::arg("dim"),
               py::call_guard<py::gil_scoped_release>(),
               docstring_groupby<T>("max").c_str());
+
+  groupBy.def(
+      "copy",
+      [](const GroupBy<T> &self, const scipp::index &group) {
+        return self.copy(group);
+      },
+      py::arg("group"),
+      Docstring()
+          .description("Extract group as new data array or dataset.")
+          .rtype<T>()
+          .template param<scipp::index>("group", "Index of groupy to extract")
+          .c_str());
 }
 
 void init_groupby(py::module &m) {

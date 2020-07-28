@@ -6,6 +6,8 @@
 #include "make_events.h"
 #include "test_macros.h"
 
+#include "scipp/core/element/arg_list.h"
+
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
@@ -992,6 +994,15 @@ TEST(TransformFlagsTest, variance_on_arg) {
                        var_no_variance, var_no_variance, all_args_with_flag)));
 }
 
+TEST(TransformFlagsTest, no_out_variance) {
+  constexpr auto op =
+      overloaded{transform_flags::no_out_variance, element::arg_list<double>,
+                 [](const auto) { return true; },
+                 [](const units::Unit &) { return units::one; }};
+  const auto var = makeVariable<double>(Values{1.0}, Variances{1.0});
+  EXPECT_EQ(transform(var, op), true * units::one);
+}
+
 TEST(TransformFlagsTest, variance_on_arg_in_place) {
   auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
   auto var_no_variance = makeVariable<double>(Values{1});
@@ -1070,5 +1081,5 @@ TEST(TransformFlagsTest, expect_all_or_none_have_variance_in_place) {
 
 TEST(TransformEigenTest, is_eigen_type_test) {
   EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Vector3d>);
-  EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Quaterniond>);
+  EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Matrix3d>);
 }

@@ -659,6 +659,11 @@ def test_sqrt_out():
     assert_export(sc.sqrt, var, var)
 
 
+def test_values_variances():
+    assert_export(sc.values, sc.Variable())
+    assert_export(sc.variances, sc.Variable())
+
+
 def test_sum():
     var = sc.Variable(dims=['x', 'y'],
                       values=np.array([[0.1, 0.3], [0.2, 0.6]]),
@@ -984,16 +989,6 @@ def test_z():
     assert_export(sc.geometry.z, pos=var)
 
 
-def test_rotate():
-    var = sc.Variable()
-    assert_export(sc.geometry.rotate, pos=var, rot=var)
-
-
-def test_rotate_out():
-    var = sc.Variable()
-    assert_export(sc.geometry.rotate, pos=var, rot=var, out=var)
-
-
 def test_less():
     var = sc.Variable()
     assert_export(sc.less, x=var, y=var)
@@ -1022,3 +1017,27 @@ def test_equal():
 def test_not_equal():
     var = sc.Variable()
     assert_export(sc.not_equal, x=var, y=var)
+
+
+def test_radd_int():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3])
+    assert (var + 1).dtype == var.dtype
+    assert (1 + var).dtype == var.dtype
+
+
+def test_rsub_int():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3])
+    assert (var - 1).dtype == var.dtype
+    assert (1 - var).dtype == var.dtype
+
+
+def test_rmul_int():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3])
+    assert (var * 1).dtype == var.dtype
+    assert (1 * var).dtype == var.dtype
+
+
+def test_rtruediv_int():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3])
+    assert (var / 1).dtype == var.dtype
+    assert (1 / var).dtype == var.dtype

@@ -7,6 +7,7 @@
 #include "scipp/common/overloaded.h"
 #include "scipp/common/span.h"
 #include "scipp/core/element/arg_list.h"
+#include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
@@ -40,5 +41,25 @@ template <class T> void zero(const core::ValueAndVariance<span<T>> &data) {
   zero(data.value);
   zero(data.variance);
 }
+
+constexpr auto values =
+    overloaded{transform_flags::no_out_variance,
+               core::element::arg_list<double, float>, [](const auto &x) {
+                 if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+                   return x.value;
+                 else
+                   return x;
+               }};
+
+constexpr auto variances = overloaded{
+    transform_flags::no_out_variance, core::element::arg_list<double, float>,
+    transform_flags::expect_variance_arg<0>,
+    [](const auto &x) {
+      if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+        return x.variance;
+      else
+        return x; // unreachable but required for instantiation
+    },
+    [](const units::Unit &u) { return u * u; }};
 
 } // namespace scipp::core::element

@@ -14,14 +14,14 @@
 /// operations for Variable.
 namespace scipp::core::element {
 
-constexpr auto comparison =
-    overloaded{arg_list<double, float, int64_t, int32_t>,
-               transform_flags::expect_no_variance_arg<0>,
-               transform_flags::expect_no_variance_arg<1>,
-               [](const units::Unit &x, const units::Unit &y) {
-                 expect::equals(x, y);
-                 return units::dimensionless;
-               }};
+constexpr auto comparison = overloaded{
+    transform_flags::no_out_variance,
+    arg_list<double, float, int64_t, int32_t, std::tuple<int64_t, int32_t>,
+             std::tuple<int32_t, int64_t>>,
+    [](const units::Unit &x, const units::Unit &y) {
+      expect::equals(x, y);
+      return units::dimensionless;
+    }};
 
 constexpr auto less = overloaded{
     comparison,

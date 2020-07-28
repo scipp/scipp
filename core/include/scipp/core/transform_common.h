@@ -67,6 +67,11 @@ static constexpr auto dimensionless_unit_check_return =
 /// operator.
 namespace transform_flags {
 /// Add this to overloaded operator to indicate that the operation does not
+/// return data with variances, regardless of whether inputs have variances.
+static constexpr auto no_out_variance = []() {};
+using no_out_variance_t = decltype(no_out_variance);
+
+/// Add this to overloaded operator to indicate that the operation does not
 /// support variances in the specified argument.
 template <int N> static constexpr auto expect_no_variance_arg = []() {};
 template <int N>

@@ -66,7 +66,7 @@ auto apply(const DType dtype, Args &&... args) {
                  scipp::core::time_point, event_list<double>, event_list<float>,
                  event_list<int64_t>, event_list<int32_t>,
                  event_list<scipp::core::time_point>, Eigen::Vector3d,
-                 Eigen::Quaterniond>{},
+                 Eigen::Matrix3d>{},
       dtype, std::forward<Args>(args)...);
 }
 

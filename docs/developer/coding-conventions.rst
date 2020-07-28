@@ -17,3 +17,8 @@ Integer types
   These may be 32 bit or 64 bit depending on platform and compiler.
   Instead, use ``int32_t`` and ``int64_t``.
   Variable width ``int`` is acceptable in loops with known small extent, e.g., in ``for (int i=0; i<4; ++i)``.
+
+Testing
+-------
+
+As a general rule all new functionality and bug fixes should be accompanied with sufficient unit tests to demonstrate that the feature or fix works as intended.

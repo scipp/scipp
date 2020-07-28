@@ -82,7 +82,7 @@ void init_element_array_view(py::module &m) {
   declare_span<DataArray>(m, "DataArray");
   declare_span<Dataset>(m, "Dataset");
   declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
-  declare_span<Eigen::Quaterniond>(m, "Eigen_Quaterniond");
+  declare_span<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
   declare_span<event_list<double>>(m, "event_double");
   declare_span<event_list<float>>(m, "event_float");
   declare_span<event_list<int64_t>>(m, "event_int64_t");
@@ -100,6 +100,6 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<DataArray>(m, "DataArray");
   declare_ElementArrayView<Dataset>(m, "Dataset");
   declare_ElementArrayView<Eigen::Vector3d>(m, "Eigen_Vector3d");
-  declare_ElementArrayView<Eigen::Quaterniond>(m, "Eigen_Quaterniond");
   declare_ElementArrayView<event_list<scipp::core::time_point>>(m, "time_point");
+  declare_ElementArrayView<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
 }

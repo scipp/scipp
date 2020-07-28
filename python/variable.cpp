@@ -5,6 +5,8 @@
 
 #include "scipp/units/unit.h"
 
+#include "scipp/common/numeric.h"
+
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
@@ -62,43 +64,40 @@ void bind_init_0D_native_python_types(py::class_<Variable> &c) {
 }
 
 void bind_init_0D_numpy_types(py::class_<Variable> &c) {
-  c.def(
-      py::init([](py::buffer &b, const std::optional<py::buffer> &v,
-                  const units::Unit &unit, py::object &dtype) {
-        py::buffer_info info = b.request();
-        if (info.ndim == 0) {
-          auto arr = py::array(b);
-          auto varr = v ? std::optional{py::array(*v)} : std::nullopt;
-          return doMakeVariable({}, arr, varr, unit, dtype);
-        } else if (info.ndim == 1 &&
-                   scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
-          return do_init_0D<Eigen::Vector3d>(
-              b.cast<Eigen::Vector3d>(),
-              v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
-              unit);
-        } else if (info.ndim == 1 &&
-                   scipp_dtype(dtype) == core::dtype<scipp::core::time_point>) {
-          return do_init_0D<scipp::core::time_point>(
-              b.cast<scipp::core::time_point>(),
-              v ? std::optional(v->cast<scipp::core::time_point>())
-                : std::nullopt,
-              unit);
-
-        } else if (info.ndim == 1 &&
-                   scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
-          return do_init_0D<Eigen::Quaterniond>(
-              Eigen::Quaterniond(b.cast<std::vector<double>>().data()),
-              v ? std::optional(
-                      Eigen::Quaterniond(v->cast<std::vector<double>>().data()))
-                : std::nullopt,
-              unit);
-        } else {
-          throw scipp::except::VariableError(
-              "Wrong overload for making 0D variable.");
-        }
-      }),
-      py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
-      py::arg("unit") = units::one, py::arg("dtype") = py::none());
+  c.def(py::init([](py::buffer &b, const std::optional<py::buffer> &v,
+                    const units::Unit &unit, py::object &dtype) {
+          py::buffer_info info = b.request();
+          if (info.ndim == 0) {
+            auto arr = py::array(b);
+            auto varr = v ? std::optional{py::array(*v)} : std::nullopt;
+            return doMakeVariable({}, arr, varr, unit, dtype);
+          } else if (info.ndim == 1 &&
+                     scipp_dtype(dtype) == core::dtype<Eigen::Vector3d>) {
+            return do_init_0D<Eigen::Vector3d>(
+                b.cast<Eigen::Vector3d>(),
+                v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
+                unit);
+          } else if (info.ndim == 1 &&
+                     scipp_dtype(dtype) ==
+                         core::dtype<scipp::core::time_point>) {
+            return do_init_0D<scipp::core::time_point>(
+                b.cast<scipp::core::time_point>(),
+                v ? std::optional(v->cast<scipp::core::time_point>())
+                  : std::nullopt,
+                unit);
+          } else if (info.ndim == 2 &&
+                     scipp_dtype(dtype) == core::dtype<Eigen::Matrix3d>) {
+            return do_init_0D<Eigen::Matrix3d>(
+                b.cast<Eigen::Matrix3d>(),
+                v ? std::optional(v->cast<Eigen::Matrix3d>()) : std::nullopt,
+                unit);
+          } else {
+            throw scipp::except::VariableError(
+                "Wrong overload for making 0D variable.");
+          }
+        }),
+        py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
+        py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
 void bind_init_list(py::class_<Variable> &c) {
@@ -124,13 +123,6 @@ void bind_init_0D_list_eigen(py::class_<Variable> &c) {
           return do_init_0D<Eigen::Vector3d>(
               Eigen::Vector3d(value.cast<std::vector<double>>().data()),
               variance ? std::optional(variance->cast<Eigen::Vector3d>())
-                       : std::nullopt,
-              unit);
-        } else if (scipp_dtype(dtype) == core::dtype<Eigen::Quaterniond>) {
-          return do_init_0D<Eigen::Quaterniond>(
-              Eigen::Quaterniond(value.cast<std::vector<double>>().data()),
-              variance ? std::optional(Eigen::Quaterniond(
-                             variance->cast<std::vector<double>>().data()))
                        : std::nullopt,
               unit);
         } else {
@@ -165,7 +157,7 @@ of variances.)");
   bind_init_0D<std::string>(variable);
   bind_init_0D<scipp::core::time_point>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
-  bind_init_0D<Eigen::Quaterniond>(variable);
+  bind_init_0D<Eigen::Matrix3d>(variable);
   variable.def(py::init<const VariableView &>())
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
@@ -187,18 +179,33 @@ of variances.)");
            [](Variable &self, py::dict) { return Variable(self); },
            py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
-      .def("__radd__",
-           [](Variable &a, double &b) { return a + b * units::one; },
-           py::is_operator())
-      .def("__rsub__",
-           [](Variable &a, double &b) { return b * units::one - a; },
-           py::is_operator())
-      .def("__rmul__",
-           [](Variable &a, double &b) { return a * (b * units::one); },
-           py::is_operator())
-      .def("__rtruediv__",
-           [](Variable &a, double &b) { return (b * units::one) / a; },
-           py::is_operator())
+      .def(
+          "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
+          py::is_operator())
+      .def(
+          "__radd__", [](Variable &a, int &b) { return a + b * units::one; },
+          py::is_operator())
+      .def(
+          "__rsub__", [](Variable &a, double &b) { return b * units::one - a; },
+          py::is_operator())
+      .def(
+          "__rsub__", [](Variable &a, int &b) { return b * units::one - a; },
+          py::is_operator())
+      .def(
+          "__rmul__",
+          [](Variable &a, double &b) { return a * (b * units::one); },
+          py::is_operator())
+      .def(
+          "__rmul__", [](Variable &a, int &b) { return a * (b * units::one); },
+          py::is_operator())
+      .def(
+          "__rtruediv__",
+          [](Variable &a, double &b) { return (b * units::one) / a; },
+          py::is_operator())
+      .def(
+          "__rtruediv__",
+          [](Variable &a, int &b) { return (b * units::one) / a; },
+          py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
   bind_init_list(variable);
@@ -321,4 +328,21 @@ Mostly equivalent to Variable, see there for details.)");
                           const std::vector<scipp::index> &>(&split),
         py::call_guard<py::gil_scoped_release>(),
         "Split a Variable along a given Dimension.");
+
+  m.def(
+      "is_linspace",
+      [](const VariableConstView &x) {
+        if (x.dims().ndim() != 1)
+          throw scipp::except::VariableError(
+              "is_linspace can only be called on a 1D Variable.");
+        else
+          return scipp::numeric::is_linspace(x.template values<double>());
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Check if the values of a variable are evenly spaced.")
+          .returns("Returns True if the variable contains regularly spaced "
+                   "values, False otherwise.")
+          .rtype("bool")
+          .c_str());
 }

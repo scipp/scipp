@@ -13,6 +13,7 @@
 #include <limits>
 #include <vector>
 
+using namespace scipp;
 using namespace scipp::core::element;
 
 TEST(ElementUtilTest, convertMaskedToZero_masks_special_vals) {
@@ -75,4 +76,13 @@ TEST(ElementUtilTest, convertToIsoDate_test) {
   scipp::core::time_point date2(ts2);
   std::string unit2("s");
   EXPECT_EQ(to_iso_date(date2, unit2), "2020-07-27T10:41:11\n");
+}
+
+TEST(ElementUtilTest, values_variances) {
+  ValueAndVariance x{1.0, 2.0};
+  EXPECT_EQ(values(units::m), units::m);
+  EXPECT_EQ(values(x), 1.0);
+  EXPECT_EQ(values(1.2), 1.2);
+  EXPECT_EQ(variances(units::m), units::m * units::m);
+  EXPECT_EQ(variances(x), 2.0);
 }

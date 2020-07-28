@@ -3,9 +3,9 @@
 # @author Neil Vaytet
 
 from .. import config
-from .tools import parse_params
-from ..utils import name_with_unit, value_to_string
-from .._scipp.core import combine_masks, Variable, Dim, dtype
+from .tools import parse_params, make_fake_coord
+from .._utils import name_with_unit, value_to_string
+from .._scipp.core import combine_masks, Dim, dtype
 
 # Other imports
 import numpy as np
@@ -16,8 +16,6 @@ class Slicer:
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
-                 values=None,
-                 variances=None,
                  masks=None,
                  cmap=None,
                  log=None,
@@ -72,25 +70,16 @@ class Slicer:
         # Record which variables are histograms along which dimension
         self.histograms = {}
 
+        self.slider_axformatter = {}
+        self.slider_axlocator = {}
+
         for name, array in self.scipp_obj_dict.items():
 
             self.data_array = array
             self.name = name
 
-            self.params["values"][name] = parse_params(params=values,
-                                                       globs=globs,
+            self.params["values"][name] = parse_params(globs=globs,
                                                        variable=array.data)
-
-            self.params["variances"][name] = {"show": False}
-            if array.variances is not None:
-                self.params["variances"][name].update(
-                    parse_params(params=variances,
-                                 defaults={"show": False},
-                                 globs=globs,
-                                 variable=Variable(dims=array.dims,
-                                                   values=np.sqrt(
-                                                       array.variances),
-                                                   unit=array.unit)))
 
             self.params["masks"][name] = parse_params(params=masks,
                                                       defaults={
@@ -118,6 +107,9 @@ class Slicer:
             self.slider_ticks[name] = {}
             # Store labels for sliders if any
             self.slider_labels[name] = {}
+            # Store axis tick formatters and locators
+            self.slider_axformatter[name] = {}
+            self.slider_axlocator[name] = {}
 
             # Process axes dimensions
             if axes is None:
@@ -129,9 +121,11 @@ class Slicer:
 
             # Iterate through axes and collect dimensions
             for ax in axes:
-                dim, var, ticks = self.axis_label_and_ticks(ax, array, name)
+                dim, var, formatter, locator = self.axis_label_and_ticks(
+                    ax, array, name)
                 self.slider_x[name][dim] = var
-                self.slider_ticks[name][dim] = ticks
+                self.slider_axformatter[name][dim] = formatter
+                self.slider_axlocator[name][dim] = locator
                 self.slider_nx[name][dim] = self.shapes[name][dim]
 
             # Save information on histograms
@@ -253,55 +247,62 @@ class Slicer:
 
     def axis_label_and_ticks(self, axis, data_array, name):
         """
-        Get dimensions and label (if present) from requested axis
+        Get dimensions and label (if present) from requested axis.
+        Also retun axes tick formatters and locators.
         """
-        ticks = None
+
+        # Create some default axis tick formatter, depending on whether log
+        # for that axis will be True or False
+        formatter = {
+            False: ticker.ScalarFormatter(),
+            True: ticker.LogFormatterSciNotation()
+        }
+        locator = {False: ticker.AutoLocator(), True: ticker.LogLocator()}
+
         dim = axis
         # Convert to Dim object?
         if isinstance(dim, str):
             dim = Dim(dim)
-        make_fake_coord = False
-        fake_unit = None
-        if not data_array.coords.__contains__(dim):
-            make_fake_coord = True
-        else:
-            tp = data_array.coords[dim].dtype
-            if tp == dtype.vector_3_float64:
-                make_fake_coord = True
-                ticks = {
-                    "formatter":
-                    lambda x: "(" + ",".join(
-                        [value_to_string(item, precision=2)
-                         for item in x]) + ")"
-                }
-            elif tp == dtype.string:
-                make_fake_coord = True
-                ticks = {"formatter": lambda x: x}
-            if make_fake_coord:
-                fake_unit = data_array.coords[dim].unit
-                ticks["coord"] = data_array.coords[dim]
-        if make_fake_coord:
-            args = {"values": np.arange(self.shapes[name][dim])}
-            if fake_unit is not None:
-                args["unit"] = fake_unit
-            var = Variable([dim], **args)
-        else:
-            var = data_array.coords[dim]
-        return dim, var, ticks
 
-    def get_custom_ticks(self, ax, dim, xy="x"):
-        """
-        Return a list of string to be used as axis tick labels in the case of
-        strings or vectors as one axis coordinate.
-        """
-        getticks = getattr(ax, "get_{}ticks".format(xy))
-        xticks = getticks()
-        if xticks[2] - xticks[1] < 1:
-            ax.xaxis.set_major_locator(ticker.MultipleLocator(1.0))
-            xticks = getticks()
-        new_ticks = [""] * len(xticks)
-        for i, x in enumerate(xticks):
-            if x >= 0 and x < self.slider_nx[self.name][dim]:
-                new_ticks[i] = self.slider_ticks[self.name][dim]["formatter"](
-                    self.slider_ticks[self.name][dim]["coord"].values[int(x)])
-        return new_ticks
+        if dim in data_array.coords:
+
+            dim_coord_dim = data_array.coords[dim].dims[0]
+            tp = data_array.coords[dim].dtype
+
+            if tp == dtype.vector_3_float64:
+                var = make_fake_coord(dim,
+                                      self.shapes[name][dim],
+                                      unit=data_array.coords[dim].unit)
+                form = ticker.FuncFormatter(lambda val, pos: "(" + ",".join([
+                    value_to_string(item, precision=2) for item in self.
+                    scipp_obj_dict[name].coords[dim].values[int(val)]
+                ]) + ")" if (int(val) >= 0 and int(val) < self.shapes[name][
+                    dim]) else "")
+                formatter.update({False: form, True: form})
+                locator[False] = ticker.MaxNLocator(integer=True)
+
+            elif tp == dtype.string:
+                var = make_fake_coord(dim,
+                                      self.shapes[name][dim],
+                                      unit=data_array.coords[dim].unit)
+                form = ticker.FuncFormatter(
+                    lambda val, pos: self.scipp_obj_dict[name].coords[
+                        dim].values[int(val)] if (int(val) >= 0 and int(
+                            val) < self.shapes[name][dim]) else "")
+                formatter.update({False: form, True: form})
+                locator[False] = ticker.MaxNLocator(integer=True)
+
+            elif dim != dim_coord_dim:  # non-dimension coordinate
+                var = data_array.coords[dim_coord_dim]
+                form = ticker.FuncFormatter(lambda val, pos: value_to_string(
+                    data_array.coords[dim].values[np.abs(data_array.coords[
+                        dim_coord_dim].values - val).argmin()]))
+                formatter.update({False: form, True: form})
+            else:
+                var = data_array.coords[dim]
+
+        else:
+            # dim not found in data_array.coords
+            var = make_fake_coord(dim, self.shapes[name][dim])
+
+        return dim, var, formatter, locator

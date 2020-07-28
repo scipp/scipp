@@ -157,15 +157,22 @@ template <class T> void bind_max(py::module &m) {
 
 template <class T> Docstring docstring_bool(const std::string op) {
   return Docstring()
-      .description("Element-wise " + op + " over the specified dimension.")
-      .raises("If the dimension does not exist, or if the dtype is not bool.")
+      .description(
+          "Element-wise " + op +
+          " over the specified dimension or all dimensions if not provided.")
+      .raises("If the input dimension to reduce (optional) does not exist, or "
+              "if the dtype is not bool.")
       .returns("The " + op + " combination of the input values.")
       .rtype<T>()
       .template param<T>("x", "Data to reduce.")
-      .param("dim", "Dimension to reduce.", "Dim");
+      .param("dim", "Dimension to reduce (optional).", "Dim");
 }
 
 template <class T> void bind_all(py::module &m) {
+  m.def(
+      "all", [](const typename T::const_view_type &x) { return all(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      docstring_bool<T>("AND").c_str());
   m.def(
       "all",
       [](const typename T::const_view_type &x, const Dim dim) {
@@ -176,6 +183,10 @@ template <class T> void bind_all(py::module &m) {
 }
 
 template <class T> void bind_any(py::module &m) {
+  m.def(
+      "any", [](const typename T::const_view_type &x) { return any(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>(),
+      docstring_bool<T>("OR").c_str());
   m.def(
       "any",
       [](const typename T::const_view_type &x, const Dim dim) {

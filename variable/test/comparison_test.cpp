@@ -72,12 +72,15 @@ TEST(ComparisonTest, tolerance_type_mismatch) {
   EXPECT_NO_THROW(is_approx(a, b, 0.0f));
 }
 
-TEST(ComparisonTest, less_variances_test) {
-  const auto a = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
-                                     Variances{1.0, 1.0});
-  const auto b = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{0.0, 3.0},
-                                     Variances{1.0, 1.0});
-  EXPECT_THROW(less(a, b), std::runtime_error);
+TEST(ComparisonTest, variances_test) {
+  const auto a = makeVariable<float>(Values{1.0}, Variances{1.0});
+  const auto b = makeVariable<float>(Values{2.0}, Variances{2.0});
+  EXPECT_EQ(less(a, b), true * units::one);
+  EXPECT_EQ(less_equal(a, b), true * units::one);
+  EXPECT_EQ(greater(a, b), false * units::one);
+  EXPECT_EQ(greater_equal(a, b), false * units::one);
+  EXPECT_EQ(equal(a, b), false * units::one);
+  EXPECT_EQ(not_equal(a, b), true * units::one);
 }
 
 TEST(ComparisonTest, less_dtypes_test) {

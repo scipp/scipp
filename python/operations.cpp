@@ -9,6 +9,7 @@
 #include "scipp/dataset/shape.h"
 #include "scipp/dataset/sort.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/util.h"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -133,4 +134,18 @@ void init_operations(py::module &m) {
 
   bind_contains_events<Variable>(m);
   bind_contains_events<DataArray>(m);
+
+  m.def("values", variable::values,
+        Docstring()
+            .description("Return the variable without variances.")
+            .seealso(":py:func:`scipp.variances`")
+            .c_str(),
+        py::call_guard<py::gil_scoped_release>());
+  m.def("variances", variable::variances,
+        Docstring()
+            .description("Return variable containing the variances of the "
+                         "input as values.")
+            .seealso(":py:func:`scipp.values`")
+            .c_str(),
+        py::call_guard<py::gil_scoped_release>());
 }

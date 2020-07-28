@@ -78,7 +78,6 @@ struct is_eigen_type<Eigen::Matrix<T, Rows, Cols>> : std::true_type {};
 template <class T, int Rows, int Cols>
 struct is_eigen_type<event_list<Eigen::Matrix<T, Rows, Cols>>>
     : std::true_type {};
-template <> struct is_eigen_type<Eigen::Quaterniond> : std::true_type {};
 template <class T>
 inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
 
@@ -302,7 +301,9 @@ struct TransformEvents {
   constexpr auto operator()(const Op &op, const Ts &... args) const {
     event_list<std::invoke_result_t<Op, core::detail::element_type_t<Ts>...>>
         vals(check_and_get_size(args...));
-    if constexpr ((has_variances_v<Ts> || ...)) {
+    if constexpr (!std::is_base_of_v<core::transform_flags::no_out_variance_t,
+                                     Op> &&
+                  (has_variances_v<Ts> || ...)) {
       auto vars(vals);
       ValuesAndVariances out{vals, vars};
       transform_elements(op, out, maybe_broadcast(args)...);
@@ -333,7 +334,10 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
         if constexpr (check_all_or_none_variances<Op, decltype(args)...>) {
           throw except::VariancesError(
               "Expected either all or none of inputs to have variances.");
-        } else if constexpr ((is_ValuesAndVariances_v<
+        } else if constexpr (!std::is_base_of_v<
+                                 core::transform_flags::no_out_variance_t,
+                                 Op> &&
+                             (is_ValuesAndVariances_v<
                                   std::decay_t<std::decay_t<decltype(args)>>> ||
                               ...)) {
           auto out_var = out.variances();
@@ -398,9 +402,11 @@ template <class Op> struct Transform {
   template <class... Ts> Variable operator()(Ts &&... handles) const {
     const auto dims = merge(handles.dims()...);
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
+    constexpr bool out_variances =
+        !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op>;
     auto volume = dims.volume();
     Variable out =
-        (handles.hasVariances() || ...)
+        out_variances && (handles.hasVariances() || ...)
             ? makeVariable<Out>(Dimensions{dims},
                                 Values(volume, core::default_init_elements),
                                 Variances(volume, core::default_init_elements))

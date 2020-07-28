@@ -70,11 +70,10 @@ def test_plot_1d_two_entries_hide_variances():
     d["Background"] = sc.Variable(['tof'],
                                   values=2.0 * np.random.rand(50),
                                   unit=sc.units.counts)
-    plot(d, variances=False)
+    plot(d, errorbars=False)
     # When variances are not present, the plot does not fail, is silently does
     # not show variances
-    print(d)
-    plot(d, variances={"Sample": False, "Background": True})
+    plot(d, errorbars={"Sample": False, "Background": True})
 
 
 def test_plot_1d_three_entries_with_labels():
@@ -108,6 +107,19 @@ def test_plot_collapse():
 def test_plot_sliceviewer_with_1d_projection():
     d = make_dense_dataset(ndim=3)
     plot(d, projection="1d")
+
+
+def test_plot_sliceviewer_with_1d_projection_with_nans():
+    d = make_dense_dataset(ndim=3, binedges=True, variances=True)
+    d['Sample'].values = np.where(d['Sample'].values < -0.8, np.nan,
+                                  d['Sample'].values)
+    d['Sample'].variances = np.where(d['Sample'].values < 0., np.nan,
+                                     d['Sample'].variances)
+    p = plot(d, projection='1d')
+    # Move the sliders
+    p['tof.x.y.counts']['widgets']['sliders']['tof'].value = 10
+    p['tof.x.y.counts']['widgets']['sliders']['x'].value = 10
+    p['tof.x.y.counts']['widgets']['sliders']['y'].value = 10
 
 
 def test_plot_1d_events_data_with_bool_bins():

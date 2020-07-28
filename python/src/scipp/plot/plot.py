@@ -5,10 +5,10 @@
 # Scipp imports
 from .._scipp import core as sc
 from .sciplot import SciPlot
+from .tools import make_fake_coord
 
 
 def plot(scipp_obj,
-         collapse=None,
          projection=None,
          axes=None,
          color=None,
@@ -18,12 +18,11 @@ def plot(scipp_obj,
          bins=None,
          **kwargs):
     """
-    Wrapper function to plot any kind of dataset
+    Wrapper function to plot any kind of scipp object.
     """
 
     # Delayed imports
     from .tools import get_line_param
-    from .plot_collapse import plot_collapse
     from .dispatch import dispatch
 
     inventory = dict()
@@ -32,7 +31,10 @@ def plot(scipp_obj,
         for name in sorted(scipp_obj.keys()):
             inventory[name] = scipp_obj[name]
     elif tp is sc.Variable or tp is sc.VariableView:
-        inventory[str(tp)] = sc.DataArray(data=scipp_obj)
+        coords = {}
+        for dim, size in zip(scipp_obj.dims, scipp_obj.shape):
+            coords[dim] = make_fake_coord(dim, size)
+        inventory[str(tp)] = sc.DataArray(data=scipp_obj, coords=coords)
     elif tp is sc.DataArray or tp is sc.DataArrayView:
         inventory[scipp_obj.name] = scipp_obj
     elif tp is dict:
@@ -121,19 +123,13 @@ def plot(scipp_obj,
     # Plot all the subsets
     output = SciPlot()
     for key, val in tobeplotted.items():
-        if collapse is not None:
-            output[key] = plot_collapse(data_array=val["scipp_obj_dict"][key],
-                                        dim=collapse,
-                                        axes=val["axes"],
-                                        **kwargs)
-        else:
-            output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                                   name=key,
-                                   ndim=val["ndims"],
-                                   projection=projection,
-                                   axes=val["axes"],
-                                   mpl_line_params=val["mpl_line_params"],
-                                   bins=bins,
-                                   **kwargs)
+        output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
+                               name=key,
+                               ndim=val["ndims"],
+                               projection=projection,
+                               axes=val["axes"],
+                               mpl_line_params=val["mpl_line_params"],
+                               bins=bins,
+                               **kwargs)
 
     return output

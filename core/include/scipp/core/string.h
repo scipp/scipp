@@ -52,12 +52,11 @@ std::string to_string(const MutableView<T, U> &mutableView) {
   return ss.str();
 }
 
-template <class T> std::string array_to_string(const T &arr);
-template <class T> std::string array_to_string(const T &arr, const std::string &unit);
+template <class T> std::string array_to_string(const T &arr, const std::string &unit="");
 
 const std::string to_iso_date(const scipp::core::time_point &tem, const std::string &unit);
 
-template <class T> std::string element_to_string(const T &item, const std::string &unit) {
+template <class T> std::string element_to_string(const T &item, const std::string &unit="") {
   using std::to_string;
   if constexpr (std::is_same_v<T, std::string>)
     return {'"' + item + "\", "};
@@ -69,17 +68,14 @@ template <class T> std::string element_to_string(const T &item, const std::strin
   } else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
     return {"(" + to_string(item[0]) + ", " + to_string(item[1]) + ", " +
             to_string(item[2]) + "), "};
-  else if constexpr (std::is_same_v<T, Eigen::Quaterniond>)
-    return {"(" + to_string(item.x()) + ", " + to_string(item.y()) + ", " +
-            to_string(item.z()) + ", " + to_string(item.w()) + "), "};
+  else if constexpr (std::is_same_v<T, Eigen::Matrix3d>)
+    return {"(" + element_to_string(Eigen::Vector3d(item.row(0))) + ", " +
+            element_to_string(Eigen::Vector3d(item.row(1))) + ", " +
+            element_to_string(Eigen::Vector3d(item.row(2))) + "), "};
   else if constexpr (is_events_v<T>)
     return array_to_string(item) + ", ";
   else
     return to_string(item) + ", ";
-}
-
-template <class T> std::string element_to_string(const T &item) {
-  return element_to_string(item, std::string(""));
 }
 
 template <class T> std::string array_to_string(const T &arr, const std::string &unit) {
@@ -97,10 +93,6 @@ template <class T> std::string array_to_string(const T &arr, const std::string &
   s.resize(s.size() - 2);
   s += "]";
   return s;
-}
-
-template <class T> std::string array_to_string(const T &arr) {
-  return array_to_string(arr, std::string(""));
 }
 
 /// Return the global dtype name registry instrance

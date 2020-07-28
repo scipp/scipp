@@ -71,7 +71,7 @@ public:
         m_targetDimensions(targetDimensions) {
     expectCanBroadcastFromTo(other.m_targetDimensions, m_targetDimensions);
     m_dimensions = other.m_dimensions;
-    if (begin != 0 || dim != Dim::Invalid)
+    if (dim != Dim::Invalid)
       m_offset += begin * m_dimensions.offset(dim);
     // See implementation of ViewIndex regarding this relabeling.
     for (const auto label : m_dimensions.labels())
@@ -127,6 +127,9 @@ public:
     return {m_variable + m_offset, m_targetDimensions, m_dimensions, size()};
   }
   auto &operator[](const scipp::index i) const { return *(begin() + i); }
+
+  auto &front() const { return *begin(); }
+  auto &back() const { return *(begin() + (size() - 1)); }
 
   const T *data() const { return m_variable + m_offset; }
   T *data() { return m_variable + m_offset; }
