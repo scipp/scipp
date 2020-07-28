@@ -136,10 +136,11 @@ void bind_init_0D_list_eigen(py::class_<Variable> &c) {
 
 template <class T, class... Ignored>
 void bind_astype(py::class_<T, Ignored...> &c) {
-  c.def("astype",
-        [](const T &self, const DType type) { return astype(self, type); },
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
+  c.def(
+      "astype",
+      [](const T &self, const DType type) { return astype(self, type); },
+      py::call_guard<py::gil_scoped_release>(),
+      R"(
       Converts a Variable to a different type.
 
       :raises: If the variable cannot be converted to the requested dtype.
@@ -171,33 +172,42 @@ of variances.)");
            py::arg("dtype") = py::none())
       .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
            "Rename dimensions.")
-      .def("copy", [](const Variable &self) { return self; },
+      .def(
+          "copy", [](const Variable &self) { return self; },
            py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
-      .def("__copy__", [](Variable &self) { return Variable(self); },
+      .def(
+          "__copy__", [](Variable &self) { return Variable(self); },
            py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
-      .def("__deepcopy__",
+      .def(
+          "__deepcopy__",
            [](Variable &self, py::dict) { return Variable(self); },
            py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
-      .def("__radd__",
-           [](Variable &a, double &b) { return a + b * units::one; },
+      .def(
+          "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
            py::is_operator())
-      .def("__radd__", [](Variable &a, int &b) { return a + b * units::one; },
+      .def(
+          "__radd__", [](Variable &a, int &b) { return a + b * units::one; },
            py::is_operator())
-      .def("__rsub__",
-           [](Variable &a, double &b) { return b * units::one - a; },
+      .def(
+          "__rsub__", [](Variable &a, double &b) { return b * units::one - a; },
            py::is_operator())
-      .def("__rsub__", [](Variable &a, int &b) { return b * units::one - a; },
+      .def(
+          "__rsub__", [](Variable &a, int &b) { return b * units::one - a; },
            py::is_operator())
-      .def("__rmul__",
+      .def(
+          "__rmul__",
            [](Variable &a, double &b) { return a * (b * units::one); },
            py::is_operator())
-      .def("__rmul__", [](Variable &a, int &b) { return a * (b * units::one); },
+      .def(
+          "__rmul__", [](Variable &a, int &b) { return a * (b * units::one); },
            py::is_operator())
-      .def("__rtruediv__",
+      .def(
+          "__rtruediv__",
            [](Variable &a, double &b) { return (b * units::one) / a; },
            py::is_operator())
-      .def("__rtruediv__",
+      .def(
+          "__rtruediv__",
            [](Variable &a, int &b) { return (b * units::one) / a; },
            py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
@@ -214,7 +224,8 @@ of variances.)");
 
   py::class_<VariableConstView>(m, "VariableConstView")
       .def(py::init<const Variable &>())
-      .def("copy", [](const VariableConstView &self) { return Variable(self); },
+      .def(
+          "copy", [](const VariableConstView &self) { return Variable(self); },
            "Return a (deep) copy.")
       .def("__copy__",
            [](const VariableConstView &self) { return Variable(self); })
@@ -229,13 +240,16 @@ View for Variable, representing a sliced or transposed view onto a variable;
 Mostly equivalent to Variable, see there for details.)");
   variableView.def_buffer(&make_py_buffer_info);
   variableView.def(py::init<Variable &>())
-      .def("__radd__",
+      .def(
+          "__radd__",
            [](VariableView &a, double &b) { return a + b * units::one; },
            py::is_operator())
-      .def("__rsub__",
+      .def(
+          "__rsub__",
            [](VariableView &a, double &b) { return b * units::one - a; },
            py::is_operator())
-      .def("__rmul__",
+      .def(
+          "__rmul__",
            [](VariableView &a, double &b) { return a * (b * units::one); },
            py::is_operator());
 
