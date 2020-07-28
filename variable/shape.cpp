@@ -116,10 +116,6 @@ Variable reverse(Variable var, const Dim dim) {
   return var;
 }
 
-VariableConstView reshape(const Variable &var, const Dimensions &dims) {
-  return {var, dims};
-}
-
 VariableView reshape(Variable &var, const Dimensions &dims) {
   return {var, dims};
 }
@@ -140,10 +136,6 @@ Variable reshape(const VariableConstView &view, const Dimensions &dims) {
 
 VariableView transpose(Variable &var, const std::vector<Dim> &dims) {
   return transpose(VariableView(var), dims);
-}
-
-VariableConstView transpose(const Variable &var, const std::vector<Dim> &dims) {
-  return transpose(VariableConstView(var), dims);
 }
 
 Variable transpose(Variable &&var, const std::vector<Dim> &dims) {
