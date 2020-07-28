@@ -94,7 +94,7 @@ def open_hdf5(filename):
     import h5py
     with h5py.File(filename, 'r') as f:
         io = HDF5IO()
-        if not 'scipp-version' in f.attrs:
+        if 'scipp-version' not in f.attrs:
             raise RuntimeError(
                 "This does not look like an HDF5 file written by scipp.")
         if f.attrs['type'] == 'DataArray':
