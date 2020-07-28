@@ -140,27 +140,6 @@ void bind_astype(py::class_<T, Ignored...> &c) {
         :rtype: Variable)");
 }
 
-template <class T> void bind_reshape(pybind11::module &mod) {
-  mod.def(
-      "reshape",
-      [](const T &self, const std::vector<Dim> &labels,
-         const py::tuple &shape) {
-        Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-        return reshape(self, dims);
-      },
-      py::arg("x"), py::arg("dims"), py::arg("shape"),
-      Docstring()
-          .description("Reshape a variable.")
-          .raises("If the volume of the old shape is not equal to the volume "
-                  "of the new shape.")
-          .returns("New variable with requested dimension labels and shape.")
-          .rtype("Variable")
-          .param("x", "Variable to reshape.", "Variable.")
-          .param("dims", "List of new dimensions.", "list")
-          .param("shape", "New extents in each dimension.", "list")
-          .c_str());
-}
-
 void init_variable(py::module &m) {
   py::class_<Variable> variable(m, "Variable",
                                 R"(
@@ -306,8 +285,6 @@ Mostly equivalent to Variable, see there for details.)");
   py::implicitly_convertible<Variable, VariableConstView>();
   py::implicitly_convertible<Variable, VariableView>();
 
-  bind_reshape<Variable>(m);
-  bind_reshape<VariableView>(m);
   m.def(
       "filter", py::overload_cast<const Variable &, const Variable &>(&filter),
       py::arg("x"), py::arg("filter"), py::call_guard<py::gil_scoped_release>(),
