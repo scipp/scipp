@@ -208,7 +208,11 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
 
 template <class T, class... Ignored>
 void bind_data_array_properties(py::class_<T, Ignored...> &c) {
-  c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
+  if constexpr (std::is_same_v<T, DataArray>)
+    c.def_property("name", &T::name, &T::setName,
+                   R"(The name of the held data.)");
+  else
+    c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def(
       "copy", [](const T &self) { return DataArray(self); },
@@ -334,13 +338,15 @@ void init_dataset(py::module &m) {
   dataArray.def(py::init([](VariableConstView data,
                             std::map<Dim, VariableConstView> coords,
                             std::map<std::string, VariableConstView> masks,
-                            std::map<std::string, VariableConstView> attrs) {
-                  return DataArray{Variable{data}, coords, masks, attrs};
+                            std::map<std::string, VariableConstView> attrs,
+                            const std::string &name) {
+                  return DataArray{Variable{data}, coords, masks, attrs, name};
                 }),
                 py::arg("data") = Variable{},
                 py::arg("coords") = std::map<Dim, VariableConstView>{},
                 py::arg("masks") = std::map<std::string, VariableConstView>{},
-                py::arg("attrs") = std::map<std::string, VariableConstView>{});
+                py::arg("attrs") = std::map<std::string, VariableConstView>{},
+                py::arg("name") = std::string{});
 
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>());

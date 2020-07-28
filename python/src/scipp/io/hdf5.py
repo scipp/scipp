@@ -73,6 +73,7 @@ class HDF5IO:
     def _read_data_array(self, group):
         from .._scipp import core as sc
         contents = dict()
+        contents['name'] = group.attrs['name']
         contents['data'] = self._read_variable(group['data'])
         for category in ['coords', 'masks', 'attrs']:
             contents[category] = dict()

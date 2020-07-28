@@ -44,6 +44,11 @@ def test_init():
     assert len(d.masks) == 1
 
 
+def test_init_with_name():
+    a = sc.DataArray(data=1.0 * sc.units.m, name='abc')
+    assert a.name == 'abc'
+
+
 def test_init_from_variable_views():
     var = sc.Variable(['x'], values=np.arange(5))
     a = sc.DataArray(data=var,
@@ -93,6 +98,13 @@ def test_labels():
     # Deprecated at point of use
     with pytest.raises(RuntimeError):
         da.labels
+
+
+def test_name():
+    a = sc.DataArray(data=1.0 * sc.units.m)
+    assert a.name == ''
+    a.name = 'abc'
+    assert a.name == 'abc'
 
 
 def test_eq():
