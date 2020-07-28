@@ -316,7 +316,7 @@ class Slicer:
                 formatter.update({False: form, True: form})
                 locator[False] = ticker.MaxNLocator(integer=True)
 
-            elif dim != dim_coord_dim:  # non-dimension coordinate
+            elif dim != dim_coord_dim and len(data_array.coords[dim].dims) == 1:  # non-dimension coordinate
                 var = data_array.coords[dim_coord_dim]
                 form = ticker.FuncFormatter(lambda val, pos: value_to_string(
                     data_array.coords[dim].values[np.abs(data_array.coords[
