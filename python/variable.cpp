@@ -174,42 +174,42 @@ of variances.)");
            "Rename dimensions.")
       .def(
           "copy", [](const Variable &self) { return self; },
-           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def(
           "__copy__", [](Variable &self) { return Variable(self); },
-           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def(
           "__deepcopy__",
-           [](Variable &self, py::dict) { return Variable(self); },
-           py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
+          [](Variable &self, py::dict) { return Variable(self); },
+          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
       .def(
           "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
-           py::is_operator())
+          py::is_operator())
       .def(
           "__radd__", [](Variable &a, int &b) { return a + b * units::one; },
-           py::is_operator())
+          py::is_operator())
       .def(
           "__rsub__", [](Variable &a, double &b) { return b * units::one - a; },
-           py::is_operator())
+          py::is_operator())
       .def(
           "__rsub__", [](Variable &a, int &b) { return b * units::one - a; },
-           py::is_operator())
+          py::is_operator())
       .def(
           "__rmul__",
-           [](Variable &a, double &b) { return a * (b * units::one); },
-           py::is_operator())
+          [](Variable &a, double &b) { return a * (b * units::one); },
+          py::is_operator())
       .def(
           "__rmul__", [](Variable &a, int &b) { return a * (b * units::one); },
-           py::is_operator())
+          py::is_operator())
       .def(
           "__rtruediv__",
-           [](Variable &a, double &b) { return (b * units::one) / a; },
-           py::is_operator())
+          [](Variable &a, double &b) { return (b * units::one) / a; },
+          py::is_operator())
       .def(
           "__rtruediv__",
-           [](Variable &a, int &b) { return (b * units::one) / a; },
-           py::is_operator())
+          [](Variable &a, int &b) { return (b * units::one) / a; },
+          py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
   bind_init_list(variable);
@@ -226,7 +226,7 @@ of variances.)");
       .def(py::init<const Variable &>())
       .def(
           "copy", [](const VariableConstView &self) { return Variable(self); },
-           "Return a (deep) copy.")
+          "Return a (deep) copy.")
       .def("__copy__",
            [](const VariableConstView &self) { return Variable(self); })
       .def("__deepcopy__",
@@ -242,16 +242,16 @@ Mostly equivalent to Variable, see there for details.)");
   variableView.def(py::init<Variable &>())
       .def(
           "__radd__",
-           [](VariableView &a, double &b) { return a + b * units::one; },
-           py::is_operator())
+          [](VariableView &a, double &b) { return a + b * units::one; },
+          py::is_operator())
       .def(
           "__rsub__",
-           [](VariableView &a, double &b) { return b * units::one - a; },
-           py::is_operator())
+          [](VariableView &a, double &b) { return b * units::one - a; },
+          py::is_operator())
       .def(
           "__rmul__",
-           [](VariableView &a, double &b) { return a * (b * units::one); },
-           py::is_operator());
+          [](VariableView &a, double &b) { return a * (b * units::one); },
+          py::is_operator());
 
   bind_astype(variable);
   bind_astype(variableView);
