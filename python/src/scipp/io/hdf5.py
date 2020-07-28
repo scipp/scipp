@@ -18,10 +18,14 @@ class HDF5IO:
         return self._units[dset.attrs['unit']]
 
     def _write_variable(self, group, var, name):
+        from .._scipp import core as sc
+        if var.dtype in [sc.dtype.string, sc.dtype.PyObject]:
+            print(f'Writing with dtype={var.dtype} not implemented, skipping.')
+            return
         group = group.create_group(name)
         dset = group.create_dataset('values', data=var.values)
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
-        dset.attrs['dtype'] = str(var.values.dtype)
+        dset.attrs['dtype'] = str(var.dtype)
         dset.attrs['unit'] = str(var.unit)
         if var.variances is not None:
             variances = group.create_dataset('variances', data=var.variances)
@@ -80,18 +84,18 @@ class HDF5IO:
 
 def data_array_to_hdf5(self, filename):
     import h5py
-    f = h5py.File(filename, 'w')
-    io = HDF5IO()
-    io._write_data_array(f, self)
+    with h5py.File(filename, 'w') as f:
+        io = HDF5IO()
+        io._write_data_array(f, self)
 
 
 def open_hdf5(filename):
     import h5py
-    f = h5py.File(filename, 'r')
-    io = HDF5IO()
-    if not 'scipp-version' in f.attrs:
-        raise RuntimeError(
-            "This does not look like an HDF5 file written by scipp.")
-    if f.attrs['type'] == 'DataArray':
-        return io._read_data_array(f)
-    raise RuntimeError(f"Unknown data type {f.attrs['type']})")
+    with h5py.File(filename, 'r') as f:
+        io = HDF5IO()
+        if not 'scipp-version' in f.attrs:
+            raise RuntimeError(
+                "This does not look like an HDF5 file written by scipp.")
+        if f.attrs['type'] == 'DataArray':
+            return io._read_data_array(f)
+        raise RuntimeError(f"Unknown data type {f.attrs['type']})")
