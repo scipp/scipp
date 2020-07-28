@@ -805,9 +805,8 @@ TEST(VariableTest, reshape_temporary) {
                                            units::m, Values{6, 8, 10, 12},
                                            Variances{22, 24, 26, 28}));
 
-  // This is not a temporary, we get a view into `var`.
   EXPECT_EQ(typeid(decltype(reshape(std::move(var), {}))),
-            typeid(VariableConstView));
+            typeid(Variable));
 }
 
 TEST(VariableTest, reshape_fail) {
