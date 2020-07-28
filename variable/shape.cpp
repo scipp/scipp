@@ -152,15 +152,11 @@ Variable transpose(Variable &&var, const std::vector<Dim> &dims) {
 
 VariableConstView transpose(const VariableConstView &view,
                             const std::vector<Dim> &dims) {
-  auto transposed(view);
-  transposed.m_view = view.data().transpose(dims);
-  return transposed;
+  return view.transpose(dims);
 }
 
 VariableView transpose(const VariableView &view, const std::vector<Dim> &dims) {
-  auto transposed(view);
-  transposed.m_view = view.data().transpose(dims);
-  return transposed;
+  return view.transpose(dims);
 }
 
 } // namespace scipp::variable
