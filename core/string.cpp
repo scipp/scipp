@@ -2,11 +2,12 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <chrono>
 #include <iomanip>
 #include <sstream>
-#include <chrono>
 
 #include "scipp/core/dimensions.h"
+#include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/core/string.h"
 
@@ -67,12 +68,14 @@ const std::string to_iso_date(const scipp::core::time_point &item,
     ss << std::put_time(&tm, "%FT%T.") << std::setw(9) << std::setfill('0')
        << ns << std::endl;
     return ss.str();
-  } else {
+  } else if (unit == "s") {
     auto tm = *std::gmtime(&ts);
     std::stringstream ss;
     ss << std::put_time(&tm, "%FT%T") << std::endl;
     return ss.str();
-  }
+  } else
+    throw except::UnitError(
+        "Time point should only have time units (ns or s).");
 }
 
 } // namespace scipp::core

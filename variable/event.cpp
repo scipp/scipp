@@ -25,10 +25,9 @@ bool contains_events(const VariableConstView &var) {
 namespace event {
 
 void append(const VariableView &a, const VariableConstView &b) {
-  transform_in_place<
-      core::pair_self_t<event_list<double>, event_list<float>,
-                        event_list<int64_t>, event_list<int32_t>,
-                        event_list<scipp::core::time_point>>>(
+  transform_in_place<core::pair_self_t<event_list<double>, event_list<float>,
+                                       event_list<int64_t>, event_list<int32_t>,
+                                       event_list<scipp::core::time_point>>>(
       a, b,
       overloaded{[](auto &a_, const auto &b_) {
                    a_.insert(a_.end(), b_.begin(), b_.end());

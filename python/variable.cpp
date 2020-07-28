@@ -140,11 +140,11 @@ void bind_astype(py::class_<T, Ignored...> &c) {
         [](const T &self, const DType type) { return astype(self, type); },
         py::call_guard<py::gil_scoped_release>(),
         R"(
-        Converts a Variable to a different type.
+      Converts a Variable to a different type.
 
-        :raises: If the variable cannot be converted to the requested dtype.
-        :return: New Variable with specified dtype.
-        :rtype: Variable)");
+      :raises: If the variable cannot be converted to the requested dtype.
+      :return: New Variable with specified dtype.
+      :rtype: Variable)");
 }
 
 void init_variable(py::module &m) {
@@ -179,33 +179,27 @@ of variances.)");
            [](Variable &self, py::dict) { return Variable(self); },
            py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
-      .def(
-          "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
-          py::is_operator())
-      .def(
-          "__radd__", [](Variable &a, int &b) { return a + b * units::one; },
-          py::is_operator())
-      .def(
-          "__rsub__", [](Variable &a, double &b) { return b * units::one - a; },
-          py::is_operator())
-      .def(
-          "__rsub__", [](Variable &a, int &b) { return b * units::one - a; },
-          py::is_operator())
-      .def(
-          "__rmul__",
-          [](Variable &a, double &b) { return a * (b * units::one); },
-          py::is_operator())
-      .def(
-          "__rmul__", [](Variable &a, int &b) { return a * (b * units::one); },
-          py::is_operator())
-      .def(
-          "__rtruediv__",
-          [](Variable &a, double &b) { return (b * units::one) / a; },
-          py::is_operator())
-      .def(
-          "__rtruediv__",
-          [](Variable &a, int &b) { return (b * units::one) / a; },
-          py::is_operator())
+      .def("__radd__",
+           [](Variable &a, double &b) { return a + b * units::one; },
+           py::is_operator())
+      .def("__radd__", [](Variable &a, int &b) { return a + b * units::one; },
+           py::is_operator())
+      .def("__rsub__",
+           [](Variable &a, double &b) { return b * units::one - a; },
+           py::is_operator())
+      .def("__rsub__", [](Variable &a, int &b) { return b * units::one - a; },
+           py::is_operator())
+      .def("__rmul__",
+           [](Variable &a, double &b) { return a * (b * units::one); },
+           py::is_operator())
+      .def("__rmul__", [](Variable &a, int &b) { return a * (b * units::one); },
+           py::is_operator())
+      .def("__rtruediv__",
+           [](Variable &a, double &b) { return (b * units::one) / a; },
+           py::is_operator())
+      .def("__rtruediv__",
+           [](Variable &a, int &b) { return (b * units::one) / a; },
+           py::is_operator())
       .def("__repr__", [](const Variable &self) { return to_string(self); });
 
   bind_init_list(variable);
@@ -286,23 +280,24 @@ Mostly equivalent to Variable, see there for details.)");
   py::implicitly_convertible<Variable, VariableConstView>();
   py::implicitly_convertible<Variable, VariableView>();
 
-  m.def("reshape",
-        [](const VariableView &self, const std::vector<Dim> &labels,
-           const py::tuple &shape) {
-          Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-          return self.reshape(dims);
-        },
-        py::arg("x"), py::arg("dims"), py::arg("shape"),
-        Docstring()
-            .description("Reshape a variable.")
-            .raises("If the volume of the old shape is not equal to the volume "
-                    "of the new shape.")
-            .returns("New variable with requested dimension labels and shape.")
-            .rtype("Variable")
-            .param("x", "Variable to reshape.", "Variable.")
-            .param("dims", "List of new dimensions.", "list")
-            .param("shape", "New extents in each dimension.", "list")
-            .c_str());
+  m.def(
+      "reshape",
+      [](const VariableView &self, const std::vector<Dim> &labels,
+         const py::tuple &shape) {
+        Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
+        return self.reshape(dims);
+      },
+      py::arg("x"), py::arg("dims"), py::arg("shape"),
+      Docstring()
+          .description("Reshape a variable.")
+          .raises("If the volume of the old shape is not equal to the volume "
+                  "of the new shape.")
+          .returns("New variable with requested dimension labels and shape.")
+          .rtype("Variable")
+          .param("x", "Variable to reshape.", "Variable.")
+          .param("dims", "List of new dimensions.", "list")
+          .param("shape", "New extents in each dimension.", "list")
+          .c_str());
 
   m.def(
       "filter", py::overload_cast<const Variable &, const Variable &>(&filter),

@@ -100,6 +100,7 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<DataArray>(m, "DataArray");
   declare_ElementArrayView<Dataset>(m, "Dataset");
   declare_ElementArrayView<Eigen::Vector3d>(m, "Eigen_Vector3d");
-  declare_ElementArrayView<event_list<scipp::core::time_point>>(m, "time_point");
+  declare_ElementArrayView<event_list<scipp::core::time_point>>(m,
+                                                                "time_point");
   declare_ElementArrayView<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
 }

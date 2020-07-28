@@ -12,7 +12,8 @@ class time_point {
 public:
   constexpr time_point() noexcept = default;
   constexpr time_point(const int64_t &d) noexcept : m_duration(d){};
-  constexpr time_point(const int32_t &d) noexcept : m_duration(static_cast<int64_t>(d)){};
+  constexpr time_point(const int32_t &d) noexcept
+      : m_duration(static_cast<int64_t>(d)){};
 
   int64_t time_since_epoch() const noexcept { return m_duration; };
 

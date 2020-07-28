@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <chrono>
 #include <map>
 #include <string>
 
@@ -52,11 +51,14 @@ std::string to_string(const MutableView<T, U> &mutableView) {
   return ss.str();
 }
 
-template <class T> std::string array_to_string(const T &arr, const std::string &unit="");
+template <class T>
+std::string array_to_string(const T &arr, const std::string &unit = "");
 
-const std::string to_iso_date(const scipp::core::time_point &tem, const std::string &unit);
+const std::string to_iso_date(const scipp::core::time_point &tem,
+                              const std::string &unit);
 
-template <class T> std::string element_to_string(const T &item, const std::string &unit="") {
+template <class T>
+std::string element_to_string(const T &item, const std::string &unit = "") {
   using std::to_string;
   if constexpr (std::is_same_v<T, std::string>)
     return {'"' + item + "\", "};
@@ -78,7 +80,8 @@ template <class T> std::string element_to_string(const T &item, const std::strin
     return to_string(item) + ", ";
 }
 
-template <class T> std::string array_to_string(const T &arr, const std::string &unit) {
+template <class T>
+std::string array_to_string(const T &arr, const std::string &unit) {
   const auto size = scipp::size(arr);
   if (size == 0)
     return std::string("[]");

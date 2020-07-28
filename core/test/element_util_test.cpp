@@ -2,9 +2,9 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 
 #include "scipp/core/element/util.h"
+#include "scipp/core/string.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
-#include "scipp/core/string.h"
 
 #include "fix_typed_test_suite_warnings.h"
 
@@ -64,18 +64,6 @@ TEST(ElementUtilTest, convertMaskedToZero_accepts_all_types) {
       std::is_same_v<decltype(convertMaskedToZero(int32_t{}, true)), int32_t>);
   static_assert(
       std::is_same_v<decltype(convertMaskedToZero(int64_t{}, true)), int64_t>);
-}
-
-TEST(ElementUtilTest, convertToIsoDate_test) {
-  int64_t ts(1595846471200000011);
-  scipp::core::time_point date(ts);
-  std::string unit("ns");
-  EXPECT_EQ(to_iso_date(date, unit), "2020-07-27T10:41:11.200000011\n");
-
-  int64_t ts2(1595846471);
-  scipp::core::time_point date2(ts2);
-  std::string unit2("s");
-  EXPECT_EQ(to_iso_date(date2, unit2), "2020-07-27T10:41:11\n");
 }
 
 TEST(ElementUtilTest, values_variances) {

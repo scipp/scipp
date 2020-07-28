@@ -164,8 +164,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return {Getter::template get<Eigen::Vector3d>(view)};
     if (type == dtype<Eigen::Matrix3d>)
       return {Getter::template get<Eigen::Matrix3d>(view)};
-   if (type == dtype<event_list<scipp::core::time_point>>)
-      return {Getter::template get<event_list<scipp::core::time_point>>(view)};      
+    if (type == dtype<event_list<scipp::core::time_point>>)
+      return {Getter::template get<event_list<scipp::core::time_point>>(view)};
     if (type == dtype<scipp::python::PyObject>)
       return {Getter::template get<scipp::python::PyObject>(view)};
     throw std::runtime_error("not implemented for this type.");
