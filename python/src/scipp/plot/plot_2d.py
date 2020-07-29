@@ -98,10 +98,12 @@ class Slicer2d(Slicer):
         self.global_vmin = np.Inf
         self.global_vmax = np.NINF
         self.vslice = None
+        self.mslice = None
         self.transp = False
         self.xlim_updated = False
         self.ylim_updated = False
         self.current_lims = {"x": np.zeros(2), "y": np.zeros(2)}
+        self.button_dims = [None, None]
         self.output = widgets.Label()
         if resolution is not None:
             if isinstance(resolution, int):
@@ -296,9 +298,9 @@ class Slicer2d(Slicer):
         """
         self.vslice = self.data_array
         if self.params["masks"][self.name]["show"]:
-            mslice = self.masks
+            self.mslice = self.masks
         # Slice along dimensions with active sliders
-        button_dims = [None, None]
+        # button_dims = [None, None]
         for dim, val in self.slider.items():
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
@@ -307,16 +309,16 @@ class Slicer2d(Slicer):
                 # At this point, after masks were combined, all their
                 # dimensions should be contained in the data_array.dims.
                 if self.params["masks"][
-                        self.name]["show"] and dim in mslice.dims:
-                    mslice = mslice[val.dim, val.value]
+                        self.name]["show"] and dim in self.mslice.dims:
+                    self.mslice = self.mslice[val.dim, val.value]
             else:
                 # Get the dimensions of the dimension-coordinates, since
                 # buttons can contain non-dimension coordinates
-                button_dims[self.buttons[dim].value.lower() ==
+                self.button_dims[self.buttons[dim].value.lower() ==
                             "x"] = self.slider_x[self.name][val.dim].dims[0]
 
         # Check if dimensions of arrays agree, if not, plot the transpose
-        self.transp = self.vslice.dims != button_dims
+        self.transp = self.vslice.dims != self.button_dims
 
         # In the case of unaligned data, we may want to auto-scale the colorbar
         # as we slice through dimensions. Colorbar limits are allowed to grow
@@ -335,72 +337,76 @@ class Slicer2d(Slicer):
             "y": True
         }
 
-        dslice = self.resample_image()
-        # if np.any(list(is_not_linspace.values())):
-        #     # Make a new slice with bin edges and counts (for rebin), and with
-        #     # non-dimension coordinates if requested.
-        #     xy = "xy"
-        #     vslice = sc.DataArray(coords={
-        #         self.xyedges["x"].dims[0]: self.xyedges["x"],
-        #         self.xyedges["y"].dims[0]: self.xyedges["y"]
-        #     },
-        #                           data=sc.Variable(dims=[
-        #                               self.xyedges[xy[not transp]].dims[0],
-        #                               self.xyedges[xy[transp]].dims[0]
-        #                           ],
-        #                                            values=vslice.values,
-        #                                            unit=sc.units.counts))
+        # dslice = self.resample_image()
+        # # if np.any(list(is_not_linspace.values())):
+        # #     # Make a new slice with bin edges and counts (for rebin), and with
+        # #     # non-dimension coordinates if requested.
+        # #     xy = "xy"
+        # #     vslice = sc.DataArray(coords={
+        # #         self.xyedges["x"].dims[0]: self.xyedges["x"],
+        # #         self.xyedges["y"].dims[0]: self.xyedges["y"]
+        # #     },
+        # #                           data=sc.Variable(dims=[
+        # #                               self.xyedges[xy[not transp]].dims[0],
+        # #                               self.xyedges[xy[transp]].dims[0]
+        # #                           ],
+        # #                                            values=vslice.values,
+        # #                                            unit=sc.units.counts))
 
-        #     # Also include the masks
-        #     if self.params["masks"][self.name]["show"]:
-        #         mslice_dims = []
-        #         for dim in mslice.dims:
-        #             if dim == button_dims[0]:
-        #                 mslice_dims.append(self.xyedges["y"].dims[0])
-        #             elif dim == button_dims[1]:
-        #                 mslice_dims.append(self.xyedges["x"].dims[0])
-        #             else:
-        #                 mslice_dims.append(dim)
-        #         vslice.masks["all"] = sc.Variable(dims=mslice_dims,
-        #                                           values=mslice.values)
+        # #     # Also include the masks
+        # #     if self.params["masks"][self.name]["show"]:
+        # #         mslice_dims = []
+        # #         for dim in mslice.dims:
+        # #             if dim == button_dims[0]:
+        # #                 mslice_dims.append(self.xyedges["y"].dims[0])
+        # #             elif dim == button_dims[1]:
+        # #                 mslice_dims.append(self.xyedges["x"].dims[0])
+        # #             else:
+        # #                 mslice_dims.append(dim)
+        # #         vslice.masks["all"] = sc.Variable(dims=mslice_dims,
+        # #                                           values=mslice.values)
 
-        # # Scale by bin width and then rebin in both directions
-        # if is_not_linspace["x"]:
-        #     vslice *= self.xywidth["x"]
-        #     vslice = sc.rebin(vslice, self.xyrebin["x"].dims[0],
-        #                       self.xyrebin["x"])
-        # if is_not_linspace["y"]:
-        #     vslice *= self.xywidth["y"]
-        #     vslice = sc.rebin(vslice, self.xyrebin["y"].dims[0],
-        #                       self.xyrebin["y"])
+        # # # Scale by bin width and then rebin in both directions
+        # # if is_not_linspace["x"]:
+        # #     vslice *= self.xywidth["x"]
+        # #     vslice = sc.rebin(vslice, self.xyrebin["x"].dims[0],
+        # #                       self.xyrebin["x"])
+        # # if is_not_linspace["y"]:
+        # #     vslice *= self.xywidth["y"]
+        # #     vslice = sc.rebin(vslice, self.xyrebin["y"].dims[0],
+        # #                       self.xyrebin["y"])
 
-        # Remember to replace masks slice after rebin
-        if np.any(list(is_not_linspace.values())):
-            if self.params["masks"][self.name]["show"]:
-                mslice = vslice.masks["all"]
+        # # # Remember to replace masks slice after rebin
+        # # if np.any(list(is_not_linspace.values())):
+        # #     if self.params["masks"][self.name]["show"]:
+        # #         mslice = vslice.masks["all"]
 
-        if self.params["masks"][self.name]["show"]:
-            # Use scipp's automatic broadcast functionality to broadcast
-            # lower dimension masks to higher dimensions.
-            # TODO: creating a Variable here could become expensive when
-            # sliders are being used. We could consider performing the
-            # automatic broadcasting once and store it in the Slicer class,
-            # but this could create a large memory overhead if the data is
-            # large.
-            # Here, the data is at most 2D, so having the Variable creation
-            # and broadcasting should remain cheap.
-            msk = sc.Variable(dims=vslice.dims,
-                              values=np.ones(vslice.shape, dtype=np.int32))
-            msk *= sc.Variable(dims=mslice.dims,
-                               values=mslice.values.astype(np.int32))
-            msk = msk.values
-            if self.transp:
-                msk = msk.T
+        # if self.params["masks"][self.name]["show"]:
+        #     # Use scipp's automatic broadcast functionality to broadcast
+        #     # lower dimension masks to higher dimensions.
+        #     # TODO: creating a Variable here could become expensive when
+        #     # sliders are being used. We could consider performing the
+        #     # automatic broadcasting once and store it in the Slicer class,
+        #     # but this could create a large memory overhead if the data is
+        #     # large.
+        #     # Here, the data is at most 2D, so having the Variable creation
+        #     # and broadcasting should remain cheap.
+        #     msk = sc.Variable(dims=dslice.dims,
+        #                       values=np.ones(dslice.shape, dtype=np.int32))
+        #     msk *= sc.Variable(dims=dslice.masks["all"].dims,
+        #                        values=dslice.masks["all"].values.astype(np.int32))
+        #     msk = msk.values
+        #     if self.transp:
+        #         msk = msk.T
 
-        arr = dslice.values
-        if self.transp:
-            arr = arr.T
-        self.im["values"].set_data(arr)
+        # arr = dslice.values
+        # if self.transp:
+        #     arr = arr.T
+        # self.im["values"].set_data(arr)
+
+        self.update_image()
+
+
         if autoscale_cbar:
             cbar_params = parse_params(globs=self.vminmax,
                                        array=arr,
@@ -411,9 +417,9 @@ class Slicer2d(Slicer):
             self.params["values"][self.name]["norm"] = cbar_params["norm"]
             self.im["values"].set_norm(
                 self.params["values"][self.name]["norm"])
-        if self.params["masks"][self.name]["show"]:
-            self.im["masks"].set_data(self.mask_to_float(msk, arr))
-            if autoscale_cbar:
+            if self.params["masks"][self.name]["show"]:
+            # self.im["masks"].set_data(self.mask_to_float(msk, arr))
+            # if autoscale_cbar:
                 self.im["masks"].set_norm(self.params["values"][self.name]["norm"])
 
         return
@@ -493,12 +499,36 @@ class Slicer2d(Slicer):
                                         self.xyrebin[xy][param["dim"], 1] -
                                         self.xyrebin[xy][param["dim"], 0])
                 self.xywidth[xy].unit = sc.units.one
-            dslice = self.resample_image()
-            arr = dslice.values
-            if self.transp:
-                arr = arr.T
-            self.im["values"].set_data(arr)
-            self.im["values"].set_extent(np.array(list(xylims.values())).flatten())
+
+            # dslice = self.resample_image()
+
+            # if self.params["masks"][self.name]["show"]:
+            #     # Use scipp's automatic broadcast functionality to broadcast
+            #     # lower dimension masks to higher dimensions.
+            #     # TODO: creating a Variable here could become expensive when
+            #     # sliders are being used. We could consider performing the
+            #     # automatic broadcasting once and store it in the Slicer class,
+            #     # but this could create a large memory overhead if the data is
+            #     # large.
+            #     # Here, the data is at most 2D, so having the Variable creation
+            #     # and broadcasting should remain cheap.
+            #     msk = sc.Variable(dims=dslice.dims,
+            #                       values=np.ones(dslice.shape, dtype=np.int32))
+            #     msk *= sc.Variable(dims=dslice.masks["all"].dims,
+            #                        values=dslice.masks["all"].values.astype(np.int32))
+            #     msk = msk.values
+            #     if self.transp:
+            #         msk = msk.T
+
+            # arr = dslice.values
+            # if self.transp:
+            #     arr = arr.T
+            # self.im["values"].set_data(arr)
+            # self.im["values"].set_extent(np.array(list(xylims.values())).flatten())
+            # if self.params["masks"][self.name]["show"]:
+            #     self.im["masks"].set_data(self.mask_to_float(msk, arr))
+            #     self.im["masks"].set_extent(np.array(list(xylims.values())).flatten())
+            self.update_image(extent=np.array(list(xylims.values())).flatten())
 
 
 
@@ -508,6 +538,7 @@ class Slicer2d(Slicer):
 
         # Make a new slice with bin edges and counts (for rebin), and with
         # non-dimension coordinates if requested.
+        # TODO: use sc.resample once it is implemented.
         xy = "xy"
         dslice = sc.DataArray(coords={
             self.xyedges["x"].dims[0]: self.xyedges["x"],
@@ -524,25 +555,60 @@ class Slicer2d(Slicer):
         # Also include the masks
         if self.params["masks"][self.name]["show"]:
             mslice_dims = []
-            for dim in mslice.dims:
-                if dim == button_dims[0]:
+            for dim in self.mslice.dims:
+                if dim == self.button_dims[0]:
                     mslice_dims.append(self.xyedges["y"].dims[0])
-                elif dim == button_dims[1]:
+                elif dim == self.button_dims[1]:
                     mslice_dims.append(self.xyedges["x"].dims[0])
                 else:
                     mslice_dims.append(dim)
             dslice.masks["all"] = sc.Variable(dims=mslice_dims,
-                                              values=mslice.values)
+                                              values=self.mslice.values)
 
         # Scale by bin width and then rebin in both directions
         # if is_not_linspace["x"]:
         # self.output.value = str(self.xyrebin["x"])
-        dslice *= self.xywidth["x"]#*self.xywidth["y"]
+        dslice *= self.xywidth["x"]*self.xywidth["y"]
         dslice = sc.rebin(dslice, self.xyrebin["x"].dims[0],
                               self.xyrebin["x"])
         # # if is_not_linspace["y"]:
-        dslice *= self.xywidth["y"]
+        # dslice *= self.xywidth["y"]
         dslice = sc.rebin(dslice, self.xyrebin["y"].dims[0],
                               self.xyrebin["y"])
 
+        # if self.params["masks"][self.name]["show"]:
+        #         mslice = dslice.masks["all"]
+
         return dslice
+
+
+    def update_image(self, extent=None):
+        dslice = self.resample_image()
+        if self.params["masks"][self.name]["show"]:
+            # Use scipp's automatic broadcast functionality to broadcast
+            # lower dimension masks to higher dimensions.
+            # TODO: creating a Variable here could become expensive when
+            # sliders are being used. We could consider performing the
+            # automatic broadcasting once and store it in the Slicer class,
+            # but this could create a large memory overhead if the data is
+            # large.
+            # Here, the data is at most 2D, so having the Variable creation
+            # and broadcasting should remain cheap.
+            msk = sc.Variable(dims=dslice.dims,
+                              values=np.ones(dslice.shape, dtype=np.int32))
+            msk *= sc.Variable(dims=dslice.masks["all"].dims,
+                               values=dslice.masks["all"].values.astype(np.int32))
+            msk = msk.values
+            if self.transp:
+                msk = msk.T
+
+        arr = dslice.values
+        if self.transp:
+            arr = arr.T
+        self.im["values"].set_data(arr)
+        if extent is not None:
+            self.im["values"].set_extent(extent)
+        if self.params["masks"][self.name]["show"]:
+            self.im["masks"].set_data(self.mask_to_float(msk, arr))
+            if extent is not None:
+                self.im["masks"].set_extent(extent)
