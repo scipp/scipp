@@ -682,12 +682,24 @@ class Slicer2d(Slicer):
         # if is_not_linspace["x"]:
         # self.output.value = str(self.xyrebin["x"])
         dslice *= self.xywidth["x"]*self.xywidth["y"]
-        dslice = sc.rebin(dslice, self.xyrebin["x"].dims[0],
-                              self.xyrebin["x"])
+        # print("########## DSLICE #########")
+        # print(dslice)
+        # print(self.xyrebin["x"].dims[0])
+        # print(self.xyrebin["x"])
+        # print("########## DSLICE END #########")
+
+        # The order of the dimensions that are rebinned matters if 2D coords
+        # are present. We must rebin the base dimension of the 2D coord first.
+        xy = "yx"
+        # print("len(dslice.coords[self.button_dims[1]].dims)", len(dslice.coords[self.button_dims[1]].dims))
+        if len(dslice.coords[self.button_dims[1]].dims) > 1:
+            xy = "xy"
+        dslice = sc.rebin(dslice, self.xyrebin[xy[0]].dims[0],
+                              self.xyrebin[xy[0]])
         # # if is_not_linspace["y"]:
         # dslice *= self.xywidth["y"]
-        dslice = sc.rebin(dslice, self.xyrebin["y"].dims[0],
-                              self.xyrebin["y"])
+        dslice = sc.rebin(dslice, self.xyrebin[xy[1]].dims[0],
+                              self.xyrebin[xy[1]])
 
         # if self.params["masks"][self.name]["show"]:
         #         mslice = dslice.masks["all"]
@@ -702,8 +714,8 @@ class Slicer2d(Slicer):
                                           self.xyrebin["x"].shape[0] - 1]),
                           dtype=dslice.dtype,
                           unit=sc.units.one))
-        print(arr)
-        print(dslice)
+        # print(arr)
+        # print(dslice)
         arr *= dslice
         # dslice = arr
 
