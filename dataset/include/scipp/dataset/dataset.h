@@ -184,6 +184,7 @@ private:
 
   // template <class MapView> MapView makeView(const bool aligned = false)
   // const;
+  CoordsView make_coords(const bool aligned) const;
 };
 
 namespace detail {

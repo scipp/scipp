@@ -657,14 +657,14 @@ CoordsConstView DataArrayConstView::make_coords(const bool aligned) const {
     erase_if_unaligned_by_dim_slices(items, slices());
   } else {
     // Unaligned coords
-    auto tmp = makeViewItems(parentDims(), m_data->second.coords);
+    const auto tmp = makeViewItems(parentDims(), m_data->second.coords);
     items.insert(tmp.begin(), tmp.end());
   }
   if (!m_data->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
     decltype(*this) unaligned = m_data->second.unaligned->data;
     // TODO handle aligned flag
-    auto tmp =
+    const auto tmp =
         makeViewItems(unaligned.parentDims(), unaligned.m_dataset->m_coords);
     items.insert(tmp.begin(), tmp.end());
   }
@@ -761,28 +761,34 @@ DataArrayView DataArrayView::slice(const Slice s) const {
   }
 }
 
-/// Return a view to all coordinates of the data view.
-CoordsView DataArrayView::coords() const noexcept {
+CoordsView DataArrayView::make_coords(const bool aligned) const {
   // Aligned coords (including unaligned by slicing) from dataset
   auto items = makeViewItems(parentDims(), m_mutableDataset->m_coords);
-  // Unaligned coords
-  auto tmp = makeViewItems(parentDims(), m_mutableData->second.coords);
-  items.insert(tmp.begin(), tmp.end());
+  if (aligned) {
+    erase_if_unaligned_by_dim_slices(items, slices());
+  } else {
+    // Unaligned coords
+    const auto tmp = makeViewItems(parentDims(), m_mutableData->second.coords);
+    items.insert(tmp.begin(), tmp.end());
+  }
   const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
   DataArray *unaligned_ptr{nullptr};
   if (is_view_of_unaligned) {
     // This is a view of the unaligned content of a realigned data array.
     unaligned_ptr = &m_mutableData->second.unaligned->data;
     decltype(*this) unaligned = m_mutableData->second.unaligned->data;
-    tmp = makeViewItems(unaligned.parentDims(),
-                        unaligned.m_mutableDataset->m_coords);
+    // TODO handle aligned flag
+    const auto tmp = makeViewItems(unaligned.parentDims(),
+                                   unaligned.m_mutableDataset->m_coords);
     items.insert(tmp.begin(), tmp.end());
   }
   return CoordsView(CoordAccess{slices().empty() ? m_mutableDataset : nullptr,
                                 &name(), unaligned_ptr},
                     std::move(items), slices());
-  // return makeView<CoordsView>();
 }
+
+/// Return a view to all coordinates of the data view.
+CoordsView DataArrayView::coords() const noexcept { return make_coords(false); }
 
 /// Return a view to all coordinates of the data array.
 CoordsView DataArray::coords() {
@@ -792,8 +798,7 @@ CoordsView DataArray::coords() {
 
 /// Return a view to all aligned coordinates of the data view.
 CoordsView DataArrayView::aligned_coords() const noexcept {
-  return coords();
-  // return makeView<CoordsView>();
+  return make_coords(true);
 }
 
 /// Return a view to all aligned coordinates of the data array.
@@ -801,7 +806,18 @@ CoordsView DataArray::aligned_coords() { return m_holder.aligned_coords(); }
 
 /// Return a view to all unaligned coordinates of the data view.
 CoordsView DataArrayView::unaligned_coords() const noexcept {
-  return aligned_coords();
+  auto items = coords().items();
+  const auto aligned = aligned_coords().items();
+  for (auto it = items.begin(); it != items.end();) {
+    if (aligned.count(it->first))
+      it = items.erase(it);
+    else
+      ++it;
+  }
+  // TODO need to init last arg of CoordAccess
+  return CoordsView{CoordAccess{slices().empty() ? m_mutableDataset : nullptr,
+                                &name(), nullptr},
+                    std::move(items), slices()};
 }
 
 /// Return a view to all unaligned coordinates of the data array.
