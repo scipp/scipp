@@ -76,7 +76,6 @@ void addMasks(Item &items, const Dims &parentDims, const Dims &dims,
 }
 
 Dataset::Dataset(const DatasetConstView &view)
-    // TODO should this be aligned_coords()?
     : Dataset(view, view.coords(), view.masks()) {}
 
 Dataset::Dataset(const DataArrayConstView &data) { setData(data.name(), data); }
@@ -100,19 +99,9 @@ CoordsConstView Dataset::coords() const noexcept {
   return CoordsConstView(makeViewItems(dimensions(), m_coords));
 }
 
-/// Return a const view to all aligned coordinates of the dataset.
-CoordsConstView Dataset::aligned_coords() const noexcept {
-  return coords(); // without slices all coords are aligned
-}
-
 /// Return a view to all coordinates of the dataset.
 CoordsView Dataset::coords() noexcept {
   return CoordsView(CoordAccess(this), makeViewItems(dimensions(), m_coords));
-}
-
-/// Return a view to all aligned coordinates of the dataset.
-CoordsView Dataset::aligned_coords() noexcept {
-  return coords(); // without slices all coords are aligned
 }
 
 /// Return a const view to all masks of the dataset.
@@ -802,7 +791,7 @@ CoordsView DataArrayView::aligned_coords() const noexcept {
 }
 
 /// Return a view to all aligned coordinates of the data array.
-CoordsView DataArray::aligned_coords() { return m_holder.aligned_coords(); }
+CoordsView DataArray::aligned_coords() { return m_holder.coords(); }
 
 /// Return a view to all unaligned coordinates of the data view.
 CoordsView DataArrayView::unaligned_coords() const noexcept {
@@ -900,26 +889,12 @@ DatasetView::DatasetView(Dataset &dataset)
 /// Return a const view to all coordinates of the dataset slice.
 CoordsConstView DatasetConstView::coords() const noexcept {
   auto items = makeViewItems(m_dataset->dimensions(), m_dataset->m_coords);
+  erase_if_unaligned_by_dim_slices(items, slices());
   return CoordsConstView(std::move(items), slices());
 }
 
 /// Return a view to all coordinates of the dataset slice.
 CoordsView DatasetView::coords() const noexcept {
-  auto items =
-      makeViewItems(m_mutableDataset->dimensions(), m_mutableDataset->m_coords);
-  return CoordsView(CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
-                    std::move(items), slices());
-}
-
-/// Return a const view to all aligned coordinates of the dataset slice.
-CoordsConstView DatasetConstView::aligned_coords() const noexcept {
-  auto items = makeViewItems(m_dataset->dimensions(), m_dataset->m_coords);
-  erase_if_unaligned_by_dim_slices(items, slices());
-  return CoordsConstView(std::move(items), slices());
-}
-
-/// Return a view to all aligned coordinates of the dataset slice.
-CoordsView DatasetView::aligned_coords() const noexcept {
   auto items =
       makeViewItems(m_mutableDataset->dimensions(), m_mutableDataset->m_coords);
   erase_if_unaligned_by_dim_slices(items, slices());

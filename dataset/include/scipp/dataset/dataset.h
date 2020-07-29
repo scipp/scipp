@@ -254,9 +254,6 @@ public:
   CoordsConstView coords() const noexcept;
   CoordsView coords() noexcept;
 
-  CoordsConstView aligned_coords() const noexcept;
-  CoordsView aligned_coords() noexcept;
-
   MasksConstView masks() const noexcept;
   MasksView masks() noexcept;
 
@@ -454,7 +451,6 @@ public:
   [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
 
   CoordsConstView coords() const noexcept;
-  CoordsConstView aligned_coords() const noexcept;
   MasksConstView masks() const noexcept;
 
   bool contains(const std::string &name) const noexcept;
@@ -528,7 +524,6 @@ public:
   DatasetView(Dataset &dataset);
 
   CoordsView coords() const noexcept;
-  CoordsView aligned_coords() const noexcept;
   MasksView masks() const noexcept;
 
   const DataArrayView &operator[](const std::string &name) const;

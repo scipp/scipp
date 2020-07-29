@@ -63,12 +63,12 @@ void copy_item(const DataArrayConstView &from, const DataArrayView &to) {
 template <class ConstView, class View>
 View copy_impl(const ConstView &in, const View &out,
                const AttrPolicy attrPolicy) {
-  for (const auto &[dim, coord] : in.aligned_coords())
-    out.aligned_coords()[dim].assign(coord);
   for (const auto &[name, mask] : in.masks())
     out.masks()[name].assign(mask);
 
   if constexpr (std::is_same_v<View, DatasetView>) {
+    for (const auto &[dim, coord] : in.coords())
+      out.coords()[dim].assign(coord);
     for (const auto &array : in) {
       copy_item(array, out[array.name()]);
       if (attrPolicy == AttrPolicy::Keep)
@@ -78,6 +78,8 @@ View copy_impl(const ConstView &in, const View &out,
         out[array.name()].masks()[name].assign(mask);
     }
   } else {
+    for (const auto &[dim, coord] : in.aligned_coords())
+      out.aligned_coords()[dim].assign(coord);
     if (attrPolicy == AttrPolicy::Keep)
       for (const auto &[dim, coord] : in.unaligned_coords())
         out.unaligned_coords()[dim].assign(coord);

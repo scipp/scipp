@@ -734,9 +734,9 @@ template <class T> void test_coord_aligned_to_unaligned_mapping(T &o) {
 }
 
 template <class T> void test_dataset_coord_aligned_to_unaligned_mapping(T &o) {
-  EXPECT_FALSE(o.coords().contains(Dim::X));
-  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).coords().contains(Dim::X));
-  // No mapping to unaligned coords of *dataset* (does not exist)
+  EXPECT_TRUE(o.coords().contains(Dim::X));
+  EXPECT_TRUE(o.slice({Dim::X, 2, 3}).coords().contains(Dim::X));
+  // No mapping to "unaligned coords" of *dataset* (does not exist)
   EXPECT_FALSE(o.slice({Dim::X, 2}).coords().contains(Dim::X));
   // Mapped "aligned" coord of dataset to unaligned coord (of item)
   EXPECT_TRUE(o.slice({Dim::X, 2})["a"].unaligned_coords().contains(Dim::X));
