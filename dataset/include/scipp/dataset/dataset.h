@@ -249,11 +249,11 @@ public:
 
   void clear();
 
-  CoordsConstView coords2() const noexcept;
-  CoordsView coords2() noexcept;
-
   CoordsConstView coords() const noexcept;
   CoordsView coords() noexcept;
+
+  CoordsConstView aligned_coords() const noexcept;
+  CoordsView aligned_coords() noexcept;
 
   AttrsConstView attrs() const noexcept;
   AttrsView attrs() noexcept;
@@ -461,8 +461,8 @@ public:
   index size() const noexcept { return m_items.size(); }
   [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
 
-  CoordsConstView coords2() const noexcept;
   CoordsConstView coords() const noexcept;
+  CoordsConstView aligned_coords() const noexcept;
   AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
@@ -536,8 +536,8 @@ class SCIPP_DATASET_EXPORT DatasetView : public DatasetConstView {
 public:
   DatasetView(Dataset &dataset);
 
-  CoordsView coords2() const noexcept;
   CoordsView coords() const noexcept;
+  CoordsView aligned_coords() const noexcept;
   AttrsView attrs() const noexcept;
   MasksView masks() const noexcept;
 
