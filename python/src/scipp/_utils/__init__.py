@@ -7,4 +7,5 @@
 
 from .collapse_and_slices import *
 from .is_type import *
+from .events import *
 from .to_string import *

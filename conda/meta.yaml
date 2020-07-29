@@ -27,13 +27,12 @@ test:
     - scipp
   requires:
     - beautifulsoup4
-    - ipyevents
-    - ipyvolume
     - ipywidgets
     - matplotlib
     - psutil
     - pytest
     - pythreejs
+    - Pillow
   source_files:
     - python/tests
   commands:

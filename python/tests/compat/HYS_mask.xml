@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<detector-masking>
+	<group>
+		<detids>0-1000</detids>
+	</group>
+</detector-masking>
