@@ -116,6 +116,7 @@ private:
 
   // template <class MapView> MapView makeView(const bool aligned = false)
   // const;
+  CoordsConstView make_coords(const bool aligned) const;
 };
 
 SCIPP_DATASET_EXPORT bool operator==(const DataArrayConstView &a,

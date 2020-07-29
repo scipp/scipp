@@ -152,7 +152,6 @@ protected:
     d.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
     d.setMask("masks_xy", dataset.masks()["masks_xy"].slice({Dim::X, pos}));
     d.setMask("masks_z", dataset.masks()["masks_z"]);
-    d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
     d.setData("values_x", dataset["values_x"].data().slice({Dim::X, pos}));
     d.setData("data_x", dataset["data_x"].data().slice({Dim::X, pos}));
     d.setData("data_xy", dataset["data_xy"].data().slice({Dim::X, pos}));
@@ -197,8 +196,6 @@ protected:
               dataset.masks()["masks_xy"].slice({Dim::Y, begin, end}));
     d.setMask("masks_z", dataset.masks()["masks_z"]);
 
-    d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
-    d.setAttr("attr_x", dataset.attrs()["attr_x"]);
     d.setData("data_xy", dataset["data_xy"].data().slice({Dim::Y, begin, end}));
     d.setData("data_zyx",
               dataset["data_zyx"].data().slice({Dim::Y, begin, end}));
@@ -225,8 +222,6 @@ protected:
     d.setMask("masks_xy", dataset.masks()["masks_xy"]);
     d.setMask("masks_z",
               dataset.masks()["masks_z"].slice({Dim::Z, begin, end}));
-    d.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
-    d.setAttr("attr_x", dataset.attrs()["attr_x"]);
     d.setData("data_zyx",
               dataset["data_zyx"].data().slice({Dim::Z, begin, end}));
     d.setData("data_xyz",
@@ -273,12 +268,12 @@ INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_events,
 TEST_P(Dataset3DTest_slice_x, slice) {
   const auto pos = GetParam();
   auto expected = reference(pos);
-  // Non-range slice converts coord to attr
+  // Non-range slice converts aligned coord to unaligned coord
   for (const auto &name :
        {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
     for (const auto &attr : {"x", "labels_x"})
-      expected[name].attrs().set(
-          attr, dataset.coords()[Dim(attr)].slice({Dim::X, pos}));
+      expected[name].coords().set(
+          Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::X, pos}));
   EXPECT_EQ(dataset.slice({Dim::X, pos}), expected);
 }
 
@@ -312,14 +307,14 @@ TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
   auto datasetWithEdges = dataset;
   datasetWithEdges.setCoord(Dim::X, makeRandom({Dim::X, 5}));
   auto expected = reference(pos);
-  // Non-range slice converts coord to attr
+  // Non-range slice converts aligned coord to unaligned coord
   for (const auto &name :
        {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
-    expected[name].attrs().set(
-        "labels_x",
+    expected[name].coords().set(
+        Dim("labels_x"),
         datasetWithEdges.coords()[Dim("labels_x")].slice({Dim::X, pos}));
-    expected[name].attrs().set(
-        "x", datasetWithEdges.coords()[Dim("x")].slice({Dim::X, pos, pos + 2}));
+    expected[name].coords().set(Dim::X, datasetWithEdges.coords()[Dim::X].slice(
+                                            {Dim::X, pos, pos + 2}));
   }
   EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}), expected);
 }
@@ -334,8 +329,6 @@ TEST_P(Dataset3DTest_slice_y, slice) {
   reference.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
   reference.setMask("masks_x", dataset.masks()["masks_x"]);
   reference.setMask("masks_z", dataset.masks()["masks_z"]);
-  reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
-  reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
   reference.setData("data_xy", dataset["data_xy"].data().slice({Dim::Y, pos}));
   reference.setData("data_zyx",
                     dataset["data_zyx"].data().slice({Dim::Y, pos}));
@@ -345,8 +338,8 @@ TEST_P(Dataset3DTest_slice_y, slice) {
     reference[name].masks().set(
         "masks_xy", dataset.masks()["masks_xy"].slice({Dim::Y, pos}));
     for (const auto &attr : {"y", "labels_xy"})
-      reference[name].attrs().set(
-          attr, dataset.coords()[Dim(attr)].slice({Dim::Y, pos}));
+      reference[name].coords().set(
+          Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Y, pos}));
   }
 
   EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
@@ -362,8 +355,6 @@ TEST_P(Dataset3DTest_slice_z, slice) {
   reference.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")]);
   reference.setMask("masks_x", dataset.masks()["masks_x"]);
   reference.setMask("masks_xy", dataset.masks()["masks_xy"]);
-  reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
-  reference.setAttr("attr_x", dataset.attrs()["attr_x"]);
   reference.setData("data_zyx",
                     dataset["data_zyx"].data().slice({Dim::Z, pos}));
   reference.setData("data_xyz",
@@ -372,8 +363,8 @@ TEST_P(Dataset3DTest_slice_z, slice) {
     reference[name].masks().set(
         "masks_z", dataset.masks()["masks_z"].slice({Dim::Z, pos}));
     for (const auto &attr : {"z", "labels_z"})
-      reference[name].attrs().set(
-          attr, dataset.coords()[Dim(attr)].slice({Dim::Z, pos}));
+      reference[name].coords().set(
+          Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Z, pos}));
   }
 
   EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
@@ -398,9 +389,6 @@ TEST_P(Dataset3DTest_slice_range_x, slice) {
   reference.setMask("masks_xy",
                     dataset.masks()["masks_xy"].slice({Dim::X, begin, end}));
   reference.setMask("masks_z", dataset.masks()["masks_z"]);
-  reference.setAttr("attr_scalar", dataset.attrs()["attr_scalar"]);
-  reference.setAttr("attr_x",
-                    dataset.attrs()["attr_x"].slice({Dim::X, begin, end}));
   reference.setData("values_x",
                     dataset["values_x"].data().slice({Dim::X, begin, end}));
   reference.setData("data_x",
@@ -731,43 +719,54 @@ protected:
   DataArray a{x, {{Dim::X, x}}};
 };
 
-template <class T> void test_coord_to_attr_mapping(T &o) {
-  EXPECT_FALSE(o.attrs().contains("x"));
-  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).attrs().contains("x"));
-  EXPECT_TRUE(o.slice({Dim::X, 2}).attrs().contains("x"));
-  EXPECT_EQ(o.slice({Dim::X, 2}).attrs()["x"], 3.0 * units::one);
-  EXPECT_TRUE(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).attrs().contains("x"));
-  EXPECT_EQ(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).attrs()["x"],
+template <class T> void test_coord_aligned_to_unaligned_mapping(T &o) {
+  EXPECT_FALSE(o.unaligned_coords().contains(Dim::X));
+  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).unaligned_coords().contains(Dim::X));
+  EXPECT_TRUE(o.slice({Dim::X, 2}).unaligned_coords().contains(Dim::X));
+  EXPECT_EQ(o.slice({Dim::X, 2}).unaligned_coords()[Dim::X], 3.0 * units::one);
+  EXPECT_TRUE(o.slice({Dim::X, 2, 3})
+                  .slice({Dim::X, 0})
+                  .unaligned_coords()
+                  .contains(Dim::X));
+  EXPECT_EQ(
+      o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).unaligned_coords()[Dim::X],
+      3.0 * units::one);
+}
+
+template <class T> void test_dataset_coord_aligned_to_unaligned_mapping(T &o) {
+  EXPECT_FALSE(o.coords().contains(Dim::X));
+  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).coords().contains(Dim::X));
+  // No mapping to unaligned coords of *dataset* (does not exist)
+  EXPECT_FALSE(o.slice({Dim::X, 2}).coords().contains(Dim::X));
+  // Mapped "aligned" coord of dataset to unaligned coord (of item)
+  EXPECT_TRUE(o.slice({Dim::X, 2})["a"].unaligned_coords().contains(Dim::X));
+  EXPECT_EQ(o.slice({Dim::X, 2})["a"].unaligned_coords()[Dim::X],
+            3.0 * units::one);
+  EXPECT_TRUE(o.slice({Dim::X, 2, 3})
+                  .slice({Dim::X, 0})["a"]
+                  .unaligned_coords()
+                  .contains(Dim::X));
+  EXPECT_EQ(o.slice({Dim::X, 2, 3})
+                .slice({Dim::X, 0})["a"]
+                .unaligned_coords()[Dim::X],
             3.0 * units::one);
 }
 
-template <class T> void test_dataset_coord_to_attr_mapping(T &o) {
-  EXPECT_FALSE(o.attrs().contains("x"));
-  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).attrs().contains("x"));
-  // No mapping to attrs of *dataset*
-  EXPECT_FALSE(o.slice({Dim::X, 2}).attrs().contains("x"));
-  // Mapped "aligned" coord of dataset to attr (unaligned coord) of item
-  EXPECT_TRUE(o.slice({Dim::X, 2})["a"].attrs().contains("x"));
-  EXPECT_EQ(o.slice({Dim::X, 2})["a"].attrs()["x"], 3.0 * units::one);
-  EXPECT_TRUE(
-      o.slice({Dim::X, 2, 3}).slice({Dim::X, 0})["a"].attrs().contains("x"));
-  EXPECT_EQ(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0})["a"].attrs()["x"],
-            3.0 * units::one);
+TEST_F(CoordToAttrMappingTest, DataArrayView) {
+  test_coord_aligned_to_unaligned_mapping(a);
 }
-
-TEST_F(CoordToAttrMappingTest, DataArrayView) { test_coord_to_attr_mapping(a); }
 
 TEST_F(CoordToAttrMappingTest, DataArrayConstView) {
   const DataArray &const_a = a;
-  test_coord_to_attr_mapping(const_a);
+  test_coord_aligned_to_unaligned_mapping(const_a);
 }
 
 TEST_F(CoordToAttrMappingTest, DatasetView) {
   Dataset d({{"a", a}});
-  test_dataset_coord_to_attr_mapping(d);
+  test_dataset_coord_aligned_to_unaligned_mapping(d);
 }
 
 TEST_F(CoordToAttrMappingTest, DatasetConstView) {
   const Dataset d({{"a", a}});
-  test_dataset_coord_to_attr_mapping(d);
+  test_dataset_coord_aligned_to_unaligned_mapping(d);
 }

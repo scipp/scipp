@@ -650,34 +650,42 @@ MapView DataArrayView::makeView(const bool aligned) const {
 }
 */
 
-/// Return a const view to all coordinates of the data view.
-CoordsConstView DataArrayConstView::coords() const noexcept {
+CoordsConstView DataArrayConstView::make_coords(const bool aligned) const {
   // Aligned coords (including unaligned by slicing) from dataset
   auto items = makeViewItems(parentDims(), m_dataset->m_coords);
-  // Unaligned coords
-  auto tmp = makeViewItems(parentDims(), m_data->second.coords);
-  items.insert(tmp.begin(), tmp.end());
+  if (aligned) {
+    erase_if_unaligned_by_dim_slices(items, slices());
+  } else {
+    // Unaligned coords
+    auto tmp = makeViewItems(parentDims(), m_data->second.coords);
+    items.insert(tmp.begin(), tmp.end());
+  }
   if (!m_data->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
     decltype(*this) unaligned = m_data->second.unaligned->data;
-    tmp = makeViewItems(unaligned.parentDims(), unaligned.m_dataset->m_coords);
+    // TODO handle aligned flag
+    auto tmp =
+        makeViewItems(unaligned.parentDims(), unaligned.m_dataset->m_coords);
     items.insert(tmp.begin(), tmp.end());
   }
   return CoordsConstView(std::move(items), slices());
-  // return makeView<CoordsConstView>();
+}
+
+/// Return a const view to all coordinates of the data view.
+CoordsConstView DataArrayConstView::coords() const noexcept {
+  return make_coords(false);
 }
 
 /// Return a const view to all aligned coordinates of the data view.
 CoordsConstView DataArrayConstView::aligned_coords() const noexcept {
-  auto items = coords().items();
-  erase_if_unaligned_by_dim_slices(items, slices());
-  return CoordsConstView(std::move(items), slices());
-  // return makeView<CoordsConstView>(true);
+  return make_coords(true);
 }
 
 /// Return a const view to all unaligned coordinates of the data view.
 CoordsConstView DataArrayConstView::unaligned_coords() const noexcept {
-  return CoordsConstView{};
+  // TODO must include unaligned by slicing
+  return CoordsConstView{makeViewItems(parentDims(), m_data->second.coords),
+                         slices()};
 }
 
 /// Return a const view to all masks of the data view.
