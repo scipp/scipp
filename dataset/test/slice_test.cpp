@@ -325,6 +325,8 @@ TEST_P(Dataset3DTest_slice_y, slice) {
   reference.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")]);
   reference.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
   reference.setMask("masks_x", dataset.masks()["masks_x"]);
+  reference.setMask("masks_xy",
+                    dataset.masks()["masks_xy"].slice({Dim::Y, pos}));
   reference.setMask("masks_z", dataset.masks()["masks_z"]);
   reference.setData("data_xy", dataset["data_xy"].data().slice({Dim::Y, pos}));
   reference.setData("data_zyx",
@@ -332,8 +334,6 @@ TEST_P(Dataset3DTest_slice_y, slice) {
   reference.setData("data_xyz",
                     dataset["data_xyz"].data().slice({Dim::Y, pos}));
   for (const auto &name : {"data_xy", "data_zyx", "data_xyz"}) {
-    reference[name].masks().set(
-        "masks_xy", dataset.masks()["masks_xy"].slice({Dim::Y, pos}));
     for (const auto &attr : {"y", "labels_xy"})
       reference[name].coords().set(
           Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Y, pos}));
@@ -352,13 +352,12 @@ TEST_P(Dataset3DTest_slice_z, slice) {
   reference.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")]);
   reference.setMask("masks_x", dataset.masks()["masks_x"]);
   reference.setMask("masks_xy", dataset.masks()["masks_xy"]);
+  reference.setMask("masks_z", dataset.masks()["masks_z"].slice({Dim::Z, pos}));
   reference.setData("data_zyx",
                     dataset["data_zyx"].data().slice({Dim::Z, pos}));
   reference.setData("data_xyz",
                     dataset["data_xyz"].data().slice({Dim::Z, pos}));
   for (const auto &name : {"data_zyx", "data_xyz"}) {
-    reference[name].masks().set(
-        "masks_z", dataset.masks()["masks_z"].slice({Dim::Z, pos}));
     for (const auto &attr : {"z", "labels_z"})
       reference[name].coords().set(
           Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Z, pos}));
