@@ -805,8 +805,7 @@ TEST(VariableTest, reshape_temporary) {
                                            units::m, Values{6, 8, 10, 12},
                                            Variances{22, 24, 26, 28}));
 
-  EXPECT_EQ(typeid(decltype(reshape(std::move(var), {}))),
-            typeid(Variable));
+  EXPECT_EQ(typeid(decltype(reshape(std::move(var), {}))), typeid(Variable));
 }
 
 TEST(VariableTest, reshape_fail) {
