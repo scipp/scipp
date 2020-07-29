@@ -104,6 +104,7 @@ class Slicer2d(Slicer):
         self.ylim_updated = False
         self.current_lims = {"x": np.zeros(2), "y": np.zeros(2)}
         self.button_dims = [None, None]
+        self.dim_to_xy = {}
         self.output = widgets.Label()
         if resolution is not None:
             if isinstance(resolution, int):
@@ -241,6 +242,14 @@ class Slicer2d(Slicer):
                 self.axparams[but_val]["labels"] = name_with_unit(
                     self.slider_coord[self.name][dim], name=str(dim))
                 self.axparams[but_val]["dim"] = dim
+            # else:
+                # Get the dimensions of the dimension-coordinates, since
+                # buttons can contain non-dimension coordinates
+                # self.button_dims[self.buttons[dim].value.lower() ==
+                #             "x"] = self.slider_coord[self.name][val.dim].dims
+                self.button_dims[self.buttons[dim].value.lower() ==
+                            "x"] = self.buttons[dim].dim
+                self.dim_to_xy[dim] = self.buttons[dim].value.lower()
 
         extent_array = np.array(list(self.extent.values())).flatten()
         self.current_lims['x'] = extent_array[:2]
@@ -346,13 +355,13 @@ class Slicer2d(Slicer):
                 if self.params["masks"][
                         self.name]["show"] and dim in self.mslice.dims:
                     self.mslice = self.mslice[val.dim, val.value]
-            else:
-                # Get the dimensions of the dimension-coordinates, since
-                # buttons can contain non-dimension coordinates
-                # self.button_dims[self.buttons[dim].value.lower() ==
-                #             "x"] = self.slider_coord[self.name][val.dim].dims
-                self.button_dims[self.buttons[dim].value.lower() ==
-                            "x"] = self.buttons[dim].dim
+            # else:
+            #     # Get the dimensions of the dimension-coordinates, since
+            #     # buttons can contain non-dimension coordinates
+            #     # self.button_dims[self.buttons[dim].value.lower() ==
+            #     #             "x"] = self.slider_coord[self.name][val.dim].dims
+            #     self.button_dims[self.buttons[dim].value.lower() ==
+            #                 "x"] = self.buttons[dim].dim
 
         # # Check if dimensions of arrays agree, if not, plot the transpose
         # for dim_list in self.button_dims:
@@ -364,26 +373,26 @@ class Slicer2d(Slicer):
 
         # TODO: should do this AFTER the resample, to avoid multiplying a really large array
 
-        arr = sc.DataArray(coords={
-            self.button_dims[0]: self.slider_coord[self.name][self.button_dims[0]],
-            self.button_dims[1]: self.slider_coord[self.name][self.button_dims[1]]
-        },
-                              data=sc.Variable(dims=self.button_dims,
-                          values=np.ones([self.slider_shape[self.name][self.button_dims[0]][self.button_dims[0]] - self.histograms[self.name][self.button_dims[0]][self.button_dims[0]],
-                                          self.slider_shape[self.name][self.button_dims[1]][self.button_dims[1]] - self.histograms[self.name][self.button_dims[1]][self.button_dims[1]]]),
-                          dtype=self.vslice.dtype,
-                          unit=sc.units.one))
-
-
-        # arr = sc.Variable(dims=self.button_dims,
-        #                   values=np.ones([self.slider_shape[self.name][self.button_dims[0]][self.button_dims[0]],
-        #                                   self.slider_shape[self.name][self.button_dims[1]][self.button_dims[1]]]),
+        # arr = sc.DataArray(coords={
+        #     self.button_dims[0]: self.slider_coord[self.name][self.button_dims[0]],
+        #     self.button_dims[1]: self.slider_coord[self.name][self.button_dims[1]]
+        # },
+        #                       data=sc.Variable(dims=self.button_dims,
+        #                   values=np.ones([self.slider_shape[self.name][self.button_dims[0]][self.button_dims[0]] - self.histograms[self.name][self.button_dims[0]][self.button_dims[0]],
+        #                                   self.slider_shape[self.name][self.button_dims[1]][self.button_dims[1]] - self.histograms[self.name][self.button_dims[1]][self.button_dims[1]]]),
         #                   dtype=self.vslice.dtype,
-        #                   unit=sc.units.one)
-        print(arr)
-        print(self.vslice)
-        arr *= self.vslice
-        self.vslice = arr
+        #                   unit=sc.units.one))
+
+
+        # # arr = sc.Variable(dims=self.button_dims,
+        # #                   values=np.ones([self.slider_shape[self.name][self.button_dims[0]][self.button_dims[0]],
+        # #                                   self.slider_shape[self.name][self.button_dims[1]][self.button_dims[1]]]),
+        # #                   dtype=self.vslice.dtype,
+        # #                   unit=sc.units.one)
+        # print(arr)
+        # print(self.vslice)
+        # arr *= self.vslice
+        # self.vslice = arr
         # msk = msk.values
         # if self.transp:
         #     msk = msk.T
@@ -603,6 +612,7 @@ class Slicer2d(Slicer):
 
     def resample_image(self):
         # if np.any(list(is_not_linspace.values())):
+        # return self.vslice
 
         # Make a new slice with bin edges and counts (for rebin), and with
         # non-dimension coordinates if requested.
@@ -618,13 +628,14 @@ class Slicer2d(Slicer):
         #                       ],
         #                                        values=self.vslice.values,
         #                                        unit=sc.units.counts))
+        print(self.dim_to_xy)
         dslice = sc.DataArray(coords={
             self.xyedges["x"].dims[0]: self.xyedges["x"],
             self.xyedges["y"].dims[0]: self.xyedges["y"]
         },
                               data=sc.Variable(dims=[
-                                  self.xyedges["y"].dims[0],
-                                  self.xyedges["x"].dims[0]
+                                  self.xyedges[self.dim_to_xy[self.vslice.dims[0]]].dims[0],
+                                  self.xyedges[self.dim_to_xy[self.vslice.dims[1]]].dims[0]
                               ],
                                                values=self.vslice.values,
                                                unit=sc.units.counts))
@@ -658,7 +669,22 @@ class Slicer2d(Slicer):
         # if self.params["masks"][self.name]["show"]:
         #         mslice = dslice.masks["all"]
 
-        return dslice
+
+        arr = sc.DataArray(coords={
+            self.xyrebin["x"].dims[0]: self.xyrebin["x"],
+            self.xyrebin["y"].dims[0]: self.xyrebin["y"],
+        },
+                              data=sc.Variable(dims=self.button_dims,
+                          values=np.ones([self.xyrebin["y"].shape[0] - 1,
+                                          self.xyrebin["x"].shape[0] - 1]),
+                          dtype=dslice.dtype,
+                          unit=sc.units.one))
+        print(arr)
+        print(dslice)
+        arr *= dslice
+        # dslice = arr
+
+        return arr
 
 
     def update_image(self, extent=None):
