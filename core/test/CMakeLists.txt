@@ -19,6 +19,7 @@ add_executable(
   element_trigonometry_test.cpp
   element_util_test.cpp
   string_test.cpp
+  time_point_test.cpp
   value_and_variance_test.cpp
   view_index_test.cpp
 )

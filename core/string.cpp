@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <chrono>
 #include <iomanip>
+#include <optional>
 #include <sstream>
 
 #include "scipp/units/unit.h"
@@ -53,10 +54,13 @@ std::map<DType, std::string> &dtypeNameRegistry() {
 }
 
 const std::string to_iso_date(const scipp::core::time_point &item,
-                              const units::Unit &unit) {
-  int64_t ts = item.time_since_epoch();
+                              const std::optional<units::Unit> &unit) {
+  if (!unit)
+    throw except::UnitError(
+        "Time point should only have time units (ns or s).");
 
-  if (unit == units::ns) {
+  int64_t ts = item.time_since_epoch();
+  if (unit.value() == units::ns) {
     int64_t conv = 1000000000;
     // time representation of the timestamp
     int64_t time = ts / conv;
@@ -70,7 +74,7 @@ const std::string to_iso_date(const scipp::core::time_point &item,
     ss << std::put_time(&tm, "%FT%T.") << std::setw(9) << std::setfill('0')
        << ns << std::endl;
     return ss.str();
-  } else if (unit == units::s) {
+  } else if (unit.value() == units::s) {
     auto tm = *std::gmtime(&ts);
     std::stringstream ss;
     ss << std::put_time(&tm, "%FT%T") << std::endl;

@@ -10,16 +10,17 @@ using namespace scipp;
 using namespace scipp::core;
 
 TEST(CoreStringTest, convertToIsoDate_test) {
-  int64_t ts(1595846471200000011);
+  const int64_t ts(1595846471200000011);
   scipp::core::time_point date(ts);
-  units::Unit unit(units::ns);
+  const units::Unit unit(units::ns);
   EXPECT_EQ(to_iso_date(date, unit), "2020-07-27T10:41:11.200000011\n");
 
-  int64_t ts2(1595846471);
+  const int64_t ts2(1595846471);
   scipp::core::time_point date2(ts2);
-  units::Unit unit2(units::s);
+  const units::Unit unit2(units::s);
   EXPECT_EQ(to_iso_date(date2, unit2), "2020-07-27T10:41:11\n");
 
-  units::Unit bad_unit(units::m);
+  const units::Unit bad_unit(units::m);
   EXPECT_THROW(to_iso_date(date2, bad_unit), scipp::except::UnitError);
+  EXPECT_THROW(to_iso_date(date2), scipp::except::UnitError);
 }

@@ -26,12 +26,10 @@ public:
     return *this;
   };
   time_point operator+(const int64_t &duration) {
-    m_duration += duration;
-    return *this;
+    return time_point(m_duration + duration);
   }
   time_point operator-(const int64_t &duration) {
-    m_duration -= duration;
-    return *this;
+    return time_point(m_duration - duration);
   }
   int64_t operator-(const time_point &time) const noexcept {
     return m_duration - time.time_since_epoch();

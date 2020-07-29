@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 
 #include "scipp/core/element/util.h"
-#include "scipp/core/string.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 
