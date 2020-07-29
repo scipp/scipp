@@ -139,6 +139,26 @@ template <class T> void bind_reshape(pybind11::module &mod) {
           .param("shape", "New extents in each dimension.", "list")
           .c_str());
 }
+template <class T> void bind_transpose(pybind11::module &mod) {
+  mod.def(
+      "transpose",
+      [](const T &self, const std::vector<Dim> &dims) {
+        return transpose(self, dims);
+      },
+      py::arg("x"), py::arg("dims") = std::vector<Dim>{},
+      Docstring()
+          .description("Transpose dimensions of a variable.")
+          .raises(
+              "If dims set does not match existing dimensions or is not empty")
+          .returns("New variable with requested dimension order.")
+          .rtype("Variable")
+          .param("x", "Variable to transpose.", "Variable.")
+          .param("dims",
+                 "List of dimensions in desired order. If default, reverses "
+                 "existing order.",
+                 "list")
+          .c_str());
+}
 
 void init_operations(py::module &m) {
   bind_concatenate<Variable>(m);
@@ -172,4 +192,6 @@ void init_operations(py::module &m) {
 
   bind_reshape<Variable>(m);
   bind_reshape<VariableView>(m);
+  bind_transpose<Variable>(m);
+  bind_transpose<VariableView>(m);
 }
