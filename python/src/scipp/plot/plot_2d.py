@@ -290,6 +290,23 @@ class Slicer2d(Slicer):
                 self.slider_axlocator[self.name][param["dim"]][getattr(
                     self, "log{}".format(xy))])
 
+        # Some annoying house-keeping when using X/Y buttons: we need to update
+        # the deeply embedded limits set by the Home button in the matplotlib
+        # toolbar. The home button actually brings the first element in the
+        # view stack to the top, so we need to modify the first element in the
+        # navigation stack in-place.
+
+        if len(self.fig.canvas.toolbar._nav_stack._elements) > 0:
+            # Get the first key in the navigation stack
+            key = list(self.fig.canvas.toolbar._nav_stack._elements[0].keys())[0]
+            # Construct a new tuple for replacement
+            alist = []
+            for x in self.fig.canvas.toolbar._nav_stack._elements[0][key]:
+                alist.append(x)
+            alist[0] = (self.xyedges['x'].values[0], self.xyedges['x'].values[-1],
+                        self.xyedges['y'].values[0], self.xyedges['y'].values[-1])
+            self.fig.canvas.toolbar._nav_stack._elements[0][key] = tuple(alist)
+
         return
 
     def update_slice(self, change):
