@@ -63,11 +63,11 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 
 DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                       const Dim dim) {
-  return DataArray(a.hasData() || b.hasData()
-                       ? concatenate(a.data(), b.data(), dim)
-                       : Variable{},
-                   concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
-                   concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
+  return DataArray(
+      a.hasData() || b.hasData() ? concatenate(a.data(), b.data(), dim)
+                                 : Variable{},
+      concat(a.aligned_coords(), b.aligned_coords(), dim, a.dims(), b.dims()),
+      concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
 }
 
 Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
@@ -75,8 +75,7 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
   Dataset result(
       std::map<std::string, Variable>(),
       concat(a.coords(), b.coords(), dim, a.dimensions(), b.dimensions()),
-      concat(a.masks(), b.masks(), dim, a.dimensions(), b.dimensions()),
-      std::map<std::string, Variable>());
+      concat(a.masks(), b.masks(), dim, a.dimensions(), b.dimensions()));
   for (const auto &item : a)
     if (b.contains(item.name())) {
       if (!item.dims().contains(dim) && item == b[item.name()])

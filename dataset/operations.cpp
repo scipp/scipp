@@ -35,7 +35,7 @@ Dataset merge(const DatasetConstView &a, const DatasetConstView &b) {
   // checked if present in both dataset with the same values with `union_`.
   // If the values are different the merge will fail.
   return Dataset(union_(a, b), union_(a.coords(), b.coords()),
-                 union_(a.masks(), b.masks()), union_(a.attrs(), b.attrs()));
+                 union_(a.masks(), b.masks()));
 }
 
 /// Return a deep copy of a DataArray or of a DataArrayView.
@@ -63,22 +63,26 @@ void copy_item(const DataArrayConstView &from, const DataArrayView &to) {
 template <class ConstView, class View>
 View copy_impl(const ConstView &in, const View &out,
                const AttrPolicy attrPolicy) {
-  for (const auto &[dim, coord] : in.coords())
-    out.coords()[dim].assign(coord);
-  for (const auto &[name, mask] : in.masks())
-    out.masks()[name].assign(mask);
-  if (attrPolicy == AttrPolicy::Keep)
-    for (const auto &[name, attr] : in.attrs())
-      out.attrs()[name].assign(attr);
+  for (const auto &[dim, coord] : in.aligned_coords())
+    out.aligned_coords()[dim].assign(coord);
 
   if constexpr (std::is_same_v<View, DatasetView>) {
+    for (const auto &[name, mask] : in.masks())
+      out.masks()[name].assign(mask);
     for (const auto &array : in) {
       copy_item(array, out[array.name()]);
       if (attrPolicy == AttrPolicy::Keep)
-        for (const auto &[name, attr] : array.attrs())
-          out[array.name()].attrs()[name].assign(attr);
+        for (const auto &[dim, coord] : array.unaligned_coords())
+          out[array.name()].unaligned_coords()[dim].assign(coord);
+      for (const auto &[name, mask] : array.masks())
+        out[array.name()].masks()[name].assign(mask);
     }
   } else {
+    if (attrPolicy == AttrPolicy::Keep)
+      for (const auto &[dim, coord] : in.unaligned_coords())
+        out.unaligned_coords()[dim].assign(coord);
+    for (const auto &[name, mask] : in.masks())
+      out.masks()[name].assign(mask);
     copy_item(in, out);
   }
 

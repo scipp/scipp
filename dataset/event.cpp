@@ -83,13 +83,14 @@ const auto make_select = [](const DataArrayConstView &array, const Dim dim,
 };
 
 } // namespace
+
 /// Return filtered event data based on excluding all events with coord values
 /// for given dim outside interval.
 DataArray filter(const DataArrayConstView &array, const Dim dim,
                  const VariableConstView &interval,
                  const AttrPolicy attrPolicy) {
   const auto &max_event_list_length =
-      max(variable::event::sizes(array.coords()[dim]));
+      max(variable::event::sizes(array.aligned_coords()[dim]));
   const bool need_64bit_indices =
       max_event_list_length.values<scipp::index>()[0] >
       std::numeric_limits<int32_t>::max();
@@ -98,7 +99,7 @@ DataArray filter(const DataArrayConstView &array, const Dim dim,
                           : make_select<int32_t>(array, dim, interval);
 
   std::map<Dim, Variable> coords;
-  for (const auto &[d, coord] : array.coords())
+  for (const auto &[d, coord] : array.aligned_coords())
     coords.emplace(d, contains_events(coord) ? copy_if(coord, select)
                                              : copy(coord));
 
@@ -106,8 +107,8 @@ DataArray filter(const DataArrayConstView &array, const Dim dim,
   return DataArray{contains_events(array.data()) ? copy_if(array.data(), select)
                                                  : copy(array.data()),
                    std::move(coords), array.masks(),
-                   attrPolicy == AttrPolicy::Keep ? array.attrs()
-                                                  : empty.attrs(),
+                   attrPolicy == AttrPolicy::Keep ? array.unaligned_coords()
+                                                  : empty.coords(),
                    array.name()};
 }
 
@@ -115,7 +116,7 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
              Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
-  return transform(x, subspan_view(function.coords()[dim], dim),
+  return transform(x, subspan_view(function.aligned_coords()[dim], dim),
                    subspan_view(function.data(), dim),
                    core::element::event::map);
 }

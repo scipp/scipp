@@ -81,8 +81,9 @@ auto make_events() {
 auto make_histogram() {
   auto edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                     units::us, Values{0, 2, 4, 1, 3, 5});
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0},
-                                   Variances{0.3, 0.4});
+  auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                   Values{2.0, 3.0, 2.0, 3.0},
+                                   Variances{0.3, 0.4, 0.3, 0.4});
 
   return DataArray(data, {{Dim::X, edges}});
 }
@@ -90,7 +91,8 @@ auto make_histogram() {
 auto make_histogram_no_variance() {
   auto edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                     units::us, Values{0, 2, 4, 1, 3, 5});
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0});
+  auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                   Values{2.0, 3.0, 2.0, 3.0});
 
   return DataArray(data, {{Dim::X, edges}});
 }
@@ -108,8 +110,9 @@ TEST(DataArrayRealignedEventsArithmeticTest, fail_events_op_non_histogram) {
   const auto events = make_events();
   auto coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                     units::us, Values{0, 2, 1, 3});
-  auto data = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2.0, 3.0},
-                                   Variances{0.3, 0.4});
+  auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                   Values{2.0, 3.0, 2.0, 3.0},
+                                   Variances{0.3, 0.4, 0.3, 0.4});
   DataArray not_hist(data, {{Dim::X, coord}});
 
   // Fail due to coord mismatch between event coord and dense coord

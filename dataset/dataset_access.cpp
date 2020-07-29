@@ -83,23 +83,4 @@ void MaskAccess::erase(const std::string &key) const {
     m_parent->eraseMask(key);
 }
 
-void AttrAccess::set(const std::string &key, Variable var) const {
-  expectValidParent(m_parent);
-  if (m_unaligned)
-    m_unaligned->attrs().set(key, std::move(var));
-  else if (m_name)
-    m_parent->setAttr(*m_name, key, std::move(var));
-  else
-    m_parent->setAttr(key, std::move(var));
-}
-void AttrAccess::erase(const std::string &key) const {
-  expectValidParent(m_parent);
-  if (m_unaligned)
-    m_unaligned->attrs().erase(key);
-  else if (m_name)
-    m_parent->eraseAttr(*m_name, key);
-  else
-    m_parent->eraseAttr(key);
-}
-
 } // namespace scipp::dataset

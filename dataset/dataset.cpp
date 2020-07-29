@@ -30,7 +30,7 @@ constexpr auto contains = [](const auto &dims, const Dim dim) {
 
 template <class Dims, class T1>
 auto makeViewItems(const Dims &dims, T1 &coords) {
-  std::unordered_map<typename T1::key_type, VariableConstView> items;
+  std::unordered_map<typename T1::key_type, VariableView> items;
   // We preserve only items that are part of the space spanned by the
   // provided parent dimensions.
   auto contained = [&dims](const auto &item2) {
@@ -76,7 +76,8 @@ void addMasks(Item &items, const Dims &parentDims, const Dims &dims,
 }
 
 Dataset::Dataset(const DatasetConstView &view)
-    : Dataset(view, view.coords(), view.masks(), view.attrs()) {}
+    // TODO should this be aligned_coords()?
+    : Dataset(view, view.coords(), view.masks()) {}
 
 Dataset::Dataset(const DataArrayConstView &data) { setData(data.name(), data); }
 
@@ -565,6 +566,7 @@ void erase_if_unaligned_by_dim_slices(Items &items, const Slices &slices) {
 }
 } // namespace
 
+/*
 template <class MapView>
 MapView DataArrayConstView::makeView(const bool aligned) const {
   auto map_parent = [](const DataArrayConstView &self) -> auto & {
@@ -646,19 +648,19 @@ MapView DataArrayView::makeView(const bool aligned) const {
         std::move(items), slices());
   }
 }
+*/
 
 /// Return a const view to all coordinates of the data view.
 CoordsConstView DataArrayConstView::coords() const noexcept {
   // Aligned coords (including unaligned by slicing) from dataset
   auto items = makeViewItems(parentDims(), m_dataset->m_coords);
   // Unaligned coords
-  const auto tmp = makeViewItems(parentDims(), m_data->second.coords);
+  auto tmp = makeViewItems(parentDims(), m_data->second.coords);
   items.insert(tmp.begin(), tmp.end());
   if (!m_data->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
     decltype(*this) unaligned = m_data->second.unaligned->data;
-    auto tmp =
-        makeViewItems(unaligned.parentDims(), unaligned.m_dataset->m_coords);
+    tmp = makeViewItems(unaligned.parentDims(), unaligned.m_dataset->m_coords);
     items.insert(tmp.begin(), tmp.end());
   }
   return CoordsConstView(std::move(items), slices());
@@ -667,8 +669,7 @@ CoordsConstView DataArrayConstView::coords() const noexcept {
 
 /// Return a const view to all aligned coordinates of the data view.
 CoordsConstView DataArrayConstView::aligned_coords() const noexcept {
-  const auto tmp = coords();
-  auto items = coords2().items();
+  auto items = coords().items();
   erase_if_unaligned_by_dim_slices(items, slices());
   return CoordsConstView(std::move(items), slices());
   // return makeView<CoordsConstView>(true);
@@ -679,13 +680,12 @@ MasksConstView DataArrayConstView::masks() const noexcept {
   // Aligned masks from dataset
   auto items = makeViewItems(parentDims(), m_dataset->m_masks);
   // Unaligned masks
-  const auto tmp = makeViewItems(parentDims(), m_data->second.masks);
+  auto tmp = makeViewItems(parentDims(), m_data->second.masks);
   items.insert(tmp.begin(), tmp.end());
   if (!m_data->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
     decltype(*this) unaligned = m_data->second.unaligned->data;
-    auto tmp =
-        makeViewItems(unaligned.parentDims(), unaligned.m_dataset->m_masks);
+    tmp = makeViewItems(unaligned.parentDims(), unaligned.m_dataset->m_masks);
     items.insert(tmp.begin(), tmp.end());
   }
   return MasksConstView(std::move(items), slices());
@@ -743,7 +743,7 @@ CoordsView DataArrayView::coords() const noexcept {
   // Aligned coords (including unaligned by slicing) from dataset
   auto items = makeViewItems(parentDims(), m_mutableDataset->m_coords);
   // Unaligned coords
-  const auto tmp = makeViewItems(parentDims(), m_mutableData->second.coords);
+  auto tmp = makeViewItems(parentDims(), m_mutableData->second.coords);
   items.insert(tmp.begin(), tmp.end());
   const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
   DataArray *unaligned_ptr{nullptr};
@@ -751,40 +751,57 @@ CoordsView DataArrayView::coords() const noexcept {
     // This is a view of the unaligned content of a realigned data array.
     unaligned_ptr = &m_mutableData->second.unaligned->data;
     decltype(*this) unaligned = m_mutableData->second.unaligned->data;
-    auto tmp = makeViewItems(unaligned.parentDims(),
-                             unaligned.m_mutableDataset->m_coords);
+    tmp = makeViewItems(unaligned.parentDims(),
+                        unaligned.m_mutableDataset->m_coords);
     items.insert(tmp.begin(), tmp.end());
   }
-  return CoordsView(CoordAccess{}, std::move(items), slices());
+  return CoordsView(CoordAccess{slices().empty() ? m_mutableDataset : nullptr,
+                                &name(), unaligned_ptr},
+                    std::move(items), slices());
   // return makeView<CoordsView>();
 }
 
 /// Return a view to all coordinates of the data array.
 CoordsView DataArray::coords() {
-  return CoordsView(CoordAccess(&m_holder),
-                    makeViewItems(dims(), m_holder.m_coords));
+  auto items = get().coords().items();
+  return CoordsView(CoordAccess{&m_holder}, std::move(items), {});
 }
 
 /// Return a view to all aligned coordinates of the data view.
-CoordsView DataArrayView::coords() const noexcept {
+CoordsView DataArrayView::aligned_coords() const noexcept {
   return makeView<CoordsView>();
 }
 
 /// Return a view to all aligned coordinates of the data array.
-CoordsView DataArray::aligned_coords() {
-  return CoordsView(CoordAccess(&m_holder),
-                    makeViewItems(dims(), m_holder.m_coords));
-}
+CoordsView DataArray::aligned_coords() { return m_holder.aligned_coords(); }
 
 /// Return a view to all masks of the data view.
 MasksView DataArrayView::masks() const noexcept {
-  return makeView<MasksView>();
+  // Aligned masks from dataset
+  auto items = makeViewItems(parentDims(), m_mutableDataset->m_masks);
+  // Unaligned masks
+  auto tmp = makeViewItems(parentDims(), m_mutableData->second.masks);
+  items.insert(tmp.begin(), tmp.end());
+  const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
+  DataArray *unaligned_ptr{nullptr};
+  if (is_view_of_unaligned) {
+    // This is a view of the unaligned content of a realigned data array.
+    unaligned_ptr = &m_mutableData->second.unaligned->data;
+    decltype(*this) unaligned = m_mutableData->second.unaligned->data;
+    tmp = makeViewItems(unaligned.parentDims(),
+                        unaligned.m_mutableDataset->m_masks);
+    items.insert(tmp.begin(), tmp.end());
+  }
+  return MasksView(MaskAccess{slices().empty() ? m_mutableDataset : nullptr,
+                              &name(), unaligned_ptr},
+                   std::move(items), slices());
+  // return makeView<MasksView>();
 }
 
 /// Return a view to all masks of the data array.
 MasksView DataArray::masks() {
-  return MasksView(MaskAccess(&m_holder),
-                   makeViewItems(dims(), m_holder.m_masks));
+  // Unlike coords we do not have aligned masks, not using different MaskAccess.
+  return get().masks();
 }
 
 DataArrayView DataArrayView::assign(const DataArrayConstView &other) const {

@@ -28,7 +28,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 /// Return intersection of maps, i.e., all items with matching names that
 /// have matching content.
 template <class Map> auto intersection(const Map &a, const Map &b) {
-  std::map<std::string, Variable> out;
+  std::map<typename Map::key_type, Variable> out;
   for (const auto &[key, item] : a)
     if (const auto it = b.find(key); it != b.end() && it->second == item)
       out.emplace(key, item);
@@ -69,7 +69,7 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
   // Note the `copy` call, ensuring that the return value of the ternary
   // operator can be moved. Without `copy`, the result of `func` is always
   // copied.
-  for (auto &&[d, coord] : a.coords())
+  for (auto &&[d, coord] : a.aligned_coords())
     if (coord.dims().ndim() == 0 || dim_of_coord(coord, d) != dim) {
       expectAlignedCoord(d, coord, dim);
       if constexpr (ApplyToData) {
@@ -80,10 +80,10 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
       }
     }
 
-  std::map<std::string, Variable> attrs;
-  for (auto &&[name, attr] : a.attrs())
-    if (!attr.dims().contains(dim))
-      attrs.emplace(name, attr);
+  std::map<Dim, Variable> unaligned_coords;
+  for (auto &&[d, coord] : a.unaligned_coords())
+    if (!coord.dims().contains(dim))
+      unaligned_coords.emplace(d, coord);
 
   std::map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())
@@ -93,19 +93,19 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
   if constexpr (ApplyToData) {
     if (a.hasData()) {
       return DataArray(func(a.data(), dim, args...), std::move(coords),
-                       std::move(masks), std::move(attrs), a.name());
+                       std::move(masks), std::move(unaligned_coords), a.name());
     } else {
       if constexpr (std::is_base_of_v<no_realigned_support_t, Func>)
         throw std::logic_error("Operation cannot handle realigned data.");
       else
         return DataArray(func(a.dims(), a.unaligned(), dim, args...),
-                         std::move(coords), std::move(masks), std::move(attrs),
-                         a.name());
+                         std::move(coords), std::move(masks),
+                         std::move(unaligned_coords), a.name());
     }
   } else {
     return DataArray(func(a, dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(masks), std::move(attrs),
-                     a.name());
+                     std::move(coords), std::move(masks),
+                     std::move(unaligned_coords), a.name());
   }
 }
 
@@ -159,9 +159,6 @@ Dataset apply_to_items(const DatasetConstView &d, Func func, Args &&... args) {
   Dataset result;
   for (const auto &data : d)
     result.setData(data.name(), func(data, std::forward<Args>(args)...));
-  for (auto &&[name, attr] : d.attrs())
-    if (copy_attr(attr, args...))
-      result.setAttr(name, attr);
   return result;
 }
 

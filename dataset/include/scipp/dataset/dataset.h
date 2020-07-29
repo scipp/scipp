@@ -64,8 +64,9 @@ public:
   DType dtype() const;
   units::Unit unit() const;
 
-  CoordsConstView coords2() const noexcept;
   CoordsConstView coords() const noexcept;
+  CoordsConstView aligned_coords() const noexcept;
+  CoordsConstView unaligned_coords() const noexcept;
   MasksConstView masks() const noexcept;
 
   /// Return true if the view contains data values.
@@ -133,8 +134,9 @@ public:
                 const detail::slice_list &slices = {},
                 VariableView &&view = VariableView{});
 
-  CoordsView coords2() const noexcept;
   CoordsView coords() const noexcept;
+  CoordsView aligned_coords() const noexcept;
+  CoordsView unaligned_coords() const noexcept;
   MasksView masks() const noexcept;
 
   void setUnit(const units::Unit unit) const;
@@ -626,6 +628,9 @@ public:
 
   CoordsConstView coords() const;
   CoordsView coords();
+
+  CoordsConstView aligned_coords() const;
+  CoordsView aligned_coords();
 
   CoordsConstView unaligned_coords() const;
   CoordsView unaligned_coords();

@@ -59,11 +59,11 @@ namespace {
 template <class... DataArgs>
 auto makeDataArray(const DataArrayConstView &view, const AttrPolicy attrPolicy,
                    DataArgs &&... dataArgs) {
-  return DataArray(std::forward<DataArgs>(dataArgs)..., copy_map(view.coords()),
-                   copy_map(view.masks()),
+  return DataArray(std::forward<DataArgs>(dataArgs)...,
+                   copy_map(view.aligned_coords()), copy_map(view.masks()),
                    attrPolicy == AttrPolicy::Keep
-                       ? copy_map(view.attrs())
-                       : std::map<std::string, Variable>{},
+                       ? copy_map(view.unaligned_coords())
+                       : std::map<Dim, Variable>{},
                    view.name());
 }
 
@@ -126,7 +126,6 @@ void DataArray::drop_alignment() {
   array.setName(name());
   move_items(m_holder.m_coords, array.coords(), dims);
   move_items(m_holder.m_masks, array.masks(), dims);
-  move_items(m_holder.m_attrs, array.attrs(), dims);
   *this = std::move(array);
 }
 
@@ -139,8 +138,6 @@ bool operator==(const DataArrayConstView &a, const DataArrayConstView &b) {
   if (a.coords() != b.coords())
     return false;
   if (a.masks() != b.masks())
-    return false;
-  if (a.attrs() != b.attrs())
     return false;
   if (a.hasData())
     return a.data() == b.data();
@@ -364,11 +361,14 @@ template <class Op>
 DataArray apply_mul_or_div(Op op, const DataArrayConstView &a,
                            const DataArrayConstView &b) {
   if (unaligned::is_realigned_events(a) || unaligned::is_realigned_events(b))
-    return {events_dense_op(op, a, b), union_(a.coords(), b.coords()),
-            union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
+    return {events_dense_op(op, a, b),
+            union_(a.aligned_coords(), b.aligned_coords()),
+            union_or(a.masks(), b.masks()),
+            intersection(a.unaligned_coords(), b.unaligned_coords())};
   else
     return {op(a.data(), b.data()), union_(a.coords(), b.coords()),
-            union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
+            union_or(a.masks(), b.masks()),
+            intersection(a.unaligned_coords(), b.unaligned_coords())};
 }
 } // namespace
 
@@ -381,8 +381,8 @@ DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
 }
 
 DataArray astype(const DataArrayConstView &var, const DType type) {
-  return DataArray(astype(var.data(), type), var.coords(), var.masks(),
-                   var.attrs());
+  return DataArray(astype(var.data(), type), var.aligned_coords(), var.masks(),
+                   var.unaligned_coords());
 }
 
 } // namespace scipp::dataset

@@ -53,10 +53,10 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
                       std::string(tab) + tab);
   }
 
-  if (!data.attrs().empty()) {
-    s << tab << "Attributes:\n";
-    for (const auto &[attr_name, var] : data.attrs())
-      s << tab << tab << format_variable(attr_name, var, datasetDims);
+  if (!data.unaligned_coords().empty()) {
+    s << tab << "Unaligned coords:\n";
+    for (const auto &[dim, var] : data.unaligned_coords())
+      s << tab << tab << format_variable(to_string(dim), var, datasetDims);
   }
   return s.str();
 }
@@ -94,11 +94,6 @@ std::string do_to_string(const D &dataset, const std::string &id,
       elem.push_back(p);
     }
     for (const auto &[name, var] : sorted(elem))
-      s << shift << format_variable(name, var, dims);
-  }
-  if (!dataset.attrs().empty()) {
-    s << shift << "Attributes:\n";
-    for (const auto &[name, var] : sorted(dataset.attrs()))
       s << shift << format_variable(name, var, dims);
   }
   if (!dataset.masks().empty()) {

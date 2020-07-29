@@ -13,18 +13,10 @@ namespace scipp::dataset::unaligned {
 
 namespace {
 template <class Map, class Dims>
-auto align(DataArray &view, const Dims &unalignedDims) {
+auto align(const Map &map, const Dims &unalignedDims) {
   std::vector<std::pair<typename Map::key_type, Variable>> aligned;
   std::set<typename Map::key_type> to_align;
-  constexpr auto map = [](DataArray &v) {
-    if constexpr (std::is_same_v<Map, CoordsView>)
-      return v.coords();
-    else if constexpr (std::is_same_v<Map, MasksView>)
-      return v.masks();
-    else
-      return v.attrs();
-  };
-  for (const auto &[name, item] : map(view)) {
+  for (const auto &[name, item] : map) {
     const auto &dims = item.dims();
     if (std::none_of(unalignedDims.begin(), unalignedDims.end(),
                      [&dims](const Dim dim) { return dims.contains(dim); }) &&
@@ -32,8 +24,8 @@ auto align(DataArray &view, const Dims &unalignedDims) {
       to_align.insert(name);
   }
   for (const auto &name : to_align) {
-    aligned.emplace_back(name, Variable(map(view)[name]));
-    map(view).erase(name);
+    aligned.emplace_back(name, Variable(map[name]));
+    map.erase(name);
   }
   return aligned;
 }
@@ -117,7 +109,7 @@ DataArray realign(DataArray unaligned,
   // TODO Some things here can be simplified and optimized by adding an
   // `extract` method to MutableView.
   Dimensions alignedDims;
-  auto alignedCoords = align<CoordsView>(unaligned, unalignedDims);
+  auto alignedCoords = align(unaligned.aligned_coords(), unalignedDims);
   const auto dims = unaligned.dims();
   for (const auto &dim : dims.labels()) {
     if (unalignedDims.count(dim)) {
@@ -135,8 +127,8 @@ DataArray realign(DataArray unaligned,
   }
 
   auto name = unaligned.name();
-  auto alignedMasks = align<MasksView>(unaligned, unalignedDims);
-  auto alignedAttrs = align<AttrsView>(unaligned, unalignedDims);
+  auto alignedMasks = align(unaligned.masks(), unalignedDims);
+  auto alignedAttrs = align(unaligned.unaligned_coords(), unalignedDims);
   return DataArray(UnalignedData{alignedDims, std::move(unaligned)},
                    std::move(alignedCoords), std::move(alignedMasks),
                    std::move(alignedAttrs), std::move(name));
