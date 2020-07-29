@@ -285,6 +285,9 @@ class Slicer2d(Slicer):
             else:
                 self.xyedges[xy] = self.slider_coord[self.name][param["dim"]].astype(
                     sc.dtype.float64)
+            print("==========================")
+            print(self.xyedges)
+            print("==========================")
 
             # Pixel widths used for scaling before rebin step
             self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
@@ -524,30 +527,43 @@ class Slicer2d(Slicer):
         # self.output.value = "scipp"
         xylims = {"x": np.array(self.ax.get_xlim()),
                   "y": np.array(self.ax.get_ylim())}
+        self.ax.set_title('got to here 0.1')
 
         # Make sure we don't overrun the original array bounds
-        xylims["x"][0] = max(xylims["x"][0], self.xyedges["x"].values[0])
-        xylims["x"][1] = min(xylims["x"][1], self.xyedges["x"].values[-1])
-        xylims["y"][0] = max(xylims["y"][0], self.xyedges["y"].values[0])
-        xylims["y"][1] = min(xylims["y"][1], self.xyedges["y"].values[-1])
+        # xylims["x"][0] = max(xylims["x"][0], self.xyedges["x"].values[0])
+        # xylims["x"][1] = min(xylims["x"][1], self.xyedges["x"].values[-1])
+        # xylims["y"][0] = max(xylims["y"][0], self.xyedges["y"].values[0])
+        # xylims["y"][1] = min(xylims["y"][1], self.xyedges["y"].values[-1])
+        xylims["x"][0] = max(xylims["x"][0], self.slider_xlims[self.name][self.button_dims[1]][0])
+        self.ax.set_title('got to here 0.11')
+        xylims["x"][1] = min(xylims["x"][1], self.slider_xlims[self.name][self.button_dims[1]][1])
+        self.ax.set_title('got to here 0.12')
+        xylims["y"][0] = max(xylims["y"][0], self.slider_xlims[self.name][self.button_dims[0]][0])
+        self.ax.set_title('got to here 0.13')
+        xylims["y"][1] = min(xylims["y"][1], self.slider_xlims[self.name][self.button_dims[0]][1])
+        self.ax.set_title('got to here 0.2')
 
         dx = self.current_lims["x"][1] - self.current_lims["x"][0]
         dy = self.current_lims["y"][1] - self.current_lims["y"][0]
+        self.ax.set_title('got to here 0.3')
         # self.output.value = str(np.array(xylims.values()).flatten())
         # new_lims = np.array(list(xylims.values())).flatten()
         diffx = np.abs(self.current_lims["x"] - xylims["x"]) / dx
         diffy = np.abs(self.current_lims["y"] - xylims["y"]) / dy
+        self.ax.set_title('got to here 0.4')
         diff = diffx.sum() + diffy.sum()
         # diff = np.sum(
         #     np.abs(self.current_lims - new_lims) /
         #     np.abs(self.current_lims))
         self.ax.set_title(str(diff))
         # return
+        # return
         if diff > 0.1:
             self.current_lims = xylims
             # self.ax.set_title("{}\n{}".format(str(xylims["x"]), str(xylims["y"])))
             # self.fig.text(np.random.rand(), np.random.rand(), str(np.random.rand()))
             for xy, param in self.axparams.items():
+                self.ax.set_title('got to here 1')
                 # Create coordinate axes for resampled array to be used as image
                 # offset = 2 * (xy == "y")
                 self.xyrebin[xy] = sc.Variable(
@@ -555,7 +571,8 @@ class Slicer2d(Slicer):
                     values=np.linspace(xylims[xy][0],
                                        xylims[xy][1],
                                        self.image_resolution[xy] + 1),
-                    unit=self.slider_x[self.name][param["dim"]].unit)
+                    unit=self.slider_coord[self.name][param["dim"]].unit)
+                self.ax.set_title('got to here 2')
 
                 # # # Create bin-edge coordinates in the case of non bin-edges, since
                 # # # rebin only accepts bin edges.
@@ -576,6 +593,7 @@ class Slicer2d(Slicer):
                                         self.xyrebin[xy][param["dim"], 1] -
                                         self.xyrebin[xy][param["dim"], 0])
                 self.xywidth[xy].unit = sc.units.one
+                self.ax.set_title('got to here 3')
 
             # dslice = self.resample_image()
 
@@ -605,7 +623,12 @@ class Slicer2d(Slicer):
             # if self.params["masks"][self.name]["show"]:
             #     self.im["masks"].set_data(self.mask_to_float(msk, arr))
             #     self.im["masks"].set_extent(np.array(list(xylims.values())).flatten())
+            self.ax.set_title('got to here 4')
+            self.ax.set_title(str(np.array(list(xylims.values())).flatten()))
+            # return
             self.update_image(extent=np.array(list(xylims.values())).flatten())
+            # return
+            self.ax.set_title('got to here 5')
 
 
 
@@ -630,12 +653,12 @@ class Slicer2d(Slicer):
         #                                        unit=sc.units.counts))
         print(self.dim_to_xy)
         dslice = sc.DataArray(coords={
-            self.xyedges["x"].dims[0]: self.xyedges["x"],
-            self.xyedges["y"].dims[0]: self.xyedges["y"]
+            self.xyrebin["x"].dims[0]: self.xyedges["x"],
+            self.xyrebin["y"].dims[0]: self.xyedges["y"]
         },
                               data=sc.Variable(dims=[
-                                  self.xyedges[self.dim_to_xy[self.vslice.dims[0]]].dims[0],
-                                  self.xyedges[self.dim_to_xy[self.vslice.dims[1]]].dims[0]
+                                  self.xyrebin[self.dim_to_xy[self.vslice.dims[0]]].dims[0],
+                                  self.xyrebin[self.dim_to_xy[self.vslice.dims[1]]].dims[0]
                               ],
                                                values=self.vslice.values,
                                                unit=sc.units.counts))
