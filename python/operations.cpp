@@ -119,47 +119,6 @@ template <typename T> void bind_contains_events(py::module &m) {
           .c_str());
 }
 
-template <class T> void bind_reshape(pybind11::module &mod) {
-  mod.def(
-      "reshape",
-      [](const T &self, const std::vector<Dim> &labels,
-         const py::tuple &shape) {
-        Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-        return reshape(self, dims);
-      },
-      py::arg("x"), py::arg("dims"), py::arg("shape"),
-      Docstring()
-          .description("Reshape a variable.")
-          .raises("If the volume of the old shape is not equal to the volume "
-                  "of the new shape.")
-          .returns("New variable with requested dimension labels and shape.")
-          .rtype("Variable")
-          .param("x", "Variable to reshape.", "Variable.")
-          .param("dims", "List of new dimensions.", "list")
-          .param("shape", "New extents in each dimension.", "list")
-          .c_str());
-}
-template <class T> void bind_transpose(pybind11::module &mod) {
-  mod.def(
-      "transpose",
-      [](const T &self, const std::vector<Dim> &dims) {
-        return transpose(self, dims);
-      },
-      py::arg("x"), py::arg("dims") = std::vector<Dim>{},
-      Docstring()
-          .description("Transpose dimensions of a variable.")
-          .raises(
-              "If dims set does not match existing dimensions or is not empty")
-          .returns("New variable with requested dimension order.")
-          .rtype("Variable")
-          .param("x", "Variable to transpose.", "Variable.")
-          .param("dims",
-                 "List of dimensions in desired order. If default, reverses "
-                 "existing order.",
-                 "list")
-          .c_str());
-}
-
 void init_operations(py::module &m) {
   bind_concatenate<Variable>(m);
   bind_concatenate<DataArray>(m);
@@ -189,9 +148,4 @@ void init_operations(py::module &m) {
             .seealso(":py:func:`scipp.values`")
             .c_str(),
         py::call_guard<py::gil_scoped_release>());
-
-  bind_reshape<Variable>(m);
-  bind_reshape<VariableView>(m);
-  bind_transpose<Variable>(m);
-  bind_transpose<VariableView>(m);
 }

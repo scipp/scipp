@@ -27,6 +27,7 @@ pybind11_add_module(
   variable.cpp
   variable_instantiate_py_object.cpp
   element_array_view.cpp
+  shape.cpp
 )
 target_link_libraries(_scipp LINK_PRIVATE scipp-dataset scipp-neutron)
 
