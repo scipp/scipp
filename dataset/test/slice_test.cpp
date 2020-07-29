@@ -150,6 +150,8 @@ protected:
     d.setCoord(Dim("labels_xy"),
                dataset.coords()[Dim("labels_xy")].slice({Dim::X, pos}));
     d.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
+    // Unlike coords, dataset mask does not turn into item mask when sliced
+    d.setMask("masks_x", dataset.masks()["masks_x"].slice({Dim::X, pos}));
     d.setMask("masks_xy", dataset.masks()["masks_xy"].slice({Dim::X, pos}));
     d.setMask("masks_z", dataset.masks()["masks_z"]);
     d.setData("values_x", dataset["values_x"].data().slice({Dim::X, pos}));
@@ -157,11 +159,6 @@ protected:
     d.setData("data_xy", dataset["data_xy"].data().slice({Dim::X, pos}));
     d.setData("data_zyx", dataset["data_zyx"].data().slice({Dim::X, pos}));
     d.setData("data_xyz", dataset["data_xyz"].data().slice({Dim::X, pos}));
-    // Dataset mask turns into item mask when sliced.
-    for (const auto &name :
-         {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
-      d[name].masks().set("masks_x",
-                          dataset.masks()["masks_x"].slice({Dim::X, pos}));
     return d;
   }
 };

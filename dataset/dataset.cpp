@@ -28,6 +28,13 @@ constexpr auto contains = [](const auto &dims, const Dim dim) {
 };
 }
 
+template <class T1> auto makeViewItems(T1 &coords) {
+  std::unordered_map<typename T1::key_type, VariableView> items;
+  for (auto &item : coords)
+    items.emplace(item.first, makeViewItem(item.second));
+  return items;
+}
+
 template <class Dims, class T1>
 auto makeViewItems(const Dims &dims, T1 &coords) {
   std::unordered_map<typename T1::key_type, VariableView> items;
@@ -646,7 +653,8 @@ CoordsConstView DataArrayConstView::make_coords(const bool aligned) const {
     erase_if_unaligned_by_dim_slices(items, slices());
   } else {
     // Unaligned coords
-    const auto tmp = makeViewItems(parentDims(), m_data->second.coords);
+    // Note no dims passed, include everything
+    const auto tmp = makeViewItems(m_data->second.coords);
     items.insert(tmp.begin(), tmp.end());
   }
   if (!m_data->second.data && hasData()) {
@@ -697,7 +705,6 @@ MasksConstView DataArrayConstView::masks() const noexcept {
     items.insert(tmp.begin(), tmp.end());
   }
   return MasksConstView(std::move(items), slices());
-  // return makeView<MasksConstView>();
 }
 
 /// Return a const view to all coordinates of the data array.
@@ -757,7 +764,8 @@ CoordsView DataArrayView::make_coords(const bool aligned) const {
     erase_if_unaligned_by_dim_slices(items, slices());
   } else {
     // Unaligned coords
-    const auto tmp = makeViewItems(parentDims(), m_mutableData->second.coords);
+    // Note no dims passed, include everything
+    const auto tmp = makeViewItems(m_mutableData->second.coords);
     items.insert(tmp.begin(), tmp.end());
   }
   const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
