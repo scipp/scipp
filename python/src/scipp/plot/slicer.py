@@ -23,8 +23,8 @@ class Slicer:
                  vmax=None,
                  color=None,
                  button_options=None,
-                 volume=False,
-                 aspect=None):
+                 aspect=None,
+                 positions=None):
 
         import ipywidgets as widgets
 
@@ -114,6 +114,10 @@ class Slicer:
             # Process axes dimensions
             if axes is None:
                 axes = array.dims
+            # Replace positions in axes if positions set
+            if positions is not None:
+                axes[axes.index(
+                    self.data_array.coords[positions].dims[0])] = positions
             # Protect against duplicate entries in axes
             if len(axes) != len(set(axes)):
                 raise RuntimeError("Duplicate entry in axes: {}".format(axes))
@@ -143,17 +147,34 @@ class Slicer:
         self.buttons = dict()
         self.showhide = dict()
         self.button_axis_to_dim = dict()
+        self.continuous_update = dict()
         # Default starting index for slider
         indx = 0
+
+        # Additional condition if positions kwarg set
+        positions_dim = None
+        if len(button_options) == 3 and positions is not None:
+            if self.data_array.coords[
+                    positions].dtype == dtype.vector_3_float64:
+                positions_dim = positions
+            else:
+                raise RuntimeError(
+                    "Supplied positions coordinate does not contain vectors.")
 
         # Now begin loop to construct sliders
         button_values = [None] * (self.ndim - len(button_options)) + \
             button_options[::-1]
         for i, dim in enumerate(self.slider_x[self.name].keys()):
-            # If this is a 3d projection, place slices half-way
-            if len(button_options) == 3 and (not volume):
-                indx = (self.slider_nx[self.name][dim] - 1) // 2
             dim_str = str(dim)
+            # Determine if slider should be disabled or not:
+            # In the case of 3d projection, disable sliders that are for
+            # dims < 3, or sliders that contain vectors
+            disabled = False
+            if positions_dim is not None:
+                disabled = dim == positions_dim
+            elif i >= self.ndim - len(button_options):
+                disabled = True
+
             # Add an IntSlider to slide along the z dimension of the array
             self.slider[dim] = widgets.IntSlider(
                 value=indx,
@@ -163,12 +184,23 @@ class Slicer:
                 description=dim_str,
                 continuous_update=True,
                 readout=False,
-                disabled=((i >= self.ndim - len(button_options))
-                          and ((len(button_options) < 3) or volume)))
+                disabled=disabled)
             labvalue = self.make_slider_label(self.slider_x[self.name][dim],
                                               indx)
+            self.continuous_update[dim] = widgets.Checkbox(
+                value=True,
+                description="Continuous update",
+                indent=False,
+                layout={"width": "20px"})
+            widgets.jslink((self.continuous_update[dim], 'value'),
+                           (self.slider[dim], 'continuous_update'))
+
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
+                self.continuous_update[dim].layout.display = 'none'
+                # This is a trick to turn the label into the coordinate name
+                # because when we hide the slider, the slider description is
+                # also hidden
                 labvalue = dim_str
             # Add a label widget to display the value of the z coordinate
             self.lab[dim] = widgets.Label(value=labvalue)
@@ -180,43 +212,35 @@ class Slicer:
                 disabled=False,
                 button_style='',
                 style={"button_width": "70px"})
-            if button_values[i] is None:
-                button_style = ""
-            else:
-                button_style = "success"
+            if button_values[i] is not None:
                 self.button_axis_to_dim[button_values[i].lower()] = dim
             setattr(self.buttons[dim], "dim", dim)
             setattr(self.buttons[dim], "old_value", self.buttons[dim].value)
             setattr(self.slider[dim], "dim", dim)
+            setattr(self.continuous_update[dim], "dim", dim)
 
+            # Hide buttons and labels for 1d variables
             if self.ndim == 1:
                 self.buttons[dim].layout.display = 'none'
                 self.lab[dim].layout.display = 'none'
 
-            if (len(button_options) == 3) and (not volume):
-                self.showhide[dim] = widgets.Button(
-                    description="hide",
-                    disabled=(button_values[i] is None),
-                    button_style=button_style,
-                    layout={'width': "70px"})
-                setattr(self.showhide[dim], "dim", dim)
-                setattr(self.showhide[dim], "value",
-                        button_values[i] is not None)
-                # Add observer to show/hide buttons
-                self.showhide[dim].on_click(self.update_showhide)
-                self.members["widgets"]["buttons"][dim] = self.showhide[dim]
+            # Hide buttons and inactive sliders for 3d projection
+            if len(button_options) == 3:
+                self.buttons[dim].layout.display = 'none'
+                if self.slider[dim].disabled:
+                    self.slider[dim].layout.display = 'none'
+                    self.continuous_update[dim].layout.display = 'none'
+                    self.lab[dim].layout.display = 'none'
 
             # Add observer to buttons
             self.buttons[dim].on_msg(self.update_buttons)
             # Add an observer to the slider
             self.slider[dim].observe(self.update_slice, names="value")
             # Add the row of slider + buttons
-            row = [self.slider[dim], self.lab[dim], self.buttons[dim]]
-            if (len(button_options) == 3) and (not volume):
-                row += [
-                    widgets.HTML(value="&nbsp;&nbsp;&nbsp;&nbsp;"),
-                    self.showhide[dim]
-                ]
+            row = [
+                self.slider[dim], self.lab[dim], self.continuous_update[dim],
+                self.buttons[dim]
+            ]
             self.vbox.append(widgets.HBox(row))
 
             # Construct members object
@@ -306,3 +330,6 @@ class Slicer:
             var = make_fake_coord(dim, self.shapes[name][dim])
 
         return dim, var, formatter, locator
+
+    def update_buttons(self, change):
+        return
