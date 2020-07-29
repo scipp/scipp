@@ -9,6 +9,8 @@
 
 #include <Eigen/Dense>
 
+#include "scipp/units/unit.h"
+
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 #include "scipp/core/dimensions.h"
@@ -52,13 +54,13 @@ std::string to_string(const MutableView<T, U> &mutableView) {
 }
 
 template <class T>
-std::string array_to_string(const T &arr, const std::string &unit = "");
+std::string array_to_string(const T &arr, const units::Unit &unit = units::ns);
 
 const std::string to_iso_date(const scipp::core::time_point &tem,
-                              const std::string &unit);
+                              const units::Unit &unit);
 
 template <class T>
-std::string element_to_string(const T &item, const std::string &unit = "") {
+std::string element_to_string(const T &item, const units::Unit &unit = units::ns) {
   using std::to_string;
   if constexpr (std::is_same_v<T, std::string>)
     return {'"' + item + "\", "};
@@ -81,7 +83,7 @@ std::string element_to_string(const T &item, const std::string &unit = "") {
 }
 
 template <class T>
-std::string array_to_string(const T &arr, const std::string &unit) {
+std::string array_to_string(const T &arr, const units::Unit &unit) {
   const auto size = scipp::size(arr);
   if (size == 0)
     return std::string("[]");

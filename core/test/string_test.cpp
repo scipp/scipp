@@ -4,6 +4,7 @@
 
 #include "scipp/core/string.h"
 #include "scipp/units/except.h"
+#include "scipp/units/unit.h"
 
 using namespace scipp;
 using namespace scipp::core;
@@ -11,14 +12,14 @@ using namespace scipp::core;
 TEST(CoreStringTest, convertToIsoDate_test) {
   int64_t ts(1595846471200000011);
   scipp::core::time_point date(ts);
-  std::string unit("ns");
+  units::Unit unit(units::ns);
   EXPECT_EQ(to_iso_date(date, unit), "2020-07-27T10:41:11.200000011\n");
 
   int64_t ts2(1595846471);
   scipp::core::time_point date2(ts2);
-  std::string unit2("s");
+  units::Unit unit2(units::s);
   EXPECT_EQ(to_iso_date(date2, unit2), "2020-07-27T10:41:11\n");
 
-  std::string bad_unit("foo");
+  units::Unit bad_unit(units::m);
   EXPECT_THROW(to_iso_date(date2, bad_unit), scipp::except::UnitError);
 }

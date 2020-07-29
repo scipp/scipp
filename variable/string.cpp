@@ -45,7 +45,7 @@ std::string make_dims_labels(const VariableConstView &variable,
 
 template <class T> struct ValuesToString {
   static auto apply(const VariableConstView &var) {
-    return core::array_to_string(var.template values<T>(), var.unit().name());
+    return core::array_to_string(var.template values<T>(), var.unit());
   }
 };
 template <class T> struct VariancesToString {
