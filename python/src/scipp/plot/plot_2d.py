@@ -438,13 +438,19 @@ class Slicer2d(Slicer):
         self.ax.set_title("haha")
         self.xlim_updated = False
         self.ylim_updated = False
-        self.output.value = "scipp"
+        # self.output.value = "scipp"
         xylims = {"x": np.array(self.ax.get_xlim()),
                   "y": np.array(self.ax.get_ylim())}
 
+        # Make sure we don't overrun the original array bounds
+        xylims["x"][0] = max(xylims["x"][0], self.xyedges["x"].values[0])
+        xylims["x"][1] = min(xylims["x"][1], self.xyedges["x"].values[-1])
+        xylims["y"][0] = max(xylims["y"][0], self.xyedges["y"].values[0])
+        xylims["y"][1] = min(xylims["y"][1], self.xyedges["y"].values[-1])
+
         dx = self.current_lims["x"][1] - self.current_lims["x"][0]
         dy = self.current_lims["y"][1] - self.current_lims["y"][0]
-        self.output.value = str(np.array(xylims.values()).flatten())
+        # self.output.value = str(np.array(xylims.values()).flatten())
         # new_lims = np.array(list(xylims.values())).flatten()
         diffx = np.abs(self.current_lims["x"] - xylims["x"]) / dx
         diffy = np.abs(self.current_lims["y"] - xylims["y"]) / dy
@@ -492,6 +498,7 @@ class Slicer2d(Slicer):
             if self.transp:
                 arr = arr.T
             self.im["values"].set_data(arr)
+            self.im["values"].set_extent(np.array(list(xylims.values())).flatten())
 
 
 
@@ -512,7 +519,7 @@ class Slicer2d(Slicer):
                               ],
                                                values=self.vslice.values,
                                                unit=sc.units.counts))
-        print(dslice)
+        # print(dslice)
 
         # Also include the masks
         if self.params["masks"][self.name]["show"]:
@@ -529,13 +536,13 @@ class Slicer2d(Slicer):
 
         # Scale by bin width and then rebin in both directions
         # if is_not_linspace["x"]:
-        self.output.value = str(self.xyrebin["x"])
+        # self.output.value = str(self.xyrebin["x"])
         dslice *= self.xywidth["x"]#*self.xywidth["y"]
         dslice = sc.rebin(dslice, self.xyrebin["x"].dims[0],
                               self.xyrebin["x"])
         # # if is_not_linspace["y"]:
-        # dslice *= self.xywidth["y"]
-        # dslice = sc.rebin(dslice, self.xyrebin["y"].dims[0],
-        #                       self.xyrebin["y"])
+        dslice *= self.xywidth["y"]
+        dslice = sc.rebin(dslice, self.xyrebin["y"].dims[0],
+                              self.xyrebin["y"])
 
         return dslice
