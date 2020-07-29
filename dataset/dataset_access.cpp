@@ -39,6 +39,8 @@ void CoordAccess::set(const Dim &key, Variable var) const {
   if (m_unaligned) {
     expectDimsNotContained(m_parent, var);
     m_unaligned->coords().set(key, std::move(var));
+  } else if (m_name) {
+    m_parent->setCoord(*m_name, key, std::move(var));
   } else
     m_parent->setCoord(key, std::move(var));
 }
@@ -50,6 +52,8 @@ void CoordAccess::erase(const Dim &key) const {
     } catch (const except::NotFoundError &e) {
       throw clarify_exception(e);
     }
+  else if (m_name)
+    m_parent->eraseCoord(*m_name, key);
   else
     m_parent->eraseCoord(key);
 }

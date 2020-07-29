@@ -33,8 +33,8 @@ struct DatasetData {
   /// Unaligned data, a simple struct of aligned dimensions alongside a data
   /// array with unaligned content.
   deep_ptr<UnalignedData> unaligned;
-  /// Attributes for data.
-  std::unordered_map<std::string, Variable> attrs;
+  /// Unaligned coords.
+  std::unordered_map<Dim, Variable> coords;
   /// Unaligned masks.
   std::unordered_map<std::string, Variable> masks;
 };
@@ -66,7 +66,6 @@ public:
 
   CoordsConstView coords2() const noexcept;
   CoordsConstView coords() const noexcept;
-  AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
   /// Return true if the view contains data values.
@@ -114,7 +113,7 @@ private:
   const detail::dataset_item_map::value_type *m_data{nullptr};
   detail::slice_list m_slices;
 
-  template <class MapView> MapView makeView() const;
+  template <class MapView> MapView makeView(const bool aligned = false) const;
 };
 
 SCIPP_DATASET_EXPORT bool operator==(const DataArrayConstView &a,
@@ -137,7 +136,6 @@ public:
   CoordsView coords2() const noexcept;
   CoordsView coords() const noexcept;
   MasksView masks() const noexcept;
-  AttrsView attrs() const noexcept;
 
   void setUnit(const units::Unit unit) const;
 
@@ -180,7 +178,7 @@ private:
   Dataset *m_mutableDataset{nullptr};
   detail::dataset_item_map::value_type *m_mutableData{nullptr};
 
-  template <class MapView> MapView makeView() const;
+  template <class MapView> MapView makeView(const bool aligned = false) const;
 };
 
 namespace detail {
@@ -222,14 +220,12 @@ public:
   explicit Dataset(const DataArrayConstView &data);
   explicit Dataset(const std::map<std::string, DataArrayConstView> &data);
 
-  template <class DataMap, class CoordMap, class MasksMap, class AttrMap>
-  Dataset(DataMap data, CoordMap coords, MasksMap masks, AttrMap attrs) {
+  template <class DataMap, class CoordMap, class MasksMap>
+  Dataset(DataMap data, CoordMap coords, MasksMap masks) {
     for (auto &&[dim, coord] : coords)
       setCoord(dim, std::move(coord));
     for (auto &&[name, mask] : masks)
       setMask(std::string(name), std::move(mask));
-    for (auto &&[name, attr] : attrs)
-      setAttr(std::string(name), std::move(attr));
     if constexpr (std::is_same_v<std::decay_t<DataMap>, DatasetConstView>)
       for (auto &&item : data)
         setData(item.name(), item);
@@ -254,9 +250,6 @@ public:
 
   CoordsConstView aligned_coords() const noexcept;
   CoordsView aligned_coords() noexcept;
-
-  AttrsConstView attrs() const noexcept;
-  AttrsView attrs() noexcept;
 
   MasksConstView masks() const noexcept;
   MasksView masks() noexcept;
@@ -343,12 +336,10 @@ public:
   }
 
   void setCoord(const Dim dim, Variable coord);
+  void setCoord(const std::string &name, const Dim dim, Variable coord);
   void setMask(const std::string &maskName, Variable mask);
   void setMask(const std::string &name, const std::string &maskName,
                Variable mask);
-  void setAttr(const std::string &attrName, Variable attr);
-  void setAttr(const std::string &name, const std::string &attrName,
-               Variable attr);
   void setData(const std::string &name, Variable data,
                const AttrPolicy attrPolicy = AttrPolicy::Drop);
   void setData(const std::string &name, const DataArrayConstView &data);
@@ -357,6 +348,10 @@ public:
   void setCoord(const Dim dim, const VariableConstView &coord) {
     setCoord(dim, Variable(coord));
   }
+  void setCoord(const std::string &name, const Dim dim,
+                const VariableConstView &coord) {
+    setCoord(name, dim, Variable(coord));
+  }
   void setMask(const std::string &maskName, const VariableConstView &mask) {
     setMask(maskName, Variable(mask));
   }
@@ -364,21 +359,13 @@ public:
                const VariableConstView &mask) {
     setMask(name, maskName, Variable(mask));
   }
-  void setAttr(const std::string &attrName, const VariableConstView &attr) {
-    setAttr(attrName, Variable(attr));
-  }
-  void setAttr(const std::string &name, const std::string &attrName,
-               const VariableConstView &attr) {
-    setAttr(name, attrName, Variable(attr));
-  }
   void setData(const std::string &name, const VariableConstView &data,
                const AttrPolicy attrPolicy = AttrPolicy::Drop) {
     setData(name, Variable(data), attrPolicy);
   }
 
   void eraseCoord(const Dim dim);
-  void eraseAttr(const std::string &attrName);
-  void eraseAttr(const std::string &name, const std::string &attrName);
+  void eraseCoord(const std::string &name, const Dim dim);
   void eraseMask(const std::string &maskName);
   void eraseMask(const std::string &name, const std::string &maskName);
 
@@ -431,7 +418,6 @@ private:
 
   std::unordered_map<Dim, scipp::index> m_dims;
   std::unordered_map<Dim, Variable> m_coords;
-  std::unordered_map<std::string, Variable> m_attrs;
   std::unordered_map<std::string, Variable> m_masks;
   detail::dataset_item_map m_data;
 };
@@ -463,7 +449,6 @@ public:
 
   CoordsConstView coords() const noexcept;
   CoordsConstView aligned_coords() const noexcept;
-  AttrsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
   bool contains(const std::string &name) const noexcept;
@@ -538,7 +523,6 @@ public:
 
   CoordsView coords() const noexcept;
   CoordsView aligned_coords() const noexcept;
-  AttrsView attrs() const noexcept;
   MasksView masks() const noexcept;
 
   const DataArrayView &operator[](const std::string &name) const;
@@ -612,11 +596,12 @@ public:
 
   template <class Data, class CoordMap = std::map<Dim, Variable>,
             class MasksMap = std::map<std::string, Variable>,
-            class AttrMap = std::map<std::string, Variable>,
+            class UnalignedCoordMap = std::map<Dim, Variable>,
             typename = std::enable_if_t<std::is_same_v<Data, Variable> ||
                                         std::is_same_v<Data, UnalignedData>>>
   DataArray(Data data, CoordMap coords = {}, MasksMap masks = {},
-            AttrMap attrs = {}, const std::string &name = "") {
+            UnalignedCoordMap unaligned_coords = {},
+            const std::string &name = "") {
     if (!data)
       throw std::runtime_error(
           "DataArray cannot be created with invalid content.");
@@ -628,8 +613,8 @@ public:
     for (auto &&[mask_name, m] : masks)
       m_holder.setMask(std::string(mask_name), std::move(m));
 
-    for (auto &&[attr_name, a] : attrs)
-      m_holder.setAttr(name, std::string(attr_name), std::move(a));
+    for (auto &&[dim, a] : unaligned_coords)
+      m_holder.setCoord(name, dim, std::move(a));
   }
 
   explicit operator bool() const noexcept { return !m_holder.empty(); }
@@ -639,14 +624,11 @@ public:
   const std::string &name() const { return m_holder.begin()->name(); }
   void setName(const std::string &name);
 
-  CoordsConstView coords2() const;
-  CoordsView coords2();
-
   CoordsConstView coords() const;
   CoordsView coords();
 
-  AttrsConstView attrs() const;
-  AttrsView attrs();
+  CoordsConstView unaligned_coords() const;
+  CoordsView unaligned_coords();
 
   MasksConstView masks() const;
   MasksView masks();

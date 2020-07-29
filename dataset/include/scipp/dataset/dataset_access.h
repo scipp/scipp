@@ -19,14 +19,16 @@ class Dataset;
 
 class CoordAccess {
 public:
-  CoordAccess(Dataset *parent, DataArray *unaligned = nullptr)
-      : m_parent(parent), m_unaligned(unaligned) {}
+  CoordAccess(Dataset *parent, const std::string *name = nullptr,
+              DataArray *unaligned = nullptr)
+      : m_parent(parent), m_name(name), m_unaligned(unaligned) {}
 
   void set(const Dim &key, variable::Variable var) const;
   void erase(const Dim &key) const;
 
 private:
   Dataset *m_parent;
+  const std::string *m_name;
   DataArray *m_unaligned;
 };
 

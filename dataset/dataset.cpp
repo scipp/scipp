@@ -28,9 +28,9 @@ constexpr auto contains = [](const auto &dims, const Dim dim) {
 };
 }
 
-template <class View, class Dims, class T1>
+template <class Dims, class T1>
 auto makeViewItems(const Dims &dims, T1 &coords) {
-  typename View::holder_type items;
+  std::unordered_map<typename T1::key_type, VariableConstView> items;
   // We preserve only items that are part of the space spanned by the
   // provided parent dimensions.
   auto contained = [&dims](const auto &item2) {
@@ -96,8 +96,7 @@ void Dataset::clear() {
 
 /// Return a const view to all coordinates of the dataset.
 CoordsConstView Dataset::coords() const noexcept {
-  return CoordsConstView(
-      makeViewItems<CoordsConstView>(dimensions(), m_coords));
+  return CoordsConstView(makeViewItems(dimensions(), m_coords));
 }
 
 /// Return a const view to all aligned coordinates of the dataset.
@@ -107,8 +106,7 @@ CoordsConstView Dataset::aligned_coords() const noexcept {
 
 /// Return a view to all coordinates of the dataset.
 CoordsView Dataset::coords() noexcept {
-  return CoordsView(CoordAccess(this),
-                    makeViewItems<CoordsConstView>(dimensions(), m_coords));
+  return CoordsView(CoordAccess(this), makeViewItems(dimensions(), m_coords));
 }
 
 /// Return a view to all aligned coordinates of the dataset.
@@ -116,26 +114,14 @@ CoordsView Dataset::aligned_coords() noexcept {
   return coords(); // without slices all coords are aligned
 }
 
-/// Return a const view to all attributes of the dataset.
-AttrsConstView Dataset::attrs() const noexcept {
-  return AttrsConstView(makeViewItems<AttrsConstView>(dimensions(), m_attrs));
-}
-
-/// Return a view to all attributes of the dataset.
-AttrsView Dataset::attrs() noexcept {
-  return AttrsView(AttrAccess(this),
-                   makeViewItems<AttrsConstView>(dimensions(), m_attrs));
-}
-
 /// Return a const view to all masks of the dataset.
 MasksConstView Dataset::masks() const noexcept {
-  return MasksConstView(makeViewItems<MasksConstView>(dimensions(), m_masks));
+  return MasksConstView(makeViewItems(dimensions(), m_masks));
 }
 
 /// Return a view to all masks of the dataset.
 MasksView Dataset::masks() noexcept {
-  return MasksView(MaskAccess(this),
-                   makeViewItems<MasksConstView>(dimensions(), m_masks));
+  return MasksView(MaskAccess(this), makeViewItems(dimensions(), m_masks));
 }
 
 bool Dataset::contains(const std::string &name) const noexcept {
@@ -156,7 +142,7 @@ void Dataset::erase(const std::string &name) {
 
 /// Extract a data item from the Dataset, returning a DataArray
 ///
-/// Coordinates, masks, and attributes are not modified.
+/// Aligned coordinates and masks are not modified.
 /// This operation invalidates any view objects created from this dataset.
 DataArray Dataset::extract(const std::string &name) {
   const auto &view = operator[](name);
@@ -164,15 +150,15 @@ DataArray Dataset::extract(const std::string &name) {
 
   auto coords = copy_map(view.coords());
   auto masks = copy_map(view.masks());
-  auto attrs = std::move(item->second.attrs);
+  auto unaligned_coords = std::move(item->second.coords);
 
   DataArray extracted;
   if (view.hasData())
     extracted = DataArray(std::move(item->second.data), std::move(coords),
-                          std::move(masks), std::move(attrs), name);
+                          std::move(masks), std::move(unaligned_coords), name);
   else
     extracted = DataArray(std::move(*item->second.unaligned), std::move(coords),
-                          std::move(masks), std::move(attrs), name);
+                          std::move(masks), std::move(unaligned_coords), name);
   erase(name);
   return extracted;
 }
@@ -267,9 +253,6 @@ void Dataset::rebuildDims() {
   for (const auto &m : m_masks) {
     setDims(m.second.dims());
   }
-  for (const auto &a : m_attrs) {
-    setDims(a.second.dims());
-  }
 }
 
 /// Set (insert or replace) the coordinate for the given dimension.
@@ -278,20 +261,11 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
   m_coords.insert_or_assign(dim, std::move(coord));
 }
 
-/// Set (insert or replace) an attribute for the given attribute name.
-///
-/// Note that the attribute name has no relation to names of data items.
-void Dataset::setAttr(const std::string &attrName, Variable attr) {
-  setDims(attr.dims());
-  m_attrs.insert_or_assign(attrName, std::move(attr));
-}
-
-/// Set (insert or replace) an attribute for item with given name.
-void Dataset::setAttr(const std::string &name, const std::string &attrName,
-                      Variable attr) {
+/// Set (insert or replace) an unaligned coordinate for item with given name.
+void Dataset::setCoord(const std::string &name, const Dim dim, Variable coord) {
   scipp::expect::contains(*this, name);
-  setDims(attr.dims());
-  m_data[name].attrs.insert_or_assign(attrName, std::move(attr));
+  setDims(coord.dims(), dim);
+  m_data[name].coords.insert_or_assign(dim, std::move(coord));
 }
 
 /// Set (insert or replace) the masks for the given mask name.
@@ -315,7 +289,7 @@ void Dataset::setData_impl(const std::string &name, detail::DatasetData &&data,
   setDims(data.data ? data.data.dims() : data.unaligned->dims);
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
-    data.attrs = std::move(m_data[name].attrs);
+    data.coords = std::move(m_data[name].coords);
   m_data[name] = std::move(data);
   if (replace)
     rebuildDims();
@@ -362,15 +336,12 @@ void Dataset::setData(const std::string &name, DataArray data) {
     else
       setMask(std::string(nm), std::move(mask));
 
-  if (dataset.m_attrs.size() > 0)
-    throw except::SizeError("Attributes should be empty for a DataArray.");
-
   if (item->second.data)
     setData(name, std::move(item->second.data));
   else
     setData(name, std::move(*item->second.unaligned));
-  for (auto &&[nm, attr] : item->second.attrs)
-    setAttr(name, std::string(nm), std::move(attr));
+  for (auto &&[dim, coord] : item->second.coords)
+    setCoord(name, dim, std::move(coord));
 }
 
 /// Set (insert or replace) data item with given name.
@@ -398,15 +369,10 @@ void DataArrayView::setData(Variable data) const {
 /// Removes the coordinate for the given dimension.
 void Dataset::eraseCoord(const Dim dim) { erase_from_map(m_coords, dim); }
 
-/// Removes an attribute for the given attribute name.
-void Dataset::eraseAttr(const std::string &attrName) {
-  erase_from_map(m_attrs, attrName);
-}
-
-/// Removes attribute with given attribute name from the given item.
-void Dataset::eraseAttr(const std::string &name, const std::string &attrName) {
+/// Removes unaligned coord with given name from the given item.
+void Dataset::eraseCoord(const std::string &name, const Dim dim) {
   scipp::expect::contains(*this, name);
-  erase_from_map(m_data[name].attrs, attrName);
+  erase_from_map(m_data[name].coords, dim);
 }
 
 /// Remove mask with given name.
@@ -461,8 +427,6 @@ void Dataset::rename(const Dim from, const Dim to) {
     item.second.rename(from, to);
   for (auto &item : m_masks)
     item.second.rename(from, to);
-  for (auto &item : m_attrs)
-    item.second.rename(from, to);
   for (auto &item : m_data) {
     auto &value = item.second;
     if (value.data)
@@ -471,8 +435,8 @@ void Dataset::rename(const Dim from, const Dim to) {
       value.unaligned->dims.relabel(value.unaligned->dims.index(from), to);
       value.unaligned->data.rename(from, to);
     }
-    for (auto &attr : value.attrs)
-      attr.second.rename(from, to);
+    for (auto &coord : value.coords)
+      coord.second.rename(from, to);
   }
 }
 
@@ -601,7 +565,8 @@ void erase_if_unaligned_by_dim_slices(Items &items, const Slices &slices) {
 }
 } // namespace
 
-template <class MapView> MapView DataArrayConstView::makeView() const {
+template <class MapView>
+MapView DataArrayConstView::makeView(const bool aligned) const {
   auto map_parent = [](const DataArrayConstView &self) -> auto & {
     if constexpr (std::is_same_v<MapView, CoordsConstView>)
       return self.m_dataset->m_coords;
@@ -611,7 +576,8 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
       return self.m_data->second.attrs; // item attrs, not dataset attrs
   };
   auto items = makeViewItems<MapView>(parentDims(), map_parent(*this));
-  erase_if_unaligned_by_dim_slices(items, slices());
+  if (aligned)
+    erase_if_unaligned_by_dim_slices(items, slices());
   if (!m_data->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
     decltype(*this) unaligned = m_data->second.unaligned->data;
@@ -634,7 +600,8 @@ template <class MapView> MapView DataArrayConstView::makeView() const {
   return MapView(std::move(items), slices());
 }
 
-template <class MapView> MapView DataArrayView::makeView() const {
+template <class MapView>
+MapView DataArrayView::makeView(const bool aligned) const {
   auto map_parent = [](const DataArrayView &self) -> auto & {
     if constexpr (std::is_same_v<MapView, CoordsView>)
       return self.m_mutableDataset->m_coords;
@@ -644,7 +611,8 @@ template <class MapView> MapView DataArrayView::makeView() const {
       return self.m_mutableData->second.attrs; // item attrs, not dataset attrs
   };
   auto items = makeViewItems<MapView>(parentDims(), map_parent(*this));
-  erase_if_unaligned_by_dim_slices(items, slices());
+  if (aligned)
+    erase_if_unaligned_by_dim_slices(items, slices());
   const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
   DataArray *unaligned_ptr{nullptr};
   if (is_view_of_unaligned) {
@@ -680,31 +648,56 @@ template <class MapView> MapView DataArrayView::makeView() const {
 }
 
 /// Return a const view to all coordinates of the data view.
-CoordsConstView DataArrayConstView::coords2() const noexcept {
-  return makeView<CoordsConstView>();
+CoordsConstView DataArrayConstView::coords() const noexcept {
+  // Aligned coords (including unaligned by slicing) from dataset
+  auto items = makeViewItems(parentDims(), m_dataset->m_coords);
+  // Unaligned coords
+  const auto tmp = makeViewItems(parentDims(), m_data->second.coords);
+  items.insert(tmp.begin(), tmp.end());
+  if (!m_data->second.data && hasData()) {
+    // This is a view of the unaligned content of a realigned data array.
+    decltype(*this) unaligned = m_data->second.unaligned->data;
+    auto tmp =
+        makeViewItems(unaligned.parentDims(), unaligned.m_dataset->m_coords);
+    items.insert(tmp.begin(), tmp.end());
+  }
+  return CoordsConstView(std::move(items), slices());
+  // return makeView<CoordsConstView>();
 }
 
 /// Return a const view to all aligned coordinates of the data view.
-CoordsConstView DataArrayConstView::coords() const noexcept {
-  return makeView<CoordsConstView>();
-}
-
-/// Return a const view to all attributes of the data view.
-AttrsConstView DataArrayConstView::attrs() const noexcept {
-  return makeView<AttrsConstView>();
+CoordsConstView DataArrayConstView::aligned_coords() const noexcept {
+  const auto tmp = coords();
+  auto items = coords2().items();
+  erase_if_unaligned_by_dim_slices(items, slices());
+  return CoordsConstView(std::move(items), slices());
+  // return makeView<CoordsConstView>(true);
 }
 
 /// Return a const view to all masks of the data view.
 MasksConstView DataArrayConstView::masks() const noexcept {
-  return makeView<MasksConstView>();
+  // Aligned masks from dataset
+  auto items = makeViewItems(parentDims(), m_dataset->m_masks);
+  // Unaligned masks
+  const auto tmp = makeViewItems(parentDims(), m_data->second.masks);
+  items.insert(tmp.begin(), tmp.end());
+  if (!m_data->second.data && hasData()) {
+    // This is a view of the unaligned content of a realigned data array.
+    decltype(*this) unaligned = m_data->second.unaligned->data;
+    auto tmp =
+        makeViewItems(unaligned.parentDims(), unaligned.m_dataset->m_masks);
+    items.insert(tmp.begin(), tmp.end());
+  }
+  return MasksConstView(std::move(items), slices());
+  // return makeView<MasksConstView>();
 }
 
 /// Return a const view to all coordinates of the data array.
-CoordsConstView DataArray::coords2() const { return get().coords2(); }
-/// Return a const view to all aligned coordinates of the data array.
 CoordsConstView DataArray::coords() const { return get().coords(); }
-/// Return a const view to all attributes of the data array.
-AttrsConstView DataArray::attrs() const { return get().attrs(); }
+/// Return a const view to all aligned coordinates of the data array.
+CoordsConstView DataArray::aligned_coords() const {
+  return get().aligned_coords();
+}
 /// Return a const view to all masks of the data array.
 MasksConstView DataArray::masks() const { return get().masks(); }
 
@@ -746,14 +739,30 @@ DataArrayView DataArrayView::slice(const Slice s) const {
 }
 
 /// Return a view to all coordinates of the data view.
-CoordsView DataArrayView::coords2() const noexcept {
-  return makeView<CoordsView>();
+CoordsView DataArrayView::coords() const noexcept {
+  // Aligned coords (including unaligned by slicing) from dataset
+  auto items = makeViewItems(parentDims(), m_mutableDataset->m_coords);
+  // Unaligned coords
+  const auto tmp = makeViewItems(parentDims(), m_mutableData->second.coords);
+  items.insert(tmp.begin(), tmp.end());
+  const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
+  DataArray *unaligned_ptr{nullptr};
+  if (is_view_of_unaligned) {
+    // This is a view of the unaligned content of a realigned data array.
+    unaligned_ptr = &m_mutableData->second.unaligned->data;
+    decltype(*this) unaligned = m_mutableData->second.unaligned->data;
+    auto tmp = makeViewItems(unaligned.parentDims(),
+                             unaligned.m_mutableDataset->m_coords);
+    items.insert(tmp.begin(), tmp.end());
+  }
+  return CoordsView(CoordAccess{}, std::move(items), slices());
+  // return makeView<CoordsView>();
 }
 
 /// Return a view to all coordinates of the data array.
-CoordsView DataArray::coords2() {
+CoordsView DataArray::coords() {
   return CoordsView(CoordAccess(&m_holder),
-                    makeViewItems<CoordsConstView>(dims(), m_holder.m_coords));
+                    makeViewItems(dims(), m_holder.m_coords));
 }
 
 /// Return a view to all aligned coordinates of the data view.
@@ -762,18 +771,10 @@ CoordsView DataArrayView::coords() const noexcept {
 }
 
 /// Return a view to all aligned coordinates of the data array.
-CoordsView DataArray::coords() {
+CoordsView DataArray::aligned_coords() {
   return CoordsView(CoordAccess(&m_holder),
-                    makeViewItems<CoordsConstView>(dims(), m_holder.m_coords));
+                    makeViewItems(dims(), m_holder.m_coords));
 }
-
-/// Return a const view to all attributes of the data view.
-AttrsView DataArrayView::attrs() const noexcept {
-  return makeView<AttrsView>();
-}
-
-/// Return a view to all attributes of the data array.
-AttrsView DataArray::attrs() { return get().attrs(); }
 
 /// Return a view to all masks of the data view.
 MasksView DataArrayView::masks() const noexcept {
@@ -783,7 +784,7 @@ MasksView DataArrayView::masks() const noexcept {
 /// Return a view to all masks of the data array.
 MasksView DataArray::masks() {
   return MasksView(MaskAccess(&m_holder),
-                   makeViewItems<MasksConstView>(dims(), m_holder.m_masks));
+                   makeViewItems(dims(), m_holder.m_masks));
 }
 
 DataArrayView DataArrayView::assign(const DataArrayConstView &other) const {
@@ -833,63 +834,39 @@ DatasetView::DatasetView(Dataset &dataset)
 
 /// Return a const view to all coordinates of the dataset slice.
 CoordsConstView DatasetConstView::coords() const noexcept {
-  auto items = makeViewItems<CoordsConstView>(m_dataset->dimensions(),
-                                              m_dataset->m_coords);
+  auto items = makeViewItems(m_dataset->dimensions(), m_dataset->m_coords);
   return CoordsConstView(std::move(items), slices());
 }
 
 /// Return a view to all coordinates of the dataset slice.
 CoordsView DatasetView::coords() const noexcept {
-  auto items = makeViewItems<CoordsConstView>(m_mutableDataset->dimensions(),
-                                              m_mutableDataset->m_coords);
+  auto items =
+      makeViewItems(m_mutableDataset->dimensions(), m_mutableDataset->m_coords);
   return CoordsView(CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
                     std::move(items), slices());
 }
 
 /// Return a const view to all aligned coordinates of the dataset slice.
 CoordsConstView DatasetConstView::aligned_coords() const noexcept {
-  auto items = makeViewItems<CoordsConstView>(m_dataset->dimensions(),
-                                              m_dataset->m_coords);
+  auto items = makeViewItems(m_dataset->dimensions(), m_dataset->m_coords);
   erase_if_unaligned_by_dim_slices(items, slices());
   return CoordsConstView(std::move(items), slices());
 }
 
 /// Return a view to all aligned coordinates of the dataset slice.
 CoordsView DatasetView::aligned_coords() const noexcept {
-  auto items = makeViewItems<CoordsConstView>(m_mutableDataset->dimensions(),
-                                              m_mutableDataset->m_coords);
+  auto items =
+      makeViewItems(m_mutableDataset->dimensions(), m_mutableDataset->m_coords);
   erase_if_unaligned_by_dim_slices(items, slices());
   return CoordsView(CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
                     std::move(items), slices());
 }
 
-/// Return a const view to all attributes of the dataset slice.
-AttrsConstView DatasetConstView::attrs() const noexcept {
-  return AttrsConstView(
-      makeViewItems<AttrsConstView>(dimensions(), m_dataset->m_attrs),
-      slices());
-}
-
-/// Return a view to all attributes of the dataset slice.
-AttrsView DatasetView::attrs() const noexcept {
-  return AttrsView(
-      AttrAccess(slices().empty() ? m_mutableDataset : nullptr),
-      makeViewItems<AttrsConstView>(dimensions(), m_mutableDataset->m_attrs),
-      slices());
-}
-/// Return a const view to all masks of the dataset slice.
-MasksConstView DatasetConstView::masks() const noexcept {
-  return MasksConstView(
-      makeViewItems<MasksConstView>(dimensions(), m_dataset->m_masks),
-      slices());
-}
-
 /// Return a view to all masks of the dataset slice.
 MasksView DatasetView::masks() const noexcept {
-  return MasksView(
-      MaskAccess(slices().empty() ? m_mutableDataset : nullptr),
-      makeViewItems<MasksConstView>(dimensions(), m_mutableDataset->m_masks),
-      slices());
+  return MasksView(MaskAccess(slices().empty() ? m_mutableDataset : nullptr),
+                   makeViewItems(dimensions(), m_mutableDataset->m_masks),
+                   slices());
 }
 
 bool DatasetConstView::contains(const std::string &name) const noexcept {
@@ -968,8 +945,6 @@ template <class A, class B> bool dataset_equals(const A &a, const B &b) {
   if (a.coords() != b.coords())
     return false;
   if (a.masks() != b.masks())
-    return false;
-  if (a.attrs() != b.attrs())
     return false;
   for (const auto &data : a) {
     try {
