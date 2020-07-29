@@ -683,9 +683,15 @@ CoordsConstView DataArrayConstView::aligned_coords() const noexcept {
 
 /// Return a const view to all unaligned coordinates of the data view.
 CoordsConstView DataArrayConstView::unaligned_coords() const noexcept {
-  // TODO must include unaligned by slicing
-  return CoordsConstView{makeViewItems(parentDims(), m_data->second.coords),
-                         slices()};
+  auto items = coords().items();
+  const auto aligned = aligned_coords().items();
+  for (auto it = items.begin(); it != items.end();) {
+    if (aligned.count(it->first))
+      it = items.erase(it);
+    else
+      ++it;
+  }
+  return CoordsConstView{std::move(items), slices()};
 }
 
 /// Return a const view to all masks of the data view.
