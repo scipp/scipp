@@ -8,6 +8,7 @@
 #include "scipp/core/except.h"
 #include "scipp/variable/event.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -772,10 +773,10 @@ TEST(VariableTest, reshape) {
   const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                         units::m, Values{1, 2, 3, 4, 5, 6});
 
-  ASSERT_EQ(var.reshape({Dim::Row, 6}),
+  ASSERT_EQ(reshape(var, {Dim::Row, 6}),
             makeVariable<double>(Dims{Dim::Row}, Shape{6}, units::m,
                                  Values{1, 2, 3, 4, 5, 6}));
-  ASSERT_EQ(var.reshape({{Dim::Row, 3}, {Dim::Z, 2}}),
+  ASSERT_EQ(reshape(var, {{Dim::Row, 3}, {Dim::Z, 2}}),
             makeVariable<double>(Dims{Dim::Row, Dim::Z}, Shape{3, 2}, units::m,
                                  Values{1, 2, 3, 4, 5, 6}));
 }
@@ -785,11 +786,11 @@ TEST(VariableTest, reshape_with_variance) {
                                         Values{1, 2, 3, 4, 5, 6},
                                         Variances{7, 8, 9, 10, 11, 12});
 
-  ASSERT_EQ(var.reshape({Dim::Row, 6}),
+  ASSERT_EQ(reshape(var, {Dim::Row, 6}),
             makeVariable<double>(Dims{Dim::Row}, Shape{6},
                                  Values{1, 2, 3, 4, 5, 6},
                                  Variances{7, 8, 9, 10, 11, 12}));
-  ASSERT_EQ(var.reshape({{Dim::Row, 3}, {Dim::Z, 2}}),
+  ASSERT_EQ(reshape(var, {{Dim::Row, 3}, {Dim::Z, 2}}),
             makeVariable<double>(Dims{Dim::Row, Dim::Z}, Shape{3, 2},
                                  Values{1, 2, 3, 4, 5, 6},
                                  Variances{7, 8, 9, 10, 11, 12}));
@@ -799,20 +800,18 @@ TEST(VariableTest, reshape_temporary) {
   const auto var = makeVariable<double>(
       Dims{Dim::X, Dim::Row}, Shape{2, 4}, units::m,
       Values{1, 2, 3, 4, 5, 6, 7, 8}, Variances{9, 10, 11, 12, 13, 14, 15, 16});
-  auto reshaped = sum(var, Dim::X).reshape({{Dim::Y, 2}, {Dim::Z, 2}});
+  auto reshaped = reshape(sum(var, Dim::X), {{Dim::Y, 2}, {Dim::Z, 2}});
   ASSERT_EQ(reshaped, makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 2},
                                            units::m, Values{6, 8, 10, 12},
                                            Variances{22, 24, 26, 28}));
 
-  // This is not a temporary, we get a view into `var`.
-  EXPECT_EQ(typeid(decltype(std::move(var).reshape({}))),
-            typeid(VariableConstView));
+  EXPECT_EQ(typeid(decltype(reshape(std::move(var), {}))), typeid(Variable));
 }
 
 TEST(VariableTest, reshape_fail) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                   Values{1, 2, 3, 4, 5, 6});
-  EXPECT_THROW_MSG(var.reshape({Dim::Row, 5}), std::runtime_error,
+  EXPECT_THROW_MSG(reshape(var, {Dim::Row, 5}), std::runtime_error,
                    "Cannot reshape to dimensions with different volume");
 }
 
@@ -823,17 +822,17 @@ TEST(VariableTest, reshape_and_slice) {
       Variances{17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
                 32});
 
-  auto slice = var.reshape({{Dim::X, 4}, {Dim::Y, 4}})
+  auto slice = reshape(var, {{Dim::X, 4}, {Dim::Y, 4}})
                    .slice({Dim::X, 1, 3})
                    .slice({Dim::Y, 1, 3});
   ASSERT_EQ(slice, makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                         Values{6, 7, 10, 11},
                                         Variances{22, 23, 26, 27}));
 
-  Variable center = var.reshape({{Dim::X, 4}, {Dim::Y, 4}})
-                        .slice({Dim::X, 1, 3})
-                        .slice({Dim::Y, 1, 3})
-                        .reshape({Dim::Z, 4});
+  Variable center = reshape(reshape(var, {{Dim::X, 4}, {Dim::Y, 4}})
+                                .slice({Dim::X, 1, 3})
+                                .slice({Dim::Y, 1, 3}),
+                            {Dim::Z, 4});
 
   ASSERT_EQ(center,
             makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{6, 7, 10, 11},
@@ -849,7 +848,7 @@ TEST(VariableTest, reshape_mutable) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                   Values{1, 2, 3, 4, 5, 6});
 
-  auto view = var.reshape({Dim::Row, 6});
+  auto view = reshape(var, {Dim::Row, 6});
   view.values<double>()[3] = 0;
 
   ASSERT_EQ(view, reference);
@@ -860,7 +859,7 @@ TEST(VariableTest, rename) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                   Values{1, 2, 3, 4, 5, 6},
                                   Variances{7, 8, 9, 10, 11, 12});
-  const Variable expected(var.reshape({{Dim::X, 2}, {Dim::Z, 3}}));
+  const Variable expected(reshape(var, {{Dim::X, 2}, {Dim::Z, 3}}));
 
   var.rename(Dim::Y, Dim::Z);
   ASSERT_EQ(var, expected);
@@ -1143,13 +1142,13 @@ TEST(TransposeTest, make_transposed_2d) {
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                   Values{1, 3, 5, 2, 4, 6},
                                   Variances{11, 13, 15, 12, 14, 16});
-  EXPECT_EQ(var.transpose({Dim::Y, Dim::X}), ref);
-  EXPECT_EQ(constVar.transpose({Dim::Y, Dim::X}), ref);
+  EXPECT_EQ(transpose(var, {Dim::Y, Dim::X}), ref);
+  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::X}), ref);
 
-  EXPECT_THROW(constVar.transpose({Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(constVar.transpose({Dim::Y}), except::DimensionError);
-  EXPECT_THROW(var.transpose({Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(var.transpose({Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(var, {Dim::Z}), except::DimensionError);
 }
 
 TEST(TransposeTest, make_transposed_multiple_d) {
@@ -1162,13 +1161,13 @@ TEST(TransposeTest, make_transposed_multiple_d) {
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::Z, Dim::X}, Shape{2, 1, 3},
                                   Values{1, 3, 5, 2, 4, 6},
                                   Variances{11, 13, 15, 12, 14, 16});
-  EXPECT_EQ(var.transpose({Dim::Y, Dim::Z, Dim::X}), ref);
-  EXPECT_EQ(constVar.transpose({Dim::Y, Dim::Z, Dim::X}), ref);
+  EXPECT_EQ(transpose(var, {Dim::Y, Dim::Z, Dim::X}), ref);
+  EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::Z, Dim::X}), ref);
 
-  EXPECT_THROW(constVar.transpose({Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(constVar.transpose({Dim::Y}), except::DimensionError);
-  EXPECT_THROW(var.transpose({Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(var.transpose({Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW(transpose(var, {Dim::Y, Dim::Z}), except::DimensionError);
+  EXPECT_THROW(transpose(var, {Dim::Z}), except::DimensionError);
 }
 
 TEST(TransposeTest, reverse) {
@@ -1181,29 +1180,28 @@ TEST(TransposeTest, reverse) {
   auto ref = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                   Values{1, 3, 5, 2, 4, 6},
                                   Variances{11, 13, 15, 12, 14, 16});
-  auto tvar = var.transpose();
-  auto tconstVar = constVar.transpose();
+  auto tvar = transpose(var);
+  auto tconstVar = transpose(constVar);
   static_assert(
       std::is_same_v<VariableConstView, std::decay_t<decltype(tconstVar)>>);
   static_assert(std::is_same_v<VariableView, decltype(tvar)>);
   EXPECT_EQ(tvar, ref);
   EXPECT_EQ(tconstVar, ref);
-  auto tview = VariableView(var).transpose();
-  auto tconstView = VariableConstView(constVar).transpose();
+  auto tview = transpose(VariableView(var));
+  auto tconstView = transpose(VariableConstView(constVar));
   static_assert(
       std::is_same_v<VariableConstView, std::decay_t<decltype(tconstView)>>);
   static_assert(std::is_same_v<VariableView, decltype(tview)>);
   EXPECT_EQ(tconstView, ref);
   EXPECT_EQ(tview, ref);
-  auto v = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
-                                Values{1, 2, 3, 4, 5, 6},
-                                Variances{11, 12, 13, 14, 15, 16})
-               .transpose();
+  auto v = transpose(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 2},
+                                          Values{1, 2, 3, 4, 5, 6},
+                                          Variances{11, 12, 13, 14, 15, 16}));
   static_assert(std::is_same_v<Variable, decltype(v)>);
   EXPECT_EQ(v, ref);
 
-  EXPECT_EQ(var.transpose().transpose(), var);
-  EXPECT_EQ(constVar.transpose().transpose(), var);
+  EXPECT_EQ(transpose(transpose(var)), var);
+  EXPECT_EQ(transpose(transpose(constVar)), var);
 
   Variable dummy = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 1},
                                         Values{0, 0}, Variances{1, 1});

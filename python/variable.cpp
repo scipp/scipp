@@ -286,25 +286,6 @@ Mostly equivalent to Variable, see there for details.)");
   py::implicitly_convertible<Variable, VariableView>();
 
   m.def(
-      "reshape",
-      [](const VariableView &self, const std::vector<Dim> &labels,
-         const py::tuple &shape) {
-        Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-        return self.reshape(dims);
-      },
-      py::arg("x"), py::arg("dims"), py::arg("shape"),
-      Docstring()
-          .description("Reshape a variable.")
-          .raises("If the volume of the old shape is not equal to the volume "
-                  "of the new shape.")
-          .returns("New variable with requested dimension labels and shape.")
-          .rtype("Variable")
-          .param("x", "Variable to reshape.", "Variable.")
-          .param("dims", "List of new dimensions.", "list")
-          .param("shape", "New extents in each dimension.", "list")
-          .c_str());
-
-  m.def(
       "filter", py::overload_cast<const Variable &, const Variable &>(&filter),
       py::arg("x"), py::arg("filter"), py::call_guard<py::gil_scoped_release>(),
       Docstring()
