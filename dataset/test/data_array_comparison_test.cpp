@@ -46,15 +46,14 @@ protected:
     dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
     dataset.setMask("mask", makeVariable<bool>(Dims{Dim::X}, Shape{4}));
 
-    dataset.setAttr("global_attr", makeVariable<int>(Values{int{}}));
-
     dataset.setData("val_and_var",
                     makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
                                          Values(12), Variances(12)));
-    dataset.setAttr("val_and_var", "attr", makeVariable<int>(Values{int{}}));
+    dataset.setCoord("val_and_var", Dim("attr"),
+                     makeVariable<int>(Values{int{}}));
 
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
-    dataset.setAttr("val", "attr", makeVariable<int>(Values{int{}}));
+    dataset.setCoord("val", Dim("attr"), makeVariable<int>(Values{int{}}));
   }
 
   Dataset dataset;
@@ -106,8 +105,9 @@ auto make_1_attr(const std::string &name, const Dimensions &dims,
                  const std::initializer_list<T2> &data) {
   Dataset d;
   d.setData("", makeVariable<T>(Dimensions(dims)));
-  d.setAttr("", name,
-            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
+  d.setCoord(
+      "", Dim(name),
+      makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
   return DataArray(d[""]);
 }
 
@@ -261,7 +261,7 @@ TEST_F(DataArray_comparison_operators, extra_mask) {
 TEST_F(DataArray_comparison_operators, extra_attr) {
   auto extra = dataset;
   for (const auto &a : extra) {
-    extra.setAttr(a.name(), "extra", makeVariable<double>(Values{0.0}));
+    extra.setCoord(a.name(), Dim("extra"), makeVariable<double>(Values{0.0}));
     expect_ne(a, dataset[a.name()]);
   }
 }
@@ -274,36 +274,28 @@ TEST_F(DataArray_comparison_operators, extra_variance) {
 }
 
 TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
-  auto a = Dataset();
-  auto b = Dataset();
-  a.setCoord(Dim::X, dataset.coords()[Dim::X]);
-  a.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
-  b.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
-  b.setCoord(Dim::X, dataset.coords()[Dim::X]);
-  for (const auto &a_ : a)
-    expect_ne(a_, b[a_.name()]);
-}
-
-TEST_F(DataArray_comparison_operators, different_label_insertion_order) {
-  auto a = Dataset();
-  auto b = Dataset();
-  a.setCoord(Dim("x"), dataset.coords()[Dim::X]);
-  a.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
-  b.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
-  b.setCoord(Dim("x"), dataset.coords()[Dim::X]);
-  for (const auto &a_ : a)
-    expect_ne(a_, b[a_.name()]);
+  const auto var = makeVariable<double>(Values{1.0});
+  auto a = DataArray(var);
+  auto b = DataArray(var);
+  a.coords().set(Dim::X, dataset.coords()[Dim::X]);
+  a.coords().set(Dim::Y, dataset.coords()[Dim::Y]);
+  b.coords().set(Dim::Y, dataset.coords()[Dim::Y]);
+  b.coords().set(Dim::X, dataset.coords()[Dim::X]);
+  expect_eq(a, b);
 }
 
 TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
   auto a = Dataset();
   auto b = Dataset();
-  a.setAttr("x", dataset.coords()[Dim::X]);
-  a.setAttr("y", dataset.coords()[Dim::Y]);
-  b.setAttr("y", dataset.coords()[Dim::Y]);
-  b.setAttr("x", dataset.coords()[Dim::X]);
+  const auto var = makeVariable<double>(Values{1.0});
+  a.setData("item", var);
+  b.setData("item", var);
+  a["item"].coords().set(Dim::X, dataset.coords()[Dim::X]);
+  a["item"].coords().set(Dim::Y, dataset.coords()[Dim::Y]);
+  b["item"].coords().set(Dim::Y, dataset.coords()[Dim::Y]);
+  b["item"].coords().set(Dim::X, dataset.coords()[Dim::X]);
   for (const auto &a_ : a)
-    expect_ne(a_, b[a_.name()]);
+    expect_eq(a_, b[a_.name()]);
 }
 
 TEST_F(DataArray_comparison_operators, with_events_dimension_data) {

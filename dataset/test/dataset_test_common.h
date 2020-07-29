@@ -67,9 +67,12 @@ template <class T, class T2>
 auto make_1_attr(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
+  throw std::runtime_error(
+      "TODO Dataset attrs (unaligned coords) not supported.");
   auto d = make_empty();
-  d.setAttr(name,
-            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
+  // d.setAttr(name,
+  //          makeVariable<T>(Dimensions(dims), units::Unit(unit),
+  //          Values(data)));
   return d;
 }
 

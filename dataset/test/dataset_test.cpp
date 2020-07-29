@@ -30,14 +30,12 @@ TEST(DatasetTest, clear) {
 
   ASSERT_FALSE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
-  ASSERT_FALSE(dataset.attrs().empty());
   ASSERT_FALSE(dataset.masks().empty());
 
   ASSERT_NO_THROW(dataset.clear());
 
   ASSERT_TRUE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
-  ASSERT_FALSE(dataset.attrs().empty());
   ASSERT_FALSE(dataset.masks().empty());
 }
 
@@ -115,26 +113,6 @@ TEST(DatasetTest, setCoord) {
   ASSERT_EQ(d.coords().size(), 2);
 }
 
-TEST(DatasetTest, setAttr) {
-  Dataset d;
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.attrs().size(), 0);
-
-  ASSERT_NO_THROW(d.setAttr("a", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.attrs().size(), 1);
-
-  ASSERT_NO_THROW(d.setAttr("b", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.attrs().size(), 2);
-
-  ASSERT_NO_THROW(d.setAttr("a", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.attrs().size(), 2);
-}
-
 TEST(DatasetTest, setMask) {
   Dataset d;
   const auto var =
@@ -205,22 +183,22 @@ TEST(DatasetTest, setData_clears_attributes) {
   const auto var = makeVariable<double>(Values{1});
   Dataset d;
   d.setData("x", var);
-  d["x"].attrs().set("attr", var);
+  d["x"].coords().set(Dim("attr"), var);
 
-  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+  EXPECT_TRUE(d["x"].coords().contains(Dim("attr")));
   d.setData("x", var);
-  EXPECT_FALSE(d["x"].attrs().contains("attr"));
+  EXPECT_FALSE(d["x"].coords().contains(Dim("attr")));
 }
 
 TEST(DatasetTest, setData_keep_attributes) {
   const auto var = makeVariable<double>(Values{1});
   Dataset d;
   d.setData("x", var);
-  d["x"].attrs().set("attr", var);
+  d["x"].coords().set(Dim("attr"), var);
 
-  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+  EXPECT_TRUE(d["x"].coords().contains(Dim("attr")));
   d.setData("x", var, AttrPolicy::Keep);
-  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+  EXPECT_TRUE(d["x"].coords().contains(Dim("attr")));
 }
 
 TEST(DatasetTest, setData_with_mismatched_dims) {
@@ -477,22 +455,6 @@ TEST(DatasetTest, erase_labels) {
   EXPECT_EQ(ref, ds);
 }
 
-TEST(DatasetTest, erase_attrs) {
-  DatasetFactory3D factory;
-  const auto ref = factory.make();
-  Dataset ds(ref);
-  auto attr = Variable(ds.attrs()["attr_x"]);
-  ds.eraseAttr("attr_x");
-  EXPECT_FALSE(ds.attrs().contains("attr_x"));
-  ds.setAttr("attr_x", attr);
-  EXPECT_EQ(ref, ds);
-
-  ds.attrs().erase("attr_x");
-  EXPECT_FALSE(ds.attrs().contains("attr_x"));
-  ds.setAttr("attr_x", attr);
-  EXPECT_EQ(ref, ds);
-}
-
 TEST(DatasetTest, erase_masks) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
@@ -512,12 +474,11 @@ TEST(DatasetTest, erase_masks) {
 TEST(DatasetTest, set_erase_item_attr) {
   DatasetFactory3D factory;
   auto ds = factory.make();
-  const auto attr = Variable(ds.attrs()["attr_x"]);
-  ds["data_x"].attrs().set("item-attr", attr);
-  EXPECT_FALSE(ds.attrs().contains("item-attr"));
-  EXPECT_TRUE(ds["data_x"].attrs().contains("item-attr"));
-  ds["data_x"].attrs().erase("item-attr");
-  EXPECT_FALSE(ds["data_x"].attrs().contains("item-attr"));
+  const auto attr = makeVariable<double>(Values{1.0});
+  ds["data_x"].coords().set(Dim("item-attr"), attr);
+  EXPECT_TRUE(ds["data_x"].coords().contains(Dim("item-attr")));
+  ds["data_x"].coords().erase(Dim("item-attr"));
+  EXPECT_FALSE(ds["data_x"].coords().contains(Dim("item-attr")));
 }
 
 TEST(DatasetTest, set_erase_item_mask) {

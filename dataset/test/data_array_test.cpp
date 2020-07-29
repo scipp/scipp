@@ -304,7 +304,7 @@ TEST(DataArrayRealignedEventsArithmeticTest, events_over_histogram) {
                         result.unaligned().data(), 1e-16));
   EXPECT_EQ(result_inplace.coords(), result.coords());
   EXPECT_EQ(result_inplace.masks(), result.masks());
-  EXPECT_EQ(result_inplace.attrs(), result.attrs());
+  EXPECT_EQ(result_inplace.unaligned_coords(), result.unaligned_coords());
 }
 
 struct DataArrayRealignedEventsPlusMinusTest : public ::testing::Test {

@@ -114,7 +114,8 @@ private:
   const detail::dataset_item_map::value_type *m_data{nullptr};
   detail::slice_list m_slices;
 
-  template <class MapView> MapView makeView(const bool aligned = false) const;
+  // template <class MapView> MapView makeView(const bool aligned = false)
+  // const;
 };
 
 SCIPP_DATASET_EXPORT bool operator==(const DataArrayConstView &a,
@@ -180,7 +181,8 @@ private:
   Dataset *m_mutableDataset{nullptr};
   detail::dataset_item_map::value_type *m_mutableData{nullptr};
 
-  template <class MapView> MapView makeView(const bool aligned = false) const;
+  // template <class MapView> MapView makeView(const bool aligned = false)
+  // const;
 };
 
 namespace detail {

@@ -61,10 +61,6 @@ void DatasetFactory3D::init() {
   base.setMask("masks_z",
                makeVariable<bool>(Dimensions{Dim::Z, lz},
                                   Values(make_bools(lz, {false, true}))));
-
-  base.setAttr("attr_scalar", makeVariable<double>(Values{rand(1).front()}));
-  base.setAttr("attr_x",
-               makeVariable<double>(Dimensions{m_dim, lx}, Values(rand(lx))));
 }
 
 void DatasetFactory3D::seed(const uint32_t value) {

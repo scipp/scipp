@@ -675,6 +675,11 @@ CoordsConstView DataArrayConstView::aligned_coords() const noexcept {
   // return makeView<CoordsConstView>(true);
 }
 
+/// Return a const view to all unaligned coordinates of the data view.
+CoordsConstView DataArrayConstView::unaligned_coords() const noexcept {
+  return CoordsConstView{};
+}
+
 /// Return a const view to all masks of the data view.
 MasksConstView DataArrayConstView::masks() const noexcept {
   // Aligned masks from dataset
@@ -697,6 +702,10 @@ CoordsConstView DataArray::coords() const { return get().coords(); }
 /// Return a const view to all aligned coordinates of the data array.
 CoordsConstView DataArray::aligned_coords() const {
   return get().aligned_coords();
+}
+/// Return a const view to all unaligned coordinates of the data array.
+CoordsConstView DataArray::unaligned_coords() const {
+  return get().unaligned_coords();
 }
 /// Return a const view to all masks of the data array.
 MasksConstView DataArray::masks() const { return get().masks(); }
@@ -769,11 +778,20 @@ CoordsView DataArray::coords() {
 
 /// Return a view to all aligned coordinates of the data view.
 CoordsView DataArrayView::aligned_coords() const noexcept {
-  return makeView<CoordsView>();
+  return coords();
+  // return makeView<CoordsView>();
 }
 
 /// Return a view to all aligned coordinates of the data array.
 CoordsView DataArray::aligned_coords() { return m_holder.aligned_coords(); }
+
+/// Return a view to all unaligned coordinates of the data view.
+CoordsView DataArrayView::unaligned_coords() const noexcept {
+  return aligned_coords();
+}
+
+/// Return a view to all unaligned coordinates of the data array.
+CoordsView DataArray::unaligned_coords() { return get().unaligned_coords(); }
 
 /// Return a view to all masks of the data view.
 MasksView DataArrayView::masks() const noexcept {
@@ -877,6 +895,12 @@ CoordsView DatasetView::aligned_coords() const noexcept {
   erase_if_unaligned_by_dim_slices(items, slices());
   return CoordsView(CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
                     std::move(items), slices());
+}
+
+/// Return a const view to all masks of the dataset slice.
+MasksConstView DatasetConstView::masks() const noexcept {
+  auto items = makeViewItems(m_dataset->dimensions(), m_dataset->m_masks);
+  return MasksConstView(std::move(items), slices());
 }
 
 /// Return a view to all masks of the dataset slice.
