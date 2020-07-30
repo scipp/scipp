@@ -199,7 +199,11 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
                 d1[2] * 1e-3);
   }
 
-  ASSERT_EQ(dspacing.attrs()["position"], tof.coords()[Dim("position")]);
+  ASSERT_FALSE(dspacing.coords().contains(Dim("position")));
+  ASSERT_EQ(dspacing["counts"].coords()[Dim("position")],
+            tof.coords()[Dim("position")]);
+  ASSERT_EQ(dspacing["events"].coords()[Dim("position")],
+            tof.coords()[Dim("position")]);
   ASSERT_EQ(dspacing.coords()[Dim("source-position")],
             tof.coords()[Dim("source-position")]);
   ASSERT_EQ(dspacing.coords()[Dim("sample-position")],
