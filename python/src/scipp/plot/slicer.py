@@ -191,7 +191,7 @@ class Slicer:
         if len(button_options) == 3 and positions is not None:
             if self.data_array.coords[
                     positions].dtype == sc.dtype.vector_3_float64:
-                positions_dim = positions
+                positions_dim = self.data_array.coords[positions].dims[-1]
             else:
                 raise RuntimeError(
                     "Supplied positions coordinate does not contain vectors.")
@@ -333,27 +333,31 @@ class Slicer:
             tp = data_array.coords[dim].dtype
 
             if tp == sc.dtype.vector_3_float64:
-                var = make_fake_coord(dim,
-                                      dim_to_shape[dim],
+                var = make_fake_coord(dim_coord_dim,
+                                      dim_to_shape[dim_coord_dim],
                                       unit=data_array.coords[dim].unit)
                 form = ticker.FuncFormatter(lambda val, pos: "(" + ",".join([
                     value_to_string(item, precision=2) for item in self.
                     scipp_obj_dict[name].coords[dim].values[int(val)]
-                ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim])
-                                            else "")
+                ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[
+                    dim_coord_dim]) else "")
                 formatter.update({False: form, True: form})
                 locator[False] = ticker.MaxNLocator(integer=True)
+                if dim != dim_coord_dim:
+                    underlying_dim = dim_coord_dim
 
             elif tp == sc.dtype.string:
-                var = make_fake_coord(dim,
-                                      dim_to_shape[dim],
+                var = make_fake_coord(dim_coord_dim,
+                                      dim_to_shape[dim_coord_dim],
                                       unit=data_array.coords[dim].unit)
                 form = ticker.FuncFormatter(
                     lambda val, pos: self.scipp_obj_dict[name].coords[
-                        dim].values[int(val)] if
-                    (int(val) >= 0 and int(val) < dim_to_shape[dim]) else "")
+                        dim].values[int(val)] if (int(val) >= 0 and int(
+                            val) < dim_to_shape[dim_coord_dim]) else "")
                 formatter.update({False: form, True: form})
                 locator[False] = ticker.MaxNLocator(integer=True)
+                if dim != dim_coord_dim:
+                    underlying_dim = dim_coord_dim
 
             elif dim != dim_coord_dim:
                 # non-dimension coordinate

@@ -307,21 +307,26 @@ class Slicer2d(Slicer):
         # toolbar. The home button actually brings the first element in the
         # navigation stack to the top, so we need to modify the first element
         # in the navigation stack in-place.
-        if len(self.fig.canvas.toolbar._nav_stack._elements) > 0:
-            # Get the first key in the navigation stack
-            key = list(
-                self.fig.canvas.toolbar._nav_stack._elements[0].keys())[0]
-            # Construct a new tuple for replacement
-            alist = []
-            for x in self.fig.canvas.toolbar._nav_stack._elements[0][key]:
-                alist.append(x)
-            alist[0] = (self.slider_xlims[self.name][self.button_dims[1]][0],
+        if self.fig is not None:
+            if self.fig.canvas.toolbar is not None:
+                if len(self.fig.canvas.toolbar._nav_stack._elements) > 0:
+                    # Get the first key in the navigation stack
+                    key = list(self.fig.canvas.toolbar._nav_stack._elements[0].
+                               keys())[0]
+                    # Construct a new tuple for replacement
+                    alist = []
+                    for x in self.fig.canvas.toolbar._nav_stack._elements[0][
+                            key]:
+                        alist.append(x)
+                    alist[0] = (
+                        self.slider_xlims[self.name][self.button_dims[1]][0],
                         self.slider_xlims[self.name][self.button_dims[1]][1],
                         self.slider_xlims[self.name][self.button_dims[0]][0],
                         self.slider_xlims[self.name][self.button_dims[0]][1])
-            self.slider_xlims[self.name][self.button_dims[1]][0]
-            # Insert the new tuple
-            self.fig.canvas.toolbar._nav_stack._elements[0][key] = tuple(alist)
+                    self.slider_xlims[self.name][self.button_dims[1]][0]
+                    # Insert the new tuple
+                    self.fig.canvas.toolbar._nav_stack._elements[0][
+                        key] = tuple(alist)
 
         return
 
