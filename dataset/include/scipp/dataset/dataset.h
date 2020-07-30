@@ -106,6 +106,8 @@ protected:
   // the child class DataArrayView.
   VariableView m_view; // empty if the array has no (aligned) data
 
+  enum CoordCategory { Aligned = 1, Unaligned = 2, All = 3 };
+
 private:
   friend class DatasetConstView;
   friend class DatasetView;
@@ -114,9 +116,7 @@ private:
   const detail::dataset_item_map::value_type *m_data{nullptr};
   detail::slice_list m_slices;
 
-  // template <class MapView> MapView makeView(const bool aligned = false)
-  // const;
-  CoordsConstView make_coords(const bool aligned) const;
+  CoordsConstView make_coords(const CoordCategory category) const;
 };
 
 SCIPP_DATASET_EXPORT bool operator==(const DataArrayConstView &a,
@@ -182,9 +182,7 @@ private:
   Dataset *m_mutableDataset{nullptr};
   detail::dataset_item_map::value_type *m_mutableData{nullptr};
 
-  // template <class MapView> MapView makeView(const bool aligned = false)
-  // const;
-  CoordsView make_coords(const bool aligned) const;
+  CoordsView make_coords(const CoordCategory category) const;
 };
 
 namespace detail {
