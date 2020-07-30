@@ -255,6 +255,10 @@ class Slicer2d(Slicer):
         self.current_lims['x'] = extent_array[:2]
         self.current_lims['y'] = extent_array[2:]
 
+
+        # Slice data to slice down potential 3+D coords
+        self.slice_data()
+
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled array to be used as image
             offset = 2 * (xy == "y")
@@ -265,23 +269,45 @@ class Slicer2d(Slicer):
                                    self.image_resolution[xy] + 1),
                 unit=self.slider_coord[self.name][param["dim"]].unit)
 
+            # # If non-dimension coordinate, need to update axes tick formatter
+            # var = data_array.coords[dim_coord_dim]
+            #     form = ticker.FuncFormatter(lambda val, pos: value_to_string(
+            #         data_array.coords[dim].values[np.abs(data_array.coords[
+            #             dim_coord_dim].values - val).argmin()]))
+            #     formatter.update({False: form, True: form})
+
             # Create bin-edge coordinates in the case of non bin-edges, since
             # rebin only accepts bin edges.
             # xydims = self.xyrebin[xy].dims
+            print(self.histograms[self.name])
             if not self.histograms[self.name][param["dim"]][param["dim"]]:
+                dims = self.vslice.coords[param["dim"]].dims
                 # Special handling for 2D coordinates
                 if len(self.slider_coord[self.name][param["dim"]].dims) > 1:
-                    shp = self.slider_coord[self.name][param["dim"]].shape
-                    idim = self.slider_coord[self.name][param["dim"]].dims.index(dim)
+                    shp = self.vslice.coords[param["dim"]].shape
+                    # dims = self.vslice.coords[param["dim"]].dims
+                    idim = self.vslice.coords[param["dim"]].dims.index(param["dim"])
+                    iother = (idim + 1) % 2
                     shp[idim] += 1
-                    edges = np.zeros(*shp)
-                    print(edges.shape)
-                    # for 
-                self.xyedges[xy] = sc.Variable(
-                    dims=[param["dim"]],
-                    values=centers_to_edges(
-                        self.slider_coord[self.name][param["dim"]].values),
-                    unit=self.slider_coord[self.name][param["dim"]].unit)
+                    print(shp)
+                    edges = sc.Variable(dims, values=np.zeros(shp), dtype=sc.dtype.float64)
+                    print(edges)
+                    xory = dims[iother]
+                    for i in range(shp[iother]):
+                        edges[xory, i] = centers_to_edges(
+                            self.vslice.coords[param["dim"]][xory, i].values)
+                    print(edges)
+                    # edges = edges.values
+                else:
+                    edges = sc.Variable(dims, values=centers_to_edges(
+                        self.slider_coord[self.name][param["dim"]].values), dtype=sc.dtype.float64)
+                edges.unit = self.slider_coord[self.name][param["dim"]].unit
+                self.xyedges[xy] = edges
+
+                # self.xyedges[xy] = sc.Variable(
+                #     dims=self.vslice.coords[param["dim"]].dims,
+                #     values=edges.values,
+                #     unit=self.slider_coord[self.name][param["dim"]].unit)
             else:
                 self.xyedges[xy] = self.slider_coord[self.name][param["dim"]].astype(
                     sc.dtype.float64)
@@ -300,12 +326,18 @@ class Slicer2d(Slicer):
         self.ax.set_xlabel(self.axparams["x"]["labels"])
         self.ax.set_ylabel(self.axparams["y"]["labels"])
         for xy, param in self.axparams.items():
-            getattr(self.ax, "{}axis".format(xy)).set_major_formatter(
-                self.slider_axformatter[self.name][param["dim"]][getattr(
-                    self, "log{}".format(xy))])
-            getattr(self.ax, "{}axis".format(xy)).set_major_locator(
-                self.slider_axlocator[self.name][param["dim"]][getattr(
-                    self, "log{}".format(xy))])
+            axis = getattr(self.ax, "{}axis".format(xy))
+            is_log = getattr(self, "log{}".format(xy))
+            axis.set_major_formatter(
+                self.slider_axformatter[self.name][param["dim"]][is_log])
+            axis.set_major_locator(
+                self.slider_axlocator[self.name][param["dim"]][is_log])
+            # getattr(self.ax, "{}axis".format(xy)).set_major_formatter(
+            #     self.slider_axformatter[self.name][param["dim"]][getattr(
+            #         self, "log{}".format(xy))])
+            # getattr(self.ax, "{}axis".format(xy)).set_major_locator(
+            #     self.slider_axlocator[self.name][param["dim"]][getattr(
+            #         self, "log{}".format(xy))])
 
 
         # Set axes limits and ticks
@@ -339,10 +371,8 @@ class Slicer2d(Slicer):
 
         return
 
-    def update_slice(self, change):
-        """
-        Slice data according to new slider value.
-        """
+    def slice_data(self):
+
         self.vslice = self.data_array
         if self.params["masks"][self.name]["show"]:
             self.mslice = self.masks
@@ -358,13 +388,35 @@ class Slicer2d(Slicer):
                 if self.params["masks"][
                         self.name]["show"] and dim in self.mslice.dims:
                     self.mslice = self.mslice[val.dim, val.value]
-            # else:
-            #     # Get the dimensions of the dimension-coordinates, since
-            #     # buttons can contain non-dimension coordinates
-            #     # self.button_dims[self.buttons[dim].value.lower() ==
-            #     #             "x"] = self.slider_coord[self.name][val.dim].dims
-            #     self.button_dims[self.buttons[dim].value.lower() ==
-            #                 "x"] = self.buttons[dim].dim
+
+
+    def update_slice(self, change):
+        """
+        Slice data according to new slider value.
+        """
+        self.slice_data()
+        # self.vslice = self.data_array
+        # if self.params["masks"][self.name]["show"]:
+        #     self.mslice = self.masks
+        # # Slice along dimensions with active sliders
+        # # button_dims = [None, None]
+        # for dim, val in self.slider.items():
+        #     if not val.disabled:
+        #         self.lab[dim].value = self.make_slider_label(
+        #             self.slider_coord[self.name][dim], val.value)
+        #         self.vslice = self.vslice[val.dim, val.value]
+        #         # At this point, after masks were combined, all their
+        #         # dimensions should be contained in the data_array.dims.
+        #         if self.params["masks"][
+        #                 self.name]["show"] and dim in self.mslice.dims:
+        #             self.mslice = self.mslice[val.dim, val.value]
+        #     # else:
+        #     #     # Get the dimensions of the dimension-coordinates, since
+        #     #     # buttons can contain non-dimension coordinates
+        #     #     # self.button_dims[self.buttons[dim].value.lower() ==
+        #     #     #             "x"] = self.slider_coord[self.name][val.dim].dims
+        #     #     self.button_dims[self.buttons[dim].value.lower() ==
+        #     #                 "x"] = self.buttons[dim].dim
 
         # # Check if dimensions of arrays agree, if not, plot the transpose
         # for dim_list in self.button_dims:

@@ -142,6 +142,7 @@ class Slicer:
                 dim, var, formatter, locator = self.axis_label_and_ticks(
                     ax, array, name, dim_to_shape)
                 self.slider_coord[name][dim] = var
+                # self.coord_name_to_underlying_dims[name][dim] = var.dims
                 self.slider_xlims[name][dim] = np.array([sc.min(var).value, sc.max(var).value], dtype=np.float)
                 self.slider_axformatter[name][dim] = formatter
                 self.slider_axlocator[name][dim] = locator
@@ -151,7 +152,14 @@ class Slicer:
                 self.histograms[name][dim] = {}
                 for i, d in enumerate(self.slider_coord[name][dim].dims):
                     self.slider_shape[name][dim][d] = self.slider_coord[name][dim].shape[i]
-                    self.histograms[name][dim][d] = dim_to_shape[d] == self.slider_coord[name][dim].shape[i] - 1
+                    self.histograms[name][dim][d] = dim_to_shape[d] == self.slider_shape[name][dim][d] - 1
+                # The above only adds the underlying dimensions.
+                # Need to also add non-dimension coord label.
+                # We assume the main dimension is the inner dimension.
+                # TODO: is that assumption correct?
+                if dim not in self.slider_shape[name][dim]:
+                    self.slider_shape[name][dim][dim] = self.slider_shape[name][dim][self.slider_coord[name][dim].dims[-1]]
+                    self.histograms[name][dim][dim] = dim_to_shape[dim] == self.slider_shape[name][dim][dim] - 1
                 # For xylims, if coord is not bin-edge, we make artificial
                 # bin-edge. This is simpler than finding the actual index of
                 # the smallest and largest values and computing a bin edge from
@@ -218,7 +226,7 @@ class Slicer:
             self.slider[dim] = widgets.IntSlider(
                 value=indx,
                 min=0,
-                max=self.slider_shape[self.name][dim][dim] - 1,
+                max=self.slider_shape[self.name][dim][dim] - 1 - self.histograms[name][dim][dim],
                 step=1,
                 description=dim_str,
                 continuous_update=True,
@@ -329,7 +337,7 @@ class Slicer:
 
         if dim in data_array.coords:
 
-            dim_coord_dim = data_array.coords[dim].dims[0]
+            dim_coord_dim = data_array.coords[dim].dims[-1]
             tp = data_array.coords[dim].dtype
 
             if tp == sc.dtype.vector_3_float64:
@@ -355,7 +363,7 @@ class Slicer:
                 formatter.update({False: form, True: form})
                 locator[False] = ticker.MaxNLocator(integer=True)
 
-            elif dim != dim_coord_dim and len(data_array.coords[dim].dims) == 1:  # non-dimension coordinate
+            elif dim != dim_coord_dim: # and len(data_array.coords[dim].dims) == 1:  # non-dimension coordinate
                 var = data_array.coords[dim_coord_dim]
                 form = ticker.FuncFormatter(lambda val, pos: value_to_string(
                     data_array.coords[dim].values[np.abs(data_array.coords[
