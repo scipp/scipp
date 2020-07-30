@@ -32,9 +32,9 @@ TEST_F(AttributesTest, dataset_item_attrs) {
   ASSERT_FALSE(d.coords().contains(Dim("scalar")));
   ASSERT_FALSE(d.coords().contains(Dim("x")));
 
-  ASSERT_EQ(d["a"].coords().size(), 2);
-  ASSERT_TRUE(d["a"].coords().contains(Dim("scalar")));
-  ASSERT_TRUE(d["a"].coords().contains(Dim("x")));
+  ASSERT_EQ(d["a"].unaligned_coords().size(), 2);
+  ASSERT_TRUE(d["a"].unaligned_coords().contains(Dim("scalar")));
+  ASSERT_TRUE(d["a"].unaligned_coords().contains(Dim("x")));
   ASSERT_TRUE(d["a"].aligned_coords().contains(Dim("dataset_attr")));
   ASSERT_FALSE(d["a"].unaligned_coords().contains(Dim("dataset_attr")));
 

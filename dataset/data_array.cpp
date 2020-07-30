@@ -366,7 +366,8 @@ DataArray apply_mul_or_div(Op op, const DataArrayConstView &a,
             union_or(a.masks(), b.masks()),
             intersection(a.unaligned_coords(), b.unaligned_coords())};
   else
-    return {op(a.data(), b.data()), union_(a.coords(), b.coords()),
+    return {op(a.data(), b.data()),
+            union_(a.aligned_coords(), b.aligned_coords()),
             union_or(a.masks(), b.masks()),
             intersection(a.unaligned_coords(), b.unaligned_coords())};
 }
