@@ -223,7 +223,7 @@ class Slicer:
         button_values = [None] * (self.ndim - len(button_options)) + \
             button_options[::-1]
         for i, dim in enumerate(self.slider_coord[self.name].keys()):
-            dim_str = str(dim)
+            dim_str = self.slider_label[self.name][dim]["name"] # str(dim)
             # Determine if slider should be disabled or not:
             # In the case of 3d projection, disable sliders that are for
             # dims < 3, or sliders that contain vectors
@@ -243,7 +243,7 @@ class Slicer:
                 continuous_update=True,
                 readout=False,
                 disabled=disabled)
-            labvalue = self.make_slider_label(self.slider_coord[self.name][dim],
+            labvalue = self.make_slider_label(self.slider_label[self.name][dim]["coord"],
                                               indx)
             self.continuous_update[dim] = widgets.Checkbox(
                 value=True,

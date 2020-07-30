@@ -393,7 +393,7 @@ class Slicer2d(Slicer):
         for dim, val in self.slider.items():
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
-                    self.slider_coord[self.name][dim], val.value)
+                    self.slider_label[self.name][dim]["coord"], val.value)
                 self.vslice = self.vslice[val.dim, val.value]
                 # At this point, after masks were combined, all their
                 # dimensions should be contained in the data_array.dims.
