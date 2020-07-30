@@ -46,6 +46,8 @@ using dataset_item_map = std::unordered_map<std::string, DatasetData>;
 /// dataset.
 enum class AttrPolicy { Keep, Drop };
 
+enum CoordCategory { Aligned = 1, Unaligned = 2, All = 3 };
+
 /// Const view for a data item and related coordinates of Dataset.
 class SCIPP_DATASET_EXPORT DataArrayConstView {
 public:
@@ -105,8 +107,6 @@ protected:
   // not accessible. This wrapping avoids inefficient duplication of the view in
   // the child class DataArrayView.
   VariableView m_view; // empty if the array has no (aligned) data
-
-  enum CoordCategory { Aligned = 1, Unaligned = 2, All = 3 };
 
 private:
   friend class DatasetConstView;
