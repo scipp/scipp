@@ -680,20 +680,22 @@ DataArrayConstView::make_coords(const CoordCategory category) const {
   // Aligned coords (including unaligned by slicing) from dataset
   auto items = makeViewItems(parentDims(), m_dataset->m_coords);
   maybe_drop_aligned_or_unaligned(items, slices(), category);
+  const bool is_view_of_unaligned = !m_data->second.data && hasData();
   if (category & CoordCategory::Unaligned) {
     // Unaligned coords
-    // Note no dims passed, include everything
-    const auto tmp = makeViewItems(m_data->second.coords);
+    // Need to include everything, e.g., to preserve bin edges after non-range
+    // slice, except when view of unaligned, where we need to ensure coords
+    // depending on dims of the realigned wrapper are not included.
+    const auto tmp = is_view_of_unaligned
+                         ? makeViewItems(parentDims(), m_data->second.coords)
+                         : makeViewItems(m_data->second.coords);
     items.insert(tmp.begin(), tmp.end());
   }
-  if (!m_data->second.data && hasData()) {
+  if (is_view_of_unaligned) {
     // This is a view of the unaligned content of a realigned data array.
     decltype(*this) unaligned = m_data->second.unaligned->data;
-    // TODO handle aligned flag
-    auto tmp =
-        makeViewItems(unaligned.parentDims(), unaligned.m_dataset->m_coords);
-    items.insert(tmp.begin(), tmp.end());
-    maybe_drop_aligned_or_unaligned(items, slices(), category);
+    const auto tmp = unaligned.make_coords(category);
+    items.insert(tmp.items().begin(), tmp.items().end());
   }
   return CoordsConstView(std::move(items), slices());
 }
@@ -783,23 +785,25 @@ CoordsView DataArrayView::make_coords(const CoordCategory category) const {
   // Aligned coords (including unaligned by slicing) from dataset
   auto items = makeViewItems(parentDims(), m_mutableDataset->m_coords);
   maybe_drop_aligned_or_unaligned(items, slices(), category);
+  const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
   if (category & CoordCategory::Unaligned) {
     // Unaligned coords
-    // Note no dims passed, include everything
-    const auto tmp = makeViewItems(m_mutableData->second.coords);
+    // Need to include everything, e.g., to preserve bin edges after non-range
+    // slice, except when view of unaligned, where we need to ensure coords
+    // depending on dims of the realigned wrapper are not included.
+    const auto tmp =
+        is_view_of_unaligned
+            ? makeViewItems(parentDims(), m_mutableData->second.coords)
+            : makeViewItems(m_mutableData->second.coords);
     items.insert(tmp.begin(), tmp.end());
   }
-  const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
   DataArray *unaligned_ptr{nullptr};
   if (is_view_of_unaligned) {
     // This is a view of the unaligned content of a realigned data array.
     unaligned_ptr = &m_mutableData->second.unaligned->data;
     decltype(*this) unaligned = m_mutableData->second.unaligned->data;
-    // TODO handle aligned flag
-    auto tmp = makeViewItems(unaligned.parentDims(),
-                             unaligned.m_mutableDataset->m_coords);
-    items.insert(tmp.begin(), tmp.end());
-    maybe_drop_aligned_or_unaligned(items, slices(), category);
+    const auto tmp = unaligned.make_coords(category);
+    items.insert(tmp.items().begin(), tmp.items().end());
   }
   return CoordsView(CoordAccess{slices().empty() ? m_mutableDataset : nullptr,
                                 &name(), unaligned_ptr},
