@@ -238,12 +238,18 @@ class Slicer2d(Slicer):
             # Create bin-edge coordinates in the case of non bin-edges, since
             # rebin only accepts bin edges.
             if not self.histograms[self.name][param["dim"]][param["dim"]]:
-                dims = self.vslice.coords[param["dim"]].dims
+                # Account for the fact that some input data may not have any
+                # coordinates. Hence the slice has no coords and we need to
+                # get the coord from the slider_coord dict.
+                if param["dim"] not in self.vslice.coords:
+                    vcoord = self.slider_coord[self.name][param["dim"]]
+                else:
+                    vcoord = self.vslice.coords[param["dim"]]
+                dims = vcoord.dims
                 # Special handling for 2D coordinates
                 if len(self.slider_coord[self.name][param["dim"]].dims) > 1:
-                    shp = self.vslice.coords[param["dim"]].shape
-                    idim = self.vslice.coords[param["dim"]].dims.index(
-                        param["dim"])
+                    shp = vcoord.shape
+                    idim = vcoord.dims.index(param["dim"])
                     iother = (idim + 1) % 2
                     shp[idim] += 1
                     edges = sc.Variable(dims,
@@ -251,8 +257,8 @@ class Slicer2d(Slicer):
                                         dtype=sc.dtype.float64)
                     xory = dims[iother]
                     for i in range(shp[iother]):
-                        edges[xory, i] = centers_to_edges(
-                            self.vslice.coords[param["dim"]][xory, i].values)
+                        edges[xory, i] = centers_to_edges(vcoord[xory,
+                                                                 i].values)
                 else:
                     edges = sc.Variable(
                         dims,

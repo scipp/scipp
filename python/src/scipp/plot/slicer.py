@@ -91,6 +91,8 @@ class Slicer:
             self.params["masks"][name]["show"] = (
                 self.params["masks"][name]["show"] and len(array.masks) > 0)
             if self.params["masks"][name]["show"] and self.masks is None:
+                # Store masks separately since they are lost when slicing.
+                # TODO: no need for this once masks are preserved in slicing
                 self.masks = sc.combine_masks(array.masks, array.dims,
                                               array.shape)
 
@@ -133,10 +135,7 @@ class Slicer:
                 self.slider_coord[name][dim] = var
                 # Store labels which can be different for coord dims if non-
                 # dimension coords are used.
-                self.slider_label[name][dim] = {
-                    "name": str(ax),
-                    "coord": lab
-                }
+                self.slider_label[name][dim] = {"name": str(ax), "coord": lab}
                 # The limits for each dimension
                 self.slider_xlims[name][dim] = np.array(
                     [sc.min(var).value, sc.max(var).value], dtype=np.float)
@@ -152,11 +151,22 @@ class Slicer:
                         dim].shape[i]
                     self.histograms[name][dim][d] = dim_to_shape[
                         d] == self.slider_shape[name][dim][d] - 1
+
+                # Small correction if xmin == xmax
+                if self.slider_xlims[name][dim][0] == self.slider_xlims[name][
+                        dim][1]:
+                    if self.slider_xlims[name][dim][0] == 0.0:
+                        self.slider_xlims[name][dim] = [-0.5, 0.5]
+                    else:
+                        dx = 0.5 * abs(self.slider_xlims[name][dim][0])
+                        self.slider_xlims[name][dim][0] -= dx
+                        self.slider_xlims[name][dim][1] += dx
                 # For xylims, if coord is not bin-edge, we make artificial
                 # bin-edge. This is simpler than finding the actual index of
                 # the smallest and largest values and computing a bin edge from
                 # the neighbours.
-                if not self.histograms[name][dim][dim]:
+                if not self.histograms[name][dim][
+                        dim] and self.slider_shape[name][dim][dim] > 1:
                     dx = 0.5 * (self.slider_xlims[name][dim][1] -
                                 self.slider_xlims[name][dim][0]) / float(
                                     self.slider_shape[name][dim][dim] - 1)

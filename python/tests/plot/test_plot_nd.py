@@ -147,8 +147,9 @@ def test_plot_4d_with_masks_projection_3d():
         dims=['pack', 'tube', 'straw', 'pixel'],
         values=np.random.rand(2, 8, 7, 256)),
                         coords={})
-    data += sc.Variable(dims=['pixel'],
-                        values=np.sin(np.linspace(0, 3.14, num=256)))
+    a = np.sin(np.linspace(0, 3.14, num=256))
+    data += sc.Variable(dims=['pixel'], values=a)
     data.masks['tube_ends'] = sc.Variable(dims=['pixel'],
-                                          values=np.full(256, False))
+                                          values=np.where(
+                                              a > 0.5, True, False))
     plot(data, projection="3d")
