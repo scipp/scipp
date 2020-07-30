@@ -21,8 +21,8 @@ TEST(MergeTest, simple) {
              makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{9, 8, 7}));
   a.setMask("masks_1", makeVariable<bool>(Dims{Dim::X}, Shape{3},
                                           Values{false, true, false}));
-  a.setAttr("attr_1", makeVariable<int>(Values{42}));
-  a.setAttr("attr_2", makeVariable<int>(Values{495}));
+  a["data_1"].coords().set(Dim("attr_1"), makeVariable<int>(Values{42}));
+  a["data_1"].coords().set(Dim("attr_2"), makeVariable<int>(Values{495}));
 
   Dataset b;
   b.setCoord(Dim::X,
@@ -33,7 +33,7 @@ TEST(MergeTest, simple) {
              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{9, 8, 9}));
   b.setMask("masks_2", makeVariable<bool>(Dims{Dim::X}, Shape{3},
                                           Values{false, true, false}));
-  b.setAttr("attr_2", makeVariable<int>(Values{495}));
+  b["data_2"].coords().set(Dim("attr_2"), makeVariable<int>(Values{495}));
 
   const auto d = merge(a, b);
 
@@ -49,8 +49,10 @@ TEST(MergeTest, simple) {
   EXPECT_EQ(a.masks()["masks_1"], d.masks()["masks_1"]);
   EXPECT_EQ(b.masks()["masks_2"], d.masks()["masks_2"]);
 
-  EXPECT_EQ(a.attrs()["attr_1"], d.attrs()["attr_1"]);
-  EXPECT_EQ(b.attrs()["attr_2"], d.attrs()["attr_2"]);
+  EXPECT_EQ(a["data_1"].unaligned_coords()[Dim("attr_1")],
+            d["data_1"].unaligned_coords()[Dim("attr_1")]);
+  EXPECT_EQ(b["data_2"].unaligned_coords()[Dim("attr_2")],
+            d["data_2"].unaligned_coords()[Dim("attr_2")]);
 }
 
 TEST(MergeTest, events) {
@@ -171,15 +173,5 @@ TEST(MergeTest, non_matching_masks) {
                                     Values{false, true, false, true, false}));
   b.setMask("a", makeVariable<bool>(Dims{Dim::X}, Shape{5},
                                     Values{true, true, true, true, true}));
-  EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
-}
-
-TEST(MergeTest, non_matching_attrs) {
-  Dataset a;
-  Dataset b;
-  a.setAttr("a",
-            makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
-  b.setAttr("a",
-            makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{2, 3, 4, 5, 6}));
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }

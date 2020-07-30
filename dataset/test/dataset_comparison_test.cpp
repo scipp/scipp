@@ -91,18 +91,6 @@ TEST_F(Dataset_comparison_operators, single_labels) {
   expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
 }
 
-TEST_F(Dataset_comparison_operators, single_attr) {
-  auto d = make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
-  expect_eq(d, d);
-  expect_ne(d, make_empty());
-  expect_ne(d, make_1_attr<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::X, 2}, units::m, {1, 2}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
-}
-
 TEST_F(Dataset_comparison_operators, single_values) {
   auto d = make_1_values<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
   expect_eq(d, d);
