@@ -14,6 +14,7 @@ from .._scipp import core as sc
 import numpy as np
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import warnings
 
 
@@ -240,7 +241,8 @@ class Slicer2d(Slicer):
                     self.axparams[but_val]["lims"][0] = new_x[np.searchsorted(
                         new_x, 0)]
                 self.axparams[but_val]["labels"] = name_with_unit(
-                    self.slider_coord[self.name][dim], name=str(dim))
+                    self.slider_label[self.name][dim]["coord"],
+                    name=self.slider_label[self.name][dim]["name"])
                 self.axparams[but_val]["dim"] = dim
             # else:
                 # Get the dimensions of the dimension-coordinates, since
@@ -249,7 +251,10 @@ class Slicer2d(Slicer):
                 #             "x"] = self.slider_coord[self.name][val.dim].dims
                 self.button_dims[self.buttons[dim].value.lower() ==
                             "x"] = self.buttons[dim].dim
+                # self.dim_to_xy[self.underlying_dims[self.name][dim]] = self.buttons[dim].value.lower()
                 self.dim_to_xy[dim] = self.buttons[dim].value.lower()
+
+        print("self.axparams", self.axparams)
 
         extent_array = np.array(list(self.extent.values())).flatten()
         self.current_lims['x'] = extent_array[:2]
@@ -260,6 +265,8 @@ class Slicer2d(Slicer):
         self.slice_data()
 
         for xy, param in self.axparams.items():
+
+            # base_dim = self.underlying_dims[self.name][param["dim"]]
             # Create coordinate axes for resampled array to be used as image
             offset = 2 * (xy == "y")
             self.xyrebin[xy] = sc.Variable(
@@ -269,12 +276,8 @@ class Slicer2d(Slicer):
                                    self.image_resolution[xy] + 1),
                 unit=self.slider_coord[self.name][param["dim"]].unit)
 
-            # # If non-dimension coordinate, need to update axes tick formatter
-            # var = data_array.coords[dim_coord_dim]
-            #     form = ticker.FuncFormatter(lambda val, pos: value_to_string(
-            #         data_array.coords[dim].values[np.abs(data_array.coords[
-            #             dim_coord_dim].values - val).argmin()]))
-            #     formatter.update({False: form, True: form})
+            # TODO: if labels are used on a 2D coordinates, we need to update
+            # the axes tick formatter to use xyrebin coords
 
             # Create bin-edge coordinates in the case of non bin-edges, since
             # rebin only accepts bin edges.
@@ -309,10 +312,12 @@ class Slicer2d(Slicer):
                 #     values=edges.values,
                 #     unit=self.slider_coord[self.name][param["dim"]].unit)
             else:
+                print("in this branch", param["dim"])
                 self.xyedges[xy] = self.slider_coord[self.name][param["dim"]].astype(
                     sc.dtype.float64)
             print("==========================")
             print(self.xyedges)
+            # print(base_dim)
             print("==========================")
 
             # Pixel widths used for scaling before rebin step
@@ -710,7 +715,8 @@ class Slicer2d(Slicer):
         #                       ],
         #                                        values=self.vslice.values,
         #                                        unit=sc.units.counts))
-        print(self.dim_to_xy)
+        print("self.dim_to_xy", self.dim_to_xy)
+        print("vslice", self.vslice)
         dslice = sc.DataArray(coords={
             self.xyrebin["x"].dims[0]: self.xyedges["x"],
             self.xyrebin["y"].dims[0]: self.xyedges["y"]

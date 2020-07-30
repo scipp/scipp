@@ -68,9 +68,11 @@ class Slicer:
         # Store ticklabels for a dimension
         self.slider_ticks = {}
         # Store labels for sliders if any
-        self.slider_labels = {}
+        self.slider_label = {}
         # Record which variables are histograms along which dimension
         self.histograms = {}
+
+        # self.underlying_dims = {}
 
         self.slider_axformatter = {}
         self.slider_axlocator = {}
@@ -103,11 +105,13 @@ class Slicer:
 
             # Create a map from dim to shape
             dim_to_shape = dict(zip(array.dims, array.shape))
-            # When using non-dimension coordinate along one axis, we also add
-            # an entry with the non-dimension coordinate label
-            for n, c in array.coords.items():
-                if n not in dim_to_shape and len(c.shape) > 0:
-                    dim_to_shape[n] = c.shape[0]
+            # # When using non-dimension coordinate along one axis, we also add
+            # # an entry with the non-dimension coordinate label
+            # for n, c in array.coords.items():
+            #     if n not in dim_to_shape and len(c.shape) > 0:
+            #         idim = array.dims
+            #         dim_to_shape[n] = arrayc.shape[0]
+            print("dim_to_shape", dim_to_shape)
 
             # Size of the slider coordinate arrays
             self.slider_shape[name] = {}
@@ -118,12 +122,13 @@ class Slicer:
             # Store ticklabels for a dimension
             self.slider_ticks[name] = {}
             # Store labels for sliders if any
-            self.slider_labels[name] = {}
+            self.slider_label[name] = {}
             # Store axis tick formatters and locators
             self.slider_axformatter[name] = {}
             self.slider_axlocator[name] = {}
             # Save information on histograms
             self.histograms[name] = {}
+            # self.underlying_dims[name] = {}
 
             # Process axes dimensions
             if axes is None:
@@ -139,10 +144,11 @@ class Slicer:
 
             # Iterate through axes and collect dimensions
             for ax in axes:
-                dim, var, formatter, locator = self.axis_label_and_ticks(
+                dim, var, label, formatter, locator = self.axis_label_and_ticks(
                     ax, array, name, dim_to_shape)
                 self.slider_coord[name][dim] = var
-                # self.coord_name_to_underlying_dims[name][dim] = var.dims
+                self.slider_label[name][dim] = {"name": str(ax), "coord": label}
+                # self.underlying_dims[name][dim] = var.dims[-1]
                 self.slider_xlims[name][dim] = np.array([sc.min(var).value, sc.max(var).value], dtype=np.float)
                 self.slider_axformatter[name][dim] = formatter
                 self.slider_axlocator[name][dim] = locator
@@ -153,13 +159,17 @@ class Slicer:
                 for i, d in enumerate(self.slider_coord[name][dim].dims):
                     self.slider_shape[name][dim][d] = self.slider_coord[name][dim].shape[i]
                     self.histograms[name][dim][d] = dim_to_shape[d] == self.slider_shape[name][dim][d] - 1
-                # The above only adds the underlying dimensions.
-                # Need to also add non-dimension coord label.
-                # We assume the main dimension is the inner dimension.
-                # TODO: is that assumption correct?
-                if dim not in self.slider_shape[name][dim]:
-                    self.slider_shape[name][dim][dim] = self.slider_shape[name][dim][self.slider_coord[name][dim].dims[-1]]
-                    self.histograms[name][dim][dim] = dim_to_shape[dim] == self.slider_shape[name][dim][dim] - 1
+                # # The above only adds the underlying dimensions.
+                # # Need to also add non-dimension coord label.
+                # # We assume the main dimension is the inner dimension.
+                # # TODO: is that assumption correct?
+                # if dim not in self.slider_shape[name][dim]:
+                #     print("setting histograms", dim)
+                #     d = self.slider_coord[name][dim].dims[-1]
+                #     self.slider_shape[name][dim][dim] = self.slider_shape[name][dim][d]
+                #     # print(self.slider_shape[name][dim][dim])
+                #     # print(dim_to_shape[dim])
+                #     self.histograms[name][dim][dim] = self.histograms[name][dim][d]
                 # For xylims, if coord is not bin-edge, we make artificial
                 # bin-edge. This is simpler than finding the actual index of
                 # the smallest and largest values and computing a bin edge from
@@ -173,6 +183,7 @@ class Slicer:
 
             print(self.slider_shape[name])
             print(self.histograms)
+            # print("underlying dims", self.underlying_dims[name])
 
             # # Save information on histograms
             # self.histograms[name] = {}
@@ -335,6 +346,9 @@ class Slicer:
         if isinstance(dim, str):
             dim = sc.Dim(dim)
 
+        underlying_dim = dim
+        non_dimension_coord = False
+
         if dim in data_array.coords:
 
             dim_coord_dim = data_array.coords[dim].dims[-1]
@@ -364,7 +378,9 @@ class Slicer:
                 locator[False] = ticker.MaxNLocator(integer=True)
 
             elif dim != dim_coord_dim: # and len(data_array.coords[dim].dims) == 1:  # non-dimension coordinate
+                non_dimension_coord = True
                 var = data_array.coords[dim_coord_dim]
+                underlying_dim = dim_coord_dim
                 form = ticker.FuncFormatter(lambda val, pos: value_to_string(
                     data_array.coords[dim].values[np.abs(data_array.coords[
                         dim_coord_dim].values - val).argmin()]))
@@ -376,7 +392,11 @@ class Slicer:
             # dim not found in data_array.coords
             var = make_fake_coord(dim, dim_to_shape[dim])
 
-        return dim, var, formatter, locator
+        label = var
+        if non_dimension_coord:
+            label = data_array.coords[dim]
+
+        return underlying_dim, var, label, formatter, locator
 
     def update_buttons(self, change):
         return
