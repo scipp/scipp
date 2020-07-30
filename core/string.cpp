@@ -62,26 +62,28 @@ const std::string to_iso_date(const scipp::core::time_point &item,
   int64_t ts = item.time_since_epoch();
 
   if (unit.value() == units::ns) {
+    // cast timestamp into duration in seconds
+    const std::chrono::duration<int64_t, std::nano> dur_nano(ts);
+    auto dur_sec = std::chrono::duration_cast<std::chrono::seconds>(dur_nano);
     // convert to chrono::time_point
-    std::chrono::duration<int64_t, std::nano> dur(ts);
-    std::chrono::system_clock::time_point tp(dur);
+    std::chrono::system_clock::time_point tp(dur_sec);
     // convert time_point to GMT time
-    auto tt = std::chrono::system_clock::to_time_t(tp);
-    std::tm *tm = std::gmtime(&tt);
+    auto timet = std::chrono::system_clock::to_time_t(tp);
+    std::tm *tm = std::gmtime(&timet);
     // get nanoseconds
     auto ns =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(dur).count() %
+        std::chrono::duration_cast<std::chrono::nanoseconds>(dur_nano).count() %
         1000000000;
     std::stringstream ss;
     ss << std::put_time(tm, "%FT%T.") << std::setw(9) << std::setfill('0') << ns
        << std::endl;
     return ss.str();
   } else if (unit.value() == units::s) {
-    // time representation of the timestamp
-    std::chrono::duration<int64_t> dur(ts);
-    std::chrono::system_clock::time_point tp(dur);
-    auto tt = std::chrono::system_clock::to_time_t(tp);
-    std::tm *tm = std::gmtime(&tt);
+    // cast timestamp into duration in seconds
+    const std::chrono::duration<int64_t> dur_sec(ts);
+    std::chrono::system_clock::time_point tp(dur_sec);
+    auto timet = std::chrono::system_clock::to_time_t(tp);
+    std::tm *tm = std::gmtime(&timet);
     std::stringstream ss;
     ss << std::put_time(tm, "%FT%T") << std::endl;
     return ss.str();
