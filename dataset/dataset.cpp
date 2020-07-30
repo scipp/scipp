@@ -261,6 +261,9 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
 /// Set (insert or replace) an unaligned coordinate for item with given name.
 void Dataset::setCoord(const std::string &name, const Dim dim, Variable coord) {
   scipp::expect::contains(*this, name);
+  if (coords().contains(dim))
+    throw except::DataArrayError(
+        "Attempt to insert unaligned coord with name shadowing aligned coord.");
   setDims(coord.dims(), dim);
   m_data[name].coords.insert_or_assign(dim, std::move(coord));
 }
@@ -840,7 +843,6 @@ MasksView DataArrayView::masks() const noexcept {
   return MasksView(MaskAccess{slices().empty() ? m_mutableDataset : nullptr,
                               &name(), unaligned_ptr},
                    std::move(items), slices());
-  // return makeView<MasksView>();
 }
 
 /// Return a view to all masks of the data array.

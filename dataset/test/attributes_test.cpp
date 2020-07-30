@@ -139,12 +139,12 @@ TEST_F(AttributesTest, scalar_mapped_into_unaligned) {
   auto d = testdata::make_dataset_realigned_x_to_y();
   EXPECT_TRUE(d["a"].unaligned_coords().empty());
   EXPECT_TRUE(d["a"].unaligned().unaligned_coords().empty());
-  d["a"].coords().set(Dim("scalar"), scalar);
-  EXPECT_TRUE(d["a"].unaligned_coords().contains(Dim("scalar")));
-  EXPECT_TRUE(d["a"].unaligned().unaligned_coords().contains(Dim("scalar")));
-  EXPECT_THROW(d["a"].unaligned().unaligned_coords().erase(Dim("scalar")),
+  d["a"].coords().set(Dim("attr"), scalar);
+  EXPECT_TRUE(d["a"].unaligned_coords().contains(Dim("attr")));
+  EXPECT_TRUE(d["a"].unaligned().unaligned_coords().contains(Dim("attr")));
+  EXPECT_THROW(d["a"].unaligned().unaligned_coords().erase(Dim("attr")),
                except::NotFoundError);
-  d["a"].coords().erase(Dim("scalar"));
+  d["a"].coords().erase(Dim("attr"));
   EXPECT_TRUE(d["a"].unaligned_coords().empty());
   EXPECT_TRUE(d["a"].unaligned().unaligned_coords().empty());
 }
