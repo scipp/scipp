@@ -159,7 +159,7 @@ class Slicer2d(Slicer):
         # Call update_slice once to make the initial image
         self.update_axes()
         print(self.ax.get_xlim())
-        self.update_slice(None)
+        # self.update_slice(None)
         # self.output = widgets.Label()
         self.vbox = widgets.VBox(self.vbox + [self.output])
         self.vbox.layout.align_items = 'center'
@@ -199,7 +199,7 @@ class Slicer2d(Slicer):
         self.update_axes()
         # update_slice no longer needed because it reacts to change in axis limits?
         # -> won't trigger if axes limits are the same for x and y?
-        self.update_slice(None)
+        # self.update_slice(None)
 
         return
 
@@ -352,6 +352,8 @@ class Slicer2d(Slicer):
             self.ax.set_xlim(self.axparams["x"]["lims"])
             self.ax.set_ylim(self.axparams["y"]["lims"])
 
+        self.update_image()
+
         # Some annoying house-keeping when using X/Y buttons: we need to update
         # the deeply embedded limits set by the Home button in the matplotlib
         # toolbar. The home button actually brings the first element in the
@@ -365,8 +367,13 @@ class Slicer2d(Slicer):
             alist = []
             for x in self.fig.canvas.toolbar._nav_stack._elements[0][key]:
                 alist.append(x)
-            alist[0] = (self.xyedges['x'].values[0], self.xyedges['x'].values[-1],
-                        self.xyedges['y'].values[0], self.xyedges['y'].values[-1])
+            # alist[0] = (self.xyedges['x'].values[0], self.xyedges['x'].values[-1],
+            #             self.xyedges['y'].values[0], self.xyedges['y'].values[-1])
+            alist[0] = (self.slider_xlims[self.name][self.button_dims[1]][0],
+                        self.slider_xlims[self.name][self.button_dims[1]][1],
+                        self.slider_xlims[self.name][self.button_dims[0]][0],
+                        self.slider_xlims[self.name][self.button_dims[0]][1])
+            self.slider_xlims[self.name][self.button_dims[1]][0]
             self.fig.canvas.toolbar._nav_stack._elements[0][key] = tuple(alist)
 
         return
@@ -722,11 +729,12 @@ class Slicer2d(Slicer):
             mslice_dims = []
             for dim in self.mslice.dims:
                 if dim == self.button_dims[0]:
-                    mslice_dims.append(self.xyedges["y"].dims[0])
+                    mslice_dims.append(self.xyrebin["y"].dims[0])
                 elif dim == self.button_dims[1]:
-                    mslice_dims.append(self.xyedges["x"].dims[0])
+                    mslice_dims.append(self.xyrebin["x"].dims[0])
                 else:
                     mslice_dims.append(dim)
+
             dslice.masks["all"] = sc.Variable(dims=mslice_dims,
                                               values=self.mslice.values)
 
