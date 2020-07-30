@@ -15,8 +15,9 @@ using namespace scipp::dataset;
 
 struct GroupbyTest : public ::testing::Test {
   GroupbyTest() {
-    d.setData("a", makeVariable<double>(Dimensions{Dim::X, 3}, units::m,
-                                        Values{1, 2, 3}, Variances{4, 5, 6}));
+    d.setData("a", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::X, 3}},
+                                        units::m, Values{1, 2, 3, 1, 2, 3},
+                                        Variances{4, 5, 6, 4, 5, 6}));
     d.setData("b", makeVariable<double>(Dimensions{Dim::X, 3}, units::s,
                                         Values{0.1, 0.2, 0.3}));
     d.setData("c", makeVariable<double>(Dimensions{{Dim::Z, 2}, {Dim::X, 3}},
@@ -76,9 +77,10 @@ TEST_F(GroupbyTest, fail_2d_coord) {
 TEST_F(GroupbyTest, dataset_1d_and_2d) {
   Dataset expected;
   Dim dim("labels2");
-  expected.setData("a", makeVariable<double>(Dims{dim}, Shape{2}, units::m,
-                                             Values{1.5, 3.0},
-                                             Variances{9.0 / 4, 6.0}));
+  expected.setData("a",
+                   makeVariable<double>(Dims{Dim::Z, dim}, Shape{2, 2},
+                                        units::m, Values{1.5, 3.0, 1.5, 3.0},
+                                        Variances{9.0 / 4, 6.0, 9.0 / 4, 6.0}));
   expected.setData("b", makeVariable<double>(Dims{dim}, Shape{2}, units::s,
                                              Values{(0.1 + 0.2) / 2.0, 0.3}));
   expected.setData("c",
@@ -132,8 +134,9 @@ struct GroupbyMaskedTest : public GroupbyTest {
 TEST_F(GroupbyMaskedTest, sum) {
   Dataset expected;
   const Dim dim("labels2");
-  expected.setData("a", makeVariable<double>(Dimensions{dim, 2}, units::m,
-                                             Values{1, 3}, Variances{4, 6}));
+  expected.setData("a", makeVariable<double>(Dims{Dim::Z, dim}, Shape{2, 2},
+                                             units::m, Values{1, 3, 1, 3},
+                                             Variances{4, 6, 4, 6}));
   expected.setData("b", makeVariable<double>(Dimensions{dim, 2}, units::s,
                                              Values{0.1, 0.3}));
   expected.setData("c", makeVariable<double>(Dimensions{{Dim::Z, 2}, {dim, 2}},
@@ -151,8 +154,9 @@ TEST_F(GroupbyMaskedTest, sum) {
 TEST_F(GroupbyMaskedTest, sum_irrelevant_mask) {
   Dataset expected;
   const Dim dim("labels2");
-  expected.setData("a", makeVariable<double>(Dimensions{dim, 2}, units::m,
-                                             Values{3, 3}, Variances{9, 6}));
+  expected.setData("a", makeVariable<double>(Dims{Dim::Z, dim}, Shape{2, 2},
+                                             units::m, Values{3, 3, 3, 3},
+                                             Variances{9, 6, 9, 6}));
   expected.setData("b", makeVariable<double>(Dimensions{dim, 2}, units::s,
                                              Values{0.1 + 0.2, 0.3}));
   expected.setData("c", makeVariable<double>(Dimensions{{Dim::Z, 2}, {dim, 2}},
@@ -179,8 +183,9 @@ TEST_F(GroupbyMaskedTest, mean_mask_ignores_values_properly) {
   // this test verifies that the data is not affected
   Dataset expected;
   const Dim dim("labels2");
-  expected.setData("a", makeVariable<double>(Dimensions{dim, 2}, units::m,
-                                             Values{1, 3}, Variances{4, 6}));
+  expected.setData("a", makeVariable<double>(Dims{Dim::Z, dim}, Shape{2, 2},
+                                             units::m, Values{1, 3, 1, 3},
+                                             Variances{4, 6, 4, 6}));
   expected.setData("b", makeVariable<double>(Dimensions{dim, 2}, units::s,
                                              Values{0.1, 0.3}));
   expected.setData("c", makeVariable<double>(Dimensions{{Dim::Z, 2}, {dim, 2}},
