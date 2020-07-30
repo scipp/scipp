@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #include <chrono>
 #include <iomanip>
-#include <optional>
 #include <sstream>
 
 #include "scipp/units/unit.h"
