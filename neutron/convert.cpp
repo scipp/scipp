@@ -192,33 +192,31 @@ T convert_impl(T d, const Dim from, const Dim to,
 namespace {
 template <class T>
 T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
-  const auto to_attr = [&](const auto field) {
-    if (!x.coords().contains(Dim(field)))
+  const auto to_attr = [&](const Dim field) {
+    if (!x.coords().contains(field))
       return;
-    if constexpr (std::is_same_v<std::decay_t<T>, Dataset>)
-      for (const auto &item : iter(x))
-        // TODO This is an unfortunate duplication of attributes. It is
-        // (currently?) required due to a limitation of handling attributes of
-        // Dataset and its items *independently* (no mapping of dataset
-        // attributes into item attributes occurs, unlike for coords and
-        // labels). If we did not also add the attributes to each of the items,
-        // a subsequent unit conversion of an item on its own would not be
-        // possible. It needs to be determined if there is a better way to
-        // handle attributes so this can be avoided.
-        item.attrs().set(field, x.coords()[Dim(field)]);
-    x.attrs().set(field, x.coords()[Dim(field)]);
-    x.coords().erase(Dim(field));
-  };
-  const auto to_coord = [&](const auto field) {
-    if (!x.attrs().contains(field))
-      return;
-    x.coords().set(Dim(field), x.attrs()[field]);
-    x.attrs().erase(field);
     if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
-      for (const auto &item : iter(x)) {
-        core::expect::equals(x.coords()[Dim(field)], item.attrs()[field]);
-        item.attrs().erase(field);
+      for (const auto &item : iter(x))
+        item.coords().set(field, x.coords()[field]);
+      x.coords().erase(field);
+    } else {
+      x.unaligned_coords().set(field, x.coords()[field]);
+      x.aligned_coords().erase(field);
+    }
+  };
+  const auto to_coord = [&](const Dim field) {
+    auto &&range = iter(x);
+    if (!range.begin()->unaligned_coords().contains(field))
+      return;
+    if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
+      x.coords().set(field, range.begin()->unaligned_coords()[field]);
+      for (const auto &item : range) {
+        core::expect::equals(x.coords()[field], item.unaligned_coords()[field]);
+        item.unaligned_coords().erase(field);
       }
+    } else {
+      x.coords().set(field, x.unaligned_coords()[field]);
+      x.unaligned_coords().erase(field);
     }
   };
   // Will be replaced by explicit flag
@@ -226,14 +224,14 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
   if (scatter) {
     std::set<Dim> pos_invariant{Dim::DSpacing, Dim::Q};
     if (pos_invariant.count(to))
-      to_attr("position");
+      to_attr(Dim::Position);
     if (pos_invariant.count(from))
-      to_coord("position");
+      to_coord(Dim::Position);
   } else {
     if (to == Dim::Tof)
-      to_coord("position");
+      to_coord(Dim::Position);
     else
-      to_attr("position");
+      to_attr(Dim::Position);
   }
   return std::move(x);
 }
