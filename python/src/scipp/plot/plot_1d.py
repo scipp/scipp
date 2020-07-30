@@ -340,8 +340,10 @@ class Slicer1d(Slicer):
                     self.ax.set_ylim(self.ylim)
 
         self.ax.set_xlabel(
-            name_with_unit(self.slider_label[self.name][dim]["coord"],
-                           name=self.slider_label[self.name][dim]["name"],))
+            name_with_unit(
+                self.slider_label[self.name][dim]["coord"],
+                name=self.slider_label[self.name][dim]["name"],
+            ))
         self.ax.xaxis.set_major_formatter(
             self.slider_axformatter[self.name][dim][self.logx])
         self.ax.xaxis.set_major_locator(
@@ -379,13 +381,15 @@ class Slicer1d(Slicer):
         for name, var in self.scipp_obj_dict.items():
             vslice = self.slice_data(var, name)
             vals = vslice.values
-            if self.histograms[name][self.button_axis_to_dim["x"]][self.button_axis_to_dim["x"]]:
+            if self.histograms[name][self.button_axis_to_dim["x"]][
+                    self.button_axis_to_dim["x"]]:
                 vals = np.concatenate((vals[0:1], vals))
             self.members["lines"][name].set_ydata(vals)
 
             if self.params["masks"][name]["show"]:
                 msk = mslice.values
-                if self.histograms[name][self.button_axis_to_dim["x"]][self.button_axis_to_dim["x"]]:
+                if self.histograms[name][self.button_axis_to_dim["x"]][
+                        self.button_axis_to_dim["x"]]:
                     msk = np.concatenate((msk[0:1], msk))
                 self.members["masks"][name].set_ydata(
                     self.mask_to_float(msk, vals))

@@ -159,8 +159,8 @@ class Slicer3d(Slicer):
                     if self.histograms[self.name][dim][dim]:
                         arr = edges_to_centers(arr)
                     coords.append(arr)
-                    labels.append(name_with_unit(
-                        self.slider_coord[self.name][dim]))
+                    labels.append(
+                        name_with_unit(self.slider_coord[self.name][dim]))
             z, y, x = np.meshgrid(*coords, indexing='ij')
             self.positions = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
