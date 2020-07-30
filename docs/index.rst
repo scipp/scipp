@@ -117,6 +117,7 @@ Documentation
    developer/variable_implementation
    developer/customizing
    developer/api
+   developer/concepts
 
 .. toctree::
    :caption: About
