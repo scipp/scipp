@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <chrono>
 #include <set>
 
 #include "scipp/core/string.h"
@@ -44,7 +45,7 @@ std::string make_dims_labels(const VariableConstView &variable,
 
 template <class T> struct ValuesToString {
   static auto apply(const VariableConstView &var) {
-    return core::array_to_string(var.template values<T>());
+    return core::array_to_string(var.template values<T>(), var.unit());
   }
 };
 template <class T> struct VariancesToString {
@@ -62,8 +63,10 @@ auto apply(const DType dtype, Args &&... args) {
     return formatterRegistry().format(args...);
   return core::callDType<Callable>(
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
-                 event_list<double>, event_list<float>, event_list<int64_t>,
-                 event_list<int32_t>, Eigen::Vector3d, Eigen::Matrix3d>{},
+                 scipp::core::time_point, event_list<double>, event_list<float>,
+                 event_list<int64_t>, event_list<int32_t>,
+                 event_list<scipp::core::time_point>, Eigen::Vector3d,
+                 Eigen::Matrix3d>{},
       dtype, std::forward<Args>(args)...);
 }
 

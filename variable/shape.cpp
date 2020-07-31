@@ -116,4 +116,39 @@ Variable reverse(Variable var, const Dim dim) {
   return var;
 }
 
+VariableView reshape(Variable &var, const Dimensions &dims) {
+  return {var, dims};
+}
+
+Variable reshape(Variable &&var, const Dimensions &dims) {
+  Variable reshaped(std::move(var));
+  reshaped.setDims(dims);
+  return reshaped;
+}
+
+Variable reshape(const VariableConstView &view, const Dimensions &dims) {
+  // In general a variable slice is not contiguous. Therefore we cannot reshape
+  // without making a copy (except for special cases).
+  Variable reshaped(view);
+  reshaped.setDims(dims);
+  return reshaped;
+}
+
+VariableView transpose(Variable &var, const std::vector<Dim> &dims) {
+  return transpose(VariableView(var), dims);
+}
+
+Variable transpose(Variable &&var, const std::vector<Dim> &dims) {
+  return Variable(transpose(VariableConstView(var), dims));
+}
+
+VariableConstView transpose(const VariableConstView &view,
+                            const std::vector<Dim> &dims) {
+  return view.transpose(dims);
+}
+
+VariableView transpose(const VariableView &view, const std::vector<Dim> &dims) {
+  return view.transpose(dims);
+}
+
 } // namespace scipp::variable

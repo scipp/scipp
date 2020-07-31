@@ -2,9 +2,16 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/string.h"
+#include <chrono>
+#include <iomanip>
+#include <sstream>
+
+#include "scipp/units/unit.h"
+
 #include "scipp/core/dimensions.h"
+#include "scipp/core/except.h"
 #include "scipp/core/slice.h"
+#include "scipp/core/string.h"
 
 namespace scipp::core {
 
@@ -43,6 +50,45 @@ std::string to_string(const Slice &slice) {
 std::map<DType, std::string> &dtypeNameRegistry() {
   static std::map<DType, std::string> registry;
   return registry;
+}
+
+const std::string to_iso_date(const scipp::core::time_point &item,
+                              const std::optional<units::Unit> &unit) {
+  if (!unit)
+    throw except::UnitError(
+        "Time point should only have time units (ns or s).");
+
+  int64_t ts = item.time_since_epoch();
+
+  if (unit.value() == units::ns) {
+    // cast timestamp into duration in seconds
+    const std::chrono::duration<int64_t, std::nano> dur_nano(ts);
+    auto dur_sec = std::chrono::duration_cast<std::chrono::seconds>(dur_nano);
+    // convert to chrono::time_point
+    std::chrono::system_clock::time_point tp(dur_sec);
+    // convert time_point to GMT time
+    auto timet = std::chrono::system_clock::to_time_t(tp);
+    std::tm *tm = std::gmtime(&timet);
+    // get nanoseconds
+    auto ns =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(dur_nano).count() %
+        1000000000;
+    std::stringstream ss;
+    ss << std::put_time(tm, "%FT%T.") << std::setw(9) << std::setfill('0') << ns
+       << std::endl;
+    return ss.str();
+  } else if (unit.value() == units::s) {
+    // cast timestamp into duration in seconds
+    const std::chrono::duration<int64_t> dur_sec(ts);
+    std::chrono::system_clock::time_point tp(dur_sec);
+    auto timet = std::chrono::system_clock::to_time_t(tp);
+    std::tm *tm = std::gmtime(&timet);
+    std::stringstream ss;
+    ss << std::put_time(tm, "%FT%T") << std::endl;
+    return ss.str();
+  } else
+    throw except::UnitError(
+        "Time point should only have time units (ns or s).");
 }
 
 } // namespace scipp::core

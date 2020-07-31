@@ -132,20 +132,6 @@ public:
   VariableView slice(const Slice slice) &;
   Variable slice(const Slice slice) &&;
 
-  VariableConstView reshape(const Dimensions &dims) const &;
-  VariableView reshape(const Dimensions &dims) &;
-  // Note: Do we have to delete the `const &&` version? Consider
-  //   const Variable var;
-  //   std::move(var).reshape({});
-  // This calls `reshape() const &` but in this case it is not a temporary and
-  // will not go out of scope, so that is ok (unless someone changes var and
-  // expects the reshaped view to be still valid).
-  Variable reshape(const Dimensions &dims) &&;
-
-  VariableConstView transpose(const std::vector<Dim> &dims = {}) const &;
-  VariableView transpose(const std::vector<Dim> &dims = {}) &;
-  // Note: the same issue as for reshape above
-  Variable transpose(const std::vector<Dim> &dims = {}) &&;
   void rename(const Dim from, const Dim to);
 
   bool operator==(const VariableConstView &other) const;
@@ -223,9 +209,10 @@ template <class... Ts>
 Variable::Variable(const DType &type, Ts &&... args)
     : Variable{
           construct<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-                    Eigen::Matrix3d, std::string, event_list<double>,
-                    event_list<float>, event_list<int64_t>,
-                    event_list<int32_t>>(type, std::forward<Ts>(args)...)} {}
+                    Eigen::Matrix3d, std::string, scipp::core::time_point,
+                    event_list<double>, event_list<float>, event_list<int64_t>,
+                    event_list<int32_t>, event_list<scipp::core::time_point>>(
+              type, std::forward<Ts>(args)...)} {}
 
 /// Non-mutable view into (a subset of) a Variable.
 class SCIPP_VARIABLE_EXPORT VariableConstView {
@@ -249,9 +236,6 @@ public:
   VariableConstView slice(const Slice slice) const;
 
   VariableConstView transpose(const std::vector<Dim> &dims = {}) const;
-  // Note the return type. Reshaping a non-contiguous slice cannot return a
-  // slice in general so we must return a copy of the data.
-  Variable reshape(const Dimensions &dims) const;
 
   units::Unit unit() const { return m_variable->unit(); }
 

@@ -158,6 +158,11 @@ protected:
     d.setData("data_xy", dataset["data_xy"].data().slice({Dim::X, pos}));
     d.setData("data_zyx", dataset["data_zyx"].data().slice({Dim::X, pos}));
     d.setData("data_xyz", dataset["data_xyz"].data().slice({Dim::X, pos}));
+    // Dataset mask turns into item mask when sliced.
+    for (const auto &name :
+         {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
+      d[name].masks().set("masks_x",
+                          dataset.masks()["masks_x"].slice({Dim::X, pos}));
     return d;
   }
 };
@@ -336,10 +341,13 @@ TEST_P(Dataset3DTest_slice_y, slice) {
                     dataset["data_zyx"].data().slice({Dim::Y, pos}));
   reference.setData("data_xyz",
                     dataset["data_xyz"].data().slice({Dim::Y, pos}));
-  for (const auto &name : {"data_xy", "data_zyx", "data_xyz"})
+  for (const auto &name : {"data_xy", "data_zyx", "data_xyz"}) {
+    reference[name].masks().set(
+        "masks_xy", dataset.masks()["masks_xy"].slice({Dim::Y, pos}));
     for (const auto &attr : {"y", "labels_xy"})
       reference[name].attrs().set(
           attr, dataset.coords()[Dim(attr)].slice({Dim::Y, pos}));
+  }
 
   EXPECT_EQ(dataset.slice({Dim::Y, pos}), reference);
 }
@@ -360,10 +368,13 @@ TEST_P(Dataset3DTest_slice_z, slice) {
                     dataset["data_zyx"].data().slice({Dim::Z, pos}));
   reference.setData("data_xyz",
                     dataset["data_xyz"].data().slice({Dim::Z, pos}));
-  for (const auto &name : {"data_zyx", "data_xyz"})
+  for (const auto &name : {"data_zyx", "data_xyz"}) {
+    reference[name].masks().set(
+        "masks_z", dataset.masks()["masks_z"].slice({Dim::Z, pos}));
     for (const auto &attr : {"z", "labels_z"})
       reference[name].attrs().set(
           attr, dataset.coords()[Dim(attr)].slice({Dim::Z, pos}));
+  }
 
   EXPECT_EQ(dataset.slice({Dim::Z, pos}), reference);
 }
