@@ -52,15 +52,16 @@ void DatasetFactory3D::init() {
   base.setCoord(Dim("labels_z"),
                 makeVariable<double>(Dimensions{Dim::Z, lz}, Values(rand(lz))));
 
-  base.setMask("masks_x",
-               makeVariable<bool>(Dimensions{m_dim, lx},
-                                  Values(make_bools(lx, {false, true}))));
-  base.setMask("masks_xy",
-               makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
-                                  Values(make_bools(lx * ly, {false, true}))));
-  base.setMask("masks_z",
-               makeVariable<bool>(Dimensions{Dim::Z, lz},
-                                  Values(make_bools(lz, {false, true}))));
+  // base.setMask("masks_x",
+  //             makeVariable<bool>(Dimensions{m_dim, lx},
+  //                                Values(make_bools(lx, {false, true}))));
+  // base.setMask("masks_xy",
+  //             makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
+  //                                Values(make_bools(lx * ly, {false,
+  //                                true}))));
+  // base.setMask("masks_z",
+  //             makeVariable<bool>(Dimensions{Dim::Z, lz},
+  //                                Values(make_bools(lz, {false, true}))));
 }
 
 void DatasetFactory3D::seed(const uint32_t value) {
@@ -71,15 +72,15 @@ void DatasetFactory3D::seed(const uint32_t value) {
 
 Dataset DatasetFactory3D::make(const bool randomMasks) {
   Dataset dataset(base);
-  if (randomMasks) {
-    dataset.setMask("masks_x", makeVariable<bool>(Dimensions{m_dim, lx},
-                                                  Values(randBool(lx))));
-    dataset.setMask("masks_xy",
-                    makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
-                                       Values(randBool(lx * ly))));
-    dataset.setMask("masks_z", makeVariable<bool>(Dimensions{Dim::Z, lz},
-                                                  Values(randBool(lz))));
-  }
+  // if (randomMasks) {
+  //  dataset.setMask("masks_x", makeVariable<bool>(Dimensions{m_dim, lx},
+  //                                                Values(randBool(lx))));
+  //  dataset.setMask("masks_xy",
+  //                  makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
+  //                                     Values(randBool(lx * ly))));
+  //  dataset.setMask("masks_z", makeVariable<bool>(Dimensions{Dim::Z, lz},
+  //                                                Values(randBool(lz))));
+  //}
   dataset.setData("values_x", makeVariable<double>(Dimensions{m_dim, lx},
                                                    Values(rand(lx))));
   dataset.setData("data_x",
@@ -158,9 +159,9 @@ Dataset make_1d_masked() {
   Dataset ds;
   ds.setData("data_x",
              makeVariable<double>(Dimensions{Dim::X, 10}, Values(random(10))));
-  ds.setMask("masks_x",
-             makeVariable<bool>(Dimensions{Dim::X, 10},
-                                Values(make_bools(10, {false, true}))));
+  ds["data_x"].masks().set(
+      "masks_x", makeVariable<bool>(Dimensions{Dim::X, 10},
+                                    Values(make_bools(10, {false, true}))));
   return ds;
 }
 

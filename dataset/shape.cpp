@@ -74,8 +74,7 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
                     const Dim dim) {
   Dataset result(
       std::map<std::string, Variable>(),
-      concat(a.coords(), b.coords(), dim, a.dimensions(), b.dimensions()),
-      concat(a.masks(), b.masks(), dim, a.dimensions(), b.dimensions()));
+      concat(a.coords(), b.coords(), dim, a.dimensions(), b.dimensions()));
   for (const auto &item : a)
     if (b.contains(item.name())) {
       if (!item.dims().contains(dim) && item == b[item.name()])

@@ -124,10 +124,13 @@ TEST_F(GroupbyTest, array_variable) {
 
 struct GroupbyMaskedTest : public GroupbyTest {
   GroupbyMaskedTest() : GroupbyTest() {
-    d.setMask("mask_x", makeVariable<bool>(Dimensions{Dim::X, 3},
-                                           Values{false, true, false}));
-    d.setMask("mask_z",
-              makeVariable<bool>(Dimensions{Dim::Z, 2}, Values{false, true}));
+    for (const auto &item : {"a", "b", "c"})
+      d[item].masks().set("mask_x",
+                          makeVariable<bool>(Dimensions{Dim::X, 3},
+                                             Values{false, true, false}));
+    for (const auto &item : {"a", "c"})
+      d[item].masks().set("mask_z", makeVariable<bool>(Dimensions{Dim::Z, 2},
+                                                       Values{false, true}));
   }
 };
 
@@ -144,8 +147,10 @@ TEST_F(GroupbyMaskedTest, sum) {
   expected.setCoord(
       dim, makeVariable<double>(Dimensions{dim, 2}, units::m, Values{1, 3}));
   expected.setCoord("a", Dim("scalar"), makeVariable<double>(Values{1.2}));
-  expected.setMask(
-      "mask_z", makeVariable<bool>(Dimensions{Dim::Z, 2}, Values{false, true}));
+  for (const auto &item : {"a", "c"})
+    expected[item].masks().set(
+        "mask_z",
+        makeVariable<bool>(Dimensions{Dim::Z, 2}, Values{false, true}));
 
   const auto result = groupby(d, dim).sum(Dim::X);
   EXPECT_EQ(result, expected);
@@ -164,17 +169,23 @@ TEST_F(GroupbyMaskedTest, sum_irrelevant_mask) {
   expected.setCoord(
       dim, makeVariable<double>(Dimensions{dim, 2}, units::m, Values{1, 3}));
   expected.setCoord("a", Dim("scalar"), makeVariable<double>(Values{1.2}));
-  expected.setMask(
-      "mask_z", makeVariable<bool>(Dimensions{Dim::Z, 2}, Values{false, true}));
+  for (const auto &item : {"a", "c"})
+    expected[item].masks().set(
+        "mask_z",
+        makeVariable<bool>(Dimensions{Dim::Z, 2}, Values{false, true}));
 
-  d.masks().erase("mask_x");
+  for (const auto &item : {"a", "b", "c"})
+    d[item].masks().erase("mask_x");
   auto result = groupby(d, dim).sum(Dim::X);
   EXPECT_EQ(result, expected);
 
-  d.masks().erase("mask_z");
-  ASSERT_TRUE(d.masks().empty());
+  for (const auto &item : {"a", "c"}) {
+    d[item].masks().erase("mask_z");
+    ASSERT_TRUE(d[item].masks().empty());
+  }
   const auto expected2 = groupby(d, dim).sum(Dim::X);
-  result.masks().erase("mask_z");
+  for (const auto &item : {"a", "c"})
+    result[item].masks().erase("mask_z");
   EXPECT_EQ(result, expected2);
 }
 
@@ -193,8 +204,10 @@ TEST_F(GroupbyMaskedTest, mean_mask_ignores_values_properly) {
   expected.setCoord(
       dim, makeVariable<double>(Dimensions{dim, 2}, units::m, Values{1, 3}));
   expected.setCoord("a", Dim("scalar"), makeVariable<double>(Values{1.2}));
-  expected.setMask(
-      "mask_z", makeVariable<bool>(Dimensions{Dim::Z, 2}, Values{false, true}));
+  for (const auto &item : {"a", "c"})
+    expected[item].masks().set(
+        "mask_z",
+        makeVariable<bool>(Dimensions{Dim::Z, 2}, Values{false, true}));
 
   const auto result = groupby(d, dim).mean(Dim::X);
   EXPECT_EQ(result, expected);
@@ -224,8 +237,10 @@ TEST_F(GroupbyMaskedTest, mean) {
 }
 
 TEST_F(GroupbyMaskedTest, mean2) {
-  d.setMask("mask_x", makeVariable<bool>(Dimensions{Dim::X, 3},
-                                         Values{false, false, true}));
+  for (const auto &item : {"a", "b", "c"})
+    d[item].masks().set(
+        "mask_x",
+        makeVariable<bool>(Dimensions{Dim::X, 3}, Values{false, false, true}));
 
   const Dim dim("labels2");
   const auto result = groupby(d, dim).mean(Dim::X);

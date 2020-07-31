@@ -96,16 +96,15 @@ std::string do_to_string(const D &dataset, const std::string &id,
     for (const auto &[name, var] : sorted(elem))
       s << shift << format_variable(name, var, dims);
   }
-  if (!dataset.masks().empty()) {
-    s << shift << "Masks:\n";
-
-    for (const auto &[name, var] : sorted(dataset.masks()))
-      s << shift << format_variable(name, var, dims);
-  }
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataArrayConstView>) {
     s << shift << "Data:\n" << format_data_view(dataset.name(), dataset);
+    if (!dataset.masks().empty()) {
+      s << shift << "Masks:\n";
+      for (const auto &[name, var] : sorted(dataset.masks()))
+        s << shift << format_variable(name, var, dims);
+    }
   } else {
     if (!dataset.empty())
       s << shift << "Data:\n";

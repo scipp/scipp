@@ -63,10 +63,8 @@ void MaskAccess::set(const std::string &key, Variable var) const {
   if (m_unaligned) {
     expectDimsNotContained(m_parent, var);
     m_unaligned->masks().set(key, std::move(var));
-  } else if (m_name) {
-    m_parent->setMask(*m_name, key, std::move(var));
   } else {
-    m_parent->setMask(key, std::move(var));
+    m_parent->setMask(*m_name, key, std::move(var));
   }
 }
 void MaskAccess::erase(const std::string &key) const {
@@ -77,10 +75,8 @@ void MaskAccess::erase(const std::string &key) const {
     } catch (const except::NotFoundError &e) {
       throw clarify_exception(e);
     }
-  else if (m_name)
-    m_parent->eraseMask(*m_name, key);
   else
-    m_parent->eraseMask(key);
+    m_parent->eraseMask(*m_name, key);
 }
 
 } // namespace scipp::dataset

@@ -35,7 +35,7 @@ private:
 
 class MaskAccess {
 public:
-  MaskAccess(Dataset *parent, const std::string *name = nullptr,
+  MaskAccess(Dataset *parent, const std::string *name,
              DataArray *unaligned = nullptr)
       : m_parent(parent), m_name(name), m_unaligned(unaligned) {}
 

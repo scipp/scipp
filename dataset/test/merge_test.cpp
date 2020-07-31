@@ -19,8 +19,6 @@ TEST(MergeTest, simple) {
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{15, 16, 17}));
   a.setCoord(Dim("label_1"),
              makeVariable<int>(Dims{Dim::Y}, Shape{3}, Values{9, 8, 7}));
-  a.setMask("masks_1", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                          Values{false, true, false}));
   a["data_1"].coords().set(Dim("attr_1"), makeVariable<int>(Values{42}));
   a["data_1"].coords().set(Dim("attr_2"), makeVariable<int>(Values{495}));
 
@@ -31,8 +29,6 @@ TEST(MergeTest, simple) {
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
   b.setCoord(Dim("label_2"),
              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{9, 8, 9}));
-  b.setMask("masks_2", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                          Values{false, true, false}));
   b["data_2"].coords().set(Dim("attr_2"), makeVariable<int>(Values{495}));
 
   const auto d = merge(a, b);
@@ -45,9 +41,6 @@ TEST(MergeTest, simple) {
 
   EXPECT_EQ(a.coords()[Dim("label_1")], d.coords()[Dim("label_1")]);
   EXPECT_EQ(b.coords()[Dim("label_2")], d.coords()[Dim("label_2")]);
-
-  EXPECT_EQ(a.masks()["masks_1"], d.masks()["masks_1"]);
-  EXPECT_EQ(b.masks()["masks_2"], d.masks()["masks_2"]);
 
   EXPECT_EQ(a["data_1"].unaligned_coords()[Dim("attr_1")],
             d["data_1"].unaligned_coords()[Dim("attr_1")]);
@@ -163,15 +156,5 @@ TEST(MergeTest, non_matching_events_labels) {
     b.coords().set(Dim("l"), label);
   }
 
-  EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
-}
-
-TEST(MergeTest, non_matching_masks) {
-  Dataset a;
-  Dataset b;
-  a.setMask("a", makeVariable<bool>(Dims{Dim::X}, Shape{5},
-                                    Values{false, true, false, true, false}));
-  b.setMask("a", makeVariable<bool>(Dims{Dim::X}, Shape{5},
-                                    Values{true, true, true, true, true}));
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
