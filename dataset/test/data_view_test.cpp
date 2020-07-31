@@ -163,8 +163,7 @@ TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant_2d_dropped) {
   ASSERT_EQ(coords[Dim::X], x);
 }
 
-TYPED_TEST(DataArrayViewTest,
-           coords_contains_only_relevant_2d_not_dropped_inconsistency) {
+TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant_2d) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
   const auto x = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3});
@@ -178,12 +177,10 @@ TYPED_TEST(DataArrayViewTest,
   // This is a very special case which is probably unlikely to occur in
   // practice. If the coordinate depends on extra dimensions and the data is
   // not, it implies that the coordinate cannot be for this data item, so it
-  // should be dropped... HOWEVER, the current implementation DOES NOT DROP IT.
-  // Should that be changed?
+  // is dropped.
   ASSERT_NE(coords, d.coords());
-  ASSERT_EQ(coords.size(), 1);
-  ASSERT_NO_THROW(coords[Dim::X]);
-  ASSERT_EQ(coords[Dim::X], x);
+  ASSERT_EQ(coords.size(), 0);
+  ASSERT_FALSE(coords.contains(Dim::X));
 }
 
 TYPED_TEST(DataArrayViewTest, hasData_hasVariances) {
