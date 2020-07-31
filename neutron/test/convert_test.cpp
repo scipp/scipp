@@ -169,6 +169,8 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
               Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
     EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
     EXPECT_EQ(data.unit(), units::counts);
+    ASSERT_EQ(dspacing["counts"].coords()[Dim("position")],
+              tof.coords()[Dim("position")]);
   } else {
     ASSERT_TRUE(dspacing.contains("events"));
     const auto &events = dspacing["events"];
@@ -197,13 +199,11 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
                 d1[1] * 1e-3);
     EXPECT_NEAR(d1[2], 3956.0 / (1e6 * 11.0 / tof1[2]) * lambda_to_d,
                 d1[2] * 1e-3);
+    ASSERT_EQ(dspacing["events"].coords()[Dim("position")],
+              tof.coords()[Dim("position")]);
   }
 
   ASSERT_FALSE(dspacing.coords().contains(Dim("position")));
-  ASSERT_EQ(dspacing["counts"].coords()[Dim("position")],
-            tof.coords()[Dim("position")]);
-  ASSERT_EQ(dspacing["events"].coords()[Dim("position")],
-            tof.coords()[Dim("position")]);
   ASSERT_EQ(dspacing.coords()[Dim("source-position")],
             tof.coords()[Dim("source-position")]);
   ASSERT_EQ(dspacing.coords()[Dim("sample-position")],

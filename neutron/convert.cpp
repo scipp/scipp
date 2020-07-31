@@ -139,9 +139,70 @@ Dataset tofToDeltaE(const Dataset &d) {
 }
 */
 
+namespace {
+
+template <class T> T coords_to_attrs(T &&x, const Dim from, const Dim to) {
+  const auto to_attr = [&](const Dim field) {
+    if (!x.coords().contains(field))
+      return;
+    Variable coord(x.coords()[field]);
+    if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
+      x.coords().erase(field);
+      for (const auto &item : iter(x))
+        item.coords().set(field, coord);
+    } else {
+      x.aligned_coords().erase(field);
+      x.unaligned_coords().set(field, coord);
+    }
+  };
+  // Will be replaced by explicit flag
+  bool scatter = x.coords().contains(Dim("sample-position"));
+  if (scatter) {
+    std::set<Dim> pos_invariant{Dim::DSpacing, Dim::Q};
+    if (pos_invariant.count(to))
+      to_attr(Dim::Position);
+  } else {
+    if (to != Dim::Tof)
+      to_attr(Dim::Position);
+  }
+  return std::move(x);
+}
+
+template <class T> T attrs_to_coords(T &&x, const Dim from, const Dim to) {
+  const auto to_coord = [&](const Dim field) {
+    auto &&range = iter(x);
+    if (!range.begin()->unaligned_coords().contains(field))
+      return;
+    if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
+      x.coords().set(field, range.begin()->unaligned_coords()[field]);
+      for (const auto &item : range) {
+        core::expect::equals(x.coords()[field], item.unaligned_coords()[field]);
+        item.unaligned_coords().erase(field);
+      }
+    } else {
+      x.coords().set(field, x.unaligned_coords()[field]);
+      x.unaligned_coords().erase(field);
+    }
+  };
+  // Will be replaced by explicit flag
+  bool scatter = x.coords().contains(Dim("sample-position"));
+  if (scatter) {
+    std::set<Dim> pos_invariant{Dim::DSpacing, Dim::Q};
+    if (pos_invariant.count(from))
+      to_coord(Dim::Position);
+  } else {
+    if (to == Dim::Tof)
+      to_coord(Dim::Position);
+  }
+  return std::move(x);
+}
+
+} // namespace
+
 template <class T>
 T convert_impl(T d, const Dim from, const Dim to,
                const ConvertRealign realign) {
+  d = attrs_to_coords(std::move(d), from, to);
   for (const auto &item : iter(d))
     if (item.hasData())
       core::expect::notCountDensity(item.unit());
@@ -189,59 +250,11 @@ T convert_impl(T d, const Dim from, const Dim to,
       "Conversion between requested dimensions not implemented yet.");
 }
 
-namespace {
-template <class T>
-T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
-  const auto to_attr = [&](const Dim field) {
-    if (!x.coords().contains(field))
-      return;
-    Variable coord(x.coords()[field]);
-    if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
-      x.coords().erase(field);
-      for (const auto &item : iter(x))
-        item.coords().set(field, coord);
-    } else {
-      x.aligned_coords().erase(field);
-      x.unaligned_coords().set(field, coord);
-    }
-  };
-  const auto to_coord = [&](const Dim field) {
-    auto &&range = iter(x);
-    if (!range.begin()->unaligned_coords().contains(field))
-      return;
-    if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
-      x.coords().set(field, range.begin()->unaligned_coords()[field]);
-      for (const auto &item : range) {
-        core::expect::equals(x.coords()[field], item.unaligned_coords()[field]);
-        item.unaligned_coords().erase(field);
-      }
-    } else {
-      x.coords().set(field, x.unaligned_coords()[field]);
-      x.unaligned_coords().erase(field);
-    }
-  };
-  // Will be replaced by explicit flag
-  bool scatter = x.coords().contains(Dim("sample-position"));
-  if (scatter) {
-    std::set<Dim> pos_invariant{Dim::DSpacing, Dim::Q};
-    if (pos_invariant.count(to))
-      to_attr(Dim::Position);
-    if (pos_invariant.count(from))
-      to_coord(Dim::Position);
-  } else {
-    if (to == Dim::Tof)
-      to_coord(Dim::Position);
-    else
-      to_attr(Dim::Position);
-  }
-  return std::move(x);
-}
-} // namespace
 
 DataArray convert(DataArray d, const Dim from, const Dim to,
                   const ConvertRealign realign) {
-  return swap_tof_related_labels_and_attrs(
-      convert_impl(std::move(d), from, to, realign), from, to);
+  return coords_to_attrs(convert_impl(std::move(d), from, to, realign), from,
+                         to);
 }
 
 DataArray convert(const DataArrayConstView &d, const Dim from, const Dim to,
@@ -251,8 +264,8 @@ DataArray convert(const DataArrayConstView &d, const Dim from, const Dim to,
 
 Dataset convert(Dataset d, const Dim from, const Dim to,
                 const ConvertRealign realign) {
-  return swap_tof_related_labels_and_attrs(
-      convert_impl(std::move(d), from, to, realign), from, to);
+  return coords_to_attrs(convert_impl(std::move(d), from, to, realign), from,
+                         to);
 }
 
 Dataset convert(const DatasetConstView &d, const Dim from, const Dim to,
