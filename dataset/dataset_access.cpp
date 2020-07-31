@@ -38,8 +38,8 @@ void CoordAccess::set(const Dim &key, Variable var) const {
   expectValidParent(m_parent);
   if (m_unaligned) {
     // TODO Mapping rules not clear, insert into coords or unaligned_coords?
-    // expectDimsNotContained(m_parent, var);
-    m_unaligned->unaligned_coords().set(key, std::move(var));
+    expectDimsNotContained(m_parent, var);
+    m_unaligned->coords().set(key, std::move(var));
   } else if (m_name) {
     m_parent->setCoord(*m_name, key, std::move(var));
   } else

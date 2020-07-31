@@ -321,11 +321,11 @@ TEST_F(RealignTest, unaligned_slice_contains_sliced_coords) {
   // preserved.
   const auto realigned = make_realigned();
   const auto slice = realigned.slice({Dim::X, 0});
-  EXPECT_FALSE(slice.coords().contains(Dim::X));
+  EXPECT_FALSE(slice.aligned_coords().contains(Dim::X));
   // Slicing realigned dimensions does not eagerly slice the unaligned content.
   // Therefore, corresponding coordinates are not removed, even for a non-range
   // slice.
-  EXPECT_TRUE(slice.unaligned().coords().contains(Dim::X));
+  EXPECT_TRUE(slice.unaligned().aligned_coords().contains(Dim::X));
 }
 
 TEST_F(RealignTest, slice_unaligned_view) {

@@ -31,7 +31,8 @@ std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
     const auto s = item.first;
     const auto dim = s.dim();
     // Only process realigned dims
-    if (unaligned().dims().contains(dim) || !unaligned().coords().contains(dim))
+    if (unaligned().dims().contains(dim) ||
+        !unaligned().aligned_coords().contains(dim))
       continue;
     const auto left = s.begin();
     const auto right = s.end() == -1 ? left + 1 : s.end();

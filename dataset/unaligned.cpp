@@ -153,8 +153,8 @@ bool is_realigned_events(const DataArrayConstView &realigned) {
 
 std::set<Dim> realigned_event_dims(const DataArrayConstView &realigned) {
   std::set<Dim> realigned_dims;
-  for (const auto &[dim, coord] : realigned.unaligned().coords())
-    if (contains_events(coord) && realigned.coords().contains(dim))
+  for (const auto &[dim, coord] : realigned.unaligned().aligned_coords())
+    if (contains_events(coord) && realigned.aligned_coords().contains(dim))
       realigned_dims.insert(dim);
   return realigned_dims;
 }
