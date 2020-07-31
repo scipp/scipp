@@ -6,6 +6,7 @@
 #include <string>
 
 #include "scipp-dataset_export.h"
+#include "scipp/common/deep_ptr.h"
 #include "scipp/units/dim.h"
 
 namespace scipp::variable {
@@ -20,8 +21,8 @@ class Dataset;
 class CoordAccess {
 public:
   CoordAccess(Dataset *parent, const std::string *name = nullptr,
-              DataArray *unaligned = nullptr)
-      : m_parent(parent), m_name(name), m_unaligned(unaligned) {}
+              deep_ptr<CoordAccess> &&unaligned = nullptr)
+      : m_parent(parent), m_name(name), m_unaligned(std::move(unaligned)) {}
 
   void set(const Dim &key, variable::Variable var) const;
   void erase(const Dim &key) const;
@@ -29,7 +30,7 @@ public:
 private:
   Dataset *m_parent;
   const std::string *m_name;
-  DataArray *m_unaligned;
+  deep_ptr<CoordAccess> m_unaligned;
 };
 
 class MaskAccess {

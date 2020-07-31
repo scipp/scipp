@@ -366,6 +366,17 @@ void DataArrayView::setData(Variable data) const {
     m_mutableDataset->setData(name(), std::move(data), AttrPolicy::Keep);
 }
 
+template <class Key, class Val>
+void Dataset::erase_from_map(std::unordered_map<Key, Val> &map,
+                             const Key &key) {
+  using core::to_string;
+  if (!map.count(key))
+    throw except::NotFoundError("Cannot erase " + to_string(key) +
+                                " -- not found.");
+  map.erase(key);
+  rebuildDims();
+}
+
 /// Removes the coordinate for the given dimension.
 void Dataset::eraseCoord(const Dim dim) { erase_from_map(m_coords, dim); }
 
@@ -781,7 +792,10 @@ DataArrayView DataArrayView::slice(const Slice s) const {
   }
 }
 
-CoordsView DataArrayView::make_coords(const CoordCategory category) const {
+/// is_item controls whether access should refer to aligned or unaligned coords,
+/// i.e., whether this is a view of a dataset item or a data array.
+CoordsView DataArrayView::make_coords(const CoordCategory category,
+                                      const bool is_item) const {
   // Aligned coords (including unaligned by slicing) from dataset
   auto items = makeViewItems(parentDims(), m_mutableDataset->m_coords);
   maybe_drop_aligned_or_unaligned(items, slices(), category);
@@ -797,16 +811,18 @@ CoordsView DataArrayView::make_coords(const CoordCategory category) const {
             : makeViewItems(m_mutableData->second.coords);
     items.insert(tmp.begin(), tmp.end());
   }
-  DataArray *unaligned_ptr{nullptr};
+  deep_ptr<CoordAccess> unaligned_ptr{nullptr};
   if (is_view_of_unaligned) {
     // This is a view of the unaligned content of a realigned data array.
-    unaligned_ptr = &m_mutableData->second.unaligned->data;
     decltype(*this) unaligned = m_mutableData->second.unaligned->data;
-    const auto tmp = unaligned.make_coords(category);
+    const auto tmp =
+        unaligned.make_coords(category, category == CoordCategory::Unaligned);
+    unaligned_ptr = std::make_unique<CoordAccess>(tmp.access());
     items.insert(tmp.items().begin(), tmp.items().end());
   }
   return CoordsView(CoordAccess{slices().empty() ? m_mutableDataset : nullptr,
-                                &name(), unaligned_ptr},
+                                is_item ? &name() : nullptr,
+                                std::move(unaligned_ptr)},
                     std::move(items), slices());
 }
 
@@ -817,8 +833,7 @@ CoordsView DataArrayView::coords() const noexcept {
 
 /// Return a view to all coordinates of the data array.
 CoordsView DataArray::coords() {
-  auto items = get().coords().items();
-  return CoordsView(CoordAccess{&m_holder}, std::move(items), {});
+  return get().make_coords(CoordCategory::All, false);
 }
 
 /// Return a view to all aligned coordinates of the data view.

@@ -172,6 +172,9 @@ public:
 
   void setData(Variable data) const;
 
+  CoordsView make_coords(const CoordCategory category,
+                         const bool is_item = true) const;
+
 private:
   friend class DatasetConstView;
   // For internal use in DatasetConstView.
@@ -181,8 +184,6 @@ private:
 
   Dataset *m_mutableDataset{nullptr};
   detail::dataset_item_map::value_type *m_mutableData{nullptr};
-
-  CoordsView make_coords(const CoordCategory category) const;
 };
 
 namespace detail {
@@ -410,10 +411,8 @@ private:
   void rebuildDims();
 
   template <class Key, class Val>
-  void erase_from_map(std::unordered_map<Key, Val> &map, const Key &key) {
-    map.erase(key);
-    rebuildDims();
-  }
+  void erase_from_map(std::unordered_map<Key, Val> &map, const Key &key);
+
   void setData_impl(const std::string &name, detail::DatasetData &&data,
                     const AttrPolicy attrPolicy);
 

@@ -153,15 +153,9 @@ TEST_F(AttributesTest, scalar_not_mapped_into_aligned) {
   auto d = testdata::make_dataset_realigned_x_to_y();
   EXPECT_TRUE(d["a"].unaligned_coords().empty());
   EXPECT_TRUE(d["a"].unaligned().unaligned_coords().empty());
-  d["a"].unaligned().unaligned_coords().set(Dim("scalar"), scalar);
-  // Note that based on dimensionality we *could* insert this attribute directly
-  // in item "a", but it would be confusing if it suddenly appeared on a higher
-  // level.
+  EXPECT_THROW(d["a"].unaligned().unaligned_coords().set(Dim("scalar"), scalar),
+               except::RealignedDataError);
   EXPECT_TRUE(d["a"].unaligned_coords().empty());
-  EXPECT_TRUE(d["a"].unaligned().unaligned_coords().contains(Dim("scalar")));
-  d["a"].unaligned().coords().erase(Dim("scalar"));
-  EXPECT_TRUE(d["a"].unaligned_coords().empty());
-  EXPECT_TRUE(d["a"].unaligned().unaligned_coords().empty());
 }
 
 TEST_F(AttributesTest, aligned_not_mapped_into_unaligned) {
@@ -188,7 +182,9 @@ TEST_F(AttributesTest, unaligned_not_mapped_into_aligned) {
   EXPECT_TRUE(d["a"].unaligned().unaligned_coords().contains(Dim("attr")));
   EXPECT_TRUE(d["a"].unaligned_coords().empty());
   EXPECT_THROW(d["a"].coords().erase(Dim("attr")), except::NotFoundError);
-  d["a"].unaligned().coords().erase(Dim("attr"));
+  EXPECT_THROW(d["a"].unaligned_coords().erase(Dim("attr")),
+               except::NotFoundError);
+  d["a"].unaligned().unaligned_coords().erase(Dim("attr"));
   EXPECT_TRUE(d["a"].unaligned_coords().empty());
   EXPECT_TRUE(d["a"].unaligned().unaligned_coords().empty());
 }
