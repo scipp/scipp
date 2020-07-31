@@ -22,8 +22,6 @@ def test_moving_variable_into_dataset_proxies():
     d = sc.Dataset()
     d.coords['x'] = sc.detail.move(sc.Variable(['x'],
                                                values=np.arange(1000.0)))
-    d.attrs["b"] = sc.detail.move(
-        sc.Variable(['y'], values=np.random.random(50)))
     d.masks["c"] = sc.detail.move(
         sc.Variable(['z'], values=np.random.random(50)))
 
@@ -31,13 +29,10 @@ def test_moving_variable_into_dataset_proxies():
     assert 'y' in d.dims
     assert 'z' in d.dims
     assert len(d.coords) == 1
-    assert len(d.attrs) == 1
     assert len(d.masks) == 1
     assert 'x' in d.coords
-    assert "b" in d.attrs
     assert "c" in d.masks
     assert d.coords['x'].shape == [1000]
-    assert d.attrs["b"].shape == [50]
     assert d.masks["c"].shape == [50]
 
 
@@ -46,18 +41,18 @@ def test_moving_variable_into_data_array_proxies():
     a = sc.DataArray(data=sc.Variable(['x'], values=np.random.random(1000)))
     a.coords['x'] = sc.detail.move(sc.Variable(['x'],
                                                values=np.arange(1000.0)))
-    a.attrs["b"] = sc.detail.move(
+    a.unaligned_coords["b"] = sc.detail.move(
         sc.Variable(['x'], values=np.random.random(1000)))
     a.masks["c"] = sc.detail.move(
         sc.Variable(['x'], values=np.random.random(1000)))
 
     assert a.dims == ['x']
     assert a.shape == [1000]
-    assert len(a.coords) == 1
-    assert len(a.attrs) == 1
+    assert len(a.coords) == 2
+    assert len(a.unaligned_coords) == 1
     assert len(a.masks) == 1
     assert 'x' in a.coords
-    assert "b" in a.attrs
+    assert "b" in a.unaligned_coords
     assert "c" in a.masks
 
 
