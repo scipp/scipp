@@ -725,8 +725,8 @@ MasksConstView DataArrayConstView::masks() const noexcept {
   if (!m_data->second.data && hasData()) {
     // This is a view of the unaligned content of a realigned data array.
     decltype(*this) unaligned = m_data->second.unaligned->data;
-    tmp = makeViewItems(unaligned.parentDims(), unaligned.m_dataset->m_masks);
-    items.insert(tmp.begin(), tmp.end());
+    const auto m = unaligned.masks();
+    items.insert(m.items().begin(), m.items().end());
   }
   return MasksConstView(std::move(items), slices());
 }
@@ -850,9 +850,8 @@ MasksView DataArrayView::masks() const noexcept {
     // This is a view of the unaligned content of a realigned data array.
     unaligned_ptr = &m_mutableData->second.unaligned->data;
     decltype(*this) unaligned = m_mutableData->second.unaligned->data;
-    tmp = makeViewItems(unaligned.parentDims(),
-                        unaligned.m_mutableDataset->m_masks);
-    items.insert(tmp.begin(), tmp.end());
+    const auto m = unaligned.masks();
+    items.insert(m.items().begin(), m.items().end());
   }
   return MasksView(MaskAccess{slices().empty() ? m_mutableDataset : nullptr,
                               &name(), unaligned_ptr},
@@ -861,8 +860,8 @@ MasksView DataArrayView::masks() const noexcept {
 
 /// Return a view to all masks of the data array.
 MasksView DataArray::masks() {
-  // Unlike coords we do not have aligned masks, not using different MaskAccess.
-  return get().masks();
+  auto items = get().masks().items();
+  return MasksView(MaskAccess{&m_holder}, std::move(items), {});
 }
 
 DataArrayView DataArrayView::assign(const DataArrayConstView &other) const {
