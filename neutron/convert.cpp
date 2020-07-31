@@ -195,13 +195,14 @@ T swap_tof_related_labels_and_attrs(T &&x, const Dim from, const Dim to) {
   const auto to_attr = [&](const Dim field) {
     if (!x.coords().contains(field))
       return;
+    Variable coord(x.coords()[field]);
     if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
-      for (const auto &item : iter(x))
-        item.coords().set(field, x.coords()[field]);
       x.coords().erase(field);
+      for (const auto &item : iter(x))
+        item.coords().set(field, coord);
     } else {
-      x.unaligned_coords().set(field, x.coords()[field]);
       x.aligned_coords().erase(field);
+      x.unaligned_coords().set(field, coord);
     }
   };
   const auto to_coord = [&](const Dim field) {
