@@ -140,8 +140,7 @@ class Slicer2d(Slicer):
             self.cbar = plt.colorbar(self.im["values"],
                                      ax=self.ax,
                                      cax=self.cax)
-            self.cbar.ax.set_ylabel(
-                name_with_unit(var=self.data_array, name=""))
+            self.cbar.set_label(name_with_unit(var=self.data_array, name=""))
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.members["images"] = self.im["values"]
