@@ -209,9 +209,10 @@ template <class... Ts>
 Variable::Variable(const DType &type, Ts &&... args)
     : Variable{
           construct<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-                    Eigen::Matrix3d, std::string, event_list<double>,
-                    event_list<float>, event_list<int64_t>,
-                    event_list<int32_t>>(type, std::forward<Ts>(args)...)} {}
+                    Eigen::Matrix3d, std::string, scipp::core::time_point,
+                    event_list<double>, event_list<float>, event_list<int64_t>,
+                    event_list<int32_t>, event_list<scipp::core::time_point>>(
+              type, std::forward<Ts>(args)...)} {}
 
 /// Non-mutable view into (a subset of) a Variable.
 class SCIPP_VARIABLE_EXPORT VariableConstView {

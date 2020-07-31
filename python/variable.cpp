@@ -77,6 +77,14 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
                 b.cast<Eigen::Vector3d>(),
                 v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
                 unit);
+          } else if (info.ndim == 1 &&
+                     scipp_dtype(dtype) ==
+                         core::dtype<scipp::core::time_point>) {
+            return do_init_0D<scipp::core::time_point>(
+                b.cast<scipp::core::time_point>(),
+                v ? std::optional(v->cast<scipp::core::time_point>())
+                  : std::nullopt,
+                unit);
           } else if (info.ndim == 2 &&
                      scipp_dtype(dtype) == core::dtype<Eigen::Matrix3d>) {
             return do_init_0D<Eigen::Matrix3d>(
@@ -133,11 +141,11 @@ void bind_astype(py::class_<T, Ignored...> &c) {
       [](const T &self, const DType type) { return astype(self, type); },
       py::call_guard<py::gil_scoped_release>(),
       R"(
-        Converts a Variable to a different type.
+      Converts a Variable to a different type.
 
-        :raises: If the variable cannot be converted to the requested dtype.
-        :return: New Variable with specified dtype.
-        :rtype: Variable)");
+      :raises: If the variable cannot be converted to the requested dtype.
+      :return: New Variable with specified dtype.
+      :rtype: Variable)");
 }
 
 void init_variable(py::module &m) {
@@ -148,6 +156,7 @@ of variances.)");
   bind_init_0D<DataArray>(variable);
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
+  bind_init_0D<scipp::core::time_point>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_0D<Eigen::Matrix3d>(variable);
   variable.def(py::init<const VariableView &>())

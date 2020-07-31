@@ -5,9 +5,12 @@
 #pragma once
 
 #include <map>
+#include <optional>
 #include <string>
 
 #include <Eigen/Dense>
+
+#include "scipp/units/unit.h"
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
@@ -51,15 +54,28 @@ std::string to_string(const MutableView<T, U> &mutableView) {
   return ss.str();
 }
 
-template <class T> std::string array_to_string(const T &arr);
+template <class T>
+std::string
+array_to_string(const T &arr,
+                const std::optional<units::Unit> &unit = std::nullopt);
 
-template <class T> std::string element_to_string(const T &item) {
+const std::string
+to_iso_date(const scipp::core::time_point &tem,
+            const std::optional<units::Unit> &unit = std::nullopt);
+
+template <class T>
+std::string
+element_to_string(const T &item,
+                  const std::optional<units::Unit> &unit = std::nullopt) {
   using std::to_string;
   if constexpr (std::is_same_v<T, std::string>)
     return {'"' + item + "\", "};
   else if constexpr (std::is_same_v<T, bool>)
     return core::to_string(item) + ", ";
-  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+
+  else if constexpr (std::is_same_v<T, scipp::core::time_point>) {
+    return core::to_string(to_iso_date(item, unit)) + ", ";
+  } else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
     return {"(" + to_string(item[0]) + ", " + to_string(item[1]) + ", " +
             to_string(item[2]) + "), "};
   else if constexpr (std::is_same_v<T, Eigen::Matrix3d>)
@@ -72,7 +88,9 @@ template <class T> std::string element_to_string(const T &item) {
     return to_string(item) + ", ";
 }
 
-template <class T> std::string array_to_string(const T &arr) {
+template <class T>
+std::string array_to_string(const T &arr,
+                            const std::optional<units::Unit> &unit) {
   const auto size = scipp::size(arr);
   if (size == 0)
     return std::string("[]");
@@ -82,7 +100,7 @@ template <class T> std::string array_to_string(const T &arr) {
       s += "..., ";
       i = size - 2;
     }
-    s += element_to_string(arr[i]);
+    s += element_to_string(arr[i], unit);
   }
   s.resize(s.size() - 2);
   s += "]";

@@ -3,12 +3,12 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
-#include <typeindex>
-
 #include <boost/container/small_vector.hpp>
+#include <typeindex>
 
 #include "scipp-core_export.h"
 #include "scipp/common/span.h"
+#include "scipp/core/time_point.h"
 
 namespace scipp::core {
 

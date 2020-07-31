@@ -1105,6 +1105,18 @@ TEST(VariableTest, construct_mult_dev_unit) {
   EXPECT_EQ(int32_t(1) * units::kg, refMult);
 }
 
+TEST(VariableTest, datetime_dtype) {
+  auto dt =
+      makeVariable<scipp::core::time_point>(Values{scipp::core::time_point{}});
+  EXPECT_EQ(dt.dtype(), dtype<scipp::core::time_point>);
+}
+
+TEST(VariableTest, construct_time_unit) {
+  Variable refMult =
+      makeVariable<int64_t>(Dims(), Shape(), units::ns, Values{1000});
+  EXPECT_EQ(int64_t(1000) * units::ns, refMult);
+}
+
 template <class T> class AsTypeTest : public ::testing::Test {};
 
 using type_pairs =
