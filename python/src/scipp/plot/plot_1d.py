@@ -6,7 +6,7 @@
 from .. import config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import edges_to_centers
+from .tools import to_bin_centers
 from .._utils import name_with_unit
 from .._scipp.core import histogram as scipp_histogram
 
@@ -320,7 +320,8 @@ class Slicer1d(Slicer):
             # Add error bars
             if self.errorbars[name]:
                 if self.histograms[name][dim][dim]:
-                    self.current_xcenters = edges_to_centers(new_x)
+                    self.current_xcenters = to_bin_centers(
+                        self.slider_coord[name][dim], dim).values
                 else:
                     self.current_xcenters = new_x
                 self.members["error_y"][name] = self.ax.errorbar(

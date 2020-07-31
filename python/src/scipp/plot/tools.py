@@ -19,25 +19,28 @@ def get_line_param(name=None, index=None):
     return param[index % len(param)]
 
 
-def edges_to_centers(x):
+def to_bin_centers(x, dim):
     """
     Convert array edges to centers
     """
-    return 0.5 * (x[1:] + x[:-1])
+    return 0.5 * (x[dim, 1:] + x[dim, :-1])
 
 
-def centers_to_edges(x):
+def to_bin_edges(x, dim):
     """
     Convert array centers to edges
     """
-    if len(x) < 2:
-        dx = 0.5 * abs(x[0])
-        if dx == 0.0:
-            dx = 0.5
-        return np.array([x[0] - dx, x[0] + dx])
+    idim = x.dims.index(dim)
+    if x.shape[idim] < 2:
+        one = 1.0 * x.unit
+        return sc.concatenate(x[dim, 0:1] - one, x[dim, 0:1] + one, dim)
     else:
-        e = edges_to_centers(x)
-        return np.concatenate([[2.0 * x[0] - e[0]], e, [2.0 * x[-1] - e[-1]]])
+        center = to_bin_centers(x, dim)
+        # Note: use range of 0:1 to keep dimension dim in the slice to avoid
+        # switching round dimension order in concatenate step.
+        left = center[dim, 0:1] - (center[dim, 1] - center[dim, 0])
+        right = center[dim, -1] + (center[dim, -1] - center[dim, -2])
+        return sc.concatenate(sc.concatenate(left, center, dim), right, dim)
 
 
 def parse_params(params=None,

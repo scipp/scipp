@@ -6,7 +6,7 @@
 from .. import config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import centers_to_edges, parse_params
+from .tools import to_bin_edges, parse_params
 from .._utils import name_with_unit
 from .._scipp import core as sc
 
@@ -218,9 +218,6 @@ class Slicer2d(Slicer):
         self.current_lims['x'] = extent_array[:2]
         self.current_lims['y'] = extent_array[2:]
 
-        # Slice data to slice down potential 3+D coords
-        self.slice_data()
-
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled array to be used as image
             offset = 2 * (xy == "y")
@@ -237,35 +234,8 @@ class Slicer2d(Slicer):
             # Create bin-edge coordinates in the case of non bin-edges, since
             # rebin only accepts bin edges.
             if not self.histograms[self.name][param["dim"]][param["dim"]]:
-                # Account for the fact that some input data may not have any
-                # coordinates. Hence the slice has no coords and we need to
-                # get the coord from the slider_coord dict.
-                if param["dim"] not in self.vslice.coords:
-                    vcoord = self.slider_coord[self.name][param["dim"]]
-                else:
-                    vcoord = self.vslice.coords[param["dim"]]
-                dims = vcoord.dims
-                # Special handling for 2D coordinates
-                if len(self.slider_coord[self.name][param["dim"]].dims) > 1:
-                    shp = vcoord.shape
-                    idim = vcoord.dims.index(param["dim"])
-                    iother = (idim + 1) % 2
-                    shp[idim] += 1
-                    edges = sc.Variable(dims,
-                                        values=np.zeros(shp),
-                                        dtype=sc.dtype.float64)
-                    xory = dims[iother]
-                    for i in range(shp[iother]):
-                        edges[xory, i] = centers_to_edges(vcoord[xory,
-                                                                 i].values)
-                else:
-                    edges = sc.Variable(
-                        dims,
-                        values=centers_to_edges(
-                            self.slider_coord[self.name][param["dim"]].values),
-                        dtype=sc.dtype.float64)
-                edges.unit = self.slider_coord[self.name][param["dim"]].unit
-                self.xyedges[xy] = edges
+                self.xyedges[xy] = to_bin_edges(
+                    self.slider_coord[self.name][param["dim"]], param["dim"])
             else:
                 self.xyedges[xy] = self.slider_coord[self.name][
                     param["dim"]].astype(sc.dtype.float64)
@@ -297,9 +267,8 @@ class Slicer2d(Slicer):
             self.ax.set_xlim(self.axparams["x"]["lims"])
             self.ax.set_ylim(self.axparams["y"]["lims"])
 
-        # Update the image using resampling (note that the data has already
-        # been sliced).
-        self.update_image()
+        # Update the image using resampling
+        self.update_slice()
 
         # Some annoying house-keeping when using X/Y buttons: we need to update
         # the deeply embedded limits set by the Home button in the matplotlib
@@ -349,7 +318,7 @@ class Slicer2d(Slicer):
                     self.mslice = self.mslice[val.dim, val.value]
         return
 
-    def update_slice(self, change):
+    def update_slice(self, change=None):
         """
         Slice data according to new slider value and update the image.
         """
@@ -468,6 +437,8 @@ class Slicer2d(Slicer):
                           self.xyrebin[xy[1]])
 
         # Use Scipp's automatic transpose to match the image x/y axes
+        # TODO: once transpose is available for DataArrays,
+        # use sc.transpose(dslice, self.button_dims) instead.
         arr = sc.DataArray(coords={
             self.xyrebin["x"].dims[0]: self.xyrebin["x"],
             self.xyrebin["y"].dims[0]: self.xyrebin["y"],

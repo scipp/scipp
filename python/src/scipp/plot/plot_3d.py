@@ -7,7 +7,7 @@ from .. import config
 from .render import render_plot
 from ..plot.sciplot import SciPlot
 from .slicer import Slicer
-from .tools import edges_to_centers
+from .tools import to_bin_centers
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 
@@ -155,10 +155,10 @@ class Slicer3d(Slicer):
             labels = []
             for dim, val in self.slider.items():
                 if val.disabled:
-                    arr = self.slider_coord[self.name][dim].values
+                    arr = self.slider_coord[self.name][dim]
                     if self.histograms[self.name][dim][dim]:
-                        arr = edges_to_centers(arr)
-                    coords.append(arr)
+                        arr = to_bin_centers(arr, dim)
+                    coords.append(arr.values)
                     labels.append(
                         name_with_unit(self.slider_coord[self.name][dim]))
             z, y, x = np.meshgrid(*coords, indexing='ij')
