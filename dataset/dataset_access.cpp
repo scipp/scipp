@@ -49,7 +49,7 @@ void CoordAccess::erase(const Dim &key) const {
   expectValidParent(m_parent);
   if (m_unaligned)
     try {
-      m_unaligned->unaligned_coords().erase(key);
+      m_unaligned->coords().erase(key);
     } catch (const except::NotFoundError &e) {
       throw clarify_exception(e);
     }
