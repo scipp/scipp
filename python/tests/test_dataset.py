@@ -23,7 +23,6 @@ def test_create_empty():
     assert len(d) == 0
     assert len(d.coords) == 0
     assert len(d.masks) == 0
-    assert len(d.attrs) == 0
     assert len(d.dims) == 0
 
 
@@ -164,39 +163,6 @@ def test_contains_masks():
     assert 'a' in d.masks
 
 
-def test_attrs_setitem():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = sc.Dataset({'a': var}, coords={'x': var})
-    with pytest.raises(RuntimeError):
-        d['x', 2:3].attrs['attr'] = sc.Variable(1.0)
-    d.attrs['attr'] = sc.Variable(1.0)
-    assert len(d) == 1
-    assert len(d.attrs) == 1
-    assert d.attrs['attr'] == sc.Variable(1.0)
-
-
-def test_attrs_setitem_events():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    events = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
-    d = sc.Dataset({'a': events}, coords={'x': var})
-    d.attrs['attr'] = events
-    d['a'].attrs['attr'] = events
-
-
-def test_contains_attrs():
-    d = sc.Dataset()
-    assert 'b' not in d.attrs
-    d.attrs['b'] = sc.Variable(1.0)
-    assert 'b' in d.attrs
-
-
-def test_attrs_keys():
-    d = sc.Dataset()
-    d.attrs['b'] = sc.Variable(1.0)
-    assert len(d.attrs.keys()) == 1
-    assert 'b' in d.attrs.keys()
-
-
 def test_slice_item():
     d = sc.Dataset(
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
@@ -277,7 +243,8 @@ def test_slice():
         coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
     expected = sc.Dataset({
         'a':
-        sc.DataArray(1.0 * sc.units.one, attrs={'x': 1.0 * sc.units.one})
+        sc.DataArray(1.0 * sc.units.one,
+                     unaligned_coords={'x': 1.0 * sc.units.one})
     })
 
     assert sc.is_equal(d['x', 1], expected)
@@ -309,10 +276,10 @@ def test_chained_slicing():
     expected['a'] = sc.Variable(dims=['y'],
                                 values=np.arange(501.0, 600.0, 10.0))
     expected['b'] = sc.Variable(1.5)
-    expected['a'].attrs['x'] = x['x', 1:3]
-    expected['b'].attrs['x'] = x['x', 1:3]
-    expected['a'].attrs['z'] = z['z', 5:7]
-    expected['b'].attrs['z'] = z['z', 5:7]
+    expected['a'].unaligned_coords['x'] = x['x', 1:3]
+    expected['b'].unaligned_coords['x'] = x['x', 1:3]
+    expected['a'].unaligned_coords['z'] = z['z', 5:7]
+    expected['b'].unaligned_coords['z'] = z['z', 5:7]
 
     assert sc.is_equal(d['x', 1]['z', 5], expected)
 
@@ -735,16 +702,6 @@ def test_coords_delitem():
     del dref.coords['x']
     assert not sc.is_equal(d, dref)
     dref.coords['x'] = d.coords['x']
-    assert sc.is_equal(d, dref)
-
-
-def test_attrs_delitem():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = sc.Dataset({'a': var}, coords={'x': var})
-    dref = d.copy()
-    d.attrs['attr'] = sc.Variable(1.0)
-    assert not sc.is_equal(d, dref)
-    del d.attrs['attr']
     assert sc.is_equal(d, dref)
 
 
