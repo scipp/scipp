@@ -90,7 +90,8 @@ template <typename Arg, typename... Args> struct Inserter<Arg, Args...> {
   template <typename Map, typename T>
   static void insert(Map &map, const T &x, const T &y) {
     map[dtype<Arg>] = [&x, &y](const py::object &obj) {
-      auto tol = obj.cast<Arg>(); // Will throw if cast does not succeed
+      auto tol =
+          pybind11::cast<Arg>(obj); // Will throw if cast does not succeed
       return is_approx(x, y, tol);
     };
     Inserter<Args...>::insert(map, x, y);
@@ -113,7 +114,7 @@ template <class T> void bind_is_approx(py::module &m) {
   m.def(
       "is_approx",
       [](const typename T::const_view_type &x,
-         const typename T::const_view_type &y, const typename py::object &tol) {
+         const typename T::const_view_type &y, const py::object &tol) {
         // Allowed types in following should come from (or be cross-checked
         // source records from INSTANTIATE_VARIABLE
         auto executor = make_function_map<typename T::const_view_type, int,
