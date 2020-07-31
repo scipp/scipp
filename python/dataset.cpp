@@ -135,12 +135,6 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
                                            py::keep_alive<0, 1>()),
                           R"(
       Dict of masks.)");
-  c.def_property_readonly("attrs",
-                          py::cpp_function([](T &self) { return self.attrs(); },
-                                           py::return_value_policy::move,
-                                           py::keep_alive<0, 1>()),
-                          R"(
-      Dict of attributes.)");
 
   if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>)
     c.def("realign", realign_impl<T>);
@@ -241,6 +235,18 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
           },
           py::return_value_policy::move, py::keep_alive<0, 1>()),
       R"(Underlying unaligned data item.)");
+  c.def_property_readonly(
+      "aligned_coords",
+      py::cpp_function([](T &self) { return self.aligned_coords(); },
+                       py::return_value_policy::move, py::keep_alive<0, 1>()),
+      R"(
+      Dict of aligned coords.)");
+  c.def_property_readonly(
+      "unaligned_coords",
+      py::cpp_function([](T &self) { return self.unaligned_coords(); },
+                       py::return_value_policy::move, py::keep_alive<0, 1>()),
+      R"(
+      Dict of unaligned coords.)");
   bind_coord_properties(c);
   bind_data_properties(c);
   bind_slice_methods(c);
@@ -315,37 +321,34 @@ void init_dataset(py::module &m) {
   bind_helper_view<items_view, DatasetView>(m, "DatasetView");
   bind_helper_view<items_view, CoordsView>(m, "CoordsView");
   bind_helper_view<items_view, MasksView>(m, "MasksView");
-  bind_helper_view<items_view, AttrsView>(m, "AttrsView");
   bind_helper_view<keys_view, Dataset>(m, "Dataset");
   bind_helper_view<keys_view, DatasetView>(m, "DatasetView");
   bind_helper_view<keys_view, CoordsView>(m, "CoordsView");
   bind_helper_view<keys_view, MasksView>(m, "MasksView");
-  bind_helper_view<keys_view, AttrsView>(m, "AttrsView");
   bind_helper_view<values_view, Dataset>(m, "Dataset");
   bind_helper_view<values_view, DatasetView>(m, "DatasetView");
   bind_helper_view<values_view, CoordsView>(m, "CoordsView");
   bind_helper_view<values_view, MasksView>(m, "MasksView");
-  bind_helper_view<values_view, AttrsView>(m, "AttrsView");
 
   bind_mutable_view<CoordsView, CoordsConstView>(m, "Coords");
   bind_mutable_view<MasksView, MasksConstView>(m, "Masks");
-  bind_mutable_view<AttrsView, AttrsConstView>(m, "Attrs");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, masks, and attributes.)");
   dataArray.def(py::init<const DataArrayConstView &>());
-  dataArray.def(py::init([](VariableConstView data,
-                            std::map<Dim, VariableConstView> coords,
-                            std::map<std::string, VariableConstView> masks,
-                            std::map<std::string, VariableConstView> attrs,
-                            const std::string &name) {
-                  return DataArray{Variable{data}, coords, masks, attrs, name};
-                }),
-                py::arg("data") = Variable{},
-                py::arg("coords") = std::map<Dim, VariableConstView>{},
-                py::arg("masks") = std::map<std::string, VariableConstView>{},
-                py::arg("attrs") = std::map<std::string, VariableConstView>{},
-                py::arg("name") = std::string{});
+  dataArray.def(
+      py::init([](VariableConstView data,
+                  std::map<Dim, VariableConstView> coords,
+                  std::map<std::string, VariableConstView> masks,
+                  std::map<Dim, VariableConstView> unaligned_coords,
+                  const std::string &name) {
+        return DataArray{Variable{data}, coords, masks, unaligned_coords, name};
+      }),
+      py::arg("data") = Variable{},
+      py::arg("coords") = std::map<Dim, VariableConstView>{},
+      py::arg("masks") = std::map<std::string, VariableConstView>{},
+      py::arg("unaligned_coords") = std::map<Dim, VariableConstView>{},
+      py::arg("name") = std::string{});
 
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>());
@@ -374,14 +377,12 @@ void init_dataset(py::module &m) {
       .def(py::init<const DataArrayConstView &>())
       .def(py::init([](const std::map<std::string, VariableConstView> &data,
                        const std::map<Dim, VariableConstView> &coords,
-                       const std::map<std::string, VariableConstView> &masks,
-                       const std::map<std::string, VariableConstView> &attrs) {
-             return Dataset(data, coords, masks, attrs);
+                       const std::map<std::string, VariableConstView> &masks) {
+             return Dataset(data, coords, masks);
            }),
            py::arg("data") = std::map<std::string, VariableConstView>{},
            py::arg("coords") = std::map<Dim, VariableConstView>{},
-           py::arg("masks") = std::map<std::string, VariableConstView>{},
-           py::arg("attrs") = std::map<std::string, VariableConstView>{})
+           py::arg("masks") = std::map<std::string, VariableConstView>{})
       .def(py::init([](const DatasetView &other) { return Dataset{other}; }))
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
