@@ -56,3 +56,8 @@ def test_is_approx_unsupported_type():
     a = sc.Variable(value=sc.Dataset())
     with pytest.raises(RuntimeError):
         sc.is_approx(a, a, 1)
+
+
+def test_is_equal():
+    var = sc.Variable(['x'], values=np.array([1]))
+    assert_export(sc.is_equal, var, var)
