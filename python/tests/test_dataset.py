@@ -150,9 +150,9 @@ def test_masks_setitem():
                                   values=np.array([True, False, True, False]))
     assert len(d) == 1
     assert len(d.masks) == 1
-    assert d.masks['mask'] == sc.Variable(dims=['x'],
-                                          values=np.array(
-                                              [True, False, True, False]))
+    assert sc.is_equal(
+        d.masks['mask'],
+        sc.Variable(dims=['x'], values=np.array([True, False, True, False])))
 
 
 def test_contains_masks():

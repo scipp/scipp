@@ -21,8 +21,13 @@ void bind_comparison(pybind11::class_<T, Ignored...> &c) {
 }
 
 template <class Other, class T, class... Ignored>
-void bind_extended_comparison(pybind11::class_<T, Ignored...> &c) {
-  bind_comparison<Other>(c);
+void bind_variable_comparison(pybind11::class_<T, Ignored...> &c) {
+  c.def(
+      "__eq__", [](T &a, Other &b) { return variable::equal(a, b); }, py::is_operator(),
+      py::call_guard<py::gil_scoped_release>());
+  c.def(
+      "__ne__", [](T &a, Other &b) { return !variable::equal(a, b); }, py::is_operator(),
+      py::call_guard<py::gil_scoped_release>());
   c.def(
       "__lt__", [](T &a, Other &b) { return variable::less(a, b); },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());

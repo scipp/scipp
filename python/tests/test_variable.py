@@ -192,7 +192,7 @@ def test_0D_scalar_string():
     var = sc.Variable(value='a')
     assert var.value == 'a'
     var.value = 'b'
-    assert var == sc.Variable(value='b')
+    assert sc.is_equal(var, sc.Variable(value='b'))
 
 
 def test_1D_scalar_access_fail():
@@ -229,7 +229,7 @@ def test_1D_string():
     assert var.values[0] == 'a'
     assert var.values[1] == 'b'
     var.values = ['c', 'd']
-    assert var == sc.Variable(dims=['x'], values=['c', 'd'])
+    assert sc.is_equal(var, sc.Variable(dims=['x'], values=['c', 'd']))
 
 
 def test_1D_converting():
@@ -414,10 +414,10 @@ def test_iand():
     a = sc.Variable(True)
     b = a
     a &= sc.Variable(False)
-    assert a == expected
-    assert b == expected
+    assert sc.is_equal(a, expected)
+    assert sc.is_equal(b, expected)
     a |= sc.Variable(True)
-    assert a == b
+    assert sc.is_equal(a, b)
 
 
 def test_ior():
@@ -425,10 +425,10 @@ def test_ior():
     a = sc.Variable(False)
     b = a
     a |= sc.Variable(True)
-    assert a == expected
-    assert b == expected
-    a &= sc.Variable(False)
-    assert a == b
+    assert sc.is_equal(a, expected)
+    assert sc.is_equal(b, expected)
+    a &= sc.Variable(True)
+    assert sc.is_equal(a, b)
 
 
 def test_ixor():
@@ -436,10 +436,10 @@ def test_ixor():
     a = sc.Variable(False)
     b = a
     a ^= sc.Variable(True)
-    assert a == expected
-    assert b == expected
+    assert sc.is_equal(a, expected)
+    assert sc.is_equal(b, expected)
     a ^= sc.Variable(True)
-    assert a == b
+    assert sc.is_equal(a, b)
 
 
 def test_binary_plus():
@@ -510,72 +510,79 @@ def test_in_place_binary_or():
     a = sc.Variable(False)
     b = sc.Variable(True)
     a |= b
-    assert a == sc.Variable(True)
+    assert sc.is_equal(a, sc.Variable(True))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
     a |= b
-    assert a == sc.Variable(dims=['x'],
-                            values=np.array([False, True, True, True]))
+    assert sc.is_equal(
+        a, sc.Variable(dims=['x'], values=np.array([False, True, True, True])))
 
 
 def test_binary_or():
     a = sc.Variable(False)
     b = sc.Variable(True)
-    assert (a | b) == sc.Variable(True)
+    assert sc.is_equal((a | b), sc.Variable(True))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    assert (a | b) == sc.Variable(dims=['x'],
-                                  values=np.array([False, True, True, True]))
+    assert sc.is_equal((a | b),
+                       sc.Variable(dims=['x'],
+                                   values=np.array([False, True, True, True])))
 
 
 def test_in_place_binary_and():
     a = sc.Variable(False)
     b = sc.Variable(True)
     a &= b
-    assert a == sc.Variable(False)
+    assert sc.is_equal(a, sc.Variable(False))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
     a &= b
-    assert a == sc.Variable(dims=['x'],
-                            values=np.array([False, False, False, True]))
+    assert sc.is_equal(
+        a, sc.Variable(dims=['x'],
+                       values=np.array([False, False, False, True])))
 
 
 def test_binary_and():
     a = sc.Variable(False)
     b = sc.Variable(True)
-    assert (a & b) == sc.Variable(False)
+    assert sc.is_equal((a & b), sc.Variable(False))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    assert (a & b) == sc.Variable(dims=['x'],
-                                  values=np.array([False, False, False, True]))
+    assert sc.is_equal((a & b),
+                       sc.Variable(dims=['x'],
+                                   values=np.array([False, False, False,
+                                                    True])))
 
 
 def test_in_place_binary_xor():
     a = sc.Variable(False)
     b = sc.Variable(True)
     a ^= b
-    assert a == sc.Variable(True)
+    assert sc.is_equal(a, sc.Variable(True))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
     a ^= b
-    assert a == sc.Variable(dims=['x'],
-                            values=np.array([False, True, True, False]))
+    assert sc.is_equal(
+        a, sc.Variable(dims=['x'], values=np.array([False, True, True,
+                                                    False])))
 
 
 def test_binary_xor():
     a = sc.Variable(False)
     b = sc.Variable(True)
-    assert (a ^ b) == sc.Variable(True)
+    assert sc.is_equal((a ^ b), sc.Variable(True))
 
     a = sc.Variable(dims=['x'], values=np.array([False, True, False, True]))
     b = sc.Variable(dims=['x'], values=np.array([False, False, True, True]))
-    assert (a ^ b) == sc.Variable(dims=['x'],
-                                  values=np.array([False, True, True, False]))
+    assert sc.is_equal((a ^ b),
+                       sc.Variable(dims=['x'],
+                                   values=np.array([False, True, True,
+                                                    False])))
 
 
 def test_in_place_binary_with_scalar():
@@ -602,10 +609,18 @@ def test_binary_equal():
 def test_binary_not_equal():
     a, b, a_slice, b_slice, data = make_variables()
     c = a + b
-    assert a != c
-    assert a_slice != c
-    assert c != a
-    assert c != a_slice
+    assert not sc.is_equal(a, c)
+    with pytest.raises(AssertionError):
+        assert a != c
+    assert not sc.is_equal(a_slice, c)
+    with pytest.raises(AssertionError):
+        assert a_slice != c
+    assert not sc.is_equal(c, a)
+    with pytest.raises(AssertionError):
+        assert c != a
+    assert not sc.is_equal(c, a_slice)
+    with pytest.raises(AssertionError):
+        assert c != a_slice
 
 
 def test_abs():
@@ -690,12 +705,12 @@ def test_set_variance():
     expected = sc.Variable(dims=['x', 'y'], values=values, variances=variances)
 
     assert var.variances is None
-    assert var != expected
+    assert not sc.is_equal(var, expected)
 
     var.variances = variances
 
     assert var.variances is not None
-    assert var == expected
+    assert sc.is_equal(var, expected)
 
 
 def test_copy_variance():
@@ -705,12 +720,12 @@ def test_copy_variance():
     expected = sc.Variable(dims=['x', 'y'], values=values, variances=variances)
 
     assert var.variances is None
-    assert var != expected
+    assert not sc.is_equal(var, expected)
 
     var.variances = expected.variances
 
     assert var.variances is not None
-    assert var == expected
+    assert sc.is_equal(var, expected)
 
 
 def test_remove_variance():
@@ -732,12 +747,12 @@ def test_set_variance_convert_dtype():
     expected = sc.Variable(dims=['x', 'y'], values=values, variances=variances)
 
     assert var.variances is None
-    assert var != expected
+    assert not sc.is_equal(var, expected)
 
     var.variances = variances
 
     assert var.variances is not None
-    assert var == expected
+    assert sc.is_equal(var, expected)
 
 
 def test_sum_mean():

@@ -250,10 +250,10 @@ Mostly equivalent to Variable, see there for details.)");
   bind_slice_methods(variable);
   bind_slice_methods(variableView);
 
-  bind_extended_comparison<Variable>(variable);
-  bind_extended_comparison<VariableConstView>(variable);
-  bind_extended_comparison<Variable>(variableView);
-  bind_extended_comparison<VariableConstView>(variableView);
+  bind_variable_comparison<Variable>(variable);
+  bind_variable_comparison<VariableConstView>(variable);
+  bind_variable_comparison<Variable>(variableView);
+  bind_variable_comparison<VariableConstView>(variableView);
 
   bind_in_place_binary<Variable>(variable);
   bind_in_place_binary<VariableConstView>(variable);

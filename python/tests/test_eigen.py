@@ -71,7 +71,7 @@ def test_variable_0D_matrix():
     rotated = sc.Variable(value=[-1, -2, 3],
                           unit=sc.units.m,
                           dtype=sc.dtype.vector_3_float64)
-    assert rot * vec == rotated
+    assert sc.is_equal(rot * vec, rotated)
 
 
 def test_variable_0D_matrix_from_numpy():
