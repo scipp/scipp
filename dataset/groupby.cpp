@@ -61,8 +61,8 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
 }
 
 template <class T>
-template <class Op, class CoordOp>
-T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
+template <class Op>
+T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
   const auto get_mask = [&](const auto &data) {
     auto mask = irreducible_mask(data.masks(), reductionDim);
