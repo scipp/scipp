@@ -76,13 +76,11 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
       const auto out_slice = out.slice({dim(), group});
       if constexpr (std::is_same_v<T, Dataset>) {
-        for (const auto &item : m_data) {
-          const auto mask = get_mask(m_data[item.name()]);
-          op(out_slice[item.name()], item, groups()[group], reductionDim, mask);
-        }
+        for (const auto &item : m_data)
+          op(out_slice[item.name()], item, groups()[group], reductionDim,
+             get_mask(m_data[item.name()]));
       } else {
-        const auto mask = get_mask(m_data);
-        op(out_slice, m_data, groups()[group], reductionDim, mask);
+        op(out_slice, m_data, groups()[group], reductionDim, get_mask(m_data));
       }
     }
   };
