@@ -44,7 +44,6 @@ protected:
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
     dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
-    dataset.setMask("mask", makeVariable<bool>(Dims{Dim::X}, Shape{4}));
 
     dataset.setData("val_and_var",
                     makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
@@ -54,6 +53,9 @@ protected:
 
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord("val", Dim("attr"), makeVariable<int>(Values{int{}}));
+    for (const auto &item : {"val_and_var", "val"})
+      dataset[item].masks().set("mask",
+                                makeVariable<bool>(Dims{Dim::X}, Shape{4}));
   }
 
   Dataset dataset;
@@ -93,9 +95,9 @@ auto make_1_mask(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
   Dataset d;
-  d.setMask(name,
-            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
   d.setData("", makeVariable<T>(Dimensions(dims)));
+  d[""].masks().set(
+      name, makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
   return DataArray(d[""]);
 }
 
@@ -253,9 +255,10 @@ TEST_F(DataArray_comparison_operators, extra_labels) {
 
 TEST_F(DataArray_comparison_operators, extra_mask) {
   auto extra = dataset;
-  extra.setMask("extra", makeVariable<bool>(Values{false}));
-  for (const auto &a : extra)
+  for (const auto &a : extra) {
+    a.masks().set("extra", makeVariable<bool>(Values{false}));
     expect_ne(a, dataset[a.name()]);
+  }
 }
 
 TEST_F(DataArray_comparison_operators, extra_attr) {

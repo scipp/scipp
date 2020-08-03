@@ -30,13 +30,11 @@ TEST(DatasetTest, clear) {
 
   ASSERT_FALSE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
-  ASSERT_FALSE(dataset.masks().empty());
 
   ASSERT_NO_THROW(dataset.clear());
 
   ASSERT_TRUE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
-  ASSERT_FALSE(dataset.masks().empty());
 }
 
 TEST(DatasetTest, erase_non_existant) {
@@ -113,28 +111,6 @@ TEST(DatasetTest, setCoord) {
   ASSERT_EQ(d.coords().size(), 2);
 }
 
-TEST(DatasetTest, setMask) {
-  Dataset d;
-  const auto var =
-      makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false});
-
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.masks().size(), 0);
-
-  ASSERT_NO_THROW(d.setMask("a", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.masks().size(), 1);
-  ASSERT_EQ(d.masks()["a"], var);
-
-  ASSERT_NO_THROW(d.setMask("b", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.masks().size(), 2);
-
-  ASSERT_NO_THROW(d.setMask("a", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.masks().size(), 2);
-}
-
 TEST(DatasetTest, set_item_mask) {
   Dataset d;
   d.setData("x", makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
@@ -142,7 +118,6 @@ TEST(DatasetTest, set_item_mask) {
   const auto var =
       makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false});
   d["x"].masks().set("unaligned", var);
-  EXPECT_FALSE(d.masks().contains("unaligned"));
   EXPECT_TRUE(d["x"].masks().contains("unaligned"));
 }
 
@@ -319,18 +294,7 @@ TEST(DatasetTest, construct_from_view) {
   ASSERT_EQ(from_view, dataset);
 }
 
-TEST(DatasetTest, construct_from_slice_without_mask) {
-  // TODO Remove this test once `construct_from_slice` is enabled again
-  DatasetFactory3D factory;
-  auto dataset = factory.make();
-  dataset.masks().erase("masks_x");
-  const auto slice = dataset.slice({Dim::X, 1});
-  Dataset from_slice(slice);
-  ASSERT_EQ(from_slice, dataset.slice({Dim::X, 1}));
-}
-
-TEST(DatasetTest, DISABLED_construct_from_slice) {
-  // Disabled since we cannot preserve unaligned masks in copy yet.
+TEST(DatasetTest, construct_from_slice) {
   DatasetFactory3D factory;
   const auto dataset = factory.make();
   const auto slice = dataset.slice({Dim::X, 1});
@@ -455,22 +419,6 @@ TEST(DatasetTest, erase_labels) {
   EXPECT_EQ(ref, ds);
 }
 
-TEST(DatasetTest, erase_masks) {
-  DatasetFactory3D factory;
-  const auto ref = factory.make();
-  Dataset ds(ref);
-  auto mask = Variable(ref.masks()["masks_x"]);
-  ds.eraseMask("masks_x");
-  EXPECT_FALSE(ds.masks().contains("masks_x"));
-  ds.setMask("masks_x", mask);
-  EXPECT_EQ(ref, ds);
-
-  ds.masks().erase("masks_x");
-  EXPECT_FALSE(ds.masks().contains("masks_x"));
-  ds.setMask("masks_x", mask);
-  EXPECT_EQ(ref, ds);
-}
-
 TEST(DatasetTest, set_erase_item_attr) {
   DatasetFactory3D factory;
   auto ds = factory.make();
@@ -484,9 +432,8 @@ TEST(DatasetTest, set_erase_item_attr) {
 TEST(DatasetTest, set_erase_item_mask) {
   DatasetFactory3D factory;
   auto ds = factory.make();
-  const auto mask = Variable(ds.masks()["masks_x"]);
+  const auto mask = makeVariable<double>(Values{true});
   ds["data_x"].masks().set("item-mask", mask);
-  EXPECT_FALSE(ds.masks().contains("item-mask"));
   EXPECT_TRUE(ds["data_x"].masks().contains("item-mask"));
   ds["data_x"].masks().erase("item-mask");
   EXPECT_FALSE(ds["data_x"].masks().contains("item-mask"));
@@ -576,8 +523,6 @@ TEST(DatasetMasksRealignedTest, set_erase) {
   // Depending on dim of unaligned -> works
   EXPECT_NO_THROW(d["a"].unaligned().masks().set(
       "mask", d["a"].unaligned().coords()[Dim::Y] * (2.0 * units::one)));
-  EXPECT_NO_THROW(
-      d.masks().set("mask", d["a"].coords()[Dim::Y] * (2.0 * units::one)));
 
   EXPECT_NO_THROW(d["a"].unaligned().masks().erase("mask"));
   EXPECT_TRUE(d["a"].masks().contains("mask")); // mask of dataset still present
@@ -585,7 +530,7 @@ TEST(DatasetMasksRealignedTest, set_erase) {
 
   // Potentially surprising but consistent behavior: "scalar" mapped from
   // realigned but cannot erase via unaligned.
-  d.masks().set("scalar", 1.3 * units::K);
+  d["a"].masks().set("scalar", 1.3 * units::K);
   EXPECT_TRUE(d["a"].unaligned().masks().contains("scalar"));
   EXPECT_THROW(d["a"].unaligned().masks().erase("scalar"),
                except::NotFoundError);

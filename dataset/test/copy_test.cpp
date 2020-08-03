@@ -51,7 +51,8 @@ struct CopyOutArgTest : public CopyTest {
     dataset_copy["data_xyz"].coords()[Dim("attr")] += one;
     dataset_copy.coords()[Dim::X] += one;
     dataset_copy.coords()[Dim::Y] += one;
-    dataset_copy.masks()["masks_x"].assign(~array_copy.masks()["masks_x"]);
+    dataset_copy["data_xyz"].masks()["masks_x"].assign(
+        ~array_copy.masks()["masks_x"]);
     EXPECT_NE(dataset_copy, dataset);
   }
 
