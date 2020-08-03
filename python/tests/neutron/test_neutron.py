@@ -107,8 +107,8 @@ def test_neutron_instrument_view_with_dataset():
 def test_neutron_instrument_view_with_masks():
     d = make_dataset_with_beamline()
     x = np.transpose(d.coords['position'].values)[0, :]
-    d.masks['amask'] = sc.Variable(dims=['position'],
-                                   values=np.less(np.abs(x), 0.5))
+    d['a'].masks['amask'] = sc.Variable(dims=['position'],
+                                        values=np.less(np.abs(x), 0.5))
     sc.neutron.instrument_view(d["a"])
 
 
