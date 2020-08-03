@@ -19,15 +19,6 @@ template <class T> typename T::view_type makeViewItem(T &variable) {
     return typename T::view_type(variable);
 }
 
-namespace {
-constexpr auto contains = [](const auto &dims, const Dim dim) {
-  if constexpr (std::is_same_v<std::decay_t<decltype(dims)>, Dimensions>)
-    return dims.contains(dim);
-  else
-    return dims.count(dim) == 1;
-};
-}
-
 template <class T1> auto makeViewItems(T1 &coords) {
   std::unordered_map<typename T1::key_type, VariableView> items;
   for (auto &item : coords)
@@ -42,7 +33,7 @@ auto makeViewItems(const Dims &dims, T1 &coords) {
   // provided parent dimensions.
   auto contained = [&dims](const auto &item2) {
     for (const Dim dim : item2.second.dims().labels())
-      if (!contains(dims, dim))
+      if (dims.count(dim) == 0)
         return false;
     return true;
   };
@@ -234,6 +225,10 @@ void Dataset::rebuildDims() {
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
   setDims(coord.dims(), dim);
+  for (const auto &item : m_data)
+    if (item.second.coords.count(dim))
+      throw except::DataArrayError("Attempt to insert dataset coord with "
+                                   "name shadowing unaligned (item) coord.");
   m_coords.insert_or_assign(dim, std::move(coord));
 }
 
@@ -307,7 +302,9 @@ void Dataset::setData(const std::string &name, DataArray data) {
     setData(name, std::move(*item->second.unaligned));
 
   for (auto &&[dim, coord] : item->second.coords)
-    setCoord(name, dim, std::move(coord));
+    // Drop unaligned coords if there is aligned coord with same name.
+    if (!coords().contains(dim))
+      setCoord(name, dim, std::move(coord));
   for (auto &&[nm, mask] : item->second.masks)
     setMask(name, std::string(nm), std::move(mask));
 }

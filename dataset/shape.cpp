@@ -32,7 +32,9 @@ typename View::value_type join_edges(const View &a, const View &b,
 namespace {
 constexpr auto is_bin_edges = [](const auto &coord, const auto &dims,
                                  const Dim dim) {
-  return coord.dims().contains(dim) && coord.dims()[dim] != dims.at(dim);
+  return coord.dims().contains(dim) &&
+         ((dims.count(dim) == 1) ? coord.dims()[dim] != dims.at(dim)
+                                 : coord.dims()[dim] == 2);
 };
 template <class T1, class T2, class DimT>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
@@ -43,7 +45,8 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
       if (is_bin_edges(a_, dimsA, dim) != is_bin_edges(b[key], dimsB, dim)) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
-      } else if (a_.dims()[dim] == dimsA.at(dim)) {
+      } else if (a_.dims()[dim] ==
+                 ((dimsA.count(dim) == 1) ? dimsA.at(dim) : 1)) {
         out.emplace(key, concatenate(a_, b[key], dim));
       } else {
         out.emplace(key, join_edges(a_, b[key], dim));
@@ -63,11 +66,19 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 
 DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                       const Dim dim) {
-  return DataArray(
+  auto out = DataArray(
       a.hasData() || b.hasData() ? concatenate(a.data(), b.data(), dim)
                                  : Variable{},
       concat(a.aligned_coords(), b.aligned_coords(), dim, a.dims(), b.dims()),
       concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
+  for (auto &&[d, coord] : concat(a.unaligned_coords(), b.unaligned_coords(),
+                                  dim, a.dims(), b.dims())) {
+    if (d == dim)
+      out.coords().set(d, std::move(coord));
+    else
+      out.unaligned_coords().set(d, std::move(coord));
+  }
+  return out;
 }
 
 Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
