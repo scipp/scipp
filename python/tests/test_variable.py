@@ -614,6 +614,7 @@ def test_binary_not_equal():
     assert c != a
     assert c != a_slice
 
+
 def test_abs():
     assert_export(sc.abs, sc.Variable())
 

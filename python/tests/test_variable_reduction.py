@@ -15,8 +15,10 @@ def test_all():
 def test_all_with_dim():
     var = sc.Variable(['x', 'y'],
                       values=np.array([True, True, True, False]).reshape(2, 2))
-    assert sc.is_equal(sc.all(var, 'x'), sc.Variable(dims=['y'], values=[True, False]))
-    assert sc.is_equal(sc.all(var, 'y'), sc.Variable(dims=['x'], values=[True, False]))
+    assert sc.is_equal(sc.all(var, 'x'),
+                       sc.Variable(dims=['y'], values=[True, False]))
+    assert sc.is_equal(sc.all(var, 'y'),
+                       sc.Variable(dims=['x'], values=[True, False]))
 
 
 def test_any():
@@ -29,8 +31,10 @@ def test_any_with_dim():
     var = sc.Variable(['x', 'y'],
                       values=np.array([True, True, False,
                                        False]).reshape(2, 2))
-    assert sc.is_equal(sc.any(var, 'x'), sc.Variable(dims=['y'], values=[True, True]))
-    assert sc.is_equal(sc.any(var, 'y'), sc.Variable(dims=['x'], values=[True, False]))
+    assert sc.is_equal(sc.any(var, 'x'),
+                       sc.Variable(dims=['y'], values=[True, True]))
+    assert sc.is_equal(sc.any(var, 'y'),
+                       sc.Variable(dims=['x'], values=[True, False]))
 
 
 def test_min():

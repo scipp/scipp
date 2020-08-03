@@ -81,9 +81,9 @@ def test_neutron_beamline():
         dtype=sc.dtype.vector_3_float64,
         unit=sc.units.m)
     assert sc.neutron.l1(d) == 10.0 * sc.units.m
-    assert sc.is_equal(sc.neutron.l2(d), sc.Variable(dims=['position'],
-                                           values=np.ones(4),
-                                           unit=sc.units.m))
+    assert sc.is_equal(
+        sc.neutron.l2(d),
+        sc.Variable(dims=['position'], values=np.ones(4), unit=sc.units.m))
     two_theta = sc.neutron.two_theta(d)
     assert two_theta.unit == sc.units.rad
     assert two_theta.dims == ['position']
