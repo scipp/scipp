@@ -387,7 +387,7 @@ class DatasetDrawer():
                     area_xy.append(item)
 
         ds = self._dataset
-        for what, items in zip(['coords', 'masks'], [ds.coords, ds.masks]):
+        for what, items in zip(['coords'], [ds.coords]):
             for name, var in items.items():
                 if sc.contains_events(var):
                     continue
