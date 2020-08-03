@@ -475,8 +475,8 @@ def convert_monitors_ws(ws, converter, **ignored):
         del single_monitor.coords['sample-position']
         if 'detector-info' in single_monitor.coords:
             del single_monitor.coords['detector-info']
-        del single_monitor.coords['run']
-        del single_monitor.coords['sample']
+        del single_monitor.unaligned_coords['run']
+        del single_monitor.unaligned_coords['sample']
         monitors.append((comp_info.name(det_index), single_monitor))
     return monitors
 

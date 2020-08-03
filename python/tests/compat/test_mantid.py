@@ -86,10 +86,10 @@ class TestMantidConversion(unittest.TestCase):
         d.realign({'tof': realigned.coords['tof']})
 
         # Removing run and sample due to missing comparison operators
-        del d.coords['run']
-        del d.coords['sample']
-        del realigned.coords['run']
-        del realigned.coords['sample']
+        del d.unaligned_coords['run']
+        del d.unaligned_coords['sample']
+        del realigned.unaligned_coords['run']
+        del realigned.unaligned_coords['sample']
         assert realigned == d
 
     def test_comparison(self):
@@ -253,7 +253,7 @@ class TestMantidConversion(unittest.TestCase):
         ds = mantidcompat.load(filename,
                                mantid_args={"LoadMonitors": "Separate"})
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
-        attrs = ds.unaligned_coords.keys()
+        attrs = [str(key) for key in ds.unaligned_coords.keys()]
         expected_monitor_attrs = set(
             ["monitor1", "monitor2", "monitor3", "monitor4", "monitor5"])
         assert expected_monitor_attrs.issubset(attrs)
@@ -270,7 +270,7 @@ class TestMantidConversion(unittest.TestCase):
         ds = mantidcompat.load(filename,
                                mantid_args={"LoadMonitors": "Include"})
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
-        attrs = ds.unaligned_coords.keys()
+        attrs = [str(key) for key in ds.unaligned_coords.keys()]
         expected_monitor_attrs = set(
             ["monitor1", "monitor2", "monitor3", "monitor4", "monitor5"])
         assert expected_monitor_attrs.issubset(attrs)
@@ -285,7 +285,7 @@ class TestMantidConversion(unittest.TestCase):
         filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
         ds = mantidcompat.load(filename, mantid_args={"LoadMonitors": True})
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
-        attrs = ds.unaligned_coords.keys()
+        attrs = [str(key) for key in ds.unaligned_coords.keys()]
         expected_monitor_attrs = set(["monitor2", "monitor3"])
         assert expected_monitor_attrs.issubset(attrs)
         for monitor_name in expected_monitor_attrs:
