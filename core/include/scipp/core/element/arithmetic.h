@@ -14,6 +14,8 @@ namespace scipp::core::element {
 
 constexpr auto add_inplace_types =
     arg_list<double, float, int64_t, int32_t, Eigen::Vector3d,
+             std::tuple<scipp::core::time_point, int64_t>,
+             std::tuple<scipp::core::time_point, int32_t>,
              std::tuple<double, float>, std::tuple<int64_t, int32_t>,
              std::tuple<int64_t, bool>>;
 

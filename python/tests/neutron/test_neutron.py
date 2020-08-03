@@ -95,16 +95,6 @@ def test_neutron_instrument_view_3d():
     sc.neutron.instrument_view(d["a"])
 
 
-def test_neutron_instrument_view_cylindrical():
-    d = make_dataset_with_beamline()
-    sc.neutron.instrument_view(d["a"], projection="Cylindrical X")
-
-
-def test_neutron_instrument_view_spherical():
-    d = make_dataset_with_beamline()
-    sc.neutron.instrument_view(d["a"], projection="Spherical Y")
-
-
 def test_neutron_instrument_view_with_dataset():
     d = make_dataset_with_beamline()
     d['b'] = sc.Variable(['position', 'tof'],
