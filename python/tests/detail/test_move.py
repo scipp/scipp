@@ -22,18 +22,16 @@ def test_moving_variable_into_dataset_proxies():
     d = sc.Dataset()
     d.coords['x'] = sc.detail.move(sc.Variable(['x'],
                                                values=np.arange(1000.0)))
-    d.masks["c"] = sc.detail.move(
+    d['data'] = 1.0 * sc.units.m
+    d['data'].masks["c"] = sc.detail.move(
         sc.Variable(['z'], values=np.random.random(50)))
 
-    assert 'x' in d.dims
-    assert 'y' in d.dims
-    assert 'z' in d.dims
     assert len(d.coords) == 1
-    assert len(d.masks) == 1
+    assert len(d['data'].masks) == 1
     assert 'x' in d.coords
-    assert "c" in d.masks
+    assert "c" in d['data'].masks
     assert d.coords['x'].shape == [1000]
-    assert d.masks["c"].shape == [50]
+    assert d['data'].masks["c"].shape == [50]
 
 
 def test_moving_variable_into_data_array_proxies():
