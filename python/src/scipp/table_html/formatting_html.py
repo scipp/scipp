@@ -237,9 +237,14 @@ def _make_inline_attributes(var, has_attrs):
         attrs_sections.append(section)
         disabled = ""
 
-    if has_attrs and hasattr(var, "attrs"):
-        if len(var.attrs) > 0:
-            attrs_sections.append(attr_section(var.attrs))
+    if has_attrs and hasattr(var, "unaligned_coords"):
+        if len(var.unaligned_coords) > 0:
+            attrs_sections.append(attr_section(var.unaligned_coords))
+            disabled = ""
+
+    if has_attrs and hasattr(var, "masks"):
+        if len(var.masks) > 0:
+            attrs_sections.append(mask_section(var.masks))
             disabled = ""
 
     if len(attrs_sections) > 0:
@@ -437,7 +442,7 @@ data_section = partial(
 
 attr_section = partial(
     _mapping_section,
-    name="Attributes",
+    name="Coordinates (unaligned)",
     details_func=summarize_attrs,
     max_items_collapse=10,
 )
