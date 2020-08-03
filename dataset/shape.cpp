@@ -84,6 +84,13 @@ DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
 
 Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
                     const Dim dim) {
+  // Note that in the special case of a dataset without data items (only coords)
+  // concatenating a range slice with a non-range slice will fail due to the
+  // missing unaligned coord in the non-range slice. This is an extremely
+  // special case and cannot be handled without adding support for unaligned
+  // coords to dataset (which is not desirable for a variety of reasons). It is
+  // unlikely that this will cause trouble in practice. Users can just use a
+  // range slice of thickness 1.
   auto result = a.empty() ? Dataset(std::map<std::string, Variable>(),
                                     concat(a.coords(), b.coords(), dim,
                                            a.dimensions(), b.dimensions()))
