@@ -61,7 +61,6 @@ Comparison operators compare element-wise and *ignore variances*.
    greater_equal
    equal
    not_equal
-   is_approx
    is_equal
 
 Reduction
