@@ -30,6 +30,7 @@ add_executable(
   rebin_test.cpp
   reduce_events_test.cpp
   self_assignment_test.cpp
+  shape_test.cpp
   slice_test.cpp
   sort_test.cpp
   event_data_operations_consistency_test.cpp
