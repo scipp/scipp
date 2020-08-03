@@ -66,14 +66,15 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 
 DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                       const Dim dim) {
-  auto out = DataArray(
-      a.hasData() || b.hasData() ? concatenate(a.data(), b.data(), dim)
-                                 : Variable{},
-      concat(a.aligned_coords(), b.aligned_coords(), dim, a.dims(), b.dims()),
-      concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
-  for (auto &&[d, coord] : concat(a.unaligned_coords(), b.unaligned_coords(),
-                                  dim, a.dims(), b.dims())) {
-    if (d == dim)
+  auto out = DataArray(a.hasData() || b.hasData()
+                           ? concatenate(a.data(), b.data(), dim)
+                           : Variable{},
+                       {},
+                       concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
+  for (auto &&[d, coord] :
+       concat(a.coords(), b.coords(), dim, a.dims(), b.dims())) {
+    if (d == dim || a.aligned_coords().contains(d) ||
+        b.aligned_coords().contains(d))
       out.coords().set(d, std::move(coord));
     else
       out.unaligned_coords().set(d, std::move(coord));
@@ -83,9 +84,10 @@ DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
 
 Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
                     const Dim dim) {
-  Dataset result(
-      std::map<std::string, Variable>(),
-      concat(a.coords(), b.coords(), dim, a.dimensions(), b.dimensions()));
+  auto result = a.empty() ? Dataset(std::map<std::string, Variable>(),
+                                    concat(a.coords(), b.coords(), dim,
+                                           a.dimensions(), b.dimensions()))
+                          : Dataset();
   for (const auto &item : a)
     if (b.contains(item.name())) {
       if (!item.dims().contains(dim) && item == b[item.name()])

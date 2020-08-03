@@ -58,6 +58,10 @@ TEST_F(Concatenate1DTest, simple_1d) {
 TEST_F(Concatenate1DTest, slices_of_1d) {
   EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1}), Dim::X),
             a.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(concatenate(a.slice({Dim::X, 0, 2}), a.slice({Dim::X, 2}), Dim::X),
+            a);
+  EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1, 3}), Dim::X),
+            a);
 }
 
 TEST_F(Concatenate1DTest, to_2d_with_0d_coord) {
@@ -130,6 +134,10 @@ TEST_F(Concatenate1DHistogramTest, simple_1d) {
 TEST_F(Concatenate1DHistogramTest, slices_of_1d) {
   EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1}), Dim::X),
             a.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1, 2}), Dim::X),
+            a);
+  EXPECT_EQ(concatenate(a.slice({Dim::X, 0, 1}), a.slice({Dim::X, 1}), Dim::X),
+            a);
 }
 
 TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
