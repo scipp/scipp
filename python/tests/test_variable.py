@@ -609,19 +609,10 @@ def test_binary_equal():
 def test_binary_not_equal():
     a, b, a_slice, b_slice, data = make_variables()
     c = a + b
-    assert not sc.is_equal(a, c)
-    with pytest.raises(AssertionError):
-        assert a != c
-    assert not sc.is_equal(a_slice, c)
-    with pytest.raises(AssertionError):
-        assert a_slice != c
-    assert not sc.is_equal(c, a)
-    with pytest.raises(AssertionError):
-        assert c != a
-    assert not sc.is_equal(c, a_slice)
-    with pytest.raises(AssertionError):
-        assert c != a_slice
-
+    assert a != c
+    assert a_slice != c
+    assert c != a
+    assert c != a_slice
 
 def test_abs():
     assert_export(sc.abs, sc.Variable())

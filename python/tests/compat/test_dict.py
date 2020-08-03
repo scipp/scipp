@@ -193,25 +193,25 @@ def test_variable_round_trip():
                       values=np.arange(10.),
                       variances=np.random.random(10),
                       unit=sc.units.m)
-    assert var == sc.from_dict(sc.to_dict(var))
+    assert sc.is_equal(var, sc.from_dict(sc.to_dict(var)))
 
 
 def test_variable_0D_round_trip():
     var = 12.0 * sc.units.one
     print(sc.to_dict(var))
-    assert var == sc.from_dict(sc.to_dict(var))
+    assert sc.is_equal(var, sc.from_dict(sc.to_dict(var)))
 
 
 def test_variable_vector_round_trip():
     var = sc.Variable(['x'],
                       values=np.random.random([10, 3]),
                       dtype=sc.dtype.vector_3_float64)
-    assert var == sc.from_dict(sc.to_dict(var))
+    assert sc.is_equal(var, sc.from_dict(sc.to_dict(var)))
 
 
 def test_variable_0D_vector_round_trip():
     var = sc.Variable(value=[1, 2, 3], dtype=sc.dtype.vector_3_float64)
-    assert var == sc.from_dict(sc.to_dict(var))
+    assert sc.is_equal(var, sc.from_dict(sc.to_dict(var)))
 
 
 def test_variable_matrix_round_trip():
@@ -225,13 +225,13 @@ def test_variable_matrix_round_trip():
                       values=data,
                       unit=sc.units.m,
                       dtype=sc.dtype.matrix_3_float64)
-    assert var == sc.from_dict(sc.to_dict(var))
+    assert sc.is_equal(var, sc.from_dict(sc.to_dict(var)))
 
 
 def test_variable_0D_matrix_round_trip():
     var = sc.Variable(value=np.arange(1, 10).reshape(3, 3),
                       dtype=sc.dtype.matrix_3_float64)
-    assert var == sc.from_dict(sc.to_dict(var))
+    assert sc.is_equal(var, sc.from_dict(sc.to_dict(var)))
 
 
 def test_variable_event_round_trip():
@@ -239,7 +239,7 @@ def test_variable_event_round_trip():
     var['x', 1].values.append(42)
     var['x', 0].values.extend(np.ones(3))
     var['x', 3].values = np.ones(6)
-    assert var == sc.from_dict(sc.to_dict(var))
+    assert sc.is_equal(var, sc.from_dict(sc.to_dict(var)))
 
 
 def test_data_array_to_dict():
@@ -261,10 +261,10 @@ def test_data_array_to_dict():
     assert np.array_equal(da_dict["data"]["variances"], da.variances)
     assert da_dict["data"]["unit"] == da.unit
     assert da_dict["data"]["dtype"] == da.dtype
-    assert sc.from_dict(da_dict["coords"]["x"]) == da.coords["x"]
-    assert sc.from_dict(da_dict["coords"]["y"]) == da.coords["y"]
-    assert sc.from_dict(da_dict["masks"]["amask"]) == da.masks["amask"]
-    assert sc.from_dict(da_dict["attrs"]["attr1"]) == da.attrs["attr1"]
+    assert sc.is_equal(sc.from_dict(da_dict["coords"]["x"]) , da.coords["x"])
+    assert sc.is_equal(sc.from_dict(da_dict["coords"]["y"]) , da.coords["y"])
+    assert sc.is_equal(sc.from_dict(da_dict["masks"]["amask"]) , da.masks["amask"])
+    assert sc.is_equal(sc.from_dict(da_dict["attrs"]["attr1"]) , da.attrs["attr1"])
 
 
 def test_data_array_unaligned_to_dict():
@@ -336,11 +336,11 @@ def test_data_array_from_dict():
         }
     }
     da = sc.from_dict(da_dict)
-    assert da.coords["x"] == sc.from_dict(da_dict["coords"]["x"])
-    assert da.coords["y"] == sc.from_dict(da_dict["coords"]["y"])
-    assert da.masks["amask"] == sc.from_dict(da_dict["masks"]["amask"])
-    assert da.attrs["attr1"] == sc.from_dict(da_dict["attrs"]["attr1"])
-    assert da.data == sc.from_dict(da_dict["data"])
+    assert sc.is_equal(da.coords["x"] , sc.from_dict(da_dict["coords"]["x"]))
+    assert sc.is_equal(da.coords["y"] , sc.from_dict(da_dict["coords"]["y"]))
+    assert sc.is_equal(da.masks["amask"] , sc.from_dict(da_dict["masks"]["amask"]))
+    assert sc.is_equal(da.attrs["attr1"] , sc.from_dict(da_dict["attrs"]["attr1"]))
+    assert sc.is_equal(da.data , sc.from_dict(da_dict["data"]))
 
 
 def test_data_array_round_trip():

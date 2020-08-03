@@ -26,7 +26,7 @@ void bind_variable_comparison(pybind11::class_<T, Ignored...> &c) {
       "__eq__", [](T &a, Other &b) { return variable::equal(a, b); }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());
   c.def(
-      "__ne__", [](T &a, Other &b) { return !variable::equal(a, b); }, py::is_operator(),
+      "__ne__", [](T &a, Other &b) { return ~variable::equal(a, b); }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());
   c.def(
       "__lt__", [](T &a, Other &b) { return variable::less(a, b); },
