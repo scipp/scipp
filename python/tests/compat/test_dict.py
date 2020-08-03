@@ -381,8 +381,8 @@ def test_dataset_to_dict():
                           values=np.random.random([5, 10]),
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
-    ds.masks["amask"] = sc.Variable(dims=["y"],
-                                    values=[True, True, False, True, False])
+    ds["a"].masks["amask"] = sc.Variable(
+        dims=["y"], values=[True, True, False, True, False])
     # Note that attributes complicate things here, as they are duplicated in
     # each entry during the conversion to dict. So for now, we leave attributes
     # out.
@@ -457,8 +457,8 @@ def test_dataset_round_trip():
                           values=np.random.random([5, 10]),
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
-    ds.masks["amask"] = sc.Variable(dims=["y"],
-                                    values=[True, True, False, True, False])
+    ds["a"].masks["amask"] = sc.Variable(
+        dims=["y"], values=[True, True, False, True, False])
     # Note that round trip would not work if attrs are present, since they get
     # become a per-item attribute during the conversion to dict.
     assert sc.is_equal(ds, sc.from_dict(sc.to_dict(ds)))
