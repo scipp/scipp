@@ -52,11 +52,10 @@ static inline void expectAlignedCoord(const Dim coord_dim,
   // dimension.
   if (var.dims().ndim() > 1)
     throw except::DimensionError(
-        "VariableConstView Coord/Label has more than one dimension "
-        "associated with " +
+        "Coord has more than one dimension associated with " +
         to_string(coord_dim) +
         " and will not be reduced by the operation dimension " +
-        to_string(operation_dim) + " Terminating operation.");
+        to_string(operation_dim) + ". Terminating operation.");
 }
 
 static constexpr auto no_realigned_support = []() {};
@@ -65,13 +64,15 @@ using no_realigned_support_t = decltype(no_realigned_support);
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
                                  const Dim dim, Args &&... args) {
-  const auto coord_apply_or_copy_dim = [&](auto &coords, const auto &view) {
+  const auto coord_apply_or_copy_dim = [&](auto &coords, const auto &view,
+                                           const bool aligned) {
     // Note the `copy` call, ensuring that the return value of the ternary
     // operator can be moved. Without `copy`, the result of `func` is always
     // copied.
     for (auto &&[d, coord] : view)
       if (coord.dims().ndim() == 0 || dim_of_coord(coord, d) != dim) {
-        expectAlignedCoord(d, coord, dim);
+        if (aligned)
+          expectAlignedCoord(d, coord, dim);
         if constexpr (ApplyToData) {
           coords.emplace(d, coord.dims().contains(dim)
                                 ? func(coord, dim, args...)
@@ -82,10 +83,10 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
       }
   };
   std::map<Dim, Variable> coords;
-  coord_apply_or_copy_dim(coords, a.aligned_coords());
+  coord_apply_or_copy_dim(coords, a.aligned_coords(), true);
 
   std::map<Dim, Variable> unaligned_coords;
-  coord_apply_or_copy_dim(unaligned_coords, a.unaligned_coords());
+  coord_apply_or_copy_dim(unaligned_coords, a.unaligned_coords(), false);
 
   std::map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())
