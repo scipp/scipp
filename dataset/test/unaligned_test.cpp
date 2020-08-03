@@ -23,6 +23,7 @@ protected:
       makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4});
   Variable temp_mask = makeVariable<bool>(Dims{Dim::Temperature}, Shape{2},
                                           Values{false, false});
+  Variable attr = makeVariable<double>(Values{3.14});
 
   DataArray make_array() {
     const Dim dim = Dim::Position;
@@ -38,7 +39,6 @@ protected:
         makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4});
     const auto pos_mask = makeVariable<bool>(
         Dims{dim}, Shape{4}, Values{false, false, false, false});
-    const auto attr = makeVariable<double>(Values{3.14});
     DataArray a(makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4}),
                 {{dim, pos}, {Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}},
                 {{"pos", pos_mask}}, {{Dim("attr"), attr}});
@@ -63,7 +63,7 @@ protected:
          {Dim::Z, zbins},
          {Dim::Y, ybins},
          {Dim::X, xbins}},
-        {{"temp", temp_mask}});
+        {{"temp", temp_mask}}, {{Dim("attr"), attr}});
   }
 };
 
@@ -200,9 +200,10 @@ TEST_F(RealignTest, attr_mapping) {
       base, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
 
   EXPECT_FALSE(realigned.hasData());
-  EXPECT_EQ(realigned.unaligned_coords().size(), 2);
+  EXPECT_EQ(realigned.unaligned_coords().size(), 3);
   EXPECT_TRUE(realigned.unaligned_coords().contains(Dim("0-d")));
   EXPECT_TRUE(realigned.unaligned_coords().contains(Dim("temp")));
+  EXPECT_TRUE(realigned.unaligned_coords().contains(Dim("attr")));
 
   EXPECT_EQ(realigned.unaligned(), base.slice({Dim::Position, 0, 3}));
 }

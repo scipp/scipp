@@ -118,7 +118,7 @@ DataArray Dataset::extract(const std::string &name) {
   const auto &view = operator[](name);
   const auto &item = m_data.find(name);
 
-  auto coords = copy_map(view.coords());
+  auto coords = copy_map(view.aligned_coords());
   auto masks = std::move(item->second.masks);
   auto unaligned_coords = std::move(item->second.coords);
 
