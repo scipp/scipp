@@ -261,10 +261,12 @@ def test_data_array_to_dict():
     assert np.array_equal(da_dict["data"]["variances"], da.variances)
     assert da_dict["data"]["unit"] == da.unit
     assert da_dict["data"]["dtype"] == da.dtype
-    assert sc.is_equal(sc.from_dict(da_dict["coords"]["x"]) , da.coords["x"])
-    assert sc.is_equal(sc.from_dict(da_dict["coords"]["y"]) , da.coords["y"])
-    assert sc.is_equal(sc.from_dict(da_dict["masks"]["amask"]) , da.masks["amask"])
-    assert sc.is_equal(sc.from_dict(da_dict["attrs"]["attr1"]) , da.attrs["attr1"])
+    assert sc.is_equal(sc.from_dict(da_dict["coords"]["x"]), da.coords["x"])
+    assert sc.is_equal(sc.from_dict(da_dict["coords"]["y"]), da.coords["y"])
+    assert sc.is_equal(sc.from_dict(da_dict["masks"]["amask"]),
+                       da.masks["amask"])
+    assert sc.is_equal(sc.from_dict(da_dict["attrs"]["attr1"]),
+                       da.attrs["attr1"])
 
 
 def test_data_array_unaligned_to_dict():
@@ -336,11 +338,13 @@ def test_data_array_from_dict():
         }
     }
     da = sc.from_dict(da_dict)
-    assert sc.is_equal(da.coords["x"] , sc.from_dict(da_dict["coords"]["x"]))
-    assert sc.is_equal(da.coords["y"] , sc.from_dict(da_dict["coords"]["y"]))
-    assert sc.is_equal(da.masks["amask"] , sc.from_dict(da_dict["masks"]["amask"]))
-    assert sc.is_equal(da.attrs["attr1"] , sc.from_dict(da_dict["attrs"]["attr1"]))
-    assert sc.is_equal(da.data , sc.from_dict(da_dict["data"]))
+    assert sc.is_equal(da.coords["x"], sc.from_dict(da_dict["coords"]["x"]))
+    assert sc.is_equal(da.coords["y"], sc.from_dict(da_dict["coords"]["y"]))
+    assert sc.is_equal(da.masks["amask"],
+                       sc.from_dict(da_dict["masks"]["amask"]))
+    assert sc.is_equal(da.attrs["attr1"],
+                       sc.from_dict(da_dict["attrs"]["attr1"]))
+    assert sc.is_equal(da.data, sc.from_dict(da_dict["data"]))
 
 
 def test_data_array_round_trip():
