@@ -107,7 +107,7 @@ Documentation
 
 .. toctree::
    :caption: Developer Documentation
-   :maxdepth: 3
+   :maxdepth: 2
 
    developer/getting-started
    developer/tooling
@@ -120,6 +120,7 @@ Documentation
    developer/customizing
    developer/api
    developer/concepts
+   developer/architecture-decision-records
 
 .. toctree::
    :caption: About
