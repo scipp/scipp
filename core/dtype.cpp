@@ -15,6 +15,8 @@ DType event_dtype(const DType type) {
     return dtype<int64_t>;
   if (type == dtype<event_list<int32_t>>)
     return dtype<int32_t>;
+  if (type == dtype<event_list<scipp::core::time_point>>)
+    return dtype<scipp::core::time_point>;
   return type; // event data with scalar weights
 }
 } // namespace scipp::core

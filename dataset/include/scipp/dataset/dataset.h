@@ -36,6 +36,8 @@ struct DatasetData {
   deep_ptr<UnalignedData> unaligned;
   /// Attributes for data.
   std::unordered_map<std::string, Variable> attrs;
+  /// Unaligned masks.
+  std::unordered_map<std::string, Variable> masks;
 };
 
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
@@ -345,7 +347,9 @@ public:
   }
 
   void setCoord(const Dim dim, Variable coord);
-  void setMask(const std::string &masksName, Variable masks);
+  void setMask(const std::string &maskName, Variable mask);
+  void setMask(const std::string &name, const std::string &maskName,
+               Variable mask);
   void setAttr(const std::string &attrName, Variable attr);
   void setAttr(const std::string &name, const std::string &attrName,
                Variable attr);
@@ -357,8 +361,12 @@ public:
   void setCoord(const Dim dim, const VariableConstView &coord) {
     setCoord(dim, Variable(coord));
   }
-  void setMask(const std::string &masksName, const VariableConstView &mask) {
-    setMask(masksName, Variable(mask));
+  void setMask(const std::string &maskName, const VariableConstView &mask) {
+    setMask(maskName, Variable(mask));
+  }
+  void setMask(const std::string &name, const std::string &maskName,
+               const VariableConstView &mask) {
+    setMask(name, maskName, Variable(mask));
   }
   void setAttr(const std::string &attrName, const VariableConstView &attr) {
     setAttr(attrName, Variable(attr));
@@ -376,6 +384,7 @@ public:
   void eraseAttr(const std::string &attrName);
   void eraseAttr(const std::string &name, const std::string &attrName);
   void eraseMask(const std::string &maskName);
+  void eraseMask(const std::string &name, const std::string &maskName);
 
   DatasetConstView slice(const Slice s) const &;
   DatasetView slice(const Slice s) &;

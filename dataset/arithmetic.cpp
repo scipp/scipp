@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform.h"
 
 #include "dataset_operations_common.h"
@@ -12,45 +13,103 @@ using namespace scipp::core;
 
 namespace scipp::dataset {
 
-template <class Op>
-void dry_run_op(const DataArrayView &a, const VariableConstView &b, Op op) {
-  // This dry run relies on the knowledge that the implementation of operations
-  // for variable simply calls transform_in_place and nothing else.
-  variable::dry_run::transform_in_place(a.data(), b, op);
+DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
+  if (a.hasData() && b.hasData()) {
+    return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
+                     union_or(a.masks(), b.masks()),
+                     intersection(a.attrs(), b.attrs()));
+  } else {
+    DataArray out(a);
+    out += b; // No broadcast possible for now
+    return out;
+  }
 }
 
-template <class Op>
-void dry_run_op(const DataArrayView &a, const DataArrayConstView &b, Op op) {
-  expect::coordsAreSuperset(a, b);
-  dry_run_op(a, b.data(), op);
+DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
+  if (a.hasData() && b.hasData()) {
+    return {a.data() - b.data(), union_(a.coords(), b.coords()),
+            union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
+  } else {
+    DataArray out(a);
+    out -= b; // No broadcast possible for now
+    return out;
+  }
+}
+
+DataArray operator+(const DataArrayConstView &a, const VariableConstView &b) {
+  return DataArray(a.data() + b, a.coords(), a.masks(), a.attrs());
+}
+
+DataArray operator-(const DataArrayConstView &a, const VariableConstView &b) {
+  return DataArray(a.data() - b, a.coords(), a.masks(), a.attrs());
+}
+
+DataArray operator*(const DataArrayConstView &a, const VariableConstView &b) {
+  return DataArray(a.data() * b, a.coords(), a.masks(), a.attrs());
+}
+
+DataArray operator/(const DataArrayConstView &a, const VariableConstView &b) {
+  return DataArray(a.data() / b, a.coords(), a.masks(), a.attrs());
+}
+
+DataArray operator+(const VariableConstView &a, const DataArrayConstView &b) {
+  return DataArray(a + b.data(), b.coords(), b.masks(), b.attrs());
+}
+
+DataArray operator-(const VariableConstView &a, const DataArrayConstView &b) {
+  return DataArray(a - b.data(), b.coords(), b.masks(), b.attrs());
+}
+
+DataArray operator*(const VariableConstView &a, const DataArrayConstView &b) {
+  return DataArray(a * b.data(), b.coords(), b.masks(), b.attrs());
+}
+
+DataArray operator/(const VariableConstView &a, const DataArrayConstView &b) {
+  return DataArray(a / b.data(), b.coords(), b.masks(), b.attrs());
+}
+
+DataArray &DataArray::operator+=(const VariableConstView &other) {
+  data() += other;
+  return *this;
+}
+
+DataArray &DataArray::operator-=(const VariableConstView &other) {
+  data() -= other;
+  return *this;
+}
+
+DataArray &DataArray::operator*=(const VariableConstView &other) {
+  data() *= other;
+  return *this;
+}
+
+DataArray &DataArray::operator/=(const VariableConstView &other) {
+  data() /= other;
+  return *this;
 }
 
 DataArrayView DataArrayView::operator+=(const DataArrayConstView &other) const {
   expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
-  data() += other.data();
-  return *this;
+  return *this += other.data();
 }
 
 DataArrayView DataArrayView::operator-=(const DataArrayConstView &other) const {
   expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
-  data() -= other.data();
-  return *this;
+  return *this -= other.data();
 }
 
 DataArrayView DataArrayView::operator*=(const DataArrayConstView &other) const {
   expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
-  data() *= other.data();
-  return *this;
+  return *this *= other.data();
 }
 
 DataArrayView DataArrayView::operator/=(const DataArrayConstView &other) const {
   expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
-  data() /= other.data();
-  return *this;
+  return *this /= other.data();
 }
 
 DataArrayView DataArrayView::operator+=(const VariableConstView &other) const {
@@ -73,19 +132,18 @@ DataArrayView DataArrayView::operator/=(const VariableConstView &other) const {
   return *this;
 }
 
-constexpr static auto plus = [](const auto &a, const auto &b) { return a + b; };
+template <class Op>
+void dry_run_op(const DataArrayView &a, const VariableConstView &b, Op op) {
+  // This dry run relies on the knowledge that the implementation of operations
+  // for variable simply calls transform_in_place and nothing else.
+  variable::dry_run::transform_in_place(a.data(), b, op);
+}
 
-constexpr static auto minus = [](const auto &a, const auto &b) {
-  return a - b;
-};
-
-constexpr static auto times = [](const auto &a, const auto &b) {
-  return a * b;
-};
-
-constexpr static auto divide = [](const auto &a, const auto &b) {
-  return a / b;
-};
+template <class Op>
+void dry_run_op(const DataArrayView &a, const DataArrayConstView &b, Op op) {
+  expect::coordsAreSuperset(a, b);
+  dry_run_op(a, b.data(), op);
+}
 
 template <class Op, class A, class B>
 auto &apply(const Op &op, A &a, const B &b) {
@@ -278,83 +336,83 @@ DatasetView DatasetView::operator/=(const DatasetConstView &other) const {
 }
 
 Dataset operator+(const DatasetConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
+  return apply_with_broadcast(core::element::plus, lhs, rhs);
 }
 
 Dataset operator+(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
+  return apply_with_broadcast(core::element::plus, lhs, rhs);
 }
 
 Dataset operator+(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
+  return apply_with_broadcast(core::element::plus, lhs, rhs);
 }
 
 Dataset operator+(const DatasetConstView &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
+  return apply_with_broadcast(core::element::plus, lhs, rhs);
 }
 
 Dataset operator+(const VariableConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(plus, lhs, rhs);
+  return apply_with_broadcast(core::element::plus, lhs, rhs);
 }
 
 Dataset operator-(const DatasetConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
+  return apply_with_broadcast(core::element::minus, lhs, rhs);
 }
 
 Dataset operator-(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
+  return apply_with_broadcast(core::element::minus, lhs, rhs);
 }
 
 Dataset operator-(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
+  return apply_with_broadcast(core::element::minus, lhs, rhs);
 }
 
 Dataset operator-(const DatasetConstView &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
+  return apply_with_broadcast(core::element::minus, lhs, rhs);
 }
 
 Dataset operator-(const VariableConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(minus, lhs, rhs);
+  return apply_with_broadcast(core::element::minus, lhs, rhs);
 }
 
 Dataset operator*(const DatasetConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
+  return apply_with_broadcast(core::element::times, lhs, rhs);
 }
 
 Dataset operator*(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
+  return apply_with_broadcast(core::element::times, lhs, rhs);
 }
 
 Dataset operator*(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
+  return apply_with_broadcast(core::element::times, lhs, rhs);
 }
 
 Dataset operator*(const DatasetConstView &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
+  return apply_with_broadcast(core::element::times, lhs, rhs);
 }
 
 Dataset operator*(const VariableConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(times, lhs, rhs);
+  return apply_with_broadcast(core::element::times, lhs, rhs);
 }
 
 Dataset operator/(const DatasetConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
+  return apply_with_broadcast(core::element::divide, lhs, rhs);
 }
 
 Dataset operator/(const DatasetConstView &lhs, const DataArrayConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
+  return apply_with_broadcast(core::element::divide, lhs, rhs);
 }
 
 Dataset operator/(const DataArrayConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
+  return apply_with_broadcast(core::element::divide, lhs, rhs);
 }
 
 Dataset operator/(const DatasetConstView &lhs, const VariableConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
+  return apply_with_broadcast(core::element::divide, lhs, rhs);
 }
 
 Dataset operator/(const VariableConstView &lhs, const DatasetConstView &rhs) {
-  return apply_with_broadcast(divide, lhs, rhs);
+  return apply_with_broadcast(core::element::divide, lhs, rhs);
 }
 
 } // namespace scipp::dataset

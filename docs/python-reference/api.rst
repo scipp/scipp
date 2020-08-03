@@ -44,6 +44,7 @@ General
    slices
    sort
    sqrt
+   transpose
    values
    variances
 

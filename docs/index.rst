@@ -1,3 +1,5 @@
+Interested in working with us? `We are hiring a C++ developer <https://europeanspallationsource.se/careers/vacancies>`_!
+
 scipp - Multi-dimensional data arrays with labeled dimensions
 =============================================================
 
@@ -105,7 +107,7 @@ Documentation
 
 .. toctree::
    :caption: Developer Documentation
-   :maxdepth: 3
+   :maxdepth: 2
 
    developer/getting-started
    developer/tooling
@@ -117,6 +119,8 @@ Documentation
    developer/variable_implementation
    developer/customizing
    developer/api
+   developer/concepts
+   developer/architecture-decision-records
 
 .. toctree::
    :caption: About

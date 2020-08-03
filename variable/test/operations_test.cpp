@@ -118,6 +118,30 @@ TEST(Variable, operator_plus_equal_non_arithmetic_type) {
   EXPECT_THROW(a += a, except::TypeError);
 }
 
+TEST(Variable, operator_plus_equal_time_type) {
+  auto now = 0;
+  auto a = makeVariable<scipp::core::time_point>(
+      Shape{1}, units::Unit{units::ns}, Values{now});
+  const auto copy(a);
+  EXPECT_THROW(a += static_cast<float>(1.0) * units::ns, except::TypeError);
+  EXPECT_NO_THROW(a += static_cast<int64_t>(1) * units::ns);
+  EXPECT_NE(a, copy);
+  EXPECT_NO_THROW(a += static_cast<int32_t>(1) * units::ns);
+  EXPECT_NE(a, copy);
+}
+
+TEST(Variable, operator_minus_equal_time_type) {
+  auto now = 0;
+  auto a = makeVariable<scipp::core::time_point>(
+      Shape{1}, units::Unit{units::ns}, Values{now});
+  const auto copy(a);
+  EXPECT_THROW(a -= static_cast<float>(1.0) * units::ns, except::TypeError);
+  EXPECT_NO_THROW(a -= static_cast<int64_t>(1) * units::ns);
+  EXPECT_NE(a, copy);
+  EXPECT_NO_THROW(a -= static_cast<int32_t>(1) * units::ns);
+  EXPECT_NE(a, copy);
+}
+
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   auto b = makeVariable<int64_t>(Dims{Dim::X}, Shape{1}, Values{2});
