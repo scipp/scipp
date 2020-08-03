@@ -51,17 +51,6 @@ void DatasetFactory3D::init() {
                                      Values(rand(lx * ly))));
   base.setCoord(Dim("labels_z"),
                 makeVariable<double>(Dimensions{Dim::Z, lz}, Values(rand(lz))));
-
-  // base.setMask("masks_x",
-  //             makeVariable<bool>(Dimensions{m_dim, lx},
-  //                                Values(make_bools(lx, {false, true}))));
-  // base.setMask("masks_xy",
-  //             makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
-  //                                Values(make_bools(lx * ly, {false,
-  //                                true}))));
-  // base.setMask("masks_z",
-  //             makeVariable<bool>(Dimensions{Dim::Z, lz},
-  //                                Values(make_bools(lz, {false, true}))));
 }
 
 void DatasetFactory3D::seed(const uint32_t value) {
@@ -72,15 +61,6 @@ void DatasetFactory3D::seed(const uint32_t value) {
 
 Dataset DatasetFactory3D::make(const bool randomMasks) {
   Dataset dataset(base);
-  // if (randomMasks) {
-  //  dataset.setMask("masks_x", makeVariable<bool>(Dimensions{m_dim, lx},
-  //                                                Values(randBool(lx))));
-  //  dataset.setMask("masks_xy",
-  //                  makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
-  //                                     Values(randBool(lx * ly))));
-  //  dataset.setMask("masks_z", makeVariable<bool>(Dimensions{Dim::Z, lz},
-  //                                                Values(randBool(lz))));
-  //}
   dataset.setData("values_x", makeVariable<double>(Dimensions{m_dim, lx},
                                                    Values(rand(lx))));
   dataset.setData("data_x",
@@ -104,6 +84,39 @@ Dataset DatasetFactory3D::make(const bool randomMasks) {
                            Values(rand(lx * ly * lz))));
 
   dataset.setData("data_scalar", makeVariable<double>(Values{rand(1).front()}));
+
+  if (randomMasks) {
+    for (const auto &item :
+         {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
+      dataset.setMask(
+          item, "masks_x",
+          makeVariable<bool>(Dimensions{m_dim, lx}, Values(randBool(lx))));
+    for (const auto &item : {"data_xy", "data_zyx", "data_xyz"})
+      dataset.setMask(item, "masks_xy",
+                      makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
+                                         Values(randBool(lx * ly))));
+    for (const auto &item : {"data_zyx", "data_xyz"})
+      dataset.setMask(
+          item, "masks_z",
+          makeVariable<bool>(Dimensions{Dim::Z, lz}, Values(randBool(lz))));
+  } else {
+    for (const auto &item :
+         {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
+      dataset.setMask(
+          item, "masks_x",
+          makeVariable<bool>(Dimensions{m_dim, lx},
+                             Values(make_bools(lx, {false, true}))));
+    for (const auto &item : {"data_xy", "data_zyx", "data_xyz"})
+      dataset.setMask(
+          item, "masks_xy",
+          makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
+                             Values(make_bools(lx * ly, {false, true}))));
+    for (const auto &item : {"data_zyx", "data_xyz"})
+      dataset.setMask(
+          item, "masks_z",
+          makeVariable<bool>(Dimensions{Dim::Z, lz},
+                             Values(make_bools(lz, {false, true}))));
+  }
 
   return dataset;
 }

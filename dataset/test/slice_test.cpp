@@ -150,14 +150,11 @@ protected:
     d.setCoord(Dim("labels_xy"),
                dataset.coords()[Dim("labels_xy")].slice({Dim::X, pos}));
     d.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
-    // d.setMask("masks_x", dataset.masks()["masks_x"].slice({Dim::X, pos}));
-    // d.setMask("masks_xy", dataset.masks()["masks_xy"].slice({Dim::X, pos}));
-    // d.setMask("masks_z", dataset.masks()["masks_z"]);
-    d.setData("values_x", dataset["values_x"].data().slice({Dim::X, pos}));
-    d.setData("data_x", dataset["data_x"].data().slice({Dim::X, pos}));
-    d.setData("data_xy", dataset["data_xy"].data().slice({Dim::X, pos}));
-    d.setData("data_zyx", dataset["data_zyx"].data().slice({Dim::X, pos}));
-    d.setData("data_xyz", dataset["data_xyz"].data().slice({Dim::X, pos}));
+    d.setData("values_x", dataset["values_x"].slice({Dim::X, pos}));
+    d.setData("data_x", dataset["data_x"].slice({Dim::X, pos}));
+    d.setData("data_xy", dataset["data_xy"].slice({Dim::X, pos}));
+    d.setData("data_zyx", dataset["data_zyx"].slice({Dim::X, pos}));
+    d.setData("data_xyz", dataset["data_xyz"].slice({Dim::X, pos}));
     return d;
   }
 };
@@ -187,16 +184,9 @@ protected:
                dataset.coords()[Dim("labels_xy")].slice({Dim::Y, begin, end}));
     d.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
 
-    // d.setMask("masks_x", dataset.masks()["masks_x"]);
-    // d.setMask("masks_xy",
-    //          dataset.masks()["masks_xy"].slice({Dim::Y, begin, end}));
-    // d.setMask("masks_z", dataset.masks()["masks_z"]);
-
-    d.setData("data_xy", dataset["data_xy"].data().slice({Dim::Y, begin, end}));
-    d.setData("data_zyx",
-              dataset["data_zyx"].data().slice({Dim::Y, begin, end}));
-    d.setData("data_xyz",
-              dataset["data_xyz"].data().slice({Dim::Y, begin, end}));
+    d.setData("data_xy", dataset["data_xy"].slice({Dim::Y, begin, end}));
+    d.setData("data_zyx", dataset["data_zyx"].slice({Dim::Y, begin, end}));
+    d.setData("data_xyz", dataset["data_xyz"].slice({Dim::Y, begin, end}));
     return d;
   }
 };
@@ -214,14 +204,8 @@ protected:
     d.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")]);
     d.setCoord(Dim("labels_z"),
                dataset.coords()[Dim("labels_z")].slice({Dim::Z, begin, end}));
-    // d.setMask("masks_x", dataset.masks()["masks_x"]);
-    // d.setMask("masks_xy", dataset.masks()["masks_xy"]);
-    // d.setMask("masks_z",
-    //          dataset.masks()["masks_z"].slice({Dim::Z, begin, end}));
-    d.setData("data_zyx",
-              dataset["data_zyx"].data().slice({Dim::Z, begin, end}));
-    d.setData("data_xyz",
-              dataset["data_xyz"].data().slice({Dim::Z, begin, end}));
+    d.setData("data_zyx", dataset["data_zyx"].slice({Dim::Z, begin, end}));
+    d.setData("data_xyz", dataset["data_xyz"].slice({Dim::Z, begin, end}));
     return d;
   }
 };
@@ -323,15 +307,9 @@ TEST_P(Dataset3DTest_slice_y, slice) {
   reference.setCoord(Dim::Z, dataset.coords()[Dim::Z].slice({Dim::Y, pos}));
   reference.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")]);
   reference.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
-  // reference.setMask("masks_x", dataset.masks()["masks_x"]);
-  // reference.setMask("masks_xy",
-  //                  dataset.masks()["masks_xy"].slice({Dim::Y, pos}));
-  // reference.setMask("masks_z", dataset.masks()["masks_z"]);
-  reference.setData("data_xy", dataset["data_xy"].data().slice({Dim::Y, pos}));
-  reference.setData("data_zyx",
-                    dataset["data_zyx"].data().slice({Dim::Y, pos}));
-  reference.setData("data_xyz",
-                    dataset["data_xyz"].data().slice({Dim::Y, pos}));
+  reference.setData("data_xy", dataset["data_xy"].slice({Dim::Y, pos}));
+  reference.setData("data_zyx", dataset["data_zyx"].slice({Dim::Y, pos}));
+  reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Y, pos}));
   for (const auto &name : {"data_xy", "data_zyx", "data_xyz"}) {
     for (const auto &attr : {"y", "labels_xy"})
       reference[name].coords().set(
@@ -349,14 +327,8 @@ TEST_P(Dataset3DTest_slice_z, slice) {
   reference.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   reference.setCoord(Dim("labels_x"), dataset.coords()[Dim("labels_x")]);
   reference.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")]);
-  // reference.setMask("masks_x", dataset.masks()["masks_x"]);
-  // reference.setMask("masks_xy", dataset.masks()["masks_xy"]);
-  // reference.setMask("masks_z", dataset.masks()["masks_z"].slice({Dim::Z,
-  // pos}));
-  reference.setData("data_zyx",
-                    dataset["data_zyx"].data().slice({Dim::Z, pos}));
-  reference.setData("data_xyz",
-                    dataset["data_xyz"].data().slice({Dim::Z, pos}));
+  reference.setData("data_zyx", dataset["data_zyx"].slice({Dim::Z, pos}));
+  reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Z, pos}));
   for (const auto &name : {"data_zyx", "data_xyz"}) {
     for (const auto &attr : {"z", "labels_z"})
       reference[name].coords().set(
@@ -380,21 +352,14 @@ TEST_P(Dataset3DTest_slice_range_x, slice) {
   reference.setCoord(Dim("labels_xy"), dataset.coords()[Dim("labels_xy")].slice(
                                            {Dim::X, begin, end}));
   reference.setCoord(Dim("labels_z"), dataset.coords()[Dim("labels_z")]);
-  // reference.setMask("masks_x",
-  //                  dataset.masks()["masks_x"].slice({Dim::X, begin, end}));
-  // reference.setMask("masks_xy",
-  //                  dataset.masks()["masks_xy"].slice({Dim::X, begin, end}));
-  // reference.setMask("masks_z", dataset.masks()["masks_z"]);
   reference.setData("values_x",
-                    dataset["values_x"].data().slice({Dim::X, begin, end}));
-  reference.setData("data_x",
-                    dataset["data_x"].data().slice({Dim::X, begin, end}));
-  reference.setData("data_xy",
-                    dataset["data_xy"].data().slice({Dim::X, begin, end}));
+                    dataset["values_x"].slice({Dim::X, begin, end}));
+  reference.setData("data_x", dataset["data_x"].slice({Dim::X, begin, end}));
+  reference.setData("data_xy", dataset["data_xy"].slice({Dim::X, begin, end}));
   reference.setData("data_zyx",
-                    dataset["data_zyx"].data().slice({Dim::X, begin, end}));
+                    dataset["data_zyx"].slice({Dim::X, begin, end}));
   reference.setData("data_xyz",
-                    dataset["data_xyz"].data().slice({Dim::X, begin, end}));
+                    dataset["data_xyz"].slice({Dim::X, begin, end}));
 
   EXPECT_EQ(dataset.slice({Dim::X, begin, end}), reference);
 }

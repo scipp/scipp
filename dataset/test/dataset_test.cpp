@@ -525,7 +525,6 @@ TEST(DatasetMasksRealignedTest, set_erase) {
       "mask", d["a"].unaligned().coords()[Dim::Y] * (2.0 * units::one)));
 
   EXPECT_NO_THROW(d["a"].unaligned().masks().erase("mask"));
-  EXPECT_TRUE(d["a"].masks().contains("mask")); // mask of dataset still present
   EXPECT_FALSE(d["a"].unaligned().masks().contains("mask"));
 
   // Potentially surprising but consistent behavior: "scalar" mapped from
