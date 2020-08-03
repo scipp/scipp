@@ -77,22 +77,12 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
       const auto out_slice = out.slice({dim(), group});
       if constexpr (std::is_same_v<T, Dataset>) {
         for (const auto &item : m_data) {
-          op(out_slice[item.name()], item, groups()[group], reductionDim,
-             get_mask(m_data[item.name()]));
+          const auto mask = get_mask(m_data[item.name()]);
+          op(out_slice[item.name()], item, groups()[group], reductionDim, mask);
         }
-        if constexpr (!std::is_same_v<CoordOp, void *>)
-          throw std::runtime_error(
-              "Cannot apply this operation to Dataset with event data.");
-        static_cast<void>(coord_op);
       } else {
         const auto mask = get_mask(m_data);
         op(out_slice, m_data, groups()[group], reductionDim, mask);
-        if constexpr (!std::is_same_v<CoordOp, void *>)
-          for (auto &&[dim, coord] : out_slice.coords())
-            coord_op(coord, m_data.coords()[dim], groups()[group], reductionDim,
-                     mask);
-        else
-          static_cast<void>(coord_op);
       }
     }
   };
@@ -128,24 +118,12 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
         out.data().assign(array.data().slice({reductionDim, 0}));
         first = false;
       }
+      for (auto &&[dim, coord] : out.coords())
+        if (contains_events(coord))
+          flatten_impl(coord, array.coords()[dim], mask);
     }
   }
 };
-
-static constexpr auto flatten_coord =
-    [](const VariableView &out, const auto &in,
-       const GroupByGrouping::group &group, const Dim reductionDim,
-       const Variable &mask_) {
-      if (!in.dims().contains(reductionDim))
-        return;
-      const auto no_mask = makeVariable<bool>(Values{true});
-      for (const auto &slice : group) {
-        auto mask = mask_ ? mask_.slice(slice) : no_mask;
-        const auto &array = in.slice(slice);
-        if (contains_events(out))
-          flatten_impl(out, array, mask);
-      }
-    };
 
 static constexpr auto sum = [](const DataArrayView &out,
                                const auto &data_container,
@@ -164,9 +142,6 @@ static constexpr auto sum = [](const DataArrayView &out,
     const auto &unaligned_in = data_container.unaligned();
     // Flatten in all cases, even if not event data? Try to sum?
     flatten(unaligned_out, unaligned_in, group, reductionDim, mask);
-    for (auto &&[dim, coord] : unaligned_out.coords())
-      flatten_coord(coord, unaligned_in.coords()[dim], group, reductionDim,
-                    mask);
   }
 };
 
@@ -194,8 +169,7 @@ static constexpr auto reduce_idempotent =
 ///
 /// This only supports event data.
 template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
-  return reduce(groupby_detail::flatten, reductionDim,
-                groupby_detail::flatten_coord);
+  return reduce(groupby_detail::flatten, reductionDim);
 }
 
 /// Reduce each group using `sum` and return combined data.

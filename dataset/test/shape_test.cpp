@@ -36,4 +36,17 @@ TEST(ResizeTest, data_array_2d) {
   expected.masks().set("mask-x", x);
 
   EXPECT_EQ(resize(a, Dim::Y, 1), expected);
+
+  Dataset d({{"a", a}});
+  Dataset expected_d({{"a", expected}});
+  EXPECT_EQ(resize(d, Dim::Y, 1), expected_d);
+}
+
+TEST(ResizeTest, data_array_event_data) {
+  const auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
+  DataArray a(var);
+  a.unaligned_coords().set(Dim::X, var);
+  DataArray expected(var);
+  expected.unaligned_coords().set(Dim::X, var);
+  EXPECT_EQ(resize(a, Dim::X, 2), expected);
 }

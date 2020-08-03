@@ -65,25 +65,27 @@ using no_realigned_support_t = decltype(no_realigned_support);
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
                                  const Dim dim, Args &&... args) {
-  std::map<Dim, Variable> coords;
-  // Note the `copy` call, ensuring that the return value of the ternary
-  // operator can be moved. Without `copy`, the result of `func` is always
-  // copied.
-  for (auto &&[d, coord] : a.aligned_coords())
-    if (coord.dims().ndim() == 0 || dim_of_coord(coord, d) != dim) {
-      expectAlignedCoord(d, coord, dim);
-      if constexpr (ApplyToData) {
-        coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim, args...)
-                                                     : copy(coord));
-      } else {
-        coords.emplace(d, coord);
+  const auto coord_apply_or_copy_dim = [&](auto &coords, const auto &view) {
+    // Note the `copy` call, ensuring that the return value of the ternary
+    // operator can be moved. Without `copy`, the result of `func` is always
+    // copied.
+    for (auto &&[d, coord] : view)
+      if (coord.dims().ndim() == 0 || dim_of_coord(coord, d) != dim) {
+        expectAlignedCoord(d, coord, dim);
+        if constexpr (ApplyToData) {
+          coords.emplace(d, coord.dims().contains(dim)
+                                ? func(coord, dim, args...)
+                                : copy(coord));
+        } else {
+          coords.emplace(d, coord);
+        }
       }
-    }
+  };
+  std::map<Dim, Variable> coords;
+  coord_apply_or_copy_dim(coords, a.aligned_coords());
 
   std::map<Dim, Variable> unaligned_coords;
-  for (auto &&[d, coord] : a.unaligned_coords())
-    if (!coord.dims().contains(dim))
-      unaligned_coords.emplace(d, coord);
+  coord_apply_or_copy_dim(unaligned_coords, a.unaligned_coords());
 
   std::map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())

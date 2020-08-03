@@ -458,7 +458,7 @@ auto make_events_out(bool mask = false) {
 }
 
 struct GroupbyFlattenDefaultWeight : public ::testing::Test {
-  const DataArray a{
+  DataArray a{
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
                            Values{1, 1, 1}, Variances{1, 1, 1}),
       {{Dim::X, make_events_in()},
@@ -470,7 +470,7 @@ struct GroupbyFlattenDefaultWeight : public ::testing::Test {
       {},
       {{Dim("scalar_attr"), makeVariable<double>(Values{1.2})}}};
 
-  const DataArray expected{
+  DataArray expected{
       makeVariable<double>(Dims{Dim("labels")}, Shape{2}, units::counts,
                            Values{1, 1}, Variances{1, 1}),
       {{Dim::X, make_events_out()},
@@ -497,6 +497,10 @@ TEST_F(GroupbyFlattenDefaultWeight, sum_realigned_coord_only) {
 }
 
 TEST_F(GroupbyFlattenDefaultWeight, flatten_dataset_coord_only) {
+  a.coords().erase(Dim::X);
+  a.unaligned_coords().set(Dim::X, make_events_in());
+  expected.coords().erase(Dim::X);
+  expected.unaligned_coords().set(Dim::X, make_events_out());
   const Dataset d{{{"a", a}, {"b", a}}};
   const Dataset expected_d{{{"a", expected}, {"b", expected}}};
   EXPECT_EQ(groupby(d, Dim("labels")).flatten(Dim::Y), expected_d);
