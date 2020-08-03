@@ -129,12 +129,6 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
             "Property `labels` is deprecated. Use `coords` instead.");
       },
       R"(Decprecated, alias for `coords`.)");
-  c.def_property_readonly("masks",
-                          py::cpp_function([](T &self) { return self.masks(); },
-                                           py::return_value_policy::move,
-                                           py::keep_alive<0, 1>()),
-                          R"(
-      Dict of masks.)");
 
   if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>)
     c.def("realign", realign_impl<T>);
@@ -247,6 +241,12 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
                        py::return_value_policy::move, py::keep_alive<0, 1>()),
       R"(
       Dict of unaligned coords.)");
+  c.def_property_readonly("masks",
+                          py::cpp_function([](T &self) { return self.masks(); },
+                                           py::return_value_policy::move,
+                                           py::keep_alive<0, 1>()),
+                          R"(
+      Dict of masks.)");
   bind_coord_properties(c);
   bind_data_properties(c);
   bind_slice_methods(c);
@@ -376,13 +376,11 @@ void init_dataset(py::module &m) {
   dataset.def(py::init<const std::map<std::string, DataArrayConstView> &>())
       .def(py::init<const DataArrayConstView &>())
       .def(py::init([](const std::map<std::string, VariableConstView> &data,
-                       const std::map<Dim, VariableConstView> &coords,
-                       const std::map<std::string, VariableConstView> &masks) {
-             return Dataset(data, coords, masks);
+                       const std::map<Dim, VariableConstView> &coords) {
+             return Dataset(data, coords);
            }),
            py::arg("data") = std::map<std::string, VariableConstView>{},
-           py::arg("coords") = std::map<Dim, VariableConstView>{},
-           py::arg("masks") = std::map<std::string, VariableConstView>{})
+           py::arg("coords") = std::map<Dim, VariableConstView>{})
       .def(py::init([](const DatasetView &other) { return Dataset{other}; }))
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
@@ -400,9 +398,8 @@ void init_dataset(py::module &m) {
            })
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())
-      .def(
-          "clear", &Dataset::clear,
-          R"(Removes all data (preserving coordinates, attributes, and masks.).)");
+      .def("clear", &Dataset::clear,
+           R"(Removes all data, preserving coordinates.)");
   datasetView.def(
       "__setitem__",
       [](const DatasetView &self, const std::string &name,

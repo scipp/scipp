@@ -129,12 +129,3 @@ class TestDatasetSlice:
         sliced = d['y', 2:6]
         assert sc.is_equal(sc.Variable(['y'], values=np.arange(2, 6)),
                            sliced.coords['y-coord'])
-
-    def test_slice_dataset_with_masks_only(self):
-        d = sc.Dataset()
-        d.masks['y-mask'] = sc.Variable(['y'], values=np.arange(10))
-        sliced = d['y', :]
-        assert sc.is_equal(d, sliced)
-        sliced = d['y', 2:6]
-        assert sc.is_equal(sc.Variable(['y'], values=np.arange(2, 6)),
-                           sliced.masks['y-mask'])

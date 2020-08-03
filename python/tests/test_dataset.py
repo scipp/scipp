@@ -22,7 +22,6 @@ def test_create_empty():
     d = sc.Dataset()
     assert len(d) == 0
     assert len(d.coords) == 0
-    assert len(d.masks) == 0
     assert len(d.dims) == 0
 
 
@@ -139,28 +138,6 @@ def test_coords_keys():
     d.coords['x'] = sc.Variable(1.0)
     assert len(d.coords.keys()) == 1
     assert 'x' in d.coords.keys()
-
-
-def test_masks_setitem():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = sc.Dataset({'a': var}, coords={'x': var})
-
-    with pytest.raises(RuntimeError):
-        d['x', 2:3].coords['label'] = sc.Variable(True)
-    d.masks['mask'] = sc.Variable(dims=['x'],
-                                  values=np.array([True, False, True, False]))
-    assert len(d) == 1
-    assert len(d.masks) == 1
-    assert sc.is_equal(
-        d.masks['mask'],
-        sc.Variable(dims=['x'], values=np.array([True, False, True, False])))
-
-
-def test_contains_masks():
-    d = sc.Dataset()
-    assert 'a' not in d.masks
-    d.masks['a'] = sc.Variable(True)
-    assert 'a' in d.masks
 
 
 def test_slice_item():
@@ -338,17 +315,14 @@ def test_sum_mean():
 
 
 def test_sum_masked():
-    d = sc.Dataset(
-        {
-            'a':
-            sc.Variable(dims=['x'],
-                        values=np.array([1, 5, 4, 5, 1], dtype=np.int64))
-        },
-        masks={
-            'm1':
-            sc.Variable(dims=['x'],
-                        values=np.array([False, True, False, True, False]))
-        })
+    d = sc.Dataset({
+        'a':
+        sc.Variable(dims=['x'],
+                    values=np.array([1, 5, 4, 5, 1], dtype=np.int64))
+    })
+    d['a'].masks['m1'] = sc.Variable(dims=['x'],
+                                     values=np.array(
+                                         [False, True, False, True, False]))
 
     d_ref = sc.Dataset({'a': sc.Variable(np.int64(6))})
 
@@ -358,12 +332,10 @@ def test_sum_masked():
 
 def test_mean_masked():
     d = sc.Dataset(
-        {'a': sc.Variable(dims=['x'], values=np.array([1, 5, 4, 5, 1]))},
-        masks={
-            'm1':
-            sc.Variable(dims=['x'],
-                        values=np.array([False, True, False, True, False]))
-        })
+        {'a': sc.Variable(dims=['x'], values=np.array([1, 5, 4, 5, 1]))})
+    d['a'].masks['m1'] = sc.Variable(dims=['x'],
+                                     values=np.array(
+                                         [False, True, False, True, False]))
     d_ref = sc.Dataset({'a': sc.Variable(2.0)})
     assert sc.is_equal(sc.mean(d, 'x')['a'], d_ref['a'])
 
@@ -709,9 +681,9 @@ def test_masks_delitem():
     var = sc.Variable(dims=['x'], values=np.array([True, True, False]))
     d = sc.Dataset({'a': var}, coords={'x': var})
     dref = d.copy()
-    d.masks['masks'] = var
+    d['a'].masks['masks'] = var
     assert not sc.is_equal(d, dref)
-    del d.masks['masks']
+    del d['a'].masks['masks']
     assert sc.is_equal(d, dref)
 
 
