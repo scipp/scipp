@@ -5,7 +5,6 @@
 import scipp as sc
 import numpy as np
 from .common import assert_export
-import pytest
 
 
 def _check_comparison_ops_on(obj):
