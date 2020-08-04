@@ -42,6 +42,10 @@ def test_data_array_1d():
                      masks={
                          'mask1': sc.less(x, 1.5 * sc.units.m),
                          'mask2': sc.less(x, 2.5 * sc.units.m)
+                     },
+                     attrs={
+                         'attr1': x,
+                         'attr2': 1.2 * sc.units.K
                      })
     check_roundtrip(a)
 
@@ -56,5 +60,9 @@ def test_data_array_2d():
                      masks={
                          'mask1': sc.less(x, 1.5 * sc.units.m),
                          'mask2': sc.less(xy, 0.5 * sc.units.kg)
+                     },
+                     attrs={
+                         'attr1': xy,
+                         'attr2': 1.2 * sc.units.K
                      })
     check_roundtrip(a)

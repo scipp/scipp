@@ -58,17 +58,11 @@ class HDF5IO:
             raise RuntimeError(
                 "Writing realigned data is not implemented yet.")
         self._write_variable(group, var=data.data, name='data')
-        coords = group.create_group('coords')
-        for name in data.coords:
-            self._write_variable(group=coords,
-                                 var=data.coords[name],
-                                 name=str(name))
-        masks = group.create_group('masks')
-        for name in data.masks:
-            self._write_variable(group=masks, var=data.masks[name], name=name)
-        attrs = group.create_group('attrs')
-        for name in data.attrs:
-            self._write_variable(group=attrs, var=data.attrs[name], name=name)
+        for view_name, view in zip(['coords', 'masks', 'attrs'],
+                                   [data.coords, data.masks, data.attrs]):
+            subgroup = group.create_group(view_name)
+            for name in view:
+                self._write_variable(group=subgroup, var=view[name], name=name)
 
     def _read_data_array(self, group):
         from .._scipp import core as sc
