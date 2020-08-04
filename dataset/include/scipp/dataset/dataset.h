@@ -416,7 +416,7 @@ private:
                     const AttrPolicy attrPolicy);
 
   std::unordered_map<Dim, scipp::index> m_dims;
-  std::unordered_map<Dim, Variable> m_coords;
+  std::unordered_map<Dim, Variable> m_coords; // aligned coords
   detail::dataset_item_map m_data;
 };
 

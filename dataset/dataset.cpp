@@ -522,6 +522,8 @@ void keep_if_unaligned_by_dim_slices(Items &items, const Slices &slices) {
   }
 }
 
+/// Conditionally removes coords from view to implement mapping of aligned
+/// coords to unaligned coords for non-range slices of data arrays or datasets.
 template <class Items, class Slices>
 void maybe_drop_aligned_or_unaligned(Items &items, const Slices &slices,
                                      const CoordCategory category) {
@@ -539,15 +541,19 @@ std::conditional_t<std::is_same_v<T, DataArrayView>, CoordsView,
                    CoordsConstView>
 make_coords(const T &view, const CoordCategory category,
             [[maybe_unused]] const bool is_item) {
-  // Aligned coords (including unaligned by slicing) from dataset
+  // Aligned coords (including unaligned by slicing) from dataset. This is all
+  // coords of the dataset *excluding* those that exceed the item dims.
   auto items = makeViewItems(view.parentDims(), view.get_dataset().m_coords);
   maybe_drop_aligned_or_unaligned(items, view.slices(), category);
+  // Array is realigned data and we access array.unaligned().coords() (not
+  // array.coords()).
   const bool is_view_of_unaligned = !view.get_data().data && view.hasData();
   if (category & CoordCategory::Unaligned) {
-    // Unaligned coords
-    // Need to include everything, e.g., to preserve bin edges after non-range
-    // slice, except when view of unaligned, where we need to ensure coords
-    // depending on dims of the realigned wrapper are not included.
+    // Unaligned coords, two cases:
+    // 1. Not view of unaligned: Need to include everything, in particular to
+    //    preserve bin edges after non-range slice.
+    // 2. View of unaligned: Filter out coords depending on dims that are not
+    //    dims of unaligned content.
     const auto tmp =
         is_view_of_unaligned
             ? makeViewItems(view.parentDims(), view.get_data().coords)
@@ -566,6 +572,13 @@ make_coords(const T &view, const CoordCategory category,
   }
   if constexpr (std::is_same_v<T, DataArrayView>)
     return CoordsView(
+        // Coord insert/erase disabled if:
+        // - coords of a slice:
+        //   array['x', 7].coords['x'] = x # fails
+        //   array.coords['x'] = x # ok
+        // - (aligned) coords of a dataset item:
+        //   del ds['a'].coords['x'] # fails
+        //   del ds.coords['x'] # ok
         CoordAccess{view.slices().empty() ? &view.get_dataset() : nullptr,
                     is_item ? &view.name() : nullptr, std::move(unaligned_ptr)},
         std::move(items), view.slices());
@@ -580,6 +593,8 @@ CoordsConstView DataArrayConstView::coords() const noexcept {
 
 /// Return a view to all coordinates of the data view.
 CoordsView DataArrayView::coords() const noexcept {
+  // Typically view of item of data array, therefore:
+  // ds['a'].coords['x'] = x # inserts unaligned coord
   return make_coords(*this, CoordCategory::All);
 }
 
@@ -588,6 +603,8 @@ CoordsConstView DataArray::coords() const { return get().coords(); }
 
 /// Return a view to all coordinates of the data array.
 CoordsView DataArray::coords() {
+  // Note difference to DataArrayView::coords():
+  // array.coords['x'] = x # inserts aligned coord
   return make_coords(get(), CoordCategory::All, false);
 }
 
