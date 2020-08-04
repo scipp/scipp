@@ -11,35 +11,60 @@ def _unit_lut():
     return dict(zip(names, units))
 
 
+def _dtype_lut():
+    from .._scipp.core import dtype as d
+    # For types understood by numpy we do not actually need this special
+    # handling, but will do as we add support for other types such as
+    # variable-length strings.
+    dtypes = [d.float64, d.float32, d.int64, d.int32, d.bool]
+    names = [str(dtype) for dtype in dtypes]
+    return dict(zip(names, dtypes))
+
+
 class HDF5IO:
     _units = _unit_lut()
+    _dtypes = _dtype_lut()
 
     def _read_unit(self, dset):
         return self._units[dset.attrs['unit']]
 
+    def _read_dtype(self, dset):
+        return self._dtypes[dset.attrs['dtype']]
+
+    def _write_array(self, group, name, array):
+        import h5py
+        # Support for strings not enabled yet (see _dtype_lut), but something
+        # like this will work (if generalized to arrays of strings). Will need
+        # to also solve reading, e.g., but iterating all elements by hand.
+        if isinstance(array, str):
+            return group.create_dataset(name,
+                                        data=array,
+                                        dtype=h5py.string_dtype())
+        return group.create_dataset(name, data=array)
+
     def _write_variable(self, group, var, name):
         from .._scipp import core as sc
-        if var.dtype in [sc.dtype.string, sc.dtype.PyObject]:
+        if var.dtype not in self._dtypes.values():
+            # In practice this may make the file unreadable, e.g., if values
+            # have unsupported dtype.
             print(f'Writing with dtype={var.dtype} not implemented, skipping.')
             return
         group = group.create_group(name)
-        dset = group.create_dataset('values', data=var.values)
+        dset = self._write_array(group, 'values', var.values)
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
         dset.attrs['dtype'] = str(var.dtype)
         dset.attrs['unit'] = str(var.unit)
         if var.variances is not None:
-            variances = group.create_dataset('variances', data=var.variances)
+            variances = self._write_array(group, 'variances', var.variances)
             dset.attrs['variances'] = variances.ref
 
     def _read_variable(self, group):
         from .._scipp import core as sc
         import numpy as np
         values = group['values']
-        contents = {
-            key: values.attrs[key]
-            for key in ['dtype', 'dims', 'shape']
-        }
+        contents = {key: values.attrs[key] for key in ['dims', 'shape']}
+        contents['dtype'] = self._read_dtype(values)
         contents['unit'] = self._read_unit(values)
         contents['variances'] = 'variances' in group
         var = sc.Variable(**contents)
