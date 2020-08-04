@@ -33,6 +33,21 @@ def test_plot_2d_image_with_vmin_vmax_with_log():
     plot(d, vmin=0.1, vmax=0.9, log=True)
 
 
+def test_plot_2d_image_with_logx():
+    d = make_dense_dataset(ndim=2)
+    plot(d, logx=True)
+
+
+def test_plot_2d_image_with_logy():
+    d = make_dense_dataset(ndim=2)
+    plot(d, logy=True)
+
+
+def test_plot_2d_image_with_logxy():
+    d = make_dense_dataset(ndim=2)
+    plot(d, logxy=True)
+
+
 def test_plot_2d_image_with_with_nan():
     d = make_dense_dataset(ndim=2)
     d["Sample"].values[0, 0] = np.nan

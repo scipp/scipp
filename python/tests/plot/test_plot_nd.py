@@ -153,3 +153,23 @@ def test_plot_4d_with_masks_projection_3d():
                                           values=np.where(
                                               a > 0.5, True, False))
     plot(data, projection="3d")
+
+
+def test_plot_3d_data_with_ragged_bins():
+    N = 10
+    M = 8
+    L = 5
+    x = np.arange(N + 1).astype(np.float64)
+    y = np.arange(M).astype(np.float64)
+    z = np.arange(L).astype(np.float64)
+    zz, yy, xx = np.meshgrid(z, y, x, indexing='ij')
+    a = np.random.random([L, M, N])
+    for i in range(M):
+        for j in range(L):
+            xx[j, i, :] *= (i + j + 1.0)
+    d = sc.Dataset()
+    d.coords['x'] = sc.Variable(['z', 'y', 'x'], values=xx, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
+    d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
+    d['a'] = sc.Variable(['z', 'y', 'x'], values=a, unit=sc.units.counts)
+    plot(d)

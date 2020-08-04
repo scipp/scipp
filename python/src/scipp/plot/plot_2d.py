@@ -104,6 +104,7 @@ class Slicer2d(Slicer):
         self.current_lims = {"x": np.zeros(2), "y": np.zeros(2)}
         self.button_dims = [None, None]
         self.dim_to_xy = {}
+        self.cslice = None
         if resolution is not None:
             if isinstance(resolution, int):
                 self.image_resolution = {"x": resolution, "y": resolution}
@@ -203,9 +204,8 @@ class Slicer2d(Slicer):
                 self.axparams[but_val]["lims"] = self.extent[but_val].copy()
                 if getattr(self,
                            "log" + but_val) and (self.extent[but_val][0] <= 0):
-                    new_x = self.slider_coord[self.name][dim].values
-                    self.axparams[but_val]["lims"][0] = new_x[np.searchsorted(
-                        new_x, 0)]
+                    self.axparams[but_val]["lims"][
+                        0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
                 self.axparams[but_val]["labels"] = name_with_unit(
                     self.slider_label[self.name][dim]["coord"],
                     name=self.slider_label[self.name][dim]["name"])
@@ -217,6 +217,9 @@ class Slicer2d(Slicer):
         extent_array = np.array(list(self.extent.values())).flatten()
         self.current_lims['x'] = extent_array[:2]
         self.current_lims['y'] = extent_array[2:]
+
+        # Slice down the coordinates in case of multi-dimensional coords
+        self.slice_coords()
 
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled array to be used as image
@@ -234,11 +237,11 @@ class Slicer2d(Slicer):
             # Create bin-edge coordinates in the case of non bin-edges, since
             # rebin only accepts bin edges.
             if not self.histograms[self.name][param["dim"]][param["dim"]]:
-                self.xyedges[xy] = to_bin_edges(
-                    self.slider_coord[self.name][param["dim"]], param["dim"])
+                self.xyedges[xy] = to_bin_edges(self.cslice[param["dim"]],
+                                                param["dim"])
             else:
-                self.xyedges[xy] = self.slider_coord[self.name][
-                    param["dim"]].astype(sc.dtype.float64)
+                self.xyedges[xy] = self.cslice[param["dim"]].astype(
+                    sc.dtype.float64)
 
             # Pixel widths used for scaling before rebin step
             self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
@@ -296,6 +299,18 @@ class Slicer2d(Slicer):
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
 
+        return
+
+    def slice_coords(self):
+        """
+        Recursively slice the coords along the dimensions of active sliders.
+        """
+        self.cslice = self.slider_coord[self.name].copy()
+        for key in self.cslice:
+            # Slice along dimensions with active sliders
+            for dim, val in self.slider.items():
+                if not val.disabled and val.dim in self.cslice[key].dims:
+                    self.cslice[key] = self.cslice[key][val.dim, val.value]
         return
 
     def slice_data(self):

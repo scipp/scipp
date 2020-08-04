@@ -300,7 +300,11 @@ class Slicer:
         return
 
     def make_slider_label(self, var, indx):
-        return name_with_unit(var=var, name=value_to_string(var.values[indx]))
+        if len(var.dims) > 1:
+            return "slice-{}".format(indx)
+        else:
+            return name_with_unit(var=var,
+                                  name=value_to_string(var.values[indx]))
 
     def mask_to_float(self, mask, var):
         return np.where(mask, var, None).astype(np.float)
