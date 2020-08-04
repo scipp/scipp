@@ -626,14 +626,14 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
   /* Test that the dataset contains the equivalent of operating on the Variable
    * directly. */
   /* Correctness of results is tested via Variable tests. */
-  // TODO should better test vs. DataArray oepration? And make sure to test
-  // masks
   const auto reference =
       TestFixture::op(dataset_a["data_a"].data(), dataset_b["data_a"].data());
   EXPECT_EQ(reference, res["data_a"].data());
 
   /* Expect coordinates to be copied to the result dataset */
   EXPECT_EQ(res.coords(), dataset_a.coords());
+  for (const auto &item : res)
+    EXPECT_EQ(item.masks(), dataset_a[item.name()].masks());
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_variableconstview_rhs) {
@@ -988,7 +988,7 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
   }
 }
 
-TEST(DataArrayMasks can_contain_any_type_but_only_OR_bools) {
+TEST(DataArrayMasks, can_contain_any_type_but_only_OR_bools) {
   DataArray a(makeVariable<double>(Values{1}));
   a.masks().set("double", makeVariable<double>(Values{1}));
   ASSERT_THROW(a += a, std::runtime_error);
