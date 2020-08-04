@@ -361,7 +361,7 @@ def test_data_array_round_trip():
                       },
                       data=sc.Variable(dims=["y", "x"],
                                        values=np.random.random([5, 10])))
-    assert da == sc.from_dict(sc.to_dict(da))
+    assert sc.is_equal(da, sc.from_dict(sc.to_dict(da)))
 
 
 def test_dataset_to_dict():
@@ -381,8 +381,8 @@ def test_dataset_to_dict():
     # each entry during the conversion to dict. So for now, we leave attributes
     # out.
     ds_dict = sc.to_dict(ds)
-    assert sc.from_dict(ds_dict["a"]) == ds["a"]
-    assert sc.from_dict(ds_dict["b"]) == ds["b"]
+    assert sc.is_equal(sc.from_dict(ds_dict["a"]), ds["a"])
+    assert sc.is_equal(sc.from_dict(ds_dict["b"]), ds["b"])
 
 
 def test_dataset_from_dict():
@@ -436,8 +436,8 @@ def test_dataset_from_dict():
         }
     }
     ds = sc.from_dict(ds_dict)
-    assert ds["a"] == sc.from_dict(ds_dict["a"])
-    assert ds["b"] == sc.from_dict(ds_dict["b"])
+    assert sc.is_equal(ds["a"], sc.from_dict(ds_dict["a"]))
+    assert sc.is_equal(ds["b"], sc.from_dict(ds_dict["b"]))
 
 
 def test_dataset_round_trip():
@@ -455,4 +455,4 @@ def test_dataset_round_trip():
                                     values=[True, True, False, True, False])
     # Note that round trip would not work if attrs are present, since they get
     # become a per-item attribute during the conversion to dict.
-    assert ds == sc.from_dict(sc.to_dict(ds))
+    assert sc.is_equal(ds, sc.from_dict(sc.to_dict(ds)))

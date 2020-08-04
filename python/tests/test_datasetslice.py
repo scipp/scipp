@@ -15,42 +15,42 @@ class TestDatasetSlice:
     def test_slice_with_range_datasetview_then_dataarrayview(self):
         sl = self._d['x', 1:-1]['a'].data
         ref = sc.Variable(['x'], values=np.array([1, 2, 3], dtype=np.int64))
-        assert ref == sl
+        assert sc.is_equal(ref, sl)
         # omitting range end
         sl = self._d['x', 1:]['a'].data
         ref = sc.Variable(['x'], values=np.array([1, 2, 3, 4], dtype=np.int64))
-        assert ref == sl
+        assert sc.is_equal(ref, sl)
         # omitting range begin
         sl = self._d['x', :-1]['a'].data
         ref = sc.Variable(['x'], values=np.array([0, 1, 2, 3], dtype=np.int64))
-        assert ref == sl
+        assert sc.is_equal(ref, sl)
         # omitting range both begin and end
         sl = self._d['x', :]['b'].data
         ref = sc.Variable(['x'],
                           values=np.array([0, 1, 2, 3, 4], dtype=np.int64))
-        assert ref == sl
+        assert sc.is_equal(ref, sl)
 
     def test_slice_with_range_dataarrayview_then_dataarrayview(self):
         sl = self._d['a']['x', 1:-1].data
         ref = sc.Variable(['x'], values=np.array([1, 2, 3], dtype=np.int64))
-        assert ref == sl
+        assert sc.is_equal(ref, sl)
         # omitting range end
         sl = self._d['a']['x', 1:].data
         ref = sc.Variable(['x'], values=np.array([1, 2, 3, 4], dtype=np.int64))
-        assert ref == sl
+        assert sc.is_equal(ref, sl)
         # omitting range begin
         sl = self._d['a']['x', :-1].data
         ref = sc.Variable(['x'], values=np.array([0, 1, 2, 3], dtype=np.int64))
-        assert ref == sl
+        assert sc.is_equal(ref, sl)
         # omitting range both begin and end
         sl = self._d['b']['x', :].data
         ref = sc.Variable(['x'],
                           values=np.array([0, 1, 2, 3, 4], dtype=np.int64))
-        assert ref == sl
+        assert sc.is_equal(ref, sl)
 
     def test_slice_single_index(self):
-        assert self._d['x', -2]['a'] == self._d['x', 3]['a']
-        assert self._d['a']['x', -2] == self._d['a']['x', 3]
+        assert sc.is_equal(self._d['x', -2]['a'], self._d['x', 3]['a'])
+        assert sc.is_equal(self._d['a']['x', -2], self._d['a']['x', 3])
 
     def _test_copy_exports_on(self, x):
         assert_export(x.copy)
@@ -116,7 +116,7 @@ class TestDatasetSlice:
         d = sc.Dataset()
         d['data'] = sc.Variable(['y'], values=np.arange(10))
         sliced = d['y', :]
-        assert d == sliced
+        assert sc.is_equal(d, sliced)
         sliced = d['y', 2:6]
         assert sc.Variable(['y'], values=np.arange(2,
                                                    6)) == sliced['data'].data
@@ -125,7 +125,7 @@ class TestDatasetSlice:
         d = sc.Dataset()
         d.coords['y-coord'] = sc.Variable(['y'], values=np.arange(10))
         sliced = d['y', :]
-        assert d == sliced
+        assert sc.is_equal(d, sliced)
         sliced = d['y', 2:6]
         assert sc.Variable(['y'],
                            values=np.arange(2, 6)) == sliced.coords['y-coord']
@@ -134,7 +134,7 @@ class TestDatasetSlice:
         d = sc.Dataset()
         d.attrs['y-attr'] = sc.Variable(['y'], values=np.arange(10))
         sliced = d['y', :]
-        assert d == sliced
+        assert sc.is_equal(d, sliced)
         sliced = d['y', 2:6]
         assert sc.Variable(['y'],
                            values=np.arange(2, 6)) == sliced.attrs['y-attr']
@@ -143,7 +143,7 @@ class TestDatasetSlice:
         d = sc.Dataset()
         d.masks['y-mask'] = sc.Variable(['y'], values=np.arange(10))
         sliced = d['y', :]
-        assert d == sliced
+        assert sc.is_equal(d, sliced)
         sliced = d['y', 2:6]
         assert sc.Variable(['y'],
                            values=np.arange(2, 6)) == sliced.masks['y-mask']

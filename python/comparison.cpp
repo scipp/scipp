@@ -109,4 +109,5 @@ void init_comparison(py::module &m) {
   bind_not_equal<Variable>(m);
   bind_is_equal<Variable>(m);
   bind_is_equal<Dataset>(m);
+  bind_is_equal<DataArray>(m);
 }

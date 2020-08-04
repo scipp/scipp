@@ -97,7 +97,7 @@ def test_create_scalar():
 def test_create_scalar_Dataset():
     dataset = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
     var = sc.Variable(dataset)
-    assert var.value == dataset
+    assert sc.is_equal(var.value, dataset)
     assert var.dims == []
     assert var.dtype == sc.dtype.Dataset
     assert var.unit == sc.units.dimensionless
@@ -114,7 +114,7 @@ def test_create_scalar_quantity():
 def test_create_via_unit():
     expected = sc.Variable(1.2, unit=sc.units.m)
     var = 1.2 * sc.units.m
-    assert var == expected
+    assert sc.is_equal(var, expected)
 
 
 def test_create_1D_string():
@@ -186,7 +186,7 @@ def test_operation_with_scalar_quantity():
 
     var = sc.Variable(dims=['x'], values=np.arange(4.0))
     var *= sc.Variable(1.5, unit=sc.units.kg)
-    assert var == reference
+    assert sc.is_equal(reference, var)
 
 
 def test_0D_scalar_access():
@@ -230,7 +230,7 @@ def test_1D_access():
 def test_1D_set_from_list():
     var = sc.Variable(dims=['x'], shape=(2, ))
     var.values = [1.0, 2.0]
-    assert var == sc.Variable(dims=['x'], values=[1.0, 2.0])
+    assert sc.is_equal(var, sc.Variable(dims=['x'], values=[1.0, 2.0]))
 
 
 def test_1D_string():
@@ -246,7 +246,7 @@ def test_1D_converting():
     var = sc.Variable(dims=['x'], values=[1, 2])
     var.values = [3.3, 4.6]
     # floats get truncated
-    assert var == sc.Variable(dims=['x'], values=[3, 4])
+    assert sc.is_equal(var, sc.Variable(dims=['x'], values=[3, 4]))
 
 
 def test_1D_dataset():
@@ -254,8 +254,8 @@ def test_1D_dataset():
     d1 = sc.Dataset({'a': 1.5 * sc.units.m})
     d2 = sc.Dataset({'a': 2.5 * sc.units.m})
     var.values = [d1, d2]
-    assert var.values[0] == d1
-    assert var.values[1] == d2
+    assert sc.is_equal(var.values[0], d1)
+    assert sc.is_equal(var.values[1], d2)
 
 
 def test_1D_access_bad_shape_fail():
@@ -359,8 +359,9 @@ def test_create_dtype():
 def test_get_slice():
     var = sc.Variable(dims=['x', 'y'], values=np.arange(0, 8).reshape(2, 4))
     var_slice = var['x', 1:2]
-    assert var_slice == sc.Variable(dims=['x', 'y'],
-                                    values=np.arange(4, 8).reshape(1, 4))
+    assert sc.is_equal(
+        var_slice,
+        sc.Variable(dims=['x', 'y'], values=np.arange(4, 8).reshape(1, 4)))
 
 
 def test_slicing():
@@ -376,14 +377,14 @@ def test_iadd():
     a = sc.Variable(1.2)
     b = a
     a += 1.0
-    assert a == expected
-    assert b == expected
+    assert sc.is_equal(a, expected)
+    assert sc.is_equal(b, expected)
     # This extra check is important: It can happen that an implementation of,
     # e.g., __iadd__ does an in-place modification, updating `b`, but then the
     # return value is assigned to `a`, which could break the connection unless
     # the correct Python object is returned.
     a += 1.0
-    assert a == b
+    assert sc.is_equal(a, b)
 
 
 def test_isub():
@@ -391,10 +392,10 @@ def test_isub():
     a = sc.Variable(2.2)
     b = a
     a -= 1.0
-    assert a == expected
-    assert b == expected
+    assert sc.is_equal(a, expected)
+    assert sc.is_equal(b, expected)
     a -= 1.0
-    assert a == b
+    assert sc.is_equal(a, b)
 
 
 def test_imul():
@@ -402,10 +403,10 @@ def test_imul():
     a = sc.Variable(1.2)
     b = a
     a *= 2.0
-    assert a == expected
-    assert b == expected
+    assert sc.is_equal(a, expected)
+    assert sc.is_equal(b, expected)
     a *= 2.0
-    assert a == b
+    assert sc.is_equal(a, b)
 
 
 def test_idiv():
@@ -413,10 +414,10 @@ def test_idiv():
     a = sc.Variable(2.4)
     b = a
     a /= 2.0
-    assert a == expected
-    assert b == expected
+    assert sc.is_equal(a, expected)
+    assert sc.is_equal(b, expected)
     a /= 2.0
-    assert a == b
+    assert sc.is_equal(a, b)
 
 
 def test_iand():
@@ -603,26 +604,26 @@ def test_in_place_binary_with_scalar():
     v *= 2
     v -= 4
     v /= 2
-    assert v == copy
+    assert sc.is_equal(v, copy)
 
 
 def test_binary_equal():
     a, b, a_slice, b_slice, data = make_variables()
-    assert a == b
-    assert a == a_slice
-    assert a_slice == b_slice
-    assert b == a
-    assert b_slice == a
-    assert b_slice == a_slice
+    assert sc.is_equal(a, b)
+    assert sc.is_equal(a, a_slice)
+    assert sc.is_equal(a_slice, b_slice)
+    assert sc.is_equal(b, a)
+    assert sc.is_equal(b_slice, a)
+    assert sc.is_equal(b_slice, a_slice)
 
 
 def test_binary_not_equal():
     a, b, a_slice, b_slice, data = make_variables()
     c = a + b
-    assert a != c
-    assert a_slice != c
-    assert c != a
-    assert c != a_slice
+    assert not sc.is_equal(a, c)
+    assert not sc.is_equal(a_slice, c)
+    assert not sc.is_equal(c, a)
+    assert not sc.is_equal(c, a_slice)
 
 
 def test_abs():
@@ -676,7 +677,7 @@ def test_sum():
     expected = sc.Variable(dims=['x'],
                            values=np.array([0.4, 0.8]),
                            unit=sc.units.m)
-    assert sc.sum(var, 'y') == expected
+    assert sc.is_equal(sc.sum(var, 'y'), expected)
 
 
 def test_sum_in_place():
@@ -690,8 +691,8 @@ def test_sum_in_place():
                            values=np.array([0.4, 0.8]),
                            unit=sc.units.m)
     out_view = sc.sum(var, 'y', out=out_var)
-    assert out_var == expected
-    assert out_view == expected
+    assert sc.is_equal(out_var, expected)
+    assert sc.is_equal(out_view, expected)
 
 
 def test_variance_acess():
@@ -738,7 +739,7 @@ def test_remove_variance():
     assert var.variances is not None
     var.variances = None
     assert var.variances is None
-    assert var == expected
+    assert sc.is_equal(var, expected)
 
 
 def test_set_variance_convert_dtype():
@@ -759,17 +760,17 @@ def test_set_variance_convert_dtype():
 
 def test_sum_mean():
     var = sc.Variable(dims=['x'], values=np.arange(5, dtype=np.int64))
-    assert sc.sum(var, 'x') == sc.Variable(10)
+    assert sc.is_equal(sc.sum(var, 'x'), sc.Variable(10))
     var = sc.Variable(dims=['x'], values=np.arange(6, dtype=np.int64))
-    assert sc.mean(var, 'x') == sc.Variable(2.5)
+    assert sc.is_equal(sc.mean(var, 'x'), sc.Variable(2.5))
 
 
 def test_make_variable_from_unit_scalar_mult_div():
     var = sc.Variable()
     var.unit = sc.units.m
-    assert var == 0.0 * sc.units.m
+    assert sc.is_equal(var, 0.0 * sc.units.m)
     var.unit = sc.units.m**(-1)
-    assert var == 0.0 / sc.units.m
+    assert sc.is_equal(var, 0.0 / sc.units.m)
 
     var = sc.Variable(value=np.float32())
     var.unit = sc.units.m
@@ -781,14 +782,14 @@ def test_make_variable_from_unit_scalar_mult_div():
 def test_construct_0d_numpy():
     v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
     var = sc.Variable(v['x', 0])
-    assert var == sc.Variable(np.float32())
+    assert sc.is_equal(var, sc.Variable(np.float32()))
 
     v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
     var = sc.Variable(v['x', 0])
     var.unit = sc.units.m
-    assert var == np.float32(0.0) * sc.units.m
+    assert sc.is_equal(var, np.float32(0.0) * sc.units.m)
     var.unit = sc.units.m**(-1)
-    assert var == np.float32(0.0) / sc.units.m
+    assert sc.is_equal(var, np.float32(0.0) / sc.units.m)
 
 
 def test_construct_0d_native_python_types():
@@ -809,7 +810,7 @@ def test_rename_dims():
     xy = sc.Variable(dims=['x', 'y'], values=values)
     zy = sc.Variable(dims=['z', 'y'], values=values)
     xy.rename_dims({'x': 'z'})
-    assert xy == zy
+    assert sc.is_equal(xy, zy)
 
 
 def test_create_1d_with_strings():
@@ -895,7 +896,7 @@ def test_atan2():
 def test_variable_data_array_binary_ops():
     a = sc.DataArray(1.0 * sc.units.m)
     var = 1.0 * sc.units.m
-    assert a / var == var / a
+    assert sc.is_equal(a / var, var / a)
 
 
 def test_num_to_nan():
@@ -903,7 +904,7 @@ def test_num_to_nan():
     replace = sc.Variable(value=0.0)
     b = sc.nan_to_num(a, replace)
     expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
-    assert b == expected
+    assert sc.is_equal(b, expected)
 
 
 def test_nan_to_nan_with_pos_inf():
@@ -911,7 +912,7 @@ def test_nan_to_nan_with_pos_inf():
     replace = sc.Variable(value=0.0)
     b = sc.nan_to_num(a, posinf=replace)
     expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
-    assert b == expected
+    assert sc.is_equal(b, expected)
 
 
 def test_nan_to_nan_with_neg_inf():
@@ -919,7 +920,7 @@ def test_nan_to_nan_with_neg_inf():
     replace = sc.Variable(value=0.0)
     b = sc.nan_to_num(a, neginf=replace)
     expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
-    assert b == expected
+    assert sc.is_equal(b, expected)
 
 
 def test_nan_to_nan_with_multiple_special_replacements():
@@ -938,7 +939,7 @@ def test_nan_to_nan_with_multiple_special_replacements():
             repl.value
             for repl in [replace_nan, replace_pos_inf, replace_neg_inf]
         ]))
-    assert b == expected
+    assert sc.is_equal(b, expected)
 
 
 def test_num_to_nan_out():
@@ -947,7 +948,7 @@ def test_num_to_nan_out():
     replace = sc.Variable(value=0.0)
     sc.nan_to_num(a, nan=replace, out=out)
     expected = sc.Variable(dims=['x'], values=np.array([1, replace.value]))
-    assert out == expected
+    assert sc.is_equal(out, expected)
 
 
 def test_num_to_nan_out_with_multiple_special_replacements():
@@ -959,19 +960,18 @@ def test_num_to_nan_out_with_multiple_special_replacements():
     expected = sc.Variable(dims=['x'],
                            values=np.array([1, np.inf, -np.inf,
                                             replace.value]))
-    assert out == expected
+    assert sc.is_equal(out, expected)
     # replace neg inf
     sc.nan_to_num(out, neginf=replace, out=out)
     expected = sc.Variable(dims=['x'],
                            values=np.array(
                                [1, np.inf, replace.value, replace.value]))
-    print(out, expected)
-    assert out == expected
+    assert sc.is_equal(out, expected)
     # replace pos inf
     sc.nan_to_num(out, posinf=replace, out=out)
     expected = sc.Variable(dims=['x'],
                            values=np.array([1] + [replace.value] * 3))
-    assert out == expected
+    assert sc.is_equal(out, expected)
 
 
 def test_position():
