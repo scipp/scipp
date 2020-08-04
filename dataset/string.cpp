@@ -113,20 +113,10 @@ std::string do_to_string(const D &dataset, const std::string &id,
 }
 
 template <class T> Dimensions dimensions(const T &dataset) {
-  Dimensions datasetDims;
-  for (const auto &item : dataset) {
-    const auto &dims = item.dims();
-    for (const auto dim : dims.labels())
-      if (!datasetDims.contains(dim))
-        datasetDims.add(dim, dims[dim]);
-  }
-  for (const auto &coord : dataset.coords()) {
-    const auto &dims = coord.second.dims();
-    for (const auto dim : dims.labels())
-      if (!datasetDims.contains(dim))
-        datasetDims.add(dim, dims[dim]);
-  }
-  return datasetDims;
+  Dimensions dims;
+  for (const auto &[dim, size] : dataset.dimensions())
+    dims.add(dim, size);
+  return dims;
 }
 
 std::string to_string(const DataArray &data) {
