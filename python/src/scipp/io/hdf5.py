@@ -43,7 +43,6 @@ class HDF5IO:
         return group.create_dataset(name, data=array)
 
     def _write_variable(self, group, var, name):
-        from .._scipp import core as sc
         if var.dtype not in self._dtypes.values():
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
@@ -61,7 +60,6 @@ class HDF5IO:
 
     def _read_variable(self, group):
         from .._scipp import core as sc
-        import numpy as np
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
         contents['dtype'] = self._read_dtype(values)
