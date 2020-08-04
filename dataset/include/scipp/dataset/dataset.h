@@ -47,6 +47,12 @@ enum class AttrPolicy { Keep, Drop };
 
 enum CoordCategory { Aligned = 1, Unaligned = 2, All = 3 };
 
+template <class T>
+std::conditional_t<std::is_same_v<T, DataArrayView>, CoordsView,
+                   CoordsConstView>
+make_coords(const T &view, const CoordCategory category,
+            const bool is_item = true);
+
 /// Const view for a data item and related coordinates of Dataset.
 class SCIPP_DATASET_EXPORT DataArrayConstView {
 public:
@@ -98,6 +104,9 @@ public:
 
   std::vector<std::pair<Dim, Variable>> slice_bounds() const;
 
+  const auto &get_dataset() const { return *m_dataset; }
+  const auto &get_data() const { return m_data->second; }
+
 protected:
   // Note that m_view is a VariableView, not a VariableConstView. In case
   // *this (DataArrayConstView) is stand-alone (not part of DataArrayView),
@@ -114,8 +123,6 @@ private:
   const Dataset *m_dataset{nullptr};
   const detail::dataset_item_map::value_type *m_data{nullptr};
   detail::slice_list m_slices;
-
-  CoordsConstView make_coords(const CoordCategory category) const;
 };
 
 SCIPP_DATASET_EXPORT bool operator==(const DataArrayConstView &a,
@@ -171,8 +178,8 @@ public:
 
   void setData(Variable data) const;
 
-  CoordsView make_coords(const CoordCategory category,
-                         const bool is_item = true) const;
+  auto &get_dataset() const { return *m_mutableDataset; }
+  auto &get_data() const { return m_mutableData->second; }
 
 private:
   friend class DatasetConstView;
@@ -389,9 +396,12 @@ public:
 private:
   friend class DatasetConstView;
   friend class DatasetView;
-  friend class DataArrayConstView;
-  friend class DataArrayView;
   friend class DataArray;
+
+  template <class T>
+  friend std::conditional_t<std::is_same_v<T, DataArrayView>, CoordsView,
+                            CoordsConstView>
+  make_coords(const T &view, const CoordCategory category, const bool is_item);
 
   void setData(const std::string &name, UnalignedData &&data);
 

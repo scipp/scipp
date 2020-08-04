@@ -532,39 +532,17 @@ void maybe_drop_aligned_or_unaligned(Items &items, const Slices &slices,
 }
 } // namespace
 
-CoordsConstView
-DataArrayConstView::make_coords(const CoordCategory category) const {
-  // Aligned coords (including unaligned by slicing) from dataset
-  auto items = makeViewItems(parentDims(), m_dataset->m_coords);
-  maybe_drop_aligned_or_unaligned(items, slices(), category);
-  const bool is_view_of_unaligned = !m_data->second.data && hasData();
-  if (category & CoordCategory::Unaligned) {
-    // Unaligned coords
-    // Need to include everything, e.g., to preserve bin edges after non-range
-    // slice, except when view of unaligned, where we need to ensure coords
-    // depending on dims of the realigned wrapper are not included.
-    const auto tmp = is_view_of_unaligned
-                         ? makeViewItems(parentDims(), m_data->second.coords)
-                         : makeViewItems(m_data->second.coords);
-    items.insert(tmp.begin(), tmp.end());
-  }
-  if (is_view_of_unaligned) {
-    // This is a view of the unaligned content of a realigned data array.
-    decltype(*this) unaligned = m_data->second.unaligned->data;
-    const auto tmp = unaligned.make_coords(category);
-    items.insert(tmp.items().begin(), tmp.items().end());
-  }
-  return CoordsConstView(std::move(items), slices());
-}
-
 /// is_item controls whether access should refer to aligned or unaligned coords,
 /// i.e., whether this is a view of a dataset item or a data array.
-CoordsView DataArrayView::make_coords(const CoordCategory category,
-                                      const bool is_item) const {
+template <class T>
+std::conditional_t<std::is_same_v<T, DataArrayView>, CoordsView,
+                   CoordsConstView>
+make_coords(const T &view, const CoordCategory category,
+            [[maybe_unused]] const bool is_item) {
   // Aligned coords (including unaligned by slicing) from dataset
-  auto items = makeViewItems(parentDims(), m_mutableDataset->m_coords);
-  maybe_drop_aligned_or_unaligned(items, slices(), category);
-  const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
+  auto items = makeViewItems(view.parentDims(), view.get_dataset().m_coords);
+  maybe_drop_aligned_or_unaligned(items, view.slices(), category);
+  const bool is_view_of_unaligned = !view.get_data().data && view.hasData();
   if (category & CoordCategory::Unaligned) {
     // Unaligned coords
     // Need to include everything, e.g., to preserve bin edges after non-range
@@ -572,33 +550,37 @@ CoordsView DataArrayView::make_coords(const CoordCategory category,
     // depending on dims of the realigned wrapper are not included.
     const auto tmp =
         is_view_of_unaligned
-            ? makeViewItems(parentDims(), m_mutableData->second.coords)
-            : makeViewItems(m_mutableData->second.coords);
+            ? makeViewItems(view.parentDims(), view.get_data().coords)
+            : makeViewItems(view.get_data().coords);
     items.insert(tmp.begin(), tmp.end());
   }
   deep_ptr<CoordAccess> unaligned_ptr{nullptr};
   if (is_view_of_unaligned) {
     // This is a view of the unaligned content of a realigned data array.
-    decltype(*this) unaligned = m_mutableData->second.unaligned->data;
+    T unaligned = view.get_data().unaligned->data;
     const auto tmp =
-        unaligned.make_coords(category, category == CoordCategory::Unaligned);
-    unaligned_ptr = std::make_unique<CoordAccess>(tmp.access());
+        make_coords(unaligned, category, category == CoordCategory::Unaligned);
+    if constexpr (std::is_same_v<T, DataArrayView>)
+      unaligned_ptr = std::make_unique<CoordAccess>(tmp.access());
     items.insert(tmp.items().begin(), tmp.items().end());
   }
-  return CoordsView(CoordAccess{slices().empty() ? m_mutableDataset : nullptr,
-                                is_item ? &name() : nullptr,
-                                std::move(unaligned_ptr)},
-                    std::move(items), slices());
+  if constexpr (std::is_same_v<T, DataArrayView>)
+    return CoordsView(
+        CoordAccess{view.slices().empty() ? &view.get_dataset() : nullptr,
+                    is_item ? &view.name() : nullptr, std::move(unaligned_ptr)},
+        std::move(items), view.slices());
+  else
+    return CoordsConstView(std::move(items), view.slices());
 }
 
 /// Return a const view to all coordinates of the data view.
 CoordsConstView DataArrayConstView::coords() const noexcept {
-  return make_coords(CoordCategory::All);
+  return make_coords(*this, CoordCategory::All);
 }
 
 /// Return a view to all coordinates of the data view.
 CoordsView DataArrayView::coords() const noexcept {
-  return make_coords(CoordCategory::All);
+  return make_coords(*this, CoordCategory::All);
 }
 
 /// Return a const view to all coordinates of the data array.
@@ -606,17 +588,17 @@ CoordsConstView DataArray::coords() const { return get().coords(); }
 
 /// Return a view to all coordinates of the data array.
 CoordsView DataArray::coords() {
-  return get().make_coords(CoordCategory::All, false);
+  return make_coords(get(), CoordCategory::All, false);
 }
 
 /// Return a const view to all aligned coordinates of the data view.
 CoordsConstView DataArrayConstView::aligned_coords() const noexcept {
-  return make_coords(CoordCategory::Aligned);
+  return make_coords(*this, CoordCategory::Aligned);
 }
 
 /// Return a view to all aligned coordinates of the data view.
 CoordsView DataArrayView::aligned_coords() const noexcept {
-  return make_coords(CoordCategory::Aligned);
+  return make_coords(*this, CoordCategory::Aligned);
 }
 
 /// Return a const view to all aligned coordinates of the data array.
@@ -629,12 +611,12 @@ CoordsView DataArray::aligned_coords() { return m_holder.coords(); }
 
 /// Return a const view to all unaligned coordinates of the data view.
 CoordsConstView DataArrayConstView::unaligned_coords() const noexcept {
-  return make_coords(CoordCategory::Unaligned);
+  return make_coords(*this, CoordCategory::Unaligned);
 }
 //
 /// Return a view to all unaligned coordinates of the data view.
 CoordsView DataArrayView::unaligned_coords() const noexcept {
-  return make_coords(CoordCategory::Unaligned);
+  return make_coords(*this, CoordCategory::Unaligned);
 }
 
 /// Return a const view to all unaligned coordinates of the data array.
@@ -647,13 +629,13 @@ CoordsView DataArray::unaligned_coords() { return get().unaligned_coords(); }
 
 /// Return a const view to all masks of the data view.
 MasksConstView DataArrayConstView::masks() const noexcept {
-  const bool is_view_of_unaligned = !m_data->second.data && hasData();
+  const bool is_view_of_unaligned = !get_data().data && hasData();
   auto items = is_view_of_unaligned
-                   ? makeViewItems(parentDims(), m_data->second.masks)
-                   : makeViewItems(m_data->second.masks);
+                   ? makeViewItems(parentDims(), get_data().masks)
+                   : makeViewItems(get_data().masks);
   if (is_view_of_unaligned) {
     // This is a view of the unaligned content of a realigned data array.
-    decltype(*this) unaligned = m_data->second.unaligned->data;
+    decltype(*this) unaligned = get_data().unaligned->data;
     const auto m = unaligned.masks();
     items.insert(m.items().begin(), m.items().end());
   }
@@ -662,15 +644,15 @@ MasksConstView DataArrayConstView::masks() const noexcept {
 
 /// Return a view to all masks of the data view.
 MasksView DataArrayView::masks() const noexcept {
-  const bool is_view_of_unaligned = !m_mutableData->second.data && hasData();
+  const bool is_view_of_unaligned = !get_data().data && hasData();
   auto items = is_view_of_unaligned
-                   ? makeViewItems(parentDims(), m_mutableData->second.masks)
-                   : makeViewItems(m_mutableData->second.masks);
+                   ? makeViewItems(parentDims(), get_data().masks)
+                   : makeViewItems(get_data().masks);
   DataArray *unaligned_ptr{nullptr};
   if (is_view_of_unaligned) {
     // This is a view of the unaligned content of a realigned data array.
-    unaligned_ptr = &m_mutableData->second.unaligned->data;
-    decltype(*this) unaligned = m_mutableData->second.unaligned->data;
+    unaligned_ptr = &get_data().unaligned->data;
+    decltype(*this) unaligned = get_data().unaligned->data;
     const auto m = unaligned.masks();
     items.insert(m.items().begin(), m.items().end());
   }
