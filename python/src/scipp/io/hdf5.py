@@ -6,7 +6,7 @@
 
 def _unit_lut():
     from .._scipp.core import units as u
-    units = [u.one, u.m, u.kg, u.us, u.angstrom]
+    units = u.supported_units()
     names = [str(unit) for unit in units]
     return dict(zip(names, units))
 

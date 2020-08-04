@@ -34,3 +34,8 @@ def test_pow():
     assert sc.units.m**-2 == sc.units.dimensionless / sc.units.m / sc.units.m
     with pytest.raises(RuntimeError):
         assert sc.units.m**27
+
+
+def test_supported_units():
+    # This is not just base units, but all "possible" combinations
+    assert len(sc.units.supported_units()) > 40
