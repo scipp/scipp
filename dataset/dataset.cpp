@@ -521,7 +521,6 @@ void keep_if_unaligned_by_dim_slices(Items &items, const Slices &slices) {
       it = items.erase(it);
   }
 }
-} // namespace
 
 template <class Items, class Slices>
 void maybe_drop_aligned_or_unaligned(Items &items, const Slices &slices,
@@ -531,6 +530,7 @@ void maybe_drop_aligned_or_unaligned(Items &items, const Slices &slices,
   if (category == CoordCategory::Unaligned)
     keep_if_unaligned_by_dim_slices(items, slices);
 }
+} // namespace
 
 CoordsConstView
 DataArrayConstView::make_coords(const CoordCategory category) const {
