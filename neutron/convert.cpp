@@ -161,9 +161,8 @@ template <class T> T coords_to_attrs(T &&x, const Dim from, const Dim to) {
     std::set<Dim> pos_invariant{Dim::DSpacing, Dim::Q};
     if (pos_invariant.count(to))
       to_attr(Dim::Position);
-  } else {
-    if (to != Dim::Tof)
-      to_attr(Dim::Position);
+  } else if (from == Dim::Tof) {
+    to_attr(Dim::Position);
   }
   return std::move(x);
 }
@@ -173,15 +172,16 @@ template <class T> T attrs_to_coords(T &&x, const Dim from, const Dim to) {
     auto &&range = iter(x);
     if (!range.begin()->unaligned_coords().contains(field))
       return;
+    Variable coord(range.begin()->coords()[field]);
     if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
-      x.coords().set(field, range.begin()->unaligned_coords()[field]);
       for (const auto &item : range) {
-        core::expect::equals(x.coords()[field], item.unaligned_coords()[field]);
+        core::expect::equals(item.coords()[field], coord);
         item.unaligned_coords().erase(field);
       }
+      x.coords().set(field, coord);
     } else {
-      x.coords().set(field, x.unaligned_coords()[field]);
       x.unaligned_coords().erase(field);
+      x.coords().set(field, coord);
     }
   };
   // Will be replaced by explicit flag
@@ -190,9 +190,8 @@ template <class T> T attrs_to_coords(T &&x, const Dim from, const Dim to) {
     std::set<Dim> pos_invariant{Dim::DSpacing, Dim::Q};
     if (pos_invariant.count(from))
       to_coord(Dim::Position);
-  } else {
-    if (to == Dim::Tof)
-      to_coord(Dim::Position);
+  } else if (to == Dim::Tof) {
+    to_coord(Dim::Position);
   }
   return std::move(x);
 }
