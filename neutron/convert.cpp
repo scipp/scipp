@@ -201,10 +201,10 @@ template <class T> T attrs_to_coords(T &&x, const Dim from, const Dim to) {
 template <class T>
 T convert_impl(T d, const Dim from, const Dim to,
                const ConvertRealign realign) {
-  d = attrs_to_coords(std::move(d), from, to);
   for (const auto &item : iter(d))
     if (item.hasData())
       core::expect::notCountDensity(item.unit());
+  d = attrs_to_coords(std::move(d), from, to);
   // This will need to be cleanup up in the future, but it is unclear how to do
   // so in a future-proof way. Some sort of double-dynamic dispatch based on
   // `from` and `to` will likely be required (with conversions helpers created
