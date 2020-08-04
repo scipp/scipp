@@ -218,9 +218,8 @@ class Slicer2d(Slicer):
         self.current_lims['x'] = extent_array[:2]
         self.current_lims['y'] = extent_array[2:]
 
-        # Slice down the coordinates in case of multi-dimensional coords
-        self.slice_coords()
-
+        # TODO: if labels are used on a 2D coordinates, we need to update
+        # the axes tick formatter to use xyrebin coords
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled array to be used as image
             offset = 2 * (xy == "y")
@@ -230,25 +229,6 @@ class Slicer2d(Slicer):
                                    extent_array[1 + offset],
                                    self.image_resolution[xy] + 1),
                 unit=self.slider_coord[self.name][param["dim"]].unit)
-
-            # TODO: if labels are used on a 2D coordinates, we need to update
-            # the axes tick formatter to use xyrebin coords
-
-            # Create bin-edge coordinates in the case of non bin-edges, since
-            # rebin only accepts bin edges.
-            if not self.histograms[self.name][param["dim"]][param["dim"]]:
-                self.xyedges[xy] = to_bin_edges(self.cslice[param["dim"]],
-                                                param["dim"])
-            else:
-                self.xyedges[xy] = self.cslice[param["dim"]].astype(
-                    sc.dtype.float64)
-
-            # Pixel widths used for scaling before rebin step
-            self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
-                                self.xyedges[xy][param["dim"], :-1]) / (
-                                    self.xyrebin[xy][param["dim"], 1] -
-                                    self.xyrebin[xy][param["dim"], 0])
-            self.xywidth[xy].unit = sc.units.one
 
         # Set axes labels
         self.ax.set_xlabel(self.axparams["x"]["labels"])
@@ -270,6 +250,10 @@ class Slicer2d(Slicer):
             self.ax.set_xlim(self.axparams["x"]["lims"])
             self.ax.set_ylim(self.axparams["y"]["lims"])
 
+        # If there are no multi-d coords, we update the edges and widths only
+        # once here.
+        if not self.contains_multid_coord[self.name]:
+            self.slice_coords()
         # Update the image using resampling
         self.update_slice()
 
@@ -311,7 +295,23 @@ class Slicer2d(Slicer):
             for dim, val in self.slider.items():
                 if not val.disabled and val.dim in self.cslice[key].dims:
                     self.cslice[key] = self.cslice[key][val.dim, val.value]
-        return
+
+        # Update the xyedges and xywidth
+        for xy, param in self.axparams.items():
+            # Create bin-edge coordinates in the case of non bin-edges, since
+            # rebin only accepts bin edges.
+            if not self.histograms[self.name][param["dim"]][param["dim"]]:
+                self.xyedges[xy] = to_bin_edges(self.cslice[param["dim"]],
+                                                param["dim"])
+            else:
+                self.xyedges[xy] = self.cslice[param["dim"]].astype(
+                    sc.dtype.float64)
+            # Pixel widths used for scaling before rebin step
+            self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
+                                self.xyedges[xy][param["dim"], :-1]) / (
+                                    self.xyrebin[xy][param["dim"], 1] -
+                                    self.xyrebin[xy][param["dim"], 0])
+            self.xywidth[xy].unit = sc.units.one
 
     def slice_data(self):
         """
@@ -331,13 +331,17 @@ class Slicer2d(Slicer):
                 if self.params["masks"][
                         self.name]["show"] and dim in self.mslice.dims:
                     self.mslice = self.mslice[val.dim, val.value]
-        return
 
     def update_slice(self, change=None):
         """
         Slice data according to new slider value and update the image.
         """
         self.slice_data()
+        # If there are multi-d coords in the data we also need to slice the
+        # coords and update the xyedges and xywidth
+        if self.contains_multid_coord[self.name]:
+            self.slice_coords()
+        # Update imade with resampling
         self.update_image()
         return
 

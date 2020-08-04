@@ -74,6 +74,8 @@ class Slicer:
         # Axes tick locators
         self.slider_axlocator = {}
 
+        self.contains_multid_coord = {}
+
         for name, array in self.scipp_obj_dict.items():
 
             self.data_array = array
@@ -114,6 +116,8 @@ class Slicer:
             self.slider_axlocator[name] = {}
             # Save information on histograms
             self.histograms[name] = {}
+
+            self.contains_multid_coord[name] = False
 
             # Process axes dimensions
             if axes is None:
@@ -172,6 +176,9 @@ class Slicer:
                                     self.slider_shape[name][dim][dim] - 1)
                     self.slider_xlims[name][dim][0] -= dx
                     self.slider_xlims[name][dim][1] += dx
+
+                if len(self.slider_coord[name][dim].dims) > 1:
+                    self.contains_multid_coord[name] = True
 
         # Initialise list for VBox container
         self.vbox = []
