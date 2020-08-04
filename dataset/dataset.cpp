@@ -43,36 +43,6 @@ auto makeViewItems(const Dims &dims, T1 &coords) {
   return items;
 }
 
-template <class Item, class Dims, class Attrs>
-void addOrthogonalAttrs(Item &items, const Dims &parentDims, Attrs &attrs) {
-  for (auto &&[name, attr] : attrs)
-    if (!parentDims.contains(attr.dims()))
-      items.emplace(name, makeViewItem(attr));
-}
-
-template <class Item, class Dims, class Coords>
-void addAttrsFromCoords(Item &items, const Dims &parentDims, const Dims &dims,
-                        Coords &coords) {
-  for (auto &&[dim, coord] : coords) {
-    const auto &coordDims = coord.dims();
-    if (!coordDims.empty() && contains(parentDims, coordDims.inner()) &&
-        !contains(dims, coordDims.inner()))
-      items.emplace(dim.name(), makeViewItem(coord));
-  }
-}
-
-/// Add masks that have become unaligned by slicing.
-template <class Item, class Dims, class Coords>
-void addMasks(Item &items, const Dims &parentDims, const Dims &dims,
-              Coords &coords) {
-  for (auto &&[name, coord] : coords) {
-    const auto &coordDims = coord.dims();
-    if (!coordDims.empty() && contains(parentDims, coordDims.inner()) &&
-        !contains(dims, coordDims.inner()))
-      items.emplace(name, makeViewItem(coord));
-  }
-}
-
 Dataset::Dataset(const DataArrayConstView &data) { setData(data.name(), data); }
 
 /// Removes all data items from the Dataset.
