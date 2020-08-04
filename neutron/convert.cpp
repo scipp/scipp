@@ -249,7 +249,6 @@ T convert_impl(T d, const Dim from, const Dim to,
       "Conversion between requested dimensions not implemented yet.");
 }
 
-
 DataArray convert(DataArray d, const Dim from, const Dim to,
                   const ConvertRealign realign) {
   return coords_to_attrs(convert_impl(std::move(d), from, to, realign), from,

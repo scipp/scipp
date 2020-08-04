@@ -66,11 +66,10 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 
 DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                       const Dim dim) {
-  auto out = DataArray(a.hasData() || b.hasData()
-                           ? concatenate(a.data(), b.data(), dim)
-                           : Variable{},
-                       {},
-                       concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
+  auto out = DataArray(
+      a.hasData() || b.hasData() ? concatenate(a.data(), b.data(), dim)
+                                 : Variable{},
+      {}, concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
   for (auto &&[d, coord] :
        concat(a.coords(), b.coords(), dim, a.dims(), b.dims())) {
     if (d == dim || a.aligned_coords().contains(d) ||
