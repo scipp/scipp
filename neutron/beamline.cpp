@@ -18,15 +18,15 @@ namespace scipp::neutron {
 namespace beamline_impl {
 
 template <class T> static auto position(const T &d) {
-    return d.coords()[Dim::Position];
+  return d.coords()[Dim::Position];
 }
 
 template <class T> static auto source_position(const T &d) {
-    return d.coords()[Dim("source-position")];
+  return d.coords()[Dim("source-position")];
 }
 
 template <class T> static auto sample_position(const T &d) {
-    return d.coords()[Dim("sample-position")];
+  return d.coords()[Dim("sample-position")];
 }
 
 template <class T> static Variable flight_path_length(const T &d) {
