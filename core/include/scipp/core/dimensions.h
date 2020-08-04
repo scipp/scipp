@@ -89,8 +89,8 @@ public:
 
   /// Returns the number of occurences of `dim` in *this.
   ///
-  /// This exists for convenience so generic code support std::unordered_map can
-  /// be written.
+  /// This exists for convenience so generic code supporting std::unordered_map
+  /// can be written.
   constexpr scipp::index count(const Dim dim) const noexcept {
     return contains(dim) ? 1 : 0;
   }
