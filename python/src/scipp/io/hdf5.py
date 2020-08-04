@@ -25,6 +25,7 @@ class HDF5IO:
         group = group.create_group(name)
         dset = group.create_dataset('values', data=var.values)
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
+        dset.attrs['shape'] = var.shape
         dset.attrs['dtype'] = str(var.dtype)
         dset.attrs['unit'] = str(var.unit)
         if var.variances is not None:
@@ -35,19 +36,17 @@ class HDF5IO:
         from .._scipp import core as sc
         import numpy as np
         values = group['values']
-        dtype = values.attrs['dtype']
-        contents = dict()
-        # For some reason we cannot pass the dataset directly to scipp, and
-        # we also need to manually override the dtype. Is h5py using a
-        # different float type?
-        contents['values'] = np.array(values, dtype=dtype, copy=False)
-        contents['dims'] = values.attrs['dims']
+        contents = {
+            key: values.attrs[key]
+            for key in ['dtype', 'dims', 'shape']
+        }
         contents['unit'] = self._read_unit(values)
+        contents['variances'] = 'variances' in group
+        var = sc.Variable(**contents)
+        values.read_direct(var.values)
         if 'variances' in group:
-            contents['variances'] = np.array(group['variances'],
-                                             dtype=dtype,
-                                             copy=False)
-        return sc.Variable(**contents)
+            group['variances'].read_direct(var.variances)
+        return var
 
     def _write_data_array(self, group, data):
         import scipp as sc
@@ -62,7 +61,9 @@ class HDF5IO:
                                    [data.coords, data.masks, data.attrs]):
             subgroup = group.create_group(view_name)
             for name in view:
-                self._write_variable(group=subgroup, var=view[name], name=name)
+                self._write_variable(group=subgroup,
+                                     var=view[name],
+                                     name=str(name))
 
     def _read_data_array(self, group):
         from .._scipp import core as sc

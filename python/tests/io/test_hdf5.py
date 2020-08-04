@@ -19,6 +19,7 @@ x = sc.Variable(dims=['x'], values=np.arange(4.0), unit=sc.units.m)
 y = sc.Variable(dims=['y'], values=np.arange(6.0), unit=sc.units.angstrom)
 xy = sc.Variable(dims=['y', 'x'],
                  values=np.random.rand(6, 4),
+                 variances=np.random.rand(6, 4),
                  unit=sc.units.kg)
 
 
