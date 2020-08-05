@@ -93,7 +93,7 @@ template <typename T> void bind_is_equal(py::module &m) {
       Docstring()
           .description("Variable level equals. Returns True if x and y "
                        "considered equal.")
-          .returns("True if x == y")
+          .returns("True if x and y are considered equal")
           .rtype<T>()
           .template param<T>("x", "Input left operand.")
           .template param<T>("y", "Input right operand.")
