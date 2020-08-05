@@ -7,9 +7,11 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "scipp-units_export.h"
+
 namespace scipp::units {
 
-class Dim {
+class SCIPP_UNITS_EXPORT Dim {
 public:
   enum class Id : uint16_t {
     Detector,
@@ -86,7 +88,7 @@ private:
   static std::mutex mutex;
 };
 
-std::string to_string(const Dim dim);
+SCIPP_UNITS_EXPORT std::string to_string(const Dim dim);
 
 } // namespace scipp::units
 
