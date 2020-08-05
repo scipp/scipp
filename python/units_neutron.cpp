@@ -165,5 +165,5 @@ void init_units_neutron(py::module &m) {
   units.def(
       "supported_units",
       []() { return supported_units_runtime_list(units::supported_units_t{}); },
-      "Return a list of all supported units and unit combinbations.");
+      "Return a list of all supported units and unit combinations.");
 }
