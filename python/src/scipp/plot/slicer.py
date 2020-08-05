@@ -337,6 +337,7 @@ class Slicer:
 
         underlying_dim = dim
         non_dimension_coord = False
+        var = None
 
         if dim in data_array.coords:
 
@@ -373,11 +374,16 @@ class Slicer:
             elif dim != dim_coord_dim:
                 # non-dimension coordinate
                 non_dimension_coord = True
-                var = data_array.coords[dim_coord_dim]
+                if dim_coord_dim in data_array.coords:
+                    var = data_array.coords[dim_coord_dim]
+                else:
+                    var = make_fake_coord(dim_coord_dim, dim_to_shape[dim_coord_dim])
                 underlying_dim = dim_coord_dim
+                # form = ticker.FuncFormatter(lambda val, pos: value_to_string(
+                #     data_array.coords[dim].values[np.abs(data_array.coords[
+                #         dim_coord_dim].values - val).argmin()]))
                 form = ticker.FuncFormatter(lambda val, pos: value_to_string(
-                    data_array.coords[dim].values[np.abs(data_array.coords[
-                        dim_coord_dim].values - val).argmin()]))
+                    data_array.coords[dim].values[np.abs(var.values - val).argmin()]))
                 formatter.update({False: form, True: form})
 
             else:
