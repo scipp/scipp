@@ -11,7 +11,7 @@
 namespace py = pybind11;
 
 template <class Other, class T, class... Ignored>
-void bind_comparison(pybind11::class_<T, Ignored...> &c) {
+void bind_inequality_to_operator(pybind11::class_<T, Ignored...> &c) {
   c.def(
       "__eq__", [](T &a, Other &b) { return a == b; }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());
@@ -21,24 +21,24 @@ void bind_comparison(pybind11::class_<T, Ignored...> &c) {
 }
 
 template <class Other, class T, class... Ignored>
-void bind_variable_comparison(pybind11::class_<T, Ignored...> &c) {
+void bind_comparison(pybind11::class_<T, Ignored...> &c) {
   c.def(
-      "__eq__", [](T &a, Other &b) { return variable::equal(a, b); },
+      "__eq__", [](T &a, Other &b) { return equal(a, b); }, py::is_operator(),
+      py::call_guard<py::gil_scoped_release>());
+  c.def(
+      "__ne__", [](T &a, Other &b) { return not_equal(a, b); },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
-      "__ne__", [](T &a, Other &b) { return variable::not_equal(a, b); },
+      "__lt__", [](T &a, Other &b) { return less(a, b); }, py::is_operator(),
+      py::call_guard<py::gil_scoped_release>());
+  c.def(
+      "__gt__", [](T &a, Other &b) { return greater(a, b); }, py::is_operator(),
+      py::call_guard<py::gil_scoped_release>());
+  c.def(
+      "__le__", [](T &a, Other &b) { return less_equal(a, b); },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
-      "__lt__", [](T &a, Other &b) { return variable::less(a, b); },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__gt__", [](T &a, Other &b) { return variable::greater(a, b); },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__le__", [](T &a, Other &b) { return variable::less_equal(a, b); },
-      py::is_operator(), py::call_guard<py::gil_scoped_release>());
-  c.def(
-      "__ge__", [](T &a, Other &b) { return variable::greater_equal(a, b); },
+      "__ge__", [](T &a, Other &b) { return greater_equal(a, b); },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
 }
 
