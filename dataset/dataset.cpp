@@ -122,7 +122,7 @@ scipp::index makeUnknownEdgeState(const scipp::index extent) {
   return -extent - 1;
 }
 bool isUnknownEdgeState(const scipp::index extent) { return extent < 0; }
-scipp::index decodeExtent(const scipp::index extent) {
+scipp::index decode(const scipp::index extent) {
   if (isUnknownEdgeState(extent))
     return -extent - 1;
   return extent;
@@ -132,20 +132,16 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
   const auto it = dims.find(dim);
   if (it == dims.end()) {
     dims[dim] = isCoord ? extents::makeUnknownEdgeState(extent) : extent;
-  } else {
-    auto &heldExtent = it->second;
-    if (extent == decodeExtent(heldExtent) && !isCoord)
-      heldExtent = decodeExtent(heldExtent); // switch to known
-    if (extent == decodeExtent(heldExtent) + 1 && isCoord)
-      heldExtent = decodeExtent(heldExtent); // switch to known
-    if (extent == decodeExtent(heldExtent) - 1 &&
-        extents::isUnknownEdgeState(heldExtent))
-      heldExtent = extent;
-    if (extent != decodeExtent(heldExtent) &&
-        !(isCoord && extent == decodeExtent(heldExtent) + 1)) {
-      throw except::DimensionError(heldExtent, extent);
-    }
+    return;
   }
+  auto &current = it->second;
+  if ((extent == decode(current) && !isCoord) ||
+      (extent == decode(current) + 1 && isCoord))
+    current = decode(current); // switch to known
+  if (extent == decode(current) - 1 && isUnknownEdgeState(current))
+    current = extent; // shrink by 1 and switch to known
+  if (extent != decode(current) && !(isCoord && extent == decode(current) + 1))
+    throw except::DimensionError(current, extent);
 }
 } // namespace extents
 
@@ -912,9 +908,8 @@ std::unordered_map<Dim, scipp::index> DatasetConstView::dimensions() const {
 
 std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
   std::unordered_map<Dim, scipp::index> all;
-  for (const auto &dim : this->m_dims) {
-    all[dim.first] = extents::decodeExtent(dim.second);
-  }
+  for (const auto &dim : this->m_dims)
+    all[dim.first] = extents::decode(dim.second);
   return all;
 }
 
