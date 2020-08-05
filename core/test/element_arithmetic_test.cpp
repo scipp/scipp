@@ -44,10 +44,15 @@ TEST_F(ElementArithmeticTest, non_in_place) {
 
 TEST_F(ElementArithmeticTest, unary_minus) { EXPECT_EQ(unary_minus(a), -a); }
 
+TEST(ElementArithmeticIntegerDivisionTest, truediv) {
+  // 32 bit ints gives double not float, consistent with numpy
+  EXPECT_TRUE(std::is_same_v<decltype(divide(int32_t{}, int32_t{}), double>);
+  EXPECT_TRUE(std::is_same_v<decltype(divide(int64_t{}, int64_t{}), double>);
+}
+
 TEST(ElementArithmeticIntegerDivisionTest, truediv_32bit) {
   const int32_t a = 2;
   const int32_t b = 3;
-  // 32 bit ints give double not float, consistent with numpy
   EXPECT_EQ(divide(a, b), 2.0 / 3.0);
 }
 
