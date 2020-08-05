@@ -127,6 +127,13 @@ TEST(DatasetTest, setCoord_shrink) {
   ASSERT_NO_THROW(d.setCoord(Dim::Y, var3));
 }
 
+TEST(DatasetTest, setCoord_fail_events_on_edges) {
+  const auto events = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{4});
+  Dataset d;
+  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{3}));
+  ASSERT_THROW(d.setCoord(Dim::Y, events), except::DimensionError);
+}
+
 TEST(DatasetTest, set_item_mask) {
   Dataset d;
   d.setData("x", makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
