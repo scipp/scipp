@@ -33,6 +33,21 @@ def test_plot_2d_image_with_vmin_vmax_with_log():
     plot(d, vmin=0.1, vmax=0.9, log=True)
 
 
+def test_plot_2d_image_with_logx():
+    d = make_dense_dataset(ndim=2)
+    plot(d, logx=True)
+
+
+def test_plot_2d_image_with_logy():
+    d = make_dense_dataset(ndim=2)
+    plot(d, logy=True)
+
+
+def test_plot_2d_image_with_logxy():
+    d = make_dense_dataset(ndim=2)
+    plot(d, logxy=True)
+
+
 def test_plot_2d_image_with_with_nan():
     d = make_dense_dataset(ndim=2)
     d["Sample"].values[0, 0] = np.nan
@@ -174,3 +189,86 @@ def test_plot_realigned_2d():
     tbins = sc.Variable(dims=['tof'], unit=sc.units.us, values=np.arange(100.))
     r = sc.realign(d, {'tof': tbins})
     plot(r)
+
+
+def test_plot_2d_ragged_coord():
+    N = 10
+    M = 5
+    x = np.arange(N).astype(np.float64)
+    y = np.arange(M).astype(np.float64)
+    xx, yy = np.meshgrid(x, y)
+    z = np.random.random([M, N])
+    for i in range(M):
+        xx[i] *= (i + 1.0)
+    d = sc.Dataset()
+    d.coords['x'] = sc.Variable(['y', 'x'], values=xx, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
+    d['a'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_2d_ragged_coord_x_edges():
+    N = 10
+    M = 5
+    x = np.arange(N + 1).astype(np.float64)
+    y = np.arange(M).astype(np.float64)
+    xx, yy = np.meshgrid(x, y)
+    z = np.random.random([M, N])
+    for i in range(M):
+        xx[i] *= (i + 1.0)
+    d = sc.Dataset()
+    d.coords['x'] = sc.Variable(['y', 'x'], values=xx, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
+    d['a'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.kg)
+    plot(d)
+
+
+def test_plot_2d_ragged_coord_y_edges():
+    N = 10
+    M = 5
+    x = np.arange(N).astype(np.float64)
+    y = np.arange(M + 1).astype(np.float64)
+    xx, yy = np.meshgrid(x, y[:-1])
+    z = np.random.random([M, N])
+    for i in range(M):
+        xx[i] *= (i + 1.0)
+    d = sc.Dataset()
+    d.coords['x'] = sc.Variable(['y', 'x'], values=xx, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
+    d['a'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_2d_ragged_coord_x_and_y_edges():
+    N = 10
+    M = 5
+    x = np.arange(N).astype(np.float64)
+    y = np.arange(M).astype(np.float64)
+    xx, yy = np.meshgrid(x, y)
+    z = np.random.random([M, N])
+    for i in range(M):
+        xx[i] *= (i + 1.0)
+    d = sc.Dataset()
+    d.coords['x'] = sc.Variable(['y', 'x'], values=xx, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
+    d['a'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_2d_ragged_coord_with_masks():
+    N = 10
+    M = 5
+    x = np.arange(N + 1).astype(np.float64)
+    y = np.arange(M).astype(np.float64)
+    xx, yy = np.meshgrid(x, y)
+    z = np.random.random([M, N])
+    for i in range(M):
+        xx[i] *= (i + 1.0)
+    d = sc.Dataset()
+    d.coords['x'] = sc.Variable(['y', 'x'], values=xx, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
+    d['a'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.counts)
+    d.masks['b'] = sc.Variable(['y', 'x'],
+                               values=np.where(z < 0.5, True, False),
+                               dtype=bool)
+    plot(d)
