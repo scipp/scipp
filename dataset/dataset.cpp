@@ -134,18 +134,15 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
     dims[dim] = isCoord ? extents::makeUnknownEdgeState(extent) : extent;
   } else {
     auto &heldExtent = it->second;
-    if (extents::isUnknownEdgeState(heldExtent)) {
-      if (extent == decodeExtent(heldExtent)) {
-        if (!isCoord)
-          heldExtent = extent;
-      } else if (extent == decodeExtent(heldExtent) + 1 && isCoord) {
-        heldExtent = decodeExtent(heldExtent);
-      } else if (extent == decodeExtent(heldExtent) - 1) {
-        heldExtent = extent;
-      } else {
-        throw except::DimensionError(heldExtent, extent);
-      }
-    } else if (extent != heldExtent && !(isCoord && extent == heldExtent + 1)) {
+    if (extent == decodeExtent(heldExtent) && !isCoord)
+      heldExtent = decodeExtent(heldExtent); // switch to known
+    if (extent == decodeExtent(heldExtent) + 1 && isCoord)
+      heldExtent = decodeExtent(heldExtent); // switch to known
+    if (extent == decodeExtent(heldExtent) - 1 &&
+        extents::isUnknownEdgeState(heldExtent))
+      heldExtent = extent;
+    if (extent != decodeExtent(heldExtent) &&
+        !(isCoord && extent == decodeExtent(heldExtent) + 1)) {
       throw except::DimensionError(heldExtent, extent);
     }
   }
