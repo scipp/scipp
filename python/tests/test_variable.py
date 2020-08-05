@@ -589,7 +589,7 @@ def test_binary_xor():
 
 
 def test_in_place_binary_with_scalar():
-    v = sc.Variable(dims=['x'], values=[10])
+    v = sc.Variable(dims=['x'], values=[10.0])
     copy = v.copy()
 
     v += 2
@@ -1037,5 +1037,5 @@ def test_rmul_int():
 
 def test_rtruediv_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
-    assert (var / 1).dtype == var.dtype
-    assert (1 / var).dtype == var.dtype
+    assert (var / 1).dtype == sc.dtype.float64
+    assert (1 / var).dtype == sc.dtype.float64
