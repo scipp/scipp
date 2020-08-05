@@ -113,20 +113,20 @@ private:
                                           supported_units_t{})};
 };
 
-Unit operator+(const Unit &a, const Unit &b);
-Unit operator-(const Unit &a, const Unit &b);
-Unit operator*(const Unit &a, const Unit &b);
-Unit operator/(const Unit &a, const Unit &b);
-Unit operator-(const Unit &a);
-Unit abs(const Unit &a);
-Unit sqrt(const Unit &a);
-Unit sin(const Unit &a);
-Unit cos(const Unit &a);
-Unit tan(const Unit &a);
-Unit asin(const Unit &a);
-Unit acos(const Unit &a);
-Unit atan(const Unit &a);
-Unit atan2(const Unit &y, const Unit &x);
+SCIPP_UNITS_EXPORT Unit operator+(const Unit &a, const Unit &b);
+SCIPP_UNITS_EXPORT Unit operator-(const Unit &a, const Unit &b);
+SCIPP_UNITS_EXPORT Unit operator*(const Unit &a, const Unit &b);
+SCIPP_UNITS_EXPORT Unit operator/(const Unit &a, const Unit &b);
+SCIPP_UNITS_EXPORT Unit operator-(const Unit &a);
+SCIPP_UNITS_EXPORT Unit abs(const Unit &a);
+SCIPP_UNITS_EXPORT Unit sqrt(const Unit &a);
+SCIPP_UNITS_EXPORT Unit sin(const Unit &a);
+SCIPP_UNITS_EXPORT Unit cos(const Unit &a);
+SCIPP_UNITS_EXPORT Unit tan(const Unit &a);
+SCIPP_UNITS_EXPORT Unit asin(const Unit &a);
+SCIPP_UNITS_EXPORT Unit acos(const Unit &a);
+SCIPP_UNITS_EXPORT Unit atan(const Unit &a);
+SCIPP_UNITS_EXPORT Unit atan2(const Unit &y, const Unit &x);
 
 constexpr Unit dimensionless{boost_units::dimensionless};
 constexpr Unit one{boost_units::dimensionless}; /// alias for dimensionless
