@@ -63,4 +63,25 @@ constexpr auto reciprocal_out_arg = overloaded{
     },
     [](units::Unit &x, const units::Unit &y) { x = units::one / y; }};
 
+constexpr auto exp = overloaded{
+    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
+    dimensionless_unit_check_return, [](const auto &x) {
+      using std::exp;
+      return exp(x);
+    }};
+
+constexpr auto log = overloaded{
+    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
+    dimensionless_unit_check_return, [](const auto &x) {
+      using std::log;
+      return log(x);
+    }};
+
+constexpr auto log10 = overloaded{
+    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
+    dimensionless_unit_check_return, [](const auto &x) {
+      using std::log10;
+      return log10(x);
+    }};
+
 } // namespace scipp::core::element

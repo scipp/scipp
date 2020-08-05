@@ -33,8 +33,12 @@ General
    collapse
    concatenate
    dot
+   exp
    filter
    histogram
+   is_sorted
+   log
+   log10
    merge
    nan_to_num
    norm

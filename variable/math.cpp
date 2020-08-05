@@ -61,4 +61,16 @@ VariableView reciprocal(const VariableConstView &var, const VariableView &out) {
   return out;
 }
 
+Variable exp(const VariableConstView &var) {
+  return transform(var, element::exp);
+}
+
+Variable log(const VariableConstView &var) {
+  return transform(var, element::log);
+}
+
+Variable log10(const VariableConstView &var) {
+  return transform(var, element::log10);
+}
+
 } // namespace scipp::variable
