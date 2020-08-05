@@ -13,8 +13,8 @@
 
 namespace scipp::core {
 
-void expectCanBroadcastFromTo(const Dimensions &source,
-                              const Dimensions &target);
+SCIPP_CORE_EXPORT void expectCanBroadcastFromTo(const Dimensions &source,
+                                                const Dimensions &target);
 
 /// A view into multi-dimensional data, supporting slicing, index reordering,
 /// and broadcasting.
