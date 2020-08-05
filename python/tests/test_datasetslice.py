@@ -70,10 +70,8 @@ class TestDatasetSlice:
         N = 6
         M = 4
         d1 = sc.Dataset()
-        d1['x'] = sc.Variable(['x'],
-                              values=np.arange(N + 1).astype(np.float64))
-        d1['y'] = sc.Variable(['y'],
-                              values=np.arange(M + 1).astype(np.float64))
+        d1['x'] = sc.Variable(['x'], values=np.arange(N).astype(np.float64))
+        d1['y'] = sc.Variable(['y'], values=np.arange(M).astype(np.float64))
         arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
         d1['a'] = sc.Variable(['x', 'y'], values=arr1)
         d1 = d1['x', 1:2]
