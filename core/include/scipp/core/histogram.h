@@ -28,3 +28,20 @@ template <class T> void sorted_edges(const T &edges) {
 } // namespace expect::histogram
 
 } // namespace scipp::core
+
+
+
+// template <class T> bool sorted_edges_ascending(const T &edges) {
+//   return std::is_sorted(edges.begin(), edges.end());
+// }
+
+// template <class T> bool sorted_edges_descending(const T &edges) {
+//   return std::is_sorted(edges.begin(), edges.end(),
+//                         std::greater<typename T::value_type>());
+// }
+
+// template <class T> void sorted_edges(const T &edges) {
+//   if (!sorted_edges_ascending(edges) && !sorted_edges_descending(edges))
+//     throw except::BinEdgeError("Bin edges of histogram must be sorted in "
+//                                "either ascending or descending order.");
+// }

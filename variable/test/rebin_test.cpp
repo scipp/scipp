@@ -21,6 +21,20 @@ TEST(Variable, rebin) {
   EXPECT_EQ(rebinned.values<double>()[0], 3.0);
 }
 
+TEST(Variable, rebin_descending) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
+  var.setUnit(units::counts);
+  const auto oldEdge =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{3.0, 2.0, 1.0});
+  const auto newEdge =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{3.0, 1.0});
+  auto rebinned = rebin(var, Dim::X, oldEdge, newEdge);
+  ASSERT_EQ(rebinned.dims().shape().size(), 1);
+  ASSERT_EQ(rebinned.dims().volume(), 1);
+  ASSERT_EQ(rebinned.values<double>().size(), 1);
+  EXPECT_EQ(rebinned.values<double>()[0], 3.0);
+}
+
 TEST(Variable, rebin_outer) {
   auto var = makeVariable<double>(Dimensions{{Dim::Y, 6}, {Dim::X, 2}},
                                   Values{1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});

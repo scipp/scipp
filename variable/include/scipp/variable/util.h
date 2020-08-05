@@ -16,5 +16,7 @@ SCIPP_VARIABLE_EXPORT Variable linspace(const VariableConstView &start,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable values(const VariableConstView &x);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 variances(const VariableConstView &x);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT bool is_sorted_ascending(const VariableConstView &x, const Dim dim);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT bool is_sorted_descending(const VariableConstView &x, const Dim dim);
 
 } // namespace scipp::variable

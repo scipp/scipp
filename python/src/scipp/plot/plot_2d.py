@@ -450,8 +450,15 @@ class Slicer2d(Slicer):
         xy = "yx"
         if len(dslice.coords[self.button_dims[1]].dims) > 1:
             xy = "xy"
+        print(dslice)
+        print('self.xyrebin[x]', self.xyrebin['x'].values)
+        print('self.xyrebin[y]', self.xyrebin['y'])
         dslice = sc.rebin(dslice, self.xyrebin[xy[0]].dims[0],
                           self.xyrebin[xy[0]])
+        print(np.flip(self.xyrebin[xy[1]].values))
+        self.xyrebin[xy[1]].values = np.flip(self.xyrebin[xy[1]].values).copy()
+        # print('self.xyrebin[x]', self.xyrebin['x'].values[:100])
+        print('self.xyrebin[x]', self.xyrebin['x'].values)
         dslice = sc.rebin(dslice, self.xyrebin[xy[1]].dims[0],
                           self.xyrebin[xy[1]])
 
