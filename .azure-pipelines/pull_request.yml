@@ -149,7 +149,6 @@ stages:
                 -DCMAKE_INSTALL_PREFIX="$(install_dir)" \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
-                -DDYNAMIC_LIB=ON \
                 "$(Build.Repository.LocalPath)"
             displayName: 'CMake configuration'
           - bash: |
@@ -207,7 +206,6 @@ stages:
                 -DCMAKE_INSTALL_PREFIX="$(install_dir)" \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
-                -DDYNAMIC_LIB=ON \
                 "$(Build.Repository.LocalPath)"
             displayName: 'CMake configuration'
           - bash: |
