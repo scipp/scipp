@@ -69,7 +69,7 @@ TEST_F(GroupbyTest, copy) {
 }
 
 TEST_F(GroupbyTest, fail_2d_coord) {
-  d.setCoord(Dim("2d"), makeVariable<float>(Dims{Dim::X, Dim::Z}, Shape{2, 2}));
+  d.setCoord(Dim("2d"), makeVariable<float>(Dims{Dim::X, Dim::Z}, Shape{3, 2}));
   EXPECT_NO_THROW(groupby(d, Dim("labels2")));
   EXPECT_THROW(groupby(d, Dim("labels2")).sum(Dim::X), except::DimensionError);
 }

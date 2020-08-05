@@ -140,26 +140,23 @@ bool oneSmaller(const scipp::index extent, const scipp::index reference) {
 void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
                const scipp::index extent, const bool isCoord) {
   const auto it = dims.find(dim);
-  // Internally use negative extent -1 to indicate unknown edge state. The `-1`
-  // is required for dimensions with extent 0.
-
   if (it == dims.end()) {
-    dims[dim] = extents::makeUnknownEdgeState(extent);
+    dims[dim] = isCoord ? extents::makeUnknownEdgeState(extent) : extent;
   } else {
     auto &heldExtent = it->second;
     if (extents::isUnknownEdgeState(heldExtent)) {
-      if (extents::isSame(extent, heldExtent)) { // Do nothing
+      if (extents::isSame(extent, heldExtent)) {
+        if (!isCoord)
+          heldExtent = extent;
       } else if (extents::oneLarger(extent, heldExtent) && isCoord) {
         heldExtent = extents::shrink(extent);
-      } else if (extents::oneSmaller(extent, heldExtent) && !isCoord) {
+      } else if (extents::oneSmaller(extent, heldExtent)) {
         heldExtent = extent;
       } else {
         throw except::DimensionError(heldExtent, extent);
       }
-    } else {
-      // Check for known edge state
-      if ((extent != heldExtent || isCoord) && extent != heldExtent + 1)
-        throw except::DimensionError(heldExtent, extent);
+    } else if (extent != heldExtent && !(isCoord && extent == heldExtent + 1)) {
+      throw except::DimensionError(heldExtent, extent);
     }
   }
 }
@@ -194,7 +191,7 @@ void Dataset::rebuildDims() {
 
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
-  setDims(coord.dims(), dim);
+  setDims(coord.dims(), dim_of_coord(coord, dim));
   for (const auto &item : m_data)
     if (item.second.coords.count(dim))
       throw except::DataArrayError("Attempt to insert dataset coord with "
@@ -208,7 +205,7 @@ void Dataset::setCoord(const std::string &name, const Dim dim, Variable coord) {
   if (coords().contains(dim))
     throw except::DataArrayError(
         "Attempt to insert unaligned coord with name shadowing aligned coord.");
-  setDims(coord.dims(), dim);
+  setDims(coord.dims(), dim_of_coord(coord, dim));
   m_data[name].coords.insert_or_assign(dim, std::move(coord));
 }
 
