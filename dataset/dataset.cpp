@@ -141,7 +141,7 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
   if (extent == decode(current) - 1 && isUnknownEdgeState(current))
     current = extent; // shrink by 1 and switch to known
   if (extent != decode(current) && !(isCoord && extent == decode(current) + 1))
-    throw except::DimensionError(current, extent);
+    throw except::DimensionError(decode(current), extent);
 }
 } // namespace extents
 
