@@ -403,6 +403,15 @@ TEST(DatasetTest, erase_coord) {
   EXPECT_EQ(ref, ds);
 }
 
+TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
+  DatasetFactory3D factory;
+  const auto ref = factory.make();
+  Dataset ds(ref);
+  auto coord = Variable(ds.coords()[Dim::X]);
+  ASSERT_TRUE(ds.contains("data_x"));
+  EXPECT_THROW(ds["data_x"].coords().erase(Dim::X), except::NotFoundError);
+}
+
 TEST(DatasetTest, erase_labels) {
   DatasetFactory3D factory;
   const auto ref = factory.make();

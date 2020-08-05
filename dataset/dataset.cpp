@@ -579,8 +579,9 @@ make_coords(const T &view, const CoordCategory category,
         // - (aligned) coords of a dataset item:
         //   del ds['a'].coords['x'] # fails
         //   del ds.coords['x'] # ok
+        // Note that del array.coords['x'] works even if 'x' is unaligned
         CoordAccess{view.slices().empty() ? &view.get_dataset() : nullptr,
-                    is_item ? &view.name() : nullptr, std::move(unaligned_ptr)},
+                    &view.name(), std::move(unaligned_ptr), is_item},
         std::move(items), view.slices());
   else
     return CoordsConstView(std::move(items), view.slices());

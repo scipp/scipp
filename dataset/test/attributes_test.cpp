@@ -182,9 +182,7 @@ TEST_F(AttributesTest, unaligned_not_mapped_into_aligned) {
   EXPECT_TRUE(d["a"].unaligned().unaligned_coords().contains(Dim("attr")));
   EXPECT_TRUE(d["a"].unaligned_coords().empty());
   EXPECT_THROW(d["a"].coords().erase(Dim("attr")), except::NotFoundError);
-  EXPECT_THROW(d["a"].unaligned_coords().erase(Dim("attr")),
-               except::NotFoundError);
-  d["a"].unaligned().unaligned_coords().erase(Dim("attr"));
+  d["a"].unaligned().coords().erase(Dim("attr"));
   EXPECT_TRUE(d["a"].unaligned_coords().empty());
   EXPECT_TRUE(d["a"].unaligned().unaligned_coords().empty());
 }
