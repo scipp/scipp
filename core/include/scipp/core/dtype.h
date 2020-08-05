@@ -28,9 +28,9 @@ struct SCIPP_CORE_EXPORT DType {
 };
 template <class T> inline DType dtype{std::type_index(typeid(T))};
 
-bool isInt(DType tp);
+SCIPP_CORE_EXPORT bool isInt(DType tp);
 
-DType event_dtype(const DType type);
+SCIPP_CORE_EXPORT DType event_dtype(const DType type);
 
 namespace detail {
 template <class T> struct element_type { using type = T; };
