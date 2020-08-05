@@ -7,7 +7,7 @@ from .. import config
 from .render import render_plot
 from ..plot.sciplot import SciPlot
 from .slicer import Slicer
-from .tools import edges_to_centers
+from .tools import to_bin_centers
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 
@@ -155,12 +155,12 @@ class Slicer3d(Slicer):
             labels = []
             for dim, val in self.slider.items():
                 if val.disabled:
-                    arr = self.slider_x[self.name][dim].values
-                    if self.histograms[self.name][dim]:
-                        arr = edges_to_centers(arr)
-                    coords.append(arr)
-                    labels.append(name_with_unit(
-                        self.slider_x[self.name][dim]))
+                    arr = self.slider_coord[self.name][dim]
+                    if self.histograms[self.name][dim][dim]:
+                        arr = to_bin_centers(arr, dim)
+                    coords.append(arr.values)
+                    labels.append(
+                        name_with_unit(self.slider_coord[self.name][dim]))
             z, y, x = np.meshgrid(*coords, indexing='ij')
             self.positions = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
@@ -634,7 +634,7 @@ void main() {
         for dim, val in self.slider.items():
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
-                    self.slider_x[self.name][dim], val.value)
+                    self.slider_coord[self.name][dim], val.value)
                 self.vslice = self.vslice[val.dim, val.value]
                 # At this point, after masks were combined, all their
                 # dimensions should be contained in the data_array.dims.

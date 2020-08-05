@@ -71,10 +71,12 @@ template <class T> struct slicer {
   static auto get(T &self, const std::tuple<Dim, scipp::index> &index) {
     auto [dim, i] = index;
     auto sz = dim_extent(self, dim);
-    if (i <= -sz || i >= sz) // index is out of range
-      throw std::runtime_error("Dimension size is " +
-                               std::to_string(dim_extent(self, dim)) +
-                               ", can't treat " + std::to_string(i));
+    if (i < -sz || i >= sz) // index is out of range
+      throw std::runtime_error(
+          "The requested index " + std::to_string(i) +
+          " is out of range. Dimension size is " + std::to_string(sz) +
+          " and the allowed range is [" + std::to_string(-sz) + ":" +
+          std::to_string(sz - 1) + "].");
     if (i < 0)
       i = sz + i;
     return self.slice(Slice(dim, i));
