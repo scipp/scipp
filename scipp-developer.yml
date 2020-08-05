@@ -28,6 +28,7 @@ dependencies:
 
   # Test
   - beautifulsoup4
+  - h5py
   - psutil
   - pytest
 
