@@ -223,10 +223,13 @@ class Slicer2d(Slicer):
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled array to be used as image
             offset = 2 * (xy == "y")
+            # Flip the axis if the coordinate is descending
+            i1 = (0 + self.contains_decreasing_coord[self.name][param["dim"]]) % 2
+            i2 = (i1 + 1) % 2
             self.xyrebin[xy] = sc.Variable(
                 dims=[param["dim"]],
-                values=np.linspace(extent_array[0 + offset],
-                                   extent_array[1 + offset],
+                values=np.linspace(extent_array[i1 + offset],
+                                   extent_array[i2 + offset],
                                    self.image_resolution[xy] + 1),
                 unit=self.slider_coord[self.name][param["dim"]].unit)
 
@@ -285,6 +288,17 @@ class Slicer2d(Slicer):
 
         return
 
+    def compute_bin_widths(self, xy, dim):
+        """
+        Pixel widths used for scaling before rebin step
+        """
+        self.xywidth[xy] = (self.xyedges[xy][dim, 1:] -
+                            self.xyedges[xy][dim, :-1]) / (
+                                self.xyrebin[xy][dim, 1] -
+                                self.xyrebin[xy][dim, 0])
+        self.xywidth[xy].unit = sc.units.one
+
+
     def slice_coords(self):
         """
         Recursively slice the coords along the dimensions of active sliders.
@@ -307,11 +321,12 @@ class Slicer2d(Slicer):
                 self.xyedges[xy] = self.cslice[param["dim"]].astype(
                     sc.dtype.float64)
             # Pixel widths used for scaling before rebin step
-            self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
-                                self.xyedges[xy][param["dim"], :-1]) / (
-                                    self.xyrebin[xy][param["dim"], 1] -
-                                    self.xyrebin[xy][param["dim"], 0])
-            self.xywidth[xy].unit = sc.units.one
+            self.compute_bin_widths(xy, param["dim"])
+            # self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
+            #                     self.xyedges[xy][param["dim"], :-1]) / (
+            #                         self.xyrebin[xy][param["dim"], 1] -
+            #                         self.xyrebin[xy][param["dim"], 0])
+            # self.xywidth[xy].unit = sc.units.one
 
     def slice_data(self):
         """
@@ -396,19 +411,23 @@ class Slicer2d(Slicer):
         if diff > 0.1:
             self.current_lims = xylims
             for xy, param in self.axparams.items():
+                # Flip the axis if the coordinate is descending
+                i1 = (0 + self.contains_decreasing_coord[self.name][param["dim"]]) % 2
+                i2 = (i1 + 1) % 2
                 # Create coordinate axes for resampled image array
                 self.xyrebin[xy] = sc.Variable(
                     dims=[param["dim"]],
-                    values=np.linspace(xylims[xy][0], xylims[xy][1],
+                    values=np.linspace(xylims[xy][i1], xylims[xy][i2],
                                        self.image_resolution[xy] + 1),
                     unit=self.slider_coord[self.name][param["dim"]].unit)
 
                 # Pixel widths used for scaling before rebin step
-                self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
-                                    self.xyedges[xy][param["dim"], :-1]) / (
-                                        self.xyrebin[xy][param["dim"], 1] -
-                                        self.xyrebin[xy][param["dim"], 0])
-                self.xywidth[xy].unit = sc.units.one
+                self.compute_bin_widths(xy, param["dim"])
+                # self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
+                #                     self.xyedges[xy][param["dim"], :-1]) / (
+                #                         self.xyrebin[xy][param["dim"], 1] -
+                #                         self.xyrebin[xy][param["dim"], 0])
+                # self.xywidth[xy].unit = sc.units.one
 
             self.update_image(extent=np.array(list(xylims.values())).flatten())
 
@@ -450,17 +469,19 @@ class Slicer2d(Slicer):
         xy = "yx"
         if len(dslice.coords[self.button_dims[1]].dims) > 1:
             xy = "xy"
-        print(dslice)
-        print('self.xyrebin[x]', self.xyrebin['x'].values)
-        print('self.xyrebin[y]', self.xyrebin['y'])
+        print("dslice", dslice)
+        print('self.xyrebin[x]', self.xyrebin['x'])
+        # print('self.xyrebin[y]', self.xyrebin['y'])
         dslice = sc.rebin(dslice, self.xyrebin[xy[0]].dims[0],
                           self.xyrebin[xy[0]])
-        print(np.flip(self.xyrebin[xy[1]].values))
-        self.xyrebin[xy[1]].values = np.flip(self.xyrebin[xy[1]].values).copy()
+        # print(np.flip(self.xyrebin[xy[1]].values))
+        # print("dslice.values", dslice.values)
+        # self.xyrebin[xy[1]].values = np.flip(self.xyrebin[xy[1]].values).copy()
         # print('self.xyrebin[x]', self.xyrebin['x'].values[:100])
-        print('self.xyrebin[x]', self.xyrebin['x'].values)
+        print('self.xyrebin[x]', self.xyrebin['x'])
         dslice = sc.rebin(dslice, self.xyrebin[xy[1]].dims[0],
                           self.xyrebin[xy[1]])
+        # print("dslice.values", dslice.values)
 
         # Use Scipp's automatic transpose to match the image x/y axes
         # TODO: once transpose is available for DataArrays,

@@ -14,6 +14,7 @@
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 #include "scipp/dataset/dataset.h"
@@ -333,6 +334,34 @@ Mostly equivalent to Variable, see there for details.)");
           .description("Check if the values of a variable are evenly spaced.")
           .returns("Returns True if the variable contains regularly spaced "
                    "values, False otherwise.")
+          .rtype("bool")
+          .c_str());
+
+  m.def(
+      "is_sorted_ascending",
+      [](const VariableConstView &x, const Dim dim) {
+          return is_sorted_ascending(x, dim);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Check if the values of a variable are sorted in "
+                       "ascending order.")
+          .returns("Returns True if the variable values are monotonously "
+                   "ascending, False otherwise.")
+          .rtype("bool")
+          .c_str());
+
+  m.def(
+      "is_sorted_descending",
+      [](const VariableConstView &x, const Dim dim) {
+          return is_sorted_descending(x, dim);
+      },
+      py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Check if the values of a variable are sorted in "
+                       "descending order.")
+          .returns("Returns True if the variable values are monotonously "
+                   "descending, False otherwise.")
           .rtype("bool")
           .c_str());
 }

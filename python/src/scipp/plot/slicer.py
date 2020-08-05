@@ -75,6 +75,7 @@ class Slicer:
         self.slider_axlocator = {}
 
         self.contains_multid_coord = {}
+        self.contains_decreasing_coord = {}
 
         for name, array in self.scipp_obj_dict.items():
 
@@ -118,6 +119,7 @@ class Slicer:
             self.histograms[name] = {}
 
             self.contains_multid_coord[name] = False
+            self.contains_decreasing_coord[name] = {}
 
             # Process axes dimensions
             if axes is None:
@@ -179,6 +181,10 @@ class Slicer:
 
                 if len(self.slider_coord[name][dim].dims) > 1:
                     self.contains_multid_coord[name] = True
+
+                self.contains_decreasing_coord[name][dim] = sc.is_sorted_descending(var, dim)
+
+
 
         # Initialise list for VBox container
         self.vbox = []
