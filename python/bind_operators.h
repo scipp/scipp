@@ -4,20 +4,42 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "scipp/variable/arithmetic.h"
-
 #include "pybind11.h"
+#include "scipp/variable/arithmetic.h"
+#include "scipp/variable/comparison.h"
 
 namespace py = pybind11;
 
 template <class Other, class T, class... Ignored>
-void bind_comparison(pybind11::class_<T, Ignored...> &c) {
+void bind_inequality_to_operator(pybind11::class_<T, Ignored...> &c) {
   c.def(
       "__eq__", [](T &a, Other &b) { return a == b; }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());
   c.def(
       "__ne__", [](T &a, Other &b) { return a != b; }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());
+}
+
+template <class Other, class T, class... Ignored>
+void bind_comparison(pybind11::class_<T, Ignored...> &c) {
+  c.def(
+      "__eq__", [](T &a, Other &b) { return equal(a, b); }, py::is_operator(),
+      py::call_guard<py::gil_scoped_release>());
+  c.def(
+      "__ne__", [](T &a, Other &b) { return not_equal(a, b); },
+      py::is_operator(), py::call_guard<py::gil_scoped_release>());
+  c.def(
+      "__lt__", [](T &a, Other &b) { return less(a, b); }, py::is_operator(),
+      py::call_guard<py::gil_scoped_release>());
+  c.def(
+      "__gt__", [](T &a, Other &b) { return greater(a, b); }, py::is_operator(),
+      py::call_guard<py::gil_scoped_release>());
+  c.def(
+      "__le__", [](T &a, Other &b) { return less_equal(a, b); },
+      py::is_operator(), py::call_guard<py::gil_scoped_release>());
+  c.def(
+      "__ge__", [](T &a, Other &b) { return greater_equal(a, b); },
+      py::is_operator(), py::call_guard<py::gil_scoped_release>());
 }
 
 struct Identity {

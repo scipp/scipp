@@ -5,6 +5,7 @@
 #include "docstring.h"
 #include "pybind11.h"
 
+#include "scipp/core/string.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/comparison.h"
 
@@ -83,6 +84,22 @@ template <typename T> void bind_not_equal(py::module &m) {
       docstring_comparison<T>("(x != y)").c_str());
 }
 
+template <typename T> void bind_is_equal(py::module &m) {
+  m.def(
+      "is_equal",
+      [](const typename T::const_view_type &x,
+         const typename T::const_view_type &y) { return x == y; },
+      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Variable level equals. Returns True if x and y "
+                       "considered equal.")
+          .returns("True if x and y are considered equal")
+          .rtype<T>()
+          .template param<T>("x", "Input left operand.")
+          .template param<T>("y", "Input right operand.")
+          .c_str());
+}
+
 void init_comparison(py::module &m) {
   bind_less<Variable>(m);
   bind_greater<Variable>(m);
@@ -90,4 +107,7 @@ void init_comparison(py::module &m) {
   bind_greater_equal<Variable>(m);
   bind_equal<Variable>(m);
   bind_not_equal<Variable>(m);
+  bind_is_equal<Variable>(m);
+  bind_is_equal<Dataset>(m);
+  bind_is_equal<DataArray>(m);
 }

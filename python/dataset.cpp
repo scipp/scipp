@@ -90,7 +90,7 @@ void bind_mutable_view(py::module &m, const std::string &name) {
           py::return_value_policy::move, py::keep_alive<0, 1>(),
           R"(view on self's items)")
       .def("__contains__", &T::contains);
-  bind_comparison<T>(view);
+  bind_inequality_to_operator<T>(view);
 }
 
 template <class T> void realign_impl(T &self, py::dict coord_dict) {
@@ -238,7 +238,6 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
           py::return_value_policy::move, py::keep_alive<0, 1>()),
       R"(Underlying unaligned data item.)");
   bind_coord_properties(c);
-  bind_comparison<DataArrayConstView>(c);
   bind_data_properties(c);
   bind_slice_methods(c);
   bind_in_place_binary<DataArrayView>(c);
@@ -410,11 +409,6 @@ void init_dataset(py::module &m) {
 
   bind_slice_methods(dataset);
   bind_slice_methods(datasetView);
-
-  bind_comparison<Dataset>(dataset);
-  bind_comparison<DatasetView>(dataset);
-  bind_comparison<Dataset>(datasetView);
-  bind_comparison<DatasetView>(datasetView);
 
   bind_in_place_binary<Dataset>(dataset);
   bind_in_place_binary<DatasetView>(dataset);
