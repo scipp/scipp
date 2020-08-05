@@ -31,10 +31,10 @@ def make_dataset():
 def test_collapse_data_array():
     d = make_dataset()
     collapsed = sc.collapse(d['sample'], keep='tof')
-    assert collapsed['y:0-x:0'] == d['sample']['y', 0]['x', 0]
-    assert collapsed['y:1-x:0'] == d['sample']['y', 1]['x', 0]
-    assert collapsed['y:0-x:1'] == d['sample']['y', 0]['x', 1]
-    assert collapsed['y:1-x:1'] == d['sample']['y', 1]['x', 1]
+    assert sc.is_equal(collapsed['y:0-x:0'], d['sample']['y', 0]['x', 0])
+    assert sc.is_equal(collapsed['y:1-x:0'], d['sample']['y', 1]['x', 0])
+    assert sc.is_equal(collapsed['y:0-x:1'], d['sample']['y', 0]['x', 1])
+    assert sc.is_equal(collapsed['y:1-x:1'], d['sample']['y', 1]['x', 1])
 
 
 def test_collapse_dataset():
@@ -48,21 +48,25 @@ def test_collapse_dataset():
     else:
         dim1 = 'y'
         dim2 = 'x'
-    assert collapsed['{}:0-{}:0'.format(dim1, dim2)] == d[dim2, 0][dim1, 0]
-    assert collapsed['{}:0-{}:1'.format(dim1, dim2)] == d[dim2, 1][dim1, 0]
-    assert collapsed['{}:1-{}:0'.format(dim1, dim2)] == d[dim2, 0][dim1, 1]
-    assert collapsed['{}:1-{}:1'.format(dim1, dim2)] == d[dim2, 1][dim1, 1]
+    assert sc.is_equal(collapsed['{}:0-{}:0'.format(dim1, dim2)],
+                       d[dim2, 0][dim1, 0])
+    assert sc.is_equal(collapsed['{}:0-{}:1'.format(dim1, dim2)],
+                       d[dim2, 1][dim1, 0])
+    assert sc.is_equal(collapsed['{}:1-{}:0'.format(dim1, dim2)],
+                       d[dim2, 0][dim1, 1])
+    assert sc.is_equal(collapsed['{}:1-{}:1'.format(dim1, dim2)],
+                       d[dim2, 1][dim1, 1])
 
 
 def test_slices_data_array():
     d = make_dataset()
     collapsed = sc.slices(d['sample'], dim='x')
-    assert collapsed['x:0'] == d['sample']['x', 0]
-    assert collapsed['x:1'] == d['sample']['x', 1]
+    assert sc.is_equal(collapsed['x:0'], d['sample']['x', 0])
+    assert sc.is_equal(collapsed['x:1'], d['sample']['x', 1])
 
 
 def test_slices_dataset():
     d = make_dataset()
     collapsed = sc.slices(d, dim='x')
-    assert collapsed['x:0'] == d['x', 0]
-    assert collapsed['x:1'] == d['x', 1]
+    assert sc.is_equal(collapsed['x:0'], d['x', 0])
+    assert sc.is_equal(collapsed['x:1'], d['x', 1])

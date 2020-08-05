@@ -10,7 +10,7 @@ def test_round_trip_dataset():
     d = sc.Dataset({'data': data}, coords={'tof': tof})
 
     dd = sc.density_to_counts(sc.counts_to_density(d, 'tof'), 'tof')
-    assert dd == d
+    assert sc.is_equal(dd, d)
 
 
 def test_round_trip_dataarray():
@@ -20,4 +20,4 @@ def test_round_trip_dataarray():
     d = sc.DataArray(data, coords={'tof': tof})
 
     dd = sc.density_to_counts(sc.counts_to_density(d, 'tof'), 'tof')
-    assert dd == d
+    assert sc.is_equal(dd, d)

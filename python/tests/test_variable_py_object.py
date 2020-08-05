@@ -46,8 +46,7 @@ def test_scalar_Variable_py_object_copy_is_deep_copy():
 def test_scalar_Variable_py_object_comparison():
     a = sc.Variable(value=[1, 2])
     b = sc.Variable(value=[1, 2])
-    assert a == b
-    assert not (a != b)
+    assert sc.is_equal(a, b)
 
 
 def test_py_object_delitem():
