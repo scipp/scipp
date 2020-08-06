@@ -12,7 +12,7 @@ def check_roundtrip(obj):
     with tempfile.TemporaryDirectory() as path:
         name = f'{path}/test.hdf5'
         obj.to_hdf5(filename=name)
-        assert sc.io.open_hdf5(filename=name) == obj
+        assert sc.is_equal(sc.io.open_hdf5(filename=name), obj)
 
 
 x = sc.Variable(dims=['x'], values=np.arange(4.0), unit=sc.units.m)
