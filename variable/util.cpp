@@ -18,7 +18,7 @@ namespace scipp::variable {
 
 Variable linspace(const VariableConstView &start, const VariableConstView &stop,
                   const Dim dim, const scipp::index num) {
-  // Th implementation here is slightly verbose and explicit. It could be
+  // The implementation here is slightly verbose and explicit. It could be
   // improved if we were to introduce new variants of `transform`, similar to
   // `std::generate`.
   core::expect::equals(start.dims(), stop.dims());
@@ -50,14 +50,15 @@ Variable variances(const VariableConstView &x) {
   return transform(x, element::variances);
 }
 
+/// Return True if variable values are monotonously increasing along given dim.
 bool is_sorted_ascending(const VariableConstView &x, const Dim dim) {
   const auto size = x.dims()[dim];
   return all(greater(x.slice({dim, 1, size}) - x.slice({dim, 0, size - 1}),
-                     Variable(x.dtype(), x.unit(), Values{0.0})
-                            ))
+                     Variable(x.dtype(), x.unit(), Values{0.0})))
       .value<bool>();
 }
 
+/// Return True if variable values are monotonously decreasing along given dim.
 bool is_sorted_descending(const VariableConstView &x, const Dim dim) {
   const auto size = x.dims()[dim];
   return all(less(x.slice({dim, 1, size}) - x.slice({dim, 0, size - 1}),
