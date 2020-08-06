@@ -50,31 +50,19 @@ Variable variances(const VariableConstView &x) {
   return transform(x, element::variances);
 }
 
-
-// template <class T> struct MakeIsSorted {
-//   static auto apply(const VariableConstView &key) {
-//     const auto &values = key.values<T>();
-//     return std::is_sorted(values.begin(), values.end());
-//   }
-// };
-
-// static auto make_is_sorted(const VariableConstView &x, const bool ascending = true) {
-//   if (ascending)
-//       return core::CallDType<double, float, int64_t, int32_t, bool,
-//                          std::string>::apply<MakeIsSorted>(x.dtype(), x);
-//   else
-//     return core::CallDType<double, float, int64_t, int32_t, bool,
-//                          std::string>::apply<MakeIsSorted>(x.dtype(), x);
-// }
-
 bool is_sorted_ascending(const VariableConstView &x, const Dim dim) {
   const auto size = x.dims()[dim];
-  return all(greater(x.slice({dim, 1, size}) - x.slice({dim, 0, size-1}), makeVariable<double>(Values{0.0}, x.unit()))).value<bool>();
+  return all(greater(x.slice({dim, 1, size}) - x.slice({dim, 0, size - 1}),
+                     Variable(x.dtype(), x.unit(), Values{0.0})
+                            ))
+      .value<bool>();
 }
 
 bool is_sorted_descending(const VariableConstView &x, const Dim dim) {
   const auto size = x.dims()[dim];
-  return all(less(x.slice({dim, 1, size}) - x.slice({dim, 0, size-1}), makeVariable<double>(Values{0.0}, x.unit()))).value<bool>();
+  return all(less(x.slice({dim, 1, size}) - x.slice({dim, 0, size - 1}),
+                  Variable(x.dtype(), x.unit(), Values{0.0})))
+      .value<bool>();
 }
 
 } // namespace scipp::variable

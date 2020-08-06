@@ -340,7 +340,7 @@ Mostly equivalent to Variable, see there for details.)");
   m.def(
       "is_sorted_ascending",
       [](const VariableConstView &x, const Dim dim) {
-          return is_sorted_ascending(x, dim);
+        return is_sorted_ascending(x, dim);
       },
       py::call_guard<py::gil_scoped_release>(),
       Docstring()
@@ -354,7 +354,7 @@ Mostly equivalent to Variable, see there for details.)");
   m.def(
       "is_sorted_descending",
       [](const VariableConstView &x, const Dim dim) {
-          return is_sorted_descending(x, dim);
+        return is_sorted_descending(x, dim);
       },
       py::call_guard<py::gil_scoped_release>(),
       Docstring()

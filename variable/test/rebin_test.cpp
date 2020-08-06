@@ -22,16 +22,20 @@ TEST(Variable, rebin) {
 }
 
 TEST(Variable, rebin_descending) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{10}, Values{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0});
+  auto var = makeVariable<double>(
+      Dims{Dim::X}, Shape{10},
+      Values{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0});
   var.setUnit(units::counts);
-  const auto oldEdge =
-      makeVariable<double>(Dims{Dim::X}, Shape{11}, Values{10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0});
-  const auto newEdge =
-      makeVariable<double>(Dims{Dim::X}, Shape{6}, Values{11.0, 7.5, 6.0, 4.5, 2.0, 0.0});
+  const auto oldEdge = makeVariable<double>(
+      Dims{Dim::X}, Shape{11},
+      Values{10.0, 9.0, 8.0, 7.0, 6.0, 5.0, 4.0, 3.0, 2.0, 1.0, 0.0});
+  const auto newEdge = makeVariable<double>(
+      Dims{Dim::X}, Shape{6}, Values{11.0, 7.5, 6.0, 4.5, 2.0, 0.0});
   auto rebinned = rebin(var, Dim::X, oldEdge, newEdge);
 
- auto expected = makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{4.5, 5.5, 8.0, 18.0, 19.0});
- expected.setUnit(units::counts);
+  auto expected = makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                       Values{4.5, 5.5, 8.0, 18.0, 19.0});
+  expected.setUnit(units::counts);
 
   ASSERT_EQ(rebinned, expected);
 }

@@ -29,8 +29,6 @@ template <class T> void sorted_edges(const T &edges) {
 
 } // namespace scipp::core
 
-
-
 // template <class T> bool sorted_edges_ascending(const T &edges) {
 //   return std::is_sorted(edges.begin(), edges.end());
 // }

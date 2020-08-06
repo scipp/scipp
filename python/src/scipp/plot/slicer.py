@@ -73,9 +73,8 @@ class Slicer:
         self.slider_axformatter = {}
         # Axes tick locators
         self.slider_axlocator = {}
-
+        # Save if some dims contain multi-dimensional coords
         self.contains_multid_coord = {}
-        # self.contains_decreasing_coord = {}
 
         for name, array in self.scipp_obj_dict.items():
 
@@ -117,9 +116,8 @@ class Slicer:
             self.slider_axlocator[name] = {}
             # Save information on histograms
             self.histograms[name] = {}
-
+            # Save if some dims contain multi-dimensional coords
             self.contains_multid_coord[name] = False
-            # self.contains_decreasing_coord[name] = {}
 
             # Process axes dimensions
             if axes is None:
@@ -146,7 +144,8 @@ class Slicer:
                 self.slider_xlims[name][dim] = np.array(
                     [sc.min(var).value, sc.max(var).value], dtype=np.float)
                 if sc.is_sorted_descending(var, dim):
-                    self.slider_xlims[name][dim] = np.flip(self.slider_xlims[name][dim]).copy()
+                    self.slider_xlims[name][dim] = np.flip(
+                        self.slider_xlims[name][dim]).copy()
                 # The tick formatter and locator
                 self.slider_axformatter[name][dim] = formatter
                 self.slider_axlocator[name][dim] = locator
@@ -183,11 +182,6 @@ class Slicer:
 
                 if len(self.slider_coord[name][dim].dims) > 1:
                     self.contains_multid_coord[name] = True
-
-                # self.contains_decreasing_coord[name][dim] = sc.is_sorted_descending
-                # (var, dim)
-
-
 
         # Initialise list for VBox container
         self.vbox = []
@@ -386,13 +380,12 @@ class Slicer:
                 if dim_coord_dim in data_array.coords:
                     var = data_array.coords[dim_coord_dim]
                 else:
-                    var = make_fake_coord(dim_coord_dim, dim_to_shape[dim_coord_dim])
+                    var = make_fake_coord(dim_coord_dim,
+                                          dim_to_shape[dim_coord_dim])
                 underlying_dim = dim_coord_dim
-                # form = ticker.FuncFormatter(lambda val, pos: value_to_string(
-                #     data_array.coords[dim].values[np.abs(data_array.coords[
-                #         dim_coord_dim].values - val).argmin()]))
-                form = ticker.FuncFormatter(lambda val, pos: value_to_string(
-                    data_array.coords[dim].values[np.abs(var.values - val).argmin()]))
+                form = ticker.FuncFormatter(
+                    lambda val, pos: value_to_string(data_array.coords[
+                        dim].values[np.abs(var.values - val).argmin()]))
                 formatter.update({False: form, True: form})
 
             else:
