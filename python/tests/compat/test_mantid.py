@@ -90,13 +90,13 @@ class TestMantidConversion(unittest.TestCase):
         del d.unaligned_coords['sample']
         del realigned.unaligned_coords['run']
         del realigned.unaligned_coords['sample']
-        assert realigned == d
+        assert sc.is_equal(realigned , d)
 
     def test_comparison(self):
         a = mantidcompat.convert_EventWorkspace_to_data_array(
             self.base_event_ws, load_pulse_times=False)
         b = a.copy()
-        assert a == b
+        assert sc.is_equal(a , b)
 
     def test_EventWorkspace_no_y_unit(self):
         import mantid.simpleapi as mantid
@@ -210,7 +210,7 @@ class TestMantidConversion(unittest.TestCase):
 
         mask = sc.Variable(dims=ds.dims, shape=ds.shape, dtype=sc.dtype.bool)
         mask['spectrum', 0:3]['tof', 0:3] |= sc.Variable(value=True)
-        assert ds.masks['bin'] == mask
+        assert sc.is_equal(ds.masks['bin'] , mask)
 
         np.testing.assert_array_equal(ds.masks["spectrum"].values[0:3],
                                       [True, True, True])
