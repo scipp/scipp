@@ -17,77 +17,11 @@
 
 namespace scipp::core::element {
 
-struct AscendingRebin {};
-struct DescendingRebin {};
-
-namespace {
-void rebin_error() {
-  throw std::runtime_error(
-      "Unknown type of rebin operation. "
-      "Possible branches are AscendingRebin and DescendingRebin.");
-}
-} // namespace
-
-template <class RebinType, class OldType, class NewType>
-bool compare_new_high_with_old_low(const NewType xn_high,
-                                   const OldType xo_low) {
-  if constexpr (std::is_same_v<RebinType, AscendingRebin>)
-    return xn_high <= xo_low;
-  else if constexpr (std::is_same_v<RebinType, DescendingRebin>)
-    return xn_high >= xo_low;
-  else
-    rebin_error();
-}
-
-template <class RebinType, class OldType, class NewType>
-bool compare_old_high_with_new_low(const OldType xo_high,
-                                   const NewType xn_low) {
-  if constexpr (std::is_same_v<RebinType, AscendingRebin>)
-    return xo_high <= xn_low;
-  else if constexpr (std::is_same_v<RebinType, DescendingRebin>)
-    return xo_high >= xn_low;
-  else
-    rebin_error();
-}
-
-template <class RebinType, class OldType, class NewType>
-double compute_delta(const NewType xn_high, const OldType xo_high,
-                     const NewType xn_low, const OldType xo_low) {
-  if constexpr (std::is_same_v<RebinType, AscendingRebin>)
-    return std::min<double>(xn_high, xo_high) -
-           std::max<double>(xn_low, xo_low);
-  else if constexpr (std::is_same_v<RebinType, DescendingRebin>)
-    return std::min<double>(xn_low, xo_low) -
-           std::max<double>(xn_high, xo_high);
-  else
-    rebin_error();
-}
-
-template <class RebinType, class OldType>
-double compute_owidth(const OldType xo_high, const OldType xo_low) {
-  if constexpr (std::is_same_v<RebinType, AscendingRebin>)
-    return xo_high - xo_low;
-  else if constexpr (std::is_same_v<RebinType, DescendingRebin>)
-    return xo_low - xo_high;
-  else
-    rebin_error();
-}
-
-template <class RebinType, class OldType, class NewType>
-bool compare_new_high_with_old_high(const NewType xn_high,
-                                    const OldType xo_high) {
-  if constexpr (std::is_same_v<RebinType, AscendingRebin>)
-    return xn_high > xo_high;
-  else if constexpr (std::is_same_v<RebinType, DescendingRebin>)
-    return xn_high < xo_high;
-  else
-    rebin_error();
-}
-
-template <class T>
+template <class Less>
 static constexpr auto rebin = overloaded{
     [](const auto &data_new, const auto &xnew, const auto &data_old,
        const auto &xold) {
+      constexpr Less less;
       zero(data_new);
       const auto oldSize = scipp::size(xold) - 1;
       const auto newSize = scipp::size(xnew) - 1;
@@ -98,14 +32,14 @@ static constexpr auto rebin = overloaded{
         const auto xo_high = xold[iold + 1];
         const auto xn_low = xnew[inew];
         const auto xn_high = xnew[inew + 1];
-        if (T{}(xo_low, xn_high))
+        if (!less(xo_low, xn_high))
           inew++; // old and new bins do not overlap
-        else if (T{}(xn_low, xo_high))
+        else if (!less(xn_low, xo_high))
           iold++; // old and new bins do not overlap
         else {
           // delta is the overlap of the bins on the x axis
-          const auto delta = std::abs(std::max<double>(xn_high, xo_high, T{}) -
-                                      std::min<double>(xn_low, xo_low, T{}));
+          const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
+                                      std::max<double>(xn_low, xo_low, less));
           const auto owidth = std::abs(xo_high - xo_low);
           const auto scale = delta / owidth;
           if constexpr (is_ValueAndVariance_v<
@@ -120,7 +54,7 @@ static constexpr auto rebin = overloaded{
           } else {
             data_new[inew] += data_old[iold] * scale;
           }
-          if (T{}(xn_high, xo_high)) {
+          if (less(xo_high, xn_high)) {
             iold++;
           } else {
             inew++;

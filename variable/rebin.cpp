@@ -20,10 +20,11 @@ bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
   return edges[dim] == toMatch[dim];
 }
 
-template <typename T, typename RebinType>
+template <typename T, class Less>
 void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
                      Variable &newT, const VariableConstView &oldCoordT,
                      const VariableConstView &newCoordT) {
+  constexpr Less less;
   const auto oldSize = oldT.dims()[dim];
   const auto newSize = newT.dims()[dim];
 
@@ -44,23 +45,23 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
     auto xn_low = xnew[inew];
     auto xn_high = xnew[inew + 1];
 
-    if (compare_old_high_with_new_low<RebinType>(xn_high, xo_low))
+    if (!less(xo_low, xn_high))
       inew++; /* old and new bins do not overlap */
-    else if (compare_old_high_with_new_low<RebinType>(xo_high, xn_low))
+    else if (!less(xn_low, xo_high))
       iold++; /* old and new bins do not overlap */
     else {
       if (is_bool) {
         newT.slice({dim, inew}) |= oldT.slice({dim, iold});
       } else {
         // delta is the overlap of the bins on the x axis
-        const auto delta =
-            compute_delta<RebinType>(xn_high, xo_high, xn_low, xo_low);
-        const auto owidth = compute_owidth<RebinType>(xo_high, xo_low);
+        const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
+                                    std::max<double>(xn_low, xo_low, less));
+        const auto owidth = std::abs(xo_high - xo_low);
         newT.slice({dim, inew}) +=
             astype(oldT.slice({dim, iold}) * ((delta / owidth) * units::one),
                    newT.dtype());
       }
-      if (compare_new_high_with_old_high<RebinType>(xn_high, xo_high)) {
+      if (less(xo_high, xn_high)) {
         iold++;
       } else {
         inew++;
@@ -69,24 +70,25 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
   }
 }
 
-// namespace rebin_inner_detail {
 namespace {
 template <class Out, class OutEdge, class In, class InEdge>
 using args = std::tuple<span<Out>, span<const OutEdge>, span<const In>,
                         span<const InEdge>>;
-}
 
 struct Greater {
-  template <class A, class B> bool operator()(const A a, const B b) {
+  template <class A, class B>
+  constexpr bool operator()(const A a, const B b) const noexcept {
     return a > b;
   }
 };
 
 struct Less {
-  template <class A, class B> bool operator()(const A a, const B b) {
+  template <class A, class B>
+  constexpr bool operator()(const A a, const B b) const noexcept {
     return a < b;
   }
 };
+} // namespace
 
 Variable rebin(const VariableConstView &var, const Dim dim,
                const VariableConstView &oldCoord,
@@ -107,17 +109,16 @@ Variable rebin(const VariableConstView &var, const Dim dim,
       args<bool, double, bool, double>>;
 
   if (var.dims().inner() == dim) {
-    // using namespace rebin_inner_detail;
     if (is_sorted_ascending(oldCoord, dim) &&
         is_sorted_ascending(newCoord, dim)) {
       return transform_subspan<transform_args>(
           var.dtype(), dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
-          core::element::rebin<Greater>);
+          core::element::rebin<Less>);
     } else if (is_sorted_descending(oldCoord, dim) &&
                is_sorted_descending(newCoord, dim)) {
       return transform_subspan<transform_args>(
           var.dtype(), dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
-          core::element::rebin<Less>);
+          core::element::rebin<Greater>);
     } else {
       throw except::BinEdgeError(sorted_error);
     }
@@ -132,23 +133,20 @@ Variable rebin(const VariableConstView &var, const Dim dim,
     if (oldCoord.dtype() == dtype<double>)
       if (is_sorted_ascending(oldCoord, dim) &&
           is_sorted_ascending(newCoord, dim))
-        rebin_non_inner<double, AscendingRebin>(dim, var, rebinned, oldCoord,
-                                                newCoord);
+        rebin_non_inner<double, Less>(dim, var, rebinned, oldCoord, newCoord);
       else if (is_sorted_descending(oldCoord, dim) &&
                is_sorted_descending(newCoord, dim))
-        rebin_non_inner<double, DescendingRebin>(dim, var, rebinned, oldCoord,
-                                                 newCoord);
+        rebin_non_inner<double, Greater>(dim, var, rebinned, oldCoord,
+                                         newCoord);
       else
         throw except::BinEdgeError(sorted_error);
     else if (oldCoord.dtype() == dtype<float>)
       if (is_sorted_ascending(oldCoord, dim) &&
           is_sorted_ascending(newCoord, dim))
-        rebin_non_inner<float, AscendingRebin>(dim, var, rebinned, oldCoord,
-                                               newCoord);
+        rebin_non_inner<float, Less>(dim, var, rebinned, oldCoord, newCoord);
       else if (is_sorted_descending(oldCoord, dim) &&
                is_sorted_descending(newCoord, dim))
-        rebin_non_inner<float, DescendingRebin>(dim, var, rebinned, oldCoord,
-                                                newCoord);
+        rebin_non_inner<float, Greater>(dim, var, rebinned, oldCoord, newCoord);
       else
         throw except::BinEdgeError(sorted_error);
     else
