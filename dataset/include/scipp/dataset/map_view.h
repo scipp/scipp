@@ -113,16 +113,9 @@ public:
   /// Return true if there are 0 coordinates in the view.
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
-  /// Returns whether a given key is present in the view.
-  bool contains(const Key &k) const {
-    return m_items.find(k) != m_items.cend();
-  }
+  bool contains(const Key &k) const;
 
-  /// Return a const view to the coordinate for given dimension.
-  typename mapped_type::const_view_type operator[](const Key key) const {
-    scipp::expect::contains(*this, key);
-    return make_slice(m_items.at(key), m_slices);
-  }
+  typename mapped_type::const_view_type operator[](const Key key) const;
 
   auto find(const Key k) const && = delete;
   auto find(const Key k) const &noexcept {
@@ -203,16 +196,10 @@ public:
   MutableView() = default;
   MutableView(const Access &access, typename Base::holder_type &&items,
               const detail::slice_list &slices);
-  /// Constructor for internal use (slicing and holding const view in mutable
-  /// view)
   MutableView(const Access &access, Base &&base);
 
-  /// Return a view to the coordinate for given dimension.
   typename Base::mapped_type::view_type
-  operator[](const typename Base::key_type key) const {
-    scipp::expect::contains(*this, key);
-    return make_slice(Base::items().at(key), Base::slices());
-  }
+  operator[](const typename Base::key_type key) const;
 
   template <class T> auto find(const T k) const && = delete;
   template <class T> auto find(const T k) const &noexcept {
