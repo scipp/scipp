@@ -100,29 +100,28 @@ Variable rebin(const VariableConstView &var, const Dim dim,
   if (!isBinEdge(dim, oldCoord.dims(), var.dims()))
     throw except::BinEdgeError(
         "The input does not have coordinates with bin-edges.");
-  std::string sorted_error =
-      "Rebin: The old or new coordinates are not sorted.";
 
   using transform_args = std::tuple<
       args<double, double, double, double>, args<float, float, float, float>,
       args<float, double, float, double>, args<float, float, float, double>,
       args<bool, double, bool, double>>;
 
+  const bool ascending =
+      is_sorted_ascending(oldCoord, dim) && is_sorted_ascending(newCoord, dim);
+  if (!ascending && !(is_sorted_descending(oldCoord, dim) &&
+                      is_sorted_descending(newCoord, dim)))
+    throw except::BinEdgeError(
+        "Rebin: The old or new bin edges are not sorted.");
   if (var.dims().inner() == dim) {
-    if (is_sorted_ascending(oldCoord, dim) &&
-        is_sorted_ascending(newCoord, dim)) {
+    if (ascending) {
       return transform_subspan<transform_args>(
           var.dtype(), dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
           core::element::rebin<Less>);
-    } else if (is_sorted_descending(oldCoord, dim) &&
-               is_sorted_descending(newCoord, dim)) {
+    } else {
       return transform_subspan<transform_args>(
           var.dtype(), dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
           core::element::rebin<Greater>);
-    } else {
-      throw except::BinEdgeError(sorted_error);
     }
-
   } else {
     auto dims = var.dims();
     dims.resize(dim, newCoord.dims()[dim] - 1);
@@ -130,28 +129,21 @@ Variable rebin(const VariableConstView &var, const Dim dim,
     if (newCoord.dims().ndim() > 1)
       throw std::runtime_error(
           "Not inner rebin works only for 1d coordinates for now.");
-    if (oldCoord.dtype() == dtype<double>)
-      if (is_sorted_ascending(oldCoord, dim) &&
-          is_sorted_ascending(newCoord, dim))
+    if (oldCoord.dtype() == dtype<double>) {
+      if (ascending)
         rebin_non_inner<double, Less>(dim, var, rebinned, oldCoord, newCoord);
-      else if (is_sorted_descending(oldCoord, dim) &&
-               is_sorted_descending(newCoord, dim))
+      else
         rebin_non_inner<double, Greater>(dim, var, rebinned, oldCoord,
                                          newCoord);
-      else
-        throw except::BinEdgeError(sorted_error);
-    else if (oldCoord.dtype() == dtype<float>)
-      if (is_sorted_ascending(oldCoord, dim) &&
-          is_sorted_ascending(newCoord, dim))
+    } else if (oldCoord.dtype() == dtype<float>) {
+      if (ascending)
         rebin_non_inner<float, Less>(dim, var, rebinned, oldCoord, newCoord);
-      else if (is_sorted_descending(oldCoord, dim) &&
-               is_sorted_descending(newCoord, dim))
-        rebin_non_inner<float, Greater>(dim, var, rebinned, oldCoord, newCoord);
       else
-        throw except::BinEdgeError(sorted_error);
-    else
+        rebin_non_inner<float, Greater>(dim, var, rebinned, oldCoord, newCoord);
+    } else {
       throw std::runtime_error(
           "Rebinning is possible only for double and float types.");
+    }
     return rebinned;
   }
 }
