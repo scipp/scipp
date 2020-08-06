@@ -6,6 +6,7 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 
 #include "pybind11.h"
 
