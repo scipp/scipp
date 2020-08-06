@@ -80,9 +80,9 @@ class HDF5IO:
             raise RuntimeError(
                 "Writing realigned data is not implemented yet.")
         self._write_variable(group, var=data.data, name='data')
-        for view_name, view in zip(
-            ['coords', 'masks', 'unaligned_coords'],
-            [data.aligned_coords, data.masks, data.unaligned_coords]):
+        views = [data.aligned_coords, data.masks, data.unaligned_coords]
+        for view_name, view in zip(['coords', 'masks', 'unaligned_coords'],
+                                   views):
             subgroup = group.create_group(view_name)
             for name in view:
                 self._write_variable(group=subgroup,
