@@ -39,11 +39,8 @@ namespace detail {
 void expect0D(const Dimensions &dims);
 } // namespace detail
 
-class Variable;
 class VariableConstView;
 class VariableView;
-
-template <class T, class... Ts> Variable makeVariable(Ts &&... ts);
 
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. In addition it has a unit and a set of dimension
