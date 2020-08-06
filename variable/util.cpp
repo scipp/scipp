@@ -53,6 +53,8 @@ Variable variances(const VariableConstView &x) {
 /// Return True if variable values are monotonously increasing along given dim.
 bool is_sorted_ascending(const VariableConstView &x, const Dim dim) {
   const auto size = x.dims()[dim];
+  if (size < 2)
+    return true;
   return all(greater(x.slice({dim, 1, size}) - x.slice({dim, 0, size - 1}),
                      Variable(x.dtype(), x.unit(), Values{0.0})))
       .value<bool>();
@@ -61,6 +63,8 @@ bool is_sorted_ascending(const VariableConstView &x, const Dim dim) {
 /// Return True if variable values are monotonously decreasing along given dim.
 bool is_sorted_descending(const VariableConstView &x, const Dim dim) {
   const auto size = x.dims()[dim];
+  if (size < 2)
+    return false;
   return all(less(x.slice({dim, 1, size}) - x.slice({dim, 0, size - 1}),
                   Variable(x.dtype(), x.unit(), Values{0.0})))
       .value<bool>();
