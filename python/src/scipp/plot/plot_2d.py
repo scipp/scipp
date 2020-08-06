@@ -223,13 +223,13 @@ class Slicer2d(Slicer):
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled array to be used as image
             offset = 2 * (xy == "y")
-            # Flip the axis if the coordinate is descending
-            i1 = (0 + self.contains_decreasing_coord[self.name][param["dim"]]) % 2
-            i2 = (i1 + 1) % 2
+            # # Flip the axis if the coordinate is descending
+            # i1 = (0 + self.contains_decreasing_coord[self.name][param["dim"]]) % 2
+            # i2 = (i1 + 1) % 2
             self.xyrebin[xy] = sc.Variable(
                 dims=[param["dim"]],
-                values=np.linspace(extent_array[i1 + offset],
-                                   extent_array[i2 + offset],
+                values=np.linspace(extent_array[0 + offset],
+                                   extent_array[1 + offset],
                                    self.image_resolution[xy] + 1),
                 unit=self.slider_coord[self.name][param["dim"]].unit)
 
@@ -411,13 +411,13 @@ class Slicer2d(Slicer):
         if diff > 0.1:
             self.current_lims = xylims
             for xy, param in self.axparams.items():
-                # Flip the axis if the coordinate is descending
-                i1 = (0 + self.contains_decreasing_coord[self.name][param["dim"]]) % 2
-                i2 = (i1 + 1) % 2
+                # # Flip the axis if the coordinate is descending
+                # i1 = (0 + self.contains_decreasing_coord[self.name][param["dim"]]) % 2
+                # i2 = (i1 + 1) % 2
                 # Create coordinate axes for resampled image array
                 self.xyrebin[xy] = sc.Variable(
                     dims=[param["dim"]],
-                    values=np.linspace(xylims[xy][i1], xylims[xy][i2],
+                    values=np.linspace(xylims[xy][0], xylims[xy][1],
                                        self.image_resolution[xy] + 1),
                     unit=self.slider_coord[self.name][param["dim"]].unit)
 
@@ -446,7 +446,8 @@ class Slicer2d(Slicer):
                 self.xyrebin[self.dim_to_xy[self.vslice.dims[1]]].dims[0]
             ],
                              values=self.vslice.values,
-                             unit=sc.units.counts))
+                             unit=sc.units.counts,
+                             dtype=sc.dtype.float64))
 
         # Also include the masks
         if self.params["masks"][self.name]["show"]:
