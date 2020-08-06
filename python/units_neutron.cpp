@@ -14,6 +14,7 @@
 using namespace scipp;
 namespace py = pybind11;
 
+namespace {
 template <class T> struct MultScalarUnit {
   static Variable apply(const py::object &scalar, const units::Unit &unit) {
     return py::cast<T>(scalar) * unit;
@@ -37,6 +38,12 @@ Variable doDivScalarUnit(const units::Unit &unit, const py::object &scalar,
   return scipp::core::CallDType<double, float, int64_t, int32_t>::apply<
       DivScalarUnit>(scipp_dtype(type), scalar, unit);
 }
+
+template <class... Ts>
+auto supported_units_runtime_list(const std::tuple<Ts...> &) {
+  return std::vector{units::Unit(Ts{})...};
+}
+} // namespace
 
 void init_units_neutron(py::module &m) {
   py::class_<units::Dim>(m, "Dim", "Dimension label")
@@ -154,4 +161,9 @@ void init_units_neutron(py::module &m) {
   units.attr("s") = units::s;
   units.attr("us") = units::us;
   units.attr("ns") = units::ns;
+
+  units.def(
+      "supported_units",
+      []() { return supported_units_runtime_list(units::supported_units_t{}); },
+      "Return a list of all supported units and unit combinations.");
 }
