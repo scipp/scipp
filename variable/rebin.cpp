@@ -76,6 +76,18 @@ using args = std::tuple<span<Out>, span<const OutEdge>, span<const In>,
                         span<const InEdge>>;
 }
 
+struct Greater {
+  template <class A, class B> bool operator()(const A a, const B b) {
+    return a > b;
+  }
+};
+
+struct Less {
+  template <class A, class B> bool operator()(const A a, const B b) {
+    return a < b;
+  }
+};
+
 Variable rebin(const VariableConstView &var, const Dim dim,
                const VariableConstView &oldCoord,
                const VariableConstView &newCoord) {
@@ -100,12 +112,12 @@ Variable rebin(const VariableConstView &var, const Dim dim,
         is_sorted_ascending(newCoord, dim)) {
       return transform_subspan<transform_args>(
           var.dtype(), dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
-          core::element::rebin<AscendingRebin>);
+          core::element::rebin<Greater>);
     } else if (is_sorted_descending(oldCoord, dim) &&
                is_sorted_descending(newCoord, dim)) {
       return transform_subspan<transform_args>(
           var.dtype(), dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
-          core::element::rebin<DescendingRebin>);
+          core::element::rebin<Less>);
     } else {
       throw except::BinEdgeError(sorted_error);
     }

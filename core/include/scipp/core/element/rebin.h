@@ -98,14 +98,15 @@ static constexpr auto rebin = overloaded{
         const auto xo_high = xold[iold + 1];
         const auto xn_low = xnew[inew];
         const auto xn_high = xnew[inew + 1];
-        if (compare_old_high_with_new_low<T>(xn_high, xo_low))
+        if (T{}(xo_low, xn_high))
           inew++; // old and new bins do not overlap
-        else if (compare_old_high_with_new_low<T>(xo_high, xn_low))
+        else if (T{}(xn_low, xo_high))
           iold++; // old and new bins do not overlap
         else {
           // delta is the overlap of the bins on the x axis
-          const auto delta = compute_delta<T>(xn_high, xo_high, xn_low, xo_low);
-          const auto owidth = compute_owidth<T>(xo_high, xo_low);
+          const auto delta = std::abs(std::max<double>(xn_high, xo_high, T{}) -
+                                      std::min<double>(xn_low, xo_low, T{}));
+          const auto owidth = std::abs(xo_high - xo_low);
           const auto scale = delta / owidth;
           if constexpr (is_ValueAndVariance_v<
                             std::decay_t<decltype(data_old)>>) {
@@ -119,7 +120,7 @@ static constexpr auto rebin = overloaded{
           } else {
             data_new[inew] += data_old[iold] * scale;
           }
-          if (compare_new_high_with_old_high<T>(xn_high, xo_high)) {
+          if (T{}(xn_high, xo_high)) {
             iold++;
           } else {
             inew++;
