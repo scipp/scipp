@@ -36,7 +36,7 @@ bool ConstView<Id, Key, Value>::contains(const Key &k) const {
 /// Return a const view to the coordinate for given dimension.
 template <class Id, class Key, class Value>
 typename ConstView<Id, Key, Value>::mapped_type::const_view_type
-ConstView<Id, Key, Value>::operator[](const Key key) const {
+ConstView<Id, Key, Value>::operator[](const Key &key) const {
   scipp::expect::contains(*this, key);
   return make_slice(m_items.at(key), m_slices);
 }
@@ -60,14 +60,15 @@ MutableView<Base, Access>::MutableView(const Access &access, Base &&base)
 
 template <class Base, class Access>
 /// Return a view to the coordinate for given dimension.
-typename Base::mapped_type::view_type
-MutableView<Base, Access>::operator[](const typename Base::key_type key) const {
+typename Base::mapped_type::view_type MutableView<Base, Access>::operator[](
+    const typename Base::key_type &key) const {
   scipp::expect::contains(*this, key);
   return make_slice(Base::items().at(key), Base::slices());
 }
 
 template <class Base, class Access>
-void MutableView<Base, Access>::erase(const typename Base::key_type key) const {
+void MutableView<Base, Access>::erase(
+    const typename Base::key_type &key) const {
   scipp::expect::contains(*this, key);
   m_access.erase(key);
 }

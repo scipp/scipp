@@ -114,10 +114,10 @@ public:
 
   bool contains(const Key &k) const;
 
-  typename mapped_type::const_view_type operator[](const Key key) const;
+  typename mapped_type::const_view_type operator[](const Key &key) const;
 
-  auto find(const Key k) const && = delete;
-  auto find(const Key k) const &noexcept {
+  auto find(const Key &k) const && = delete;
+  auto find(const Key &k) const &noexcept {
     return boost::make_transform_iterator(m_items.find(k), make_item{this});
   }
 
@@ -198,10 +198,10 @@ public:
   MutableView(const Access &access, Base &&base);
 
   typename Base::mapped_type::view_type
-  operator[](const typename Base::key_type key) const;
+  operator[](const typename Base::key_type &key) const;
 
-  template <class T> auto find(const T k) const && = delete;
-  template <class T> auto find(const T k) const &noexcept {
+  template <class T> auto find(const T &k) const && = delete;
+  template <class T> auto find(const T &k) const &noexcept {
     return boost::make_transform_iterator(Base::items().find(k),
                                           make_item{this});
   }
@@ -237,11 +237,11 @@ public:
   }
 
   template <class VarOrView>
-  void set(const typename Base::key_type key, VarOrView var) const {
+  void set(const typename Base::key_type &key, VarOrView var) const {
     m_access.set(key, typename Base::mapped_type(std::move(var)));
   }
 
-  void erase(const typename Base::key_type key) const;
+  void erase(const typename Base::key_type &key) const;
 };
 
 SCIPP_DATASET_EXPORT Variable irreducible_mask(const MasksConstView &masks,
