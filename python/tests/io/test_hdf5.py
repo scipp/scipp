@@ -44,7 +44,7 @@ def test_data_array_1d():
                          'mask1': sc.less(x, 1.5 * sc.units.m),
                          'mask2': sc.less(x, 2.5 * sc.units.m)
                      },
-                     attrs={
+                     unaligned_coords={
                          'attr1': x,
                          'attr2': 1.2 * sc.units.K
                      })
@@ -62,7 +62,7 @@ def test_data_array_2d():
                          'mask1': sc.less(x, 1.5 * sc.units.m),
                          'mask2': sc.less(xy, 0.5 * sc.units.kg)
                      },
-                     attrs={
+                     unaligned_coords={
                          'attr1': xy,
                          'attr2': 1.2 * sc.units.K
                      })
