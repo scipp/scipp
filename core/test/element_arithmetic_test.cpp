@@ -43,3 +43,35 @@ TEST_F(ElementArithmeticTest, non_in_place) {
 }
 
 TEST_F(ElementArithmeticTest, unary_minus) { EXPECT_EQ(unary_minus(a), -a); }
+
+TEST(ElementArithmeticIntegerDivisionTest, truediv) {
+  // 32 bit ints gives double not float, consistent with numpy
+  EXPECT_TRUE((std::is_same_v<decltype(divide(int32_t{}, int32_t{})), double>));
+  EXPECT_TRUE((std::is_same_v<decltype(divide(int64_t{}, int64_t{})), double>));
+}
+
+TEST(ElementArithmeticIntegerDivisionTest, truediv_32bit) {
+  const int32_t a = 2;
+  const int32_t b = 3;
+  EXPECT_EQ(divide(a, b), 2.0 / 3.0);
+}
+
+TEST(ElementArithmeticIntegerDivisionTest, truediv_64bit) {
+  const int64_t a = 2;
+  const int64_t b = 3;
+  EXPECT_EQ(divide(a, b), 2.0 / 3.0);
+}
+
+template <class T> struct int_as_first_arg : std::false_type {};
+template <> struct int_as_first_arg<int64_t> : std::true_type {};
+template <> struct int_as_first_arg<int32_t> : std::true_type {};
+template <class A, class B>
+struct int_as_first_arg<std::tuple<A, B>> : int_as_first_arg<A> {};
+
+template <class... Ts> auto no_int_as_first_arg(const std::tuple<Ts...> &) {
+  return !(int_as_first_arg<Ts>::value || ...);
+}
+
+TEST(ElementArithmeticIntegerDivisionTest, inplace_truediv_not_supported) {
+  EXPECT_TRUE(no_int_as_first_arg(decltype(divide_equals)::types{}));
+}

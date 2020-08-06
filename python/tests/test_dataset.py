@@ -596,7 +596,7 @@ def test_binary_of_item_with_variable():
 
 
 def test_in_place_binary_with_scalar():
-    d = sc.Dataset({'data': sc.Variable(dims=['x'], values=[10])},
+    d = sc.Dataset({'data': sc.Variable(dims=['x'], values=[10.0])},
                    coords={'x': sc.Variable(dims=['x'], values=[10])})
     copy = d.copy()
 
@@ -608,7 +608,7 @@ def test_in_place_binary_with_scalar():
 
 
 def test_view_in_place_binary_with_scalar():
-    d = sc.Dataset({'data': sc.Variable(dims=['x'], values=[10])},
+    d = sc.Dataset({'data': sc.Variable(dims=['x'], values=[10.0])},
                    coords={'x': sc.Variable(dims=['x'], values=[10])})
     copy = d.copy()
 

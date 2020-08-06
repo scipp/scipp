@@ -43,8 +43,14 @@ TYPED_TEST(VariableScalarOperatorTest, times_equals) {
 }
 
 TYPED_TEST(VariableScalarOperatorTest, divide_equals) {
-  this->variable /= this->scalar * units::one;
-  EXPECT_EQ(this->value(), 5);
+  if (this->variable.dtype() == dtype<double> ||
+      this->variable.dtype() == dtype<float>) {
+    this->variable /= this->scalar * units::one;
+    EXPECT_EQ(this->value(), 5);
+  } else {
+    EXPECT_THROW(this->variable /= this->scalar * units::one,
+                 except::TypeError);
+  }
 }
 
 TEST(Variable, operator_unary_minus) {
@@ -145,7 +151,7 @@ TEST(Variable, operator_minus_equal_time_type) {
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   auto b = makeVariable<int64_t>(Dims{Dim::X}, Shape{1}, Values{2});
-  EXPECT_THROW(a += b, except::TypeError);
+  EXPECT_NO_THROW(a += b);
 }
 
 TEST(Variable, operator_plus_equal_different_variables_same_element_type) {
@@ -411,9 +417,9 @@ TEST(Variable, operator_allowed_types) {
   EXPECT_NO_THROW(i64 += i32);
   EXPECT_NO_THROW(d += f);
 
-  /* Can not operate on lower precision from higher precision */
-  EXPECT_ANY_THROW(i32 += i64);
-  EXPECT_ANY_THROW(f += d);
+  /* Can operate on lower precision from higher precision */
+  EXPECT_NO_THROW(i32 += i64);
+  EXPECT_NO_THROW(f += d);
 
   /* Expect promotion to double if one parameter is double */
   EXPECT_EQ(dtype<double>, (f + d).dtype());

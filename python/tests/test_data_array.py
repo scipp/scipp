@@ -156,7 +156,7 @@ def test_in_place_binary_with_dataarray():
 
 
 def test_in_place_binary_with_scalar():
-    a = sc.DataArray(data=sc.Variable(['x'], values=[10]),
+    a = sc.DataArray(data=sc.Variable(['x'], values=[10.0]),
                      coords={'x': sc.Variable(['x'], values=[10])})
     copy = a.copy()
 
@@ -182,7 +182,7 @@ def test_binary_with_broadcast():
 
 
 def test_view_in_place_binary_with_scalar():
-    d = sc.Dataset({'data': sc.Variable(dims=['x'], values=[10])},
+    d = sc.Dataset({'data': sc.Variable(dims=['x'], values=[10.0])},
                    coords={'x': sc.Variable(dims=['x'], values=[10])})
     copy = d.copy()
 
