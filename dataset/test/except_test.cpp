@@ -7,6 +7,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
