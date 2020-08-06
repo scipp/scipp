@@ -8,7 +8,6 @@ import scipp as sc
 def test_numpy_self_assign_shift():
     var = sc.Variable(dims=['x'], values=np.arange(8))
     expected = sc.Variable(dims=['x'], values=[0, 1, 0, 1, 2, 3, 6, 7])
-    a = np.flip(var.values)
     var['x', 2:6].values = var['x', 0:4].values
     assert sc.is_equal(var, expected)
 
