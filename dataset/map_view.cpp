@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/map_view.h"
+#include "scipp/dataset/except.h"
 
 namespace scipp::dataset {
 
@@ -63,6 +64,12 @@ typename Base::mapped_type::view_type
 MutableView<Base, Access>::operator[](const typename Base::key_type key) const {
   scipp::expect::contains(*this, key);
   return make_slice(Base::items().at(key), Base::slices());
+}
+
+template <class Base, class Access>
+void MutableView<Base, Access>::erase(const typename Base::key_type key) const {
+  scipp::expect::contains(*this, key);
+  m_access.erase(key);
 }
 
 template class ConstView<ViewId::Coords, Dim, variable::Variable>;

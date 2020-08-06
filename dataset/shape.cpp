@@ -12,6 +12,12 @@
 
 namespace scipp::dataset {
 
+/// Return one of the inputs if they are the same, throw otherwise.
+template <class T> T same(const T &a, const T &b) {
+  core::expect::equals(a, b);
+  return a;
+}
+
 /// Concatenate a and b, assuming that a and b contain bin edges.
 ///
 /// Checks that the last edges in `a` match the first edges in `b`. The

@@ -5,6 +5,7 @@
 #pragma once
 #include <string>
 
+#include "scipp-dataset_export.h"
 #include "scipp/units/dim.h"
 
 namespace scipp::variable {

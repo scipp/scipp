@@ -8,7 +8,6 @@
 
 #include "scipp/core/slice.h"
 #include "scipp/dataset/dataset_access.h"
-#include "scipp/dataset/except.h"
 #include "scipp/dataset/map_view_forward.h"
 #include "scipp/units/dim.h"
 #include "scipp/units/unit.h"
@@ -242,10 +241,7 @@ public:
     m_access.set(key, typename Base::mapped_type(std::move(var)));
   }
 
-  void erase(const typename Base::key_type key) const {
-    scipp::expect::contains(*this, key);
-    m_access.erase(key);
-  }
+  void erase(const typename Base::key_type key) const;
 };
 
 SCIPP_DATASET_EXPORT Variable irreducible_mask(const MasksConstView &masks,

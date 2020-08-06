@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/dataset_access.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 
 namespace scipp::dataset {
 
