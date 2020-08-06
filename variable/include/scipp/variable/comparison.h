@@ -61,11 +61,11 @@ bool is_approx(const VariableConstView &a, const VariableConstView &b,
               mismatch.test_and_set();
             } else if constexpr (is_ValueAndVariance_v<
                                      std::decay_t<decltype(va)>>) {
-              if ((std::abs(va.value - vb.value) >= tol) ||
-                  (std::abs(va.variance - vb.variance) >= tol))
+              if ((std::abs(va.value - vb.value) > tol) ||
+                  (std::abs(va.variance - vb.variance) > tol))
                 mismatch.test_and_set();
             } else {
-              if (std::abs(va - vb) >= tol)
+              if (std::abs(va - vb) > tol)
                 mismatch.test_and_set();
             }
           },
