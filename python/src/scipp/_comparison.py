@@ -14,7 +14,7 @@ def less(x, y):
 
     :param x: Left input.
     :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of 
+    :raises: If the units of inputs are not the same, or if the dtypes of
              inputs cannot be compared.
     :return: Booleans that are true if `a < b`.
     """
@@ -30,7 +30,7 @@ def greater(x, y):
 
     :param x: Left input.
     :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of 
+    :raises: If the units of inputs are not the same, or if the dtypes of
              inputs cannot be compared.
     :return: Booleans that are true if `a > b`.
     """
@@ -46,7 +46,7 @@ def less_equal(x, y):
 
     :param x: Left input.
     :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of 
+    :raises: If the units of inputs are not the same, or if the dtypes of
              inputs cannot be compared.
     :return: Booleans that are true if `a <= b`.
     """
@@ -62,7 +62,7 @@ def greater_equal(x, y):
 
     :param x: Left input.
     :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of 
+    :raises: If the units of inputs are not the same, or if the dtypes of
              inputs cannot be compared.
     :return: Booleans that are true if `a >= b`.
     """
@@ -78,7 +78,7 @@ def equal(x, y):
 
     :param x: Left input.
     :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of 
+    :raises: If the units of inputs are not the same, or if the dtypes of
              inputs cannot be compared.
     :return: Booleans that are true if `a == b`.
     """
@@ -94,7 +94,7 @@ def not_equal(x, y):
 
     :param x: Left input.
     :param y: Right input.
-    :raises: If the units of inputs are not the same, or if the dtypes of 
+    :raises: If the units of inputs are not the same, or if the dtypes of
              inputs cannot be compared.
     :return: Booleans that are true if `a != b`.
     """
