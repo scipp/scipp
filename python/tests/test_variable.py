@@ -899,7 +899,7 @@ def test_variable_data_array_binary_ops():
     assert sc.is_equal(a / var, var / a)
 
 
-def test_num_to_nan():
+def test_nan_to_num():
     a = sc.Variable(dims=['x'], values=np.array([1, np.nan]))
     replace = sc.Variable(value=0.0)
     b = sc.nan_to_num(a, replace)
@@ -942,7 +942,7 @@ def test_nan_to_nan_with_multiple_special_replacements():
     assert sc.is_equal(b, expected)
 
 
-def test_num_to_nan_out():
+def test_nan_to_num_out():
     a = sc.Variable(dims=['x'], values=np.array([1, np.nan]))
     out = sc.Variable(dims=['x'], values=np.zeros(2))
     replace = sc.Variable(value=0.0)
@@ -951,7 +951,7 @@ def test_num_to_nan_out():
     assert sc.is_equal(out, expected)
 
 
-def test_num_to_nan_out_with_multiple_special_replacements():
+def test_nan_to_num_out_with_multiple_special_replacements():
     a = sc.Variable(dims=['x'], values=np.array([1, np.inf, -np.inf, np.nan]))
     out = sc.Variable(dims=['x'], values=np.zeros(4))
     replace = sc.Variable(value=0.0)
