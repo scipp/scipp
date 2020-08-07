@@ -7,6 +7,7 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 #include "scipp/variable/arithmetic.h"
 
 #include "../variable/test/make_events.h"

@@ -6,6 +6,7 @@
 #include <set>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 
 namespace scipp::dataset {
 

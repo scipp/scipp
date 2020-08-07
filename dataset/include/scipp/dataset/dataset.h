@@ -14,7 +14,6 @@
 
 #include "scipp/common/deep_ptr.h"
 #include "scipp/dataset/dataset_access.h"
-#include "scipp/dataset/except.h"
 #include "scipp/dataset/map_view.h"
 #include "scipp/variable/variable.h"
 
@@ -77,11 +76,7 @@ public:
   }
 
   /// Return untyped const view for data (values and optional variances).
-  const VariableConstView &data() const {
-    if (!hasData())
-      throw except::RealignedDataError("No data in item.");
-    return m_view;
-  }
+  const VariableConstView &data() const;
   /// Return typed const view for data values.
   template <class T> auto values() const { return data().template values<T>(); }
 
@@ -145,11 +140,7 @@ public:
   void setUnit(const units::Unit unit) const;
 
   /// Return untyped view for data (values and optional variances).
-  const VariableView &data() const {
-    if (!hasData())
-      throw except::RealignedDataError("No data in item.");
-    return m_view;
-  }
+  const VariableView &data() const;
   /// Return typed view for data values.
   template <class T> auto values() const { return data().template values<T>(); }
 
@@ -801,12 +792,6 @@ SCIPP_DATASET_EXPORT DataArray astype(const DataArrayConstView &var,
 
 SCIPP_DATASET_EXPORT Dataset merge(const DatasetConstView &a,
                                    const DatasetConstView &b);
-
-/// Return one of the inputs if they are the same, throw otherwise.
-template <class T> T same(const T &a, const T &b) {
-  core::expect::equals(a, b);
-  return a;
-}
 
 /// Union the masks of the two proxies.
 /// If any of the masks repeat they are OR'ed.
