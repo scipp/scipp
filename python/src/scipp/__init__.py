@@ -25,7 +25,9 @@ from .compat.dict import to_dict, from_dict
 from .io import data_array_to_hdf5
 
 # Wrappers for free functions from _scipp.core
-from .math import *
+from ._comparison import *
+from ._math import *
+from ._trigonometry import *
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(VariableConstView, '_repr_html_', make_html)

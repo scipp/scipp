@@ -1,11 +1,8 @@
-from ._scipp import core as sc
-
-
-def _call_cpp_func(func, *args, out=None, **kwargs):
-    if out is None:
-        return func(*args, **kwargs)
-    else:
-        return func(*args, **kwargs, out=out)
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# @author Simon Heybrock
+from ._scipp import core as _cpp
+from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 def abs(x, out=None):
@@ -15,9 +12,9 @@ def abs(x, out=None):
     :param out: Optional output buffer.
     :raises: If the dtype has no absolute value, e.g., if it is a string.
     :return: The absolute values of the input.
-    :seealso: `scipp.norm` for vector-like dtype.
+    :seealso: :py:func:`scipp.norm` for vector-like dtype.
     """
-    return _call_cpp_func(sc.abs, x, out=out)
+    return _call_cpp_func(_cpp.abs, x, out=out)
 
 
 def nan_to_num(x, nan=None, posinf=None, neginf=None, out=None):
@@ -44,7 +41,7 @@ def nan_to_num(x, nan=None, posinf=None, neginf=None, out=None):
     :raises: If the types of input and replacement do not match.
     :return: Input elements are replaced in output with specified subsitutions.
     """
-    return _call_cpp_func(sc.nan_to_num, x, nan, posinf, neginf, out=out)
+    return _call_cpp_func(_cpp.nan_to_num, x, nan, posinf, neginf, out=out)
 
 
 def norm(x):
@@ -54,7 +51,7 @@ def norm(x):
     :raises: If the dtype has no norm, i.e., if it is not a vector.
     :return: Scalar elements computed as the norm values of the input elements.
     """
-    return _call_cpp_func(sc.norm, x, out=None)
+    return _call_cpp_func(_cpp.norm, x, out=None)
 
 
 def reciprocal(x, out=None):
@@ -65,7 +62,7 @@ def reciprocal(x, out=None):
     :raises: If the dtype has no reciprocal, e.g., if it is a string.
     :return: The reciprocal values of the input.
     """
-    return _call_cpp_func(sc.reciprocal, x, out=out)
+    return _call_cpp_func(_cpp.reciprocal, x, out=out)
 
 
 def sqrt(x, out=None):
@@ -76,4 +73,4 @@ def sqrt(x, out=None):
     :raises: If the dtype has no square-root, e.g., if it is a string.
     :return: The square-root values of the input.
     """
-    return _call_cpp_func(sc.sqrt, x, out=out)
+    return _call_cpp_func(_cpp.sqrt, x, out=out)
