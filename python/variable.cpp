@@ -338,30 +338,29 @@ Mostly equivalent to Variable, see there for details.)");
           .c_str());
 
   m.def(
-      "is_sorted_ascending",
-      [](const VariableConstView &x, const Dim dim) {
-        return is_sorted_ascending(x, dim);
+      "is_sorted",
+      [](const VariableConstView &x, const Dim dim, const std::string &order) {
+        if (order == "ascending")
+          return is_sorted(x, dim, variable::SortOrder::Ascending);
+        else if (order == "descending")
+          return is_sorted(x, dim, variable::SortOrder::Descending);
+        else
+          throw std::runtime_error(
+              "Sort order must be 'ascending' or 'descending'");
       },
+      py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
       py::call_guard<py::gil_scoped_release>(),
       Docstring()
           .description("Check if the values of a variable are sorted in "
-                       "ascending order.")
+                       "ascending/descending order.")
+          .param("x", "Variable to check.", "Variable")
+          .param("dim", "Dimension along which order is checked.", "Dim")
+          .param("order",
+                 "Sorted order. Valid options are 'ascending' and "
+                 "'descending'. Default is 'ascending'.",
+                 "str")
           .returns("Returns True if the variable values are monotonously "
                    "ascending, False otherwise.")
-          .rtype("bool")
-          .c_str());
-
-  m.def(
-      "is_sorted_descending",
-      [](const VariableConstView &x, const Dim dim) {
-        return is_sorted_descending(x, dim);
-      },
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Check if the values of a variable are sorted in "
-                       "descending order.")
-          .returns("Returns True if the variable values are monotonously "
-                   "descending, False otherwise.")
           .rtype("bool")
           .c_str());
 }

@@ -106,10 +106,10 @@ Variable rebin(const VariableConstView &var, const Dim dim,
       args<float, double, float, double>, args<float, float, float, double>,
       args<bool, double, bool, double>>;
 
-  const bool ascending =
-      is_sorted_ascending(oldCoord, dim) && is_sorted_ascending(newCoord, dim);
-  if (!ascending && !(is_sorted_descending(oldCoord, dim) &&
-                      is_sorted_descending(newCoord, dim)))
+  const bool ascending = is_sorted(oldCoord, dim, SortOrder::Ascending) &&
+                         is_sorted(newCoord, dim, SortOrder::Ascending);
+  if (!ascending && !(is_sorted(oldCoord, dim, SortOrder::Descending) &&
+                      is_sorted(newCoord, dim, SortOrder::Descending)))
     throw except::BinEdgeError(
         "Rebin: The old or new bin edges are not sorted.");
   if (var.dims().inner() == dim) {

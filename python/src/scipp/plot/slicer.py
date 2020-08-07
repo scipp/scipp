@@ -143,7 +143,7 @@ class Slicer:
                 # The limits for each dimension
                 self.slider_xlims[name][dim] = np.array(
                     [sc.min(var).value, sc.max(var).value], dtype=np.float)
-                if sc.is_sorted_descending(var, dim):
+                if sc.is_sorted(var, dim, order='descending'):
                     self.slider_xlims[name][dim] = np.flip(
                         self.slider_xlims[name][dim]).copy()
                 # The tick formatter and locator
