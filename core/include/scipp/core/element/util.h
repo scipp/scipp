@@ -71,14 +71,14 @@ constexpr auto is_sorted_common = overloaded{
       out = units::dimensionless;
     }};
 
-constexpr auto is_sorted_ascending = overloaded{
+constexpr auto is_sorted_nondescending = overloaded{
     is_sorted_common, [](bool &out, const auto left, const auto right) {
-      out = out && (left < right);
+      out = out && (left <= right);
     }};
 
-constexpr auto is_sorted_descending = overloaded{
+constexpr auto is_sorted_nonascending = overloaded{
     is_sorted_common, [](bool &out, const auto left, const auto right) {
-      out = out && (left > right);
+      out = out && (left >= right);
     }};
 
 } // namespace scipp::core::element

@@ -351,8 +351,10 @@ Mostly equivalent to Variable, see there for details.)");
       py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
       py::call_guard<py::gil_scoped_release>(),
       Docstring()
-          .description("Check if the values of a variable are sorted in "
-                       "ascending/descending order.")
+          .description("Check if the values of a variable are sorted in.\n\nIf "
+                       "'order' is 'ascending' checks if values are "
+                       "non-decreasing along 'dim'. If 'order' is 'descending' "
+                       "checks if values are non-increasing along 'dim'.")
           .param("x", "Variable to check.", "Variable")
           .param("dim", "Dimension along which order is checked.", "Dim")
           .param("order",

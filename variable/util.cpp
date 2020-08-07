@@ -50,8 +50,10 @@ Variable variances(const VariableConstView &x) {
   return transform(x, element::variances);
 }
 
-/// Return true if variable values are monotonously increasing/decreasing (for
-/// Ascending/Descending order, respectively) along given dim.
+/// Return true if variable values are sorted along given dim.
+///
+/// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
+/// If `order` is SortOrder::Descending, checks if values are non-increasing.
 bool is_sorted(const VariableConstView &x, const Dim dim,
                const SortOrder order) {
   const auto size = x.dims()[dim];
@@ -61,11 +63,11 @@ bool is_sorted(const VariableConstView &x, const Dim dim,
   if (order == SortOrder::Ascending)
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
-                        core::element::is_sorted_ascending);
+                        core::element::is_sorted_nondescending);
   else
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
-                        core::element::is_sorted_descending);
+                        core::element::is_sorted_nonascending);
   return out.value<bool>();
 }
 
