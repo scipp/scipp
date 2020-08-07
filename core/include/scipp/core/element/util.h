@@ -65,7 +65,8 @@ constexpr auto variances = overloaded{
 constexpr auto is_sorted_common = overloaded{
     core::element::arg_list<
         std::tuple<bool, double, double>, std::tuple<bool, float, float>,
-        std::tuple<bool, int64_t, int64_t>, std::tuple<bool, int32_t, int32_t>>,
+        std::tuple<bool, int64_t, int64_t>, std::tuple<bool, int32_t, int32_t>,
+        std::tuple<bool, std::string, std::string>>,
     transform_flags::expect_no_variance_arg<1>,
     [](units::Unit &out, const units::Unit &left, const units::Unit &right) {
       core::expect::equals(left, right);
@@ -73,12 +74,12 @@ constexpr auto is_sorted_common = overloaded{
     }};
 
 constexpr auto is_sorted_nondescending = overloaded{
-    is_sorted_common, [](bool &out, const auto left, const auto right) {
+    is_sorted_common, [](bool &out, const auto &left, const auto &right) {
       out = out && (left <= right);
     }};
 
 constexpr auto is_sorted_nonascending = overloaded{
-    is_sorted_common, [](bool &out, const auto left, const auto right) {
+    is_sorted_common, [](bool &out, const auto &left, const auto &right) {
       out = out && (left >= right);
     }};
 
