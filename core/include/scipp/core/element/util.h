@@ -62,4 +62,23 @@ constexpr auto variances = overloaded{
     },
     [](const units::Unit &u) { return u * u; }};
 
+constexpr auto is_sorted_common = overloaded{
+    core::element::arg_list<std::tuple<bool, double, double>,
+                            std::tuple<bool, float, float>>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](units::Unit &out, const units::Unit &left, const units::Unit &right) {
+      core::expect::equals(left, right);
+      out = units::dimensionless;
+    }};
+
+constexpr auto is_sorted_ascending = overloaded{
+    is_sorted_common, [](bool &out, const auto left, const auto right) {
+      out = out && (left < right);
+    }};
+
+constexpr auto is_sorted_descending = overloaded{
+    is_sorted_common, [](bool &out, const auto left, const auto right) {
+      out = out && (left > right);
+    }};
+
 } // namespace scipp::core::element
