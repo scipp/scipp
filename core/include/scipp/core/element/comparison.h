@@ -16,8 +16,8 @@ namespace scipp::core::element {
 
 constexpr auto comparison = overloaded{
     transform_flags::no_out_variance,
-    arg_list<double, float, int64_t, int32_t, std::tuple<int64_t, int32_t>,
-             std::tuple<int32_t, int64_t>>,
+    arg_list<double, float, int64_t, int32_t, bool,
+             std::tuple<int64_t, int32_t>, std::tuple<int32_t, int64_t>>,
     [](const units::Unit &x, const units::Unit &y) {
       expect::equals(x, y);
       return units::dimensionless;
@@ -49,7 +49,7 @@ constexpr auto not_equal =
     overloaded{comparison, [](const auto &x, const auto &y) { return x != y; }};
 
 constexpr auto max_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t>,
+    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
                transform_flags::expect_in_variance_if_out_variance,
                [](auto &&a, const auto &b) {
                  using std::max;
@@ -57,7 +57,7 @@ constexpr auto max_equals =
                }};
 
 constexpr auto min_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t>,
+    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
                transform_flags::expect_in_variance_if_out_variance,
                [](auto &&a, const auto &b) {
                  using std::min;
