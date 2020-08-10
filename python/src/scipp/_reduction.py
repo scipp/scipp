@@ -108,16 +108,16 @@ def all(x, dim=None, out=None):
 
 
 def any(x, dim=None, out=None):
-    """Element-wise AND over the specified dimension or all dimensions if not
+    """Element-wise OR over the specified dimension or all dimensions if not
     provided.
 
     :param x: Input data.
-    :param dim: Optional dimension along which to calculate the AND. If not
-                given, the AND over all dimensions is calculated.
+    :param dim: Optional dimension along which to calculate the OR. If not
+                given, the OR over all dimensions is calculated.
     :param out: Optional output buffer.
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
-    :return: The AND of the input values.
+    :return: The OR of the input values.
     """
     if dim is None:
         return _call_cpp_func(_cpp.any, x, out=out)
