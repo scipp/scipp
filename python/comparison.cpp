@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "docstring.h"
 #include "pybind11.h"
 
 #include "scipp/core/string.h"
@@ -15,28 +14,12 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
-template <class T> Docstring docstring_comparison(const std::string op) {
-  return Docstring()
-      .description(
-          "Comparison returning the truth value of " + op +
-          " element-wise.\n\nNote and warning: If one or both of the operators "
-          "have variances (uncertainties) there are ignored silently, i.e., "
-          "comparison is based exclusively on the values.")
-      .raises("If the units of inputs are not the same, or if the dtypes of "
-              "inputs are not double precision floats.")
-      .returns("Booleans that are true if " + op + ".")
-      .rtype<T>()
-      .template param<T>("x", "Input left operand.")
-      .template param<T>("y", "Input right operand.");
-}
-
 template <typename T> void bind_less(py::module &m) {
   m.def(
       "less",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y) { return less(x, y); },
-      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-      docstring_comparison<T>("(x < y)").c_str());
+      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_greater(py::module &m) {
@@ -44,8 +27,7 @@ template <typename T> void bind_greater(py::module &m) {
       "greater",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y) { return greater(x, y); },
-      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-      docstring_comparison<T>("(x > y)").c_str());
+      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_less_equal(py::module &m) {
@@ -53,8 +35,7 @@ template <typename T> void bind_less_equal(py::module &m) {
       "less_equal",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y) { return less_equal(x, y); },
-      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-      docstring_comparison<T>("(x <= y)").c_str());
+      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_greater_equal(py::module &m) {
@@ -62,8 +43,7 @@ template <typename T> void bind_greater_equal(py::module &m) {
       "greater_equal",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y) { return greater_equal(x, y); },
-      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-      docstring_comparison<T>("(x >= y)").c_str());
+      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_equal(py::module &m) {
@@ -71,8 +51,7 @@ template <typename T> void bind_equal(py::module &m) {
       "equal",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y) { return equal(x, y); },
-      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-      docstring_comparison<T>("(x == y)").c_str());
+      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_not_equal(py::module &m) {
@@ -80,8 +59,7 @@ template <typename T> void bind_not_equal(py::module &m) {
       "not_equal",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y) { return not_equal(x, y); },
-      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-      docstring_comparison<T>("(x != y)").c_str());
+      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_is_equal(py::module &m) {
@@ -89,15 +67,7 @@ template <typename T> void bind_is_equal(py::module &m) {
       "is_equal",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y) { return x == y; },
-      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Variable level equals. Returns True if x and y "
-                       "considered equal.")
-          .returns("True if x and y are considered equal")
-          .rtype<T>()
-          .template param<T>("x", "Input left operand.")
-          .template param<T>("y", "Input right operand.")
-          .c_str());
+      py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
 void init_comparison(py::module &m) {
