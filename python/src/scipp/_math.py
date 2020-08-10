@@ -25,7 +25,7 @@ def nan_to_num(x, nan=None, posinf=None, neginf=None, out=None):
     The function allows replacements to be separately specified for nan, inf
     or -inf values.
     You can choose to replace a subset of those special values by providing
-    just the required key word arguments.
+    just the required keyword arguments.
     If the replacement is value-only and the input has variances, the variance
     at the element(s) undergoing replacement are also replaced with the
     replacement value.
