@@ -8,7 +8,6 @@ from .._utils import histogram_events_data
 def dispatch(scipp_obj_dict,
              ndim=0,
              name=None,
-             collapse=None,
              bins=None,
              projection=None,
              mpl_line_params=None,
