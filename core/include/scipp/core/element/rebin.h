@@ -17,9 +17,11 @@
 
 namespace scipp::core::element {
 
+template <class Less>
 static constexpr auto rebin = overloaded{
     [](const auto &data_new, const auto &xnew, const auto &data_old,
        const auto &xold) {
+      constexpr Less less;
       zero(data_new);
       const auto oldSize = scipp::size(xold) - 1;
       const auto newSize = scipp::size(xnew) - 1;
@@ -30,15 +32,15 @@ static constexpr auto rebin = overloaded{
         const auto xo_high = xold[iold + 1];
         const auto xn_low = xnew[inew];
         const auto xn_high = xnew[inew + 1];
-        if (xn_high <= xo_low)
+        if (!less(xo_low, xn_high))
           inew++; // old and new bins do not overlap
-        else if (xo_high <= xn_low)
+        else if (!less(xn_low, xo_high))
           iold++; // old and new bins do not overlap
         else {
           // delta is the overlap of the bins on the x axis
-          const auto delta = std::min<double>(xn_high, xo_high) -
-                             std::max<double>(xn_low, xo_low);
-          const auto owidth = xo_high - xo_low;
+          const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
+                                      std::max<double>(xn_low, xo_low, less));
+          const auto owidth = std::abs(xo_high - xo_low);
           const auto scale = delta / owidth;
           if constexpr (is_ValueAndVariance_v<
                             std::decay_t<decltype(data_old)>>) {
@@ -52,7 +54,7 @@ static constexpr auto rebin = overloaded{
           } else {
             data_new[inew] += data_old[iold] * scale;
           }
-          if (xn_high > xo_high) {
+          if (less(xo_high, xn_high)) {
             iold++;
           } else {
             inew++;

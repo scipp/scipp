@@ -38,8 +38,8 @@ def to_bin_edges(x, dim):
         center = to_bin_centers(x, dim)
         # Note: use range of 0:1 to keep dimension dim in the slice to avoid
         # switching round dimension order in concatenate step.
-        left = center[dim, 0:1] - (center[dim, 1] - center[dim, 0])
-        right = center[dim, -1] + (center[dim, -1] - center[dim, -2])
+        left = center[dim, 0:1] - (x[dim, 1] - x[dim, 0])
+        right = center[dim, -1] + (x[dim, -1] - x[dim, -2])
         return sc.concatenate(sc.concatenate(left, center, dim), right, dim)
 
 
@@ -103,7 +103,7 @@ def parse_params(params=None,
 
 
 def make_fake_coord(dim, size, unit=None):
-    args = {"values": np.arange(size)}
+    args = {"values": np.arange(size, dtype=np.float64)}
     if unit is not None:
         args["unit"] = unit
     return sc.Variable(dims=[dim], **args)

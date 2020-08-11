@@ -73,7 +73,7 @@ class Slicer:
         self.slider_axformatter = {}
         # Axes tick locators
         self.slider_axlocator = {}
-
+        # Save if some dims contain multi-dimensional coords
         self.contains_multid_coord = {}
 
         for name, array in self.scipp_obj_dict.items():
@@ -116,7 +116,7 @@ class Slicer:
             self.slider_axlocator[name] = {}
             # Save information on histograms
             self.histograms[name] = {}
-
+            # Save if some dims contain multi-dimensional coords
             self.contains_multid_coord[name] = False
 
             # Process axes dimensions
@@ -143,6 +143,9 @@ class Slicer:
                 # The limits for each dimension
                 self.slider_xlims[name][dim] = np.array(
                     [sc.min(var).value, sc.max(var).value], dtype=np.float)
+                if sc.is_sorted(var, dim, order='descending'):
+                    self.slider_xlims[name][dim] = np.flip(
+                        self.slider_xlims[name][dim]).copy()
                 # The tick formatter and locator
                 self.slider_axformatter[name][dim] = formatter
                 self.slider_axlocator[name][dim] = locator
@@ -337,6 +340,7 @@ class Slicer:
 
         underlying_dim = dim
         non_dimension_coord = False
+        var = None
 
         if dim in data_array.coords:
 
@@ -373,11 +377,15 @@ class Slicer:
             elif dim != dim_coord_dim:
                 # non-dimension coordinate
                 non_dimension_coord = True
-                var = data_array.coords[dim_coord_dim]
+                if dim_coord_dim in data_array.coords:
+                    var = data_array.coords[dim_coord_dim]
+                else:
+                    var = make_fake_coord(dim_coord_dim,
+                                          dim_to_shape[dim_coord_dim])
                 underlying_dim = dim_coord_dim
-                form = ticker.FuncFormatter(lambda val, pos: value_to_string(
-                    data_array.coords[dim].values[np.abs(data_array.coords[
-                        dim_coord_dim].values - val).argmin()]))
+                form = ticker.FuncFormatter(
+                    lambda val, pos: value_to_string(data_array.coords[
+                        dim].values[np.abs(var.values - val).argmin()]))
                 formatter.update({False: form, True: form})
 
             else:

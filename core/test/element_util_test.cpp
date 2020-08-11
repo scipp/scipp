@@ -73,3 +73,30 @@ TEST(ElementUtilTest, values_variances) {
   EXPECT_EQ(variances(units::m), units::m * units::m);
   EXPECT_EQ(variances(x), 2.0);
 }
+
+namespace {
+constexpr auto test_is_sorted = [](const auto sorted, const bool order) {
+  const auto expect_sorted_eq = [&sorted](const auto a, const auto b,
+                                          const auto expected) {
+    bool out = true;
+    sorted(out, a, b);
+    EXPECT_EQ(out, expected);
+  };
+  expect_sorted_eq(1.0, 2.0, order);
+  expect_sorted_eq(-1.0, 1.0, order);
+  expect_sorted_eq(-2.0, -1.0, order);
+  expect_sorted_eq(1.0, 1.0, true);
+  expect_sorted_eq(2.0, 1.0, !order);
+  expect_sorted_eq(1.0, -1.0, !order);
+  expect_sorted_eq(-1.0, -2.0, !order);
+  units::Unit unit = units::one;
+  sorted(unit, units::m, units::m);
+  EXPECT_EQ(unit, units::one);
+  EXPECT_THROW(sorted(unit, units::m, units::s), except::UnitError);
+};
+}
+
+TEST(ElementUtilTest, is_sorted) {
+  test_is_sorted(is_sorted_nondescending, true);
+  test_is_sorted(is_sorted_nonascending, false);
+}
