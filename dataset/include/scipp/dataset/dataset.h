@@ -47,6 +47,7 @@ enum class AttrPolicy { Keep, Drop };
 
 enum CoordCategory { Aligned = 1, Unaligned = 2, All = 3 };
 
+class DataArrayView;
 template <class T>
 std::conditional_t<std::is_same_v<T, DataArrayView>, CoordsView,
                    CoordsConstView>
