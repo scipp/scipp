@@ -57,6 +57,7 @@ class HDF5IO:
         if var.variances is not None:
             variances = self._write_array(group, 'variances', var.variances)
             dset.attrs['variances'] = variances.ref
+        return group
 
     def _read_variable(self, group):
         from .._scipp import core as sc
@@ -80,25 +81,34 @@ class HDF5IO:
             raise RuntimeError(
                 "Writing realigned data is not implemented yet.")
         self._write_variable(group, var=data.data, name='data')
-        views = [data.aligned_coords, data.masks, data.unaligned_coords]
-        for view_name, view in zip(['coords', 'masks', 'unaligned_coords'],
-                                   views):
+        views = [data.coords, data.masks]
+        aligned = data.aligned_coords.keys()
+        # Note that we write aligned and unaligned coords into the same group.
+        # Distinction is via an attribute, which is more natural than having
+        # 2 separate groups.
+        for view_name, view in zip(['coords', 'masks'], views):
             subgroup = group.create_group(view_name)
             for name in view:
-                self._write_variable(group=subgroup,
-                                     var=view[name],
-                                     name=str(name))
+                g = self._write_variable(group=subgroup,
+                                         var=view[name],
+                                         name=str(name))
+                if view_name == 'coords':
+                    g.attrs['aligned'] = name in aligned
 
     def _read_data_array(self, group):
         from .._scipp import core as sc
         contents = dict()
         contents['name'] = group.attrs['name']
         contents['data'] = self._read_variable(group['data'])
-        for category in ['coords', 'masks', 'unaligned_coords']:
+        contents['unaligned_coords'] = dict()
+        for category in ['coords', 'masks']:
             contents[category] = dict()
             for name in group[category]:
-                contents[category][name] = self._read_variable(
-                    group[category][name])
+                g = group[category][name]
+                c = category
+                if category == 'coords' and not g.attrs.get('aligned', True):
+                    c = 'unaligned_coords'
+                contents[c][name] = self._read_variable(g)
         return sc.DataArray(**contents)
 
 
