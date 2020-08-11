@@ -184,6 +184,15 @@ def test_plot_2d_with_dimension_of_size_1():
     plot(d["b"])
 
 
+def test_plot_2d_with_dimension_of_size_2():
+    a = sc.DataArray(data=sc.Variable(dims=['y', 'x'], shape=[2, 4]),
+                     coords={
+                         'x': sc.Variable(dims=['x'], values=[1, 2, 3, 4]),
+                         'y': sc.Variable(dims=['y'], values=[1, 2])
+                     })
+    plot(a)
+
+
 def test_plot_realigned_2d():
     d = make_events_dataset(ndim=1)
     tbins = sc.Variable(dims=['tof'], unit=sc.units.us, values=np.arange(100.))
@@ -272,3 +281,27 @@ def test_plot_2d_ragged_coord_with_masks():
                                values=np.where(z < 0.5, True, False),
                                dtype=bool)
     plot(d)
+
+
+def test_plot_2d_with_labels_but_no_dimension_coord():
+    N = 50
+    M = 10
+    y = np.arange(M).astype(np.float)
+    z = np.random.random([M, N])
+    d = sc.Dataset()
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
+    d['Signal'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.kg)
+    d.coords['somelabels'] = sc.Variable(['x'],
+                                         values=np.linspace(101., 155., N),
+                                         unit=sc.units.s)
+    plot(d, axes=['y', 'somelabels'])
+
+
+def test_plot_2d_with_decreasing_edges():
+    a = sc.DataArray(data=sc.Variable(dims=['y', 'x'],
+                                      values=np.arange(12).reshape(3, 4)),
+                     coords={
+                         'x': sc.Variable(dims=['x'], values=[4, 3, 2, 1]),
+                         'y': sc.Variable(dims=['y'], values=[1, 2, 3])
+                     })
+    plot(a)

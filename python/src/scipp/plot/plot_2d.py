@@ -285,6 +285,15 @@ class Slicer2d(Slicer):
 
         return
 
+    def compute_bin_widths(self, xy, dim):
+        """
+        Pixel widths used for scaling before rebin step
+        """
+        self.xywidth[xy] = (
+            self.xyedges[xy][dim, 1:] - self.xyedges[xy][dim, :-1]) / (
+                self.xyrebin[xy][dim, 1] - self.xyrebin[xy][dim, 0])
+        self.xywidth[xy].unit = sc.units.one
+
     def slice_coords(self):
         """
         Recursively slice the coords along the dimensions of active sliders.
@@ -307,11 +316,7 @@ class Slicer2d(Slicer):
                 self.xyedges[xy] = self.cslice[param["dim"]].astype(
                     sc.dtype.float64)
             # Pixel widths used for scaling before rebin step
-            self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
-                                self.xyedges[xy][param["dim"], :-1]) / (
-                                    self.xyrebin[xy][param["dim"], 1] -
-                                    self.xyrebin[xy][param["dim"], 0])
-            self.xywidth[xy].unit = sc.units.one
+            self.compute_bin_widths(xy, param["dim"])
 
     def slice_data(self):
         """
@@ -367,26 +372,17 @@ class Slicer2d(Slicer):
         """
         self.xlim_updated = False
         self.ylim_updated = False
-        xylims = {
-            "x": np.array(self.ax.get_xlim()),
-            "y": np.array(self.ax.get_ylim())
-        }
-
+        xylims = {}
         # Make sure we don't overrun the original array bounds
-        xylims["x"][0] = max(
-            xylims["x"][0],
-            self.slider_xlims[self.name][self.button_dims[1]][0])
-        xylims["x"][1] = min(
-            xylims["x"][1],
-            self.slider_xlims[self.name][self.button_dims[1]][1])
-        xylims["y"][0] = max(
-            xylims["y"][0],
-            self.slider_xlims[self.name][self.button_dims[0]][0])
-        xylims["y"][1] = min(
-            xylims["y"][1],
-            self.slider_xlims[self.name][self.button_dims[0]][1])
-        dx = self.current_lims["x"][1] - self.current_lims["x"][0]
-        dy = self.current_lims["y"][1] - self.current_lims["y"][0]
+        xylims["x"] = np.clip(
+            self.ax.get_xlim(),
+            *sorted(self.slider_xlims[self.name][self.button_dims[1]]))
+        xylims["y"] = np.clip(
+            self.ax.get_ylim(),
+            *sorted(self.slider_xlims[self.name][self.button_dims[0]]))
+
+        dx = np.abs(self.current_lims["x"][1] - self.current_lims["x"][0])
+        dy = np.abs(self.current_lims["y"][1] - self.current_lims["y"][0])
         diffx = np.abs(self.current_lims["x"] - xylims["x"]) / dx
         diffy = np.abs(self.current_lims["y"] - xylims["y"]) / dy
         diff = diffx.sum() + diffy.sum()
@@ -404,11 +400,7 @@ class Slicer2d(Slicer):
                     unit=self.slider_coord[self.name][param["dim"]].unit)
 
                 # Pixel widths used for scaling before rebin step
-                self.xywidth[xy] = (self.xyedges[xy][param["dim"], 1:] -
-                                    self.xyedges[xy][param["dim"], :-1]) / (
-                                        self.xyrebin[xy][param["dim"], 1] -
-                                        self.xyrebin[xy][param["dim"], 0])
-                self.xywidth[xy].unit = sc.units.one
+                self.compute_bin_widths(xy, param["dim"])
 
             self.update_image(extent=np.array(list(xylims.values())).flatten())
 
@@ -427,7 +419,8 @@ class Slicer2d(Slicer):
                 self.xyrebin[self.dim_to_xy[self.vslice.dims[1]]].dims[0]
             ],
                              values=self.vslice.values,
-                             unit=sc.units.counts))
+                             unit=sc.units.counts,
+                             dtype=sc.dtype.float64))
 
         # Also include the masks
         if self.params["masks"][self.name]["show"]:

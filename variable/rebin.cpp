@@ -9,6 +9,9 @@
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/transform_subspan.h"
+#include "scipp/variable/util.h"
+
+using namespace scipp::core::element;
 
 namespace scipp::variable {
 
@@ -17,10 +20,11 @@ bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
   return edges[dim] == toMatch[dim];
 }
 
-template <typename T>
+template <typename T, class Less>
 void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
                      Variable &newT, const VariableConstView &oldCoordT,
                      const VariableConstView &newCoordT) {
+  constexpr Less less;
   const auto oldSize = oldT.dims()[dim];
   const auto newSize = newT.dims()[dim];
 
@@ -41,22 +45,23 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
     auto xn_low = xnew[inew];
     auto xn_high = xnew[inew + 1];
 
-    if (xn_high <= xo_low)
+    if (!less(xo_low, xn_high))
       inew++; /* old and new bins do not overlap */
-    else if (xo_high <= xn_low)
+    else if (!less(xn_low, xo_high))
       iold++; /* old and new bins do not overlap */
     else {
       if (is_bool) {
         newT.slice({dim, inew}) |= oldT.slice({dim, iold});
       } else {
         // delta is the overlap of the bins on the x axis
-        auto delta = std::min(xn_high, xo_high) - std::max(xn_low, xo_low);
-        auto owidth = xo_high - xo_low;
+        const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
+                                    std::max<double>(xn_low, xo_low, less));
+        const auto owidth = std::abs(xo_high - xo_low);
         newT.slice({dim, inew}) +=
             astype(oldT.slice({dim, iold}) * ((delta / owidth) * units::one),
                    newT.dtype());
       }
-      if (xn_high > xo_high) {
+      if (less(xo_high, xn_high)) {
         iold++;
       } else {
         inew++;
@@ -65,11 +70,25 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
   }
 }
 
-namespace rebin_inner_detail {
+namespace {
 template <class Out, class OutEdge, class In, class InEdge>
 using args = std::tuple<span<Out>, span<const OutEdge>, span<const In>,
                         span<const InEdge>>;
-}
+
+struct Greater {
+  template <class A, class B>
+  constexpr bool operator()(const A a, const B b) const noexcept {
+    return a > b;
+  }
+};
+
+struct Less {
+  template <class A, class B>
+  constexpr bool operator()(const A a, const B b) const noexcept {
+    return a < b;
+  }
+};
+} // namespace
 
 Variable rebin(const VariableConstView &var, const Dim dim,
                const VariableConstView &oldCoord,
@@ -82,15 +101,27 @@ Variable rebin(const VariableConstView &var, const Dim dim,
     throw except::BinEdgeError(
         "The input does not have coordinates with bin-edges.");
 
-  if (var.dims().inner() == dim) {
-    using namespace rebin_inner_detail;
-    return transform_subspan<std::tuple<
-        args<double, double, double, double>, args<float, float, float, float>,
-        args<float, double, float, double>, args<float, float, float, double>,
-        args<bool, double, bool, double>>>(var.dtype(), dim,
-                                           newCoord.dims()[dim] - 1, newCoord,
-                                           var, oldCoord, core::element::rebin);
+  using transform_args = std::tuple<
+      args<double, double, double, double>, args<float, float, float, float>,
+      args<float, double, float, double>, args<float, float, float, double>,
+      args<bool, double, bool, double>>;
 
+  const bool ascending = is_sorted(oldCoord, dim, SortOrder::Ascending) &&
+                         is_sorted(newCoord, dim, SortOrder::Ascending);
+  if (!ascending && !(is_sorted(oldCoord, dim, SortOrder::Descending) &&
+                      is_sorted(newCoord, dim, SortOrder::Descending)))
+    throw except::BinEdgeError(
+        "Rebin: The old or new bin edges are not sorted.");
+  if (var.dims().inner() == dim) {
+    if (ascending) {
+      return transform_subspan<transform_args>(
+          var.dtype(), dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
+          core::element::rebin<Less>);
+    } else {
+      return transform_subspan<transform_args>(
+          var.dtype(), dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
+          core::element::rebin<Greater>);
+    }
   } else {
     auto dims = var.dims();
     dims.resize(dim, newCoord.dims()[dim] - 1);
@@ -98,13 +129,21 @@ Variable rebin(const VariableConstView &var, const Dim dim,
     if (newCoord.dims().ndim() > 1)
       throw std::runtime_error(
           "Not inner rebin works only for 1d coordinates for now.");
-    if (oldCoord.dtype() == dtype<double>)
-      rebin_non_inner<double>(dim, var, rebinned, oldCoord, newCoord);
-    else if (oldCoord.dtype() == dtype<float>)
-      rebin_non_inner<float>(dim, var, rebinned, oldCoord, newCoord);
-    else
+    if (oldCoord.dtype() == dtype<double>) {
+      if (ascending)
+        rebin_non_inner<double, Less>(dim, var, rebinned, oldCoord, newCoord);
+      else
+        rebin_non_inner<double, Greater>(dim, var, rebinned, oldCoord,
+                                         newCoord);
+    } else if (oldCoord.dtype() == dtype<float>) {
+      if (ascending)
+        rebin_non_inner<float, Less>(dim, var, rebinned, oldCoord, newCoord);
+      else
+        rebin_non_inner<float, Greater>(dim, var, rebinned, oldCoord, newCoord);
+    } else {
       throw std::runtime_error(
           "Rebinning is possible only for double and float types.");
+    }
     return rebinned;
   }
 }

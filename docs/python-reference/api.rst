@@ -35,6 +35,7 @@ General
    dot
    filter
    histogram
+   is_sorted
    merge
    nan_to_num
    norm
