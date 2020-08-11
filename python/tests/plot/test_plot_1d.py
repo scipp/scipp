@@ -101,7 +101,7 @@ def test_plot_1d_with_masks():
 
 def test_plot_collapse():
     d = make_dense_dataset(ndim=2)
-    plot(d, collapse='tof')
+    plot(sc.collaps(d, keep='tof'))
 
 
 def test_plot_sliceviewer_with_1d_projection():
