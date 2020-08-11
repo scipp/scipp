@@ -19,7 +19,8 @@ template <class T> void bind_sin(py::module &m) {
       "sin",
       [](const typename T::const_view_type &x,
          const typename T::view_type &out) { return sin(x, out); },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>());
+      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_asin(py::module &m) {
@@ -30,7 +31,8 @@ template <class T> void bind_asin(py::module &m) {
       "asin",
       [](const typename T::const_view_type &x,
          const typename T::view_type &out) { return asin(x, out); },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>());
+      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_cos(py::module &m) {
@@ -41,7 +43,8 @@ template <class T> void bind_cos(py::module &m) {
       "cos",
       [](const typename T::const_view_type &x,
          const typename T::view_type &out) { return cos(x, out); },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>());
+      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_acos(py::module &m) {
@@ -52,7 +55,8 @@ template <class T> void bind_acos(py::module &m) {
       "acos",
       [](const typename T::const_view_type &x,
          const typename T::view_type &out) { return acos(x, out); },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>());
+      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_tan(py::module &m) {
@@ -63,7 +67,8 @@ template <class T> void bind_tan(py::module &m) {
       "tan",
       [](const typename T::const_view_type &x,
          const typename T::view_type &out) { return tan(x, out); },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>());
+      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_atan(py::module &m) {
@@ -74,7 +79,8 @@ template <class T> void bind_atan(py::module &m) {
       "atan",
       [](const typename T::const_view_type &x,
          const typename T::view_type &out) { return atan(x, out); },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>());
+      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_atan2(py::module &m) {
@@ -88,7 +94,7 @@ template <class T> void bind_atan2(py::module &m) {
       [](const typename T::const_view_type &y,
          const typename T::const_view_type &x,
          typename T::view_type out) { return atan2(y, x, out); },
-      py::arg("y"), py::arg("x"), py::arg("out"),
+      py::arg("y"), py::arg("x"), py::arg("out"), py::keep_alive<0, 3>(),
       py::call_guard<py::gil_scoped_release>());
 }
 

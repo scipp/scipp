@@ -21,7 +21,8 @@ template <typename T> void bind_abs(py::module &m) {
       "abs",
       [](const typename T::const_view_type &x,
          const typename T::view_type &out) { return abs(x, out); },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>());
+      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_sqrt(py::module &m) {
@@ -32,7 +33,8 @@ template <typename T> void bind_sqrt(py::module &m) {
       "sqrt",
       [](const typename T::const_view_type &x,
          const typename T::view_type &out) { return sqrt(x, out); },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>());
+      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_norm(py::module &m) {
@@ -50,7 +52,8 @@ template <typename T> void bind_reciprocal(py::module &m) {
       "reciprocal",
       [](const typename T::const_view_type &x,
          const typename T::view_type &out) { return reciprocal(x, out); },
-      py::arg("x"), py::arg("out"), py::call_guard<py::gil_scoped_release>());
+      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_nan_to_num(py::module &m) {
@@ -92,7 +95,7 @@ template <typename T> void bind_nan_to_num(py::module &m) {
       py::arg("x"), py::arg("nan") = std::optional<VariableConstView>(),
       py::arg("posinf") = std::optional<VariableConstView>(),
       py::arg("neginf") = std::optional<VariableConstView>(), py::arg("out"),
-      py::call_guard<py::gil_scoped_release>());
+      py::keep_alive<0, 5>(), py::call_guard<py::gil_scoped_release>());
 }
 
 void init_unary(py::module &m) {
