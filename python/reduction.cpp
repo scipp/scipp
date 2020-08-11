@@ -34,7 +34,7 @@ template <class T> void bind_mean_out(py::module &m) {
       "mean",
       [](const typename T::const_view_type &x, const Dim dim,
          typename T::view_type out) { return mean(x, dim, out); },
-      py::arg("x"), py::arg("dim"), py::arg("out"),
+      py::arg("x"), py::arg("dim"), py::arg("out"), py::keep_alive<0, 3>(),
       py::call_guard<py::gil_scoped_release>());
 }
 
@@ -52,7 +52,7 @@ template <class T> void bind_sum_out(py::module &m) {
       "sum",
       [](const typename T::const_view_type &x, const Dim dim,
          const typename T::view_type &out) { return sum(x, dim, out); },
-      py::arg("x"), py::arg("dim"), py::arg("out"),
+      py::arg("x"), py::arg("dim"), py::arg("out"), py::keep_alive<0, 3>(),
       py::call_guard<py::gil_scoped_release>());
 }
 
