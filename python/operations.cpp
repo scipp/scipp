@@ -9,6 +9,8 @@
 #include "scipp/dataset/sort.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/sort.h"
+#include "scipp/variable/variable.h"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -93,6 +95,7 @@ void init_operations(py::module &m) {
   bind_sort<Variable>(m);
   bind_sort<DataArray>(m);
   bind_sort<Dataset>(m);
+  bind_sort_dim<Variable>(m);
   bind_sort_dim<DataArray>(m);
   bind_sort_dim<Dataset>(m);
 

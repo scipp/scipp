@@ -15,6 +15,7 @@ set(INC_FILES
     include/scipp/variable/rebin.h
     include/scipp/variable/reduction.h
     include/scipp/variable/shape.h
+    include/scipp/variable/sort.h
     include/scipp/variable/string.h
     include/scipp/variable/subspan_view.h
     include/scipp/variable/transform.h
@@ -40,6 +41,7 @@ set(SRC_FILES
     rebin.cpp
     reduction.cpp
     shape.cpp
+    sort.cpp
     string.cpp
     subspan_view.cpp
     trigonometry.cpp
