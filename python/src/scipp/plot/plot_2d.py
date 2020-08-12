@@ -406,40 +406,54 @@ class Slicer2d(Slicer):
 
         return
 
+    def select_bins(self, coord, dim, start, end):
+        bins = coord.shape[0]
+        # scipp treats bins as closed on left and open on right: [left, right)
+        first = sc.sum(coord <= start, dim).value - 1
+        last = bins - sc.sum(coord > end, dim).value
+        first = max(0, first)
+        last = min(bins - 1, last)
+        return (dim, slice(first, last + 1)), (dim, slice(first, last + 2))
+
     def resample_image(self):
+        dim = self.xyrebin['x'].dims[0]
+        slicex, binslicex = self.select_bins(self.xyedges["x"], dim,
+                                             self.xyrebin['x'][dim, 0],
+                                             self.xyrebin['x'][dim, -1])
+        dim = self.xyrebin['y'].dims[0]
+        slicey, binslicey = self.select_bins(self.xyedges["y"], dim,
+                                             self.xyrebin['y'][dim, 0],
+                                             self.xyrebin['y'][dim, -1])
 
         # Make a new slice with bin edges and counts for using in rebin.
         dslice = sc.DataArray(
             coords={
-                self.xyrebin["x"].dims[0]: self.xyedges["x"],
-                self.xyrebin["y"].dims[0]: self.xyedges["y"]
+                self.xyrebin["x"].dims[0]: self.xyedges["x"][binslicex],
+                self.xyrebin["y"].dims[0]: self.xyedges["y"][binslicey]
             },
             data=sc.Variable(dims=[
                 self.xyrebin[self.dim_to_xy[self.vslice.dims[0]]].dims[0],
                 self.xyrebin[self.dim_to_xy[self.vslice.dims[1]]].dims[0]
             ],
-                             values=self.vslice.values,
+                             values=self.vslice[slicex][slicey].values,
                              unit=sc.units.counts,
                              dtype=sc.dtype.float64))
 
         # Also include the masks
         if self.params["masks"][self.name]["show"]:
-            mslice_dims = []
+            mslice = self.mslice
             for dim in self.mslice.dims:
                 if dim == self.button_dims[0]:
-                    mslice_dims.append(self.xyrebin["y"].dims[0])
+                    mslice = mslice[slicey]
                 elif dim == self.button_dims[1]:
-                    mslice_dims.append(self.xyrebin["x"].dims[0])
-                else:
-                    mslice_dims.append(dim)
-
-            dslice.masks["all"] = sc.Variable(dims=mslice_dims,
-                                              values=self.mslice.values)
+                    mslice = mslice[slicex]
+            dslice.masks["all"] = mslice
 
         # Scale by bin width and then rebin in both directions
-        dslice *= self.xywidth["x"] * self.xywidth["y"]
+        dslice *= self.xywidth["x"][slicex] * self.xywidth["y"][slicey]
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
+
         xy = "yx"
         if len(dslice.coords[self.button_dims[1]].dims) > 1:
             xy = "xy"
