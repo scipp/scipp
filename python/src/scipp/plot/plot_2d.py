@@ -445,6 +445,8 @@ class Slicer2d(Slicer):
         return
 
     def select_bins(self, coord, dim, start, end):
+        if len(coord.dims) != 1:
+            return dim, slice(0, -1)
         bins = coord.shape[0]
         # scipp treats bins as closed on left and open on right: [left, right)
         first = sc.sum(coord <= start, dim).value - 1
@@ -456,11 +458,11 @@ class Slicer2d(Slicer):
     @timeit
     def resample_image(self):
         dim = self.xyrebin['x'].dims[0]
-        slicex = self.select_bins(self.xyedges["x"], dim,
+        slicex = self.select_bins(self.xyedges['x'], dim,
                                   self.xyrebin['x'][dim, 0],
                                   self.xyrebin['x'][dim, -1])
         dim = self.xyrebin['y'].dims[0]
-        slicey = self.select_bins(self.xyedges["y"], dim,
+        slicey = self.select_bins(self.xyedges['y'], dim,
                                   self.xyrebin['y'][dim, 0],
                                   self.xyrebin['y'][dim, -1])
 
