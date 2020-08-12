@@ -9,6 +9,7 @@ from .slicer import Slicer
 from .tools import to_bin_edges, parse_params
 from .._utils import name_with_unit
 from .._scipp import core as sc
+from .. import detail
 
 # Other imports
 import numpy as np
@@ -341,11 +342,14 @@ class Slicer2d(Slicer):
         if self.vslice.unaligned is not None:
             self.vslice = sc.histogram(self.vslice)
             self.autoscale_cbar = True
+            self.vslice.variances = None
         else:
-            self.vslice = self.vslice.astype(sc.dtype.float32)
+            self.vslice = detail.move_to_data_array(
+                data=sc.Variable(dims=self.vslice.dims,
+                                 unit=sc.units.counts,
+                                 values=self.vslice.values,
+                                 dtype=sc.dtype.float32))
             self.autoscale_cbar = False
-        self.vslice.variances = None
-        self.vslice.unit = sc.units.counts
         self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
         self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
         if self.params["masks"][self.name]["show"]:
