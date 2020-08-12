@@ -445,13 +445,13 @@ class Slicer2d(Slicer):
         return
 
     def select_bins(self, coord, dim, start, end):
-        if len(coord.dims) != 1: # TODO find combined min/max
+        if len(coord.dims) != 1:  # TODO find combined min/max
             return dim, slice(0, -1)
         bins = coord.shape[0]
         # scipp treats bins as closed on left and open on right: [left, right)
         first = sc.sum(coord <= start, dim).value - 1
         last = bins - sc.sum(coord > end, dim).value
-        if first >= last: # TODO better handling for decreasing
+        if first >= last:  # TODO better handling for decreasing
             return dim, slice(0, -1)
         first = max(0, first)
         last = min(bins - 1, last)
@@ -467,8 +467,6 @@ class Slicer2d(Slicer):
         slicey = self.select_bins(self.xyedges['y'], dim,
                                   self.xyrebin['y'][dim, 0],
                                   self.xyrebin['y'][dim, -1])
-
-        # Make a new slice with bin edges and counts for using in rebin.
         dslice = self.vslice[slicex][slicey]
 
         # The order of the dimensions that are rebinned matters if 2D coords
@@ -476,19 +474,10 @@ class Slicer2d(Slicer):
         xy = "yx"
         if len(dslice.coords[self.button_dims[1]].dims) > 1:
             xy = "xy"
-
-        @timeit
-        def rebin_x():
-            return sc.rebin(dslice, self.xyrebin[xy[0]].dims[0],
-                            self.xyrebin[xy[0]])
-
-        @timeit
-        def rebin_y():
-            return sc.rebin(dslice, self.xyrebin[xy[1]].dims[0],
-                            self.xyrebin[xy[1]])
-
-        dslice = rebin_x()
-        dslice = rebin_y()
+        dslice = sc.rebin(dslice, self.xyrebin[xy[0]].dims[0],
+                          self.xyrebin[xy[0]])
+        dslice = sc.rebin(dslice, self.xyrebin[xy[1]].dims[0],
+                          self.xyrebin[xy[1]])
 
         # Use Scipp's automatic transpose to match the image x/y axes
         # TODO: once transpose is available for DataArrays,
@@ -505,6 +494,7 @@ class Slicer2d(Slicer):
                                             dtype=dslice.dtype,
                                             unit=sc.units.one))
         arr *= dslice
+        # Scale by output bins width
         arr /= self.xyrebin['x'].values[1] - self.xyrebin['x'].values[0]
         arr /= self.xyrebin['y'].values[1] - self.xyrebin['y'].values[0]
         return arr
