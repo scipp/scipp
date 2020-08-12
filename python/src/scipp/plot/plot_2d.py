@@ -357,7 +357,15 @@ class Slicer2d(Slicer):
                 if self.params["masks"][
                         self.name]["show"] and dim in self.mslice.dims:
                     self.mslice = self.mslice[val.dim, val.value]
-        self.vslice = self.vslice.copy()
+        # In the case of unaligned data, we may want to auto-scale the colorbar
+        # as we slice through dimensions. Colorbar limits are allowed to grow
+        # but not shrink.
+        if self.vslice.unaligned is not None:
+            self.vslice = sc.histogram(self.vslice)
+            self.autoscale_cbar = True
+        else:
+            self.vslice = self.vslice.copy()
+            self.autoscale_cbar = False
         self.vslice.variances = None
         self.vslice.unit = sc.units.counts
         self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
@@ -499,15 +507,6 @@ class Slicer2d(Slicer):
 
     @timeit
     def update_image(self, extent=None):
-
-        # In the case of unaligned data, we may want to auto-scale the colorbar
-        # as we slice through dimensions. Colorbar limits are allowed to grow
-        # but not shrink.
-        autoscale_cbar = False
-        if self.vslice.unaligned is not None:
-            self.vslice = sc.histogram(self.vslice)
-            autoscale_cbar = True
-
         dslice = self.resample_image()
         if self.params["masks"][self.name]["show"]:
             # Use scipp's automatic broadcast functionality to broadcast
@@ -535,7 +534,7 @@ class Slicer2d(Slicer):
             if extent is not None:
                 self.im["masks"].set_extent(extent)
 
-        if autoscale_cbar:
+        if self.autoscale_cbar:
             cbar_params = parse_params(globs=self.vminmax,
                                        array=arr,
                                        min_val=self.global_vmin,
