@@ -9,6 +9,7 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
 
@@ -37,43 +38,48 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
   // const bool is_bool = newT.dtype() == dtype<bool>;
   const bool is_bool = newT.dtype().index == std::type_index(typeid(bool));
 
-  auto accumulate_bin = [&](const auto &range) {
-    int iold = 0;
-    int inew = range.begin();
-    while ((iold < oldSize) && (inew < range.end())) {
-      auto xo_low = xold[iold];
-      auto xo_high = xold[iold + 1];
+  auto add_from_bin = [&](const auto &slice, const auto xn_low,
+                          const auto xn_high, const scipp::index iold) {
+    auto xo_low = xold[iold];
+    auto xo_high = xold[iold + 1];
+    if (is_bool) {
+      slice |= oldT.slice({dim, iold});
+    } else {
+      // delta is the overlap of the bins on the x axis
+      const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
+                                  std::max<double>(xn_low, xo_low, less));
+      const auto owidth = std::abs(xo_high - xo_low);
+      slice += oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
+    }
+  };
+  auto accumulate_bin = [&](const auto &slice, const auto xn_low,
+                            const auto xn_high) {
+    scipp::index begin =
+        std::upper_bound(xold, xold + oldSize + 1, xn_low, less) - xold;
+    scipp::index end =
+        std::upper_bound(xold, xold + oldSize + 1, xn_high, less) - xold;
+    if (begin == oldSize + 1 || end == 0)
+      return;
+    if (begin > 0)
+      add_from_bin(slice, xn_low, xn_high, begin - 1);
+    if (begin < end - 1) {
+      if (is_bool)
+        slice |= any(oldT.slice({dim, begin, end - 1}), dim);
+      else
+        slice += sum(oldT.slice({dim, begin, end - 1}), dim);
+    }
+    if (begin != end && end < oldSize + 1)
+      add_from_bin(slice, xn_low, xn_high, end - 1);
+  };
+  auto accumulate_bins = [&](const auto &range) {
+    for (scipp::index inew = range.begin(); inew < range.end(); ++inew) {
       auto xn_low = xnew[inew];
       auto xn_high = xnew[inew + 1];
-
-      if (!less(xo_low, xn_high))
-        inew++; /* old and new bins do not overlap */
-      else if (!less(xn_low, xo_high))
-        iold++; /* old and new bins do not overlap */
-      else {
-        if (is_bool) {
-          newT.slice({dim, inew}) |= oldT.slice({dim, iold});
-        } else {
-          // delta is the overlap of the bins on the x axis
-          const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
-                                      std::max<double>(xn_low, xo_low, less));
-          const auto owidth = std::abs(xo_high - xo_low);
-          if (delta == owidth) // 2x speedup for many-to-1 rebin
-            newT.slice({dim, inew}) += oldT.slice({dim, iold});
-          else
-            newT.slice({dim, inew}) +=
-                oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
-        }
-        if (less(xo_high, xn_high)) {
-          iold++;
-        } else {
-          inew++;
-        }
-      }
+      accumulate_bin(newT.slice({dim, inew}), xn_low, xn_high);
     }
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, newSize),
-                               accumulate_bin);
+                               accumulate_bins);
 }
 
 namespace {
