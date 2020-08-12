@@ -460,7 +460,7 @@ class Slicer2d(Slicer):
             ],
                              values=self.vslice[slicex][slicey].values,
                              unit=sc.units.counts,
-                             dtype=sc.dtype.float64))
+                             dtype=sc.dtype.float32))
 
         # Also include the masks
         if self.params["masks"][self.name]["show"]:
