@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock, Igor Gudich
 #include "scipp/core/element/rebin.h"
+#include "scipp/core/parallel.h"
 #include "scipp/units/except.h"
 #include "scipp/variable/apply.h"
 #include "scipp/variable/arithmetic.h"
@@ -30,46 +31,49 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
 
   const auto *xold = oldCoordT.values<T>().data();
   const auto *xnew = newCoordT.values<T>().data();
-  // This function assumes that dimensions between coord and data
-  // coord is 1D.
-  int iold = 0;
-  int inew = 0;
   // TODO: Using dtype<bool> does not seem to compile on Windows. It is not
   // clear why that is, since dtype<double> is working below.
   // We use the longer syntax below which compiles instead of:
   // const bool is_bool = newT.dtype() == dtype<bool>;
   const bool is_bool = newT.dtype().index == std::type_index(typeid(bool));
-  while ((iold < oldSize) && (inew < newSize)) {
-    auto xo_low = xold[iold];
-    auto xo_high = xold[iold + 1];
-    auto xn_low = xnew[inew];
-    auto xn_high = xnew[inew + 1];
 
-    if (!less(xo_low, xn_high))
-      inew++; /* old and new bins do not overlap */
-    else if (!less(xn_low, xo_high))
-      iold++; /* old and new bins do not overlap */
-    else {
-      if (is_bool) {
-        newT.slice({dim, inew}) |= oldT.slice({dim, iold});
-      } else {
-        // delta is the overlap of the bins on the x axis
-        const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
-                                    std::max<double>(xn_low, xo_low, less));
-        const auto owidth = std::abs(xo_high - xo_low);
-        if (delta == owidth) // 2x speedup for many-to-1 rebin
-          newT.slice({dim, inew}) += oldT.slice({dim, iold});
-        else
-          newT.slice({dim, inew}) +=
-              oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
-      }
-      if (less(xo_high, xn_high)) {
-        iold++;
-      } else {
-        inew++;
+  auto accumulate_bin = [&](const auto &range) {
+    int iold = 0;
+    int inew = range.begin();
+    while ((iold < oldSize) && (inew < range.end())) {
+      auto xo_low = xold[iold];
+      auto xo_high = xold[iold + 1];
+      auto xn_low = xnew[inew];
+      auto xn_high = xnew[inew + 1];
+
+      if (!less(xo_low, xn_high))
+        inew++; /* old and new bins do not overlap */
+      else if (!less(xn_low, xo_high))
+        iold++; /* old and new bins do not overlap */
+      else {
+        if (is_bool) {
+          newT.slice({dim, inew}) |= oldT.slice({dim, iold});
+        } else {
+          // delta is the overlap of the bins on the x axis
+          const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
+                                      std::max<double>(xn_low, xo_low, less));
+          const auto owidth = std::abs(xo_high - xo_low);
+          if (delta == owidth) // 2x speedup for many-to-1 rebin
+            newT.slice({dim, inew}) += oldT.slice({dim, iold});
+          else
+            newT.slice({dim, inew}) +=
+                oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
+        }
+        if (less(xo_high, xn_high)) {
+          iold++;
+        } else {
+          inew++;
+        }
       }
     }
-  }
+  };
+  core::parallel::parallel_for(core::parallel::blocked_range(0, newSize),
+                               accumulate_bin);
 }
 
 namespace {
