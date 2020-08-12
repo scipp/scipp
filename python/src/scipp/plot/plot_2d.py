@@ -441,18 +441,18 @@ class Slicer2d(Slicer):
         last = bins - sc.sum(coord > end, dim).value
         first = max(0, first)
         last = min(bins - 1, last)
-        return (dim, slice(first, last + 1)), (dim, slice(first, last + 2))
+        return dim, slice(first, last + 1)
 
     @timeit
     def resample_image(self):
         dim = self.xyrebin['x'].dims[0]
-        slicex, binslicex = self.select_bins(self.xyedges["x"], dim,
-                                             self.xyrebin['x'][dim, 0],
-                                             self.xyrebin['x'][dim, -1])
+        slicex = self.select_bins(self.xyedges["x"], dim,
+                                  self.xyrebin['x'][dim, 0],
+                                  self.xyrebin['x'][dim, -1])
         dim = self.xyrebin['y'].dims[0]
-        slicey, binslicey = self.select_bins(self.xyedges["y"], dim,
-                                             self.xyrebin['y'][dim, 0],
-                                             self.xyrebin['y'][dim, -1])
+        slicey = self.select_bins(self.xyedges["y"], dim,
+                                  self.xyrebin['y'][dim, 0],
+                                  self.xyrebin['y'][dim, -1])
 
         # Make a new slice with bin edges and counts for using in rebin.
         dslice = self.vslice[slicex][slicey]
