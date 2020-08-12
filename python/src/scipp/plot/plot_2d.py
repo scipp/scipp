@@ -359,6 +359,7 @@ class Slicer2d(Slicer):
                     self.mslice = self.mslice[val.dim, val.value]
         self.vslice = self.vslice.copy()
         self.vslice.variances = None
+        self.vslice.unit = sc.units.counts
         self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
         self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
         if self.params["masks"][self.name]["show"]:
