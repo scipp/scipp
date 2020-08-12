@@ -358,6 +358,7 @@ class Slicer2d(Slicer):
                         self.name]["show"] and dim in self.mslice.dims:
                     self.mslice = self.mslice[val.dim, val.value]
         self.vslice = self.vslice.copy()
+        self.vslice.variances = None
         self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
         self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
         if self.params["masks"][self.name]["show"]:
@@ -491,12 +492,8 @@ class Slicer2d(Slicer):
                                             dtype=dslice.dtype,
                                             unit=sc.units.one))
         arr *= dslice
-        arr /= self.xyrebin['x'][self.xyrebin["x"].dims[0],
-                                 1] - self.xyrebin['x'][
-                                     self.xyrebin["x"].dims[0], 0]
-        arr /= self.xyrebin['y'][self.xyrebin["y"].dims[0],
-                                 1] - self.xyrebin['y'][
-                                     self.xyrebin["y"].dims[0], 0]
+        arr /= self.xyrebin['x'].values[1] - self.xyrebin['x'].values[0]
+        arr /= self.xyrebin['y'].values[1] - self.xyrebin['y'].values[0]
         return arr
 
     @timeit
