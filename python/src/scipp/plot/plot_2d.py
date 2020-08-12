@@ -304,15 +304,16 @@ class Slicer2d(Slicer):
 
         return
 
+    @timeit
     def compute_bin_widths(self, xy, dim):
         """
         Pixel widths used for scaling before rebin step
         """
-        self.xywidth[xy] = (
-            self.xyedges[xy][dim, 1:] - self.xyedges[xy][dim, :-1]) / (
-                self.xyrebin[xy][dim, 1] - self.xyrebin[xy][dim, 0])
+        self.xywidth[xy] = (self.xyedges[xy][dim, 1:] -
+                            self.xyedges[xy][dim, :-1])
         self.xywidth[xy].unit = sc.units.one
 
+    @timeit
     def slice_coords(self):
         """
         Recursively slice the coords along the dimensions of active sliders.
@@ -356,17 +357,27 @@ class Slicer2d(Slicer):
                 if self.params["masks"][
                         self.name]["show"] and dim in self.mslice.dims:
                     self.mslice = self.mslice[val.dim, val.value]
+        self.vslice = self.vslice.copy()
+        self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
+        self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
+        if self.params["masks"][self.name]["show"]:
+            self.vslice.masks["all"] = self.mslice
+        # Scale by bin width and then rebin in both directions
+        # Note that this has to be written as 2 inplace operations to avoid
+        # creation of large 2D temporary from broadcast
+        self.vslice *= self.xywidth["x"]
+        self.vslice *= self.xywidth["y"]
 
     @timeit
     def update_slice(self, change=None):
         """
         Slice data according to new slider value and update the image.
         """
-        self.slice_data()
         # If there are multi-d coords in the data we also need to slice the
         # coords and update the xyedges and xywidth
         if self.contains_multid_coord[self.name]:
             self.slice_coords()
+        self.slice_data()
         # Update imade with resampling
         self.update_image()
         return
@@ -420,12 +431,7 @@ class Slicer2d(Slicer):
                     values=np.linspace(xylims[xy][0], xylims[xy][1],
                                        self.image_resolution[xy] + 1),
                     unit=self.slider_coord[self.name][param["dim"]].unit)
-
-                # Pixel widths used for scaling before rebin step
-                self.compute_bin_widths(xy, param["dim"])
-
             self.update_image(extent=np.array(list(xylims.values())).flatten())
-
         return
 
     def select_bins(self, coord, dim, start, end):
@@ -449,44 +455,26 @@ class Slicer2d(Slicer):
                                              self.xyrebin['y'][dim, -1])
 
         # Make a new slice with bin edges and counts for using in rebin.
-        dslice = sc.DataArray(
-            coords={
-                self.xyrebin["x"].dims[0]: self.xyedges["x"][binslicex],
-                self.xyrebin["y"].dims[0]: self.xyedges["y"][binslicey]
-            },
-            data=sc.Variable(dims=[
-                self.xyrebin[self.dim_to_xy[self.vslice.dims[0]]].dims[0],
-                self.xyrebin[self.dim_to_xy[self.vslice.dims[1]]].dims[0]
-            ],
-                             values=self.vslice[slicex][slicey].values,
-                             unit=sc.units.counts,
-                             dtype=sc.dtype.float32))
+        dslice = self.vslice[slicex][slicey]
 
-        # Also include the masks
-        if self.params["masks"][self.name]["show"]:
-            mslice = self.mslice
-            for dim in self.mslice.dims:
-                if dim == self.button_dims[0]:
-                    mslice = mslice[slicey]
-                elif dim == self.button_dims[1]:
-                    mslice = mslice[slicex]
-            dslice.masks["all"] = mslice
-
-        # Scale by bin width and then rebin in both directions
-        # Note that this has to be written as 2 inplace operations to avoid
-        # creation of large 2D temporary from broadcast
-        dslice *= self.xywidth["x"][slicex]
-        dslice *= self.xywidth["y"][slicey]
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
-
         xy = "yx"
         if len(dslice.coords[self.button_dims[1]].dims) > 1:
             xy = "xy"
-        dslice = sc.rebin(dslice, self.xyrebin[xy[0]].dims[0],
-                          self.xyrebin[xy[0]])
-        dslice = sc.rebin(dslice, self.xyrebin[xy[1]].dims[0],
-                          self.xyrebin[xy[1]])
+
+        @timeit
+        def rebin_x():
+            return sc.rebin(dslice, self.xyrebin[xy[0]].dims[0],
+                            self.xyrebin[xy[0]])
+
+        @timeit
+        def rebin_y():
+            return sc.rebin(dslice, self.xyrebin[xy[1]].dims[0],
+                            self.xyrebin[xy[1]])
+
+        dslice = rebin_x()
+        dslice = rebin_y()
 
         # Use Scipp's automatic transpose to match the image x/y axes
         # TODO: once transpose is available for DataArrays,
@@ -503,6 +491,12 @@ class Slicer2d(Slicer):
                                             dtype=dslice.dtype,
                                             unit=sc.units.one))
         arr *= dslice
+        arr /= self.xyrebin['x'][self.xyrebin["x"].dims[0],
+                                 1] - self.xyrebin['x'][
+                                     self.xyrebin["x"].dims[0], 0]
+        arr /= self.xyrebin['y'][self.xyrebin["y"].dims[0],
+                                 1] - self.xyrebin['y'][
+                                     self.xyrebin["y"].dims[0], 0]
         return arr
 
     @timeit
