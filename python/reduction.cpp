@@ -80,6 +80,30 @@ template <class T> void bind_max(py::module &m) {
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
 }
 
+template <class T> void bind_nanmin(py::module &m) {
+  m.def(
+      "nanmin", [](const typename T::const_view_type &x) { return nanmin(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "nanmin",
+      [](const typename T::const_view_type &x, const Dim dim) {
+        return nanmin(x, dim);
+      },
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
+}
+
+template <class T> void bind_nanmax(py::module &m) {
+  m.def(
+      "nanmax", [](const typename T::const_view_type &x) { return nanmax(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "nanmax",
+      [](const typename T::const_view_type &x, const Dim dim) {
+        return nanmax(x, dim);
+      },
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
+}
+
 template <class T> void bind_all(py::module &m) {
   m.def(
       "all", [](const typename T::const_view_type &x) { return all(x); },
@@ -121,6 +145,8 @@ void init_reduction(py::module &m) {
 
   bind_min<Variable>(m);
   bind_max<Variable>(m);
+  bind_nanmin<Variable>(m);
+  bind_nanmax<Variable>(m);
   bind_all<Variable>(m);
   bind_any<Variable>(m);
 }
