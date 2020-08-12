@@ -58,8 +58,7 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
                                     std::max<double>(xn_low, xo_low, less));
         const auto owidth = std::abs(xo_high - xo_low);
         newT.slice({dim, inew}) +=
-            astype(oldT.slice({dim, iold}) * ((delta / owidth) * units::one),
-                   newT.dtype());
+            oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
       }
       if (less(xo_high, xn_high)) {
         iold++;
