@@ -473,7 +473,10 @@ class Slicer2d(Slicer):
             dslice.masks["all"] = mslice
 
         # Scale by bin width and then rebin in both directions
-        dslice *= self.xywidth["x"][slicex] * self.xywidth["y"][slicey]
+        # Note that this has to be written as 2 inplace operations to avoid
+        # creation of large 2D temporary from broadcast
+        dslice *= self.xywidth["x"][slicex]
+        dslice *= self.xywidth["y"][slicey]
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
 
