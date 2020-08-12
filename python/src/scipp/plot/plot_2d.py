@@ -341,15 +341,15 @@ class Slicer2d(Slicer):
         # but not shrink.
         if self.vslice.unaligned is not None:
             self.vslice = sc.histogram(self.vslice)
-            self.autoscale_cbar = True
             self.vslice.variances = None
+            self.autoscale_cbar = True
         else:
-            self.vslice = detail.move_to_data_array(
-                data=sc.Variable(dims=self.vslice.dims,
-                                 unit=sc.units.counts,
-                                 values=self.vslice.values,
-                                 dtype=sc.dtype.float32))
             self.autoscale_cbar = False
+        self.vslice = detail.move_to_data_array(
+            data=sc.Variable(dims=self.vslice.dims,
+                             unit=sc.units.counts,
+                             values=self.vslice.values,
+                             dtype=sc.dtype.float32))
         self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
         self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
         if self.params["masks"][self.name]["show"]:
