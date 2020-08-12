@@ -16,6 +16,24 @@ import ipywidgets as widgets
 import matplotlib.pyplot as plt
 import warnings
 
+import os
+import time
+
+
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+        if 'log_time' in kw:
+            name = kw.get('log_name', method.__name__.upper())
+            kw['log_time'][name] = int((te - ts) * 1000)
+        else:
+            os.write(1, f'{method.__name__}  {(te - ts) * 1000} ms\n'.encode())
+        return result
+
+    return timed
+
 
 def plot_2d(scipp_obj_dict=None,
             axes=None,
@@ -195,6 +213,7 @@ class Slicer2d(Slicer):
         self.update_axes()
         return
 
+    @timeit
     def update_axes(self):
         # Go through the buttons and select the right coordinates for the axes
         for dim, button in self.buttons.items():
@@ -318,6 +337,7 @@ class Slicer2d(Slicer):
             # Pixel widths used for scaling before rebin step
             self.compute_bin_widths(xy, param["dim"])
 
+    @timeit
     def slice_data(self):
         """
         Recursively slice the data along the dimensions of active sliders.
@@ -337,6 +357,7 @@ class Slicer2d(Slicer):
                         self.name]["show"] and dim in self.mslice.dims:
                     self.mslice = self.mslice[val.dim, val.value]
 
+    @timeit
     def update_slice(self, change=None):
         """
         Slice data according to new slider value and update the image.
@@ -366,6 +387,7 @@ class Slicer2d(Slicer):
         if self.xlim_updated:
             self.update_bins_from_axes_limits()
 
+    @timeit
     def update_bins_from_axes_limits(self):
         """
         Update the axis limits and resample the image according to new viewport
@@ -415,6 +437,7 @@ class Slicer2d(Slicer):
         last = min(bins - 1, last)
         return (dim, slice(first, last + 1)), (dim, slice(first, last + 2))
 
+    @timeit
     def resample_image(self):
         dim = self.xyrebin['x'].dims[0]
         slicex, binslicex = self.select_bins(self.xyedges["x"], dim,
@@ -479,6 +502,7 @@ class Slicer2d(Slicer):
         arr *= dslice
         return arr
 
+    @timeit
     def update_image(self, extent=None):
 
         # In the case of unaligned data, we may want to auto-scale the colorbar
