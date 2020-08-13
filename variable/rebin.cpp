@@ -24,6 +24,8 @@ bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
   return edges[dim] == toMatch[dim];
 }
 
+bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
+
 template <typename T, class Less>
 void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
                      Variable &newT, const VariableConstView &oldCoordT,
@@ -54,7 +56,7 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
     if (begin == oldSize + 1 || end == 0)
       return;
     begin = std::max(scipp::index(0), begin - 1);
-    if (newT.dtype() == dtype<bool>) {
+    if (is_dtype_bool(newT)) {
       slice |= any(oldT.slice({dim, begin, end}), dim);
     } else {
       add_from_bin(slice, xn_low, xn_high, begin);
