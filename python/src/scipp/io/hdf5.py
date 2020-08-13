@@ -25,108 +25,113 @@ def _dtype_lut():
     return dict(zip(names, dtypes))
 
 
-def _numpy_dtype_list():
-    from .._scipp.core import dtype as d
-    return [d.float64, d.float32, d.int64, d.int32, d.bool]
-
-
-def _scipp_dtype_list():
-    from .._scipp.core import dtype as d
-    return [d.DataArray]
-
-
-def _event_list_dtype_list():
-    from .._scipp.core import dtype as d
-    return [
-        d.event_list_float64, d.event_list_float32, d.event_list_int64,
-        d.event_list_int32
-    ]
-
-
-def _write_data_numpy(group, data):
-    dset = group.create_dataset('values', data=data.values)
-    if data.variances is not None:
-        variances = group.create_dataset('variances', data=data.variances)
-        dset.attrs['variances'] = variances.ref
-    return dset
-
-
-def _read_data_numpy(group, data):
-    group['values'].read_direct(data.values)
-    if 'variances' in group:
-        group['variances'].read_direct(data.variances)
-
-
-def _write_data_scipp(group, data):
-    values = group.create_group('values')
-    io = HDF5IO()
-    if len(data.shape) == 0:
-        io._write_data_array(values, data.value)
-    else:
-        for i, item in enumerate(data.values):
-            io._write_data_array(values.create_group(f'value-{i}'), item)
-    return values
-
-
-def _read_data_scipp(group, data):
-    values = group['values']
-    io = HDF5IO()
-    if len(data.shape) == 0:
-        data.value = io._read_data_array(values)
-    else:
-        for i in range(len(data.values)):
-            data.values[i] = io._read_data_array(values[f'value-{i}'])
-
-
-def _write_data_event_list(group, data):
-    if len(data.shape) == 0:
+class HDF5NumpyHandler():
+    @staticmethod
+    def write(group, data):
         dset = group.create_dataset('values', data=data.values)
-    else:
+        if data.variances is not None:
+            variances = group.create_dataset('variances', data=data.variances)
+            dset.attrs['variances'] = variances.ref
+        return dset
+
+    @staticmethod
+    def read(group, data):
+        group['values'].read_direct(data.values)
+        if 'variances' in group:
+            group['variances'].read_direct(data.variances)
+
+
+class HDF5ScippHandler():
+    @staticmethod
+    def write(group, data):
+        values = group.create_group('values')
+        io = HDF5IO()
+        if len(data.shape) == 0:
+            io._write_data_array(values, data.value)
+        else:
+            for i, item in enumerate(data.values):
+                io._write_data_array(values.create_group(f'value-{i}'), item)
+        return values
+
+    @staticmethod
+    def read(group, data):
+        values = group['values']
+        io = HDF5IO()
+        if len(data.shape) == 0:
+            data.value = io._read_data_array(values)
+        else:
+            for i in range(len(data.values)):
+                data.values[i] = io._read_data_array(values[f'value-{i}'])
+
+
+class HDF5EventListHandler():
+    @staticmethod
+    def write(group, data):
+        if len(data.shape) == 0:
+            dset = group.create_dataset('values', data=data.values)
+        else:
+            import h5py
+            import numpy as np
+            dt = h5py.vlen_dtype(np.float64)
+            dset = group.create_dataset('values', shape=data.shape, dtype=dt)
+            for i in range(len(data.values)):
+                dset[i] = data.values[i]
+        return dset
+
+    @staticmethod
+    def read(group, data):
+        values = group['values']
+        if len(data.shape) == 0:
+            data.values = values
+        else:
+            for i in range(len(data.values)):
+                data.values[i] = values[i]
+
+
+class HDF5StringHandler():
+    @staticmethod
+    def write(group, data):
         import h5py
-        import numpy as np
-        dt = h5py.vlen_dtype(np.float64)
-        dset = group.create_dataset('values', shape=data.shape, dtype=dt)
-        for i in range(len(data.values)):
-            dset[i] = data.values[i]
-    return dset
+        dt = h5py.string_dtype(encoding='utf-8')
+        if len(data.shape) == 0:
+            dset = group.create_dataset('values', data=data.value, dtype=dt)
+        else:
+            dset = group.create_dataset('values', shape=data.shape, dtype=dt)
+            for i in range(len(data.values)):
+                dset[i] = data.values[i]
+        return dset
+
+    @staticmethod
+    def read(group, data):
+        values = group['values']
+        if len(data.shape) == 0:
+            data.value = str(values[...])
+        else:
+            for i in range(len(data.values)):
+                data.values[i] = values[i]
 
 
-def _read_data_event_list(group, data):
-    values = group['values']
-    if len(data.shape) == 0:
-        data.values = values
-    else:
-        for i in range(len(data.values)):
-            data.values[i] = values[i]
-
-
-def _write_data_string(group, data):
-    import h5py
-    dt = h5py.string_dtype(encoding='utf-8')
-    if len(data.shape) == 0:
-        dset = group.create_dataset('values', data=data.value, dtype=dt)
-    else:
-        dset = group.create_dataset('values', shape=data.shape, dtype=dt)
-        for i in range(len(data.values)):
-            dset[i] = data.values[i]
-    return dset
-
-
-def _read_data_string(group, data):
-    values = group['values']
-    if len(data.shape) == 0:
-        data.value = str(values[...])
-    else:
-        for i in range(len(data.values)):
-            data.values[i] = values[i]
+def _handler_lut():
+    from .._scipp.core import dtype as d
+    handler = {}
+    for dtype in [d.float64, d.float32, d.int64, d.int32, d.bool]:
+        handler[str(dtype)] = HDF5NumpyHandler
+    for dtype in [d.DataArray]:
+        handler[str(dtype)] = HDF5ScippHandler
+    for dtype in [
+            d.event_list_float64, d.event_list_float32, d.event_list_int64,
+            d.event_list_int32
+    ]:
+        handler[str(dtype)] = HDF5EventListHandler
+    for dtype in [d.string]:
+        handler[str(dtype)] = HDF5StringHandler
+    return handler
 
 
 class HDF5IO:
     _units = _unit_lut()
     _dtypes = _dtype_lut()
-    _numpy_dtypes = _numpy_dtype_list()
-    _scipp_dtypes = _scipp_dtype_list()
-    _event_list_dtypes = _event_list_dtype_list()
+    _handlers = _handler_lut()
 
     def _read_unit(self, dset):
         return self._units[dset.attrs['unit']]
@@ -135,28 +140,10 @@ class HDF5IO:
         return self._dtypes[dset.attrs['dtype']]
 
     def _write_data(self, group, data):
-        from .._scipp.core import dtype as d
-        if data.dtype in self._numpy_dtypes:
-            return _write_data_numpy(group, data)
-        if data.dtype in self._scipp_dtypes:
-            return _write_data_scipp(group, data)
-        if data.dtype in self._event_list_dtypes:
-            return _write_data_event_list(group, data)
-        if data.dtype == d.string:
-            return _write_data_string(group, data)
-        raise RuntimeError("unsupported dtype")
+        return self._handlers[str(data.dtype)].write(group, data)
 
     def _read_data(self, group, data):
-        from .._scipp.core import dtype as d
-        if data.dtype in self._numpy_dtypes:
-            return _read_data_numpy(group, data)
-        if data.dtype in self._scipp_dtypes:
-            return _read_data_scipp(group, data)
-        if data.dtype in self._event_list_dtypes:
-            return _read_data_event_list(group, data)
-        if data.dtype == d.string:
-            return _read_data_string(group, data)
-        raise RuntimeError("unsupported dtype")
+        return self._handlers[str(data.dtype)].read(group, data)
 
     def _write_variable(self, group, var, name):
         if var.dtype not in self._dtypes.values():
