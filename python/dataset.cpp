@@ -90,7 +90,7 @@ void bind_mutable_view(py::module &m, const std::string &name) {
           py::return_value_policy::move, py::keep_alive<0, 1>(),
           R"(view on self's items)")
       .def("__contains__", &T::contains);
-  bind_comparison<T>(view);
+  bind_inequality_to_operator<T>(view);
 }
 
 template <class T> void realign_impl(T &self, py::dict coord_dict) {
@@ -208,7 +208,11 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
 
 template <class T, class... Ignored>
 void bind_data_array_properties(py::class_<T, Ignored...> &c) {
-  c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
+  if constexpr (std::is_same_v<T, DataArray>)
+    c.def_property("name", &T::name, &T::setName,
+                   R"(The name of the held data.)");
+  else
+    c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
   c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def(
       "copy", [](const T &self) { return DataArray(self); },
@@ -238,7 +242,6 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
           py::return_value_policy::move, py::keep_alive<0, 1>()),
       R"(Underlying unaligned data item.)");
   bind_coord_properties(c);
-  bind_comparison<DataArrayConstView>(c);
   bind_data_properties(c);
   bind_slice_methods(c);
   bind_in_place_binary<DataArrayView>(c);
@@ -334,13 +337,15 @@ void init_dataset(py::module &m) {
   dataArray.def(py::init([](VariableConstView data,
                             std::map<Dim, VariableConstView> coords,
                             std::map<std::string, VariableConstView> masks,
-                            std::map<std::string, VariableConstView> attrs) {
-                  return DataArray{Variable{data}, coords, masks, attrs};
+                            std::map<std::string, VariableConstView> attrs,
+                            const std::string &name) {
+                  return DataArray{Variable{data}, coords, masks, attrs, name};
                 }),
                 py::arg("data") = Variable{},
                 py::arg("coords") = std::map<Dim, VariableConstView>{},
                 py::arg("masks") = std::map<std::string, VariableConstView>{},
-                py::arg("attrs") = std::map<std::string, VariableConstView>{});
+                py::arg("attrs") = std::map<std::string, VariableConstView>{},
+                py::arg("name") = std::string{});
 
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>());
@@ -410,11 +415,6 @@ void init_dataset(py::module &m) {
 
   bind_slice_methods(dataset);
   bind_slice_methods(datasetView);
-
-  bind_comparison<Dataset>(dataset);
-  bind_comparison<DatasetView>(dataset);
-  bind_comparison<Dataset>(datasetView);
-  bind_comparison<DatasetView>(datasetView);
 
   bind_in_place_binary<Dataset>(dataset);
   bind_in_place_binary<DatasetView>(dataset);

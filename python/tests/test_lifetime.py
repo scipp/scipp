@@ -3,6 +3,7 @@
 # @author Simon Heybrock
 import numpy as np
 import scipp as sc
+import pytest
 """This file contains tests specific to pybind11 lifetime issues, in particular
 py::return_value_policy and py::keep_alive."""
 
@@ -103,3 +104,39 @@ def test_lifetime_string_array():
     gc.collect()
     var.copy()  # do something allocating memory to trigger potential segfault
     assert vals[100000] == 'ab'
+
+
+@pytest.mark.parametrize("func",
+                         [sc.abs, sc.sqrt, sc.reciprocal, sc.nan_to_num])
+def test_lifetime_out_arg(func):
+    var = 1.0 * sc.units.one
+    var = func(var, out=var)
+    var *= 1.0  # var would be an invalid view is keep_alive not correct
+
+
+@pytest.mark.parametrize("func", [sc.sin, sc.cos, sc.tan])
+def test_lifetime_trigonometry_out_arg(func):
+    var = 1.0 * sc.units.rad
+    var = func(var, out=var)
+    var *= 1.0  # var would be an invalid view is keep_alive not correct
+
+
+@pytest.mark.parametrize("func", [sc.asin, sc.acos, sc.atan])
+def test_lifetime_inverse_trigonometry_out_arg(func):
+    var = 1.0 * sc.units.one
+    var = func(var, out=var)
+    var *= 1.0  # var would be an invalid view is keep_alive not correct
+
+
+def test_lifetime_atan2_out_arg():
+    var = 1.0 * sc.units.one
+    var = sc.atan2(var, var, out=var)
+    var *= 1.0  # var would be an invalid view is keep_alive not correct
+
+
+@pytest.mark.parametrize("func", [sc.mean, sc.sum])
+def test_lifetime_reduction_out_arg(func):
+    var = sc.Variable(dims=['x'], values=[1, 2, 3])
+    out = 0.0 * sc.units.one
+    out = func(var, 'x', out=out)
+    out *= 1.0  # out would be an invalid view is keep_alive not correct

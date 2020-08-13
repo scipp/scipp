@@ -14,6 +14,7 @@
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 #include "scipp/dataset/dataset.h"
@@ -333,6 +334,35 @@ Mostly equivalent to Variable, see there for details.)");
           .description("Check if the values of a variable are evenly spaced.")
           .returns("Returns True if the variable contains regularly spaced "
                    "values, False otherwise.")
+          .rtype("bool")
+          .c_str());
+
+  m.def(
+      "is_sorted",
+      [](const VariableConstView &x, const Dim dim, const std::string &order) {
+        if (order == "ascending")
+          return is_sorted(x, dim, variable::SortOrder::Ascending);
+        else if (order == "descending")
+          return is_sorted(x, dim, variable::SortOrder::Descending);
+        else
+          throw std::runtime_error(
+              "Sort order must be 'ascending' or 'descending'");
+      },
+      py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
+      py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Check if the values of a variable are sorted in.\n\nIf "
+                       "'order' is 'ascending' checks if values are "
+                       "non-decreasing along 'dim'. If 'order' is 'descending' "
+                       "checks if values are non-increasing along 'dim'.")
+          .param("x", "Variable to check.", "Variable")
+          .param("dim", "Dimension along which order is checked.", "Dim")
+          .param("order",
+                 "Sorted order. Valid options are 'ascending' and "
+                 "'descending'. Default is 'ascending'.",
+                 "str")
+          .returns("Returns True if the variable values are monotonously "
+                   "ascending, False otherwise.")
           .rtype("bool")
           .c_str());
 }

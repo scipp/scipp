@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform.h"
 

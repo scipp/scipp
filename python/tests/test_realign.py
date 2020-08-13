@@ -18,7 +18,7 @@ def test_realign():
     y = sc.Variable(dims=['y'], values=[0.0, 4.0])
     realigned = sc.realign(base, coords={'y': y})
     assert realigned.data is None
-    assert realigned.unaligned == base
+    assert sc.is_equal(realigned.unaligned, base)
     expected = sc.DataArray(data=sc.Variable(dims=['y'], values=[4.0]),
                             coords={'y': y})
-    assert sc.histogram(realigned) == expected
+    assert sc.is_equal(sc.histogram(realigned), expected)

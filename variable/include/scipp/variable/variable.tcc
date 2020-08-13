@@ -29,9 +29,9 @@ template <class T> struct is_span<scipp::span<T>> : std::true_type {};
 template <class T> inline constexpr bool is_span_v = is_span<T>::value;
 
 template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
-  if constexpr(is_span_v<typename T1::value_type>)
+  if constexpr (is_span_v<typename T1::value_type>)
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end(),
-        [](auto &a, auto &b) { return equal(a,b); });
+                      [](auto &a, auto &b) { return equal(a, b); });
   else
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
@@ -257,6 +257,20 @@ void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
   }
 }
 
+namespace {
+template <class T> struct default_init {
+  static T value() { return T(); }
+};
+// Eigen does not zero-initialize matrices (vectors), which is a recurrent
+// source of bugs. Variable does zero-init instead.
+template <class T, int Rows, int Cols>
+struct default_init<Eigen::Matrix<T, Rows, Cols>> {
+  static Eigen::Matrix<T, Rows, Cols> value() {
+    return Eigen::Matrix<T, Rows, Cols>::Zero();
+  }
+};
+} // namespace
+
 /// Implementation of VariableConcept that holds data.
 template <class T>
 class DataModel : public VariableConceptT<typename T::value_type> {
@@ -266,9 +280,9 @@ public:
   DataModel(const Dimensions &dimensions, T model,
             std::optional<T> variances = std::nullopt)
       : VariableConceptT<typename T::value_type>(dimensions),
-        m_values(model ? std::move(model)
-                       : T(dimensions.volume(),
-                           detail::default_init<value_type>::value())),
+        m_values(
+            model ? std::move(model)
+                  : T(dimensions.volume(), default_init<value_type>::value())),
         m_variances(std::move(variances)) {
     if (m_variances && !core::canHaveVariances<value_type>())
       throw except::VariancesError("This data type cannot have variances.");
@@ -276,8 +290,7 @@ public:
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
     if (m_variances && !*m_variances)
-      *m_variances =
-          T(dimensions.volume(), detail::default_init<value_type>::value());
+      *m_variances = T(dimensions.volume(), default_init<value_type>::value());
   }
 
   void setVariances(Variable &&variances) override {

@@ -6,7 +6,7 @@
 from .. import config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import edges_to_centers
+from .tools import to_bin_centers
 from .._utils import name_with_unit
 from .._scipp.core import histogram as scipp_histogram
 
@@ -262,7 +262,7 @@ class Slicer1d(Slicer):
         xmin = np.Inf
         xmax = np.NINF
         for name, var in self.scipp_obj_dict.items():
-            new_x = self.slider_x[name][dim].values
+            new_x = self.slider_coord[name][dim].values
             xmin = min(new_x[0], xmin)
             xmax = max(new_x[-1], xmax)
 
@@ -270,7 +270,7 @@ class Slicer1d(Slicer):
             ydata = vslice.values
 
             # If this is a histogram, plot a step function
-            if self.histograms[name][dim]:
+            if self.histograms[name][dim][dim]:
                 ye = np.concatenate((ydata[0:1], ydata))
                 [self.members["lines"][name]
                  ] = self.ax.step(new_x,
@@ -319,8 +319,9 @@ class Slicer1d(Slicer):
 
             # Add error bars
             if self.errorbars[name]:
-                if self.histograms[name][dim]:
-                    self.current_xcenters = edges_to_centers(new_x)
+                if self.histograms[name][dim][dim]:
+                    self.current_xcenters = to_bin_centers(
+                        self.slider_coord[name][dim], dim).values
                 else:
                     self.current_xcenters = new_x
                 self.members["error_y"][name] = self.ax.errorbar(
@@ -340,7 +341,10 @@ class Slicer1d(Slicer):
                     self.ax.set_ylim(self.ylim)
 
         self.ax.set_xlabel(
-            name_with_unit(self.slider_x[self.name][dim], name=str(dim)))
+            name_with_unit(
+                self.slider_label[self.name][dim]["coord"],
+                name=self.slider_label[self.name][dim]["name"],
+            ))
         self.ax.xaxis.set_major_formatter(
             self.slider_axformatter[self.name][dim][self.logx])
         self.ax.xaxis.set_major_locator(
@@ -354,7 +358,7 @@ class Slicer1d(Slicer):
         for dim, val in self.slider.items():
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
-                    self.slider_x[self.name][dim], val.value)
+                    self.slider_label[self.name][dim]["coord"], val.value)
                 vslice = vslice[val.dim, val.value]
         if vslice.unaligned is not None:
             vslice = scipp_histogram(vslice)
@@ -378,13 +382,15 @@ class Slicer1d(Slicer):
         for name, var in self.scipp_obj_dict.items():
             vslice = self.slice_data(var, name)
             vals = vslice.values
-            if self.histograms[name][self.button_axis_to_dim["x"]]:
+            if self.histograms[name][self.button_axis_to_dim["x"]][
+                    self.button_axis_to_dim["x"]]:
                 vals = np.concatenate((vals[0:1], vals))
             self.members["lines"][name].set_ydata(vals)
 
             if self.params["masks"][name]["show"]:
                 msk = mslice.values
-                if self.histograms[name][self.button_axis_to_dim["x"]]:
+                if self.histograms[name][self.button_axis_to_dim["x"]][
+                        self.button_axis_to_dim["x"]]:
                     msk = np.concatenate((msk[0:1], msk))
                 self.members["masks"][name].set_ydata(
                     self.mask_to_float(msk, vals))

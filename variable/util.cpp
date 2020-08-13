@@ -6,8 +6,10 @@
 #include "scipp/core/element/util.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/transform.h"
 
 using namespace scipp::core;
@@ -16,7 +18,7 @@ namespace scipp::variable {
 
 Variable linspace(const VariableConstView &start, const VariableConstView &stop,
                   const Dim dim, const scipp::index num) {
-  // Th implementation here is slightly verbose and explicit. It could be
+  // The implementation here is slightly verbose and explicit. It could be
   // improved if we were to introduce new variants of `transform`, similar to
   // `std::generate`.
   core::expect::equals(start.dims(), stop.dims());
@@ -46,6 +48,27 @@ Variable values(const VariableConstView &x) {
 }
 Variable variances(const VariableConstView &x) {
   return transform(x, element::variances);
+}
+
+/// Return true if variable values are sorted along given dim.
+///
+/// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
+/// If `order` is SortOrder::Descending, checks if values are non-increasing.
+bool is_sorted(const VariableConstView &x, const Dim dim,
+               const SortOrder order) {
+  const auto size = x.dims()[dim];
+  if (size < 2)
+    return true;
+  auto out = makeVariable<bool>(Values{true});
+  if (order == SortOrder::Ascending)
+    accumulate_in_place(out, x.slice({dim, 0, size - 1}),
+                        x.slice({dim, 1, size}),
+                        core::element::is_sorted_nondescending);
+  else
+    accumulate_in_place(out, x.slice({dim, 0, size - 1}),
+                        x.slice({dim, 1, size}),
+                        core::element::is_sorted_nonascending);
+  return out.value<bool>();
 }
 
 } // namespace scipp::variable

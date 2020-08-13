@@ -72,22 +72,24 @@ def test_neutron_convert_out_arg_realign():
 def test_neutron_beamline():
     d = make_dataset_with_beamline()
 
-    assert sc.neutron.source_position(d) == sc.Variable(
-        value=np.array([0, 0, -10]),
-        dtype=sc.dtype.vector_3_float64,
-        unit=sc.units.m)
-    assert sc.neutron.sample_position(d) == sc.Variable(
-        value=np.array([0, 0, 0]),
-        dtype=sc.dtype.vector_3_float64,
-        unit=sc.units.m)
-    assert sc.neutron.l1(d) == 10.0 * sc.units.m
-    assert sc.neutron.l2(d) == sc.Variable(dims=['position'],
-                                           values=np.ones(4),
-                                           unit=sc.units.m)
+    assert sc.is_equal(
+        sc.neutron.source_position(d),
+        sc.Variable(value=np.array([0, 0, -10]),
+                    dtype=sc.dtype.vector_3_float64,
+                    unit=sc.units.m))
+    assert sc.is_equal(
+        sc.neutron.sample_position(d),
+        sc.Variable(value=np.array([0, 0, 0]),
+                    dtype=sc.dtype.vector_3_float64,
+                    unit=sc.units.m))
+    assert sc.is_equal(sc.neutron.l1(d), 10.0 * sc.units.m)
+    assert sc.is_equal(
+        sc.neutron.l2(d),
+        sc.Variable(dims=['position'], values=np.ones(4), unit=sc.units.m))
     two_theta = sc.neutron.two_theta(d)
     assert two_theta.unit == sc.units.rad
     assert two_theta.dims == ['position']
-    assert sc.neutron.scattering_angle(d) == 0.5 * two_theta
+    assert sc.is_equal(sc.neutron.scattering_angle(d), 0.5 * two_theta)
 
 
 def test_neutron_instrument_view_3d():

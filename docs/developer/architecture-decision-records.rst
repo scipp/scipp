@@ -5,4 +5,4 @@ Architecture Decision Records
    :maxdepth: 1
    :glob:
 
-   ADRs/*
+   adr/*
