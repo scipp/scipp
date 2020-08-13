@@ -80,3 +80,13 @@ def test_data_array_dtype_DataArray():
     a.coords['1d'].values[2] = sc.DataArray(data=2.0 * sc.units.m)
     a.coords['1d'].values[3] = sc.DataArray(data=3.0 * sc.units.m)
     check_roundtrip(a)
+
+
+def test_data_array_dtype_event_list():
+    events = sc.Variable(dims=['x'],
+                         shape=[2],
+                         dtype=sc.dtype.event_list_float64)
+    events['x', 0].values = np.arange(4.0)
+    a = sc.DataArray(data=events)
+    check_roundtrip(a)
+    check_roundtrip(a['x', 0])

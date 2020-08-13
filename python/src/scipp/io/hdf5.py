@@ -17,7 +17,9 @@ def _dtype_lut():
     # handling, but will do as we add support for other types such as
     # variable-length strings.
     dtypes = [
-        d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.DataArray
+        d.float64, d.float32, d.int64, d.int32, d.bool, d.string,
+        d.event_list_float64, d.event_list_float32, d.event_list_int64,
+        d.event_list_int32, d.DataArray
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
@@ -31,6 +33,14 @@ def _numpy_dtype_list():
 def _scipp_dtype_list():
     from .._scipp.core import dtype as d
     return [d.DataArray]
+
+
+def _event_list_dtype_list():
+    from .._scipp.core import dtype as d
+    return [
+        d.event_list_float64, d.event_list_float32, d.event_list_int64,
+        d.event_list_int32
+    ]
 
 
 def _write_data_numpy(group, data):
@@ -68,11 +78,35 @@ def _read_data_scipp(group, data):
             data.values[i] = io._read_data_array(values[f'value-{i}'])
 
 
+def _write_data_event_list(group, data):
+    import h5py
+    import numpy as np
+    dt = h5py.vlen_dtype(np.float64)
+    if len(data.shape) == 0:
+        dset = group.create_dataset('values', data=data.values)
+    else:
+        dt = h5py.vlen_dtype(np.float64)
+        dset = group.create_dataset('values', shape=data.shape, dtype=dt)
+        for i in range(len(data.values)):
+            dset[i] = data.values[i]
+    return dset
+
+
+def _read_data_event_list(group, data):
+    values = group['values']
+    if len(data.shape) == 0:
+        data.values = values
+    else:
+        for i in range(len(data.values)):
+            data.values[i] = values[i]
+
+
 class HDF5IO:
     _units = _unit_lut()
     _dtypes = _dtype_lut()
     _numpy_dtypes = _numpy_dtype_list()
     _scipp_dtypes = _scipp_dtype_list()
+    _event_list_dtypes = _event_list_dtype_list()
 
     def _read_unit(self, dset):
         return self._units[dset.attrs['unit']]
@@ -85,6 +119,8 @@ class HDF5IO:
             return _write_data_numpy(group, data)
         if data.dtype in self._scipp_dtypes:
             return _write_data_scipp(group, data)
+        if data.dtype in self._event_list_dtypes:
+            return _write_data_event_list(group, data)
         raise RuntimeError("unsupported dtype")
 
     def _read_data(self, group, data):
@@ -92,6 +128,8 @@ class HDF5IO:
             return _read_data_numpy(group, data)
         if data.dtype in self._scipp_dtypes:
             return _read_data_scipp(group, data)
+        if data.dtype in self._event_list_dtypes:
+            return _read_data_event_list(group, data)
         raise RuntimeError("unsupported dtype")
 
     def _write_variable(self, group, var, name):
