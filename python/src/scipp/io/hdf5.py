@@ -16,14 +16,63 @@ def _dtype_lut():
     # For types understood by numpy we do not actually need this special
     # handling, but will do as we add support for other types such as
     # variable-length strings.
-    dtypes = [d.float64, d.float32, d.int64, d.int32, d.bool]
+    dtypes = [
+        d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.DataArray
+    ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
+
+
+def _numpy_dtype_list():
+    from .._scipp.core import dtype as d
+    return [d.float64, d.float32, d.int64, d.int32, d.bool]
+
+
+def _scipp_dtype_list():
+    from .._scipp.core import dtype as d
+    return [d.DataArray]
+
+
+def _write_data_numpy(group, data):
+    dset = group.create_dataset('values', data=data.values)
+    if data.variances is not None:
+        variances = group.create_dataset('variances', data=data.variances)
+        dset.attrs['variances'] = variances.ref
+    return dset
+
+
+def _read_data_numpy(group, data):
+    group['values'].read_direct(data.values)
+    if 'variances' in group:
+        group['variances'].read_direct(data.variances)
+
+
+def _write_data_scipp(group, data):
+    values = group.create_group('values')
+    io = HDF5IO()
+    if len(data.shape) == 0:
+        io._write_data_array(values, data.value)
+    else:
+        for i, item in enumerate(data.values):
+            io._write_data_array(values.create_group(f'value-{i}'), item)
+    return values
+
+
+def _read_data_scipp(group, data):
+    values = group['values']
+    io = HDF5IO()
+    if len(data.shape) == 0:
+        data.value = io._read_data_array(values)
+    else:
+        for i in len(data.values):
+            data.values[i] = io._read_data_array(values[f'value-{i}'])
 
 
 class HDF5IO:
     _units = _unit_lut()
     _dtypes = _dtype_lut()
+    _numpy_dtypes = _numpy_dtype_list()
+    _scipp_dtypes = _scipp_dtype_list()
 
     def _read_unit(self, dset):
         return self._units[dset.attrs['unit']]
@@ -32,16 +81,18 @@ class HDF5IO:
         return self._dtypes[dset.attrs['dtype']]
 
     def _write_data(self, group, data):
-        dset = group.create_dataset('values', data=data.values)
-        if data.variances is not None:
-            variances = group.create_dataset('variances', data=data.variances)
-            dset.attrs['variances'] = variances.ref
-        return dset
+        if data.dtype in self._numpy_dtypes:
+            return _write_data_numpy(group, data)
+        if data.dtype in self._scipp_dtypes:
+            return _write_data_scipp(group, data)
+        raise RuntimeError("unsupported dtype")
 
     def _read_data(self, group, data):
-        group['values'].read_direct(data.values)
-        if 'variances' in group:
-            group['variances'].read_direct(data.variances)
+        if data.dtype in self._numpy_dtypes:
+            return _read_data_numpy(group, data)
+        if data.dtype in self._scipp_dtypes:
+            return _read_data_scipp(group, data)
+        raise RuntimeError("unsupported dtype")
 
     def _write_variable(self, group, var, name):
         if var.dtype not in self._dtypes.values():
@@ -69,8 +120,8 @@ class HDF5IO:
         return var
 
     def _write_data_array(self, group, data):
-        import scipp as sc
-        group.attrs['scipp-version'] = sc.__version__
+        from .._scipp import __version__
+        group.attrs['scipp-version'] = __version__
         group.attrs['type'] = 'DataArray'
         group.attrs['name'] = data.name
         if data.data is None:

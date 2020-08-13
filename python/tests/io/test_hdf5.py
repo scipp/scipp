@@ -67,3 +67,9 @@ def test_data_array_2d():
                          'attr2': 1.2 * sc.units.K
                      })
     check_roundtrip(a)
+
+
+def test_data_array_dtype_DataArray():
+    a = sc.DataArray(data=x)
+    a.coords['nested'] = sc.Variable(value=a)
+    check_roundtrip(a)
