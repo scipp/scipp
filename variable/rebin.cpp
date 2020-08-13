@@ -3,7 +3,6 @@
 /// @file
 /// @author Simon Heybrock, Igor Gudich
 #include "scipp/core/element/rebin.h"
-#include "scipp/core/dtype.h"
 #include "scipp/core/parallel.h"
 #include "scipp/units/except.h"
 #include "scipp/variable/apply.h"
@@ -14,7 +13,6 @@
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
 
-using namespace scipp::core;
 using namespace scipp::core::element;
 
 namespace scipp::variable {
@@ -24,6 +22,7 @@ bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
   return edges[dim] == toMatch[dim];
 }
 
+// Workaround VS C7526 (undefined inline variable) with dtype<> in template.
 bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
 
 template <typename T, class Less>
