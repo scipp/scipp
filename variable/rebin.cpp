@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock, Igor Gudich
 #include "scipp/core/element/rebin.h"
+#include "scipp/core/dtype.h"
 #include "scipp/core/parallel.h"
 #include "scipp/units/except.h"
 #include "scipp/variable/apply.h"
@@ -13,6 +14,7 @@
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
 
+using namespace scipp::core;
 using namespace scipp::core::element;
 
 namespace scipp::variable {
