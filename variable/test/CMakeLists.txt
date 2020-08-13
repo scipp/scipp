@@ -11,6 +11,7 @@ add_executable(
   reduce_logical_test.cpp
   reduce_various_test.cpp
   subspan_view_test.cpp
+  sort_test.cpp
   transform_test.cpp
   trigonometry_test.cpp
   util_test.cpp
