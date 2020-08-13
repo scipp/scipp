@@ -64,7 +64,7 @@ def _read_data_scipp(group, data):
     if len(data.shape) == 0:
         data.value = io._read_data_array(values)
     else:
-        for i in len(data.values):
+        for i in range(len(data.values)):
             data.values[i] = io._read_data_array(values[f'value-{i}'])
 
 

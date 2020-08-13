@@ -71,5 +71,12 @@ def test_data_array_2d():
 
 def test_data_array_dtype_DataArray():
     a = sc.DataArray(data=x)
-    a.coords['nested'] = sc.Variable(value=a)
+    a.coords['scalar'] = sc.Variable(value=a)
+    a.coords['1d'] = sc.Variable(dims=a.dims,
+                                 shape=a.shape,
+                                 dtype=sc.dtype.DataArray)
+    a.coords['1d'].values[0] = sc.DataArray(data=0.0 * sc.units.m)
+    a.coords['1d'].values[1] = sc.DataArray(data=1.0 * sc.units.m)
+    a.coords['1d'].values[2] = sc.DataArray(data=2.0 * sc.units.m)
+    a.coords['1d'].values[3] = sc.DataArray(data=3.0 * sc.units.m)
     check_roundtrip(a)
