@@ -25,6 +25,18 @@ def _dtype_lut():
     return dict(zip(names, dtypes))
 
 
+def _event_list_dtype_lut():
+    from .._scipp.core import dtype as d
+    import numpy as np
+    dtypes = [
+        d.event_list_float64, d.event_list_float32, d.event_list_int64,
+        d.event_list_int32
+    ]
+    numpy_dtypes = [np.float64, np.float32, np.int64, np.int32]
+    names = [str(dtype) for dtype in dtypes]
+    return dict(zip(names, numpy_dtypes))
+
+
 class HDF5NumpyHandler():
     @staticmethod
     def write(group, data):
@@ -71,8 +83,7 @@ class HDF5EventListHandler():
             dset = group.create_dataset('values', data=data.values)
         else:
             import h5py
-            import numpy as np
-            dt = h5py.vlen_dtype(np.float64)
+            dt = h5py.vlen_dtype(_event_list_dtype_lut()[str(data.dtype)])
             dset = group.create_dataset('values', shape=data.shape, dtype=dt)
             for i in range(len(data.values)):
                 dset[i] = data.values[i]
@@ -118,11 +129,8 @@ def _handler_lut():
         handler[str(dtype)] = HDF5NumpyHandler
     for dtype in [d.DataArray]:
         handler[str(dtype)] = HDF5ScippHandler
-    for dtype in [
-            d.event_list_float64, d.event_list_float32, d.event_list_int64,
-            d.event_list_int32
-    ]:
-        handler[str(dtype)] = HDF5EventListHandler
+    for dtype in _event_list_dtype_lut().keys():
+        handler[dtype] = HDF5EventListHandler
     for dtype in [d.string]:
         handler[str(dtype)] = HDF5StringHandler
     return handler

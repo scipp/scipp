@@ -4,8 +4,8 @@
 # @author Simon Heybrock
 import scipp as sc
 import numpy as np
-
 import tempfile
+import pytest
 
 
 def check_roundtrip(obj):
@@ -82,11 +82,13 @@ def test_data_array_dtype_DataArray():
     check_roundtrip(a)
 
 
-def test_data_array_dtype_event_list():
-    events = sc.Variable(dims=['x'],
-                         shape=[2],
-                         dtype=sc.dtype.event_list_float64)
-    events['x', 0].values = np.arange(4.0)
+@pytest.mark.parametrize("dtype", [
+    sc.dtype.event_list_float64, sc.dtype.event_list_float32,
+    sc.dtype.event_list_int64, sc.dtype.event_list_int32
+])
+def test_data_array_dtype_event_list(dtype):
+    events = sc.Variable(dims=['x'], shape=[2], dtype=dtype)
+    events['x', 0].values = np.arange(4)
     a = sc.DataArray(data=events)
     check_roundtrip(a)
     check_roundtrip(a['x', 0])
