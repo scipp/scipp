@@ -120,24 +120,19 @@ class HDF5StringHandler():
                 data.values[i] = values[i]
 
 
-def _data_handler_lut():
-    from .._scipp.core import dtype as d
-    handler = {}
-    for dtype in [d.float64, d.float32, d.int64, d.int32, d.bool]:
-        handler[str(dtype)] = HDF5NumpyHandler
-    for dtype in [d.DataArray]:
-        handler[str(dtype)] = HDF5ScippHandler
-    for dtype in _event_list_dtype_lut().keys():
-        handler[dtype] = HDF5EventListHandler
-    for dtype in [d.string]:
-        handler[str(dtype)] = HDF5StringHandler
-    return handler
+def _check_scipp_version(group):
+    if 'scipp-version' not in group.attrs:
+        raise RuntimeError(
+            "This does not look like an HDF5 file/group written by scipp.")
 
 
 class VariableIO:
+    _dtypes = _dtype_lut()
+    _units = _unit_lut()
+
     @staticmethod
     def write(group, var):
-        if var.dtype not in HDF5IO._dtypes.values():
+        if var.dtype not in VariableIO._dtypes.values():
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
             print(f'Writing with dtype={var.dtype} not implemented, skipping.')
@@ -158,8 +153,8 @@ class VariableIO:
         from .._scipp import core as sc
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
-        contents['dtype'] = HDF5IO._read_dtype(values)
-        contents['unit'] = HDF5IO._read_unit(values)
+        contents['dtype'] = VariableIO._dtypes[values.attrs['dtype']]
+        contents['unit'] = VariableIO._units[values.attrs['unit']]
         contents['variances'] = 'variances' in group
         var = sc.Variable(**contents)
         HDF5IO._read_data(group, var)
@@ -213,31 +208,29 @@ class DatasetIO:
     pass
 
 
+def _data_handler_lut():
+    from .._scipp.core import dtype as d
+    handler = {}
+    for dtype in [d.float64, d.float32, d.int64, d.int32, d.bool]:
+        handler[str(dtype)] = HDF5NumpyHandler
+    for dtype in [d.DataArray]:
+        handler[str(dtype)] = HDF5ScippHandler
+    for dtype in _event_list_dtype_lut().keys():
+        handler[dtype] = HDF5EventListHandler
+    for dtype in [d.string]:
+        handler[str(dtype)] = HDF5StringHandler
+    return handler
+
+
 def _handler_lut():
     return dict(
         zip(['Variable', 'DataArray', 'Dataset'],
             [VariableIO, DataArrayIO, DatasetIO]))
 
 
-def _check_scipp_version(group):
-    if 'scipp-version' not in group.attrs:
-        raise RuntimeError(
-            "This does not look like an HDF5 file/group written by scipp.")
-
-
 class HDF5IO:
-    _units = _unit_lut()
-    _dtypes = _dtype_lut()
     _data_handlers = _data_handler_lut()
     _handlers = _handler_lut()
-
-    @staticmethod
-    def _read_unit(dset):
-        return HDF5IO._units[dset.attrs['unit']]
-
-    @staticmethod
-    def _read_dtype(dset):
-        return HDF5IO._dtypes[dset.attrs['dtype']]
 
     @staticmethod
     def _write_data(group, data):
@@ -249,7 +242,8 @@ class HDF5IO:
 
     @staticmethod
     def write(group, data):
-        return HDF5IO._handlers[data.__class__.__name__].write(group, data)
+        return HDF5IO._handlers[data.__class__.__name__.replace(
+            'View', '')].write(group, data)
 
     @staticmethod
     def read(group):
@@ -259,8 +253,7 @@ class HDF5IO:
 def data_array_to_hdf5(self, filename):
     import h5py
     with h5py.File(filename, 'w') as f:
-        HDF5IO._handlers['DataArray'].write(f, self)
-        #io._write_data_array(f, self)
+        HDF5IO.write(f, self)
 
 
 def open_hdf5(filename):
