@@ -37,7 +37,7 @@ def _event_list_dtype_lut():
     return dict(zip(names, numpy_dtypes))
 
 
-class HDF5NumpyHandler():
+class NumpyDataIO():
     @staticmethod
     def write(group, data):
         dset = group.create_dataset('values', data=data.values)
@@ -53,7 +53,7 @@ class HDF5NumpyHandler():
             group['variances'].read_direct(data.variances)
 
 
-class HDF5ScippHandler():
+class ScippDataIO():
     @staticmethod
     def write(group, data):
         values = group.create_group('values')
@@ -74,7 +74,7 @@ class HDF5ScippHandler():
                 data.values[i] = HDF5IO.read(values[f'value-{i}'])
 
 
-class HDF5EventListHandler():
+class EventListDataIO():
     @staticmethod
     def write(group, data):
         if len(data.shape) == 0:
@@ -97,7 +97,7 @@ class HDF5EventListHandler():
                 data.values[i] = values[i]
 
 
-class HDF5StringHandler():
+class StringDataIO():
     @staticmethod
     def write(group, data):
         import h5py
@@ -130,13 +130,13 @@ def _data_handler_lut():
     from .._scipp.core import dtype as d
     handler = {}
     for dtype in [d.float64, d.float32, d.int64, d.int32, d.bool]:
-        handler[str(dtype)] = HDF5NumpyHandler
+        handler[str(dtype)] = NumpyDataIO
     for dtype in [d.DataArray]:
-        handler[str(dtype)] = HDF5ScippHandler
+        handler[str(dtype)] = ScippDataIO
     for dtype in _event_list_dtype_lut().keys():
-        handler[dtype] = HDF5EventListHandler
+        handler[dtype] = EventListDataIO
     for dtype in [d.string]:
-        handler[str(dtype)] = HDF5StringHandler
+        handler[str(dtype)] = StringDataIO
     return handler
 
 
@@ -162,7 +162,7 @@ class VariableIO:
             return
         from .._scipp import __version__
         group.attrs['scipp-version'] = __version__
-        group.attrs['scipp-type'] = 'DataArray'
+        group.attrs['scipp-type'] = 'Variable'
         dset = cls._write_data(group, var)
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
@@ -240,20 +240,20 @@ def _handler_lut():
 class HDF5IO:
     _handlers = _handler_lut()
 
-    @staticmethod
-    def write(group, data):
-        return HDF5IO._handlers[data.__class__.__name__.replace(
-            'View', '')].write(group, data)
+    @classmethod
+    def write(cls, group, data):
+        name = data.__class__.__name__.replace('View', '')
+        return cls._handlers[name].write(group, data)
 
-    @staticmethod
-    def read(group):
-        return HDF5IO._handlers[group.attrs['scipp-type']].read(group)
+    @classmethod
+    def read(cls, group):
+        return cls._handlers[group.attrs['scipp-type']].read(group)
 
 
-def data_array_to_hdf5(self, filename):
+def to_hdf5(obj, filename):
     import h5py
     with h5py.File(filename, 'w') as f:
-        HDF5IO.write(f, self)
+        HDF5IO.write(f, obj)
 
 
 def open_hdf5(filename):

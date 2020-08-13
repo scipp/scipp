@@ -23,6 +23,14 @@ xy = sc.Variable(dims=['y', 'x'],
                  unit=sc.units.kg)
 
 
+def test_variable_1d():
+    check_roundtrip(x)
+
+
+def test_variable_2d():
+    check_roundtrip(xy)
+
+
 def test_data_array_1d_no_coords():
     a = sc.DataArray(data=x)
     check_roundtrip(a)

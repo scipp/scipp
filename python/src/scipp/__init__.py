@@ -36,6 +36,8 @@ setattr(DataArrayConstView, '_repr_html_', make_html)
 setattr(Dataset, '_repr_html_', make_html)
 setattr(DatasetConstView, '_repr_html_', make_html)
 
-from .io.hdf5 import data_array_to_hdf5 as _data_array_to_hdf5
-setattr(DataArray, 'to_hdf5', _data_array_to_hdf5)
-setattr(DataArrayView, 'to_hdf5', _data_array_to_hdf5)
+from .io.hdf5 import to_hdf5 as _to_hdf5
+setattr(Variable, 'to_hdf5', _to_hdf5)
+setattr(VariableView, 'to_hdf5', _to_hdf5)
+setattr(DataArray, 'to_hdf5', _to_hdf5)
+setattr(DataArrayView, 'to_hdf5', _to_hdf5)
