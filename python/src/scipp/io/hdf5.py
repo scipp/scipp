@@ -228,17 +228,28 @@ class DataArrayIO:
 
 
 class DatasetIO:
-    pass
+    @staticmethod
+    def write(group, data):
+        from .._scipp import __version__
+        group.attrs['scipp-version'] = __version__
+        group.attrs['scipp-type'] = 'Dataset'
+        for name in data:
+            HDF5IO.write(group.create_group(name), data[name])
 
-
-def _handler_lut():
-    return dict(
-        zip(['Variable', 'DataArray', 'Dataset'],
-            [VariableIO, DataArrayIO, DatasetIO]))
+    @staticmethod
+    def read(group):
+        _check_scipp_version(group)
+        from .._scipp import core as sc
+        d = sc.Dataset()
+        for name in group:
+            d[name] = HDF5IO.read(group[name])
+        return d
 
 
 class HDF5IO:
-    _handlers = _handler_lut()
+    _handlers = dict(
+        zip(['Variable', 'DataArray', 'Dataset'],
+            [VariableIO, DataArrayIO, DatasetIO]))
 
     @classmethod
     def write(cls, group, data):
