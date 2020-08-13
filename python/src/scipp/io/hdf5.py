@@ -120,10 +120,19 @@ class StringDataIO():
                 data.values[i] = values[i]
 
 
-def _check_scipp_version(group):
+def _write_scipp_header(group, what):
+    from .._scipp import __version__
+    group.attrs['scipp-version'] = __version__
+    group.attrs['scipp-type'] = what
+
+
+def _check_scipp_header(group, what):
     if 'scipp-version' not in group.attrs:
         raise RuntimeError(
             "This does not look like an HDF5 file/group written by scipp.")
+    if (group.attrs['scipp-type'] != what):
+        raise RuntimeError(
+            f"Attempt to read {what}, found {group.attrs['scipp-type']}.")
 
 
 def _data_handler_lut():
@@ -160,9 +169,7 @@ class VariableIO:
             # have unsupported dtype.
             print(f'Writing with dtype={var.dtype} not implemented, skipping.')
             return
-        from .._scipp import __version__
-        group.attrs['scipp-version'] = __version__
-        group.attrs['scipp-type'] = 'Variable'
+        _write_scipp_header(group, 'Variable')
         dset = cls._write_data(group, var)
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
@@ -172,7 +179,7 @@ class VariableIO:
 
     @classmethod
     def read(cls, group):
-        _check_scipp_version(group)
+        _check_scipp_header(group, 'Variable')
         from .._scipp import core as sc
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
@@ -187,9 +194,7 @@ class VariableIO:
 class DataArrayIO:
     @staticmethod
     def write(group, data):
-        from .._scipp import __version__
-        group.attrs['scipp-version'] = __version__
-        group.attrs['scipp-type'] = 'DataArray'
+        _write_scipp_header(group, 'DataArray')
         group.attrs['name'] = data.name
         if data.data is None:
             raise RuntimeError(
@@ -210,7 +215,7 @@ class DataArrayIO:
 
     @staticmethod
     def read(group):
-        _check_scipp_version(group)
+        _check_scipp_header(group, 'DataArray')
         from .._scipp import core as sc
         contents = dict()
         contents['name'] = group.attrs['name']
@@ -230,20 +235,19 @@ class DataArrayIO:
 class DatasetIO:
     @staticmethod
     def write(group, data):
-        from .._scipp import __version__
-        group.attrs['scipp-version'] = __version__
-        group.attrs['scipp-type'] = 'Dataset'
+        _write_scipp_header(group, 'Dataset')
+        # Slight redundancy here from writing aligned coords for each item,
+        # but irrelevant for common case of 1D coords with 2D (or higher)
+        # data. The advantage is the we can read individual dataset entries
+        # directly as data arrays.
         for name in data:
             HDF5IO.write(group.create_group(name), data[name])
 
     @staticmethod
     def read(group):
-        _check_scipp_version(group)
+        _check_scipp_header(group, 'Dataset')
         from .._scipp import core as sc
-        d = sc.Dataset()
-        for name in group:
-            d[name] = HDF5IO.read(group[name])
-        return d
+        return sc.Dataset({name: HDF5IO.read(group[name]) for name in group})
 
 
 class HDF5IO:
