@@ -142,6 +142,9 @@ class VariableIO:
             # have unsupported dtype.
             print(f'Writing with dtype={var.dtype} not implemented, skipping.')
             return
+        from .._scipp import __version__
+        group.attrs['scipp-version'] = __version__
+        group.attrs['scipp-type'] = 'DataArray'
         dset = HDF5IO._write_data(group, var)
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
@@ -151,6 +154,7 @@ class VariableIO:
 
     @staticmethod
     def read(group):
+        _check_scipp_version(group)
         from .._scipp import core as sc
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
@@ -167,7 +171,7 @@ class DataArrayIO:
     def write(group, data):
         from .._scipp import __version__
         group.attrs['scipp-version'] = __version__
-        group.attrs['type'] = 'DataArray'
+        group.attrs['scipp-type'] = 'DataArray'
         group.attrs['name'] = data.name
         if data.data is None:
             raise RuntimeError(
@@ -188,6 +192,7 @@ class DataArrayIO:
 
     @staticmethod
     def read(group):
+        _check_scipp_version(group)
         from .._scipp import core as sc
         contents = dict()
         contents['name'] = group.attrs['name']
@@ -212,6 +217,12 @@ def _handler_lut():
     return dict(
         zip(['Variable', 'DataArray', 'Dataset'],
             [VariableIO, DataArrayIO, DatasetIO]))
+
+
+def _check_scipp_version(group):
+    if 'scipp-version' not in group.attrs:
+        raise RuntimeError(
+            "This does not look like an HDF5 file/group written by scipp.")
 
 
 class HDF5IO:
@@ -242,7 +253,7 @@ class HDF5IO:
 
     @staticmethod
     def read(group):
-        return HDF5IO._handlers[group.attrs['type']].read(group)
+        return HDF5IO._handlers[group.attrs['scipp-type']].read(group)
 
 
 def data_array_to_hdf5(self, filename):
@@ -255,11 +266,4 @@ def data_array_to_hdf5(self, filename):
 def open_hdf5(filename):
     import h5py
     with h5py.File(filename, 'r') as f:
-        io = HDF5IO()
-        if 'scipp-version' not in f.attrs:
-            raise RuntimeError(
-                "This does not look like an HDF5 file written by scipp.")
-        return HDF5IO._handlers[f.attrs['type']].read(f)
-        #if f.attrs['type'] == 'DataArray':
-        #    return io._read_data_array(f)
-        #raise RuntimeError(f"Unknown data type {f.attrs['type']})")
+        return HDF5IO.read(f)
