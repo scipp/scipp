@@ -31,16 +31,17 @@ class HDF5IO:
     def _read_dtype(self, dset):
         return self._dtypes[dset.attrs['dtype']]
 
-    def _write_array(self, group, name, array):
-        import h5py
-        # Support for strings not enabled yet (see _dtype_lut), but something
-        # like this will work (if generalized to arrays of strings). Will need
-        # to also solve reading, e.g., but iterating all elements by hand.
-        if isinstance(array, str):
-            return group.create_dataset(name,
-                                        data=array,
-                                        dtype=h5py.string_dtype())
-        return group.create_dataset(name, data=array)
+    def _write_data(self, group, data):
+        dset = group.create_dataset('values', data=data.values)
+        if data.variances is not None:
+            variances = group.create_dataset('variances', data=data.variances)
+            dset.attrs['variances'] = variances.ref
+        return dset
+
+    def _read_data(self, group, data):
+        group['values'].read_direct(data.values)
+        if 'variances' in group:
+            group['variances'].read_direct(data.variances)
 
     def _write_variable(self, group, var, name):
         if var.dtype not in self._dtypes.values():
@@ -49,14 +50,11 @@ class HDF5IO:
             print(f'Writing with dtype={var.dtype} not implemented, skipping.')
             return
         group = group.create_group(name)
-        dset = self._write_array(group, 'values', var.values)
+        dset = self._write_data(group, var)
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
         dset.attrs['dtype'] = str(var.dtype)
         dset.attrs['unit'] = str(var.unit)
-        if var.variances is not None:
-            variances = self._write_array(group, 'variances', var.variances)
-            dset.attrs['variances'] = variances.ref
         return group
 
     def _read_variable(self, group):
@@ -67,9 +65,7 @@ class HDF5IO:
         contents['unit'] = self._read_unit(values)
         contents['variances'] = 'variances' in group
         var = sc.Variable(**contents)
-        values.read_direct(var.values)
-        if 'variances' in group:
-            group['variances'].read_direct(var.variances)
+        self._read_data(group, var)
         return var
 
     def _write_data_array(self, group, data):
