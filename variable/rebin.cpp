@@ -32,25 +32,16 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
 
   const auto *xold = oldCoordT.values<T>().data();
   const auto *xnew = newCoordT.values<T>().data();
-  // TODO: Using dtype<bool> does not seem to compile on Windows. It is not
-  // clear why that is, since dtype<double> is working below.
-  // We use the longer syntax below which compiles instead of:
-  // const bool is_bool = newT.dtype() == dtype<bool>;
-  const bool is_bool = newT.dtype().index == std::type_index(typeid(bool));
 
   auto add_from_bin = [&](const auto &slice, const auto xn_low,
                           const auto xn_high, const scipp::index iold) {
     auto xo_low = xold[iold];
     auto xo_high = xold[iold + 1];
-    if (is_bool) {
-      slice |= oldT.slice({dim, iold});
-    } else {
-      // delta is the overlap of the bins on the x axis
-      const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
-                                  std::max<double>(xn_low, xo_low, less));
-      const auto owidth = std::abs(xo_high - xo_low);
-      slice += oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
-    }
+    // delta is the overlap of the bins on the x axis
+    const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
+                                std::max<double>(xn_low, xo_low, less));
+    const auto owidth = std::abs(xo_high - xo_low);
+    slice += oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
   };
   auto accumulate_bin = [&](const auto &slice, const auto xn_low,
                             const auto xn_high) {
@@ -60,16 +51,16 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
         std::upper_bound(xold, xold + oldSize + 1, xn_high, less) - xold;
     if (begin == oldSize + 1 || end == 0)
       return;
-    if (begin > 0)
-      add_from_bin(slice, xn_low, xn_high, begin - 1);
-    if (begin < end - 1) {
-      if (is_bool)
-        slice |= any(oldT.slice({dim, begin, end - 1}), dim);
-      else
-        sum(oldT.slice({dim, begin, end - 1}), dim, slice);
+    begin = std::max(scipp::index(0), begin - 1);
+    if (newT.dtype() == dtype<bool>) {
+      slice |= any(oldT.slice({dim, begin, end}), dim);
+    } else {
+      add_from_bin(slice, xn_low, xn_high, begin);
+      if (begin < end - 1)
+        sum(oldT.slice({dim, begin + 1, end - 1}), dim, slice);
+      if (begin != end && end < oldSize + 1)
+        add_from_bin(slice, xn_low, xn_high, end - 1);
     }
-    if (begin != end && end < oldSize + 1)
-      add_from_bin(slice, xn_low, xn_high, end - 1);
   };
   auto accumulate_bins = [&](const auto &range) {
     for (scipp::index inew = range.begin(); inew < range.end(); ++inew) {
