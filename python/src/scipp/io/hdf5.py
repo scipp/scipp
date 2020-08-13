@@ -57,23 +57,21 @@ class HDF5ScippHandler():
     @staticmethod
     def write(group, data):
         values = group.create_group('values')
-        io = HDF5IO()
         if len(data.shape) == 0:
-            io._write_data_array(values, data.value)
+            HDF5IO.write(values, data.value)
         else:
             for i, item in enumerate(data.values):
-                io._write_data_array(values.create_group(f'value-{i}'), item)
+                HDF5IO.write(values.create_group(f'value-{i}'), item)
         return values
 
     @staticmethod
     def read(group, data):
         values = group['values']
-        io = HDF5IO()
         if len(data.shape) == 0:
-            data.value = io._read_data_array(values)
+            data.value = HDF5IO.read(values)
         else:
             for i in range(len(data.values)):
-                data.values[i] = io._read_data_array(values[f'value-{i}'])
+                data.values[i] = HDF5IO.read(values[f'value-{i}'])
 
 
 class HDF5EventListHandler():
@@ -122,7 +120,7 @@ class HDF5StringHandler():
                 data.values[i] = values[i]
 
 
-def _handler_lut():
+def _data_handler_lut():
     from .._scipp.core import dtype as d
     handler = {}
     for dtype in [d.float64, d.float32, d.int64, d.int32, d.bool]:
@@ -136,49 +134,37 @@ def _handler_lut():
     return handler
 
 
-class HDF5IO:
-    _units = _unit_lut()
-    _dtypes = _dtype_lut()
-    _handlers = _handler_lut()
-
-    def _read_unit(self, dset):
-        return self._units[dset.attrs['unit']]
-
-    def _read_dtype(self, dset):
-        return self._dtypes[dset.attrs['dtype']]
-
-    def _write_data(self, group, data):
-        return self._handlers[str(data.dtype)].write(group, data)
-
-    def _read_data(self, group, data):
-        return self._handlers[str(data.dtype)].read(group, data)
-
-    def _write_variable(self, group, var, name):
-        if var.dtype not in self._dtypes.values():
+class VariableIO:
+    @staticmethod
+    def write(group, var):
+        if var.dtype not in HDF5IO._dtypes.values():
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
             print(f'Writing with dtype={var.dtype} not implemented, skipping.')
             return
-        group = group.create_group(name)
-        dset = self._write_data(group, var)
+        dset = HDF5IO._write_data(group, var)
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
         dset.attrs['dtype'] = str(var.dtype)
         dset.attrs['unit'] = str(var.unit)
         return group
 
-    def _read_variable(self, group):
+    @staticmethod
+    def read(group):
         from .._scipp import core as sc
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
-        contents['dtype'] = self._read_dtype(values)
-        contents['unit'] = self._read_unit(values)
+        contents['dtype'] = HDF5IO._read_dtype(values)
+        contents['unit'] = HDF5IO._read_unit(values)
         contents['variances'] = 'variances' in group
         var = sc.Variable(**contents)
-        self._read_data(group, var)
+        HDF5IO._read_data(group, var)
         return var
 
-    def _write_data_array(self, group, data):
+
+class DataArrayIO:
+    @staticmethod
+    def write(group, data):
         from .._scipp import __version__
         group.attrs['scipp-version'] = __version__
         group.attrs['type'] = 'DataArray'
@@ -186,7 +172,7 @@ class HDF5IO:
         if data.data is None:
             raise RuntimeError(
                 "Writing realigned data is not implemented yet.")
-        self._write_variable(group, var=data.data, name='data')
+        VariableIO.write(group.create_group('data'), var=data.data)
         views = [data.coords, data.masks]
         aligned = data.aligned_coords.keys()
         # Note that we write aligned and unaligned coords into the same group.
@@ -195,17 +181,17 @@ class HDF5IO:
         for view_name, view in zip(['coords', 'masks'], views):
             subgroup = group.create_group(view_name)
             for name in view:
-                g = self._write_variable(group=subgroup,
-                                         var=view[name],
-                                         name=str(name))
+                g = VariableIO.write(group=subgroup.create_group(str(name)),
+                                     var=view[name])
                 if view_name == 'coords':
                     g.attrs['aligned'] = name in aligned
 
-    def _read_data_array(self, group):
+    @staticmethod
+    def read(group):
         from .._scipp import core as sc
         contents = dict()
         contents['name'] = group.attrs['name']
-        contents['data'] = self._read_variable(group['data'])
+        contents['data'] = VariableIO.read(group['data'])
         contents['unaligned_coords'] = dict()
         for category in ['coords', 'masks']:
             contents[category] = dict()
@@ -214,15 +200,56 @@ class HDF5IO:
                 c = category
                 if category == 'coords' and not g.attrs.get('aligned', True):
                     c = 'unaligned_coords'
-                contents[c][name] = self._read_variable(g)
+                contents[c][name] = VariableIO.read(g)
         return sc.DataArray(**contents)
+
+
+class DatasetIO:
+    pass
+
+
+def _handler_lut():
+    return dict(
+        zip(['Variable', 'DataArray', 'Dataset'],
+            [VariableIO, DataArrayIO, DatasetIO]))
+
+
+class HDF5IO:
+    _units = _unit_lut()
+    _dtypes = _dtype_lut()
+    _data_handlers = _data_handler_lut()
+    _handlers = _handler_lut()
+
+    @staticmethod
+    def _read_unit(dset):
+        return HDF5IO._units[dset.attrs['unit']]
+
+    @staticmethod
+    def _read_dtype(dset):
+        return HDF5IO._dtypes[dset.attrs['dtype']]
+
+    @staticmethod
+    def _write_data(group, data):
+        return HDF5IO._data_handlers[str(data.dtype)].write(group, data)
+
+    @staticmethod
+    def _read_data(group, data):
+        return HDF5IO._data_handlers[str(data.dtype)].read(group, data)
+
+    @staticmethod
+    def write(group, data):
+        return HDF5IO._handlers[data.__class__.__name__].write(group, data)
+
+    @staticmethod
+    def read(group):
+        return HDF5IO._handlers[group.attrs['type']].read(group)
 
 
 def data_array_to_hdf5(self, filename):
     import h5py
     with h5py.File(filename, 'w') as f:
-        io = HDF5IO()
-        io._write_data_array(f, self)
+        HDF5IO._handlers['DataArray'].write(f, self)
+        #io._write_data_array(f, self)
 
 
 def open_hdf5(filename):
@@ -232,6 +259,7 @@ def open_hdf5(filename):
         if 'scipp-version' not in f.attrs:
             raise RuntimeError(
                 "This does not look like an HDF5 file written by scipp.")
-        if f.attrs['type'] == 'DataArray':
-            return io._read_data_array(f)
-        raise RuntimeError(f"Unknown data type {f.attrs['type']})")
+        return HDF5IO._handlers[f.attrs['type']].read(f)
+        #if f.attrs['type'] == 'DataArray':
+        #    return io._read_data_array(f)
+        #raise RuntimeError(f"Unknown data type {f.attrs['type']})")
