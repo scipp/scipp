@@ -90,3 +90,9 @@ def test_data_array_dtype_event_list():
     a = sc.DataArray(data=events)
     check_roundtrip(a)
     check_roundtrip(a['x', 0])
+
+
+def test_data_array_dtype_string():
+    a = sc.DataArray(data=sc.Variable(dims=['x'], values=['abc', 'def']))
+    check_roundtrip(a)
+    check_roundtrip(a['x', 0])
