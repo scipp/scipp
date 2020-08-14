@@ -35,7 +35,6 @@ General
    dot
    filter
    histogram
-   is_sorted
    merge
    nan_to_num
    norm
@@ -48,7 +47,6 @@ General
    transpose
    values
    variances
-   is_linspace
 
 Comparison
 ~~~~~~~~~~
@@ -65,6 +63,8 @@ Comparison operators compare element-wise and *ignore variances*.
    equal
    not_equal
    is_equal
+   is_linspace
+   is_sorted
 
 Reduction
 ~~~~~~~~~
