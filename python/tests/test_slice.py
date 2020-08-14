@@ -15,6 +15,19 @@ def _make_1d_data_array(begin, end, dim_name='x', bin_edges=False):
     return sc.DataArray(data=data, coords={dim_name: x})
 
 
+def test_slicing_defaults():
+    da = _make_1d_data_array(begin=3.0,
+                             end=13.0,
+                             dim_name='x',
+                             bin_edges=False)
+    # test replicate no-effect slicing
+    assert sc.is_equal(da, slice(
+        da, 'x',
+        end=13.0 * working_unit))  # Note closed on left with default start
+    assert sc.is_equal(da['x', :-1],
+                       slice(da, 'x'))  # Note open on right with default end!
+
+
 def test_slice_range_on_point_coords_1D():
     #    Data Values           [0.0][1.0] ... [8.0][9.0]
     #    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
