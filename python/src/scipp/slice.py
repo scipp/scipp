@@ -18,32 +18,24 @@ def slice(object, coord_name, start=None, end=None):
     dim = coord.dims[0]
     bins = coord.shape[0]
     bin_edges = bins == object.shape[object.dims.index(dim)] + 1
-    if bin_edges:
-        if start is None:
-            first = 0
-        else:
-            first = sc.sum(sc.less_equal(coord, start), dim).value - 1
-            if first < 0:
-                first = 0
-        if end is None:
-            last = bins - 1
-        else:
-            last = bins - sc.sum(sc.greater_equal(coord, end), dim).value
-            if last > bins:
-                last = bins - 1
+    if start is None:
+        first = 0
     else:
-        if start is None:
-            first = 0
+        if bin_edges:
+            # include lower bin edge boundary
+            first = sc.sum(sc.less_equal(coord, start), dim).value - 1
         else:
+            # First point >= value for non bin edges
             first = bins - sc.sum(sc.greater_equal(coord, start), dim).value
-            if first < 0:
-                first = 0
-        if end is None:
+    if first < 0:
+        first = 0
+
+    # last index determination identical for bin-edges and non-bin edges
+    if end is None:
+        last = bins - 1
+    else:
+        last = bins - sc.sum(sc.greater_equal(coord, end), dim).value
+        if last > bins:
             last = bins - 1
-        else:
-            last = bins - sc.sum(sc.greater_equal(coord, end), dim).value
-            print(end, last)
-            if last > bins:
-                last = bins - 1
 
     return object[dim, first:last]
