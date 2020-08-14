@@ -19,7 +19,7 @@ def _dtype_lut():
     dtypes = [
         d.float64, d.float32, d.int64, d.int32, d.bool, d.string,
         d.event_list_float64, d.event_list_float32, d.event_list_int64,
-        d.event_list_int32, d.DataArray
+        d.event_list_int32, d.DataArray, d.Dataset
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
@@ -140,7 +140,7 @@ def _data_handler_lut():
     handler = {}
     for dtype in [d.float64, d.float32, d.int64, d.int32, d.bool]:
         handler[str(dtype)] = NumpyDataIO
-    for dtype in [d.DataArray]:
+    for dtype in [d.DataArray, d.Dataset]:
         handler[str(dtype)] = ScippDataIO
     for dtype in _event_list_dtype_lut().keys():
         handler[dtype] = EventListDataIO
