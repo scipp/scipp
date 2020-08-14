@@ -130,7 +130,13 @@ def test_slice_point_on_point_coords_1D():
     # Test start on left boundary (closed on left), so includes boundary
     out = sc.slice(da, 'x', 3.0 * working_unit)
     assert sc.is_equal(out.attrs['x'], da['x', 0].attrs['x'])
-    # Test point slice between points yields nothing
+    # Test point slice between points throws
     with pytest.raises(RuntimeError):
         sc.slice(da, 'x',
                  3.5 * working_unit)  # No sensible return. Must throw.
+    # Test start on right boundary
+    out = sc.slice(da, 'x', 12.0 * working_unit)
+    assert sc.is_equal(out.attrs['x'], da['x', -1].attrs['x'])
+    # Test start outside right boundary throws
+    with pytest.raises(RuntimeError):
+        out = sc.slice(da, 'x', 12.1 * working_unit)

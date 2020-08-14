@@ -51,7 +51,7 @@ def slice(object, coord_name, v_slice=slice(None, None, None)):
         return object[dim, first:last]
     else:
         if bin_edges:
-            raise RuntimeError('Not implemented yet')
+            idx = sc.sum(sc.less_equal(coord, v_slice), dim).value - 1
         else:
             res = np.where(sc.equal(coord, v_slice).values)
             if len(res[0]) < 1:
@@ -60,4 +60,4 @@ def slice(object, coord_name, v_slice=slice(None, None, None)):
                 )
             else:
                 idx = res[0][0]  # Take first if there are many
-            return object[dim, idx]
+        return object[dim, idx]
