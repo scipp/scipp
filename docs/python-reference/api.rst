@@ -48,6 +48,7 @@ General
    transpose
    values
    variances
+   is_linspace
 
 Comparison
 ~~~~~~~~~~
