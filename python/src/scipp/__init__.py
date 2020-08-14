@@ -29,7 +29,7 @@ from ._comparison import *
 from ._math import *
 from ._reduction import *
 from ._trigonometry import *
-from .slice import *
+from ._slice import *
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(VariableConstView, '_repr_html_', make_html)
