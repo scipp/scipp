@@ -20,10 +20,12 @@ def test_slicing_defaults():
                              dim_name='x',
                              bin_edges=False)
     # test replicate no-effect slicing
-    assert sc.is_equal(da, sc.slice(
-        da, 'x', slice(None, 13.0 * working_unit)))  # Note closed on left with default start
+    assert sc.is_equal(da, sc.slice(da, 'x', slice(
+        None, 13.0 * working_unit)))  # Note closed on left with default start
     assert sc.is_equal(da['x', :-1],
-                       sc.slice(da, 'x'))  # Note open on right with default end!
+                       sc.slice(da,
+                                'x'))  # Note open on right with default end!
+
 
 def test_slice_range_on_point_coords_1D():
     #    Data Values           [0.0][1.0] ... [8.0][9.0]
@@ -75,6 +77,7 @@ def test_slice_range_on_edge_coords_1D():
     out = sc.slice(da, 'x', slice(11.0 * working_unit, 12.0 * working_unit))
     assert sc.is_equal(out.coords['x'], da['x', -1:].coords['x'])  #
 
+
 def test_slice_range_on_point_coords_2D():
     data = sc.Variable(['y', 'x'], values=np.arange(100).reshape(5, 20))
     x = sc.Variable(['x'], values=np.arange(-10.0, 10.0))
@@ -97,9 +100,21 @@ def test_slice_range_on_point_coords_2D():
                        da.coords['x'])  # unaffected by y-value slicing
     assert sc.is_equal(out.coords['y'], da.coords['y']['y', 0:4])
 
+
 def test_2d_coord_unsupported():
     coord2d = sc.Variable(['y', 'x'], values=np.arange(10).reshape(5, 2))
     data = coord2d.copy()
     da = sc.DataArray(data=data, coords={'p': coord2d})
     with pytest.raises(RuntimeError):
         sc.slice(da, coord_name='p')
+
+
+def test_coord_must_be_sorted_ascending():
+    asc_coord = _make_1d_data_array(begin=0.0, end=4.0, dim_name='x')
+    sc.slice(asc_coord, 'x')  # No throw. Sorted ascending
+    desc_coord = asc_coord.copy()
+    desc_coord.coords['x'].values = np.flip(desc_coord.coords['x'].values)
+    assert sc.is_sorted(desc_coord.coords['x'], 'x',
+                        order='descending')  # sanity check, 'x'
+    with pytest.raises(RuntimeError):
+        sc.slice(desc_coord, 'x')
