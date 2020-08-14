@@ -52,6 +52,10 @@ def slice(object, coord_name, v_slice=slice(None, None, None)):
     else:
         if bin_edges:
             idx = sc.sum(sc.less_equal(coord, v_slice), dim).value - 1
+            if idx < 0:
+                raise RuntimeError(
+                    f"Point slice {v_slice.value} does not fall within any bin edges along {coord_name}"
+                )
         else:
             res = np.where(sc.equal(coord, v_slice).values)
             if len(res[0]) < 1:

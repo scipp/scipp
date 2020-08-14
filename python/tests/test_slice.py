@@ -140,3 +140,29 @@ def test_slice_point_on_point_coords_1D():
     # Test start outside right boundary throws
     with pytest.raises(RuntimeError):
         out = sc.slice(da, 'x', 12.1 * working_unit)
+
+
+def test_slice_point_on_edge_coords_1D():
+    #    Data Values            [0.0] ...       [9.0]
+    #    Coord Values (edges) [3.0][4.0] ... [11.0][12.0]
+
+    da = _make_1d_data_array(begin=3.0, end=13.0, dim_name='x', bin_edges=True)
+    # test no-effect slicing
+    # Test start on left boundary (closed on left), so includes boundary
+    out = sc.slice(da, 'x', 3.0 * working_unit)
+    assert sc.is_equal(out.attrs['x'], da['x', 0].attrs['x'])
+    # Same as above, takes lower bounds of bin so same bin
+    out = sc.slice(da, 'x', 3.5 * working_unit)
+    assert sc.is_equal(out.attrs['x'], da['x', 0].attrs['x'])
+    # Next bin
+    out = sc.slice(da, 'x', 4.0 * working_unit)
+    assert sc.is_equal(out.attrs['x'], da['x', 1].attrs['x'])
+    # Last bin
+    out = sc.slice(da, 'x', 11.9 * working_unit)
+    assert sc.is_equal(out.attrs['x'], da['x', -1].attrs['x'])
+    # (closed on right) so out of bounds
+    with pytest.raises(RuntimeError):
+        out = sc.slice(da, 'x', 12.0 * working_unit)
+    # out of bounds for left for completeness
+    with pytest.raises(RuntimeError):
+        out = sc.slice(da, 'x', 2.99 * working_unit)
