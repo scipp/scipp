@@ -61,7 +61,7 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
       add_from_bin(slice, xn_low, xn_high, begin);
       if (begin < end - 1)
         sum(oldT.slice({dim, begin + 1, end - 1}), dim, slice);
-      if (begin != end && end < oldSize + 1)
+      if (begin != end - 1 && end < oldSize + 1)
         add_from_bin(slice, xn_low, xn_high, end - 1);
     }
   };
