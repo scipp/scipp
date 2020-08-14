@@ -116,3 +116,21 @@ def test_coord_must_be_sorted_ascending():
                         order='descending')  # sanity check, 'x'
     with pytest.raises(RuntimeError):
         sc.slice(desc_coord, 'x')
+
+
+def test_slice_point_on_point_coords_1D():
+    #    Data Values           [0.0][1.0] ... [8.0][9.0]
+    #    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
+
+    da = _make_1d_data_array(begin=3.0,
+                             end=13.0,
+                             dim_name='x',
+                             bin_edges=False)
+    # test no-effect slicing
+    # Test start on left boundary (closed on left), so includes boundary
+    out = sc.slice(da, 'x', 3.0 * working_unit)
+    assert sc.is_equal(out.attrs['x'], da['x', 0].attrs['x'])
+    # Test point slice between points yields nothing
+    with pytest.raises(RuntimeError):
+        sc.slice(da, 'x',
+                 3.5 * working_unit)  # No sensible return. Must throw.
