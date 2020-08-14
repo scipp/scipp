@@ -41,7 +41,6 @@ def test_slice_range_on_point_coords_1D():
     # Test start on left boundary (closed on left), so includes boundary
     out = sc.slice(da, 'x', slice(3.0 * working_unit, 4.0 * working_unit))
     assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
-    assert sc.is_equal(out.data, da['x', 0:1].data)
     # Test start out of bounds on left truncated
     out = sc.slice(da, 'x', slice(2.0 * working_unit, 4.0 * working_unit))
     assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
@@ -66,7 +65,6 @@ def test_slice_range_on_edge_coords_1D():
     # Test start on left boundary (closed on left), so includes boundary
     out = sc.slice(da, 'x', slice(3.0 * working_unit, 4.0 * working_unit))
     assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
-    assert sc.is_equal(out.data, da['x', 0:1].data)
     # Test slicing with range boundary inside edge, same result as above expected
     out = sc.slice(da, 'x', slice(3.1 * working_unit, 4.0 * working_unit))
     assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
