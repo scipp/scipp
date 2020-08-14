@@ -46,6 +46,9 @@ def test_slice_range_on_point_coords_1D():
     # Test start out of bounds on left truncated
     out = slice(da, 'x', start=2.0 * working_unit, end=4.0 * working_unit)
     assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
+    # Test inner values
+    out = slice(da, 'x', start=3.5 * working_unit, end=5.5 * working_unit)
+    assert sc.is_equal(out.coords['x'], da['x', 1:3].coords['x'])
     # Test end on right boundary (open on right), so does not include boundary
     out = slice(da, 'x', start=11.0 * working_unit, end=12.0 * working_unit)
     assert sc.is_equal(out.coords['x'], da['x', -2:-1].coords['x'])
@@ -93,10 +96,10 @@ def test_slice_range_on_point_coords_2D():
                        da.coords['y'])  # unaffected by x-value slicing
     assert sc.is_equal(out.coords['x'], da.coords['x']['x', 0:10])
     # Test slice y range by value
-    out = slice(da, 'y', start=0.0 * working_unit, end=2.5 * working_unit)
+    out = slice(da, 'y', start=-2.5 * working_unit, end=0.501 * working_unit)
     assert sc.is_equal(out.coords['x'],
                        da.coords['x'])  # unaffected by y-value slicing
-    assert sc.is_equal(out.coords['y'], da.coords['y']['y', 2:5])
+    assert sc.is_equal(out.coords['y'], da.coords['y']['y', 0:4])
 
 
 def test_2d_coord_unsupported():
