@@ -83,59 +83,56 @@ TEST_F(Dataset3DTest, dimension_extent_check_replace_with_edge_coord) {
   ASSERT_NE(edge_coord["data_xyz"], dataset["data_xyz"]);
   // Cannot incrementally grow.
   ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 6})));
-  // Minor implementation shortcoming: Currently we cannot go back to
-  // non-edges.
-  ASSERT_ANY_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 4})));
+  // Reverse: Replace edge coord with non-edge coord works.
+  ASSERT_NO_THROW(edge_coord.setCoord(Dim::X, makeRandom({Dim::X, 4})));
 }
 
-TEST_F(Dataset3DTest,
-       dimension_extent_check_prevents_non_edge_coord_with_edge_data) {
+TEST_F(Dataset3DTest, dimension_extent_check_prevents_shrink) {
   // If we reduce the X extent to 3 we would have data defined at the edges,
-  // but
-  // the coord is not. This is forbidden.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
-  // We *can* set data with X extent 3. The X coord is now bin edges, and
-  // other
-  // data is defined on the edges.
-  ASSERT_NO_THROW(dataset.setData("non_edge_data", makeRandom({Dim::X, 3})));
-  // Now the X extent of the dataset is 3, but since we have data on the edges
-  // we still cannot change the coord to non-edges.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})));
+  // which is forbidden.
+  ASSERT_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 3})),
+               except::DimensionError);
+  ASSERT_THROW(dataset.setData("non_edge_data", makeRandom({Dim::X, 3})),
+               except::DimensionError);
 }
 
-TEST_F(Dataset3DTest,
-       dimension_extent_check_prevents_setting_edge_data_without_edge_coord) {
-  ASSERT_ANY_THROW(dataset.setData("edge_data", makeRandom({Dim::X, 5})));
+TEST_F(Dataset3DTest, dimension_extent_check_prevents_setting_edge_data) {
+  ASSERT_THROW(dataset.setData("edge_data", makeRandom({Dim::X, 5})),
+               except::DimensionError);
   ASSERT_NO_THROW(dataset.setCoord(Dim::X, makeRandom({Dim::X, 5})));
-  ASSERT_NO_THROW(dataset.setData("edge_data", makeRandom({Dim::X, 5})));
+  // prevented even if we have coord on the edges
+  ASSERT_THROW(dataset.setData("edge_data", makeRandom({Dim::X, 5})),
+               except::DimensionError);
 }
 
 TEST_F(Dataset3DTest, dimension_extent_check_non_coord_dimension_fail) {
   // This is the Y coordinate but has extra extent in X.
-  ASSERT_ANY_THROW(
-      dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
+  ASSERT_THROW(dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 5}, {Dim::Y, 5}})),
+               except::DimensionError);
 }
 
-TEST_F(Dataset3DTest, dimension_extent_check_labels_dimension_fail) {
-  // We cannot have labels on edges unless the coords are also edges. Note the
-  // slight inconsistency though: Labels are typically though of as being for a
-  // particular dimension (the inner one), but we can have labels on edges also
-  // for the other dimensions (x in this case), just like data.
-  ASSERT_ANY_THROW(dataset.setCoord(Dim("bad_labels"),
-                                    makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
-  ASSERT_ANY_THROW(dataset.setCoord(Dim("bad_labels"),
-                                    makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
-  dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 4}, {Dim::Y, 6}}));
-  ASSERT_ANY_THROW(dataset.setCoord(Dim("bad_labels"),
-                                    makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
-  dataset.setCoord(Dim::X, makeRandom({Dim::X, 5}));
-  ASSERT_NO_THROW(dataset.setCoord(Dim("good_labels"),
-                                   makeRandom({{Dim::X, 5}, {Dim::Y, 5}})));
-  ASSERT_NO_THROW(dataset.setCoord(Dim("good_labels"),
-                                   makeRandom({{Dim::X, 5}, {Dim::Y, 6}})));
-  ASSERT_NO_THROW(dataset.setCoord(Dim("good_labels"),
+TEST_F(Dataset3DTest,
+       dimension_extent_check_non_dimension_coord_dimension_fail) {
+  // Non-dimension coords are considered coords for their inner dim. They can
+  // only be edges for this dim.
+  ASSERT_NO_THROW(dataset.setCoord(Dim("edge_labels"),
                                    makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
-  ASSERT_NO_THROW(dataset.setCoord(Dim("good_labels"),
+  ASSERT_THROW(dataset.setCoord(Dim("bad_edges_for_non_inner_dim"),
+                                makeRandom({{Dim::X, 5}, {Dim::Y, 5}})),
+               except::DimensionError);
+  dataset.setCoord(Dim::Y, makeRandom({{Dim::X, 4}, {Dim::Y, 6}}));
+  dataset.setCoord(Dim::X, makeRandom({Dim::X, 5}));
+  ASSERT_THROW(dataset.setCoord(Dim("bad_even_if_coord_on_edges"),
+                                makeRandom({{Dim::X, 5}, {Dim::Y, 5}})),
+               except::DimensionError);
+  ASSERT_THROW(dataset.setCoord(Dim("bad_edges_for_both_dims"),
+                                makeRandom({{Dim::X, 5}, {Dim::Y, 6}})),
+               except::DimensionError);
+  ASSERT_NO_THROW(
+      dataset.setCoord(Dim("edge_labels_can_be_set_also_if_edge_dim_coord"),
+                       makeRandom({{Dim::X, 4}, {Dim::Y, 6}})));
+  // Back to non-edge labels also works
+  ASSERT_NO_THROW(dataset.setCoord(Dim("edge_labels"),
                                    makeRandom({{Dim::X, 4}, {Dim::Y, 5}})));
 }
 

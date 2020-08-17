@@ -111,6 +111,29 @@ TEST(DatasetTest, setCoord) {
   ASSERT_EQ(d.coords().size(), 2);
 }
 
+TEST(DatasetTest, setCoord_grow) {
+  const auto var3 = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  const auto var4 = makeVariable<double>(Dims{Dim::X}, Shape{4});
+  Dataset d;
+  ASSERT_NO_THROW(d.setCoord(Dim::X, var3));
+  ASSERT_NO_THROW(d.setCoord(Dim::Y, var4));
+}
+
+TEST(DatasetTest, setCoord_shrink) {
+  const auto var3 = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  const auto var4 = makeVariable<double>(Dims{Dim::X}, Shape{4});
+  Dataset d;
+  ASSERT_NO_THROW(d.setCoord(Dim::X, var4));
+  ASSERT_NO_THROW(d.setCoord(Dim::Y, var3));
+}
+
+TEST(DatasetTest, setCoord_fail_events_on_edges) {
+  const auto events = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{4});
+  Dataset d;
+  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{3}));
+  ASSERT_THROW(d.setCoord(Dim::Y, events), except::DimensionError);
+}
+
 TEST(DatasetTest, set_item_mask) {
   Dataset d;
   d.setData("x", makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));

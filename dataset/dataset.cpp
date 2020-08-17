@@ -121,47 +121,27 @@ namespace extents {
 scipp::index makeUnknownEdgeState(const scipp::index extent) {
   return -extent - 1;
 }
-scipp::index shrink(const scipp::index extent) { return extent - 1; }
 bool isUnknownEdgeState(const scipp::index extent) { return extent < 0; }
-scipp::index decodeExtent(const scipp::index extent) {
+scipp::index decode(const scipp::index extent) {
   if (isUnknownEdgeState(extent))
     return -extent - 1;
   return extent;
 }
-bool isSame(const scipp::index extent, const scipp::index reference) {
-  return reference == -extent - 1;
-}
-bool oneLarger(const scipp::index extent, const scipp::index reference) {
-  return extent == -reference - 1 + 1;
-}
-bool oneSmaller(const scipp::index extent, const scipp::index reference) {
-  return extent == -reference - 1 - 1;
-}
 void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
                const scipp::index extent, const bool isCoord) {
   const auto it = dims.find(dim);
-  // Internally use negative extent -1 to indicate unknown edge state. The `-1`
-  // is required for dimensions with extent 0.
-
   if (it == dims.end()) {
-    dims[dim] = extents::makeUnknownEdgeState(extent);
-  } else {
-    auto &heldExtent = it->second;
-    if (extents::isUnknownEdgeState(heldExtent)) {
-      if (extents::isSame(extent, heldExtent)) { // Do nothing
-      } else if (extents::oneLarger(extent, heldExtent) && isCoord) {
-        heldExtent = extents::shrink(extent);
-      } else if (extents::oneSmaller(extent, heldExtent) && !isCoord) {
-        heldExtent = extent;
-      } else {
-        throw except::DimensionError(heldExtent, extent);
-      }
-    } else {
-      // Check for known edge state
-      if ((extent != heldExtent || isCoord) && extent != heldExtent + 1)
-        throw except::DimensionError(heldExtent, extent);
-    }
+    dims[dim] = isCoord ? extents::makeUnknownEdgeState(extent) : extent;
+    return;
   }
+  auto &current = it->second;
+  if ((extent == decode(current) && !isCoord) ||
+      (extent == decode(current) + 1 && isCoord))
+    current = decode(current); // switch to known
+  if (extent == decode(current) - 1 && isUnknownEdgeState(current))
+    current = extent; // shrink by 1 and switch to known
+  if (extent != decode(current) && !(isCoord && extent == decode(current) + 1))
+    throw except::DimensionError(decode(current), extent);
 }
 } // namespace extents
 
@@ -194,7 +174,7 @@ void Dataset::rebuildDims() {
 
 /// Set (insert or replace) the coordinate for the given dimension.
 void Dataset::setCoord(const Dim dim, Variable coord) {
-  setDims(coord.dims(), dim);
+  setDims(coord.dims(), dim_of_coord(coord, dim));
   for (const auto &item : m_data)
     if (item.second.coords.count(dim))
       throw except::DataArrayError("Attempt to insert dataset coord with "
@@ -208,7 +188,7 @@ void Dataset::setCoord(const std::string &name, const Dim dim, Variable coord) {
   if (coords().contains(dim))
     throw except::DataArrayError(
         "Attempt to insert unaligned coord with name shadowing aligned coord.");
-  setDims(coord.dims(), dim);
+  setDims(coord.dims(), dim_of_coord(coord, dim));
   m_data[name].coords.insert_or_assign(dim, std::move(coord));
 }
 
@@ -928,9 +908,8 @@ std::unordered_map<Dim, scipp::index> DatasetConstView::dimensions() const {
 
 std::unordered_map<Dim, scipp::index> Dataset::dimensions() const {
   std::unordered_map<Dim, scipp::index> all;
-  for (const auto &dim : this->m_dims) {
-    all[dim.first] = extents::decodeExtent(dim.second);
-  }
+  for (const auto &dim : this->m_dims)
+    all[dim.first] = extents::decode(dim.second);
   return all;
 }
 

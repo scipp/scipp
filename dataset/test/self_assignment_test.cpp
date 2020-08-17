@@ -35,7 +35,7 @@ TEST_F(SelfAssignmentTest, dataset_item) {
 
   // Code that checks for self-assignment might erroneously not check for
   // presence of slices.
-  dataset.setData("a", dataset["a"].slice({Dim::X, 0, 1}));
+  dataset.setData("a", dataset["a"].slice({Dim::X, 0}));
   EXPECT_NE(dataset["a"], expected);
   EXPECT_NE(dataset["a"].values<double>().data(), expected_ptr);
 }
