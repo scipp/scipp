@@ -17,7 +17,7 @@ SCIPP_VARIABLE_EXPORT Variable linspace(const VariableConstView &start,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 variances(const VariableConstView &x);
 
-enum class SortOrder { Ascending, Descending };
+enum class SortOrder { Ascending, Descending, Any };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT bool
 is_sorted(const VariableConstView &x, const Dim dim, const SortOrder order);

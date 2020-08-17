@@ -19,9 +19,11 @@ def slice(object, coord_name, v_slice=slice(None, None, None)):
         raise RuntimeError(
             "multi-dimensional coordinates not supported in slice")
     dim = coord.dims[0]
-    if not sc.is_sorted(coord, dim, order='ascending'):
-        raise RuntimeError("Coordinate to slice must be sorted ascending"
-                           )  # TODO implementaion limitation
+    if not sc.is_sorted(coord, dim, order='any'):
+        raise RuntimeError(
+            "Coordinate must be monotomically increasing or decreasing for value slicing"
+        )
+
     bins = coord.shape[0]
     bin_edges = bins == object.shape[object.dims.index(dim)] + 1
     if isinstance(v_slice, builtins.slice):

@@ -54,21 +54,35 @@ Variable variances(const VariableConstView &x) {
 ///
 /// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
 /// If `order` is SortOrder::Descending, checks if values are non-increasing.
+/// If `order` is SortOrder::Any, checks if values are either non-increasing or
+/// non-decreasing.
 bool is_sorted(const VariableConstView &x, const Dim dim,
                const SortOrder order) {
   const auto size = x.dims()[dim];
   if (size < 2)
     return true;
   auto out = makeVariable<bool>(Values{true});
-  if (order == SortOrder::Ascending)
+  if (order == SortOrder::Ascending) {
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
                         core::element::is_sorted_nondescending);
-  else
+    return out.value<bool>();
+  } else if (order == SortOrder::Descending) {
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
                         core::element::is_sorted_nonascending);
-  return out.value<bool>();
+    return out.value<bool>();
+  } else {
+    accumulate_in_place(out, x.slice({dim, 0, size - 1}),
+                        x.slice({dim, 1, size}),
+                        core::element::is_sorted_nondescending);
+    auto non_descending = out.value<bool>();
+    out = makeVariable<bool>(Values{true});
+    accumulate_in_place(out, x.slice({dim, 0, size - 1}),
+                        x.slice({dim, 1, size}),
+                        core::element::is_sorted_nonascending);
+    return non_descending || out.value<bool>();
+  }
 }
 
 } // namespace scipp::variable

@@ -344,6 +344,8 @@ Mostly equivalent to Variable, see there for details.)");
           return is_sorted(x, dim, variable::SortOrder::Ascending);
         else if (order == "descending")
           return is_sorted(x, dim, variable::SortOrder::Descending);
+        else if (order == "any")
+          return is_sorted(x, dim, variable::SortOrder::Any);
         else
           throw std::runtime_error(
               "Sort order must be 'ascending' or 'descending'");
@@ -354,12 +356,14 @@ Mostly equivalent to Variable, see there for details.)");
           .description("Check if the values of a variable are sorted in.\n\nIf "
                        "'order' is 'ascending' checks if values are "
                        "non-decreasing along 'dim'. If 'order' is 'descending' "
-                       "checks if values are non-increasing along 'dim'.")
+                       "checks if values are non-increasing along 'dim'."
+                       "If 'order' is 'any' can be either non-increasing or "
+                       "non-decreasing along 'dim'.")
           .param("x", "Variable to check.", "Variable")
           .param("dim", "Dimension along which order is checked.", "Dim")
           .param("order",
-                 "Sorted order. Valid options are 'ascending' and "
-                 "'descending'. Default is 'ascending'.",
+                 "Sorted order. Valid options are 'ascending', "
+                 "'descending' and 'any'. Default is 'ascending'.",
                  "str")
           .returns("Returns True if the variable values are monotonously "
                    "ascending, False otherwise.")

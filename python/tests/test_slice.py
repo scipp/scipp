@@ -6,11 +6,14 @@ working_unit = sc.units.dimensionless
 
 
 def _make_1d_data_array(begin, end, dim_name='x', bin_edges=False):
+    step = 1
+    if begin > end:
+        step = -1
     if bin_edges:
-        data = sc.Variable([dim_name], values=np.arange(end - begin - 1))
+        data = sc.Variable([dim_name], values=np.arange(abs(end - begin) - 1))
     else:
-        data = sc.Variable([dim_name], values=np.arange(end - begin))
-    x = sc.Variable([dim_name], values=np.arange(begin, end))
+        data = sc.Variable([dim_name], values=np.arange(abs(end - begin)))
+    x = sc.Variable([dim_name], values=np.arange(begin, end, step))
     return sc.DataArray(data=data, coords={dim_name: x})
 
 
@@ -107,15 +110,20 @@ def test_2d_coord_unsupported():
         sc.slice(da, coord_name='p')
 
 
-def test_coord_must_be_sorted_ascending():
-    asc_coord = _make_1d_data_array(begin=0.0, end=4.0, dim_name='x')
-    sc.slice(asc_coord, 'x')  # No throw. Sorted ascending
-    desc_coord = asc_coord.copy()
-    desc_coord.coords['x'].values = np.flip(desc_coord.coords['x'].values)
-    assert sc.is_sorted(desc_coord.coords['x'], 'x',
-                        order='descending')  # sanity check, 'x'
+def test_coord_must_be_monotomically_increasing_or_decreasing():
+    def _make_data_array_from_array(dim, values):
+        x = sc.Variable(['x'], values=values)
+        return sc.DataArray(data=x, coords={'x': x})
+
+    da = _make_data_array_from_array(
+        'x', [1, 3, 3, 4, 4])  # Fine monotomically increasing
+    sc.slice(da, 'x')
+    da = _make_data_array_from_array(
+        'x', [4, 4, 3, 2, 2])  # Fine monotomically decreasing
+    sc.slice(da, 'x')
+    da = _make_data_array_from_array('x', [4, 4, 2, 2, 3])  # unsorted!
     with pytest.raises(RuntimeError):
-        sc.slice(desc_coord, 'x')
+        sc.slice(da, 'x')
 
 
 def test_slice_point_on_point_coords_1D():
@@ -126,7 +134,6 @@ def test_slice_point_on_point_coords_1D():
                              end=13.0,
                              dim_name='x',
                              bin_edges=False)
-    # test no-effect slicing
     # Test start on left boundary (closed on left), so includes boundary
     out = sc.slice(da, 'x', 3.0 * working_unit)
     assert sc.is_equal(out.attrs['x'], da['x', 0].attrs['x'])
@@ -166,3 +173,86 @@ def test_slice_point_on_edge_coords_1D():
     # out of bounds for left for completeness
     with pytest.raises(RuntimeError):
         out = sc.slice(da, 'x', 2.99 * working_unit)
+
+
+def test_slicing_defaults_reversed():
+    da_descending_coord = _make_1d_data_array(begin=12.0,
+                                              end=2.0,
+                                              dim_name='x',
+                                              bin_edges=False)
+    da_ascending_coord = _make_1d_data_array(begin=3.0,
+                                             end=13.0,
+                                             dim_name='x',
+                                             bin_edges=False)
+    # test replicate no-effect slicing
+    assert sc.is_sorted(da_descending_coord.coords['x'], 'x',
+                        'descending')  # Sanity check
+    assert sc.is_sorted(da_ascending_coord.coords['x'], 'x',
+                        'ascending')  # Sanity check
+
+    assert sc.is_equal(
+        da_ascending_coord,
+        sc.slice(da_ascending_coord, 'x', slice(
+            None,
+            13.0 * working_unit)))  # Note closed on left with default start
+    assert sc.is_equal(
+        da_descending_coord,
+        sc.slice(da_descending_coord, 'x', slice(
+            None,
+            13.0 * working_unit)))  # Note closed on left with default start
+
+    assert sc.is_equal(da_ascending_coord['x', :-1],
+                       sc.slice(da_ascending_coord,
+                                'x'))  # Note open on right with default end!
+    assert sc.is_equal(da_descending_coord['x', :-1],
+                       sc.slice(da_descending_coord,
+                                'x'))  # Note open on right with default end!
+
+
+def test_slice_range_on_point_coords_1D_reversed():
+    #    Data Values           [0.0][1.0] ... [8.0][9.0]
+    #    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
+
+    da = _make_1d_data_array(begin=12.0,
+                             end=2.0,
+                             dim_name='x',
+                             bin_edges=False)
+    # test no-effect slicing
+    out = sc.slice(da, 'x', slice(3.0 * working_unit, 13.0 * working_unit))
+    assert sc.is_equal(da, out)
+    # Test start on left boundary (closed on left), so includes boundary
+    out = sc.slice(da, 'x', slice(3.0 * working_unit, 4.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
+    # Test start out of bounds on left truncated
+    out = sc.slice(da, 'x', slice(2.0 * working_unit, 4.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
+    # Test inner values
+    out = sc.slice(da, 'x', slice(3.5 * working_unit, 5.5 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 1:3].coords['x'])
+    # Test end on right boundary (open on right), so does not include boundary
+    out = sc.slice(da, 'x', slice(11.0 * working_unit, 12.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', -2:-1].coords['x'])
+    # Test start out of bounds on right truncated
+    out = sc.slice(da, 'x', slice(11.0 * working_unit, 13.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', -2:].coords['x'])
+
+
+def test_slice_range_on_edge_coords_1D_reversed():
+    #    Data Values            [0.0] ...       [9.0]
+    #    Coord Values (edges) [3.0][4.0] ... [11.0][12.0]
+    da = _make_1d_data_array(begin=12.0, end=2.0, dim_name='x', bin_edges=True)
+    # test no-effect slicing
+    out = sc.slice(da, 'x', slice(3.0 * working_unit, 13.0 * working_unit))
+    assert sc.is_equal(da, out)
+    # Test start on left boundary (closed on left), so includes boundary
+    out = sc.slice(da, 'x', slice(3.0 * working_unit, 4.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
+    # Test slicing with range boundary inside edge, same result as above expected
+    out = sc.slice(da, 'x', slice(3.1 * working_unit, 4.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
+    # Test slicing with range lower boundary on upper edge of bin (open on right test)
+    out = sc.slice(da, 'x', slice(4.0 * working_unit, 6.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 1:3].coords['x'])
+    # Test end on right boundary (open on right), so does not include boundary
+    out = sc.slice(da, 'x', slice(11.0 * working_unit, 12.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', -1:].coords['x'])  #
