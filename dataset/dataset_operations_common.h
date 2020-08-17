@@ -64,7 +64,7 @@ using no_realigned_support_t = decltype(no_realigned_support);
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
                                  const Dim dim, Args &&... args) {
-  const auto coord_apply_or_copy_dim = [&](auto &coords, const auto &view,
+  const auto coord_apply_or_copy_dim = [&](auto &coords_, const auto &view,
                                            const bool aligned) {
     // Note the `copy` call, ensuring that the return value of the ternary
     // operator can be moved. Without `copy`, the result of `func` is always
@@ -74,11 +74,11 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
         if (aligned)
           expectAlignedCoord(d, coord, dim);
         if constexpr (ApplyToData) {
-          coords.emplace(d, coord.dims().contains(dim)
-                                ? func(coord, dim, args...)
-                                : copy(coord));
+          coords_.emplace(d, coord.dims().contains(dim)
+                                 ? func(coord, dim, args...)
+                                 : copy(coord));
         } else {
-          coords.emplace(d, coord);
+          coords_.emplace(d, coord);
         }
       }
   };
