@@ -31,8 +31,8 @@ auto makeViewItems(const Dims &dims, T1 &coords) {
   std::unordered_map<typename T1::key_type, VariableView> items;
   // We preserve only items that are part of the space spanned by the
   // provided parent dimensions.
-  auto contained = [&dims](const auto &item) {
-    for (const Dim dim : item.second.dims().labels())
+  auto contained = [&dims](const auto &coord) {
+    for (const Dim dim : coord.second.dims().labels())
       if (dims.count(dim) == 0)
         return false;
     return true;
