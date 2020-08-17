@@ -87,6 +87,7 @@ void init_element_array_view(py::module &m) {
   declare_span<event_list<double>>(m, "event_double");
   declare_span<event_list<float>>(m, "event_float");
   declare_span<event_list<int64_t>>(m, "event_int64_t");
+  declare_span<event_list<int32_t>>(m, "event_int32_t");
   declare_span<event_list<scipp::core::time_point>>(m, "time_point");
 
   declare_ElementArrayView<double>(m, "double");
@@ -98,6 +99,7 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<event_list<double>>(m, "event_double");
   declare_ElementArrayView<event_list<float>>(m, "event_float");
   declare_ElementArrayView<event_list<int64_t>>(m, "event_int64_t");
+  declare_ElementArrayView<event_list<int32_t>>(m, "event_int32_t");
   declare_ElementArrayView<DataArray>(m, "DataArray");
   declare_ElementArrayView<Dataset>(m, "Dataset");
   declare_ElementArrayView<Eigen::Vector3d>(m, "Eigen_Vector3d");

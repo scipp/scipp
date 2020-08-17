@@ -156,6 +156,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return {Getter::template get<event_list<float>>(view)};
     if (type == dtype<event_list<int64_t>>)
       return {Getter::template get<event_list<int64_t>>(view)};
+    if (type == dtype<event_list<int32_t>>)
+      return {Getter::template get<event_list<int32_t>>(view)};
     if (type == dtype<DataArray>)
       return {Getter::template get<DataArray>(view)};
     if (type == dtype<Dataset>)
@@ -372,8 +374,8 @@ public:
 using as_ElementArrayView = as_ElementArrayViewImpl<
     double, float, int64_t, int32_t, bool, std::string, event_list<double>,
     scipp::core::time_point, event_list<scipp::core::time_point>,
-    event_list<float>, event_list<int64_t>, DataArray, Dataset, Eigen::Vector3d,
-    Eigen::Matrix3d, scipp::python::PyObject>;
+    event_list<float>, event_list<int64_t>, event_list<int32_t>, DataArray,
+    Dataset, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
