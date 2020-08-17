@@ -105,7 +105,7 @@ include(IPO)
 
 # Optimization flags
 if(${CMAKE_CXX_COMPILER_ID} MATCHES "GNU")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --param inline-unit-growth=50")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --param inline-unit-growth=100")
 endif()
 
 # Get version from git-describe

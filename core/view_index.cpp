@@ -56,6 +56,8 @@ ViewIndex::ViewIndex(
     m_delta[m_ndim_nested + d] = outer.m_delta[d];
     m_extent[m_ndim_nested + d] = outer.m_extent[d];
   }
+  m_dims = outer.m_dims;
+  m_subdims = outer.m_subdims;
   update_nested_range();
 }
 
