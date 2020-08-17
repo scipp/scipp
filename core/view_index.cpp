@@ -5,6 +5,7 @@
 #include "scipp/core/view_index.h"
 
 namespace scipp::core {
+
 ViewIndex::ViewIndex(const Dimensions &targetDimensions,
                      const Dimensions &dataDimensions) {
   m_dims = static_cast<int32_t>(targetDimensions.shape().size());
@@ -37,4 +38,25 @@ ViewIndex::ViewIndex(const Dimensions &targetDimensions,
   }
   setIndex(0);
 }
+
+ViewIndex::ViewIndex(
+    const Dimensions &targetDimensions, const Dimensions &dataDimensions,
+    const Dimensions &nested, const Dim nested_dim,
+    const scipp::span<const std::pair<scipp::index, scipp::index>>
+        nested_ranges) {
+  m_ndim_nested = nested.ndim();
+  m_dim_nested = m_ndim_nested - nested.index(nested_dim) - 1;
+  m_nested_ranges = nested_ranges;
+
+  ViewIndex inner(nested, nested); // inner iteration in natural order
+  m_delta = inner.m_delta;
+  m_extent = inner.m_extent;
+  ViewIndex outer(targetDimensions, dataDimensions);
+  for (scipp::index d = 0; d < outer.m_dims; ++d) {
+    m_delta[m_ndim_nested + d] = outer.m_delta[d];
+    m_extent[m_ndim_nested + d] = outer.m_extent[d];
+  }
+  update_nested_range();
+}
+
 } // namespace scipp::core

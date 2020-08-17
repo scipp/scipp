@@ -13,16 +13,42 @@ class SCIPP_CORE_EXPORT ViewIndex {
 public:
   ViewIndex(const Dimensions &targetDimensions,
             const Dimensions &dataDimensions);
+  ViewIndex(const Dimensions &targetDimensions,
+            const Dimensions &dataDimensions, const Dimensions &nested,
+            const Dim nested_dim,
+            const scipp::span<const std::pair<scipp::index, scipp::index>>
+                nested_ranges);
+
+  void update_nested_range() {
+    if (m_outer_index >= scipp::size(m_nested_ranges))
+      return;
+    const auto [begin, end] = m_nested_ranges[m_outer_index];
+    m_index = begin;
+    for (scipp::index dim = 0; dim < m_dim_nested; ++dim)
+      m_index *= m_extent[dim]; // 2d or higher nested
+    if (m_dim_nested + 1 != m_ndim_nested)
+      m_delta[m_dim_nested + 1] += m_extent[m_dim_nested] - (end - begin);
+    m_extent[m_dim_nested] = end - begin;
+  }
 
   constexpr void increment_outer() noexcept {
     scipp::index d = 0;
+    bool update_nested = false;
     while ((m_coord[d] == m_extent[d]) && (d < NDIM_MAX - 1)) {
-      m_index += m_delta[d + 1];
+      if (d + 1 >= m_ndim_nested) {
+        m_outer_index += m_delta[d + 1];
+        update_nested = true;
+      } else {
+        m_index += m_delta[d + 1];
+      }
       ++m_coord[d + 1];
       m_coord[d] = 0;
       ++d;
     }
+    if (update_nested)
+      update_nested_range();
   }
+
   constexpr void increment() noexcept {
     m_index += m_delta[0];
     ++m_coord[0];
@@ -99,8 +125,8 @@ private:
   // We decided to go with std::array as our final choice to avoid the warning,
   // as the performance is identical to C-style arrays, as long as range based
   // loops are used.
-
   scipp::index m_index{0};
+  scipp::index m_outer_index{0}; // outer index in case of nesting
   std::array<scipp::index, NDIM_MAX> m_delta = {};
   std::array<scipp::index, NDIM_MAX> m_coord = {};
   std::array<scipp::index, NDIM_MAX> m_extent = {};
@@ -109,6 +135,10 @@ private:
   int32_t m_subdims = 0;
   std::array<int32_t, NDIM_MAX> m_offsets;
   std::array<scipp::index, NDIM_MAX> m_factors;
+  scipp::index m_ndim_nested{NDIM_MAX};
+  scipp::span<const std::pair<scipp::index, scipp::index>> m_nested_ranges;
+  scipp::index m_dim_nested{
+      0}; // dimension index referred to by ranges, for nested > 1d
 };
 
 } // namespace scipp::core

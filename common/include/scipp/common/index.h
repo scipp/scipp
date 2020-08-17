@@ -18,7 +18,7 @@ using index = int64_t;
 /// where, e.g., std::vector::size return size_t. Use of this free function
 /// reduces the need for manual casting, which would otherwise be required to
 /// avoid compiler warnings.
-template <class T> index size(const T &container) {
+template <class T> constexpr index size(const T &container) noexcept {
   return static_cast<index>(container.size());
 }
 } // namespace scipp

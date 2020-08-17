@@ -182,3 +182,79 @@ TEST_F(ViewIndex2DTest, edges) {
   i.increment();
   EXPECT_EQ(i.get(), 18);
 }
+
+class ViewIndexNextTest : public ::testing::Test {
+protected:
+  ViewIndex
+  make(const Dimensions &dims, const Dimensions &nested,
+       const std::vector<std::pair<scipp::index, scipp::index>> &ranges) {
+    return {dims, dims, nested, Dim::Row,
+            scipp::span(ranges.data(), ranges.data() + 3)};
+  }
+
+  ViewIndex
+  make(const Dimensions &target, const Dimensions &outer,
+       const Dimensions &nested,
+       const std::vector<std::pair<scipp::index, scipp::index>> &ranges) {
+    return {target, outer, nested, Dim::Row,
+            scipp::span(ranges.data(), ranges.data() + ranges.size())};
+  }
+
+  void check(ViewIndex i, const std::vector<scipp::index> &indices) {
+    for (const auto index : indices) {
+      EXPECT_EQ(i.get(), index);
+      i.increment();
+    }
+  }
+};
+
+TEST_F(ViewIndexNextTest, outer_1d_inner_1d) {
+  check(make({{Dim::X}, 3}, {{Dim::Row}, 4}, {{0, 3}, {3, 3}, {3, 4}}),
+        {0, 1, 2, 3});
+  check(make({{Dim::X}, 3}, {{Dim::Row}, 4}, {{0, 2}, {3, 3}, {3, 4}}),
+        {0, 1, 3});
+  check(make({{Dim::X}, 3}, {{Dim::Row}, 4}, {{0, 4}, {3, 3}, {3, 4}}),
+        {0, 1, 2, 3, 3});
+  check(make({{Dim::X}, 3}, {{Dim::Row}, 4}, {{1, 3}, {0, 2}, {2, 4}}),
+        {1, 2, 0, 1, 2, 3});
+}
+
+TEST_F(ViewIndexNextTest, outer_2d_inner_1d) {
+  check(make({{Dim::X, Dim::Y}, {2, 2}}, {{Dim::Row}, 6},
+             {{0, 3}, {3, 3}, {3, 4}, {4, 6}}),
+        {0, 1, 2, 3, 4, 5});
+}
+
+TEST_F(ViewIndexNextTest, outer_2d_transpose_inner_1d) {
+  const Dimensions xy({{Dim::X, Dim::Y}, {2, 3}});
+  const Dimensions yx({{Dim::Y, Dim::X}, {3, 2}});
+  check(make(xy, yx, {{Dim::Row}, 6},
+             {{0, 1}, {1, 2}, {2, 3}, {3, 4}, {4, 5}, {5, 6}}),
+        {0, 2, 4, 1, 3, 5});
+  // same length in all subranges
+  check(make(xy, yx, {{Dim::Row}, 12},
+             {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}}),
+        {0, 1, 4, 5, 8, 9, 2, 3, 6, 7, 10, 11});
+  // 1 subrange is longer
+  check(make(xy, yx, {{Dim::Row}, 13},
+             {{0, 2}, {2, 4}, {4, 7}, {7, 9}, {9, 11}, {11, 13}}),
+        {0, 1, 4, 5, 6, 9, 10, 2, 3, 7, 8, 11, 12});
+}
+
+TEST_F(ViewIndexNextTest, outer_1d_inner_2d_slow_ranges) {
+  check(make({{Dim::X}, 3}, {{Dim::Row, Dim::Y}, {6, 2}},
+             {{0, 1}, {1, 3}, {3, 6}}),
+        {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12});
+  check(make({{Dim::X}, 3}, {{Dim::Row, Dim::Y}, {6, 2}},
+             {{0, 1}, {0, 2}, {3, 6}}),
+        {0, 1, 0, 1, 2, 3, 6, 7, 8, 9, 10, 11, 12});
+}
+
+TEST_F(ViewIndexNextTest, outer_1d_inner_2d_fast_ranges) {
+  check(make({{Dim::X}, 3}, {{Dim::Y, Dim::Row}, {2, 6}},
+             {{0, 1}, {1, 3}, {3, 6}}),
+        {0, 6, 1, 2, 7, 8, 3, 4, 5, 9, 10, 11});
+  check(make({{Dim::X}, 3}, {{Dim::Y, Dim::Row}, {2, 6}},
+             {{0, 1}, {0, 2}, {3, 6}}),
+        {0, 6, 0, 1, 6, 7, 3, 4, 5, 9, 10, 11});
+}
