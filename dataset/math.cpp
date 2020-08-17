@@ -8,7 +8,8 @@
 namespace scipp::dataset {
 
 DataArray reciprocal(const DataArrayConstView &a) {
-  return DataArray(reciprocal(a.data()), a.coords(), a.masks(), a.attrs());
+  return DataArray(reciprocal(a.data()), a.aligned_coords(), a.masks(),
+                   a.unaligned_coords());
 }
 
 } // namespace scipp::dataset

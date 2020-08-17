@@ -38,19 +38,26 @@ void CoordAccess::set(const Dim &key, Variable var) const {
   expectValidParent(m_parent);
   if (m_unaligned) {
     expectDimsNotContained(m_parent, var);
-    m_unaligned->coords().set(key, std::move(var));
+    m_unaligned->set(key, std::move(var));
+  } else if (m_name && m_isItem) {
+    m_parent->setCoord(*m_name, key, std::move(var));
   } else
     m_parent->setCoord(key, std::move(var));
 }
 void CoordAccess::erase(const Dim &key) const {
   expectValidParent(m_parent);
-  if (m_unaligned)
+  if (m_unaligned) {
     try {
-      m_unaligned->coords().erase(key);
+      m_unaligned->erase(key);
     } catch (const except::NotFoundError &e) {
       throw clarify_exception(e);
     }
-  else
+  } else if (m_name) {
+    if (!m_isItem && m_parent->coords().contains(key))
+      m_parent->eraseCoord(key); // this is a DataArray, may delete aligned
+    else
+      m_parent->eraseCoord(*m_name, key);
+  } else
     m_parent->eraseCoord(key);
 }
 
@@ -59,10 +66,8 @@ void MaskAccess::set(const std::string &key, Variable var) const {
   if (m_unaligned) {
     expectDimsNotContained(m_parent, var);
     m_unaligned->masks().set(key, std::move(var));
-  } else if (m_name) {
-    m_parent->setMask(*m_name, key, std::move(var));
   } else {
-    m_parent->setMask(key, std::move(var));
+    m_parent->setMask(*m_name, key, std::move(var));
   }
 }
 void MaskAccess::erase(const std::string &key) const {
@@ -73,29 +78,8 @@ void MaskAccess::erase(const std::string &key) const {
     } catch (const except::NotFoundError &e) {
       throw clarify_exception(e);
     }
-  else if (m_name)
+  else
     m_parent->eraseMask(*m_name, key);
-  else
-    m_parent->eraseMask(key);
-}
-
-void AttrAccess::set(const std::string &key, Variable var) const {
-  expectValidParent(m_parent);
-  if (m_unaligned)
-    m_unaligned->attrs().set(key, std::move(var));
-  else if (m_name)
-    m_parent->setAttr(*m_name, key, std::move(var));
-  else
-    m_parent->setAttr(key, std::move(var));
-}
-void AttrAccess::erase(const std::string &key) const {
-  expectValidParent(m_parent);
-  if (m_unaligned)
-    m_unaligned->attrs().erase(key);
-  else if (m_name)
-    m_parent->eraseAttr(*m_name, key);
-  else
-    m_parent->eraseAttr(key);
 }
 
 } // namespace scipp::dataset

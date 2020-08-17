@@ -59,9 +59,8 @@ std::string
 array_to_string(const T &arr,
                 const std::optional<units::Unit> &unit = std::nullopt);
 
-const std::string
-to_iso_date(const scipp::core::time_point &tem,
-            const std::optional<units::Unit> &unit = std::nullopt);
+SCIPP_CORE_EXPORT const std::string
+to_iso_date(const scipp::core::time_point &item, const units::Unit &unit);
 
 template <class T>
 std::string
@@ -74,7 +73,7 @@ element_to_string(const T &item,
     return core::to_string(item) + ", ";
 
   else if constexpr (std::is_same_v<T, scipp::core::time_point>) {
-    return core::to_string(to_iso_date(item, unit)) + ", ";
+    return core::to_string(to_iso_date(item, unit.value())) + ", ";
   } else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
     return {"(" + to_string(item[0]) + ", " + to_string(item[1]) + ", " +
             to_string(item[2]) + "), "};

@@ -32,7 +32,9 @@ typename View::value_type join_edges(const View &a, const View &b,
 namespace {
 constexpr auto is_bin_edges = [](const auto &coord, const auto &dims,
                                  const Dim dim) {
-  return coord.dims().contains(dim) && coord.dims()[dim] != dims.at(dim);
+  return coord.dims().contains(dim) &&
+         ((dims.count(dim) == 1) ? coord.dims()[dim] != dims.at(dim)
+                                 : coord.dims()[dim] == 2);
 };
 template <class T1, class T2, class DimT>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
@@ -43,7 +45,8 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
       if (is_bin_edges(a_, dimsA, dim) != is_bin_edges(b[key], dimsB, dim)) {
         throw except::BinEdgeError(
             "Either both or neither of the inputs must be bin edges.");
-      } else if (a_.dims()[dim] == dimsA.at(dim)) {
+      } else if (a_.dims()[dim] ==
+                 ((dimsA.count(dim) == 1) ? dimsA.at(dim) : 1)) {
         out.emplace(key, concatenate(a_, b[key], dim));
       } else {
         out.emplace(key, join_edges(a_, b[key], dim));
@@ -63,20 +66,34 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 
 DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                       const Dim dim) {
-  return DataArray(a.hasData() || b.hasData()
-                       ? concatenate(a.data(), b.data(), dim)
-                       : Variable{},
-                   concat(a.coords(), b.coords(), dim, a.dims(), b.dims()),
-                   concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
+  auto out = DataArray(
+      a.hasData() || b.hasData() ? concatenate(a.data(), b.data(), dim)
+                                 : Variable{},
+      {}, concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
+  for (auto &&[d, coord] :
+       concat(a.coords(), b.coords(), dim, a.dims(), b.dims())) {
+    if (d == dim || a.aligned_coords().contains(d) ||
+        b.aligned_coords().contains(d))
+      out.coords().set(d, std::move(coord));
+    else
+      out.unaligned_coords().set(d, std::move(coord));
+  }
+  return out;
 }
 
 Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
                     const Dim dim) {
-  Dataset result(
-      std::map<std::string, Variable>(),
-      concat(a.coords(), b.coords(), dim, a.dimensions(), b.dimensions()),
-      concat(a.masks(), b.masks(), dim, a.dimensions(), b.dimensions()),
-      std::map<std::string, Variable>());
+  // Note that in the special case of a dataset without data items (only coords)
+  // concatenating a range slice with a non-range slice will fail due to the
+  // missing unaligned coord in the non-range slice. This is an extremely
+  // special case and cannot be handled without adding support for unaligned
+  // coords to dataset (which is not desirable for a variety of reasons). It is
+  // unlikely that this will cause trouble in practice. Users can just use a
+  // range slice of thickness 1.
+  auto result = a.empty() ? Dataset(std::map<std::string, Variable>(),
+                                    concat(a.coords(), b.coords(), dim,
+                                           a.dimensions(), b.dimensions()))
+                          : Dataset();
   for (const auto &item : a)
     if (b.contains(item.name())) {
       if (!item.dims().contains(dim) && item == b[item.name()])

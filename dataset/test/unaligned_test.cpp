@@ -23,6 +23,7 @@ protected:
       makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4});
   Variable temp_mask = makeVariable<bool>(Dims{Dim::Temperature}, Shape{2},
                                           Values{false, false});
+  Variable attr = makeVariable<double>(Values{3.14});
 
   DataArray make_array() {
     const Dim dim = Dim::Position;
@@ -38,10 +39,9 @@ protected:
         makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4});
     const auto pos_mask = makeVariable<bool>(
         Dims{dim}, Shape{4}, Values{false, false, false, false});
-    const auto attr = makeVariable<double>(Values{3.14});
     DataArray a(makeVariable<double>(Dims{dim}, Shape{4}, Values{1, 2, 3, 4}),
                 {{dim, pos}, {Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}},
-                {{"pos", pos_mask}}, {{"attr", attr}});
+                {{"pos", pos_mask}}, {{Dim("attr"), attr}});
 
     a = concatenate(a, a + a, Dim::Temperature);
     a.coords().set(Dim::Temperature, temp);
@@ -63,7 +63,7 @@ protected:
          {Dim::Z, zbins},
          {Dim::Y, ybins},
          {Dim::X, xbins}},
-        {{"temp", temp_mask}});
+        {{"temp", temp_mask}}, {{Dim("attr"), attr}});
   }
 };
 
@@ -189,19 +189,21 @@ TEST_F(RealignTest, mask_mapping) {
 
 TEST_F(RealignTest, attr_mapping) {
   auto base = make_array();
-  base.attrs().set("0-d", makeVariable<double>(Values{1.0}));
-  base.attrs().set("pos",
-                   makeVariable<bool>(Dims{Dim::Position}, Shape{4},
-                                      Values{false, false, false, true}));
-  base.attrs().set("temp", makeVariable<bool>(Dims{Dim::Temperature}, Shape{2},
-                                              Values{false, true}));
+  base.unaligned_coords().set(Dim("0-d"), makeVariable<double>(Values{1.0}));
+  base.unaligned_coords().set(
+      Dim("pos"), makeVariable<bool>(Dims{Dim::Position}, Shape{4},
+                                     Values{false, false, false, true}));
+  base.unaligned_coords().set(
+      Dim("temp"), makeVariable<bool>(Dims{Dim::Temperature}, Shape{2},
+                                      Values{false, true}));
   auto realigned = unaligned::realign(
       base, {{Dim::Z, zbins}, {Dim::Y, ybins}, {Dim::X, xbins}});
 
   EXPECT_FALSE(realigned.hasData());
-  EXPECT_EQ(realigned.attrs().size(), 2);
-  EXPECT_TRUE(realigned.attrs().contains("0-d"));
-  EXPECT_TRUE(realigned.attrs().contains("temp"));
+  EXPECT_EQ(realigned.unaligned_coords().size(), 3);
+  EXPECT_TRUE(realigned.unaligned_coords().contains(Dim("0-d")));
+  EXPECT_TRUE(realigned.unaligned_coords().contains(Dim("temp")));
+  EXPECT_TRUE(realigned.unaligned_coords().contains(Dim("attr")));
 
   EXPECT_EQ(realigned.unaligned(), base.slice({Dim::Position, 0, 3}));
 }
@@ -258,7 +260,7 @@ TEST_F(RealignTest, copy_realigned_slice) {
   EXPECT_EQ(copy.dims(), slice.dims());
   EXPECT_EQ(copy.coords(), slice.coords());
   EXPECT_EQ(copy.masks(), slice.masks());
-  EXPECT_EQ(copy.attrs(), slice.attrs());
+  EXPECT_EQ(copy.unaligned_coords(), slice.unaligned_coords());
   EXPECT_NE(copy.unaligned(), slice.unaligned());
   EXPECT_EQ(copy.unaligned(),
             realigned.unaligned().slice({Dim::Position, 1, 3}));
@@ -320,11 +322,11 @@ TEST_F(RealignTest, unaligned_slice_contains_sliced_coords) {
   // preserved.
   const auto realigned = make_realigned();
   const auto slice = realigned.slice({Dim::X, 0});
-  EXPECT_FALSE(slice.coords().contains(Dim::X));
+  EXPECT_FALSE(slice.aligned_coords().contains(Dim::X));
   // Slicing realigned dimensions does not eagerly slice the unaligned content.
   // Therefore, corresponding coordinates are not removed, even for a non-range
   // slice.
-  EXPECT_TRUE(slice.unaligned().coords().contains(Dim::X));
+  EXPECT_TRUE(slice.unaligned().aligned_coords().contains(Dim::X));
 }
 
 TEST_F(RealignTest, slice_unaligned_view) {
@@ -478,7 +480,7 @@ TEST_P(RealignEventsTest, copy_realigned_slice) {
   EXPECT_EQ(copy.dims(), slice.dims());
   EXPECT_EQ(copy.coords(), slice.coords());
   EXPECT_EQ(copy.masks(), slice.masks());
-  EXPECT_EQ(copy.attrs(), slice.attrs());
+  EXPECT_EQ(copy.unaligned_coords(), slice.unaligned_coords());
   EXPECT_NE(copy.unaligned(), slice.unaligned());
   EXPECT_EQ(copy.unaligned(), event::filter(realigned.unaligned(), Dim::Tof,
                                             realigned.coords()[Dim::Tof].slice(

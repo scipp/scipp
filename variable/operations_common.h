@@ -9,13 +9,19 @@
 namespace scipp::variable {
 
 // Helpers for in-place reductions and reductions with groupby.
-void flatten_impl(const VariableView &summed, const VariableConstView &var,
-                  const VariableConstView &mask);
-void sum_impl(const VariableView &summed, const VariableConstView &var);
-void all_impl(const VariableView &out, const VariableConstView &var);
-void any_impl(const VariableView &out, const VariableConstView &var);
-void max_impl(const VariableView &out, const VariableConstView &var);
-void min_impl(const VariableView &out, const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT void flatten_impl(const VariableView &summed,
+                                        const VariableConstView &var,
+                                        const VariableConstView &mask);
+SCIPP_VARIABLE_EXPORT void sum_impl(const VariableView &summed,
+                                    const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT void all_impl(const VariableView &out,
+                                    const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT void any_impl(const VariableView &out,
+                                    const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT void max_impl(const VariableView &out,
+                                    const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT void min_impl(const VariableView &out,
+                                    const VariableConstView &var);
 SCIPP_VARIABLE_EXPORT Variable mean_impl(const VariableConstView &var,
                                          const Dim dim,
                                          const VariableConstView &masks_sum);

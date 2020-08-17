@@ -5,4 +5,4 @@
 
 # flake8: noqa
 
-from .hdf5 import data_array_to_hdf5, open_hdf5
+from .hdf5 import open_hdf5

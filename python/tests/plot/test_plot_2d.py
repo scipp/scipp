@@ -277,9 +277,9 @@ def test_plot_2d_ragged_coord_with_masks():
     d.coords['x'] = sc.Variable(['y', 'x'], values=xx, unit=sc.units.m)
     d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
     d['a'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.counts)
-    d.masks['b'] = sc.Variable(['y', 'x'],
-                               values=np.where(z < 0.5, True, False),
-                               dtype=bool)
+    d['a'].masks['b'] = sc.Variable(['y', 'x'],
+                                    values=np.where(z < 0.5, True, False),
+                                    dtype=bool)
     plot(d)
 
 

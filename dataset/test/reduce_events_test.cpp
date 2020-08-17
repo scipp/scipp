@@ -32,21 +32,20 @@ TEST(ReduceEventsTest, flatten) {
   EXPECT_EQ(flatten(make_events(), Dim::Y), expected);
 }
 
-TEST(ReduceEventsTest, flatten_dataset_with_mask) {
-  Dataset d;
-  d.setMask("y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
-                                    Values{false, true, false}));
+TEST(ReduceEventsTest, flatten_data_array_with_mask) {
+  DataArray d(make_events());
+  d.masks().set("y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
+                                        Values{false, true, false}));
   d.coords().set(Dim::X, make_events());
   d.coords().set(Dim("label"), make_events());
-  d.setData("b", make_events());
   auto expected = makeVariable<event_list<double>>(
       Dims{}, Shape{}, Values{event_list<double>{1, 2, 3, 6, 7}});
 
   const auto flat = flatten(d, Dim::Y);
 
-  EXPECT_EQ(flat["b"].coords()[Dim::X], expected);
-  EXPECT_EQ(flat["b"].coords()[Dim("label")], expected);
-  EXPECT_EQ(flat["b"].data(), expected);
+  EXPECT_EQ(flat.coords()[Dim::X], expected);
+  EXPECT_EQ(flat.coords()[Dim("label")], expected);
+  EXPECT_EQ(flat.data(), expected);
 }
 
 TEST(ReduceEventsTest, flatten_dataset_non_constant_scalar_weight_fail) {

@@ -18,19 +18,21 @@ protected:
                makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
     a.setData("data_1",
               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
-    a.setCoord(Dim("label_1"),
+    a.setCoord("data_1", Dim("label_1"),
                makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
-    a.setMask("mask_1", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                           Values{false, true, false}));
+    a["data_1"].masks().set(
+        "mask_1",
+        makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
 
     b.setCoord(Dim::X,
                makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6}));
     b.setData("data_1",
               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{14, 15, 16}));
-    b.setCoord(Dim("label_1"),
+    b.setCoord("data_1", Dim("label_1"),
                makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{24, 25, 26}));
-    b.setMask("mask_1", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                           Values{false, true, false}));
+    b["data_1"].masks().set(
+        "mask_1",
+        makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
   }
 
   Dataset a;
@@ -45,12 +47,21 @@ TEST_F(Concatenate1DTest, simple_1d) {
   EXPECT_EQ(d["data_1"].data(),
             makeVariable<int>(Dims{Dim::X}, Shape{6},
                               Values{11, 12, 13, 14, 15, 16}));
-  EXPECT_EQ(d.coords()[Dim("label_1")],
+  EXPECT_EQ(d["data_1"].coords()[Dim("label_1")],
             makeVariable<int>(Dims{Dim::X}, Shape{6},
                               Values{21, 22, 23, 24, 25, 26}));
-  EXPECT_EQ(d.masks()["mask_1"],
+  EXPECT_EQ(d["data_1"].masks()["mask_1"],
             makeVariable<bool>(Dims{Dim::X}, Shape{6},
                                Values{false, true, false, false, true, false}));
+}
+
+TEST_F(Concatenate1DTest, slices_of_1d) {
+  EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1}), Dim::X),
+            a.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(concatenate(a.slice({Dim::X, 0, 2}), a.slice({Dim::X, 2}), Dim::X),
+            a);
+  EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1, 3}), Dim::X),
+            a);
 }
 
 TEST_F(Concatenate1DTest, to_2d_with_0d_coord) {
@@ -72,46 +83,61 @@ TEST_F(Concatenate1DTest, to_2d_with_0d_coord) {
                   Dim::Y));
 }
 
-TEST(ConcatenateTest, simple_1d_histogram) {
+class Concatenate1DHistogramTest : public ::testing::Test {
+protected:
+  Concatenate1DHistogramTest() {
+    a.setCoord(Dim::X,
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
+    a.setData("data_1",
+              makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{11, 12}));
+    a.setCoord("data_1", Dim("edge_labels"),
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
+    a.setCoord("data_1", Dim("labels"),
+               makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{21, 22}));
+    a["data_1"].masks().set("masks", makeVariable<bool>(Dims{Dim::X}, Shape{2},
+                                                        Values{false, true}));
+    b.setCoord(Dim::X,
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{3, 4, 5}));
+    b.setData("data_1",
+              makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14}));
+    b.setCoord("data_1", Dim("edge_labels"),
+               makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{23, 24, 25}));
+    b.setCoord("data_1", Dim("labels"),
+               makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{24, 25}));
+    b["data_1"].masks().set("masks", makeVariable<bool>(Dims{Dim::X}, Shape{2},
+                                                        Values{false, true}));
+  }
+
   Dataset a;
-  a.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  a.setData("data_1",
-            makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{11, 12}));
-  a.setCoord(Dim("edge_labels"),
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
-  a.setCoord(Dim("labels"),
-             makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{21, 22}));
-  a.setMask("masks",
-            makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
-
   Dataset b;
-  b.setCoord(Dim::X,
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{3, 4, 5}));
-  b.setData("data_1",
-            makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14}));
-  b.setCoord(Dim("edge_labels"),
-             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{23, 24, 25}));
-  b.setCoord(Dim("labels"),
-             makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{24, 25}));
-  b.setMask("masks",
-            makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
+};
 
+TEST_F(Concatenate1DHistogramTest, simple_1d) {
   Dataset expected;
   expected.setCoord(
       Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
   expected.setData("data_1", makeVariable<int>(Dims{Dim::X}, Shape{4},
                                                Values{11, 12, 13, 14}));
   expected.setCoord(
-      Dim("edge_labels"),
+      "data_1", Dim("edge_labels"),
       makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{21, 22, 23, 24, 25}));
-  expected.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4},
-                                                     Values{21, 22, 24, 25}));
-  expected.setMask("masks",
-                   makeVariable<bool>(Dims{Dim::X}, Shape{4},
-                                      Values{false, true, false, true}));
+  expected.setCoord(
+      "data_1", Dim("labels"),
+      makeVariable<int>(Dims{Dim::X}, Shape{4}, Values{21, 22, 24, 25}));
+  expected["data_1"].masks().set(
+      "masks", makeVariable<bool>(Dims{Dim::X}, Shape{4},
+                                  Values{false, true, false, true}));
 
   EXPECT_EQ(concatenate(a, b, Dim::X), expected);
+}
+
+TEST_F(Concatenate1DHistogramTest, slices_of_1d) {
+  EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1}), Dim::X),
+            a.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(concatenate(a.slice({Dim::X, 0}), a.slice({Dim::X, 1, 2}), Dim::X),
+            a);
+  EXPECT_EQ(concatenate(a.slice({Dim::X, 0, 1}), a.slice({Dim::X, 1}), Dim::X),
+            a);
 }
 
 TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
@@ -189,8 +215,9 @@ TEST(ConcatenateTest, concat_2d_coord) {
             makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{11, 12, 13}));
   a.setCoord(Dim("label_1"),
              makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{21, 22, 23}));
-  a.setMask("mask_1", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                         Values{false, true, false}));
+  a["data_1"].masks().set(
+      "mask_1",
+      makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
 
   Dataset b(a);
   b.coords()[Dim::X] += 3 * units::one;
@@ -206,8 +233,9 @@ TEST(ConcatenateTest, concat_2d_coord) {
                                             113, 11, 12, 13}));
   expected.setCoord(Dim("label_1"), makeVariable<int>(Dims{Dim::X}, Shape{3},
                                                       Values{21, 22, 23}));
-  expected.setMask("mask_1", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                                Values{false, true, false}));
+  expected["data_1"].masks().set(
+      "mask_1",
+      makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false}));
 
   const auto ab = concatenate(a, b, Dim::Y);
   const auto ba = concatenate(b, a, Dim::Y);

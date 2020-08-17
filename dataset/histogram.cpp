@@ -174,8 +174,8 @@ DataArray histogram(const DataArrayConstView &realigned) {
       out = histogram(sliced.unaligned(),
                       unaligned::realigned_event_coord(realigned));
     }
-    for (const auto &[name, attr] : realigned.attrs())
-      out.attrs().set(name, std::move(attr));
+    for (const auto &[dim, coord] : realigned.unaligned_coords())
+      out.unaligned_coords().set(dim, std::move(coord));
     return out;
   }
   std::optional<DataArray> filtered;
@@ -190,8 +190,8 @@ DataArray histogram(const DataArrayConstView &realigned) {
 
   Variable data(unaligned.data(), realigned.dims());
   histogram_md_recurse(data, unaligned, realigned);
-  return DataArray{std::move(data), realigned.coords(), realigned.masks(),
-                   realigned.attrs()};
+  return DataArray{std::move(data), realigned.aligned_coords(),
+                   realigned.masks(), realigned.unaligned_coords()};
 }
 
 Dataset histogram(const DatasetConstView &realigned) {

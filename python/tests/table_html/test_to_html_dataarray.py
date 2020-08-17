@@ -27,14 +27,14 @@ def test_basic(dims, lengths):
                                   dims[0]: data,
                                   LABEL_NAME: data
                               },
-                              attrs={ATTR_NAME: data},
+                              unaligned_coords={ATTR_NAME: data},
                               masks={MASK_NAME: data})
 
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
     assert len(sections) == 5
     expected_sections = [
-        "Dimensions", "Coordinates", "Data", "Masks", "Attributes"
+        "Dimensions", "Coordinates", "Data", "Masks", "Coordinates (unaligned)"
     ]
     for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
@@ -77,7 +77,7 @@ def test_events(dims, lengths):
                                   dims[0]: data,
                                   LABEL_NAME: attr
                               },
-                              attrs={ATTR_NAME: attr},
+                              unaligned_coords={ATTR_NAME: attr},
                               masks={MASK_NAME: attr})
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
@@ -135,14 +135,14 @@ def test_bin_edge(dims, lengths):
                                   dims[0]: edges,
                                   LABEL_NAME: edges
                               },
-                              attrs={ATTR_NAME: data},
+                              unaligned_coords={ATTR_NAME: data},
                               masks={MASK_NAME: edges})
 
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
     assert len(sections) == 5
     expected_sections = [
-        "Dimensions", "Coordinates", "Data", "Masks", "Attributes"
+        "Dimensions", "Coordinates", "Data", "Masks", "Coordinates (unaligned)"
     ]
     for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
@@ -194,14 +194,14 @@ def test_bin_edge_and_events(dims, lengths):
                                   dims[0]: non_events_bin_edges,
                                   LABEL_NAME: non_events_bin_edges
                               },
-                              attrs={ATTR_NAME: non_events_data},
+                              unaligned_coords={ATTR_NAME: non_events_data},
                               masks={MASK_NAME: non_events_bin_edges})
 
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
 
     expected_sections = [
-        "Dimensions", "Coordinates", "Data", "Masks", "Attributes"
+        "Dimensions", "Coordinates", "Data", "Masks", "Coordinates (unaligned)"
     ]
     assert len(sections) == 5
     for actual_section, expected_section in zip(sections, expected_sections):
@@ -237,7 +237,7 @@ def dataarray_for_repr_test():
                          'xxx': x,
                          'aux': sc.Variable(['x'], values=np.random.rand(3))
                      },
-                     attrs={
+                     unaligned_coords={
                          'attr_zz': x,
                          'attr_aa': y
                      },

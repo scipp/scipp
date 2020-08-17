@@ -243,17 +243,23 @@ def test_variable_event_round_trip():
 
 
 def test_data_array_to_dict():
-    da = sc.DataArray(
-        coords={
-            "x": sc.Variable(dims=["x"], values=np.arange(10.)),
-            "y": sc.Variable(dims=["y"], values=np.arange(5), unit=sc.units.m),
-        },
-        masks={
-            "amask":
-            sc.Variable(dims=["y"], values=[True, True, False, True, False])
-        },
-        attrs={"attr1": sc.Variable(dims=["x"], values=np.random.random(10))},
-        data=sc.Variable(dims=["y", "x"], values=np.random.random([5, 10])))
+    da = sc.DataArray(coords={
+        "x":
+        sc.Variable(dims=["x"], values=np.arange(10.)),
+        "y":
+        sc.Variable(dims=["y"], values=np.arange(5), unit=sc.units.m),
+    },
+                      masks={
+                          "amask":
+                          sc.Variable(dims=["y"],
+                                      values=[True, True, False, True, False])
+                      },
+                      unaligned_coords={
+                          "attr1":
+                          sc.Variable(dims=["x"], values=np.random.random(10))
+                      },
+                      data=sc.Variable(dims=["y", "x"],
+                                       values=np.random.random([5, 10])))
     da_dict = sc.to_dict(da)
     assert da_dict["data"]["dims"] == da.dims
     assert da_dict["data"]["shape"] == da.shape
@@ -265,8 +271,8 @@ def test_data_array_to_dict():
     assert sc.is_equal(sc.from_dict(da_dict["coords"]["y"]), da.coords["y"])
     assert sc.is_equal(sc.from_dict(da_dict["masks"]["amask"]),
                        da.masks["amask"])
-    assert sc.is_equal(sc.from_dict(da_dict["attrs"]["attr1"]),
-                       da.attrs["attr1"])
+    assert sc.is_equal(sc.from_dict(da_dict["unaligned_coords"]["attr1"]),
+                       da.unaligned_coords["attr1"])
 
 
 def test_data_array_unaligned_to_dict():
@@ -326,7 +332,7 @@ def test_data_array_from_dict():
                 "values": [True, True, False, True, False]
             }
         },
-        "attrs": {
+        "unaligned_coords": {
             "attr1": {
                 "dims": ["x"],
                 "values": np.random.random(10)
@@ -342,8 +348,8 @@ def test_data_array_from_dict():
     assert sc.is_equal(da.coords["y"], sc.from_dict(da_dict["coords"]["y"]))
     assert sc.is_equal(da.masks["amask"],
                        sc.from_dict(da_dict["masks"]["amask"]))
-    assert sc.is_equal(da.attrs["attr1"],
-                       sc.from_dict(da_dict["attrs"]["attr1"]))
+    assert sc.is_equal(da.unaligned_coords["attr1"],
+                       sc.from_dict(da_dict["unaligned_coords"]["attr1"]))
     assert sc.is_equal(da.data, sc.from_dict(da_dict["data"]))
 
 
@@ -375,8 +381,8 @@ def test_dataset_to_dict():
                           values=np.random.random([5, 10]),
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
-    ds.masks["amask"] = sc.Variable(dims=["y"],
-                                    values=[True, True, False, True, False])
+    ds["a"].masks["amask"] = sc.Variable(
+        dims=["y"], values=[True, True, False, True, False])
     # Note that attributes complicate things here, as they are duplicated in
     # each entry during the conversion to dict. So for now, we leave attributes
     # out.
@@ -451,8 +457,8 @@ def test_dataset_round_trip():
                           values=np.random.random([5, 10]),
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
-    ds.masks["amask"] = sc.Variable(dims=["y"],
-                                    values=[True, True, False, True, False])
+    ds["a"].masks["amask"] = sc.Variable(
+        dims=["y"], values=[True, True, False, True, False])
     # Note that round trip would not work if attrs are present, since they get
     # become a per-item attribute during the conversion to dict.
     assert sc.is_equal(ds, sc.from_dict(sc.to_dict(ds)))

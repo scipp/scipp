@@ -47,7 +47,7 @@ class TestMantidConversion(unittest.TestCase):
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         d = mantidcompat.convert_Workspace2D_to_data_array(ws)
         self.assertEqual(
-            d.attrs["run"].value.getProperty("run_start").value,
+            d.coords["run"].value.getProperty("run_start").value,
             "2012-05-21T15:14:56.279289666",
         )
         self.assertEqual(d.data.unit, sc.units.counts)
@@ -86,17 +86,17 @@ class TestMantidConversion(unittest.TestCase):
         d.realign({'tof': realigned.coords['tof']})
 
         # Removing run and sample due to missing comparison operators
-        del d.attrs['run']
-        del d.attrs['sample']
-        del realigned.attrs['run']
-        del realigned.attrs['sample']
-        assert realigned == d
+        del d.unaligned_coords['run']
+        del d.unaligned_coords['sample']
+        del realigned.unaligned_coords['run']
+        del realigned.unaligned_coords['sample']
+        assert sc.is_equal(realigned, d)
 
     def test_comparison(self):
         a = mantidcompat.convert_EventWorkspace_to_data_array(
             self.base_event_ws, load_pulse_times=False)
         b = a.copy()
-        assert a == b
+        assert sc.is_equal(a, b)
 
     def test_EventWorkspace_no_y_unit(self):
         import mantid.simpleapi as mantid
@@ -210,7 +210,7 @@ class TestMantidConversion(unittest.TestCase):
 
         mask = sc.Variable(dims=ds.dims, shape=ds.shape, dtype=sc.dtype.bool)
         mask['spectrum', 0:3]['tof', 0:3] |= sc.Variable(value=True)
-        assert ds.masks['bin'] == mask
+        assert sc.is_equal(ds.masks['bin'], mask)
 
         np.testing.assert_array_equal(ds.masks["spectrum"].values[0:3],
                                       [True, True, True])
@@ -253,13 +253,13 @@ class TestMantidConversion(unittest.TestCase):
         ds = mantidcompat.load(filename,
                                mantid_args={"LoadMonitors": "Separate"})
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
-        attrs = ds.attrs.keys()
+        attrs = [str(key) for key in ds.unaligned_coords.keys()]
         expected_monitor_attrs = set(
             ["monitor1", "monitor2", "monitor3", "monitor4", "monitor5"])
         assert expected_monitor_attrs.issubset(attrs)
 
         for monitor_name in expected_monitor_attrs:
-            monitors = ds.attrs[monitor_name].values
+            monitors = ds.coords[monitor_name].values
             assert isinstance(monitors, sc.DataArray)
             assert monitors.shape == [4471]
 
@@ -270,12 +270,12 @@ class TestMantidConversion(unittest.TestCase):
         ds = mantidcompat.load(filename,
                                mantid_args={"LoadMonitors": "Include"})
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
-        attrs = ds.attrs.keys()
+        attrs = [str(key) for key in ds.unaligned_coords.keys()]
         expected_monitor_attrs = set(
             ["monitor1", "monitor2", "monitor3", "monitor4", "monitor5"])
         assert expected_monitor_attrs.issubset(attrs)
         for monitor_name in expected_monitor_attrs:
-            monitors = ds.attrs[monitor_name].values
+            monitors = ds.coords[monitor_name].values
             assert isinstance(monitors, sc.DataArray)
             assert monitors.shape == [4471]
 
@@ -285,11 +285,11 @@ class TestMantidConversion(unittest.TestCase):
         filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
         ds = mantidcompat.load(filename, mantid_args={"LoadMonitors": True})
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
-        attrs = ds.attrs.keys()
+        attrs = [str(key) for key in ds.unaligned_coords.keys()]
         expected_monitor_attrs = set(["monitor2", "monitor3"])
         assert expected_monitor_attrs.issubset(attrs)
         for monitor_name in expected_monitor_attrs:
-            monitor = ds.attrs[monitor_name].value
+            monitor = ds.coords[monitor_name].value
             assert isinstance(monitor, sc.DataArray)
             assert monitor.shape == [200001]
             assert 'position' in monitor.coords
@@ -300,8 +300,8 @@ class TestMantidConversion(unittest.TestCase):
             # Absence of the following is not crucial, but currently there is
             # no need for these, and it avoid duplication:
             assert 'detector-info' not in monitor.coords
-            assert 'run' not in monitor.attrs
-            assert 'sample' not in monitor.attrs
+            assert 'run' not in monitor.coords
+            assert 'sample' not in monitor.coords
 
     def test_mdhisto_workspace_q(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
@@ -345,7 +345,7 @@ class TestMantidConversion(unittest.TestCase):
         # All events in central 'peak'
         self.assertEqual(100000, max_1d[max_index])
 
-        self.assertTrue('nevents' in histo_data_array.attrs)
+        self.assertTrue('nevents' in histo_data_array.unaligned_coords)
 
     def test_mdhisto_workspace_many_dims(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
@@ -448,19 +448,19 @@ class TestMantidConversion(unittest.TestCase):
         assert 'data' in diff
         assert 'calculated' in diff
         assert 'diff' in diff
-        assert 'status' in params.attrs
-        assert 'function' in params.attrs
-        assert 'cost-function' in params.attrs
-        assert 'chi^2/d.o.f.' in params.attrs
+        assert 'status' in params.coords
+        assert 'function' in params.coords
+        assert 'cost-function' in params.coords
+        assert 'chi^2/d.o.f.' in params.coords
 
     def test_set_run(self):
         import mantid.simpleapi as mantid
         target = mantid.CloneWorkspace(self.base_event_ws)
         d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
-        d.attrs["run"].value.addProperty("test_property", 1, True)
+        d.unaligned_coords["run"].value.addProperty("test_property", 1, True)
         # before
         self.assertFalse(target.run().hasProperty("test_property"))
-        target.setRun(d.attrs["run"].value)
+        target.setRun(d.unaligned_coords["run"].value)
         # after
         self.assertTrue(target.run().hasProperty("test_property"))
 
@@ -468,10 +468,10 @@ class TestMantidConversion(unittest.TestCase):
         import mantid.simpleapi as mantid
         target = mantid.CloneWorkspace(self.base_event_ws)
         d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
-        d.attrs["sample"].value.setThickness(3)
+        d.unaligned_coords["sample"].value.setThickness(3)
         # before
         self.assertNotEqual(3, target.sample().getThickness())
-        target.setSample(d.attrs["sample"].value)
+        target.setSample(d.unaligned_coords["sample"].value)
         # after
         self.assertEqual(3, target.sample().getThickness())
 

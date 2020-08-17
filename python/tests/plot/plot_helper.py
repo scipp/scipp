@@ -39,8 +39,9 @@ def make_dense_dataset(ndim=1,
                                                  101., 105., shapes[0]),
                                              unit=sc.units.s)
     if masks:
-        d.masks["mask"] = sc.Variable(dims,
-                                      values=np.where(a > 0, True, False))
+        d["Sample"].masks["mask"] = sc.Variable(dims,
+                                                values=np.where(
+                                                    a > 0, True, False))
     return d
 
 

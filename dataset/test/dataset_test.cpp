@@ -30,15 +30,11 @@ TEST(DatasetTest, clear) {
 
   ASSERT_FALSE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
-  ASSERT_FALSE(dataset.attrs().empty());
-  ASSERT_FALSE(dataset.masks().empty());
 
   ASSERT_NO_THROW(dataset.clear());
 
   ASSERT_TRUE(dataset.empty());
   ASSERT_FALSE(dataset.coords().empty());
-  ASSERT_FALSE(dataset.attrs().empty());
-  ASSERT_FALSE(dataset.masks().empty());
 }
 
 TEST(DatasetTest, erase_non_existant) {
@@ -115,48 +111,6 @@ TEST(DatasetTest, setCoord) {
   ASSERT_EQ(d.coords().size(), 2);
 }
 
-TEST(DatasetTest, setAttr) {
-  Dataset d;
-  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.attrs().size(), 0);
-
-  ASSERT_NO_THROW(d.setAttr("a", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.attrs().size(), 1);
-
-  ASSERT_NO_THROW(d.setAttr("b", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.attrs().size(), 2);
-
-  ASSERT_NO_THROW(d.setAttr("a", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.attrs().size(), 2);
-}
-
-TEST(DatasetTest, setMask) {
-  Dataset d;
-  const auto var =
-      makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false});
-
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.masks().size(), 0);
-
-  ASSERT_NO_THROW(d.setMask("a", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.masks().size(), 1);
-  ASSERT_EQ(d.masks()["a"], var);
-
-  ASSERT_NO_THROW(d.setMask("b", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.masks().size(), 2);
-
-  ASSERT_NO_THROW(d.setMask("a", var));
-  ASSERT_EQ(d.size(), 0);
-  ASSERT_EQ(d.masks().size(), 2);
-}
-
 TEST(DatasetTest, set_item_mask) {
   Dataset d;
   d.setData("x", makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
@@ -164,7 +118,6 @@ TEST(DatasetTest, set_item_mask) {
   const auto var =
       makeVariable<bool>(Dims{Dim::X}, Shape{3}, Values{false, true, false});
   d["x"].masks().set("unaligned", var);
-  EXPECT_FALSE(d.masks().contains("unaligned"));
   EXPECT_TRUE(d["x"].masks().contains("unaligned"));
 }
 
@@ -205,22 +158,22 @@ TEST(DatasetTest, setData_clears_attributes) {
   const auto var = makeVariable<double>(Values{1});
   Dataset d;
   d.setData("x", var);
-  d["x"].attrs().set("attr", var);
+  d["x"].coords().set(Dim("attr"), var);
 
-  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+  EXPECT_TRUE(d["x"].coords().contains(Dim("attr")));
   d.setData("x", var);
-  EXPECT_FALSE(d["x"].attrs().contains("attr"));
+  EXPECT_FALSE(d["x"].coords().contains(Dim("attr")));
 }
 
 TEST(DatasetTest, setData_keep_attributes) {
   const auto var = makeVariable<double>(Values{1});
   Dataset d;
   d.setData("x", var);
-  d["x"].attrs().set("attr", var);
+  d["x"].coords().set(Dim("attr"), var);
 
-  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+  EXPECT_TRUE(d["x"].coords().contains(Dim("attr")));
   d.setData("x", var, AttrPolicy::Keep);
-  EXPECT_TRUE(d["x"].attrs().contains("attr"));
+  EXPECT_TRUE(d["x"].coords().contains(Dim("attr")));
 }
 
 TEST(DatasetTest, setData_with_mismatched_dims) {
@@ -341,18 +294,7 @@ TEST(DatasetTest, construct_from_view) {
   ASSERT_EQ(from_view, dataset);
 }
 
-TEST(DatasetTest, construct_from_slice_without_mask) {
-  // TODO Remove this test once `construct_from_slice` is enabled again
-  DatasetFactory3D factory;
-  auto dataset = factory.make();
-  dataset.masks().erase("masks_x");
-  const auto slice = dataset.slice({Dim::X, 1});
-  Dataset from_slice(slice);
-  ASSERT_EQ(from_slice, dataset.slice({Dim::X, 1}));
-}
-
-TEST(DatasetTest, DISABLED_construct_from_slice) {
-  // Disabled since we cannot preserve unaligned masks in copy yet.
+TEST(DatasetTest, construct_from_slice) {
   DatasetFactory3D factory;
   const auto dataset = factory.make();
   const auto slice = dataset.slice({Dim::X, 1});
@@ -461,6 +403,15 @@ TEST(DatasetTest, erase_coord) {
   EXPECT_EQ(ref, ds);
 }
 
+TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
+  DatasetFactory3D factory;
+  const auto ref = factory.make();
+  Dataset ds(ref);
+  auto coord = Variable(ds.coords()[Dim::X]);
+  ASSERT_TRUE(ds.contains("data_x"));
+  EXPECT_THROW(ds["data_x"].coords().erase(Dim::X), except::NotFoundError);
+}
+
 TEST(DatasetTest, erase_labels) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
@@ -477,55 +428,21 @@ TEST(DatasetTest, erase_labels) {
   EXPECT_EQ(ref, ds);
 }
 
-TEST(DatasetTest, erase_attrs) {
-  DatasetFactory3D factory;
-  const auto ref = factory.make();
-  Dataset ds(ref);
-  auto attr = Variable(ds.attrs()["attr_x"]);
-  ds.eraseAttr("attr_x");
-  EXPECT_FALSE(ds.attrs().contains("attr_x"));
-  ds.setAttr("attr_x", attr);
-  EXPECT_EQ(ref, ds);
-
-  ds.attrs().erase("attr_x");
-  EXPECT_FALSE(ds.attrs().contains("attr_x"));
-  ds.setAttr("attr_x", attr);
-  EXPECT_EQ(ref, ds);
-}
-
-TEST(DatasetTest, erase_masks) {
-  DatasetFactory3D factory;
-  const auto ref = factory.make();
-  Dataset ds(ref);
-  auto mask = Variable(ref.masks()["masks_x"]);
-  ds.eraseMask("masks_x");
-  EXPECT_FALSE(ds.masks().contains("masks_x"));
-  ds.setMask("masks_x", mask);
-  EXPECT_EQ(ref, ds);
-
-  ds.masks().erase("masks_x");
-  EXPECT_FALSE(ds.masks().contains("masks_x"));
-  ds.setMask("masks_x", mask);
-  EXPECT_EQ(ref, ds);
-}
-
 TEST(DatasetTest, set_erase_item_attr) {
   DatasetFactory3D factory;
   auto ds = factory.make();
-  const auto attr = Variable(ds.attrs()["attr_x"]);
-  ds["data_x"].attrs().set("item-attr", attr);
-  EXPECT_FALSE(ds.attrs().contains("item-attr"));
-  EXPECT_TRUE(ds["data_x"].attrs().contains("item-attr"));
-  ds["data_x"].attrs().erase("item-attr");
-  EXPECT_FALSE(ds["data_x"].attrs().contains("item-attr"));
+  const auto attr = makeVariable<double>(Values{1.0});
+  ds["data_x"].coords().set(Dim("item-attr"), attr);
+  EXPECT_TRUE(ds["data_x"].coords().contains(Dim("item-attr")));
+  ds["data_x"].coords().erase(Dim("item-attr"));
+  EXPECT_FALSE(ds["data_x"].coords().contains(Dim("item-attr")));
 }
 
 TEST(DatasetTest, set_erase_item_mask) {
   DatasetFactory3D factory;
   auto ds = factory.make();
-  const auto mask = Variable(ds.masks()["masks_x"]);
+  const auto mask = makeVariable<double>(Values{true});
   ds["data_x"].masks().set("item-mask", mask);
-  EXPECT_FALSE(ds.masks().contains("item-mask"));
   EXPECT_TRUE(ds["data_x"].masks().contains("item-mask"));
   ds["data_x"].masks().erase("item-mask");
   EXPECT_FALSE(ds["data_x"].masks().contains("item-mask"));
@@ -615,16 +532,13 @@ TEST(DatasetMasksRealignedTest, set_erase) {
   // Depending on dim of unaligned -> works
   EXPECT_NO_THROW(d["a"].unaligned().masks().set(
       "mask", d["a"].unaligned().coords()[Dim::Y] * (2.0 * units::one)));
-  EXPECT_NO_THROW(
-      d.masks().set("mask", d["a"].coords()[Dim::Y] * (2.0 * units::one)));
 
   EXPECT_NO_THROW(d["a"].unaligned().masks().erase("mask"));
-  EXPECT_TRUE(d["a"].masks().contains("mask")); // mask of dataset still present
   EXPECT_FALSE(d["a"].unaligned().masks().contains("mask"));
 
   // Potentially surprising but consistent behavior: "scalar" mapped from
   // realigned but cannot erase via unaligned.
-  d.masks().set("scalar", 1.3 * units::K);
+  d["a"].masks().set("scalar", 1.3 * units::K);
   EXPECT_TRUE(d["a"].unaligned().masks().contains("scalar"));
   EXPECT_THROW(d["a"].unaligned().masks().erase("scalar"),
                except::NotFoundError);

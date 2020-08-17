@@ -63,8 +63,8 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
   const auto coordY = rand(ly);
   const auto labelT =
       makeVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly)));
-  const auto masks = makeVariable<bool>(Dimensions{Dim::Y, ly},
-                                        Values(make_bools(ly, {false, true})));
+  const auto mask = makeVariable<bool>(Dimensions{Dim::Y, ly},
+                                       Values(make_bools(ly, {false, true})));
 
   Dataset a;
   {
@@ -72,11 +72,10 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
                makeVariable<double>(Dims{Dim::X}, Shape{lx}, Values(coordX)));
     a.setCoord(Dim::Y,
                makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
-
     a.setCoord(Dim("t"), labelT);
-    a.setMask("mask", masks);
     a.setData("data_a",
               makeVariable<double>(Dimensions{Dim::X, lx}, Values(rand(lx))));
+    a.setMask("data_a", "mask", mask);
     a.setData("data_b",
               makeVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
   }
@@ -87,12 +86,10 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
                makeVariable<double>(Dims{Dim::X}, Shape{lx}, Values(coordX)));
     b.setCoord(Dim::Y,
                makeVariable<double>(Dims{Dim::Y}, Shape{ly}, Values(coordY)));
-
     b.setCoord(Dim("t"), labelT);
-    b.setMask("mask", masks);
-
     b.setData("data_a",
               makeVariable<double>(Dimensions{Dim::Y, ly}, Values(rand(ly))));
+    b.setMask("data_a", "mask", mask);
   }
 
   return std::make_tuple(a, b);
@@ -397,15 +394,19 @@ TYPED_TEST(DatasetBinaryEqualsOpTest,
 TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
   auto a = datasetFactory().make();
   auto b = datasetFactory().make();
-  const auto expectedMasks =
+  const auto expectedMask =
       makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
                          Values(make_bools(datasetFactory().lx, true)));
 
-  b.setMask("masks_x", expectedMasks);
+  for (const auto &item :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
+    b[item].masks().set("masks_x", expectedMask);
 
   TestFixture::op(a, b);
 
-  EXPECT_EQ(a.masks()["masks_x"], expectedMasks);
+  for (const auto &item :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
+    EXPECT_EQ(a[item].masks()["masks_x"], expectedMask);
 }
 
 TYPED_TEST_SUITE(DatasetMaskSlicingBinaryOpTest, Binary);
@@ -413,7 +414,7 @@ TYPED_TEST_SUITE(DatasetMaskSlicingBinaryOpTest, Binary);
 TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
   auto a = make_1d_masked();
 
-  const auto expectedMasks =
+  const auto expectedMask =
       makeVariable<bool>(Dimensions{Dim::X, 3}, Values(make_bools(3, true)));
 
   // these are conveniently 0 1 0 and 1 0 1
@@ -422,7 +423,7 @@ TYPED_TEST(DatasetMaskSlicingBinaryOpTest, binary_op_on_sliced_masks) {
 
   const auto slice3 = TestFixture::op(slice1, slice2);
 
-  EXPECT_EQ(slice3.masks()["masks_x"], expectedMasks);
+  EXPECT_EQ(slice3["data_x"].masks()["masks_x"], expectedMask);
 }
 
 TYPED_TEST(DatasetViewBinaryEqualsOpTest, return_value) {
@@ -631,7 +632,8 @@ TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_dataset_rhs) {
 
   /* Expect coordinates to be copied to the result dataset */
   EXPECT_EQ(res.coords(), dataset_a.coords());
-  EXPECT_EQ(res.masks(), dataset_a.masks());
+  for (const auto &item : res)
+    EXPECT_EQ(item.masks(), dataset_a[item.name()].masks());
 }
 
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_variableconstview_rhs) {
@@ -901,15 +903,19 @@ TYPED_TEST(DatasetBinaryOpTest, masks_propagate) {
   auto a = datasetFactory().make();
   auto b = datasetFactory().make();
 
-  const auto expectedMasks =
+  const auto expectedMask =
       makeVariable<bool>(Dimensions{Dim::X, datasetFactory().lx},
                          Values(make_bools(datasetFactory().lx, true)));
 
-  b.setMask("masks_x", expectedMasks);
+  for (const auto &item :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
+    b[item].masks().set("masks_x", expectedMask);
 
   const auto res = TestFixture::op(a, b);
 
-  EXPECT_EQ(res.masks()["masks_x"], expectedMasks);
+  for (const auto &item :
+       {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
+    EXPECT_EQ(res[item].masks()["masks_x"], expectedMask);
 }
 
 TEST(DatasetSetData, dense_to_dense) {
@@ -982,44 +988,15 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
   }
 }
 
-TEST(DatasetMaskContainer, can_contain_any_type_but_only_OR_EQ_bools) {
-  Dataset a;
-  a.setMask("double", makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                           Values{1.0, 2.0, 3.0}));
-  ASSERT_THROW(a.masks()["double"] |= a.masks()["double"], std::runtime_error);
-  a.setMask("float",
-            makeVariable<float>(Dims{Dim::X}, Shape{3}, Values{1.0, 2.0, 3.0}));
-  ASSERT_THROW(a.masks()["float"] |= a.masks()["float"], std::runtime_error);
-  a.setMask("int64",
-            makeVariable<int64_t>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  ASSERT_THROW(a.masks()["int64"] |= a.masks()["int64"], std::runtime_error);
-  a.setMask("int32",
-            makeVariable<int32_t>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  ASSERT_THROW(a.masks()["int32"] |= a.masks()["int32"], std::runtime_error);
-
-  // success case
-  a.setMask("bool", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                       Values{false, false, false}));
-  ASSERT_NO_THROW(a.masks()["bool"] |= a.masks()["bool"]);
-}
-
-TEST(DatasetMaskContainer, can_contain_any_type_but_only_OR_bools) {
-  Dataset a;
-  a.setMask("double", makeVariable<double>(Dims{Dim::X}, Shape{3},
-                                           Values{1.0, 2.0, 3.0}));
-  ASSERT_THROW(a.masks()["double"] | a.masks()["double"], std::runtime_error);
-  a.setMask("float",
-            makeVariable<float>(Dims{Dim::X}, Shape{3}, Values{1.0, 2.0, 3.0}));
-  ASSERT_THROW(a.masks()["float"] | a.masks()["float"], std::runtime_error);
-  a.setMask("int64",
-            makeVariable<int64_t>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  ASSERT_THROW(a.masks()["int64"] | a.masks()["int64"], std::runtime_error);
-  a.setMask("int32",
-            makeVariable<int32_t>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
-  ASSERT_THROW(a.masks()["int32"] | a.masks()["int32"], std::runtime_error);
-
-  // success case
-  a.setMask("bool", makeVariable<bool>(Dims{Dim::X}, Shape{3},
-                                       Values{false, false, false}));
-  ASSERT_NO_THROW(a.masks()["bool"] | a.masks()["bool"]);
+TEST(DataArrayMasks, can_contain_any_type_but_only_OR_bools) {
+  DataArray a(makeVariable<double>(Values{1}));
+  a.masks().set("double", makeVariable<double>(Values{1}));
+  ASSERT_THROW(a += a, std::runtime_error);
+  ASSERT_THROW(a + a, std::runtime_error);
+  a.masks().set("bool", makeVariable<bool>(Values{false}));
+  ASSERT_THROW(a += a, std::runtime_error);
+  ASSERT_THROW(a + a, std::runtime_error);
+  a.masks().erase("double");
+  ASSERT_NO_THROW(a += a);
+  ASSERT_NO_THROW(a + a);
 }

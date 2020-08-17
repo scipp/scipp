@@ -206,13 +206,19 @@ class TableViewer:
         self.trigger_update = True
 
         if su.is_dataset_or_array(scipp_obj):
-            self.headers = 2
             if su.is_dataset(scipp_obj):
                 iterlist = scipp_obj
+                tag_names = ['coords', 'data']
+                tag_keys = [scipp_obj.coords, iterlist]
             else:
                 iterlist = {scipp_obj.name: scipp_obj}
-            for tag, cat in zip(["coords", "masks", "data"],
-                                [scipp_obj.coords, scipp_obj.masks, iterlist]):
+                tag_names = ['coords', 'unaligned_coords', 'masks', 'data']
+                tag_keys = [
+                    scipp_obj.aligned_coords, scipp_obj.unaligned_coords,
+                    scipp_obj.masks, iterlist
+                ]
+            self.headers = len(tag_names)
+            for tag, cat in zip(tag_names, tag_keys):
                 for name, var in cat.items():
                     ndims = len(var.dims)
                     name_str = str(name)
@@ -233,9 +239,7 @@ class TableViewer:
                         self.tabledict[group][key][tag][name_str] = var
                         self.sizes[group][key].append(
                             var.shape[0] if ndims > 0 else None)
-
         else:
-
             ndims = len(scipp_obj.shape)
             if ndims < 2:
                 group = "{}D Variables".format(ndims)
@@ -324,7 +328,7 @@ class TableViewer:
         return
 
     def make_dict(self):
-        return {"coords": {}, "data": {}, "masks": {}}
+        return {"coords": {}, "data": {}, "masks": {}, "unaligned_coords": {}}
 
     def make_hbox(self, group, key, size):
         hbox = self.tables[group][key]
