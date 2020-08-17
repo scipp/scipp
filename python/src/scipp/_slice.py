@@ -1,6 +1,7 @@
 import scipp as sc
 
 
+# PROTOTYPE functionality - will clean-up and rewrite in c++
 def slice(object, coord_name, v_slice=slice(None, None, None)):
     '''
     Value based slicing using coordinate and start, end values along that axis.
