@@ -458,7 +458,7 @@ void DataArrayView::setUnit(const units::Unit unit) const {
 namespace {
 auto unaligned_by_dim_slice = [](const auto &item, const Dim dim) {
   const auto &[key, var] = item;
-  if constexpr (std::is_same_v<std::decay_t<decltype(key)>, Dim>) {
+  if constexpr (std::is_same_v<std::decay_t<decltype(item.first)>, Dim>) {
     const bool is_dimension_coord =
         !contains_events(var) && var.dims().contains(key);
     return !contains_events(var) && var.dims().contains(dim) &&
