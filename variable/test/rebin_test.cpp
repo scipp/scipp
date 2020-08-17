@@ -7,7 +7,7 @@
 
 using namespace scipp;
 
-TEST(Variable, rebin) {
+TEST(RebinTest, inner) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   var.setUnit(units::counts);
   const auto oldEdge =
@@ -21,7 +21,7 @@ TEST(Variable, rebin) {
   EXPECT_EQ(rebinned.values<double>()[0], 3.0);
 }
 
-TEST(Variable, rebin_descending) {
+TEST(RebinTest, inner_descending) {
   auto var = makeVariable<double>(
       Dims{Dim::X}, Shape{10},
       Values{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0});
@@ -40,7 +40,7 @@ TEST(Variable, rebin_descending) {
   ASSERT_EQ(rebinned, expected);
 }
 
-TEST(Variable, rebin_outer) {
+TEST(RebinTest, outer) {
   auto var = makeVariable<double>(Dimensions{{Dim::Y, 6}, {Dim::X, 2}},
                                   Values{1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
   var.setUnit(units::counts);
@@ -57,6 +57,82 @@ TEST(Variable, rebin_outer) {
   expected.setUnit(units::counts);
 
   ASSERT_EQ(rebinned, expected);
+}
+
+TEST(RebinTest, outer_increasing) {
+  const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4, 1},
+                                        Values{1, 2, 3, 4}, units::counts);
+  constexpr auto varY = [](const auto... vals) {
+    return makeVariable<double>(Dims{Dim::Y}, Shape{sizeof...(vals)},
+                                Values{vals...});
+  };
+  const auto oldY = varY(0, 1, 2, 3, 4);
+  constexpr auto var1x1 = [](const double value) {
+    return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 1},
+                                Values{value}, units::counts);
+  };
+  // full range
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, oldY), var);
+  // aligned old/bew edges
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0, 4)), var1x1(10));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0, 2)), var1x1(3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1, 3)), var1x1(5));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2, 4)), var1x1(7));
+  // crossing 0 bin bounds
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 0.3)), var1x1((0.3 - 0.1) * 1));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.1, 1.3)), var1x1((1.3 - 1.1) * 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.1, 3.3)), var1x1((3.3 - 3.1) * 4));
+  // crossing 1 bin bound
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 2.0)), var1x1(0.9 * 1 + 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 1.3)),
+            var1x1((1.0 - 0.1) * 1 + (1.3 - 1.0) * 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.1, 2.3)),
+            var1x1((2.0 - 1.1) * 2 + (2.3 - 2.0) * 3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.1, 3.3)),
+            var1x1((3.0 - 2.1) * 3 + (3.3 - 3.0) * 4));
+  // crossing 2 bin bounds
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 2.3)),
+            var1x1((1.0 - 0.1) * 1 + 2 + (2.3 - 2.0) * 3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.1, 3.3)),
+            var1x1((2.0 - 1.1) * 2 + 3 + (3.3 - 3.0) * 4));
+}
+
+TEST(RebinTest, outer_decreasing) {
+  const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4, 1},
+                                        Values{4, 3, 2, 1}, units::counts);
+  constexpr auto varY = [](const auto... vals) {
+    return makeVariable<double>(Dims{Dim::Y}, Shape{sizeof...(vals)},
+                                Values{vals...});
+  };
+  const auto oldY = varY(4, 3, 2, 1, 0);
+  constexpr auto var1x1 = [](const double value) {
+    return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 1},
+                                Values{value}, units::counts);
+  };
+  // full range
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, oldY), var);
+  // aligned old/bew edges
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(4, 0)), var1x1(10));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2, 0)), var1x1(3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3, 1)), var1x1(5));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(4, 2)), var1x1(7));
+  // crossing 0 bin bounds
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.3, 0.1)), var1x1((0.3 - 0.1) * 1));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.3, 1.1)), var1x1((1.3 - 1.1) * 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.3, 3.1)), var1x1((3.3 - 3.1) * 4));
+  // crossing 1 bin bound
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.0, 0.1)), var1x1(0.9 * 1 + 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.3, 0.1)),
+            var1x1((1.0 - 0.1) * 1 + (1.3 - 1.0) * 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.3, 1.1)),
+            var1x1((2.0 - 1.1) * 2 + (2.3 - 2.0) * 3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.3, 2.1)),
+            var1x1((3.0 - 2.1) * 3 + (3.3 - 3.0) * 4));
+  // crossing 2 bin bounds
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.3, 0.1)),
+            var1x1((1.0 - 0.1) * 1 + 2 + (2.3 - 2.0) * 3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.3, 1.1)),
+            var1x1((2.0 - 1.1) * 2 + 3 + (3.3 - 3.0) * 4));
 }
 
 class RebinMask1DTest : public ::testing::Test {

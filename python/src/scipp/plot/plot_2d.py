@@ -9,6 +9,7 @@ from .slicer import Slicer
 from .tools import to_bin_edges, parse_params
 from .._utils import name_with_unit
 from .._scipp import core as sc
+from .. import detail
 
 # Other imports
 import numpy as np
@@ -289,9 +290,8 @@ class Slicer2d(Slicer):
         """
         Pixel widths used for scaling before rebin step
         """
-        self.xywidth[xy] = (
-            self.xyedges[xy][dim, 1:] - self.xyedges[xy][dim, :-1]) / (
-                self.xyrebin[xy][dim, 1] - self.xyrebin[xy][dim, 0])
+        self.xywidth[xy] = (self.xyedges[xy][dim, 1:] -
+                            self.xyedges[xy][dim, :-1])
         self.xywidth[xy].unit = sc.units.one
 
     def slice_coords(self):
@@ -336,16 +336,39 @@ class Slicer2d(Slicer):
                 if self.params["masks"][
                         self.name]["show"] and dim in self.mslice.dims:
                     self.mslice = self.mslice[val.dim, val.value]
+        # In the case of unaligned data, we may want to auto-scale the colorbar
+        # as we slice through dimensions. Colorbar limits are allowed to grow
+        # but not shrink.
+        if self.vslice.unaligned is not None:
+            self.vslice = sc.histogram(self.vslice)
+            self.vslice.variances = None
+            self.autoscale_cbar = True
+        else:
+            self.autoscale_cbar = False
+        self.vslice = detail.move_to_data_array(
+            data=sc.Variable(dims=self.vslice.dims,
+                             unit=sc.units.counts,
+                             values=self.vslice.values,
+                             dtype=sc.dtype.float32))
+        self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
+        self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
+        if self.params["masks"][self.name]["show"]:
+            self.vslice.masks["all"] = self.mslice
+        # Scale by bin width and then rebin in both directions
+        # Note that this has to be written as 2 inplace operations to avoid
+        # creation of large 2D temporary from broadcast
+        self.vslice *= self.xywidth["x"]
+        self.vslice *= self.xywidth["y"]
 
     def update_slice(self, change=None):
         """
         Slice data according to new slider value and update the image.
         """
-        self.slice_data()
         # If there are multi-d coords in the data we also need to slice the
         # coords and update the xyedges and xywidth
         if self.contains_multid_coord[self.name]:
             self.slice_coords()
+        self.slice_data()
         # Update imade with resampling
         self.update_image()
         return
@@ -398,46 +421,33 @@ class Slicer2d(Slicer):
                     values=np.linspace(xylims[xy][0], xylims[xy][1],
                                        self.image_resolution[xy] + 1),
                     unit=self.slider_coord[self.name][param["dim"]].unit)
-
-                # Pixel widths used for scaling before rebin step
-                self.compute_bin_widths(xy, param["dim"])
-
             self.update_image(extent=np.array(list(xylims.values())).flatten())
-
         return
 
+    def select_bins(self, coord, dim, start, end):
+        bins = coord.shape[-1]
+        if len(coord.dims) != 1:  # TODO find combined min/max
+            return dim, slice(0, bins - 1)
+        # scipp treats bins as closed on left and open on right: [left, right)
+        first = sc.sum(coord <= start, dim).value - 1
+        last = bins - sc.sum(coord > end, dim).value
+        if first >= last:  # TODO better handling for decreasing
+            return dim, slice(0, bins - 1)
+        first = max(0, first)
+        last = min(bins - 1, last)
+        return dim, slice(first, last + 1)
+
     def resample_image(self):
+        dim = self.xyrebin['x'].dims[0]
+        slicex = self.select_bins(self.xyedges['x'], dim,
+                                  self.xyrebin['x'][dim, 0],
+                                  self.xyrebin['x'][dim, -1])
+        dim = self.xyrebin['y'].dims[0]
+        slicey = self.select_bins(self.xyedges['y'], dim,
+                                  self.xyrebin['y'][dim, 0],
+                                  self.xyrebin['y'][dim, -1])
+        dslice = self.vslice[slicex][slicey]
 
-        # Make a new slice with bin edges and counts for using in rebin.
-        dslice = sc.DataArray(
-            coords={
-                self.xyrebin["x"].dims[0]: self.xyedges["x"],
-                self.xyrebin["y"].dims[0]: self.xyedges["y"]
-            },
-            data=sc.Variable(dims=[
-                self.xyrebin[self.dim_to_xy[self.vslice.dims[0]]].dims[0],
-                self.xyrebin[self.dim_to_xy[self.vslice.dims[1]]].dims[0]
-            ],
-                             values=self.vslice.values,
-                             unit=sc.units.counts,
-                             dtype=sc.dtype.float64))
-
-        # Also include the masks
-        if self.params["masks"][self.name]["show"]:
-            mslice_dims = []
-            for dim in self.mslice.dims:
-                if dim == self.button_dims[0]:
-                    mslice_dims.append(self.xyrebin["y"].dims[0])
-                elif dim == self.button_dims[1]:
-                    mslice_dims.append(self.xyrebin["x"].dims[0])
-                else:
-                    mslice_dims.append(dim)
-
-            dslice.masks["all"] = sc.Variable(dims=mslice_dims,
-                                              values=self.mslice.values)
-
-        # Scale by bin width and then rebin in both directions
-        dslice *= self.xywidth["x"] * self.xywidth["y"]
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
         xy = "yx"
@@ -463,18 +473,12 @@ class Slicer2d(Slicer):
                                             dtype=dslice.dtype,
                                             unit=sc.units.one))
         arr *= dslice
+        # Scale by output bins width
+        arr /= self.xyrebin['x'].values[1] - self.xyrebin['x'].values[0]
+        arr /= self.xyrebin['y'].values[1] - self.xyrebin['y'].values[0]
         return arr
 
     def update_image(self, extent=None):
-
-        # In the case of unaligned data, we may want to auto-scale the colorbar
-        # as we slice through dimensions. Colorbar limits are allowed to grow
-        # but not shrink.
-        autoscale_cbar = False
-        if self.vslice.unaligned is not None:
-            self.vslice = sc.histogram(self.vslice)
-            autoscale_cbar = True
-
         dslice = self.resample_image()
         if self.params["masks"][self.name]["show"]:
             # Use scipp's automatic broadcast functionality to broadcast
@@ -502,7 +506,7 @@ class Slicer2d(Slicer):
             if extent is not None:
                 self.im["masks"].set_extent(extent)
 
-        if autoscale_cbar:
+        if self.autoscale_cbar:
             cbar_params = parse_params(globs=self.vminmax,
                                        array=arr,
                                        min_val=self.global_vmin,
