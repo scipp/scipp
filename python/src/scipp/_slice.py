@@ -19,11 +19,12 @@ def slice(object, coord_name, v_slice=slice(None, None, None)):
         raise RuntimeError(
             "multi-dimensional coordinates not supported in slice")
     dim = coord.dims[0]
-    if not sc.is_sorted(coord, dim, order='any'):
+    ascending = sc.is_sorted(coord, dim, order='ascending')
+    descending = sc.is_sorted(coord, dim, order='descending')
+    if not (ascending or descending):
         raise RuntimeError(
             "Coordinate must be monotomically increasing or decreasing for value slicing"
         )
-
     bins = coord.shape[0]
     bin_edges = bins == object.shape[object.dims.index(dim)] + 1
     if isinstance(v_slice, builtins.slice):
@@ -32,12 +33,20 @@ def slice(object, coord_name, v_slice=slice(None, None, None)):
         else:
             if bin_edges:
                 # include lower bin edge boundary
-                first = sc.sum(sc.less_equal(coord, v_slice.start),
-                               dim).value - 1
+                if ascending:
+                    first = sc.sum(sc.less_equal(coord, v_slice.start),
+                                   dim).value - 1
+                else:
+                    first = sc.sum(sc.greater_equal(coord, v_slice.start),
+                                   dim).value - 1
             else:
                 # First point >= value for non bin edges
-                first = bins - sc.sum(sc.greater_equal(coord, v_slice.start),
-                                      dim).value
+                if ascending:
+                    first = bins - sc.sum(
+                        sc.greater_equal(coord, v_slice.start), dim).value
+                else:
+                    first = bins - sc.sum(sc.less_equal(coord, v_slice.start),
+                                          dim).value
         if first < 0:
             first = 0
 
@@ -45,15 +54,22 @@ def slice(object, coord_name, v_slice=slice(None, None, None)):
         if v_slice.stop is None:
             last = bins - 1
         else:
-            last = bins - sc.sum(sc.greater_equal(coord, v_slice.stop),
-                                 dim).value
+            if ascending:
+                last = bins - sc.sum(sc.greater_equal(coord, v_slice.stop),
+                                     dim).value
+            else:
+                last = bins - sc.sum(sc.less_equal(coord, v_slice.stop),
+                                     dim).value
             if last > bins:
                 last = bins - 1
 
         return object[dim, first:last]
     else:
         if bin_edges:
-            idx = sc.sum(sc.less_equal(coord, v_slice), dim).value - 1
+            if ascending:
+                idx = sc.sum(sc.less_equal(coord, v_slice), dim).value - 1
+            else:
+                idx = sc.sum(sc.greater_equal(coord, v_slice), dim).value - 1
             if idx < 0:
                 raise RuntimeError(
                     f"Point slice {v_slice.value} does not fall within any bin edges along {coord_name}"

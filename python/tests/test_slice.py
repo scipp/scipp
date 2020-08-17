@@ -17,8 +17,11 @@ def _make_1d_data_array(begin, end, dim_name='x', bin_edges=False):
     return sc.DataArray(data=data, coords={dim_name: x})
 
 
-def _test_slicing_defaults(da):
-    # test replicate no-effect slicing
+def test_slicing_defaults_ascending():
+    da = _make_1d_data_array(begin=3.0,
+                             end=13.0,
+                             dim_name='x',
+                             bin_edges=False)
     assert sc.is_equal(da, sc.slice(da, 'x', slice(
         None, 13.0 * working_unit)))  # Note closed on left with default start
     assert sc.is_equal(da['x', :-1],
@@ -26,20 +29,16 @@ def _test_slicing_defaults(da):
                                 'x'))  # Note open on right with default end!
 
 
-def test_slicing_defaults_ascending():
-    da = _make_1d_data_array(begin=3.0,
-                             end=13.0,
-                             dim_name='x',
-                             bin_edges=False)
-    _test_slicing_defaults(da)
-
-
 def test_slicing_defaults_descending():
     da = _make_1d_data_array(begin=12.0,
                              end=2.0,
                              dim_name='x',
                              bin_edges=False)
-    _test_slicing_defaults(da)
+    assert sc.is_equal(da, sc.slice(da, 'x', slice(
+        None, 2.0 * working_unit)))  # Note closed on left with default start
+    assert sc.is_equal(da['x', :-1],
+                       sc.slice(da,
+                                'x'))  # Note open on right with default end!
 
 
 def test_2d_coord_unsupported():
@@ -66,7 +65,15 @@ def test_coord_must_be_monotomically_increasing_or_decreasing():
         sc.slice(da, 'x')
 
 
-def _test_slice_range_on_point_coords_1D(da):
+def test_slice_range_on_point_coords_1D_ascending():
+    #    Data Values           [0.0][1.0] ... [8.0][9.0]
+    #    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
+
+    da = _make_1d_data_array(begin=3.0,
+                             end=13.0,
+                             dim_name='x',
+                             bin_edges=False)
+
     # test no-effect slicing
     out = sc.slice(da, 'x', slice(3.0 * working_unit, 13.0 * working_unit))
     assert sc.is_equal(da, out)
@@ -82,21 +89,9 @@ def _test_slice_range_on_point_coords_1D(da):
     # Test end on right boundary (open on right), so does not include boundary
     out = sc.slice(da, 'x', slice(11.0 * working_unit, 12.0 * working_unit))
     assert sc.is_equal(out.coords['x'], da['x', -2:-1].coords['x'])
-    # Test start out of bounds on right truncated
+    # Test end out of bounds on right truncated
     out = sc.slice(da, 'x', slice(11.0 * working_unit, 13.0 * working_unit))
     assert sc.is_equal(out.coords['x'], da['x', -2:].coords['x'])
-
-
-def test_slice_range_on_point_coords_1D_ascending():
-    #    Data Values           [0.0][1.0] ... [8.0][9.0]
-    #    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
-
-    da = _make_1d_data_array(begin=3.0,
-                             end=13.0,
-                             dim_name='x',
-                             bin_edges=False)
-
-    _test_slice_range_on_point_coords_1D(da)
 
 
 def test_slice_range_on_point_coords_1D_descending():
@@ -108,10 +103,29 @@ def test_slice_range_on_point_coords_1D_descending():
                              dim_name='x',
                              bin_edges=False)
 
-    _test_slice_range_on_point_coords_1D(da)
+    out = sc.slice(da, 'x', slice(12.0 * working_unit, 2.0 * working_unit))
+    assert sc.is_equal(da, out)
+    # Test start on left boundary (closed on left), so includes boundary
+    out = sc.slice(da, 'x', slice(12.0 * working_unit, 11.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
+    # Test start out of bounds on left truncated
+    out = sc.slice(da, 'x', slice(13.0 * working_unit, 11.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
+    # Test inner values
+    out = sc.slice(da, 'x', slice(11.5 * working_unit, 9.5 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 1:3].coords['x'])
+    # Test end on right boundary (open on right), so does not include boundary
+    out = sc.slice(da, 'x', slice(4.0 * working_unit, 3.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', -2:-1].coords['x'])
+    # Test end out of bounds on right truncated
+    out = sc.slice(da, 'x', slice(4.0 * working_unit, 1.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', -2:].coords['x'])
 
 
-def _test_slice_range_on_edge_coords_1D(da):
+def test_slice_range_on_edge_coords_1D_ascending():
+    #    Data Values            [0.0] ...       [9.0]
+    #    Coord Values (edges) [3.0][4.0] ... [11.0][12.0]
+    da = _make_1d_data_array(begin=3.0, end=13.0, dim_name='x', bin_edges=True)
     # test no-effect slicing
     out = sc.slice(da, 'x', slice(3.0 * working_unit, 13.0 * working_unit))
     assert sc.is_equal(da, out)
@@ -129,18 +143,25 @@ def _test_slice_range_on_edge_coords_1D(da):
     assert sc.is_equal(out.coords['x'], da['x', -1:].coords['x'])  #
 
 
-def test_slice_range_on_edge_coords_1D_ascending():
-    #    Data Values            [0.0] ...       [9.0]
-    #    Coord Values (edges) [3.0][4.0] ... [11.0][12.0]
-    da = _make_1d_data_array(begin=3.0, end=13.0, dim_name='x', bin_edges=True)
-    _test_slice_range_on_edge_coords_1D(da)
-
-
 def test_slice_range_on_edge_coords_1D_descending():
     #    Data Values            [0.0] ...       [9.0]
     #    Coord Values (edges) [12.0][11.0] ... [4.0][3.0]
     da = _make_1d_data_array(begin=12.0, end=2.0, dim_name='x', bin_edges=True)
-    _test_slice_range_on_edge_coords_1D(da)
+    # test no-effect slicing
+    out = sc.slice(da, 'x', slice(12.0 * working_unit, 2.0 * working_unit))
+    assert sc.is_equal(da, out)
+    # Test start on left boundary (closed on left), so includes boundary
+    out = sc.slice(da, 'x', slice(12.0 * working_unit, 11.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
+    # Test slicing with range boundary inside edge, same result as above expected
+    out = sc.slice(da, 'x', slice(11.9 * working_unit, 11.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 0:1].coords['x'])
+    # Test slicing with range lower boundary on upper edge of bin (open on right test)
+    out = sc.slice(da, 'x', slice(11.0 * working_unit, 9.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', 1:3].coords['x'])
+    # Test end on right boundary (open on right), so does not include boundary
+    out = sc.slice(da, 'x', slice(4.0 * working_unit, 3.0 * working_unit))
+    assert sc.is_equal(out.coords['x'], da['x', -1:].coords['x'])  #
 
 
 def test_slice_point_on_point_coords_1D_ascending():
@@ -176,18 +197,18 @@ def test_slice_point_on_point_coords_1D_descending():
                              bin_edges=False)
 
     # Test start on left boundary (closed on left), so includes boundary
-    out = sc.slice(da, 'x', 3.0 * working_unit)
-    assert sc.is_equal(out.attrs['x'], da['x', -1].attrs['x'])
+    out = sc.slice(da, 'x', 12.0 * working_unit)
+    assert sc.is_equal(out.attrs['x'], da['x', 0].attrs['x'])
     # Test point slice between points throws
     with pytest.raises(RuntimeError):
         sc.slice(da, 'x',
                  3.5 * working_unit)  # No sensible return. Must throw.
     # Test start on right boundary
-    out = sc.slice(da, 'x', 12.0 * working_unit)
-    assert sc.is_equal(out.attrs['x'], da['x', 0].attrs['x'])
+    out = sc.slice(da, 'x', 3.0 * working_unit)
+    assert sc.is_equal(out.attrs['x'], da['x', -1].attrs['x'])
     # Test start outside right boundary throws
     with pytest.raises(RuntimeError):
-        out = sc.slice(da, 'x', 12.1 * working_unit)
+        out = sc.slice(da, 'x', 2.99 * working_unit)
 
 
 def _test_slice_point_on_edge_coords_1D(da):
@@ -220,12 +241,12 @@ def test_slice_point_on_edge_coords_1D_ascending():
     _test_slice_point_on_edge_coords_1D(da)
 
 
-def test_slice_point_on_edge_coords_1D_descending():
-    #    Data Values            [0.0] ...       [9.0]
-    #    Coord Values (edges) [12.0][11.0] ... [4.0][3.0]
-
-    da = _make_1d_data_array(begin=3.0, end=13.0, dim_name='x', bin_edges=True)
-    _test_slice_point_on_edge_coords_1D(da)
+#def test_slice_point_on_edge_coords_1D_descending():
+#    #    Data Values            [0.0] ...       [9.0]
+#    #    Coord Values (edges) [12.0][11.0] ... [4.0][3.0]
+#
+#    da = _make_1d_data_array(begin=3.0, end=13.0, dim_name='x', bin_edges=True)
+#    _test_slice_point_on_edge_coords_1D(da)
 
 
 def test_slice_range_on_point_coords_2D():
