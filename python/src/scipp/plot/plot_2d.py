@@ -425,14 +425,14 @@ class Slicer2d(Slicer):
         return
 
     def select_bins(self, coord, dim, start, end):
+        bins = coord.shape[-1]
         if len(coord.dims) != 1:  # TODO find combined min/max
-            return dim, slice(0, -1)
-        bins = coord.shape[0]
+            return dim, slice(0, bins-1)
         # scipp treats bins as closed on left and open on right: [left, right)
         first = sc.sum(coord <= start, dim).value - 1
         last = bins - sc.sum(coord > end, dim).value
         if first >= last:  # TODO better handling for decreasing
-            return dim, slice(0, -1)
+            return dim, slice(0, bins - 1)
         first = max(0, first)
         last = min(bins - 1, last)
         return dim, slice(first, last + 1)
