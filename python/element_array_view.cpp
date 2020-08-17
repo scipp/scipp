@@ -82,12 +82,13 @@ void init_element_array_view(py::module &m) {
   declare_span<const Dim>(m, "Dim_const");
   declare_span<DataArray>(m, "DataArray");
   declare_span<Dataset>(m, "Dataset");
+  declare_span<scipp::core::time_point>(m, "time_point");
   declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
   declare_span<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
   declare_span<event_list<double>>(m, "event_double");
   declare_span<event_list<float>>(m, "event_float");
   declare_span<event_list<int64_t>>(m, "event_int64_t");
-  declare_span<event_list<scipp::core::time_point>>(m, "time_point");
+  declare_span<event_list<scipp::core::time_point>>(m, "event_time_point");
 
   declare_ElementArrayView<double>(m, "double");
   declare_ElementArrayView<float>(m, "float");
@@ -95,6 +96,7 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<int32_t>(m, "int32");
   declare_ElementArrayView<std::string>(m, "string");
   declare_ElementArrayView<bool>(m, "bool");
+  declare_ElementArrayView<scipp::core::time_point>(m, "time_point");
   declare_ElementArrayView<event_list<double>>(m, "event_double");
   declare_ElementArrayView<event_list<float>>(m, "event_float");
   declare_ElementArrayView<event_list<int64_t>>(m, "event_int64_t");
@@ -102,6 +104,6 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<Dataset>(m, "Dataset");
   declare_ElementArrayView<Eigen::Vector3d>(m, "Eigen_Vector3d");
   declare_ElementArrayView<event_list<scipp::core::time_point>>(m,
-                                                                "time_point");
+                                                                "event_time_point");
   declare_ElementArrayView<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
 }

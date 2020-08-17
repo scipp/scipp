@@ -15,6 +15,7 @@
 #include "numpy.h"
 #include "py_object.h"
 #include "pybind11.h"
+#include "datetime.h"
 
 namespace py = pybind11;
 using namespace scipp;
