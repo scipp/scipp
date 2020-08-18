@@ -690,56 +690,25 @@ template <bool dry_run> struct in_place {
   /// required by `visit`.
   template <class Op> struct TransformInPlace {
     Op op;
-    template <class T> void operator()(T &&handle) const {
-      using namespace detail;
-      auto view = as_view{handle, handle.dims()};
-      if (handle.isContiguous())
-        do_transform_in_place(op, std::tuple<>{}, handle);
-      else
-        do_transform_in_place(op, std::tuple<>{}, view);
-    }
-
-    template <class A, class B> void operator()(A &&a, B &&b) const {
-      using namespace detail;
-      const auto &dimsA = a.dims();
-      const auto &dimsB = b.dims();
-      if constexpr (std::is_same_v<typename std::remove_reference_t<decltype(
-                                       a)>::value_type,
-                                   typename std::remove_reference_t<decltype(
-                                       b)>::value_type>) {
-        if (a.valuesView(dimsA).overlaps(b.valuesView(dimsA))) {
-          // If there is an overlap between lhs and rhs we copy the rhs before
-          // applying the operation.
-          const auto &b_ = b.copyT();
-          // Ensuring that we call exactly same instance of operator() to avoid
-          // extra template instantiations, do not remove the static_cast.
-          return operator()(std::forward<A>(a), static_cast<B>(*b_));
-        }
-      }
-
-      if (a.isContiguous() && dimsA.contains(dimsB)) {
-        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform_in_place(op, std::tuple<>{}, a, b);
-        } else {
-          do_transform_in_place(op, std::tuple<>{}, a, as_view{b, dimsA});
-        }
-      } else {
-        // If LHS has fewer dimensions than RHS, e.g., for computing sum the
-        // view for iteration is based on dimsB.
-        const auto viewDims = dimsA.contains(dimsB) ? dimsA : dimsB;
-        auto a_view = as_view{a, viewDims};
-        if (b.isContiguous() && dimsA.isContiguousIn(dimsB)) {
-          do_transform_in_place(op, std::tuple<>{}, a_view, b);
-        } else {
-          do_transform_in_place(op, std::tuple<>{}, a_view,
-                                as_view{b, viewDims});
-        }
-      }
-    }
-
     template <class T, class... Ts>
     void operator()(T &&out, Ts &&... handles) const {
       using namespace detail;
+      constexpr auto overlaps = [](const auto &a, const auto &b) {
+        if constexpr (std::is_same_v<
+                          typename std::decay_t<decltype(a)>::value_type,
+                          typename std::decay_t<decltype(b)>::value_type>)
+          return a.valuesView(a.dims()).overlaps(b.valuesView(a.dims()));
+        else
+          return false;
+      };
+      // If there is an overlap between lhs and rhs we copy the rhs before
+      // applying the operation.
+      if ((overlaps(out, handles) || ...)) {
+        // Ensuring that we call exactly same instance of operator() to avoid
+        // extra template instantiations, do not remove the static_cast.
+        return operator()(std::forward<T>(out),
+                          static_cast<Ts>(*(handles.copyT()))...);
+      }
       const auto dims = merge(out.dims(), handles.dims()...);
       auto out_view = as_view{out, dims};
       do_transform_in_place(op, std::tuple<>{}, out_view,
