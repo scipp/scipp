@@ -17,6 +17,7 @@ set(INC_FILES
     include/scipp/dataset/math.h
     include/scipp/dataset/rebin.h
     include/scipp/dataset/reduction.h
+    include/scipp/dataset/slice.h
     include/scipp/dataset/shape.h
     include/scipp/dataset/sort.h
     include/scipp/dataset/string.h
@@ -39,6 +40,7 @@ set(SRC_FILES
     rebin.cpp
     reduction.cpp
     shape.cpp
+    slice.cpp
     sort.cpp
     string.cpp
     unaligned.cpp

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-License-Identifier: GPL-2.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
@@ -9,6 +9,7 @@
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/slice.h"
 #include "scipp/variable/arithmetic.h"
 #include "test_macros.h"
 
@@ -770,4 +771,21 @@ TEST_F(CoordToAttrMappingTest, DatasetView) {
 TEST_F(CoordToAttrMappingTest, DatasetConstView) {
   const Dataset d({{"a", a}});
   test_dataset_coord_to_attr_mapping(d);
+}
+
+TEST(SliceTest, test_dimension_not_found) {
+  auto var =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 4.0});
+  DataArray da{var, {{Dim::X, var}}};
+  const auto begin = makeVariable<double>(Values{1.0});
+  EXPECT_THROW(dataset::slice(da, Dim::Y, begin),
+               except::DimensionNotFoundError);
+}
+
+TEST(SliceTest, test_no_multi_dimensional_coords) {
+  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                  Values{1.0, 2.0, 3.0, 4.0});
+  DataArray da{var, {{Dim::X, var}}};
+  const auto begin = makeVariable<double>(Values{1.0});
+  EXPECT_THROW(dataset::slice(da, Dim::X, begin), std::runtime_error);
 }
