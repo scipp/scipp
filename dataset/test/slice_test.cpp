@@ -10,6 +10,7 @@
 #include "scipp/core/slice.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/slice.h"
+#include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
 #include "test_macros.h"
 
@@ -777,15 +778,52 @@ TEST(SliceTest, test_dimension_not_found) {
   auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 4.0});
   DataArray da{var, {{Dim::X, var}}};
-  const auto begin = makeVariable<double>(Values{1.0});
-  EXPECT_THROW(dataset::slice(da, Dim::Y, begin),
-               except::DimensionNotFoundError);
+  EXPECT_THROW(dataset::slice(da, Dim::Y), except::DimensionNotFoundError);
 }
 
 TEST(SliceTest, test_no_multi_dimensional_coords) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
   DataArray da{var, {{Dim::X, var}}};
-  const auto begin = makeVariable<double>(Values{1.0});
-  EXPECT_THROW(dataset::slice(da, Dim::X, begin), std::runtime_error);
+  EXPECT_THROW(dataset::slice(da, Dim::X), std::runtime_error);
+}
+TEST(SliceTest, test_unsorted_coord_throws) {
+  auto unsorted =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 1.5});
+  DataArray da{unsorted, {{Dim::X, unsorted}}};
+  EXPECT_THROW(dataset::slice(da, Dim::X), std::runtime_error);
+}
+
+DataArray make_1d_data_array(scipp::index begin, scipp::index end, Dim dim,
+                             bool bin_edges = false) {
+  auto size = std::abs(begin - end);
+  double step = end > begin ? 1.0 : -1.0;
+  element_array<double> values(size);
+  for (scipp::index i = 0; i < size; ++i) {
+    values.data()[i] = begin + (i * step);
+  }
+  Variable coord(units::dimensionless, Dimensions{{dim, size}}, values,
+                 std::optional<element_array<double>>{});
+  Variable data(
+      units::dimensionless, Dimensions{{dim, bin_edges ? size - 1 : size}},
+      element_array<double>(values.begin(),
+                            bin_edges ? values.end() - 1 : values.end()),
+      std::optional<element_array<double>>{});
+  return DataArray{data, {{dim, coord}}};
+}
+
+TEST(SliceTest, test_slicing_defaults_ascending) {
+  auto da = make_1d_data_array(3, 13, Dim::X, false);
+  EXPECT_EQ(
+      da, slice(da, Dim::X, VariableConstView{}, 13.0 * units::dimensionless));
+  EXPECT_EQ(da.slice(core::Slice{Dim::X, 0, 9}),
+            slice(da, Dim::X)); // Note open on the right with default end
+}
+
+TEST(SliceTest, test_slicing_defaults_descending) {
+  auto da = make_1d_data_array(12, 2, Dim::X, false);
+  EXPECT_EQ(da,
+            slice(da, Dim::X, VariableConstView{}, 2.0 * units::dimensionless));
+  EXPECT_EQ(da.slice(core::Slice{Dim::X, 0, 9}),
+            slice(da, Dim::X)); // Note open on the right with default end
 }

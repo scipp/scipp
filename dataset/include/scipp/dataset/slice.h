@@ -8,8 +8,8 @@
 
 namespace scipp::dataset {
 
-[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArrayConstView
 slice(const DataArrayConstView &to_slice, const Dim dim,
       const VariableConstView begin = VariableConstView{},
-      const VariableConstView *end = nullptr);
+      const VariableConstView end = VariableConstView{});
 } // namespace scipp::dataset
