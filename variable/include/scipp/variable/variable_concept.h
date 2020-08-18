@@ -106,36 +106,20 @@ public:
   DType dtype() const noexcept override { return scipp::dtype<T>; }
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
 
-  virtual scipp::span<T> values() = 0;
-  virtual scipp::span<T> values(const Dim dim, const scipp::index begin,
-                                const scipp::index end) = 0;
-  virtual scipp::span<const T> values() const = 0;
-  virtual scipp::span<const T> values(const Dim dim, const scipp::index begin,
-                                      const scipp::index end) const = 0;
-  virtual scipp::span<T> variances() = 0;
-  virtual scipp::span<T> variances(const Dim dim, const scipp::index begin,
-                                   const scipp::index end) = 0;
-  virtual scipp::span<const T> variances() const = 0;
-  virtual scipp::span<const T> variances(const Dim dim,
-                                         const scipp::index begin,
-                                         const scipp::index end) const = 0;
-  virtual ElementArrayView<T> valuesView(const Dimensions &dims) = 0;
-  virtual ElementArrayView<T> valuesView(const Dimensions &dims, const Dim dim,
-                                         const scipp::index begin) = 0;
+  virtual ElementArrayView<T> values(const Dimensions &dims) = 0;
+  virtual ElementArrayView<T> values(const Dimensions &dims, const Dim dim,
+                                     const scipp::index begin) = 0;
+  virtual ElementArrayView<const T> values(const Dimensions &dims) const = 0;
+  virtual ElementArrayView<const T> values(const Dimensions &dims,
+                                           const Dim dim,
+                                           const scipp::index begin) const = 0;
+  virtual ElementArrayView<T> variances(const Dimensions &dims) = 0;
+  virtual ElementArrayView<T> variances(const Dimensions &dims, const Dim dim,
+                                        const scipp::index begin) = 0;
+  virtual ElementArrayView<const T> variances(const Dimensions &dims) const = 0;
   virtual ElementArrayView<const T>
-  valuesView(const Dimensions &dims) const = 0;
-  virtual ElementArrayView<const T>
-  valuesView(const Dimensions &dims, const Dim dim,
-             const scipp::index begin) const = 0;
-  virtual ElementArrayView<T> variancesView(const Dimensions &dims) = 0;
-  virtual ElementArrayView<T> variancesView(const Dimensions &dims,
-                                            const Dim dim,
-                                            const scipp::index begin) = 0;
-  virtual ElementArrayView<const T>
-  variancesView(const Dimensions &dims) const = 0;
-  virtual ElementArrayView<const T>
-  variancesView(const Dimensions &dims, const Dim dim,
-                const scipp::index begin) const = 0;
+  variances(const Dimensions &dims, const Dim dim,
+            const scipp::index begin) const = 0;
   virtual ElementArrayView<const T>
   valuesReshaped(const Dimensions &dims) const = 0;
   virtual ElementArrayView<T> valuesReshaped(const Dimensions &dims) = 0;

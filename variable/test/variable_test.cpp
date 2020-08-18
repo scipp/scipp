@@ -870,7 +870,7 @@ TEST(Variable, access_typed_view) {
                                   Values{1, 2, 3, 4, 5, 6});
   const auto values =
       dynamic_cast<const variable::VariableConceptT<double> &>(var.data())
-          .valuesView({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 3}});
+          .values({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 3}});
   ASSERT_EQ(values.size(), 24);
 
   for (const auto z : {0, 1, 2, 3}) {
@@ -892,7 +892,7 @@ TEST(Variable, access_typed_view_edges) {
                                   Values{1, 2, 3, 4, 5, 6});
   const auto values =
       dynamic_cast<const variable::VariableConceptT<double> &>(var.data())
-          .valuesView({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 2}});
+          .values({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 2}});
   ASSERT_EQ(values.size(), 16);
 
   for (const auto z : {0, 1, 2, 3}) {

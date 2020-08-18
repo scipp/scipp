@@ -328,7 +328,7 @@ constexpr bool check_all_or_none_variances =
 /// whether any of the arguments has variances or not.
 template <class Op, class Out, class Tuple>
 static void do_transform(Op op, Out &&out, Tuple &&processed) {
-  auto out_val = out.values();
+  auto out_val = out.values(out.dims());
   std::apply(
       [&op, &out, &out_val](auto &&... args) {
         if constexpr (check_all_or_none_variances<Op, decltype(args)...>) {
@@ -340,7 +340,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
                              (is_ValuesAndVariances_v<
                                   std::decay_t<std::decay_t<decltype(args)>>> ||
                               ...)) {
-          auto out_var = out.variances();
+          auto out_var = out.variances(out.dims());
           transform_elements(op, ValuesAndVariances{out_val, out_var},
                              std::forward<decltype(args)>(args)...);
         } else {
@@ -389,8 +389,8 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
 template <class T> struct as_view {
   using value_type = typename T::value_type;
   bool hasVariances() const { return data.hasVariances(); }
-  auto values() const { return data.valuesView(dims); }
-  auto variances() const { return data.variancesView(dims); }
+  auto values() const { return data.values(dims); }
+  auto variances() const { return data.variances(dims); }
 
   T &data;
   const Dimensions &dims;
@@ -401,7 +401,7 @@ template <class Op> struct Transform {
   Op op;
   template <class... Ts> Variable operator()(Ts &&... handles) const {
     const auto dims = merge(handles.dims()...);
-    using Out = decltype(maybe_eval(op(handles.values()[0]...)));
+    using Out = decltype(maybe_eval(op(handles.values(dims)[0]...)));
     constexpr bool out_variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op>;
     auto volume = dims.volume();
@@ -697,7 +697,7 @@ template <bool dry_run> struct in_place {
         if constexpr (std::is_same_v<
                           typename std::decay_t<decltype(a)>::value_type,
                           typename std::decay_t<decltype(b)>::value_type>)
-          return a.valuesView(a.dims()).overlaps(b.valuesView(a.dims()));
+          return a.values(a.dims()).overlaps(b.values(a.dims()));
         else
           return false;
       };
