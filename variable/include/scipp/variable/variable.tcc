@@ -170,8 +170,6 @@ VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) {
 /// values<T> and variances<T> can be compared.
 template <class T>
 bool VariableConceptT<T>::equals(const VariableConstView &a, const VariableConstView &b) const {
-  if (!a || !b)
-    return static_cast<bool>(a) == static_cast<bool>(b);
   if (a.unit() != b.unit())
     return false;
   if (a.dims() != b.dims())

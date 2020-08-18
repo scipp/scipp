@@ -74,6 +74,8 @@ void Variable::setDims(const Dimensions &dimensions) {
 }
 
 bool Variable::operator==(const VariableConstView &other) const {
+  if (!*this || !other)
+    return static_cast<bool>(*this) == static_cast<bool>(other);
   return data().equals(*this, other);
 }
 
@@ -98,6 +100,8 @@ template SCIPP_VARIABLE_EXPORT VariableView
 VariableView::assign(const VariableView &) const;
 
 bool VariableConstView::operator==(const VariableConstView &other) const {
+  if (!*this || !other)
+    return static_cast<bool>(*this) == static_cast<bool>(other);
   // Always use deep comparison (pointer comparison does not make sense since we
   // may be looking at a different section).
   return underlying().data().equals(*this, other);
