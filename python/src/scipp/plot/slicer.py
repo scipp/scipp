@@ -93,8 +93,14 @@ class Slicer:
                                                       },
                                                       globs=globs,
                                                       profile_dim=profile)
+            self.params["masks"][name]["show"] = (
+                self.params["masks"][name]["show"] and len(array.masks) > 0)
             if len(array.masks) > 0:
-                self.masks[name] = list(array.masks.keys())
+                self.masks[name] = {key: widgets.Checkbox(
+                    value=self.params["masks"][name]["show"],
+                    description="{}:{}".format(name, key),
+                    indent=False,
+                    layout={"width": "initial"}) for key in array.masks}
             # self.params["masks"][name]["show"] = (
             #     self.params["masks"][name]["show"] and len(array.masks) > 0)
             # if self.params["masks"][name]["show"] and self.masks is None:
@@ -309,17 +315,16 @@ class Slicer:
             self.members["widgets"]["labels"][dim_str] = self.lab[dim]
 
         if len(self.masks) > 0:
-            self.masks_box = widgets.Accordion()
-            mask_list = []
+            self.masks_box = []
+            # mask_list = []
             for name in self.masks:
-                mbox = []
-                for m in self.masks[name]:
-                    mbox.append(
-                        widgets.Checkbox(value=True, description=m))
-                mask_list.append(widgets.VBox(mbox))
-            self.masks_box.children = tuple(mask_list)
-            for i, name in enumerate(self.masks):
-                self.masks_box.set_title(i, name)
+                mask_list = []
+                for cbox in self.masks[name].values():
+                    mask_list.append(cbox)
+                self.masks_box.append(widgets.HBox(mask_list))
+            # self.masks_box.append(tuple(mask_list)
+            # for i, name in enumerate(self.masks):
+            #     self.masks_box.set_title(i, name)
             
 
             self.masks_button = widgets.ToggleButton(
@@ -329,7 +334,7 @@ class Slicer:
                 disabled=False,
                 button_style="")
             self.masks_button.observe(self.toggle_masks, names="value")
-            self.vbox += [self.masks_button, self.masks_box]
+            self.vbox += [self.masks_button, widgets.VBox(self.masks_box)]
             self.members["widgets"]["togglebutton"]["masks"] = \
                 self.masks_button
 

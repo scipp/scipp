@@ -265,9 +265,9 @@ class Slicer1d(Slicer):
                 "masks": {}
             })
 
-        if self.masks is not None:
-            mslice = self.slice_masks().values
-        # self.ax.set_title('plot_1d 10')
+        # if self.masks is not None:
+        #     mslice = self.slice_masks().values
+        # # self.ax.set_title('plot_1d 10')
 
         xmin = np.Inf
         xmax = np.NINF
@@ -278,16 +278,17 @@ class Slicer1d(Slicer):
             xmax = max(new_x[-1], xmax)
 
             vslice = self.slice_data(var, name)
-            ydata = vslice.values
+            # ydata = vslice.values
             # self.ax.set_title('plot_1d 12')
 
             # If this is a histogram, plot a step function
             if self.histograms[name][dim][dim]:
                 # self.ax.set_title('plot_1d 12.1')
-                ye = np.concatenate((ydata[0:1], ydata))
+                # ye = np.concatenate((ydata[0:1], ydata))
+                ye = sc.concatenate((vslice[dim, 0:1], vslice, dim))
                 [self.members["lines"][name]
                  ] = self.ax.step(new_x,
-                                  ye,
+                                  ye.values,
                                   label=name,
                                   zorder=10,
                                   **{
@@ -296,7 +297,7 @@ class Slicer1d(Slicer):
                                   })
                 # Add masks if any
                 if self.params["masks"][name]["show"]:
-                    me = np.concatenate((mslice[0:1], mslice))
+                    # me = np.concatenate((mslice[0:1], mslice))
                     [self.members["masks"][name]] = self.ax.step(
                         new_x,
                         self.mask_to_float(me, ye),
@@ -310,7 +311,7 @@ class Slicer1d(Slicer):
                 # If this is not a histogram, just use normal plot
                 [self.members["lines"][name]
                  ] = self.ax.plot(new_x,
-                                  ydata,
+                                  vslice.values,
                                   label=name,
                                   zorder=10,
                                   **{
@@ -319,17 +320,19 @@ class Slicer1d(Slicer):
                                   })
                 # Add masks if any
                 if self.params["masks"][name]["show"]:
-                    [self.members["masks"][name]
-                     ] = self.ax.plot(new_x,
-                                      self.mask_to_float(mslice, ydata),
-                                      zorder=10,
-                                      mec=self.params["masks"][name]["color"],
-                                      mew=3,
-                                      linestyle="none",
-                                      **{
-                                          key: self.mpl_line_params[key][name]
-                                          for key in ["color", "marker"]
-                                      })
+                    self.members["masks"][name] = {}
+                    for m in self.masks[name]:
+                        [self.members["masks"][name][m]
+                         ] = self.ax.plot(new_x,
+                                          self.mask_to_float(vslice.masks[m].values, vslice.values),
+                                          zorder=10,
+                                          mec=self.params["masks"][name]["color"],
+                                          mew=3,
+                                          linestyle="none",
+                                          **{
+                                              key: self.mpl_line_params[key][name]
+                                              for key in ["color", "marker"]
+                                          })
             # self.ax.set_title('plot_1d 13')
 
             # Add error bars
