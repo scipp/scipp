@@ -66,6 +66,11 @@ static constexpr auto dimensionless_unit_check_return =
 /// actually called since flag presence is checked via the base class of the
 /// operator.
 namespace transform_flags {
+/// Add this to overloaded operator to disable automatic generation of code
+/// descending into event lists during iteration over elements.
+static constexpr auto no_event_list_handling = []() {};
+using no_event_list_handling_t = decltype(no_event_list_handling);
+
 /// Add this to overloaded operator to indicate that the operation does not
 /// return data with variances, regardless of whether inputs have variances.
 static constexpr auto no_out_variance = []() {};

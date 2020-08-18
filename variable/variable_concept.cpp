@@ -8,6 +8,7 @@ VariableConceptHandle::VariableConceptHandle(const VariableConceptHandle &other)
 
 VariableConceptHandle &
 VariableConceptHandle::operator=(const VariableConceptHandle &other) {
+  /*
   if (*this && other) {
     // Avoid allocation of new element_array if output is of correct shape.
     // This yields a 5x speedup in assignment operations of variables.
@@ -21,6 +22,7 @@ VariableConceptHandle::operator=(const VariableConceptHandle &other) {
       return *this;
     }
   }
+  */
   return *this = other ? other->clone() : VariableConceptHandle();
 }
 

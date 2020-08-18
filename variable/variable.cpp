@@ -15,7 +15,7 @@ Variable::Variable(const VariableConstView &slice)
   // There is a bug in the implementation of MultiIndex used in ElementArrayView
   // in case one of the dimensions has extent 0.
   if (slice && dims().volume() != 0)
-    data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
+    data().copy(slice, *this);
 }
 
 Variable::Variable(const Variable &parent, const Dimensions &dims)
@@ -88,7 +88,7 @@ template <class T> VariableView VariableView::assign(const T &other) const {
     return *this; // Self-assignment, return early.
   setUnit(other.unit());
   core::expect::equals(dims(), other.dims());
-  data().copy(other.data(), Dim::Invalid, 0, 0, 1);
+  data().copy(other, *this);
   return *this;
 }
 

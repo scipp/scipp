@@ -730,7 +730,9 @@ template <bool dry_run> struct in_place {
       // provided operator is for individual elements (regardless of whether
       // they are elements of dense or event data), so we add overloads for
       // event data processing.
-      if constexpr ((is_any_events<Ts>::value || ...)) {
+      if constexpr (std::is_base_of_v<
+                        core::transform_flags::no_event_list_handling_t, Op> ||
+                    (is_any_events<Ts>::value || ...)) {
         visit_impl<Ts...>::apply(makeTransformInPlace(op), var.data(),
                                  other.data()...);
       } else if constexpr (sizeof...(Other) > 1) {

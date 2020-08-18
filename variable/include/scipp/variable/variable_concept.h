@@ -21,6 +21,7 @@ namespace scipp::variable {
 
 class Variable;
 class VariableConstView;
+class VariableView;
 class VariableConcept;
 template <class T> class VariableConceptT;
 
@@ -67,8 +68,6 @@ public:
   transpose(const std::vector<Dim> &dms) const = 0;
   virtual VariableConceptHandle transpose(const std::vector<Dim> &dms) = 0;
 
-  virtual bool equals(const VariableConstView &a,
-                      const VariableConstView &b) const = 0;
   virtual bool isSame(const VariableConcept &other) const = 0;
 
   virtual bool isContiguous() const = 0;
@@ -77,9 +76,11 @@ public:
   virtual bool hasVariances() const noexcept = 0;
 
   virtual scipp::index size() const = 0;
-  virtual void copy(const VariableConcept &other, const Dim dim,
-                    const scipp::index offset, const scipp::index otherBegin,
-                    const scipp::index otherEnd) = 0;
+
+  virtual bool equals(const VariableConstView &a,
+                      const VariableConstView &b) const = 0;
+  virtual void copy(const VariableConstView &src,
+                    const VariableView &dest) const = 0;
 
   virtual void setVariances(Variable &&variances) = 0;
 
@@ -152,9 +153,8 @@ public:
 
   bool equals(const VariableConstView &a,
               const VariableConstView &b) const override;
-  void copy(const VariableConcept &other, const Dim dim,
-            const scipp::index offset, const scipp::index otherBegin,
-            const scipp::index otherEnd) override;
+  void copy(const VariableConstView &src,
+            const VariableView &dest) const override;
 };
 
 template <class T>

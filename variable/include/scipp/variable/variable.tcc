@@ -9,6 +9,7 @@
 #include "scipp/variable/apply.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/transform.h"
 #include <numeric>
 #include <optional>
 
@@ -173,35 +174,18 @@ bool VariableConceptT<T>::equals(const VariableConstView &a, const VariableConst
               equal(a.variances<T>(), b.variances<T>()));
 }
 
+/// Helper for implementing Variable(View) copy operations.
+///
+/// This method is using virtual dispatch as a trick to obtain T, such that
+/// transform can be called with any T.
 template <class T>
-void VariableConceptT<T>::copy(const VariableConcept &other, const Dim dim,
-                               const scipp::index offset,
-                               const scipp::index otherBegin,
-                               const scipp::index otherEnd) {
-  if (this->hasVariances() != other.hasVariances())
-    throw except::VariancesError(
-        "Either both or neither of the operands must have a variances.");
-  auto iterDims = this->dims();
-  const scipp::index delta = otherEnd - otherBegin;
-  if (iterDims.contains(dim))
-    iterDims.resize(dim, delta);
-
-  const auto &otherT = requireT<const VariableConceptT>(other);
-  // Pass invalid dimension to prevent slicing when non-range slice
-  auto otherView =
-      otherT.values(iterDims, delta == 1 ? Dim::Invalid : dim, otherBegin);
-  // TODO Use custom copy that can detect contiguous ElementArrayView, then
-  // handle 4 cases for minimizing slow iteration --- just copy contiguous range
-  // where possible.
-  auto vals = values(iterDims, dim, offset);
-  std::copy(otherView.begin(), otherView.end(), vals.begin());
-  if (this->hasVariances()) {
-    // Pass invalid dimension to prevent slicing when non-range slice
-    auto otherVariances =
-        otherT.variances(iterDims, delta == 1 ? Dim::Invalid : dim, otherBegin);
-    auto vars = variances(iterDims, dim, offset);
-    std::copy(otherVariances.begin(), otherVariances.end(), vars.begin());
-  }
+void VariableConceptT<T>::copy(const VariableConstView &src,
+                               const VariableView &dest) const {
+  transform_in_place<T>(
+      dest, src,
+      overloaded{core::transform_flags::no_event_list_handling,
+                 core::transform_flags::expect_in_variance_if_out_variance,
+                 [](auto &a, const auto &b) { a = b; }});
 }
 
 namespace {
