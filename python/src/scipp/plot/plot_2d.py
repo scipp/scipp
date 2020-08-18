@@ -4,6 +4,7 @@
 
 # Scipp imports
 from .. import config
+from .plot_1d import plot_1d
 from .render import render_plot
 from .slicer import Slicer
 from .tools import to_bin_edges, parse_params
@@ -34,7 +35,8 @@ def plot_2d(scipp_obj_dict=None,
             logx=False,
             logy=False,
             logxy=False,
-            resolution=None):
+            resolution=None,
+            profile=None):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -54,7 +56,8 @@ def plot_2d(scipp_obj_dict=None,
                   color=color,
                   logx=logx or logxy,
                   logy=logy or logxy,
-                  resolution=resolution)
+                  resolution=resolution,
+                  profile=profile)
 
     if ax is None:
         render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
@@ -77,7 +80,8 @@ class Slicer2d(Slicer):
                  color=None,
                  logx=False,
                  logy=False,
-                 resolution=None):
+                 resolution=None,
+                 profile=None):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
@@ -88,7 +92,8 @@ class Slicer2d(Slicer):
                          vmax=vmax,
                          color=color,
                          aspect=aspect,
-                         button_options=['X', 'Y'])
+                         button_options=['X', 'Y'],
+                         profile=profile)
 
         self.members["images"] = {}
         self.axparams = {"x": {}, "y": {}}
@@ -99,6 +104,7 @@ class Slicer2d(Slicer):
         self.global_vmin = np.Inf
         self.global_vmax = np.NINF
         self.vslice = None
+        self.dslice = None
         self.mslice = None
         self.xlim_updated = False
         self.ylim_updated = False
@@ -106,6 +112,10 @@ class Slicer2d(Slicer):
         self.button_dims = [None, None]
         self.dim_to_xy = {}
         self.cslice = None
+        self.profile = profile
+        if self.profile is not None:
+            self.profile = sc.Dim(self.profile)
+        self.first_profile_plotted = False
         if resolution is not None:
             if isinstance(resolution, int):
                 self.image_resolution = {"x": resolution, "y": resolution}
@@ -119,21 +129,32 @@ class Slicer2d(Slicer):
         self.xyrebin = {}
         self.xyedges = {}
         self.xywidth = {}
+        self.image_pixel_size = {}
 
         # Get or create matplotlib axes
         self.fig = None
         self.ax = ax
+        self.ax_profile = None
         self.cax = cax
+        print('got to here 1')
         if self.ax is None:
-            self.fig, self.ax = plt.subplots(
-                1,
+            nrows = 1 + (self.profile is not None)
+            self.fig, mpl_axes = plt.subplots(
+                nrows,
                 1,
                 figsize=(config.plot.width / config.plot.dpi,
-                         config.plot.height / config.plot.dpi),
+                         nrows * config.plot.height / config.plot.dpi),
                 dpi=config.plot.dpi)
+            if self.profile is not None:
+                self.ax = mpl_axes[0]
+                self.ax_profile = mpl_axes[1]
+            else:
+                self.ax = mpl_axes
+        print('got to here 2')
 
         self.im = dict()
         self.cbar = None
+        print('got to here 3')
 
         self.im["values"] = self.make_default_imshow(
             self.params["values"][self.name]["cmap"])
@@ -154,9 +175,11 @@ class Slicer2d(Slicer):
             self.ax.set_xscale("log")
         if self.logy:
             self.ax.set_yscale("log")
+        print('got to here 4')
 
         # Call update_slice once to make the initial image
         self.update_axes()
+        print('got to here 5')
         self.vbox = widgets.VBox(self.vbox)
         self.vbox.layout.align_items = 'center'
         self.members["fig"] = self.fig
@@ -165,6 +188,10 @@ class Slicer2d(Slicer):
         # Connect changes in axes limits to resampling function
         self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
         self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
+
+        if self.profile is not None:
+            # Connect profile plot to mouse cursor
+            self.fig.canvas.mpl_connect('button_press_event', self.update_profile)
 
         return
 
@@ -199,21 +226,25 @@ class Slicer2d(Slicer):
     def update_axes(self):
         # Go through the buttons and select the right coordinates for the axes
         for dim, button in self.buttons.items():
+            print(dim, self.slider[dim].disabled)
             if self.slider[dim].disabled:
-                but_val = button.value.lower()
-                self.extent[but_val] = self.slider_xlims[self.name][dim]
-                self.axparams[but_val]["lims"] = self.extent[but_val].copy()
-                if getattr(self,
-                           "log" + but_val) and (self.extent[but_val][0] <= 0):
-                    self.axparams[but_val]["lims"][
-                        0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
-                self.axparams[but_val]["labels"] = name_with_unit(
-                    self.slider_label[self.name][dim]["coord"],
-                    name=self.slider_label[self.name][dim]["name"])
-                self.axparams[but_val]["dim"] = dim
-                # Get the dimensions corresponding to the x/y buttons
-                self.button_dims[button.value.lower() == "x"] = button.dim
-                self.dim_to_xy[dim] = button.value.lower()
+                but_val = button.value
+                print(dim, button.value)
+                if but_val is not None:
+                    but_val = but_val.lower()
+                    self.extent[but_val] = self.slider_xlims[self.name][dim]
+                    self.axparams[but_val]["lims"] = self.extent[but_val].copy()
+                    if getattr(self,
+                               "log" + but_val) and (self.extent[but_val][0] <= 0):
+                        self.axparams[but_val]["lims"][
+                            0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
+                    self.axparams[but_val]["labels"] = name_with_unit(
+                        self.slider_label[self.name][dim]["coord"],
+                        name=self.slider_label[self.name][dim]["name"])
+                    self.axparams[but_val]["dim"] = dim
+                    # Get the dimensions corresponding to the x/y buttons
+                    self.button_dims[but_val == "x"] = button.dim
+                    self.dim_to_xy[dim] = but_val
 
         extent_array = np.array(list(self.extent.values())).flatten()
         self.current_lims['x'] = extent_array[:2]
@@ -221,6 +252,7 @@ class Slicer2d(Slicer):
 
         # TODO: if labels are used on a 2D coordinates, we need to update
         # the axes tick formatter to use xyrebin coords
+        print(self.axparams)
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled array to be used as image
             offset = 2 * (xy == "y")
@@ -352,6 +384,12 @@ class Slicer2d(Slicer):
                              dtype=sc.dtype.float32))
         self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
         self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
+
+        if self.profile is not None:
+            # print(self.slider_coord[self.name])
+            # print(self.slider_coord[self.name][self.profile])
+            self.vslice.coords[self.profile] = self.slider_coord[self.name][self.profile]
+
         if self.params["masks"][self.name]["show"]:
             self.vslice.masks["all"] = self.mslice
         # Scale by bin width and then rebin in both directions
@@ -461,25 +499,33 @@ class Slicer2d(Slicer):
         # Use Scipp's automatic transpose to match the image x/y axes
         # TODO: once transpose is available for DataArrays,
         # use sc.transpose(dslice, self.button_dims) instead.
+        slice_dims = self.button_dims
+        slice_shape = [self.xyrebin["y"].shape[0] - 1,
+                       self.xyrebin["x"].shape[0] - 1]
+        if self.profile is not None:
+            slice_dims.append(self.profile)
+            slice_shape.append(self.slider_shape[self.name][self.profile][self.profile])
         arr = sc.DataArray(coords={
             self.xyrebin["x"].dims[0]: self.xyrebin["x"],
             self.xyrebin["y"].dims[0]: self.xyrebin["y"],
         },
-                           data=sc.Variable(dims=self.button_dims,
-                                            values=np.ones([
-                                                self.xyrebin["y"].shape[0] - 1,
-                                                self.xyrebin["x"].shape[0] - 1
-                                            ]),
+                           data=sc.Variable(dims=slice_dims,
+                                            values=np.ones(slice_shape),
                                             dtype=dslice.dtype,
                                             unit=sc.units.one))
+        if self.profile is not None:
+            arr.coords[self.profile] = self.slider_coord[self.name][self.profile]
         arr *= dslice
         # Scale by output bins width
-        arr /= self.xyrebin['x'].values[1] - self.xyrebin['x'].values[0]
-        arr /= self.xyrebin['y'].values[1] - self.xyrebin['y'].values[0]
+        for key in self.xyrebin:
+            self.image_pixel_size[key] = self.xyrebin[key].values[1] - self.xyrebin[key].values[0]
+            arr /= self.image_pixel_size[key]
+        # arr /= self.xyrebin['y'].values[1] - self.xyrebin['y'].values[0]
         return arr
 
     def update_image(self, extent=None):
-        dslice = self.resample_image()
+        self.dslice = self.resample_image()
+        # return
         if self.params["masks"][self.name]["show"]:
             # Use scipp's automatic broadcast functionality to broadcast
             # lower dimension masks to higher dimensions.
@@ -490,14 +536,22 @@ class Slicer2d(Slicer):
             # large.
             # Here, the data is at most 2D, so having the Variable creation
             # and broadcasting should remain cheap.
-            msk = sc.Variable(dims=dslice.dims,
-                              values=np.ones(dslice.shape, dtype=np.int32))
-            msk *= sc.Variable(dims=dslice.masks["all"].dims,
-                               values=dslice.masks["all"].values.astype(
+            msk = sc.Variable(dims=self.dslice.dims,
+                              values=np.ones(self.dslice.shape, dtype=np.int32))
+            msk *= sc.Variable(dims=self.dslice.masks["all"].dims,
+                               values=self.dslice.masks["all"].values.astype(
                                    np.int32))
-            msk = msk.values
+            # msk = msk.values
 
-        arr = dslice.values
+        if self.profile is not None:
+            arr = sc.sum(self.dslice, self.profile).values
+            if self.params["masks"][self.name]["show"]:
+                msk = sc.sum(msk, self.profile).values
+        else:
+            arr = self.dslice.values
+            if self.params["masks"][self.name]["show"]:
+                msk = msk.values
+
         self.im["values"].set_data(arr)
         if extent is not None:
             self.im["values"].set_extent(extent)
@@ -521,3 +575,23 @@ class Slicer2d(Slicer):
                     self.params["values"][self.name]["norm"])
 
         return
+
+    def update_profile(self, event):
+        # Find indices of pixel where cursor lies
+        ix = int((event.xdata - self.current_lims["x"][0]) / self.image_pixel_size["x"])
+        iy = int((event.ydata - self.current_lims["y"][0]) / self.image_pixel_size["y"])
+
+        # Slice the 3d cube down to a 1d profile
+        prof = self.dslice[self.button_dims[0], iy][self.button_dims[1], ix]
+        self.ax_profile.set_title('hahahaha')
+        if not self.first_profile_plotted:
+            _ = plot_1d({self.name: prof}, ax=self.ax_profile,
+                        mpl_line_params={
+                            "color": {self.name: config.plot.color[0]},
+                            "marker": {self.name: config.plot.marker[0]},
+                            "linestyle": {self.name: config.plot.linestyle[0]},
+                            "linewidth": {self.name: config.plot.linewidth[0]},
+                            })
+            self.first_profile_plotted = True
+        # else:
+        #     self.ax_profile.plot(self.slider_coord[self.name][self.profile].values, prof.values)

@@ -24,7 +24,8 @@ class Slicer:
                  color=None,
                  button_options=None,
                  aspect=None,
-                 positions=None):
+                 positions=None,
+                 profile=None):
 
         import ipywidgets as widgets
 
@@ -82,14 +83,16 @@ class Slicer:
             self.name = name
 
             self.params["values"][name] = parse_params(globs=globs,
-                                                       variable=array.data)
+                                                       variable=array.data,
+                                                       profile_dim=profile)
 
             self.params["masks"][name] = parse_params(params=masks,
                                                       defaults={
                                                           "cmap": "gray",
                                                           "cbar": False
                                                       },
-                                                      globs=globs)
+                                                      globs=globs,
+                                                      profile_dim=profile)
             self.params["masks"][name]["show"] = (
                 self.params["masks"][name]["show"] and len(array.masks) > 0)
             if self.params["masks"][name]["show"] and self.masks is None:
@@ -209,16 +212,24 @@ class Slicer:
         # Now begin loop to construct sliders
         button_values = [None] * (self.ndim - len(button_options)) + \
             button_options[::-1]
+        found_profile_dim = False
         for i, dim in enumerate(self.slider_coord[self.name].keys()):
             dim_str = self.slider_label[self.name][dim]["name"]
             # Determine if slider should be disabled or not:
             # In the case of 3d projection, disable sliders that are for
-            # dims < 3, or sliders that contain vectors
+            # dims < 3, or sliders that contain vectors.
+            # In the case that a dim is used for profile plotting, we need to
+            # adjust the dim counting in case the profile dim was part of the
+            # first dims that were scanned.
             disabled = False
             if positions_dim is not None:
                 disabled = dim == positions_dim
-            elif i >= self.ndim - len(button_options):
+            elif i >= self.ndim - (len(button_options) + found_profile_dim):
                 disabled = True
+            if profile is not None and dim == profile:
+                disabled = True
+                found_profile_dim = True
+            print('in slicer', dim, disabled)
 
             # Add an IntSlider to slide along the z dimension of the array
             self.slider[dim] = widgets.IntSlider(
