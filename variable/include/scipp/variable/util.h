@@ -22,4 +22,6 @@ enum class SortOrder { Ascending, Descending };
 [[nodiscard]] SCIPP_VARIABLE_EXPORT bool
 is_sorted(const VariableConstView &x, const Dim dim, const SortOrder order);
 
+[[nodiscard]] Variable sort(const VariableConstView &var, const Dim dim);
+
 } // namespace scipp::variable

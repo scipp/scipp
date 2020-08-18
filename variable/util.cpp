@@ -10,6 +10,7 @@
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 
 using namespace scipp::core;
@@ -69,6 +70,30 @@ bool is_sorted(const VariableConstView &x, const Dim dim,
                         x.slice({dim, 1, size}),
                         core::element::is_sorted_nonascending);
   return out.value<bool>();
+}
+
+// TODO
+// - move template args and kernel ("overloaded") to `core::element` (see
+//   is_sorted) and test there
+// - support SortOrder as third argument (see is_sorted)
+// - implemented sorting with variances
+Variable sort(const VariableConstView &var, const Dim dim) {
+  Variable out(var);
+  transform_in_place<std::tuple<span<double>, span<float>, span<std::string>>>(
+      subspan_view(out, dim),
+      overloaded{[](auto &range) {
+                   using T = std::decay_t<decltype(range)>;
+                   constexpr bool vars = is_ValueAndVariance_v<T>;
+                   if constexpr (vars) {
+                     // either copy to vector of pairs, `std::sort` by first,
+                     // copy back or use order of first to sort index, use index
+                     // to permute
+                   } else {
+                     std::sort(range.begin(), range.end());
+                   }
+                 },
+                 [](units::Unit &) {}});
+  return out;
 }
 
 } // namespace scipp::variable
