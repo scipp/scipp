@@ -40,19 +40,6 @@ template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
 
 template <class T> class ViewModel;
 
-template <class T>
-auto makeSpan(T &model, const Dimensions &dims, const Dim dim,
-              const scipp::index begin, const scipp::index end) {
-  if (!dims.contains(dim) && (begin != 0 || end != 1))
-    throw std::runtime_error("VariableConcept: Slice index out of range.");
-  if (!dims.contains(dim) || dims[dim] == end - begin) {
-    return scipp::span(model.data(), model.data() + model.size());
-  }
-  const scipp::index beginOffset = begin * dims.offset(dim);
-  const scipp::index endOffset = end * dims.offset(dim);
-  return scipp::span(model.data() + beginOffset, model.data() + endOffset);
-}
-
 template <class T, class... Args>
 auto optionalVariancesView(T &concept, Args &&... args) {
   return concept.hasVariances()
