@@ -29,6 +29,8 @@ template <class T> struct is_span<scipp::span<T>> : std::true_type {};
 template <class T> inline constexpr bool is_span_v = is_span<T>::value;
 
 template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
+  // TODO Use optimizations in case of contigous views (instead of slower
+  // ElementArrayView iteration). Add multi threading?
   if constexpr (is_span_v<typename T1::value_type>)
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end(),
                       [](auto &a, auto &b) { return equal(a, b); });
@@ -162,38 +164,27 @@ VariableConceptT<T>::transpose(const std::vector<Dim> &tdims) {
       this->hasVariances() ? std::optional(variancesView(dms)) : std::nullopt);
 }
 
+/// Helper for implementing Variable(View)::operator==.
+///
+/// This method is using virtual dispatch as a trick to obtain T, such that
+/// values<T> and variances<T> can be compared.
 template <class T>
-bool VariableConceptT<T>::operator==(const VariableConcept &other) const {
-  const auto &dims = this->dims();
-  if (dims != other.dims())
+bool VariableConceptT<T>::equals(const VariableConstView &a, const VariableConstView &b) const {
+  if (!a || !b)
+    return static_cast<bool>(a) == static_cast<bool>(b);
+  if (a.unit() != b.unit())
     return false;
-  if (this->dtype() != other.dtype())
+  if (a.dims() != b.dims())
     return false;
-  if (this->hasVariances() != other.hasVariances())
+  if (a.dtype() != b.dtype())
     return false;
-  const auto &otherT = requireT<const VariableConceptT>(other);
-  if (dims.volume() == 0 && dims == other.dims())
+  if (a.hasVariances() != b.hasVariances())
+    return false;
+  if (a.dims().volume() == 0 && a.dims() == b.dims())
     return true;
-  if (this->isContiguous()) {
-    if (other.isContiguous() && dims.isContiguousIn(other.dims())) {
-      return equal(values(), otherT.values()) &&
-             (!this->hasVariances() || equal(variances(), otherT.variances()));
-    } else {
-      return equal(values(), otherT.valuesView(dims)) &&
-             (!this->hasVariances() ||
-              equal(variances(), otherT.variancesView(dims)));
-    }
-  } else {
-    if (other.isContiguous() && dims.isContiguousIn(other.dims())) {
-      return equal(valuesView(dims), otherT.values()) &&
-             (!this->hasVariances() ||
-              equal(variancesView(dims), otherT.variances()));
-    } else {
-      return equal(valuesView(dims), otherT.valuesView(dims)) &&
-             (!this->hasVariances() ||
-              equal(variancesView(dims), otherT.variancesView(dims)));
-    }
-  }
+  return equal(a.values<T>(), b.values<T>()) &&
+             (!a.hasVariances() ||
+              equal(a.variances<T>(), b.variances<T>()));
 }
 
 template <class T>

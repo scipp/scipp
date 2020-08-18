@@ -73,16 +73,8 @@ void Variable::setDims(const Dimensions &dimensions) {
   m_object = m_object->makeDefaultFromParent(dimensions);
 }
 
-template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
-  if (!a || !b)
-    return static_cast<bool>(a) == static_cast<bool>(b);
-  if (a.unit() != b.unit())
-    return false;
-  return a.data() == b.data();
-}
-
 bool Variable::operator==(const VariableConstView &other) const {
-  return equals(*this, other);
+  return data().equals(*this, other);
 }
 
 bool Variable::operator!=(const VariableConstView &other) const {
@@ -108,7 +100,7 @@ VariableView::assign(const VariableView &) const;
 bool VariableConstView::operator==(const VariableConstView &other) const {
   // Always use deep comparison (pointer comparison does not make sense since we
   // may be looking at a different section).
-  return equals(*this, other);
+  return underlying().data().equals(*this, other);
 }
 
 bool VariableConstView::operator!=(const VariableConstView &other) const {

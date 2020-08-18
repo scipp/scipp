@@ -20,6 +20,7 @@
 namespace scipp::variable {
 
 class Variable;
+class VariableConstView;
 class VariableConcept;
 template <class T> class VariableConceptT;
 
@@ -66,7 +67,8 @@ public:
   transpose(const std::vector<Dim> &dms) const = 0;
   virtual VariableConceptHandle transpose(const std::vector<Dim> &dms) = 0;
 
-  virtual bool operator==(const VariableConcept &other) const = 0;
+  virtual bool equals(const VariableConstView &a,
+                      const VariableConstView &b) const = 0;
   virtual bool isSame(const VariableConcept &other) const = 0;
 
   virtual bool isContiguous() const = 0;
@@ -164,7 +166,8 @@ public:
 
   VariableConceptHandle transpose(const std::vector<Dim> &dims) override;
 
-  bool operator==(const VariableConcept &other) const override;
+  bool equals(const VariableConstView &a,
+              const VariableConstView &b) const override;
   void copy(const VariableConcept &other, const Dim dim,
             const scipp::index offset, const scipp::index otherBegin,
             const scipp::index otherEnd) override;
