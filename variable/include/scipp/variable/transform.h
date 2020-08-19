@@ -535,6 +535,14 @@ static constexpr auto type_tuples(Op) noexcept {
     return std::tuple<Ts...>{};
 }
 
+constexpr auto overlaps = [](const auto &a, const auto &b) {
+  if constexpr (std::is_same_v<typename std::decay_t<decltype(a)>::value_type,
+                               typename std::decay_t<decltype(b)>::value_type>)
+    return a.values().overlaps(b.values());
+  else
+    return false;
+};
+
 /// Helper class wrapping functions for in-place transform.
 ///
 /// The dry_run template argument can be used to disable any actual modification
@@ -695,14 +703,6 @@ template <bool dry_run> struct in_place {
     template <class T, class... Ts>
     void operator()(T &&out, Ts &&... handles) const {
       using namespace detail;
-      constexpr auto overlaps = [](const auto &a, const auto &b) {
-        if constexpr (std::is_same_v<
-                          typename std::decay_t<decltype(a)>::value_type,
-                          typename std::decay_t<decltype(b)>::value_type>)
-          return a.values().overlaps(b.values());
-        else
-          return false;
-      };
       // If there is an overlap between lhs and rhs we copy the rhs before
       // applying the operation.
       if ((overlaps(out, handles) || ...)) {
