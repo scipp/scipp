@@ -74,8 +74,8 @@ const std::string to_iso_date(const scipp::core::time_point &item,
         std::chrono::duration_cast<std::chrono::nanoseconds>(dur_nano).count() %
         1000000000;
     std::stringstream ss;
-    ss << std::put_time(tm, "%FT%T.") << std::setw(9) << std::setfill('0') << ns
-       << std::endl;
+    ss << std::put_time(tm, "%FT%T.") << std::setw(9) << std::setfill('0')
+       << ns;
     return ss.str();
   } else if (unit.value() == units::s) {
     // cast timestamp into duration in seconds
@@ -84,7 +84,7 @@ const std::string to_iso_date(const scipp::core::time_point &item,
     auto timet = std::chrono::system_clock::to_time_t(tp);
     std::tm *tm = std::gmtime(&timet);
     std::stringstream ss;
-    ss << std::put_time(tm, "%FT%T") << std::endl;
+    ss << std::put_time(tm, "%FT%T");
     return ss.str();
   } else
     throw except::UnitError(

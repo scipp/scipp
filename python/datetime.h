@@ -33,27 +33,21 @@ public:
     if (!src)
       return false;
     // Get timestamp (ns precision) from the numpy object
-    PyObject *source = src.ptr();
-    PyObject *tmp = PyNumber_Long(source);
-    long timestamp = PyLong_AsLong(tmp);
+    int64_t timestamp = src.attr("astype")("int").cast<int64_t>();
     value = scipp::core::time_point(timestamp);
 
     return true;
   }
 
-  // Conversion part 2 (C++ -> Python)
+  /// Conversion part 2 (C++ -> Python)
   static py::handle cast(const scipp::core::time_point &src,
-                         py::return_value_policy, py::handle) {
-    auto epoch = src.time_since_epoch();
-    std::chrono::system_clock::time_point tp{std::chrono::nanoseconds{epoch}};
-    auto time = std::chrono::system_clock::to_time_t(tp);
-    auto tm = *std::gmtime(&time);
+                         py::return_value_policy, py::handle var_h) {
+    int64_t epoch = src.time_since_epoch();
+    auto unit = var_h.attr("unit").cast<py::str>();
+    py::object np = py::module::import("numpy");
+    py::object nd64 = np.attr("datetime64")(epoch, unit);
 
-    // GMTime has only ms resolution, so we need to add ns explicitly
-    auto ns = epoch % 1000000000;
-    std::stringstream ss;
-    ss << std::put_time(&tm, "%FT%T.") << ns;
-    return PyUnicode_FromString(c_str(ss.str()));
+    return PyUnicode_FromString(c_str(py::str(nd64)));
   }
 };
 } // namespace detail

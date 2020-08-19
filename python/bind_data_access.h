@@ -12,10 +12,10 @@
 #include "scipp/dataset/except.h"
 #include "scipp/variable/variable.h"
 
+#include "datetime.h"
 #include "numpy.h"
 #include "py_object.h"
 #include "pybind11.h"
-#include "datetime.h"
 
 namespace py = pybind11;
 using namespace scipp;
@@ -64,8 +64,9 @@ template <class T> struct MakePyBufferInfoT {
 };
 
 inline py::buffer_info make_py_buffer_info(VariableView &view) {
-  return core::CallDType<double, float, int64_t, int32_t,
-                         bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
+  return core::CallDType<
+      double, float, int64_t, int32_t, bool,
+      scipp::core::time_point>::apply<MakePyBufferInfoT>(view.dtype(), view);
 }
 
 template <class... Ts> class as_ElementArrayViewImpl;
@@ -232,6 +233,10 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return DataAccessHelper::as_py_array_t_impl<Getter, int32_t>(obj, view);
     if (type == dtype<bool>)
       return DataAccessHelper::as_py_array_t_impl<Getter, bool>(obj, view);
+    if (type == dtype<scipp::core::time_point>)
+      return DataAccessHelper::as_py_array_t_impl<Getter,
+                                                  scipp::core::time_point>(
+          obj, view);
     return std::visit(
         [&view, &obj](const auto &data) {
           const auto &dims = view.dims();
@@ -396,11 +401,9 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
         return std::vector<int64_t>(dims.shape().begin(), dims.shape().end());
       },
       "Shape of the data (read-only).", py::return_value_policy::move);
-
   c.def_property(
       "unit", [](const T &self) { return self.unit(); }, &T::setUnit,
       "Physical unit of the data.");
-
   c.def_property("values", &as_ElementArrayView::values<T>,
                  &as_ElementArrayView::set_values<T>,
                  "Array of values of the data.");

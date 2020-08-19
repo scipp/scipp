@@ -78,6 +78,14 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
                 b.cast<Eigen::Vector3d>(),
                 v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
                 unit);
+          } else if (info.ndim == 1 &&
+                     scipp_dtype(dtype) ==
+                         core::dtype<scipp::core::time_point>) {
+            return do_init_0D<scipp::core::time_point>(
+                b.cast<scipp::core::time_point>(),
+                v ? std::optional(v->cast<scipp::core::time_point>())
+                  : std::nullopt,
+                unit);
           } else if (info.ndim == 2 &&
                      scipp_dtype(dtype) == core::dtype<Eigen::Matrix3d>) {
             return do_init_0D<Eigen::Matrix3d>(
