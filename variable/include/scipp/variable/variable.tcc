@@ -159,7 +159,6 @@ template <class T> void DataModel<T>::assign(const VariableConcept &other) {
   if (hasVariances())
     std::copy(otherT.m_variances->begin(), otherT.m_variances->end(),
               m_variances->begin());
-
 }
 
 template <class T>
@@ -192,22 +191,23 @@ template <class T> element_array<T> &Variable::cast(const bool variances_) {
 
 template <class T>
 const ElementArrayView<const T> VariableConstView::cast() const {
-  return {&m_variable->values<T>()[0], m_offset, m_dims, m_dataDims};
+  return {m_variable->cast<T>().data(), m_offset, m_dims, m_dataDims};
 }
 
 template <class T>
 const ElementArrayView<const T> VariableConstView::castVariances() const {
   core::expect::hasVariances(*this);
-  return {&m_variable->variances<T>()[0], m_offset, m_dims, m_dataDims};
+  return {m_variable->cast<T>(true).data(), m_offset, m_dims, m_dataDims};
 }
 
 template <class T> ElementArrayView<T> VariableView::cast() const {
-  return {&m_mutableVariable->values<T>()[0], m_offset, m_dims, m_dataDims};
+  return {m_mutableVariable->cast<T>().data(), m_offset, m_dims, m_dataDims};
 }
 
 template <class T> ElementArrayView<T> VariableView::castVariances() const {
   core::expect::hasVariances(*this);
-  return {&m_mutableVariable->variances<T>()[0], m_offset, m_dims, m_dataDims};
+  return {m_mutableVariable->cast<T>(true).data(), m_offset, m_dims,
+          m_dataDims};
 }
 
 /// Macro for instantiating classes and functions required for support a new

@@ -143,13 +143,13 @@ public:
 
   void setVariances(Variable v);
 
-private:
-  template <class... Ts, class... Args>
-  static Variable construct(const DType &type, Args &&... args);
-
   template <class T>
   const element_array<T> &cast(const bool variances = false) const;
   template <class T> element_array<T> &cast(const bool variances = false);
+
+private:
+  template <class... Ts, class... Args>
+  static Variable construct(const DType &type, Args &&... args);
 
   units::Unit m_unit;
   VariableConceptHandle m_object;
