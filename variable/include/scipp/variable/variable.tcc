@@ -16,13 +16,11 @@
 namespace scipp::variable {
 
 template <class T, class C> auto &requireT(C &concept) {
-  try {
-    return dynamic_cast<T &>(concept);
-  } catch (const std::bad_cast &) {
+  if (concept.dtype() != dtype<typename T::value_type>)
     throw except::TypeError("Expected item dtype " +
                             to_string(T::static_dtype()) + ", got " +
                             to_string(concept.dtype()) + '.');
-  }
+  return static_cast<T &>(concept);
 }
 
 template <class T> struct is_span : std::false_type {};
