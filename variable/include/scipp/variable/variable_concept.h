@@ -52,21 +52,6 @@ public:
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const = 0;
-  virtual VariableConceptHandle makeView() const = 0;
-  virtual VariableConceptHandle makeView() = 0;
-  virtual VariableConceptHandle makeView(const Dim dim,
-                                         const scipp::index begin,
-                                         const scipp::index end = -1) const = 0;
-  virtual VariableConceptHandle makeView(const Dim dim,
-                                         const scipp::index begin,
-                                         const scipp::index end = -1) = 0;
-
-  virtual VariableConceptHandle reshape(const Dimensions &dims) const = 0;
-  virtual VariableConceptHandle reshape(const Dimensions &dims) = 0;
-
-  virtual VariableConceptHandle
-  transpose(const std::vector<Dim> &dms) const = 0;
-  virtual VariableConceptHandle transpose(const std::vector<Dim> &dms) = 0;
 
   virtual bool isContiguous() const = 0;
   virtual bool isView() const = 0;
@@ -130,24 +115,6 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override;
-
-  VariableConceptHandle makeView() const override;
-
-  VariableConceptHandle makeView() override;
-
-  VariableConceptHandle makeView(const Dim dim, const scipp::index begin,
-                                 const scipp::index end) const override;
-
-  VariableConceptHandle makeView(const Dim dim, const scipp::index begin,
-                                 const scipp::index end) override;
-
-  VariableConceptHandle reshape(const Dimensions &dims) const override;
-
-  VariableConceptHandle reshape(const Dimensions &dims) override;
-
-  VariableConceptHandle transpose(const std::vector<Dim> &dims) const override;
-
-  VariableConceptHandle transpose(const std::vector<Dim> &dims) override;
 
   bool equals(const VariableConstView &a,
               const VariableConstView &b) const override;
