@@ -414,8 +414,8 @@ template <class Op> struct Transform {
                                 Variances(volume, core::default_init_elements))
             : makeVariable<Out>(Dimensions{dims},
                                 Values(volume, core::default_init_elements));
-    auto outT = VariableAccess<Out, Variable>(out);
-    do_transform(op, outT, std::tuple<>(), as_view{handles, dims}...);
+    do_transform(op, variable_access<Out>(out), std::tuple<>(),
+                 as_view{handles, dims}...);
     return out;
   }
 };

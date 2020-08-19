@@ -21,8 +21,9 @@ template <class T, class Var> struct VariableAccess {
   Variable clone() const { return copy(*m_var); }
   Var *m_var{nullptr};
 };
-
-template <class T> class VariableConceptT;
+template <class T, class Var> auto variable_access(Var &var) {
+  return VariableAccess<T, Var>(var);
+}
 
 namespace visit_detail {
 template <template <class...> class Tuple, class... T, class... V>
@@ -32,8 +33,7 @@ static bool holds_alternatives(Tuple<T...> &&, const V &... v) noexcept {
 
 template <template <class...> class Tuple, class... T, class... V>
 static auto get_args(Tuple<T...> &&, V &&... v) noexcept {
-  return std::tuple(
-      VariableAccess<T, std::remove_reference_t<decltype(v)>>{v}...);
+  return std::tuple(variable_access<T>(v)...);
 }
 
 template <class... Tuple, class F, class... V>
