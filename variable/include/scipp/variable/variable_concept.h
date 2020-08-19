@@ -68,8 +68,6 @@ public:
   transpose(const std::vector<Dim> &dms) const = 0;
   virtual VariableConceptHandle transpose(const std::vector<Dim> &dms) = 0;
 
-  virtual bool isSame(const VariableConcept &other) const = 0;
-
   virtual bool isContiguous() const = 0;
   virtual bool isView() const = 0;
   virtual bool isConstView() const = 0;

@@ -316,9 +316,6 @@ public:
     return std::make_unique<DataModel<T>>(this->dims(), m_values, m_variances);
   }
 
-  bool isSame(const VariableConcept &other) const override {
-    return this == &other;
-  }
   bool isContiguous() const override { return true; }
   bool isView() const override { return false; }
   bool isConstView() const override { return false; }
@@ -467,16 +464,6 @@ public:
     return std::make_unique<ViewModel<T>>(this->dims(), m_values, m_variances);
   }
 
-  bool isSame(const VariableConcept &other) const override {
-    // Views can be copied but can still refer to same data, so unlike for
-    // DataModel a pointer comparison is not sufficient here.
-    if (hasVariances() != other.hasVariances())
-      return false;
-    if (const auto *ptr = dynamic_cast<const ViewModel<T> *>(&other))
-      return m_values.isSame(ptr->m_values);
-    return false;
-  }
-
   bool isContiguous() const override {
     return this->dims().isContiguousIn(m_values.parentDimensions());
   }
@@ -529,46 +516,22 @@ template <class T> element_array<T> &Variable::cast(const bool variances_) {
 
 template <class T>
 const ElementArrayView<const T> VariableConstView::cast() const {
-  using TT = T;
-  if (!m_view)
-    return requireT<const DataModel<element_array<TT>>>(data()).values(
-        dims());
-  if (m_view->isConstView())
-    return requireT<const ViewModel<ElementArrayView<const TT>>>(data())
-        .m_values;
-  // Make a const view from the mutable one.
-  return {requireT<const ViewModel<ElementArrayView<TT>>>(data()).m_values,
-          dims()};
+  return {&m_variable->values<T>()[0], m_offset, m_dims, m_dataDims};
 }
 
 template <class T>
 const ElementArrayView<const T> VariableConstView::castVariances() const {
   core::expect::hasVariances(*this);
-  using TT = T;
-  if (!m_view)
-    return requireT<const DataModel<element_array<TT>>>(data()).variances(
-        dims());
-  if (m_view->isConstView())
-    return *requireT<const ViewModel<ElementArrayView<const TT>>>(data())
-                .m_variances;
-  // Make a const view from the mutable one.
-  return {*requireT<const ViewModel<ElementArrayView<TT>>>(data()).m_variances,
-          dims()};
+  return {&m_variable->variances<T>()[0], m_offset, m_dims, m_dataDims};
 }
 
 template <class T> ElementArrayView<T> VariableView::cast() const {
-  using TT = T;
-  if (m_view)
-    return requireT<const ViewModel<ElementArrayView<TT>>>(data()).m_values;
-  return requireT<DataModel<element_array<TT>>>(data()).values(dims());
+  return {&m_mutableVariable->values<T>()[0], m_offset, m_dims, m_dataDims};
 }
 
 template <class T> ElementArrayView<T> VariableView::castVariances() const {
   core::expect::hasVariances(*this);
-  using TT = T;
-  if (m_view)
-    return *requireT<const ViewModel<ElementArrayView<TT>>>(data()).m_variances;
-  return requireT<DataModel<element_array<TT>>>(data()).variances(dims());
+  return {&m_mutableVariable->variances<T>()[0], m_offset, m_dims, m_dataDims};
 }
 
 /// Macro for instantiating classes and functions required for support a new

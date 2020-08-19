@@ -82,9 +82,9 @@ std::string format_variable(const std::string &key,
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   s << colSep << make_dims_labels(variable, datasetDims);
   s << colSep;
-  s << apply<ValuesToString>(variable.data().dtype(), variable);
+  s << apply<ValuesToString>(variable.dtype(), variable);
   if (variable.hasVariances())
-    s << colSep << apply<VariancesToString>(variable.data().dtype(), variable);
+    s << colSep << apply<VariancesToString>(variable.dtype(), variable);
   s << '\n';
   return s.str();
 }
