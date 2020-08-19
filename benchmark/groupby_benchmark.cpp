@@ -62,7 +62,9 @@ template <class T> static void BM_groupby_flatten(benchmark::State &state) {
   std::iota(group_.begin(), group_.end(), 0);
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nHist},
                                      Values(group_.begin(), group_.end()));
-  events.coords().set(Dim("group"), group / (nHist / nGroup * units::one));
+  events.coords().set(
+      Dim("group"),
+      astype(group / (nHist / nGroup * units::one), dtype<int64_t>));
   for (auto _ : state) {
     auto flat = groupby(events, Dim("group")).flatten(Dim::X);
     state.PauseTiming();
@@ -105,7 +107,8 @@ static void BM_groupby_large_table(benchmark::State &state) {
   d.setData("c", column);
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nRow},
                                      Values(group_.begin(), group_.end()));
-  d.coords().set(Dim("group"), group / (nRow / nGroup * units::one));
+  d.coords().set(Dim("group"),
+                 astype(group / (nRow / nGroup * units::one), dtype<int64_t>));
   for (auto _ : state) {
     auto grouped = groupby(d, Dim("group")).sum(Dim::X);
     state.PauseTiming();
