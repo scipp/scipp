@@ -84,12 +84,18 @@ public:
 
   bool hasVariances() const noexcept { return data().hasVariances(); }
 
-  template <class T> auto values() const { return scipp::span(cast<T>()); }
-  template <class T> auto values() { return scipp::span(cast<T>()); }
-  template <class T> auto variances() const {
-    return scipp::span(cast<T>(true));
+  template <class T> auto values() const {
+    return makeElementArrayView(cast<T>().data(), 0, dims(), dims());
   }
-  template <class T> auto variances() { return scipp::span(cast<T>(true)); }
+  template <class T> auto values() {
+    return makeElementArrayView(cast<T>().data(), 0, dims(), dims());
+  }
+  template <class T> auto variances() const {
+    return makeElementArrayView(cast<T>(true).data(), 0, dims(), dims());
+  }
+  template <class T> auto variances() {
+    return makeElementArrayView(cast<T>(true).data(), 0, dims(), dims());
+  }
   template <class T> const auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];

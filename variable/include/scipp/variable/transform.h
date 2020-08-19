@@ -328,7 +328,7 @@ constexpr bool check_all_or_none_variances =
 /// whether any of the arguments has variances or not.
 template <class Op, class Out, class Tuple>
 static void do_transform(Op op, Out &&out, Tuple &&processed) {
-  auto out_val = out.values(out.dims());
+  auto out_val = out.values();
   std::apply(
       [&op, &out, &out_val](auto &&... args) {
         if constexpr (check_all_or_none_variances<Op, decltype(args)...>) {
@@ -340,7 +340,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
                              (is_ValuesAndVariances_v<
                                   std::decay_t<std::decay_t<decltype(args)>>> ||
                               ...)) {
-          auto out_var = out.variances(out.dims());
+          auto out_var = out.variances();
           transform_elements(op, ValuesAndVariances{out_val, out_var},
                              std::forward<decltype(args)>(args)...);
         } else {
@@ -389,8 +389,10 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
 template <class T> struct as_view {
   using value_type = typename T::value_type;
   bool hasVariances() const { return data.hasVariances(); }
-  auto values() const { return data.values(dims); }
-  auto variances() const { return data.variances(dims); }
+  auto values() const { return decltype(data.values())(data.values(), dims); }
+  auto variances() const {
+    return decltype(data.variances())(data.variances(), dims);
+  }
 
   T &data;
   const Dimensions &dims;
@@ -401,7 +403,7 @@ template <class Op> struct Transform {
   Op op;
   template <class... Ts> Variable operator()(Ts &&... handles) const {
     const auto dims = merge(handles.dims()...);
-    using Out = decltype(maybe_eval(op(handles.values(dims)[0]...)));
+    using Out = decltype(maybe_eval(op(handles.values()[0]...)));
     constexpr bool out_variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op>;
     auto volume = dims.volume();
@@ -412,7 +414,7 @@ template <class Op> struct Transform {
                                 Variances(volume, core::default_init_elements))
             : makeVariable<Out>(Dimensions{dims},
                                 Values(volume, core::default_init_elements));
-    auto &outT = static_cast<VariableConceptT<Out> &>(out.data());
+    auto outT = VariableAccess<Out, Variable>(out);
     do_transform(op, outT, std::tuple<>(), as_view{handles, dims}...);
     return out;
   }
@@ -697,17 +699,20 @@ template <bool dry_run> struct in_place {
         if constexpr (std::is_same_v<
                           typename std::decay_t<decltype(a)>::value_type,
                           typename std::decay_t<decltype(b)>::value_type>)
-          return a.values(a.dims()).overlaps(b.values(a.dims()));
+          return a.values().overlaps(b.values());
         else
           return false;
       };
       // If there is an overlap between lhs and rhs we copy the rhs before
       // applying the operation.
       if ((overlaps(out, handles) || ...)) {
-        // Ensuring that we call exactly same instance of operator() to avoid
-        // extra template instantiations, do not remove the static_cast.
-        return operator()(std::forward<T>(out),
-                          static_cast<Ts>(*(handles.copyT()))...);
+        if constexpr (sizeof...(Ts) == 1) {
+          auto copy = (handles.clone(), ...);
+          return operator()(std::forward<T>(out), Ts(copy)...);
+        } else {
+          throw std::runtime_error(
+              "Overlap handling only implemented for 2 inputs.");
+        }
       }
       const auto dims = merge(out.dims(), handles.dims()...);
       auto out_view = as_view{out, dims};
@@ -733,12 +738,11 @@ template <bool dry_run> struct in_place {
       if constexpr (std::is_base_of_v<
                         core::transform_flags::no_event_list_handling_t, Op> ||
                     (is_any_events<Ts>::value || ...)) {
-        visit_impl<Ts...>::apply(makeTransformInPlace(op), var.data(),
-                                 other.data()...);
+        visit_impl<Ts...>::apply(makeTransformInPlace(op), var, other...);
       } else if constexpr (sizeof...(Other) > 1) {
         // No event data supported yet in this case.
         variable::visit(std::tuple<Ts...>{})
-            .apply(makeTransformInPlace(op), var.data(), other.data()...);
+            .apply(makeTransformInPlace(op), var, other...);
       } else {
         // Note that if only one of the inputs is events it must be the one
         // being transformed in-place, so there are only three cases here.
@@ -748,7 +752,7 @@ template <bool dry_run> struct in_place {
                     visit_detail::maybe_duplicate<Ts, Var, Other...>...>{}))
             .apply(makeTransformInPlace(
                        overloaded_events{op, TransformEventsInPlace{}}),
-                   var.data(), other.data()...);
+                   var, other...);
       }
     } catch (const std::bad_variant_access &) {
       throw except::TypeError("Cannot apply operation to item dtypes ", var,
@@ -847,14 +851,14 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   Variable out;
   try {
     if constexpr ((is_any_events<Ts>::value || ...) || sizeof...(Vars) > 2) {
-      out = visit_impl<Ts...>::apply(Transform{op}, vars.data()...);
+      out = visit_impl<Ts...>::apply(Transform{op}, vars...);
     } else {
       out =
           variable::visit(
               augment::insert_events(
                   std::tuple<visit_detail::maybe_duplicate<Ts, Vars...>...>{}))
               .apply(Transform{overloaded_events{op, TransformEvents{}}},
-                     vars.data()...);
+                     vars...);
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes ", vars...);

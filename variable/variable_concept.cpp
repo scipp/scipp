@@ -8,6 +8,7 @@ VariableConceptHandle::VariableConceptHandle(const VariableConceptHandle &other)
 
 VariableConceptHandle &
 VariableConceptHandle::operator=(const VariableConceptHandle &other) {
+  // TODO Reenable this optimization somehow. Add another clone overload?
   /*
   if (*this && other) {
     // Avoid allocation of new element_array if output is of correct shape.
