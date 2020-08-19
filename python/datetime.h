@@ -47,7 +47,7 @@ public:
     py::object np = py::module::import("numpy");
     py::object nd64 = np.attr("datetime64")(epoch, unit);
 
-    return PyUnicode_FromString(c_str(py::str(nd64)));
+    return nd64.release();
   }
 };
 } // namespace detail
