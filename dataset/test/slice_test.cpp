@@ -816,7 +816,7 @@ TEST(SliceTest, test_slicing_defaults_ascending) {
   auto da = make_1d_data_array(3, 13, Dim::X, false);
   EXPECT_EQ(
       da, slice(da, Dim::X, VariableConstView{}, 13.0 * units::dimensionless));
-  EXPECT_EQ(da.slice(core::Slice{Dim::X, 0, 9}),
+  EXPECT_EQ(da.slice({Dim::X, 0, 9}),
             slice(da, Dim::X)); // Note open on the right with default end
 }
 
@@ -824,6 +824,34 @@ TEST(SliceTest, test_slicing_defaults_descending) {
   auto da = make_1d_data_array(12, 2, Dim::X, false);
   EXPECT_EQ(da,
             slice(da, Dim::X, VariableConstView{}, 2.0 * units::dimensionless));
-  EXPECT_EQ(da.slice(core::Slice{Dim::X, 0, 9}),
+  EXPECT_EQ(da.slice({Dim::X, 0, 9}),
             slice(da, Dim::X)); // Note open on the right with default end
+}
+
+TEST(SliceTest, test_slice_range_on_point_coords_1D_ascending) {
+  auto da = make_1d_data_array(3, 13, Dim::X, false);
+  // No effect slicing
+  auto out = slice(da, Dim::X, 3.0 * units::dimensionless,
+                   13.0 * units::dimensionless);
+  EXPECT_EQ(da, out);
+  // Test start on left boundary (closed on left), so includes boundary
+  out =
+      slice(da, Dim::X, 3.0 * units::dimensionless, 4.0 * units::dimensionless);
+  EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
+  // Test start out of bounds on left truncated
+  out =
+      slice(da, Dim::X, 2.0 * units::dimensionless, 4.0 * units::dimensionless);
+  EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
+  // Test inner values
+  out =
+      slice(da, Dim::X, 3.5 * units::dimensionless, 5.5 * units::dimensionless);
+  EXPECT_EQ(out, da.slice({Dim::X, 1, 3}));
+  // Test end on right boundary (open on right), so does not include boundary
+  out = slice(da, Dim::X, 11.0 * units::dimensionless,
+              12.0 * units::dimensionless);
+  EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
+  // Test end out of bounds on right truncated
+  out = slice(da, Dim::X, 11.0 * units::dimensionless,
+              13.0 * units::dimensionless);
+  EXPECT_EQ(out, da.slice({Dim::X, 8, 10}));
 }

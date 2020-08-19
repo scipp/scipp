@@ -28,17 +28,37 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
                              "decreasing for value slicing");
 
   const auto bins = coord.dims().volume();
-
   const auto bin_edges = bins == to_slice.dims()[dim] + 1;
 
-  scipp::index first = 0;
-  scipp::index last = bins - 1;
-  // TODO Point slice
+  // Point slice
   if ((begin && end) && begin == end) {
-    throw std::runtime_error("Not implemented yet");
+    scipp::index idx = -1;
+    if (bin_edges) {
+      if (ascending)
+        idx = sum(less_equal(coord, begin), dim).value<scipp::index>();
+      else
+        idx = sum(greater_equal(coord, begin), dim).value<scipp::index>();
+      if (idx < 0)
+        throw except::NotFoundError(
+            to_string(begin) +
+            " point slice does not fall within any bin edges along " +
+            to_string(dim));
+    } else {
+      auto values_view = equal(coord, begin).values<scipp::index>();
+      auto it = std::find(values_view.begin(), values_view.end(), true);
+      if (it == values_view.end())
+        throw except::NotFoundError(to_string(begin) +
+                                    " point slice does not exactly match any "
+                                    "point coordinate value along " +
+                                    to_string(dim));
+      idx = std::distance(it, values_view.begin());
+    }
+    return to_slice.slice({dim, idx});
   }
   // Range slice
   else {
+    scipp::index first = 0;
+    scipp::index last = bins - 1;
     if (begin) {
       if (bin_edges) {
         // lower bin edge boundary
@@ -70,7 +90,7 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
       first = 0;
     if (last > bins)
       last = bins - 1;
-    return to_slice.slice(Slice(dim, first, last));
+    return to_slice.slice({dim, first, last});
   }
 }
 } // namespace scipp::dataset
