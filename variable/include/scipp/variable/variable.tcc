@@ -93,6 +93,7 @@ public:
               const VariableConstView &b) const override;
   void copy(const VariableConstView &src,
             const VariableView &dest) const override;
+  void assign(const VariableConcept &other) override;
 
   void setVariances(Variable &&variances) override {
     if (!core::canHaveVariances<value_type>())
@@ -152,6 +153,15 @@ void DataModel<T>::copy(const VariableConstView &src,
       overloaded{core::transform_flags::no_event_list_handling,
                  core::transform_flags::expect_in_variance_if_out_variance,
                  [](auto &a, const auto &b) { a = b; }});
+}
+
+template <class T> void DataModel<T>::assign(const VariableConcept &other) {
+  const auto &otherT = requireT<const DataModel<T>>(other);
+  std::copy(otherT.m_values.begin(), otherT.m_values.end(), m_values.begin());
+  if (hasVariances())
+    std::copy(otherT.m_variances->begin(), otherT.m_variances->end(),
+              m_variances->begin());
+
 }
 
 template <class T>

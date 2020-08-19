@@ -8,22 +8,18 @@ VariableConceptHandle::VariableConceptHandle(const VariableConceptHandle &other)
 
 VariableConceptHandle &
 VariableConceptHandle::operator=(const VariableConceptHandle &other) {
-  // TODO Reenable this optimization somehow. Add another clone overload?
-  /*
   if (*this && other) {
     // Avoid allocation of new element_array if output is of correct shape.
     // This yields a 5x speedup in assignment operations of variables.
     auto &concept = **this;
     auto &otherConcept = *other;
-    if (!concept.isView() && !otherConcept.isView() &&
-        concept.dtype() == otherConcept.dtype() &&
+    if (concept.dtype() == otherConcept.dtype() &&
         concept.dims() == otherConcept.dims() &&
         concept.hasVariances() == otherConcept.hasVariances()) {
-      concept.copy(otherConcept, Dim::Invalid, 0, 0, 1);
+      concept.assign(otherConcept);
       return *this;
     }
   }
-  */
   return *this = other ? other->clone() : VariableConceptHandle();
 }
 
