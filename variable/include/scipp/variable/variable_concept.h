@@ -23,7 +23,6 @@ class Variable;
 class VariableConstView;
 class VariableView;
 class VariableConcept;
-template <class T> class VariableConceptT;
 
 class SCIPP_VARIABLE_EXPORT VariableConceptHandle
     : public scipp::deep_ptr<VariableConcept> {
@@ -36,90 +35,35 @@ public:
   VariableConceptHandle &operator=(const VariableConceptHandle &other);
 };
 
-/// Abstract base class for any data that can be held by Variable. Also used
-/// to hold views to data by (Const)VariableView. This is using so-called
-/// concept-based polymorphism, see talks by Sean Parent.
+/// Abstract base class for any data that can be held by Variable. This is using
+/// so-called concept-based polymorphism, see talks by Sean Parent.
 ///
 /// This is the most generic representation for a multi-dimensional array of
-/// data. More operations are supportd by the partially-typed
-/// VariableConceptT.
+/// data. More operations are supportd by the typed DataModel.
 class SCIPP_VARIABLE_EXPORT VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
   virtual ~VariableConcept() = default;
 
-  virtual DType dtype() const noexcept = 0;
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const = 0;
 
-  virtual bool isContiguous() const = 0;
-  virtual bool isView() const = 0;
-  virtual bool isConstView() const = 0;
-  virtual bool hasVariances() const noexcept = 0;
+  virtual DType dtype() const noexcept = 0;
+  const Dimensions &dims() const { return m_dimensions; }
 
-  virtual scipp::index size() const = 0;
+  virtual bool hasVariances() const noexcept = 0;
+  virtual void setVariances(Variable &&variances) = 0;
 
   virtual bool equals(const VariableConstView &a,
                       const VariableConstView &b) const = 0;
   virtual void copy(const VariableConstView &src,
                     const VariableView &dest) const = 0;
 
-  virtual void setVariances(Variable &&variances) = 0;
-
-  const Dimensions &dims() const { return m_dimensions; }
-
   friend class Variable;
 
 private:
   Dimensions m_dimensions;
-};
-
-/// Partially typed implementation of VariableConcept. This is a common base
-/// class for DataModel<T> and ViewModel<T>. The former holds data in a
-/// contiguous array, whereas the latter is a (potentially non-contiguous) view
-/// into the former. This base class implements functionality that is common to
-/// both, for a specific T.
-template <class T> class VariableConceptT : public VariableConcept {
-public:
-  using value_type = T;
-
-  VariableConceptT(const Dimensions &dimensions)
-      : VariableConcept(dimensions) {}
-
-  DType dtype() const noexcept override { return scipp::dtype<T>; }
-  static DType static_dtype() noexcept { return scipp::dtype<T>; }
-
-  virtual ElementArrayView<T> values(const Dimensions &dims) = 0;
-  virtual ElementArrayView<T> values(const Dimensions &dims, const Dim dim,
-                                     const scipp::index begin) = 0;
-  virtual ElementArrayView<const T> values(const Dimensions &dims) const = 0;
-  virtual ElementArrayView<const T> values(const Dimensions &dims,
-                                           const Dim dim,
-                                           const scipp::index begin) const = 0;
-  virtual ElementArrayView<T> variances(const Dimensions &dims) = 0;
-  virtual ElementArrayView<T> variances(const Dimensions &dims, const Dim dim,
-                                        const scipp::index begin) = 0;
-  virtual ElementArrayView<const T> variances(const Dimensions &dims) const = 0;
-  virtual ElementArrayView<const T>
-  variances(const Dimensions &dims, const Dim dim,
-            const scipp::index begin) const = 0;
-  virtual ElementArrayView<const T>
-  valuesReshaped(const Dimensions &dims) const = 0;
-  virtual ElementArrayView<T> valuesReshaped(const Dimensions &dims) = 0;
-  virtual ElementArrayView<const T>
-  variancesReshaped(const Dimensions &dims) const = 0;
-  virtual ElementArrayView<T> variancesReshaped(const Dimensions &dims) = 0;
-
-  virtual std::unique_ptr<VariableConceptT> copyT() const = 0;
-
-  VariableConceptHandle
-  makeDefaultFromParent(const Dimensions &dims) const override;
-
-  bool equals(const VariableConstView &a,
-              const VariableConstView &b) const override;
-  void copy(const VariableConstView &src,
-            const VariableView &dest) const override;
 };
 
 template <class T>

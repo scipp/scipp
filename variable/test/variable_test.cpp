@@ -865,46 +865,6 @@ TEST(VariableTest, rename) {
   ASSERT_EQ(var, expected);
 }
 
-TEST(Variable, access_typed_view) {
-  auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                  Values{1, 2, 3, 4, 5, 6});
-  const auto values =
-      dynamic_cast<const variable::VariableConceptT<double> &>(var.data())
-          .values({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 3}});
-  ASSERT_EQ(values.size(), 24);
-
-  for (const auto z : {0, 1, 2, 3}) {
-    EXPECT_EQ(values[3 * z + 0], 1);
-    EXPECT_EQ(values[3 * z + 1], 2);
-    EXPECT_EQ(values[3 * z + 2], 3);
-  }
-  for (const auto z : {0, 1, 2, 3}) {
-    EXPECT_EQ(values[12 + 3 * z + 0], 4);
-    EXPECT_EQ(values[12 + 3 * z + 1], 5);
-    EXPECT_EQ(values[12 + 3 * z + 2], 6);
-  }
-}
-
-TEST(Variable, access_typed_view_edges) {
-  // If a variable contains bin edges we want to "skip" the last edge. Say bins
-  // is in direction Y:
-  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                  Values{1, 2, 3, 4, 5, 6});
-  const auto values =
-      dynamic_cast<const variable::VariableConceptT<double> &>(var.data())
-          .values({{Dim::Y, 2}, {Dim::Z, 4}, {Dim::X, 2}});
-  ASSERT_EQ(values.size(), 16);
-
-  for (const auto z : {0, 1, 2, 3}) {
-    EXPECT_EQ(values[2 * z + 0], 1);
-    EXPECT_EQ(values[2 * z + 1], 4);
-  }
-  for (const auto z : {0, 1, 2, 3}) {
-    EXPECT_EQ(values[8 + 2 * z + 0], 2);
-    EXPECT_EQ(values[8 + 2 * z + 1], 5);
-  }
-}
-
 TEST(EventsVariable, create) {
   const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   EXPECT_TRUE(contains_events(var));
