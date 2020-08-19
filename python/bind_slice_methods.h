@@ -92,8 +92,7 @@ template <class T> struct slicer {
                              const py::array &data) {
     auto slice = slicer<T>::get(self, index);
     core::CallDType<double, float, int64_t, int32_t, bool>::apply<
-        SetData<decltype(slice)>::template Impl>(slice.data().dtype(), slice,
-                                                 data);
+        SetData<decltype(slice)>::template Impl>(slice.dtype(), slice, data);
   }
 
   static void
@@ -101,8 +100,7 @@ template <class T> struct slicer {
                        const py::array &data) {
     auto slice = slicer<T>::get_range(self, index);
     core::CallDType<double, float, int64_t, int32_t, bool>::apply<
-        SetData<decltype(slice)>::template Impl>(slice.data().dtype(), slice,
-                                                 data);
+        SetData<decltype(slice)>::template Impl>(slice.dtype(), slice, data);
   }
 
   template <class Other>
