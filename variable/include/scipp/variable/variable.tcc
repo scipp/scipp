@@ -77,15 +77,7 @@ public:
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
 
   VariableConceptHandle
-  makeDefaultFromParent(const Dimensions &dims) const override {
-    if (hasVariances())
-      return std::make_unique<DataModel<T>>(dims,
-                                            element_array<T>(dims.volume()),
-                                            element_array<T>(dims.volume()));
-    else
-      return std::make_unique<DataModel<T>>(dims,
-                                            element_array<T>(dims.volume()));
-  }
+  makeDefaultFromParent(const Dimensions &dims) const override;
 
   bool equals(const VariableConstView &a,
               const VariableConstView &b) const override;
@@ -93,18 +85,7 @@ public:
             const VariableView &dest) const override;
   void assign(const VariableConcept &other) override;
 
-  void setVariances(Variable &&variances) override {
-    if (!core::canHaveVariances<value_type>())
-      throw except::VariancesError("This data type cannot have variances.");
-    if (!variances)
-      return m_variances.reset();
-    if (variances.hasVariances())
-      throw except::VariancesError(
-          "Cannot set variances from variable with variances.");
-    core::expect::equals(this->dims(), variances.dims());
-    m_variances.emplace(
-        std::move(requireT<DataModel>(variances.data()).m_values));
-  }
+  void setVariances(Variable &&variances) override;
 
   VariableConceptHandle clone() const override {
     return std::make_unique<DataModel<T>>(this->dims(), m_values, m_variances);
@@ -117,6 +98,17 @@ public:
   element_array<T> m_values;
   std::optional<element_array<T>> m_variances;
 };
+
+template <class T>
+VariableConceptHandle
+DataModel<T>::makeDefaultFromParent(const Dimensions &dims) const {
+  if (hasVariances())
+    return std::make_unique<DataModel<T>>(dims, element_array<T>(dims.volume()),
+                                          element_array<T>(dims.volume()));
+  else
+    return std::make_unique<DataModel<T>>(dims,
+                                          element_array<T>(dims.volume()));
+}
 
 /// Helper for implementing Variable(View)::operator==.
 ///
@@ -159,6 +151,19 @@ template <class T> void DataModel<T>::assign(const VariableConcept &other) {
   if (hasVariances())
     std::copy(otherT.m_variances->begin(), otherT.m_variances->end(),
               m_variances->begin());
+}
+
+template <class T> void DataModel<T>::setVariances(Variable &&variances) {
+  if (!core::canHaveVariances<value_type>())
+    throw except::VariancesError("This data type cannot have variances.");
+  if (!variances)
+    return m_variances.reset();
+  if (variances.hasVariances())
+    throw except::VariancesError(
+        "Cannot set variances from variable with variances.");
+  core::expect::equals(this->dims(), variances.dims());
+  m_variances.emplace(
+      std::move(requireT<DataModel>(variances.data()).m_values));
 }
 
 template <class T>
