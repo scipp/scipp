@@ -42,7 +42,7 @@ TEST_F(BucketModelTest, variances) {
   EXPECT_FALSE(model.hasVariances());
 }
 
-TEST_F(BucketModelTest, comparison){
+TEST_F(BucketModelTest, comparison) {
   EXPECT_EQ(Model(dims, buckets, Dim::X, buffer),
             Model(dims, buckets, Dim::X, buffer));
   EXPECT_NE(Model(dims, buckets, Dim::X, buffer),
