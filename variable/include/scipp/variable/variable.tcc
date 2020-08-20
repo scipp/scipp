@@ -69,8 +69,8 @@ public:
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
     if (m_variances && !*m_variances)
-      *m_variances = element_array<T>(dimensions.volume(),
-                                      default_init<T>::value());
+      *m_variances =
+          element_array<T>(dimensions.volume(), default_init<T>::value());
   }
 
   DType dtype() const noexcept override { return scipp::dtype<T>; }
@@ -95,6 +95,43 @@ public:
     return m_variances.has_value();
   }
 
+  auto values() const {
+    return ElementArrayView(m_values.data(), 0, dims(), dims());
+  }
+  auto values() { return ElementArrayView(m_values.data(), 0, dims(), dims()); }
+  auto variances() const {
+    expectHasVariances();
+    return ElementArrayView(m_variances->data(), 0, dims(), dims());
+  }
+  auto variances() {
+    expectHasVariances();
+    return ElementArrayView(m_variances->data(), 0, dims(), dims());
+  }
+
+  auto values(const scipp::index offset, const Dimensions &iterDims,
+              const Dimensions &dataDims) const {
+    return ElementArrayView(m_values.data(), offset, iterDims, dataDims);
+  }
+  auto values(const scipp::index offset, const Dimensions &iterDims,
+              const Dimensions &dataDims) {
+    return ElementArrayView(m_values.data(), offset, iterDims, dataDims);
+  }
+  auto variances(const scipp::index offset, const Dimensions &iterDims,
+                 const Dimensions &dataDims) const {
+    expectHasVariances();
+    return ElementArrayView(m_variances->data(), offset, iterDims, dataDims);
+  }
+  auto variances(const scipp::index offset, const Dimensions &iterDims,
+                 const Dimensions &dataDims) {
+    expectHasVariances();
+    return ElementArrayView(m_variances->data(), offset, iterDims, dataDims);
+  }
+
+private:
+  void expectHasVariances() const {
+    if (!hasVariances())
+      throw except::VariancesError("Variable does not have variances.");
+  }
   element_array<T> m_values;
   std::optional<element_array<T>> m_variances;
 };
@@ -173,46 +210,40 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
       m_object(std::make_unique<DataModel<typename T::value_type>>(
           std::move(dimensions), std::move(values_), std::move(variances_))) {}
 
+template <class T> const DataModel<T> &cast(const Variable &var) {
+  return requireT<const DataModel<T>>(var.data());
+}
+
+template <class T> DataModel<T> &cast(Variable &var) {
+  return requireT<DataModel<T>>(var.data());
+}
+
+template <class T> ElementArrayView<const T> Variable::values() const {
+  return cast<T>(*this).values();
+}
+template <class T> ElementArrayView<T> Variable::values() {
+  return cast<T>(*this).values();
+}
+template <class T> ElementArrayView<const T> Variable::variances() const {
+  return cast<T>(*this).variances();
+}
+template <class T> ElementArrayView<T> Variable::variances() {
+  return cast<T>(*this).variances();
+}
+
+template <class T> ElementArrayView<const T> VariableConstView::values() const {
+  return cast<T>(*m_variable).values(m_offset, m_dims, m_dataDims);
+}
 template <class T>
-const element_array<T> &Variable::cast(const bool variances_) const {
-  auto &dm = requireT<const DataModel<T>>(*m_object);
-  if (!variances_)
-    return dm.m_values;
-  else {
-    core::expect::hasVariances(*this);
-    return *dm.m_variances;
-  }
+ElementArrayView<const T> VariableConstView::variances() const {
+  return cast<T>(*m_variable).variances(m_offset, m_dims, m_dataDims);
 }
 
-template <class T> element_array<T> &Variable::cast(const bool variances_) {
-  auto &dm = requireT<DataModel<T>>(*m_object);
-  if (!variances_)
-    return dm.m_values;
-  else {
-    core::expect::hasVariances(*this);
-    return *dm.m_variances;
-  }
+template <class T> ElementArrayView<T> VariableView::values() const {
+  return cast<T>(*m_mutableVariable).values(m_offset, m_dims, m_dataDims);
 }
-
-template <class T>
-const ElementArrayView<const T> VariableConstView::cast() const {
-  return {m_variable->cast<T>().data(), m_offset, m_dims, m_dataDims};
-}
-
-template <class T>
-const ElementArrayView<const T> VariableConstView::castVariances() const {
-  core::expect::hasVariances(*this);
-  return {m_variable->cast<T>(true).data(), m_offset, m_dims, m_dataDims};
-}
-
-template <class T> ElementArrayView<T> VariableView::cast() const {
-  return {m_mutableVariable->cast<T>().data(), m_offset, m_dims, m_dataDims};
-}
-
-template <class T> ElementArrayView<T> VariableView::castVariances() const {
-  core::expect::hasVariances(*this);
-  return {m_mutableVariable->cast<T>(true).data(), m_offset, m_dims,
-          m_dataDims};
+template <class T> ElementArrayView<T> VariableView::variances() const {
+  return cast<T>(*m_mutableVariable).variances(m_offset, m_dims, m_dataDims);
 }
 
 /// Macro for instantiating classes and functions required for support a new
@@ -225,17 +256,15 @@ template <class T> ElementArrayView<T> VariableView::castVariances() const {
   template Variable::Variable(const units::Unit, const Dimensions &,           \
                               element_array<__VA_ARGS__>,                      \
                               std::optional<element_array<__VA_ARGS__>>);      \
-  template element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(            \
-      const bool);                                                             \
-  template const element_array<__VA_ARGS__> &Variable::cast<__VA_ARGS__>(      \
-      const bool) const;                                                       \
-  template const ElementArrayView<const __VA_ARGS__>                           \
-  VariableConstView::cast<__VA_ARGS__>() const;                                \
-  template const ElementArrayView<const __VA_ARGS__>                           \
-  VariableConstView::castVariances<__VA_ARGS__>() const;                       \
-  template ElementArrayView<__VA_ARGS__> VariableView::cast<__VA_ARGS__>()     \
+  template ElementArrayView<const __VA_ARGS__> Variable::values() const;       \
+  template ElementArrayView<__VA_ARGS__> Variable::values();                   \
+  template ElementArrayView<const __VA_ARGS__> Variable::variances() const;    \
+  template ElementArrayView<__VA_ARGS__> Variable::variances();                \
+  template ElementArrayView<const __VA_ARGS__> VariableConstView::values()     \
       const;                                                                   \
-  template ElementArrayView<__VA_ARGS__>                                       \
-  VariableView::castVariances<__VA_ARGS__>() const;
+  template ElementArrayView<const __VA_ARGS__> VariableConstView::variances()  \
+      const;                                                                   \
+  template ElementArrayView<__VA_ARGS__> VariableView::values() const;         \
+  template ElementArrayView<__VA_ARGS__> VariableView::variances() const;
 
 } // namespace scipp::variable

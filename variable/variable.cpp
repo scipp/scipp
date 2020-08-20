@@ -29,6 +29,8 @@ Variable::Variable(const VariableConstView &parent, const Dimensions &dims)
 Variable::Variable(const Variable &parent, VariableConceptHandle data)
     : m_unit(parent.unit()), m_object(std::move(data)) {}
 
+Variable::Variable(VariableConceptHandle data) : m_object(std::move(data)) {}
+
 VariableConstView::VariableConstView(const Variable &variable,
                                      const Dimensions &dims)
     : m_variable(&variable), m_dims(dims), m_dataDims(dims) {
