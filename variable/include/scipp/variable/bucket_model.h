@@ -119,7 +119,7 @@ void DataModel<bucket<T>>::copy(const VariableConstView &,
   // `concatenate` since we cannot just copy buckets but need to manage the
   // buffer as well.
   throw std::runtime_error(
-      "SHape-related operations for bucketed data are not supported yet.");
+      "Shape-related operations for bucketed data are not supported yet.");
 }
 
 template <class T>
