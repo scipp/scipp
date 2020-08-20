@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/bucket_model.tcc"
+#include "scipp/variable/bucket_model.h"
 
 using namespace scipp;
 using namespace scipp::variable;

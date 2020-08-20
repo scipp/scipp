@@ -6,7 +6,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/except.h"
-#include "scipp/variable/variable.tcc"
+#include "scipp/variable/data_model.h"
 
 namespace scipp::variable {
 
