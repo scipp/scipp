@@ -4,7 +4,6 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bucket_model.h"
-#include "scipp/variable/variable.tcc"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -78,22 +77,4 @@ TEST_F(BucketModelTest, values_const) {
   const Model model(dims, buckets, Dim::X, buffer);
   EXPECT_EQ(*(model.values().begin() + 0), buffer.slice({Dim::X, 0, 2}));
   EXPECT_EQ(*(model.values().begin() + 1), buffer.slice({Dim::X, 2, 4}));
-}
-
-INSTANTIATE_BUCKET_VARIABLE(bucket_Variable, bucket<Variable>)
-
-TEST_F(BucketModelTest, variable) {
-  Variable var(std::make_unique<Model>(dims, buckets, Dim::X, buffer));
-  EXPECT_EQ(var.unit(), units::one);
-  EXPECT_EQ(var.dims(), dims);
-  const auto vals = var.values<bucket<Variable>>();
-  EXPECT_EQ(vals.size(), 2);
-  EXPECT_EQ(vals[0], buffer.slice({Dim::X, 0, 2}));
-  EXPECT_EQ(vals[1], buffer.slice({Dim::X, 2, 4}));
-  EXPECT_EQ(vals.front(), buffer.slice({Dim::X, 0, 2}));
-  EXPECT_EQ(vals.back(), buffer.slice({Dim::X, 2, 4}));
-  EXPECT_EQ(*vals.begin(), buffer.slice({Dim::X, 0, 2}));
-  const auto &const_var = var;
-  EXPECT_EQ(const_var.values<bucket<Variable>>()[0],
-            buffer.slice({Dim::X, 0, 2}));
 }

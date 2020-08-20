@@ -55,18 +55,21 @@ template <class T> ElementArrayView<T> VariableView::variances() const {
   return cast<T>(*m_mutableVariable).variances(m_offset, m_dims, m_dataDims);
 }
 
-/// Macro for instantiating classes and functions required for support a new
-/// dtype in Variable.
-#define INSTANTIATE_VARIABLE(name, ...)                                        \
+#define INSTANTIATE_VARIABLE_BASE(name, ...)                                   \
   namespace {                                                                  \
   auto register_dtype_name_##name(                                             \
       (core::dtypeNameRegistry().emplace(dtype<__VA_ARGS__>, #name), 0));      \
   }                                                                            \
+  template ElementArrayView<const __VA_ARGS__> Variable::values() const;       \
+  template ElementArrayView<__VA_ARGS__> Variable::values();
+
+/// Macro for instantiating classes and functions required for support a new
+/// dtype in Variable.
+#define INSTANTIATE_VARIABLE(name, ...)                                        \
+  INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
                               element_array<__VA_ARGS__>,                      \
                               std::optional<element_array<__VA_ARGS__>>);      \
-  template ElementArrayView<const __VA_ARGS__> Variable::values() const;       \
-  template ElementArrayView<__VA_ARGS__> Variable::values();                   \
   template ElementArrayView<const __VA_ARGS__> Variable::variances() const;    \
   template ElementArrayView<__VA_ARGS__> Variable::variances();                \
   template ElementArrayView<const __VA_ARGS__> VariableConstView::values()     \

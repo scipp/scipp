@@ -81,10 +81,4 @@ private:
   T m_buffer;
 };
 
-#define INSTANTIATE_BUCKET_VARIABLE(name, ...)                                 \
-  namespace {                                                                  \
-  auto register_dtype_name_##name(                                             \
-      (core::dtypeNameRegistry().emplace(dtype<__VA_ARGS__>, #name), 0));      \
-  }
-
 } // namespace scipp::variable
