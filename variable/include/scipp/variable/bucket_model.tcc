@@ -5,9 +5,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
-#include "scipp/units/unit.h"
 #include "scipp/variable/except.h"
-#include "scipp/variable/transform.h"
 #include "scipp/variable/variable.tcc"
 
 namespace scipp::variable {

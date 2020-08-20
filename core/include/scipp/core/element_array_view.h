@@ -16,12 +16,49 @@ namespace scipp::core {
 SCIPP_CORE_EXPORT void expectCanBroadcastFromTo(const Dimensions &source,
                                                 const Dimensions &target);
 
+template <class T>
+class element_array_view_iterator
+    : public boost::iterator_facade<element_array_view_iterator<T>, T,
+                                    boost::random_access_traversal_tag> {
+public:
+  element_array_view_iterator(T *variable, const Dimensions &targetDimensions,
+                              const Dimensions &dimensions,
+                              const scipp::index index)
+      : m_variable(variable), m_index(targetDimensions, dimensions) {
+    m_index.setIndex(index);
+  }
+
+private:
+  friend class boost::iterator_core_access;
+
+  bool equal(const element_array_view_iterator &other) const {
+    return m_index == other.m_index;
+  }
+  constexpr void increment() noexcept { m_index.increment(); }
+  auto &dereference() const { return m_variable[m_index.get()]; }
+  void decrement() { m_index.setIndex(m_index.index() - 1); }
+  void advance(int64_t delta) {
+    if (delta == 1)
+      increment();
+    else
+      m_index.setIndex(m_index.index() + delta);
+  }
+  int64_t distance_to(const element_array_view_iterator &other) const {
+    return static_cast<int64_t>(other.m_index.index()) -
+           static_cast<int64_t>(m_index.index());
+  }
+
+  T *m_variable;
+  ViewIndex m_index;
+};
+
 /// A view into multi-dimensional data, supporting slicing, index reordering,
 /// and broadcasting.
 template <class T> class SCIPP_CORE_EXPORT ElementArrayView {
 public:
   using element_type = T;
   using value_type = std::remove_cv_t<T>;
+  using iterator = element_array_view_iterator<T>;
 
   /// Construct a ElementArrayView.
   ///
@@ -58,46 +95,8 @@ public:
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
 
-  ElementArrayView<std::remove_const_t<T>>
-  createMutable(std::remove_const_t<T> *variable) const {
-    return ElementArrayView<std::remove_const_t<T>>(
-        variable, m_offset, m_targetDimensions, m_dimensions);
-  }
-
   friend class ElementArrayView<std::remove_const_t<T>>;
   friend class ElementArrayView<const T>;
-
-  class iterator
-      : public boost::iterator_facade<iterator, T,
-                                      boost::random_access_traversal_tag> {
-  public:
-    iterator(T *variable, const Dimensions &targetDimensions,
-             const Dimensions &dimensions, const scipp::index index)
-        : m_variable(variable), m_index(targetDimensions, dimensions) {
-      m_index.setIndex(index);
-    }
-
-  private:
-    friend class boost::iterator_core_access;
-
-    bool equal(const iterator &other) const { return m_index == other.m_index; }
-    constexpr void increment() noexcept { m_index.increment(); }
-    auto &dereference() const { return m_variable[m_index.get()]; }
-    void decrement() { m_index.setIndex(m_index.index() - 1); }
-    void advance(int64_t delta) {
-      if (delta == 1)
-        increment();
-      else
-        m_index.setIndex(m_index.index() + delta);
-    }
-    int64_t distance_to(const iterator &other) const {
-      return static_cast<int64_t>(other.m_index.index()) -
-             static_cast<int64_t>(m_index.index());
-    }
-
-    T *m_variable;
-    ViewIndex m_index;
-  };
 
   iterator begin() const {
     return {m_variable + m_offset, m_targetDimensions, m_dimensions, 0};
@@ -130,13 +129,6 @@ public:
     return std::equal(begin(), end(), other.begin());
   }
 
-  /// Return true if *this and other are two equivalent views of the same data.
-  bool isSame(const ElementArrayView<T> &other) const {
-    return (m_variable == other.m_variable) && (m_offset == other.m_offset) &&
-           (m_dimensions == other.m_dimensions) &&
-           (m_targetDimensions == other.m_targetDimensions);
-  }
-
   template <class T2> bool overlaps(const ElementArrayView<T2> &other) const {
     // TODO We could be less restrictive here and use a more sophisticated check
     // based on offsets and dimensions, if there is a performance issue due to
@@ -147,21 +139,12 @@ public:
     return false;
   }
 
-  const Dimensions &parentDimensions() const { return m_dimensions; }
-
 private:
   T *m_variable;
   scipp::index m_offset{0};
   Dimensions m_targetDimensions;
   Dimensions m_dimensions;
 };
-
-template <class T>
-ElementArrayView<T> makeElementArrayView(T *variable, const scipp::index offset,
-                                         const Dimensions &targetDimensions,
-                                         const Dimensions &dimensions) {
-  return ElementArrayView<T>(variable, offset, targetDimensions, dimensions);
-}
 
 template <class T> struct is_ElementArrayView : std::false_type {};
 template <class T>
