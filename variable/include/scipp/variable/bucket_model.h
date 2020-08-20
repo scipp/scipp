@@ -6,8 +6,8 @@
 #include "scipp/core/bucket_array_view.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
-#include "scipp/variable/except.h"
 #include "scipp/variable/data_model.h"
+#include "scipp/variable/except.h"
 
 namespace scipp::variable {
 
