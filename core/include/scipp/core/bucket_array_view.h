@@ -25,11 +25,8 @@ public:
   using value_type = const typename bucket_base::range_type;
   using base = ElementArrayView<const value_type>;
 
-  bucket_array_view(value_type *buckets, const scipp::index offset,
-                    const Dimensions &iterDims, const Dimensions &dataDims,
-                    const Dim dim, T &buffer)
-      : ElementArrayView<value_type>(buckets, offset, iterDims, dataDims),
-        m_transform{dim, &buffer} {}
+  bucket_array_view(const base &buckets, const Dim dim, T &buffer)
+      : base(buckets), m_transform{dim, &buffer} {}
 
   auto begin() const {
     return boost::make_transform_iterator(base::begin(), m_transform);

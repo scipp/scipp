@@ -61,11 +61,13 @@ public:
   void copy(const VariableConstView &, const VariableView &) const override {}
   void assign(const VariableConcept &) override {}
 
-  ElementArrayView<bucket<T>> values() {
-    return {m_buckets.data(), 0, dims(), dims(), m_dim, m_buffer};
+  auto buckets() const {
+    return ElementArrayView{m_buckets.data(), 0, dims(), dims()};
   }
+
+  ElementArrayView<bucket<T>> values() { return {buckets(), m_dim, m_buffer}; }
   ElementArrayView<const bucket<T>> values() const {
-    return {m_buckets.data(), 0, dims(), dims(), m_dim, m_buffer};
+    return {buckets(), m_dim, m_buffer};
   }
 
 private:
