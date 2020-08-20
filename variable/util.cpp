@@ -10,7 +10,6 @@
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
-#include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 
 using namespace scipp::core;

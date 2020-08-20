@@ -74,6 +74,18 @@ template <typename T> void bind_sort_dim(py::module &m) {
 }
 
 template <typename T> void bind_sort_variable(py::module &m) {
+  auto doc = Docstring()
+                 .description("Sort a Variable according to its values along "
+                              "the inner dimension.")
+                 .raises("If the key is not the inner dimension.")
+                 .returns("The sorted equivalent of the input.")
+                 .rtype<T>()
+                 .template param<T>("x", "Data to be sorted")
+                 .param("dim", "Dimension to sort along.", "Dim")
+                 .param("order",
+                        "Sorted order. Valid options are 'ascending' and "
+                        "'descending'. Default is 'ascending'.",
+                        "str");
   m.def(
       "sort",
       [](const typename T::const_view_type &x, const Dim dim,
@@ -87,7 +99,7 @@ template <typename T> void bind_sort_variable(py::module &m) {
               "Sort order must be 'ascending' or 'descending'");
       },
       py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
-      py::call_guard<py::gil_scoped_release>());
+      py::call_guard<py::gil_scoped_release>(), doc.c_str());
 }
 
 template <typename T> void bind_contains_events(py::module &m) {

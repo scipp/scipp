@@ -30,11 +30,11 @@ constexpr auto sort_to_specify(F1 for_zip, F2 for_no_var) {
           using B = typename T::value_type;
           using A = typename B::value_type;
           std::vector<std::pair<A, A>> zipped;
-          for (long unsigned int i = 0; i < range.value.size(); i++) {
+          for (scipp::index i = 0; i < scipp::size(range.value); i++) {
             zipped.push_back(std::make_pair(range.value[i], range.variance[i]));
           }
           std::sort(std::begin(zipped), std::end(zipped), for_zip);
-          for (long unsigned int i = 0; i < range.value.size(); i++) {
+          for (scipp::index i = 0; i < scipp::size(range.value); i++) {
             range.value[i] = zipped[i].first;
             range.variance[i] = zipped[i].second;
           }
