@@ -145,7 +145,7 @@ static constexpr void advance(T &indices,
 }
 
 template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
-  if constexpr (core::is_ElementArrayView_v<std::decay_t<T>>)
+  if constexpr (std::is_base_of_v<core::element_array_view, std::decay_t<T>>)
     return iterable.begin_index();
   else if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
     return begin_index(iterable.values);
@@ -154,7 +154,7 @@ template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
 }
 
 template <class T> static constexpr auto end_index(T &&iterable) noexcept {
-  if constexpr (core::is_ElementArrayView_v<std::decay_t<T>>)
+  if constexpr (std::is_base_of_v<core::element_array_view, std::decay_t<T>>)
     return iterable.end_index();
   else if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
     return end_index(iterable.values);

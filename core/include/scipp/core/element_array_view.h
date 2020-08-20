@@ -135,12 +135,6 @@ private:
   T *m_variable;
 };
 
-template <class T> struct is_ElementArrayView : std::false_type {};
-template <class T>
-struct is_ElementArrayView<ElementArrayView<T>> : std::true_type {};
-template <class T>
-inline constexpr bool is_ElementArrayView_v = is_ElementArrayView<T>::value;
-
 } // namespace scipp::core
 
 namespace scipp {
