@@ -6,7 +6,6 @@
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
 #include "scipp/units/unit.h"
-#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable.h"

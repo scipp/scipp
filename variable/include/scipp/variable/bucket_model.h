@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#pragma once
 #include "scipp/core/bucket_array_view.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
@@ -14,9 +15,10 @@ namespace scipp::variable {
 /// DataArray, or Dataset.
 template <class T> class DataModel<bucket<T>> : public VariableConcept {
 public:
-  using value_type = typename bucket<T>::range_type;
+  using value_type = bucket<T>;
+  using range_type = typename bucket<T>::range_type;
 
-  DataModel(const Dimensions &dimensions, element_array<value_type> buckets,
+  DataModel(const Dimensions &dimensions, element_array<range_type> buckets,
             const Dim dim, T buffer)
       : VariableConcept(dimensions), m_buckets(std::move(buckets)), m_dim(dim),
         m_buffer(std::move(buffer)) {
@@ -40,7 +42,7 @@ public:
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
     return std::make_unique<DataModel>(dims,
-                                       element_array<value_type>(dims.volume()),
+                                       element_array<range_type>(dims.volume()),
                                        m_dim, T(m_buffer, m_buffer.dims()));
   }
 
@@ -70,9 +72,15 @@ public:
   }
 
 private:
-  element_array<value_type> m_buckets;
+  element_array<range_type> m_buckets;
   Dim m_dim;
   T m_buffer;
 };
+
+#define INSTANTIATE_BUCKET_VARIABLE(name, ...)                                 \
+  namespace {                                                                  \
+  auto register_dtype_name_##name(                                             \
+      (core::dtypeNameRegistry().emplace(dtype<__VA_ARGS__>, #name), 0));      \
+  }
 
 } // namespace scipp::variable
