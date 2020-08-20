@@ -65,8 +65,9 @@ public:
     if (m_variances && !core::canHaveVariances<T>())
       throw except::VariancesError("This data type cannot have variances.");
     if (this->dims().volume() != scipp::size(m_values))
-      throw std::runtime_error("Creating Variable: data size does not match "
-                               "volume given by dimension extents");
+      throw except::DimensionError(
+          "Creating Variable: data size does not match "
+          "volume given by dimension extents.");
     if (m_variances && !*m_variances)
       *m_variances =
           element_array<T>(dimensions.volume(), default_init<T>::value());

@@ -24,6 +24,10 @@ public:
         m_buffer(std::move(buffer)) {
     if (!m_buffer.dims().contains(m_dim))
       throw except::DimensionError("Buffer must contain bucket slicing dim.");
+    if (this->dims().volume() != scipp::size(m_buckets))
+      throw except::DimensionError(
+          "Creating Variable: data size does not match "
+          "volume given by dimension extents.");
   }
 
   VariableConceptHandle clone() const override {

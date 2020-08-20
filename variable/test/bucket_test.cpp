@@ -19,7 +19,7 @@ using Model = DataModel<bucket<Variable>>;
 
 class BucketModelTest : public ::testing::Test {
 protected:
-  Dimensions dims{Dim::X, 4};
+  Dimensions dims{Dim::X, 2};
   element_array<std::pair<scipp::index, scipp::index>> buckets{{0, 2}, {2, 4}};
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
@@ -47,7 +47,7 @@ TEST_F(BucketModelTest, comparison){
   EXPECT_EQ(Model(dims, buckets, Dim::X, buffer),
             Model(dims, buckets, Dim::X, buffer));
   EXPECT_NE(Model(dims, buckets, Dim::X, buffer),
-            Model({{Dim::X, Dim::Y}, {2, 2}}, buckets, Dim::X, buffer));
+            Model({{Dim::X, Dim::Y}, {2, 1}}, buckets, Dim::X, buffer));
   auto buckets2 = buckets;
   buckets2.data()[0] = {0, 1};
   EXPECT_NE(Model(dims, buckets, Dim::X, buffer),
@@ -86,6 +86,14 @@ TEST_F(BucketModelTest, variable) {
   Variable var(std::make_unique<Model>(dims, buckets, Dim::X, buffer));
   EXPECT_EQ(var.unit(), units::one);
   EXPECT_EQ(var.dims(), dims);
-  EXPECT_EQ(*var.values<bucket<Variable>>().begin(),
+  const auto vals = var.values<bucket<Variable>>();
+  EXPECT_EQ(vals.size(), 2);
+  EXPECT_EQ(vals[0], buffer.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(vals[1], buffer.slice({Dim::X, 2, 4}));
+  EXPECT_EQ(vals.front(), buffer.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(vals.back(), buffer.slice({Dim::X, 2, 4}));
+  EXPECT_EQ(*vals.begin(), buffer.slice({Dim::X, 0, 2}));
+  const auto &const_var = var;
+  EXPECT_EQ(const_var.values<bucket<Variable>>()[0],
             buffer.slice({Dim::X, 0, 2}));
 }

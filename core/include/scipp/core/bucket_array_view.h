@@ -35,6 +35,23 @@ public:
     return boost::make_transform_iterator(base::end(), m_transform);
   }
 
+  auto operator[](const scipp::index i) const { return *(begin() + i); }
+
+  auto front() const { return *begin(); }
+  auto back() const { return *(begin() + (size() - 1)); }
+
+  bool operator==(const bucket_array_view &other) const {
+    if (dims() != other.dims())
+      return false;
+    return std::equal(begin(), end(), other.begin());
+  }
+
+  template <class T2> bool overlaps(const bucket_array_view<T2> &other) const {
+    if (buffer() == other.buffer())
+      return element_array_view::overlaps(other);
+    return false;
+  }
+
 private:
   struct make_item {
     auto operator()(typename bucket_array_view::value_type &range) const {
