@@ -52,41 +52,34 @@ private:
   ViewIndex m_index;
 };
 
-/// A view into multi-dimensional data, supporting slicing, index reordering,
-/// and broadcasting.
-template <class T> class SCIPP_CORE_EXPORT ElementArrayView {
+/// Base class for ElementArrayView<T> with functionality independent of T.
+class SCIPP_CORE_EXPORT element_array_view {
 public:
-  using element_type = T;
-  using value_type = std::remove_cv_t<T>;
-  using iterator = element_array_view_iterator<T>;
-
-  /// Construct a ElementArrayView.
+  /// Construct an element_array_view.
   ///
-  /// @param variable Pointer to data array.
   /// @param offset Start offset from beginning of data array.
   /// @param targetDimensions Dimensions of the constructed ElementArrayView.
   /// @param dimensions Dimensions of the data array.
   ///
   /// The parameter `targetDimensions` can be used to remove, slice, broadcast,
   /// or transpose dimensions of the input data array.
-  ElementArrayView(T *variable, const scipp::index offset,
-                   const Dimensions &targetDimensions,
-                   const Dimensions &dimensions)
-      : m_variable(variable), m_offset(offset),
-        m_targetDimensions(targetDimensions), m_dimensions(dimensions) {
+  element_array_view(const scipp::index offset,
+                     const Dimensions &targetDimensions,
+                     const Dimensions &dimensions)
+      : m_offset(offset), m_targetDimensions(targetDimensions),
+        m_dimensions(dimensions) {
     expectCanBroadcastFromTo(m_dimensions, m_targetDimensions);
   }
 
-  /// Construct a ElementArrayView from another ElementArrayView, with different
-  /// target dimensions.
+  /// Construct element_array_view from another element_array_view, with
+  /// different target dimensions.
   ///
   /// A good way to think of this is of a non-contiguous underlying data array,
   /// e.g., since the other view may represent a slice. This also supports
   /// broadcasting the slice.
-  template <class Other>
-  ElementArrayView(const Other &other, const Dimensions &targetDimensions)
-      : m_variable(other.m_variable), m_offset(other.m_offset),
-        m_targetDimensions(targetDimensions) {
+  element_array_view(const element_array_view &other,
+                     const Dimensions &targetDimensions)
+      : m_offset(other.m_offset), m_targetDimensions(targetDimensions) {
     expectCanBroadcastFromTo(other.m_targetDimensions, m_targetDimensions);
     m_dimensions = other.m_dimensions;
     // See implementation of ViewIndex regarding this relabeling.
@@ -94,6 +87,46 @@ public:
       if (label != Dim::Invalid && !other.m_targetDimensions.contains(label))
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
+
+  ViewIndex begin_index() const noexcept {
+    return {m_targetDimensions, m_dimensions};
+  }
+  ViewIndex end_index() const noexcept {
+    ViewIndex i{m_targetDimensions, m_dimensions};
+    i.setIndex(size());
+    return i;
+  }
+
+  scipp::index size() const { return m_targetDimensions.volume(); }
+
+protected:
+  scipp::index m_offset{0};
+  Dimensions m_targetDimensions;
+  Dimensions m_dimensions;
+};
+
+/// A view into multi-dimensional data, supporting slicing, index reordering,
+/// and broadcasting.
+template <class T>
+class SCIPP_CORE_EXPORT ElementArrayView : public element_array_view {
+public:
+  using element_type = T;
+  using value_type = std::remove_cv_t<T>;
+  using iterator = element_array_view_iterator<T>;
+
+  /// Construct an ElementArrayView over given data pointer.
+  ElementArrayView(T *variable, const scipp::index offset,
+                   const Dimensions &targetDimensions,
+                   const Dimensions &dimensions)
+      : element_array_view(offset, targetDimensions, dimensions),
+        m_variable(variable) {}
+
+  /// Construct a ElementArrayView from another ElementArrayView, with different
+  /// target dimensions.
+  template <class Other>
+  ElementArrayView(const Other &other, const Dimensions &targetDimensions)
+      : element_array_view(other, targetDimensions),
+        m_variable(other.m_variable) {}
 
   friend class ElementArrayView<std::remove_const_t<T>>;
   friend class ElementArrayView<const T>;
@@ -111,17 +144,6 @@ public:
 
   const T *data() const { return m_variable + m_offset; }
   T *data() { return m_variable + m_offset; }
-
-  ViewIndex begin_index() const noexcept {
-    return {m_targetDimensions, m_dimensions};
-  }
-  ViewIndex end_index() const noexcept {
-    ViewIndex i{m_targetDimensions, m_dimensions};
-    i.setIndex(size());
-    return i;
-  }
-
-  scipp::index size() const { return m_targetDimensions.volume(); }
 
   bool operator==(const ElementArrayView<T> &other) const {
     if (m_targetDimensions != other.m_targetDimensions)
@@ -141,9 +163,6 @@ public:
 
 private:
   T *m_variable;
-  scipp::index m_offset{0};
-  Dimensions m_targetDimensions;
-  Dimensions m_dimensions;
 };
 
 template <class T> struct is_ElementArrayView : std::false_type {};
