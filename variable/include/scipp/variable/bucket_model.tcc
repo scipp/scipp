@@ -53,11 +53,19 @@ private:
   make_item m_transform;
 };
 
+/// Specialization of ElementArrayView for mutable access to bucketed data.
+///
+/// Iteration returns a mutable view to a slice of the underlying buffer. For
+/// example, a VariableView in case of a T=Variable.
 template <class T>
 class ElementArrayView<variable::bucket<T>> : public bucket_array_view<T> {
   using bucket_array_view<T>::bucket_array_view;
 };
 
+/// Specialization of ElementArrayView for const access to bucketed data.
+///
+/// Iteration returns a const view to a slice of the underlying buffer. For
+/// example, a VariableConstView in case of a T=Variable.
 template <class T>
 class ElementArrayView<const variable::bucket<T>>
     : public bucket_array_view<const T> {
@@ -68,6 +76,8 @@ class ElementArrayView<const variable::bucket<T>>
 
 namespace scipp::variable {
 
+/// Specialization of DataModel for "bucketed" data. T could be Variable,
+/// DataArray, or Dataset.
 template <class T> class DataModel<bucket<T>> : public VariableConcept {
 public:
   using value_type = typename bucket<T>::range_type;
