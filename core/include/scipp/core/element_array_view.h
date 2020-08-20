@@ -13,9 +13,6 @@
 
 namespace scipp::core {
 
-SCIPP_CORE_EXPORT void expectCanBroadcastFromTo(const Dimensions &source,
-                                                const Dimensions &target);
-
 template <class T>
 class element_array_view_iterator
     : public boost::iterator_facade<element_array_view_iterator<T>, T,
@@ -55,38 +52,11 @@ private:
 /// Base class for ElementArrayView<T> with functionality independent of T.
 class SCIPP_CORE_EXPORT element_array_view {
 public:
-  /// Construct an element_array_view.
-  ///
-  /// @param offset Start offset from beginning of data array.
-  /// @param targetDimensions Dimensions of the constructed ElementArrayView.
-  /// @param dimensions Dimensions of the data array.
-  ///
-  /// The parameter `targetDimensions` can be used to remove, slice, broadcast,
-  /// or transpose dimensions of the input data array.
   element_array_view(const scipp::index offset,
                      const Dimensions &targetDimensions,
-                     const Dimensions &dimensions)
-      : m_offset(offset), m_targetDimensions(targetDimensions),
-        m_dimensions(dimensions) {
-    expectCanBroadcastFromTo(m_dimensions, m_targetDimensions);
-  }
-
-  /// Construct element_array_view from another element_array_view, with
-  /// different target dimensions.
-  ///
-  /// A good way to think of this is of a non-contiguous underlying data array,
-  /// e.g., since the other view may represent a slice. This also supports
-  /// broadcasting the slice.
+                     const Dimensions &dimensions);
   element_array_view(const element_array_view &other,
-                     const Dimensions &targetDimensions)
-      : m_offset(other.m_offset), m_targetDimensions(targetDimensions) {
-    expectCanBroadcastFromTo(other.m_targetDimensions, m_targetDimensions);
-    m_dimensions = other.m_dimensions;
-    // See implementation of ViewIndex regarding this relabeling.
-    for (const auto label : m_dimensions.labels())
-      if (label != Dim::Invalid && !other.m_targetDimensions.contains(label))
-        m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
-  }
+                     const Dimensions &targetDimensions);
 
   ViewIndex begin_index() const noexcept {
     return {m_targetDimensions, m_dimensions};
