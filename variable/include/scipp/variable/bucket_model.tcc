@@ -10,7 +10,10 @@
 
 namespace scipp::variable {
 
-template <class T> struct bucket {};
+template <class T> struct bucket {
+  using element_type = typename T::view_type;
+  using const_element_type = typename T::const_view_type;
+};
 
 template <class T> class DataModel<bucket<T>> : public VariableConcept {
 public:
@@ -61,6 +64,9 @@ public:
   void copy(const VariableConstView &src,
             const VariableView &dest) const override {}
   void assign(const VariableConcept &other) override {}
+
+  ElementArrayView<typename bucket<T>::element_type> values();
+  ElementArrayView<typename bucket<T>::const_element_type> values() const;
 
 private:
   element_array<std::pair<scipp::index, scipp::index>> m_buckets;

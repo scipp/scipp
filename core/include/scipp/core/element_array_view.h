@@ -52,27 +52,24 @@ private:
 /// Base class for ElementArrayView<T> with functionality independent of T.
 class SCIPP_CORE_EXPORT element_array_view {
 public:
-  element_array_view(const scipp::index offset,
-                     const Dimensions &targetDimensions,
-                     const Dimensions &dimensions);
+  element_array_view(const scipp::index offset, const Dimensions &iterDims,
+                     const Dimensions &dataDims);
   element_array_view(const element_array_view &other,
-                     const Dimensions &targetDimensions);
+                     const Dimensions &iterDims);
 
-  ViewIndex begin_index() const noexcept {
-    return {m_targetDimensions, m_dimensions};
-  }
+  ViewIndex begin_index() const noexcept { return {m_iterDims, m_dataDims}; }
   ViewIndex end_index() const noexcept {
-    ViewIndex i{m_targetDimensions, m_dimensions};
+    ViewIndex i{m_iterDims, m_dataDims};
     i.setIndex(size());
     return i;
   }
 
-  scipp::index size() const { return m_targetDimensions.volume(); }
+  scipp::index size() const { return m_iterDims.volume(); }
 
 protected:
   scipp::index m_offset{0};
-  Dimensions m_targetDimensions;
-  Dimensions m_dimensions;
+  Dimensions m_iterDims;
+  Dimensions m_dataDims;
 };
 
 /// A view into multi-dimensional data, supporting slicing, index reordering,
@@ -86,26 +83,23 @@ public:
 
   /// Construct an ElementArrayView over given data pointer.
   ElementArrayView(T *variable, const scipp::index offset,
-                   const Dimensions &targetDimensions,
-                   const Dimensions &dimensions)
-      : element_array_view(offset, targetDimensions, dimensions),
-        m_variable(variable) {}
+                   const Dimensions &iterDims, const Dimensions &dataDims)
+      : element_array_view(offset, iterDims, dataDims), m_variable(variable) {}
 
   /// Construct a ElementArrayView from another ElementArrayView, with different
-  /// target dimensions.
+  /// iteration dimensions.
   template <class Other>
-  ElementArrayView(const Other &other, const Dimensions &targetDimensions)
-      : element_array_view(other, targetDimensions),
-        m_variable(other.m_variable) {}
+  ElementArrayView(const Other &other, const Dimensions &iterDims)
+      : element_array_view(other, iterDims), m_variable(other.m_variable) {}
 
   friend class ElementArrayView<std::remove_const_t<T>>;
   friend class ElementArrayView<const T>;
 
   iterator begin() const {
-    return {m_variable + m_offset, m_targetDimensions, m_dimensions, 0};
+    return {m_variable + m_offset, m_iterDims, m_dataDims, 0};
   }
   iterator end() const {
-    return {m_variable + m_offset, m_targetDimensions, m_dimensions, size()};
+    return {m_variable + m_offset, m_iterDims, m_dataDims, size()};
   }
   auto &operator[](const scipp::index i) const { return *(begin() + i); }
 
@@ -116,7 +110,7 @@ public:
   T *data() { return m_variable + m_offset; }
 
   bool operator==(const ElementArrayView<T> &other) const {
-    if (m_targetDimensions != other.m_targetDimensions)
+    if (m_iterDims != other.m_iterDims)
       return false;
     return std::equal(begin(), end(), other.begin());
   }
@@ -126,8 +120,7 @@ public:
     // based on offsets and dimensions, if there is a performance issue due to
     // this current stricter requirement.
     if (m_variable == other.m_variable)
-      return (m_offset != other.m_offset) ||
-             (m_dimensions != other.m_dimensions);
+      return (m_offset != other.m_offset) || (m_dataDims != other.m_dataDims);
     return false;
   }
 

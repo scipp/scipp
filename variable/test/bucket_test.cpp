@@ -7,6 +7,12 @@
 using namespace scipp;
 using namespace scipp::variable;
 
+TEST(BucketTest, member_types) {
+  static_assert(std::is_same_v<bucket<Variable>::element_type, VariableView>);
+  static_assert(
+      std::is_same_v<bucket<Variable>::const_element_type, VariableConstView>);
+}
+
 using Model = DataModel<bucket<Variable>>;
 
 class BucketModelTest : public ::testing::Test {
