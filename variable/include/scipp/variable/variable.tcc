@@ -61,16 +61,16 @@ public:
       : VariableConcept(dimensions),
         m_values(model ? std::move(model)
                        : element_array<T>(dimensions.volume(),
-                                          default_init<value_type>::value())),
+                                          default_init<T>::value())),
         m_variances(std::move(variances)) {
-    if (m_variances && !core::canHaveVariances<value_type>())
+    if (m_variances && !core::canHaveVariances<T>())
       throw except::VariancesError("This data type cannot have variances.");
     if (this->dims().volume() != scipp::size(m_values))
       throw std::runtime_error("Creating Variable: data size does not match "
                                "volume given by dimension extents");
     if (m_variances && !*m_variances)
       *m_variances = element_array<T>(dimensions.volume(),
-                                      default_init<value_type>::value());
+                                      default_init<T>::value());
   }
 
   DType dtype() const noexcept override { return scipp::dtype<T>; }
@@ -154,7 +154,7 @@ template <class T> void DataModel<T>::assign(const VariableConcept &other) {
 }
 
 template <class T> void DataModel<T>::setVariances(Variable &&variances) {
-  if (!core::canHaveVariances<value_type>())
+  if (!core::canHaveVariances<T>())
     throw except::VariancesError("This data type cannot have variances.");
   if (!variances)
     return m_variances.reset();

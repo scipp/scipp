@@ -4,6 +4,7 @@ set(TARGET_NAME "scipp-variable-test")
 add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
+  bucket_test.cpp
   comparison_test.cpp
   indexed_slice_view_test.cpp
   operations_test.cpp
