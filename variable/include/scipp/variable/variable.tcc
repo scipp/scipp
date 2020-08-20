@@ -61,7 +61,10 @@ template <class T> ElementArrayView<T> VariableView::variances() const {
       (core::dtypeNameRegistry().emplace(dtype<__VA_ARGS__>, #name), 0));      \
   }                                                                            \
   template ElementArrayView<const __VA_ARGS__> Variable::values() const;       \
-  template ElementArrayView<__VA_ARGS__> Variable::values();
+  template ElementArrayView<__VA_ARGS__> Variable::values();                   \
+  template ElementArrayView<const __VA_ARGS__> VariableConstView::values()     \
+      const;                                                                   \
+  template ElementArrayView<__VA_ARGS__> VariableView::values() const;
 
 /// Macro for instantiating classes and functions required for support a new
 /// dtype in Variable.
@@ -72,11 +75,8 @@ template <class T> ElementArrayView<T> VariableView::variances() const {
                               std::optional<element_array<__VA_ARGS__>>);      \
   template ElementArrayView<const __VA_ARGS__> Variable::variances() const;    \
   template ElementArrayView<__VA_ARGS__> Variable::variances();                \
-  template ElementArrayView<const __VA_ARGS__> VariableConstView::values()     \
-      const;                                                                   \
   template ElementArrayView<const __VA_ARGS__> VariableConstView::variances()  \
       const;                                                                   \
-  template ElementArrayView<__VA_ARGS__> VariableView::values() const;         \
   template ElementArrayView<__VA_ARGS__> VariableView::variances() const;
 
 } // namespace scipp::variable

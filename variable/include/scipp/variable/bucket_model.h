@@ -69,10 +69,25 @@ public:
   auto buckets() const {
     return ElementArrayView{m_buckets.data(), 0, dims(), dims()};
   }
+  auto buckets(const scipp::index offset, const Dimensions &iterDims,
+               const Dimensions &dataDims) const {
+    return ElementArrayView(m_buckets.data(), offset, iterDims, dataDims);
+  }
 
   ElementArrayView<bucket<T>> values() { return {buckets(), m_dim, m_buffer}; }
   ElementArrayView<const bucket<T>> values() const {
     return {buckets(), m_dim, m_buffer};
+  }
+
+  ElementArrayView<bucket<T>> values(const scipp::index offset,
+                                     const Dimensions &iterDims,
+                                     const Dimensions &dataDims) {
+    return {buckets(offset, iterDims, dataDims), m_dim, m_buffer};
+  }
+  ElementArrayView<const bucket<T>> values(const scipp::index offset,
+                                           const Dimensions &iterDims,
+                                           const Dimensions &dataDims) const {
+    return {buckets(offset, iterDims, dataDims), m_dim, m_buffer};
   }
 
 private:

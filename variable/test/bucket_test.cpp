@@ -18,7 +18,7 @@ using Model = DataModel<bucket<Variable>>;
 
 class BucketModelTest : public ::testing::Test {
 protected:
-  Dimensions dims{Dim::X, 2};
+  Dimensions dims{Dim::Y, 2};
   element_array<std::pair<scipp::index, scipp::index>> buckets{{0, 2}, {2, 4}};
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
