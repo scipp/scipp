@@ -7,13 +7,13 @@
 #include <vector>
 
 #include "scipp-variable_export.h"
-#include "scipp/variable/variable.h"
 #include "scipp/variable/util.h" // for enum ascending, descending
+#include "scipp/variable/variable.h"
 
 namespace scipp::variable {
 
-
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sort(const VariableConstView &var, 
-                                        const Dim dim, const SortOrder order);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sort(const VariableConstView &var,
+                                                  const Dim dim,
+                                                  const SortOrder order);
 
 } // namespace scipp::variable
