@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/shape.h"
 
 using namespace scipp;
 
@@ -16,6 +17,26 @@ protected:
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   Variable var{std::make_unique<Model>(dims, buckets, Dim::X, buffer)};
 };
+
+TEST_F(VariableBucketTest, comparison) {
+  EXPECT_TRUE(var == var);
+  EXPECT_FALSE(var != var);
+}
+
+TEST_F(VariableBucketTest, copy) { EXPECT_EQ(Variable(var), var); }
+
+TEST_F(VariableBucketTest, assign) {
+  Variable copy(var);
+  var.values<bucket<Variable>>()[0] += var.values<bucket<Variable>>()[1];
+  EXPECT_NE(copy, var);
+  copy = var;
+  EXPECT_EQ(copy, var);
+}
+
+TEST_F(VariableBucketTest, shape_operations) {
+  // Not supported yet, not to ensure this fails instead of returning garbage.
+  EXPECT_ANY_THROW(concatenate(var, var, Dim::Y));
+}
 
 TEST_F(VariableBucketTest, basics) {
   // TODO Probably it would be a good idea to prevent having any other unit.

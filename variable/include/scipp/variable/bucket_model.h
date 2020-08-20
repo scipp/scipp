@@ -59,12 +59,11 @@ public:
       throw except::VariancesError("This data type cannot have variances.");
   }
 
-  bool equals(const VariableConstView &,
-              const VariableConstView &) const override {
-    return false;
-  }
-  void copy(const VariableConstView &, const VariableView &) const override {}
-  void assign(const VariableConcept &) override {}
+  bool equals(const VariableConstView &a,
+              const VariableConstView &b) const override;
+  void copy(const VariableConstView &src,
+            const VariableView &dest) const override;
+  void assign(const VariableConcept &other) override;
 
   auto buckets() const {
     return ElementArrayView{m_buckets.data(), 0, dims(), dims()};
@@ -95,5 +94,41 @@ private:
   Dim m_dim;
   T m_buffer;
 };
+
+template <class T>
+bool DataModel<bucket<T>>::equals(const VariableConstView &a,
+                                  const VariableConstView &b) const {
+  if (a.unit() != b.unit())
+    return false;
+  if (a.dims() != b.dims())
+    return false;
+  if (a.dtype() != b.dtype())
+    return false;
+  if (a.hasVariances() != b.hasVariances())
+    return false;
+  if (a.dims().volume() == 0 && a.dims() == b.dims())
+    return true;
+  // TODO This implementation is slow since it creates a view for every bucket.
+  return equal(a.values<bucket<T>>(), b.values<bucket<T>>());
+}
+
+template <class T>
+void DataModel<bucket<T>>::copy(const VariableConstView &,
+                                const VariableView &) const {
+  // Need to rethink the entire mechanism of shape-changing operations such as
+  // `concatenate` since we cannot just copy buckets but need to manage the
+  // buffer as well.
+  throw std::runtime_error(
+      "SHape-related operations for bucketed data are not supported yet.");
+}
+
+template <class T>
+void DataModel<bucket<T>>::assign(const VariableConcept &other) {
+  const auto &otherT = requireT<const DataModel<bucket<T>>>(other);
+  std::copy(otherT.m_buckets.begin(), otherT.m_buckets.end(),
+            m_buckets.begin());
+  m_dim = otherT.m_dim;
+  m_buffer = otherT.m_buffer;
+}
 
 } // namespace scipp::variable
