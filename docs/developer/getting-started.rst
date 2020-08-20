@@ -81,7 +81,7 @@ To use the ``scipp`` Python module:
 .. code-block:: bash
 
   cd ../python
-  PYTHONPATH=$PYTHONPATH:./install python3
+  PYTHONPATH=$PYTHONPATH:../install python3
 
 In Python:
 
