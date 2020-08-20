@@ -73,8 +73,8 @@ public:
           element_array<T>(dimensions.volume(), default_init<T>::value());
   }
 
-  DType dtype() const noexcept override { return scipp::dtype<T>; }
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
+  DType dtype() const noexcept override { return scipp::dtype<T>; }
 
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override;

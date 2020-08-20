@@ -44,9 +44,8 @@ public:
                                        m_dim, T(m_buffer, m_buffer.dims()));
   }
 
-  constexpr DType dtype() const noexcept override {
-    return scipp::dtype<bucket<T>>; // or bucket<T>::view_type?
-  }
+  static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
+  DType dtype() const noexcept override { return scipp::dtype<bucket<T>>; }
 
   constexpr bool hasVariances() const noexcept override { return false; }
   void setVariances(Variable &&) override {

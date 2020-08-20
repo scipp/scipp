@@ -251,8 +251,6 @@ public:
   auto &underlying() const { return *m_variable; }
 
 protected:
-  friend class Variable;
-
   const Variable *m_variable{nullptr};
   scipp::index m_offset{0};
   Dimensions m_dims;
@@ -319,7 +317,6 @@ public:
   void expectCanSetUnit(const units::Unit &unit) const;
 
 private:
-  friend class Variable;
   friend class dataset::DataArrayConstView;
   template <class T> friend typename T::view_type dataset::makeViewItem(T &);
 
