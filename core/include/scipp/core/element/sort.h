@@ -15,11 +15,10 @@
 
 namespace scipp::core::element {
 
-constexpr auto sort_common =
-    overloaded{core::element::arg_list<
-                   std::tuple<span<int64_t>, span<int32_t>, span<double>,
-                              span<float>, span<std::string>>>,
-               [](units::Unit &) {}};
+constexpr auto sort_common = overloaded{
+    core::element::arg_list<span<int64_t>, span<int32_t>, span<double>,
+                            span<float>, span<std::string>>,
+    [](units::Unit &) {}};
 
 template <typename F1, typename F2>
 constexpr auto sort_to_specify(F1 for_zip, F2 for_no_var) {

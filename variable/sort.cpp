@@ -17,13 +17,11 @@ Variable sort(const VariableConstView &var, const Dim dim,
               const SortOrder order) {
   Variable out(var);
   if (order == SortOrder::Ascending)
-    transform_in_place<std::tuple<span<int64_t>, span<int32_t>, span<double>,
-                                  span<float>, span<std::string>>>(
-        subspan_view(out, dim), core::element::sort_nondescending);
+    transform_in_place(subspan_view(out, dim),
+                       core::element::sort_nondescending);
   else
-    transform_in_place<std::tuple<span<int64_t>, span<int32_t>, span<double>,
-                                  span<float>, span<std::string>>>(
-        subspan_view(out, dim), core::element::sort_nonascending);
+    transform_in_place(subspan_view(out, dim),
+                       core::element::sort_nonascending);
   return out;
 }
 

@@ -83,12 +83,3 @@ TEST(UtilTest, values_variances) {
   EXPECT_EQ(values(var), 1.0 * units::m);
   EXPECT_EQ(variances(var), 2.0 * (units::m * units::m));
 }
-
-TEST(SortTest, ascending) {
-  auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                  Values{3, 2, 1, 20, 10, 30});
-  const auto expected = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                             Values{1, 2, 3, 10, 20, 30});
-  EXPECT_EQ(sort(var, Dim::X), expected);
-  EXPECT_THROW(sort(var, Dim::Y), except::DimensionError);
-}
