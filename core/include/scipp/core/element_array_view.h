@@ -58,27 +58,6 @@ public:
         m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
   }
 
-  /// Construct a ElementArrayView from another ElementArrayView, with different
-  /// target dimensions and offset derived from `dim` and `begin`.
-  ///
-  /// This is essentially performing a slice of a ElementArrayView, creating a
-  /// new view which may at the same time also perform other manipulations such
-  /// as broadcasting and transposing.
-  template <class Other>
-  ElementArrayView(const Other &other, const Dimensions &targetDimensions,
-                   const Dim dim, const scipp::index begin)
-      : m_variable(other.m_variable), m_offset(other.m_offset),
-        m_targetDimensions(targetDimensions) {
-    expectCanBroadcastFromTo(other.m_targetDimensions, m_targetDimensions);
-    m_dimensions = other.m_dimensions;
-    if (dim != Dim::Invalid)
-      m_offset += begin * m_dimensions.offset(dim);
-    // See implementation of ViewIndex regarding this relabeling.
-    for (const auto label : m_dimensions.labels())
-      if (label != Dim::Invalid && !other.m_targetDimensions.contains(label))
-        m_dimensions.relabel(m_dimensions.index(label), Dim::Invalid);
-  }
-
   ElementArrayView<std::remove_const_t<T>>
   createMutable(std::remove_const_t<T> *variable) const {
     return ElementArrayView<std::remove_const_t<T>>(

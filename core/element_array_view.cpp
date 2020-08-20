@@ -9,6 +9,8 @@ namespace scipp::core {
 
 void expectCanBroadcastFromTo(const Dimensions &source,
                               const Dimensions &target) {
+  if (source == target)
+    return;
   for (const auto dim : target.labels())
     if (source.contains(dim) && (source[dim] < target[dim]))
       throw except::DimensionError("Cannot broadcast/slice dimension since "

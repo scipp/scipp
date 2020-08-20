@@ -124,18 +124,11 @@ template <class... Ts> class as_ElementArrayViewImpl {
   using get_variances = DataAccessHelper::get_variances;
 
   template <class View>
-  using outVariant_t = std::variant<
-      std::conditional_t<std::is_same_v<View, Variable>, scipp::span<Ts>,
-                         ElementArrayView<Ts>>...>;
+  using outVariant_t = std::variant<ElementArrayView<Ts>...>;
 
   template <class Getter, class View>
   static outVariant_t<View> get(View &view) {
-    DType type = view.data().dtype();
-    if constexpr (std::is_same_v<DataArray, View> ||
-                  std::is_base_of_v<DataArrayConstView, View>) {
-      const auto &v = view.data();
-      type = v.data().dtype();
-    }
+    const DType type = view.dtype();
     if (type == dtype<double>)
       return {Getter::template get<double>(view)};
     if (type == dtype<float>)
@@ -217,12 +210,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
   template <class Getter, class View>
   static py::object get_py_array_t(py::object &obj) {
     auto &view = obj.cast<View &>();
-    DType type = view.data().dtype();
-    if constexpr (std::is_same_v<DataArray, View> ||
-                  std::is_base_of_v<DataArrayConstView, View>) {
-      const auto &v = view.data();
-      type = v.data().dtype();
-    }
+    const DType type = view.dtype();
     if (type == dtype<double>)
       return DataAccessHelper::as_py_array_t_impl<Getter, double>(obj, view);
     if (type == dtype<float>)

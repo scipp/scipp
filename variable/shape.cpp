@@ -24,7 +24,7 @@ Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
   }
   Variable result(var);
   result.setDims(newDims);
-  result.data().copy(var.data(), Dim::Invalid, 0, 0, 1);
+  result.data().copy(var, result);
   return result;
 }
 
@@ -79,8 +79,8 @@ Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
     dims.add(dim, extent1 + extent2);
   out.setDims(dims);
 
-  out.data().copy(a1.data(), dim, 0, 0, extent1);
-  out.data().copy(a2.data(), dim, extent1, 0, extent2);
+  out.data().copy(a1, out.slice({dim, 0, extent1}));
+  out.data().copy(a2, out.slice({dim, extent1, extent1 + extent2}));
 
   return out;
 }
@@ -89,7 +89,8 @@ Variable permute(const Variable &var, const Dim dim,
                  const std::vector<scipp::index> &indices) {
   auto permuted(var);
   for (scipp::index i = 0; i < scipp::size(indices); ++i)
-    permuted.data().copy(var.data(), dim, i, indices[i], indices[i] + 1);
+    permuted.data().copy(var.slice({dim, i}),
+                         permuted.slice({dim, indices[i]}));
   return permuted;
 }
 
