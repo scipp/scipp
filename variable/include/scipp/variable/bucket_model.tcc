@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <boost/iterator/transform_iterator.hpp>
+
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
@@ -9,16 +11,68 @@
 #include "scipp/variable/variable.tcc"
 
 namespace scipp::variable {
-
-template <class T> struct bucket {
+struct bucket_base {
+  using range_type = std::pair<scipp::index, scipp::index>;
+};
+template <class T> struct bucket : bucket_base {
   using element_type = typename T::view_type;
   using const_element_type = typename T::const_view_type;
 };
+} // namespace scipp::variable
+
+namespace scipp::core {
+
+template <class T>
+class bucket_array_view
+    : public ElementArrayView<const variable::bucket_base::range_type> {
+public:
+  using value_type = const typename variable::bucket_base::range_type;
+  using base = ElementArrayView<const value_type>;
+
+  bucket_array_view(value_type *buckets, const scipp::index offset,
+                    const Dimensions &iterDims, const Dimensions &dataDims,
+                    const Dim dim, T &buffer)
+      : ElementArrayView<value_type>(buckets, offset, iterDims, dataDims),
+        m_transform{dim, &buffer} {}
+
+  auto begin() const {
+    return boost::make_transform_iterator(base::begin(), m_transform);
+  }
+  auto end() const {
+    return boost::make_transform_iterator(base::end(), m_transform);
+  }
+
+private:
+  struct make_item {
+    auto operator()(typename bucket_array_view::value_type &range) const {
+      return m_buffer->slice({m_dim, range.first, range.second});
+    }
+    Dim m_dim;
+    T *m_buffer;
+  };
+  make_item m_transform;
+};
+
+template <class T>
+class ElementArrayView<variable::bucket<T>> : public bucket_array_view<T> {
+  using bucket_array_view<T>::bucket_array_view;
+};
+
+template <class T>
+class ElementArrayView<const variable::bucket<T>>
+    : public bucket_array_view<const T> {
+  using bucket_array_view<const T>::bucket_array_view;
+};
+
+} // namespace scipp::core
+
+namespace scipp::variable {
 
 template <class T> class DataModel<bucket<T>> : public VariableConcept {
 public:
-  DataModel(const Dimensions &dimensions,
-            element_array<std::pair<scipp::index, scipp::index>> buckets,
+  using value_type = typename bucket<T>::range_type;
+
+  DataModel(const Dimensions &dimensions, element_array<value_type> buckets,
             const Dim dim, T buffer)
       : VariableConcept(dimensions), m_buckets(std::move(buckets)), m_dim(dim),
         m_buffer(std::move(buffer)) {
@@ -41,35 +95,37 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
-    return std::make_unique<DataModel>(
-        dims,
-        element_array<std::pair<scipp::index, scipp::index>>(dims.volume()),
-        m_dim, T(m_buffer, m_buffer.dims()));
+    return std::make_unique<DataModel>(dims,
+                                       element_array<value_type>(dims.volume()),
+                                       m_dim, T(m_buffer, m_buffer.dims()));
   }
 
   constexpr DType dtype() const noexcept override {
-    return scipp::dtype<bucket<T>>;
+    return scipp::dtype<bucket<T>>; // or bucket<T>::view_type?
   }
 
   constexpr bool hasVariances() const noexcept override { return false; }
-  void setVariances(Variable &&variances) override {
+  void setVariances(Variable &&) override {
     if (!core::canHaveVariances<T>())
       throw except::VariancesError("This data type cannot have variances.");
   }
 
-  bool equals(const VariableConstView &a,
-              const VariableConstView &b) const override {
+  bool equals(const VariableConstView &,
+              const VariableConstView &) const override {
     return false;
   }
-  void copy(const VariableConstView &src,
-            const VariableView &dest) const override {}
-  void assign(const VariableConcept &other) override {}
+  void copy(const VariableConstView &, const VariableView &) const override {}
+  void assign(const VariableConcept &) override {}
 
-  ElementArrayView<typename bucket<T>::element_type> values();
-  ElementArrayView<typename bucket<T>::const_element_type> values() const;
+  ElementArrayView<bucket<T>> values() {
+    return {m_buckets.data(), 0, dims(), dims(), m_dim, m_buffer};
+  }
+  ElementArrayView<const bucket<T>> values() const {
+    return {m_buckets.data(), 0, dims(), dims(), m_dim, m_buffer};
+  }
 
 private:
-  element_array<std::pair<scipp::index, scipp::index>> m_buckets;
+  element_array<value_type> m_buckets;
   Dim m_dim;
   T m_buffer;
 };

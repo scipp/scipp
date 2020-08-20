@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bucket_model.tcc"
 
 using namespace scipp;
@@ -62,4 +63,18 @@ TEST_F(BucketModelTest, clone) {
   Model model(dims, buckets, Dim::X, buffer);
   const auto copy = model.clone();
   EXPECT_EQ(dynamic_cast<const Model &>(*copy), model);
+}
+
+TEST_F(BucketModelTest, values) {
+  Model model(dims, buckets, Dim::X, buffer);
+  EXPECT_EQ(*(model.values().begin() + 0), buffer.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(*(model.values().begin() + 1), buffer.slice({Dim::X, 2, 4}));
+  (*model.values().begin()) += 2.0 * units::one;
+  EXPECT_EQ(*(model.values().begin() + 0), buffer.slice({Dim::X, 2, 4}));
+}
+
+TEST_F(BucketModelTest, values_const) {
+  const Model model(dims, buckets, Dim::X, buffer);
+  EXPECT_EQ(*(model.values().begin() + 0), buffer.slice({Dim::X, 0, 2}));
+  EXPECT_EQ(*(model.values().begin() + 1), buffer.slice({Dim::X, 2, 4}));
 }
