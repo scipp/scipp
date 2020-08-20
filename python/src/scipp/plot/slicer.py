@@ -10,6 +10,7 @@ from .._scipp import core as sc
 # Other imports
 import numpy as np
 import matplotlib.ticker as ticker
+import ipywidgets as widgets
 
 
 class Slicer:
@@ -26,8 +27,6 @@ class Slicer:
                  aspect=None,
                  positions=None,
                  profile=None):
-
-        import ipywidgets as widgets
 
         self.scipp_obj_dict = scipp_obj_dict
 
@@ -95,19 +94,19 @@ class Slicer:
                                                       profile_dim=profile)
             self.params["masks"][name]["show"] = (
                 self.params["masks"][name]["show"] and len(array.masks) > 0)
-            if len(array.masks) > 0:
-                self.masks[name] = {key: widgets.Checkbox(
-                    value=self.params["masks"][name]["show"],
-                    description="{}:{}".format(name, key),
-                    indent=False,
-                    layout={"width": "initial"}) for key in array.masks}
-            # self.params["masks"][name]["show"] = (
-            #     self.params["masks"][name]["show"] and len(array.masks) > 0)
-            # if self.params["masks"][name]["show"] and self.masks is None:
-            #     # Store masks separately since they are lost when slicing.
-            #     # TODO: no need for this once masks are preserved in slicing
-            #     self.masks = sc.combine_masks(array.masks, array.dims,
-            #                                   array.shape)
+            # if len(array.masks) > 0:
+            #     self.masks[name] = {key: widgets.Checkbox(
+            #         value=self.params["masks"][name]["show"],
+            #         description="{}:{}".format(name, key),
+            #         indent=False,
+            #         layout={"width": "initial"}) for key in array.masks}
+            # # self.params["masks"][name]["show"] = (
+            # #     self.params["masks"][name]["show"] and len(array.masks) > 0)
+            # # if self.params["masks"][name]["show"] and self.masks is None:
+            # #     # Store masks separately since they are lost when slicing.
+            # #     # TODO: no need for this once masks are preserved in slicing
+            # #     self.masks = sc.combine_masks(array.masks, array.dims,
+            # #                                   array.shape)
 
             # Create a map from dim to shape
             dim_to_shape = dict(zip(array.dims, array.shape))
@@ -314,6 +313,61 @@ class Slicer:
                 dim]
             self.members["widgets"]["labels"][dim_str] = self.lab[dim]
 
+
+        # Add controls for masks
+        self.add_masks_controls()
+        # for name, array in self.scipp_obj_dict.items():
+        #     if len(array.masks) > 0:
+        #         self.masks[name] = {}
+        #         for key in array.masks:
+        #             self.masks[name][key] = widgets.Checkbox(
+        #                 value=self.params["masks"][name]["show"],
+        #                 description="{}:{}".format(name, key),
+        #                 indent=False,
+        #                 layout={"width": "initial"})
+        #             setattr(self.masks[name][key], "masks_group", name)
+        #             setattr(self.masks[name][key], "masks_name", key)
+        #             self.masks[name][key].observe(self.toggle_mask, names="value")
+        # if len(self.masks) > 0:
+        #     self.masks_box = []
+        #     # mask_list = []
+        #     for name in self.masks:
+        #         mask_list = []
+        #         for cbox in self.masks[name].values():
+        #             mask_list.append(cbox)
+        #         self.masks_box.append(widgets.HBox(mask_list))
+        #     # self.masks_box.append(tuple(mask_list)
+        #     # for i, name in enumerate(self.masks):
+        #     #     self.masks_box.set_title(i, name)
+            
+
+        #     self.masks_button = widgets.ToggleButton(
+        #         value=self.params["masks"][self.name]["show"],
+        #         description="Hide all masks"
+        #         if self.params["masks"][self.name]["show"] else "Show all masks",
+        #         disabled=False,
+        #         button_style="")
+        #     self.masks_button.observe(self.toggle_all_masks, names="value")
+        #     self.vbox += [self.masks_button, widgets.VBox(self.masks_box)]
+        #     self.members["widgets"]["togglebutton"]["masks"] = \
+        #         self.masks_button
+
+        return
+
+    def add_masks_controls(self):
+        # Add controls for masks
+        for name, array in self.scipp_obj_dict.items():
+            if len(array.masks) > 0:
+                self.masks[name] = {}
+                for key in array.masks:
+                    self.masks[name][key] = widgets.Checkbox(
+                        value=self.params["masks"][name]["show"],
+                        description="{}:{}".format(name, key),
+                        indent=False,
+                        layout={"width": "initial"})
+                    setattr(self.masks[name][key], "masks_group", name)
+                    setattr(self.masks[name][key], "masks_name", key)
+                    self.masks[name][key].observe(self.toggle_mask, names="value")
         if len(self.masks) > 0:
             self.masks_box = []
             # mask_list = []
@@ -329,16 +383,14 @@ class Slicer:
 
             self.masks_button = widgets.ToggleButton(
                 value=self.params["masks"][self.name]["show"],
-                description="Hide masks"
-                if self.params["masks"][self.name]["show"] else "Show masks",
+                description="Hide all masks"
+                if self.params["masks"][self.name]["show"] else "Show all masks",
                 disabled=False,
                 button_style="")
-            self.masks_button.observe(self.toggle_masks, names="value")
+            self.masks_button.observe(self.toggle_all_masks, names="value")
             self.vbox += [self.masks_button, widgets.VBox(self.masks_box)]
             self.members["widgets"]["togglebutton"]["masks"] = \
                 self.masks_button
-
-        return
 
     def make_slider_label(self, var, indx):
         if len(var.dims) > 1:
@@ -433,4 +485,13 @@ class Slicer:
         return underlying_dim, var, label, formatter, locator
 
     def update_buttons(self, change):
+        return
+
+    def toggle_all_masks(self, change):
+        for name in self.masks:
+            for key in self.masks[name]:
+                self.masks[name][key].value = change["new"]
+            # msk.set_visible(change["new"])
+        change["owner"].description = "Hide all masks" if change["new"] else \
+            "Show all masks"
         return

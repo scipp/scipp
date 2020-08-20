@@ -8,7 +8,7 @@ from .render import render_plot
 from .slicer import Slicer
 from .tools import to_bin_centers
 from .._utils import name_with_unit
-from .._scipp.core import histogram as scipp_histogram
+from .._scipp import core as sc
 
 # Other imports
 import numpy as np
@@ -278,17 +278,21 @@ class Slicer1d(Slicer):
             xmax = max(new_x[-1], xmax)
 
             vslice = self.slice_data(var, name)
-            # ydata = vslice.values
+            ydata = vslice.values
             # self.ax.set_title('plot_1d 12')
 
             # If this is a histogram, plot a step function
             if self.histograms[name][dim][dim]:
                 # self.ax.set_title('plot_1d 12.1')
-                # ye = np.concatenate((ydata[0:1], ydata))
-                ye = sc.concatenate((vslice[dim, 0:1], vslice, dim))
+                ye = np.concatenate((ydata[0:1], ydata))
+                # # ye = sc.concatenate((vslice[dim, 0:1], vslice, dim))
+                # print(vslice[dim, 0:1])
+                # print(vslice)
+                # if 
+                # ye = sc.concatenate(vslice[dim, 0:1], vslice, dim)
                 [self.members["lines"][name]
                  ] = self.ax.step(new_x,
-                                  ye.values,
+                                  ye,
                                   label=name,
                                   zorder=10,
                                   **{
@@ -297,13 +301,18 @@ class Slicer1d(Slicer):
                                   })
                 # Add masks if any
                 if self.params["masks"][name]["show"]:
-                    # me = np.concatenate((mslice[0:1], mslice))
-                    [self.members["masks"][name]] = self.ax.step(
-                        new_x,
-                        self.mask_to_float(me, ye),
-                        linewidth=self.mpl_line_params["linewidth"][name] * 3,
-                        color=self.params["masks"][name]["color"],
-                        zorder=9)
+                    self.members["masks"][name] = {}
+                    for m in self.masks[name]:
+                        mdata = vslice.masks[m].values
+                        me = np.concatenate((mdata[0:1], mdata))
+                        # print(self.members["masks"][name][m])
+                        # print(self.params["masks"])
+                        [self.members["masks"][name][m]] = self.ax.step(
+                            new_x,
+                            self.mask_to_float(me, ye),
+                            linewidth=self.mpl_line_params["linewidth"][name] * 3,
+                            color=self.params["masks"][name]["color"],
+                            zorder=9)
 
             else:
                 # self.ax.set_title('plot_1d 12.2')
@@ -381,7 +390,7 @@ class Slicer1d(Slicer):
                     self.slider_label[self.name][dim]["coord"], val.value)
                 vslice = vslice[val.dim, val.value]
         if vslice.unaligned is not None:
-            vslice = scipp_histogram(vslice)
+            vslice = sc.histogram(vslice)
             self.ylim = self.get_ylim(var=vslice,
                                       ymin=self.ylim[0],
                                       ymax=self.ylim[1],
@@ -521,11 +530,15 @@ class Slicer1d(Slicer):
         arr2 = np.array([y - e, y + e]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
-    def toggle_masks(self, change):
-        for n, msk in self.members["masks"].items():
-            msk.set_visible(change["new"])
-        change["owner"].description = "Hide masks" if change["new"] else \
-            "Show masks"
+    def toggle_mask(self, change):
+        self.members["masks"][change["owner"].masks_group][change["owner"].masks_name].set_visible(change["new"])
+        # for name in self.masks:
+        #     for key in self.masks[name]:
+
+        # for n, msk in self.members["masks"].items():
+        #     msk.set_visible(change["new"])
+        # change["owner"].description = "Hide masks" if change["new"] else \
+        #     "Show masks"
         return
 
     def vars_to_err(self, v):
