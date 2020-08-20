@@ -4,7 +4,7 @@
 
 # Scipp imports
 from .. import config
-from .plot_1d import plot_1d
+from .plot_1d import Slicer1d
 from .render import render_plot
 from .slicer import Slicer
 from .tools import to_bin_edges, parse_params
@@ -112,10 +112,13 @@ class Slicer2d(Slicer):
         self.button_dims = [None, None]
         self.dim_to_xy = {}
         self.cslice = None
-        self.profile = profile
-        if self.profile is not None:
-            self.profile = sc.Dim(self.profile)
+
+        # self.profile = profile
+        # if self.profile is not None:
+        #     self.profile = sc.Dim(self.profile)
         self.first_profile_plotted = False
+        self.profile_viewer = None
+
         if resolution is not None:
             if isinstance(resolution, int):
                 self.image_resolution = {"x": resolution, "y": resolution}
@@ -192,6 +195,7 @@ class Slicer2d(Slicer):
         if self.profile is not None:
             # Connect profile plot to mouse cursor
             self.fig.canvas.mpl_connect('button_press_event', self.update_profile)
+            # self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
 
         return
 
@@ -411,10 +415,11 @@ class Slicer2d(Slicer):
         self.update_image()
         return
 
-    def toggle_masks(self, change):
-        self.im["masks"].set_visible(change["new"])
-        change["owner"].description = "Hide masks" if change["new"] else \
-            "Show masks"
+    def toggle_mask(self, change):
+        self.members["masks"][change["owner"].masks_group][change["owner"].masks_name].set_visible(change["new"])
+        # self.im["masks"].set_visible(change["new"])
+        # change["owner"].description = "Hide masks" if change["new"] else \
+        #     "Show masks"
         return
 
     def check_for_xlim_update(self, event_ax):
@@ -499,12 +504,16 @@ class Slicer2d(Slicer):
         # Use Scipp's automatic transpose to match the image x/y axes
         # TODO: once transpose is available for DataArrays,
         # use sc.transpose(dslice, self.button_dims) instead.
-        slice_dims = self.button_dims
+        slice_dims = self.button_dims.copy()
         slice_shape = [self.xyrebin["y"].shape[0] - 1,
                        self.xyrebin["x"].shape[0] - 1]
         if self.profile is not None:
             slice_dims.append(self.profile)
             slice_shape.append(self.slider_shape[self.name][self.profile][self.profile])
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
+        print(slice_dims)
+        print(slice_shape)
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
         arr = sc.DataArray(coords={
             self.xyrebin["x"].dims[0]: self.xyrebin["x"],
             self.xyrebin["y"].dims[0]: self.xyrebin["y"],
@@ -543,6 +552,7 @@ class Slicer2d(Slicer):
                                    np.int32))
             # msk = msk.values
 
+        print(self.dslice)
         if self.profile is not None:
             arr = sc.sum(self.dslice, self.profile).values
             if self.params["masks"][self.name]["show"]:
@@ -583,15 +593,30 @@ class Slicer2d(Slicer):
 
         # Slice the 3d cube down to a 1d profile
         prof = self.dslice[self.button_dims[0], iy][self.button_dims[1], ix]
-        self.ax_profile.set_title('hahahaha')
+        # self.ax_profile.set_title('hahahaha')
         if not self.first_profile_plotted:
-            _ = plot_1d({self.name: prof}, ax=self.ax_profile,
+            # _ = plot_1d({self.name: prof}, ax=self.ax_profile,
+            #             mpl_line_params={
+            #                 "color": {self.name: config.plot.color[0]},
+            #                 "marker": {self.name: config.plot.marker[0]},
+            #                 "linestyle": {self.name: config.plot.linestyle[0]},
+            #                 "linewidth": {self.name: config.plot.linewidth[0]},
+            #                 })
+
+            self.profile_viewer = Slicer1d({self.name: prof}, ax=self.ax_profile,
                         mpl_line_params={
                             "color": {self.name: config.plot.color[0]},
                             "marker": {self.name: config.plot.marker[0]},
                             "linestyle": {self.name: config.plot.linestyle[0]},
                             "linewidth": {self.name: config.plot.linewidth[0]},
                             })
+
             self.first_profile_plotted = True
-        # else:
+        else:
+            # self.ax_profile.set_title('members lines 1')
+            # print(self.profile_viewer.members["lines"])
+            # self.ax_profile.set_title('members lines 2')
+            # print(self.profile_viewer.members["lines"][self.name])
+            # self.ax_profile.set_title('members lines 3')
+            self.profile_viewer.members["lines"][self.name].set_ydata(prof.values)
         #     self.ax_profile.plot(self.slider_coord[self.name][self.profile].values, prof.values)

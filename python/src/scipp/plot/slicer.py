@@ -52,6 +52,11 @@ class Slicer:
         if self.aspect is None:
             self.aspect = config.plot.aspect
 
+        # Save dimension for profiles as Dim object
+        self.profile = profile
+        if self.profile is not None:
+            self.profile = sc.Dim(self.profile)
+
         # Containers: need one per entry in the dict of scipp
         # objects (=DataArray)
 
@@ -83,7 +88,7 @@ class Slicer:
 
             self.params["values"][name] = parse_params(globs=globs,
                                                        variable=array.data,
-                                                       profile_dim=profile)
+                                                       profile_dim=self.profile)
 
             self.params["masks"][name] = parse_params(params=masks,
                                                       defaults={
@@ -91,7 +96,7 @@ class Slicer:
                                                           "cbar": False
                                                       },
                                                       globs=globs,
-                                                      profile_dim=profile)
+                                                      profile_dim=self.profile)
             self.params["masks"][name]["show"] = (
                 self.params["masks"][name]["show"] and len(array.masks) > 0)
             # if len(array.masks) > 0:
@@ -136,6 +141,12 @@ class Slicer:
             if positions is not None:
                 axes[axes.index(
                     self.data_array.coords[positions].dims[0])] = positions
+            # If a profile is requested, always make it the outermost dim
+            if self.profile is not None:
+                if self.profile in axes:
+                    axes.remove(self.profile)
+                    axes.insert(0, self.profile)
+
             # Protect against duplicate entries in axes
             if len(axes) != len(set(axes)):
                 raise RuntimeError("Duplicate entry in axes: {}".format(axes))
@@ -233,7 +244,7 @@ class Slicer:
                 disabled = dim == positions_dim
             elif i >= self.ndim - (len(button_options) + found_profile_dim):
                 disabled = True
-            if profile is not None and dim == profile:
+            if self.profile is not None and dim == self.profile:
                 disabled = True
                 found_profile_dim = True
             print('in slicer', dim, disabled)
@@ -259,13 +270,14 @@ class Slicer:
             widgets.jslink((self.continuous_update[dim], 'value'),
                            (self.slider[dim], 'continuous_update'))
 
-            if self.ndim == len(button_options):
+            if self.ndim == len(button_options) + (self.profile is not None):
                 self.slider[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
                 # This is a trick to turn the label into the coordinate name
                 # because when we hide the slider, the slider description is
                 # also hidden
                 labvalue = dim_str
+
             # Add a label widget to display the value of the z coordinate
             self.lab[dim] = widgets.Label(value=labvalue)
             # Add one set of buttons per dimension
@@ -289,7 +301,7 @@ class Slicer:
                 self.lab[dim].layout.display = 'none'
 
             # Hide buttons and inactive sliders for 3d projection
-            if len(button_options) == 3:
+            if len(button_options) == 3 or (self.profile == dim):
                 self.buttons[dim].layout.display = 'none'
                 if self.slider[dim].disabled:
                     self.slider[dim].layout.display = 'none'
