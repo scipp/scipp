@@ -65,6 +65,14 @@ public:
   }
 
   scipp::index size() const { return m_iterDims.volume(); }
+  constexpr const Dimensions &dims() const noexcept { return m_iterDims; }
+
+  bool overlaps(const element_array_view &other) const {
+    // TODO We could be less restrictive here and use a more sophisticated check
+    // based on offsets and dimensions, if there is a performance issue due to
+    // this current stricter requirement.
+    return (m_offset != other.m_offset) || (m_dataDims != other.m_dataDims);
+  }
 
 protected:
   scipp::index m_offset{0};
@@ -81,51 +89,47 @@ public:
   using value_type = std::remove_cv_t<T>;
   using iterator = element_array_view_iterator<T>;
 
-  /// Construct an ElementArrayView over given data pointer.
-  ElementArrayView(T *variable, const scipp::index offset,
+  /// Construct an ElementArrayView over given buffer.
+  ElementArrayView(T *buffer, const scipp::index offset,
                    const Dimensions &iterDims, const Dimensions &dataDims)
-      : element_array_view(offset, iterDims, dataDims), m_variable(variable) {}
+      : element_array_view(offset, iterDims, dataDims), m_buffer(buffer) {}
 
   /// Construct a ElementArrayView from another ElementArrayView, with different
   /// iteration dimensions.
   template <class Other>
   ElementArrayView(const Other &other, const Dimensions &iterDims)
-      : element_array_view(other, iterDims), m_variable(other.m_variable) {}
-
-  friend class ElementArrayView<std::remove_const_t<T>>;
-  friend class ElementArrayView<const T>;
+      : element_array_view(other, iterDims), m_buffer(other.buffer()) {}
 
   iterator begin() const {
-    return {m_variable + m_offset, m_iterDims, m_dataDims, 0};
+    return {m_buffer + m_offset, m_iterDims, m_dataDims, 0};
   }
   iterator end() const {
-    return {m_variable + m_offset, m_iterDims, m_dataDims, size()};
+    return {m_buffer + m_offset, m_iterDims, m_dataDims, size()};
   }
   auto &operator[](const scipp::index i) const { return *(begin() + i); }
 
   auto &front() const { return *begin(); }
   auto &back() const { return *(begin() + (size() - 1)); }
 
-  const T *data() const { return m_variable + m_offset; }
-  T *data() { return m_variable + m_offset; }
+  const T *data() const { return m_buffer + m_offset; }
+  T *data() { return m_buffer + m_offset; }
 
   bool operator==(const ElementArrayView<T> &other) const {
-    if (m_iterDims != other.m_iterDims)
+    if (dims() != other.dims())
       return false;
     return std::equal(begin(), end(), other.begin());
   }
 
   template <class T2> bool overlaps(const ElementArrayView<T2> &other) const {
-    // TODO We could be less restrictive here and use a more sophisticated check
-    // based on offsets and dimensions, if there is a performance issue due to
-    // this current stricter requirement.
-    if (m_variable == other.m_variable)
-      return (m_offset != other.m_offset) || (m_dataDims != other.m_dataDims);
+    if (buffer() == other.buffer())
+      return element_array_view::overlaps(other);
     return false;
   }
 
+  constexpr T *buffer() const noexcept { return m_buffer; }
+
 private:
-  T *m_variable;
+  T *m_buffer;
 };
 
 } // namespace scipp::core
