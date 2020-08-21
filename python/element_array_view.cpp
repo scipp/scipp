@@ -68,7 +68,7 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
              });
   else
     view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
-                               const T value) {
+                               [[maybe_unused]] const T value) {
       if constexpr (std::is_same_v<decltype(self[i]), T>)
         self[i] = value;
       else

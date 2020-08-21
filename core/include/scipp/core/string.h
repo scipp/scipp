@@ -71,7 +71,6 @@ element_to_string(const T &item,
     return {'"' + item + "\", "};
   else if constexpr (std::is_same_v<T, bool>)
     return core::to_string(item) + ", ";
-
   else if constexpr (std::is_same_v<T, scipp::core::time_point>) {
     return core::to_string(to_iso_date(item, unit.value())) + ", ";
   } else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
