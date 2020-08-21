@@ -49,8 +49,7 @@ def parse_params(params=None,
                  variable=None,
                  array=None,
                  min_val=None,
-                 max_val=None,
-                 profile_dim=None):
+                 max_val=None):
     """
     Construct the colorbar settings using default and input values
     """
@@ -77,10 +76,7 @@ def parse_params(params=None,
     # variable array is a nan. Until sc.nanmin/nanmax are implemented, we fall
     # back to using numpy, both when a Variable and a numpy array are supplied.
     if variable is not None:
-        if profile_dim is not None:
-            _find_min_max(sc.sum(variable, profile_dim).values, parsed)
-        else:
-            _find_min_max(variable.values, parsed)
+        _find_min_max(variable.values, parsed)
         need_norm = True
     if array is not None:
         _find_min_max(array, parsed)
