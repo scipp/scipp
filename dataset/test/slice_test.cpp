@@ -781,7 +781,6 @@ TEST(SliceTest, test_dimension_not_found) {
                except::DimensionNotFoundError);
 }
 
-
 enum class CoordType { BinEdges, Points };
 DataArray make_1d_data_array(scipp::index begin, scipp::index end, Dim dim,
                              CoordType coord_type) {
@@ -917,7 +916,8 @@ TEST(SliceTest, test_slice_range_on_edge_coords_1D_ascending) {
       slice(da, Dim::X, 3.0 * units::dimensionless, 4.0 * units::dimensionless);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test slicing with range boundary inside edge, same result as above expected
-  out = slice(da, Dim::X, 3.1 * units::dimensionless, 4.0 * units::dimensionless);
+  out =
+      slice(da, Dim::X, 3.1 * units::dimensionless, 4.0 * units::dimensionless);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test slicing with range lower boundary on upper edge of bin (open on right
   // test)
@@ -943,7 +943,8 @@ TEST(SliceTest, test_slice_range_on_edge_coords_1D_descending) {
               11.0 * units::dimensionless);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test slicing with range boundary inside edge, same result as above expected
-  out = slice(da, Dim::X, 11.9 * units::dimensionless, 11.0 * units::dimensionless);
+  out = slice(da, Dim::X, 11.9 * units::dimensionless,
+              11.0 * units::dimensionless);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test slicing with range lower boundary on upper edge of bin (open on right
   // test)
@@ -1000,34 +1001,33 @@ TEST(SliceTest, test_point_on_point_coords_1D_descending) {
   EXPECT_THROW(auto s = slice(da, Dim::X, begin, begin), except::NotFoundError);
 }
 
-TEST(SliceTest, test_slice_point_on_edge_coords_1D){
+TEST(SliceTest, test_slice_point_on_edge_coords_1D) {
   //    Data Values              [0.0] ... [8.0]
   //    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
 
   auto da = make_1d_data_array(3, 13, Dim::X, CoordType::BinEdges);
 
-// test no-effect slicing
-// Test start on left boundary (closed on left), so includes boundary
+  // test no-effect slicing
+  // Test start on left boundary (closed on left), so includes boundary
   auto begin = 3.0 * units::dimensionless;
   auto out = slice(da, Dim::X, begin, begin);
-      EXPECT_EQ(out, da.slice({Dim::X, 0}));
-// Same as above, takes lower bounds of bin so same bin
+  EXPECT_EQ(out, da.slice({Dim::X, 0}));
+  // Same as above, takes lower bounds of bin so same bin
   begin = 3.5 * units::dimensionless;
   out = slice(da, Dim::X, begin, begin);
   EXPECT_EQ(out, da.slice({Dim::X, 0}));
-// Next bin
+  // Next bin
   begin = 4.0 * units::dimensionless;
   out = slice(da, Dim::X, begin, begin);
   EXPECT_EQ(out, da.slice({Dim::X, 1}));
-// Last bin
+  // Last bin
   begin = 11.9 * units::dimensionless;
   out = slice(da, Dim::X, begin, begin);
   EXPECT_EQ(out, da.slice({Dim::X, 8}));
-// (closed on right) so out of bounds
+  // (closed on right) so out of bounds
   begin = 12.0 * units::dimensionless;
   EXPECT_THROW(auto s = slice(da, Dim::X, begin, begin), except::NotFoundError);
-// out of bounds for left for completeness
+  // out of bounds for left for completeness
   begin = 2.99 * units::dimensionless;
   EXPECT_THROW(auto s = slice(da, Dim::X, begin, begin), except::NotFoundError);
 }
-
