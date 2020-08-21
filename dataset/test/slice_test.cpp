@@ -816,6 +816,15 @@ DataArray make_1d_data_array(scipp::index begin, scipp::index end, Dim dim,
   return DataArray{data, {{dim, coord}}};
 }
 
+TEST(SliceTest, test_begin_end_not_0D_throws) {
+  auto da = make_1d_data_array(0, 3, Dim::X, CoordType::Points);
+  auto one_d = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
+  EXPECT_THROW(auto s = slice(da, Dim::X, one_d, VariableConstView{}),
+               except::MismatchError<Dimensions>);
+  EXPECT_THROW(auto s = slice(da, Dim::X, VariableConstView{}, one_d),
+               except::MismatchError<Dimensions>);
+}
+
 TEST(SliceTest, test_slicing_defaults_ascending) {
   auto da = make_1d_data_array(3, 13, Dim::X, CoordType::Points);
   EXPECT_EQ(

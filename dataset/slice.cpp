@@ -12,13 +12,17 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
                          const VariableConstView begin,
                          const VariableConstView end) {
   using namespace variable;
+  if (begin)
+    variable::detail::expect0D(begin.dims());
+  if (end)
+    variable::detail::expect0D(end.dims());
   auto coords = to_slice.coords();
   if (!coords.contains(dim))
     throw except::DimensionNotFoundError(to_slice.dims(), dim);
   auto [k, coord] = *coords.find(dim);
   if (coord.dims().ndim() != 1) {
     throw except::SizeError(
-        "multi-dimensional coordinates not supported in slice");
+        "Multi-dimensional coordinates not supported in slice");
   }
   const bool ascending = is_sorted(coord, dim, variable::SortOrder::Ascending);
   const bool descending =
