@@ -9,8 +9,8 @@
 
 namespace scipp::variable {
 
-INSTANTIATE_BUCKET_VARIABLE(bucket_Dataset, bucket<Dataset>)
-INSTANTIATE_BUCKET_VARIABLE(bucket_DataArray, bucket<DataArray>)
+INSTANTIATE_BUCKET_VARIABLE(DatasetView, bucket<Dataset>)
+INSTANTIATE_BUCKET_VARIABLE(DataArrayView, bucket<DataArray>)
 
 } // namespace scipp::variable
 

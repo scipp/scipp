@@ -6,6 +6,6 @@
 
 namespace scipp::variable {
 
-INSTANTIATE_BUCKET_VARIABLE(bucket_Variable, bucket<Variable>)
+INSTANTIATE_BUCKET_VARIABLE(VariableView, bucket<Variable>)
 
 } // namespace scipp::variable

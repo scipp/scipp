@@ -69,10 +69,10 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
   else
     view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
                                [[maybe_unused]] const T value) {
-      if constexpr (std::is_same_v<decltype(self[i]), T>)
-        self[i] = value;
-      else
+      if constexpr (is_view_v<decltype(self[i])>)
         throw std::runtime_error("Setting items of this type is not possible.");
+      else
+        self[i] = value;
     });
 }
 

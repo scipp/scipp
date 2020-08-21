@@ -19,12 +19,6 @@
 namespace py = pybind11;
 using namespace scipp;
 
-template <class T> struct is_view : std::false_type {};
-template <> struct is_view<VariableView> : std::true_type {};
-template <> struct is_view<DataArrayView> : std::true_type {};
-template <> struct is_view<DatasetView> : std::true_type {};
-template <class T> inline constexpr bool is_view_v = is_view<T>::value;
-
 template <class T> void remove_variances(T &obj) {
   if constexpr (std::is_same_v<T, DataArray> ||
                 std::is_same_v<T, DataArrayView>)
