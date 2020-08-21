@@ -20,5 +20,6 @@ INSTANTIATE_VARIABLE(span_int64, span<int64_t>)
 INSTANTIATE_VARIABLE(span_int32, span<int32_t>)
 INSTANTIATE_VARIABLE(span_const_bool, span<const bool>)
 INSTANTIATE_VARIABLE(span_bool, span<bool>)
+INSTANTIATE_VARIABLE(span_string, span<std::string>)
 
 } // namespace scipp::variable
