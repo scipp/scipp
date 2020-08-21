@@ -25,7 +25,7 @@ public:
             const Dim dim, T buffer)
       : VariableConcept(dimensions), m_buckets(std::move(buckets)), m_dim(dim),
         m_buffer(std::move(buffer)) {
-    if (!get_dims(m_buffer).count(m_dim))
+    if (!m_buffer.dims().count(m_dim))
       throw except::DimensionError("Buffer must contain bucket slicing dim.");
     if (this->dims().volume() != scipp::size(m_buckets))
       throw except::DimensionError(
@@ -93,12 +93,6 @@ public:
   }
 
 private:
-  auto get_dims(const T &obj) const {
-    if constexpr (std::is_same_v<T, dataset::Dataset>)
-      return obj.dimensions();
-    else
-      return obj.dims();
-  }
   element_array<range_type> m_buckets;
   Dim m_dim;
   T m_buffer;

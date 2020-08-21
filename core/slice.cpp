@@ -26,7 +26,7 @@ void validate_begin(const scipp::index begin_) {
 Slice::Slice(const Dim dim_, const scipp::index begin_, const scipp::index end_)
     : m_dim(dim_), m_begin(begin_), m_end(end_) {
   validate_begin(begin_);
-  if (begin_ > end_)
+  if (end_ != -1 && begin_ > end_)
     throw except::SliceError("end must be >= begin. Given begin " +
                              std::to_string(begin_) + " end " +
                              std::to_string(end_));

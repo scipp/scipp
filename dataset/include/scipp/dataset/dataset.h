@@ -393,6 +393,7 @@ public:
   Dataset &operator/=(const DatasetConstView &other);
 
   std::unordered_map<Dim, scipp::index> dimensions() const;
+  std::unordered_map<Dim, scipp::index> dims() const { return dimensions(); }
 
 private:
   friend class DatasetConstView;
@@ -498,6 +499,7 @@ public:
   bool operator!=(const Dataset &other) const;
   bool operator!=(const DatasetConstView &other) const;
   std::unordered_map<Dim, scipp::index> dimensions() const;
+  std::unordered_map<Dim, scipp::index> dims() const { return dimensions(); }
 
 protected:
   explicit DatasetConstView() : m_dataset(nullptr) {}
