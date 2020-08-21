@@ -22,14 +22,12 @@ from .table_html import to_html, make_html
 from .object_list import _repr_html_
 from ._utils import collapse, slices
 from .compat.dict import to_dict, from_dict
-from .io import data_array_to_hdf5
 
 # Wrappers for free functions from _scipp.core
 from ._comparison import *
 from ._math import *
 from ._reduction import *
 from ._trigonometry import *
-from ._slice import *
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(VariableConstView, '_repr_html_', make_html)
@@ -38,4 +36,10 @@ setattr(DataArrayConstView, '_repr_html_', make_html)
 setattr(Dataset, '_repr_html_', make_html)
 setattr(DatasetConstView, '_repr_html_', make_html)
 
-setattr(DataArray, 'to_hdf5', data_array_to_hdf5)
+from .io.hdf5 import to_hdf5 as _to_hdf5
+setattr(Variable, 'to_hdf5', _to_hdf5)
+setattr(VariableView, 'to_hdf5', _to_hdf5)
+setattr(DataArray, 'to_hdf5', _to_hdf5)
+setattr(DataArrayView, 'to_hdf5', _to_hdf5)
+setattr(Dataset, 'to_hdf5', _to_hdf5)
+setattr(DatasetView, 'to_hdf5', _to_hdf5)
