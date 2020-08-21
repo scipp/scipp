@@ -5,7 +5,6 @@
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
-#include <iostream>
 
 namespace scipp::dataset {
 DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
@@ -41,10 +40,10 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
     scipp::index idx = -1;
     if (bin_edges) {
       if (ascending)
-        idx = sum(less_equal(coord, begin), dim).value<scipp::index>();
+        idx = sum(less_equal(coord, begin), dim).value<scipp::index>() - 1;
       else
-        idx = sum(greater_equal(coord, begin), dim).value<scipp::index>();
-      if (idx < 0)
+        idx = sum(greater_equal(coord, begin), dim).value<scipp::index>() - 1;
+      if (idx < 0 || idx >= len_data)
         throw except::NotFoundError(
             to_string(begin) +
             " point slice does not fall within any bin edges along " +
