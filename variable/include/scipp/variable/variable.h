@@ -249,6 +249,7 @@ public:
   Variable operator-() const;
 
   auto &underlying() const { return *m_variable; }
+  bool is_trivial() const noexcept;
 
 protected:
   const Variable *m_variable{nullptr};
