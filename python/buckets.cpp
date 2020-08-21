@@ -18,15 +18,17 @@ namespace {
 template <class T> void bind_buckets(pybind11::module &m) {
   m.def(
       "to_buckets",
-      [](const VariableConstView &begin, const VariableConstView &end,
-         const Dim dim, const typename T::const_view_type &data) {
+      [](const py::object &begin_obj, const py::object &end_obj, const Dim dim,
+         const typename T::const_view_type &data) {
         element_array<std::pair<scipp::index, scipp::index>> buckets;
         Dimensions dims;
-        if (begin) {
+        if (!begin_obj.is_none()) {
+          const auto &begin = begin_obj.cast<VariableView>();
           buckets.resize(begin.dims().volume());
           dims = begin.dims();
           const auto &begin_ = begin.values<int64_t>();
-          if (end) {
+          if (!end_obj.is_none()) {
+            const auto &end = end_obj.cast<VariableView>();
             core::expect::equals(begin.dims(), end.dims());
             const auto &end_ = end.values<int64_t>();
             for (scipp::index i = 0; i < buckets.size(); ++i)
@@ -35,7 +37,7 @@ template <class T> void bind_buckets(pybind11::module &m) {
             for (scipp::index i = 0; i < buckets.size(); ++i)
               buckets.data()[i] = {begin_[i], -1};
           }
-        } else if (!end) {
+        } else if (end_obj.is_none()) {
           buckets.resize(data.dims()[dim]);
           dims = Dimensions(dim, buckets.size());
           for (scipp::index i = 0; i < buckets.size(); ++i)
@@ -46,9 +48,9 @@ template <class T> void bind_buckets(pybind11::module &m) {
         return Variable(std::make_unique<variable::DataModel<bucket<T>>>(
             dims, std::move(buckets), dim, T(data)));
       },
-      py::arg("begin") = VariableConstView{},
-      py::arg("end") = VariableConstView{}, py::arg("dim"), py::arg("data"),
-      py::call_guard<py::gil_scoped_release>());
+      py::arg("begin") = py::none(), py::arg("end") = py::none(),
+      py::arg("dim"), py::arg("data")); // do not release GIL since using
+                                        // implicit conversions in functor
 }
 
 } // namespace
