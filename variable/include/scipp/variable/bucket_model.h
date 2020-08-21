@@ -16,30 +16,33 @@ namespace scipp::variable {
 
 /// Specialization of DataModel for "bucketed" data. T could be Variable,
 /// DataArray, or Dataset.
+///
+/// A bucket in this context is defined as an element of a variable mapping to a
+/// range of data, such as a slice of a DataArray.
 template <class T> class DataModel<bucket<T>> : public VariableConcept {
 public:
   using value_type = bucket<T>;
   using range_type = typename bucket<T>::range_type;
 
-  DataModel(const Dimensions &dimensions, element_array<range_type> buckets,
+  DataModel(const Dimensions &dimensions, element_array<range_type> indices,
             const Dim dim, T buffer)
-      : VariableConcept(dimensions), m_buckets(std::move(buckets)), m_dim(dim),
+      : VariableConcept(dimensions), m_indices(std::move(indices)), m_dim(dim),
         m_buffer(std::move(buffer)) {
     if (!m_buffer.dims().count(m_dim))
       throw except::DimensionError("Buffer must contain bucket slicing dim.");
-    if (this->dims().volume() != scipp::size(m_buckets))
+    if (this->dims().volume() != scipp::size(m_indices))
       throw except::DimensionError(
           "Creating Variable: data size does not match "
           "volume given by dimension extents.");
   }
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<DataModel>(this->dims(), m_buckets, m_dim,
+    return std::make_unique<DataModel>(this->dims(), m_indices, m_dim,
                                        m_buffer);
   }
 
   bool operator==(const DataModel &other) const noexcept {
-    return dims() == other.dims() && equal(m_buckets, other.m_buckets) &&
+    return dims() == other.dims() && equal(m_indices, other.m_indices) &&
            m_dim == other.m_dim && m_buffer == other.m_buffer;
   }
   bool operator!=(const DataModel &other) const noexcept {
@@ -68,32 +71,32 @@ public:
             const VariableView &dest) const override;
   void assign(const VariableConcept &other) override;
 
-  auto buckets() const {
-    return ElementArrayView{m_buckets.data(), 0, dims(), dims()};
+  auto indices() const {
+    return ElementArrayView{m_indices.data(), 0, dims(), dims()};
   }
-  auto buckets(const scipp::index offset, const Dimensions &iterDims,
+  auto indices(const scipp::index offset, const Dimensions &iterDims,
                const Dimensions &dataDims) const {
-    return ElementArrayView(m_buckets.data(), offset, iterDims, dataDims);
+    return ElementArrayView(m_indices.data(), offset, iterDims, dataDims);
   }
 
-  ElementArrayView<bucket<T>> values() { return {buckets(), m_dim, m_buffer}; }
+  ElementArrayView<bucket<T>> values() { return {indices(), m_dim, m_buffer}; }
   ElementArrayView<const bucket<T>> values() const {
-    return {buckets(), m_dim, m_buffer};
+    return {indices(), m_dim, m_buffer};
   }
 
   ElementArrayView<bucket<T>> values(const scipp::index offset,
                                      const Dimensions &iterDims,
                                      const Dimensions &dataDims) {
-    return {buckets(offset, iterDims, dataDims), m_dim, m_buffer};
+    return {indices(offset, iterDims, dataDims), m_dim, m_buffer};
   }
   ElementArrayView<const bucket<T>> values(const scipp::index offset,
                                            const Dimensions &iterDims,
                                            const Dimensions &dataDims) const {
-    return {buckets(offset, iterDims, dataDims), m_dim, m_buffer};
+    return {indices(offset, iterDims, dataDims), m_dim, m_buffer};
   }
 
 private:
-  element_array<range_type> m_buckets;
+  element_array<range_type> m_indices;
   Dim m_dim;
   T m_buffer;
 };
@@ -119,7 +122,7 @@ template <class T>
 void DataModel<bucket<T>>::copy(const VariableConstView &,
                                 const VariableView &) const {
   // Need to rethink the entire mechanism of shape-changing operations such as
-  // `concatenate` since we cannot just copy buckets but need to manage the
+  // `concatenate` since we cannot just copy indices but need to manage the
   // buffer as well.
   throw std::runtime_error(
       "Shape-related operations for bucketed data are not supported yet.");
@@ -128,8 +131,8 @@ void DataModel<bucket<T>>::copy(const VariableConstView &,
 template <class T>
 void DataModel<bucket<T>>::assign(const VariableConcept &other) {
   const auto &otherT = requireT<const DataModel<bucket<T>>>(other);
-  std::copy(otherT.m_buckets.begin(), otherT.m_buckets.end(),
-            m_buckets.begin());
+  std::copy(otherT.m_indices.begin(), otherT.m_indices.end(),
+            m_indices.begin());
   m_dim = otherT.m_dim;
   m_buffer = otherT.m_buffer;
 }
