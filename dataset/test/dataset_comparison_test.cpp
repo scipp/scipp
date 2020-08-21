@@ -42,8 +42,6 @@ protected:
 
     dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
 
-    dataset.setAttr("attr", makeVariable<int>(Values{int{}}));
-
     dataset.setData("val_and_var",
                     makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
                                          Values(12), Variances(12)));
@@ -91,18 +89,6 @@ TEST_F(Dataset_comparison_operators, single_labels) {
   expect_ne(d, make_1_labels<double>("a", {Dim::X, 2}, units::m, {1, 2}));
   expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
   expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
-}
-
-TEST_F(Dataset_comparison_operators, single_attr) {
-  auto d = make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
-  expect_eq(d, d);
-  expect_ne(d, make_empty());
-  expect_ne(d, make_1_attr<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::X, 2}, units::m, {1, 2}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
 }
 
 TEST_F(Dataset_comparison_operators, single_values) {
@@ -162,12 +148,6 @@ TEST_F(Dataset_comparison_operators, extra_labels) {
   expect_ne(extra, dataset);
 }
 
-TEST_F(Dataset_comparison_operators, extra_attr) {
-  auto extra = dataset;
-  extra.setAttr("extra", makeVariable<double>(Dims{Dim::Z}, Shape{2}));
-  expect_ne(extra, dataset);
-}
-
 TEST_F(Dataset_comparison_operators, extra_data) {
   auto extra = dataset;
   extra.setData("extra", makeVariable<double>(Dims{Dim::Z}, Shape{2}));
@@ -188,26 +168,6 @@ TEST_F(Dataset_comparison_operators, different_coord_insertion_order) {
   a.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   b.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
   b.setCoord(Dim::X, dataset.coords()[Dim::X]);
-  expect_eq(a, b);
-}
-
-TEST_F(Dataset_comparison_operators, different_label_insertion_order) {
-  auto a = make_empty();
-  auto b = make_empty();
-  a.setCoord(Dim("x"), dataset.coords()[Dim::X]);
-  a.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
-  b.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
-  b.setCoord(Dim("x"), dataset.coords()[Dim::X]);
-  expect_eq(a, b);
-}
-
-TEST_F(Dataset_comparison_operators, different_attr_insertion_order) {
-  auto a = make_empty();
-  auto b = make_empty();
-  a.setAttr("x", dataset.coords()[Dim::X]);
-  a.setAttr("y", dataset.coords()[Dim::Y]);
-  b.setAttr("y", dataset.coords()[Dim::Y]);
-  b.setAttr("x", dataset.coords()[Dim::X]);
   expect_eq(a, b);
 }
 

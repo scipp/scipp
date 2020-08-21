@@ -66,14 +66,14 @@ TEST(StringFormattingTest, to_string_MutableView) {
   auto [a, b] = makeDatasets();
 
   EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));
-  EXPECT_EQ(to_string(a.attrs()), to_string(b.attrs()));
+  EXPECT_EQ(to_string(a["a"].masks()), to_string(b["a"].masks()));
 }
 
 TEST(StringFormattingTest, to_string_ConstView) {
   const auto [a, b] = makeDatasets();
 
   EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));
-  EXPECT_EQ(to_string(a.attrs()), to_string(b.attrs()));
+  EXPECT_EQ(to_string(a["a"].masks()), to_string(b["a"].masks()));
 }
 
 TEST(StringFormattingTest, to_string_events_Dataset) {

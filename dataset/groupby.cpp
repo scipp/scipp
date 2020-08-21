@@ -61,30 +61,27 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
 }
 
 template <class T>
-template <class Op, class CoordOp>
-T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
+template <class Op>
+T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
-  auto mask = irreducible_mask(m_data.masks(), reductionDim);
-  if (mask)
-    mask = ~std::move(
-        mask); // `op` multiplies mask into data to zero masked elements
+  const auto get_mask = [&](const auto &data) {
+    auto mask = irreducible_mask(data.masks(), reductionDim);
+    if (mask)
+      mask = ~std::move(
+          mask); // `op` multiplies mask into data to zero masked elements
+    return mask;
+  };
   // Apply to each group, storing result in output slice
   const auto process_groups = [&](const auto &range) {
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
       const auto out_slice = out.slice({dim(), group});
       if constexpr (std::is_same_v<T, Dataset>) {
-        for (const auto &item : m_data) {
-          op(out_slice[item.name()], item, groups()[group], reductionDim, mask);
-        }
+        for (const auto &item : m_data)
+          op(out_slice[item.name()], item, groups()[group], reductionDim,
+             get_mask(m_data[item.name()]));
       } else {
-        op(out_slice, m_data, groups()[group], reductionDim, mask);
+        op(out_slice, m_data, groups()[group], reductionDim, get_mask(m_data));
       }
-      if constexpr (!std::is_same_v<CoordOp, void *>)
-        for (auto &&[dim, coord] : out_slice.coords())
-          coord_op(coord, m_data.coords()[dim], groups()[group], reductionDim,
-                   mask);
-      else
-        static_cast<void>(coord_op);
     }
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, size()),
@@ -119,24 +116,12 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
         out.data().assign(array.data().slice({reductionDim, 0}));
         first = false;
       }
+      for (auto &&[dim, coord] : out.coords())
+        if (contains_events(coord))
+          flatten_impl(coord, array.coords()[dim], mask);
     }
   }
 };
-
-static constexpr auto flatten_coord =
-    [](const VariableView &out, const auto &in,
-       const GroupByGrouping::group &group, const Dim reductionDim,
-       const Variable &mask_) {
-      if (!in.dims().contains(reductionDim))
-        return;
-      const auto no_mask = makeVariable<bool>(Values{true});
-      for (const auto &slice : group) {
-        auto mask = mask_ ? mask_.slice(slice) : no_mask;
-        const auto &array = in.slice(slice);
-        if (contains_events(out))
-          flatten_impl(out, array, mask);
-      }
-    };
 
 static constexpr auto sum = [](const DataArrayView &out,
                                const auto &data_container,
@@ -155,9 +140,6 @@ static constexpr auto sum = [](const DataArrayView &out,
     const auto &unaligned_in = data_container.unaligned();
     // Flatten in all cases, even if not event data? Try to sum?
     flatten(unaligned_out, unaligned_in, group, reductionDim, mask);
-    for (auto &&[dim, coord] : unaligned_out.coords())
-      flatten_coord(coord, unaligned_in.coords()[dim], group, reductionDim,
-                    mask);
   }
 };
 
@@ -185,8 +167,7 @@ static constexpr auto reduce_idempotent =
 ///
 /// This only supports event data.
 template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
-  return reduce(groupby_detail::flatten, reductionDim,
-                groupby_detail::flatten_coord);
+  return reduce(groupby_detail::flatten, reductionDim);
 }
 
 /// Reduce each group using `sum` and return combined data.
@@ -220,35 +201,37 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   auto out = sum(reductionDim);
 
   // 2. Compute number of slices N contributing to each out slice
-  auto scale = makeVariable<double>(Dims{dim()}, Shape{size()});
-  const auto scaleT = scale.template values<double>();
-  const auto mask = irreducible_mask(m_data.masks(), reductionDim);
-  for (scipp::index group = 0; group < size(); ++group)
-    for (const auto &slice : groups()[group]) {
-      // N contributing to each slice
-      scaleT[group] += slice.end() - slice.begin();
-      // N masks for each slice, that need to be subtracted
-      if (mask) {
-        const auto masks_sum = variable::sum(mask.slice(slice), reductionDim);
-        scaleT[group] -= masks_sum.template value<int64_t>();
+  const auto get_scale = [&](const auto &data) {
+    auto scale = makeVariable<double>(Dims{dim()}, Shape{size()});
+    const auto scaleT = scale.template values<double>();
+    const auto mask = irreducible_mask(data.masks(), reductionDim);
+    for (scipp::index group = 0; group < size(); ++group)
+      for (const auto &slice : groups()[group]) {
+        // N contributing to each slice
+        scaleT[group] += slice.end() - slice.begin();
+        // N masks for each slice, that need to be subtracted
+        if (mask) {
+          const auto masks_sum = variable::sum(mask.slice(slice), reductionDim);
+          scaleT[group] -= masks_sum.template value<int64_t>();
+        }
       }
-    }
-
-  scale = 1.0 * units::one / scale;
+    return reciprocal(std::move(scale));
+  };
 
   // 3. sum/N -> mean
   if constexpr (std::is_same_v<T, Dataset>) {
     for (const auto &item : out) {
       if (isInt(item.data().dtype()))
-        out.setData(item.name(), item.data() * scale, AttrPolicy::Keep);
+        out.setData(item.name(), item.data() * get_scale(m_data[item.name()]),
+                    AttrPolicy::Keep);
       else
-        item *= scale;
+        item *= get_scale(m_data[item.name()]);
     }
   } else {
     if (isInt(out.data().dtype()))
-      out.setData(out.data() * scale);
+      out.setData(out.data() * get_scale(m_data));
     else
-      out *= scale;
+      out *= get_scale(m_data);
   }
 
   return out;

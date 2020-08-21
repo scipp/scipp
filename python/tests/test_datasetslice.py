@@ -70,10 +70,8 @@ class TestDatasetSlice:
         N = 6
         M = 4
         d1 = sc.Dataset()
-        d1['x'] = sc.Variable(['x'],
-                              values=np.arange(N + 1).astype(np.float64))
-        d1['y'] = sc.Variable(['y'],
-                              values=np.arange(M + 1).astype(np.float64))
+        d1['x'] = sc.Variable(['x'], values=np.arange(N).astype(np.float64))
+        d1['y'] = sc.Variable(['y'], values=np.arange(M).astype(np.float64))
         arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
         d1['a'] = sc.Variable(['x', 'y'], values=arr1)
         d1 = d1['x', 1:2]
@@ -129,21 +127,3 @@ class TestDatasetSlice:
         sliced = d['y', 2:6]
         assert sc.is_equal(sc.Variable(['y'], values=np.arange(2, 6)),
                            sliced.coords['y-coord'])
-
-    def test_slice_dataset_with_attrs_only(self):
-        d = sc.Dataset()
-        d.attrs['y-attr'] = sc.Variable(['y'], values=np.arange(10))
-        sliced = d['y', :]
-        assert sc.is_equal(d, sliced)
-        sliced = d['y', 2:6]
-        assert sc.is_equal(sc.Variable(['y'], values=np.arange(2, 6)),
-                           sliced.attrs['y-attr'])
-
-    def test_slice_dataset_with_masks_only(self):
-        d = sc.Dataset()
-        d.masks['y-mask'] = sc.Variable(['y'], values=np.arange(10))
-        sliced = d['y', :]
-        assert sc.is_equal(d, sliced)
-        sliced = d['y', 2:6]
-        assert sc.is_equal(sc.Variable(['y'], values=np.arange(2, 6)),
-                           sliced.masks['y-mask'])

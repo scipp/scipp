@@ -3,6 +3,18 @@
 Release Notes
 =============
 
+Since v0.4
+----------
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+- ``Dataset`` does not have a ``masks`` property any more.
+  Use ``ds['item'].masks`` instead.
+- ``Dataset`` does not support attributes any more.
+- ``DataArray`` and dataset items attributes are now are now handled as "unaligned" coords.
+  Use ``ds['item'].coords`` or ``array.unaligned_coords`` to access these.
+
 v0.4 (July 2020)
 ----------------
 

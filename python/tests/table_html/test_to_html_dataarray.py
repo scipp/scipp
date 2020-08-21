@@ -27,14 +27,14 @@ def test_basic(dims, lengths):
                                   dims[0]: data,
                                   LABEL_NAME: data
                               },
-                              attrs={ATTR_NAME: data},
+                              unaligned_coords={ATTR_NAME: data},
                               masks={MASK_NAME: data})
 
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
     assert len(sections) == 5
     expected_sections = [
-        "Dimensions", "Coordinates", "Data", "Masks", "Attributes"
+        "Dimensions", "Coordinates", "Data", "Masks", "Coordinates (unaligned)"
     ]
     for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
@@ -77,7 +77,7 @@ def test_events(dims, lengths):
                                   dims[0]: data,
                                   LABEL_NAME: attr
                               },
-                              attrs={ATTR_NAME: attr},
+                              unaligned_coords={ATTR_NAME: attr},
                               masks={MASK_NAME: attr})
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
@@ -124,7 +124,7 @@ def test_bin_edge(dims, lengths):
                        values=np.random.rand(*lengths),
                        variances=np.random.rand(*lengths))
     # makes the first dimension be bin-edges
-    lengths[0] += 1
+    lengths[-1] += 1
     edges = sc.Variable(dims,
                         unit=in_unit,
                         dtype=in_dtype,
@@ -132,17 +132,17 @@ def test_bin_edge(dims, lengths):
 
     data_array = sc.DataArray(data,
                               coords={
-                                  dims[0]: edges,
+                                  dims[-1]: edges,
                                   LABEL_NAME: edges
                               },
-                              attrs={ATTR_NAME: data},
-                              masks={MASK_NAME: edges})
+                              unaligned_coords={ATTR_NAME: data},
+                              masks={MASK_NAME: data})
 
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
     assert len(sections) == 5
     expected_sections = [
-        "Dimensions", "Coordinates", "Data", "Masks", "Attributes"
+        "Dimensions", "Coordinates", "Data", "Masks", "Coordinates (unaligned)"
     ]
     for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
@@ -164,7 +164,7 @@ def test_bin_edge(dims, lengths):
                        dims,
                        in_dtype,
                        in_unit,
-                       has_bin_edges=True)
+                       has_bin_edges=name == LABEL_NAME)
 
 
 @pytest.mark.parametrize("dims, lengths",
@@ -172,9 +172,13 @@ def test_bin_edge(dims, lengths):
                           (['x', 'y', 'z'], [10, 10, 10])))
 def test_bin_edge_and_events(dims, lengths):
     in_unit = sc.units.m
-    in_dtype = sc.dtype.event_list_float32
+    in_event_dtype = sc.dtype.event_list_float32
+    in_dtype = sc.dtype.float32
 
-    data = sc.Variable(dims=dims, shape=lengths, unit=in_unit, dtype=in_dtype)
+    data = sc.Variable(dims=dims,
+                       shape=lengths,
+                       unit=in_unit,
+                       dtype=in_event_dtype)
 
     # attribute data without the events dimension
     non_events_data = sc.Variable(dims=dims,
@@ -183,25 +187,26 @@ def test_bin_edge_and_events(dims, lengths):
                                   dtype=in_dtype)
 
     # makes the first dimension be bin-edges
-    lengths[0] += 1
+    lengths[-1] += 1
     non_events_bin_edges = sc.Variable(dims=dims,
                                        shape=lengths,
                                        unit=in_unit,
                                        dtype=in_dtype)
 
+    print(data, non_events_bin_edges, non_events_data)
     data_array = sc.DataArray(data,
                               coords={
-                                  dims[0]: non_events_bin_edges,
+                                  dims[-1]: non_events_bin_edges,
                                   LABEL_NAME: non_events_bin_edges
                               },
-                              attrs={ATTR_NAME: non_events_data},
-                              masks={MASK_NAME: non_events_bin_edges})
+                              unaligned_coords={ATTR_NAME: non_events_data},
+                              masks={MASK_NAME: non_events_data})
 
     html = BeautifulSoup(make_html(data_array), features="html.parser")
     sections = html.find_all(class_="xr-section-item")
 
     expected_sections = [
-        "Dimensions", "Coordinates", "Data", "Masks", "Attributes"
+        "Dimensions", "Coordinates", "Data", "Masks", "Coordinates (unaligned)"
     ]
     assert len(sections) == 5
     for actual_section, expected_section in zip(sections, expected_sections):
@@ -211,7 +216,12 @@ def test_bin_edge_and_events(dims, lengths):
     assert_section(attr_section, ATTR_NAME, dims, in_dtype, in_unit)
 
     data_section = sections.pop(2)
-    assert_section(data_section, "", dims, in_dtype, in_unit, has_events=True)
+    assert_section(data_section,
+                   "",
+                   dims,
+                   in_event_dtype,
+                   in_unit,
+                   has_events=True)
 
     dim_section = sections.pop(0)
     assert_dims_section(data, dim_section)
@@ -224,7 +234,7 @@ def test_bin_edge_and_events(dims, lengths):
                        dims,
                        in_dtype,
                        in_unit,
-                       has_bin_edges=True)
+                       has_bin_edges=name == LABEL_NAME)
 
 
 def dataarray_for_repr_test():
@@ -237,7 +247,7 @@ def dataarray_for_repr_test():
                          'xxx': x,
                          'aux': sc.Variable(['x'], values=np.random.rand(3))
                      },
-                     attrs={
+                     unaligned_coords={
                          'attr_zz': x,
                          'attr_aa': y
                      },

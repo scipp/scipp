@@ -44,14 +44,14 @@ void init_detail(py::module &m) {
       "move_to_data_array",
       [](Variable &data, std::map<Dim, Variable &> &coords,
          std::map<std::string, Variable &> &masks,
-         std::map<std::string, Variable &> &attrs, const std::string &name) {
+         std::map<Dim, Variable &> &unaligned_coords, const std::string &name) {
         return DataArray(std::move(data), std::move(coords), std::move(masks),
-                         std::move(attrs), name);
+                         std::move(unaligned_coords), name);
       },
       py::arg("data") = Variable{},
       py::arg("coords") = std::map<Dim, Variable>{},
       py::arg("masks") = std::map<std::string, Variable>{},
-      py::arg("attrs") = std::map<std::string, Variable>{},
+      py::arg("unaligned_coords") = std::map<Dim, Variable>{},
       py::arg("name") = std::string{},
       R"(This functions moves the contents of all the input Variables (data,
       coordinates, masks and attributes) to a new DataArray without

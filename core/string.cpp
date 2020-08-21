@@ -53,14 +53,9 @@ std::map<DType, std::string> &dtypeNameRegistry() {
 }
 
 const std::string to_iso_date(const scipp::core::time_point &item,
-                              const std::optional<units::Unit> &unit) {
-  if (!unit)
-    throw except::UnitError(
-        "Time point should only have time units (ns or s).");
-
+                              const units::Unit &unit) {
   int64_t ts = item.time_since_epoch();
-
-  if (unit.value() == units::ns) {
+  if (unit == units::ns) {
     // cast timestamp into duration in seconds
     const std::chrono::duration<int64_t, std::nano> dur_nano(ts);
     auto dur_sec = std::chrono::duration_cast<std::chrono::seconds>(dur_nano);
@@ -77,7 +72,7 @@ const std::string to_iso_date(const scipp::core::time_point &item,
     ss << std::put_time(tm, "%FT%T.") << std::setw(9) << std::setfill('0') << ns
        << std::endl;
     return ss.str();
-  } else if (unit.value() == units::s) {
+  } else if (unit == units::s) {
     // cast timestamp into duration in seconds
     const std::chrono::duration<int64_t> dur_sec(ts);
     std::chrono::system_clock::time_point tp(dur_sec);

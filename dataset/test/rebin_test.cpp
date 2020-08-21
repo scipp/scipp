@@ -124,12 +124,12 @@ TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   ds.setData("data_x", makeVariable<double>(Dimensions{Dim::X, 5},
                                             Values{1, 2, 3, 4, 5}));
 
-  ds.setMask("mask_x",
-             makeVariable<bool>(Dimensions{Dim::X, 5},
-                                Values{false, false, true, false, false}));
-  ds.setMask("mask_y",
-             makeVariable<bool>(Dimensions{Dim::Y, 5},
-                                Values{false, false, true, false, false}));
+  ds["data_x"].masks().set(
+      "mask_x", makeVariable<bool>(Dimensions{Dim::X, 5},
+                                   Values{false, false, true, false, false}));
+  ds["data_x"].masks().set(
+      "mask_y", makeVariable<bool>(Dimensions{Dim::Y, 5},
+                                   Values{false, false, true, false, false}));
 
   const auto edges =
       makeVariable<double>(Dimensions{Dim::X, 3}, Values{1, 3, 5});
@@ -140,6 +140,6 @@ TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   ASSERT_EQ(result["data_x"].masks()["mask_x"],
             makeVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true}));
   // the Y masks should not have been touched
-  ASSERT_EQ(ds.masks().size(), 2);
-  ASSERT_EQ(ds.masks()["mask_y"].dims(), Dimensions(Dim::Y, 5));
+  ASSERT_EQ(ds["data_x"].masks().size(), 2);
+  ASSERT_EQ(ds["data_x"].masks()["mask_y"].dims(), Dimensions(Dim::Y, 5));
 }

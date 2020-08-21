@@ -124,18 +124,11 @@ template <class... Ts> class as_ElementArrayViewImpl {
   using get_variances = DataAccessHelper::get_variances;
 
   template <class View>
-  using outVariant_t = std::variant<
-      std::conditional_t<std::is_same_v<View, Variable>, scipp::span<Ts>,
-                         ElementArrayView<Ts>>...>;
+  using outVariant_t = std::variant<ElementArrayView<Ts>...>;
 
   template <class Getter, class View>
   static outVariant_t<View> get(View &view) {
-    DType type = view.data().dtype();
-    if constexpr (std::is_same_v<DataArray, View> ||
-                  std::is_base_of_v<DataArrayConstView, View>) {
-      const auto &v = view.data();
-      type = v.data().dtype();
-    }
+    const DType type = view.dtype();
     if (type == dtype<double>)
       return {Getter::template get<double>(view)};
     if (type == dtype<float>)
@@ -156,6 +149,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return {Getter::template get<event_list<float>>(view)};
     if (type == dtype<event_list<int64_t>>)
       return {Getter::template get<event_list<int64_t>>(view)};
+    if (type == dtype<event_list<int32_t>>)
+      return {Getter::template get<event_list<int32_t>>(view)};
     if (type == dtype<DataArray>)
       return {Getter::template get<DataArray>(view)};
     if (type == dtype<Dataset>)
@@ -215,12 +210,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
   template <class Getter, class View>
   static py::object get_py_array_t(py::object &obj) {
     auto &view = obj.cast<View &>();
-    DType type = view.data().dtype();
-    if constexpr (std::is_same_v<DataArray, View> ||
-                  std::is_base_of_v<DataArrayConstView, View>) {
-      const auto &v = view.data();
-      type = v.data().dtype();
-    }
+    const DType type = view.dtype();
     if (type == dtype<double>)
       return DataAccessHelper::as_py_array_t_impl<Getter, double>(obj, view);
     if (type == dtype<float>)
@@ -372,8 +362,8 @@ public:
 using as_ElementArrayView = as_ElementArrayViewImpl<
     double, float, int64_t, int32_t, bool, std::string, event_list<double>,
     scipp::core::time_point, event_list<scipp::core::time_point>,
-    event_list<float>, event_list<int64_t>, DataArray, Dataset, Eigen::Vector3d,
-    Eigen::Matrix3d, scipp::python::PyObject>;
+    event_list<float>, event_list<int64_t>, event_list<int32_t>, DataArray,
+    Dataset, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {

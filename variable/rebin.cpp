@@ -3,11 +3,13 @@
 /// @file
 /// @author Simon Heybrock, Igor Gudich
 #include "scipp/core/element/rebin.h"
+#include "scipp/core/parallel.h"
 #include "scipp/units/except.h"
 #include "scipp/variable/apply.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
 
@@ -20,6 +22,9 @@ bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
   return edges[dim] == toMatch[dim];
 }
 
+// Workaround VS C7526 (undefined inline variable) with dtype<> in template.
+bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
+
 template <typename T, class Less>
 void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
                      Variable &newT, const VariableConstView &oldCoordT,
@@ -30,44 +35,45 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
 
   const auto *xold = oldCoordT.values<T>().data();
   const auto *xnew = newCoordT.values<T>().data();
-  // This function assumes that dimensions between coord and data
-  // coord is 1D.
-  int iold = 0;
-  int inew = 0;
-  // TODO: Using dtype<bool> does not seem to compile on Windows. It is not
-  // clear why that is, since dtype<double> is working below.
-  // We use the longer syntax below which compiles instead of:
-  // const bool is_bool = newT.dtype() == dtype<bool>;
-  const bool is_bool = newT.dtype().index == std::type_index(typeid(bool));
-  while ((iold < oldSize) && (inew < newSize)) {
+
+  auto add_from_bin = [&](const auto &slice, const auto xn_low,
+                          const auto xn_high, const scipp::index iold) {
     auto xo_low = xold[iold];
     auto xo_high = xold[iold + 1];
-    auto xn_low = xnew[inew];
-    auto xn_high = xnew[inew + 1];
-
-    if (!less(xo_low, xn_high))
-      inew++; /* old and new bins do not overlap */
-    else if (!less(xn_low, xo_high))
-      iold++; /* old and new bins do not overlap */
-    else {
-      if (is_bool) {
-        newT.slice({dim, inew}) |= oldT.slice({dim, iold});
-      } else {
-        // delta is the overlap of the bins on the x axis
-        const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
-                                    std::max<double>(xn_low, xo_low, less));
-        const auto owidth = std::abs(xo_high - xo_low);
-        newT.slice({dim, inew}) +=
-            astype(oldT.slice({dim, iold}) * ((delta / owidth) * units::one),
-                   newT.dtype());
-      }
-      if (less(xo_high, xn_high)) {
-        iold++;
-      } else {
-        inew++;
-      }
+    // delta is the overlap of the bins on the x axis
+    const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
+                                std::max<double>(xn_low, xo_low, less));
+    const auto owidth = std::abs(xo_high - xo_low);
+    slice += oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
+  };
+  auto accumulate_bin = [&](const auto &slice, const auto xn_low,
+                            const auto xn_high) {
+    scipp::index begin =
+        std::upper_bound(xold, xold + oldSize + 1, xn_low, less) - xold;
+    scipp::index end =
+        std::upper_bound(xold, xold + oldSize + 1, xn_high, less) - xold;
+    if (begin == oldSize + 1 || end == 0)
+      return;
+    begin = std::max(scipp::index(0), begin - 1);
+    if (is_dtype_bool(newT)) {
+      slice |= any(oldT.slice({dim, begin, end}), dim);
+    } else {
+      add_from_bin(slice, xn_low, xn_high, begin);
+      if (begin + 1 < end - 1)
+        sum(oldT.slice({dim, begin + 1, end - 1}), dim, slice);
+      if (begin != end - 1 && end < oldSize + 1)
+        add_from_bin(slice, xn_low, xn_high, end - 1);
     }
-  }
+  };
+  auto accumulate_bins = [&](const auto &range) {
+    for (scipp::index inew = range.begin(); inew < range.end(); ++inew) {
+      auto xn_low = xnew[inew];
+      auto xn_high = xnew[inew + 1];
+      accumulate_bin(newT.slice({dim, inew}), xn_low, xn_high);
+    }
+  };
+  core::parallel::parallel_for(core::parallel::blocked_range(0, newSize),
+                               accumulate_bins);
 }
 
 namespace {

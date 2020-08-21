@@ -37,9 +37,9 @@ public:
   void SetUp() {
     ds.setData("data_x",
                makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{1, 5, 4, 5, 1}));
-    ds.setMask("masks_x",
-               makeVariable<bool>(Dims{Dim::X}, Shape{5},
-                                  Values{false, true, false, true, false}));
+    ds["data_x"].masks().set(
+        "masks_x", makeVariable<bool>(Dims{Dim::X}, Shape{5},
+                                      Values{false, true, false, true, false}));
   }
   Dataset ds;
 };
@@ -65,7 +65,7 @@ TYPED_TEST(DatasetShapeChangingOpTest, mean_masked) {
 }
 
 TYPED_TEST(DatasetShapeChangingOpTest, mean_fully_masked) {
-  this->ds.setMask(
+  this->ds["data_x"].masks().set(
       "full_mask",
       makeVariable<bool>(Dimensions{Dim::X, 5}, Values(make_bools(5, true))));
   const Dataset result = mean(this->ds, Dim::X);
@@ -83,10 +83,10 @@ TEST(DatasetOperationsTest, mean_two_dims) {
                                               Values{-999, -999, 3, -999, 5, 6,
                                                      -999, 10, 10, -999}));
 
-  ds.setMask("mask_xy",
-             makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{5, 2},
-                                Values{true, true, false, true, false, false,
-                                       true, false, false, true}));
+  ds["data_xy"].masks().set(
+      "mask_xy", makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{5, 2},
+                                    Values{true, true, false, true, false,
+                                           false, true, false, false, true}));
 
   const Dataset result = mean(ds, Dim::X);
 
@@ -103,7 +103,7 @@ TEST(DatasetOperationsTest, mean_three_dims) {
                  Values{-999, -999, 3, -999, 5, 6, -999, 10, 10, -999,
                         -999, -999, 3, -999, 5, 6, -999, 10, 10, -999}));
 
-  ds.setMask(
+  ds["data_xy"].masks().set(
       "mask_xy",
       makeVariable<bool>(Dims{Dim::Z, Dim::X, Dim::Y}, Shape{2, 5, 2},
                          Values{true,  true,  false, true,  false, false, true,

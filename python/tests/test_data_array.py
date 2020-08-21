@@ -17,7 +17,7 @@ def make_dataarray(dim1='x', dim2='y', seed=None):
             dim2: sc.Variable([dim2], values=np.arange(3.0), unit=sc.units.m),
             'aux': sc.Variable([dim2], values=np.random.rand(3))
         },
-        attrs={'meta': sc.Variable([dim2], values=np.arange(3))})
+        unaligned_coords={'meta': sc.Variable([dim2], values=np.arange(3))})
 
 
 def test_slice_init():
@@ -37,10 +37,11 @@ def test_init():
             'x': sc.Variable(['x'], values=np.arange(3), unit=sc.units.m),
             'lib1': sc.Variable(['x'], values=np.random.rand(3))
         },
-        attrs={'met1': sc.Variable(['x'], values=np.arange(3))},
+        unaligned_coords={'met1': sc.Variable(['x'], values=np.arange(3))},
         masks={'mask1': sc.Variable(['x'], values=np.ones(3, dtype=np.bool))})
-    assert len(d.attrs) == 1
-    assert len(d.coords) == 2
+    assert len(d.coords) == 3
+    assert len(d.aligned_coords) == 2
+    assert len(d.unaligned_coords) == 1
     assert len(d.masks) == 1
 
 
@@ -53,18 +54,18 @@ def test_init_from_variable_views():
     var = sc.Variable(['x'], values=np.arange(5))
     a = sc.DataArray(data=var,
                      coords={'x': var},
-                     attrs={'meta': var},
+                     unaligned_coords={'meta': var},
                      masks={'mask1': sc.less(var, sc.Variable(value=3))})
     b = sc.DataArray(data=a.data,
                      coords={'x': a.coords['x']},
-                     attrs={'meta': a.attrs['meta']},
+                     unaligned_coords={'meta': a.unaligned_coords['meta']},
                      masks={'mask1': a.masks['mask1']})
     assert sc.is_equal(a, b)
 
     # Ensure mix of Variables and Variable views work
     c = sc.DataArray(data=a.data,
                      coords={'x': var},
-                     attrs={'meta': a.attrs['meta']},
+                     unaligned_coords={'meta': a.unaligned_coords['meta']},
                      masks={'mask1': a.masks['mask1']})
 
     assert sc.is_equal(a, c)
@@ -72,16 +73,14 @@ def test_init_from_variable_views():
 
 def test_coords():
     da = make_dataarray()
-    assert len(dict(da.coords)) == 3
+    assert len(dict(da.coords)) == 4
+    assert len(dict(da.aligned_coords)) == 3
+    assert len(dict(da.unaligned_coords)) == 1
     assert 'x' in da.coords
     assert 'y' in da.coords
     assert 'aux' in da.coords
-
-
-def test_attrs():
-    da = make_dataarray()
-    assert len(dict(da.attrs)) == 1
-    assert 'meta' in da.attrs
+    assert 'meta' in da.coords
+    assert 'meta' in da.unaligned_coords
 
 
 def test_masks():
@@ -234,7 +233,7 @@ def test_reciprocal():
 
 
 def test_realign():
-    co = sc.Variable(['x'], shape=[1], dtype=sc.dtype.event_list_float64)
+    co = sc.Variable(['y'], shape=[1], dtype=sc.dtype.event_list_float64)
     co.values[0].append(1.0)
     co.values[0].append(2.0)
     co.values[0].append(2.0)

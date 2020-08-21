@@ -75,8 +75,6 @@ void MutableView<Base, Access>::erase(
 
 template class ConstView<ViewId::Coords, Dim, variable::Variable>;
 template class MutableView<CoordsConstView, CoordAccess>;
-template class ConstView<ViewId::Attrs, std::string, variable::Variable>;
-template class MutableView<AttrsConstView, AttrAccess>;
 template class ConstView<ViewId::Masks, std::string, variable::Variable>;
 template class MutableView<MasksConstView, MaskAccess>;
 

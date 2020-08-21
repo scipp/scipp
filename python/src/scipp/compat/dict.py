@@ -32,12 +32,8 @@ def to_dict(scipp_obj):
         # manually duplicating all attributes, since these are not carried when
         # accessing items of a Dataset.
         out = {}
-        copy_attrs = len(scipp_obj.attrs.keys()) > 0
         for name, item in scipp_obj.items():
             out[name] = _data_array_to_dict(item)
-            if copy_attrs:
-                for key, attr in scipp_obj.attrs.items():
-                    out[name]["attrs"][key] = _variable_to_dict(attr)
         return out
 
 
@@ -94,10 +90,11 @@ def _data_array_to_dict(da):
     """
     Convert a scipp DataArray to a python dict.
     """
-    out = {"coords": {}, "masks": {}, "attrs": {}}
+    out = {"aligned_coords": {}, "masks": {}, "unaligned_coords": {}}
     for key in out.keys():
         for name, item in getattr(da, key).items():
             out[key][str(name)] = _variable_to_dict(item)
+    out['coords'] = out.pop('aligned_coords')
     if da.unaligned is not None:
         out["unaligned"] = _data_array_to_dict(da.unaligned)
     else:
@@ -211,7 +208,7 @@ def _dict_to_data_array(d):
         raise KeyError("To create a DataArray, the supplied dict must contain "
                        "either 'data' or 'unaligned'. "
                        "Got {}.".format(d.keys()))
-    out = {"coords": {}, "masks": {}, "attrs": {}}
+    out = {"coords": {}, "masks": {}, "unaligned_coords": {}}
     for key in out.keys():
         if key in d:
             for name, item in d[key].items():

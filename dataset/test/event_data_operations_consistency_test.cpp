@@ -28,8 +28,9 @@ static auto make_events_array_default_weights() {
 static auto make_histogram() {
   auto edges = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 3}},
                                     units::us, Values{0, 2, 4, 1, 3, 5});
-  auto data = makeVariable<double>(Dimensions{Dim::X, 2}, Values{2.0, 3.0},
-                                   Variances{0.3, 0.4});
+  auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                   Values{2.0, 3.0, 2.0, 3.0},
+                                   Variances{0.3, 0.4, 0.3, 0.4});
 
   return DataArray(data, {{Dim::X, edges}});
 }

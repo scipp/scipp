@@ -242,6 +242,8 @@ public:
   }
 
   void erase(const typename Base::key_type &key) const;
+
+  const Access &access() const { return m_access; }
 };
 
 SCIPP_DATASET_EXPORT Variable irreducible_mask(const MasksConstView &masks,
