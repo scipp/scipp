@@ -48,12 +48,9 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
-    if constexpr (std::is_same_v<T, Variable>)
-      return std::make_unique<DataModel>(
-          dims, element_array<range_type>(dims.volume()), m_dim,
-          T(m_buffer, get_dims(m_buffer)));
-    throw std::runtime_error(
-        "makeDefaultFromParent not implemented yet for this bucket type");
+    return std::make_unique<DataModel>(dims,
+                                       element_array<range_type>(dims.volume()),
+                                       m_dim, T{m_buffer.slice({m_dim, 0, 0})});
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }

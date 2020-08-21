@@ -10,11 +10,17 @@
 
 namespace scipp::variable {
 
+// TODO Is there a bug here? Checking dims of underlying not enough, need to
+// also check data dims?
 Variable::Variable(const VariableConstView &slice)
-    : Variable(slice ? Variable(slice, slice.dims()) : Variable()) {
+    : Variable(slice ? slice.dims() == slice.underlying().dims()
+                           ? Variable(slice.underlying())
+                           : Variable(slice, slice.dims())
+                     : Variable()) {
   // There is a bug in the implementation of MultiIndex used in ElementArrayView
   // in case one of the dimensions has extent 0.
-  if (slice && dims().volume() != 0)
+  if (slice && slice.dims() != slice.underlying().dims() &&
+      dims().volume() != 0)
     data().copy(slice, *this);
 }
 

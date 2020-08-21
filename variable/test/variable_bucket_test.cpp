@@ -63,3 +63,8 @@ TEST_F(VariableBucketTest, view) {
   EXPECT_EQ(vals.size(), 1);
   EXPECT_EQ(vals[0], buffer.slice({Dim::X, 2, 4}));
 }
+
+TEST_F(VariableBucketTest, construct_from_view) {
+  Variable copy{VariableView(var)};
+  EXPECT_EQ(copy, var);
+}
