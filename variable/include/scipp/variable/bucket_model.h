@@ -53,7 +53,7 @@ public:
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
   DType dtype() const noexcept override { return scipp::dtype<bucket<T>>; }
 
-  constexpr bool hasVariances() const noexcept override { return false; }
+  bool hasVariances() const noexcept override { return false; }
   void setVariances(Variable &&) override {
     if (!core::canHaveVariances<T>())
       throw except::VariancesError("This data type cannot have variances.");
