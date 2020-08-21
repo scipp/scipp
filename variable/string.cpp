@@ -5,6 +5,7 @@
 #include <chrono>
 #include <set>
 
+#include "scipp/core/bucket_array_view.h"
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/variable/string.h"
@@ -50,7 +51,10 @@ template <class T> struct ValuesToString {
 };
 template <class T> struct VariancesToString {
   static auto apply(const VariableConstView &var) {
-    return core::array_to_string(var.template variances<T>());
+    if constexpr (core::canHaveVariances<T>())
+      return core::array_to_string(var.template variances<T>());
+    else
+      return std::string{};
   }
 };
 
@@ -66,7 +70,7 @@ auto apply(const DType dtype, Args &&... args) {
                  scipp::core::time_point, event_list<double>, event_list<float>,
                  event_list<int64_t>, event_list<int32_t>,
                  event_list<scipp::core::time_point>, Eigen::Vector3d,
-                 Eigen::Matrix3d>{},
+                 Eigen::Matrix3d, bucket<Variable>>{},
       dtype, std::forward<Args>(args)...);
 }
 

@@ -55,6 +55,7 @@ public:
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const VariableConstView &parent, const Dimensions &dims);
   Variable(const Variable &parent, VariableConceptHandle data);
+  Variable(VariableConceptHandle data);
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            std::optional<T> variances);
@@ -84,18 +85,10 @@ public:
 
   bool hasVariances() const noexcept { return data().hasVariances(); }
 
-  template <class T> auto values() const {
-    return makeElementArrayView(cast<T>().data(), 0, dims(), dims());
-  }
-  template <class T> auto values() {
-    return makeElementArrayView(cast<T>().data(), 0, dims(), dims());
-  }
-  template <class T> auto variances() const {
-    return makeElementArrayView(cast<T>(true).data(), 0, dims(), dims());
-  }
-  template <class T> auto variances() {
-    return makeElementArrayView(cast<T>(true).data(), 0, dims(), dims());
-  }
+  template <class T> ElementArrayView<const T> values() const;
+  template <class T> ElementArrayView<T> values();
+  template <class T> ElementArrayView<const T> variances() const;
+  template <class T> ElementArrayView<T> variances();
   template <class T> const auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];
@@ -142,10 +135,6 @@ public:
   VariableConcept &data() & { return *m_object; }
 
   void setVariances(Variable v);
-
-  template <class T>
-  const element_array<T> &cast(const bool variances = false) const;
-  template <class T> element_array<T> &cast(const bool variances = false);
 
 private:
   template <class... Ts, class... Args>
@@ -244,8 +233,8 @@ public:
   // temporaries and we do not need to delete the rvalue overload, unlike for
   // many other methods. The data is owned by the underlying variable so it
   // will not be deleted even if *this is a temporary and gets deleted.
-  template <class T> auto values() const { return cast<T>(); }
-  template <class T> auto variances() const { return castVariances<T>(); }
+  template <class T> ElementArrayView<const T> values() const;
+  template <class T> ElementArrayView<const T> variances() const;
   template <class T> const auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];
@@ -262,11 +251,6 @@ public:
   auto &underlying() const { return *m_variable; }
 
 protected:
-  friend class Variable;
-
-  template <class T> const ElementArrayView<const T> cast() const;
-  template <class T> const ElementArrayView<const T> castVariances() const;
-
   const Variable *m_variable{nullptr};
   scipp::index m_offset{0};
   Dimensions m_dims;
@@ -291,8 +275,8 @@ public:
   VariableView transpose(const std::vector<Dim> &dims = {}) const;
 
   // Note: No need to delete rvalue overloads here, see VariableConstView.
-  template <class T> auto values() const { return cast<T>(); }
-  template <class T> auto variances() const { return castVariances<T>(); }
+  template <class T> ElementArrayView<T> values() const;
+  template <class T> ElementArrayView<T> variances() const;
   template <class T> auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];
@@ -333,16 +317,12 @@ public:
   void expectCanSetUnit(const units::Unit &unit) const;
 
 private:
-  friend class Variable;
   friend class dataset::DataArrayConstView;
   template <class T> friend typename T::view_type dataset::makeViewItem(T &);
 
   // For internal use in DataArrayConstView.
   explicit VariableView(VariableConstView &&base)
       : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
-
-  template <class T> ElementArrayView<T> cast() const;
-  template <class T> ElementArrayView<T> castVariances() const;
 
   Variable *m_mutableVariable{nullptr};
 };

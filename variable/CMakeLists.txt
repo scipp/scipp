@@ -48,6 +48,7 @@ set(SRC_FILES
     variable_concept.cpp
     variable.cpp
     variable_instantiate_basic.cpp
+    variable_instantiate_bucket_elements.cpp
     variable_instantiate_view_elements.cpp
 )
 
