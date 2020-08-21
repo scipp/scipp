@@ -5,6 +5,7 @@
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
+#include <iostream>
 
 namespace scipp::dataset {
 DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
@@ -27,8 +28,9 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
     throw std::runtime_error("Coordinate must be monotomically increasing or "
                              "decreasing for value slicing");
 
-  const auto bins = coord.dims().volume();
-  const auto bin_edges = bins == to_slice.dims()[dim] + 1;
+  const auto len_data = to_slice.dims()[dim];
+  const auto len = coord.dims().volume();
+  const auto bin_edges = len == len_data + 1;
 
   // Point slice
   if ((begin && end) && begin == end) {
@@ -44,21 +46,22 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
             " point slice does not fall within any bin edges along " +
             to_string(dim));
     } else {
-      auto values_view = equal(coord, begin).values<scipp::index>();
+      auto eq = equal(coord, begin);
+      auto values_view = eq.values<bool>();
       auto it = std::find(values_view.begin(), values_view.end(), true);
       if (it == values_view.end())
         throw except::NotFoundError(to_string(begin) +
                                     " point slice does not exactly match any "
                                     "point coordinate value along " +
                                     to_string(dim));
-      idx = std::distance(it, values_view.begin());
+      idx = std::distance(values_view.begin(), it);
     }
     return to_slice.slice({dim, idx});
   }
   // Range slice
   else {
     scipp::index first = 0;
-    scipp::index last = bins - 1;
+    scipp::index last = len - 1;
     if (begin) {
       if (bin_edges) {
         // lower bin edge boundary
@@ -71,25 +74,24 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
       } else {
         // First point >= value for non bin edges
         if (ascending)
-          first = bins -
-                  sum(greater_equal(coord, begin), dim).value<scipp::index>();
+          first =
+              len - sum(greater_equal(coord, begin), dim).value<scipp::index>();
         else
           first =
-              bins - sum(less_equal(coord, begin), dim).value<scipp::index>();
+              len - sum(less_equal(coord, begin), dim).value<scipp::index>();
       }
+      if (first < 0)
+        first = 0;
     }
     if (end) {
       if (ascending) {
-        last = bins - sum(greater_equal(coord, end), dim).value<scipp::index>();
+        last = len - sum(greater_equal(coord, end), dim).value<scipp::index>();
       } else {
-        last = bins - sum(less_equal(coord, end), dim).value<scipp::index>();
+        last = len - sum(less_equal(coord, end), dim).value<scipp::index>();
       }
+      if (last > len_data)
+        last = len - 1;
     }
-
-    if (first < 0)
-      first = 0;
-    if (last > bins)
-      last = bins - 1;
     return to_slice.slice({dim, first, last});
   }
 }
