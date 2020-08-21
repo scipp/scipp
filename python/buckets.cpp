@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Simon Hezbrock
+#include "docstring.h"
+#include "pybind11.h"
+#include "scipp/dataset/shape.h"
+#include "scipp/variable/bucket_model.h"
+#include "scipp/variable/shape.h"
+#include "scipp/variable/variable.h"
+
+using namespace scipp;
+
+namespace py = pybind11;
+
+namespace {
+
+template <class T> void bind_buckets(pybind11::module &m) {
+  m.def(
+      "to_buckets",
+      [](const VariableConstView &begin, const VariableConstView &end,
+         const Dim dim, const typename T::const_view_type &data) {
+        // if(!begin && !end)
+        element_array<std::pair<scipp::index, scipp::index>> buckets(
+            begin.dims().volume());
+        const auto &begin_ = begin.values<int64_t>();
+        const auto &end_ = end.values<int64_t>();
+        for (scipp::index i = 0; i < buckets.size(); ++i)
+          buckets.data()[i] = {begin_[i], end_[i]};
+        return Variable(std::make_unique<variable::DataModel<bucket<T>>>(
+            begin.dims(), std::move(buckets), dim, T(data)));
+      },
+      py::arg("begin") = VariableConstView{},
+      py::arg("end") = VariableConstView{}, py::arg("dim"), py::arg("data"),
+      py::call_guard<py::gil_scoped_release>());
+}
+
+} // namespace
+
+void init_buckets(py::module &m) {
+  bind_buckets<Variable>(m);
+  bind_buckets<DataArray>(m);
+  bind_buckets<Dataset>(m);
+}

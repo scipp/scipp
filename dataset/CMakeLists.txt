@@ -44,6 +44,7 @@ set(SRC_FILES
     sort.cpp
     string.cpp
     unaligned.cpp
+    variable_instantiate_bucket_elements.cpp
     variable_instantiate_dataset.cpp
     variable_reduction.cpp
 )

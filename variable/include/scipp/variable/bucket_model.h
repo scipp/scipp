@@ -9,6 +9,9 @@
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
 
+namespace scipp::dataset {
+class Dataset;
+}
 namespace scipp::variable {
 
 /// Specialization of DataModel for "bucketed" data. T could be Variable,
@@ -22,7 +25,7 @@ public:
             const Dim dim, T buffer)
       : VariableConcept(dimensions), m_buckets(std::move(buckets)), m_dim(dim),
         m_buffer(std::move(buffer)) {
-    if (!m_buffer.dims().contains(m_dim))
+    if (!get_dims(m_buffer).count(m_dim))
       throw except::DimensionError("Buffer must contain bucket slicing dim.");
     if (this->dims().volume() != scipp::size(m_buckets))
       throw except::DimensionError(
@@ -45,9 +48,12 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
-    return std::make_unique<DataModel>(dims,
-                                       element_array<range_type>(dims.volume()),
-                                       m_dim, T(m_buffer, m_buffer.dims()));
+    if constexpr (std::is_same_v<T, Variable>)
+      return std::make_unique<DataModel>(
+          dims, element_array<range_type>(dims.volume()), m_dim,
+          T(m_buffer, get_dims(m_buffer)));
+    throw std::runtime_error(
+        "makeDefaultFromParent not implemented yet for this bucket type");
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
@@ -90,6 +96,12 @@ public:
   }
 
 private:
+  auto get_dims(const T &obj) const {
+    if constexpr (std::is_same_v<T, dataset::Dataset>)
+      return obj.dimensions();
+    else
+      return obj.dims();
+  }
   element_array<range_type> m_buckets;
   Dim m_dim;
   T m_buffer;
