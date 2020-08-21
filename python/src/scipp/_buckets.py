@@ -9,7 +9,8 @@ def to_buckets(data, dim, begin=None, end=None):
     """Create variable with elements defined as slices of `data` along `dim`.
 
     The elements of the returned variable are "buckets", defined as views into
-    `data`. The returned variable keeps and manages a copy of `data` internally.
+    `data`. The returned variable keeps and manages a copy of `data`
+    internally.
 
     The variables `begin` and `end` must have the same dims and shape and
     `dtype=sc.dtype.int64`. The output dims and shape are given by `begin`.
