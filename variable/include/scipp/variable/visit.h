@@ -11,7 +11,19 @@
 
 namespace scipp::variable {
 
-template <class T> class VariableConceptT;
+template <class T, class Var> struct VariableAccess {
+  VariableAccess(Var &var) : m_var(&var) {}
+  using value_type = T;
+  Dimensions dims() const { return m_var->dims(); }
+  auto values() const { return m_var->template values<T>(); }
+  auto variances() const { return m_var->template variances<T>(); }
+  bool hasVariances() const { return m_var->hasVariances(); }
+  Variable clone() const { return copy(*m_var); }
+  Var *m_var{nullptr};
+};
+template <class T, class Var> auto variable_access(Var &var) {
+  return VariableAccess<T, Var>(var);
+}
 
 namespace visit_detail {
 template <template <class...> class Tuple, class... T, class... V>
@@ -21,11 +33,7 @@ static bool holds_alternatives(Tuple<T...> &&, const V &... v) noexcept {
 
 template <template <class...> class Tuple, class... T, class... V>
 static auto get_args(Tuple<T...> &&, V &&... v) noexcept {
-  return std::forward_as_tuple(
-      dynamic_cast<
-          std::conditional_t<std::is_const_v<std::remove_reference_t<V>>,
-                             const VariableConceptT<T>, VariableConceptT<T>> &>(
-          v)...);
+  return std::tuple(variable_access<T>(v)...);
 }
 
 template <class... Tuple, class F, class... V>

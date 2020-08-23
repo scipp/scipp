@@ -19,6 +19,11 @@ template <class T> struct ValuesAndVariances {
   ValuesAndVariances(T &val, T &var) : values(val), variances(var) {
     expect::sizeMatches(values, variances);
   }
+  ValuesAndVariances &operator=(const ValuesAndVariances<const T> &other) {
+    values = other.values;
+    variances = other.variances;
+    return *this;
+  }
   ValuesAndVariances &operator=(std::pair<T, T> &&data) {
     values = std::move(data.first);
     variances = std::move(data.second);

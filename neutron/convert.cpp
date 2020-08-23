@@ -39,7 +39,7 @@ T convert_generic(T &&d, const Dim from, const Dim to,
       // Cannot realign if any item has aligned (histogrammed) data
       if (!coord.dims().contains(arg.dims()))
         d.coords().set(from, broadcast(coord, arg.dims()));
-      transform_in_place(coord, arg, op_);
+      transform_in_place(d.coords()[from], arg, op_);
     } else {
       // Unit conversion may swap what min and max are, so we treat them jointly
       // as extrema and extract min and max at the end.

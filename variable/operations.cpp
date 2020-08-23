@@ -49,7 +49,7 @@ Variable filter(const Variable &var, const Variable &filter) {
   // type for *every* slice. Should be combined into a single virtual call.
   for (scipp::index iIn = 0; iIn < scipp::size(mask); ++iIn)
     if (mask[iIn])
-      out.data().copy(var.data(), dim, iOut++, iIn, iIn + 1);
+      out.data().copy(var.slice({dim, iIn}), out.slice({dim, iOut++}));
   return out;
 }
 
