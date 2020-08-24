@@ -8,6 +8,7 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/sort.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/sort.h"
 #include "scipp/variable/util.h"
 
 using namespace scipp;
@@ -72,6 +73,35 @@ template <typename T> void bind_sort_dim(py::module &m) {
       doc.c_str());
 }
 
+template <typename T> void bind_sort_variable(py::module &m) {
+  auto doc = Docstring()
+                 .description("Sort a Variable according to its values along "
+                              "the inner dimension.")
+                 .raises("If the key is not the inner dimension.")
+                 .returns("The sorted equivalent of the input.")
+                 .rtype<T>()
+                 .template param<T>("x", "Data to be sorted")
+                 .param("dim", "Dimension to sort along.", "Dim")
+                 .param("order",
+                        "Sorted order. Valid options are 'ascending' and "
+                        "'descending'. Default is 'ascending'.",
+                        "str");
+  m.def(
+      "sort",
+      [](const typename T::const_view_type &x, const Dim dim,
+         const std::string &order) {
+        if (order == "ascending")
+          return sort(x, dim, variable::SortOrder::Ascending);
+        else if (order == "descending")
+          return sort(x, dim, variable::SortOrder::Descending);
+        else
+          throw std::runtime_error(
+              "Sort order must be 'ascending' or 'descending'");
+      },
+      py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
+      py::call_guard<py::gil_scoped_release>(), doc.c_str());
+}
+
 template <typename T> void bind_contains_events(py::module &m) {
   m.def(
       "contains_events",
@@ -95,6 +125,8 @@ void init_operations(py::module &m) {
   bind_sort<Dataset>(m);
   bind_sort_dim<DataArray>(m);
   bind_sort_dim<Dataset>(m);
+
+  bind_sort_variable<Variable>(m);
 
   bind_contains_events<Variable>(m);
   bind_contains_events<DataArray>(m);
