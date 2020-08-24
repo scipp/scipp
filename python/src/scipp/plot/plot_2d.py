@@ -112,6 +112,7 @@ class Slicer2d(Slicer):
         self.button_dims = [None, None]
         self.dim_to_xy = {}
         self.cslice = None
+        self.autoscale_cbar = False
 
         extra_dims_options = {"sliders": 0, "profiles": 1}
         self.extra_dims = extra_dims_options[extra_dims]
@@ -376,38 +377,17 @@ class Slicer2d(Slicer):
         if self.params["masks"][self.name]["show"]:
             self.mslice = self.masks
 
-        if self.extra_dims:
-            self.vslice = self.vslice.astype(sc.dtype.float32)
-            self.vslice.unit = sc.units.counts
-            # detail.move_to_data_array(
-            #     data=sc.Variable(dims=self.vslice.dims,
-            #                      unit=sc.units.counts,
-            #                      values=self.vslice.values,
-            #                      dtype=sc.dtype.float32))
-            # self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
-            # self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
-
         # Slice along dimensions with active sliders
         for dim, val in self.slider.items():
             if not val.disabled:
-                # Resample instead of slicing
-                if self.extra_dims:
-                    # self.vslice = self.vslice[val.dim, val.value]
-                    self.vslice = self.resample_image(self.vslice,
-                        coord_edges={dim: self.slider_coord[self.name][dim]},
-                        rebin_edges={dim: self.slider_xlims[self.name][dim]})[dim, 0]
-                    depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
-                    depth.unit = sc.units.one
-                    self.vslice *= depth
-                else:
-                    self.lab[dim].value = self.make_slider_label(
-                        self.slider_label[self.name][dim]["coord"], val.value)
-                    self.vslice = self.vslice[val.dim, val.value]
-                    # At this point, after masks were combined, all their
-                    # dimensions should be contained in the data_array.dims.
-                    if self.params["masks"][
-                            self.name]["show"] and dim in self.mslice.dims:
-                        self.mslice = self.mslice[val.dim, val.value]
+                self.lab[dim].value = self.make_slider_label(
+                    self.slider_label[self.name][dim]["coord"], val.value)
+                self.vslice = self.vslice[val.dim, val.value]
+                # At this point, after masks were combined, all their
+                # dimensions should be contained in the data_array.dims.
+                if self.params["masks"][
+                        self.name]["show"] and dim in self.mslice.dims:
+                    self.mslice = self.mslice[val.dim, val.value]
         # In the case of unaligned data, we may want to auto-scale the colorbar
         # as we slice through dimensions. Colorbar limits are allowed to grow
         # but not shrink.
@@ -438,6 +418,48 @@ class Slicer2d(Slicer):
         self.vslice *= self.xywidth["x"]
         self.vslice *= self.xywidth["y"]
 
+
+    def rebin_data(self):
+        """
+        Recursively rebin the data along the dimensions of active sliders.
+        """
+        # self.vslice = self.data_array
+        # if self.params["masks"][self.name]["show"]:
+        #     self.mslice = self.masks
+
+        # self.vslice = self.vslice.astype(sc.dtype.float32)
+        # self.vslice.unit = sc.units.counts
+        self.vslice = detail.move_to_data_array(
+            data=sc.Variable(dims=self.data_array.dims,
+                             unit=sc.units.counts,
+                             values=self.data_array.values,
+                             dtype=sc.dtype.float32))
+        for dim, coord in self.slider_coord[self.name].items():
+            if self.histograms[self.name][dim][dim]:
+                self.vslice.coords[dim] = coord
+            else:
+                self.vslice.coords[dim] = to_bin_edges(coord, dim)
+
+        # Slice along dimensions with active sliders
+        for dim, val in self.slider.items():
+            if not val.disabled:
+                # self.vslice = self.vslice[val.dim, val.value]
+                self.vslice = self.resample_image(self.vslice,
+                    coord_edges={dim: self.slider_coord[self.name][dim]},
+                    rebin_edges={dim: self.slider_xlims[self.name][dim]})[dim, 0]
+                depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
+                depth.unit = sc.units.one
+                self.vslice *= depth
+
+
+        # if self.params["masks"][self.name]["show"]:
+        #     self.vslice.masks["all"] = self.mslice
+        # Scale by bin width and then rebin in both directions
+        # Note that this has to be written as 2 inplace operations to avoid
+        # creation of large 2D temporary from broadcast
+        self.vslice *= self.xywidth["x"]
+        self.vslice *= self.xywidth["y"]
+
     def update_slice(self, change=None):
         """
         Slice data according to new slider value and update the image.
@@ -446,7 +468,10 @@ class Slicer2d(Slicer):
         # coords and update the xyedges and xywidth
         if self.contains_multid_coord[self.name]:
             self.slice_coords()
-        self.slice_data()
+        if self.extra_dims:
+            self.rebin_data()
+        else:
+            self.slice_data()
         # Update imade with resampling
         self.update_image()
         return
