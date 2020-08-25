@@ -3,6 +3,8 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
+#include <algorithm>
+
 #include "scipp/core/bucket_array_view.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
@@ -24,12 +26,10 @@ public:
   using value_type = bucket<T>;
   using range_type = typename bucket<T>::range_type;
 
-  DataModel(const Dimensions &dimensions, element_array<range_type> indices,
-            const Dim dim, T buffer)
-      : VariableConcept(dimensions), m_indices(std::move(indices)), m_dim(dim),
-        m_buffer(std::move(buffer)) {
-    if (!m_buffer.dims().count(m_dim))
-      throw except::DimensionError("Buffer must contain bucket slicing dim.");
+  DataModel(const Dimensions &dimensions,
+            const element_array<range_type> &indices, const Dim dim, T buffer)
+      : VariableConcept(dimensions), m_dim(dim), m_buffer(std::move(buffer)),
+        m_indices(validated_indices(indices)) {
     if (this->dims().volume() != scipp::size(m_indices))
       throw except::DimensionError(
           "Creating Variable: data size does not match "
@@ -96,9 +96,29 @@ public:
   }
 
 private:
-  element_array<range_type> m_indices;
+  auto validated_indices(const element_array<range_type> &indices) {
+    auto copy(indices);
+    std::sort(copy.begin(), copy.end());
+    if ((!copy.empty() && (copy.begin()->first < 0)) ||
+        (!copy.empty() && ((copy.end() - 1)->second > m_buffer.dims()[m_dim])))
+      throw except::SliceError("Bucket indices out of range");
+    if (std::adjacent_find(copy.begin(), copy.end(),
+                           [](const auto a, const auto b) {
+                             return a.second > b.first;
+                           }) != copy.end())
+      throw except::SliceError(
+          "Bucket begin index must be less or equal to its end index.");
+    if (std::find_if(copy.begin(), copy.end(), [](const auto x) {
+          return x.second >= 0 && x.first > x.second;
+        }) != copy.end())
+      throw except::SliceError("Overlapping bucket indices are not allowed.");
+    // Copy to avoid a second memory allocation
+    std::copy(indices.begin(), indices.end(), copy.begin());
+    return copy;
+  }
   Dim m_dim;
   T m_buffer;
+  element_array<range_type> m_indices;
 };
 
 template <class T>
