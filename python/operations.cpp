@@ -101,8 +101,9 @@ void bind_is_sorted(py::module &m) {
                  "Sorted order. Valid options are 'ascending' and "
                  "'descending'. Default is 'ascending'.",
                  "str")
-          .returns("Returns True if the variable values are monotonously "
-                   "ascending, False otherwise.")
+          .returns(
+              "True if the variable values are monotonously ascending or "
+              "descending (depending on the requested order), False otherwise.")
           .rtype("bool")
           .c_str());
 }
