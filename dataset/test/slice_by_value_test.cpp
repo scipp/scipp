@@ -28,15 +28,10 @@ DataArray make_1d_data_array(scipp::index begin, scipp::index end, Dim dim,
   for (scipp::index i = 0; i < size; ++i) {
     values.data()[i] = begin + (i * step);
   }
-  Variable coord(units::one, Dimensions{{dim, size}}, values,
-                 std::optional<element_array<double>>{});
-  Variable data(
-      units::one,
-      Dimensions{{dim, coord_type == CoordType::BinEdges ? size - 1 : size}},
-      element_array<double>(values.begin(), coord_type == CoordType::BinEdges
-                                                ? values.end() - 1
-                                                : values.end()),
-      std::optional<element_array<double>>{});
+  Variable coord =
+      makeVariable<double>(units::m, Dimensions{{dim, size}}, Values(values));
+  Variable data = makeVariable<int64_t>(
+      Dims{dim}, Shape{coord_type == CoordType::BinEdges ? size - 1 : size});
   return DataArray{data, {{dim, coord}}};
 }
 
@@ -65,14 +60,14 @@ TEST(SliceByValueTest, test_begin_end_not_0D_throws) {
 
 TEST(SliceByValueTest, test_slicing_defaults_ascending) {
   auto da = make_1d_data_array(3, 13, Dim::X, CoordType::Points);
-  EXPECT_EQ(da, slice(da, Dim::X, VariableConstView{}, 13.0 * units::one));
+  EXPECT_EQ(da, slice(da, Dim::X, VariableConstView{}, 13.0 * units::m));
   EXPECT_EQ(da.slice({Dim::X, 0, 9}),
             slice(da, Dim::X)); // Note open on the right with default end
 }
 
 TEST(SliceByValueTest, test_slicing_defaults_descending) {
   auto da = make_1d_data_array(12, 2, Dim::X, CoordType::Points);
-  EXPECT_EQ(da, slice(da, Dim::X, VariableConstView{}, 2.0 * units::one));
+  EXPECT_EQ(da, slice(da, Dim::X, VariableConstView{}, 2.0 * units::m));
   EXPECT_EQ(da.slice({Dim::X, 0, 9}),
             slice(da, Dim::X)); // Note open on the right with default end
 }
@@ -83,22 +78,22 @@ TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_ascending) {
 
   auto da = make_1d_data_array(3, 13, Dim::X, CoordType::Points);
   // No effect slicing
-  auto out = slice(da, Dim::X, 3.0 * units::one, 13.0 * units::one);
+  auto out = slice(da, Dim::X, 3.0 * units::m, 13.0 * units::m);
   EXPECT_EQ(da, out);
   // Test start on left boundary (closed on left), so includes boundary
-  out = slice(da, Dim::X, 3.0 * units::one, 4.0 * units::one);
+  out = slice(da, Dim::X, 3.0 * units::m, 4.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test start out of bounds on left truncated
-  out = slice(da, Dim::X, 2.0 * units::one, 4.0 * units::one);
+  out = slice(da, Dim::X, 2.0 * units::m, 4.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test inner values
-  out = slice(da, Dim::X, 3.5 * units::one, 5.5 * units::one);
+  out = slice(da, Dim::X, 3.5 * units::m, 5.5 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 1, 3}));
   // Test end on right boundary (open on right), so does not include boundary
-  out = slice(da, Dim::X, 11.0 * units::one, 12.0 * units::one);
+  out = slice(da, Dim::X, 11.0 * units::m, 12.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
   // Test end out of bounds on right truncated
-  out = slice(da, Dim::X, 11.0 * units::one, 13.0 * units::one);
+  out = slice(da, Dim::X, 11.0 * units::m, 13.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 8, 10}));
 }
 
@@ -108,22 +103,22 @@ TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_descending) {
 
   auto da = make_1d_data_array(12, 2, Dim::X, CoordType::Points);
   // No effect slicing
-  auto out = slice(da, Dim::X, 12.0 * units::one, 2.0 * units::one);
+  auto out = slice(da, Dim::X, 12.0 * units::m, 2.0 * units::m);
   EXPECT_EQ(da, out);
   // Test start on left boundary (closed on left), so includes boundary
-  out = slice(da, Dim::X, 12.0 * units::one, 11.0 * units::one);
+  out = slice(da, Dim::X, 12.0 * units::m, 11.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test start out of bounds on left truncated
-  out = slice(da, Dim::X, 13.0 * units::one, 11.0 * units::one);
+  out = slice(da, Dim::X, 13.0 * units::m, 11.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test inner values
-  out = slice(da, Dim::X, 11.5 * units::one, 9.5 * units::one);
+  out = slice(da, Dim::X, 11.5 * units::m, 9.5 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 1, 3}));
   // Test end on right boundary (open on right), so does not include boundary
-  out = slice(da, Dim::X, 4.0 * units::one, 3.0 * units::one);
+  out = slice(da, Dim::X, 4.0 * units::m, 3.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
   // Test end out of bounds on right truncated
-  out = slice(da, Dim::X, 4.0 * units::one, 1.0 * units::one);
+  out = slice(da, Dim::X, 4.0 * units::m, 1.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 8, 10}));
 }
 
@@ -132,20 +127,20 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_ascending) {
   //    Coord Values (edges) [3.0][4.0] ... [11.0][12.0]
   auto da = make_1d_data_array(3, 13, Dim::X, CoordType::BinEdges);
   // No effect slicing
-  auto out = slice(da, Dim::X, 3.0 * units::one, 13.0 * units::one);
+  auto out = slice(da, Dim::X, 3.0 * units::m, 13.0 * units::m);
   EXPECT_EQ(out, da);
   // Test start on left boundary (closed on left), so includes boundary
-  out = slice(da, Dim::X, 3.0 * units::one, 4.0 * units::one);
+  out = slice(da, Dim::X, 3.0 * units::m, 4.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test slicing with range boundary inside edge, same result as above expected
-  out = slice(da, Dim::X, 3.1 * units::one, 4.0 * units::one);
+  out = slice(da, Dim::X, 3.1 * units::m, 4.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test slicing with range lower boundary on upper edge of bin (open on right
   // test)
-  out = slice(da, Dim::X, 4.0 * units::one, 6.0 * units::one);
+  out = slice(da, Dim::X, 4.0 * units::m, 6.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 1, 3}));
   // Test end on right boundary (open on right), so does not include boundary
-  out = slice(da, Dim::X, 11.0 * units::one, 12.0 * units::one);
+  out = slice(da, Dim::X, 11.0 * units::m, 12.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
 }
 
@@ -154,20 +149,20 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_descending) {
   //    Coord Values (edges) [12.0][11.0] ... [4.0][3.0]
   auto da = make_1d_data_array(12, 2, Dim::X, CoordType::BinEdges);
   // No effect slicing
-  auto out = slice(da, Dim::X, 12.0 * units::one, 2.0 * units::one);
+  auto out = slice(da, Dim::X, 12.0 * units::m, 2.0 * units::m);
   EXPECT_EQ(out, da);
   // Test start on left boundary (closed on left), so includes boundary
-  out = slice(da, Dim::X, 12.0 * units::one, 11.0 * units::one);
+  out = slice(da, Dim::X, 12.0 * units::m, 11.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test slicing with range boundary inside edge, same result as above expected
-  out = slice(da, Dim::X, 11.9 * units::one, 11.0 * units::one);
+  out = slice(da, Dim::X, 11.9 * units::m, 11.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test slicing with range lower boundary on upper edge of bin (open on right
   // test)
-  out = slice(da, Dim::X, 11.0 * units::one, 9.0 * units::one);
+  out = slice(da, Dim::X, 11.0 * units::m, 9.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 1, 3}));
   // Test end on right boundary (open on right), so does not include boundary
-  out = slice(da, Dim::X, 4.0 * units::one, 3.0 * units::one);
+  out = slice(da, Dim::X, 4.0 * units::m, 3.0 * units::m);
   EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
 }
 
@@ -178,18 +173,18 @@ TEST(SliceByValueTest, test_point_on_point_coords_1D_ascending) {
   auto da = make_1d_data_array(3, 13, Dim::X, CoordType::Points);
   // No effect slicing
   // Test start on left boundary (closed on left), so includes boundary
-  auto begin = 3.0 * units::one;
+  auto begin = 3.0 * units::m;
   auto out = slice(da, Dim::X, begin, begin);
   EXPECT_EQ(out, da.slice({Dim::X, 0}));
   // Test point slice between points throws
-  begin = 3.5 * units::one;
+  begin = 3.5 * units::m;
   EXPECT_THROW(auto s = slice(da, Dim::X, begin, begin), except::NotFoundError);
   // Test start on right boundary
-  begin = 12.0 * units::one;
+  begin = 12.0 * units::m;
   out = slice(da, Dim::X, begin, begin);
   EXPECT_EQ(out, da.slice({Dim::X, 9}));
   // Test start outside right boundary throws
-  begin = 12.1 * units::one;
+  begin = 12.1 * units::m;
   EXPECT_THROW(auto s = slice(da, Dim::X, begin, begin), except::NotFoundError);
 }
 
@@ -200,18 +195,18 @@ TEST(SliceByValueTest, test_point_on_point_coords_1D_descending) {
   auto da = make_1d_data_array(12, 2, Dim::X, CoordType::Points);
   // No effect slicing
   // Test start on left boundary (closed on left), so includes boundary
-  auto begin = 12.0 * units::one;
+  auto begin = 12.0 * units::m;
   auto out = slice(da, Dim::X, begin, begin);
   EXPECT_EQ(out, da.slice({Dim::X, 0}));
   // Test point slice between points throws
-  begin = 3.5 * units::one;
+  begin = 3.5 * units::m;
   EXPECT_THROW(auto s = slice(da, Dim::X, begin, begin), except::NotFoundError);
   // Test start on right boundary
-  begin = 3.0 * units::one;
+  begin = 3.0 * units::m;
   out = slice(da, Dim::X, begin, begin);
   EXPECT_EQ(out, da.slice({Dim::X, 9}));
   // Test start outside right boundary throws
-  begin = 2.99 * units::one;
+  begin = 2.99 * units::m;
   EXPECT_THROW(auto s = slice(da, Dim::X, begin, begin), except::NotFoundError);
 }
 
@@ -223,25 +218,25 @@ TEST(SliceByValueTest, test_slice_point_on_edge_coords_1D) {
 
   // test no-effect slicing
   // Test start on left boundary (closed on left), so includes boundary
-  auto begin = 3.0 * units::one;
+  auto begin = 3.0 * units::m;
   auto out = slice(da, Dim::X, begin, begin);
   EXPECT_EQ(out, da.slice({Dim::X, 0}));
   // Same as above, takes lower bounds of bin so same bin
-  begin = 3.5 * units::one;
+  begin = 3.5 * units::m;
   out = slice(da, Dim::X, begin, begin);
   EXPECT_EQ(out, da.slice({Dim::X, 0}));
   // Next bin
-  begin = 4.0 * units::one;
+  begin = 4.0 * units::m;
   out = slice(da, Dim::X, begin, begin);
   EXPECT_EQ(out, da.slice({Dim::X, 1}));
   // Last bin
-  begin = 11.9 * units::one;
+  begin = 11.9 * units::m;
   out = slice(da, Dim::X, begin, begin);
   EXPECT_EQ(out, da.slice({Dim::X, 8}));
   // (closed on right) so out of bounds
-  begin = 12.0 * units::one;
+  begin = 12.0 * units::m;
   EXPECT_THROW(auto s = slice(da, Dim::X, begin, begin), except::NotFoundError);
   // out of bounds for left for completeness
-  begin = 2.99 * units::one;
+  begin = 2.99 * units::m;
   EXPECT_THROW(auto s = slice(da, Dim::X, begin, begin), except::NotFoundError);
 }
