@@ -68,7 +68,7 @@ TEST(SliceByValueTest, test_slicing_defaults_descending) {
   EXPECT_EQ(da, slice(da, Dim::X, {}, {}));
 }
 
-TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_ascending) {
+TEST(SliceByValueTest, test_slice_range_on_point_coord_1D_ascending) {
   auto da = make_points(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
   // No effect slicing
   auto out = slice(da, Dim::X, 3.0 * units::m, 13.0 * units::m);
@@ -90,7 +90,7 @@ TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_ascending) {
   EXPECT_EQ(out, da.slice({Dim::X, 8, 10}));
 }
 
-TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_descending) {
+TEST(SliceByValueTest, test_slice_range_on_point_coord_1D_descending) {
   auto da = make_points(12, 11, 10, 9, 8, 7, 6, 5, 4, 3);
   // No effect slicing
   auto out = slice(da, Dim::X, 12.0 * units::m, 2.0 * units::m);
@@ -112,7 +112,7 @@ TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_descending) {
   EXPECT_EQ(out, da.slice({Dim::X, 8, 10}));
 }
 
-TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_ascending) {
+TEST(SliceByValueTest, test_slice_range_on_edge_coord_1D_ascending) {
   auto da = make_histogram(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
   // No effect slicing
   auto out = slice(da, Dim::X, 3.0 * units::m, 13.0 * units::m);
@@ -132,7 +132,7 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_ascending) {
   EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
 }
 
-TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_descending) {
+TEST(SliceByValueTest, test_slice_range_on_edge_coord_1D_descending) {
   auto da = make_histogram(12, 11, 10, 9, 8, 7, 6, 5, 4, 3);
   // No effect slicing
   auto out = slice(da, Dim::X, 12.0 * units::m, 2.0 * units::m);
@@ -152,7 +152,7 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_descending) {
   EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
 }
 
-TEST(SliceByValueTest, test_point_on_point_coords_1D_ascending) {
+TEST(SliceByValueTest, test_point_on_point_coord_1D_ascending) {
   auto da = make_points(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
   // Test start on left boundary (closed on left), so includes boundary
   EXPECT_EQ(slice(da, Dim::X, 3.0 * units::m), da.slice({Dim::X, 0}));
@@ -164,7 +164,7 @@ TEST(SliceByValueTest, test_point_on_point_coords_1D_ascending) {
   EXPECT_THROW(slice(da, Dim::X, 12.1 * units::m), except::SliceError);
 }
 
-TEST(SliceByValueTest, test_point_on_point_coords_1D_descending) {
+TEST(SliceByValueTest, test_point_on_point_coord_1D_descending) {
   auto da = make_points(12, 11, 10, 9, 8, 7, 6, 5, 4, 3);
   // Test start on left boundary (closed on left), so includes boundary
   EXPECT_EQ(slice(da, Dim::X, 12.0 * units::m), da.slice({Dim::X, 0}));
@@ -176,7 +176,7 @@ TEST(SliceByValueTest, test_point_on_point_coords_1D_descending) {
   EXPECT_THROW(slice(da, Dim::X, 2.99 * units::m), except::SliceError);
 }
 
-TEST(SliceByValueTest, test_slice_point_on_edge_coords_1D) {
+TEST(SliceByValueTest, test_slice_point_on_edge_coord_1D) {
   auto da = make_histogram(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
   // Test start on left boundary (closed on left), so includes boundary
   EXPECT_EQ(slice(da, Dim::X, 3.0 * units::m), da.slice({Dim::X, 0}));
@@ -190,4 +190,16 @@ TEST(SliceByValueTest, test_slice_point_on_edge_coords_1D) {
   EXPECT_THROW(slice(da, Dim::X, 12.0 * units::m), except::SliceError);
   // out of bounds for left for completeness
   EXPECT_THROW(slice(da, Dim::X, 2.99 * units::m), except::SliceError);
+}
+
+TEST(SliceByValueTest, test_slice_range_on_point_coord_1D_duplicate) {
+  auto da = make_points(3, 4, 4, 5);
+  EXPECT_EQ(slice(da, Dim::X, 4.0 * units::m, 4.6 * units::m),
+            da.slice({Dim::X, 1, 3}));
+}
+
+TEST(SliceByValueTest, test_slice_point_on_edge_coord_1D_duplicate) {
+  // [4,4) is empty bin, 4 is in [4,5)
+  auto da = make_histogram(3, 4, 4, 5);
+  EXPECT_EQ(slice(da, Dim::X, 4.0 * units::m), da.slice({Dim::X, 2}));
 }
