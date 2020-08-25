@@ -30,42 +30,42 @@ TEST(SliceByValueTest, test_dimension_not_found) {
   auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 4.0});
   DataArray da{var, {{Dim::X, var}}};
-  EXPECT_THROW(auto s = slice(da, Dim::Y), except::NotFoundError);
+  EXPECT_THROW(auto s = slice(da, Dim::Y, {}, {}), except::NotFoundError);
 }
 
 TEST(SliceByValueTest, test_no_multi_dimensional_coords) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
   DataArray da{var, {{Dim::X, var}}};
-  EXPECT_THROW(auto s = slice(da, Dim::X), except::DimensionError);
+  EXPECT_THROW(auto s = slice(da, Dim::X, {}, {}), except::DimensionError);
 }
 
 TEST(SliceByValueTest, test_unsorted_coord_throws) {
   auto unsorted =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 1.5});
   DataArray da{unsorted, {{Dim::X, unsorted}}};
-  EXPECT_THROW(auto s = slice(da, Dim::X), std::runtime_error);
+  EXPECT_THROW(auto s = slice(da, Dim::X, {}, {}), std::runtime_error);
 }
 
 TEST(SliceByValueTest, test_begin_end_not_0D_throws) {
   auto da = make_points(0, 1, 2, 3);
   auto one_d = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
-  EXPECT_THROW(auto s = slice(da, Dim::X, one_d, VariableConstView{}),
+  EXPECT_THROW(auto s = slice(da, Dim::X, one_d, {}),
                except::MismatchError<Dimensions>);
-  EXPECT_THROW(auto s = slice(da, Dim::X, VariableConstView{}, one_d),
+  EXPECT_THROW(auto s = slice(da, Dim::X, {}, one_d),
                except::MismatchError<Dimensions>);
 }
 
 TEST(SliceByValueTest, test_slicing_defaults_ascending) {
   auto da = make_points(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
-  EXPECT_EQ(da, slice(da, Dim::X, VariableConstView{}, 13.0 * units::m));
-  EXPECT_EQ(da, slice(da, Dim::X));
+  EXPECT_EQ(da, slice(da, Dim::X, {}, 13.0 * units::m));
+  EXPECT_EQ(da, slice(da, Dim::X, {}, {}));
 }
 
 TEST(SliceByValueTest, test_slicing_defaults_descending) {
   auto da = make_points(12, 11, 10, 9, 8, 7, 6, 5, 4, 3);
-  EXPECT_EQ(da, slice(da, Dim::X, VariableConstView{}, 2.0 * units::m));
-  EXPECT_EQ(da, slice(da, Dim::X));
+  EXPECT_EQ(da, slice(da, Dim::X, {}, 2.0 * units::m));
+  EXPECT_EQ(da, slice(da, Dim::X, {}, {}));
 }
 
 TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_ascending) {

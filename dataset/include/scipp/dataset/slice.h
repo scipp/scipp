@@ -9,8 +9,11 @@
 namespace scipp::dataset {
 
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArrayConstView
-slice(const DataArrayConstView &to_slice, const Dim dim,
-      const VariableConstView begin = VariableConstView{},
-      const VariableConstView end = VariableConstView{});
+slice(const DataArrayConstView &data, const Dim dim,
+      const VariableConstView value);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArrayConstView
+slice(const DataArrayConstView &data, const Dim dim,
+      const VariableConstView begin, const VariableConstView end);
 
 } // namespace scipp::dataset
