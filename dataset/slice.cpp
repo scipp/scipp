@@ -63,9 +63,10 @@ DataArrayConstView slice(const DataArrayConstView &data, const Dim dim,
     auto eq = equal(get_1d_coord(data, dim), value);
     auto values = eq.values<bool>();
     auto it = std::find(values.begin(), values.end(), true);
-    if (it == values.end())
-      throw except::SliceError(to_string(value) + " not found in coord " +
-                               to_string(dim));
+    if (sum(eq, dim).value<scipp::index>() != 1)
+      throw except::SliceError("Coord " + to_string(dim) +
+                               " does not contain unique point with value " +
+                               to_string(value) + '\n');
     return data.slice({dim, std::distance(values.begin(), it)});
   }
 }

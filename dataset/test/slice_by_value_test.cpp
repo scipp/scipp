@@ -159,22 +159,11 @@ TEST(SliceByValueTest, test_point_on_point_coord_1D) {
   EXPECT_EQ(slice(da, Dim::X, 2.0 * units::m), da.slice({Dim::X, 4}));
 }
 
-TEST(SliceByValueTest, test_point_on_point_coord_1D_duplicate_fail) {
+TEST(SliceByValueTest, test_point_on_point_coord_1D_not_unique) {
   auto da = make_points(1, 3, 5, 3, 2);
   EXPECT_EQ(slice(da, Dim::X, 1.0 * units::m), da.slice({Dim::X, 0}));
   EXPECT_THROW(slice(da, Dim::X, 3.0 * units::m), except::SliceError);
-}
-
-TEST(SliceByValueTest, test_point_on_point_coord_1D_descending) {
-  auto da = make_points(12, 11, 10, 9, 8, 7, 6, 5, 4, 3);
-  // Test start on left boundary (closed on left), so includes boundary
-  EXPECT_EQ(slice(da, Dim::X, 12.0 * units::m), da.slice({Dim::X, 0}));
-  // Test point slice between points throws
-  EXPECT_THROW(slice(da, Dim::X, 3.5 * units::m), except::SliceError);
-  // Test start on right boundary
-  EXPECT_EQ(slice(da, Dim::X, 3.0 * units::m), da.slice({Dim::X, 9}));
-  // Test start outside right boundary throws
-  EXPECT_THROW(slice(da, Dim::X, 2.99 * units::m), except::SliceError);
+  EXPECT_THROW(slice(da, Dim::X, 4.0 * units::m), except::SliceError);
 }
 
 TEST(SliceByValueTest, test_slice_point_on_edge_coord_1D) {
