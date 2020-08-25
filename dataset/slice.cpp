@@ -17,9 +17,8 @@ namespace scipp::dataset {
 
 namespace {
 
-scipp::index get_index_impl(const VariableConstView &coord, const Dim dim,
-                            const VariableConstView &value,
-                            const bool ascending) {
+scipp::index get_count(const VariableConstView &coord, const Dim dim,
+                       const VariableConstView &value, const bool ascending) {
   return (ascending ? sum(less_equal(coord, value), dim)
                     : sum(greater_equal(coord, value), dim))
       .value<scipp::index>();
@@ -28,21 +27,19 @@ scipp::index get_index_impl(const VariableConstView &coord, const Dim dim,
 scipp::index get_index(const VariableConstView &coord, const Dim dim,
                        const VariableConstView &value, const bool ascending,
                        const bool edges) {
-  auto i = get_index_impl(coord, dim, value, edges ? ascending : !ascending);
+  auto i = get_count(coord, dim, value, edges ? ascending : !ascending);
   i = edges ? i - 1 : coord.dims()[dim] - i;
   return std::clamp<scipp::index>(0, i, coord.dims()[dim]);
 }
 
 auto get_coord(const DataArrayConstView &data, const Dim dim) {
   const auto &coord = data.coords()[dim];
-  if (coord.dims().ndim() != 1) {
+  if (coord.dims().ndim() != 1)
     throw except::DimensionError(
         "Multi-dimensional coordinates cannot be used for value-base slicing.");
-  }
   const bool ascending = is_sorted(coord, dim, variable::SortOrder::Ascending);
   const bool descending =
       is_sorted(coord, dim, variable::SortOrder::Descending);
-
   if (!(ascending ^ descending))
     throw std::runtime_error("Coordinate must be monotomically increasing or "
                              "decreasing for value slicing");
@@ -51,55 +48,38 @@ auto get_coord(const DataArrayConstView &data, const Dim dim) {
 
 } // namespace
 
-DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
+DataArrayConstView slice(const DataArrayConstView &data, const Dim dim,
                          const VariableConstView value) {
   core::expect::equals(value.dims(), Dimensions{});
-  const auto &[coord, ascending] = get_coord(to_slice, dim);
-  const auto len = to_slice.dims()[dim];
-  const auto bin_edges = is_histogram(to_slice, dim);
-  scipp::index idx = -1;
-  if (bin_edges) {
-    if (ascending)
-      idx = sum(less_equal(coord, value), dim).value<scipp::index>() - 1;
-    else
-      idx = sum(greater_equal(coord, value), dim).value<scipp::index>() - 1;
-    if (idx < 0 || idx >= len)
-      throw except::NotFoundError(
-          to_string(value) +
-          " point slice does not fall within any bin edges along " +
-          to_string(dim));
+  const auto &[coord, ascending] = get_coord(data, dim);
+  if (is_histogram(data, dim)) {
+    return data.slice({dim, get_count(coord, dim, value, ascending) - 1});
   } else {
     auto eq = equal(coord, value);
-    auto values_view = eq.values<bool>();
-    auto it = std::find(values_view.begin(), values_view.end(), true);
-    if (it == values_view.end())
-      throw except::NotFoundError(to_string(value) +
-                                  " point slice does not exactly match any "
-                                  "point coordinate value along " +
-                                  to_string(dim));
-    idx = std::distance(values_view.begin(), it);
+    auto values = eq.values<bool>();
+    auto it = std::find(values.begin(), values.end(), true);
+    if (it == values.end())
+      throw except::SliceError(to_string(value) + " not found in coord " +
+                               to_string(dim));
+    return data.slice({dim, std::distance(values.begin(), it)});
   }
-    return to_slice.slice({dim, idx});
 }
 
-DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
+DataArrayConstView slice(const DataArrayConstView &data, const Dim dim,
                          const VariableConstView begin,
                          const VariableConstView end) {
   if (begin)
     core::expect::equals(begin.dims(), Dimensions{});
   if (end)
     core::expect::equals(end.dims(), Dimensions{});
-  const auto &[coord, ascending] = get_coord(to_slice, dim);
-
-  const auto len = to_slice.dims()[dim];
-  const auto bin_edges = is_histogram(to_slice, dim);
-
+  const auto &[coord, ascending] = get_coord(data, dim);
+  const auto bin_edges = is_histogram(data, dim);
   scipp::index first = 0;
-  scipp::index last = len;
+  scipp::index last = data.dims()[dim];
   if (begin)
     first = get_index(coord, dim, begin, ascending, bin_edges);
   if (end)
     last = get_index(coord, dim, end, ascending, bin_edges);
-  return to_slice.slice({dim, first, last});
+  return data.slice({dim, first, last});
 }
 } // namespace scipp::dataset

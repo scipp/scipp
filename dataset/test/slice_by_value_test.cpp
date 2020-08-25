@@ -157,11 +157,11 @@ TEST(SliceByValueTest, test_point_on_point_coords_1D_ascending) {
   // Test start on left boundary (closed on left), so includes boundary
   EXPECT_EQ(slice(da, Dim::X, 3.0 * units::m), da.slice({Dim::X, 0}));
   // Test point slice between points throws
-  EXPECT_THROW(slice(da, Dim::X, 3.5 * units::m), except::NotFoundError);
+  EXPECT_THROW(slice(da, Dim::X, 3.5 * units::m), except::SliceError);
   // Test start on right boundary
   EXPECT_EQ(slice(da, Dim::X, 12.0 * units::m), da.slice({Dim::X, 9}));
   // Test start outside right boundary throws
-  EXPECT_THROW(slice(da, Dim::X, 12.1 * units::m), except::NotFoundError);
+  EXPECT_THROW(slice(da, Dim::X, 12.1 * units::m), except::SliceError);
 }
 
 TEST(SliceByValueTest, test_point_on_point_coords_1D_descending) {
@@ -169,11 +169,11 @@ TEST(SliceByValueTest, test_point_on_point_coords_1D_descending) {
   // Test start on left boundary (closed on left), so includes boundary
   EXPECT_EQ(slice(da, Dim::X, 12.0 * units::m), da.slice({Dim::X, 0}));
   // Test point slice between points throws
-  EXPECT_THROW(slice(da, Dim::X, 3.5 * units::m), except::NotFoundError);
+  EXPECT_THROW(slice(da, Dim::X, 3.5 * units::m), except::SliceError);
   // Test start on right boundary
   EXPECT_EQ(slice(da, Dim::X, 3.0 * units::m), da.slice({Dim::X, 9}));
   // Test start outside right boundary throws
-  EXPECT_THROW(slice(da, Dim::X, 2.99 * units::m), except::NotFoundError);
+  EXPECT_THROW(slice(da, Dim::X, 2.99 * units::m), except::SliceError);
 }
 
 TEST(SliceByValueTest, test_slice_point_on_edge_coords_1D) {
@@ -187,7 +187,7 @@ TEST(SliceByValueTest, test_slice_point_on_edge_coords_1D) {
   // Last bin
   EXPECT_EQ(slice(da, Dim::X, 11.9 * units::m), da.slice({Dim::X, 8}));
   // (closed on right) so out of bounds
-  EXPECT_THROW(slice(da, Dim::X, 12.0 * units::m), except::NotFoundError);
+  EXPECT_THROW(slice(da, Dim::X, 12.0 * units::m), except::SliceError);
   // out of bounds for left for completeness
-  EXPECT_THROW(slice(da, Dim::X, 2.99 * units::m), except::NotFoundError);
+  EXPECT_THROW(slice(da, Dim::X, 2.99 * units::m), except::SliceError);
 }
