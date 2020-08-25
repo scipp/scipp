@@ -59,15 +59,13 @@ TEST(SliceByValueTest, test_begin_end_not_0D_throws) {
 TEST(SliceByValueTest, test_slicing_defaults_ascending) {
   auto da = make_points(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
   EXPECT_EQ(da, slice(da, Dim::X, VariableConstView{}, 13.0 * units::m));
-  EXPECT_EQ(da.slice({Dim::X, 0, 9}),
-            slice(da, Dim::X)); // Note open on the right with default end
+  EXPECT_EQ(da, slice(da, Dim::X));
 }
 
 TEST(SliceByValueTest, test_slicing_defaults_descending) {
   auto da = make_points(12, 11, 10, 9, 8, 7, 6, 5, 4, 3);
   EXPECT_EQ(da, slice(da, Dim::X, VariableConstView{}, 2.0 * units::m));
-  EXPECT_EQ(da.slice({Dim::X, 0, 9}),
-            slice(da, Dim::X)); // Note open on the right with default end
+  EXPECT_EQ(da, slice(da, Dim::X));
 }
 
 TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_ascending) {

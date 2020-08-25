@@ -2,8 +2,11 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Owen Arnold
-#include "scipp/dataset/slice.h"
+#include <algorithm>
+
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/histogram.h"
+#include "scipp/dataset/slice.h"
 #include "scipp/units/dim.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/reduction.h"
@@ -11,6 +14,24 @@
 #include "scipp/variable/variable.h"
 
 namespace scipp::dataset {
+
+namespace {
+scipp::index get_index_impl(const VariableConstView &coord, const Dim dim,
+                            const VariableConstView &value,
+                            const bool ascending) {
+  return (ascending ? sum(less_equal(coord, value), dim)
+                    : sum(greater_equal(coord, value), dim))
+      .value<scipp::index>();
+}
+scipp::index get_index(const VariableConstView &coord, const Dim dim,
+                       const VariableConstView &value, const bool ascending,
+                       const bool edges) {
+  auto i = get_index_impl(coord, dim, value, edges ? ascending : !ascending);
+  i = edges ? i - 1 : coord.dims()[dim] - i;
+  return std::clamp<scipp::index>(0, i, coord.dims()[dim]);
+}
+} // namespace
+
 DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
                          const VariableConstView begin,
                          const VariableConstView end) {
@@ -32,9 +53,8 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
     throw std::runtime_error("Coordinate must be monotomically increasing or "
                              "decreasing for value slicing");
 
-  const auto len_data = to_slice.dims()[dim];
-  const auto len = coord.dims().volume();
-  const auto bin_edges = len == len_data + 1;
+  const auto len = to_slice.dims()[dim];
+  const auto bin_edges = is_histogram(to_slice, dim);
 
   // Point slice
   if ((begin && end) && begin == end) {
@@ -44,7 +64,7 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
         idx = sum(less_equal(coord, begin), dim).value<scipp::index>() - 1;
       else
         idx = sum(greater_equal(coord, begin), dim).value<scipp::index>() - 1;
-      if (idx < 0 || idx >= len_data)
+      if (idx < 0 || idx >= len)
         throw except::NotFoundError(
             to_string(begin) +
             " point slice does not fall within any bin edges along " +
@@ -65,37 +85,11 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
   // Range slice
   else {
     scipp::index first = 0;
-    scipp::index last = len - 1;
-    if (begin) {
-      if (bin_edges) {
-        // lower bin edge boundary
-        if (ascending) {
-          first = sum(less_equal(coord, begin), dim).value<scipp::index>() - 1;
-        } else {
-          first =
-              sum(greater_equal(coord, begin), dim).value<scipp::index>() - 1;
-        }
-      } else {
-        // First point >= value for non bin edges
-        if (ascending)
-          first =
-              len - sum(greater_equal(coord, begin), dim).value<scipp::index>();
-        else
-          first =
-              len - sum(less_equal(coord, begin), dim).value<scipp::index>();
-      }
-      if (first < 0)
-        first = 0;
-    }
-    if (end) {
-      if (ascending) {
-        last = len - sum(greater_equal(coord, end), dim).value<scipp::index>();
-      } else {
-        last = len - sum(less_equal(coord, end), dim).value<scipp::index>();
-      }
-      if (last > len_data)
-        last = len - 1;
-    }
+    scipp::index last = len;
+    if (begin)
+      first = get_index(coord, dim, begin, ascending, bin_edges);
+    if (end)
+      last = get_index(coord, dim, end, ascending, bin_edges);
     return to_slice.slice({dim, first, last});
   }
 }
