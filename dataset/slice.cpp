@@ -41,8 +41,8 @@ auto get_coord(const DataArrayConstView &data, const Dim dim) {
   const bool descending =
       is_sorted(coord, dim, variable::SortOrder::Descending);
   if (!(ascending ^ descending))
-    throw std::runtime_error("Coordinate must be monotomically increasing or "
-                             "decreasing for value slicing");
+    throw std::runtime_error("Coordinate must be monotonically increasing or "
+                             "decreasing for value-based slicing");
   return std::tuple(coord, ascending);
 }
 
