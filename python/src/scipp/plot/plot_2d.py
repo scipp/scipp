@@ -4,7 +4,8 @@
 
 # Scipp imports
 from .. import config
-from .plot_1d import Slicer1d
+# from .plot_1d import Slicer1d
+from .plot import plot
 from .render import render_plot
 from .slicer import Slicer
 from .tools import to_bin_edges, parse_params
@@ -62,7 +63,7 @@ def plot_2d(scipp_obj_dict=None,
     if ax is None:
         render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
 
-    return sv.members
+    return sv
 
 
 class Slicer2d(Slicer):
@@ -128,6 +129,7 @@ class Slicer2d(Slicer):
         #     self.profile = sc.Dim(self.profile)
         # self.first_profile_plotted = False
         self.profile_viewer = None
+        self.profile_key = None
 
         if resolution is not None:
             if isinstance(resolution, int):
@@ -754,10 +756,28 @@ class Slicer2d(Slicer):
         self.ax.set_title('update_profile 4' + str(prof.dims) + ' ' + str(prof.shape))
         # print("################# PROFILE ##############")
         # print(prof)
+        # if self.histograms[self.name][dim][dim]:
+
+        # to_plot = sc.DataArray(
+        #     data=sc.Variable(dims=prof.dims,
+        #                      unit=self.data_array.unit,
+        #                      values=prof.values))
+        # for dim in prof.dims:
+        #     to_plot.coords[dim] = self.slider_coord[self.name][dim]
 
         # self.ax_profile.set_title('hahahaha')
         # if not self.first_profile_plotted:
         if self.profile_viewer is None:
+
+            # We need to extract the data again and replace with the original
+            # coordinates, because coordinates have been forced to be bin-edges
+            # so that rebin could be used. Also reset original unit.
+            to_plot = sc.DataArray(
+                data=sc.Variable(dims=prof.dims,
+                                 unit=self.data_array.unit,
+                                 values=prof.values))
+            for dim in prof.dims:
+                to_plot.coords[dim] = self.slider_coord[self.name][dim]
             # _ = plot_1d({self.name: prof}, ax=self.ax_profile,
             #             mpl_line_params={
             #                 "color": {self.name: config.plot.color[0]},
@@ -767,13 +787,18 @@ class Slicer2d(Slicer):
             #                 })
             # self.ax.set_title('update_profile 5')
 
-            self.profile_viewer = Slicer1d({self.name: prof}, ax=self.ax_extra_dims,
-                        mpl_line_params={
-                            "color": {self.name: config.plot.color[0]},
-                            "marker": {self.name: config.plot.marker[0]},
-                            "linestyle": {self.name: config.plot.linestyle[0]},
-                            "linewidth": {self.name: config.plot.linewidth[0]},
-                            })
+            # self.profile_viewer = Slicer1d({self.name: prof}, ax=self.ax_extra_dims,
+            #             mpl_line_params={
+            #                 "color": {self.name: config.plot.color[0]},
+            #                 "marker": {self.name: config.plot.marker[0]},
+            #                 "linestyle": {self.name: config.plot.linestyle[0]},
+            #                 "linewidth": {self.name: config.plot.linewidth[0]},
+            #                 })
+
+            self.profile_viewer = plot({self.name: to_plot}, ax=self.ax_extra_dims)
+            self.profile_key = list(self.profile_viewer.keys())[0]
+            # render_plot(widgets=self.profile_viewer[self.profile_key].keep_buttons_box)
+
             # self.ax.set_title('update_profile 6')
 
             # self.first_profile_plotted = True
@@ -784,6 +809,6 @@ class Slicer2d(Slicer):
             # print(self.profile_viewer.members["lines"][self.name])
             # self.ax_profile.set_title('members lines 3')
             # self.ax_extra_dims.set_title(str(prof.values))
-            self.profile_viewer.update_slice({"vslice": {self.name: prof}})
+            self.profile_viewer[self.profile_key].update_slice({"vslice": {self.name: prof}})
             # self.profile_viewer.members["lines"][self.name].set_ydata(prof.values)
         #     self.ax_profile.plot(self.slider_coord[self.name][self.profile].values, prof.values)

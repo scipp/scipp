@@ -53,7 +53,7 @@ def plot_1d(scipp_obj_dict=None,
     if ax is None:
         render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
 
-    return sv.members
+    return sv
 
 
 class Slicer1d(Slicer):
@@ -175,10 +175,12 @@ class Slicer1d(Slicer):
 
         # vbox contains the original sliders and buttons. In mbox, we include
         # the keep trace buttons.
-        self.mbox = self.vbox.copy()
+        # self.mbox = self.vbox.copy()
+        self.keep_buttons_box = []
         for key, val in self.keep_buttons.items():
-            self.mbox.append(widgets.HBox(val))
-        self.box = widgets.VBox(self.mbox)
+            self.keep_buttons_box.append(widgets.HBox(val))
+        self.keep_buttons_box = widgets.VBox(self.keep_buttons_box)
+        self.box = widgets.VBox([widgets.VBox(self.vbox), self.keep_buttons_box])
         self.box.layout.align_items = 'center'
 
         # Populate the members
