@@ -14,14 +14,13 @@ using namespace scipp;
 
 namespace {
 template <int N>
-constexpr auto make_array_common =
-    [](const auto... values) {
-      const auto size = sizeof...(values);
-      Variable coord = makeVariable<double>(units::m, Dims{Dim::X}, Shape{size},
-                                            Values{values...});
-      Variable data = makeVariable<int64_t>(Dims{Dim::X}, Shape{size - N});
-      return DataArray{data, {{Dim::X, coord}}};
-    };
+constexpr auto make_array_common = [](const auto... values) {
+  const auto size = sizeof...(values);
+  Variable coord = makeVariable<double>(units::m, Dims{Dim::X}, Shape{size},
+                                        Values{values...});
+  Variable data = makeVariable<int64_t>(Dims{Dim::X}, Shape{size - N});
+  return DataArray{data, {{Dim::X, coord}}};
+};
 }
 constexpr auto make_points = make_array_common<0>;
 constexpr auto make_histogram = make_array_common<1>;
@@ -152,16 +151,18 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coord_1D_descending) {
   EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
 }
 
-TEST(SliceByValueTest, test_point_on_point_coord_1D_ascending) {
-  auto da = make_points(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
-  // Test start on left boundary (closed on left), so includes boundary
-  EXPECT_EQ(slice(da, Dim::X, 3.0 * units::m), da.slice({Dim::X, 0}));
-  // Test point slice between points throws
-  EXPECT_THROW(slice(da, Dim::X, 3.5 * units::m), except::SliceError);
-  // Test start on right boundary
-  EXPECT_EQ(slice(da, Dim::X, 12.0 * units::m), da.slice({Dim::X, 9}));
-  // Test start outside right boundary throws
-  EXPECT_THROW(slice(da, Dim::X, 12.1 * units::m), except::SliceError);
+TEST(SliceByValueTest, test_point_on_point_coord_1D) {
+  auto da = make_points(1, 3, 5, 4, 2);
+  EXPECT_EQ(slice(da, Dim::X, 1.0 * units::m), da.slice({Dim::X, 0}));
+  EXPECT_EQ(slice(da, Dim::X, 3.0 * units::m), da.slice({Dim::X, 1}));
+  EXPECT_EQ(slice(da, Dim::X, 4.0 * units::m), da.slice({Dim::X, 3}));
+  EXPECT_EQ(slice(da, Dim::X, 2.0 * units::m), da.slice({Dim::X, 4}));
+}
+
+TEST(SliceByValueTest, test_point_on_point_coord_1D_duplicate_fail) {
+  auto da = make_points(1, 3, 5, 3, 2);
+  EXPECT_EQ(slice(da, Dim::X, 1.0 * units::m), da.slice({Dim::X, 0}));
+  EXPECT_THROW(slice(da, Dim::X, 3.0 * units::m), except::SliceError);
 }
 
 TEST(SliceByValueTest, test_point_on_point_coord_1D_descending) {

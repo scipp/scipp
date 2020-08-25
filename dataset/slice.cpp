@@ -32,11 +32,16 @@ scipp::index get_index(const VariableConstView &coord, const Dim dim,
   return std::clamp<scipp::index>(0, i, coord.dims()[dim]);
 }
 
-auto get_coord(const DataArrayConstView &data, const Dim dim) {
+auto get_1d_coord(const DataArrayConstView &data, const Dim dim) {
   const auto &coord = data.coords()[dim];
   if (coord.dims().ndim() != 1)
     throw except::DimensionError(
         "Multi-dimensional coordinates cannot be used for value-base slicing.");
+  return coord;
+}
+
+auto get_coord(const DataArrayConstView &data, const Dim dim) {
+  const auto &coord = get_1d_coord(data, dim);
   const bool ascending = is_sorted(coord, dim, variable::SortOrder::Ascending);
   const bool descending =
       is_sorted(coord, dim, variable::SortOrder::Descending);
@@ -51,11 +56,11 @@ auto get_coord(const DataArrayConstView &data, const Dim dim) {
 DataArrayConstView slice(const DataArrayConstView &data, const Dim dim,
                          const VariableConstView value) {
   core::expect::equals(value.dims(), Dimensions{});
-  const auto &[coord, ascending] = get_coord(data, dim);
   if (is_histogram(data, dim)) {
+    const auto &[coord, ascending] = get_coord(data, dim);
     return data.slice({dim, get_count(coord, dim, value, ascending) - 1});
   } else {
-    auto eq = equal(coord, value);
+    auto eq = equal(get_1d_coord(data, dim), value);
     auto values = eq.values<bool>();
     auto it = std::find(values.begin(), values.end(), true);
     if (it == values.end())
