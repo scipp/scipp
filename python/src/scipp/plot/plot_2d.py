@@ -144,25 +144,27 @@ class Slicer2d(Slicer):
         self.xywidth = {}
         self.image_pixel_size = {}
 
+        self.da_with_edges = self.make_data_array_with_bin_edges()
+
         # Get or create matplotlib axes
         self.fig = None
         self.ax = ax
-        # self.ax_extra_dims = None
+        self.ax_extra_dims = None
         self.cax = cax
         print('got to here 1')
         if self.ax is None:
-            # nrows = 1 + (self.profile is not None)
-            self.fig, self.ax = plt.subplots(
-                1,
+            nrows = 1 + self.extra_dims
+            self.fig, mpl_axes = plt.subplots(
+                nrows,
                 1,
                 figsize=(config.plot.width / config.plot.dpi,
-                         config.plot.height / config.plot.dpi),
+                         nrows * config.plot.height / config.plot.dpi),
                 dpi=config.plot.dpi)
-            # if self.profile is not None:
-            #     self.ax = mpl_axes[0]
-            #     self.ax_profile = mpl_axes[1]
-            # else:
-            #     self.ax = mpl_axes
+            if self.extra_dims:
+                self.ax = mpl_axes[0]
+                self.ax_extra_dims = mpl_axes[1]
+            else:
+                self.ax = mpl_axes
         print('got to here 2')
 
         self.im = dict()
@@ -202,12 +204,25 @@ class Slicer2d(Slicer):
         self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
         self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
 
-        # if self.profile is not None:
-        #     # Connect profile plot to mouse cursor
-        #     self.fig.canvas.mpl_connect('button_press_event', self.update_profile)
-        #     # self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+        if self.extra_dims:
+            # Connect profile plot to mouse cursor
+            self.fig.canvas.mpl_connect('button_press_event', self.update_profile)
+            # self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
 
         return
+
+    def make_data_array_with_bin_edges(self):
+        da_with_edges = detail.move_to_data_array(
+            data=sc.Variable(dims=self.data_array.dims,
+                             unit=sc.units.counts,
+                             values=self.data_array.values,
+                             dtype=sc.dtype.float32))
+        for dim, coord in self.slider_coord[self.name].items():
+            if self.histograms[self.name][dim][dim]:
+                da_with_edges.coords[dim] = coord
+            else:
+                da_with_edges.coords[dim] = to_bin_edges(coord, dim)
+        return da_with_edges
 
     def make_default_imshow(self, cmap):
         return self.ax.imshow([[1.0, 1.0], [1.0, 1.0]],
@@ -423,22 +438,24 @@ class Slicer2d(Slicer):
         """
         Recursively rebin the data along the dimensions of active sliders.
         """
-        # self.vslice = self.data_array
-        # if self.params["masks"][self.name]["show"]:
-        #     self.mslice = self.masks
+        # # self.vslice = self.data_array
+        # # if self.params["masks"][self.name]["show"]:
+        # #     self.mslice = self.masks
 
-        # self.vslice = self.vslice.astype(sc.dtype.float32)
-        # self.vslice.unit = sc.units.counts
-        self.vslice = detail.move_to_data_array(
-            data=sc.Variable(dims=self.data_array.dims,
-                             unit=sc.units.counts,
-                             values=self.data_array.values,
-                             dtype=sc.dtype.float32))
-        for dim, coord in self.slider_coord[self.name].items():
-            if self.histograms[self.name][dim][dim]:
-                self.vslice.coords[dim] = coord
-            else:
-                self.vslice.coords[dim] = to_bin_edges(coord, dim)
+        # # self.vslice = self.vslice.astype(sc.dtype.float32)
+        # # self.vslice.unit = sc.units.counts
+        # self.vslice = detail.move_to_data_array(
+        #     data=sc.Variable(dims=self.data_array.dims,
+        #                      unit=sc.units.counts,
+        #                      values=self.data_array.values,
+        #                      dtype=sc.dtype.float32))
+        # for dim, coord in self.slider_coord[self.name].items():
+        #     if self.histograms[self.name][dim][dim]:
+        #         self.vslice.coords[dim] = coord
+        #     else:
+        #         self.vslice.coords[dim] = to_bin_edges(coord, dim)
+
+        self.vslice = self.da_with_edges.copy()
 
         # Slice along dimensions with active sliders
         for dim, val in self.slider.items():
@@ -503,10 +520,10 @@ class Slicer2d(Slicer):
         # Make sure we don't overrun the original array bounds
         xylims["x"] = np.clip(
             self.ax.get_xlim(),
-            *sorted(self.slider_xlims[self.name][self.button_dims[1]]))
+            *sorted(self.slider_xlims[self.name][self.button_dims[1]].values))
         xylims["y"] = np.clip(
             self.ax.get_ylim(),
-            *sorted(self.slider_xlims[self.name][self.button_dims[0]]))
+            *sorted(self.slider_xlims[self.name][self.button_dims[0]].values))
 
         dx = np.abs(self.current_lims["x"][1] - self.current_lims["x"][0])
         dy = np.abs(self.current_lims["y"][1] - self.current_lims["y"][0])
@@ -704,22 +721,43 @@ class Slicer2d(Slicer):
 
     def update_profile(self, event):
         # Find indices of pixel where cursor lies
-        ix = int((event.xdata - self.current_lims["x"][0]) / self.image_pixel_size["x"])
-        iy = int((event.ydata - self.current_lims["y"][0]) / self.image_pixel_size["y"])
+        dimx = self.xyrebin["x"].dims[0]
+        dimy = self.xyrebin["y"].dims[0]
+        # self.fig2 = plt.figure()
+        # self.ax2 = self.fig2.add_subplot(111)
+
+        self.ax.set_title('update_profile 1')
+        # self.ax.set_title('update_profile 1.1' + str(event.xdata))
+        # self.ax.set_title('update_profile 1.2' + str(self.current_lims["x"][0]))
+        # self.ax.set_title('update_profile 1.3' + str(self.image_pixel_size))
+        ix = int((event.xdata - self.current_lims["x"][0]) / self.image_pixel_size[dimx])
+        self.ax.set_title('update_profile 1.5' + str(ix))
+        iy = int((event.ydata - self.current_lims["y"][0]) / self.image_pixel_size[dimy])
+        self.ax.set_title('update_profile 2')
 
         # Slice the 3d cube down to a 1d profile
-        prof = self.dslice[self.button_dims[0], iy][self.button_dims[1], ix]
+        # prof = self.dslice[self.button_dims[0], iy][self.button_dims[1], ix]
 
-        prof = rebin_edges = {self.xyrebin[xy[0]].dims[0]: self.xyrebin[xy[0]],
-                         self.xyrebin[xy[1]].dims[0]: self.xyrebin[xy[1]]}
+        # prof = rebin_edges = {self.xyrebin[xy[0]].dims[0]: self.xyrebin[xy[0]],
+        #                  self.xyrebin[xy[1]].dims[0]: self.xyrebin[xy[1]]}
 
-        prof = self.resample_image(self.data_array,
-            coord_edges={self.xyrebin[xy[0]].dims[0]: self.xyedges[xy[0]],
-                         self.xyrebin[xy[1]].dims[0]: self.xyedges[xy[1]]},
-            rebin_edges=rebin_edges)
+        # dimx = self.xyrebin[xy[1]].dims[0]
+        # dimy = self.xyrebin[xy[0]].dims[0]
+        self.ax.set_title('update_profile 3')
+
+
+        prof = self.resample_image(self.da_with_edges,
+            coord_edges={dimy: self.da_with_edges.coords[dimy],
+                         dimx: self.da_with_edges.coords[dimx]},
+            rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2],
+                         dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimy, 0][dimx, 0]
+        self.ax.set_title('update_profile 4' + str(prof.dims) + ' ' + str(prof.shape))
+        # print("################# PROFILE ##############")
+        # print(prof)
 
         # self.ax_profile.set_title('hahahaha')
-        if not self.first_profile_plotted:
+        # if not self.first_profile_plotted:
+        if self.profile_viewer is None:
             # _ = plot_1d({self.name: prof}, ax=self.ax_profile,
             #             mpl_line_params={
             #                 "color": {self.name: config.plot.color[0]},
@@ -727,21 +765,25 @@ class Slicer2d(Slicer):
             #                 "linestyle": {self.name: config.plot.linestyle[0]},
             #                 "linewidth": {self.name: config.plot.linewidth[0]},
             #                 })
+            # self.ax.set_title('update_profile 5')
 
-            self.profile_viewer = Slicer1d({self.name: prof}, ax=self.ax_profile,
+            self.profile_viewer = Slicer1d({self.name: prof}, ax=self.ax_extra_dims,
                         mpl_line_params={
                             "color": {self.name: config.plot.color[0]},
                             "marker": {self.name: config.plot.marker[0]},
                             "linestyle": {self.name: config.plot.linestyle[0]},
                             "linewidth": {self.name: config.plot.linewidth[0]},
                             })
+            # self.ax.set_title('update_profile 6')
 
-            self.first_profile_plotted = True
+            # self.first_profile_plotted = True
         else:
             # self.ax_profile.set_title('members lines 1')
             # print(self.profile_viewer.members["lines"])
             # self.ax_profile.set_title('members lines 2')
             # print(self.profile_viewer.members["lines"][self.name])
             # self.ax_profile.set_title('members lines 3')
-            self.profile_viewer.members["lines"][self.name].set_ydata(prof.values)
+            # self.ax_extra_dims.set_title(str(prof.values))
+            self.profile_viewer.update_slice({"vslice": {self.name: prof}})
+            # self.profile_viewer.members["lines"][self.name].set_ydata(prof.values)
         #     self.ax_profile.plot(self.slider_coord[self.name][self.profile].values, prof.values)

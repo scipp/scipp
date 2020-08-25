@@ -409,7 +409,10 @@ class Slicer1d(Slicer):
         # if self.masks is not None:
         #     mslice = self.slice_masks()
         for name, var in self.scipp_obj_dict.items():
-            vslice = self.slice_data(var, name)
+            if "vslice" in change:
+                vslice = change["vslice"][name]
+            else:
+                vslice = self.slice_data(var, name)
             # self.update_line(name, vslice)
             vals = vslice.values
             if self.histograms[name][self.button_axis_to_dim["x"]][
