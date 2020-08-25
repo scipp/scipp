@@ -86,13 +86,13 @@ TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_ascending) {
   auto out = slice(da, Dim::X, 3.0 * units::one, 13.0 * units::one);
   EXPECT_EQ(da, out);
   // Test start on left boundary (closed on left), so includes boundary
-  out = slice(da, Dim::X, 3.0 * units::one, 4.0 * units::dimensionless);
+  out = slice(da, Dim::X, 3.0 * units::one, 4.0 * units::one);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test start out of bounds on left truncated
-  out = slice(da, Dim::X, 2.0 * units::one, 4.0 * units::dimensionless);
+  out = slice(da, Dim::X, 2.0 * units::one, 4.0 * units::one);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test inner values
-  out = slice(da, Dim::X, 3.5 * units::one, 5.5 * units::dimensionless);
+  out = slice(da, Dim::X, 3.5 * units::one, 5.5 * units::one);
   EXPECT_EQ(out, da.slice({Dim::X, 1, 3}));
   // Test end on right boundary (open on right), so does not include boundary
   out = slice(da, Dim::X, 11.0 * units::one, 12.0 * units::one);
@@ -120,10 +120,10 @@ TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_descending) {
   out = slice(da, Dim::X, 11.5 * units::one, 9.5 * units::one);
   EXPECT_EQ(out, da.slice({Dim::X, 1, 3}));
   // Test end on right boundary (open on right), so does not include boundary
-  out = slice(da, Dim::X, 4.0 * units::one, 3.0 * units::dimensionless);
+  out = slice(da, Dim::X, 4.0 * units::one, 3.0 * units::one);
   EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
   // Test end out of bounds on right truncated
-  out = slice(da, Dim::X, 4.0 * units::one, 1.0 * units::dimensionless);
+  out = slice(da, Dim::X, 4.0 * units::one, 1.0 * units::one);
   EXPECT_EQ(out, da.slice({Dim::X, 8, 10}));
 }
 
@@ -135,14 +135,14 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_ascending) {
   auto out = slice(da, Dim::X, 3.0 * units::one, 13.0 * units::one);
   EXPECT_EQ(out, da);
   // Test start on left boundary (closed on left), so includes boundary
-  out = slice(da, Dim::X, 3.0 * units::one, 4.0 * units::dimensionless);
+  out = slice(da, Dim::X, 3.0 * units::one, 4.0 * units::one);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test slicing with range boundary inside edge, same result as above expected
-  out = slice(da, Dim::X, 3.1 * units::one, 4.0 * units::dimensionless);
+  out = slice(da, Dim::X, 3.1 * units::one, 4.0 * units::one);
   EXPECT_EQ(out, da.slice({Dim::X, 0, 1}));
   // Test slicing with range lower boundary on upper edge of bin (open on right
   // test)
-  out = slice(da, Dim::X, 4.0 * units::one, 6.0 * units::dimensionless);
+  out = slice(da, Dim::X, 4.0 * units::one, 6.0 * units::one);
   EXPECT_EQ(out, da.slice({Dim::X, 1, 3}));
   // Test end on right boundary (open on right), so does not include boundary
   out = slice(da, Dim::X, 11.0 * units::one, 12.0 * units::one);
@@ -167,7 +167,7 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_descending) {
   out = slice(da, Dim::X, 11.0 * units::one, 9.0 * units::one);
   EXPECT_EQ(out, da.slice({Dim::X, 1, 3}));
   // Test end on right boundary (open on right), so does not include boundary
-  out = slice(da, Dim::X, 4.0 * units::one, 3.0 * units::dimensionless);
+  out = slice(da, Dim::X, 4.0 * units::one, 3.0 * units::one);
   EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
 }
 
