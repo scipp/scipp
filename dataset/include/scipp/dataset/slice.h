@@ -12,4 +12,5 @@ namespace scipp::dataset {
 slice(const DataArrayConstView &to_slice, const Dim dim,
       const VariableConstView begin = VariableConstView{},
       const VariableConstView end = VariableConstView{});
+
 } // namespace scipp::dataset

@@ -16,9 +16,9 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
                          const VariableConstView end) {
   using namespace variable;
   if (begin)
-    variable::detail::expect0D(begin.dims());
+    core::expect::equals(begin.dims(), Dimensions{});
   if (end)
-    variable::detail::expect0D(end.dims());
+    core::expect::equals(end.dims(), Dimensions{});
   const auto &coord = to_slice.coords()[dim];
   if (coord.dims().ndim() != 1) {
     throw except::DimensionError(
