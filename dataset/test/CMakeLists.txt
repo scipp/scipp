@@ -19,21 +19,22 @@ add_executable(
   dataset_test.cpp
   dataset_view_test.cpp
   data_view_test.cpp
+  event_data_operations_consistency_test.cpp
   event_test.cpp
   except_test.cpp
   groupby_test.cpp
   histogram_test.cpp
-  math_test.cpp
   masks_view_test.cpp
+  math_test.cpp
   mean_test.cpp
   merge_test.cpp
   rebin_test.cpp
   reduce_events_test.cpp
   self_assignment_test.cpp
   shape_test.cpp
+  slice_by_value_test.cpp
   slice_test.cpp
   sort_test.cpp
-  event_data_operations_consistency_test.cpp
   string_test.cpp
   sum_test.cpp
   transform_events_and_dense_test.cpp
