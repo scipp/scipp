@@ -15,10 +15,7 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
     variable::detail::expect0D(begin.dims());
   if (end)
     variable::detail::expect0D(end.dims());
-  auto coords = to_slice.coords();
-  if (!coords.contains(dim))
-    throw except::DimensionNotFoundError(to_slice.dims(), dim);
-  auto [k, coord] = *coords.find(dim);
+  const auto &coord = to_slice.coords()[dim];
   if (coord.dims().ndim() != 1) {
     throw except::SizeError(
         "Multi-dimensional coordinates not supported in slice");
