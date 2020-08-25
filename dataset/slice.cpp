@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
-/// @author Owen Arnold
+/// @author Owen Arnold, Simon Heybrock
 #include <algorithm>
 
 #include "scipp/dataset/dataset.h"
@@ -61,12 +61,12 @@ DataArrayConstView slice(const DataArrayConstView &data, const Dim dim,
     return data.slice({dim, get_count(coord, dim, value, ascending) - 1});
   } else {
     auto eq = equal(get_1d_coord(data, dim), value);
-    auto values = eq.values<bool>();
-    auto it = std::find(values.begin(), values.end(), true);
     if (sum(eq, dim).value<scipp::index>() != 1)
       throw except::SliceError("Coord " + to_string(dim) +
                                " does not contain unique point with value " +
                                to_string(value) + '\n');
+    auto values = eq.values<bool>();
+    auto it = std::find(values.begin(), values.end(), true);
     return data.slice({dim, std::distance(values.begin(), it)});
   }
 }
