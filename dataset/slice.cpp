@@ -17,8 +17,8 @@ DataArrayConstView slice(const DataArrayConstView &to_slice, const Dim dim,
     variable::detail::expect0D(end.dims());
   const auto &coord = to_slice.coords()[dim];
   if (coord.dims().ndim() != 1) {
-    throw except::SizeError(
-        "Multi-dimensional coordinates not supported in slice");
+    throw except::DimensionError(
+        "Multi-dimensional coordinates cannot be used for value-base slicing.");
   }
   const bool ascending = is_sorted(coord, dim, variable::SortOrder::Ascending);
   const bool descending =

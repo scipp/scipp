@@ -12,11 +12,11 @@
 
 using namespace scipp;
 
-TEST(SliceTest, test_dimension_not_found) {
+TEST(SliceByValueTest, test_dimension_not_found) {
   auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 4.0});
   DataArray da{var, {{Dim::X, var}}};
-  EXPECT_THROW(auto s = dataset::slice(da, Dim::Y), except::NotFoundError);
+  EXPECT_THROW(auto s = slice(da, Dim::Y), except::NotFoundError);
 }
 
 enum class CoordType { BinEdges, Points };
@@ -40,21 +40,21 @@ DataArray make_1d_data_array(scipp::index begin, scipp::index end, Dim dim,
   return DataArray{data, {{dim, coord}}};
 }
 
-TEST(SliceTest, test_no_multi_dimensional_coords) {
+TEST(SliceByValueTest, test_no_multi_dimensional_coords) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});
   DataArray da{var, {{Dim::X, var}}};
-  EXPECT_THROW(auto s = dataset::slice(da, Dim::X), std::runtime_error);
+  EXPECT_THROW(auto s = slice(da, Dim::X), except::DimensionError);
 }
 
-TEST(SliceTest, test_unsorted_coord_throws) {
+TEST(SliceByValueTest, test_unsorted_coord_throws) {
   auto unsorted =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 1.5});
   DataArray da{unsorted, {{Dim::X, unsorted}}};
-  EXPECT_THROW(auto s = dataset::slice(da, Dim::X), std::runtime_error);
+  EXPECT_THROW(auto s = slice(da, Dim::X), std::runtime_error);
 }
 
-TEST(SliceTest, test_begin_end_not_0D_throws) {
+TEST(SliceByValueTest, test_begin_end_not_0D_throws) {
   auto da = make_1d_data_array(0, 3, Dim::X, CoordType::Points);
   auto one_d = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   EXPECT_THROW(auto s = slice(da, Dim::X, one_d, VariableConstView{}),
@@ -63,7 +63,7 @@ TEST(SliceTest, test_begin_end_not_0D_throws) {
                except::MismatchError<Dimensions>);
 }
 
-TEST(SliceTest, test_slicing_defaults_ascending) {
+TEST(SliceByValueTest, test_slicing_defaults_ascending) {
   auto da = make_1d_data_array(3, 13, Dim::X, CoordType::Points);
   EXPECT_EQ(
       da, slice(da, Dim::X, VariableConstView{}, 13.0 * units::dimensionless));
@@ -71,7 +71,7 @@ TEST(SliceTest, test_slicing_defaults_ascending) {
             slice(da, Dim::X)); // Note open on the right with default end
 }
 
-TEST(SliceTest, test_slicing_defaults_descending) {
+TEST(SliceByValueTest, test_slicing_defaults_descending) {
   auto da = make_1d_data_array(12, 2, Dim::X, CoordType::Points);
   EXPECT_EQ(da,
             slice(da, Dim::X, VariableConstView{}, 2.0 * units::dimensionless));
@@ -79,7 +79,7 @@ TEST(SliceTest, test_slicing_defaults_descending) {
             slice(da, Dim::X)); // Note open on the right with default end
 }
 
-TEST(SliceTest, test_slice_range_on_point_coords_1D_ascending) {
+TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_ascending) {
   //    Data Values           [0.0][1.0] ... [8.0][9.0]
   //    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
 
@@ -110,7 +110,7 @@ TEST(SliceTest, test_slice_range_on_point_coords_1D_ascending) {
   EXPECT_EQ(out, da.slice({Dim::X, 8, 10}));
 }
 
-TEST(SliceTest, test_slice_range_on_point_coords_1D_descending) {
+TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_descending) {
   //    Data Values           [0.0][1.0] ... [8.0][9.0]
   //    Coord Values (points) [12.0][11.0] ... [4.0][3.0]
 
@@ -141,7 +141,7 @@ TEST(SliceTest, test_slice_range_on_point_coords_1D_descending) {
   EXPECT_EQ(out, da.slice({Dim::X, 8, 10}));
 }
 
-TEST(SliceTest, test_slice_range_on_edge_coords_1D_ascending) {
+TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_ascending) {
   //    Data Values            [0.0] ...       [8.0]
   //    Coord Values (edges) [3.0][4.0] ... [11.0][12.0]
   auto da = make_1d_data_array(3, 13, Dim::X, CoordType::BinEdges);
@@ -168,7 +168,7 @@ TEST(SliceTest, test_slice_range_on_edge_coords_1D_ascending) {
   EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
 }
 
-TEST(SliceTest, test_slice_range_on_edge_coords_1D_descending) {
+TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_descending) {
   //    Data Values            [0.0] ...       [8.0]
   //    Coord Values (edges) [12.0][11.0] ... [4.0][3.0]
   auto da = make_1d_data_array(12, 2, Dim::X, CoordType::BinEdges);
@@ -195,7 +195,7 @@ TEST(SliceTest, test_slice_range_on_edge_coords_1D_descending) {
   EXPECT_EQ(out, da.slice({Dim::X, 8, 9}));
 }
 
-TEST(SliceTest, test_point_on_point_coords_1D_ascending) {
+TEST(SliceByValueTest, test_point_on_point_coords_1D_ascending) {
   //    Data Values           [0.0][1.0] ... [8.0][9.0]
   //    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
 
@@ -217,7 +217,7 @@ TEST(SliceTest, test_point_on_point_coords_1D_ascending) {
   EXPECT_THROW(auto s = slice(da, Dim::X, begin, begin), except::NotFoundError);
 }
 
-TEST(SliceTest, test_point_on_point_coords_1D_descending) {
+TEST(SliceByValueTest, test_point_on_point_coords_1D_descending) {
   //    Data Values           [0.0][1.0] ... [8.0][9.0]
   //    Coord Values (points) [12.0][11.0] ... [3.0][2.0]
 
@@ -239,7 +239,7 @@ TEST(SliceTest, test_point_on_point_coords_1D_descending) {
   EXPECT_THROW(auto s = slice(da, Dim::X, begin, begin), except::NotFoundError);
 }
 
-TEST(SliceTest, test_slice_point_on_edge_coords_1D) {
+TEST(SliceByValueTest, test_slice_point_on_edge_coords_1D) {
   //    Data Values              [0.0] ... [8.0]
   //    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
 
