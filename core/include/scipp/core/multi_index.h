@@ -34,8 +34,10 @@ public:
   constexpr static scipp::index N = sizeof...(DataDims);
   MultiIndex(const Dimensions &iterDims, const DataDims &... dataDims) {
     scipp::index d = iterDims.ndim() - 1;
-    for (const auto size : iterDims.shape())
+    for (const auto size : iterDims.shape()) {
       m_shape[d--] = size;
+      m_end_sentinel *= size;
+    }
     m_stride = std::array<std::array<scipp::index, NDIM_MAX>, N>{
         get_strides(iterDims, dataDims)...};
   }
@@ -64,12 +66,7 @@ public:
   constexpr auto get() const noexcept { return m_data_index; }
   constexpr scipp::index index() const noexcept { return m_iter_index; }
 
-  constexpr bool operator==(const MultiIndex &other) const noexcept {
-    return m_iter_index == other.m_iter_index;
-  }
-  constexpr bool operator!=(const MultiIndex &other) const noexcept {
-    return m_iter_index != other.m_iter_index;
-  }
+  scipp::index end_sentinel() const noexcept { return m_end_sentinel; }
 
 private:
   std::array<scipp::index, N> m_data_index = {};
@@ -77,6 +74,7 @@ private:
   std::array<std::array<scipp::index, NDIM_MAX>, N> m_stride = {};
   std::array<scipp::index, NDIM_MAX> m_coord = {};
   std::array<scipp::index, NDIM_MAX> m_shape = {};
+  scipp::index m_end_sentinel{1};
 };
 
 } // namespace scipp::core

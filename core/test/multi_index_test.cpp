@@ -17,6 +17,7 @@ protected:
       EXPECT_EQ(i.get(), (std::array<scipp::index, 1>{index}));
       i.increment();
     }
+    EXPECT_EQ(i.index(), i.end_sentinel());
   }
   void check(MultiIndex<Dimensions, Dimensions> i,
              const std::vector<scipp::index> &indices0,
@@ -25,6 +26,7 @@ protected:
       EXPECT_EQ(i.get(), (std::array{indices0[n], indices1[n]}));
       i.increment();
     }
+    EXPECT_EQ(i.index(), i.end_sentinel());
   }
   Dimensions x{{Dim::X}, {2}};
   Dimensions y{{Dim::Y}, {3}};
