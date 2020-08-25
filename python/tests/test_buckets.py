@@ -16,7 +16,7 @@ def test_to_buckets_default_begin_end():
 
 def test_to_buckets_default_end():
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    begin = sc.Variable(dims=['y'], values=[1, 3])
+    begin = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.dtype.int64)
     var = sc.to_buckets(begin=begin, dim='x', data=data)
     assert var.dims == begin.dims
     assert var.shape == begin.shape
@@ -26,15 +26,15 @@ def test_to_buckets_default_end():
 
 def test_to_buckets_fail_only_end():
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    end = sc.Variable(dims=['y'], values=[1, 3])
+    end = sc.Variable(dims=['y'], values=[1, 3], dtype=sc.dtype.int64)
     with pytest.raises(RuntimeError):
         sc.to_buckets(end=end, dim='x', data=data)
 
 
 def test_to_buckets():
     data = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    begin = sc.Variable(dims=['y'], values=[0, 2])
-    end = sc.Variable(dims=['y'], values=[2, 4])
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.dtype.int64)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.dtype.int64)
     var = sc.to_buckets(begin=begin, end=end, dim='x', data=data)
     assert var.dims == begin.dims
     assert var.shape == begin.shape
