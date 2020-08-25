@@ -73,6 +73,41 @@ template <typename T> void bind_sort_dim(py::module &m) {
       doc.c_str());
 }
 
+auto get_sort_order(const std::string &order) {
+  if (order == "ascending")
+    return variable::SortOrder::Ascending;
+  else if (order == "descending")
+    return variable::SortOrder::Descending;
+  else
+    throw std::runtime_error("Sort order must be 'ascending' or 'descending'");
+}
+
+void bind_is_sorted(py::module &m) {
+  m.def(
+      "is_sorted",
+      [](const VariableConstView &x, const Dim dim, const std::string &order) {
+        return is_sorted(x, dim, get_sort_order(order));
+      },
+      py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
+      py::call_guard<py::gil_scoped_release>(),
+      Docstring()
+          .description("Check if the values of a variable are sorted in.\n\nIf "
+                       "'order' is 'ascending' checks if values are "
+                       "non-decreasing along 'dim'. If 'order' is 'descending' "
+                       "checks if values are non-increasing along 'dim'.")
+          .param("x", "Variable to check.", "Variable")
+          .param("dim", "Dimension along which order is checked.", "Dim")
+          .param("order",
+                 "Sorted order. Valid options are 'ascending' and "
+                 "'descending'. Default is 'ascending'.",
+                 "str")
+          .returns(
+              "True if the variable values are monotonously ascending or "
+              "descending (depending on the requested order), False otherwise.")
+          .rtype("bool")
+          .c_str());
+}
+
 template <typename T> void bind_sort_variable(py::module &m) {
   auto doc = Docstring()
                  .description("Sort a Variable according to its values along "
@@ -90,13 +125,7 @@ template <typename T> void bind_sort_variable(py::module &m) {
       "sort",
       [](const typename T::const_view_type &x, const Dim dim,
          const std::string &order) {
-        if (order == "ascending")
-          return sort(x, dim, variable::SortOrder::Ascending);
-        else if (order == "descending")
-          return sort(x, dim, variable::SortOrder::Descending);
-        else
-          throw std::runtime_error(
-              "Sort order must be 'ascending' or 'descending'");
+        return sort(x, dim, get_sort_order(order));
       },
       py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
       py::call_guard<py::gil_scoped_release>(), doc.c_str());
@@ -127,6 +156,7 @@ void init_operations(py::module &m) {
   bind_sort_dim<Dataset>(m);
 
   bind_sort_variable<Variable>(m);
+  bind_is_sorted(m);
 
   bind_contains_events<Variable>(m);
   bind_contains_events<DataArray>(m);
