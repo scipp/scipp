@@ -12,27 +12,25 @@
 
 using namespace scipp;
 
+namespace {
+template <int N>
+constexpr auto make_array_common =
+    [](const auto... values) {
+      const auto size = sizeof...(values);
+      Variable coord = makeVariable<double>(units::m, Dims{Dim::X}, Shape{size},
+                                            Values{values...});
+      Variable data = makeVariable<int64_t>(Dims{Dim::X}, Shape{size - N});
+      return DataArray{data, {{Dim::X, coord}}};
+    };
+}
+constexpr auto make_points = make_array_common<0>;
+constexpr auto make_histogram = make_array_common<1>;
+
 TEST(SliceByValueTest, test_dimension_not_found) {
   auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 4.0});
   DataArray da{var, {{Dim::X, var}}};
   EXPECT_THROW(auto s = slice(da, Dim::Y), except::NotFoundError);
-}
-
-enum class CoordType { BinEdges, Points };
-DataArray make_1d_data_array(scipp::index begin, scipp::index end, Dim dim,
-                             CoordType coord_type) {
-  auto size = std::abs(begin - end);
-  double step = end > begin ? 1.0 : -1.0;
-  element_array<double> values(size);
-  for (scipp::index i = 0; i < size; ++i) {
-    values.data()[i] = begin + (i * step);
-  }
-  Variable coord =
-      makeVariable<double>(units::m, Dimensions{{dim, size}}, Values(values));
-  Variable data = makeVariable<int64_t>(
-      Dims{dim}, Shape{coord_type == CoordType::BinEdges ? size - 1 : size});
-  return DataArray{data, {{dim, coord}}};
 }
 
 TEST(SliceByValueTest, test_no_multi_dimensional_coords) {
@@ -50,7 +48,7 @@ TEST(SliceByValueTest, test_unsorted_coord_throws) {
 }
 
 TEST(SliceByValueTest, test_begin_end_not_0D_throws) {
-  auto da = make_1d_data_array(0, 3, Dim::X, CoordType::Points);
+  auto da = make_points(0, 1, 2, 3);
   auto one_d = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   EXPECT_THROW(auto s = slice(da, Dim::X, one_d, VariableConstView{}),
                except::MismatchError<Dimensions>);
@@ -59,24 +57,21 @@ TEST(SliceByValueTest, test_begin_end_not_0D_throws) {
 }
 
 TEST(SliceByValueTest, test_slicing_defaults_ascending) {
-  auto da = make_1d_data_array(3, 13, Dim::X, CoordType::Points);
+  auto da = make_points(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
   EXPECT_EQ(da, slice(da, Dim::X, VariableConstView{}, 13.0 * units::m));
   EXPECT_EQ(da.slice({Dim::X, 0, 9}),
             slice(da, Dim::X)); // Note open on the right with default end
 }
 
 TEST(SliceByValueTest, test_slicing_defaults_descending) {
-  auto da = make_1d_data_array(12, 2, Dim::X, CoordType::Points);
+  auto da = make_points(12, 11, 10, 9, 8, 7, 6, 5, 4, 3);
   EXPECT_EQ(da, slice(da, Dim::X, VariableConstView{}, 2.0 * units::m));
   EXPECT_EQ(da.slice({Dim::X, 0, 9}),
             slice(da, Dim::X)); // Note open on the right with default end
 }
 
 TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_ascending) {
-  //    Data Values           [0.0][1.0] ... [8.0][9.0]
-  //    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
-
-  auto da = make_1d_data_array(3, 13, Dim::X, CoordType::Points);
+  auto da = make_points(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
   // No effect slicing
   auto out = slice(da, Dim::X, 3.0 * units::m, 13.0 * units::m);
   EXPECT_EQ(da, out);
@@ -98,10 +93,7 @@ TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_ascending) {
 }
 
 TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_descending) {
-  //    Data Values           [0.0][1.0] ... [8.0][9.0]
-  //    Coord Values (points) [12.0][11.0] ... [4.0][3.0]
-
-  auto da = make_1d_data_array(12, 2, Dim::X, CoordType::Points);
+  auto da = make_points(12, 11, 10, 9, 8, 7, 6, 5, 4, 3);
   // No effect slicing
   auto out = slice(da, Dim::X, 12.0 * units::m, 2.0 * units::m);
   EXPECT_EQ(da, out);
@@ -123,9 +115,7 @@ TEST(SliceByValueTest, test_slice_range_on_point_coords_1D_descending) {
 }
 
 TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_ascending) {
-  //    Data Values            [0.0] ...       [8.0]
-  //    Coord Values (edges) [3.0][4.0] ... [11.0][12.0]
-  auto da = make_1d_data_array(3, 13, Dim::X, CoordType::BinEdges);
+  auto da = make_histogram(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
   // No effect slicing
   auto out = slice(da, Dim::X, 3.0 * units::m, 13.0 * units::m);
   EXPECT_EQ(out, da);
@@ -145,9 +135,7 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_ascending) {
 }
 
 TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_descending) {
-  //    Data Values            [0.0] ...       [8.0]
-  //    Coord Values (edges) [12.0][11.0] ... [4.0][3.0]
-  auto da = make_1d_data_array(12, 2, Dim::X, CoordType::BinEdges);
+  auto da = make_histogram(12, 11, 10, 9, 8, 7, 6, 5, 4, 3);
   // No effect slicing
   auto out = slice(da, Dim::X, 12.0 * units::m, 2.0 * units::m);
   EXPECT_EQ(out, da);
@@ -167,10 +155,7 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coords_1D_descending) {
 }
 
 TEST(SliceByValueTest, test_point_on_point_coords_1D_ascending) {
-  //    Data Values           [0.0][1.0] ... [8.0][9.0]
-  //    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
-
-  auto da = make_1d_data_array(3, 13, Dim::X, CoordType::Points);
+  auto da = make_points(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
   // No effect slicing
   // Test start on left boundary (closed on left), so includes boundary
   auto begin = 3.0 * units::m;
@@ -189,10 +174,7 @@ TEST(SliceByValueTest, test_point_on_point_coords_1D_ascending) {
 }
 
 TEST(SliceByValueTest, test_point_on_point_coords_1D_descending) {
-  //    Data Values           [0.0][1.0] ... [8.0][9.0]
-  //    Coord Values (points) [12.0][11.0] ... [3.0][2.0]
-
-  auto da = make_1d_data_array(12, 2, Dim::X, CoordType::Points);
+  auto da = make_points(12, 11, 10, 9, 8, 7, 6, 5, 4, 3);
   // No effect slicing
   // Test start on left boundary (closed on left), so includes boundary
   auto begin = 12.0 * units::m;
@@ -211,11 +193,7 @@ TEST(SliceByValueTest, test_point_on_point_coords_1D_descending) {
 }
 
 TEST(SliceByValueTest, test_slice_point_on_edge_coords_1D) {
-  //    Data Values              [0.0] ... [8.0]
-  //    Coord Values (points) [3.0][4.0] ... [11.0][12.0]
-
-  auto da = make_1d_data_array(3, 13, Dim::X, CoordType::BinEdges);
-
+  auto da = make_histogram(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
   // test no-effect slicing
   // Test start on left boundary (closed on left), so includes boundary
   auto begin = 3.0 * units::m;
