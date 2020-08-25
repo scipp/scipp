@@ -27,6 +27,7 @@ protected:
     }
   }
   Dimensions x{{Dim::X}, {2}};
+  Dimensions y{{Dim::Y}, {3}};
   Dimensions yx{{Dim::Y, Dim::X}, {3, 2}};
   Dimensions xy{{Dim::X, Dim::Y}, {2, 3}};
   Dimensions xz{{Dim::X, Dim::Z}, {2, 4}};
@@ -85,6 +86,8 @@ TEST_F(MultiIndexTest, slice_and_broadcast) {
 }
 
 TEST_F(MultiIndexTest, multiple_data_indices) {
+  check({yx, x, y}, {0, 1, 0, 1, 0, 1}, {0, 0, 1, 1, 2, 2});
+  check({xy, x, y}, {0, 0, 0, 1, 1, 1}, {0, 1, 2, 0, 1, 2});
   check({xy, yx, xy}, {0, 2, 4, 1, 3, 5}, {0, 1, 2, 3, 4, 5});
   check({yx, yx, xy}, {0, 1, 2, 3, 4, 5}, {0, 3, 1, 4, 2, 5});
 }
