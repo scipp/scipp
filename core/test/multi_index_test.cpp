@@ -11,22 +11,35 @@ using namespace scipp::core;
 
 class MultiIndexTest : public ::testing::Test {
 protected:
-  void check(MultiIndex<Dimensions> i,
-             const std::vector<scipp::index> &indices) const {
-    for (const auto index : indices) {
-      EXPECT_EQ(i.get(), (std::array<scipp::index, 1>{index}));
+  template <class... Dims, class... Indices>
+  void check_impl(MultiIndex<Dims...> i,
+                  const std::vector<scipp::index> &indices0,
+                  const Indices &... indices) const {
+    const bool skip_advance_check = i.index() != 0;
+    for (scipp::index n = 0; n < scipp::size(indices0); ++n) {
+      EXPECT_EQ(i.get(), (std::array{indices0[n], indices[n]...}));
       i.increment();
     }
     EXPECT_EQ(i.index(), i.end_sentinel());
+    if (skip_advance_check)
+      return;
+    for (scipp::index n0 = 0; n0 < scipp::size(indices0); ++n0) {
+      i.advance(-i.index());
+      i.advance(n0);
+      for (scipp::index n = n0; n < scipp::size(indices0); ++n) {
+        EXPECT_EQ(i.get(), (std::array{indices0[n], indices[n]...}));
+        i.increment();
+      }
+    }
+  }
+  void check(MultiIndex<Dimensions> i,
+             const std::vector<scipp::index> &indices) const {
+    check_impl(i, indices);
   }
   void check(MultiIndex<Dimensions, Dimensions> i,
              const std::vector<scipp::index> &indices0,
              const std::vector<scipp::index> &indices1) const {
-    for (scipp::index n = 0; n < scipp::size(indices0); ++n) {
-      EXPECT_EQ(i.get(), (std::array{indices0[n], indices1[n]}));
-      i.increment();
-    }
-    EXPECT_EQ(i.index(), i.end_sentinel());
+    check_impl(i, indices0, indices1);
   }
   Dimensions x{{Dim::X}, {2}};
   Dimensions y{{Dim::Y}, {3}};
@@ -92,4 +105,26 @@ TEST_F(MultiIndexTest, multiple_data_indices) {
   check({xy, x, y}, {0, 0, 0, 1, 1, 1}, {0, 1, 2, 0, 1, 2});
   check({xy, yx, xy}, {0, 2, 4, 1, 3, 5}, {0, 1, 2, 3, 4, 5});
   check({yx, yx, xy}, {0, 1, 2, 3, 4, 5}, {0, 3, 1, 4, 2, 5});
+}
+
+TEST_F(MultiIndexTest, advance_multiple_data_indices) {
+  MultiIndex index(yx, x, y);
+  index.advance(1);
+  check(index, {1, 0, 1, 0, 1}, {0, 1, 1, 2, 2});
+  index.advance(1);
+  check(index, {0, 1, 0, 1}, {1, 1, 2, 2});
+}
+
+TEST_F(MultiIndexTest, advance_slice_middle) {
+  MultiIndex index(xz, xyz);
+  index.advance(2);
+  check(index, {2, 3, 12, 13, 14, 15});
+  index.advance(3);
+  check(index, {13, 14, 15});
+}
+
+TEST_F(MultiIndexTest, advance_slice_and_broadcast) {
+  MultiIndex index(xz, xy);
+  index.advance(2);
+  check(index, {0, 0, 3, 3, 3, 3});
 }

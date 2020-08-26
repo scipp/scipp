@@ -63,8 +63,31 @@ public:
     ++m_iter_index;
   }
 
+  constexpr void advance(const scipp::index offset) noexcept {
+    m_iter_index += offset;
+    auto remainder{m_iter_index};
+    for (scipp::index d = 0; d < NDIM_MAX; ++d) {
+      if (m_shape[d] == 0)
+        continue;
+      m_coord[d] = remainder % m_shape[d];
+      remainder /= m_shape[d];
+    }
+    for (scipp::index data = 0; data < N; ++data) {
+      m_data_index[data] = 0;
+      for (scipp::index d = 0; d < NDIM_MAX; ++d)
+        m_data_index[data] += m_stride[data][d] * m_coord[d];
+    }
+  }
+
   constexpr auto get() const noexcept { return m_data_index; }
   constexpr scipp::index index() const noexcept { return m_iter_index; }
+
+  constexpr bool operator==(const MultiIndex &other) const noexcept {
+    return m_iter_index == other.m_iter_index;
+  }
+  constexpr bool operator!=(const MultiIndex &other) const noexcept {
+    return m_iter_index != other.m_iter_index;
+  }
 
   scipp::index end_sentinel() const noexcept { return m_end_sentinel; }
 
