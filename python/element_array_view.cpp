@@ -56,8 +56,6 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
           [](const ElementArrayView<T> &self) { return array_to_string(self); })
       .def("__getitem__", &ElementArrayView<T>::operator[],
            py::return_value_policy::reference)
-      .def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
-                             const T value) { self[i] = value; })
       .def("__len__", &ElementArrayView<T>::size)
       .def("__iter__", [](const ElementArrayView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
@@ -68,6 +66,14 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
                 const std::vector<typename T::value_type> &value) {
                self[i].assign(value.begin(), value.end());
              });
+  else
+    view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
+                               [[maybe_unused]] const T value) {
+      if constexpr (is_view_v<decltype(self[i])>)
+        throw std::runtime_error("Setting items of this type is not possible.");
+      else
+        self[i] = value;
+    });
 }
 
 void init_element_array_view(py::module &m) {
@@ -106,4 +112,7 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<event_list<scipp::core::time_point>>(m,
                                                                 "time_point");
   declare_ElementArrayView<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
+  declare_ElementArrayView<bucket<Variable>>(m, "bucket_Variable");
+  declare_ElementArrayView<bucket<DataArray>>(m, "bucket_DataArray");
+  declare_ElementArrayView<bucket<Dataset>>(m, "bucket_Dataset");
 }

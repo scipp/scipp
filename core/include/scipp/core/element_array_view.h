@@ -137,3 +137,6 @@ private:
 namespace scipp {
 using core::ElementArrayView;
 }
+
+// Specializations of ElementArrayView:
+#include "scipp/core/bucket_array_view.h"

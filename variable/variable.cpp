@@ -11,10 +11,12 @@
 namespace scipp::variable {
 
 Variable::Variable(const VariableConstView &slice)
-    : Variable(slice ? Variable(slice, slice.dims()) : Variable()) {
+    : Variable(slice ? slice.is_trivial() ? Variable(slice.underlying())
+                                          : Variable(slice, slice.dims())
+                     : Variable()) {
   // There is a bug in the implementation of MultiIndex used in ElementArrayView
   // in case one of the dimensions has extent 0.
-  if (slice && dims().volume() != 0)
+  if (slice && !slice.is_trivial() && dims().volume() != 0)
     data().copy(slice, *this);
 }
 
@@ -165,6 +167,11 @@ std::vector<scipp::index> VariableConstView::strides() const {
     if (dims().contains(label))
       strides.emplace_back(parent.offset(label));
   return strides;
+}
+
+bool VariableConstView::is_trivial() const noexcept {
+  return m_variable && m_offset == 0 && m_dims == m_variable->dims() &&
+         m_dataDims == m_variable->dims();
 }
 
 void Variable::rename(const Dim from, const Dim to) {

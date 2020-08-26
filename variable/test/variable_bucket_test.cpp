@@ -12,10 +12,10 @@ using Model = variable::DataModel<bucket<Variable>>;
 class VariableBucketTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
-  element_array<std::pair<scipp::index, scipp::index>> buckets{{0, 2}, {2, 4}};
+  element_array<std::pair<scipp::index, scipp::index>> indices{{0, 2}, {2, 4}};
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  Variable var{std::make_unique<Model>(dims, buckets, Dim::X, buffer)};
+  Variable var{std::make_unique<Model>(dims, indices, Dim::X, buffer)};
 };
 
 TEST_F(VariableBucketTest, comparison) {
@@ -62,4 +62,9 @@ TEST_F(VariableBucketTest, view) {
   const auto vals = view.values<bucket<Variable>>();
   EXPECT_EQ(vals.size(), 1);
   EXPECT_EQ(vals[0], buffer.slice({Dim::X, 2, 4}));
+}
+
+TEST_F(VariableBucketTest, construct_from_view) {
+  Variable copy{VariableView(var)};
+  EXPECT_EQ(copy, var);
 }

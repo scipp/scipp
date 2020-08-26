@@ -249,6 +249,7 @@ public:
   Variable operator-() const;
 
   auto &underlying() const { return *m_variable; }
+  bool is_trivial() const noexcept;
 
 protected:
   const Variable *m_variable{nullptr};
@@ -342,4 +343,8 @@ using variable::Variable;
 using variable::VariableConstView;
 using variable::VariableView;
 using variable::Variances;
+template <class T> struct is_view : std::false_type {};
+template <class T> inline constexpr bool is_view_v = is_view<T>::value;
+template <> struct is_view<VariableConstView> : std::true_type {};
+template <> struct is_view<VariableView> : std::true_type {};
 } // namespace scipp
