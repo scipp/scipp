@@ -49,15 +49,6 @@ protected:
   Dimensions xyz{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
 };
 
-TEST_F(MultiIndexTest, to_linear) {
-  EXPECT_EQ(to_linear(std::vector{0}, std::vector{2}), 0);
-  EXPECT_EQ(to_linear(std::vector{1}, std::vector{2}), 1);
-  EXPECT_EQ(to_linear(std::vector{0, 0}, std::vector{1, 1}), 0);
-  EXPECT_EQ(to_linear(std::vector{0, 1}, std::vector{2, 2}), 1);
-  EXPECT_EQ(to_linear(std::vector{1, 0}, std::vector{2, 2}), 2);
-  EXPECT_EQ(to_linear(std::vector{1, 1}, std::vector{2, 2}), 3);
-}
-
 namespace {
 constexpr static auto check_strides =
     [](const Dimensions &iter, const Dimensions &data,

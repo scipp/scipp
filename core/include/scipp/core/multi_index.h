@@ -9,13 +9,6 @@
 
 namespace scipp::core {
 
-template <class T> scipp::index to_linear(const T &coord, const T &shape) {
-  scipp::index linear = coord.front();
-  for (scipp::index d = 1; d < scipp::size(coord); ++d)
-    linear = shape[d] * linear + coord[d];
-  return linear;
-}
-
 /// Strides in dataDims when iterating iterDims.
 inline auto get_strides(const Dimensions &iterDims,
                         const Dimensions &dataDims) {
