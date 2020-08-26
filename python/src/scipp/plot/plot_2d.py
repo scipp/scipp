@@ -866,7 +866,7 @@ class Slicer2d(Slicer):
         else:
             self.ax_extra_dims.set_title('keep_or_delete_profile 5')
             self.keep_profile(event)
-        self.ax_extra_dims.set_title('keep_or_delete_profile 6')
+        # self.ax_extra_dims.set_title('keep_or_delete_profile 6')
 
 
 
@@ -875,37 +875,40 @@ class Slicer2d(Slicer):
         trace = list(self.profile_viewer[self.profile_key].keep_buttons.values())[-1]
         xdata = event.mouseevent.xdata
         ydata = event.mouseevent.ydata
-        self.ax_extra_dims.set_title('keep_profile 1')
+        # self.ax_extra_dims.set_title('keep_profile 1')
         # random_color = np.random.random([1, 4])
         # random_color[0, -1] = 1.0
-        self.ax_extra_dims.set_title('keep_profile 2')
+        # self.ax_extra_dims.set_title('keep_profile 2')
         if self.profile_scatter is None:
             # self.ax_extra_dims.set_title('keep_profile 3333333333333' + str(random_color))
             # self.ax_extra_dims.set_title('keep_profile 3.1' + str(event.xdata))
             # self.ax_extra_dims.set_title('keep_profile 3.2' + str(event.ydata))
-            self.profile_scatter = self.ax.scatter([xdata], [ydata], c=[trace[2].value])
+            self.profile_scatter = self.ax.scatter([xdata], [ydata], c=[trace[2].value], picker=5)
         else:
-            self.ax_extra_dims.set_title('keep_profile 4')
+            # self.ax_extra_dims.set_title('keep_profile 4')
             new_offsets = np.concatenate((self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
-            self.ax_extra_dims.set_title('keep_profile 4.5' + str([_hex_to_rgb(trace[2].value)]))
+            # self.ax_extra_dims.set_title('keep_profile 4.5' + str([_hex_to_rgb(trace[2].value)]))
             col = np.array(_hex_to_rgb(trace[2].value) + [255], dtype=np.float) / 255.0
             new_colors = np.concatenate((self.profile_scatter.get_facecolors(), [col]), axis=0)
-            self.ax_extra_dims.set_title('keep_profile 4.6')
+            # self.ax_extra_dims.set_title('keep_profile 4.6')
             self.profile_scatter.set_offsets(new_offsets)
             self.profile_scatter.set_facecolors(new_colors)
-        self.ax_extra_dims.set_title('keep_profile 5')
-        self.ax_extra_dims.set_title(str(self.profile_viewer[self.profile_key].keep_buttons))
+        # self.ax_extra_dims.set_title('keep_profile 5')
+        # self.ax_extra_dims.set_title(str(self.profile_viewer[self.profile_key].keep_buttons))
         # owner = list(self.profile_viewer[self.profile_key].keep_buttons.values())[-1][1]
         # self.ax_extra_dims.set_title('keep_profile 5.5' + str(owner))
         self.profile_viewer[self.profile_key].keep_trace(trace[1])
-        self.ax_extra_dims.set_title('keep_profile 6')
+        # self.ax_extra_dims.set_title('keep_profile 6')
 
     def delete_profile(self, event):
-            xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
-            ax.set_title('here 2')
-            c = np.delete(scat.get_facecolors(), ind, axis=0)
-            ax.set_title('here 3')
-            ax.set_title(str(xy))
-            scat.set_offsets(xy)
-            scat.set_color(c)
-            fig.canvas.draw_idle()
+        ind = event.ind[0]
+        xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
+        # ax.set_title('here 2')
+        c = np.delete(self.profile_scatter.get_facecolors(), ind, axis=0)
+        # ax.set_title('here 3')
+        # self.ax.set_title(str(xy))
+        self.profile_scatter.set_offsets(xy)
+        self.profile_scatter.set_facecolors(c)
+        self.fig.canvas.draw_idle()
+        # trace = list(self.profile_viewer[self.profile_key].keep_buttons.values())[ind]
+        # self.profile_viewer[self.profile_key].remove_trace(trace[1])

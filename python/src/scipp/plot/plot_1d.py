@@ -470,19 +470,19 @@ class Slicer1d(Slicer):
         return
 
     def keep_trace(self, owner):
-        self.ax.set_title("keep_trace 1")
+        # self.ax.set_title("keep_trace 1")
         lab = self.keep_buttons[owner.id][0].value
         lines_to_keep = ["lines"]
-        self.ax.set_title("keep_trace 2")
+        # self.ax.set_title("keep_trace 2")
         if self.params["masks"][lab]["show"]:
             lines_to_keep.append("masks")
-        self.ax.set_title("keep_trace 3")
+        # self.ax.set_title("keep_trace 3")
         for line in lines_to_keep:
             self.ax.lines.append(cp.copy(self.members[line][lab]))
             self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
             self.ax.lines[-1].set_url(owner.id)
             self.ax.lines[-1].set_zorder(1)
-        self.ax.set_title("keep_trace 4")
+        # self.ax.set_title("keep_trace 4")
         if self.errorbars[lab]:
             err = self.members["error_y"][lab].get_children()
             self.ax.collections.append(cp.copy(err[0]))
@@ -490,22 +490,22 @@ class Slicer1d(Slicer):
                 self.keep_buttons[owner.id][2].value)
             self.ax.collections[-1].set_url(owner.id)
             self.ax.collections[-1].set_zorder(1)
-        self.ax.set_title("keep_trace 5")
+        # self.ax.set_title("keep_trace 5")
 
         for dim, val in self.slider.items():
             if not val.disabled:
                 lab = "{},{}:{}".format(lab, dim, val.value)
-        self.ax.set_title("keep_trace 6")
+        # self.ax.set_title("keep_trace 6")
         self.keep_buttons[owner.id][0] = widgets.Label(
             value=lab, layout={'width': "initial"}, title=lab)
         self.make_keep_button()
-        self.ax.set_title("keep_trace 7")
+        # self.ax.set_title("keep_trace 7")
         owner.description = "Remove"
         self.mbox = self.vbox.copy()
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
         self.box.children = tuple(self.mbox)
-        self.ax.set_title("keep_trace 8")
+        # self.ax.set_title("keep_trace 8")
         return
 
     def remove_trace(self, owner):
