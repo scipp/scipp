@@ -162,11 +162,11 @@ template <class T> static constexpr auto end_index(T &&iterable) noexcept {
     return scipp::size(iterable);
 }
 
-template <class T> static constexpr auto get(const T &index) noexcept {
-  if constexpr (std::is_integral_v<T>)
-    return index;
+template <int N, class T> static constexpr auto get(const T &index) noexcept {
+  if constexpr (std::is_integral_v<std::tuple_element_t<0, T>>)
+    return std::get<N>(index);
   else
-    return index.get();
+    return std::get<N>(index).get();
 }
 
 template <class T>
@@ -182,12 +182,12 @@ static constexpr auto has_stride_zero(const T &index) noexcept {
 template <class Op, class Indices, class... Args, size_t... I>
 static constexpr auto call_impl(Op &&op, const Indices &indices,
                                 std::index_sequence<I...>, Args &&... args) {
-  return op(value_maybe_variance(args, iter::get(std::get<I + 1>(indices)))...);
+  return op(value_maybe_variance(args, iter::get<I + 1>(indices))...);
 }
 template <class Op, class Indices, class Out, class... Args>
 static constexpr void call(Op &&op, const Indices &indices, Out &&out,
                            Args &&... args) {
-  const auto i = iter::get(std::get<0>(indices));
+  const auto i = iter::get<0>(indices);
   auto &&out_ = value_maybe_variance(out, i);
   out_ = call_impl(std::forward<Op>(op), indices,
                    std::make_index_sequence<std::tuple_size_v<Indices> - 1>{},
@@ -206,16 +206,15 @@ static constexpr void call_in_place_impl(Op &&op, const Indices &indices,
                                          std::index_sequence<I...>, Arg &&arg,
                                          Args &&... args) {
   static_assert(
-      std::is_same_v<
-          decltype(op(arg, value_maybe_variance(
-                               args, iter::get(std::get<I + 1>(indices)))...)),
-          void>);
-  op(arg, value_maybe_variance(args, iter::get(std::get<I + 1>(indices)))...);
+      std::is_same_v<decltype(op(arg, value_maybe_variance(
+                                          args, iter::get<I + 1>(indices))...)),
+                     void>);
+  op(arg, value_maybe_variance(args, iter::get<I + 1>(indices))...);
 }
 template <class Op, class Indices, class Arg, class... Args>
 static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
                                     Args &&... args) {
-  const auto i = iter::get(std::get<0>(indices));
+  const auto i = iter::get<0>(indices);
   // Two cases are distinguished here:
   // 1. In the case of event data we create ValuesAndVariances, which hold
   //    references that can be modified.
