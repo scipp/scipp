@@ -210,8 +210,7 @@ of variances.)");
       .def(
           "__rtruediv__",
           [](Variable &a, int &b) { return (b * units::one) / a; },
-          py::is_operator())
-      .def("__repr__", [](const Variable &self) { return to_string(self); });
+          py::is_operator());
 
   bind_init_list(variable);
   // Order matters for pybind11's overload resolution. Do not change.
@@ -231,9 +230,7 @@ of variances.)");
       .def("__copy__",
            [](const VariableConstView &self) { return Variable(self); })
       .def("__deepcopy__",
-           [](VariableView &self, py::dict) { return Variable(self); })
-      .def("__repr__",
-           [](const VariableConstView &self) { return to_string(self); });
+           [](VariableView &self, py::dict) { return Variable(self); });
 
   py::class_<VariableView, VariableConstView> variableView(
       m, "VariableView", py::buffer_protocol(), R"(
@@ -253,6 +250,9 @@ Mostly equivalent to Variable, see there for details.)");
           "__rmul__",
           [](VariableView &a, double &b) { return a * (b * units::one); },
           py::is_operator());
+
+  bind_common_operators(variable);
+  bind_common_operators(variableView);
 
   bind_astype(variable);
   bind_astype(variableView);

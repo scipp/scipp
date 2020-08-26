@@ -136,8 +136,8 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
 
 template <class T, class... Ignored>
 void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
+  bind_common_operators(c);
   c.def("__len__", &T::size);
-  c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def(
       "__iter__",
       [](const T &self) {
@@ -201,7 +201,6 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
                    R"(The name of the held data.)");
   else
     c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
-  c.def("__repr__", [](const T &self) { return to_string(self); });
   c.def(
       "copy", [](const T &self) { return DataArray(self); },
       py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
@@ -247,6 +246,7 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
                                            py::keep_alive<0, 1>()),
                           R"(
       Dict of masks.)");
+  bind_common_operators(c);
   bind_coord_properties(c);
   bind_data_properties(c);
   bind_slice_methods(c);
