@@ -7,7 +7,6 @@
 #include <boost/iterator/transform_iterator.hpp>
 
 #include "scipp/core/bucket.h"
-#include "scipp/core/element_array_view.h"
 
 namespace scipp::core {
 
