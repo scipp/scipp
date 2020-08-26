@@ -8,6 +8,7 @@ from .. import config
 from .plot import plot
 from .render import render_plot
 from .slicer import Slicer
+from ..show import _hex_to_rgb
 from .tools import to_bin_edges, parse_params
 from .._utils import name_with_unit
 from .._scipp import core as sc
@@ -17,6 +18,8 @@ from .. import detail
 import numpy as np
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PathCollection
 import warnings
 
 
@@ -120,7 +123,7 @@ class Slicer2d(Slicer):
         # if extra_dims not in extra_dims_options:
         #     raise RuntimeError("Unknown handling method for extra_dims: {}. "
         #                        "Possible choices are {}.".format(extra_dims, extra_dims_options))
-        # if 
+        # if
         # self.use_slider_for_extra_dims = True
 
 
@@ -130,6 +133,9 @@ class Slicer2d(Slicer):
         # self.first_profile_plotted = False
         self.profile_viewer = None
         self.profile_key = None
+        self.slice_position_rectangle = None
+        self.profile_scatter = None
+        self.profile_update_lock = False
 
         if resolution is not None:
             if isinstance(resolution, int):
@@ -208,8 +214,9 @@ class Slicer2d(Slicer):
 
         if self.extra_dims:
             # Connect profile plot to mouse cursor
-            self.fig.canvas.mpl_connect('button_press_event', self.update_profile)
-            # self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+            # self.fig.canvas.mpl_connect('button_press_event', self.keep_profile)
+            self.fig.canvas.mpl_connect('pick_event', self.keep_or_delete_profile)
+            self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
 
         return
 
@@ -234,7 +241,8 @@ class Slicer2d(Slicer):
                               origin="lower",
                               aspect=self.aspect,
                               interpolation="nearest",
-                              cmap=cmap)
+                              cmap=cmap,
+                              picker=5)
 
     def update_buttons(self, owner, event, dummy):
         toggle_slider = False
@@ -405,6 +413,16 @@ class Slicer2d(Slicer):
                 if self.params["masks"][
                         self.name]["show"] and dim in self.mslice.dims:
                     self.mslice = self.mslice[val.dim, val.value]
+                if self.slice_position_rectangle is not None:
+                    new_pos = self.slider_coord[self.name][dim][dim, val.value].value
+                    self.slice_position_rectangle.set_x(new_pos)
+                    if self.histograms[self.name][dim][dim]:
+                        self.slice_position_rectangle.set_width(
+                            self.slider_coord[self.name][dim][dim, val.value + 1].value - new_pos)
+                    else:
+                        new_pos -= 0.5 * self.slice_position_rectangle.get_width()
+                    self.slice_position_rectangle.set_x(new_pos)
+
         # In the case of unaligned data, we may want to auto-scale the colorbar
         # as we slice through dimensions. Colorbar limits are allowed to grow
         # but not shrink.
@@ -436,48 +454,48 @@ class Slicer2d(Slicer):
         self.vslice *= self.xywidth["y"]
 
 
-    def rebin_data(self):
-        """
-        Recursively rebin the data along the dimensions of active sliders.
-        """
-        # # self.vslice = self.data_array
-        # # if self.params["masks"][self.name]["show"]:
-        # #     self.mslice = self.masks
+    # def rebin_data(self):
+    #     """
+    #     Recursively rebin the data along the dimensions of active sliders.
+    #     """
+    #     # # self.vslice = self.data_array
+    #     # # if self.params["masks"][self.name]["show"]:
+    #     # #     self.mslice = self.masks
 
-        # # self.vslice = self.vslice.astype(sc.dtype.float32)
-        # # self.vslice.unit = sc.units.counts
-        # self.vslice = detail.move_to_data_array(
-        #     data=sc.Variable(dims=self.data_array.dims,
-        #                      unit=sc.units.counts,
-        #                      values=self.data_array.values,
-        #                      dtype=sc.dtype.float32))
-        # for dim, coord in self.slider_coord[self.name].items():
-        #     if self.histograms[self.name][dim][dim]:
-        #         self.vslice.coords[dim] = coord
-        #     else:
-        #         self.vslice.coords[dim] = to_bin_edges(coord, dim)
+    #     # # self.vslice = self.vslice.astype(sc.dtype.float32)
+    #     # # self.vslice.unit = sc.units.counts
+    #     # self.vslice = detail.move_to_data_array(
+    #     #     data=sc.Variable(dims=self.data_array.dims,
+    #     #                      unit=sc.units.counts,
+    #     #                      values=self.data_array.values,
+    #     #                      dtype=sc.dtype.float32))
+    #     # for dim, coord in self.slider_coord[self.name].items():
+    #     #     if self.histograms[self.name][dim][dim]:
+    #     #         self.vslice.coords[dim] = coord
+    #     #     else:
+    #     #         self.vslice.coords[dim] = to_bin_edges(coord, dim)
 
-        self.vslice = self.da_with_edges.copy()
+    #     self.vslice = self.da_with_edges.copy()
 
-        # Slice along dimensions with active sliders
-        for dim, val in self.slider.items():
-            if not val.disabled:
-                # self.vslice = self.vslice[val.dim, val.value]
-                self.vslice = self.resample_image(self.vslice,
-                    coord_edges={dim: self.slider_coord[self.name][dim]},
-                    rebin_edges={dim: self.slider_xlims[self.name][dim]})[dim, 0]
-                depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
-                depth.unit = sc.units.one
-                self.vslice *= depth
+    #     # Slice along dimensions with active sliders
+    #     for dim, val in self.slider.items():
+    #         if not val.disabled:
+    #             # self.vslice = self.vslice[val.dim, val.value]
+    #             self.vslice = self.resample_image(self.vslice,
+    #                 coord_edges={dim: self.slider_coord[self.name][dim]},
+    #                 rebin_edges={dim: self.slider_xlims[self.name][dim]})[dim, 0]
+    #             depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
+    #             depth.unit = sc.units.one
+    #             self.vslice *= depth
 
 
-        # if self.params["masks"][self.name]["show"]:
-        #     self.vslice.masks["all"] = self.mslice
-        # Scale by bin width and then rebin in both directions
-        # Note that this has to be written as 2 inplace operations to avoid
-        # creation of large 2D temporary from broadcast
-        self.vslice *= self.xywidth["x"]
-        self.vslice *= self.xywidth["y"]
+    #     # if self.params["masks"][self.name]["show"]:
+    #     #     self.vslice.masks["all"] = self.mslice
+    #     # Scale by bin width and then rebin in both directions
+    #     # Note that this has to be written as 2 inplace operations to avoid
+    #     # creation of large 2D temporary from broadcast
+    #     self.vslice *= self.xywidth["x"]
+    #     self.vslice *= self.xywidth["y"]
 
     def update_slice(self, change=None):
         """
@@ -487,11 +505,11 @@ class Slicer2d(Slicer):
         # coords and update the xyedges and xywidth
         if self.contains_multid_coord[self.name]:
             self.slice_coords()
-        if self.extra_dims:
-            self.rebin_data()
-        else:
-            self.slice_data()
-        # Update imade with resampling
+        # if self.extra_dims:
+        #     self.rebin_data()
+        # else:
+        self.slice_data()
+        # Update image with resampling
         self.update_image()
         return
 
@@ -721,6 +739,10 @@ class Slicer2d(Slicer):
 
         return
 
+    # def update_profile(self, event):
+    #     self.make_profile(event, color=)
+
+
     def update_profile(self, event):
         # Find indices of pixel where cursor lies
         dimx = self.xyrebin["x"].dims[0]
@@ -728,7 +750,7 @@ class Slicer2d(Slicer):
         # self.fig2 = plt.figure()
         # self.ax2 = self.fig2.add_subplot(111)
 
-        self.ax.set_title('update_profile 1')
+        self.ax.set_title(str())
         # self.ax.set_title('update_profile 1.1' + str(event.xdata))
         # self.ax.set_title('update_profile 1.2' + str(self.current_lims["x"][0]))
         # self.ax.set_title('update_profile 1.3' + str(self.image_pixel_size))
@@ -799,6 +821,23 @@ class Slicer2d(Slicer):
             self.profile_key = list(self.profile_viewer.keys())[0]
             # render_plot(widgets=self.profile_viewer[self.profile_key].keep_buttons_box)
 
+            # If profile is 1d, add indicator of range covered by current slice
+            if len(to_plot.dims) == 1:
+                dim = to_plot.dims[0]
+                xlims = self.ax_extra_dims.get_xlim()
+                ylims = self.ax_extra_dims.get_ylim()
+                left = to_plot.coords[dim][dim, self.slider[dim].value].value
+                if self.histograms[self.name][dim][dim]:
+                    width = (to_plot.coords[dim][dim, self.slider[dim].value + 1] -
+                             to_plot.coords[dim][dim, self.slider[dim].value]).value
+                else:
+                    width = 0.01 * (xlims[1] - xlims[0])
+                    left -= 0.5 * width
+                self.slice_position_rectangle = Rectangle(
+                    (left, ylims[0]), width, ylims[1] - ylims[0],
+                         facecolor="lightgray", zorder=-10)
+                self.ax_extra_dims.add_patch(self.slice_position_rectangle)
+
             # self.ax.set_title('update_profile 6')
 
             # self.first_profile_plotted = True
@@ -812,3 +851,61 @@ class Slicer2d(Slicer):
             self.profile_viewer[self.profile_key].update_slice({"vslice": {self.name: prof}})
             # self.profile_viewer.members["lines"][self.name].set_ydata(prof.values)
         #     self.ax_profile.plot(self.slider_coord[self.name][self.profile].values, prof.values)
+
+
+    def keep_or_delete_profile(self, event):
+        self.ax_extra_dims.set_title('keep_or_delete_profile 1')
+        if isinstance(event.artist, PathCollection):
+            self.ax_extra_dims.set_title('keep_or_delete_profile 2')
+            self.delete_profile(event)
+            self.ax_extra_dims.set_title('keep_or_delete_profile 3')
+            self.profile_update_lock = True
+        elif self.profile_update_lock:
+            self.ax_extra_dims.set_title('keep_or_delete_profile 4')
+            self.profile_update_lock = False
+        else:
+            self.ax_extra_dims.set_title('keep_or_delete_profile 5')
+            self.keep_profile(event)
+        self.ax_extra_dims.set_title('keep_or_delete_profile 6')
+
+
+
+
+    def keep_profile(self, event):
+        trace = list(self.profile_viewer[self.profile_key].keep_buttons.values())[-1]
+        xdata = event.mouseevent.xdata
+        ydata = event.mouseevent.ydata
+        self.ax_extra_dims.set_title('keep_profile 1')
+        # random_color = np.random.random([1, 4])
+        # random_color[0, -1] = 1.0
+        self.ax_extra_dims.set_title('keep_profile 2')
+        if self.profile_scatter is None:
+            # self.ax_extra_dims.set_title('keep_profile 3333333333333' + str(random_color))
+            # self.ax_extra_dims.set_title('keep_profile 3.1' + str(event.xdata))
+            # self.ax_extra_dims.set_title('keep_profile 3.2' + str(event.ydata))
+            self.profile_scatter = self.ax.scatter([xdata], [ydata], c=[trace[2].value])
+        else:
+            self.ax_extra_dims.set_title('keep_profile 4')
+            new_offsets = np.concatenate((self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
+            self.ax_extra_dims.set_title('keep_profile 4.5' + str([_hex_to_rgb(trace[2].value)]))
+            col = np.array(_hex_to_rgb(trace[2].value) + [255], dtype=np.float) / 255.0
+            new_colors = np.concatenate((self.profile_scatter.get_facecolors(), [col]), axis=0)
+            self.ax_extra_dims.set_title('keep_profile 4.6')
+            self.profile_scatter.set_offsets(new_offsets)
+            self.profile_scatter.set_facecolors(new_colors)
+        self.ax_extra_dims.set_title('keep_profile 5')
+        self.ax_extra_dims.set_title(str(self.profile_viewer[self.profile_key].keep_buttons))
+        # owner = list(self.profile_viewer[self.profile_key].keep_buttons.values())[-1][1]
+        # self.ax_extra_dims.set_title('keep_profile 5.5' + str(owner))
+        self.profile_viewer[self.profile_key].keep_trace(trace[1])
+        self.ax_extra_dims.set_title('keep_profile 6')
+
+    def delete_profile(self, event):
+            xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
+            ax.set_title('here 2')
+            c = np.delete(scat.get_facecolors(), ind, axis=0)
+            ax.set_title('here 3')
+            ax.set_title(str(xy))
+            scat.set_offsets(xy)
+            scat.set_color(c)
+            fig.canvas.draw_idle()
