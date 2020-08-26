@@ -24,6 +24,7 @@
 
 #include "scipp/common/overloaded.h"
 
+#include "scipp/core/multi_index.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
@@ -144,6 +145,20 @@ static constexpr void advance(T &indices,
                std::make_index_sequence<std::tuple_size_v<T>>{});
 }
 
+template <class T> static constexpr auto iter_dims(T &&iterable) noexcept {
+  if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
+    return iter_dims(iterable.values);
+  else
+    return iterable.dims();
+}
+
+template <class T> static constexpr auto data_dims(T &&iterable) noexcept {
+  if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
+    return data_dims(iterable.values);
+  else
+    return iterable.dataDims();
+}
+
 template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
   if constexpr (std::is_base_of_v<core::element_array_view, std::decay_t<T>>)
     return iterable.begin_index();
@@ -163,10 +178,13 @@ template <class T> static constexpr auto end_index(T &&iterable) noexcept {
 }
 
 template <int N, class T> static constexpr auto get(const T &index) noexcept {
-  if constexpr (std::is_integral_v<std::tuple_element_t<0, T>>)
-    return std::get<N>(index);
-  else
-    return std::get<N>(index).get();
+  if constexpr (visit_detail::is_tuple<T>::value) {
+    if constexpr (std::is_integral_v<std::tuple_element_t<0, T>>)
+      return std::get<N>(index);
+    else
+      return std::get<N>(index).get();
+  } else
+    return std::get<N>(index.get());
 }
 
 template <class T>
@@ -190,7 +208,7 @@ static constexpr void call(Op &&op, const Indices &indices, Out &&out,
   const auto i = iter::get<0>(indices);
   auto &&out_ = value_maybe_variance(out, i);
   out_ = call_impl(std::forward<Op>(op), indices,
-                   std::make_index_sequence<std::tuple_size_v<Indices> - 1>{},
+                   std::make_index_sequence<sizeof...(Args)>{},
                    std::forward<Args>(args)...);
   // If the output is events, ValuesAndVariances::operator= already does the job
   // in the line above (since ValuesAndVariances wraps references), if not
@@ -226,7 +244,7 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
   // terminates with the second level.
   auto &&arg_ = value_maybe_variance(arg, i);
   call_in_place_impl(std::forward<Op>(op), indices,
-                     std::make_index_sequence<std::tuple_size_v<Indices> - 1>{},
+                     std::make_index_sequence<sizeof...(Args)>{},
                      std::forward<decltype(arg_)>(arg_),
                      std::forward<Args>(args)...);
   if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(arg_)>>) {
@@ -237,21 +255,27 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
 
 template <class Op, class Out, class... Ts>
 static void transform_elements(Op op, Out &&out, Ts &&... other) {
-  auto run = [&](auto indices, const auto &end) {
-    for (; std::get<0>(indices) != end; iter::increment(indices))
-      call(op, indices, out, other...);
-  };
-  const auto begin =
-      std::tuple{iter::begin_index(out), iter::begin_index(other)...};
   if constexpr (transform_detail::is_events_v<std::decay_t<Out>>) {
+    auto run = [&](auto indices, const auto &end) {
+      for (; std::get<0>(indices) != end; iter::increment(indices))
+        call(op, indices, out, other...);
+    };
+    const auto begin =
+        std::tuple{iter::begin_index(out), iter::begin_index(other)...};
     run(begin, iter::end_index(out));
   } else {
+    auto run = [&](auto indices, const auto &end) {
+      for (; indices != end; indices.increment())
+        call(op, indices, out, other...);
+    };
+    const auto begin = core::MultiIndex(
+        iter::iter_dims(out), iter::data_dims(out), iter::data_dims(other)...);
     auto run_parallel = [&](const auto &range) {
       auto indices = begin;
-      iter::advance(indices, range.begin());
-      auto end = std::tuple{iter::begin_index(out)};
-      iter::advance(end, range.end());
-      run(indices, std::get<0>(end));
+      indices.advance(range.begin());
+      auto end = begin;
+      end.advance(range.end() - range.begin());
+      run(indices, end);
     };
     core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
                                  run_parallel);
@@ -587,12 +611,19 @@ template <bool dry_run> struct in_place {
         // implemented for now.
         run(begin, iter::end_index(arg));
       } else {
+        auto run_ = [&](auto indices, const auto &end) {
+          for (; indices != end; indices.increment())
+            call_in_place(op, indices, arg, other...);
+        };
+        const auto begin_ =
+            core::MultiIndex(iter::iter_dims(arg), iter::data_dims(arg),
+                             iter::data_dims(other)...);
         auto run_parallel = [&](const auto &range) {
-          auto indices = begin;
-          iter::advance(indices, range.begin());
-          auto end = std::tuple{iter::begin_index(arg)};
-          iter::advance(end, range.end());
-          run(indices, std::get<0>(end));
+          auto indices = begin_;
+          indices.advance(range.begin());
+          auto end = begin_;
+          end.advance(range.end() - range.begin());
+          run_(indices, end);
         };
         core::parallel::parallel_for(
             core::parallel::blocked_range(0, arg.size()), run_parallel);

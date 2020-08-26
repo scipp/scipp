@@ -17,7 +17,8 @@ template <class T> scipp::index to_linear(const T &coord, const T &shape) {
 }
 
 /// Strides in dataDims when iterating iterDims.
-auto get_strides(const Dimensions &iterDims, const Dimensions &dataDims) {
+inline auto get_strides(const Dimensions &iterDims,
+                        const Dimensions &dataDims) {
   std::array<scipp::index, NDIM_MAX> strides = {};
   scipp::index d = iterDims.ndim() - 1;
   for (const auto dim : iterDims.labels()) {
