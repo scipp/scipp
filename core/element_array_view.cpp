@@ -43,9 +43,9 @@ element_array_view::element_array_view(const scipp::index offset,
 /// broadcasting the slice.
 element_array_view::element_array_view(const element_array_view &other,
                                        const Dimensions &iterDims)
-    : m_offset(other.m_offset), m_iterDims(iterDims) {
+    : m_offset(other.m_offset), m_iterDims(iterDims),
+      m_dataDims(other.m_dataDims) {
   expectCanBroadcastFromTo(other.m_iterDims, m_iterDims);
-  m_dataDims = other.m_dataDims;
   // See implementation of ViewIndex regarding this relabeling.
   for (const auto label : m_dataDims.labels())
     if (label != Dim::Invalid && !other.m_iterDims.contains(label))

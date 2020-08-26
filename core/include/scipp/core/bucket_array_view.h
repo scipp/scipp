@@ -6,17 +6,10 @@
 
 #include <boost/iterator/transform_iterator.hpp>
 
+#include "scipp/core/bucket.h"
 #include "scipp/core/element_array_view.h"
 
 namespace scipp::core {
-
-struct bucket_base {
-  using range_type = std::pair<scipp::index, scipp::index>;
-};
-template <class T> struct bucket : bucket_base {
-  using element_type = typename T::view_type;
-  using const_element_type = typename T::const_view_type;
-};
 
 template <class T>
 class bucket_array_view
@@ -69,6 +62,8 @@ private:
 /// example, a VariableView in case of T=Variable.
 template <class T>
 class ElementArrayView<bucket<T>> : public bucket_array_view<T> {
+public:
+  using value_type = typename T::view_type;
   using bucket_array_view<T>::bucket_array_view;
 };
 
@@ -78,11 +73,9 @@ class ElementArrayView<bucket<T>> : public bucket_array_view<T> {
 /// example, a VariableConstView in case of T=Variable.
 template <class T>
 class ElementArrayView<const bucket<T>> : public bucket_array_view<const T> {
+public:
+  using value_type = typename T::const_view_type;
   using bucket_array_view<const T>::bucket_array_view;
 };
 
 } // namespace scipp::core
-
-namespace scipp {
-using core::bucket;
-}
