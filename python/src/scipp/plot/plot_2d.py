@@ -854,17 +854,24 @@ class Slicer2d(Slicer):
 
 
     def keep_or_delete_profile(self, event):
-        self.ax_extra_dims.set_title('keep_or_delete_profile 1')
+        # self.ax_extra_dims.set_title('keep_or_delete_profile 1' + str(event.artist))
+        # return
+        self.ax_extra_dims.set_title(self.ax_extra_dims.get_title() + '\n' + str(event.artist))
         if isinstance(event.artist, PathCollection):
-            self.ax_extra_dims.set_title('keep_or_delete_profile 2')
+            # self.ax_extra_dims.set_title(self.ax_extra_dims.get_title() + str(event.artist))
+            # self.ax_extra_dims.set_title('keep_or_delete_profile 2')
             self.delete_profile(event)
-            self.ax_extra_dims.set_title('keep_or_delete_profile 3')
+            # self.ax_extra_dims.set_title('keep_or_delete_profile 3')
             self.profile_update_lock = True
+            self.ax_extra_dims.set_title(self.ax_extra_dims.get_title() + '\n branch1')
         elif self.profile_update_lock:
-            self.ax_extra_dims.set_title('keep_or_delete_profile 4')
+            # self.ax_extra_dims.set_title('keep_or_delete_profile 4')
             self.profile_update_lock = False
+            self.ax_extra_dims.set_title(self.ax_extra_dims.get_title() + '\n branch2')
+            # self.ax_extra_dims.set_title("unlock!")
         else:
-            self.ax_extra_dims.set_title('keep_or_delete_profile 5')
+            # self.ax_extra_dims.set_title('keep_or_delete_profile 5')
+            self.ax_extra_dims.set_title(self.ax_extra_dims.get_title() + '\n branch3')
             self.keep_profile(event)
         # self.ax_extra_dims.set_title('keep_or_delete_profile 6')
 
@@ -901,14 +908,24 @@ class Slicer2d(Slicer):
         # self.ax_extra_dims.set_title('keep_profile 6')
 
     def delete_profile(self, event):
+        # self.ax_extra_dims.set_title('delete_profile 1')
         ind = event.ind[0]
+        # self.ax_extra_dims.set_title('delete_profile 2')
         xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
+        # self.ax_extra_dims.set_title('delete_profile 3')
         # ax.set_title('here 2')
         c = np.delete(self.profile_scatter.get_facecolors(), ind, axis=0)
+        # self.ax_extra_dims.set_title('delete_profile 4')
         # ax.set_title('here 3')
         # self.ax.set_title(str(xy))
         self.profile_scatter.set_offsets(xy)
+        # self.ax_extra_dims.set_title('delete_profile 5')
         self.profile_scatter.set_facecolors(c)
+        # self.ax_extra_dims.set_title('delete_profile 6')
         self.fig.canvas.draw_idle()
-        # trace = list(self.profile_viewer[self.profile_key].keep_buttons.values())[ind]
-        # self.profile_viewer[self.profile_key].remove_trace(trace[1])
+        # self.ax_extra_dims.set_title('delete_profile 7')
+
+        trace = list(self.profile_viewer[self.profile_key].keep_buttons.values())[ind]
+        self.ax_extra_dims.set_title(str(trace[2]) + str(trace[1].id))
+        self.profile_viewer[self.profile_key].remove_trace(trace[1])
+        # self.ax_extra_dims.set_title('delete_profile 9')

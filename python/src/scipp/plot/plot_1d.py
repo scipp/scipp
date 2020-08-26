@@ -510,21 +510,30 @@ class Slicer1d(Slicer):
 
     def remove_trace(self, owner):
         del self.keep_buttons[owner.id]
+        # self.ax.set_title("remove_trace 1")
         lines = []
         for line in self.ax.lines:
             if line.get_url() != owner.id:
                 lines.append(line)
+        # self.ax.set_title("remove_trace 2")
         collections = []
+        self.ax.set_title("remove_trace 2.2"+str(self.ax.collections))
         for coll in self.ax.collections:
             if coll.get_url() != owner.id:
                 collections.append(coll)
+        # self.ax.set_title("remove_trace 3")
         self.ax.lines = lines
+        self.ax.set_title("remove_trace 3.1"+str(lines))
         self.ax.collections = collections
+        self.ax.set_title("remove_trace 3.2"+str(collections))
         self.fig.canvas.draw_idle()
+        self.ax.set_title("remove_trace 3.3")
         self.mbox = self.vbox.copy()
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
+        # self.ax.set_title("remove_trace 3.4")
         self.box.children = tuple(self.mbox)
+        # self.ax.set_title("remove_trace 4")
         return
 
     def update_trace_color(self, change):
