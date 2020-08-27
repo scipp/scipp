@@ -159,7 +159,6 @@ class Slicer2d(Slicer):
         self.ax = ax
         self.ax_extra_dims = None
         self.cax = cax
-        print('got to here 1')
         if self.ax is None:
             nrows = 1 + self.extra_dims
             self.fig, mpl_axes = plt.subplots(
@@ -173,11 +172,9 @@ class Slicer2d(Slicer):
                 self.ax_extra_dims = mpl_axes[1]
             else:
                 self.ax = mpl_axes
-        print('got to here 2')
 
         self.im = dict()
         self.cbar = None
-        print('got to here 3')
 
         self.im["values"] = self.make_default_imshow(
             self.params["values"][self.name]["cmap"])
@@ -198,11 +195,9 @@ class Slicer2d(Slicer):
             self.ax.set_xscale("log")
         if self.logy:
             self.ax.set_yscale("log")
-        print('got to here 4')
 
         # Call update_slice once to make the initial image
         self.update_axes()
-        print('got to here 5')
         self.vbox = widgets.VBox(self.vbox)
         self.vbox.layout.align_items = 'center'
         self.members["fig"] = self.fig
@@ -215,6 +210,8 @@ class Slicer2d(Slicer):
         if self.extra_dims:
             # Connect profile plot to mouse cursor
             # self.fig.canvas.mpl_connect('button_press_event', self.keep_profile)
+            # self.ax.callbacks.connect('pick_event', self.keep_or_delete_profile)
+            # self.ax.callbacks.connect('motion_notify_event', self.update_profile)
             self.fig.canvas.mpl_connect('pick_event', self.keep_or_delete_profile)
             self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
 
@@ -265,10 +262,8 @@ class Slicer2d(Slicer):
     def update_axes(self):
         # Go through the buttons and select the right coordinates for the axes
         for dim, button in self.buttons.items():
-            print(dim, self.slider[dim].disabled)
             if self.slider[dim].disabled:
                 but_val = button.value
-                print(dim, button.value)
                 if but_val is not None:
                     but_val = but_val.lower()
                     self.extent[but_val] = self.slider_xlims[self.name][dim].values
@@ -291,7 +286,6 @@ class Slicer2d(Slicer):
 
         # TODO: if labels are used on a 2D coordinates, we need to update
         # the axes tick formatter to use xyrebin coords
-        print(self.axparams)
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled array to be used as image
             offset = 2 * (xy == "y")
@@ -604,7 +598,7 @@ class Slicer2d(Slicer):
         #     xy = "xy"
 
         for dim, edges in rebin_edges.items():
-            print(dslice, dim, edges)
+            # print(dslice, dim, edges)
             dslice = sc.rebin(dslice, dim, edges)
 
 
@@ -705,7 +699,7 @@ class Slicer2d(Slicer):
                                    np.int32))
             # msk = msk.values
 
-        print(self.dslice)
+        # print(self.dslice)
         # if self.profile is not None:
         #     arr = sc.sum(self.dslice, self.profile).values
         #     if self.params["masks"][self.name]["show"]:
@@ -744,188 +738,87 @@ class Slicer2d(Slicer):
 
 
     def update_profile(self, event):
-        # Find indices of pixel where cursor lies
-        dimx = self.xyrebin["x"].dims[0]
-        dimy = self.xyrebin["y"].dims[0]
-        # self.fig2 = plt.figure()
-        # self.ax2 = self.fig2.add_subplot(111)
+        if event.inaxes == self.ax:
+            # Find indices of pixel where cursor lies
+            dimx = self.xyrebin["x"].dims[0]
+            dimy = self.xyrebin["y"].dims[0]
+            ix = int((event.xdata - self.current_lims["x"][0]) / self.image_pixel_size[dimx])
+            iy = int((event.ydata - self.current_lims["y"][0]) / self.image_pixel_size[dimy])
 
-        self.ax.set_title(str())
-        # self.ax.set_title('update_profile 1.1' + str(event.xdata))
-        # self.ax.set_title('update_profile 1.2' + str(self.current_lims["x"][0]))
-        # self.ax.set_title('update_profile 1.3' + str(self.image_pixel_size))
-        ix = int((event.xdata - self.current_lims["x"][0]) / self.image_pixel_size[dimx])
-        self.ax.set_title('update_profile 1.5' + str(ix))
-        iy = int((event.ydata - self.current_lims["y"][0]) / self.image_pixel_size[dimy])
-        self.ax.set_title('update_profile 2')
+            # Slice the 3d cube down to a 1d profile
+            prof = self.resample_image(self.da_with_edges,
+                coord_edges={dimy: self.da_with_edges.coords[dimy],
+                             dimx: self.da_with_edges.coords[dimx]},
+                rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2],
+                             dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimy, 0][dimx, 0]
 
-        # Slice the 3d cube down to a 1d profile
-        # prof = self.dslice[self.button_dims[0], iy][self.button_dims[1], ix]
+            if self.profile_viewer is None:
+                # We need to extract the data again and replace with the original
+                # coordinates, because coordinates have been forced to be bin-edges
+                # so that rebin could be used. Also reset original unit.
+                to_plot = sc.DataArray(
+                    data=sc.Variable(dims=prof.dims,
+                                     unit=self.data_array.unit,
+                                     values=prof.values))
+                for dim in prof.dims:
+                    to_plot.coords[dim] = self.slider_coord[self.name][dim]
+                self.profile_viewer = plot({self.name: to_plot}, ax=self.ax_extra_dims)
+                self.profile_key = list(self.profile_viewer.keys())[0]
 
-        # prof = rebin_edges = {self.xyrebin[xy[0]].dims[0]: self.xyrebin[xy[0]],
-        #                  self.xyrebin[xy[1]].dims[0]: self.xyrebin[xy[1]]}
+                # If profile is 1d, add indicator of range covered by current slice
+                if len(to_plot.dims) == 1:
+                    dim = to_plot.dims[0]
+                    xlims = self.ax_extra_dims.get_xlim()
+                    ylims = self.ax_extra_dims.get_ylim()
+                    left = to_plot.coords[dim][dim, self.slider[dim].value].value
+                    if self.histograms[self.name][dim][dim]:
+                        width = (to_plot.coords[dim][dim, self.slider[dim].value + 1] -
+                                 to_plot.coords[dim][dim, self.slider[dim].value]).value
+                    else:
+                        width = 0.01 * (xlims[1] - xlims[0])
+                        left -= 0.5 * width
+                    self.slice_position_rectangle = Rectangle(
+                        (left, ylims[0]), width, ylims[1] - ylims[0],
+                             facecolor="lightgray", zorder=-10)
+                    self.ax_extra_dims.add_patch(self.slice_position_rectangle)
 
-        # dimx = self.xyrebin[xy[1]].dims[0]
-        # dimy = self.xyrebin[xy[0]].dims[0]
-        self.ax.set_title('update_profile 3')
-
-
-        prof = self.resample_image(self.da_with_edges,
-            coord_edges={dimy: self.da_with_edges.coords[dimy],
-                         dimx: self.da_with_edges.coords[dimx]},
-            rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2],
-                         dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimy, 0][dimx, 0]
-        self.ax.set_title('update_profile 4' + str(prof.dims) + ' ' + str(prof.shape))
-        # print("################# PROFILE ##############")
-        # print(prof)
-        # if self.histograms[self.name][dim][dim]:
-
-        # to_plot = sc.DataArray(
-        #     data=sc.Variable(dims=prof.dims,
-        #                      unit=self.data_array.unit,
-        #                      values=prof.values))
-        # for dim in prof.dims:
-        #     to_plot.coords[dim] = self.slider_coord[self.name][dim]
-
-        # self.ax_profile.set_title('hahahaha')
-        # if not self.first_profile_plotted:
-        if self.profile_viewer is None:
-
-            # We need to extract the data again and replace with the original
-            # coordinates, because coordinates have been forced to be bin-edges
-            # so that rebin could be used. Also reset original unit.
-            to_plot = sc.DataArray(
-                data=sc.Variable(dims=prof.dims,
-                                 unit=self.data_array.unit,
-                                 values=prof.values))
-            for dim in prof.dims:
-                to_plot.coords[dim] = self.slider_coord[self.name][dim]
-            # _ = plot_1d({self.name: prof}, ax=self.ax_profile,
-            #             mpl_line_params={
-            #                 "color": {self.name: config.plot.color[0]},
-            #                 "marker": {self.name: config.plot.marker[0]},
-            #                 "linestyle": {self.name: config.plot.linestyle[0]},
-            #                 "linewidth": {self.name: config.plot.linewidth[0]},
-            #                 })
-            # self.ax.set_title('update_profile 5')
-
-            # self.profile_viewer = Slicer1d({self.name: prof}, ax=self.ax_extra_dims,
-            #             mpl_line_params={
-            #                 "color": {self.name: config.plot.color[0]},
-            #                 "marker": {self.name: config.plot.marker[0]},
-            #                 "linestyle": {self.name: config.plot.linestyle[0]},
-            #                 "linewidth": {self.name: config.plot.linewidth[0]},
-            #                 })
-
-            self.profile_viewer = plot({self.name: to_plot}, ax=self.ax_extra_dims)
-            self.profile_key = list(self.profile_viewer.keys())[0]
-            # render_plot(widgets=self.profile_viewer[self.profile_key].keep_buttons_box)
-
-            # If profile is 1d, add indicator of range covered by current slice
-            if len(to_plot.dims) == 1:
-                dim = to_plot.dims[0]
-                xlims = self.ax_extra_dims.get_xlim()
-                ylims = self.ax_extra_dims.get_ylim()
-                left = to_plot.coords[dim][dim, self.slider[dim].value].value
-                if self.histograms[self.name][dim][dim]:
-                    width = (to_plot.coords[dim][dim, self.slider[dim].value + 1] -
-                             to_plot.coords[dim][dim, self.slider[dim].value]).value
-                else:
-                    width = 0.01 * (xlims[1] - xlims[0])
-                    left -= 0.5 * width
-                self.slice_position_rectangle = Rectangle(
-                    (left, ylims[0]), width, ylims[1] - ylims[0],
-                         facecolor="lightgray", zorder=-10)
-                self.ax_extra_dims.add_patch(self.slice_position_rectangle)
-
-            # self.ax.set_title('update_profile 6')
-
-            # self.first_profile_plotted = True
-        else:
-            # self.ax_profile.set_title('members lines 1')
-            # print(self.profile_viewer.members["lines"])
-            # self.ax_profile.set_title('members lines 2')
-            # print(self.profile_viewer.members["lines"][self.name])
-            # self.ax_profile.set_title('members lines 3')
-            # self.ax_extra_dims.set_title(str(prof.values))
-            self.profile_viewer[self.profile_key].update_slice({"vslice": {self.name: prof}})
-            # self.profile_viewer.members["lines"][self.name].set_ydata(prof.values)
-        #     self.ax_profile.plot(self.slider_coord[self.name][self.profile].values, prof.values)
+            else:
+                self.profile_viewer[self.profile_key].update_slice({"vslice": {self.name: prof}})
+            self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(True)
+        elif self.profile_viewer is not None:
+            self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(False)
 
 
     def keep_or_delete_profile(self, event):
-        # self.ax_extra_dims.set_title('keep_or_delete_profile 1' + str(event.artist))
-        # return
-        self.ax_extra_dims.set_title(self.ax_extra_dims.get_title() + '\n' + str(event.artist))
         if isinstance(event.artist, PathCollection):
-            # self.ax_extra_dims.set_title(self.ax_extra_dims.get_title() + str(event.artist))
-            # self.ax_extra_dims.set_title('keep_or_delete_profile 2')
             self.delete_profile(event)
-            # self.ax_extra_dims.set_title('keep_or_delete_profile 3')
             self.profile_update_lock = True
-            self.ax_extra_dims.set_title(self.ax_extra_dims.get_title() + '\n branch1')
         elif self.profile_update_lock:
-            # self.ax_extra_dims.set_title('keep_or_delete_profile 4')
             self.profile_update_lock = False
-            self.ax_extra_dims.set_title(self.ax_extra_dims.get_title() + '\n branch2')
-            # self.ax_extra_dims.set_title("unlock!")
         else:
-            # self.ax_extra_dims.set_title('keep_or_delete_profile 5')
-            self.ax_extra_dims.set_title(self.ax_extra_dims.get_title() + '\n branch3')
             self.keep_profile(event)
-        # self.ax_extra_dims.set_title('keep_or_delete_profile 6')
-
-
-
 
     def keep_profile(self, event):
         trace = list(self.profile_viewer[self.profile_key].keep_buttons.values())[-1]
         xdata = event.mouseevent.xdata
         ydata = event.mouseevent.ydata
-        # self.ax_extra_dims.set_title('keep_profile 1')
-        # random_color = np.random.random([1, 4])
-        # random_color[0, -1] = 1.0
-        # self.ax_extra_dims.set_title('keep_profile 2')
         if self.profile_scatter is None:
-            # self.ax_extra_dims.set_title('keep_profile 3333333333333' + str(random_color))
-            # self.ax_extra_dims.set_title('keep_profile 3.1' + str(event.xdata))
-            # self.ax_extra_dims.set_title('keep_profile 3.2' + str(event.ydata))
             self.profile_scatter = self.ax.scatter([xdata], [ydata], c=[trace[2].value], picker=5)
         else:
-            # self.ax_extra_dims.set_title('keep_profile 4')
             new_offsets = np.concatenate((self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
-            # self.ax_extra_dims.set_title('keep_profile 4.5' + str([_hex_to_rgb(trace[2].value)]))
             col = np.array(_hex_to_rgb(trace[2].value) + [255], dtype=np.float) / 255.0
             new_colors = np.concatenate((self.profile_scatter.get_facecolors(), [col]), axis=0)
-            # self.ax_extra_dims.set_title('keep_profile 4.6')
             self.profile_scatter.set_offsets(new_offsets)
             self.profile_scatter.set_facecolors(new_colors)
-        # self.ax_extra_dims.set_title('keep_profile 5')
-        # self.ax_extra_dims.set_title(str(self.profile_viewer[self.profile_key].keep_buttons))
-        # owner = list(self.profile_viewer[self.profile_key].keep_buttons.values())[-1][1]
-        # self.ax_extra_dims.set_title('keep_profile 5.5' + str(owner))
         self.profile_viewer[self.profile_key].keep_trace(trace[1])
-        # self.ax_extra_dims.set_title('keep_profile 6')
 
     def delete_profile(self, event):
-        # self.ax_extra_dims.set_title('delete_profile 1')
         ind = event.ind[0]
-        # self.ax_extra_dims.set_title('delete_profile 2')
         xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
-        # self.ax_extra_dims.set_title('delete_profile 3')
-        # ax.set_title('here 2')
         c = np.delete(self.profile_scatter.get_facecolors(), ind, axis=0)
-        # self.ax_extra_dims.set_title('delete_profile 4')
-        # ax.set_title('here 3')
-        # self.ax.set_title(str(xy))
         self.profile_scatter.set_offsets(xy)
-        # self.ax_extra_dims.set_title('delete_profile 5')
         self.profile_scatter.set_facecolors(c)
-        # self.ax_extra_dims.set_title('delete_profile 6')
         self.fig.canvas.draw_idle()
-        # self.ax_extra_dims.set_title('delete_profile 7')
-
+        # Also remove the line from the 1d plot
         trace = list(self.profile_viewer[self.profile_key].keep_buttons.values())[ind]
-        self.ax_extra_dims.set_title(str(trace[2]) + str(trace[1].id))
         self.profile_viewer[self.profile_key].remove_trace(trace[1])
-        # self.ax_extra_dims.set_title('delete_profile 9')

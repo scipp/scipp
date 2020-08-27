@@ -76,7 +76,6 @@ class Slicer1d(Slicer):
         self.scipp_obj_dict = scipp_obj_dict
         self.fig = None
         self.ax = ax
-        # self.ax.set_title('plot_1d 0')
         self.mpl_axes = False
         self.input_contains_unaligned_data = False
         self.current_xcenters = None
@@ -91,7 +90,6 @@ class Slicer1d(Slicer):
             self.mpl_axes = True
         if grid:
             self.ax.grid()
-        # self.ax.set_title('plot_1d 1')
 
         # Determine whether error bars should be plotted or not
         self.errorbars = {}
@@ -118,7 +116,6 @@ class Slicer1d(Slicer):
             else:
                 raise TypeError("Unsupported type for argument "
                                 "'errorbars': {}".format(type(errorbars)))
-        # self.ax.set_title('plot_1d 2')
 
         # Initialise container for returning matplotlib objects
         self.members.update({
@@ -129,7 +126,6 @@ class Slicer1d(Slicer):
         })
         # Save the line parameters (color, linewidth...)
         self.mpl_line_params = mpl_line_params
-        # self.ax.set_title('plot_1d 3')
 
         self.names = []
         self.ylim = [np.Inf, np.NINF]
@@ -148,29 +144,23 @@ class Slicer1d(Slicer):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_ylim(self.ylim)
-        # self.ax.set_title('plot_1d 4')
 
         if self.logx:
             self.ax.set_xscale("log")
         if self.logy:
             self.ax.set_yscale("log")
-        # self.ax.set_title('plot_1d 5')
 
         # Disable buttons
         for dim, button in self.buttons.items():
             if self.slider[dim].disabled:
                 button.disabled = True
-        # self.ax.set_title('plot_1d 5.5')
         self.update_axes(list(self.slider.keys())[-1])
-        # self.ax.set_title('plot_1d 5.6')
 
         self.ax.set_ylabel(ylab)
         if len(self.ax.get_legend_handles_labels()[0]) > 0:
             self.ax.legend()
-        # self.ax.set_title('plot_1d 6')
 
         self.keep_buttons = dict()
-        # if self.ndim > 1:
         self.make_keep_button()
 
         # vbox contains the original sliders and buttons. In mbox, we include
@@ -182,6 +172,8 @@ class Slicer1d(Slicer):
         self.keep_buttons_box = widgets.VBox(self.keep_buttons_box)
         self.box = widgets.VBox([widgets.VBox(self.vbox), self.keep_buttons_box])
         self.box.layout.align_items = 'center'
+        if self.ndim < 2:
+            self.keep_buttons_box.layout.display = 'none'
 
         # Populate the members
         self.members["fig"] = self.fig
@@ -269,29 +261,20 @@ class Slicer1d(Slicer):
 
         # if self.masks is not None:
         #     mslice = self.slice_masks().values
-        # # self.ax.set_title('plot_1d 10')
 
         xmin = np.Inf
         xmax = np.NINF
         for name, var in self.scipp_obj_dict.items():
-            # self.ax.set_title('plot_1d 11')
             new_x = self.slider_coord[name][dim].values
             xmin = min(new_x[0], xmin)
             xmax = max(new_x[-1], xmax)
 
             vslice = self.slice_data(var, name)
             ydata = vslice.values
-            # self.ax.set_title('plot_1d 12')
 
             # If this is a histogram, plot a step function
             if self.histograms[name][dim][dim]:
-                # self.ax.set_title('plot_1d 12.1')
                 ye = np.concatenate((ydata[0:1], ydata))
-                # # ye = sc.concatenate((vslice[dim, 0:1], vslice, dim))
-                # print(vslice[dim, 0:1])
-                # print(vslice)
-                # if 
-                # ye = sc.concatenate(vslice[dim, 0:1], vslice, dim)
                 [self.members["lines"][name]
                  ] = self.ax.step(new_x,
                                   ye,
@@ -307,8 +290,6 @@ class Slicer1d(Slicer):
                     for m in self.masks[name]:
                         mdata = vslice.masks[m].values
                         me = np.concatenate((mdata[0:1], mdata))
-                        # print(self.members["masks"][name][m])
-                        # print(self.params["masks"])
                         [self.members["masks"][name][m]] = self.ax.step(
                             new_x,
                             self.mask_to_float(me, ye),
@@ -317,7 +298,6 @@ class Slicer1d(Slicer):
                             zorder=9)
 
             else:
-                # self.ax.set_title('plot_1d 12.2')
 
                 # If this is not a histogram, just use normal plot
                 [self.members["lines"][name]
@@ -344,7 +324,6 @@ class Slicer1d(Slicer):
                                               key: self.mpl_line_params[key][name]
                                               for key in ["color", "marker"]
                                           })
-            # self.ax.set_title('plot_1d 13')
 
             # Add error bars
             if self.errorbars[name]:
@@ -360,7 +339,6 @@ class Slicer1d(Slicer):
                     color=self.mpl_line_params["color"][name],
                     zorder=10,
                     fmt="none")
-        # self.ax.set_title('plot_1d 20')
 
         if not self.mpl_axes:
             deltax = 0.05 * (xmax - xmin)
@@ -379,7 +357,6 @@ class Slicer1d(Slicer):
             self.slider_axformatter[self.name][dim][self.logx])
         self.ax.xaxis.set_major_locator(
             self.slider_axlocator[self.name][dim][self.logx])
-        # self.ax.set_title('plot_1d 21')
 
         return
 
@@ -442,26 +419,6 @@ class Slicer1d(Slicer):
 
         return
 
-    # def update_line(self, name, vslice):
-    #     vals = vslice.values
-    #     if self.histograms[name][self.button_axis_to_dim["x"]][
-    #             self.button_axis_to_dim["x"]]:
-    #         vals = np.concatenate((vals[0:1], vals))
-    #     self.members["lines"][name].set_ydata(vals)
-
-    #     if self.params["masks"][name]["show"]:
-    #         msk = mslice.values
-    #         if self.histograms[name][self.button_axis_to_dim["x"]][
-    #                 self.button_axis_to_dim["x"]]:
-    #             msk = np.concatenate((msk[0:1], msk))
-    #         self.members["masks"][name].set_ydata(
-    #             self.mask_to_float(msk, vals))
-    #     if self.errorbars[name]:
-    #         coll = self.members["error_y"][name].get_children()[0]
-    #         coll.set_segments(
-    #             self.change_segments_y(self.current_xcenters,
-    #                                    vals, vslice.variances))
-
     def keep_remove_trace(self, owner):
         if owner.description == "Keep":
             self.keep_trace(owner)
@@ -470,19 +427,15 @@ class Slicer1d(Slicer):
         return
 
     def keep_trace(self, owner):
-        # self.ax.set_title("keep_trace 1")
         lab = self.keep_buttons[owner.id][0].value
         lines_to_keep = ["lines"]
-        # self.ax.set_title("keep_trace 2")
         if self.params["masks"][lab]["show"]:
             lines_to_keep.append("masks")
-        # self.ax.set_title("keep_trace 3")
         for line in lines_to_keep:
             self.ax.lines.append(cp.copy(self.members[line][lab]))
             self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
             self.ax.lines[-1].set_url(owner.id)
             self.ax.lines[-1].set_zorder(1)
-        # self.ax.set_title("keep_trace 4")
         if self.errorbars[lab]:
             err = self.members["error_y"][lab].get_children()
             self.ax.collections.append(cp.copy(err[0]))
@@ -490,50 +443,37 @@ class Slicer1d(Slicer):
                 self.keep_buttons[owner.id][2].value)
             self.ax.collections[-1].set_url(owner.id)
             self.ax.collections[-1].set_zorder(1)
-        # self.ax.set_title("keep_trace 5")
 
         for dim, val in self.slider.items():
             if not val.disabled:
                 lab = "{},{}:{}".format(lab, dim, val.value)
-        # self.ax.set_title("keep_trace 6")
         self.keep_buttons[owner.id][0] = widgets.Label(
             value=lab, layout={'width': "initial"}, title=lab)
         self.make_keep_button()
-        # self.ax.set_title("keep_trace 7")
         owner.description = "Remove"
         self.mbox = self.vbox.copy()
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
         self.box.children = tuple(self.mbox)
-        # self.ax.set_title("keep_trace 8")
         return
 
     def remove_trace(self, owner):
         del self.keep_buttons[owner.id]
-        # self.ax.set_title("remove_trace 1")
         lines = []
         for line in self.ax.lines:
             if line.get_url() != owner.id:
                 lines.append(line)
-        # self.ax.set_title("remove_trace 2")
         collections = []
-        self.ax.set_title("remove_trace 2.2"+str(self.ax.collections))
         for coll in self.ax.collections:
             if coll.get_url() != owner.id:
                 collections.append(coll)
-        # self.ax.set_title("remove_trace 3")
         self.ax.lines = lines
-        self.ax.set_title("remove_trace 3.1"+str(lines))
         self.ax.collections = collections
-        self.ax.set_title("remove_trace 3.2"+str(collections))
-        self.fig.canvas.draw_idle()
-        self.ax.set_title("remove_trace 3.3")
+        # self.fig.canvas.draw_idle()
         self.mbox = self.vbox.copy()
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
-        # self.ax.set_title("remove_trace 3.4")
         self.box.children = tuple(self.mbox)
-        # self.ax.set_title("remove_trace 4")
         return
 
     def update_trace_color(self, change):
