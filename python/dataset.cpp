@@ -162,16 +162,6 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
       [](T &self, const std::string &name) { return self[name]; },
       py::keep_alive<0, 1>());
   c.def("__contains__", &T::contains);
-  c.def(
-      "copy", [](const T &self) { return Dataset(self); },
-      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
-  c.def(
-      "__copy__", [](const T &self) { return Dataset(self); },
-      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
-  c.def(
-      "__deepcopy__",
-      [](const T &self, const py::dict &) { return Dataset(self); },
-      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
   c.def_property_readonly(
       "dims",
       [](const T &self) {
@@ -201,16 +191,6 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
                    R"(The name of the held data.)");
   else
     c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
-  c.def(
-      "copy", [](const T &self) { return DataArray(self); },
-      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
-  c.def(
-      "__copy__", [](const T &self) { return DataArray(self); },
-      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
-  c.def(
-      "__deepcopy__",
-      [](const T &self, const py::dict &) { return DataArray(self); },
-      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
   c.def_property(
       "data",
       py::cpp_function(
@@ -256,20 +236,6 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   bind_binary<DatasetView>(c);
   bind_binary<DataArrayView>(c);
   bind_binary<VariableConstView>(c);
-}
-
-template <class T, class... Ignored>
-void bind_astype(py::class_<T, Ignored...> &c) {
-  c.def(
-      "astype",
-      [](const T &self, const DType type) { return astype(self, type); },
-      py::call_guard<py::gil_scoped_release>(),
-      R"(
-        Converts a DataArray to a different type.
-
-        :raises: If the variable cannot be converted to the requested dtype.
-        :return: New array with specified dtype.
-        :rtype: DataArray)");
 }
 
 template <class T> void bind_rebin(py::module &m) {
