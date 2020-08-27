@@ -15,11 +15,10 @@ def time(method):
         start = _time.time()
         result = method(*args, **kw)
         end = _time.time()
+        ms = (end - start) * 1000
         time.counter -= 1
-        os.write(
-            1,
-            f'{"  " * indent}exit {method.__name__}  {(end - start) * 1000} ms\n'
-            .encode())
+        os.write(1,
+                 f'{"  " * indent}exit {method.__name__}  {ms} ms\n'.encode())
         return result
 
     return timed
