@@ -16,7 +16,7 @@ def flatten(x, dim):
     :return: The flattened data.
     :seealso: :py:func:`scipp.sum` for regular dense data.
     """
-    return _call_cpp_func(_cpp.flatten, x)
+    return _call_cpp_func(_cpp.flatten, x, dim)
 
 
 def mean(x, dim, out=None):
