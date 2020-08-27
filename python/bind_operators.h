@@ -10,6 +10,41 @@
 
 namespace py = pybind11;
 
+template <class T, class... Ignored>
+void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
+  c.def("__repr__", [](T &self) { return to_string(self); });
+  c.def("__bool__", [](T &) {
+    throw std::runtime_error("The truth value of a variable, data array, or "
+                             "dataset is ambiguous. Use any() or all().");
+  });
+  // For views such as VariableView __copy__ needs to return a Variable. Use
+  // result type of operator+ to obtain this type.
+  using Copy = decltype(std::declval<T>() + std::declval<T>());
+  c.def(
+      "copy", [](T &self) { return Copy(self); },
+      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+  c.def(
+      "__copy__", [](T &self) { return Copy(self); },
+      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+  c.def(
+      "__deepcopy__", [](T &self, py::dict) { return Copy(self); },
+      py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.");
+}
+
+template <class T, class... Ignored>
+void bind_astype(py::class_<T, Ignored...> &c) {
+  c.def(
+      "astype",
+      [](const T &self, const DType type) { return astype(self, type); },
+      py::call_guard<py::gil_scoped_release>(),
+      R"(
+        Converts a Variable or DataArray to a different type.
+
+        :raises: If the variable cannot be converted to the requested dtype.
+        :return: New variable or data array with specified dtype.
+        :rtype: Variable or DataArray)");
+}
+
 template <class Other, class T, class... Ignored>
 void bind_inequality_to_operator(pybind11::class_<T, Ignored...> &c) {
   c.def(

@@ -305,12 +305,12 @@ def test_data_array_unaligned_to_dict():
     da_dict = sc.to_dict(realigned)
     assert "unaligned" in da_dict
     assert "data" not in da_dict
-    assert sc.from_dict(da_dict["coords"]["x"]) == xbins
-    assert sc.from_dict(da_dict["coords"]["y"]) == ybins
-    assert sc.from_dict(
-        da_dict["unaligned"]["coords"]["x"]) == realigned.unaligned.coords["x"]
-    assert sc.from_dict(
-        da_dict["unaligned"]["coords"]["y"]) == realigned.unaligned.coords["y"]
+    assert sc.is_equal(sc.from_dict(da_dict["coords"]["x"]), xbins)
+    assert sc.is_equal(sc.from_dict(da_dict["coords"]["y"]), ybins)
+    assert sc.is_equal(sc.from_dict(da_dict["unaligned"]["coords"]["x"]),
+                       realigned.unaligned.coords["x"])
+    assert sc.is_equal(sc.from_dict(da_dict["unaligned"]["coords"]["y"]),
+                       realigned.unaligned.coords["y"])
 
 
 def test_data_array_from_dict():

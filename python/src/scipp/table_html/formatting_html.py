@@ -194,7 +194,7 @@ def _icon(icon_name):
 
 def summarize_coord(dim, var, ds=None):
     is_index = dim in var.dims
-    bin_edges = find_bin_edges(var, ds) if ds else None
+    bin_edges = find_bin_edges(var, ds) if ds is not None else None
     return summarize_variable(str(dim), var, is_index, bin_edges=bin_edges)
 
 
