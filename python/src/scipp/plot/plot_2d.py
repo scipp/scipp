@@ -354,6 +354,16 @@ class Slicer2d(Slicer):
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
 
+        if self.profile_viewer is not None:
+            del self.profile_viewer
+            self.ax_extra_dims.clear()
+            self.profile_viewer = None
+            if self.profile_scatter is not None:
+                self.ax.collections = []
+                self.fig.canvas.draw_idle()
+                del self.profile_scatter
+                self.profile_scatter = None
+
         return
 
     def compute_bin_widths(self, xy, dim):
