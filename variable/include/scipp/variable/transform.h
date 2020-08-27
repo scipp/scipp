@@ -274,7 +274,7 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
       auto indices = begin;
       indices.advance(range.begin());
       auto end = begin;
-      end.advance(range.end() - range.begin());
+      end.advance(range.end());
       run(indices, end);
     };
     core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
@@ -622,7 +622,7 @@ template <bool dry_run> struct in_place {
           auto indices = begin_;
           indices.advance(range.begin());
           auto end = begin_;
-          end.advance(range.end() - range.begin());
+          end.advance(range.end());
           run_(indices, end);
         };
         core::parallel::parallel_for(
