@@ -75,7 +75,6 @@ class Slicer1d(Slicer):
                          masks=masks,
                          button_options=['X'])
 
-        os.write(1, 'Slicer1d 1\n'.encode())
         self.scipp_obj_dict = scipp_obj_dict
         self.fig = None
         self.ax = ax
@@ -93,7 +92,6 @@ class Slicer1d(Slicer):
             self.mpl_axes = True
         if grid:
             self.ax.grid()
-        os.write(1, 'Slicer1d 2\n'.encode())
 
         # Determine whether error bars should be plotted or not
         self.errorbars = {}
@@ -120,7 +118,6 @@ class Slicer1d(Slicer):
             else:
                 raise TypeError("Unsupported type for argument "
                                 "'errorbars': {}".format(type(errorbars)))
-        os.write(1, 'Slicer1d 3\n'.encode())
 
         # # Initialise container for returning matplotlib objects
         # self.members.update({
@@ -131,7 +128,6 @@ class Slicer1d(Slicer):
         # })
         # Save the line parameters (color, linewidth...)
         self.mpl_line_params = mpl_line_params
-        os.write(1, 'Slicer1d 4\n'.encode())
 
         self.names = []
         self.ylim = [np.Inf, np.NINF]
@@ -150,7 +146,6 @@ class Slicer1d(Slicer):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_ylim(self.ylim)
-        os.write(1, 'Slicer1d 5\n'.encode())
 
         if self.logx:
             self.ax.set_xscale("log")
@@ -161,9 +156,7 @@ class Slicer1d(Slicer):
         for dim, button in self.buttons.items():
             if self.slider[dim].disabled:
                 button.disabled = True
-        os.write(1, 'Slicer1d 6\n'.encode())
         self.update_axes(list(self.slider.keys())[-1])
-        os.write(1, 'Slicer1d 7\n'.encode())
 
         self.ax.set_ylabel(ylab)
         if len(self.ax.get_legend_handles_labels()[0]) > 0:
@@ -271,12 +264,10 @@ class Slicer1d(Slicer):
         # if self.masks is not None:
         #     mslice = self.slice_masks().values
 
-        os.write(1, 'update_axes 1\n'.encode())
 
         xmin = np.Inf
         xmax = np.NINF
         for name, var in self.scipp_obj_dict.items():
-            os.write(1, ('update_axes 2' + name + '\n').encode())
             new_x = self.slider_coord[name][dim].values
             xmin = min(new_x[0], xmin)
             xmax = max(new_x[-1], xmax)
@@ -284,10 +275,8 @@ class Slicer1d(Slicer):
             vslice = self.slice_data(var, name)
             ydata = vslice.values
 
-            os.write(1, 'update_axes 3\n'.encode())
             # If this is a histogram, plot a step function
             if self.histograms[name][dim][dim]:
-                os.write(1, 'update_axes 3.1\n'.encode())
                 ye = np.concatenate((ydata[0:1], ydata))
                 [self.members["lines"][name]
                  ] = self.ax.step(new_x,
@@ -300,19 +289,11 @@ class Slicer1d(Slicer):
                                   })
                 # Add masks if any
                 # if self.params["masks"][name]["show"]:
-                os.write(1, 'update_axes 3.2\n'.encode())
-                os.write(1, (str(self.masks)+'\n').encode())
-                os.write(1, (str(len(self.masks[name])) + '\n').encode())
                 if len(self.masks[name]) > 0:
-                    os.write(1, 'update_axes 3.25\n'.encode())
-                    os.write(1, (str(self.members)+'\n').encode())
                     self.members["masks"][name] = {}
-                    os.write(1, 'update_axes 3.3\n'.encode())
                     for m in self.masks[name]:
-                        os.write(1, 'update_axes 3.4\n'.encode())
                         mdata = vslice.masks[m].values
                         me = np.concatenate((mdata[0:1], mdata))
-                        os.write(1, 'update_axes 3.5\n'.encode())
                         [self.members["masks"][name][m]] = self.ax.step(
                             new_x,
                             self.mask_to_float(me, ye),
@@ -348,7 +329,6 @@ class Slicer1d(Slicer):
                                               key: self.mpl_line_params[key][name]
                                               for key in ["color", "marker"]
                                           })
-            os.write(1, 'update_axes 4\n'.encode())
 
             # Add error bars
             if self.errorbars[name]:
@@ -364,7 +344,6 @@ class Slicer1d(Slicer):
                     color=self.mpl_line_params["color"][name],
                     zorder=10,
                     fmt="none")
-        os.write(1, 'update_axes 5\n'.encode())
 
         if not self.mpl_axes:
             deltax = 0.05 * (xmax - xmin)
@@ -373,7 +352,6 @@ class Slicer1d(Slicer):
                 self.ax.set_xlim([xmin - deltax, xmax + deltax])
                 if self.input_contains_unaligned_data:
                     self.ax.set_ylim(self.ylim)
-        os.write(1, 'update_axes 6\n'.encode())
 
         self.ax.set_xlabel(
             name_with_unit(
@@ -384,7 +362,6 @@ class Slicer1d(Slicer):
             self.slider_axformatter[self.name][dim][self.logx])
         self.ax.xaxis.set_major_locator(
             self.slider_axlocator[self.name][dim][self.logx])
-        os.write(1, 'update_axes 7\n'.encode())
 
         return
 
@@ -457,7 +434,6 @@ class Slicer1d(Slicer):
         return
 
     def keep_trace(self, owner):
-        os.write(1, 'keep_trace 1'.encode())
         lab = self.keep_buttons[owner.id][0].value
         # lines_to_keep = ["lines"]
         # if self.params["masks"][lab]["show"]:
@@ -469,7 +445,6 @@ class Slicer1d(Slicer):
         self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
         self.ax.lines[-1].set_url(owner.id)
         self.ax.lines[-1].set_zorder(2)
-        os.write(1, 'keep_trace 2'.encode())
 
         # The masks
         if len(self.masks[lab]) > 0:
@@ -478,7 +453,6 @@ class Slicer1d(Slicer):
                 # self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
                 self.ax.lines[-1].set_url(owner.id)
                 self.ax.lines[-1].set_zorder(1)
-        os.write(1, 'keep_trace 3'.encode())
 
         if self.errorbars[lab]:
             err = self.members["error_y"][lab].get_children()
@@ -487,20 +461,17 @@ class Slicer1d(Slicer):
                 self.keep_buttons[owner.id][2].value)
             self.ax.collections[-1].set_url(owner.id)
             self.ax.collections[-1].set_zorder(1)
-        os.write(1, 'keep_trace 4'.encode())
 
         for dim, val in self.slider.items():
             if not val.disabled:
                 lab = "{},{}:{}".format(lab, dim, val.value)
         self.keep_buttons[owner.id][0] = widgets.Label(
             value=lab, layout={'width': "initial"}, title=lab)
-        os.write(1, 'keep_trace 5'.encode())
         self.make_keep_button()
         owner.description = "Remove"
         self.mbox = self.vbox.copy()
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
-        os.write(1, 'keep_trace 6'.encode())
         self.box.children = tuple(self.mbox)
         return
 

@@ -188,7 +188,6 @@ class Slicer2d(Slicer):
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.members["image"] = self.image
         self.members["colorbar"] = self.cbar
-        print(self.masks)
         if len(self.masks[self.name]) > 0:
             self.members["masks"] = {}
             for m in self.masks[self.name]:
@@ -802,19 +801,12 @@ class Slicer2d(Slicer):
                                      values=prof.values))
                 for dim in prof.dims:
                     to_plot.coords[dim] = self.slider_coord[self.name][dim]
-                os.write(1, 'update_profile 1\n'.encode())
                 if len(self.masks[self.name]) > 0:
-                    os.write(1, 'update_profile 2\n'.encode())
                     for m in self.masks[self.name]:
-                        os.write(1, 'update_profile 3\n'.encode())
                         to_plot.masks[m] = prof.masks[m]
-                os.write(1, 'update_profile 3.5\n'.encode())
-                os.write(1, (str(to_plot) + '\n').encode())
                 
                 self.profile_viewer = plot({self.name: to_plot}, ax=self.ax_extra_dims)
-                os.write(1, 'update_profile 3.6\n'.encode())
                 self.profile_key = list(self.profile_viewer.keys())[0]
-                os.write(1, 'update_profile 4\n'.encode())
 
                 # If profile is 1d, add indicator of range covered by current slice
                 if len(to_plot.dims) == 1:
@@ -834,12 +826,17 @@ class Slicer2d(Slicer):
                     self.ax_extra_dims.add_patch(self.slice_position_rectangle)
 
             else:
-                os.write(1, 'update_profile 5\n'.encode())
                 self.profile_viewer[self.profile_key].update_slice({"vslice": {self.name: prof}})
             self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(True)
+            if len(self.masks[self.name]) > 0:
+                for m in self.masks[self.name]:
+                    self.profile_viewer[self.profile_key].members["masks"][self.name][m].set_visible(True)
         elif self.profile_viewer is not None:
             self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(False)
-        os.write(1, 'update_profile 6\n'.encode())
+            if len(self.masks[self.name]) > 0:
+                for m in self.masks[self.name]:
+                    self.profile_viewer[self.profile_key].members["masks"][self.name][m].set_visible(False)
+
 
 
     def keep_or_delete_profile(self, event):
