@@ -774,9 +774,9 @@ def test_make_variable_from_unit_scalar_mult_div():
 
     var = sc.Variable(value=np.float32())
     var.unit = sc.units.m
-    assert var == np.float32(0.0) * sc.units.m
+    assert sc.is_equal(var, np.float32(0.0) * sc.units.m)
     var.unit = sc.units.m**(-1)
-    assert var == np.float32(0.0) / sc.units.m
+    assert sc.is_equal(var, np.float32(0.0) / sc.units.m)
 
 
 def test_construct_0d_numpy():
