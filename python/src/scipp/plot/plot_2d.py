@@ -224,6 +224,7 @@ class Slicer2d(Slicer):
             data=sc.Variable(dims=self.data_array.dims,
                              unit=sc.units.counts,
                              values=self.data_array.values,
+                             variances=self.data_array.variances,
                              dtype=sc.dtype.float32))
         for dim, coord in self.slider_coord[self.name].items():
             if self.histograms[self.name][dim][dim]:
@@ -448,6 +449,7 @@ class Slicer2d(Slicer):
             data=sc.Variable(dims=data_slice.dims,
                              unit=sc.units.counts,
                              values=data_slice.values,
+                             variances=data_slice.variances,
                              dtype=sc.dtype.float32))
         self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
         self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
@@ -457,8 +459,8 @@ class Slicer2d(Slicer):
         #     # print(self.slider_coord[self.name][self.profile])
         #     self.vslice.coords[self.profile] = self.slider_coord[self.name][self.profile]
 
-        if len(self.masks[self.name]) > 0:
-            for m in self.masks[self.name]:
+        if len(data_slice.masks) > 0:
+            for m in data_slice.masks:
                 self.vslice.masks[m] = data_slice.masks[m]
         # Scale by bin width and then rebin in both directions
         # Note that this has to be written as 2 inplace operations to avoid
@@ -692,10 +694,12 @@ class Slicer2d(Slicer):
         # Use Scipp's automatic transpose to match the image x/y axes
         # TODO: once transpose is available for DataArrays,
         # use sc.transpose(dslice, self.button_dims) instead.
+        shape = [self.xyrebin["y"].shape[0] - 1,
+                 self.xyrebin["x"].shape[0] - 1]
         self.dslice = sc.DataArray(coords=rebin_edges,
                            data=sc.Variable(dims=self.button_dims,
-                                            values=np.ones([self.xyrebin["y"].shape[0] - 1,
-                       self.xyrebin["x"].shape[0] - 1]),
+                                            values=np.ones(shape),
+                                            variances=np.zeros(shape),
                                             dtype=self.vslice.dtype,
                                             unit=sc.units.one))
         # if self.profile is not None:
@@ -798,13 +802,13 @@ class Slicer2d(Slicer):
                 to_plot = sc.DataArray(
                     data=sc.Variable(dims=prof.dims,
                                      unit=self.data_array.unit,
-                                     values=prof.values))
+                                     values=prof.values,
+                                     variances=prof.variances))
                 for dim in prof.dims:
                     to_plot.coords[dim] = self.slider_coord[self.name][dim]
-                if len(self.masks[self.name]) > 0:
-                    for m in self.masks[self.name]:
+                if len(prof.masks) > 0:
+                    for m in prof.masks:
                         to_plot.masks[m] = prof.masks[m]
-                
                 self.profile_viewer = plot({self.name: to_plot}, ax=self.ax_extra_dims)
                 self.profile_key = list(self.profile_viewer.keys())[0]
 
@@ -827,16 +831,40 @@ class Slicer2d(Slicer):
 
             else:
                 self.profile_viewer[self.profile_key].update_slice({"vslice": {self.name: prof}})
-            self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(True)
-            if len(self.masks[self.name]) > 0:
-                for m in self.masks[self.name]:
-                    self.profile_viewer[self.profile_key].members["masks"][self.name][m].set_visible(True)
-        elif self.profile_viewer is not None:
-            self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(False)
-            if len(self.masks[self.name]) > 0:
-                for m in self.masks[self.name]:
-                    self.profile_viewer[self.profile_key].members["masks"][self.name][m].set_visible(False)
 
+            self.toggle_visibility_of_hover_plot(True)
+            # self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(True)
+            # if self.profile_viewer[self.profile_key].errorbars[self.name]:
+            #     self.profile_viewer[self.profile_key].members["error_y"][self.name].set_visible(True)
+            # mask_dict = self.profile_viewer[self.profile_key].members["masks"][self.name]
+            # if len(mask_dict) > 0:
+            #     for m in mask_dict:
+            #         mask_dict[m].set_visible(True)
+        elif self.profile_viewer is not None:
+            self.toggle_visibility_of_hover_plot(False)
+            # self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(False)
+            # if self.profile_viewer[self.profile_key].errorbars[self.name]:
+            #     self.profile_viewer[self.profile_key].members["error_y"][self.name].set_visible(True)
+            # mask_dict = self.profile_viewer[self.profile_key].members["masks"][self.name]
+            # if len(mask_dict) > 0:
+            #     for m in mask_dict:
+            #         mask_dict[m].set_visible(False)
+
+            # if len(self.masks[self.name]) > 0:
+            #     for m in self.masks[self.name]:
+            #         self.profile_viewer[self.profile_key].members["masks"][self.name][m].set_visible(False)
+
+    def toggle_visibility_of_hover_plot(self, value):
+        self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(value)
+        if self.profile_viewer[self.profile_key].errorbars[self.name]:
+            for item in self.profile_viewer[self.profile_key].members["error_y"][self.name]:
+                if item is not None:
+                    for it in item:
+                        it.set_visible(value)
+        mask_dict = self.profile_viewer[self.profile_key].members["masks"][self.name]
+        if len(mask_dict) > 0:
+            for m in mask_dict:
+                mask_dict[m].set_visible(value)
 
 
     def keep_or_delete_profile(self, event):

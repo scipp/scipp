@@ -275,6 +275,11 @@ class Slicer1d(Slicer):
             vslice = self.slice_data(var, name)
             ydata = vslice.values
 
+            if len(self.masks[name]) > 0:
+                self.members["masks"][name] = {}
+                base_mask = sc.Variable(dims=vslice.dims,
+                          values=np.ones(vslice.shape, dtype=np.int32))
+
             # If this is a histogram, plot a step function
             if self.histograms[name][dim][dim]:
                 ye = np.concatenate((ydata[0:1], ydata))
@@ -290,9 +295,17 @@ class Slicer1d(Slicer):
                 # Add masks if any
                 # if self.params["masks"][name]["show"]:
                 if len(self.masks[name]) > 0:
-                    self.members["masks"][name] = {}
+                    # self.members["masks"][name] = {}
+                    # base_mask = sc.Variable(dims=vslice.dims,
+                    #           values=np.ones(vslice.shape, dtype=np.int32))
                     for m in self.masks[name]:
-                        mdata = vslice.masks[m].values
+                        # mdata = vslice.masks[m].values
+
+                        mdata = (base_mask * sc.Variable(dims=vslice.masks[m].dims,
+                                       values=vslice.masks[m].values.astype(
+                                           np.int32))).values
+
+
                         me = np.concatenate((mdata[0:1], mdata))
                         [self.members["masks"][name][m]] = self.ax.step(
                             new_x,
@@ -300,6 +313,7 @@ class Slicer1d(Slicer):
                             linewidth=self.mpl_line_params["linewidth"][name] * 3,
                             color=self.params["masks"][name]["color"],
                             zorder=9)
+
 
             else:
 
@@ -316,11 +330,14 @@ class Slicer1d(Slicer):
                 # Add masks if any
                 # if self.params["masks"][name]["show"]:
                 if len(self.masks[name]) > 0:
-                    self.members["masks"][name] = {}
+                    # self.members["masks"][name] = {}
                     for m in self.masks[name]:
+                        mdata = (base_mask * sc.Variable(dims=vslice.masks[m].dims,
+                                       values=vslice.masks[m].values.astype(
+                                           np.int32))).values
                         [self.members["masks"][name][m]
                          ] = self.ax.plot(new_x,
-                                          self.mask_to_float(vslice.masks[m].values, vslice.values),
+                                          self.mask_to_float(mdata, vslice.values),
                                           zorder=10,
                                           mec=self.params["masks"][name]["color"],
                                           mew=3,
@@ -406,8 +423,18 @@ class Slicer1d(Slicer):
 
             if len(self.masks[name]) > 0:
                 # for m in vslice.masks:
+                base_mask = sc.Variable(dims=vslice.dims,
+                          values=np.ones(vslice.shape, dtype=np.int32))
                 for m in self.masks[name]:
-                    msk = vslice.masks[m].values
+                    # os.write(1, ('update_axes' + m + '\n').encode())
+                    # mdata = vslice.masks[m].values
+
+                    msk = (base_mask * sc.Variable(dims=vslice.masks[m].dims,
+                                   values=vslice.masks[m].values.astype(
+                                       np.int32))).values
+
+                # for m in self.masks[name]:
+                    # msk = vslice.masks[m].values
                     if self.histograms[name][self.button_axis_to_dim["x"]][
                             self.button_axis_to_dim["x"]]:
                         msk = np.concatenate((msk[0:1], msk))
