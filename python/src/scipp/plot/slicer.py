@@ -95,21 +95,23 @@ class Slicer:
                                                           "cbar": False
                                                       },
                                                       globs=globs)
-            self.params["masks"][name]["show"] = (
-                self.params["masks"][name]["show"] and len(array.masks) > 0)
-            # if len(array.masks) > 0:
-            #     self.masks[name] = {key: widgets.Checkbox(
-            #         value=self.params["masks"][name]["show"],
-            #         description="{}:{}".format(name, key),
-            #         indent=False,
-            #         layout={"width": "initial"}) for key in array.masks}
-            # # self.params["masks"][name]["show"] = (
-            # #     self.params["masks"][name]["show"] and len(array.masks) > 0)
-            # # if self.params["masks"][name]["show"] and self.masks is None:
-            # #     # Store masks separately since they are lost when slicing.
-            # #     # TODO: no need for this once masks are preserved in slicing
-            # #     self.masks = sc.combine_masks(array.masks, array.dims,
-            # #                                   array.shape)
+
+
+            # self.params["masks"][name]["show"] = (
+            #     self.params["masks"][name]["show"] and len(array.masks) > 0)
+            # # if len(array.masks) > 0:
+            # #     self.masks[name] = {key: widgets.Checkbox(
+            # #         value=self.params["masks"][name]["show"],
+            # #         description="{}:{}".format(name, key),
+            # #         indent=False,
+            # #         layout={"width": "initial"}) for key in array.masks}
+            # # # self.params["masks"][name]["show"] = (
+            # # #     self.params["masks"][name]["show"] and len(array.masks) > 0)
+            # # # if self.params["masks"][name]["show"] and self.masks is None:
+            # # #     # Store masks separately since they are lost when slicing.
+            # # #     # TODO: no need for this once masks are preserved in slicing
+            # # #     self.masks = sc.combine_masks(array.masks, array.dims,
+            # # #                                   array.shape)
 
             # Create a map from dim to shape
             dim_to_shape = dict(zip(array.dims, array.shape))
@@ -389,9 +391,12 @@ class Slicer:
 
     def add_masks_controls(self):
         # Add controls for masks
+        masks_found = False
         for name, array in self.scipp_obj_dict.items():
+            self.masks[name] = {}
             if len(array.masks) > 0:
-                self.masks[name] = {}
+                # self.masks[name] = {}
+                masks_found = True
                 for key in array.masks:
                     self.masks[name][key] = widgets.Checkbox(
                         value=self.params["masks"][name]["show"],
@@ -401,7 +406,7 @@ class Slicer:
                     setattr(self.masks[name][key], "masks_group", name)
                     setattr(self.masks[name][key], "masks_name", key)
                     self.masks[name][key].observe(self.toggle_mask, names="value")
-        if len(self.masks) > 0:
+        if masks_found:
             self.masks_box = []
             # mask_list = []
             for name in self.masks:

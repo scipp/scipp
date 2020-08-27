@@ -628,37 +628,37 @@ void main() {
         Slice the extra dimensions down and update the slice values
         """
         self.vslice = self.data_array
-        if self.params["masks"][self.name]["show"]:
-            mslice = self.masks
+        # if self.params["masks"][self.name]["show"]:
+        #     mslice = self.masks
         # Slice along dimensions with active sliders
         for dim, val in self.slider.items():
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_coord[self.name][dim], val.value)
                 self.vslice = self.vslice[val.dim, val.value]
-                # At this point, after masks were combined, all their
-                # dimensions should be contained in the data_array.dims.
-                if self.params["masks"][
-                        self.name]["show"] and dim in mslice.dims:
-                    mslice = mslice[val.dim, val.value]
+                # # At this point, after masks were combined, all their
+                # # dimensions should be contained in the data_array.dims.
+                # if self.params["masks"][
+                #         self.name]["show"] and dim in mslice.dims:
+                #     mslice = mslice[val.dim, val.value]
 
-        if self.params["masks"][self.name]["show"]:
-            # Use automatic broadcasting in Scipp variables
-            msk = sc.Variable(dims=self.vslice.dims,
-                              values=np.ones(self.vslice.shape,
-                                             dtype=np.int32))
-            msk *= sc.Variable(dims=mslice.dims,
-                               values=mslice.values.astype(np.int32))
-            msk = msk.values
+        # if self.params["masks"][self.name]["show"]:
+        #     # Use automatic broadcasting in Scipp variables
+        #     msk = sc.Variable(dims=self.vslice.dims,
+        #                       values=np.ones(self.vslice.shape,
+        #                                      dtype=np.int32))
+        #     msk *= sc.Variable(dims=mslice.dims,
+        #                        values=mslice.values.astype(np.int32))
+        #     msk = msk.values
 
         self.vslice = self.vslice.values.flatten()
         colors = self.scalar_map.to_rgba(self.vslice).astype(np.float32)
 
-        if self.params["masks"][self.name]["show"]:
-            masks_inds = np.where(msk.flatten())
-            masks_colors = self.masks_scalar_map.to_rgba(
-                self.vslice[masks_inds]).astype(np.float32)
-            colors[masks_inds] = masks_colors
+        # if self.params["masks"][self.name]["show"]:
+        #     masks_inds = np.where(msk.flatten())
+        #     masks_colors = self.masks_scalar_map.to_rgba(
+        #         self.vslice[masks_inds]).astype(np.float32)
+        #     colors[masks_inds] = masks_colors
 
         return colors
 

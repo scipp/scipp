@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PathCollection
 import warnings
-
+import os
 
 def plot_2d(scipp_obj_dict=None,
             axes=None,
@@ -173,24 +173,27 @@ class Slicer2d(Slicer):
             else:
                 self.ax = mpl_axes
 
-        self.im = dict()
+        # self.im = dict()
         self.cbar = None
 
-        self.im["values"] = self.make_default_imshow(
-            self.params["values"][self.name]["cmap"])
+        self.image = self.make_default_imshow(
+            self.params["values"][self.name]["cmap"], picker=5)
         self.ax.set_title(self.name)
         if self.params["values"][self.name]["cbar"]:
-            self.cbar = plt.colorbar(self.im["values"],
+            self.cbar = plt.colorbar(self.image,
                                      ax=self.ax,
                                      cax=self.cax)
             self.cbar.set_label(name_with_unit(var=self.data_array, name=""))
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-        self.members["images"] = self.im["values"]
+        self.members["image"] = self.image
         self.members["colorbar"] = self.cbar
-        if self.params["masks"][self.name]["show"]:
-            self.im["masks"] = self.make_default_imshow(
-                cmap=self.params["masks"][self.name]["cmap"])
+        print(self.masks)
+        if len(self.masks[self.name]) > 0:
+            self.members["masks"] = {}
+            for m in self.masks[self.name]:
+                self.members["masks"][m] = self.make_default_imshow(
+                    cmap=self.params["masks"][self.name]["cmap"])
         if self.logx:
             self.ax.set_xscale("log")
         if self.logy:
@@ -228,9 +231,12 @@ class Slicer2d(Slicer):
                 da_with_edges.coords[dim] = coord
             else:
                 da_with_edges.coords[dim] = to_bin_edges(coord, dim)
+        if len(self.masks[self.name]) > 0:
+            for m in self.masks[self.name]:
+                da_with_edges.masks[m] = self.data_array.masks[m]
         return da_with_edges
 
-    def make_default_imshow(self, cmap):
+    def make_default_imshow(self, cmap, picker=None):
         return self.ax.imshow([[1.0, 1.0], [1.0, 1.0]],
                               norm=self.params["values"][self.name]["norm"],
                               extent=np.array(list(
@@ -239,7 +245,7 @@ class Slicer2d(Slicer):
                               aspect=self.aspect,
                               interpolation="nearest",
                               cmap=cmap,
-                              picker=5)
+                              picker=picker)
 
     def update_buttons(self, owner, event, dummy):
         toggle_slider = False
@@ -310,9 +316,10 @@ class Slicer2d(Slicer):
         # Set axes limits and ticks
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
-            self.im["values"].set_extent(extent_array)
-            if self.params["masks"][self.name]["show"]:
-                self.im["masks"].set_extent(extent_array)
+            self.image.set_extent(extent_array)
+            if len(self.masks[self.name]) > 0:
+                for m in self.masks[self.name]:
+                    self.members["masks"][m].set_extent(extent_array)
             self.ax.set_xlim(self.axparams["x"]["lims"])
             self.ax.set_ylim(self.axparams["y"]["lims"])
 
@@ -354,6 +361,7 @@ class Slicer2d(Slicer):
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
 
+        # Clear profile axes if present and reset to None
         if self.profile_viewer is not None:
             del self.profile_viewer
             self.ax_extra_dims.clear()
@@ -402,21 +410,21 @@ class Slicer2d(Slicer):
         """
         Recursively slice the data along the dimensions of active sliders.
         """
-        self.vslice = self.data_array
-        if self.params["masks"][self.name]["show"]:
-            self.mslice = self.masks
+        data_slice = self.data_array
+        # if self.params["masks"][self.name]["show"]:
+        #     self.mslice = self.masks
 
         # Slice along dimensions with active sliders
         for dim, val in self.slider.items():
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_label[self.name][dim]["coord"], val.value)
-                self.vslice = self.vslice[val.dim, val.value]
-                # At this point, after masks were combined, all their
-                # dimensions should be contained in the data_array.dims.
-                if self.params["masks"][
-                        self.name]["show"] and dim in self.mslice.dims:
-                    self.mslice = self.mslice[val.dim, val.value]
+                data_slice = data_slice[val.dim, val.value]
+                # # At this point, after masks were combined, all their
+                # # dimensions should be contained in the data_array.dims.
+                # if self.params["masks"][
+                #         self.name]["show"] and dim in self.mslice.dims:
+                #     self.mslice = self.mslice[val.dim, val.value]
                 if self.slice_position_rectangle is not None:
                     new_pos = self.slider_coord[self.name][dim][dim, val.value].value
                     self.slice_position_rectangle.set_x(new_pos)
@@ -430,16 +438,17 @@ class Slicer2d(Slicer):
         # In the case of unaligned data, we may want to auto-scale the colorbar
         # as we slice through dimensions. Colorbar limits are allowed to grow
         # but not shrink.
-        if self.vslice.unaligned is not None:
-            self.vslice = sc.histogram(self.vslice)
-            self.vslice.variances = None
+        if data_slice.unaligned is not None:
+            data_slice = sc.histogram(data_slice)
+            data_slice.variances = None
             self.autoscale_cbar = True
         else:
             self.autoscale_cbar = False
+
         self.vslice = detail.move_to_data_array(
-            data=sc.Variable(dims=self.vslice.dims,
+            data=sc.Variable(dims=data_slice.dims,
                              unit=sc.units.counts,
-                             values=self.vslice.values,
+                             values=data_slice.values,
                              dtype=sc.dtype.float32))
         self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
         self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
@@ -449,8 +458,9 @@ class Slicer2d(Slicer):
         #     # print(self.slider_coord[self.name][self.profile])
         #     self.vslice.coords[self.profile] = self.slider_coord[self.name][self.profile]
 
-        if self.params["masks"][self.name]["show"]:
-            self.vslice.masks["all"] = self.mslice
+        if len(self.masks[self.name]) > 0:
+            for m in self.masks[self.name]:
+                self.vslice.masks[m] = data_slice.masks[m]
         # Scale by bin width and then rebin in both directions
         # Note that this has to be written as 2 inplace operations to avoid
         # creation of large 2D temporary from broadcast
@@ -518,7 +528,10 @@ class Slicer2d(Slicer):
         return
 
     def toggle_mask(self, change):
-        self.members["masks"][change["owner"].masks_group][change["owner"].masks_name].set_visible(change["new"])
+        # print(self.members["masks"])
+        self.members["masks"][change["owner"].masks_name].set_visible(change["new"])
+        # if self.profile_viewer is not None:
+        #     self.profile_viewer[self.profile_key].masks[
         # self.im["masks"].set_visible(change["new"])
         # change["owner"].description = "Hide masks" if change["new"] else \
         #     "Show masks"
@@ -672,7 +685,7 @@ class Slicer2d(Slicer):
         rebin_edges = {self.xyrebin[xy[0]].dims[0]: self.xyrebin[xy[0]],
                          self.xyrebin[xy[1]].dims[0]: self.xyrebin[xy[1]]}
 
-        im = self.resample_image(self.vslice,
+        resampled_image = self.resample_image(self.vslice,
             coord_edges={self.xyrebin[xy[0]].dims[0]: self.xyedges[xy[0]],
                          self.xyrebin[xy[1]].dims[0]: self.xyedges[xy[1]]},
             rebin_edges=rebin_edges)
@@ -689,10 +702,42 @@ class Slicer2d(Slicer):
         # if self.profile is not None:
         #     arr.coords[self.profile] = self.slider_coord[self.name][self.profile]
 
-        self.dslice *= im
+        self.dslice *= resampled_image
 
-        # return
-        if self.params["masks"][self.name]["show"]:
+        # # return
+        # if self.params["masks"][self.name]["show"]:
+        #     # Use scipp's automatic broadcast functionality to broadcast
+        #     # lower dimension masks to higher dimensions.
+        #     # TODO: creating a Variable here could become expensive when
+        #     # sliders are being used. We could consider performing the
+        #     # automatic broadcasting once and store it in the Slicer class,
+        #     # but this could create a large memory overhead if the data is
+        #     # large.
+        #     # Here, the data is at most 2D, so having the Variable creation
+        #     # and broadcasting should remain cheap.
+        #     base_mask = sc.Variable(dims=self.dslice.dims,
+        #                       values=np.ones(self.dslice.shape, dtype=np.int32))
+        #     msk *= sc.Variable(dims=self.dslice.masks["all"].dims,
+        #                        values=self.dslice.masks["all"].values.astype(
+        #                            np.int32))
+        #     # msk = msk.values
+
+        # print(self.dslice)
+        # if self.profile is not None:
+        #     arr = sc.sum(self.dslice, self.profile).values
+        #     if self.params["masks"][self.name]["show"]:
+        #         msk = sc.sum(msk, self.profile).values
+        # else:
+        arr = self.dslice.values
+        # if self.params["masks"][self.name]["show"]:
+        #     msk = msk.values
+
+        self.image.set_data(arr)
+        if extent is not None:
+            self.image.set_extent(extent)
+
+        # Handle masks
+        if len(self.masks[self.name]) > 0:
             # Use scipp's automatic broadcast functionality to broadcast
             # lower dimension masks to higher dimensions.
             # TODO: creating a Variable here could become expensive when
@@ -702,30 +747,15 @@ class Slicer2d(Slicer):
             # large.
             # Here, the data is at most 2D, so having the Variable creation
             # and broadcasting should remain cheap.
-            msk = sc.Variable(dims=self.dslice.dims,
+            base_mask = sc.Variable(dims=self.dslice.dims,
                               values=np.ones(self.dslice.shape, dtype=np.int32))
-            msk *= sc.Variable(dims=self.dslice.masks["all"].dims,
-                               values=self.dslice.masks["all"].values.astype(
+            for m in self.masks[self.name]:
+                msk = base_mask * sc.Variable(dims=self.dslice.masks[m].dims,
+                               values=self.dslice.masks[m].values.astype(
                                    np.int32))
-            # msk = msk.values
-
-        # print(self.dslice)
-        # if self.profile is not None:
-        #     arr = sc.sum(self.dslice, self.profile).values
-        #     if self.params["masks"][self.name]["show"]:
-        #         msk = sc.sum(msk, self.profile).values
-        # else:
-        arr = self.dslice.values
-        if self.params["masks"][self.name]["show"]:
-            msk = msk.values
-
-        self.im["values"].set_data(arr)
-        if extent is not None:
-            self.im["values"].set_extent(extent)
-        if self.params["masks"][self.name]["show"]:
-            self.im["masks"].set_data(self.mask_to_float(msk, arr))
-            if extent is not None:
-                self.im["masks"].set_extent(extent)
+                self.members["masks"][m].set_data(self.mask_to_float(msk.values, arr))
+                if extent is not None:
+                    self.members["masks"].set_extent(extent)
 
         if self.autoscale_cbar:
             cbar_params = parse_params(globs=self.vminmax,
@@ -772,8 +802,19 @@ class Slicer2d(Slicer):
                                      values=prof.values))
                 for dim in prof.dims:
                     to_plot.coords[dim] = self.slider_coord[self.name][dim]
+                os.write(1, 'update_profile 1\n'.encode())
+                if len(self.masks[self.name]) > 0:
+                    os.write(1, 'update_profile 2\n'.encode())
+                    for m in self.masks[self.name]:
+                        os.write(1, 'update_profile 3\n'.encode())
+                        to_plot.masks[m] = prof.masks[m]
+                os.write(1, 'update_profile 3.5\n'.encode())
+                os.write(1, (str(to_plot) + '\n').encode())
+                
                 self.profile_viewer = plot({self.name: to_plot}, ax=self.ax_extra_dims)
+                os.write(1, 'update_profile 3.6\n'.encode())
                 self.profile_key = list(self.profile_viewer.keys())[0]
+                os.write(1, 'update_profile 4\n'.encode())
 
                 # If profile is 1d, add indicator of range covered by current slice
                 if len(to_plot.dims) == 1:
@@ -793,10 +834,12 @@ class Slicer2d(Slicer):
                     self.ax_extra_dims.add_patch(self.slice_position_rectangle)
 
             else:
+                os.write(1, 'update_profile 5\n'.encode())
                 self.profile_viewer[self.profile_key].update_slice({"vslice": {self.name: prof}})
             self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(True)
         elif self.profile_viewer is not None:
             self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(False)
+        os.write(1, 'update_profile 6\n'.encode())
 
 
     def keep_or_delete_profile(self, event):
