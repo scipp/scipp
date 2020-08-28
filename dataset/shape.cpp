@@ -55,7 +55,17 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
       // 1D coord is kept only if both inputs have matching 1D coords.
       if (a_.dims().contains(dim) || b[key].dims().contains(dim) ||
           a_ != b[key])
-        out.emplace(key, concatenate(a_, b[key], dim));
+        // Mismatching 1D coords must be broadcast to ensure new coord shape
+        // matches new data shape.
+        out.emplace(
+            key,
+            concatenate(broadcast(a_, dimsA.count(dim)
+                                          ? Dimensions(dim, dimsA.at(dim))
+                                          : Dimensions()),
+                        broadcast(b[key], dimsB.count(dim)
+                                              ? Dimensions(dim, dimsB.at(dim))
+                                              : Dimensions()),
+                        dim));
       else
         out.emplace(key, same(a_, b[key]));
     }

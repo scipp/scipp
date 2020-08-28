@@ -79,10 +79,10 @@ def test_equal_not_equal():
     a = _a['x', :]
     b = _b['x', :]
     c = a + 2.0
-    assert a == b
-    assert b == a
-    assert a != c
-    assert c != a
+    assert sc.is_equal(a, b)
+    assert sc.is_equal(b, a)
+    assert not sc.is_equal(a, c)
+    assert not sc.is_equal(c, a)
 
 
 def test_correct_temporaries():

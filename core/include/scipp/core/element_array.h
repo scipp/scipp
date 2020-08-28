@@ -101,9 +101,11 @@ public:
   const T *data() const noexcept { return m_data.get(); }
   T *data() noexcept { return m_data.get(); }
   const T *begin() const noexcept { return data(); }
+  T *begin() noexcept { return data(); }
   const T *end() const noexcept {
     return m_size < 0 ? begin() : data() + size();
   }
+  T *end() noexcept { return m_size < 0 ? begin() : data() + size(); }
 
   void reset() noexcept {
     m_data.reset();

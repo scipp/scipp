@@ -283,3 +283,19 @@ TEST(ConcatenateTest, dataset_with_no_data_items_histogram) {
       res.coords()[Dim("histogram")],
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{.1, .2, .3, .4}));
 }
+
+TEST(ConcatenateTest, broadcast_coord) {
+  DataArray a(1.0 * units::one, {{Dim::X, 1.0 * units::one}});
+  DataArray b(makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{2, 3}),
+              {{Dim::X, 2.0 * units::one}});
+  EXPECT_EQ(
+      concatenate(a, b, Dim::X),
+      DataArray(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
+                {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                               Values{1, 2, 2})}}));
+  EXPECT_EQ(
+      concatenate(b, a, Dim::X),
+      DataArray(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 3, 1}),
+                {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
+                                               Values{2, 2, 1})}}));
+}

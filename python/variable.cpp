@@ -135,20 +135,6 @@ void bind_init_0D_list_eigen(py::class_<Variable> &c) {
       py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
-template <class T, class... Ignored>
-void bind_astype(py::class_<T, Ignored...> &c) {
-  c.def(
-      "astype",
-      [](const T &self, const DType type) { return astype(self, type); },
-      py::call_guard<py::gil_scoped_release>(),
-      R"(
-      Converts a Variable to a different type.
-
-      :raises: If the variable cannot be converted to the requested dtype.
-      :return: New Variable with specified dtype.
-      :rtype: Variable)");
-}
-
 void init_variable(py::module &m) {
   py::class_<Variable> variable(m, "Variable",
                                 R"(
@@ -173,16 +159,6 @@ of variances.)");
            py::arg("dtype") = py::none())
       .def("rename_dims", &rename_dims<Variable>, py::arg("dims_dict"),
            "Rename dimensions.")
-      .def(
-          "copy", [](const Variable &self) { return self; },
-          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
-      .def(
-          "__copy__", [](Variable &self) { return Variable(self); },
-          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
-      .def(
-          "__deepcopy__",
-          [](Variable &self, py::dict) { return Variable(self); },
-          py::call_guard<py::gil_scoped_release>(), "Return a (deep) copy.")
       .def_property_readonly("dtype", &Variable::dtype)
       .def(
           "__radd__", [](Variable &a, double &b) { return a + b * units::one; },
@@ -210,8 +186,7 @@ of variances.)");
       .def(
           "__rtruediv__",
           [](Variable &a, int &b) { return (b * units::one) / a; },
-          py::is_operator())
-      .def("__repr__", [](const Variable &self) { return to_string(self); });
+          py::is_operator());
 
   bind_init_list(variable);
   // Order matters for pybind11's overload resolution. Do not change.
@@ -223,17 +198,8 @@ of variances.)");
   bind_init_0D_list_eigen(variable);
   //------------------------------------
 
-  py::class_<VariableConstView>(m, "VariableConstView")
-      .def(py::init<const Variable &>())
-      .def(
-          "copy", [](const VariableConstView &self) { return Variable(self); },
-          "Return a (deep) copy.")
-      .def("__copy__",
-           [](const VariableConstView &self) { return Variable(self); })
-      .def("__deepcopy__",
-           [](VariableView &self, py::dict) { return Variable(self); })
-      .def("__repr__",
-           [](const VariableConstView &self) { return to_string(self); });
+  py::class_<VariableConstView> variableConstView(m, "VariableConstView");
+  variableConstView.def(py::init<const Variable &>());
 
   py::class_<VariableView, VariableConstView> variableView(
       m, "VariableView", py::buffer_protocol(), R"(
@@ -253,6 +219,9 @@ Mostly equivalent to Variable, see there for details.)");
           "__rmul__",
           [](VariableView &a, double &b) { return a * (b * units::one); },
           py::is_operator());
+
+  bind_common_operators(variable);
+  bind_common_operators(variableConstView);
 
   bind_astype(variable);
   bind_astype(variableView);
@@ -334,35 +303,6 @@ Mostly equivalent to Variable, see there for details.)");
           .description("Check if the values of a variable are evenly spaced.")
           .returns("Returns True if the variable contains regularly spaced "
                    "values, False otherwise.")
-          .rtype("bool")
-          .c_str());
-
-  m.def(
-      "is_sorted",
-      [](const VariableConstView &x, const Dim dim, const std::string &order) {
-        if (order == "ascending")
-          return is_sorted(x, dim, variable::SortOrder::Ascending);
-        else if (order == "descending")
-          return is_sorted(x, dim, variable::SortOrder::Descending);
-        else
-          throw std::runtime_error(
-              "Sort order must be 'ascending' or 'descending'");
-      },
-      py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Check if the values of a variable are sorted in.\n\nIf "
-                       "'order' is 'ascending' checks if values are "
-                       "non-decreasing along 'dim'. If 'order' is 'descending' "
-                       "checks if values are non-increasing along 'dim'.")
-          .param("x", "Variable to check.", "Variable")
-          .param("dim", "Dimension along which order is checked.", "Dim")
-          .param("order",
-                 "Sorted order. Valid options are 'ascending' and "
-                 "'descending'. Default is 'ascending'.",
-                 "str")
-          .returns("Returns True if the variable values are monotonously "
-                   "ascending, False otherwise.")
           .rtype("bool")
           .c_str());
 }

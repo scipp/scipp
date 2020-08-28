@@ -31,10 +31,10 @@ def test_create():
     xy = sc.Variable(dims=['x', 'y'], values=np.arange(12).reshape(3, 4))
     d = sc.Dataset({'xy': xy, 'x': x}, coords={'x': x, 'y': y})
     assert len(d) == 2
-    assert d.coords['x'] == x
-    assert d.coords['y'] == y
-    assert d['xy'].data == xy
-    assert d['x'].data == x
+    assert sc.is_equal(d.coords['x'], x)
+    assert sc.is_equal(d.coords['y'], y)
+    assert sc.is_equal(d['xy'].data, xy)
+    assert sc.is_equal(d['x'].data, x)
     assert bool(set(d.dims) - set(['y', 'x']))
 
 
@@ -144,10 +144,10 @@ def test_slice_item():
     d = sc.Dataset(
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
-    assert d['a']['x', 2:4].data == sc.Variable(dims=['x'],
-                                                values=np.arange(2, 4))
-    assert d['a']['x', 2:4].coords['x'] == sc.Variable(dims=['x'],
-                                                       values=np.arange(6, 8))
+    assert sc.is_equal(d['a']['x', 2:4].data,
+                       sc.Variable(dims=['x'], values=np.arange(2, 4)))
+    assert sc.is_equal(d['a']['x', 2:4].coords['x'],
+                       sc.Variable(dims=['x'], values=np.arange(6, 8)))
 
 
 def test_set_item_slice_from_numpy():
@@ -155,8 +155,8 @@ def test_set_item_slice_from_numpy():
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
     d['a']['x', 2:4] = np.arange(2)
-    assert d['a'].data == sc.Variable(dims=['x'],
-                                      values=np.array([0, 1, 0, 1]))
+    assert sc.is_equal(d['a'].data,
+                       sc.Variable(dims=['x'], values=np.array([0, 1, 0, 1])))
 
 
 def test_set_item_slice_with_variances_from_numpy():
@@ -463,12 +463,12 @@ def test_dataset_set_data():
 
     d3 = sc.Dataset()
     d3['b'] = d1['a']
-    assert d3['b'].data == d1['a'].data
+    assert sc.is_equal(d3['b'].data, d1['a'].data)
     assert d3['b'].coords == d1['a'].coords
     d1['a'] = d2['a']
     d1['c'] = d2['a']
-    assert d2['a'].data == d1['a'].data
-    assert d2['a'].data == d1['c'].data
+    assert sc.is_equal(d2['a'].data, d1['a'].data)
+    assert sc.is_equal(d2['a'].data, d1['c'].data)
 
     d = sc.Dataset()
     d.coords['row'] = sc.Variable(dims=['row'], values=np.arange(10.0))

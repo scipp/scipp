@@ -47,17 +47,17 @@ def test_lifetime_items_iter():
     var = sc.Variable(dims=['x'], values=np.arange(10))
     d = sc.Dataset({'a': var}, coords={'x': var, 'aux': var})
     for key, item in (d + d).items():
-        assert item.data == var + var
+        assert sc.is_equal(item.data, var + var)
     for dim, coord in (d + d).coords.items():
-        assert coord == var
+        assert sc.is_equal(coord, var)
     for key, item in d['x', 1:5].items():
-        assert item.data == var['x', 1:5]
+        assert sc.is_equal(item.data, var['x', 1:5])
     for dim, coord in d['x', 1:5].coords.items():
-        assert coord == var['x', 1:5]
+        assert sc.is_equal(coord, var['x', 1:5])
     for key, item in (d + d)['x', 1:5].items():
-        assert item.data == (var + var)['x', 1:5]
+        assert sc.is_equal(item.data, (var + var)['x', 1:5])
     for dim, coord in (d + d)['x', 1:5].coords.items():
-        assert coord == var['x', 1:5]
+        assert sc.is_equal(coord, var['x', 1:5])
 
 
 def test_lifetime_single_value():
@@ -88,12 +88,12 @@ def test_lifetime_scalar_py_object():
 def test_lifetime_scalar():
     elem = sc.Variable(['x'], values=np.arange(100000))
     var = sc.Variable(value=elem)
-    assert var.values == elem
+    assert sc.is_equal(var.values, elem)
     vals = var.copy().values
     import gc
     gc.collect()
     var.copy()  # do something allocating memory to trigger potential segfault
-    assert vals == elem
+    assert sc.is_equal(vals, elem)
 
 
 def test_lifetime_string_array():

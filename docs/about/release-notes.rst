@@ -15,6 +15,16 @@ Breaking changes
 - ``DataArray`` and dataset items attributes are now are now handled as "unaligned" coords.
   Use ``ds['item'].coords`` or ``array.unaligned_coords`` to access these.
 
+Contributors
+~~~~~~~~~~~~
+
+Owen Arnold,
+Thibault Chatel,
+Simon Heybrock,
+Daniel Nixon,
+Piotr Rozyczko,
+and Neil Vaytet
+
 v0.4 (July 2020)
 ----------------
 

@@ -774,9 +774,9 @@ def test_make_variable_from_unit_scalar_mult_div():
 
     var = sc.Variable(value=np.float32())
     var.unit = sc.units.m
-    assert var == np.float32(0.0) * sc.units.m
+    assert sc.is_equal(var, np.float32(0.0) * sc.units.m)
     var.unit = sc.units.m**(-1)
-    assert var == np.float32(0.0) / sc.units.m
+    assert sc.is_equal(var, np.float32(0.0) / sc.units.m)
 
 
 def test_construct_0d_numpy():
@@ -979,48 +979,20 @@ def test_position():
     assert_export(sc.geometry.position, x=var, y=var, z=var)
 
 
-def test_x():
+def test_xyz():
     var = sc.Variable()
     assert_export(sc.geometry.x, pos=var)
-
-
-def test_y():
-    var = sc.Variable()
     assert_export(sc.geometry.y, pos=var)
-
-
-def test_z():
-    var = sc.Variable()
     assert_export(sc.geometry.z, pos=var)
 
 
-def test_less():
+def test_comparison():
     var = sc.Variable()
     assert_export(sc.less, x=var, y=var)
-
-
-def test_greater():
-    var = sc.Variable()
     assert_export(sc.greater, x=var, y=var)
-
-
-def test_greater_equal():
-    var = sc.Variable()
     assert_export(sc.greater_equal, x=var, y=var)
-
-
-def test_less_equal():
-    var = sc.Variable()
     assert_export(sc.less_equal, x=var, y=var)
-
-
-def test_equal():
-    var = sc.Variable()
     assert_export(sc.equal, x=var, y=var)
-
-
-def test_not_equal():
-    var = sc.Variable()
     assert_export(sc.not_equal, x=var, y=var)
 
 
@@ -1046,3 +1018,9 @@ def test_rtruediv_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
     assert (var / 1).dtype == sc.dtype.float64
     assert (1 / var).dtype == sc.dtype.float64
+
+
+def test_sort():
+    var = sc.Variable()
+    assert_export(sc.sort, x=var, dim='x', order='ascending')
+    assert_export(sc.is_sorted, x=var, dim='x', order='ascending')
