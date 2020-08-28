@@ -52,13 +52,17 @@ except ImportError:
 from .plot import plot
 
 
-def superplot(dataset, **kwargs):
-    return plot(dataset, projection="1d", **kwargs)
+def superplot(scipp_obj, **kwargs):
+    return plot(scipp_obj, projection="1d", **kwargs)
 
 
-def image(dataset, **kwargs):
-    return plot(dataset, projection="2d", **kwargs)
+def image(scipp_obj, **kwargs):
+    return plot(scipp_obj, projection="2d", **kwargs)
 
 
-def scatter3d(dataset, **kwargs):
-    return plot(dataset, projection="3d", **kwargs)
+def scatter3d(scipp_obj, **kwargs):
+    return plot(scipp_obj, projection="3d", **kwargs)
+
+
+def profiler(scipp_obj, **kwargs):
+    return plot(scipp_obj, profiler=True, **kwargs)

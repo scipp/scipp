@@ -11,6 +11,7 @@ def dispatch(scipp_obj_dict,
              bins=None,
              projection=None,
              mpl_line_params=None,
+             profiler=False,
              **kwargs):
     """
     Function to automatically dispatch the dict of scipp objects to the
@@ -37,7 +38,10 @@ def dispatch(scipp_obj_dict,
             projection = "2d"
     projection = projection.lower()
 
-    if projection == "1d":
+    if profiler:
+        from .profiler import profiler
+        return profiler(scipp_obj_dict, **kwargs)
+    elif projection == "1d":
         from .plot_1d import plot_1d
         return plot_1d(scipp_obj_dict,
                        mpl_line_params=mpl_line_params,
