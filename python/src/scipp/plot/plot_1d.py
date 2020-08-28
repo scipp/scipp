@@ -70,11 +70,14 @@ class Slicer1d(Slicer):
                  logy=False,
                  grid=False):
 
+        os.write(1, 'Slicer1d 1\n'.encode())
+
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
                          button_options=['X'])
 
+        os.write(1, 'Slicer1d 2\n'.encode())
         self.scipp_obj_dict = scipp_obj_dict
         self.fig = None
         self.ax = ax
@@ -92,6 +95,7 @@ class Slicer1d(Slicer):
             self.mpl_axes = True
         if grid:
             self.ax.grid()
+        os.write(1, 'Slicer1d 3\n'.encode())
 
         # Determine whether error bars should be plotted or not
         self.errorbars = {}
@@ -118,6 +122,7 @@ class Slicer1d(Slicer):
             else:
                 raise TypeError("Unsupported type for argument "
                                 "'errorbars': {}".format(type(errorbars)))
+        os.write(1, 'Slicer1d 4\n'.encode())
 
         # # Initialise container for returning matplotlib objects
         # self.members.update({
@@ -146,6 +151,7 @@ class Slicer1d(Slicer):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_ylim(self.ylim)
+        os.write(1, 'Slicer1d 5\n'.encode())
 
         if self.logx:
             self.ax.set_xscale("log")
@@ -164,6 +170,7 @@ class Slicer1d(Slicer):
 
         self.keep_buttons = dict()
         self.make_keep_button()
+        os.write(1, 'Slicer1d 6\n'.encode())
 
         # vbox contains the original sliders and buttons. In mbox, we include
         # the keep trace buttons.
@@ -180,6 +187,7 @@ class Slicer1d(Slicer):
         # Populate the members
         self.members["fig"] = self.fig
         self.members["ax"] = self.ax
+        os.write(1, 'Slicer1d 7\n'.encode())
 
         return
 
@@ -313,6 +321,13 @@ class Slicer1d(Slicer):
                             linewidth=self.mpl_line_params["linewidth"][name] * 3.0,
                             color=self.params["masks"][name]["color"],
                             zorder=9)
+                        # Abuse a mostly unused property `gid` of Line2D to
+                        # identify the line as a mask. We set gid to `onaxes`.
+                        # This is used by the profile viewer in the 2D plotter
+                        # to know whether to show the mask or not, depending on
+                        # whether the cursor is hovering over the 2D image or
+                        # not.
+                        self.members["masks"][name][m].set_gid("onaxes")
 
 
             else:
@@ -344,16 +359,7 @@ class Slicer1d(Slicer):
                                           mew=3.0,
                                           linestyle="none",
                                           marker=self.mpl_line_params["marker"][name])
-                                          # **{
-                                          #     key: self.mpl_line_params[key][name]
-                                          #     for key in ["color", "marker"]
-                                          # })
-            # Abuse a mostly unused property `gid` of Line2D to identify the
-            # line as a mask. We set gid to `onaxes`. This is used by the
-            # profile viewer in the 2D plotter to know whether to show the
-            # mask or not, depending on whether the cursor is hovering over the
-            # 2D image or not.
-            self.members["masks"][name][m].set_gid("onaxes")
+                        self.members["masks"][name][m].set_gid("onaxes")
 
             # Add error bars
             if self.errorbars[name]:

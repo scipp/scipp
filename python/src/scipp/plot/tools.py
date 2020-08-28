@@ -88,11 +88,10 @@ def parse_params(params=None,
         if max_val is not None:
             parsed["vmax"] = max(parsed["vmax"], max_val)
         if parsed["log"]:
-            norm = LogNorm(vmin=10.0**parsed["vmin"],
-                           vmax=10.0**parsed["vmax"])
+            norm = LogNorm
         else:
-            norm = Normalize(vmin=parsed["vmin"], vmax=parsed["vmax"])
-        parsed["norm"] = norm
+            norm = Normalize
+        parsed["norm"] = norm(vmin=parsed["vmin"], vmax=parsed["vmax"])
 
     # Convert color into custom colormap
     if parsed["color"] is not None:
@@ -118,5 +117,9 @@ def _find_min_max(array, params):
             valid = np.ma.masked_invalid(array, copy=False)
     if params["vmin"] is None:
         params["vmin"] = valid.min()
+        if params["log"]:
+            params["vmin"] = 10.0**params["vmin"]
     if params["vmax"] is None:
         params["vmax"] = valid.max()
+        if params["log"]:
+            params["vmax"] = 10.0**params["vmax"]
