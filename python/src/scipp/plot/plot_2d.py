@@ -40,7 +40,7 @@ def plot_2d(scipp_obj_dict=None,
             logy=False,
             logxy=False,
             resolution=None,
-            extra_dims="sliders"):
+            picking=False):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -61,7 +61,7 @@ def plot_2d(scipp_obj_dict=None,
                   logx=logx or logxy,
                   logy=logy or logxy,
                   resolution=resolution,
-                  extra_dims=extra_dims)
+                  picking=picking)
 
     if ax is None:
         render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
@@ -85,7 +85,7 @@ class Slicer2d(Slicer):
                  logx=False,
                  logy=False,
                  resolution=None,
-                 extra_dims=None):
+                 picking=None):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
@@ -96,8 +96,7 @@ class Slicer2d(Slicer):
                          vmax=vmax,
                          color=color,
                          aspect=aspect,
-                         button_options=['X', 'Y'],
-                         extra_dims=extra_dims)
+                         button_options=['X', 'Y'])
 
         self.members["images"] = {}
         self.axparams = {"x": {}, "y": {}}
@@ -118,13 +117,14 @@ class Slicer2d(Slicer):
         self.cslice = None
         self.autoscale_cbar = False
 
-        extra_dims_options = {"sliders": 0, "profiles": 1}
-        self.extra_dims = extra_dims_options[extra_dims]
-        # if extra_dims not in extra_dims_options:
-        #     raise RuntimeError("Unknown handling method for extra_dims: {}. "
-        #                        "Possible choices are {}.".format(extra_dims, extra_dims_options))
-        # if
-        # self.use_slider_for_extra_dims = True
+        # extra_dims_options = {"sliders": 0, "profiles": 1}
+        # self.extra_dims = extra_dims_options[extra_dims]
+        # # if extra_dims not in extra_dims_options:
+        # #     raise RuntimeError("Unknown handling method for extra_dims: {}. "
+        # #                        "Possible choices are {}.".format(extra_dims, extra_dims_options))
+        # # if
+        # # self.use_slider_for_extra_dims = True
+        self.picking = picking
 
 
         # self.profile = profile
@@ -157,19 +157,24 @@ class Slicer2d(Slicer):
         # Get or create matplotlib axes
         self.fig = None
         self.ax = ax
-        self.ax_extra_dims = None
+        self.ax_picking = None
         self.cax = cax
         if self.ax is None:
-            nrows = 1 + self.extra_dims
+            # Note: if picking is enabled, we need to create the subplot axes
+            # here, as the creation of new axes triggered by a matplotlib event
+            # does not seem to work (maybe it's swallowed by the kernel in a
+            # similar way to the print statements?). Hence we cannot just let
+            # the call to plot create its own axes.
+            nrows = 1 + self.picking
             self.fig, mpl_axes = plt.subplots(
                 nrows,
                 1,
                 figsize=(config.plot.width / config.plot.dpi,
                          nrows * config.plot.height / config.plot.dpi),
                 dpi=config.plot.dpi)
-            if self.extra_dims:
+            if self.picking:
                 self.ax = mpl_axes[0]
-                self.ax_extra_dims = mpl_axes[1]
+                self.ax_picking = mpl_axes[1]
             else:
                 self.ax = mpl_axes
 
@@ -209,7 +214,7 @@ class Slicer2d(Slicer):
         self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
         self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
 
-        if self.extra_dims:
+        if self.picking:
             # Connect profile plot to mouse cursor
             # self.fig.canvas.mpl_connect('button_press_event', self.keep_profile)
             # self.ax.callbacks.connect('pick_event', self.keep_or_delete_profile)
@@ -364,7 +369,7 @@ class Slicer2d(Slicer):
         # Clear profile axes if present and reset to None
         if self.profile_viewer is not None:
             del self.profile_viewer
-            self.ax_extra_dims.clear()
+            self.ax_picking.clear()
             self.profile_viewer = None
             if self.profile_scatter is not None:
                 self.ax.collections = []
@@ -520,9 +525,6 @@ class Slicer2d(Slicer):
         # coords and update the xyedges and xywidth
         if self.contains_multid_coord[self.name]:
             self.slice_coords()
-        # if self.extra_dims:
-        #     self.rebin_data()
-        # else:
         self.slice_data()
         # Update image with resampling
         self.update_image()
@@ -809,14 +811,14 @@ class Slicer2d(Slicer):
                 if len(prof.masks) > 0:
                     for m in prof.masks:
                         to_plot.masks[m] = prof.masks[m]
-                self.profile_viewer = plot({self.name: to_plot}, ax=self.ax_extra_dims)
+                self.profile_viewer = plot({self.name: to_plot}, ax=self.ax_picking)
                 self.profile_key = list(self.profile_viewer.keys())[0]
 
                 # If profile is 1d, add indicator of range covered by current slice
                 if len(to_plot.dims) == 1:
                     dim = to_plot.dims[0]
-                    xlims = self.ax_extra_dims.get_xlim()
-                    ylims = self.ax_extra_dims.get_ylim()
+                    xlims = self.ax_picking.get_xlim()
+                    ylims = self.ax_picking.get_ylim()
                     left = to_plot.coords[dim][dim, self.slider[dim].value].value
                     if self.histograms[self.name][dim][dim]:
                         width = (to_plot.coords[dim][dim, self.slider[dim].value + 1] -
@@ -827,7 +829,7 @@ class Slicer2d(Slicer):
                     self.slice_position_rectangle = Rectangle(
                         (left, ylims[0]), width, ylims[1] - ylims[0],
                              facecolor="lightgray", zorder=-10)
-                    self.ax_extra_dims.add_patch(self.slice_position_rectangle)
+                    self.ax_picking.add_patch(self.slice_position_rectangle)
 
             else:
                 self.profile_viewer[self.profile_key].update_slice({"vslice": {self.name: prof}})
@@ -864,7 +866,9 @@ class Slicer2d(Slicer):
         mask_dict = self.profile_viewer[self.profile_key].members["masks"][self.name]
         if len(mask_dict) > 0:
             for m in mask_dict:
-                mask_dict[m].set_visible(value)
+                mask_dict[m].set_visible(value if self.profile_viewer[self.profile_key].masks[self.name][m].value else False)
+                # mask_dict[m].set_visible(value)
+                mask_dict[m].set_gid("onaxes" if value else "offaxes")
 
 
     def keep_or_delete_profile(self, event):

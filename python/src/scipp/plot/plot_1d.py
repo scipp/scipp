@@ -310,7 +310,7 @@ class Slicer1d(Slicer):
                         [self.members["masks"][name][m]] = self.ax.step(
                             new_x,
                             self.mask_to_float(me, ye),
-                            linewidth=self.mpl_line_params["linewidth"][name] * 3,
+                            linewidth=self.mpl_line_params["linewidth"][name] * 3.0,
                             color=self.params["masks"][name]["color"],
                             zorder=9)
 
@@ -338,14 +338,22 @@ class Slicer1d(Slicer):
                         [self.members["masks"][name][m]
                          ] = self.ax.plot(new_x,
                                           self.mask_to_float(mdata, vslice.values),
-                                          zorder=10,
+                                          zorder=11,
                                           mec=self.params["masks"][name]["color"],
-                                          mew=3,
+                                          mfc="None",
+                                          mew=3.0,
                                           linestyle="none",
-                                          **{
-                                              key: self.mpl_line_params[key][name]
-                                              for key in ["color", "marker"]
-                                          })
+                                          marker=self.mpl_line_params["marker"][name])
+                                          # **{
+                                          #     key: self.mpl_line_params[key][name]
+                                          #     for key in ["color", "marker"]
+                                          # })
+            # Abuse a mostly unused property `gid` of Line2D to identify the
+            # line as a mask. We set gid to `onaxes`. This is used by the
+            # profile viewer in the 2D plotter to know whether to show the
+            # mask or not, depending on whether the cursor is hovering over the
+            # 2D image or not.
+            self.members["masks"][name][m].set_gid("onaxes")
 
             # Add error bars
             if self.errorbars[name]:
@@ -458,6 +466,7 @@ class Slicer1d(Slicer):
             self.keep_trace(owner)
         elif owner.description == "Remove":
             self.remove_trace(owner)
+        self.fig.canvas.draw_idle()
         return
 
     def keep_trace(self, owner):
@@ -469,17 +478,30 @@ class Slicer1d(Slicer):
 
         # The main line
         self.ax.lines.append(cp.copy(self.members["lines"][lab]))
-        self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
         self.ax.lines[-1].set_url(owner.id)
         self.ax.lines[-1].set_zorder(2)
+        if self.ax.lines[-1].get_marker() == "None":
+            self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
+        else:
+            self.ax.lines[-1].set_markerfacecolor(self.keep_buttons[owner.id][2].value)
+            self.ax.lines[-1].set_markeredgecolor("None")
 
         # The masks
         if len(self.masks[lab]) > 0:
             for m in self.masks[lab]:
                 self.ax.lines.append(cp.copy(self.members["masks"][lab][m]))
+                # print(self.ax.lines[-1].get_mew())
                 # self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
                 self.ax.lines[-1].set_url(owner.id)
-                self.ax.lines[-1].set_zorder(1)
+                self.ax.lines[-1].set_gid(m)
+                self.ax.lines[-1].set_zorder(3)
+                if self.ax.lines[-1].get_marker() != "None":
+                    self.ax.lines[-1].set_zorder(3)
+                else:
+                    self.ax.lines[-1].set_zorder(1)
+
+                #     self.ax.lines[-1].set_markerfacecolor("None")
+                #     self.ax.lines[-1].set_markeredgewidth(5.0)
 
         if self.errorbars[lab]:
             err = self.members["error_y"][lab].get_children()
@@ -487,7 +509,8 @@ class Slicer1d(Slicer):
             self.ax.collections[-1].set_color(
                 self.keep_buttons[owner.id][2].value)
             self.ax.collections[-1].set_url(owner.id)
-            self.ax.collections[-1].set_zorder(1)
+            self.ax.collections[-1].set_zorder(2)
+        # self.fig.canvas.draw_idle()
 
         for dim, val in self.slider.items():
             if not val.disabled:
@@ -524,7 +547,11 @@ class Slicer1d(Slicer):
     def update_trace_color(self, change):
         for line in self.ax.lines:
             if line.get_url() == change["owner"].id:
-                line.set_color(change["new"])
+                if line.get_marker() == 'None':
+                    line.set_color(change["new"])
+                else:
+                    line.set_markerfacecolor(change["new"])
+
         for coll in self.ax.collections:
             if coll.get_url() == change["owner"].id:
                 coll.set_color(change["new"])
@@ -538,7 +565,13 @@ class Slicer1d(Slicer):
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
     def toggle_mask(self, change):
-        self.members["masks"][change["owner"].masks_group][change["owner"].masks_name].set_visible(change["new"])
+        msk = self.members["masks"][change["owner"].masks_group][change["owner"].masks_name]
+        if msk.get_gid() == "onaxes":
+            msk.set_visible(change["new"])
+        # Also toggle masks on additional lines created by keep button
+        for line in self.ax.lines:
+            if line.get_gid() == change["owner"].masks_name:
+                line.set_visible(change["new"])
         # for name in self.masks:
         #     for key in self.masks[name]:
 

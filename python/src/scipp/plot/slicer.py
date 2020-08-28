@@ -25,8 +25,7 @@ class Slicer:
                  color=None,
                  button_options=None,
                  aspect=None,
-                 positions=None,
-                 extra_dims=None):
+                 positions=None):
 
         self.scipp_obj_dict = scipp_obj_dict
 
