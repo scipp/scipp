@@ -415,8 +415,8 @@ class Slicer2d(Slicer):
                 # If a profile viewer is present, we also update the position
                 # of the slice on the profile plot.
                 if self.slice_pos_rectangle is not None:
-                    new_pos = self.slider_coord[
-                        self.name][dim][dim, val.value].value
+                    new_pos = self.slider_coord[self.name][dim][
+                        dim, val.value].value
                     self.slice_pos_rectangle.set_x(new_pos)
                     if self.histograms[self.name][dim][dim]:
                         self.slice_pos_rectangle.set_width(self.slider_coord[
@@ -648,8 +648,8 @@ class Slicer2d(Slicer):
                                        dimx: self.da_with_edges.coords[dimx]
                                    },
                                    rebin_edges={
-                                       dimy:
-                                       self.xyrebin["y"][dimy, iy:iy + 2],
+                                       dimy: self.xyrebin["y"][dimy,
+                                                               iy:iy + 2],
                                        dimx: self.xyrebin["x"][dimx, ix:ix + 2]
                                    })[dimy, 0][dimx, 0]
 

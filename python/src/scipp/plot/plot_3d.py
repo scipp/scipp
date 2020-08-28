@@ -5,7 +5,6 @@
 # Scipp imports
 from .. import config
 from .render import render_plot
-from ..plot.sciplot import SciPlot
 from .slicer import Slicer
 from .tools import to_bin_centers
 from .._utils import name_with_unit, value_to_string
@@ -542,7 +541,7 @@ void main() {
     def update_cut_slider_bounds(self):
         # Cartesian X, Y, Z
         if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
-            minmax = self.xminmax["xyz" [self.cut_surface_buttons.value]]
+            minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
             if minmax[0] < self.cut_slider.max:
                 self.cut_slider.min = minmax[0]
                 self.cut_slider.max = minmax[1]
@@ -553,7 +552,7 @@ void main() {
         # Cylindrical X, Y, Z
         elif self.cut_surface_buttons.value < self.cut_options["Sphere"]:
             j = self.cut_surface_buttons.value - 3
-            remaining_axes = self.permutations["xyz" [j]]
+            remaining_axes = self.permutations["xyz"[j]]
             self.remaining_inds = [(j + 1) % 3, (j + 2) % 3]
             rmax = np.abs([
                 self.xminmax[remaining_axes[0]][0],
@@ -667,8 +666,9 @@ void main() {
         Update colors of points.
         """
         new_colors = self.slice_data(change)
-        new_colors[:, 3] = self.points_geometry.attributes[
-            "rgba_color"].array[:, 3]
+        new_colors[:,
+                   3] = self.points_geometry.attributes["rgba_color"].array[:,
+                                                                            3]
         self.points_geometry.attributes["rgba_color"].array = new_colors
         if self.cut_surface_buttons.value == self.cut_options["Value"]:
             self.update_cut_surface(None)
