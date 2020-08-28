@@ -21,7 +21,7 @@ import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PathCollection
 import warnings
-import os
+
 
 def plot_2d(scipp_obj_dict=None,
             axes=None,
@@ -127,7 +127,7 @@ class Slicer2d(Slicer):
         self.picking = picking
         self.profile_viewer = None
         self.profile_key = None
-        self.slice_position_rectangle = None
+        self.slice_pos_rectangle = None
         self.profile_scatter = None
         self.profile_update_lock = False
         self.da_with_edges = None
@@ -171,8 +171,10 @@ class Slicer2d(Slicer):
             if self.picking:
                 self.ax = mpl_axes[0]
                 self.ax_picking = mpl_axes[1]
-                self.ax_picking.set_ylim([self.params["values"][self.name]["vmin"],
-                    self.params["values"][self.name]["vmax"]])
+                self.ax_picking.set_ylim([
+                    self.params["values"][self.name]["vmin"],
+                    self.params["values"][self.name]["vmax"]
+                ])
             else:
                 self.ax = mpl_axes
 
@@ -180,9 +182,7 @@ class Slicer2d(Slicer):
             self.params["values"][self.name]["cmap"], picker=5)
         self.ax.set_title(self.name)
         if self.params["values"][self.name]["cbar"]:
-            self.cbar = plt.colorbar(self.image,
-                                     ax=self.ax,
-                                     cax=self.cax)
+            self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
             self.cbar.set_label(name_with_unit(var=self.data_array, name=""))
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
@@ -211,8 +211,10 @@ class Slicer2d(Slicer):
 
         if self.picking:
             # Connect picking events
-            self.fig.canvas.mpl_connect('pick_event', self.keep_or_delete_profile)
-            self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+            self.fig.canvas.mpl_connect('pick_event',
+                                        self.keep_or_delete_profile)
+            self.fig.canvas.mpl_connect('motion_notify_event',
+                                        self.update_profile)
 
         return
 
@@ -269,10 +271,12 @@ class Slicer2d(Slicer):
                 but_val = button.value
                 if but_val is not None:
                     but_val = but_val.lower()
-                    self.extent[but_val] = self.slider_xlims[self.name][dim].values
-                    self.axparams[but_val]["lims"] = self.extent[but_val].copy()
-                    if getattr(self,
-                               "log" + but_val) and (self.extent[but_val][0] <= 0):
+                    self.extent[but_val] = self.slider_xlims[
+                        self.name][dim].values
+                    self.axparams[but_val]["lims"] = self.extent[but_val].copy(
+                    )
+                    if getattr(self, "log" +
+                               but_val) and (self.extent[but_val][0] <= 0):
                         self.axparams[but_val]["lims"][
                             0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
                     self.axparams[but_val]["labels"] = name_with_unit(
@@ -343,9 +347,9 @@ class Slicer2d(Slicer):
                     for x in self.fig.canvas.toolbar._nav_stack._elements[0][
                             key]:
                         alist.append(x)
-                    alist[0] = (
-                        *self.slider_xlims[self.name][self.button_dims[1]].values,
-                        *self.slider_xlims[self.name][self.button_dims[0]].values)
+                    alist[0] = (*self.slider_xlims[self.name][
+                        self.button_dims[1]].values, *self.slider_xlims[
+                            self.name][self.button_dims[0]].values)
                     # Insert the new tuple
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
@@ -410,15 +414,17 @@ class Slicer2d(Slicer):
 
                 # If a profile viewer is present, we also update the position
                 # of the slice on the profile plot.
-                if self.slice_position_rectangle is not None:
-                    new_pos = self.slider_coord[self.name][dim][dim, val.value].value
-                    self.slice_position_rectangle.set_x(new_pos)
+                if self.slice_pos_rectangle is not None:
+                    new_pos = self.slider_coord[
+                        self.name][dim][dim, val.value].value
+                    self.slice_pos_rectangle.set_x(new_pos)
                     if self.histograms[self.name][dim][dim]:
-                        self.slice_position_rectangle.set_width(
-                            self.slider_coord[self.name][dim][dim, val.value + 1].value - new_pos)
+                        self.slice_pos_rectangle.set_width(self.slider_coord[
+                            self.name][dim][dim, val.value + 1].value -
+                                                           new_pos)
                     else:
-                        new_pos -= 0.5 * self.slice_position_rectangle.get_width()
-                    self.slice_position_rectangle.set_x(new_pos)
+                        new_pos -= 0.5 * self.slice_pos_rectangle.get_width()
+                    self.slice_pos_rectangle.set_x(new_pos)
 
         # In the case of unaligned data, we may want to auto-scale the colorbar
         # as we slice through dimensions. Colorbar limits are allowed to grow
@@ -439,91 +445,36 @@ class Slicer2d(Slicer):
         self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
         self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
 
-        # if self.profile is not None:
-        #     # print(self.slider_coord[self.name])
-        #     # print(self.slider_coord[self.name][self.profile])
-        #     self.vslice.coords[self.profile] = self.slider_coord[self.name][self.profile]
-
+        # Also include masks
         if len(data_slice.masks) > 0:
             for m in data_slice.masks:
                 self.vslice.masks[m] = data_slice.masks[m]
+
         # Scale by bin width and then rebin in both directions
         # Note that this has to be written as 2 inplace operations to avoid
         # creation of large 2D temporary from broadcast
         self.vslice *= self.xywidth["x"]
         self.vslice *= self.xywidth["y"]
 
-
-    # def rebin_data(self):
-    #     """
-    #     Recursively rebin the data along the dimensions of active sliders.
-    #     """
-    #     # # self.vslice = self.data_array
-    #     # # if self.params["masks"][self.name]["show"]:
-    #     # #     self.mslice = self.masks
-
-    #     # # self.vslice = self.vslice.astype(sc.dtype.float32)
-    #     # # self.vslice.unit = sc.units.counts
-    #     # self.vslice = detail.move_to_data_array(
-    #     #     data=sc.Variable(dims=self.data_array.dims,
-    #     #                      unit=sc.units.counts,
-    #     #                      values=self.data_array.values,
-    #     #                      dtype=sc.dtype.float32))
-    #     # for dim, coord in self.slider_coord[self.name].items():
-    #     #     if self.histograms[self.name][dim][dim]:
-    #     #         self.vslice.coords[dim] = coord
-    #     #     else:
-    #     #         self.vslice.coords[dim] = to_bin_edges(coord, dim)
-
-    #     self.vslice = self.da_with_edges.copy()
-
-    #     # Slice along dimensions with active sliders
-    #     for dim, val in self.slider.items():
-    #         if not val.disabled:
-    #             # self.vslice = self.vslice[val.dim, val.value]
-    #             self.vslice = self.resample_image(self.vslice,
-    #                 coord_edges={dim: self.slider_coord[self.name][dim]},
-    #                 rebin_edges={dim: self.slider_xlims[self.name][dim]})[dim, 0]
-    #             depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
-    #             depth.unit = sc.units.one
-    #             self.vslice *= depth
-
-
-    #     # if self.params["masks"][self.name]["show"]:
-    #     #     self.vslice.masks["all"] = self.mslice
-    #     # Scale by bin width and then rebin in both directions
-    #     # Note that this has to be written as 2 inplace operations to avoid
-    #     # creation of large 2D temporary from broadcast
-    #     self.vslice *= self.xywidth["x"]
-    #     self.vslice *= self.xywidth["y"]
-
     def update_slice(self, change=None):
         """
         Slice data according to new slider value and update the image.
         """
-        slice_is_provided = False
-        if change is not None:
-            slice_is_provided == "vslice" in change
-        if slice_is_provided:
-            self.vslice = change["vslice"]
-        else:
-            # If there are multi-d coords in the data we also need to slice the
-            # coords and update the xyedges and xywidth
-            if self.contains_multid_coord[self.name]:
-                self.slice_coords()
-            self.slice_data()
+        # If there are multi-d coords in the data we also need to slice the
+        # coords and update the xyedges and xywidth
+        if self.contains_multid_coord[self.name]:
+            self.slice_coords()
+        self.slice_data()
         # Update image with resampling
         self.update_image()
         return
 
     def toggle_mask(self, change):
-        # print(self.members["masks"])
-        self.members["masks"][change["owner"].masks_name].set_visible(change["new"])
+        self.members["masks"][change["owner"].masks_name].set_visible(
+            change["new"])
         if self.profile_viewer is not None:
-            self.profile_viewer[self.profile_key].masks[self.name][change["owner"].masks_name].value = change["new"]
-        # self.im["masks"].set_visible(change["new"])
-        # change["owner"].description = "Hide masks" if change["new"] else \
-        #     "Show masks"
+            self.profile_viewer[self.profile_key].masks[self.name][
+                change["owner"].masks_name].value = change["new"]
         return
 
     def check_for_xlim_update(self, event_ax):
@@ -585,155 +536,65 @@ class Slicer2d(Slicer):
         return dim, slice(first, last + 1)
 
     def resample_image(self, array, coord_edges, rebin_edges):
-
         dslice = array
+        # Select bins to speed up rebinning
         for dim in rebin_edges:
             this_slice = self.select_bins(coord_edges[dim], dim,
-                                  rebin_edges[dim][dim, 0],
-                                  rebin_edges[dim][dim, -1])
+                                          rebin_edges[dim][dim, 0],
+                                          rebin_edges[dim][dim, -1])
             dslice = dslice[this_slice]
 
-        # dim = self.xyrebin['x'].dims[0]
-        # slicex = self.select_bins(self.xyedges['x'], dim,
-        #                           self.xyrebin['x'][dim, 0],
-        #                           self.xyrebin['x'][dim, -1])
-        # dim = self.xyrebin['y'].dims[0]
-        # slicey = self.select_bins(self.xyedges['y'], dim,
-        #                           self.xyrebin['y'][dim, 0],
-        #                           self.xyrebin['y'][dim, -1])
-        # dslice = self.vslice[slicex][slicey]
-
-        # # The order of the dimensions that are rebinned matters if 2D coords
-        # # are present. We must rebin the base dimension of the 2D coord first.
-        # xy = "yx"
-        # if len(dslice.coords[self.button_dims[1]].dims) > 1:
-        #     xy = "xy"
-
+        # Rebin the data
         for dim, edges in rebin_edges.items():
-            # print(dslice, dim, edges)
             dslice = sc.rebin(dslice, dim, edges)
 
-
-
-
-        # dslice = sc.rebin(dslice, self.xyrebin[xy[0]].dims[0],
-        #                   self.xyrebin[xy[0]])
-        # dslice = sc.rebin(dslice, self.xyrebin[xy[1]].dims[0],
-        #                   self.xyrebin[xy[1]])
-
-
-
-
-
-        # slice_dims = self.button_dims.copy()
-        # slice_shape = [self.xyrebin["y"].shape[0] - 1,
-        #                self.xyrebin["x"].shape[0] - 1]
-        # if self.profile is not None:
-        #     slice_dims.append(self.profile)
-        #     slice_shape.append(self.slider_shape[self.name][self.profile][self.profile])
-        # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-        # print(slice_dims)
-        # print(slice_shape)
-        # print("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~")
-
-
-        # # Use Scipp's automatic transpose to match the image x/y axes
-        # # TODO: once transpose is available for DataArrays,
-        # # use sc.transpose(dslice, self.button_dims) instead.
-
-        # arr = sc.DataArray(coords=rebin_edges,
-        #                    data=sc.Variable(dims=self.button_dims,
-        #                                     values=np.ones([self.xyrebin["y"].shape[0] - 1,
-        #                self.xyrebin["x"].shape[0] - 1]),
-        #                                     dtype=dslice.dtype,
-        #                                     unit=sc.units.one))
-        # # if self.profile is not None:
-        # #     arr.coords[self.profile] = self.slider_coord[self.name][self.profile]
-        # arr *= dslice
-
-
-
-        # Scale by output bins width
-        # for key in self.xyrebin:
-        #     self.image_pixel_size[key] = self.xyrebin[key].values[1] - self.xyrebin[key].values[0]
-        #     dslice /= self.image_pixel_size[key]
-
+        # Divide by pixel width
         for key, edges in rebin_edges.items():
             self.image_pixel_size[key] = edges.values[1] - edges.values[0]
             dslice /= self.image_pixel_size[key]
-        # arr /= self.xyrebin['y'].values[1] - self.xyrebin['y'].values[0]
         return dslice
 
     def update_image(self, extent=None):
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
-        os.write(1, 'update_image 1\n'.encode())
         xy = "yx"
         if len(self.vslice.coords[self.button_dims[1]].dims) > 1:
             xy = "xy"
-        os.write(1, 'update_image 2\n'.encode())
 
-        rebin_edges = {self.xyrebin[xy[0]].dims[0]: self.xyrebin[xy[0]],
-                         self.xyrebin[xy[1]].dims[0]: self.xyrebin[xy[1]]}
-        os.write(1, 'update_image 3\n'.encode())
+        rebin_edges = {
+            self.xyrebin[xy[0]].dims[0]: self.xyrebin[xy[0]],
+            self.xyrebin[xy[1]].dims[0]: self.xyrebin[xy[1]]
+        }
 
         resampled_image = self.resample_image(self.vslice,
-            coord_edges={self.xyrebin[xy[0]].dims[0]: self.xyedges[xy[0]],
-                         self.xyrebin[xy[1]].dims[0]: self.xyedges[xy[1]]},
-            rebin_edges=rebin_edges)
-        os.write(1, 'update_image 4\n'.encode())
+                                              coord_edges={
+                                                  self.xyrebin[xy[0]].dims[0]:
+                                                  self.xyedges[xy[0]],
+                                                  self.xyrebin[xy[1]].dims[0]:
+                                                  self.xyedges[xy[1]]
+                                              },
+                                              rebin_edges=rebin_edges)
 
         # Use Scipp's automatic transpose to match the image x/y axes
         # TODO: once transpose is available for DataArrays,
         # use sc.transpose(dslice, self.button_dims) instead.
-        shape = [self.xyrebin["y"].shape[0] - 1,
-                 self.xyrebin["x"].shape[0] - 1]
+        shape = [
+            self.xyrebin["y"].shape[0] - 1, self.xyrebin["x"].shape[0] - 1
+        ]
         self.dslice = sc.DataArray(coords=rebin_edges,
-                           data=sc.Variable(dims=self.button_dims,
-                                            values=np.ones(shape),
-                                            variances=np.zeros(shape),
-                                            dtype=self.vslice.dtype,
-                                            unit=sc.units.one))
-        # if self.profile is not None:
-        #     arr.coords[self.profile] = self.slider_coord[self.name][self.profile]
-        os.write(1, 'update_image 5\n'.encode())
+                                   data=sc.Variable(dims=self.button_dims,
+                                                    values=np.ones(shape),
+                                                    variances=np.zeros(shape),
+                                                    dtype=self.vslice.dtype,
+                                                    unit=sc.units.one))
 
         self.dslice *= resampled_image
-        os.write(1, 'update_image 6\n'.encode())
 
-        # # return
-        # if self.params["masks"][self.name]["show"]:
-        #     # Use scipp's automatic broadcast functionality to broadcast
-        #     # lower dimension masks to higher dimensions.
-        #     # TODO: creating a Variable here could become expensive when
-        #     # sliders are being used. We could consider performing the
-        #     # automatic broadcasting once and store it in the Slicer class,
-        #     # but this could create a large memory overhead if the data is
-        #     # large.
-        #     # Here, the data is at most 2D, so having the Variable creation
-        #     # and broadcasting should remain cheap.
-        #     base_mask = sc.Variable(dims=self.dslice.dims,
-        #                       values=np.ones(self.dslice.shape, dtype=np.int32))
-        #     msk *= sc.Variable(dims=self.dslice.masks["all"].dims,
-        #                        values=self.dslice.masks["all"].values.astype(
-        #                            np.int32))
-        #     # msk = msk.values
-
-        # print(self.dslice)
-        # if self.profile is not None:
-        #     arr = sc.sum(self.dslice, self.profile).values
-        #     if self.params["masks"][self.name]["show"]:
-        #         msk = sc.sum(msk, self.profile).values
-        # else:
+        # Update the matplotlib image data
         arr = self.dslice.values
-        # if self.params["masks"][self.name]["show"]:
-        #     msk = msk.values
-        os.write(1, 'update_image 7\n'.encode())
-
         self.image.set_data(arr)
         if extent is not None:
             self.image.set_extent(extent)
-        os.write(1, 'update_image 8\n'.encode())
 
         # Handle masks
         if len(self.masks[self.name]) > 0:
@@ -747,15 +608,16 @@ class Slicer2d(Slicer):
             # Here, the data is at most 2D, so having the Variable creation
             # and broadcasting should remain cheap.
             base_mask = sc.Variable(dims=self.dslice.dims,
-                              values=np.ones(self.dslice.shape, dtype=np.int32))
+                                    values=np.ones(self.dslice.shape,
+                                                   dtype=np.int32))
             for m in self.masks[self.name]:
-                msk = base_mask * sc.Variable(dims=self.dslice.masks[m].dims,
-                               values=self.dslice.masks[m].values.astype(
-                                   np.int32))
-                self.members["masks"][m].set_data(self.mask_to_float(msk.values, arr))
+                msk = base_mask * sc.Variable(
+                    dims=self.dslice.masks[m].dims,
+                    values=self.dslice.masks[m].values.astype(np.int32))
+                self.members["masks"][m].set_data(
+                    self.mask_to_float(msk.values, arr))
                 if extent is not None:
                     self.members["masks"].set_extent(extent)
-        os.write(1, 'update_image 9\n'.encode())
 
         if self.autoscale_cbar:
             cbar_params = parse_params(globs=self.vminmax,
@@ -765,68 +627,56 @@ class Slicer2d(Slicer):
             self.global_vmin = cbar_params["vmin"]
             self.global_vmax = cbar_params["vmax"]
             self.params["values"][self.name]["norm"] = cbar_params["norm"]
-            self.image.set_norm(
-                self.params["values"][self.name]["norm"])
-            # if self.params["masks"][self.name]["show"]:
+            self.image.set_norm(self.params["values"][self.name]["norm"])
             if len(self.masks[self.name]) > 0:
                 for m in self.masks[self.name]:
                     self.members["masks"][m].set_norm(
                         self.params["values"][self.name]["norm"])
-        os.write(1, 'update_image 10\n'.encode())
-
-        return
-
-    # def update_profile(self, event):
-    #     self.make_profile(event, color=)
 
     def compute_profile(self, event):
         # Find indices of pixel where cursor lies
         dimx = self.xyrebin["x"].dims[0]
         dimy = self.xyrebin["y"].dims[0]
-        ix = int((event.xdata - self.current_lims["x"][0]) / self.image_pixel_size[dimx])
-        iy = int((event.ydata - self.current_lims["y"][0]) / self.image_pixel_size[dimy])
-
-        # Slice the 3d cube down to a 1d profile
+        ix = int((event.xdata - self.current_lims["x"][0]) /
+                 self.image_pixel_size[dimx])
+        iy = int((event.ydata - self.current_lims["y"][0]) /
+                 self.image_pixel_size[dimy])
+        # Resample the 3d cube down to a 1d profile
         return self.resample_image(self.da_with_edges,
-            coord_edges={dimy: self.da_with_edges.coords[dimy],
-                         dimx: self.da_with_edges.coords[dimx]},
-            rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2],
-                         dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimy, 0][dimx, 0]
+                                   coord_edges={
+                                       dimy: self.da_with_edges.coords[dimy],
+                                       dimx: self.da_with_edges.coords[dimx]
+                                   },
+                                   rebin_edges={
+                                       dimy:
+                                       self.xyrebin["y"][dimy, iy:iy + 2],
+                                       dimx: self.xyrebin["x"][dimx, ix:ix + 2]
+                                   })[dimy, 0][dimx, 0]
 
     def create_profile_viewer(self, prof):
         # We need to extract the data again and replace with the original
         # coordinates, because coordinates have been forced to be bin-edges
         # so that rebin could be used. Also reset original unit.
-        os.write(1, 'create_profile_viewer 1\n'.encode())
-        to_plot = sc.DataArray(
-            data=sc.Variable(dims=prof.dims,
-                             unit=self.data_array.unit,
-                             values=prof.values,
-                             variances=prof.variances))
-        os.write(1, 'create_profile_viewer 2\n'.encode())
+        to_plot = sc.DataArray(data=sc.Variable(dims=prof.dims,
+                                                unit=self.data_array.unit,
+                                                values=prof.values,
+                                                variances=prof.variances))
         for dim in prof.dims:
             to_plot.coords[dim] = self.slider_coord[self.name][dim]
-        os.write(1, 'create_profile_viewer 3\n'.encode())
         if len(prof.masks) > 0:
             for m in prof.masks:
                 to_plot.masks[m] = prof.masks[m]
-        os.write(1, 'create_profile_viewer 4\n'.encode())
-        self.profile_viewer = plot({self.name: to_plot}, ax=self.ax_picking,
-            logy=self.log)
-        os.write(1, 'create_profile_viewer 5\n'.encode())
+        self.profile_viewer = plot({self.name: to_plot},
+                                   ax=self.ax_picking,
+                                   logy=self.log)
         self.profile_key = list(self.profile_viewer.keys())[0]
         return to_plot
 
     def update_profile(self, event):
-        os.write(1, 'update_profile 1\n'.encode())
         if event.inaxes == self.ax:
-            os.write(1, 'update_profile 2\n'.encode())
             prof = self.compute_profile(event)
-            os.write(1, 'update_profile 3\n'.encode())
             if self.profile_viewer is None:
-                os.write(1, 'update_profile 4\n'.encode())
                 to_plot = self.create_profile_viewer(prof)
-                os.write(1, 'update_profile 5\n'.encode())
 
                 # Add indicator of range covered by current slice
                 dim = to_plot.dims[0]
@@ -834,42 +684,46 @@ class Slicer2d(Slicer):
                 ylims = self.ax_picking.get_ylim()
                 left = to_plot.coords[dim][dim, self.slider[dim].value].value
                 if self.histograms[self.name][dim][dim]:
-                    width = (to_plot.coords[dim][dim, self.slider[dim].value + 1] -
-                             to_plot.coords[dim][dim, self.slider[dim].value]).value
+                    width = (
+                        to_plot.coords[dim][dim, self.slider[dim].value + 1] -
+                        to_plot.coords[dim][dim, self.slider[dim].value]).value
                 else:
                     width = 0.01 * (xlims[1] - xlims[0])
                     left -= 0.5 * width
-                self.slice_position_rectangle = Rectangle(
-                    (left, ylims[0]), width, ylims[1] - ylims[0],
-                         facecolor="lightgray", zorder=-10)
-                self.ax_picking.add_patch(self.slice_position_rectangle)
-                os.write(1, 'update_profile 6\n'.encode())
+                self.slice_pos_rectangle = Rectangle((left, ylims[0]),
+                                                     width,
+                                                     ylims[1] - ylims[0],
+                                                     facecolor="lightgray",
+                                                     zorder=-10)
+                self.ax_picking.add_patch(self.slice_pos_rectangle)
 
             else:
-                os.write(1, 'update_profile 7\n'.encode())
-                self.profile_viewer[self.profile_key].update_slice({"vslice": {self.name: prof}})
-                os.write(1, 'update_profile 8\n'.encode())
+                self.profile_viewer[self.profile_key].update_slice(
+                    {"vslice": {
+                        self.name: prof
+                    }})
             self.toggle_visibility_of_hover_plot(True)
         elif self.profile_viewer is not None:
             self.toggle_visibility_of_hover_plot(False)
-        os.write(1, 'update_profile 9\n'.encode())
-
-
 
     def toggle_visibility_of_hover_plot(self, value):
-        self.profile_viewer[self.profile_key].members["lines"][self.name].set_visible(value)
+        # If the mouse moves off the image, we hide the profile. If it moves
+        # back onto the image, we show the profile
+        self.profile_viewer[self.profile_key].members["lines"][
+            self.name].set_visible(value)
         if self.profile_viewer[self.profile_key].errorbars[self.name]:
-            for item in self.profile_viewer[self.profile_key].members["error_y"][self.name]:
+            for item in self.profile_viewer[
+                    self.profile_key].members["error_y"][self.name]:
                 if item is not None:
                     for it in item:
                         it.set_visible(value)
-        mask_dict = self.profile_viewer[self.profile_key].members["masks"][self.name]
+        mask_dict = self.profile_viewer[self.profile_key].members["masks"][
+            self.name]
         if len(mask_dict) > 0:
             for m in mask_dict:
-                mask_dict[m].set_visible(value if self.profile_viewer[self.profile_key].masks[self.name][m].value else False)
-                # mask_dict[m].set_visible(value)
+                mask_dict[m].set_visible(value if self.profile_viewer[
+                    self.profile_key].masks[self.name][m].value else False)
                 mask_dict[m].set_gid("onaxes" if value else "offaxes")
-
 
     def keep_or_delete_profile(self, event):
         if isinstance(event.artist, PathCollection):
@@ -881,15 +735,21 @@ class Slicer2d(Slicer):
             self.keep_profile(event)
 
     def keep_profile(self, event):
-        trace = list(self.profile_viewer[self.profile_key].keep_buttons.values())[-1]
+        trace = list(
+            self.profile_viewer[self.profile_key].keep_buttons.values())[-1]
         xdata = event.mouseevent.xdata
         ydata = event.mouseevent.ydata
         if self.profile_scatter is None:
-            self.profile_scatter = self.ax.scatter([xdata], [ydata], c=[trace[2].value], picker=5)
+            self.profile_scatter = self.ax.scatter([xdata], [ydata],
+                                                   c=[trace[2].value],
+                                                   picker=5)
         else:
-            new_offsets = np.concatenate((self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
-            col = np.array(_hex_to_rgb(trace[2].value) + [255], dtype=np.float) / 255.0
-            new_colors = np.concatenate((self.profile_scatter.get_facecolors(), [col]), axis=0)
+            new_offsets = np.concatenate(
+                (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
+            col = np.array(_hex_to_rgb(trace[2].value) + [255],
+                           dtype=np.float) / 255.0
+            new_colors = np.concatenate(
+                (self.profile_scatter.get_facecolors(), [col]), axis=0)
             self.profile_scatter.set_offsets(new_offsets)
             self.profile_scatter.set_facecolors(new_colors)
         self.profile_viewer[self.profile_key].keep_trace(trace[1])
@@ -902,5 +762,6 @@ class Slicer2d(Slicer):
         self.profile_scatter.set_facecolors(c)
         self.fig.canvas.draw_idle()
         # Also remove the line from the 1d plot
-        trace = list(self.profile_viewer[self.profile_key].keep_buttons.values())[ind]
+        trace = list(
+            self.profile_viewer[self.profile_key].keep_buttons.values())[ind]
         self.profile_viewer[self.profile_key].remove_trace(trace[1])

@@ -17,8 +17,6 @@ import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import warnings
 
-import os
-
 
 def plot_1d(scipp_obj_dict=None,
             axes=None,
@@ -70,14 +68,11 @@ class Slicer1d(Slicer):
                  logy=False,
                  grid=False):
 
-        os.write(1, 'Slicer1d 1\n'.encode())
-
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
                          button_options=['X'])
 
-        os.write(1, 'Slicer1d 2\n'.encode())
         self.scipp_obj_dict = scipp_obj_dict
         self.fig = None
         self.ax = ax
@@ -95,7 +90,6 @@ class Slicer1d(Slicer):
             self.mpl_axes = True
         if grid:
             self.ax.grid()
-        os.write(1, 'Slicer1d 3\n'.encode())
 
         # Determine whether error bars should be plotted or not
         self.errorbars = {}
@@ -122,15 +116,7 @@ class Slicer1d(Slicer):
             else:
                 raise TypeError("Unsupported type for argument "
                                 "'errorbars': {}".format(type(errorbars)))
-        os.write(1, 'Slicer1d 4\n'.encode())
 
-        # # Initialise container for returning matplotlib objects
-        # self.members.update({
-        #     "lines": {},
-        #     "error_x": {},
-        #     "error_y": {},
-        #     "error_xy": {}
-        # })
         # Save the line parameters (color, linewidth...)
         self.mpl_line_params = mpl_line_params
 
@@ -151,7 +137,6 @@ class Slicer1d(Slicer):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_ylim(self.ylim)
-        os.write(1, 'Slicer1d 5\n'.encode())
 
         if self.logx:
             self.ax.set_xscale("log")
@@ -170,16 +155,15 @@ class Slicer1d(Slicer):
 
         self.keep_buttons = dict()
         self.make_keep_button()
-        os.write(1, 'Slicer1d 6\n'.encode())
 
-        # vbox contains the original sliders and buttons. In mbox, we include
-        # the keep trace buttons.
-        # self.mbox = self.vbox.copy()
+        # vbox contains the original sliders and buttons.
+        # In keep_buttons_box, we include the keep trace buttons.
         self.keep_buttons_box = []
         for key, val in self.keep_buttons.items():
             self.keep_buttons_box.append(widgets.HBox(val))
         self.keep_buttons_box = widgets.VBox(self.keep_buttons_box)
-        self.box = widgets.VBox([widgets.VBox(self.vbox), self.keep_buttons_box])
+        self.box = widgets.VBox(
+            [widgets.VBox(self.vbox), self.keep_buttons_box])
         self.box.layout.align_items = 'center'
         if self.ndim < 2:
             self.keep_buttons_box.layout.display = 'none'
@@ -187,7 +171,6 @@ class Slicer1d(Slicer):
         # Populate the members
         self.members["fig"] = self.fig
         self.members["ax"] = self.ax
-        os.write(1, 'Slicer1d 7\n'.encode())
 
         return
 
@@ -269,10 +252,6 @@ class Slicer1d(Slicer):
             "masks": {}
         })
 
-        # if self.masks is not None:
-        #     mslice = self.slice_masks().values
-
-
         xmin = np.Inf
         xmax = np.NINF
         for name, var in self.scipp_obj_dict.items():
@@ -286,7 +265,8 @@ class Slicer1d(Slicer):
             if len(self.masks[name]) > 0:
                 self.members["masks"][name] = {}
                 base_mask = sc.Variable(dims=vslice.dims,
-                          values=np.ones(vslice.shape, dtype=np.int32))
+                                        values=np.ones(vslice.shape,
+                                                       dtype=np.int32))
 
             # If this is a histogram, plot a step function
             if self.histograms[name][dim][dim]:
@@ -301,24 +281,20 @@ class Slicer1d(Slicer):
                                       for key in ["color", "linewidth"]
                                   })
                 # Add masks if any
-                # if self.params["masks"][name]["show"]:
                 if len(self.masks[name]) > 0:
-                    # self.members["masks"][name] = {}
-                    # base_mask = sc.Variable(dims=vslice.dims,
-                    #           values=np.ones(vslice.shape, dtype=np.int32))
                     for m in self.masks[name]:
-                        # mdata = vslice.masks[m].values
-
-                        mdata = (base_mask * sc.Variable(dims=vslice.masks[m].dims,
-                                       values=vslice.masks[m].values.astype(
-                                           np.int32))).values
-
+                        mdata = (
+                            base_mask *
+                            sc.Variable(dims=vslice.masks[m].dims,
+                                        values=vslice.masks[m].values.astype(
+                                            np.int32))).values
 
                         me = np.concatenate((mdata[0:1], mdata))
                         [self.members["masks"][name][m]] = self.ax.step(
                             new_x,
                             self.mask_to_float(me, ye),
-                            linewidth=self.mpl_line_params["linewidth"][name] * 3.0,
+                            linewidth=self.mpl_line_params["linewidth"][name] *
+                            3.0,
                             color=self.params["masks"][name]["color"],
                             zorder=9)
                         # Abuse a mostly unused property `gid` of Line2D to
@@ -328,7 +304,6 @@ class Slicer1d(Slicer):
                         # whether the cursor is hovering over the 2D image or
                         # not.
                         self.members["masks"][name][m].set_gid("onaxes")
-
 
             else:
 
@@ -343,22 +318,22 @@ class Slicer1d(Slicer):
                                       for key in self.mpl_line_params.keys()
                                   })
                 # Add masks if any
-                # if self.params["masks"][name]["show"]:
                 if len(self.masks[name]) > 0:
-                    # self.members["masks"][name] = {}
                     for m in self.masks[name]:
-                        mdata = (base_mask * sc.Variable(dims=vslice.masks[m].dims,
-                                       values=vslice.masks[m].values.astype(
-                                           np.int32))).values
-                        [self.members["masks"][name][m]
-                         ] = self.ax.plot(new_x,
-                                          self.mask_to_float(mdata, vslice.values),
-                                          zorder=11,
-                                          mec=self.params["masks"][name]["color"],
-                                          mfc="None",
-                                          mew=3.0,
-                                          linestyle="none",
-                                          marker=self.mpl_line_params["marker"][name])
+                        mdata = (
+                            base_mask *
+                            sc.Variable(dims=vslice.masks[m].dims,
+                                        values=vslice.masks[m].values.astype(
+                                            np.int32))).values
+                        [self.members["masks"][name][m]] = self.ax.plot(
+                            new_x,
+                            self.mask_to_float(mdata, vslice.values),
+                            zorder=11,
+                            mec=self.params["masks"][name]["color"],
+                            mfc="None",
+                            mew=3.0,
+                            linestyle="none",
+                            marker=self.mpl_line_params["marker"][name])
                         self.members["masks"][name][m].set_gid("onaxes")
 
             # Add error bars
@@ -419,16 +394,16 @@ class Slicer1d(Slicer):
                 mslice = mslice[dim, val.value]
         return mslice
 
-    # Define function to update slices
     def update_slice(self, change):
-        # if self.masks is not None:
-        #     mslice = self.slice_masks()
+        # Define function to update slices.
+        # Special key in the change dict: if "vslice" is found, it means we are
+        # calling from a profile viewer, and the slice has hence already been
+        # generate.
         for name, var in self.scipp_obj_dict.items():
             if "vslice" in change:
                 vslice = change["vslice"][name]
             else:
                 vslice = self.slice_data(var, name)
-            # self.update_line(name, vslice)
             vals = vslice.values
             if self.histograms[name][self.button_axis_to_dim["x"]][
                     self.button_axis_to_dim["x"]]:
@@ -436,19 +411,14 @@ class Slicer1d(Slicer):
             self.members["lines"][name].set_ydata(vals)
 
             if len(self.masks[name]) > 0:
-                # for m in vslice.masks:
                 base_mask = sc.Variable(dims=vslice.dims,
-                          values=np.ones(vslice.shape, dtype=np.int32))
+                                        values=np.ones(vslice.shape,
+                                                       dtype=np.int32))
                 for m in self.masks[name]:
-                    # os.write(1, ('update_axes' + m + '\n').encode())
-                    # mdata = vslice.masks[m].values
-
-                    msk = (base_mask * sc.Variable(dims=vslice.masks[m].dims,
-                                   values=vslice.masks[m].values.astype(
-                                       np.int32))).values
-
-                # for m in self.masks[name]:
-                    # msk = vslice.masks[m].values
+                    # Use automatic broadcast to broadcast 0D masks
+                    msk = (base_mask * sc.Variable(
+                        dims=vslice.masks[m].dims,
+                        values=vslice.masks[m].values.astype(np.int32))).values
                     if self.histograms[name][self.button_axis_to_dim["x"]][
                             self.button_axis_to_dim["x"]]:
                         msk = np.concatenate((msk[0:1], msk))
@@ -477,11 +447,6 @@ class Slicer1d(Slicer):
 
     def keep_trace(self, owner):
         lab = self.keep_buttons[owner.id][0].value
-        # lines_to_keep = ["lines"]
-        # if self.params["masks"][lab]["show"]:
-        #     lines_to_keep.append("masks")
-        # for line in lines_to_keep:
-
         # The main line
         self.ax.lines.append(cp.copy(self.members["lines"][lab]))
         self.ax.lines[-1].set_url(owner.id)
@@ -489,15 +454,14 @@ class Slicer1d(Slicer):
         if self.ax.lines[-1].get_marker() == "None":
             self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
         else:
-            self.ax.lines[-1].set_markerfacecolor(self.keep_buttons[owner.id][2].value)
+            self.ax.lines[-1].set_markerfacecolor(
+                self.keep_buttons[owner.id][2].value)
             self.ax.lines[-1].set_markeredgecolor("None")
 
         # The masks
         if len(self.masks[lab]) > 0:
             for m in self.masks[lab]:
                 self.ax.lines.append(cp.copy(self.members["masks"][lab][m]))
-                # print(self.ax.lines[-1].get_mew())
-                # self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
                 self.ax.lines[-1].set_url(owner.id)
                 self.ax.lines[-1].set_gid(m)
                 self.ax.lines[-1].set_zorder(3)
@@ -506,9 +470,6 @@ class Slicer1d(Slicer):
                 else:
                     self.ax.lines[-1].set_zorder(1)
 
-                #     self.ax.lines[-1].set_markerfacecolor("None")
-                #     self.ax.lines[-1].set_markeredgewidth(5.0)
-
         if self.errorbars[lab]:
             err = self.members["error_y"][lab].get_children()
             self.ax.collections.append(cp.copy(err[0]))
@@ -516,7 +477,6 @@ class Slicer1d(Slicer):
                 self.keep_buttons[owner.id][2].value)
             self.ax.collections[-1].set_url(owner.id)
             self.ax.collections[-1].set_zorder(2)
-        # self.fig.canvas.draw_idle()
 
         for dim, val in self.slider.items():
             if not val.disabled:
@@ -543,7 +503,6 @@ class Slicer1d(Slicer):
                 collections.append(coll)
         self.ax.lines = lines
         self.ax.collections = collections
-        # self.fig.canvas.draw_idle()
         self.mbox = self.vbox.copy()
         for k, b in self.keep_buttons.items():
             self.mbox.append(widgets.HBox(b))
@@ -571,20 +530,14 @@ class Slicer1d(Slicer):
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
     def toggle_mask(self, change):
-        msk = self.members["masks"][change["owner"].masks_group][change["owner"].masks_name]
+        msk = self.members["masks"][change["owner"].masks_group][
+            change["owner"].masks_name]
         if msk.get_gid() == "onaxes":
             msk.set_visible(change["new"])
         # Also toggle masks on additional lines created by keep button
         for line in self.ax.lines:
             if line.get_gid() == change["owner"].masks_name:
                 line.set_visible(change["new"])
-        # for name in self.masks:
-        #     for key in self.masks[name]:
-
-        # for n, msk in self.members["masks"].items():
-        #     msk.set_visible(change["new"])
-        # change["owner"].description = "Hide masks" if change["new"] else \
-        #     "Show masks"
         return
 
     def vars_to_err(self, v):

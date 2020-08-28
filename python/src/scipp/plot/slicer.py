@@ -51,11 +51,6 @@ class Slicer:
         if self.aspect is None:
             self.aspect = config.plot.aspect
 
-        # # Save dimension for profiles as Dim object
-        # self.profile = profile
-        # if self.profile is not None:
-        #     self.profile = sc.Dim(self.profile)
-
         # Containers: need one per entry in the dict of scipp
         # objects (=DataArray)
 
@@ -95,23 +90,6 @@ class Slicer:
                                                       },
                                                       globs=globs)
 
-
-            # self.params["masks"][name]["show"] = (
-            #     self.params["masks"][name]["show"] and len(array.masks) > 0)
-            # # if len(array.masks) > 0:
-            # #     self.masks[name] = {key: widgets.Checkbox(
-            # #         value=self.params["masks"][name]["show"],
-            # #         description="{}:{}".format(name, key),
-            # #         indent=False,
-            # #         layout={"width": "initial"}) for key in array.masks}
-            # # # self.params["masks"][name]["show"] = (
-            # # #     self.params["masks"][name]["show"] and len(array.masks) > 0)
-            # # # if self.params["masks"][name]["show"] and self.masks is None:
-            # # #     # Store masks separately since they are lost when slicing.
-            # # #     # TODO: no need for this once masks are preserved in slicing
-            # # #     self.masks = sc.combine_masks(array.masks, array.dims,
-            # # #                                   array.shape)
-
             # Create a map from dim to shape
             dim_to_shape = dict(zip(array.dims, array.shape))
 
@@ -140,11 +118,6 @@ class Slicer:
             if positions is not None:
                 axes[axes.index(
                     self.data_array.coords[positions].dims[0])] = positions
-            # # If a profile is requested, always make it the outermost dim
-            # if self.profile is not None:
-            #     if self.profile in axes:
-            #         axes.remove(self.profile)
-            #         axes.insert(0, self.profile)
 
             # Protect against duplicate entries in axes
             if len(axes) != len(set(axes)):
@@ -200,25 +173,11 @@ class Slicer:
                     self.slider_xlims[name][dim][0] -= dx
                     self.slider_xlims[name][dim][1] += dx
 
-                self.slider_xlims[name][dim] = sc.Variable([dim], values=self.slider_xlims[name][dim],
-                    unit=var.unit)
+                self.slider_xlims[name][dim] = sc.Variable(
+                    [dim], values=self.slider_xlims[name][dim], unit=var.unit)
 
                 if len(self.slider_coord[name][dim].dims) > 1:
                     self.contains_multid_coord[name] = True
-
-
-            # # Parse display parameters, including colorbar properties
-            # self.params["values"][name] = parse_params(globs=globs,
-            #                                            variable=array.data,
-            #                                            profile_dim=self.profile)
-
-            # self.params["masks"][name] = parse_params(params=masks,
-            #                                           defaults={
-            #                                               "cmap": "gray",
-            #                                               "cbar": False
-            #                                           },
-            #                                           globs=globs,
-            #                                           profile_dim=self.profile)
 
         # Initialise list for VBox container
         self.vbox = []
@@ -246,30 +205,16 @@ class Slicer:
         # Now begin loop to construct sliders
         button_values = [None] * (self.ndim - len(button_options)) + \
             button_options[::-1]
-        # print('button_values', button_values+)
-        # found_profile_dim = False
-        # idim = 0
         for i, dim in enumerate(self.slider_coord[self.name]):
             dim_str = self.slider_label[self.name][dim]["name"]
             # Determine if slider should be disabled or not:
             # In the case of 3d projection, disable sliders that are for
             # dims < 3, or sliders that contain vectors.
-            # In the case that a dim is used for profile plotting, we need to
-            # adjust the dim counting in case the profile dim was part of the
-            # first dims that were scanned.
             disabled = False
             if positions_dim is not None:
                 disabled = dim == positions_dim
-            # elif self.profile is not None and dim == self.profile:
-            #     disabled = True
-            #     found_profile_dim = True
-            #     idim -= 1
             elif i >= self.ndim - len(button_options):
-            # elif idim >= len(button_options) - 1:
                 disabled = True
-            # else:
-            # idim += 1
-            # print('in slicer', dim, disabled, self.ndim - (len(button_options) - (self.profile is not None)), idim)
 
             # Add an IntSlider to slide along the z dimension of the array
             self.slider[dim] = widgets.IntSlider(
@@ -347,44 +292,8 @@ class Slicer:
                 dim]
             self.members["widgets"]["labels"][dim_str] = self.lab[dim]
 
-
         # Add controls for masks
         self.add_masks_controls()
-        # for name, array in self.scipp_obj_dict.items():
-        #     if len(array.masks) > 0:
-        #         self.masks[name] = {}
-        #         for key in array.masks:
-        #             self.masks[name][key] = widgets.Checkbox(
-        #                 value=self.params["masks"][name]["show"],
-        #                 description="{}:{}".format(name, key),
-        #                 indent=False,
-        #                 layout={"width": "initial"})
-        #             setattr(self.masks[name][key], "masks_group", name)
-        #             setattr(self.masks[name][key], "masks_name", key)
-        #             self.masks[name][key].observe(self.toggle_mask, names="value")
-        # if len(self.masks) > 0:
-        #     self.masks_box = []
-        #     # mask_list = []
-        #     for name in self.masks:
-        #         mask_list = []
-        #         for cbox in self.masks[name].values():
-        #             mask_list.append(cbox)
-        #         self.masks_box.append(widgets.HBox(mask_list))
-        #     # self.masks_box.append(tuple(mask_list)
-        #     # for i, name in enumerate(self.masks):
-        #     #     self.masks_box.set_title(i, name)
-            
-
-        #     self.masks_button = widgets.ToggleButton(
-        #         value=self.params["masks"][self.name]["show"],
-        #         description="Hide all masks"
-        #         if self.params["masks"][self.name]["show"] else "Show all masks",
-        #         disabled=False,
-        #         button_style="")
-        #     self.masks_button.observe(self.toggle_all_masks, names="value")
-        #     self.vbox += [self.masks_button, widgets.VBox(self.masks_box)]
-        #     self.members["widgets"]["togglebutton"]["masks"] = \
-        #         self.masks_button
 
         return
 
@@ -394,7 +303,6 @@ class Slicer:
         for name, array in self.scipp_obj_dict.items():
             self.masks[name] = {}
             if len(array.masks) > 0:
-                # self.masks[name] = {}
                 masks_found = True
                 for key in array.masks:
                     self.masks[name][key] = widgets.Checkbox(
@@ -404,24 +312,21 @@ class Slicer:
                         layout={"width": "initial"})
                     setattr(self.masks[name][key], "masks_group", name)
                     setattr(self.masks[name][key], "masks_name", key)
-                    self.masks[name][key].observe(self.toggle_mask, names="value")
+                    self.masks[name][key].observe(self.toggle_mask,
+                                                  names="value")
+
         if masks_found:
             self.masks_box = []
-            # mask_list = []
             for name in self.masks:
                 mask_list = []
                 for cbox in self.masks[name].values():
                     mask_list.append(cbox)
                 self.masks_box.append(widgets.HBox(mask_list))
-            # self.masks_box.append(tuple(mask_list)
-            # for i, name in enumerate(self.masks):
-            #     self.masks_box.set_title(i, name)
-            
-
+            # Add a master button to control all masks in one go
             self.masks_button = widgets.ToggleButton(
                 value=self.params["masks"][self.name]["show"],
-                description="Hide all masks"
-                if self.params["masks"][self.name]["show"] else "Show all masks",
+                description="Hide all masks" if
+                self.params["masks"][self.name]["show"] else "Show all masks",
                 disabled=False,
                 button_style="")
             self.masks_button.observe(self.toggle_all_masks, names="value")
@@ -528,7 +433,6 @@ class Slicer:
         for name in self.masks:
             for key in self.masks[name]:
                 self.masks[name][key].value = change["new"]
-            # msk.set_visible(change["new"])
         change["owner"].description = "Hide all masks" if change["new"] else \
             "Show all masks"
         return
