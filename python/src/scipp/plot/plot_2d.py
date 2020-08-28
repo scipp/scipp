@@ -40,7 +40,7 @@ def plot_2d(scipp_obj_dict=None,
             logy=False,
             logxy=False,
             resolution=None,
-            picking=False):
+            pick=False):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -61,7 +61,7 @@ def plot_2d(scipp_obj_dict=None,
                   logx=logx or logxy,
                   logy=logy or logxy,
                   resolution=resolution,
-                  picking=picking)
+                  pick=pick)
 
     if ax is None:
         render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
@@ -85,7 +85,7 @@ class Slicer2d(Slicer):
                  logx=False,
                  logy=False,
                  resolution=None,
-                 picking=None):
+                 pick=None):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
@@ -99,7 +99,7 @@ class Slicer2d(Slicer):
                          button_options=['X', 'Y'])
 
         # Initial checks
-        if picking and self.ndim != 3:
+        if pick and self.ndim != 3:
             raise RuntimeError("Picking on a 2d plot is only supported for 3D "
                                "data.")
 
@@ -123,15 +123,15 @@ class Slicer2d(Slicer):
         self.cslice = None
         self.autoscale_cbar = False
 
-        # Variables for profile plotting from picking
-        self.picking = picking
+        # Variables for profile plotting from pick
+        self.pick = pick
         self.profile_viewer = None
         self.profile_key = None
         self.slice_pos_rectangle = None
         self.profile_scatter = None
         self.profile_update_lock = False
         self.da_with_edges = None
-        if self.picking:
+        if self.pick:
             self.da_with_edges = self.make_data_array_with_bin_edges()
 
         if resolution is not None:
@@ -152,7 +152,7 @@ class Slicer2d(Slicer):
         # Get or create matplotlib axes
         self.fig = None
         self.ax = ax
-        self.ax_picking = None
+        self.ax_pick = None
         self.cax = cax
         self.cbar = None
         if self.ax is None:
@@ -161,17 +161,17 @@ class Slicer2d(Slicer):
             # does not seem to work (maybe it's swallowed by the kernel in a
             # similar way to the print statements?). Hence we cannot just let
             # the call to plot create its own axes.
-            nrows = 1 + self.picking
+            nrows = 1 + self.pick
             self.fig, mpl_axes = plt.subplots(
                 nrows,
                 1,
                 figsize=(config.plot.width / config.plot.dpi,
                          nrows * config.plot.height / config.plot.dpi),
                 dpi=config.plot.dpi)
-            if self.picking:
+            if self.pick:
                 self.ax = mpl_axes[0]
-                self.ax_picking = mpl_axes[1]
-                self.ax_picking.set_ylim([
+                self.ax_pick = mpl_axes[1]
+                self.ax_pick.set_ylim([
                     self.params["values"][self.name]["vmin"],
                     self.params["values"][self.name]["vmax"]
                 ])
@@ -209,7 +209,7 @@ class Slicer2d(Slicer):
         self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
         self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
 
-        if self.picking:
+        if self.pick:
             # Connect picking events
             self.fig.canvas.mpl_connect('pick_event',
                                         self.keep_or_delete_profile)
@@ -357,7 +357,7 @@ class Slicer2d(Slicer):
         # Clear profile axes if present and reset to None
         if self.profile_viewer is not None:
             del self.profile_viewer
-            self.ax_picking.clear()
+            self.ax_pick.clear()
             self.profile_viewer = None
             if self.profile_scatter is not None:
                 self.ax.collections = []
@@ -667,7 +667,7 @@ class Slicer2d(Slicer):
             for m in prof.masks:
                 to_plot.masks[m] = prof.masks[m]
         self.profile_viewer = plot({self.name: to_plot},
-                                   ax=self.ax_picking,
+                                   ax=self.ax_pick,
                                    logy=self.log)
         self.profile_key = list(self.profile_viewer.keys())[0]
         return to_plot
@@ -680,8 +680,8 @@ class Slicer2d(Slicer):
 
                 # Add indicator of range covered by current slice
                 dim = to_plot.dims[0]
-                xlims = self.ax_picking.get_xlim()
-                ylims = self.ax_picking.get_ylim()
+                xlims = self.ax_pick.get_xlim()
+                ylims = self.ax_pick.get_ylim()
                 left = to_plot.coords[dim][dim, self.slider[dim].value].value
                 if self.histograms[self.name][dim][dim]:
                     width = (
@@ -695,7 +695,7 @@ class Slicer2d(Slicer):
                                                      ylims[1] - ylims[0],
                                                      facecolor="lightgray",
                                                      zorder=-10)
-                self.ax_picking.add_patch(self.slice_pos_rectangle)
+                self.ax_pick.add_patch(self.slice_pos_rectangle)
 
             else:
                 self.profile_viewer[self.profile_key].update_slice(

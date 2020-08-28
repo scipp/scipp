@@ -173,3 +173,23 @@ def test_plot_3d_data_with_ragged_bins():
     d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
     d['a'] = sc.Variable(['z', 'y', 'x'], values=a, unit=sc.units.counts)
     plot(d)
+
+
+def test_plot_profileviewer():
+    d = make_dense_dataset(ndim=3)
+    plot(d, pick=True)
+
+
+def test_plot_profileviewer_with_binedges():
+    d = make_dense_dataset(ndim=3, binedges=True)
+    plot(d, pick=True)
+
+
+def test_plot_profileviewer_with_masks():
+    d = make_dense_dataset(ndim=3, masks=True)
+    plot(d, pick=True)
+
+
+def test_plot_profileviewer_with_binedges_and_masks():
+    d = make_dense_dataset(ndim=3, binedges=True, masks=True)
+    plot(d, pick=True)
