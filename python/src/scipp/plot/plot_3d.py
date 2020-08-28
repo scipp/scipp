@@ -65,7 +65,7 @@ def plot_3d(scipp_obj_dict=None,
 
     render_plot(widgets=sv.box, filename=filename)
 
-    return SciPlot(sv.members)
+    return sv
 
 
 class Slicer3d(Slicer):
