@@ -117,9 +117,9 @@ def test_plot_sliceviewer_with_1d_projection_with_nans():
                                      d['Sample'].variances)
     p = plot(d, projection='1d')
     # Move the sliders
-    p['tof.x.y.counts']['widgets']['sliders']['tof'].value = 10
-    p['tof.x.y.counts']['widgets']['sliders']['x'].value = 10
-    p['tof.x.y.counts']['widgets']['sliders']['y'].value = 10
+    p['tof.x.y.counts'].members['widgets']['sliders']['tof'].value = 10
+    p['tof.x.y.counts'].members['widgets']['sliders']['x'].value = 10
+    p['tof.x.y.counts'].members['widgets']['sliders']['y'].value = 10
 
 
 def test_plot_1d_events_data_with_bool_bins():
