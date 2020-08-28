@@ -531,8 +531,8 @@ class Slicer2d(Slicer):
     def toggle_mask(self, change):
         # print(self.members["masks"])
         self.members["masks"][change["owner"].masks_name].set_visible(change["new"])
-        # if self.profile_viewer is not None:
-        #     self.profile_viewer[self.profile_key].masks[
+        if self.profile_viewer is not None:
+            self.profile_viewer[self.profile_key].masks[self.name][change["owner"].masks_name].value = change["new"]
         # self.im["masks"].set_visible(change["new"])
         # change["owner"].description = "Hide masks" if change["new"] else \
         #     "Show masks"
