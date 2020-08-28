@@ -4,7 +4,6 @@
 
 # Scipp imports
 from .. import config
-# from .plot_1d import Slicer1d
 from .plot import plot
 from .render import render_plot
 from .slicer import Slicer

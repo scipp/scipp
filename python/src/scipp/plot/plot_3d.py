@@ -118,7 +118,7 @@ class Slicer3d(Slicer):
         self.scalar_map = cm.ScalarMappable(
             norm=self.params["values"][self.name]["norm"], cmap=self.cmap)
         self.masks_scalar_map = None
-        if self.params["masks"][self.name]["show"]:
+        if len(self.masks[self.name]) > 0:
             self.masks_cmap = copy(
                 cm.get_cmap(self.params["masks"][self.name]["cmap"]))
             self.masks_cmap.set_bad(color=nan_color)
@@ -627,37 +627,34 @@ void main() {
         Slice the extra dimensions down and update the slice values
         """
         self.vslice = self.data_array
-        # if self.params["masks"][self.name]["show"]:
-        #     mslice = self.masks
         # Slice along dimensions with active sliders
         for dim, val in self.slider.items():
             if not val.disabled:
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_coord[self.name][dim], val.value)
                 self.vslice = self.vslice[val.dim, val.value]
-                # # At this point, after masks were combined, all their
-                # # dimensions should be contained in the data_array.dims.
-                # if self.params["masks"][
-                #         self.name]["show"] and dim in mslice.dims:
-                #     mslice = mslice[val.dim, val.value]
 
-        # if self.params["masks"][self.name]["show"]:
-        #     # Use automatic broadcasting in Scipp variables
-        #     msk = sc.Variable(dims=self.vslice.dims,
-        #                       values=np.ones(self.vslice.shape,
-        #                                      dtype=np.int32))
-        #     msk *= sc.Variable(dims=mslice.dims,
-        #                        values=mslice.values.astype(np.int32))
-        #     msk = msk.values
+        # Handle masks
+        if len(self.masks[self.name]) > 0:
+            # Use automatic broadcasting in Scipp variables
+            msk = sc.Variable(dims=self.vslice.dims,
+                              values=np.zeros(self.vslice.shape,
+                                              dtype=np.int32))
+            for m in self.masks[self.name]:
+                if self.masks[self.name][m].value:
+                    msk += sc.Variable(
+                        dims=self.vslice.masks[m].dims,
+                        values=self.vslice.masks[m].values.astype(np.int32))
+            msk = msk.values
 
         self.vslice = self.vslice.values.flatten()
         colors = self.scalar_map.to_rgba(self.vslice).astype(np.float32)
 
-        # if self.params["masks"][self.name]["show"]:
-        #     masks_inds = np.where(msk.flatten())
-        #     masks_colors = self.masks_scalar_map.to_rgba(
-        #         self.vslice[masks_inds]).astype(np.float32)
-        #     colors[masks_inds] = masks_colors
+        if len(self.masks[self.name]) > 0:
+            masks_inds = np.where(msk.flatten())
+            masks_colors = self.masks_scalar_map.to_rgba(
+                self.vslice[masks_inds]).astype(np.float32)
+            colors[masks_inds] = masks_colors
 
         return colors
 
@@ -674,13 +671,10 @@ void main() {
             self.update_cut_surface(None)
         return
 
-    def toggle_masks(self, change):
+    def toggle_mask(self, change):
         """
         Show/hide masks
         """
-        self.params["masks"][self.name]["show"] = change["new"]
-        change["owner"].description = "Hide masks" if change["new"] else \
-            "Show masks"
         self.update_slice(None)
         return
 
