@@ -65,4 +65,4 @@ def scatter3d(scipp_obj, **kwargs):
 
 
 def profiler(scipp_obj, **kwargs):
-    return plot(scipp_obj, profiler=True, **kwargs)
+    return plot(scipp_obj, projection="profile", **kwargs)

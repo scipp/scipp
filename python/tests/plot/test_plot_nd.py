@@ -177,19 +177,19 @@ def test_plot_3d_data_with_ragged_bins():
 
 def test_plot_profileviewer():
     d = make_dense_dataset(ndim=3)
-    plot(d, profiler=True)
+    plot(d, projection="profile")
 
 
 def test_plot_profileviewer_with_binedges():
     d = make_dense_dataset(ndim=3, binedges=True)
-    plot(d, profiler=True)
+    plot(d, projection="profile")
 
 
 def test_plot_profileviewer_with_masks():
     d = make_dense_dataset(ndim=3, masks=True)
-    plot(d, profiler=True)
+    plot(d, projection="profile")
 
 
 def test_plot_profileviewer_with_binedges_and_masks():
     d = make_dense_dataset(ndim=3, binedges=True, masks=True)
-    plot(d, profiler=True)
+    plot(d, projection="profile")
