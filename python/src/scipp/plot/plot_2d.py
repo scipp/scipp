@@ -4,11 +4,8 @@
 
 # Scipp imports
 from .. import config
-from .plot import plot
-# from .profiler import Profiler
 from .render import render_plot
 from .slicer import Slicer
-from ..show import _hex_to_rgb
 from .tools import to_bin_edges, parse_params
 from .._utils import name_with_unit
 from .._scipp import core as sc
@@ -18,8 +15,6 @@ from .. import detail
 import numpy as np
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-from matplotlib.collections import PathCollection
 import warnings
 
 
@@ -100,7 +95,6 @@ class Slicer2d(Slicer):
         self.extent = {"x": [1, 2], "y": [1, 2]}
         self.logx = logx
         self.logy = logy
-        self.log = log
         self.vminmax = {"vmin": vmin, "vmax": vmax}
         self.global_vmin = np.Inf
         self.global_vmax = np.NINF
@@ -209,24 +203,20 @@ class Slicer2d(Slicer):
         # Go through the buttons and select the right coordinates for the axes
         for dim, button in self.buttons.items():
             if self.slider[dim].disabled:
-                but_val = button.value
-                if but_val is not None:
-                    but_val = but_val.lower()
-                    self.extent[but_val] = self.slider_xlims[
-                        self.name][dim].values
-                    self.axparams[but_val]["lims"] = self.extent[but_val].copy(
-                    )
-                    if getattr(self, "log" +
-                               but_val) and (self.extent[but_val][0] <= 0):
-                        self.axparams[but_val]["lims"][
-                            0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
-                    self.axparams[but_val]["labels"] = name_with_unit(
-                        self.slider_label[self.name][dim]["coord"],
-                        name=self.slider_label[self.name][dim]["name"])
-                    self.axparams[but_val]["dim"] = dim
-                    # Get the dimensions corresponding to the x/y buttons
-                    self.button_dims[but_val == "x"] = button.dim
-                    self.dim_to_xy[dim] = but_val
+                but_val = button.value.lower()
+                self.extent[but_val] = self.slider_xlims[self.name][dim].values
+                self.axparams[but_val]["lims"] = self.extent[but_val].copy()
+                if getattr(self,
+                           "log" + but_val) and (self.extent[but_val][0] <= 0):
+                    self.axparams[but_val]["lims"][
+                        0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
+                self.axparams[but_val]["labels"] = name_with_unit(
+                    self.slider_label[self.name][dim]["coord"],
+                    name=self.slider_label[self.name][dim]["name"])
+                self.axparams[but_val]["dim"] = dim
+                # Get the dimensions corresponding to the x/y buttons
+                self.button_dims[but_val == "x"] = button.dim
+                self.dim_to_xy[dim] = but_val
 
         extent_array = np.array(list(self.extent.values())).flatten()
         self.current_lims['x'] = extent_array[:2]

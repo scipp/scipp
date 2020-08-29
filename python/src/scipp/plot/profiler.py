@@ -3,23 +3,20 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .. import config
 from .plot import plot
 from .render import render_plot
 from .plot_2d import Slicer2d
 from ..show import _hex_to_rgb
-from .tools import to_bin_edges, parse_params
+from .tools import to_bin_edges
 from .._utils import name_with_unit
 from .._scipp import core as sc
 from .. import detail
 
 # Other imports
 import numpy as np
-import ipywidgets as widgets
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PathCollection
-import warnings
 
 
 def profiler(scipp_obj_dict=None,
@@ -92,6 +89,7 @@ class Profiler(Slicer2d):
         self.profile_scatter = None
         self.profile_update_lock = False
         self.ax_pick = None
+        self.log = log
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
