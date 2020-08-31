@@ -3,7 +3,12 @@
 /// @file
 #pragma once
 
+#include "scipp/units/except.h"
+#include "scipp/units/unit.h"
 #include <stdint.h>
+#include <string>
+#define NS_LENGTH 19
+#define S_LENGTH 10
 
 namespace scipp::core {
 
@@ -11,9 +16,23 @@ namespace scipp::core {
 class time_point {
 public:
   constexpr time_point() noexcept = default;
-  constexpr time_point(const int64_t &d) noexcept : m_duration(d){};
-  constexpr time_point(const int32_t &d) noexcept
-      : m_duration(static_cast<int64_t>(d)){};
+  time_point(const int64_t &d) { initialize(d); };
+  time_point(const int32_t &d) { initialize(static_cast<int64_t>(d)); };
+
+  void initialize(const int64_t &d) {
+    m_duration = d;
+    int32_t length = std::to_string(m_duration).length();
+    if (length == NS_LENGTH)
+      m_unit = scipp::units::ns;
+    else if (length == S_LENGTH)
+      m_unit = scipp::units::s;
+    else
+      throw except::UnitError(
+          "Time point should only have time units (ns or s). " +
+          std::to_string(m_duration));
+  }
+
+  scipp::units::Unit unit() const noexcept { return m_unit; };
 
   int64_t time_since_epoch() const noexcept { return m_duration; };
 
@@ -55,6 +74,7 @@ public:
 
 private:
   int64_t m_duration{0};
+  scipp::units::Unit m_unit{scipp::units::dimensionless};
 };
 
 } // namespace scipp::core
