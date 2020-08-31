@@ -160,7 +160,7 @@ class Slicer1d(Slicer):
         # In keep_buttons_box, we include the keep trace buttons.
         self.keep_buttons_box = []
         for key, val in self.keep_buttons.items():
-            self.keep_buttons_box.append(widgets.HBox(val))
+            self.keep_buttons_box.append(widgets.HBox(list(val.values())))
         self.keep_buttons_box = widgets.VBox(self.keep_buttons_box)
         self.box = widgets.VBox(
             [widgets.VBox(self.vbox), self.keep_buttons_box])
@@ -218,7 +218,11 @@ class Slicer1d(Slicer):
         setattr(col, "id", key)
         but.on_click(self.keep_remove_trace)
         col.observe(self.update_trace_color, names="value")
-        self.keep_buttons[key] = [drop, but, col]
+        self.keep_buttons[key] = {
+            "dropdown": drop,
+            "button": but,
+            "colorpicker": col
+        }
         return
 
     def update_buttons(self, owner, event, dummy):
@@ -234,11 +238,14 @@ class Slicer1d(Slicer):
         self.update_axes(owner.dim)
         self.keep_buttons = dict()
         self.make_keep_button()
+        self.update_button_box_widget()
+        return
+
+    def update_button_box_widget(self):
         self.mbox = self.vbox.copy()
         for k, b in self.keep_buttons.items():
-            self.mbox.append(widgets.HBox(b))
+            self.mbox.append(widgets.HBox(list(b.values())))
         self.box.children = tuple(self.mbox)
-        return
 
     def update_axes(self, dim):
         if not self.mpl_axes:
@@ -446,16 +453,17 @@ class Slicer1d(Slicer):
         return
 
     def keep_trace(self, owner):
-        lab = self.keep_buttons[owner.id][0].value
+        lab = self.keep_buttons[owner.id]["dropdown"].value
         # The main line
         self.ax.lines.append(cp.copy(self.members["lines"][lab]))
         self.ax.lines[-1].set_url(owner.id)
         self.ax.lines[-1].set_zorder(2)
         if self.ax.lines[-1].get_marker() == "None":
-            self.ax.lines[-1].set_color(self.keep_buttons[owner.id][2].value)
+            self.ax.lines[-1].set_color(
+                self.keep_buttons[owner.id]["colorpicker"].value)
         else:
             self.ax.lines[-1].set_markerfacecolor(
-                self.keep_buttons[owner.id][2].value)
+                self.keep_buttons[owner.id]["colorpicker"].value)
             self.ax.lines[-1].set_markeredgecolor("None")
 
         # The masks
@@ -474,21 +482,18 @@ class Slicer1d(Slicer):
             err = self.members["error_y"][lab].get_children()
             self.ax.collections.append(cp.copy(err[0]))
             self.ax.collections[-1].set_color(
-                self.keep_buttons[owner.id][2].value)
+                self.keep_buttons[owner.id]["colorpicker"].value)
             self.ax.collections[-1].set_url(owner.id)
             self.ax.collections[-1].set_zorder(2)
 
         for dim, val in self.slider.items():
             if not val.disabled:
                 lab = "{},{}:{}".format(lab, dim, val.value)
-        self.keep_buttons[owner.id][0] = widgets.Label(
-            value=lab, layout={'width': "initial"}, title=lab)
+        self.keep_buttons[owner.id]["dropdown"].options = [lab]
+        self.keep_buttons[owner.id]["dropdown"].disabled = True
         self.make_keep_button()
         owner.description = "Remove"
-        self.mbox = self.vbox.copy()
-        for k, b in self.keep_buttons.items():
-            self.mbox.append(widgets.HBox(b))
-        self.box.children = tuple(self.mbox)
+        self.update_button_box_widget()
         return
 
     def remove_trace(self, owner):
@@ -503,10 +508,7 @@ class Slicer1d(Slicer):
                 collections.append(coll)
         self.ax.lines = lines
         self.ax.collections = collections
-        self.mbox = self.vbox.copy()
-        for k, b in self.keep_buttons.items():
-            self.mbox.append(widgets.HBox(b))
-        self.box.children = tuple(self.mbox)
+        self.update_button_box_widget()
         return
 
     def update_trace_color(self, change):

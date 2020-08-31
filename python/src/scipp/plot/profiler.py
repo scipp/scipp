@@ -169,6 +169,10 @@ class Profiler(Slicer2d):
         del self.profile_viewer
         if self.ax_pick is not None:
             self.ax_pick.clear()
+            self.ax_pick.set_ylim([
+                self.params["values"][self.name]["vmin"],
+                self.params["values"][self.name]["vmax"]
+            ])
         self.profile_viewer = None
         if self.profile_scatter is not None:
             self.ax.collections = []
@@ -310,19 +314,18 @@ class Profiler(Slicer2d):
         xdata = event.mouseevent.xdata
         ydata = event.mouseevent.ydata
         if self.profile_scatter is None:
-            self.profile_scatter = self.ax.scatter([xdata], [ydata],
-                                                   c=[trace[2].value],
-                                                   picker=5)
+            self.profile_scatter = self.ax.scatter(
+                [xdata], [ydata], c=[trace["colorpicker"].value], picker=5)
         else:
             new_offsets = np.concatenate(
                 (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
-            col = np.array(_hex_to_rgb(trace[2].value) + [255],
+            col = np.array(_hex_to_rgb(trace["colorpicker"].value) + [255],
                            dtype=np.float) / 255.0
             new_colors = np.concatenate(
                 (self.profile_scatter.get_facecolors(), [col]), axis=0)
             self.profile_scatter.set_offsets(new_offsets)
             self.profile_scatter.set_facecolors(new_colors)
-        self.profile_viewer[self.profile_key].keep_trace(trace[1])
+        self.profile_viewer[self.profile_key].keep_trace(trace["button"])
 
     def delete_profile(self, event):
         ind = event.ind[0]
@@ -334,4 +337,4 @@ class Profiler(Slicer2d):
         # Also remove the line from the 1d plot
         trace = list(
             self.profile_viewer[self.profile_key].keep_buttons.values())[ind]
-        self.profile_viewer[self.profile_key].remove_trace(trace[1])
+        self.profile_viewer[self.profile_key].remove_trace(trace["button"])
