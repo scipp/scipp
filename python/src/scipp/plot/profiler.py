@@ -7,7 +7,7 @@ from .plot import plot
 from .render import render_plot
 from .plot_2d import Slicer2d
 from ..show import _hex_to_rgb
-from .tools import to_bin_edges
+from .tools import to_bin_edges, parse_params, get_ylim
 from .._utils import name_with_unit
 from .._scipp import core as sc
 from .. import detail
@@ -17,7 +17,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
 from matplotlib.collections import PathCollection
-
+import os
 
 def profiler(scipp_obj_dict=None,
              axes=None,
@@ -95,6 +95,9 @@ class Profiler(Slicer2d):
         self.log = log
         self.flatten_as = flatten_as
         self.da_with_edges = None
+        self.vmin = vmin
+        self.vmax = vmax
+        self.ylim = None
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
@@ -137,10 +140,12 @@ class Profiler(Slicer2d):
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.members["colorbar"] = self.cbar
 
-        self.ax_pick.set_ylim([
-            self.params["values"][self.name]["vmin"],
-            self.params["values"][self.name]["vmax"]
-        ])
+        # self.ax_pick.set_ylim([
+        #     self.params["values"][self.name]["vmin"],
+        #     self.params["values"][self.name]["vmax"]
+        # ])
+        self.ax_pick.set_ylim(get_ylim(
+                var=self.data_array, errorbars=(self.data_array.variances is not None)))
 
         # Connect picking events
         self.fig.canvas.mpl_connect('pick_event', self.keep_or_delete_profile)
@@ -174,10 +179,10 @@ class Profiler(Slicer2d):
         del self.profile_viewer
         if self.ax_pick is not None:
             self.ax_pick.clear()
-            self.ax_pick.set_ylim([
-                self.params["values"][self.name]["vmin"],
-                self.params["values"][self.name]["vmax"]
-            ])
+            # ylim = get_ylim(
+            #     var=self.data_array, errorbars=(self.data_array.variances is not None))
+            self.ax_pick.set_ylim(get_ylim(
+                var=self.data_array, errorbars=(self.data_array.variances is not None)))
         self.profile_viewer = None
         if self.profile_scatter is not None:
             self.ax.collections = []
@@ -223,6 +228,23 @@ class Profiler(Slicer2d):
                     # depth.unit = sc.units.one
                     # data_slice *= depth
             data_slice = getattr(sc, self.flatten_as)(self.data_array, selected_dim)
+            # Update the colorbar limits automatically
+            cbar_params = parse_params(globs={"vmin": self.vmin, "vmax": self.vmax},
+                                       variable=data_slice)
+            # self.params["values"][self.name]["norm"] = cbar_params["norm"]
+            self.image.set_norm(cbar_params["norm"])
+            if len(self.masks[self.name]) > 0:
+                for m in self.masks[self.name]:
+                    self.members["masks"][m].set_norm(cbar_params["norm"])
+
+            # self.ylim = get_ylim(
+            #     var=data_slice, errorbars=(data_slice.variances is not None))
+            # # # The axes are None on the first pass when the __init__ from
+            # # # Slicer2d is called. In this case, they are updated when the
+            # # # profile_viewer is created.
+            # # if self.ax_pick is not None:
+            # #     self.ax_pick.set_ylim(self.ylim)
+
             self.prepare_slice_for_resample(data_slice)
 
         # # Update the position of the slice position indicator
@@ -272,26 +294,36 @@ class Profiler(Slicer2d):
         # We need to extract the data again and replace with the original
         # coordinates, because coordinates have been forced to be bin-edges
         # so that rebin could be used. Also reset original unit.
+        # os.write(1, "create_profile_viewer 1\n".encode())
         to_plot = sc.DataArray(data=sc.Variable(dims=prof.dims,
                                                 unit=self.data_array.unit,
                                                 values=prof.values,
                                                 variances=prof.variances))
+        # os.write(1, "create_profile_viewer 2\n".encode())
         for dim in prof.dims:
             to_plot.coords[dim] = self.slider_coord[self.name][dim]
         if len(prof.masks) > 0:
             for m in prof.masks:
                 to_plot.masks[m] = prof.masks[m]
+        # os.write(1, "create_profile_viewer 3\n".encode())
         self.profile_viewer = plot({self.name: to_plot},
                                    ax=self.ax_pick,
                                    logy=self.log)
         self.profile_key = list(self.profile_viewer.keys())[0]
+        # os.write(1, "create_profile_viewer 4\n".encode())
+        # if self.flatten_as != "slice":
+        #     self.ax_pick.set_ylim(self.ylim)
+        # os.write(1, "create_profile_viewer 5\n".encode())
         return to_plot
 
     def update_profile(self, event):
+        # os.write(1, "update_profile 1\n".encode())
         if event.inaxes == self.ax:
             prof = self.compute_profile(event)
+            # os.write(1, "update_profile 2\n".encode())
             if self.profile_viewer is None:
                 to_plot = self.create_profile_viewer(prof)
+                # os.write(1, "update_profile 3\n".encode())
 
                 if self.flatten_as == "slice":
                     # Add indicator of range covered by current slice
@@ -312,15 +344,21 @@ class Profiler(Slicer2d):
                                                          facecolor="lightgray",
                                                          zorder=-10)
                     self.ax_pick.add_patch(self.slice_pos_rectangle)
+                # os.write(1, "update_profile 4\n".encode())
 
             else:
+                # os.write(1, "update_profile 5\n".encode())
                 self.profile_viewer[self.profile_key].update_slice(
                     {"vslice": {
                         self.name: prof
                     }})
+                # os.write(1, "update_profile 6\n".encode())
+            # os.write(1, "update_profile 7\n".encode())
             self.toggle_visibility_of_hover_plot(True)
         elif self.profile_viewer is not None:
             self.toggle_visibility_of_hover_plot(False)
+        # self.fig.canvas.draw_idle()
+        # os.write(1, "update_profile 8\n".encode())
 
     def toggle_visibility_of_hover_plot(self, value):
         # If the mouse moves off the image, we hide the profile. If it moves

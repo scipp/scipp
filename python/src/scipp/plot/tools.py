@@ -123,3 +123,37 @@ def _find_min_max(array, params):
         params["vmax"] = valid.max()
         if params["log"]:
             params["vmax"] = 10.0**params["vmax"]
+
+
+
+def vars_to_err(v):
+    with np.errstate(invalid="ignore"):
+        v = np.sqrt(v)
+    non_finites = np.where(np.logical_not(np.isfinite(v)))
+    v[non_finites] = 0.0
+    return v
+
+def get_finite_y(arr, logy=False):
+    if logy:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            arr = np.log10(arr, out=arr)
+    subset = np.where(np.isfinite(arr))
+    return arr[subset]
+
+def get_ylim(var=None, ymin=None, ymax=None, errorbars=False, logy=False):
+    if errorbars:
+        err = vars_to_err(var.variances)
+    else:
+        err = 0.0
+
+    ymin_new = np.amin(get_finite_y(var.values - err, logy=logy))
+    ymax_new = np.amax(get_finite_y(var.values + err, logy=logy))
+
+    dy = 0.05 * (ymax_new - ymin_new)
+    ymin_new -= dy
+    ymax_new += dy
+    if logy:
+        ymin_new = 10.0**ymin_new
+        ymax_new = 10.0**ymax_new
+    return [ymin_new if ymin is None else min(ymin, ymin_new),
+            ymax_new if ymax is None else max(ymax, ymax_new)]

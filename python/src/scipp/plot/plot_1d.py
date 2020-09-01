@@ -6,7 +6,7 @@
 from .. import config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import to_bin_centers
+from .tools import to_bin_centers, get_ylim, vars_to_err
 from .._utils import name_with_unit
 from .._scipp import core as sc
 
@@ -127,10 +127,11 @@ class Slicer1d(Slicer):
         for name, var in self.scipp_obj_dict.items():
             self.names.append(name)
             if var.values is not None:
-                self.ylim = self.get_ylim(var=var,
+                self.ylim = get_ylim(var=var,
                                           ymin=self.ylim[0],
                                           ymax=self.ylim[1],
-                                          errorbars=self.errorbars[name])
+                                          errorbars=self.errorbars[name],
+                                          logy=self.logy)
             ylab = name_with_unit(var=var, name="")
 
         if (not self.mpl_axes) and (var.values is not None):
@@ -174,29 +175,29 @@ class Slicer1d(Slicer):
 
         return
 
-    def get_finite_y(self, arr):
-        if self.logy:
-            with np.errstate(divide="ignore", invalid="ignore"):
-                arr = np.log10(arr, out=arr)
-        subset = np.where(np.isfinite(arr))
-        return arr[subset]
+    # def get_finite_y(self, arr):
+    #     if self.logy:
+    #         with np.errstate(divide="ignore", invalid="ignore"):
+    #             arr = np.log10(arr, out=arr)
+    #     subset = np.where(np.isfinite(arr))
+    #     return arr[subset]
 
-    def get_ylim(self, var=None, ymin=None, ymax=None, errorbars=False):
-        if errorbars:
-            err = self.vars_to_err(var.variances)
-        else:
-            err = 0.0
+    # def get_ylim(self, var=None, ymin=None, ymax=None, errorbars=False):
+    #     if errorbars:
+    #         err = self.vars_to_err(var.variances)
+    #     else:
+    #         err = 0.0
 
-        ymin_new = np.amin(self.get_finite_y(var.values - err))
-        ymax_new = np.amax(self.get_finite_y(var.values + err))
+    #     ymin_new = np.amin(self.get_finite_y(var.values - err))
+    #     ymax_new = np.amax(self.get_finite_y(var.values + err))
 
-        dy = 0.05 * (ymax_new - ymin_new)
-        ymin_new -= dy
-        ymax_new += dy
-        if self.logy:
-            ymin_new = 10.0**ymin_new
-            ymax_new = 10.0**ymax_new
-        return [min(ymin, ymin_new), max(ymax, ymax_new)]
+    #     dy = 0.05 * (ymax_new - ymin_new)
+    #     ymin_new -= dy
+    #     ymax_new += dy
+    #     if self.logy:
+    #         ymin_new = 10.0**ymin_new
+    #         ymax_new = 10.0**ymax_new
+    #     return [min(ymin, ymin_new), max(ymax, ymax_new)]
 
     def make_keep_button(self):
         drop = widgets.Dropdown(options=self.names,
@@ -353,7 +354,7 @@ class Slicer1d(Slicer):
                 self.members["error_y"][name] = self.ax.errorbar(
                     self.current_xcenters,
                     ydata,
-                    yerr=self.vars_to_err(vslice.variances),
+                    yerr=vars_to_err(vslice.variances),
                     color=self.mpl_line_params["color"][name],
                     zorder=10,
                     fmt="none")
@@ -388,10 +389,11 @@ class Slicer1d(Slicer):
                 vslice = vslice[val.dim, val.value]
         if vslice.unaligned is not None:
             vslice = sc.histogram(vslice)
-            self.ylim = self.get_ylim(var=vslice,
+            self.ylim = get_ylim(var=vslice,
                                       ymin=self.ylim[0],
                                       ymax=self.ylim[1],
-                                      errorbars=self.errorbars[name])
+                                      errorbars=self.errorbars[name],
+                                      logy=self.logy)
         return vslice
 
     def slice_masks(self):
@@ -526,7 +528,7 @@ class Slicer1d(Slicer):
         return
 
     def change_segments_y(self, x, y, e):
-        e = self.vars_to_err(e)
+        e = vars_to_err(e)
         arr1 = np.repeat(x, 2)
         arr2 = np.array([y - e, y + e]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
@@ -542,9 +544,9 @@ class Slicer1d(Slicer):
                 line.set_visible(change["new"])
         return
 
-    def vars_to_err(self, v):
-        with np.errstate(invalid="ignore"):
-            v = np.sqrt(v)
-        non_finites = np.where(np.logical_not(np.isfinite(v)))
-        v[non_finites] = 0.0
-        return v
+    # def vars_to_err(self, v):
+    #     with np.errstate(invalid="ignore"):
+    #         v = np.sqrt(v)
+    #     non_finites = np.where(np.logical_not(np.isfinite(v)))
+    #     v[non_finites] = 0.0
+    #     return v
