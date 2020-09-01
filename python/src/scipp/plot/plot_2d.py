@@ -560,7 +560,7 @@ class Slicer2d(Slicer):
                     self.members["masks"][m].set_data(
                         self.mask_to_float(msk.values, arr))
                     if extent is not None:
-                        self.members["masks"].set_extent(extent)
+                        self.members["masks"][m].set_extent(extent)
                 else:
                     self.members["masks"][m].set_visible(False)
                     self.members["masks"][m].set_url("hide")
