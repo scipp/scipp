@@ -319,6 +319,8 @@ class Slicer2d(Slicer):
             # Pixel widths used for scaling before rebin step
             self.compute_bin_widths(xy, param["dim"])
 
+    # def prepare_slice_
+
     def slice_data(self):
         """
         Recursively slice the data along the dimensions of active sliders.
@@ -332,6 +334,39 @@ class Slicer2d(Slicer):
                     self.slider_label[self.name][dim]["coord"], val.value)
                 data_slice = data_slice[val.dim, val.value]
 
+        self.prepare_slice_for_resample(data_slice)
+
+        # # In the case of unaligned data, we may want to auto-scale the colorbar
+        # # as we slice through dimensions. Colorbar limits are allowed to grow
+        # # but not shrink.
+        # if data_slice.unaligned is not None:
+        #     data_slice = sc.histogram(data_slice)
+        #     data_slice.variances = None
+        #     self.autoscale_cbar = True
+        # else:
+        #     self.autoscale_cbar = False
+
+        # self.vslice = detail.move_to_data_array(
+        #     data=sc.Variable(dims=data_slice.dims,
+        #                      unit=sc.units.counts,
+        #                      values=data_slice.values,
+        #                      variances=data_slice.variances,
+        #                      dtype=sc.dtype.float32))
+        # self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
+        # self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
+
+        # # Also include masks
+        # if len(data_slice.masks) > 0:
+        #     for m in data_slice.masks:
+        #         self.vslice.masks[m] = data_slice.masks[m]
+
+        # # Scale by bin width and then rebin in both directions
+        # # Note that this has to be written as 2 inplace operations to avoid
+        # # creation of large 2D temporary from broadcast
+        # self.vslice *= self.xywidth["x"]
+        # self.vslice *= self.xywidth["y"]
+
+    def prepare_slice_for_resample(self, data_slice):
         # In the case of unaligned data, we may want to auto-scale the colorbar
         # as we slice through dimensions. Colorbar limits are allowed to grow
         # but not shrink.
@@ -376,8 +411,9 @@ class Slicer2d(Slicer):
         return
 
     def toggle_mask(self, change):
-        self.members["masks"][change["owner"].masks_name].set_visible(
-            change["new"])
+        im = self.members["masks"][change["owner"].masks_name]
+        if im.get_url() != "hide":
+            im.set_visible(change["new"])
         return
 
     def check_for_xlim_update(self, event_ax):
@@ -449,6 +485,9 @@ class Slicer2d(Slicer):
 
         # Rebin the data
         for dim, edges in rebin_edges.items():
+            # print(dim)
+            # print(dslice)
+            # print(edges)
             dslice = sc.rebin(dslice, dim, edges)
 
         # Divide by pixel width
@@ -514,13 +553,17 @@ class Slicer2d(Slicer):
                                     values=np.ones(self.dslice.shape,
                                                    dtype=np.int32))
             for m in self.masks[self.name]:
-                msk = base_mask * sc.Variable(
-                    dims=self.dslice.masks[m].dims,
-                    values=self.dslice.masks[m].values.astype(np.int32))
-                self.members["masks"][m].set_data(
-                    self.mask_to_float(msk.values, arr))
-                if extent is not None:
-                    self.members["masks"].set_extent(extent)
+                if m in self.dslice.masks:
+                    msk = base_mask * sc.Variable(
+                        dims=self.dslice.masks[m].dims,
+                        values=self.dslice.masks[m].values.astype(np.int32))
+                    self.members["masks"][m].set_data(
+                        self.mask_to_float(msk.values, arr))
+                    if extent is not None:
+                        self.members["masks"].set_extent(extent)
+                else:
+                    self.members["masks"][m].set_visible(False)
+                    self.members["masks"][m].set_url("hide")
 
         if self.autoscale_cbar:
             cbar_params = parse_params(globs=self.vminmax,

@@ -35,7 +35,8 @@ def profiler(scipp_obj_dict=None,
              logx=False,
              logy=False,
              logxy=False,
-             resolution=None):
+             resolution=None,
+             flatten_as="sum"):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
     2, a slider is created to adjust the position of the slice in that
@@ -55,7 +56,8 @@ def profiler(scipp_obj_dict=None,
                   color=color,
                   logx=logx or logxy,
                   logy=logy or logxy,
-                  resolution=resolution)
+                  resolution=resolution,
+                  flatten_as=flatten_as)
 
     if ax is None:
         render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
@@ -78,7 +80,8 @@ class Profiler(Slicer2d):
                  color=None,
                  logx=False,
                  logy=False,
-                 resolution=None):
+                 resolution=None,
+                 flatten_as=None):
 
         # Variables for profile plotting from pick need to be set before
         # calling the init from Slicer2d as it calls update_axes() and
@@ -90,6 +93,8 @@ class Profiler(Slicer2d):
         self.profile_update_lock = False
         self.ax_pick = None
         self.log = log
+        self.flatten_as = flatten_as
+        self.da_with_edges = None
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
@@ -182,29 +187,65 @@ class Profiler(Slicer2d):
 
     def slice_data(self):
 
-        # Run Slicer2d slice_data
-        super().slice_data()
+        if self.flatten_as == "slice":
+            # Run Slicer2d slice_data
+            super().slice_data()
+            # Update the position of the slice position indicator
+            for dim, val in self.slider.items():
+                if not val.disabled:
+                    if self.slice_pos_rectangle is not None:
+                        new_pos = self.slider_coord[self.name][dim][
+                            dim, val.value].value
+                        self.slice_pos_rectangle.set_x(new_pos)
+                        if self.histograms[self.name][dim][dim]:
+                            self.slice_pos_rectangle.set_width(self.slider_coord[
+                                self.name][dim][dim, val.value + 1].value -
+                                                               new_pos)
+                        else:
+                            new_pos -= 0.5 * self.slice_pos_rectangle.get_width()
+                        self.slice_pos_rectangle.set_x(new_pos)
+        # elif self.flatten_as == "sum":
+        else:
+            # if self.da_with_edges is None:
+            #     # Save a copy of the data array with bin-edge coords
+            #     self.da_with_edges = self.make_data_array_with_bin_edges()
+            data_slice = self.da_with_edges
+            selected_dim = None
+            for dim, val in self.slider.items():
+                if not val.disabled:
+                    selected_dim = dim
+                    break
+                    # # self.vslice = self.vslice[val.dim, val.value]
+                    # data_slice = self.resample_image(data_slice,
+                    #     coord_edges={dim: self.slider_coord[self.name][dim]},
+                    #     rebin_edges={dim: self.slider_xlims[self.name][dim]})[dim, 0]
+                    # depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
+                    # depth.unit = sc.units.one
+                    # data_slice *= depth
+            data_slice = getattr(sc, self.flatten_as)(self.data_array, selected_dim)
+            self.prepare_slice_for_resample(data_slice)
 
-        # Update the position of the slice position indicator
-        for dim, val in self.slider.items():
-            if not val.disabled:
-                if self.slice_pos_rectangle is not None:
-                    new_pos = self.slider_coord[self.name][dim][
-                        dim, val.value].value
-                    self.slice_pos_rectangle.set_x(new_pos)
-                    if self.histograms[self.name][dim][dim]:
-                        self.slice_pos_rectangle.set_width(self.slider_coord[
-                            self.name][dim][dim, val.value + 1].value -
-                                                           new_pos)
-                    else:
-                        new_pos -= 0.5 * self.slice_pos_rectangle.get_width()
-                    self.slice_pos_rectangle.set_x(new_pos)
+        # # Update the position of the slice position indicator
+        # for dim, val in self.slider.items():
+        #     if not val.disabled:
+        #         if self.slice_pos_rectangle is not None:
+        #             new_pos = self.slider_coord[self.name][dim][
+        #                 dim, val.value].value
+        #             self.slice_pos_rectangle.set_x(new_pos)
+        #             if self.histograms[self.name][dim][dim]:
+        #                 self.slice_pos_rectangle.set_width(self.slider_coord[
+        #                     self.name][dim][dim, val.value + 1].value -
+        #                                                    new_pos)
+        #             else:
+        #                 new_pos -= 0.5 * self.slice_pos_rectangle.get_width()
+        #             self.slice_pos_rectangle.set_x(new_pos)
 
     def toggle_mask(self, change):
         super().toggle_mask(change)
         if self.profile_viewer is not None:
             self.profile_viewer[self.profile_key].masks[self.name][
                 change["owner"].masks_name].value = change["new"]
+        self.fig.canvas.draw_idle()
         return
 
     def compute_profile(self, event):
@@ -252,24 +293,25 @@ class Profiler(Slicer2d):
             if self.profile_viewer is None:
                 to_plot = self.create_profile_viewer(prof)
 
-                # Add indicator of range covered by current slice
-                dim = to_plot.dims[0]
-                xlims = self.ax_pick.get_xlim()
-                ylims = self.ax_pick.get_ylim()
-                left = to_plot.coords[dim][dim, self.slider[dim].value].value
-                if self.histograms[self.name][dim][dim]:
-                    width = (
-                        to_plot.coords[dim][dim, self.slider[dim].value + 1] -
-                        to_plot.coords[dim][dim, self.slider[dim].value]).value
-                else:
-                    width = 0.01 * (xlims[1] - xlims[0])
-                    left -= 0.5 * width
-                self.slice_pos_rectangle = Rectangle((left, ylims[0]),
-                                                     width,
-                                                     ylims[1] - ylims[0],
-                                                     facecolor="lightgray",
-                                                     zorder=-10)
-                self.ax_pick.add_patch(self.slice_pos_rectangle)
+                if self.flatten_as == "slice":
+                    # Add indicator of range covered by current slice
+                    dim = to_plot.dims[0]
+                    xlims = self.ax_pick.get_xlim()
+                    ylims = self.ax_pick.get_ylim()
+                    left = to_plot.coords[dim][dim, self.slider[dim].value].value
+                    if self.histograms[self.name][dim][dim]:
+                        width = (
+                            to_plot.coords[dim][dim, self.slider[dim].value + 1] -
+                            to_plot.coords[dim][dim, self.slider[dim].value]).value
+                    else:
+                        width = 0.01 * (xlims[1] - xlims[0])
+                        left -= 0.5 * width
+                    self.slice_pos_rectangle = Rectangle((left, ylims[0]),
+                                                         width,
+                                                         ylims[1] - ylims[0],
+                                                         facecolor="lightgray",
+                                                         zorder=-10)
+                    self.ax_pick.add_patch(self.slice_pos_rectangle)
 
             else:
                 self.profile_viewer[self.profile_key].update_slice(
