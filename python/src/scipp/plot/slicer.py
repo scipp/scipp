@@ -82,14 +82,19 @@ class Slicer:
             adims = array.dims
             for dim in axes:
                 if dim not in adims:
-                    
+                    underlying_dim = array.coords[dim].dims[-1]
+                    adims[adims.index(underlying_dim)] = dim
+            print(adims)
 
             self.data_arrays[name] = sc.DataArray(
-                data=sc.Variable(dims=array.dims,
+                data=sc.Variable(dims=adims,
                                  unit=array.unit,
                                  values=array.values,
                                  variances=array.variances,
                                  dtype=sc.dtype.float64))
+            print("================")
+            print(self.data_arrays[name])
+            print("================")
             self.name = name
 
             self.params["values"][name] = parse_params(globs=globs,
