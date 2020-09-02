@@ -464,11 +464,11 @@ class TestMantidConversion(unittest.TestCase):
         # after
         self.assertTrue(target.run().hasProperty("test_property"))
 
-    def test_convert_run_logs_to_unaligned_coords(self):
+    def test_convert_array_run_log_to_unaligned_coords(self):
         # Given a Mantid workspace with a run log
         import mantid.simpleapi as mantid
         target = mantid.CloneWorkspace(self.base_event_ws)
-        log_name = "proton_charge"
+        log_name = "SampleTemp"
         self.assertTrue(
             target.run().hasProperty(log_name),
             f"Expected input workspace to have a {log_name} run log")
@@ -480,8 +480,32 @@ class TestMantidConversion(unittest.TestCase):
         self.assertTrue(
             np.allclose(target.run()[log_name].value,
                         d.unaligned_coords[log_name].values),
-            "Expected values in the unaligned coord to match the original run log from the Mantid workspace"
-        )
+            "Expected values in the unaligned coord to match "
+            "the original run log from the Mantid workspace")
+        self.assertEqual(d.unaligned_coords[log_name].units, sc.units.K)
+        self.assertTrue(
+            np.allclose(target.run()[log_name].times,
+                        d.unaligned_coords[log_name].coords["times"].values),
+            "Expected times in the unaligned coord to match "
+            "the original run log from the Mantid workspace")
+
+    def test_convert_scalar_run_log_to_unaligned_coords(self):
+        # Given a Mantid workspace with a run log
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        log_name = "start_time"
+        self.assertTrue(
+            target.run().hasProperty(log_name),
+            f"Expected input workspace to have a {log_name} run log")
+
+        # When the workspace is converted to a scipp data array
+        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+
+        # Then the data array contains the run log as an unaligned coord
+        self.assertEqual(
+            target.run()[log_name].value, d.unaligned_coords[log_name].value,
+            "Expected value of the unaligned coord to match "
+            "the original run log from the Mantid workspace")
 
     def test_set_sample(self):
         import mantid.simpleapi as mantid

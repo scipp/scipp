@@ -6,6 +6,7 @@ import re
 from copy import deepcopy
 from contextlib import contextmanager
 import uuid
+import warnings
 
 import numpy as np
 
@@ -52,28 +53,56 @@ def make_run(ws):
     return sc.Variable(value=deepcopy(ws.run()))
 
 
-def generate_variables_from_run_logs(ws):
+def make_variables_from_run_logs(ws):
     lookup_units = dict(
         zip([str(unit) for unit in sc.units.supported_units()],
             sc.units.supported_units()))
     for property_name in ws.run().keys():
-        units = lookup_units.get(ws.run()[property_name].units, None)
+        units_string = ws.run()[property_name].units
+        units = lookup_units.get(units_string, None)
         values = deepcopy(ws.run()[property_name].value)
-        # TODO should warn if we don't recognise the units string?
+
+        if units_string and units is None:
+            warnings.warn(
+                f"Workspace run log '{property_name}' has units which are "
+                f"unrecognised by scipp: '{units_string}'")
+
+        try:
+            times = deepcopy(ws.run()[property_name].times)
+            is_time_series = True
+            dimension_label = "times"
+        except AttributeError:
+            times = None
+            is_time_series = False
+            dimension_label = property_name
 
         if np.isscalar(values):
             if units is not None:
-                yield property_name, sc.Variable(value=values, unit=units)
+                property_data = sc.Variable(value=values, unit=units)
             else:
-                yield property_name, sc.Variable(value=values)
+                property_data = sc.Variable(value=values)
         else:
             if units is not None:
-                yield property_name, sc.Variable(values=values,
-                                                 unit=units,
-                                                 dims=[property_name])
+                property_data = sc.Variable(values=values,
+                                            unit=units,
+                                            dims=[dimension_label])
             else:
-                yield property_name, sc.Variable(values=values,
-                                                 dims=[property_name])
+                property_data = sc.Variable(values=values,
+                                            dims=[dimension_label])
+
+        if is_time_series:
+            # If property has timestamps, create a DataArray
+            data_array = sc.DataArray(data=property_data,
+                                      coords={
+                                          dimension_label:
+                                          sc.Variable([dimension_label],
+                                                      values=times,
+                                                      dtype=sc.dtype.int64,
+                                                      unit=sc.units.ns)
+                                      })
+            yield property_name, sc.Variable(data_array)
+
+        yield property_name, property_data
 
 
 def make_sample(ws):
@@ -447,7 +476,7 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
         },
     }
 
-    for run_log_name, run_log_variable in generate_variables_from_run_logs(ws):
+    for run_log_name, run_log_variable in make_variables_from_run_logs(ws):
         info["unaligned_coords"][run_log_name] = run_log_variable
 
     if advanced_geometry:
