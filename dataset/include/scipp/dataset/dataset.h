@@ -392,6 +392,8 @@ public:
   Dataset &operator*=(const DatasetConstView &other);
   Dataset &operator/=(const DatasetConstView &other);
 
+  // TODO dims() required for generic code. Need proper equivalent to class
+  // Dimensions that does not imply dimension order.
   std::unordered_map<Dim, scipp::index> dimensions() const;
   std::unordered_map<Dim, scipp::index> dims() const { return dimensions(); }
 

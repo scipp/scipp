@@ -66,6 +66,7 @@ public:
 
   scipp::index size() const { return m_iterDims.volume(); }
   constexpr const Dimensions &dims() const noexcept { return m_iterDims; }
+  constexpr const Dimensions &dataDims() const noexcept { return m_dataDims; }
 
   bool overlaps(const element_array_view &other) const {
     // TODO We could be less restrictive here and use a more sophisticated check
