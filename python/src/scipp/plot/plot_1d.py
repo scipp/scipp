@@ -73,7 +73,7 @@ class Slicer1d(Slicer):
                          masks=masks,
                          button_options=['X'])
 
-        self.scipp_obj_dict = scipp_obj_dict
+        # self.scipp_obj_dict = scipp_obj_dict
         self.fig = None
         self.ax = ax
         self.mpl_axes = False
@@ -93,7 +93,7 @@ class Slicer1d(Slicer):
 
         # Determine whether error bars should be plotted or not
         self.errorbars = {}
-        for name, var in self.scipp_obj_dict.items():
+        for name, var in self.data_arrays.items():
             if var.unaligned is not None:
                 self.errorbars[name] = var.unaligned.variances is not None
                 self.input_contains_unaligned_data = True
@@ -101,13 +101,13 @@ class Slicer1d(Slicer):
                 self.errorbars[name] = var.variances is not None
         if errorbars is not None:
             if isinstance(errorbars, bool):
-                for name, var in self.scipp_obj_dict.items():
+                for name, var in self.data_arrays.items():
                     self.errorbars[name] &= errorbars
             elif isinstance(errorbars, dict):
                 for name, v in errorbars.items():
-                    if name in self.scipp_obj_dict:
+                    if name in self.data_arrays:
                         self.errorbars[
-                            name] = errorbars[name] and self.scipp_obj_dict[
+                            name] = errorbars[name] and self.data_arrays[
                                 name].variances is not None
                     else:
                         print("Warning: key {} was not found in list of "
@@ -124,7 +124,7 @@ class Slicer1d(Slicer):
         self.ylim = [np.Inf, np.NINF]
         self.logx = logx
         self.logy = logy
-        for name, var in self.scipp_obj_dict.items():
+        for name, var in self.data_arrays.items():
             self.names.append(name)
             if var.values is not None:
                 self.ylim = get_ylim(var=var,
@@ -262,13 +262,15 @@ class Slicer1d(Slicer):
 
         xmin = np.Inf
         xmax = np.NINF
-        for name, var in self.scipp_obj_dict.items():
-            new_x = self.slider_coord[name][dim].values
-            xmin = min(new_x[0], xmin)
-            xmax = max(new_x[-1], xmax)
+        for name, array in self.data_arrays.items():
+            # new_x = self.slider_coord[name][dim].values
+            # new_x = array.coords[dim].values
+            xmin = min(sc.min(array.coords[dim]).value, xmin)
+            xmax = max(sc.max(array.coords[dim]).value, xmax)
 
-            vslice = self.slice_data(var, name)
+            vslice = self.slice_data(array, name)
             ydata = vslice.values
+            xcenters = to_bin_centers(vslice.coords[dim], dim).values
 
             if len(self.masks[name]) > 0:
                 self.members["masks"][name] = {}
@@ -280,7 +282,7 @@ class Slicer1d(Slicer):
             if self.histograms[name][dim][dim]:
                 ye = np.concatenate((ydata[0:1], ydata))
                 [self.members["lines"][name]
-                 ] = self.ax.step(new_x,
+                 ] = self.ax.step(vslice.coords[dim].values,
                                   ye,
                                   label=name,
                                   zorder=10,
@@ -299,7 +301,7 @@ class Slicer1d(Slicer):
 
                         me = np.concatenate((mdata[0:1], mdata))
                         [self.members["masks"][name][m]] = self.ax.step(
-                            new_x,
+                            vslice.coords[dim].values,
                             self.mask_to_float(me, ye),
                             linewidth=self.mpl_line_params["linewidth"][name] *
                             3.0,
@@ -316,8 +318,9 @@ class Slicer1d(Slicer):
             else:
 
                 # If this is not a histogram, just use normal plot
+                # x = to_bin_centers(vslice.coords[dim], dim).values
                 [self.members["lines"][name]
-                 ] = self.ax.plot(new_x,
+                 ] = self.ax.plot(xcenters,
                                   vslice.values,
                                   label=name,
                                   zorder=10,
@@ -334,7 +337,7 @@ class Slicer1d(Slicer):
                                         values=vslice.masks[m].values.astype(
                                             np.int32))).values
                         [self.members["masks"][name][m]] = self.ax.plot(
-                            new_x,
+                            xcenters,
                             self.mask_to_float(mdata, vslice.values),
                             zorder=11,
                             mec=self.params["masks"][name]["color"],
@@ -346,13 +349,13 @@ class Slicer1d(Slicer):
 
             # Add error bars
             if self.errorbars[name]:
-                if self.histograms[name][dim][dim]:
-                    self.current_xcenters = to_bin_centers(
-                        self.slider_coord[name][dim], dim).values
-                else:
-                    self.current_xcenters = new_x
+                # if self.histograms[name][dim][dim]:
+                #     self.current_xcenters = to_bin_centers(
+                #         self.slider_coord[name][dim], dim).values
+                # else:
+                #     self.current_xcenters = new_x
                 self.members["error_y"][name] = self.ax.errorbar(
-                    self.current_xcenters,
+                    xcenters,
                     ydata,
                     yerr=vars_to_err(vslice.variances),
                     color=self.mpl_line_params["color"][name],
@@ -408,7 +411,7 @@ class Slicer1d(Slicer):
         # Special key in the change dict: if "vslice" is found, it means we are
         # calling from a profile viewer, and the slice has hence already been
         # generate.
-        for name, var in self.scipp_obj_dict.items():
+        for name, var in self.data_arrays.items():
             if "vslice" in change:
                 vslice = change["vslice"][name]
             else:

@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
-from .tools import parse_params, make_fake_coord
+from .tools import parse_params, make_fake_coord, to_bin_edges
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 
@@ -27,7 +27,8 @@ class Slicer:
                  aspect=None,
                  positions=None):
 
-        self.scipp_obj_dict = scipp_obj_dict
+        # self.scipp_obj_dict = scipp_obj_dict
+        self.data_arrays = {}
 
         # Member container for dict output
         self.members = dict(widgets=dict(sliders=dict(),
@@ -57,9 +58,9 @@ class Slicer:
         # List mask names for each item
         self.masks = {}
         # Size of the slider coordinate arrays
-        self.slider_shape = {}
+        self.dim_to_shape = {}
         # Store coordinates of dimensions that will be in sliders
-        self.slider_coord = {}
+        # self.slider_coord = {}
         # Store coordinate min and max limits
         self.slider_xlims = {}
         # Store ticklabels for a dimension
@@ -75,9 +76,14 @@ class Slicer:
         # Save if some dims contain multi-dimensional coords
         self.contains_multid_coord = {}
 
-        for name, array in self.scipp_obj_dict.items():
+        for name, array in scipp_obj_dict.items():
 
-            self.data_array = array
+            self.data_arrays[name] = sc.DataArray(
+                data=sc.Variable(dims=array.dims,
+                                 unit=array.unit,
+                                 values=array.values,
+                                 variances=array.variances,
+                                 dtype=sc.dtype.float64))
             self.name = name
 
             self.params["values"][name] = parse_params(globs=globs,
@@ -91,12 +97,12 @@ class Slicer:
                                                       globs=globs)
 
             # Create a map from dim to shape
-            dim_to_shape = dict(zip(array.dims, array.shape))
+            # dim_to_shape = dict(zip(array.dims, array.shape))
 
             # Size of the slider coordinate arrays
-            self.slider_shape[name] = {}
+            self.dim_to_shape[name] = dict(zip(array.dims, array.shape))
             # Store coordinates of dimensions that will be in sliders
-            self.slider_coord[name] = {}
+            # self.slider_coord[name] = {}
             # Store coordinate min and max limits
             self.slider_xlims[name] = {}
             # Store ticklabels for a dimension
@@ -127,9 +133,28 @@ class Slicer:
             # Iterate through axes and collect dimensions
             for ax in axes:
                 dim, var, lab, formatter, locator = self.axis_label_and_ticks(
-                    ax, array, name, dim_to_shape)
+                    ax, array, name)
+
+                # To allow for 2D coordinates, the histograms are
+                # stored as dicts, with one key per dimension of the coordinate
+                # self.slider_shape[name][dim] = {}
+                dim_shape = None
+                self.histograms[name][dim] = {}
+                for i, d in enumerate(var.dims):
+                    # shape = var.shape[i]
+                    self.histograms[name][dim][d] = self.dim_to_shape[name][
+                        d] == var.shape[i] - 1
+                    if d == dim:
+                        dim_shape = var.shape[i]
+
+                if self.histograms[name][dim][dim]:
+                    self.data_arrays[name].coords[dim] = var
+                else:
+                    self.data_arrays[name].coords[dim] = to_bin_edges(var, dim)
+
                 # The coordinate variable
-                self.slider_coord[name][dim] = var
+                # self.slider_coord[name][dim] = var
+                # self.data_arrays[name].coords[dim] = var
                 # Store labels which can be different for coord dims if non-
                 # dimension coords are used.
                 self.slider_label[name][dim] = {"name": str(ax), "coord": lab}
@@ -142,15 +167,15 @@ class Slicer:
                 # The tick formatter and locator
                 self.slider_axformatter[name][dim] = formatter
                 self.slider_axlocator[name][dim] = locator
-                # To allow for 2D coordinates, the shapes and histograms are
-                # stored as dicts, with one key per dimension of the coordinate
-                self.slider_shape[name][dim] = {}
-                self.histograms[name][dim] = {}
-                for i, d in enumerate(self.slider_coord[name][dim].dims):
-                    self.slider_shape[name][dim][d] = self.slider_coord[name][
-                        dim].shape[i]
-                    self.histograms[name][dim][d] = dim_to_shape[
-                        d] == self.slider_shape[name][dim][d] - 1
+                # # To allow for 2D coordinates, the shapes and histograms are
+                # # stored as dicts, with one key per dimension of the coordinate
+                # self.slider_shape[name][dim] = {}
+                # self.histograms[name][dim] = {}
+                # for i, d in enumerate(self.slider_coord[name][dim].dims):
+                #     self.slider_shape[name][dim][d] = self.slider_coord[name][
+                #         dim].shape[i]
+                #     self.histograms[name][dim][d] = dim_to_shape[
+                #         d] == self.slider_shape[name][dim][d] - 1
 
                 # Small correction if xmin == xmax
                 if self.slider_xlims[name][dim][0] == self.slider_xlims[name][
@@ -165,19 +190,33 @@ class Slicer:
                 # bin-edge. This is simpler than finding the actual index of
                 # the smallest and largest values and computing a bin edge from
                 # the neighbours.
+                # if not self.histograms[name][dim][
+                #         dim] and self.slider_shape[name][dim][dim] > 1:
+                #     dx = 0.5 * (self.slider_xlims[name][dim][1] -
+                #                 self.slider_xlims[name][dim][0]) / float(
+                #                     self.slider_shape[name][dim][dim] - 1)
+                #     self.slider_xlims[name][dim][0] -= dx
+                #     self.slider_xlims[name][dim][1] += dx
                 if not self.histograms[name][dim][
-                        dim] and self.slider_shape[name][dim][dim] > 1:
+                        dim] and dim_shape > 1:
                     dx = 0.5 * (self.slider_xlims[name][dim][1] -
                                 self.slider_xlims[name][dim][0]) / float(
-                                    self.slider_shape[name][dim][dim] - 1)
+                                    dim_shape - 1)
                     self.slider_xlims[name][dim][0] -= dx
                     self.slider_xlims[name][dim][1] += dx
 
                 self.slider_xlims[name][dim] = sc.Variable(
                     [dim], values=self.slider_xlims[name][dim], unit=var.unit)
 
-                if len(self.slider_coord[name][dim].dims) > 1:
+                if len(var.dims) > 1:
                     self.contains_multid_coord[name] = True
+
+            # Include masks
+            for n, msk in array.masks:
+                self.data_arrays[name].masks[n] = msk
+
+
+        print(self.data_arrays)
 
         # Initialise list for VBox container
         self.vbox = []
@@ -185,6 +224,7 @@ class Slicer:
         # Initialise slider and label containers
         self.lab = dict()
         self.slider = dict()
+        self.thickness_slider = dict()
         self.buttons = dict()
         self.showhide = dict()
         self.button_axis_to_dim = dict()
@@ -205,7 +245,8 @@ class Slicer:
         # Now begin loop to construct sliders
         button_values = [None] * (self.ndim - len(button_options)) + \
             button_options[::-1]
-        for i, dim in enumerate(self.slider_coord[self.name]):
+        # for i, dim in enumerate(self.slider_coord[self.name]):
+        for i, dim in enumerate(self.data_arrays[self.name].coords):
             dim_str = self.slider_label[self.name][dim]["name"]
             # Determine if slider should be disabled or not:
             # In the case of 3d projection, disable sliders that are for
@@ -220,8 +261,9 @@ class Slicer:
             self.slider[dim] = widgets.IntSlider(
                 value=indx,
                 min=0,
-                max=self.slider_shape[self.name][dim][dim] - 1 -
-                self.histograms[name][dim][dim],
+                # max=self.slider_shape[self.name][dim][dim] - 1 -
+                # self.histograms[name][dim][dim],
+                max=self.dim_to_shape[self.name][dim] - 1,
                 step=1,
                 description=dim_str,
                 continuous_update=True,
@@ -297,10 +339,27 @@ class Slicer:
 
         return
 
+    def make_data_array_with_bin_edges(self, array):
+        da_with_edges = sc.DataArray(
+            data=sc.Variable(dims=array.dims,
+                             unit=array.unit,
+                             values=array.values,
+                             variances=array.variances,
+                             dtype=sc.dtype.float64))
+        for dim, coord in arraycoord[self.name].items():
+            if self.histograms[self.name][dim][dim]:
+                da_with_edges.coords[dim] = coord
+            else:
+                da_with_edges.coords[dim] = to_bin_edges(coord, dim)
+        if len(self.masks[self.name]) > 0:
+            for m in self.masks[self.name]:
+                da_with_edges.masks[m] = self.data_array.masks[m]
+        return da_with_edges
+
     def add_masks_controls(self):
         # Add controls for masks
         masks_found = False
-        for name, array in self.scipp_obj_dict.items():
+        for name, array in self.data_arrays.items():
             self.masks[name] = {}
             if len(array.masks) > 0:
                 masks_found = True
@@ -344,7 +403,7 @@ class Slicer:
     def mask_to_float(self, mask, var):
         return np.where(mask, var, None).astype(np.float)
 
-    def axis_label_and_ticks(self, axis, data_array, name, dim_to_shape):
+    def axis_label_and_ticks(self, axis, data_array, name):
         """
         Get dimensions and label (if present) from requested axis.
         Also retun axes tick formatters and locators.
@@ -374,12 +433,11 @@ class Slicer:
 
             if tp == sc.dtype.vector_3_float64:
                 var = make_fake_coord(dim_coord_dim,
-                                      dim_to_shape[dim_coord_dim],
+                                      self.dim_to_shape[name][dim_coord_dim],
                                       unit=data_array.coords[dim].unit)
                 form = ticker.FuncFormatter(lambda val, pos: "(" + ",".join([
-                    value_to_string(item, precision=2) for item in self.
-                    scipp_obj_dict[name].coords[dim].values[int(val)]
-                ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[
+                    value_to_string(item, precision=2) for item in array.coords[dim].values[int(val)]
+                ]) + ")" if (int(val) >= 0 and int(val) < self.dim_to_shape[name][
                     dim_coord_dim]) else "")
                 formatter.update({False: form, True: form})
                 locator[False] = ticker.MaxNLocator(integer=True)
@@ -388,12 +446,12 @@ class Slicer:
 
             elif tp == sc.dtype.string:
                 var = make_fake_coord(dim_coord_dim,
-                                      dim_to_shape[dim_coord_dim],
+                                      self.dim_to_shape[name][dim_coord_dim],
                                       unit=data_array.coords[dim].unit)
                 form = ticker.FuncFormatter(
-                    lambda val, pos: self.scipp_obj_dict[name].coords[
+                    lambda val, pos: array.coords[
                         dim].values[int(val)] if (int(val) >= 0 and int(
-                            val) < dim_to_shape[dim_coord_dim]) else "")
+                            val) < self.dim_to_shape[name][dim_coord_dim]) else "")
                 formatter.update({False: form, True: form})
                 locator[False] = ticker.MaxNLocator(integer=True)
                 if dim != dim_coord_dim:
@@ -406,7 +464,7 @@ class Slicer:
                     var = data_array.coords[dim_coord_dim]
                 else:
                     var = make_fake_coord(dim_coord_dim,
-                                          dim_to_shape[dim_coord_dim])
+                                          self.dim_to_shape[name][dim_coord_dim])
                 underlying_dim = dim_coord_dim
                 form = ticker.FuncFormatter(
                     lambda val, pos: value_to_string(data_array.coords[
@@ -418,7 +476,7 @@ class Slicer:
 
         else:
             # dim not found in data_array.coords
-            var = make_fake_coord(dim, dim_to_shape[dim])
+            var = make_fake_coord(dim, self.dim_to_shape[name][dim])
 
         label = var
         if non_dimension_coord:
