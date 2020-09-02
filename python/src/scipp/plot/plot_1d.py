@@ -417,10 +417,15 @@ class Slicer1d(Slicer):
             else:
                 vslice = self.slice_data(var, name)
             vals = vslice.values
-            if self.histograms[name][self.button_axis_to_dim["x"]][
-                    self.button_axis_to_dim["x"]]:
+            dim = self.button_axis_to_dim["x"]
+            xcoord = vslice.coords[dim]
+            hist = self.histograms[name][dim][dim]
+            if hist:
                 vals = np.concatenate((vals[0:1], vals))
-            self.members["lines"][name].set_ydata(vals)
+            else:
+                xcoord = to_bin_centers(xcoord, dim)
+            # self.members["lines"][name].set_ydata(vals)
+            self.members["lines"][name].set_data(xcoord.values, vals)
 
             if len(self.masks[name]) > 0:
                 base_mask = sc.Variable(dims=vslice.dims,
@@ -431,17 +436,22 @@ class Slicer1d(Slicer):
                     msk = (base_mask * sc.Variable(
                         dims=vslice.masks[m].dims,
                         values=vslice.masks[m].values.astype(np.int32))).values
-                    if self.histograms[name][self.button_axis_to_dim["x"]][
-                            self.button_axis_to_dim["x"]]:
+                    if hist:
                         msk = np.concatenate((msk[0:1], msk))
-                    self.members["masks"][name][m].set_ydata(
+                    self.members["masks"][name][m].set_data(
+                        xcoord.values,
                         self.mask_to_float(msk, vals))
+                    # self.members["masks"][name][m].set_ydata(
+                    #     self.mask_to_float(msk, vals))
 
             if self.errorbars[name]:
                 coll = self.members["error_y"][name].get_children()[0]
+                if hist:
+                    xcoord = to_bin_centers(xcoord, dim)
                 coll.set_segments(
-                    self.change_segments_y(self.current_xcenters,
+                    self.change_segments_y(xcoord.values,
                                            vslice.values, vslice.variances))
+
         if self.input_contains_unaligned_data and (not self.mpl_axes):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)

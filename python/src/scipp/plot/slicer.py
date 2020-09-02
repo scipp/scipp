@@ -212,7 +212,7 @@ class Slicer:
                     self.contains_multid_coord[name] = True
 
             # Include masks
-            for n, msk in array.masks:
+            for n, msk in array.masks.items():
                 self.data_arrays[name].masks[n] = msk
 
 
