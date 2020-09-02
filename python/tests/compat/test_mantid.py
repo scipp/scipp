@@ -478,8 +478,8 @@ class TestMantidConversion(unittest.TestCase):
 
         # Then the data array contains the run log as an unaligned coord
         self.assertTrue(
-            np.allclose(target.run().getProperty(log_name).value,
-                        d.unaligned_coords[log_name].value),
+            np.allclose(target.run()[log_name].value,
+                        d.unaligned_coords[log_name].values),
             "Expected values in the unaligned coord to match the original run log from the Mantid workspace"
         )
 

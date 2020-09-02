@@ -52,6 +52,30 @@ def make_run(ws):
     return sc.Variable(value=deepcopy(ws.run()))
 
 
+def generate_variables_from_run_logs(ws):
+    lookup_units = dict(
+        zip([str(unit) for unit in sc.units.supported_units()],
+            sc.units.supported_units()))
+    for property_name in ws.run().keys():
+        units = lookup_units.get(ws.run()[property_name].units, None)
+        values = deepcopy(ws.run()[property_name].value)
+        # TODO should warn if we don't recognise the units string?
+
+        if np.isscalar(values):
+            if units is not None:
+                yield property_name, sc.Variable(value=values, unit=units)
+            else:
+                yield property_name, sc.Variable(value=values)
+        else:
+            if units is not None:
+                yield property_name, sc.Variable(values=values,
+                                                 unit=units,
+                                                 dims=[property_name])
+            else:
+                yield property_name, sc.Variable(values=values,
+                                                 dims=[property_name])
+
+
 def make_sample(ws):
     return sc.Variable(value=deepcopy(ws.sample()))
 
@@ -415,8 +439,6 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
         },
         "masks": {},
         "unaligned_coords": {
-            "run":
-            make_run(ws),
             "sample":
             make_sample(ws),
             "instrument-name":
@@ -424,6 +446,9 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
                 value=ws.componentInfo().name(ws.componentInfo().root()))
         },
     }
+
+    for run_log_name, run_log_variable in generate_variables_from_run_logs(ws):
+        info["unaligned_coords"][run_log_name] = run_log_variable
 
     if advanced_geometry:
         info["coords"]["detector-info"] = make_detector_info(ws)
