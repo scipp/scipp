@@ -116,3 +116,13 @@ Building Documentation
 - Activate a conda environment with Mantid or ensure Mantid is in your ``PYTHONPATH``
 - If Mantid is unavailable (e.g. on Windows) edit ``docs/conf.py`` and include ``nbsphinx_allow_errors = True``. Take care to not commit this change though.
 - Run ``sphinx-build scipp/src/docs .``
+
+Precommit Hooks
+---------------
+
+If you wish, you can install precommit hooks for flake8 and yapf. In the source directory run:
+
+.. code-block:: bash
+
+  pre-commit install
+  pre-commit run --all-files
