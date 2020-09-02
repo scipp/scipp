@@ -154,12 +154,12 @@ class Slicer3d(Slicer):
             labels = []
             for dim, val in self.slider.items():
                 if val.disabled:
-                    arr = self.slider_coord[self.name][dim]
-                    if self.histograms[self.name][dim][dim]:
-                        arr = to_bin_centers(arr, dim)
-                    coords.append(arr.values)
-                    labels.append(
-                        name_with_unit(self.slider_coord[self.name][dim]))
+                    # arr = self.slider_coord[self.name][dim]
+                    # if self.histograms[self.name][dim][dim]:
+                    #     arr = to_bin_centers(arr, dim)
+                    coord = self.data_arrays[self.name].coords[dim]
+                    coords.append(to_bin_centers(coord).values)
+                    labels.append(name_with_unit(coord))
             z, y, x = np.meshgrid(*coords, indexing='ij')
             self.positions = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T

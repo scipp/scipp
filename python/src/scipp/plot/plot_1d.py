@@ -370,11 +370,13 @@ class Slicer1d(Slicer):
                 if self.input_contains_unaligned_data:
                     self.ax.set_ylim(self.ylim)
 
+        # self.ax.set_xlabel(
+        #     name_with_unit(
+        #         self.slider_label[self.name][dim]["coord"],
+        #         name=self.slider_label[self.name][dim]["name"],
+        #     ))
         self.ax.set_xlabel(
-            name_with_unit(
-                self.slider_label[self.name][dim]["coord"],
-                name=self.slider_label[self.name][dim]["name"],
-            ))
+            name_with_unit(self.data_arrays[self.name].coords[dim]))
         self.ax.xaxis.set_major_formatter(
             self.slider_axformatter[self.name][dim][self.logx])
         self.ax.xaxis.set_major_locator(
@@ -387,8 +389,10 @@ class Slicer1d(Slicer):
         # Slice along dimensions with active sliders
         for dim, val in self.slider.items():
             if not val.disabled:
+                # self.lab[dim].value = self.make_slider_label(
+                #     self.slider_label[self.name][dim]["coord"], val.value)
                 self.lab[dim].value = self.make_slider_label(
-                    self.slider_label[self.name][dim]["coord"], val.value)
+                    var.coords[dim], val.value)
                 vslice = vslice[val.dim, val.value]
         if vslice.unaligned is not None:
             vslice = sc.histogram(vslice)

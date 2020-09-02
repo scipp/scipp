@@ -120,7 +120,7 @@ class Slicer2d(Slicer):
                 "y": config.plot.height
             }
         self.xyrebin = {}
-        self.xyedges = {}
+        # self.xyedges = {}
         self.xywidth = {}
         self.image_pixel_size = {}
 
@@ -142,7 +142,7 @@ class Slicer2d(Slicer):
         self.ax.set_title(self.name)
         if self.params["values"][self.name]["cbar"]:
             self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
-            self.cbar.set_label(name_with_unit(var=self.data_array, name=""))
+            self.cbar.set_label(name_with_unit(var=self.data_arrays[self.name], name=""))
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.members["image"] = self.image
@@ -232,7 +232,7 @@ class Slicer2d(Slicer):
                 values=np.linspace(extent_array[0 + offset],
                                    extent_array[1 + offset],
                                    self.image_resolution[xy] + 1),
-                unit=self.slider_coord[self.name][param["dim"]].unit)
+                unit=self.data_arrays[self.name].coords[param["dim"]].unit)
 
         # Set axes labels
         self.ax.set_xlabel(self.axparams["x"]["labels"])
@@ -255,10 +255,10 @@ class Slicer2d(Slicer):
             self.ax.set_xlim(self.axparams["x"]["lims"])
             self.ax.set_ylim(self.axparams["y"]["lims"])
 
-        # If there are no multi-d coords, we update the edges and widths only
-        # once here.
-        if not self.contains_multid_coord[self.name]:
-            self.slice_coords()
+        # # If there are no multi-d coords, we update the edges and widths only
+        # # once here.
+        # if not self.contains_multid_coord[self.name]:
+        #     self.slice_coords()
         # Update the image using resampling
         self.update_slice()
 
@@ -287,37 +287,37 @@ class Slicer2d(Slicer):
 
         return
 
-    def compute_bin_widths(self, xy, dim):
-        """
-        Pixel widths used for scaling before rebin step
-        """
-        self.xywidth[xy] = (self.xyedges[xy][dim, 1:] -
-                            self.xyedges[xy][dim, :-1])
-        self.xywidth[xy].unit = sc.units.one
+    # def compute_bin_widths(self, xy, dim):
+    #     """
+    #     Pixel widths used for scaling before rebin step
+    #     """
+    #     self.xywidth[xy] = (self.xyedges[xy][dim, 1:] -
+    #                         self.xyedges[xy][dim, :-1])
+    #     self.xywidth[xy].unit = sc.units.one
 
-    def slice_coords(self):
-        """
-        Recursively slice the coords along the dimensions of active sliders.
-        """
-        self.cslice = self.slider_coord[self.name].copy()
-        for key in self.cslice:
-            # Slice along dimensions with active sliders
-            for dim, val in self.slider.items():
-                if not val.disabled and val.dim in self.cslice[key].dims:
-                    self.cslice[key] = self.cslice[key][val.dim, val.value]
+    # def slice_coords(self):
+    #     """
+    #     Recursively slice the coords along the dimensions of active sliders.
+    #     """
+    #     self.cslice = self.slider_coord[self.name].copy()
+    #     for key in self.cslice:
+    #         # Slice along dimensions with active sliders
+    #         for dim, val in self.slider.items():
+    #             if not val.disabled and val.dim in self.cslice[key].dims:
+    #                 self.cslice[key] = self.cslice[key][val.dim, val.value]
 
-        # Update the xyedges and xywidth
-        for xy, param in self.axparams.items():
-            # Create bin-edge coordinates in the case of non bin-edges, since
-            # rebin only accepts bin edges.
-            if not self.histograms[self.name][param["dim"]][param["dim"]]:
-                self.xyedges[xy] = to_bin_edges(self.cslice[param["dim"]],
-                                                param["dim"])
-            else:
-                self.xyedges[xy] = self.cslice[param["dim"]].astype(
-                    sc.dtype.float64)
-            # Pixel widths used for scaling before rebin step
-            self.compute_bin_widths(xy, param["dim"])
+    #     # Update the xyedges and xywidth
+    #     for xy, param in self.axparams.items():
+    #         # Create bin-edge coordinates in the case of non bin-edges, since
+    #         # rebin only accepts bin edges.
+    #         if not self.histograms[self.name][param["dim"]][param["dim"]]:
+    #             self.xyedges[xy] = to_bin_edges(self.cslice[param["dim"]],
+    #                                             param["dim"])
+    #         else:
+    #             self.xyedges[xy] = self.cslice[param["dim"]].astype(
+    #                 sc.dtype.float64)
+    #         # Pixel widths used for scaling before rebin step
+    #         self.compute_bin_widths(xy, param["dim"])
 
     # def prepare_slice_
 
@@ -325,7 +325,7 @@ class Slicer2d(Slicer):
         """
         Recursively slice the data along the dimensions of active sliders.
         """
-        data_slice = self.data_array
+        data_slice = self.data_arrays[self.name]
 
         # Slice along dimensions with active sliders
         for dim, val in self.slider.items():
@@ -333,6 +333,23 @@ class Slicer2d(Slicer):
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_label[self.name][dim]["coord"], val.value)
                 data_slice = data_slice[val.dim, val.value]
+
+        # Update the xyedges and xywidth
+        for xy, param in self.axparams.items():
+            # # Create bin-edge coordinates in the case of non bin-edges, since
+            # # rebin only accepts bin edges.
+            # if not self.histograms[self.name][param["dim"]][param["dim"]]:
+            #     self.xyedges[xy] = to_bin_edges(self.cslice[param["dim"]],
+            #                                     param["dim"])
+            # else:
+            #     self.xyedges[xy] = self.cslice[param["dim"]].astype(
+            #         sc.dtype.float64)
+            # # Pixel widths used for scaling before rebin step
+            # self.compute_bin_widths(xy, param["dim"])
+            self.xywidth[xy] = (
+                data_slice.coords[param["dim"]][param["dim"], 1:] -
+                data_slice.coords[param["dim"]][param["dim"], :-1])
+            self.xywidth[xy].unit = sc.units.one
 
         self.prepare_slice_for_resample(data_slice)
 
@@ -383,8 +400,10 @@ class Slicer2d(Slicer):
                              values=data_slice.values,
                              variances=data_slice.variances,
                              dtype=sc.dtype.float32))
-        self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
-        self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
+        # self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
+        # self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
+        self.vslice.coords[self.xyrebin["x"].dims[0]] = data_slice.coords[self.axparams["x"]["dim"]]
+        self.vslice.coords[self.xyrebin["y"].dims[0]] = data_slice.coords[self.axparams["y"]["dim"]]
 
         # Also include masks
         if len(data_slice.masks) > 0:
@@ -401,10 +420,10 @@ class Slicer2d(Slicer):
         """
         Slice data according to new slider value and update the image.
         """
-        # If there are multi-d coords in the data we also need to slice the
-        # coords and update the xyedges and xywidth
-        if self.contains_multid_coord[self.name]:
-            self.slice_coords()
+        # # If there are multi-d coords in the data we also need to slice the
+        # # coords and update the xyedges and xywidth
+        # if self.contains_multid_coord[self.name]:
+        #     self.slice_coords()
         self.slice_data()
         # Update image with resampling
         self.update_image()
@@ -474,11 +493,12 @@ class Slicer2d(Slicer):
         last = min(bins - 1, last)
         return dim, slice(first, last + 1)
 
-    def resample_image(self, array, coord_edges, rebin_edges):
+    # def resample_image(self, array, coord_edges, rebin_edges):
+    def resample_image(self, array, rebin_edges):
         dslice = array
         # Select bins to speed up rebinning
         for dim in rebin_edges:
-            this_slice = self.select_bins(coord_edges[dim], dim,
+            this_slice = self.select_bins(array.coords[dim], dim,
                                           rebin_edges[dim][dim, 0],
                                           rebin_edges[dim][dim, -1])
             dslice = dslice[this_slice]
@@ -503,18 +523,21 @@ class Slicer2d(Slicer):
         if len(self.vslice.coords[self.button_dims[1]].dims) > 1:
             xy = "xy"
 
+        dimy = self.xyrebin[xy[0]].dims[0]
+        dimx = self.xyrebin[xy[1]].dims[0]
+
         rebin_edges = {
-            self.xyrebin[xy[0]].dims[0]: self.xyrebin[xy[0]],
-            self.xyrebin[xy[1]].dims[0]: self.xyrebin[xy[1]]
+            dimy: self.xyrebin[xy[0]],
+            dimx: self.xyrebin[xy[1]]
         }
 
         resampled_image = self.resample_image(self.vslice,
-                                              coord_edges={
-                                                  self.xyrebin[xy[0]].dims[0]:
-                                                  self.xyedges[xy[0]],
-                                                  self.xyrebin[xy[1]].dims[0]:
-                                                  self.xyedges[xy[1]]
-                                              },
+                                              # coord_edges={
+                                              #     self.xyrebin[xy[0]].dims[0]:
+                                              #     self.xyedges[xy[0]],
+                                              #     self.xyrebin[xy[1]].dims[0]:
+                                              #     self.xyedges[xy[1]]
+                                              # },
                                               rebin_edges=rebin_edges)
 
         # Use Scipp's automatic transpose to match the image x/y axes
