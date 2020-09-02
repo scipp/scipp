@@ -6,6 +6,11 @@ Release Notes
 Since v0.4
 ----------
 
+Features
+~~~~~~~~
+
+- New ``profiler`` plotting functionality where one of the slider dimensions can be displayed as a profile in a subplot.
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
@@ -14,6 +19,7 @@ Breaking changes
 - ``Dataset`` does not support attributes any more.
 - ``DataArray`` and dataset items attributes are now are now handled as "unaligned" coords.
   Use ``ds['item'].coords`` or ``array.unaligned_coords`` to access these.
+- ``vmin`` and ``vmax`` in 2D plots now represent absolute values instead of exponents when ``log=True`` is used.
 
 Contributors
 ~~~~~~~~~~~~
