@@ -595,35 +595,37 @@ template <bool dry_run> struct in_place {
     }
     if constexpr (dry_run)
       return;
-    auto run = [&](auto indices, const auto &end) {
-      for (; std::get<0>(indices) != end; iter::increment(indices))
-        call_in_place(op, indices, arg, other...);
-    };
 
     if constexpr (transform_detail::is_events_v<std::decay_t<T>> ||
                   (transform_detail::is_events_v<std::decay_t<Ts>> || ...)) {
+      auto run = [&](auto indices, const auto &end) {
+        for (; std::get<0>(indices) != end; iter::increment(indices))
+          call_in_place(op, indices, arg, other...);
+      };
       run(begin, iter::end_index(arg));
     } else {
+      auto run = [&](auto indices, const auto &end) {
+        for (; indices != end; indices.increment())
+          call_in_place(op, indices, arg, other...);
+      };
+      const auto begin_ =
+          core::MultiIndex(iter::iter_dims(arg), iter::data_dims(arg),
+                           iter::data_dims(other)...);
       if (iter::has_stride_zero(std::get<0>(begin))) {
         // The output has a dimension with stride zero so parallelization must
         // be done differently. Explicit and precise control of chunking is
         // required to avoid multiple threads writing to the same output. Not
         // implemented for now.
-        run(begin, iter::end_index(arg));
+        auto end = begin_;
+        end.advance(arg.size());
+        run(begin_, end);
       } else {
-        auto run_ = [&](auto indices, const auto &end) {
-          for (; indices != end; indices.increment())
-            call_in_place(op, indices, arg, other...);
-        };
-        const auto begin_ =
-            core::MultiIndex(iter::iter_dims(arg), iter::data_dims(arg),
-                             iter::data_dims(other)...);
         auto run_parallel = [&](const auto &range) {
           auto indices = begin_;
           indices.advance(range.begin());
           auto end = begin_;
           end.advance(range.end());
-          run_(indices, end);
+          run(indices, end);
         };
         core::parallel::parallel_for(
             core::parallel::blocked_range(0, arg.size()), run_parallel);
