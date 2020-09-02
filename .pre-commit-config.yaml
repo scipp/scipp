@@ -7,3 +7,5 @@ repos:
       rev: v0.30.0
       hooks:
         - id: yapf
+          args: ["-i", "-r"]
+          files: "python"
