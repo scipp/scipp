@@ -59,9 +59,8 @@ public:
       m_shape[d--] = size;
       m_end_sentinel *= size;
     }
-    // Last arg is dummy
-    m_stride = std::array{get_strides(iterDims, dataDims)...,
-                          get_strides(iterDims, iterDims)};
+    m_stride = std::array<std::array<scipp::index, NDIM_MAX>, N>{
+        get_strides(iterDims, dataDims)...};
   }
 
   MultiIndex(const BucketParams &bucket_params, const Dimensions &iterDims,
@@ -79,26 +78,18 @@ public:
     for (const auto size : nestedDims.shape()) {
       m_shape[dim--] = size;
     }
+    // TODO Strides must be 0 for dense inputs, need BucketParams for *each*
+    // input, unmerged condition is dummy for now (just for expansion)
+    m_stride = std::array<std::array<scipp::index, NDIM_MAX>, N>{get_strides(
+        nestedDims,
+        dataDims.contains(Dim::Invalid) ? nestedDims : nestedDims)...};
+    const auto [begin, end] = m_indices[m_bucket_index];
+    m_shape[m_nested_dim_index] = end - begin;
     const auto bucketStrides =
         std::array<std::array<scipp::index, NDIM_MAX>, N>{
-            get_strides(iterDims, dataDims)...};
-    // TODO Strides must be 0 for dense inputs, need BucketParams for *each*
-    // input, unmerged
-    // condition is dummy for now (just for expansion)
-    const auto nestedStrides =
-        std::array<std::array<scipp::index, NDIM_MAX>, N>{get_strides(
-            nestedDims,
-            dataDims.contains(Dim::Invalid) ? nestedDims : nestedDims)...};
-    const auto [begin, end] = m_indices[m_bucket_index];
-    for (scipp::index data = 0; data < N; ++data) {
-      for (scipp::index d = 0; d < m_ndim_nested; ++d)
-        m_stride[data][d] = nestedStrides[data][d];
-    }
-    m_shape[m_nested_dim_index] = end - begin;
-    // TODO is output always of maximum shape and has buckets? use index 0
-    // instead of N?
+            get_strides(iterDims, dataDims)...}[0];
     for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
-      m_stride[N][m_ndim_nested + d] = bucketStrides[0][d];
+      m_stride[0][m_ndim_nested + d] = bucketStrides[d];
     m_end_sentinel = iterDims.volume();
     load_bucket_params();
     // fprintf(stderr, "nested stride %ld nested dim index %ld\n",
@@ -126,7 +117,10 @@ public:
     while ((m_coord[d] == m_shape[d]) && (d < NDIM_MAX - 1)) {
       if (d + 1 >= m_ndim_nested) {
         // move to next bucket
-        m_bucket_index += m_stride[N][d + 1] - m_coord[d] * m_stride[N][d];
+        if (d == m_ndim_nested - 1)
+          m_bucket_index += m_stride[0][d + 1];
+        else
+          m_bucket_index += m_stride[0][d + 1] - m_coord[d] * m_stride[0][d];
         load_bucket_params();
       } else {
         for (scipp::index data = 0; data < N; ++data)
@@ -177,7 +171,7 @@ public:
       }
       m_bucket_index = 0;
       for (scipp::index d = m_ndim_nested; d < NDIM_MAX; ++d)
-        m_bucket_index += m_stride[N][d] * m_coord[d];
+        m_bucket_index += m_stride[0][d] * m_coord[d];
       load_bucket_params();
       // fprintf(stderr, "set_index(%ld) %ld %ld %ld %ld bucket %ld\n", offset,
       //        m_coord[0], m_coord[1], m_coord[2], m_coord[3], m_bucket_index);
@@ -215,7 +209,7 @@ public:
 
 private:
   std::array<scipp::index, N> m_data_index = {};
-  std::array<std::array<scipp::index, NDIM_MAX>, N + 1> m_stride = {};
+  std::array<std::array<scipp::index, NDIM_MAX>, N> m_stride = {};
   std::array<scipp::index, NDIM_MAX> m_coord = {};
   std::array<scipp::index, NDIM_MAX> m_shape = {};
   scipp::index m_end_sentinel{1};
@@ -225,12 +219,6 @@ private:
   scipp::index m_nested_dim_index;
   scipp::span<const std::pair<scipp::index, scipp::index>> m_indices{};
 
-  // BucketParams m_bucket_params;
-  // ElementArrayView<const bucket_base::range_type> m_buckets;
-  // each bucket corresponds to a slice.
-  // iterating slice is always without broadcast or transpose
-  // move to next bucket is just changing start and end of slicing dim -> simple
-  // "shift" of slice view
 };
 
 } // namespace scipp::core
