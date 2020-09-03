@@ -76,6 +76,8 @@ class Slicer:
         # Save if some dims contain multi-dimensional coords
         self.contains_multid_coord = {}
 
+        self.units = {}
+
         for name, array in scipp_obj_dict.items():
 
             # Process axes dimensions
@@ -102,7 +104,7 @@ class Slicer:
 
             self.data_arrays[name] = sc.DataArray(
                 data=sc.Variable(dims=adims,
-                                 unit=array.unit,
+                                 unit=sc.units.counts,
                                  values=array.values,
                                  variances=array.variances,
                                  dtype=sc.dtype.float64))
@@ -267,6 +269,7 @@ class Slicer:
         # Initialise slider and label containers
         self.lab = dict()
         self.slider = dict()
+        # self.slider = dict()
         self.thickness_slider = dict()
         self.buttons = dict()
         self.showhide = dict()
@@ -307,16 +310,19 @@ class Slicer:
                 disabled = True
 
             # Add an IntSlider to slide along the z dimension of the array
-            self.slider[dim] = widgets.IntSlider(
-                value=indx,
-                min=0,
+            dim_xlims = self.slider_xlims[self.name][dim].values
+            dx = dim_xlims[1] - dim_xlims[0]
+            self.slider[dim] = widgets.FloatSlider(
+                value=0.5 * np.sum(dim_xlims),
+                min=dim_xlims[0],
                 # max=self.slider_shape[self.name][dim][dim] - 1 -
                 # self.histograms[name][dim][dim],
-                max=self.dim_to_shape[self.name][dim] - 1,
-                step=1,
+                # max=self.dim_to_shape[self.name][dim] - 1,
+                max=dim_xlims[1],
+                step=0.01 * dx,
                 description=dim_str,
                 continuous_update=True,
-                readout=False,
+                readout=True,
                 disabled=disabled)
             # labvalue = self.make_slider_label(
             #     self.slider_label[self.name][dim]["coord"], indx)
@@ -328,9 +334,21 @@ class Slicer:
             widgets.jslink((self.continuous_update[dim], 'value'),
                            (self.slider[dim], 'continuous_update'))
 
-            labvalue = self.make_slider_label(
-                    self.data_arrays[self.name].coords[dim], indx,
-                    self.slider_axformatter[self.name][dim][False])
+            self.thickness_slider[dim] = widgets.FloatSlider(
+                value=dx,
+                min=0.0,
+                max=dx,
+                step=0.01 * dx,
+                description="Thickness",
+                continuous_update=False,
+                readout=True,
+                disabled=disabled,
+                layout={'width': "270px"})
+
+            # labvalue = self.make_slider_label(
+            #         self.data_arrays[self.name].coords[dim], indx,
+            #         self.slider_axformatter[self.name][dim][False])
+            labvalue = str(self.data_arrays[self.name].coords[dim].unit)
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
@@ -355,6 +373,7 @@ class Slicer:
             setattr(self.buttons[dim], "old_value", self.buttons[dim].value)
             setattr(self.slider[dim], "dim", dim)
             setattr(self.continuous_update[dim], "dim", dim)
+            setattr(self.thickness_slider[dim], "dim", dim)
 
             # Hide buttons and labels for 1d variables
             if self.ndim == 1:
@@ -368,6 +387,7 @@ class Slicer:
                     self.slider[dim].layout.display = 'none'
                     self.continuous_update[dim].layout.display = 'none'
                     self.lab[dim].layout.display = 'none'
+                    self.thickness_slider[dim].layout.display = 'none'
 
             # Add observer to buttons
             self.buttons[dim].on_msg(self.update_buttons)
@@ -376,7 +396,7 @@ class Slicer:
             # Add the row of slider + buttons
             row = [
                 self.slider[dim], self.lab[dim], self.continuous_update[dim],
-                self.buttons[dim]
+                self.buttons[dim], self.thickness_slider[dim],
             ]
             self.vbox.append(widgets.HBox(row))
 
@@ -445,13 +465,15 @@ class Slicer:
             self.members["widgets"]["togglebutton"]["masks"] = \
                 self.masks_button
 
-    def make_slider_label(self, var, indx, formatter):
-        if len(var.dims) > 1:
-            return "slice-{}".format(indx)
-        else:
-            return name_with_unit(var=var,
-                                  name=formatter.format_data_short(var.values[indx]))
-                                  # name=value_to_string(var.values[indx]))
+    # def make_slider_label(self, var, indx, formatter):
+    def make_slider_label(self, value, formatter):
+        # if len(var.dims) > 1:
+        #     return "slice-{}".format(indx)
+        # else:
+        #     return name_with_unit(var=var,
+        #                           name=formatter.format_data_short(var.values[indx]))
+        #                           # name=value_to_string(var.values[indx]))
+        return formatter.format_data_short(value)
 
     def mask_to_float(self, mask, var):
         return np.where(mask, var, None).astype(np.float)

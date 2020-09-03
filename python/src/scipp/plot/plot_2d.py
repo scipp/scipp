@@ -335,9 +335,20 @@ class Slicer2d(Slicer):
                 # self.lab[dim].value = self.make_slider_label(
                 #     self.slider_label[self.name][dim]["coord"], val.value)
                 # print(self.slider_axformatter)
-                self.lab[dim].value = self.make_slider_label(
-                    data_slice.coords[dim], val.value, self.slider_axformatter[self.name][dim][False])
-                data_slice = data_slice[val.dim, val.value]
+                # self.lab[dim].value = self.make_slider_label(
+                #     val.value, self.slider_axformatter[self.name][dim][False])
+                self.lab[dim].value = self.slider_axformatter[self.name][dim][False].format_data_short(val.value)
+                deltax = self.thickness_slider[dim].value
+
+                data_slice = self.resample_image(data_slice,
+                        # coord_edges={dim: self.slider_coord[self.name][dim]},
+                        rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
+                                                                     val.value + 0.5 * deltax])})[dim, 0]
+                    # depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
+                    # depth.unit = sc.units.one
+                data_slice *= (deltax * sc.units.one)
+
+                # data_slice = data_slice[val.dim, val.value]
 
 
         # Update the xyedges and xywidth
@@ -357,7 +368,15 @@ class Slicer2d(Slicer):
                 data_slice.coords[param["dim"]][param["dim"], :-1])
             self.xywidth[xy].unit = sc.units.one
 
-        self.prepare_slice_for_resample(data_slice)
+
+        self.vslice = data_slice
+        # Scale by bin width and then rebin in both directions
+        # Note that this has to be written as 2 inplace operations to avoid
+        # creation of large 2D temporary from broadcast
+        self.vslice *= self.xywidth["x"]
+        self.vslice *= self.xywidth["y"]
+
+        # self.prepare_slice_for_resample(data_slice)
 
         # # In the case of unaligned data, we may want to auto-scale the colorbar
         # # as we slice through dimensions. Colorbar limits are allowed to grow
