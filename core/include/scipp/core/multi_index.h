@@ -99,10 +99,15 @@ public:
     //          m_stride.begin() + m_ndim_nested);
     const auto [begin, end] = m_indices[m_bucket_index];
     m_shape[m_ndim_nested - 1] = end - begin;
+    // TODO is output always of maximum shape and has buckets? use index 0
+    // instead of N?
     for (scipp::index d = 0; d < m_ndim_nested; ++d)
       m_stride[N][d] = 0;
     for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
       m_stride[N][m_ndim_nested + d] = bucketStrides[0][d];
+    m_end_sentinel = 0;
+    for (const auto [begin, end] : m_indices)
+      m_end_sentinel += end - begin;
   }
 
   /*
@@ -154,13 +159,11 @@ public:
     ++m_coord[0];
     if (m_coord[0] == m_shape[0])
       increment_outer();
-    ++m_iter_index;
   }
 
-  constexpr void advance(const scipp::index offset) noexcept {
+  constexpr void set_index(const scipp::index offset) noexcept {
     // TODO how to handle this in case of bucket elements?
-    m_iter_index += offset;
-    auto remainder{m_iter_index};
+    auto remainder{offset};
     for (scipp::index d = 0; d < NDIM_MAX; ++d) {
       if (m_shape[d] == 0)
         continue;
@@ -175,20 +178,30 @@ public:
   }
 
   constexpr auto get() const noexcept { return m_data_index; }
-  constexpr scipp::index index() const noexcept { return m_iter_index; }
 
   constexpr bool operator==(const MultiIndex &other) const noexcept {
-    return m_iter_index == other.m_iter_index;
+    return m_coord == other.m_coord;
   }
   constexpr bool operator!=(const MultiIndex &other) const noexcept {
-    return m_iter_index != other.m_iter_index;
+    return m_coord != other.m_coord;
+  }
+
+  auto begin() const noexcept {
+    auto it(*this);
+    it.set_index(0);
+    return it;
+  }
+
+  auto end() const noexcept {
+    auto it(*this);
+    it.set_index(m_end_sentinel);
+    return it;
   }
 
   scipp::index end_sentinel() const noexcept { return m_end_sentinel; }
 
 private:
   std::array<scipp::index, N> m_data_index = {};
-  scipp::index m_iter_index{0};
   std::array<std::array<scipp::index, NDIM_MAX>, N + 1> m_stride = {};
   std::array<scipp::index, NDIM_MAX> m_coord = {};
   std::array<scipp::index, NDIM_MAX> m_shape = {};
