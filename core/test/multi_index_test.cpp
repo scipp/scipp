@@ -189,4 +189,12 @@ TEST_F(MultiIndexTest, 2d_array_of_1d_buckets) {
   check_with_buckets(buf, dim,
                      {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}}, yx,
                      xy, {0, 1, 6, 7, 2, 3, 8, 9, 4, 5, 10, 11});
+  // slice inner
+  check_with_buckets(buf, dim,
+                     {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}}, x, xy,
+                     {0, 1, 6, 7});
+  // slice outer
+  check_with_buckets(buf, dim,
+                     {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}}, y, xy,
+                     {0, 1, 2, 3, 4, 5});
 }

@@ -106,13 +106,15 @@ public:
       m_stride[N][m_ndim_nested + d] = bucketStrides[0][d];
     m_end_sentinel = iterDims.volume();
     load_bucket_params();
-    fprintf(stderr, "nested stride %ld nested dim index %ld\n", m_nested_stride,
-            m_nested_dim_index);
-    fprintf(stderr, "shape %ld %ld %ld\n", m_shape[0], m_shape[1], m_shape[2]);
-    fprintf(stderr, "initial strides %ld %ld %ld\n", m_stride[0][0],
-            m_stride[0][1], m_stride[0][2]);
-    fprintf(stderr, "initial strides %ld %ld %ld\n", m_stride[N][0],
-            m_stride[N][1], m_stride[N][2]);
+    // fprintf(stderr, "nested stride %ld nested dim index %ld\n",
+    // m_nested_stride,
+    //        m_nested_dim_index);
+    // fprintf(stderr, "shape %ld %ld %ld\n", m_shape[0], m_shape[1],
+    // m_shape[2]); fprintf(stderr, "initial strides %ld %ld %ld\n",
+    // m_stride[0][0],
+    //        m_stride[0][1], m_stride[0][2]);
+    // fprintf(stderr, "initial strides %ld %ld %ld\n", m_stride[N][0],
+    //        m_stride[N][1], m_stride[N][2]);
   }
 
   constexpr void load_bucket_params() noexcept {
@@ -187,12 +189,14 @@ public:
         m_stride[data][m_ndim_nested] = 0;
       }
       load_bucket_params();
-      fprintf(stderr, "set_index(%ld) %ld %ld %ld %ld bucket %ld\n", offset,
-              m_coord[0], m_coord[1], m_coord[2], m_coord[3], m_bucket_index);
-      fprintf(stderr, "strides %ld %ld %ld\n", m_stride[0][0], m_stride[0][1],
-              m_stride[0][2]);
-      fprintf(stderr, "strides %ld %ld %ld\n", m_stride[N][0], m_stride[N][1],
-              m_stride[N][2]);
+      // fprintf(stderr, "set_index(%ld) %ld %ld %ld %ld bucket %ld\n", offset,
+      //        m_coord[0], m_coord[1], m_coord[2], m_coord[3], m_bucket_index);
+      // fprintf(stderr, "strides %ld %ld %ld\n", m_stride[0][0],
+      // m_stride[0][1],
+      //        m_stride[0][2]);
+      // fprintf(stderr, "strides %ld %ld %ld\n", m_stride[N][0],
+      // m_stride[N][1],
+      //        m_stride[N][2]);
     }
   }
 
