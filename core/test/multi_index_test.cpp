@@ -165,6 +165,13 @@ TEST_F(MultiIndexTest, 1d_array_of_1d_buckets) {
 
 TEST_F(MultiIndexTest, 1d_array_of_2d_buckets) {
   Dimensions buf{{Dim("a"), Dim("b")}, {2, 3}}; // 2d cut into two sections
+  // cut along inner
   check_with_buckets(buf, Dim("b"), {{0, 1}, {1, 3}}, x, x, {0, 3, 1, 2, 4, 5});
+  check_with_buckets(buf, Dim("b"), {{0, 1}, {2, 3}}, x, x, {0, 3, 2, 5});
+  check_with_buckets(buf, Dim("b"), {{1, 2}, {2, 3}}, x, x, {1, 4, 2, 5});
+  check_with_buckets(buf, Dim("b"), {{1, 3}, {0, 1}}, x, x, {1, 2, 4, 5, 0, 3});
+  // cut along outer
   check_with_buckets(buf, Dim("a"), {{0, 1}, {1, 2}}, x, x, {0, 1, 2, 3, 4, 5});
+  check_with_buckets(buf, Dim("a"), {{1, 2}, {1, 2}}, x, x, {3, 4, 5, 3, 4, 5});
+  check_with_buckets(buf, Dim("a"), {{1, 2}, {0, 1}}, x, x, {3, 4, 5, 0, 1, 2});
 }
