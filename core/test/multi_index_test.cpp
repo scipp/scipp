@@ -61,6 +61,16 @@ protected:
              const std::vector<scipp::index> &indices1) const {
     check_impl(i, indices0, indices1);
   }
+  void check_with_buckets(
+      const Dimensions &bufferDims, const Dim sliceDim,
+      const std::vector<std::pair<scipp::index, scipp::index>> &indices,
+      const Dimensions &iterDims, const Dimensions &dataDims,
+      const std::vector<scipp::index> &expected) {
+    BucketParams params{sliceDim, bufferDims, indices};
+    MultiIndex index(params, iterDims, dataDims);
+    check(index, expected);
+  }
+
   Dimensions x{{Dim::X}, {2}};
   Dimensions y{{Dim::Y}, {3}};
   Dimensions yx{{Dim::Y, Dim::X}, {3, 2}};
@@ -142,9 +152,16 @@ TEST_F(MultiIndexTest, advance_slice_and_broadcast) {
 
 TEST_F(MultiIndexTest, buckets) {
   Dimensions events{{Dim::Row}, {7}};
-  const std::vector<std::pair<scipp::index, scipp::index>> indices{{0, 3},
-                                                                   {3, 7}};
-  BucketParams params{Dim::Row, events, indices};
-  MultiIndex index(params, x, x);
-  check(index, {0, 1, 2, 3, 4, 5, 6});
+  // natural order no gaps
+  check_with_buckets(events, Dim::Row, {{0, 3}, {3, 7}}, x, x,
+                     {0, 1, 2, 3, 4, 5, 6});
+  // gap between
+  check_with_buckets(events, Dim::Row, {{0, 3}, {4, 7}}, x, x,
+                     {0, 1, 2, 4, 5, 6});
+  // gap at start
+  check_with_buckets(events, Dim::Row, {{1, 3}, {3, 7}}, x, x,
+                     {1, 2, 3, 4, 5, 6});
+  // out of order
+  check_with_buckets(events, Dim::Row, {{4, 7}, {0, 4}}, x, x,
+                     {4, 5, 6, 0, 1, 2, 3});
 }

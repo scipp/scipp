@@ -86,14 +86,15 @@ public:
         std::array<std::array<scipp::index, NDIM_MAX>, N>{get_strides(
             nestedDims,
             dataDims.contains(Dim::Invalid) ? nestedDims : nestedDims)...};
+    const auto [begin, end] = m_indices[m_bucket_index];
     for (scipp::index data = 0; data < N; ++data) {
       for (scipp::index d = 0; d < m_ndim_nested; ++d)
         m_stride[data][d] = nestedStrides[data][d];
       for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
         m_stride[data][m_ndim_nested + d] = bucketStrides[data][d];
       m_stride[data][m_ndim_nested] = 0;
+      m_data_index[data] = begin;
     }
-    const auto [begin, end] = m_indices[m_bucket_index];
     m_shape[m_ndim_nested - 1] = end - begin;
     // TODO is output always of maximum shape and has buckets? use index 0
     // instead of N?
@@ -102,7 +103,7 @@ public:
     for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
       m_stride[N][m_ndim_nested + d] = bucketStrides[0][d];
     m_end_sentinel = iterDims.volume();
-    // load_bucket_params();
+    load_bucket_params();
     fprintf(stderr, "initial strides %ld %ld\n", m_stride[0][0],
             m_stride[0][1]);
     fprintf(stderr, "initial strides %ld %ld\n", m_stride[N][0],
@@ -127,11 +128,6 @@ public:
         load_bucket_params();
       }
       for (scipp::index data = 0; data < N; ++data)
-        // need to setup stride for next bucket begin into m_stride[data][d + 1]
-        // then update that... this implies we need to know *which* strides to
-        // init (in constructor) and update (here). Passing merged BucketParams
-        // not sufficient? Pass BucketParams of all inputs, init strides, then
-        // merge params. Stride 0 later implies dense (non-bucket) input.
         m_data_index[data] +=
             m_stride[data][d + 1] - m_coord[d] * m_stride[data][d];
       ++m_coord[d + 1];
@@ -149,7 +145,6 @@ public:
   }
 
   constexpr void set_index(const scipp::index offset) noexcept {
-    // TODO how to handle this in case of bucket elements?
     if (m_ndim_nested == NDIM_MAX) {
       auto remainder{offset};
       for (scipp::index d = 0; d < NDIM_MAX; ++d) {
@@ -180,13 +175,12 @@ public:
       m_bucket_index = 0;
       for (scipp::index d = m_ndim_nested; d < NDIM_MAX; ++d)
         m_bucket_index += m_stride[N][d] * m_coord[d];
-      load_bucket_params();
       const auto [begin, end] = m_indices[m_bucket_index];
       for (scipp::index data = 0; data < N; ++data) {
-        m_data_index[data] = 0;
         m_stride[data][m_ndim_nested] = 0;
         m_data_index[data] = begin;
       }
+      load_bucket_params();
       fprintf(stderr, "set_index(%ld) %ld %ld %ld %ld bucket %ld\n", offset,
               m_coord[0], m_coord[1], m_coord[2], m_coord[3], m_bucket_index);
       fprintf(stderr, "strides %ld %ld\n", m_stride[0][0], m_stride[0][1]);
