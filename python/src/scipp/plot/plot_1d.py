@@ -391,8 +391,10 @@ class Slicer1d(Slicer):
             if not val.disabled:
                 # self.lab[dim].value = self.make_slider_label(
                 #     self.slider_label[self.name][dim]["coord"], val.value)
+                # self.lab[dim].value = self.make_slider_label(
+                #     var.coords[dim], val.value)
                 self.lab[dim].value = self.make_slider_label(
-                    var.coords[dim], val.value)
+                    var.coords[dim], val.value, self.slider_axformatter[name][dim][False])
                 vslice = vslice[val.dim, val.value]
         if vslice.unaligned is not None:
             vslice = sc.histogram(vslice)

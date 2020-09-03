@@ -210,9 +210,11 @@ class Slicer2d(Slicer):
                            "log" + but_val) and (self.extent[but_val][0] <= 0):
                     self.axparams[but_val]["lims"][
                         0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
+                # self.axparams[but_val]["labels"] = name_with_unit(
+                #     self.slider_label[self.name][dim]["coord"],
+                #     name=self.slider_label[self.name][dim]["name"])
                 self.axparams[but_val]["labels"] = name_with_unit(
-                    self.slider_label[self.name][dim]["coord"],
-                    name=self.slider_label[self.name][dim]["name"])
+                    self.data_arrays[self.name].coords[dim])
                 self.axparams[but_val]["dim"] = dim
                 # Get the dimensions corresponding to the x/y buttons
                 self.button_dims[but_val == "x"] = button.dim
@@ -330,9 +332,13 @@ class Slicer2d(Slicer):
         # Slice along dimensions with active sliders
         for dim, val in self.slider.items():
             if not val.disabled:
+                # self.lab[dim].value = self.make_slider_label(
+                #     self.slider_label[self.name][dim]["coord"], val.value)
+                # print(self.slider_axformatter)
                 self.lab[dim].value = self.make_slider_label(
-                    self.slider_label[self.name][dim]["coord"], val.value)
+                    data_slice.coords[dim], val.value, self.slider_axformatter[self.name][dim][False])
                 data_slice = data_slice[val.dim, val.value]
+
 
         # Update the xyedges and xywidth
         for xy, param in self.axparams.items():
@@ -476,7 +482,7 @@ class Slicer2d(Slicer):
                     dims=[param["dim"]],
                     values=np.linspace(xylims[xy][0], xylims[xy][1],
                                        self.image_resolution[xy] + 1),
-                    unit=self.slider_coord[self.name][param["dim"]].unit)
+                    unit=self.data_arrays[self.name].coords[param["dim"]].unit)
             self.update_image(extent=np.array(list(xylims.values())).flatten())
         return
 

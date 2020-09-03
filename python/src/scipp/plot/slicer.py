@@ -66,7 +66,7 @@ class Slicer:
         # Store ticklabels for a dimension
         self.slider_ticks = {}
         # Store labels for sliders if any
-        self.slider_label = {}
+        # self.slider_label = {}
         # Record which variables are histograms along which dimension
         self.histograms = {}
         # Axes tick formatters
@@ -77,6 +77,20 @@ class Slicer:
         self.contains_multid_coord = {}
 
         for name, array in scipp_obj_dict.items():
+
+            # Process axes dimensions
+            if axes is None:
+                axes = array.dims
+            # Replace positions in axes if positions set
+            if positions is not None:
+                axes[axes.index(
+                    array.coords[positions].dims[0])] = positions
+
+            # Protect against duplicate entries in axes
+            if len(axes) != len(set(axes)):
+                raise RuntimeError("Duplicate entry in axes: {}".format(axes))
+            self.ndim = len(axes)
+
 
             print(array)
             adims = array.dims
@@ -92,9 +106,9 @@ class Slicer:
                                  values=array.values,
                                  variances=array.variances,
                                  dtype=sc.dtype.float64))
-            print("================")
-            print(self.data_arrays[name])
-            print("================")
+            # print("================")
+            # print(self.data_arrays[name])
+            # print("================")
             self.name = name
 
             self.params["values"][name] = parse_params(globs=globs,
@@ -111,7 +125,7 @@ class Slicer:
             # dim_to_shape = dict(zip(array.dims, array.shape))
 
             # Size of the slider coordinate arrays
-            self.dim_to_shape[name] = dict(zip(array.dims, array.shape))
+            self.dim_to_shape[name] = dict(zip(self.data_arrays[name].dims, self.data_arrays[name].shape))
             # for dim, coord in array.coords.items():
             #     if dim not in self.dim_to_shape[name] and len(coord.dims) > 0:
             #         print(dim, self.dim_to_shape[name], coord)
@@ -124,7 +138,7 @@ class Slicer:
             # Store ticklabels for a dimension
             self.slider_ticks[name] = {}
             # Store labels for sliders if any
-            self.slider_label[name] = {}
+            # self.slider_label[name] = {}
             # Store axis tick formatters and locators
             self.slider_axformatter[name] = {}
             self.slider_axlocator[name] = {}
@@ -133,23 +147,29 @@ class Slicer:
             # Save if some dims contain multi-dimensional coords
             self.contains_multid_coord[name] = False
 
-            # Process axes dimensions
-            if axes is None:
-                axes = array.dims
-            # Replace positions in axes if positions set
-            if positions is not None:
-                axes[axes.index(
-                    self.data_array.coords[positions].dims[0])] = positions
+            # # Process axes dimensions
+            # if axes is None:
+            #     axes = array.dims
+            # # Replace positions in axes if positions set
+            # if positions is not None:
+            #     axes[axes.index(
+            #         self.data_array.coords[positions].dims[0])] = positions
 
-            # Protect against duplicate entries in axes
-            if len(axes) != len(set(axes)):
-                raise RuntimeError("Duplicate entry in axes: {}".format(axes))
-            self.ndim = len(axes)
+            # # Protect against duplicate entries in axes
+            # if len(axes) != len(set(axes)):
+            #     raise RuntimeError("Duplicate entry in axes: {}".format(axes))
+            # self.ndim = len(axes)
 
             # Iterate through axes and collect dimensions
-            for dim in axes:
+            for ax in axes:
                 # dim, var, lab, formatter, locator = self.axis_label_and_ticks(
                 #     ax, array, name)
+
+                # dim = sc.Dim(ax)
+                dim = ax
+                # Convert to Dim object?
+                if isinstance(dim, str):
+                    dim = sc.Dim(dim)
 
                 var, formatter, locator = self.axis_label_and_ticks(
                     dim, array, name)
@@ -166,6 +186,9 @@ class Slicer:
                         d] == var.shape[i] - 1
                     if d == dim:
                         dim_shape = var.shape[i]
+                    print("-----------------")
+                    print(d, self.histograms)
+                    print("-----------------")
 
                 if self.histograms[name][dim][dim]:
                     self.data_arrays[name].coords[dim] = var
@@ -300,7 +323,9 @@ class Slicer:
             widgets.jslink((self.continuous_update[dim], 'value'),
                            (self.slider[dim], 'continuous_update'))
 
-            labvalue = ""
+            labvalue = self.make_slider_label(
+                    self.data_arrays[self.name].coords[dim], indx,
+                    self.slider_axformatter[self.name][dim][False])
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
@@ -415,12 +440,13 @@ class Slicer:
             self.members["widgets"]["togglebutton"]["masks"] = \
                 self.masks_button
 
-    def make_slider_label(self, var, indx):
+    def make_slider_label(self, var, indx, formatter):
         if len(var.dims) > 1:
             return "slice-{}".format(indx)
         else:
             return name_with_unit(var=var,
-                                  name=value_to_string(var.values[indx]))
+                                  name=formatter.format_data_short(var.values[indx]))
+                                  # name=value_to_string(var.values[indx]))
 
     def mask_to_float(self, mask, var):
         return np.where(mask, var, None).astype(np.float)
@@ -441,8 +467,8 @@ class Slicer:
 
         # dim = axis
         # Convert to Dim object?
-        if isinstance(dim, str):
-            dim = sc.Dim(dim)
+        # if isinstance(dim, str):
+        #     dim = sc.Dim(dim)
 
         # underlying_dim = dim
         # non_dimension_coord = False
@@ -450,7 +476,7 @@ class Slicer:
 
         if dim in data_array.coords:
 
-            # dim_coord_dim = data_array.coords[dim].dims[-1]
+            dim_coord_dim = data_array.coords[dim].dims[-1]
             tp = data_array.coords[dim].dtype
 
             if tp == sc.dtype.vector_3_float64:
@@ -484,19 +510,26 @@ class Slicer:
                 # if dim != dim_coord_dim:
                 #     underlying_dim = dim_coord_dim
 
-            # elif dim != dim_coord_dim:
-            #     # non-dimension coordinate
-            #     non_dimension_coord = True
-            #     if dim_coord_dim in data_array.coords:
-            #         var = data_array.coords[dim_coord_dim]
-            #     else:
-            #         var = make_fake_coord(dim_coord_dim,
-            #                               self.dim_to_shape[name][dim_coord_dim])
-            #     underlying_dim = dim_coord_dim
-            #     form = ticker.FuncFormatter(
-            #         lambda val, pos: value_to_string(data_array.coords[
-            #             dim].values[np.abs(var.values - val).argmin()]))
-            #     formatter.update({False: form, True: form})
+            elif dim != dim_coord_dim:
+                # non-dimension coordinate
+                # non_dimension_coord = True
+                if dim_coord_dim in data_array.coords:
+                    coord = data_array.coords[dim_coord_dim]
+                    var = sc.Variable(
+                        [dim],
+                        values=coord.values,
+                        variances=coord.variances,
+                        unit=coord.unit,
+                        dtype=sc.dtype.float64)
+                else:
+                    var = make_fake_coord(dim,
+                                          self.dim_to_shape[name][dim_coord_dim])
+                # underlying_dim = dim_coord_dim
+                # var = data_array.coords[dim].astype(sc.dtype.float64)
+                form = ticker.FuncFormatter(
+                    lambda val, pos: value_to_string(data_array.coords[
+                        dim].values[np.abs(var.values - val).argmin()]))
+                formatter.update({False: form, True: form})
 
             else:
                 var = data_array.coords[dim].astype(sc.dtype.float64)
