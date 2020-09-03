@@ -20,7 +20,7 @@ protected:
       EXPECT_EQ(i.get(), (std::array{indices0[n], indices[n]...}));
       i.increment();
     }
-    EXPECT_EQ(i.index(), i.end_sentinel());
+    ASSERT_EQ(i.index(), i.end_sentinel());
     if (skip_advance_check)
       return;
     for (scipp::index n0 = 0; n0 < scipp::size(indices0); ++n0) {
@@ -118,4 +118,13 @@ TEST_F(MultiIndexTest, advance_slice_and_broadcast) {
   MultiIndex index(xz, xy);
   index.advance(2);
   check(index, {0, 0, 3, 3, 3, 3});
+}
+
+TEST_F(MultiIndexTest, buckets) {
+  Dimensions events{{Dim::Row}, {7}};
+  const std::vector<std::pair<scipp::index, scipp::index>> indices{{0, 3},
+                                                                   {3, 7}};
+  BucketParams params{Dim::Row, events, indices};
+  MultiIndex index(params, x, x);
+  check(index, {0, 1, 2, 3, 4, 5, 6});
 }
