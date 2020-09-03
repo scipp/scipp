@@ -68,6 +68,9 @@ public:
              const DataDims &... dataDims) {
     const auto &nestedDims = bucket_params.dims;
     m_ndim_nested = nestedDims.ndim();
+    m_nested_stride = nestedDims.offset(bucket_params.dim);
+    m_nested_dim_index =
+        m_ndim_nested - nestedDims.index(bucket_params.dim) - 1;
     m_indices = bucket_params.indices;
     scipp::index dim = iterDims.ndim() - 1 + m_ndim_nested;
     for (const auto size : iterDims.shape()) {
@@ -93,9 +96,9 @@ public:
       for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
         m_stride[data][m_ndim_nested + d] = bucketStrides[data][d];
       m_stride[data][m_ndim_nested] = 0;
-      m_data_index[data] = begin;
+      m_data_index[data] = m_nested_stride * begin;
     }
-    m_shape[m_ndim_nested - 1] = end - begin;
+    m_shape[m_nested_dim_index] = end - begin;
     // TODO is output always of maximum shape and has buckets? use index 0
     // instead of N?
     for (scipp::index d = 0; d < m_ndim_nested; ++d)
@@ -104,19 +107,22 @@ public:
       m_stride[N][m_ndim_nested + d] = bucketStrides[0][d];
     m_end_sentinel = iterDims.volume();
     load_bucket_params();
-    fprintf(stderr, "initial strides %ld %ld\n", m_stride[0][0],
-            m_stride[0][1]);
-    fprintf(stderr, "initial strides %ld %ld\n", m_stride[N][0],
-            m_stride[N][1]);
+    fprintf(stderr, "nested stride %ld nested dim index %ld\n", m_nested_stride,
+            m_nested_dim_index);
+    fprintf(stderr, "shape %ld %ld %ld\n", m_shape[0], m_shape[1], m_shape[2]);
+    fprintf(stderr, "initial strides %ld %ld %ld\n", m_stride[0][0],
+            m_stride[0][1], m_stride[0][2]);
+    fprintf(stderr, "initial strides %ld %ld %ld\n", m_stride[N][0],
+            m_stride[N][1], m_stride[N][2]);
   }
 
   constexpr void load_bucket_params() noexcept {
     const auto [begin, end] = m_indices[m_bucket_index];
-    m_shape[m_ndim_nested - 1] = end - begin;
+    m_shape[m_nested_dim_index] = end - begin;
     // TODO do not update dense
     for (scipp::index data = 0; data < N; ++data)
       m_stride[data][m_ndim_nested] =
-          begin - m_stride[data][m_ndim_nested]; // TODO scale
+          m_nested_stride * begin - m_stride[data][m_ndim_nested]; // TODO scale
   }
 
   constexpr void increment_outer() noexcept {
@@ -178,13 +184,15 @@ public:
       const auto [begin, end] = m_indices[m_bucket_index];
       for (scipp::index data = 0; data < N; ++data) {
         m_stride[data][m_ndim_nested] = 0;
-        m_data_index[data] = begin;
+        m_data_index[data] = m_nested_stride * begin;
       }
       load_bucket_params();
       fprintf(stderr, "set_index(%ld) %ld %ld %ld %ld bucket %ld\n", offset,
               m_coord[0], m_coord[1], m_coord[2], m_coord[3], m_bucket_index);
-      fprintf(stderr, "strides %ld %ld\n", m_stride[0][0], m_stride[0][1]);
-      fprintf(stderr, "strides %ld %ld\n", m_stride[N][0], m_stride[N][1]);
+      fprintf(stderr, "strides %ld %ld %ld\n", m_stride[0][0], m_stride[0][1],
+              m_stride[0][2]);
+      fprintf(stderr, "strides %ld %ld %ld\n", m_stride[N][0], m_stride[N][1],
+              m_stride[N][2]);
     }
   }
 
@@ -219,6 +227,8 @@ private:
   scipp::index m_end_sentinel{1};
   scipp::index m_bucket_index{0};
   scipp::index m_ndim_nested{NDIM_MAX};
+  scipp::index m_nested_stride{0};
+  scipp::index m_nested_dim_index;
   scipp::span<const std::pair<scipp::index, scipp::index>> m_indices{};
 
   // BucketParams m_bucket_params;

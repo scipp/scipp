@@ -150,18 +150,21 @@ TEST_F(MultiIndexTest, advance_slice_and_broadcast) {
   check(index, {0, 0, 3, 3, 3, 3});
 }
 
-TEST_F(MultiIndexTest, buckets) {
-  Dimensions events{{Dim::Row}, {7}};
+TEST_F(MultiIndexTest, 1d_array_of_1d_buckets) {
+  const Dim dim = Dim::Row;
+  Dimensions buf{{dim}, {7}}; // 1d cut into two sections
   // natural order no gaps
-  check_with_buckets(events, Dim::Row, {{0, 3}, {3, 7}}, x, x,
-                     {0, 1, 2, 3, 4, 5, 6});
+  check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, x, x, {0, 1, 2, 3, 4, 5, 6});
   // gap between
-  check_with_buckets(events, Dim::Row, {{0, 3}, {4, 7}}, x, x,
-                     {0, 1, 2, 4, 5, 6});
+  check_with_buckets(buf, dim, {{0, 3}, {4, 7}}, x, x, {0, 1, 2, 4, 5, 6});
   // gap at start
-  check_with_buckets(events, Dim::Row, {{1, 3}, {3, 7}}, x, x,
-                     {1, 2, 3, 4, 5, 6});
+  check_with_buckets(buf, dim, {{1, 3}, {3, 7}}, x, x, {1, 2, 3, 4, 5, 6});
   // out of order
-  check_with_buckets(events, Dim::Row, {{4, 7}, {0, 4}}, x, x,
-                     {4, 5, 6, 0, 1, 2, 3});
+  check_with_buckets(buf, dim, {{4, 7}, {0, 4}}, x, x, {4, 5, 6, 0, 1, 2, 3});
+}
+
+TEST_F(MultiIndexTest, 1d_array_of_2d_buckets) {
+  Dimensions buf{{Dim("a"), Dim("b")}, {2, 3}}; // 2d cut into two sections
+  check_with_buckets(buf, Dim("b"), {{0, 1}, {1, 3}}, x, x, {0, 3, 1, 2, 4, 5});
+  check_with_buckets(buf, Dim("a"), {{0, 1}, {1, 2}}, x, x, {0, 1, 2, 3, 4, 5});
 }
