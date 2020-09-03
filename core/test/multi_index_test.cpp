@@ -175,3 +175,18 @@ TEST_F(MultiIndexTest, 1d_array_of_2d_buckets) {
   check_with_buckets(buf, Dim("a"), {{1, 2}, {1, 2}}, x, x, {3, 4, 5, 3, 4, 5});
   check_with_buckets(buf, Dim("a"), {{1, 2}, {0, 1}}, x, x, {3, 4, 5, 0, 1, 2});
 }
+
+TEST_F(MultiIndexTest, 2d_array_of_1d_buckets) {
+  const Dim dim = Dim::Row;
+  Dimensions buf{{dim}, {12}}; // 1d cut into xy=2x3 sections
+  check_with_buckets(buf, dim,
+                     {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}}, xy,
+                     xy, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
+  check_with_buckets(buf, dim,
+                     {{1, 2}, {2, 4}, {5, 6}, {6, 8}, {8, 10}, {10, 12}}, xy,
+                     xy, {1, 2, 3, 5, 6, 7, 8, 9, 10, 11});
+  // transpose
+  check_with_buckets(buf, dim,
+                     {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}}, yx,
+                     xy, {0, 1, 6, 7, 2, 3, 8, 9, 4, 5, 10, 11});
+}
