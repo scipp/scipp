@@ -15,6 +15,7 @@ protected:
   void check_impl(MultiIndex<Dims...> i,
                   const std::vector<scipp::index> &indices0,
                   const Indices &... indices) const {
+    ASSERT_NE(i.begin(), i.end());
     const bool skip_set_index_check = i != i.begin();
     for (scipp::index n = 0; n < scipp::size(indices0); ++n) {
       EXPECT_EQ(i.get(), (std::array{indices0[n], indices[n]...}));

@@ -165,8 +165,10 @@ public:
     // TODO how to handle this in case of bucket elements?
     auto remainder{offset};
     for (scipp::index d = 0; d < NDIM_MAX; ++d) {
-      if (m_shape[d] == 0)
-        continue;
+      if (m_shape[d] == 0) {
+        m_coord[d] = remainder; // this serves as the end index
+        break;
+      }
       m_coord[d] = remainder % m_shape[d];
       remainder /= m_shape[d];
     }
