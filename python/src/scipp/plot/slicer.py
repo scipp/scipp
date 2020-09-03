@@ -276,14 +276,19 @@ class Slicer:
         indx = 0
 
         # Additional condition if positions kwarg set
-        positions_dim = None
-        if len(button_options) == 3 and positions is not None:
-            if self.data_array.coords[
-                    positions].dtype == sc.dtype.vector_3_float64:
-                positions_dim = self.data_array.coords[positions].dims[-1]
-            else:
+        # positions_dim = None
+        if positions is not None:
+            if scipp_obj_dict[self.name].coords[
+                    positions].dtype != sc.dtype.vector_3_float64:
                 raise RuntimeError(
                     "Supplied positions coordinate does not contain vectors.")
+        # if len(button_options) == 3 and positions is not None:
+        #     if scipp_obj_dict[self.name].coords[
+        #             positions].dtype == sc.dtype.vector_3_float64:
+        #         positions_dim = self.data_array.coords[positions].dims[-1]
+        #     else:
+        #         raise RuntimeError(
+        #             "Supplied positions coordinate does not contain vectors.")
 
         # Now begin loop to construct sliders
         button_values = [None] * (self.ndim - len(button_options)) + \
@@ -296,8 +301,8 @@ class Slicer:
             # In the case of 3d projection, disable sliders that are for
             # dims < 3, or sliders that contain vectors.
             disabled = False
-            if positions_dim is not None:
-                disabled = dim == positions_dim
+            if positions is not None:
+                disabled = dim == positions
             elif i >= self.ndim - len(button_options):
                 disabled = True
 
@@ -486,7 +491,7 @@ class Slicer:
                                       self.dim_to_shape[name][dim],
                                       unit=data_array.coords[dim].unit)
                 form = ticker.FuncFormatter(lambda val, pos: "(" + ",".join([
-                    value_to_string(item, precision=2) for item in array.coords[dim].values[int(val)]
+                    value_to_string(item, precision=2) for item in data_array.coords[dim].values[int(val)]
                 ]) + ")" if (int(val) >= 0 and int(val) < self.dim_to_shape[name][
                     dim]) else "")
                     # dim_coord_dim]) else "")

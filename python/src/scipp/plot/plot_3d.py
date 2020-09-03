@@ -140,7 +140,7 @@ class Slicer3d(Slicer):
         self.pixel_size = pixel_size
         self.tick_size = tick_size
         if positions is not None:
-            coord = self.data_array.coords[positions]
+            coord = scipp_obj_dict[self.name].coords[positions]
             self.positions = np.array(coord.values, dtype=np.float32)
             self.axlabels.update({
                 "x": name_with_unit(coord, name="X"),
@@ -152,15 +152,18 @@ class Slicer3d(Slicer):
             # axes.
             coords = []
             labels = []
-            for dim, val in self.slider.items():
-                if val.disabled:
+            # for dim, val in self.slider.items():
+            for dim in self.data_arrays[self.name].dims:
+                print("in here", dim)
+                if self.slider[dim].disabled:
                     # arr = self.slider_coord[self.name][dim]
                     # if self.histograms[self.name][dim][dim]:
                     #     arr = to_bin_centers(arr, dim)
                     coord = self.data_arrays[self.name].coords[dim]
-                    coords.append(to_bin_centers(coord).values)
+                    coords.append(to_bin_centers(coord, dim).values)
                     labels.append(name_with_unit(coord))
-            z, y, x = np.meshgrid(*coords, indexing='ij')
+            # z, y, x = np.meshgrid(*coords, indexing='ij')
+            x, y, z = np.meshgrid(*coords, indexing='ij')
             self.positions = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
             if self.pixel_size is None:
@@ -174,8 +177,8 @@ class Slicer3d(Slicer):
         # Find spatial and value limits
         self.xminmax, self.center_of_mass = self.get_spatial_extents()
         self.vminmax = [
-            sc.min(self.data_array.data).value,
-            sc.max(self.data_array.data).value
+            sc.min(self.data_arrays[self.name].data).value,
+            sc.max(self.data_arrays[self.name].data).value
         ]
 
         # Create the point cloud with pythreejs
@@ -493,7 +496,7 @@ void main() {
             ax,
             cmap=cm.get_cmap(self.params["values"][self.name]["cmap"]),
             norm=self.params["values"][self.name]["norm"])
-        cb1.set_label(name_with_unit(var=self.data_array, name=""))
+        cb1.set_label(name_with_unit(var=self.data_arrays[self.name], name=""))
         canvas.draw()
         image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
         shp = list(fig.canvas.get_width_height())[::-1] + [3]
@@ -626,12 +629,14 @@ void main() {
         """
         Slice the extra dimensions down and update the slice values
         """
-        self.vslice = self.data_array
+        self.vslice = self.data_arrays[self.name]
         # Slice along dimensions with active sliders
         for dim, val in self.slider.items():
             if not val.disabled:
+                # self.lab[dim].value = self.make_slider_label(
+                #     self.slider_coord[self.name][dim], val.value)
                 self.lab[dim].value = self.make_slider_label(
-                    self.slider_coord[self.name][dim], val.value)
+                    self.vslice.coords[dim], val.value, self.slider_axformatter[self.name][dim][False])
                 self.vslice = self.vslice[val.dim, val.value]
 
         # Handle masks
