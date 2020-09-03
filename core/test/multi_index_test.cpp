@@ -24,11 +24,31 @@ protected:
     ASSERT_EQ(i, i.end());
     if (skip_set_index_check)
       return;
-    for (scipp::index n0 = 0; n0 < scipp::size(indices0); ++n0) {
-      i.set_index(n0);
-      for (scipp::index n = n0; n < scipp::size(indices0); ++n) {
-        EXPECT_EQ(i.get(), (std::array{indices0[n], indices[n]...}));
-        i.increment();
+    if (i.end_sentinel() == scipp::size(indices0)) {
+      // No buckets
+      for (scipp::index n0 = 0; n0 < scipp::size(indices0); ++n0) {
+        i.set_index(n0);
+        for (scipp::index n = n0; n < scipp::size(indices0); ++n) {
+          EXPECT_EQ(i.get(), (std::array{indices0[n], indices[n]...}));
+          i.increment();
+        }
+      }
+    } else {
+      // Buckets
+      for (scipp::index bucket = 0; bucket < i.end_sentinel(); ++bucket) {
+        i.set_index(bucket);
+        scipp::index n0 = 0;
+        auto it = i.begin();
+        while (it != i) {
+          it.increment();
+          ++n0;
+        }
+        i.set_index(bucket);
+        for (scipp::index n = n0; n < scipp::size(indices0); ++n) {
+          EXPECT_EQ(i.get(), (std::array{indices0[n], indices[n]...}))
+              << bucket << ' ' << n0;
+          i.increment();
+        }
       }
     }
   }
@@ -126,5 +146,5 @@ TEST_F(MultiIndexTest, buckets) {
                                                                    {3, 7}};
   BucketParams params{Dim::Row, events, indices};
   MultiIndex index(params, x, x);
-  // check(index, {0, 1, 2, 3, 4, 5, 6});
+  check(index, {0, 1, 2, 3, 4, 5, 6});
 }
