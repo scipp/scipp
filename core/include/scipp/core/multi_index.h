@@ -138,6 +138,9 @@ public:
       increment_outer();
   }
 
+  /// Set the absolute index. In the special case of iteration with buckets,
+  /// this sets the *index of the bucket* and NOT the full index within the
+  /// iterated data.
   constexpr void set_index(const scipp::index offset) noexcept {
     auto remainder{offset};
     for (scipp::index d = 0; d < NDIM_MAX; ++d) {
@@ -187,6 +190,7 @@ public:
     return it;
   }
 
+  // TODO this should be removed, end() can compute volume based on m_coord
   scipp::index end_sentinel() const noexcept { return m_end_sentinel; }
 
 private:
