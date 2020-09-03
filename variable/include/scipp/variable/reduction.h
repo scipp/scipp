@@ -35,5 +35,13 @@ SCIPP_VARIABLE_EXPORT VariableView sum(const VariableConstView &var,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable min(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable min(const VariableConstView &var,
                                                  const Dim dim);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+nanmax(const VariableConstView &var);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+nanmax(const VariableConstView &var, const Dim dim);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+nanmin(const VariableConstView &var);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+nanmin(const VariableConstView &var, const Dim dim);
 
 } // namespace scipp::variable

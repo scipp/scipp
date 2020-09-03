@@ -98,10 +98,31 @@ template <typename T> void bind_nan_to_num(py::module &m) {
       py::keep_alive<0, 5>(), py::call_guard<py::gil_scoped_release>());
 }
 
+template <typename T> void bind_exp(py::module &m) {
+  m.def(
+      "exp", [](const VariableConstView &x) { return exp(x); }, py::arg("x"),
+      py::call_guard<py::gil_scoped_release>());
+}
+
+template <typename T> void bind_log(py::module &m) {
+  m.def(
+      "log", [](const VariableConstView &x) { return log(x); }, py::arg("x"),
+      py::call_guard<py::gil_scoped_release>());
+}
+
+template <typename T> void bind_log10(py::module &m) {
+  m.def(
+      "log10", [](const VariableConstView &x) { return log10(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+}
+
 void init_unary(py::module &m) {
   bind_abs<Variable>(m);
   bind_sqrt<Variable>(m);
   bind_norm<Variable>(m);
   bind_reciprocal<Variable>(m);
   bind_nan_to_num<Variable>(m);
+  bind_exp<Variable>(m);
+  bind_log<Variable>(m);
+  bind_log10<Variable>(m);
 }

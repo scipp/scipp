@@ -162,6 +162,14 @@ Variable max(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::max_equals);
 }
 
+/// Return the maximum along given dimension ignoring NaN values.
+///
+/// Variances are not considered when determining the maximum. If present, the
+/// variance of the maximum element is returned.
+Variable nanmax(const VariableConstView &var, const Dim dim) {
+  return reduce_idempotent(var, dim, core::element::nanmax_equals);
+}
+
 void min_impl(const VariableView &out, const VariableConstView &var) {
   reduce_impl(out, var, core::element::min_equals);
 }
@@ -174,14 +182,32 @@ Variable min(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::min_equals);
 }
 
+/// Return the minimum along given dimension ignorning NaN values.
+///
+/// Variances are not considered when determining the minimum. If present, the
+/// variance of the minimum element is returned.
+Variable nanmin(const VariableConstView &var, const Dim dim) {
+  return reduce_idempotent(var, dim, core::element::nanmin_equals);
+}
+
 /// Return the maximum along all dimensions.
 Variable max(const VariableConstView &var) {
   return reduce_all_dims(var, [](auto &&... _) { return max(_...); });
 }
 
+/// Return the maximum along all dimensions ignorning NaN values.
+Variable nanmax(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return nanmax(_...); });
+}
+
 /// Return the minimum along all dimensions.
 Variable min(const VariableConstView &var) {
   return reduce_all_dims(var, [](auto &&... _) { return min(_...); });
+}
+
+/// Return the minimum along all dimensions ignoring NaN values.
+Variable nanmin(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return nanmin(_...); });
 }
 
 /// Return the logical AND along all dimensions.

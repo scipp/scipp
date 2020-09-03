@@ -89,6 +89,42 @@ def max(x, dim=None, out=None):
         return _call_cpp_func(_cpp.max, x, dim=dim, out=out)
 
 
+def nanmin(x, dim=None, out=None):
+    """Element-wise min ignoring not at number values over the specified
+    dimension or all dimensions if not provided.
+
+    :param x: Input data.
+    :param dim: Optional dimension along which to calculate the min. If not
+                given, the min over all dimensions is calculated.
+    :param out: Optional output buffer.
+    :raises: If the dimension does not exist, or the dtype cannot be summed,
+             e.g., if it is a string.
+    :return: The min of the input values.
+    """
+    if dim is None:
+        return _call_cpp_func(_cpp.nanmin, x, out=out)
+    else:
+        return _call_cpp_func(_cpp.nanmin, x, dim=dim, out=out)
+
+
+def nanmax(x, dim=None, out=None):
+    """Element-wise max ignoring not a number values over the specified
+    dimension or all dimensions if not provided.
+
+    :param x: Input data.
+    :param dim: Optional dimension along which to calculate the max. If not
+                given, the max over all dimensions is calculated.
+    :param out: Optional output buffer.
+    :raises: If the dimension does not exist, or the dtype cannot be summed,
+             e.g., if it is a string.
+    :return: The max of the input values.
+    """
+    if dim is None:
+        return _call_cpp_func(_cpp.nanmax, x, out=out)
+    else:
+        return _call_cpp_func(_cpp.nanmax, x, dim=dim, out=out)
+
+
 def all(x, dim=None, out=None):
     """Element-wise AND over the specified dimension or all dimensions if not
     provided.

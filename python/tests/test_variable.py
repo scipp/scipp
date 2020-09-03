@@ -833,6 +833,21 @@ def test_reciprocal_out():
     assert_export(sc.reciprocal, var, var)
 
 
+def test_exp():
+    var = sc.Variable()
+    assert_export(sc.exp, x=var)
+
+
+def test_log():
+    var = sc.Variable()
+    assert_export(sc.log, x=var)
+
+
+def test_log10():
+    var = sc.Variable()
+    assert_export(sc.log10, x=var)
+
+
 def test_sin():
     assert_export(sc.sin, sc.Variable())
 
