@@ -83,24 +83,21 @@ public:
     m_stride = std::array<std::array<scipp::index, NDIM_MAX>, N>{get_strides(
         nestedDims,
         dataDims.contains(Dim::Invalid) ? nestedDims : nestedDims)...};
-    const auto [begin, end] = m_indices[m_bucket_index];
-    m_shape[m_nested_dim_index] = end - begin;
     const auto bucketStrides =
         std::array<std::array<scipp::index, NDIM_MAX>, N>{
             get_strides(iterDims, dataDims)...}[0];
+    // Use upper part of m_stride[0] for buckets. This works under the
+    // assumption that the 0th data is never dense, i.e., is always handled via
+    // bucket-based offsets.
     for (scipp::index d = 0; d < NDIM_MAX - m_ndim_nested; ++d)
       m_stride[0][m_ndim_nested + d] = bucketStrides[d];
     m_end_sentinel = iterDims.volume();
     load_bucket_params();
-    // fprintf(stderr, "nested stride %ld nested dim index %ld\n",
-    // m_nested_stride,
-    //        m_nested_dim_index);
-    // fprintf(stderr, "shape %ld %ld %ld\n", m_shape[0], m_shape[1],
-    // m_shape[2]); fprintf(stderr, "initial strides %ld %ld %ld\n",
-    // m_stride[0][0],
-    //        m_stride[0][1], m_stride[0][2]);
-    // fprintf(stderr, "initial strides %ld %ld %ld\n", m_stride[N][0],
-    //        m_stride[N][1], m_stride[N][2]);
+    fprintf(stderr, "nested stride %ld nested dim index %ld\n", m_nested_stride,
+            m_nested_dim_index);
+    fprintf(stderr, "shape %ld %ld %ld\n", m_shape[0], m_shape[1], m_shape[2]);
+    fprintf(stderr, "initial strides %ld %ld %ld\n", m_stride[0][0],
+            m_stride[0][1], m_stride[0][2]);
   }
 
   constexpr void load_bucket_params() noexcept {
@@ -142,45 +139,30 @@ public:
   }
 
   constexpr void set_index(const scipp::index offset) noexcept {
-    if (m_ndim_nested == NDIM_MAX) {
-      auto remainder{offset};
-      for (scipp::index d = 0; d < NDIM_MAX; ++d) {
-        if (m_shape[d] == 0) {
-          m_coord[d] = remainder; // this serves as the end index
-          break;
-        }
+    auto remainder{offset};
+    for (scipp::index d = 0; d < NDIM_MAX; ++d) {
+      if (m_shape[d] == 0) {
+        m_coord[d] = remainder; // this serves as the end index
+        break;
+      }
+      if (m_ndim_nested != NDIM_MAX && d < m_ndim_nested) {
+        m_coord[d] = 0;
+      } else {
         m_coord[d] = remainder % m_shape[d];
         remainder /= m_shape[d];
       }
+    }
+    if (m_ndim_nested == NDIM_MAX) {
       for (scipp::index data = 0; data < N; ++data) {
         m_data_index[data] = 0;
         for (scipp::index d = 0; d < NDIM_MAX; ++d)
           m_data_index[data] += m_stride[data][d] * m_coord[d];
       }
     } else {
-      auto remainder{offset};
-      for (scipp::index d = 0; d < m_ndim_nested; ++d)
-        m_coord[d] = 0;
-      for (scipp::index d = m_ndim_nested; d < NDIM_MAX; ++d) {
-        if (m_shape[d] == 0) {
-          m_coord[d] = remainder; // this serves as the end index
-          break;
-        }
-        m_coord[d] = remainder % m_shape[d];
-        remainder /= m_shape[d];
-      }
       m_bucket_index = 0;
       for (scipp::index d = m_ndim_nested; d < NDIM_MAX; ++d)
         m_bucket_index += m_stride[0][d] * m_coord[d];
       load_bucket_params();
-      // fprintf(stderr, "set_index(%ld) %ld %ld %ld %ld bucket %ld\n", offset,
-      //        m_coord[0], m_coord[1], m_coord[2], m_coord[3], m_bucket_index);
-      // fprintf(stderr, "strides %ld %ld %ld\n", m_stride[0][0],
-      // m_stride[0][1],
-      //        m_stride[0][2]);
-      // fprintf(stderr, "strides %ld %ld %ld\n", m_stride[N][0],
-      // m_stride[N][1],
-      //        m_stride[N][2]);
     }
   }
 
