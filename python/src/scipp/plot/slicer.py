@@ -348,7 +348,7 @@ class Slicer:
             # labvalue = self.make_slider_label(
             #         self.data_arrays[self.name].coords[dim], indx,
             #         self.slider_axformatter[self.name][dim][False])
-            labvalue = str(self.data_arrays[self.name].coords[dim].unit)
+            labvalue = "[{}]".format(self.data_arrays[self.name].coords[dim].unit)
             if self.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
@@ -391,8 +391,9 @@ class Slicer:
 
             # Add observer to buttons
             self.buttons[dim].on_msg(self.update_buttons)
-            # Add an observer to the slider
+            # Add an observer to the sliders
             self.slider[dim].observe(self.update_slice, names="value")
+            self.thickness_slider[dim].observe(self.update_slice, names="value")
             # Add the row of slider + buttons
             row = [
                 self.slider[dim], self.lab[dim], self.continuous_update[dim],

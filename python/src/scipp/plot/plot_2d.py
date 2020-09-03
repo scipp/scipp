@@ -186,6 +186,7 @@ class Slicer2d(Slicer):
         if not self.slider[owner.dim].disabled:
             toggle_slider = True
             self.slider[owner.dim].disabled = True
+            self.thickness_slider[owner.dim].disabled = True
         for dim, button in self.buttons.items():
             if (button.value == owner.value) and (dim != owner.dim):
                 if self.slider[dim].disabled:
@@ -195,6 +196,7 @@ class Slicer2d(Slicer):
                 button.old_value = button.value
                 if toggle_slider:
                     self.slider[dim].disabled = False
+                    self.thickness_slider[dim].disabled = False
         owner.old_value = owner.value
         self.update_axes()
         return
@@ -337,13 +339,14 @@ class Slicer2d(Slicer):
                 # print(self.slider_axformatter)
                 # self.lab[dim].value = self.make_slider_label(
                 #     val.value, self.slider_axformatter[self.name][dim][False])
-                self.lab[dim].value = self.slider_axformatter[self.name][dim][False].format_data_short(val.value)
+                # self.lab[dim].value = self.slider_axformatter[self.name][dim][False].format_data_short(val.value)
                 deltax = self.thickness_slider[dim].value
 
                 data_slice = self.resample_image(data_slice,
                         # coord_edges={dim: self.slider_coord[self.name][dim]},
                         rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
-                                                                     val.value + 0.5 * deltax])})[dim, 0]
+                                                                     val.value + 0.5 * deltax],
+                                                            unit=data_slice.coords[dim].unit)})[dim, 0]
                     # depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
                     # depth.unit = sc.units.one
                 data_slice *= (deltax * sc.units.one)
