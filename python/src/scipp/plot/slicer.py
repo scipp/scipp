@@ -264,7 +264,9 @@ class Slicer:
         print(self.data_arrays)
 
         # Initialise list for VBox container
-        self.vbox = []
+        self.rescale_button = widgets.Button(description="Rescale")
+        self.rescale_button.on_click(self.rescale_to_data)
+        self.vbox = [self.rescale_button]
 
         # Initialise slider and label containers
         self.lab = dict()
@@ -336,7 +338,7 @@ class Slicer:
 
             self.thickness_slider[dim] = widgets.FloatSlider(
                 value=dx,
-                min=0.0,
+                min=0.01 * dx,
                 max=dx,
                 step=0.01 * dx,
                 description="Thickness",
@@ -583,3 +585,42 @@ class Slicer:
         change["owner"].description = "Hide all masks" if change["new"] else \
             "Show all masks"
         return
+
+    def select_bins(self, coord, dim, start, end):
+        bins = coord.shape[-1]
+        if len(coord.dims) != 1:  # TODO find combined min/max
+            return dim, slice(0, bins - 1)
+        # scipp treats bins as closed on left and open on right: [left, right)
+        first = sc.sum(coord <= start, dim).value - 1
+        last = bins - sc.sum(coord > end, dim).value
+        if first >= last:  # TODO better handling for decreasing
+            return dim, slice(0, bins - 1)
+        first = max(0, first)
+        last = min(bins - 1, last)
+        return dim, slice(first, last + 1)
+
+
+    def resample_image(self, array, rebin_edges):
+        dslice = array
+        # Select bins to speed up rebinning
+        for dim in rebin_edges:
+            this_slice = self.select_bins(array.coords[dim], dim,
+                                          rebin_edges[dim][dim, 0],
+                                          rebin_edges[dim][dim, -1])
+            dslice = dslice[this_slice]
+
+        # Rebin the data
+        for dim, edges in rebin_edges.items():
+            # print(dim)
+            # print(dslice)
+            # print(edges)
+            dslice = sc.rebin(dslice, dim, edges)
+
+        # Divide by pixel width
+        for dim, edges in rebin_edges.items():
+            # self.image_pixel_size[key] = edges.values[1] - edges.values[0]
+            # print("edges.values[1]", edges.values[1])
+            # print(self.image_pixel_size[key])
+            # dslice /= self.image_pixel_size[key]
+            dslice /= edges[dim, 1:] - edges[dim, :-1]
+        return dslice

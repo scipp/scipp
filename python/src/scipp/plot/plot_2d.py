@@ -15,7 +15,9 @@ from .. import detail
 import numpy as np
 import ipywidgets as widgets
 import matplotlib.pyplot as plt
+from matplotlib.axes import Subplot
 import warnings
+import os
 
 
 def plot_2d(scipp_obj_dict=None,
@@ -143,7 +145,7 @@ class Slicer2d(Slicer):
         if self.params["values"][self.name]["cbar"]:
             self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
             self.cbar.set_label(name_with_unit(var=self.data_arrays[self.name], name=""))
-            self.cbar.ax.set_picker(5)
+            # self.cbar.ax.set_picker(5)
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.members["image"] = self.image
@@ -169,8 +171,8 @@ class Slicer2d(Slicer):
         self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
         self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
 
-        if self.cbar is not None:
-            self.fig.canvas.mpl_connect('pick_event', self.rescale_colorbar)
+        # if self.cbar is not None:
+        #     self.fig.canvas.mpl_connect('pick_event', self.rescale_colorbar)
 
         return
 
@@ -293,7 +295,7 @@ class Slicer2d(Slicer):
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
 
-        self.rescale_colorbar()
+        self.rescale_to_data()
 
         return
 
@@ -331,10 +333,10 @@ class Slicer2d(Slicer):
 
     # def prepare_slice_
 
-    def rescale_colorbar(self, event=None):
+    def rescale_to_data(self, button=None):
         vmin = None
         vmax = None
-        if event is None:
+        if button is None:
             # If the colorbar has been clicked, then ignore globally set
             # limits, as the click signals the user wants to change the
             # colorscale.
@@ -365,6 +367,11 @@ class Slicer2d(Slicer):
                 #     val.value, self.slider_axformatter[self.name][dim][False])
                 # self.lab[dim].value = self.slider_axformatter[self.name][dim][False].format_data_short(val.value)
                 deltax = self.thickness_slider[dim].value
+
+                # print(data_slice)
+                # print(sc.Variable([dim], values=[val.value - 0.5 * deltax,
+                #                                                      val.value + 0.5 * deltax],
+                #                                             unit=data_slice.coords[dim].unit))
 
                 data_slice = self.resample_image(data_slice,
                         # coord_edges={dim: self.slider_coord[self.name][dim]},
@@ -532,41 +539,44 @@ class Slicer2d(Slicer):
             self.update_image(extent=np.array(list(xylims.values())).flatten())
         return
 
-    def select_bins(self, coord, dim, start, end):
-        bins = coord.shape[-1]
-        if len(coord.dims) != 1:  # TODO find combined min/max
-            return dim, slice(0, bins - 1)
-        # scipp treats bins as closed on left and open on right: [left, right)
-        first = sc.sum(coord <= start, dim).value - 1
-        last = bins - sc.sum(coord > end, dim).value
-        if first >= last:  # TODO better handling for decreasing
-            return dim, slice(0, bins - 1)
-        first = max(0, first)
-        last = min(bins - 1, last)
-        return dim, slice(first, last + 1)
+    # def select_bins(self, coord, dim, start, end):
+    #     bins = coord.shape[-1]
+    #     if len(coord.dims) != 1:  # TODO find combined min/max
+    #         return dim, slice(0, bins - 1)
+    #     # scipp treats bins as closed on left and open on right: [left, right)
+    #     first = sc.sum(coord <= start, dim).value - 1
+    #     last = bins - sc.sum(coord > end, dim).value
+    #     if first >= last:  # TODO better handling for decreasing
+    #         return dim, slice(0, bins - 1)
+    #     first = max(0, first)
+    #     last = min(bins - 1, last)
+    #     return dim, slice(first, last + 1)
 
     # def resample_image(self, array, coord_edges, rebin_edges):
-    def resample_image(self, array, rebin_edges):
-        dslice = array
-        # Select bins to speed up rebinning
-        for dim in rebin_edges:
-            this_slice = self.select_bins(array.coords[dim], dim,
-                                          rebin_edges[dim][dim, 0],
-                                          rebin_edges[dim][dim, -1])
-            dslice = dslice[this_slice]
+    # def resample_image(self, array, rebin_edges):
+    #     dslice = array
+    #     # Select bins to speed up rebinning
+    #     for dim in rebin_edges:
+    #         this_slice = self.select_bins(array.coords[dim], dim,
+    #                                       rebin_edges[dim][dim, 0],
+    #                                       rebin_edges[dim][dim, -1])
+    #         dslice = dslice[this_slice]
 
-        # Rebin the data
-        for dim, edges in rebin_edges.items():
-            # print(dim)
-            # print(dslice)
-            # print(edges)
-            dslice = sc.rebin(dslice, dim, edges)
+    #     # Rebin the data
+    #     for dim, edges in rebin_edges.items():
+    #         # print(dim)
+    #         # print(dslice)
+    #         # print(edges)
+    #         dslice = sc.rebin(dslice, dim, edges)
 
-        # Divide by pixel width
-        for key, edges in rebin_edges.items():
-            self.image_pixel_size[key] = edges.values[1] - edges.values[0]
-            dslice /= self.image_pixel_size[key]
-        return dslice
+    #     # Divide by pixel width
+    #     for dim, edges in rebin_edges.items():
+    #         # self.image_pixel_size[key] = edges.values[1] - edges.values[0]
+    #         # print("edges.values[1]", edges.values[1])
+    #         # print(self.image_pixel_size[key])
+    #         # dslice /= self.image_pixel_size[key]
+    #         dslice /= edges[dim, 1:] - edges[dim, :-1]
+    #     return dslice
 
     def update_image(self, extent=None):
         # The order of the dimensions that are rebinned matters if 2D coords

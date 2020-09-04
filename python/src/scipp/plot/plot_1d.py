@@ -6,7 +6,7 @@
 from .. import config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import to_bin_centers, get_ylim, vars_to_err
+from .tools import to_bin_centers, vars_to_err
 from .._utils import name_with_unit
 from .._scipp import core as sc
 
@@ -121,23 +121,23 @@ class Slicer1d(Slicer):
         self.mpl_line_params = mpl_line_params
 
         self.names = []
-        self.ylim = [np.Inf, np.NINF]
+        # self.ylim = [np.Inf, np.NINF]
         self.logx = logx
         self.logy = logy
         for name, var in self.data_arrays.items():
             self.names.append(name)
-            if var.values is not None:
-                self.ylim = get_ylim(var=var,
-                                          ymin=self.ylim[0],
-                                          ymax=self.ylim[1],
-                                          errorbars=self.errorbars[name],
-                                          logy=self.logy)
+            # if var.values is not None:
+            #     self.ylim = get_ylim(var=var,
+            #                               ymin=self.ylim[0],
+            #                               ymax=self.ylim[1],
+            #                               errorbars=self.errorbars[name],
+            #                               logy=self.logy)
             ylab = name_with_unit(var=var, name="")
 
-        if (not self.mpl_axes) and (var.values is not None):
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=UserWarning)
-                self.ax.set_ylim(self.ylim)
+        # if (not self.mpl_axes) and (var.values is not None):
+        #     with warnings.catch_warnings():
+        #         warnings.filterwarnings("ignore", category=UserWarning)
+        #         self.ax.set_ylim(self.ylim)
 
         if self.logx:
             self.ax.set_xscale("log")
@@ -165,7 +165,7 @@ class Slicer1d(Slicer):
         self.keep_buttons_box = widgets.VBox(self.keep_buttons_box)
         self.box = widgets.VBox(
             [widgets.VBox(self.vbox), self.keep_buttons_box])
-        self.box.layout.align_items = 'center'
+        # self.box.layout.align_items = 'center'
         if self.ndim < 2:
             self.keep_buttons_box.layout.display = 'none'
 
@@ -367,8 +367,8 @@ class Slicer1d(Slicer):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_xlim([xmin - deltax, xmax + deltax])
-                if self.input_contains_unaligned_data:
-                    self.ax.set_ylim(self.ylim)
+                # if self.input_contains_unaligned_data:
+                #     self.ax.set_ylim(self.ylim)
 
         # self.ax.set_xlabel(
         #     name_with_unit(
@@ -382,6 +382,8 @@ class Slicer1d(Slicer):
         self.ax.xaxis.set_major_locator(
             self.slider_axlocator[self.name][dim][self.logx])
 
+        self.rescale_to_data()
+
         return
 
     def slice_data(self, var, name):
@@ -393,16 +395,35 @@ class Slicer1d(Slicer):
                 #     self.slider_label[self.name][dim]["coord"], val.value)
                 # self.lab[dim].value = self.make_slider_label(
                 #     var.coords[dim], val.value)
-                self.lab[dim].value = self.make_slider_label(
-                    var.coords[dim], val.value, self.slider_axformatter[name][dim][False])
-                vslice = vslice[val.dim, val.value]
+                # self.lab[dim].value = self.make_slider_label(
+                #     var.coords[dim], val.value, self.slider_axformatter[name][dim][False])
+
+                # vslice = vslice[val.dim, val.value]
+
+                deltax = self.thickness_slider[dim].value
+                vslice = self.resample_image(vslice,
+                        rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
+                                                                     val.value + 0.5 * deltax],
+                                                            unit=vslice.coords[dim].unit)})[dim, 0]
+                vslice *= (deltax * sc.units.one)
+
+
+
+
+
+
+
+
+
+
+
         if vslice.unaligned is not None:
             vslice = sc.histogram(vslice)
-            self.ylim = get_ylim(var=vslice,
-                                      ymin=self.ylim[0],
-                                      ymax=self.ylim[1],
-                                      errorbars=self.errorbars[name],
-                                      logy=self.logy)
+            # self.ylim = get_ylim(var=vslice,
+            #                           ymin=self.ylim[0],
+            #                           ymax=self.ylim[1],
+            #                           errorbars=self.errorbars[name],
+            #                           logy=self.logy)
         return vslice
 
     def slice_masks(self):
@@ -458,10 +479,10 @@ class Slicer1d(Slicer):
                     self.change_segments_y(xcoord.values,
                                            vslice.values, vslice.variances))
 
-        if self.input_contains_unaligned_data and (not self.mpl_axes):
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=UserWarning)
-                self.ax.set_ylim(self.ylim)
+        # if self.input_contains_unaligned_data and (not self.mpl_axes):
+        #     with warnings.catch_warnings():
+        #         warnings.filterwarnings("ignore", category=UserWarning)
+        #         self.ax.set_ylim(self.ylim)
 
         return
 
@@ -561,6 +582,13 @@ class Slicer1d(Slicer):
         for line in self.ax.lines:
             if line.get_gid() == change["owner"].masks_name:
                 line.set_visible(change["new"])
+        return
+
+    def rescale_to_data(self, button=None):
+        # self.ax.set_ylim(get_ylim())
+        self.ax.autoscale(True)
+        self.ax.relim()
+        self.ax.autoscale_view()
         return
 
     # def vars_to_err(self, v):
