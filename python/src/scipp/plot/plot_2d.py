@@ -143,6 +143,7 @@ class Slicer2d(Slicer):
         if self.params["values"][self.name]["cbar"]:
             self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
             self.cbar.set_label(name_with_unit(var=self.data_arrays[self.name], name=""))
+            self.cbar.ax.set_picker(5)
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.members["image"] = self.image
@@ -167,6 +168,9 @@ class Slicer2d(Slicer):
         # Connect changes in axes limits to resampling function
         self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
         self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
+
+        if self.cbar is not None:
+            self.fig.canvas.mpl_connect('pick_event', self.rescale_colorbar)
 
         return
 
@@ -289,6 +293,8 @@ class Slicer2d(Slicer):
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
 
+        self.rescale_colorbar()
+
         return
 
     # def compute_bin_widths(self, xy, dim):
@@ -324,6 +330,24 @@ class Slicer2d(Slicer):
     #         self.compute_bin_widths(xy, param["dim"])
 
     # def prepare_slice_
+
+    def rescale_colorbar(self, event=None):
+        vmin = None
+        vmax = None
+        if event is None:
+            # If the colorbar has been clicked, then ignore globally set
+            # limits, as the click signals the user wants to change the
+            # colorscale.
+            vmin =  self.vminmax["vmin"]
+            vmax =  self.vminmax["vmax"]
+        if vmin is None:
+            vmin = sc.min(self.dslice.data).value
+        if vmax is None:
+            vmax = sc.max(self.dslice.data).value
+        self.image.set_clim([vmin, vmax])
+        for m in self.masks[self.name]:
+            self.members["masks"][m].set_clim([vmin, vmax])
+
 
     def slice_data(self):
         """
@@ -411,38 +435,38 @@ class Slicer2d(Slicer):
         # self.vslice *= self.xywidth["x"]
         # self.vslice *= self.xywidth["y"]
 
-    def prepare_slice_for_resample(self, data_slice):
-        # In the case of unaligned data, we may want to auto-scale the colorbar
-        # as we slice through dimensions. Colorbar limits are allowed to grow
-        # but not shrink.
-        if data_slice.unaligned is not None:
-            data_slice = sc.histogram(data_slice)
-            data_slice.variances = None
-            self.autoscale_cbar = True
-        else:
-            self.autoscale_cbar = False
+    # def prepare_slice_for_resample(self, data_slice):
+    #     # In the case of unaligned data, we may want to auto-scale the colorbar
+    #     # as we slice through dimensions. Colorbar limits are allowed to grow
+    #     # but not shrink.
+    #     if data_slice.unaligned is not None:
+    #         data_slice = sc.histogram(data_slice)
+    #         data_slice.variances = None
+    #         self.autoscale_cbar = True
+    #     else:
+    #         self.autoscale_cbar = False
 
-        self.vslice = detail.move_to_data_array(
-            data=sc.Variable(dims=data_slice.dims,
-                             unit=sc.units.counts,
-                             values=data_slice.values,
-                             variances=data_slice.variances,
-                             dtype=sc.dtype.float32))
-        # self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
-        # self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
-        self.vslice.coords[self.xyrebin["x"].dims[0]] = data_slice.coords[self.axparams["x"]["dim"]]
-        self.vslice.coords[self.xyrebin["y"].dims[0]] = data_slice.coords[self.axparams["y"]["dim"]]
+    #     self.vslice = detail.move_to_data_array(
+    #         data=sc.Variable(dims=data_slice.dims,
+    #                          unit=sc.units.counts,
+    #                          values=data_slice.values,
+    #                          variances=data_slice.variances,
+    #                          dtype=sc.dtype.float32))
+    #     # self.vslice.coords[self.xyrebin["x"].dims[0]] = self.xyedges["x"]
+    #     # self.vslice.coords[self.xyrebin["y"].dims[0]] = self.xyedges["y"]
+    #     self.vslice.coords[self.xyrebin["x"].dims[0]] = data_slice.coords[self.axparams["x"]["dim"]]
+    #     self.vslice.coords[self.xyrebin["y"].dims[0]] = data_slice.coords[self.axparams["y"]["dim"]]
 
-        # Also include masks
-        if len(data_slice.masks) > 0:
-            for m in data_slice.masks:
-                self.vslice.masks[m] = data_slice.masks[m]
+    #     # Also include masks
+    #     if len(data_slice.masks) > 0:
+    #         for m in data_slice.masks:
+    #             self.vslice.masks[m] = data_slice.masks[m]
 
-        # Scale by bin width and then rebin in both directions
-        # Note that this has to be written as 2 inplace operations to avoid
-        # creation of large 2D temporary from broadcast
-        self.vslice *= self.xywidth["x"]
-        self.vslice *= self.xywidth["y"]
+    #     # Scale by bin width and then rebin in both directions
+    #     # Note that this has to be written as 2 inplace operations to avoid
+    #     # creation of large 2D temporary from broadcast
+    #     self.vslice *= self.xywidth["x"]
+    #     self.vslice *= self.xywidth["y"]
 
     def update_slice(self, change=None):
         """
