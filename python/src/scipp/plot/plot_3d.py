@@ -355,7 +355,7 @@ class Slicer3d(Slicer):
         points_geometry = p3.BufferGeometry(
             attributes={
                 'position': p3.BufferAttribute(array=self.positions),
-                'rgba_color': p3.BufferAttribute(array=self.slice_data(None))
+                'rgba_color': p3.BufferAttribute(array=self.slice_data(change=None, autoscale_cmap=True))
             })
         points_material = self.create_points_material()
         points = p3.Points(geometry=points_geometry, material=points_material)
@@ -625,7 +625,7 @@ void main() {
         c3[:, 3] = newc
         self.points_geometry.attributes["rgba_color"].array = c3
 
-    def slice_data(self, change):
+    def slice_data(self, change=None, autoscale_cmap=False):
         """
         Slice the extra dimensions down and update the slice values
         """
@@ -635,9 +635,17 @@ void main() {
             if not val.disabled:
                 # self.lab[dim].value = self.make_slider_label(
                 #     self.slider_coord[self.name][dim], val.value)
-                self.lab[dim].value = self.make_slider_label(
-                    self.vslice.coords[dim], val.value, self.slider_axformatter[self.name][dim][False])
-                self.vslice = self.vslice[val.dim, val.value]
+                # self.lab[dim].value = self.make_slider_label(
+                #     self.vslice.coords[dim], val.value, self.slider_axformatter[self.name][dim][False])
+                # self.vslice = self.vslice[val.dim, val.value]
+
+                deltax = self.thickness_slider[dim].value
+                self.vslice = self.resample_image(self.vslice,
+                        rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
+                                                                     val.value + 0.5 * deltax],
+                                                            unit=self.vslice.coords[dim].unit)})[dim, 0]
+                self.vslice *= (deltax * sc.units.one)
+
 
         # Handle masks
         if len(self.masks[self.name]) > 0:
@@ -653,6 +661,8 @@ void main() {
             msk = msk.values
 
         self.vslice = self.vslice.values.flatten()
+        if autoscale_cmap:
+            self.scalar_map.set_clim(self.vslice.min(), self.vslice.max())
         colors = self.scalar_map.to_rgba(self.vslice).astype(np.float32)
 
         if len(self.masks[self.name]) > 0:
@@ -663,11 +673,11 @@ void main() {
 
         return colors
 
-    def update_slice(self, change):
+    def update_slice(self, change=None, autoscale_cmap=False):
         """
         Update colors of points.
         """
-        new_colors = self.slice_data(change)
+        new_colors = self.slice_data(change=change, autoscale_cmap=autoscale_cmap)
         new_colors[:,
                    3] = self.points_geometry.attributes["rgba_color"].array[:,
                                                                             3]
@@ -680,7 +690,7 @@ void main() {
         """
         Show/hide masks
         """
-        self.update_slice(None)
+        self.update_slice()
         return
 
     def toggle_outline(self, change):
@@ -688,3 +698,7 @@ void main() {
         self.axticks.visible = change["new"]
         desc = "Hide" if change["new"] else "Show"
         self.toggle_outline_button.description = desc + " outline"
+
+    def rescale_to_data(self, button=None):
+        # self.scalar_map.set_clim(self.vslice.min(), self.vslice.max())
+        self.update_slice(autoscale_cmap=True)
