@@ -286,6 +286,23 @@ class Slicer:
 
         print(self.data_arrays)
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
         # Initialise list for VBox container
         self.rescale_button = widgets.Button(description="Rescale")
         self.rescale_button.on_click(self.rescale_to_data)

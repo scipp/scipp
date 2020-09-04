@@ -5,7 +5,7 @@
 # Scipp imports
 from .. import config
 from .render import render_plot
-from .profiler import Profiler
+# from .profiler import Profiler
 from .tools import to_bin_edges, parse_params
 from .._utils import name_with_unit
 from .._scipp import core as sc
@@ -43,7 +43,7 @@ def plot_2d(scipp_obj_dict=None,
     particular dimension.
     """
 
-    sv = Plot2d(scipp_obj_dict=scipp_obj_dict,
+    sv = SciPlot2d(scipp_obj_dict=scipp_obj_dict,
                   axes=axes,
                   masks=masks,
                   ax=ax,
@@ -64,7 +64,7 @@ def plot_2d(scipp_obj_dict=None,
     return sv
 
 
-class Plot2d(Profiler):
+class SciPlot2d():
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
@@ -81,7 +81,19 @@ class Plot2d(Profiler):
                  logy=False,
                  resolution=None):
 
-        super().__init__(scipp_obj_dict=scipp_obj_dict,
+        # super().__init__(scipp_obj_dict=scipp_obj_dict,
+        #                  axes=axes,
+        #                  masks=masks,
+        #                  cmap=cmap,
+        #                  log=log,
+        #                  vmin=vmin,
+        #                  vmax=vmax,
+        #                  color=color,
+        #                  aspect=aspect,
+        #                  button_options=['X', 'Y'])
+
+        self.engine = PlotEngine(parent=self,
+                         scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
                          cmap=cmap,

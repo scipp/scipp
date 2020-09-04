@@ -5,7 +5,7 @@
 # Scipp imports
 from .._scipp import core as sc
 from .. import _utils as su
-from .sciplot import SciPlot
+# from .sciplot import Plot
 from .tools import make_fake_coord
 
 
@@ -122,7 +122,7 @@ def plot(scipp_obj,
                 tobeplotted[key]["mpl_line_params"][n][name] = p
 
     # Plot all the subsets
-    output = SciPlot()
+    output = Plot()
     for key, val in tobeplotted.items():
         output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
                                name=key,
@@ -134,3 +134,22 @@ def plot(scipp_obj,
                                **kwargs)
 
     return output
+
+
+class Plot(dict):
+    """
+    The Plot object is used as output from the plot command.
+    It is a small wrapper around python dict, with a silent repr.
+    The dict will contain all the plot elements as well as the slider and
+    button widgets.
+    More functionalities can be added in the future.
+    """
+    def __init__(self, *arg, **kw):
+        super(Plot, self).__init__(*arg, **kw)
+
+    def _ipython_display_(self):
+        import ipywidgets as widgets
+        contents = []
+        for key, val in self.items():
+            contents.append(val._to_widget())
+        return widgets.VBox(contents)._ipython_display_()

@@ -29,22 +29,27 @@ try:
             # If we are in an IPython kernel, select either widget backend
             # if installed (for JupyterLan), or notebook backend.
             if "IPKernelApp" in ipy.config and not is_doc_build:
-                try:
-                    _ = importlib.import_module("ipympl")
-                    matplotlib.use('module://ipympl.backend_nbagg')
-                except ImportError:
-                    matplotlib.use('nbAgg')
-                    # Remove the title banner and button from figure
-                    ipy.run_cell_magic(
-                        "html", "", "<style>.output_wrapper "
-                        ".ui-dialog-titlebar {display: none;}</style>")
+                matplotlib.use('module://ipympl.backend_nbagg')
+                from ipympl.backend_nbagg import Canvas
+                Canvas.header_visible.default_value = False
+                # try:
+                #     _ = importlib.import_module("ipympl")
+                #     matplotlib.use('module://ipympl.backend_nbagg')
+                # except ImportError:
+                #     matplotlib.use('nbAgg')
+                #     # Remove the title banner and button from figure
+                #     ipy.run_cell_magic(
+                #         "html", "", "<style>.output_wrapper "
+                #         ".ui-dialog-titlebar {display: none;}</style>")
     except ImportError:
         pass
-    # Turn interactive plotting on
+    # Turn interactive plotting off
     import matplotlib.pyplot as plt
-    plt.ion()
     if is_doc_build:
         plt.rcParams.update({'figure.max_open_warning': 0})
+    else:
+        plt.ioff()
+
 
 except ImportError:
     pass
