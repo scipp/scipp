@@ -479,13 +479,14 @@ class TestMantidConversion(unittest.TestCase):
         # Then the data array contains the run log as an unaligned coord
         self.assertTrue(
             np.allclose(target.run()[log_name].value,
-                        d.unaligned_coords[log_name].values),
+                        d.unaligned_coords[log_name].values.data.values),
             "Expected values in the unaligned coord to match "
             "the original run log from the Mantid workspace")
-        self.assertEqual(d.unaligned_coords[log_name].units, sc.units.K)
+        self.assertEqual(d.unaligned_coords[log_name].values.unit, sc.units.K)
         self.assertTrue(
-            np.allclose(target.run()[log_name].times,
-                        d.unaligned_coords[log_name].coords["times"].values),
+            np.array_equal(
+                target.run()[log_name].times.astype(np.int64),
+                d.unaligned_coords[log_name].values.coords["times"].values),
             "Expected times in the unaligned coord to match "
             "the original run log from the Mantid workspace")
 

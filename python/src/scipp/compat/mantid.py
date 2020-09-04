@@ -53,10 +53,24 @@ def make_run(ws):
     return sc.Variable(value=deepcopy(ws.run()))
 
 
+additional_unit_mapping = {
+    "Kelvin": sc.units.K,
+    "microsecond": sc.units.us,
+    "nanosecond": sc.units.ns,
+    "second": sc.units.s,
+    "Angstrom": sc.units.angstrom,
+    "Hz": sc.units.dimensionless / sc.units.s,
+    "degree": sc.units.deg,
+}
+# Alternatively we could make use of a library for this,
+# for example pint (https://pint.readthedocs.io)
+
+
 def make_variables_from_run_logs(ws):
     lookup_units = dict(
         zip([str(unit) for unit in sc.units.supported_units()],
             sc.units.supported_units()))
+    lookup_units.update(additional_unit_mapping)
     for property_name in ws.run().keys():
         units_string = ws.run()[property_name].units
         units = lookup_units.get(units_string, None)
@@ -101,8 +115,8 @@ def make_variables_from_run_logs(ws):
                                                       unit=sc.units.ns)
                                       })
             yield property_name, sc.Variable(data_array)
-
-        yield property_name, property_data
+        else:
+            yield property_name, property_data
 
 
 def make_sample(ws):
