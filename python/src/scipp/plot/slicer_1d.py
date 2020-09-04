@@ -16,47 +16,48 @@ import copy as cp
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import warnings
+import os
 
 
-def plot_1d(scipp_obj_dict=None,
-            axes=None,
-            errorbars=None,
-            masks={"color": "k"},
-            filename=None,
-            figsize=None,
-            ax=None,
-            mpl_line_params=None,
-            logx=False,
-            logy=False,
-            logxy=False,
-            grid=False):
-    """
-    Plot a 1D spectrum.
+# def plot_1d(scipp_obj_dict=None,
+#             axes=None,
+#             errorbars=None,
+#             masks={"color": "k"},
+#             filename=None,
+#             figsize=None,
+#             ax=None,
+#             mpl_line_params=None,
+#             logx=False,
+#             logy=False,
+#             logxy=False,
+#             grid=False):
+#     """
+#     Plot a 1D spectrum.
 
-    Input is a Dataset containing one or more Variables.
-    If the coordinate of the x-axis contains bin edges, then a bar plot is
-    made.
-    If the data contains more than one dimensions, sliders are added.
+#     Input is a Dataset containing one or more Variables.
+#     If the coordinate of the x-axis contains bin edges, then a bar plot is
+#     made.
+#     If the data contains more than one dimensions, sliders are added.
 
-    """
+#     """
 
-    sv = Plot1d(scipp_obj_dict=scipp_obj_dict,
-                  axes=axes,
-                  errorbars=errorbars,
-                  masks=masks,
-                  ax=ax,
-                  mpl_line_params=mpl_line_params,
-                  logx=logx or logxy,
-                  logy=logy or logxy,
-                  grid=grid)
+#     sv = Slicer1d(scipp_obj_dict=scipp_obj_dict,
+#                   axes=axes,
+#                   errorbars=errorbars,
+#                   masks=masks,
+#                   ax=ax,
+#                   mpl_line_params=mpl_line_params,
+#                   logx=logx or logxy,
+#                   logy=logy or logxy,
+#                   grid=grid)
 
-    if ax is None:
-        render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
+#     if ax is None:
+#         render_plot(figure=sv.fig, widgets=sv.box, filename=filename)
 
-    return sv
+#     return sv
 
 
-class Plot1d(Profiler):
+class Slicer1d(Slicer):
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
@@ -67,6 +68,7 @@ class Plot1d(Profiler):
                  logx=False,
                  logy=False,
                  grid=False):
+        os.write(1, "Slicer1d 0\n".encode())
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
@@ -74,6 +76,7 @@ class Plot1d(Profiler):
                          button_options=['X'])
 
         # self.scipp_obj_dict = scipp_obj_dict
+        os.write(1, "Slicer1d 1\n".encode())
         self.fig = None
         self.ax = ax
         self.mpl_axes = False
@@ -90,6 +93,7 @@ class Plot1d(Profiler):
             self.mpl_axes = True
         if grid:
             self.ax.grid()
+        os.write(1, "Slicer1d 2\n".encode())
 
         # Determine whether error bars should be plotted or not
         self.errorbars = {}
@@ -116,6 +120,7 @@ class Plot1d(Profiler):
             else:
                 raise TypeError("Unsupported type for argument "
                                 "'errorbars': {}".format(type(errorbars)))
+        os.write(1, "Slicer1d 3\n".encode())
 
         # Save the line parameters (color, linewidth...)
         self.mpl_line_params = mpl_line_params
@@ -133,6 +138,7 @@ class Plot1d(Profiler):
             #                               errorbars=self.errorbars[name],
             #                               logy=self.logy)
             ylab = name_with_unit(var=var, name="")
+        os.write(1, "Slicer1d 4\n".encode())
 
         # if (not self.mpl_axes) and (var.values is not None):
         #     with warnings.catch_warnings():
@@ -148,7 +154,9 @@ class Plot1d(Profiler):
         for dim, button in self.buttons.items():
             if self.slider[dim].disabled:
                 button.disabled = True
+        os.write(1, "Slicer1d 5\n".encode())
         self.update_axes(list(self.slider.keys())[-1])
+        os.write(1, "Slicer1d 6\n".encode())
 
         self.ax.set_ylabel(ylab)
         if len(self.ax.get_legend_handles_labels()[0]) > 0:
@@ -156,6 +164,7 @@ class Plot1d(Profiler):
 
         self.keep_buttons = dict()
         self.make_keep_button()
+        os.write(1, "Slicer1d 7\n".encode())
 
         # vbox contains the original sliders and buttons.
         # In keep_buttons_box, we include the keep trace buttons.
@@ -172,6 +181,7 @@ class Plot1d(Profiler):
         # Populate the members
         self.members["fig"] = self.fig
         self.members["ax"] = self.ax
+        os.write(1, "Slicer1d 8\n".encode())
 
         return
 
@@ -262,25 +272,37 @@ class Plot1d(Profiler):
 
         xmin = np.Inf
         xmax = np.NINF
+        os.write(1, "update_axes 1\n".encode())
+
         for name, array in self.data_arrays.items():
             # new_x = self.slider_coord[name][dim].values
             # new_x = array.coords[dim].values
             xmin = min(sc.min(array.coords[dim]).value, xmin)
             xmax = max(sc.max(array.coords[dim]).value, xmax)
+            os.write(1, "update_axes 2\n".encode())
 
             vslice = self.slice_data(array, name)
             ydata = vslice.values
             xcenters = to_bin_centers(vslice.coords[dim], dim).values
+            os.write(1, "update_axes 3\n".encode())
 
             if len(self.masks[name]) > 0:
                 self.members["masks"][name] = {}
                 base_mask = sc.Variable(dims=vslice.dims,
                                         values=np.ones(vslice.shape,
                                                        dtype=np.int32))
+            os.write(1, "update_axes 4\n".encode())
 
             # If this is a histogram, plot a step function
             if self.histograms[name][dim][dim]:
+                os.write(1, "update_axes 5\n".encode())
                 ye = np.concatenate((ydata[0:1], ydata))
+                os.write(1, "update_axes 5.1\n".encode())
+                os.write(1, (str(vslice.coords[dim].values) + "\n").encode())
+                os.write(1, (str(name) + "\n").encode())
+                os.write(1, (str(ye) + "\n").encode())
+                os.write(1, (str(self.mpl_line_params) + "\n").encode())
+
                 [self.members["lines"][name]
                  ] = self.ax.step(vslice.coords[dim].values,
                                   ye,
@@ -290,6 +312,7 @@ class Plot1d(Profiler):
                                       key: self.mpl_line_params[key][name]
                                       for key in ["color", "linewidth"]
                                   })
+                os.write(1, "update_axes 5.2\n".encode())
                 # Add masks if any
                 if len(self.masks[name]) > 0:
                     for m in self.masks[name]:
@@ -314,8 +337,10 @@ class Plot1d(Profiler):
                         # whether the cursor is hovering over the 2D image or
                         # not.
                         self.members["masks"][name][m].set_gid("onaxes")
+                os.write(1, "update_axes 5.3\n".encode())
 
             else:
+                os.write(1, "update_axes 6\n".encode())
 
                 # If this is not a histogram, just use normal plot
                 # x = to_bin_centers(vslice.coords[dim], dim).values
@@ -346,6 +371,7 @@ class Plot1d(Profiler):
                             linestyle="none",
                             marker=self.mpl_line_params["marker"][name])
                         self.members["masks"][name][m].set_gid("onaxes")
+            os.write(1, "update_axes 7\n".encode())
 
             # Add error bars
             if self.errorbars[name]:
@@ -361,6 +387,7 @@ class Plot1d(Profiler):
                     color=self.mpl_line_params["color"][name],
                     zorder=10,
                     fmt="none")
+        os.write(1, "update_axes 8\n".encode())
 
         if not self.mpl_axes:
             deltax = 0.05 * (xmax - xmin)
@@ -375,14 +402,17 @@ class Plot1d(Profiler):
         #         self.slider_label[self.name][dim]["coord"],
         #         name=self.slider_label[self.name][dim]["name"],
         #     ))
+        os.write(1, "update_axes 9\n".encode())
         self.ax.set_xlabel(
             name_with_unit(self.data_arrays[self.name].coords[dim]))
         self.ax.xaxis.set_major_formatter(
             self.slider_axformatter[self.name][dim][self.logx])
         self.ax.xaxis.set_major_locator(
             self.slider_axlocator[self.name][dim][self.logx])
+        os.write(1, "update_axes 10\n".encode())
 
         self.rescale_to_data()
+        os.write(1, "update_axes 11\n".encode())
 
         return
 

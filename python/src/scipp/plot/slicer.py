@@ -3,14 +3,16 @@
 # @author Neil Vaytet
 
 from .. import config
-from .tools import parse_params, make_fake_coord, to_bin_edges
+from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 
 # Other imports
 import numpy as np
 import matplotlib.ticker as ticker
+import matplotlib.pyplot as plt
 import ipywidgets as widgets
+import os
 
 
 class Slicer:
@@ -26,6 +28,8 @@ class Slicer:
                  button_options=None,
                  aspect=None,
                  positions=None):
+
+        os.write(1, "Slicer 1\n".encode())
 
         # self.scipp_obj_dict = scipp_obj_dict
         self.data_arrays = {}
@@ -46,14 +50,32 @@ class Slicer:
             "vmax": vmax,
             "color": color
         }
+        os.write(1, "Slicer 2\n".encode())
 
         # Save aspect ratio setting
         self.aspect = aspect
         if self.aspect is None:
             self.aspect = config.plot.aspect
 
+        # Variables for the profile viewer
+        self.profile_viewer = None
+        self.profile_key = None
+        self.profile_dim = None
+        self.slice_pos_rectangle = None
+        self.profile_scatter = None
+        self.profile_update_lock = False
+        self.profile_ax = None
+        self.log = log
+        # self.flatten_as = flatten_as
+        # self.da_with_edges = None
+        # self.vmin = vmin
+        # self.vmax = vmax
+        # self.ylim = None
+
+
         # Containers: need one per entry in the dict of scipp
         # objects (=DataArray)
+        os.write(1, "Slicer 3\n".encode())
 
         # List mask names for each item
         self.masks = {}
@@ -260,6 +282,7 @@ class Slicer:
             for n, msk in array.masks.items():
                 self.data_arrays[name].masks[n] = msk
 
+        os.write(1, "Slicer 4\n".encode())
 
         print(self.data_arrays)
 
@@ -274,11 +297,13 @@ class Slicer:
         # self.slider = dict()
         self.thickness_slider = dict()
         self.buttons = dict()
+        self.profile_button = dict()
         self.showhide = dict()
         self.button_axis_to_dim = dict()
         self.continuous_update = dict()
         # Default starting index for slider
         indx = 0
+        os.write(1, "Slicer 5\n".encode())
 
         # Additional condition if positions kwarg set
         # positions_dim = None
@@ -299,7 +324,9 @@ class Slicer:
         button_values = [None] * (self.ndim - len(button_options)) + \
             button_options[::-1]
         # for i, dim in enumerate(self.slider_coord[self.name]):
-        for i, dim in enumerate(self.data_arrays[self.name].coords):
+        # for i, dim in enumerate(self.data_arrays[self.name].coords):
+        os.write(1, "Slicer 5.1\n".encode())
+        for i, dim in enumerate(axes):
             # dim_str = self.slider_label[self.name][dim]["name"]
             dim_str = str(dim)
             # Determine if slider should be disabled or not:
@@ -310,6 +337,7 @@ class Slicer:
                 disabled = dim == positions
             elif i >= self.ndim - len(button_options):
                 disabled = True
+            os.write(1, "Slicer 5.2\n".encode())
 
             # Add an IntSlider to slide along the z dimension of the array
             dim_xlims = self.slider_xlims[self.name][dim].values
@@ -335,6 +363,7 @@ class Slicer:
                 layout={"width": "20px"})
             widgets.jslink((self.continuous_update[dim], 'value'),
                            (self.slider[dim], 'continuous_update'))
+            os.write(1, "Slicer 5.3\n".encode())
 
             self.thickness_slider[dim] = widgets.FloatSlider(
                 value=dx,
@@ -346,6 +375,7 @@ class Slicer:
                 readout=True,
                 disabled=disabled,
                 layout={'width': "270px"})
+            os.write(1, "Slicer 5.4\n".encode())
 
             # labvalue = self.make_slider_label(
             #         self.data_arrays[self.name].coords[dim], indx,
@@ -358,6 +388,7 @@ class Slicer:
                 # because when we hide the slider, the slider description is
                 # also hidden
                 labvalue = dim_str
+            os.write(1, "Slicer 5.5\n".encode())
 
             # Add a label widget to display the value of the z coordinate
             self.lab[dim] = widgets.Label(value=labvalue)
@@ -368,7 +399,19 @@ class Slicer:
                 value=button_values[i],
                 disabled=False,
                 button_style='',
-                style={"button_width": "70px"})
+                style={"button_width": "50px"})
+            os.write(1, "Slicer 5.6\n".encode())
+
+            self.profile_button[dim] = widgets.ToggleButton(
+                value=False,
+                description="Profile",
+                disabled=False,
+                button_style="",
+                layout={"width": "initial"})
+            self.profile_button[dim].observe(self.toggle_profile_view, names="value")
+
+            os.write(1, "Slicer 5.7\n".encode())
+
             if button_values[i] is not None:
                 self.button_axis_to_dim[button_values[i].lower()] = dim
             setattr(self.buttons[dim], "dim", dim)
@@ -376,6 +419,8 @@ class Slicer:
             setattr(self.slider[dim], "dim", dim)
             setattr(self.continuous_update[dim], "dim", dim)
             setattr(self.thickness_slider[dim], "dim", dim)
+            setattr(self.profile_button[dim], "dim", dim)
+            os.write(1, "Slicer 5.8\n".encode())
 
             # Hide buttons and labels for 1d variables
             if self.ndim == 1:
@@ -390,6 +435,7 @@ class Slicer:
                     self.continuous_update[dim].layout.display = 'none'
                     self.lab[dim].layout.display = 'none'
                     self.thickness_slider[dim].layout.display = 'none'
+            os.write(1, "Slicer 5.9\n".encode())
 
             # Add observer to buttons
             self.buttons[dim].on_msg(self.update_buttons)
@@ -400,17 +446,21 @@ class Slicer:
             row = [
                 self.slider[dim], self.lab[dim], self.continuous_update[dim],
                 self.buttons[dim], self.thickness_slider[dim],
+                self.profile_button[dim]
             ]
             self.vbox.append(widgets.HBox(row))
+            os.write(1, "Slicer 5.10\n".encode())
 
             # Construct members object
             self.members["widgets"]["sliders"][dim_str] = self.slider[dim]
             self.members["widgets"]["togglebuttons"][dim_str] = self.buttons[
                 dim]
             self.members["widgets"]["labels"][dim_str] = self.lab[dim]
+        os.write(1, "Slicer 6\n".encode())
 
         # Add controls for masks
         self.add_masks_controls()
+        os.write(1, "Slicer 7\n".encode())
 
         return
 
@@ -624,3 +674,297 @@ class Slicer:
             # dslice /= self.image_pixel_size[key]
             dslice /= edges[dim, 1:] - edges[dim, :-1]
         return dslice
+
+
+
+
+
+# ################################################################
+# # Profile viewer ###############################################
+# ################################################################
+
+
+
+    def toggle_profile_view(self, change=None):
+        return
+        # self.profile_dim = change["owner"].dim
+        # if change["new"]:
+        #     self.show_profile_view()
+        # else:
+        #     self.hide_profile_view()
+        # return
+
+
+
+#     def show_profile_view(self):
+
+#         # Double the figure height
+#         self.fig.set_figheight(2 * self.fig.get_figheight())
+#         # Change the ax geometry so it becomes a subplot
+#         self.ax.change_geometry(2, 1, 1)
+#         # Add lower panel
+#         self.profile_ax = self.fig.add_subplot(212)
+
+#         # Also need to move the colorbar to the top panel.
+#         # Easiest way to do this is to remove it and create it again.
+#         if self.params["values"][self.name]["cbar"]:
+#             self.cbar.remove()
+#             del self.cbar
+#             self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
+#             self.cbar.set_label(name_with_unit(var=self.data_arrays[self.name], name=""))
+#             if self.cax is None:
+#                 self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
+#             self.members["colorbar"] = self.cbar
+
+#         # # self.ax_pick.set_ylim([
+#         # #     self.params["values"][self.name]["vmin"],
+#         # #     self.params["values"][self.name]["vmax"]
+#         # # ])
+#         # self.ax_pick.set_ylim(get_ylim(
+#         #         var=self.data_array, errorbars=(self.data_array.variances is not None)))
+
+#         # Connect picking events
+#         # self.fig.canvas.mpl_connect('pick_event', self.keep_or_delete_profile)
+#         self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+
+#         return
+
+#     def update_profile_axes(self):
+
+#         # Clear profile axes if present and reset to None
+#         del self.profile_viewer
+#         if self.profile_ax is not None:
+#             self.profile_ax.clear()
+#             # # ylim = get_ylim(
+#             # #     var=self.data_array, errorbars=(self.data_array.variances is not None))
+#             # self.ax_pick.set_ylim(get_ylim(
+#             #     var=self.data_array, errorbars=(self.data_array.variances is not None)))
+#         self.profile_viewer = None
+#         if self.profile_scatter is not None:
+#             # self.ax.collections = []
+#             self.fig.canvas.draw_idle()
+#             del self.profile_scatter
+#             self.profile_scatter = None
+
+
+
+
+
+
+
+
+#     def compute_profile(self, event):
+#         # Find indices of pixel where cursor lies
+#         # os.write(1, "compute_profile 1\n".encode())
+#         dimx = self.xyrebin["x"].dims[0]
+#         # os.write(1, "compute_profile 1.1\n".encode())
+#         dimy = self.xyrebin["y"].dims[0]
+#         # os.write(1, "compute_profile 1.2\n".encode())
+#         ix = int((event.xdata - self.current_lims["x"][0]) /
+#                  (self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]))
+#         # os.write(1, "compute_profile 1.3\n".encode())
+#         iy = int((event.ydata - self.current_lims["y"][0]) /
+#                  (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
+#         # os.write(1, "compute_profile 2\n".encode())
+
+#         data_slice = self.data_arrays[self.name]
+#         os.write(1, "compute_profile 3\n".encode())
+
+#         # Slice along dimensions with active sliders
+#         for dim, val in self.slider.items():
+#             os.write(1, "compute_profile 4\n".encode())
+#             if dim != self.profile_dim:
+#                 os.write(1, "compute_profile 5\n".encode())
+#                 if dim == dimx:
+#                     os.write(1, "compute_profile 6\n".encode())
+#                     data_slice = self.resample_image(data_slice,
+#                         rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimx, 0]
+#                 elif dim == dimy:
+#                     os.write(1, "compute_profile 7\n".encode())
+#                     data_slice = self.resample_image(data_slice,
+#                         rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2]})[dimy, 0]
+#                 else:
+#                     os.write(1, "compute_profile 8\n".encode())
+#                     deltax = self.thickness_slider[dim].value
+#                     data_slice = self.resample_image(data_slice,
+#                         rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
+#                                                                      val.value + 0.5 * deltax],
+#                                                             unit=data_slice.coords[dim].unit)})[dim, 0]
+#         os.write(1, "compute_profile 9\n".encode())
+
+#                     # depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
+#                     # depth.unit = sc.units.one
+#                 # data_slice *= (deltax * sc.units.one)
+
+
+#         # # Resample the 3d cube down to a 1d profile
+#         # return self.resample_image(self.da_with_edges,
+#         #                            coord_edges={
+#         #                                dimy: self.da_with_edges.coords[dimy],
+#         #                                dimx: self.da_with_edges.coords[dimx]
+#         #                            },
+#         #                            rebin_edges={
+#         #                                dimy: self.xyrebin["y"][dimy,
+#         #                                                        iy:iy + 2],
+#         #                                dimx: self.xyrebin["x"][dimx, ix:ix + 2]
+#         #                            })[dimy, 0][dimx, 0]
+#         return data_slice
+
+#     def create_profile_plot(self, prof):
+#         # We need to extract the data again and replace with the original
+#         # coordinates, because coordinates have been forced to be bin-edges
+#         # so that rebin could be used. Also reset original unit.
+#         os.write(1, "create_profile_viewer 1\n".encode())
+#         # to_plot = sc.DataArray(data=sc.Variable(dims=prof.dims,
+#         #                                         unit=self.data_arrays[self.name].unit,
+#         #                                         values=prof.values,
+#         #                                         variances=prof.variances))
+
+#         prof.unit = self.data_arrays[self.name].unit
+#         os.write(1, "create_profile_viewer 1.1\n".encode())
+#         dim = prof.dims[0]
+#         os.write(1, "create_profile_viewer 1.2\n".encode())
+#         if not self.histograms[self.name][dim][dim]:
+#             os.write(1, "create_profile_viewer 1.3\n".encode())
+#             os.write(1, (str(to_bin_centers(prof.coords[dim], dim)) + "\n").encode())
+#             # TODO: there is an issue here when we have non-bin edges
+#             prof.coords[dim] = to_bin_centers(prof.coords[dim], dim)
+
+#         os.write(1, "create_profile_viewer 2\n".encode())
+#         # for dim in prof.dims:
+#         #     to_plot.coords[dim] = self.slider_coord[self.name][dim]
+#         # if len(prof.masks) > 0:
+#         #     for m in prof.masks:
+#         #         to_plot.masks[m] = prof.masks[m]
+#         # os.write(1, "create_profile_viewer 3\n".encode())
+#         self.profile_viewer = plot({self.name: prof},
+#                                    ax=self.profile_ax,
+#                                    logy=self.log)
+#         os.write(1, "create_profile_viewer 3\n".encode())
+#         self.profile_key = list(self.profile_viewer.keys())[0]
+#         os.write(1, "create_profile_viewer 4\n".encode())
+#         # if self.flatten_as != "slice":
+#         #     self.ax_pick.set_ylim(self.ylim)
+#         # os.write(1, "create_profile_viewer 5\n".encode())
+#         return prof
+
+
+
+#     def update_profile(self, event):
+#         os.write(1, "update_profile 1\n".encode())
+#         if event.inaxes == self.ax:
+#             os.write(1, "update_profile 1.5\n".encode())
+#             prof = self.compute_profile(event)
+#             os.write(1, "update_profile 2\n".encode())
+#             if self.profile_viewer is None:
+#                 to_plot = self.create_profile_plot(prof)
+#                 os.write(1, "update_profile 3\n".encode())
+
+#                 # if self.flatten_as == "slice":
+
+#                 # # Add indicator of range covered by current slice
+#                 # dim = to_plot.dims[0]
+#                 # xlims = self.ax_pick.get_xlim()
+#                 # ylims = self.ax_pick.get_ylim()
+#                 # left = to_plot.coords[dim][dim, self.slider[dim].value].value
+#                 # if self.histograms[self.name][dim][dim]:
+#                 #     width = (
+#                 #         to_plot.coords[dim][dim, self.slider[dim].value + 1] -
+#                 #         to_plot.coords[dim][dim, self.slider[dim].value]).value
+#                 # else:
+#                 #     width = 0.01 * (xlims[1] - xlims[0])
+#                 #     left -= 0.5 * width
+#                 # self.slice_pos_rectangle = Rectangle((left, ylims[0]),
+#                 #                                      width,
+#                 #                                      ylims[1] - ylims[0],
+#                 #                                      facecolor="lightgray",
+#                 #                                      zorder=-10)
+#                 # self.ax_pick.add_patch(self.slice_pos_rectangle)
+
+
+
+
+#             # else:
+#             #     # os.write(1, "update_profile 5\n".encode())
+#             #     self.profile_viewer[self.profile_key].update_slice(
+#             #         {"vslice": {
+#             #             self.name: prof
+#             #         }})
+
+
+
+#                 # os.write(1, "update_profile 6\n".encode())
+#             # os.write(1, "update_profile 7\n".encode())
+
+
+
+
+#             self.toggle_visibility_of_hover_plot(True)
+#         elif self.profile_viewer is not None:
+#             self.toggle_visibility_of_hover_plot(False)
+
+
+
+
+#         # self.fig.canvas.draw_idle()
+#         # os.write(1, "update_profile 8\n".encode())
+
+#     def toggle_visibility_of_hover_plot(self, value):
+#         return
+#         # If the mouse moves off the image, we hide the profile. If it moves
+#         # back onto the image, we show the profile
+#         self.profile_viewer[self.profile_key].members["lines"][
+#             self.name].set_visible(value)
+#         if self.profile_viewer[self.profile_key].errorbars[self.name]:
+#             for item in self.profile_viewer[
+#                     self.profile_key].members["error_y"][self.name]:
+#                 if item is not None:
+#                     for it in item:
+#                         it.set_visible(value)
+#         mask_dict = self.profile_viewer[self.profile_key].members["masks"][
+#             self.name]
+#         if len(mask_dict) > 0:
+#             for m in mask_dict:
+#                 mask_dict[m].set_visible(value if self.profile_viewer[
+#                     self.profile_key].masks[self.name][m].value else False)
+#                 mask_dict[m].set_gid("onaxes" if value else "offaxes")
+
+#     def keep_or_delete_profile(self, event):
+#         if isinstance(event.artist, PathCollection):
+#             self.delete_profile(event)
+#             self.profile_update_lock = True
+#         elif self.profile_update_lock:
+#             self.profile_update_lock = False
+#         else:
+#             self.keep_profile(event)
+
+#     def keep_profile(self, event):
+#         trace = list(
+#             self.profile_viewer[self.profile_key].keep_buttons.values())[-1]
+#         xdata = event.mouseevent.xdata
+#         ydata = event.mouseevent.ydata
+#         if self.profile_scatter is None:
+#             self.profile_scatter = self.ax.scatter(
+#                 [xdata], [ydata], c=[trace["colorpicker"].value], picker=5)
+#         else:
+#             new_offsets = np.concatenate(
+#                 (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
+#             col = np.array(_hex_to_rgb(trace["colorpicker"].value) + [255],
+#                            dtype=np.float) / 255.0
+#             new_colors = np.concatenate(
+#                 (self.profile_scatter.get_facecolors(), [col]), axis=0)
+#             self.profile_scatter.set_offsets(new_offsets)
+#             self.profile_scatter.set_facecolors(new_colors)
+#         self.profile_viewer[self.profile_key].keep_trace(trace["button"])
+
+#     def delete_profile(self, event):
+#         ind = event.ind[0]
+#         xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
+#         c = np.delete(self.profile_scatter.get_facecolors(), ind, axis=0)
+#         self.profile_scatter.set_offsets(xy)
+#         self.profile_scatter.set_facecolors(c)
+#         self.fig.canvas.draw_idle()
+#         # Also remove the line from the 1d plot
+#         trace = list(
+#             self.profile_viewer[self.profile_key].keep_buttons.values())[ind]
+#         self.profile_viewer[self.profile_key].remove_trace(trace["button"])

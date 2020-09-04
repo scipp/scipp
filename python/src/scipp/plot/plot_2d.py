@@ -5,7 +5,7 @@
 # Scipp imports
 from .. import config
 from .render import render_plot
-from .slicer import Slicer
+from .profiler import Profiler
 from .tools import to_bin_edges, parse_params
 from .._utils import name_with_unit
 from .._scipp import core as sc
@@ -43,7 +43,7 @@ def plot_2d(scipp_obj_dict=None,
     particular dimension.
     """
 
-    sv = Slicer2d(scipp_obj_dict=scipp_obj_dict,
+    sv = Plot2d(scipp_obj_dict=scipp_obj_dict,
                   axes=axes,
                   masks=masks,
                   ax=ax,
@@ -64,7 +64,7 @@ def plot_2d(scipp_obj_dict=None,
     return sv
 
 
-class Slicer2d(Slicer):
+class Plot2d(Profiler):
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
@@ -163,7 +163,7 @@ class Slicer2d(Slicer):
         # Call update_slice once to make the initial image
         self.update_axes()
         self.vbox = widgets.VBox(self.vbox)
-        self.vbox.layout.align_items = 'center'
+        # self.vbox.layout.align_items = 'center'
         self.members["fig"] = self.fig
         self.members["ax"] = self.ax
 
@@ -297,6 +297,10 @@ class Slicer2d(Slicer):
 
         self.rescale_to_data()
 
+
+        if self.profile_viewer is not None:
+            self.update_profile_axes()
+
         return
 
     # def compute_bin_widths(self, xy, dim):
@@ -373,6 +377,8 @@ class Slicer2d(Slicer):
                 #                                                      val.value + 0.5 * deltax],
                 #                                             unit=data_slice.coords[dim].unit))
 
+                # TODO: see if we can call resample_image only once with
+                # rebin_edges dict containing all dims to be sliced.
                 data_slice = self.resample_image(data_slice,
                         # coord_edges={dim: self.slider_coord[self.name][dim]},
                         rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
