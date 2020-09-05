@@ -4,6 +4,7 @@
 
 # Scipp imports
 from .. import config
+from .engine_2d import PlotEngine2d
 from .render import render_plot
 # from .profiler import Profiler
 from .tools import to_bin_edges, parse_params
@@ -92,7 +93,7 @@ class SciPlot2d():
         #                  aspect=aspect,
         #                  button_options=['X', 'Y'])
 
-        self.engine = PlotEngine(parent=self,
+        self.engine = PlotEngine2d(parent=self,
                          scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
@@ -104,7 +105,9 @@ class SciPlot2d():
                          aspect=aspect,
                          button_options=['X', 'Y'])
 
-        self.members["images"] = {}
+        self.widgets = PlotWidgets(self, self.engine)
+
+        # self.members["images"] = {}
         self.axparams = {"x": {}, "y": {}}
         self.extent = {"x": [1, 2], "y": [1, 2]}
         self.logx = logx
@@ -160,8 +163,8 @@ class SciPlot2d():
             # self.cbar.ax.set_picker(5)
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-        self.members["image"] = self.image
-        self.members["colorbar"] = self.cbar
+        # self.members["image"] = self.image
+        # self.members["colorbar"] = self.cbar
         if len(self.masks[self.name]) > 0:
             self.members["masks"] = {}
             for m in self.masks[self.name]:
@@ -176,15 +179,15 @@ class SciPlot2d():
         self.update_axes()
         self.vbox = widgets.VBox(self.vbox)
         # self.vbox.layout.align_items = 'center'
-        self.members["fig"] = self.fig
-        self.members["ax"] = self.ax
+        # self.members["fig"] = self.fig
+        # self.members["ax"] = self.ax
 
-        # Connect changes in axes limits to resampling function
-        self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
-        self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
+        # # Connect changes in axes limits to resampling function
+        # self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
+        # self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
 
-        # if self.cbar is not None:
-        #     self.fig.canvas.mpl_connect('pick_event', self.rescale_colorbar)
+        # # if self.cbar is not None:
+        # #     self.fig.canvas.mpl_connect('pick_event', self.rescale_colorbar)
 
         return
 

@@ -35,6 +35,8 @@ class PlotEngine:
         # self.scipp_obj_dict = scipp_obj_dict
         self.data_arrays = {}
 
+        self.axes = axes
+
         # # Member container for dict output
         # self.members = dict(widgets=dict(sliders=dict(),
         #                                  togglebuttons=dict(),
@@ -104,22 +106,22 @@ class PlotEngine:
         for name, array in scipp_obj_dict.items():
 
             # Process axes dimensions
-            if axes is None:
-                axes = array.dims
+            if self.axes is None:
+                self.axes = array.dims
             # Replace positions in axes if positions set
             if positions is not None:
-                axes[axes.index(
+                self.axes[self.axes.index(
                     array.coords[positions].dims[0])] = positions
 
             # Protect against duplicate entries in axes
-            if len(axes) != len(set(axes)):
-                raise RuntimeError("Duplicate entry in axes: {}".format(axes))
-            self.ndim = len(axes)
+            if len(self.axes) != len(set(self.axes)):
+                raise RuntimeError("Duplicate entry in axes: {}".format(self.axes))
+            self.ndim = len(self.axes)
 
 
             print(array)
             adims = array.dims
-            for dim in axes:
+            for dim in self.axes:
                 if dim not in adims:
                     underlying_dim = array.coords[dim].dims[-1]
                     adims[adims.index(underlying_dim)] = dim
@@ -186,7 +188,7 @@ class PlotEngine:
             # self.ndim = len(axes)
 
             # Iterate through axes and collect dimensions
-            for ax in axes:
+            for ax in self.axes:
                 # dim, var, lab, formatter, locator = self.axis_label_and_ticks(
                 #     ax, array, name)
 
