@@ -8,7 +8,7 @@ class PlotWidgets:
         # Initialise list for VBox container
         self.rescale_button = ipw.Button(description="Rescale")
         self.rescale_button.on_click(self.rescale_to_data)
-        self.vbox = [self.rescale_button]
+        self.base_widgets = [self.rescale_button]
 
         # Initialise slider and label containers
         self.lab = dict()
@@ -167,7 +167,7 @@ class PlotWidgets:
                 self.buttons[dim], self.thickness_slider[dim],
                 self.profile_button[dim]
             ]
-            self.vbox.append(ipw.HBox(row))
+            self.base_widgets.append(ipw.HBox(row))
             os.write(1, "Slicer 5.10\n".encode())
 
         #     # Construct members object
@@ -181,7 +181,7 @@ class PlotWidgets:
         self.add_masks_controls()
         os.write(1, "Slicer 7\n".encode())
 
-        self.vbox = 
+        self.base_widgets = ipw.VBox(self.base_widgets)
 
         return
 
@@ -235,6 +235,6 @@ class PlotWidgets:
                 disabled=False,
                 button_style="")
             self.masks_button.observe(self.parent.engine.toggle_all_masks, names="value")
-            self.vbox += [self.masks_button, ipw.VBox(self.masks_box)]
+            self.base_widgets += [self.masks_button, ipw.VBox(self.masks_box)]
             # self.members["widgets"]["togglebutton"]["masks"] = \
             #     self.masks_button

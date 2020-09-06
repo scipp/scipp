@@ -191,6 +191,17 @@ class SciPlot2d():
 
         return
 
+
+    def _ipython_display_(self):
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        # self.overview["figure"] = self.members["fig"].canvas
+        widgets_ = [self.figure.canvas, self.widgets.base_widgets]
+        if self.widgets.additional_widgets is not None:
+            widgets_.append(self.overview["additional_widgets"])
+        return ipw.VBox(widgets_)
+
     def make_default_imshow(self, cmap, picker=None):
         return self.ax.imshow([[1.0, 1.0], [1.0, 1.0]],
                               norm=self.params["values"][self.name]["norm"],
