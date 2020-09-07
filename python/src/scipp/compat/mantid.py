@@ -62,8 +62,6 @@ additional_unit_mapping = {
     "Hz": sc.units.dimensionless / sc.units.s,
     "degree": sc.units.deg,
 }
-# Alternatively we could make use of a library for this,
-# for example pint (https://pint.readthedocs.io)
 
 
 def make_variables_from_run_logs(ws):
@@ -77,9 +75,8 @@ def make_variables_from_run_logs(ws):
         values = deepcopy(ws.run()[property_name].value)
 
         if units_string and units is None:
-            warnings.warn(
-                f"Workspace run log '{property_name}' has units which are "
-                f"unrecognised by scipp: '{units_string}'")
+            warnings.warn(f"Workspace run log '{property_name}' "
+                          f"has unrecognised units: '{units_string}'")
 
         try:
             times = deepcopy(ws.run()[property_name].times)

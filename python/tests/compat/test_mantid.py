@@ -1,6 +1,7 @@
 # Tests in this file work only with a working Mantid installation available in
 # PYTHONPATH.
 import unittest
+import warnings
 
 import numpy as np
 import pytest
@@ -507,6 +508,19 @@ class TestMantidConversion(unittest.TestCase):
             target.run()[log_name].value, d.unaligned_coords[log_name].value,
             "Expected value of the unaligned coord to match "
             "the original run log from the Mantid workspace")
+
+    def test_warning_raised_when_convert_run_log_with_unrecognised_units(self):
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+            self.assertGreater(
+                len(caught_warnings), 0,
+                "Expected warnings due to some run logs"
+                "having unrecognised units strings")
+            self.assertTrue(
+                any("unrecognised units" in str(caught_warning.message)
+                    for caught_warning in caught_warnings))
 
     def test_set_sample(self):
         import mantid.simpleapi as mantid
