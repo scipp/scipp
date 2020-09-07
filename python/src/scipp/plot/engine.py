@@ -26,12 +26,13 @@ class PlotEngine:
                  vmin=None,
                  vmax=None,
                  color=None,
-                 button_options=None,
-                 aspect=None,
+                 # button_options=None,
+                 # aspect=None,
                  positions=None):
 
         # os.write(1, "Slicer 1\n".encode())
 
+        self.parent = parent
         # self.scipp_obj_dict = scipp_obj_dict
         self.data_arrays = {}
 
@@ -55,10 +56,10 @@ class PlotEngine:
         }
         # os.write(1, "Slicer 2\n".encode())
 
-        # Save aspect ratio setting
-        self.aspect = aspect
-        if self.aspect is None:
-            self.aspect = config.plot.aspect
+        # # Save aspect ratio setting
+        # self.aspect = aspect
+        # if self.aspect is None:
+        #     self.aspect = config.plot.aspect
 
         # # Variables for the profile viewer
         # self.profile_viewer = None
@@ -95,9 +96,9 @@ class PlotEngine:
         # Record which variables are histograms along which dimension
         self.histograms = {}
         # Axes tick formatters
-        self.slider_axformatter = {}
+        self.axformatter = {}
         # Axes tick locators
-        self.slider_axlocator = {}
+        self.axlocator = {}
         # Save if some dims contain multi-dimensional coords
         # self.contains_multid_coord = {}
 
@@ -167,12 +168,12 @@ class PlotEngine:
             # Store labels for sliders if any
             # self.slider_label[name] = {}
             # Store axis tick formatters and locators
-            self.slider_axformatter[name] = {}
-            self.slider_axlocator[name] = {}
+            self.axformatter[name] = {}
+            self.axlocator[name] = {}
             # Save information on histograms
             self.histograms[name] = {}
-            # Save if some dims contain multi-dimensional coords
-            self.contains_multid_coord[name] = False
+            # # Save if some dims contain multi-dimensional coords
+            # self.contains_multid_coord[name] = False
 
             # # Process axes dimensions
             # if axes is None:
@@ -235,8 +236,8 @@ class PlotEngine:
                     self.slider_xlims[name][dim] = np.flip(
                         self.slider_xlims[name][dim]).copy()
                 # The tick formatter and locator
-                self.slider_axformatter[name][dim] = formatter
-                self.slider_axlocator[name][dim] = locator
+                self.axformatter[name][dim] = formatter
+                self.axlocator[name][dim] = locator
                 # # To allow for 2D coordinates, the shapes and histograms are
                 # # stored as dicts, with one key per dimension of the coordinate
                 # self.slider_shape[name][dim] = {}
@@ -385,3 +386,57 @@ class PlotEngine:
         return var, formatter, locator
 
 
+
+
+
+    def select_bins(self, coord, dim, start, end):
+        bins = coord.shape[-1]
+        if len(coord.dims) != 1:  # TODO find combined min/max
+            return dim, slice(0, bins - 1)
+        # scipp treats bins as closed on left and open on right: [left, right)
+        first = sc.sum(coord <= start, dim).value - 1
+        last = bins - sc.sum(coord > end, dim).value
+        if first >= last:  # TODO better handling for decreasing
+            return dim, slice(0, bins - 1)
+        first = max(0, first)
+        last = min(bins - 1, last)
+        return dim, slice(first, last + 1)
+
+
+    def resample_image(self, array, rebin_edges):
+        dslice = array
+        # Select bins to speed up rebinning
+        for dim in rebin_edges:
+            this_slice = self.select_bins(array.coords[dim], dim,
+                                          rebin_edges[dim][dim, 0],
+                                          rebin_edges[dim][dim, -1])
+            dslice = dslice[this_slice]
+
+        # Rebin the data
+        for dim, edges in rebin_edges.items():
+            # print(dim)
+            # print(dslice)
+            # print(edges)
+            dslice = sc.rebin(dslice, dim, edges)
+
+        # Divide by pixel width
+        for dim, edges in rebin_edges.items():
+            # self.image_pixel_size[key] = edges.values[1] - edges.values[0]
+            # print("edges.values[1]", edges.values[1])
+            # print(self.image_pixel_size[key])
+            # dslice /= self.image_pixel_size[key]
+            div = edges[dim, 1:] - edges[dim, :-1]
+            div.unit = sc.units.one
+            dslice /= div
+        return dslice
+
+    def mask_to_float(self, mask, var):
+        return np.where(mask, var, None).astype(np.float)
+
+    def toggle_profile_view(self, change=None):
+        self.profile_dim = change["owner"].dim
+        if change["new"]:
+            self.show_profile_view()
+        else:
+            self.hide_profile_view()
+        return
