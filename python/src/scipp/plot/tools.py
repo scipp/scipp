@@ -133,6 +133,10 @@ def vars_to_err(v):
     v[non_finites] = 0.0
     return v
 
+
+def mask_to_float(mask, var):
+    return np.where(mask, var, None).astype(np.float)
+
 # def get_finite_y(arr, logy=False):
 #     if logy:
 #         with np.errstate(divide="ignore", invalid="ignore"):

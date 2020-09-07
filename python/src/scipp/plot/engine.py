@@ -430,8 +430,8 @@ class PlotEngine:
             dslice /= div
         return dslice
 
-    def mask_to_float(self, mask, var):
-        return np.where(mask, var, None).astype(np.float)
+    # def mask_to_float(self, mask, var):
+    #     return np.where(mask, var, None).astype(np.float)
 
     def toggle_profile_view(self, change=None):
         self.profile_dim = change["owner"].dim
