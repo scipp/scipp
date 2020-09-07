@@ -309,7 +309,7 @@ class SciPlot1d():
         # self.box.children = tuple(self.mbox)
         widget_list = []
         for key, val in self.keep_buttons.items():
-            widget_list.append(widgets.HBox(list(val.values())))
+            widget_list.append(ipw.HBox(list(val.values())))
         self.additional_widgets.children = tuple(widget_list)
 
 
@@ -556,7 +556,7 @@ class SciPlot1d():
             self.keep_trace(owner)
         elif owner.description == "Remove":
             self.remove_trace(owner)
-        self.fig.canvas.draw_idle()
+        # self.fig.canvas.draw_idle()
         return
 
     def keep_trace(self, owner):

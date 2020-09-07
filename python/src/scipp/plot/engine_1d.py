@@ -59,13 +59,13 @@ class PlotEngine1d(PlotEngine):
 
 
     def update_buttons(self, owner, event, dummy):
-        for dim, button in self.buttons.items():
+        for dim, button in self.parent.widgets.buttons.items():
             if dim == owner.dim:
-                self.slider[dim].disabled = True
+                self.parent.widgets.slider[dim].disabled = True
                 button.disabled = True
-                self.button_axis_to_dim["x"] = dim
+                self.parent.widgets.button_axis_to_dim["x"] = dim
             else:
-                self.slider[dim].disabled = False
+                self.parent.widgets.slider[dim].disabled = False
                 button.value = None
                 button.disabled = False
         self.update_axes(owner.dim)
@@ -246,7 +246,7 @@ class PlotEngine1d(PlotEngine):
 
                 # vslice = vslice[val.dim, val.value]
 
-                deltax = self.thickness_slider[dim].value
+                deltax = self.parent.widgets.thickness_slider[dim].value
                 vslice = self.resample_image(vslice,
                         rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
                                                                      val.value + 0.5 * deltax],
