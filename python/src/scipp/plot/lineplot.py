@@ -6,7 +6,7 @@
 from .. import config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import to_bin_centers, vars_to_err
+from .tools import to_bin_centers, vars_to_err, mask_to_float
 from .._utils import name_with_unit
 from .._scipp import core as sc
 
@@ -60,8 +60,9 @@ class LinePlot:
                 dpi=config.plot.dpi)
         else:
             self.mpl_axes = True
-        if grid:
-            self.ax.grid()
+        self.grid = grid
+        # if grid:
+        #     self.ax.grid()
 
         # Determine whether error bars should be plotted or not
         self.errorbars = {}
@@ -120,7 +121,7 @@ class LinePlot:
         # for dim, button in self.buttons.items():
         #     if self.slider[dim].disabled:
         #         button.disabled = True
-        self.plot_data(dict_of_data_arrays)
+        # self.plot_data(dict_of_data_arrays)
 
         self.ax.set_ylabel(ylab)
         if len(self.ax.get_legend_handles_labels()[0]) > 0:
@@ -243,6 +244,10 @@ class LinePlot:
         # #     "masks": {}
         # # })
 
+        if self.grid:
+            self.ax.grid()
+
+
         if is_bin_edge is not None:
             self.is_bin_edge = is_bin_edge
 
@@ -297,7 +302,7 @@ class LinePlot:
                     me = np.concatenate((mdata[0:1], mdata))
                     [self.mask_lines[name][m]] = self.ax.step(
                         array.coords[dim].values,
-                        self.mask_to_float(me, ye),
+                        mask_to_float(me, ye),
                         linewidth=self.mpl_line_params["linewidth"][name] *
                         3.0,
                         color=self.masks["color"],
@@ -333,7 +338,7 @@ class LinePlot:
                                         np.int32))).values
                     [self.mask_lines[name][m]] = self.ax.plot(
                         xcenters,
-                        self.mask_to_float(mdata, array.values),
+                        mask_to_float(mdata, array.values),
                         zorder=11,
                         mec=self.masks["color"],
                         mfc="None",
@@ -575,16 +580,17 @@ class LinePlot:
         arr2 = np.array([y - e, y + e]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
-    def toggle_mask(self, mask_name, value):
-        # # msk = self.members["masks"][change["owner"].masks_group][
-        # #     change["owner"].masks_name]
-        # msk = self.mask_lines[name][m].
-        # if msk.get_gid() == "onaxes":
-        #     msk.set_visible(change["new"])
+    def toggle_mask(self, mask_group, mask_name, value):
+        # msk = self.members["masks"][change["owner"].masks_group][
+        #     change["owner"].masks_name]
+        msk = self.mask_lines[mask_group][mask_name]
+        if msk.get_gid() == "onaxes":
+            msk.set_visible(value)
         # Also toggle masks on additional lines created by keep button
         for line in self.ax.lines:
             if line.get_gid() == mask_name:
                 line.set_visible(value)
+        self.fig.canvas.draw_idle()
         return
 
     def rescale_to_data(self):

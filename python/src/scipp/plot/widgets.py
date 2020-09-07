@@ -99,6 +99,15 @@ class PlotWidgets:
                 layout={'width': "270px"})
             # os.write(1, "Slicer 5.4\n".encode())
 
+            self.profile_button[dim] = ipw.ToggleButton(
+                value=False,
+                description="Profile",
+                disabled=False,
+                button_style="",
+                layout={"width": "initial"})
+            self.profile_button[dim].observe(self.parent.engine.toggle_profile_view, names="value")
+
+
             # labvalue = self.make_slider_label(
             #         self.data_arrays[self.name].coords[dim], indx,
             #         self.slider_axformatter[self.name][dim][False])
@@ -106,6 +115,8 @@ class PlotWidgets:
             if self.parent.engine.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
+                self.thickness_slider[dim].layout.display = 'none'
+                self.profile_button[dim].layout.display = 'none'
                 # This is a trick to turn the label into the coordinate name
                 # because when we hide the slider, the slider description is
                 # also hidden
@@ -124,13 +135,13 @@ class PlotWidgets:
                 style={"button_width": "50px"})
             # os.write(1, "Slicer 5.6\n".encode())
 
-            self.profile_button[dim] = ipw.ToggleButton(
-                value=False,
-                description="Profile",
-                disabled=False,
-                button_style="",
-                layout={"width": "initial"})
-            self.profile_button[dim].observe(self.parent.engine.toggle_profile_view, names="value")
+            # self.profile_button[dim] = ipw.ToggleButton(
+            #     value=False,
+            #     description="Profile",
+            #     disabled=False,
+            #     button_style="",
+            #     layout={"width": "initial"})
+            # self.profile_button[dim].observe(self.parent.engine.toggle_profile_view, names="value")
 
             # os.write(1, "Slicer 5.7\n".encode())
 
@@ -215,13 +226,13 @@ class PlotWidgets:
                 masks_found = True
                 for key in array.masks:
                     self.mask_checkboxes[name][key] = ipw.Checkbox(
-                        value=self.params["masks"][name]["show"],
+                        value=self.parent.engine.params["masks"][name]["show"],
                         description="{}:{}".format(name, key),
                         indent=False,
                         layout={"width": "initial"})
-                    setattr(self.mask_checkboxes[name][key], "masks_group", name)
-                    setattr(self.mask_checkboxes[name][key], "masks_name", key)
-                    self.mask_checkboxes[name][key].observe(self.parent.engine.toggle_mask,
+                    setattr(self.mask_checkboxes[name][key], "mask_group", name)
+                    setattr(self.mask_checkboxes[name][key], "mask_name", key)
+                    self.mask_checkboxes[name][key].observe(self.parent.toggle_mask,
                                                   names="value")
 
         if masks_found:
@@ -233,12 +244,20 @@ class PlotWidgets:
                 self.masks_box.append(ipw.HBox(mask_list))
             # Add a master button to control all masks in one go
             self.masks_button = ipw.ToggleButton(
-                value=self.params["masks"][self.parent.engine.name]["show"],
+                value=self.parent.engine.params["masks"][self.parent.engine.name]["show"],
                 description="Hide all masks" if
                 self.parent.engine.params["masks"][self.parent.engine.name]["show"] else "Show all masks",
                 disabled=False,
                 button_style="")
-            self.masks_button.observe(self.parent.engine.toggle_all_masks, names="value")
+            self.masks_button.observe(self.toggle_all_masks, names="value")
             self.container += [self.masks_button, ipw.VBox(self.masks_box)]
             # self.members["widgets"]["togglebutton"]["masks"] = \
             #     self.masks_button
+
+    def toggle_all_masks(self, change):
+        for name in self.mask_checkboxes:
+            for key in self.mask_checkboxes[name]:
+                self.mask_checkboxes[name][key].value = change["new"]
+        change["owner"].description = "Hide all masks" if change["new"] else \
+            "Show all masks"
+        return

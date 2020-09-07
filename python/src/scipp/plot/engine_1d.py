@@ -5,7 +5,7 @@
 # Scipp imports
 from .. import config
 from .engine import PlotEngine
-from .lineplot import LinePlot
+# from .lineplot import LinePlot
 from .render import render_plot
 from .slicer import Slicer
 from .tools import to_bin_centers, vars_to_err
@@ -108,11 +108,11 @@ class PlotEngine1d(PlotEngine):
             # dim = vslice.dims[0]
             is_bin_edge[name] = self.histograms[name][dim][dim]
 
-        if self.parent.figure is None:
-            self.parent.figure = LinePlot(to_line_plot, is_bin_edge=is_bin_edge,
-                mpl_line_params=self.parent.mpl_line_params)
-        else:
-            self.parent.figure.plot_data(to_line_plot, is_bin_edge=is_bin_edge, clear=True)
+        # if self.parent.figure is None:
+        #     self.parent.figure = LinePlot(to_line_plot, is_bin_edge=is_bin_edge,
+        #         mpl_line_params=self.parent.mpl_line_params)
+        # else:
+        self.parent.figure.plot_data(to_line_plot, is_bin_edge=is_bin_edge, clear=True)
 
         #     new_data_arrays
         #     ydata = vslice.values

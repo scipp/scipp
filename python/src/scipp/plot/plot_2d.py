@@ -393,6 +393,7 @@ class SciPlot2d():
         self.image.set_clim([vmin, vmax])
         for m, im in self.mask_image.items():
             im.set_clim([vmin, vmax])
+        self.fig.canvas.draw_idle()
 
 
     # def slice_data(self):
@@ -535,9 +536,10 @@ class SciPlot2d():
     #     return
 
     def toggle_mask(self, change):
-        im = self.members["masks"][change["owner"].masks_name]
+        im = self.mask_image[change["owner"].masks_name]
         if im.get_url() != "hide":
             im.set_visible(change["new"])
+        self.fig.canvas.draw_idle()
         return
 
     # def toggle_profile_view(self, change=None):

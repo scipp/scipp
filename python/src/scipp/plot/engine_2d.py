@@ -1,4 +1,4 @@
-from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers
+from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers, mask_to_float
 from .engine import PlotEngine
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
@@ -300,7 +300,7 @@ class PlotEngine2d(PlotEngine):
                         dims=self.dslice.masks[m].dims,
                         values=self.dslice.masks[m].values.astype(np.int32))
                     self.parent.mask_image[m].set_data(
-                        self.mask_to_float(msk.values, arr))
+                        mask_to_float(msk.values, arr))
                     if extent is not None:
                         self.parent.mask_image[m].set_extent(extent)
                 else:
@@ -320,3 +320,5 @@ class PlotEngine2d(PlotEngine):
         #         for m in self.masks[self.engine.name]:
         #             self.members["masks"][m].set_norm(
         #                 self.params["values"][self.engine.name]["norm"])
+
+        self.parent.fig.canvas.draw_idle()

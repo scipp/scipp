@@ -7,6 +7,7 @@ from .. import config
 from .engine_1d import PlotEngine1d
 # from .render import render_plot
 # from .slicer import Slicer
+from .lineplot import LinePlot
 from .tools import to_bin_centers, vars_to_err
 from .widgets import PlotWidgets
 from .._utils import name_with_unit
@@ -88,18 +89,14 @@ class SciPlot1d():
         self.widgets = PlotWidgets(self, engine=self.engine,
                          button_options=['X'])
 
-        self.figure = None
-        # LinePlot(dict_of_data_arrays=scipp_obj_dict,
-        #          errorbars=errorbars,
-        #          masks=masks,
-        #          is_bin_edge={name: self.},
-        #          ax=None,
-        #          mpl_line_params=None,
-        #          logx=False,
-        #          logy=False,
-        #          grid=False,
-        #          axformatter=None,
-        #          axlocator=None)
+        self.figure = LinePlot(dict_of_data_arrays=scipp_obj_dict,
+                 errorbars=errorbars,
+                 masks=masks,
+                 ax=ax,
+                 mpl_line_params=mpl_line_params,
+                 logx=logx,
+                 logy=logy,
+                 grid=grid)
 
 
         # super().__init__(scipp_obj_dict=scipp_obj_dict,
@@ -646,16 +643,18 @@ class SciPlot1d():
     #     arr2 = np.array([y - e, y + e]).T.flatten()
     #     return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
-    # def toggle_mask(self, change):
-    #     msk = self.members["masks"][change["owner"].masks_group][
-    #         change["owner"].masks_name]
-    #     if msk.get_gid() == "onaxes":
-    #         msk.set_visible(change["new"])
-    #     # Also toggle masks on additional lines created by keep button
-    #     for line in self.ax.lines:
-    #         if line.get_gid() == change["owner"].masks_name:
-    #             line.set_visible(change["new"])
-    #     return
+    def toggle_mask(self, change):
+        self.figure.toggle_mask(change["owner"].mask_group,
+            change["owner"].mask_name, change["new"])
+        # msk = self.members["masks"][change["owner"].masks_group][
+        #     change["owner"].masks_name]
+        # if msk.get_gid() == "onaxes":
+        #     msk.set_visible(change["new"])
+        # # Also toggle masks on additional lines created by keep button
+        # for line in self.ax.lines:
+        #     if line.get_gid() == change["owner"].masks_name:
+        #         line.set_visible(change["new"])
+        return
 
     def rescale_to_data(self, button=None):
         self.figure.rescale_to_data()
