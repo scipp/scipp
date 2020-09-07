@@ -243,6 +243,9 @@ class LinePlot:
         # #     "masks": {}
         # # })
 
+        if is_bin_edge is not None:
+            self.is_bin_edge = is_bin_edge
+
         dim = None
 
 
@@ -251,10 +254,12 @@ class LinePlot:
         for name, array in dict_of_data_arrays.items():
             # new_x = self.slider_coord[name][dim].values
             # new_x = array.coords[dim].values
+
+            dim = array.dims[0]
+
             xmin = min(sc.min(array.coords[dim]).value, xmin)
             xmax = max(sc.max(array.coords[dim]).value, xmax)
 
-            dim = array.dims[0]
 
             # vslice = self.slice_data(array, name)
             ydata = array.values
@@ -271,7 +276,7 @@ class LinePlot:
             # If this is a histogram, plot a step function
             if self.is_bin_edge[name]:
                 ye = np.concatenate((ydata[0:1], ydata))
-                [self.lines[name]
+                [self.data_lines[name]
                  ] = self.ax.step(array.coords[dim].values,
                                   ye,
                                   label=name,
@@ -309,7 +314,7 @@ class LinePlot:
 
                 # If this is not a histogram, just use normal plot
                 # x = to_bin_centers(vslice.coords[dim], dim).values
-                [self.lines[name]
+                [self.data_lines[name]
                  ] = self.ax.plot(xcenters,
                                   array.values,
                                   label=name,
@@ -446,7 +451,7 @@ class LinePlot:
             else:
                 xcoord = to_bin_centers(xcoord, dim)
             # self.members["lines"][name].set_ydata(vals)
-            self.lines[name].set_data(xcoord.values, vals)
+            self.data_lines[name].set_data(xcoord.values, vals)
 
             if len(array.masks) > 0:
                 base_mask = sc.Variable(dims=array.dims,
@@ -492,7 +497,7 @@ class LinePlot:
     def keep_line(self, name, color, line_id):
         # lab = self.keep_buttons[owner.id]["dropdown"].value
         # The main line
-        self.ax.lines.append(cp.copy(self.lines[name]))
+        self.ax.lines.append(cp.copy(self.data_lines[name]))
         self.ax.lines[-1].set_url(line_id)
         self.ax.lines[-1].set_zorder(2)
         if self.ax.lines[-1].get_marker() == "None":
@@ -547,7 +552,7 @@ class LinePlot:
         self.fig.canvas.draw_idle()
         return
 
-    def update_trace_color(self, line_id, color):
+    def update_line_color(self, line_id, color):
         for line in self.ax.lines:
             if line.get_url() == line_id:
                 if line.get_marker() == 'None':
@@ -582,7 +587,7 @@ class LinePlot:
                 line.set_visible(value)
         return
 
-    def rescale_to_data(self, button=None):
+    def rescale_to_data(self):
         # self.ax.set_ylim(get_ylim())
         self.ax.autoscale(True)
         self.ax.relim()

@@ -55,7 +55,7 @@ except ImportError:
     pass
 
 from .plot import plot
-from .lineplot import LinePlot
+# from .lineplot import LinePlot
 
 
 def superplot(scipp_obj, **kwargs):

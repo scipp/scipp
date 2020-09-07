@@ -19,10 +19,7 @@ class PlotEngine2d(PlotEngine):
                  log=None,
                  vmin=None,
                  vmax=None,
-                 color=None,
-                 # button_options=None,
-                 # aspect=None,
-                 positions=None):
+                 color=None):
 
         super().__init__(parent=parent,
                          scipp_obj_dict=scipp_obj_dict,
@@ -32,10 +29,7 @@ class PlotEngine2d(PlotEngine):
                          log=log,
                          vmin=vmin,
                          vmax=vmax,
-                         color=color,
-                         # button_options=button_options,
-                         # aspect=aspect,
-                         positions=positions)
+                         color=color)
 
         self.axparams = {"x": {}, "y": {}}
         self.button_dims = [None, None]
