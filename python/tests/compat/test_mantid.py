@@ -48,7 +48,7 @@ class TestMantidConversion(unittest.TestCase):
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         d = mantidcompat.convert_Workspace2D_to_data_array(ws)
         self.assertEqual(
-            d.coords["run"].value.getProperty("run_start").value,
+            d.coords["run_start"].value,
             "2012-05-21T15:14:56.279289666",
         )
         self.assertEqual(d.data.unit, sc.units.counts)
@@ -86,10 +86,8 @@ class TestMantidConversion(unittest.TestCase):
             eventWS, realign_events=False, load_pulse_times=False)
         d.realign({'tof': realigned.coords['tof']})
 
-        # Removing run and sample due to missing comparison operators
-        del d.unaligned_coords['run']
+        # Removing sample due to missing comparison operators
         del d.unaligned_coords['sample']
-        del realigned.unaligned_coords['run']
         del realigned.unaligned_coords['sample']
         assert sc.is_equal(realigned, d)
 
@@ -301,7 +299,6 @@ class TestMantidConversion(unittest.TestCase):
             # Absence of the following is not crucial, but currently there is
             # no need for these, and it avoid duplication:
             assert 'detector-info' not in monitor.coords
-            assert 'run' not in monitor.coords
             assert 'sample' not in monitor.coords
 
     def test_mdhisto_workspace_q(self):
@@ -453,17 +450,6 @@ class TestMantidConversion(unittest.TestCase):
         assert 'function' in params.coords
         assert 'cost-function' in params.coords
         assert 'chi^2/d.o.f.' in params.coords
-
-    def test_set_run(self):
-        import mantid.simpleapi as mantid
-        target = mantid.CloneWorkspace(self.base_event_ws)
-        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
-        d.unaligned_coords["run"].value.addProperty("test_property", 1, True)
-        # before
-        self.assertFalse(target.run().hasProperty("test_property"))
-        target.setRun(d.unaligned_coords["run"].value)
-        # after
-        self.assertTrue(target.run().hasProperty("test_property"))
 
     def test_convert_array_run_log_to_unaligned_coords(self):
         # Given a Mantid workspace with a run log

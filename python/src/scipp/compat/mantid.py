@@ -459,7 +459,9 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
         bin_masks['spectrum', index][dim, masked_bin].value = True
 
 
-def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
+def _convert_MatrixWorkspace_info(ws,
+                                  advanced_geometry=False,
+                                  load_run_logs=True):
     common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     source_pos, sample_pos = make_component_info(ws)
@@ -487,8 +489,9 @@ def _convert_MatrixWorkspace_info(ws, advanced_geometry=False):
         },
     }
 
-    for run_log_name, run_log_variable in make_variables_from_run_logs(ws):
-        info["unaligned_coords"][run_log_name] = run_log_variable
+    if load_run_logs:
+        for run_log_name, run_log_variable in make_variables_from_run_logs(ws):
+            info["unaligned_coords"][run_log_name] = run_log_variable
 
     if advanced_geometry:
         info["coords"]["detector-info"] = make_detector_info(ws)
@@ -528,31 +531,34 @@ def convert_monitors_ws(ws, converter, **ignored):
         if not definition.size() == 1:
             raise RuntimeError("Cannot deal with grouped monitor detectors")
         det_index = definition[0][0]  # Ignore time index
-        # We only ExtractSpectra for compability with
-        # exising convert_Workspace2D_to_dataarray. This could instead be
+        # We only ExtractSpectra for compatibility with
+        # existing convert_Workspace2D_to_dataarray. This could instead be
         # refactored if found to be slow
         with run_mantid_alg('ExtractSpectra',
                             InputWorkspace=ws,
                             WorkspaceIndexList=[index]) as monitor_ws:
-            single_monitor = converter(monitor_ws)
+            # Run logs are already loaded in the data workspace
+            single_monitor = converter(monitor_ws, load_run_logs=False)
         # Remove redundant information that is duplicated from workspace
         # We get this extra information from the generic converter reuse
         del single_monitor.coords['sample-position']
         if 'detector-info' in single_monitor.coords:
             del single_monitor.coords['detector-info']
-        del single_monitor.unaligned_coords['run']
         del single_monitor.unaligned_coords['sample']
         monitors.append((comp_info.name(det_index), single_monitor))
     return monitors
 
 
-def convert_Workspace2D_to_data_array(ws, advanced_geometry=False, **ignored):
+def convert_Workspace2D_to_data_array(ws,
+                                      load_run_logs=True,
+                                      advanced_geometry=False,
+                                      **ignored):
 
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
 
     coords_labs_data = _convert_MatrixWorkspace_info(
-        ws, advanced_geometry=advanced_geometry)
+        ws, advanced_geometry=advanced_geometry, load_run_logs=load_run_logs)
     _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
     if ws.id() == 'MaskWorkspace':
         coords_labs_data["data"] = sc.Variable([spec_dim],
@@ -596,6 +602,7 @@ def convert_EventWorkspace_to_data_array(ws,
                                          load_pulse_times=True,
                                          realign_events=False,
                                          advanced_geometry=False,
+                                         load_run_logs=True,
                                          **ignored):
     from mantid.api import EventType
 
@@ -632,7 +639,7 @@ def convert_EventWorkspace_to_data_array(ws,
             weights[spec_dim, i].variances = sp.getWeightErrors()
 
     coords_labs_data = _convert_MatrixWorkspace_info(
-        ws, advanced_geometry=advanced_geometry)
+        ws, advanced_geometry=advanced_geometry, load_run_logs=load_run_logs)
     bin_edges = coords_labs_data["coords"][dim]
     coords_labs_data["coords"][dim] = coord
 
