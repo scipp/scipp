@@ -87,9 +87,9 @@ class SciPlot2d:
                  resolution=None):
 
 
-        self.presenter = PlotPresenter()
+        self.controller = PlotController()
 
-        self.model = PlotModel2d(presenter=self.presenter,
+        self.model = PlotModel2d(controller=self.controller,
                          scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
@@ -101,7 +101,7 @@ class SciPlot2d:
                          # aspect=aspect)
                          # button_options=['X', 'Y'])
 
-        self.controller = PlotController(presenter=self.presenter, #engine=self.engine,
+        self.controller.widgets = PlotWidgets(model=self.model, #engine=self.engine,
                          button_options=['X', 'Y'])
 
         self.view = PlotView2d(presenter=self.presenter,

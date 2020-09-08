@@ -1,263 +1,459 @@
-import ipywidgets as ipw
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# @author Neil Vaytet
+
+from .. import config
+from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers
+from .._utils import name_with_unit, value_to_string
+from .._scipp import core as sc
+
+# Other imports
 import numpy as np
+import matplotlib.ticker as ticker
+import matplotlib.pyplot as plt
+import ipywidgets as widgets
+import os
 
 
 class PlotController:
+    def __init__(self,
+                 scipp_obj_dict=None,
+                 axes=None,
+                 masks=None,
+                 cmap=None,
+                 log=None,
+                 vmin=None,
+                 vmax=None,
+                 color=None,
+                 # button_options=None,
+                 # aspect=None,
+                 positions=None):
 
-    def __init__(self, presenter, positions=None,
-                         button_options=None):
+        # os.write(1, "Slicer 1\n".encode())
 
-        # Initialise list for VBox container
-        self.parent = parent
-        self.rescale_button = ipw.Button(description="Rescale")
-        self.rescale_button.on_click(self.parent.rescale_to_data)
-        self.container = [self.rescale_button]
+        # self.parent = parent
+        # self.scipp_obj_dict = scipp_obj_dict
+        self.data_arrays = {}
+        self.widgets = None
 
-        # Initialise slider and label containers
-        self.lab = dict()
-        self.slider = dict()
-        # self.slider = dict()
-        self.thickness_slider = dict()
-        self.buttons = dict()
-        self.profile_button = dict()
-        self.showhide = dict()
-        self.button_axis_to_dim = dict()
-        self.continuous_update = dict()
-        # Default starting index for slider
-        indx = 0
-        # os.write(1, "Slicer 5\n".encode())
+        self.axes = axes
 
-        # # Additional condition if positions kwarg set
-        # # positions_dim = None
-        # if positions is not None:
-        #     if scipp_obj_dict[self.parent.engine.name].coords[
-        #             positions].dtype != sc.dtype.vector_3_float64:
-        #         raise RuntimeError(
-        #             "Supplied positions coordinate does not contain vectors.")
-        # if len(button_options) == 3 and positions is not None:
-        #     if scipp_obj_dict[self.name].coords[
-        #             positions].dtype == sc.dtype.vector_3_float64:
-        #         positions_dim = self.data_array.coords[positions].dims[-1]
-        #     else:
-        #         raise RuntimeError(
-        #             "Supplied positions coordinate does not contain vectors.")
+        # # Member container for dict output
+        # self.members = dict(widgets=dict(sliders=dict(),
+        #                                  togglebuttons=dict(),
+        #                                  togglebutton=dict(),
+        #                                  buttons=dict(),
+        #                                  labels=dict()))
 
-        # Now begin loop to construct sliders
-        button_values = [None] * (self.parent.engine.ndim - len(button_options)) + \
-            button_options[::-1]
-        # for i, dim in enumerate(self.slider_coord[self.name]):
-        # for i, dim in enumerate(self.data_arrays[self.name].coords):
-        # os.write(1, "Slicer 5.1\n".encode())
-        for i, dim in enumerate(self.parent.engine.axes):
-            # dim_str = self.slider_label[self.name][dim]["name"]
-            dim_str = str(dim)
-            # Determine if slider should be disabled or not:
-            # In the case of 3d projection, disable sliders that are for
-            # dims < 3, or sliders that contain vectors.
-            disabled = False
-            if positions is not None:
-                disabled = dim == positions
-            elif i >= self.parent.engine.ndim - len(button_options):
-                disabled = True
-            # os.write(1, "Slicer 5.2\n".encode())
+        # Parse parameters for values, variances and masks
+        self.params = {"values": {}, "variances": {}, "masks": {}}
+        globs = {
+            "cmap": cmap,
+            "log": log,
+            "vmin": vmin,
+            "vmax": vmax,
+            "color": color
+        }
+        # os.write(1, "Slicer 2\n".encode())
 
-            # Add an FloatSlider to slide along the z dimension of the array
-            dim_xlims = self.parent.engine.slider_xlims[self.parent.engine.name][dim].values
-            dx = dim_xlims[1] - dim_xlims[0]
-            self.slider[dim] = ipw.FloatSlider(
-                value=0.5 * np.sum(dim_xlims),
-                min=dim_xlims[0],
-                # max=self.slider_shape[self.name][dim][dim] - 1 -
-                # self.histograms[name][dim][dim],
-                # max=self.dim_to_shape[self.name][dim] - 1,
-                max=dim_xlims[1],
-                step=0.01 * dx,
-                description=dim_str,
-                continuous_update=True,
-                readout=True,
-                disabled=disabled)
-            # labvalue = self.make_slider_label(
-            #     self.slider_label[self.name][dim]["coord"], indx)
-            self.continuous_update[dim] = ipw.Checkbox(
-                value=True,
-                description="Continuous update",
-                indent=False,
-                layout={"width": "20px"})
-            ipw.jslink((self.continuous_update[dim], 'value'),
-                           (self.slider[dim], 'continuous_update'))
-            # os.write(1, "Slicer 5.3\n".encode())
+        # # Save aspect ratio setting
+        # self.aspect = aspect
+        # if self.aspect is None:
+        #     self.aspect = config.plot.aspect
 
-            self.thickness_slider[dim] = ipw.FloatSlider(
-                value=dx,
-                min=0.01 * dx,
-                max=dx,
-                step=0.01 * dx,
-                description="Thickness",
-                continuous_update=False,
-                readout=True,
-                disabled=disabled,
-                layout={'width': "270px"})
-            # os.write(1, "Slicer 5.4\n".encode())
-
-            self.profile_button[dim] = ipw.ToggleButton(
-                value=False,
-                description="Profile",
-                disabled=False,
-                button_style="",
-                layout={"width": "initial"})
-            self.profile_button[dim].observe(self.parent.engine.toggle_profile_view, names="value")
+        # # Variables for the profile viewer
+        # self.profile_viewer = None
+        # self.profile_key = None
+        # self.profile_dim = None
+        # self.slice_pos_rectangle = None
+        # self.profile_scatter = None
+        # self.profile_update_lock = False
+        # self.profile_ax = None
+        # self.log = log
+        # # self.flatten_as = flatten_as
+        # # self.da_with_edges = None
+        # # self.vmin = vmin
+        # # self.vmax = vmax
+        # # self.ylim = None
 
 
-            # labvalue = self.make_slider_label(
-            #         self.data_arrays[self.name].coords[dim], indx,
-            #         self.slider_axformatter[self.name][dim][False])
-            labvalue = "[{}]".format(self.parent.engine.data_arrays[self.parent.engine.name].coords[dim].unit)
-            if self.parent.engine.ndim == len(button_options):
-                self.slider[dim].layout.display = 'none'
-                self.continuous_update[dim].layout.display = 'none'
-                self.thickness_slider[dim].layout.display = 'none'
-                self.profile_button[dim].layout.display = 'none'
-                # This is a trick to turn the label into the coordinate name
-                # because when we hide the slider, the slider description is
-                # also hidden
-                labvalue = dim_str
-            # os.write(1, "Slicer 5.5\n".encode())
+        # Containers: need one per entry in the dict of scipp
+        # objects (=DataArray)
+        # os.write(1, "Slicer 3\n".encode())
 
-            # Add a label widget to display the value of the z coordinate
-            self.lab[dim] = ipw.Label(value=labvalue)
-            # Add one set of buttons per dimension
-            self.buttons[dim] = ipw.ToggleButtons(
-                options=button_options,
-                description='',
-                value=button_values[i],
-                disabled=False,
-                button_style='',
-                style={"button_width": "50px"})
-            # os.write(1, "Slicer 5.6\n".encode())
+        # List mask names for each item
+        self.mask_names = {}
+        # Size of the slider coordinate arrays
+        self.dim_to_shape = {}
+        # Store coordinates of dimensions that will be in sliders
+        # self.slider_coord = {}
+        # Store coordinate min and max limits
+        self.slider_xlims = {}
+        # Store ticklabels for a dimension
+        # self.slider_ticks = {}
+        # Store labels for sliders if any
+        # self.slider_label = {}
+        # Record which variables are histograms along which dimension
+        self.histograms = {}
+        # Axes tick formatters
+        self.axformatter = {}
+        # Axes tick locators
+        self.axlocator = {}
+        # Save if some dims contain multi-dimensional coords
+        # self.contains_multid_coord = {}
 
-            # self.profile_button[dim] = ipw.ToggleButton(
-            #     value=False,
-            #     description="Profile",
-            #     disabled=False,
-            #     button_style="",
-            #     layout={"width": "initial"})
-            # self.profile_button[dim].observe(self.parent.engine.toggle_profile_view, names="value")
+        # self.units = {}
 
-            # os.write(1, "Slicer 5.7\n".encode())
+        # Get first item in dict and process dimensions.
+        # Dimensions should be the same for all dict items.
+        self.name = list(scipp_obj_dict.keys())[0]
+        self.process_axes_dimensions(scipp_obj_dict[self.name],
+            positions=positions)
 
-            if button_values[i] is not None:
-                self.button_axis_to_dim[button_values[i].lower()] = dim
-            setattr(self.buttons[dim], "dim", dim)
-            setattr(self.buttons[dim], "old_value", self.buttons[dim].value)
-            setattr(self.slider[dim], "dim", dim)
-            setattr(self.continuous_update[dim], "dim", dim)
-            setattr(self.thickness_slider[dim], "dim", dim)
-            setattr(self.profile_button[dim], "dim", dim)
-            # os.write(1, "Slicer 5.8\n".encode())
+        for name, array in scipp_obj_dict.items():
 
-            # Hide buttons and labels for 1d variables
-            if self.parent.engine.ndim == 1:
-                self.buttons[dim].layout.display = 'none'
-                self.lab[dim].layout.display = 'none'
+            # # Process axes dimensions
+            # if self.axes is None:
+            #     self.axes = array.dims
+            # # Replace positions in axes if positions set
+            # if positions is not None:
+            #     self.axes[self.axes.index(
+            #         array.coords[positions].dims[0])] = positions
 
-            # Hide buttons and inactive sliders for 3d projection
-            if len(button_options) == 3:
-                self.buttons[dim].layout.display = 'none'
-                if self.slider[dim].disabled:
-                    self.slider[dim].layout.display = 'none'
-                    self.continuous_update[dim].layout.display = 'none'
-                    self.lab[dim].layout.display = 'none'
-                    self.thickness_slider[dim].layout.display = 'none'
-            # os.write(1, "Slicer 5.9\n".encode())
+            # # Convert to Dim objects
+            # for i in range(len(self.axes)):
+            #     if isinstance(self.axes[i], str):
+            #         self.axes[i] = sc.Dim(self.axes[i])
 
-            # Add observer to buttons
-            self.buttons[dim].on_msg(self.parent.engine.update_buttons)
-            # Add an observer to the sliders
-            self.slider[dim].observe(self.parent.engine.update_slice, names="value")
-            self.thickness_slider[dim].observe(self.parent.engine.update_slice, names="value")
-            # Add the row of slider + buttons
-            row = [
-                self.slider[dim], self.lab[dim], self.continuous_update[dim],
-                self.buttons[dim], self.thickness_slider[dim],
-                self.profile_button[dim]
-            ]
-            self.container.append(ipw.HBox(row))
-            # os.write(1, "Slicer 5.10\n".encode())
+            # # Protect against duplicate entries in axes
+            # if len(self.axes) != len(set(self.axes)):
+            #     raise RuntimeError("Duplicate entry in axes: {}".format(self.axes))
+            # self.ndim = len(self.axes)
+            # self.process_axes_dimensions()
 
-        #     # Construct members object
-        #     self.members["widgets"]["sliders"][dim_str] = self.slider[dim]
-        #     self.members["widgets"]["togglebuttons"][dim_str] = self.buttons[
-        #         dim]
-        #     self.members["widgets"]["labels"][dim_str] = self.lab[dim]
-        # os.write(1, "Slicer 6\n".encode())
 
-        # Add controls for masks
-        self.add_masks_controls()
-        # os.write(1, "Slicer 7\n".encode())
+            # print(array)
+            adims = array.dims
+            for dim in self.axes:
+                if dim not in adims:
+                    underlying_dim = array.coords[dim].dims[-1]
+                    adims[adims.index(underlying_dim)] = dim
+            # print(adims)
 
-        self.container = ipw.VBox(self.container)
+            self.data_arrays[name] = sc.DataArray(
+                data=sc.Variable(dims=adims,
+                                 unit=sc.units.counts,
+                                 values=array.values,
+                                 variances=array.variances,
+                                 dtype=sc.dtype.float64))
+            # print("================")
+            # print(self.data_arrays[name])
+            # print("================")
+            # self.name = name
 
+            self.params["values"][name] = parse_params(globs=globs,
+                                                       variable=array.data)
+
+            self.params["masks"][name] = parse_params(params=masks,
+                                                      defaults={
+                                                          "cmap": "gray",
+                                                          "cbar": False
+                                                      },
+                                                      globs=globs)
+
+            # Create a map from dim to shape
+            # dim_to_shape = dict(zip(array.dims, array.shape))
+
+            # Size of the slider coordinate arrays
+            self.dim_to_shape[name] = dict(zip(self.data_arrays[name].dims, self.data_arrays[name].shape))
+            # for dim, coord in array.coords.items():
+            #     if dim not in self.dim_to_shape[name] and len(coord.dims) > 0:
+            #         print(dim, self.dim_to_shape[name], coord)
+            #         self.dim_to_shape[name][dim] = self.dim_to_shape[name][coord.dims[-1]]
+            # print(self.dim_to_shape[name])
+            # Store coordinates of dimensions that will be in sliders
+            # self.slider_coord[name] = {}
+            # Store coordinate min and max limits
+            self.slider_xlims[name] = {}
+            # Store ticklabels for a dimension
+            # self.slider_ticks[name] = {}
+            # Store labels for sliders if any
+            # self.slider_label[name] = {}
+            # Store axis tick formatters and locators
+            self.axformatter[name] = {}
+            self.axlocator[name] = {}
+            # Save information on histograms
+            self.histograms[name] = {}
+            # # Save if some dims contain multi-dimensional coords
+            # self.contains_multid_coord[name] = False
+
+            # # Process axes dimensions
+            # if axes is None:
+            #     axes = array.dims
+            # # Replace positions in axes if positions set
+            # if positions is not None:
+            #     axes[axes.index(
+            #         self.data_array.coords[positions].dims[0])] = positions
+
+            # # Protect against duplicate entries in axes
+            # if len(axes) != len(set(axes)):
+            #     raise RuntimeError("Duplicate entry in axes: {}".format(axes))
+            # self.ndim = len(axes)
+
+            # Iterate through axes and collect dimensions
+            for dim in self.axes:
+                self.collect_dim_shapes_and_lims(name, dim)
+
+            # Include masks
+            for n, msk in array.masks.items():
+                self.data_arrays[name].masks[n] = msk
+            self.mask_names[name] = list(array.masks.keys())
+
+
+        # os.write(1, "Slicer 4\n".encode())
+
+        print(self.data_arrays)
+
+        # self.widgets = PlotWidgets(controller=self,
+        #                  button_options=['X'])
         return
 
-    # def make_data_array_with_bin_edges(self, array):
-    #     da_with_edges = sc.DataArray(
-    #         data=sc.Variable(dims=array.dims,
-    #                          unit=array.unit,
-    #                          values=array.values,
-    #                          variances=array.variances,
-    #                          dtype=sc.dtype.float64))
-    #     for dim, coord in arraycoord[self.name].items():
-    #         if self.histograms[self.name][dim][dim]:
-    #             da_with_edges.coords[dim] = coord
-    #         else:
-    #             da_with_edges.coords[dim] = to_bin_edges(coord, dim)
-    #     if len(self.masks[self.name]) > 0:
-    #         for m in self.masks[self.name]:
-    #             da_with_edges.masks[m] = self.data_array.masks[m]
-    #     return da_with_edges
+    def process_axes_dimensions(self, array, positions=None):
 
-    def add_masks_controls(self):
-        # Add controls for masks
-        masks_found = False
-        self.mask_checkboxes = {}
-        for name, array in self.parent.engine.data_arrays.items():
-            self.mask_checkboxes[name] = {}
-            if len(array.masks) > 0:
-                masks_found = True
-                for key in array.masks:
-                    self.mask_checkboxes[name][key] = ipw.Checkbox(
-                        value=self.parent.engine.params["masks"][name]["show"],
-                        description="{}:{}".format(name, key),
-                        indent=False,
-                        layout={"width": "initial"})
-                    setattr(self.mask_checkboxes[name][key], "mask_group", name)
-                    setattr(self.mask_checkboxes[name][key], "mask_name", key)
-                    self.mask_checkboxes[name][key].observe(self.parent.toggle_mask,
-                                                  names="value")
+        # Process axes dimensions
+        if self.axes is None:
+            self.axes = array.dims
+        # Replace positions in axes if positions set
+        if positions is not None:
+            self.axes[self.axes.index(
+                array.coords[positions].dims[0])] = positions
 
-        if masks_found:
-            self.masks_box = []
-            for name in self.mask_checkboxes:
-                mask_list = []
-                for cbox in self.mask_checkboxes[name].values():
-                    mask_list.append(cbox)
-                self.masks_box.append(ipw.HBox(mask_list))
-            # Add a master button to control all masks in one go
-            self.masks_button = ipw.ToggleButton(
-                value=self.parent.engine.params["masks"][self.parent.engine.name]["show"],
-                description="Hide all masks" if
-                self.parent.engine.params["masks"][self.parent.engine.name]["show"] else "Show all masks",
-                disabled=False,
-                button_style="")
-            self.masks_button.observe(self.toggle_all_masks, names="value")
-            self.container += [self.masks_button, ipw.VBox(self.masks_box)]
-            # self.members["widgets"]["togglebutton"]["masks"] = \
-            #     self.masks_button
+        # Convert to Dim objects
+        for i in range(len(self.axes)):
+            if isinstance(self.axes[i], str):
+                self.axes[i] = sc.Dim(self.axes[i])
 
-    def toggle_all_masks(self, change):
-        for name in self.mask_checkboxes:
-            for key in self.mask_checkboxes[name]:
-                self.mask_checkboxes[name][key].value = change["new"]
-        change["owner"].description = "Hide all masks" if change["new"] else \
-            "Show all masks"
+        # Protect against duplicate entries in axes
+        if len(self.axes) != len(set(self.axes)):
+            raise RuntimeError("Duplicate entry in axes: {}".format(self.axes))
+        self.ndim = len(self.axes)
         return
+
+
+    def collect_dim_shapes_and_lims(self, name, dim):
+
+        var, formatter, locator = self.axis_label_and_ticks(
+            dim, array, name)
+
+        # To allow for 2D coordinates, the histograms are
+        # stored as dicts, with one key per dimension of the coordinate
+        # self.slider_shape[name][dim] = {}
+        dim_shape = None
+        self.histograms[name][dim] = {}
+        for i, d in enumerate(var.dims):
+            # shape = var.shape[i]
+            self.histograms[name][dim][d] = self.dim_to_shape[name][
+                d] == var.shape[i] - 1
+            if d == dim:
+                dim_shape = var.shape[i]
+
+        if self.histograms[name][dim][dim]:
+            self.data_arrays[name].coords[dim] = var
+        else:
+            self.data_arrays[name].coords[dim] = to_bin_edges(var, dim)
+
+        # The limits for each dimension
+        self.slider_xlims[name][dim] = np.array(
+            [sc.min(var).value, sc.max(var).value], dtype=np.float)
+        if sc.is_sorted(var, dim, order='descending'):
+            self.slider_xlims[name][dim] = np.flip(
+                self.slider_xlims[name][dim]).copy()
+        # The tick formatter and locator
+        self.axformatter[name][dim] = formatter
+        self.axlocator[name][dim] = locator
+
+        # Small correction if xmin == xmax
+        if self.slider_xlims[name][dim][0] == self.slider_xlims[name][
+                dim][1]:
+            if self.slider_xlims[name][dim][0] == 0.0:
+                self.slider_xlims[name][dim] = [-0.5, 0.5]
+            else:
+                dx = 0.5 * abs(self.slider_xlims[name][dim][0])
+                self.slider_xlims[name][dim][0] -= dx
+                self.slider_xlims[name][dim][1] += dx
+        # For xylims, if coord is not bin-edge, we make artificial
+        # bin-edge. This is simpler than finding the actual index of
+        # the smallest and largest values and computing a bin edge from
+        # the neighbours.
+        if not self.histograms[name][dim][
+                dim] and dim_shape > 1:
+            dx = 0.5 * (self.slider_xlims[name][dim][1] -
+                        self.slider_xlims[name][dim][0]) / float(
+                            dim_shape - 1)
+            self.slider_xlims[name][dim][0] -= dx
+            self.slider_xlims[name][dim][1] += dx
+
+        self.slider_xlims[name][dim] = sc.Variable(
+            [dim], values=self.slider_xlims[name][dim], unit=var.unit)
+        return
+
+
+    def axis_label_and_ticks(self, dim, data_array, name):
+        """
+        Get dimensions and label (if present) from requested axis.
+        Also retun axes tick formatters and locators.
+        """
+
+        # Create some default axis tick formatter, depending on whether log
+        # for that axis will be True or False
+        formatter = {
+            False: ticker.ScalarFormatter(),
+            True: ticker.LogFormatterSciNotation()
+        }
+        locator = {False: ticker.AutoLocator(), True: ticker.LogLocator()}
+
+        # dim = axis
+        # Convert to Dim object?
+        # if isinstance(dim, str):
+        #     dim = sc.Dim(dim)
+
+        # underlying_dim = dim
+        # non_dimension_coord = False
+        var = None
+
+        if dim in data_array.coords:
+
+            dim_coord_dim = data_array.coords[dim].dims[-1]
+            tp = data_array.coords[dim].dtype
+
+            if tp == sc.dtype.vector_3_float64:
+                # var = make_fake_coord(dim_coord_dim,
+                                      # self.dim_to_shape[name][dim_coord_dim],
+                var = make_fake_coord(dim,
+                                      self.dim_to_shape[name][dim],
+                                      unit=data_array.coords[dim].unit)
+                form = ticker.FuncFormatter(lambda val, pos: "(" + ",".join([
+                    value_to_string(item, precision=2) for item in data_array.coords[dim].values[int(val)]
+                ]) + ")" if (int(val) >= 0 and int(val) < self.dim_to_shape[name][
+                    dim]) else "")
+                    # dim_coord_dim]) else "")
+                formatter.update({False: form, True: form})
+                locator[False] = ticker.MaxNLocator(integer=True)
+                # if dim != dim_coord_dim:
+                #     underlying_dim = dim_coord_dim
+
+            elif tp == sc.dtype.string:
+                # var = make_fake_coord(dim_coord_dim,
+                #                       self.dim_to_shape[name][dim_coord_dim],
+                var = make_fake_coord(dim,
+                                      self.dim_to_shape[name][dim],
+                                      unit=data_array.coords[dim].unit)
+                form = ticker.FuncFormatter(
+                    lambda val, pos: data_array.coords[
+                        dim].values[int(val)] if (int(val) >= 0 and int(
+                            val) < self.dim_to_shape[name][dim]) else "")
+                formatter.update({False: form, True: form})
+                locator[False] = ticker.MaxNLocator(integer=True)
+                # if dim != dim_coord_dim:
+                #     underlying_dim = dim_coord_dim
+
+            elif dim != dim_coord_dim:
+                # non-dimension coordinate
+                # non_dimension_coord = True
+                if dim_coord_dim in data_array.coords:
+                    coord = data_array.coords[dim_coord_dim]
+                    var = sc.Variable(
+                        [dim],
+                        values=coord.values,
+                        variances=coord.variances,
+                        unit=coord.unit,
+                        dtype=sc.dtype.float64)
+                else:
+                    var = make_fake_coord(dim,
+                                          self.dim_to_shape[name][dim_coord_dim])
+                # underlying_dim = dim_coord_dim
+                # var = data_array.coords[dim].astype(sc.dtype.float64)
+                form = ticker.FuncFormatter(
+                    lambda val, pos: value_to_string(data_array.coords[
+                        dim].values[np.abs(var.values - val).argmin()]))
+                formatter.update({False: form, True: form})
+
+            else:
+                var = data_array.coords[dim].astype(sc.dtype.float64)
+
+        else:
+            # dim not found in data_array.coords
+            var = make_fake_coord(dim, self.dim_to_shape[name][dim])
+
+        # label = var
+        # if non_dimension_coord:
+        #     label = data_array.coords[dim]
+
+        # return underlying_dim, var, label, formatter, locator
+        return var, formatter, locator
+
+
+
+
+
+    def select_bins(self, coord, dim, start, end):
+        bins = coord.shape[-1]
+        if len(coord.dims) != 1:  # TODO find combined min/max
+            return dim, slice(0, bins - 1)
+        # scipp treats bins as closed on left and open on right: [left, right)
+        first = sc.sum(coord <= start, dim).value - 1
+        last = bins - sc.sum(coord > end, dim).value
+        if first >= last:  # TODO better handling for decreasing
+            return dim, slice(0, bins - 1)
+        first = max(0, first)
+        last = min(bins - 1, last)
+        return dim, slice(first, last + 1)
+
+
+    def resample_image(self, array, rebin_edges):
+        dslice = array
+        # Select bins to speed up rebinning
+        for dim in rebin_edges:
+            this_slice = self.select_bins(array.coords[dim], dim,
+                                          rebin_edges[dim][dim, 0],
+                                          rebin_edges[dim][dim, -1])
+            dslice = dslice[this_slice]
+
+        # Rebin the data
+        for dim, edges in rebin_edges.items():
+            # print(dim)
+            # print(dslice)
+            # print(edges)
+            dslice = sc.rebin(dslice, dim, edges)
+
+        # Divide by pixel width
+        for dim, edges in rebin_edges.items():
+            # self.image_pixel_size[key] = edges.values[1] - edges.values[0]
+            # print("edges.values[1]", edges.values[1])
+            # print(self.image_pixel_size[key])
+            # dslice /= self.image_pixel_size[key]
+            div = edges[dim, 1:] - edges[dim, :-1]
+            div.unit = sc.units.one
+            dslice /= div
+        return dslice
+
+    # def mask_to_float(self, mask, var):
+    #     return np.where(mask, var, None).astype(np.float)
+
+    def toggle_profile_view(self, change=None):
+        self.profile_dim = change["owner"].dim
+        if change["new"]:
+            self.show_profile_view()
+        else:
+            self.hide_profile_view()
+        return
+
+
+
+
+
+    def update_buttons(self):
+        self.model.update_buttons()
+
+    def update_slice(self):
+        self.model.update_slice()
