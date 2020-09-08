@@ -32,6 +32,7 @@
 
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_factory.h"
 #include "scipp/variable/visit.h"
 
 namespace scipp::core::detail {
@@ -435,16 +436,15 @@ template <class Op> struct Transform {
   template <class... Ts> Variable operator()(Ts &&... handles) const {
     const auto dims = merge(handles.dims()...);
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
-    constexpr bool out_variances =
-        !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op>;
-    auto volume = dims.volume();
-    Variable out =
-        out_variances && (handles.hasVariances() || ...)
-            ? makeVariable<Out>(Dimensions{dims},
-                                Values(volume, core::default_init_elements),
-                                Variances(volume, core::default_init_elements))
-            : makeVariable<Out>(Dimensions{dims},
-                                Values(volume, core::default_init_elements));
+    const bool variances =
+        !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
+        (handles.hasVariances() || ...);
+    Variable out = variableFactory().create(dtype<Out>, dims, variances);
+    if (((handles.m_var->dtype() == dtype<bucket<Variable>>) || ...)) {
+      out =
+          variableFactory().create_buckets(dtype<bucket<Variable>>, dtype<Out>,
+                                           dims, variances, *handles.m_var...);
+    }
     do_transform(op, variable_access<Out>(out), std::tuple<>(),
                  as_view{handles, dims}...);
     return out;

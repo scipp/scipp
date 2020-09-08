@@ -9,6 +9,7 @@
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -70,6 +71,12 @@ template <class T> ElementArrayView<T> VariableView::variances() const {
 /// dtype in Variable.
 #define INSTANTIATE_VARIABLE(name, ...)                                        \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
+  namespace {                                                                  \
+  auto register_variable_maker_##name((                                        \
+      variableFactory().emplace(                                               \
+          dtype<__VA_ARGS__>, std::make_unique<VariableMaker<__VA_ARGS__>>()), \
+      0));                                                                     \
+  }                                                                            \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
                               element_array<__VA_ARGS__>,                      \
                               std::optional<element_array<__VA_ARGS__>>);      \

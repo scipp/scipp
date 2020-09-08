@@ -68,6 +68,8 @@ public:
             const VariableView &dest) const override;
   void assign(const VariableConcept &other) override;
 
+  Dim dim() const noexcept { return m_dim; }
+  const T &buffer() const noexcept { return m_buffer; }
   auto indices() const {
     return ElementArrayView{m_indices.data(), 0, dims(), dims()};
   }
