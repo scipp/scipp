@@ -30,8 +30,10 @@ void expectCanBroadcastFromTo(const Dimensions &source,
 /// transpose `dataDims`.
 element_array_view::element_array_view(const scipp::index offset,
                                        const Dimensions &iterDims,
-                                       const Dimensions &dataDims)
-    : m_offset(offset), m_iterDims(iterDims), m_dataDims(dataDims) {
+                                       const Dimensions &dataDims,
+                                       const BucketParams &bucketParams)
+    : m_offset(offset), m_iterDims(iterDims), m_dataDims(dataDims),
+      m_bucketParams(bucketParams) {
   expectCanBroadcastFromTo(m_dataDims, m_iterDims);
 }
 

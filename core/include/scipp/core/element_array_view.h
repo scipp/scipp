@@ -54,7 +54,8 @@ private:
 class SCIPP_CORE_EXPORT element_array_view {
 public:
   element_array_view(const scipp::index offset, const Dimensions &iterDims,
-                     const Dimensions &dataDims);
+                     const Dimensions &dataDims,
+                     const BucketParams &bucketParams);
   element_array_view(const element_array_view &other,
                      const Dimensions &iterDims);
 
@@ -79,7 +80,7 @@ public:
     return (m_offset != other.m_offset) || (m_dataDims != other.m_dataDims);
   }
 
-public:
+protected:
   scipp::index m_offset{0};
   Dimensions m_iterDims;
   Dimensions m_dataDims;
@@ -97,8 +98,10 @@ public:
 
   /// Construct an ElementArrayView over given buffer.
   ElementArrayView(T *buffer, const scipp::index offset,
-                   const Dimensions &iterDims, const Dimensions &dataDims)
-      : element_array_view(offset, iterDims, dataDims), m_buffer(buffer) {}
+                   const Dimensions &iterDims, const Dimensions &dataDims,
+                   const BucketParams &bucketParams = BucketParams{})
+      : element_array_view(offset, iterDims, dataDims, bucketParams),
+        m_buffer(buffer) {}
 
   /// Construct a ElementArrayView from another ElementArrayView, with different
   /// iteration dimensions.
