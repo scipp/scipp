@@ -55,24 +55,13 @@ std::map<DType, std::string> &dtypeNameRegistry() {
 
 const std::string to_iso_date(const scipp::core::time_point &item,
                               const std::optional<units::Unit> &unit) {
-  int64_t ts = item.time_since_epoch();
-  units::Unit n_unit;
-  if (!unit) {
-    // dataset's to_string can't send unit.
-    n_unit = item.unit();
-  } else {
-    n_unit = *unit;
-    // compare with time_point unit
-    if (n_unit != item.unit())
-      throw except::UnitError(
-          "Time point unit is inconsistent with requested.");
-  }
-
-  if (n_unit != scipp::units::s && n_unit != scipp::units::ns)
+  if (!unit)
     throw except::UnitError(
         "Time point should only have time units (ns or s).");
 
-  if (n_unit == scipp::units::ns) {
+  int64_t ts = item.time_since_epoch();
+
+  if (unit.value() == units::ns) {
     // cast timestamp into duration in seconds
     const std::chrono::duration<int64_t, std::nano> dur_nano(ts);
     auto dur_sec = std::chrono::duration_cast<std::chrono::seconds>(dur_nano);
@@ -89,7 +78,7 @@ const std::string to_iso_date(const scipp::core::time_point &item,
     ss << std::put_time(tm, "%FT%T.") << std::setw(9) << std::setfill('0')
        << ns;
     return ss.str();
-  } else if (n_unit == units::s) {
+  } else if (unit.value() == units::s) {
     // cast timestamp into duration in seconds
     const std::chrono::duration<int64_t> dur_sec(ts);
     std::chrono::system_clock::time_point tp(dur_sec);
