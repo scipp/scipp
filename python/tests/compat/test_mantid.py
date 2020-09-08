@@ -1,6 +1,7 @@
 # Tests in this file work only with a working Mantid installation available in
 # PYTHONPATH.
 import unittest
+import warnings
 
 import numpy as np
 import pytest
@@ -47,7 +48,7 @@ class TestMantidConversion(unittest.TestCase):
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         d = mantidcompat.convert_Workspace2D_to_data_array(ws)
         self.assertEqual(
-            d.coords["run"].value.getProperty("run_start").value,
+            d.coords["run_start"].value,
             "2012-05-21T15:14:56.279289666",
         )
         self.assertEqual(d.data.unit, sc.units.counts)
@@ -85,10 +86,8 @@ class TestMantidConversion(unittest.TestCase):
             eventWS, realign_events=False, load_pulse_times=False)
         d.realign({'tof': realigned.coords['tof']})
 
-        # Removing run and sample due to missing comparison operators
-        del d.unaligned_coords['run']
+        # Removing sample due to missing comparison operators
         del d.unaligned_coords['sample']
-        del realigned.unaligned_coords['run']
         del realigned.unaligned_coords['sample']
         assert sc.is_equal(realigned, d)
 
@@ -298,10 +297,11 @@ class TestMantidConversion(unittest.TestCase):
             # from sample:
             assert 'sample-position' not in monitor.coords
             # Absence of the following is not crucial, but currently there is
-            # no need for these, and it avoid duplication:
+            # no need for these, and it avoids duplication:
             assert 'detector-info' not in monitor.coords
-            assert 'run' not in monitor.coords
             assert 'sample' not in monitor.coords
+            assert 'SampleTemp' not in monitor.coords,\
+                "Expect run logs not be duplicated in monitor workspaces"
 
     def test_mdhisto_workspace_q(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
@@ -453,16 +453,82 @@ class TestMantidConversion(unittest.TestCase):
         assert 'cost-function' in params.coords
         assert 'chi^2/d.o.f.' in params.coords
 
-    def test_set_run(self):
+    def test_convert_array_run_log_to_unaligned_coords(self):
+        # Given a Mantid workspace with a run log
         import mantid.simpleapi as mantid
         target = mantid.CloneWorkspace(self.base_event_ws)
+        log_name = "SampleTemp"
+        self.assertTrue(
+            target.run().hasProperty(log_name),
+            f"Expected input workspace to have a {log_name} run log")
+
+        # When the workspace is converted to a scipp data array
         d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
-        d.unaligned_coords["run"].value.addProperty("test_property", 1, True)
-        # before
-        self.assertFalse(target.run().hasProperty("test_property"))
-        target.setRun(d.unaligned_coords["run"].value)
-        # after
-        self.assertTrue(target.run().hasProperty("test_property"))
+
+        # Then the data array contains the run log as an unaligned coord
+        self.assertTrue(
+            np.allclose(target.run()[log_name].value,
+                        d.unaligned_coords[log_name].values.data.values),
+            "Expected values in the unaligned coord to match "
+            "the original run log from the Mantid workspace")
+        self.assertEqual(d.unaligned_coords[log_name].values.unit, sc.units.K)
+        self.assertTrue(
+            np.array_equal(
+                target.run()[log_name].times.astype(np.int64),
+                d.unaligned_coords[log_name].values.coords["time"].values),
+            "Expected times in the unaligned coord to match "
+            "the original run log from the Mantid workspace")
+
+    def test_convert_scalar_run_log_to_unaligned_coords(self):
+        # Given a Mantid workspace with a run log
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        log_name = "start_time"
+        self.assertTrue(
+            target.run().hasProperty(log_name),
+            f"Expected input workspace to have a {log_name} run log")
+
+        # When the workspace is converted to a scipp data array
+        d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+
+        # Then the data array contains the run log as an unaligned coord
+        self.assertEqual(
+            target.run()[log_name].value, d.unaligned_coords[log_name].value,
+            "Expected value of the unaligned coord to match "
+            "the original run log from the Mantid workspace")
+
+    def test_warning_raised_when_convert_run_log_with_unrecognised_units(self):
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+            assert len(
+                caught_warnings
+            ) > 0, "Expected warnings due to some run logs " \
+                   "having unrecognised units strings"
+            assert any("unrecognised units" in str(caught_warning.message)
+                       for caught_warning in caught_warnings)
+
+    def test_no_warning_raised_when_convert_explicitly_dimensionless_run_log(
+            self):
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+            original_number_of_warnings = len(caught_warnings)
+
+        # Add an explicitly dimensionless log
+        mantid.AddSampleLog(Workspace=target,
+                            LogName='dimensionless_log',
+                            LogText='1',
+                            LogType='Number',
+                            LogUnit='dimensionless')
+
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+            assert len(caught_warnings) == original_number_of_warnings,\
+                "Expected no extra warning about unrecognised units " \
+                "from explicitly dimensionless log"
 
     def test_set_sample(self):
         import mantid.simpleapi as mantid
