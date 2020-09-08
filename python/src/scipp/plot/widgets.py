@@ -27,13 +27,13 @@ class PlotWidgets:
         indx = 0
         # os.write(1, "Slicer 5\n".encode())
 
-        # Additional condition if positions kwarg set
-        # positions_dim = None
-        if positions is not None:
-            if scipp_obj_dict[self.parent.engine.name].coords[
-                    positions].dtype != sc.dtype.vector_3_float64:
-                raise RuntimeError(
-                    "Supplied positions coordinate does not contain vectors.")
+        # # Additional condition if positions kwarg set
+        # # positions_dim = None
+        # if positions is not None:
+        #     if scipp_obj_dict[self.parent.engine.name].coords[
+        #             positions].dtype != sc.dtype.vector_3_float64:
+        #         raise RuntimeError(
+        #             "Supplied positions coordinate does not contain vectors.")
         # if len(button_options) == 3 and positions is not None:
         #     if scipp_obj_dict[self.name].coords[
         #             positions].dtype == sc.dtype.vector_3_float64:

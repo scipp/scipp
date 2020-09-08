@@ -114,6 +114,11 @@ class PlotEngine:
                 self.axes[self.axes.index(
                     array.coords[positions].dims[0])] = positions
 
+            # Convert to Dim objects
+            for i in range(len(self.axes)):
+                if isinstance(self.axes[i], str):
+                    self.axes[i] = sc.Dim(self.axes[i])
+
             # Protect against duplicate entries in axes
             if len(self.axes) != len(set(self.axes)):
                 raise RuntimeError("Duplicate entry in axes: {}".format(self.axes))
@@ -189,15 +194,15 @@ class PlotEngine:
             # self.ndim = len(axes)
 
             # Iterate through axes and collect dimensions
-            for ax in self.axes:
+            for dim in self.axes:
                 # dim, var, lab, formatter, locator = self.axis_label_and_ticks(
                 #     ax, array, name)
 
-                # dim = sc.Dim(ax)
-                dim = ax
-                # Convert to Dim object?
-                if isinstance(dim, str):
-                    dim = sc.Dim(dim)
+                # # dim = sc.Dim(ax)
+                # dim = ax
+                # # Convert to Dim object?
+                # if isinstance(dim, str):
+                #     dim = sc.Dim(dim)
 
                 var, formatter, locator = self.axis_label_and_ticks(
                     dim, array, name)
@@ -288,7 +293,7 @@ class PlotEngine:
 
         # os.write(1, "Slicer 4\n".encode())
 
-        # print(self.data_arrays)
+        print(self.data_arrays)
 
 
     def axis_label_and_ticks(self, dim, data_array, name):
