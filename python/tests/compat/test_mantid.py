@@ -502,13 +502,33 @@ class TestMantidConversion(unittest.TestCase):
         target = mantid.CloneWorkspace(self.base_event_ws)
         with warnings.catch_warnings(record=True) as caught_warnings:
             mantidcompat.convert_EventWorkspace_to_data_array(target, False)
-            self.assertGreater(
-                len(caught_warnings), 0,
-                "Expected warnings due to some run logs"
-                "having unrecognised units strings")
-            self.assertTrue(
-                any("unrecognised units" in str(caught_warning.message)
-                    for caught_warning in caught_warnings))
+            assert len(
+                caught_warnings
+            ) > 0, "Expected warnings due to some run logs " \
+                   "having unrecognised units strings"
+            assert any("unrecognised units" in str(caught_warning.message)
+                       for caught_warning in caught_warnings)
+
+    def test_no_warning_raised_when_convert_explicitly_dimensionless_run_log(
+            self):
+        import mantid.simpleapi as mantid
+        target = mantid.CloneWorkspace(self.base_event_ws)
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+            original_number_of_warnings = len(caught_warnings)
+
+        # Add an explicitly dimensionless log
+        mantid.AddSampleLog(Workspace=target,
+                            LogName='dimensionless_log',
+                            LogText='1',
+                            LogType='Number',
+                            LogUnit='dimensionless')
+
+        with warnings.catch_warnings(record=True) as caught_warnings:
+            mantidcompat.convert_EventWorkspace_to_data_array(target, False)
+            assert len(caught_warnings) == original_number_of_warnings,\
+                "Expected no extra warning about unrecognised units " \
+                "from explicitly dimensionless log"
 
     def test_set_sample(self):
         import mantid.simpleapi as mantid

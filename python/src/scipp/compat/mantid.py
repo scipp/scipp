@@ -71,12 +71,14 @@ def make_variables_from_run_logs(ws):
     lookup_units.update(additional_unit_mapping)
     for property_name in ws.run().keys():
         units_string = ws.run()[property_name].units
-        unit = lookup_units.get(units_string, sc.units.one)
+        unit = lookup_units.get(units_string, None)
         values = deepcopy(ws.run()[property_name].value)
 
-        if units_string and unit == sc.units.one:
+        if units_string and unit is None:
             warnings.warn(f"Workspace run log '{property_name}' "
                           f"has unrecognised units: '{units_string}'")
+        if unit is None:
+            unit = sc.units.one
 
         try:
             times = deepcopy(ws.run()[property_name].times)
