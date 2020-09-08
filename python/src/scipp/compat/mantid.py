@@ -59,7 +59,7 @@ additional_unit_mapping = {
     "nanosecond": sc.units.ns,
     "second": sc.units.s,
     "Angstrom": sc.units.angstrom,
-    "Hz": sc.units.dimensionless / sc.units.s,
+    "Hz": sc.units.one / sc.units.s,
     "degree": sc.units.deg,
 }
 
@@ -71,35 +71,28 @@ def make_variables_from_run_logs(ws):
     lookup_units.update(additional_unit_mapping)
     for property_name in ws.run().keys():
         units_string = ws.run()[property_name].units
-        units = lookup_units.get(units_string, None)
+        unit = lookup_units.get(units_string, sc.units.one)
         values = deepcopy(ws.run()[property_name].value)
 
-        if units_string and units is None:
+        if units_string and unit is None:
             warnings.warn(f"Workspace run log '{property_name}' "
                           f"has unrecognised units: '{units_string}'")
 
         try:
             times = deepcopy(ws.run()[property_name].times)
             is_time_series = True
-            dimension_label = "times"
+            dimension_label = "time"
         except AttributeError:
             times = None
             is_time_series = False
             dimension_label = property_name
 
         if np.isscalar(values):
-            if units is not None:
-                property_data = sc.Variable(value=values, unit=units)
-            else:
-                property_data = sc.Variable(value=values)
+            property_data = sc.Variable(value=values, unit=unit)
         else:
-            if units is not None:
-                property_data = sc.Variable(values=values,
-                                            unit=units,
-                                            dims=[dimension_label])
-            else:
-                property_data = sc.Variable(values=values,
-                                            dims=[dimension_label])
+            property_data = sc.Variable(values=values,
+                                        unit=unit,
+                                        dims=[dimension_label])
 
         if is_time_series:
             # If property has timestamps, create a DataArray
