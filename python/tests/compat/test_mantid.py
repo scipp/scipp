@@ -297,9 +297,11 @@ class TestMantidConversion(unittest.TestCase):
             # from sample:
             assert 'sample-position' not in monitor.coords
             # Absence of the following is not crucial, but currently there is
-            # no need for these, and it avoid duplication:
+            # no need for these, and it avoids duplication:
             assert 'detector-info' not in monitor.coords
             assert 'sample' not in monitor.coords
+            assert 'SampleTemp' not in monitor.coords,\
+                "Expect run logs not be duplicated in monitor workspaces"
 
     def test_mdhisto_workspace_q(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
@@ -473,7 +475,7 @@ class TestMantidConversion(unittest.TestCase):
         self.assertTrue(
             np.array_equal(
                 target.run()[log_name].times.astype(np.int64),
-                d.unaligned_coords[log_name].values.coords["times"].values),
+                d.unaligned_coords[log_name].values.coords["time"].values),
             "Expected times in the unaligned coord to match "
             "the original run log from the Mantid workspace")
 
