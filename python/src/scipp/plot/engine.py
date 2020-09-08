@@ -120,13 +120,13 @@ class PlotEngine:
             self.ndim = len(self.axes)
 
 
-            print(array)
+            # print(array)
             adims = array.dims
             for dim in self.axes:
                 if dim not in adims:
                     underlying_dim = array.coords[dim].dims[-1]
                     adims[adims.index(underlying_dim)] = dim
-            print(adims)
+            # print(adims)
 
             self.data_arrays[name] = sc.DataArray(
                 data=sc.Variable(dims=adims,
@@ -288,7 +288,7 @@ class PlotEngine:
 
         # os.write(1, "Slicer 4\n".encode())
 
-        print(self.data_arrays)
+        # print(self.data_arrays)
 
 
     def axis_label_and_ticks(self, dim, data_array, name):

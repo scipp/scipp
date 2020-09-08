@@ -12,7 +12,7 @@ from .._scipp import core as sc
 
 # Other imports
 import numpy as np
-import ipywidgets as widgets
+import ipywidgets as ipw
 from matplotlib import cm
 import matplotlib as mpl
 from matplotlib.backends import backend_agg
@@ -46,7 +46,7 @@ def plot_3d(scipp_obj_dict=None,
     planes.
     """
 
-    sv = Slicer3d(scipp_obj_dict=scipp_obj_dict,
+    sp = SciPlot3d(scipp_obj_dict=scipp_obj_dict,
                   positions=positions,
                   axes=axes,
                   masks=masks,
@@ -62,12 +62,12 @@ def plot_3d(scipp_obj_dict=None,
                   tick_size=tick_size,
                   show_outline=show_outline)
 
-    render_plot(widgets=sv.box, filename=filename)
+    # render_plot(widgets=sv.box, filename=filename)
 
-    return sv
+    return sp
 
 
-class Slicer3d(Slicer):
+class SciPlot3d:
     def __init__(self,
                  scipp_obj_dict=None,
                  positions=None,
@@ -85,8 +85,9 @@ class Slicer3d(Slicer):
                  tick_size=None,
                  show_outline=True):
 
-        super().__init__(scipp_obj_dict=scipp_obj_dict,
-                         positions=positions,
+
+        self.engine = PlotEngine3d(parent=self,
+                         scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
                          cmap=cmap,
@@ -94,13 +95,32 @@ class Slicer3d(Slicer):
                          vmin=vmin,
                          vmax=vmax,
                          color=color,
-                         aspect=aspect,
+                         positions=positions)
+                         # aspect=aspect)
+                         # button_options=['X', 'Y'])
+
+        self.widgets = PlotWidgets(self, engine=self.engine,
+            positions=positions,
                          button_options=['X', 'Y', 'Z'])
+
+
+        # super().__init__(scipp_obj_dict=scipp_obj_dict,
+        #                  positions=positions,
+        #                  axes=axes,
+        #                  masks=masks,
+        #                  cmap=cmap,
+        #                  log=log,
+        #                  vmin=vmin,
+        #                  vmax=vmax,
+        #                  color=color,
+        #                  aspect=aspect,
+        #                  positions=positions,
+        #                  button_options=['X', 'Y', 'Z'])
 
         self.vslice = None
         self.current_cut_surface_value = None
         self.cut_slider_steps = 10.
-        self.cbar_image = widgets.Image()
+        self.cbar_image = ipw.Image()
         self.cut_options = {
             "Xplane": 0,
             "Yplane": 1,
@@ -223,130 +243,43 @@ class Slicer3d(Slicer):
         self.outline.visible = show_outline
         self.axticks.visible = show_outline
 
-        # Opacity slider: top value controls opacity if no cut surface is
-        # active. If a cut curface is present, the upper slider is the opacity
-        # of the slice, while the lower slider value is the opacity of the
-        # data not in the cut surface.
-        self.opacity_slider = widgets.FloatRangeSlider(
-            min=0.0,
-            max=1.0,
-            value=[0.1, 1],
-            step=0.01,
-            description="Opacity slider: When no cut surface is active, the "
-            "max value of the range slider controls the overall opacity, "
-            "and the lower value has no effect. When a cut surface is "
-            "present, the max value is the opacity of the slice, while the "
-            "min value is the opacity of the background.",
-            continuous_update=True,
-            style={'description_width': '60px'})
-        self.opacity_slider.observe(self.update_opacity, names="value")
-        self.opacity_checkbox = widgets.Checkbox(
-            value=self.opacity_slider.continuous_update,
-            description="Continuous update",
-            indent=False,
-            layout={"width": "20px"})
-        self.opacity_checkbox_link = widgets.jslink(
-            (self.opacity_checkbox, 'value'),
-            (self.opacity_slider, 'continuous_update'))
+        self.create_cut_surface_controls()
 
-        self.toggle_outline_button = widgets.ToggleButton(value=show_outline,
-                                                          description='',
-                                                          button_style='')
-        self.toggle_outline_button.observe(self.toggle_outline, names="value")
-        # Run a trigger to update button text
-        self.toggle_outline({"new": show_outline})
+        self.figure = ipw.HBox([self.renderer, self.cbar_image])
 
-        # Add buttons to provide a choice of different cut surfaces:
-        # - Cartesian X, Y, Z
-        # - Cylindrical X, Y, Z (cylinder major axis)
-        # - Sperical R
-        # - Value-based iso-surface
-        # Note additional spaces required in cylindrical names because
-        # options must be unique.
-        self.cut_surface_buttons = widgets.ToggleButtons(
-            options=[('X ', self.cut_options["Xplane"]),
-                     ('Y ', self.cut_options["Yplane"]),
-                     ('Z ', self.cut_options["Zplane"]),
-                     ('R ', self.cut_options["Sphere"]),
-                     (' X ', self.cut_options["Xcylinder"]),
-                     (' Y ', self.cut_options["Ycylinder"]),
-                     (' Z ', self.cut_options["Zcylinder"]),
-                     ('', self.cut_options["Value"])],
-            value=None,
-            description='Cut surface:',
-            button_style='',
-            tooltips=[
-                'X-plane', 'Y-plane', 'Z-plane', 'Sphere', 'Cylinder-X',
-                'Cylinder-Y', 'Cylinder-Z', 'Value'
-            ],
-            icons=(['cube'] * 3) + ['circle-o'] + (['toggle-on'] * 3) +
-            ['magic'],
-            style={"button_width": "55px"},
-            layout={'width': '350px'})
-        self.cut_surface_buttons.observe(self.update_cut_surface_buttons,
-                                         names="value")
-        # Add a capture for a click event: if the active button is clicked,
-        # this resets the togglebuttons value to None and deletes the cut
-        # surface.
-        self.cut_surface_buttons.on_msg(self.check_if_reset_needed)
-
-        # Add slider to control position of cut surface
-        self.cut_slider = widgets.FloatSlider(min=0,
-                                              max=1,
-                                              description="Position:",
-                                              disabled=True,
-                                              value=0.5,
-                                              layout={"width": "350px"})
-        self.cut_checkbox = widgets.Checkbox(value=True,
-                                             description="Continuous update",
-                                             indent=False,
-                                             layout={"width": "20px"},
-                                             disabled=True)
-        self.cut_checkbox_link = widgets.jslink(
-            (self.cut_checkbox, 'value'),
-            (self.cut_slider, 'continuous_update'))
-        self.cut_slider.observe(self.update_cut_surface, names="value")
-
-        # Allow to change the thickness of the cut surface
-        self.cut_surface_thickness = widgets.BoundedFloatText(
-            value=0.05 * self.box_size.max(),
-            min=0,
-            layout={"width": "150px"},
-            disabled=True,
-            description="Thickness:",
-            style={'description_width': 'initial'})
-        self.cut_surface_thickness.observe(self.update_cut_surface,
-                                           names="value")
-        self.cut_thickness_link = widgets.jslink(
-            (self.cut_slider, 'step'), (self.cut_surface_thickness, 'value'))
-        self.cut_slider.observe(self.update_cut_surface, names="value")
-
-        # Put widgets into boxes
-        self.cut_surface_controls = widgets.HBox([
-            self.cut_surface_buttons,
-            widgets.VBox([
-                widgets.HBox([self.cut_slider, self.cut_checkbox]),
-                self.cut_surface_thickness
-            ])
-        ])
-
-        self.box = widgets.VBox([
-            widgets.HBox([self.renderer, self.cbar_image]),
-            widgets.VBox(self.vbox),
-            widgets.HBox([
+        self.additional_widgets = ipw.HBox([
                 self.opacity_slider, self.opacity_checkbox,
                 self.toggle_outline_button
-            ]), self.cut_surface_controls
-        ])
+            ])
 
-        # Update list of members to be returned in the SciPlot object
-        self.members.update({
-            "camera": self.camera,
-            "scene": self.scene,
-            "renderer": self.renderer
-        })
+        # self.box = ipw.VBox([
+        #     ipw.HBox([self.renderer, self.cbar_image]),
+        #     ipw.VBox(self.vbox),
+        #     ipw.HBox([
+        #         self.opacity_slider, self.opacity_checkbox,
+        #         self.toggle_outline_button
+        #     ]), self.cut_surface_controls
+        # ])
+
+        # # Update list of members to be returned in the SciPlot object
+        # self.members.update({
+        #     "camera": self.camera,
+        #     "scene": self.scene,
+        #     "renderer": self.renderer
+        # })
 
         return
+
+    def _ipython_display_(self):
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        # widgets_ = [self.figure, self.widgets]
+        # if self.overview["additional_widgets"] is not None:
+        #     wdgts.append(self.overview["additional_widgets"])
+        return ipw.VBox([self.figure, self.widgets.container, self.additional_widgets,
+            self.cut_surface_controls])
+
 
     def create_points_geometry(self):
         """
@@ -503,6 +436,120 @@ void main() {
         self.cbar_image.value = pil.Image.fromarray(
             image.reshape(shp))._repr_png_()
 
+
+
+
+    def create_cut_surface_controls(self):
+
+        # Opacity slider: top value controls opacity if no cut surface is
+        # active. If a cut curface is present, the upper slider is the opacity
+        # of the slice, while the lower slider value is the opacity of the
+        # data not in the cut surface.
+        self.opacity_slider = widgets.FloatRangeSlider(
+            min=0.0,
+            max=1.0,
+            value=[0.1, 1],
+            step=0.01,
+            description="Opacity slider: When no cut surface is active, the "
+            "max value of the range slider controls the overall opacity, "
+            "and the lower value has no effect. When a cut surface is "
+            "present, the max value is the opacity of the slice, while the "
+            "min value is the opacity of the background.",
+            continuous_update=True,
+            style={'description_width': '60px'})
+        self.opacity_slider.observe(self.update_opacity, names="value")
+        self.opacity_checkbox = widgets.Checkbox(
+            value=self.opacity_slider.continuous_update,
+            description="Continuous update",
+            indent=False,
+            layout={"width": "20px"})
+        self.opacity_checkbox_link = widgets.jslink(
+            (self.opacity_checkbox, 'value'),
+            (self.opacity_slider, 'continuous_update'))
+
+        self.toggle_outline_button = widgets.ToggleButton(value=show_outline,
+                                                          description='',
+                                                          button_style='')
+        self.toggle_outline_button.observe(self.toggle_outline, names="value")
+        # Run a trigger to update button text
+        self.toggle_outline({"new": show_outline})
+
+        # Add buttons to provide a choice of different cut surfaces:
+        # - Cartesian X, Y, Z
+        # - Cylindrical X, Y, Z (cylinder major axis)
+        # - Sperical R
+        # - Value-based iso-surface
+        # Note additional spaces required in cylindrical names because
+        # options must be unique.
+        self.cut_surface_buttons = widgets.ToggleButtons(
+            options=[('X ', self.cut_options["Xplane"]),
+                     ('Y ', self.cut_options["Yplane"]),
+                     ('Z ', self.cut_options["Zplane"]),
+                     ('R ', self.cut_options["Sphere"]),
+                     (' X ', self.cut_options["Xcylinder"]),
+                     (' Y ', self.cut_options["Ycylinder"]),
+                     (' Z ', self.cut_options["Zcylinder"]),
+                     ('', self.cut_options["Value"])],
+            value=None,
+            description='Cut surface:',
+            button_style='',
+            tooltips=[
+                'X-plane', 'Y-plane', 'Z-plane', 'Sphere', 'Cylinder-X',
+                'Cylinder-Y', 'Cylinder-Z', 'Value'
+            ],
+            icons=(['cube'] * 3) + ['circle-o'] + (['toggle-on'] * 3) +
+            ['magic'],
+            style={"button_width": "55px"},
+            layout={'width': '350px'})
+        self.cut_surface_buttons.observe(self.update_cut_surface_buttons,
+                                         names="value")
+        # Add a capture for a click event: if the active button is clicked,
+        # this resets the togglebuttons value to None and deletes the cut
+        # surface.
+        self.cut_surface_buttons.on_msg(self.check_if_reset_needed)
+
+        # Add slider to control position of cut surface
+        self.cut_slider = widgets.FloatSlider(min=0,
+                                              max=1,
+                                              description="Position:",
+                                              disabled=True,
+                                              value=0.5,
+                                              layout={"width": "350px"})
+        self.cut_checkbox = widgets.Checkbox(value=True,
+                                             description="Continuous update",
+                                             indent=False,
+                                             layout={"width": "20px"},
+                                             disabled=True)
+        self.cut_checkbox_link = widgets.jslink(
+            (self.cut_checkbox, 'value'),
+            (self.cut_slider, 'continuous_update'))
+        self.cut_slider.observe(self.update_cut_surface, names="value")
+
+        # Allow to change the thickness of the cut surface
+        self.cut_surface_thickness = widgets.BoundedFloatText(
+            value=0.05 * self.box_size.max(),
+            min=0,
+            layout={"width": "150px"},
+            disabled=True,
+            description="Thickness:",
+            style={'description_width': 'initial'})
+        self.cut_surface_thickness.observe(self.update_cut_surface,
+                                           names="value")
+        self.cut_thickness_link = widgets.jslink(
+            (self.cut_slider, 'step'), (self.cut_surface_thickness, 'value'))
+        self.cut_slider.observe(self.update_cut_surface, names="value")
+
+        # Put widgets into boxes
+        self.cut_surface_controls = widgets.HBox([
+            self.cut_surface_buttons,
+            widgets.VBox([
+                widgets.HBox([self.cut_slider, self.cut_checkbox]),
+                self.cut_surface_thickness
+            ])
+        ])
+        return
+
+
     def update_opacity(self, change):
         """
         Update opacity of all points when opacity slider is changed.
@@ -625,66 +672,66 @@ void main() {
         c3[:, 3] = newc
         self.points_geometry.attributes["rgba_color"].array = c3
 
-    def slice_data(self, change=None, autoscale_cmap=False):
-        """
-        Slice the extra dimensions down and update the slice values
-        """
-        self.vslice = self.data_arrays[self.name]
-        # Slice along dimensions with active sliders
-        for dim, val in self.slider.items():
-            if not val.disabled:
-                # self.lab[dim].value = self.make_slider_label(
-                #     self.slider_coord[self.name][dim], val.value)
-                # self.lab[dim].value = self.make_slider_label(
-                #     self.vslice.coords[dim], val.value, self.slider_axformatter[self.name][dim][False])
-                # self.vslice = self.vslice[val.dim, val.value]
+    # def slice_data(self, change=None, autoscale_cmap=False):
+    #     """
+    #     Slice the extra dimensions down and update the slice values
+    #     """
+    #     self.vslice = self.data_arrays[self.name]
+    #     # Slice along dimensions with active sliders
+    #     for dim, val in self.slider.items():
+    #         if not val.disabled:
+    #             # self.lab[dim].value = self.make_slider_label(
+    #             #     self.slider_coord[self.name][dim], val.value)
+    #             # self.lab[dim].value = self.make_slider_label(
+    #             #     self.vslice.coords[dim], val.value, self.slider_axformatter[self.name][dim][False])
+    #             # self.vslice = self.vslice[val.dim, val.value]
 
-                deltax = self.thickness_slider[dim].value
-                self.vslice = self.resample_image(self.vslice,
-                        rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
-                                                                     val.value + 0.5 * deltax],
-                                                            unit=self.vslice.coords[dim].unit)})[dim, 0]
-                self.vslice *= (deltax * sc.units.one)
+    #             deltax = self.thickness_slider[dim].value
+    #             self.vslice = self.resample_image(self.vslice,
+    #                     rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
+    #                                                                  val.value + 0.5 * deltax],
+    #                                                         unit=self.vslice.coords[dim].unit)})[dim, 0]
+    #             self.vslice *= (deltax * sc.units.one)
 
 
-        # Handle masks
-        if len(self.masks[self.name]) > 0:
-            # Use automatic broadcasting in Scipp variables
-            msk = sc.Variable(dims=self.vslice.dims,
-                              values=np.zeros(self.vslice.shape,
-                                              dtype=np.int32))
-            for m in self.masks[self.name]:
-                if self.masks[self.name][m].value:
-                    msk += sc.Variable(
-                        dims=self.vslice.masks[m].dims,
-                        values=self.vslice.masks[m].values.astype(np.int32))
-            msk = msk.values
+    #     # Handle masks
+    #     if len(self.masks[self.name]) > 0:
+    #         # Use automatic broadcasting in Scipp variables
+    #         msk = sc.Variable(dims=self.vslice.dims,
+    #                           values=np.zeros(self.vslice.shape,
+    #                                           dtype=np.int32))
+    #         for m in self.masks[self.name]:
+    #             if self.masks[self.name][m].value:
+    #                 msk += sc.Variable(
+    #                     dims=self.vslice.masks[m].dims,
+    #                     values=self.vslice.masks[m].values.astype(np.int32))
+    #         msk = msk.values
 
-        self.vslice = self.vslice.values.flatten()
-        if autoscale_cmap:
-            self.scalar_map.set_clim(self.vslice.min(), self.vslice.max())
-        colors = self.scalar_map.to_rgba(self.vslice).astype(np.float32)
+    #     self.vslice = self.vslice.values.flatten()
+    #     if autoscale_cmap:
+    #         self.scalar_map.set_clim(self.vslice.min(), self.vslice.max())
+    #     colors = self.scalar_map.to_rgba(self.vslice).astype(np.float32)
 
-        if len(self.masks[self.name]) > 0:
-            masks_inds = np.where(msk.flatten())
-            masks_colors = self.masks_scalar_map.to_rgba(
-                self.vslice[masks_inds]).astype(np.float32)
-            colors[masks_inds] = masks_colors
+    #     if len(self.masks[self.name]) > 0:
+    #         masks_inds = np.where(msk.flatten())
+    #         masks_colors = self.masks_scalar_map.to_rgba(
+    #             self.vslice[masks_inds]).astype(np.float32)
+    #         colors[masks_inds] = masks_colors
 
-        return colors
+    #     return colors
 
-    def update_slice(self, change=None, autoscale_cmap=False):
-        """
-        Update colors of points.
-        """
-        new_colors = self.slice_data(change=change, autoscale_cmap=autoscale_cmap)
-        new_colors[:,
-                   3] = self.points_geometry.attributes["rgba_color"].array[:,
-                                                                            3]
-        self.points_geometry.attributes["rgba_color"].array = new_colors
-        if self.cut_surface_buttons.value == self.cut_options["Value"]:
-            self.update_cut_surface(None)
-        return
+    # def update_slice(self, change=None, autoscale_cmap=False):
+    #     """
+    #     Update colors of points.
+    #     """
+    #     new_colors = self.slice_data(change=change, autoscale_cmap=autoscale_cmap)
+    #     new_colors[:,
+    #                3] = self.points_geometry.attributes["rgba_color"].array[:,
+    #                                                                         3]
+    #     self.points_geometry.attributes["rgba_color"].array = new_colors
+    #     if self.cut_surface_buttons.value == self.cut_options["Value"]:
+    #         self.update_cut_surface(None)
+    #     return
 
     def toggle_mask(self, change):
         """

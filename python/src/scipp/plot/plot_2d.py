@@ -69,7 +69,7 @@ def plot_2d(scipp_obj_dict=None,
     return sp
 
 
-class SciPlot2d():
+class SciPlot2d:
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
