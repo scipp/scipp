@@ -74,7 +74,7 @@ stages:
               versionSpec: '3.x'
               addToPath: true
               architecture: 'x64'
-          - bash: pip install flake8 yapf==0.29.0
+          - bash: pip install flake8 yapf==0.30.0
             displayName: 'Install tooling'
           - bash: |
               set -ex
