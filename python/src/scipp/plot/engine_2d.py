@@ -278,7 +278,7 @@ class PlotEngine2d(PlotEngine):
         arr = self.dslice.values
         self.parent.image.set_data(arr)
         if extent is not None:
-            self.image.set_extent(extent)
+            self.parent.image.set_extent(extent)
 
         # Handle masks
         if len(self.parent.widgets.mask_checkboxes[self.name]) > 0:

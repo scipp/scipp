@@ -54,7 +54,7 @@ def plot_1d(scipp_obj_dict=None,
                   grid=grid)
 
     if filename is not None:
-        sp.fig.savefig(filename, bbox_inches="tight")
+        sp.figure.fig.savefig(filename, bbox_inches="tight")
 
     return sp
 

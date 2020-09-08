@@ -198,9 +198,9 @@ class SciPlot2d():
         # self.members["fig"] = self.fig
         # self.members["ax"] = self.ax
 
-        # # Connect changes in axes limits to resampling function
-        # self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
-        # self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
+        # Connect changes in axes limits to resampling function
+        self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
+        self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
 
         # # if self.cbar is not None:
         # #     self.fig.canvas.mpl_connect('pick_event', self.rescale_colorbar)
@@ -570,10 +570,10 @@ class SciPlot2d():
         # Make sure we don't overrun the original array bounds
         xylims["x"] = np.clip(
             self.ax.get_xlim(),
-            *sorted(self.slider_xlims[self.engine.name][self.button_dims[1]].values))
+            *sorted(self.engine.slider_xlims[self.engine.name][self.engine.button_dims[1]].values))
         xylims["y"] = np.clip(
             self.ax.get_ylim(),
-            *sorted(self.slider_xlims[self.engine.name][self.button_dims[0]].values))
+            *sorted(self.engine.slider_xlims[self.engine.name][self.engine.button_dims[0]].values))
 
         dx = np.abs(self.current_lims["x"][1] - self.current_lims["x"][0])
         dy = np.abs(self.current_lims["y"][1] - self.current_lims["y"][0])
@@ -585,14 +585,14 @@ class SciPlot2d():
         # avoid too many updates while panning.
         if diff > 0.1:
             self.current_lims = xylims
-            for xy, param in self.axparams.items():
+            for xy, param in self.engine.axparams.items():
                 # Create coordinate axes for resampled image array
                 self.engine.xyrebin[xy] = sc.Variable(
                     dims=[param["dim"]],
                     values=np.linspace(xylims[xy][0], xylims[xy][1],
                                        self.image_resolution[xy] + 1),
                     unit=self.engine.data_arrays[self.engine.name].coords[param["dim"]].unit)
-            self.update_image(extent=np.array(list(xylims.values())).flatten())
+            self.engine.update_image(extent=np.array(list(xylims.values())).flatten())
         return
 
 
