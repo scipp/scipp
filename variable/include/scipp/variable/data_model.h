@@ -136,6 +136,12 @@ private:
   std::optional<element_array<T>> m_variances;
 };
 
+} // namespace scipp::variable
+
+#include "scipp/variable/bucket_model.h"
+
+namespace scipp::variable {
+
 template <class T>
 VariableConceptHandle
 DataModel<T>::makeDefaultFromParent(const Dimensions &dims) const {

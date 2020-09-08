@@ -45,6 +45,48 @@ public:
     return false;
   }
 
+  // TODO data() returns base::data... can we even use this in transform like
+  // this?
+  template <class Elem> auto values() const noexcept {
+    // should convert this into element_array_view with begin_index() that
+    // returns a ViewIndex with subspan setup?
+    // maybe just a minimal helper class, providing everything transform needs,
+    // i.e.,
+    // not begin_index! transform uses
+    // data()
+    // dims()
+    // dataDims()
+    // => need to add indices, nested dim, buffer dims... from multiple inputs,
+    // and validate helper need to set BucketParams and use iterDims and
+    // dataDims from this, not m_buffer
+    // ... but data() needs to return events, not bucket indices (ok as is?)
+    // TODO note that all other accessors will be broken... how to manage access
+    // control?
+    auto view = m_transform.m_buffer->template values<Elem>();
+    view.m_offset = m_offset;
+    view.m_iterDims = m_iterDims;
+    view.m_dataDims = m_dataDims;
+    // should MultiIndex handle iter of bucket array, or should we pass full
+    // begin/end iterators here (or just the whole view)?
+    view.m_bucketParams =
+        BucketParams{m_transform.m_dim, m_transform.m_buffer->dims(),
+                     scipp::span{data(), data() + size()}};
+    return view;
+  }
+  template <class Elem> auto variances() const noexcept {
+    auto view = m_transform.m_buffer->template variances<Elem>();
+    view.m_offset = m_offset;
+    view.m_iterDims = m_iterDims;
+    view.m_dataDims = m_dataDims;
+    view.m_bucketParams =
+        BucketParams{m_transform.m_dim, m_transform.m_buffer->dims(),
+                     scipp::span{data(), data() + size()}};
+    return view;
+  }
+  bool hasVariances() const noexcept {
+    return m_transform.m_buffer->hasVariances();
+  }
+
 private:
   struct make_item {
     auto operator()(typename bucket_array_view::value_type &range) const {

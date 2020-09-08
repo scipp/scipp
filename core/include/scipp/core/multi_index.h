@@ -65,6 +65,10 @@ public:
 
   MultiIndex(const BucketParams &bucket_params, const Dimensions &iterDims,
              const DataDims &... dataDims) {
+    if (!bucket_params) {
+      *this = MultiIndex(iterDims, dataDims...);
+      return;
+    }
     const auto &nestedDims = bucket_params.dims;
     m_ndim_nested = nestedDims.ndim();
     m_nested_stride = nestedDims.offset(bucket_params.dim);
@@ -101,6 +105,8 @@ public:
   }
 
   constexpr void load_bucket_params() noexcept {
+    if (m_bucket_index >= scipp::size(m_indices))
+      return; // at end
     const auto [begin, end] = m_indices[m_bucket_index];
     m_shape[m_nested_dim_index] = end - begin;
     // TODO do not update dense

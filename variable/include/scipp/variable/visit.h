@@ -8,26 +8,52 @@
 #include <utility>
 #include <variant>
 
+#include "scipp/core/bucket.h"
+
 namespace scipp::variable {
 
+/// Access wrapper for a variable with known dtype.
 template <class T, class Var> struct VariableAccess {
   VariableAccess(Var &var) : m_var(&var) {}
-  using value_type = T;
+  bool is_buckets() const {
+    return m_var->dtype() == dtype<core::bucket<Variable>>;
+  }
   Dimensions dims() const { return m_var->dims(); }
-  auto values() const { return m_var->template values<T>(); }
-  auto variances() const { return m_var->template variances<T>(); }
-  bool hasVariances() const { return m_var->hasVariances(); }
+  auto values() const {
+    return is_buckets() ? m_var->template values<core::bucket<Variable>>()
+                              .template values<T>()
+                        : m_var->template values<T>();
+  }
+  auto variances() const {
+    return is_buckets() ? m_var->template values<core::bucket<Variable>>()
+                              .template variances<T>()
+                        : m_var->template variances<T>();
+  }
+  bool hasVariances() const {
+    return is_buckets()
+               ? m_var->template values<core::bucket<Variable>>().hasVariances()
+               : m_var->hasVariances();
+  }
   Variable clone() const { return copy(*m_var); }
   Var *m_var{nullptr};
+  using value_type = T;
+  // using value_type = typename decltype(m_var->template
+  // values<T>())::value_type;
 };
 template <class T, class Var> auto variable_access(Var &var) {
   return VariableAccess<T, Var>(var);
 }
 
 namespace visit_detail {
+template <class V> constexpr auto element_dtype(const V &v) noexcept {
+  if (v.dtype() == dtype<core::bucket<Variable>>)
+    return v.template values<core::bucket<Variable>>()[0].dtype();
+  return v.dtype();
+}
+
 template <template <class...> class Tuple, class... T, class... V>
 static bool holds_alternatives(Tuple<T...> &&, const V &... v) noexcept {
-  return ((dtype<T> == v.dtype()) && ...);
+  return ((dtype<T> == element_dtype(v)) && ...);
 }
 
 template <template <class...> class Tuple, class... T, class... V>

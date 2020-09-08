@@ -9,6 +9,7 @@
 #include "scipp/core/element/arg_list.h"
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
@@ -1082,4 +1083,23 @@ TEST(TransformFlagsTest, expect_all_or_none_have_variance_in_place) {
 TEST(TransformEigenTest, is_eigen_type_test) {
   EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Vector3d>);
   EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Matrix3d>);
+}
+
+class TransformBucketElementsTest : public ::testing::Test {
+protected:
+  using Model = variable::DataModel<bucket<Variable>>;
+  Dimensions dims{Dim::Y, 2};
+  element_array<std::pair<scipp::index, scipp::index>> indices{{0, 2}, {2, 4}};
+  Variable buffer =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  Variable var{std::make_unique<Model>(dims, indices, Dim::X, buffer)};
+};
+
+TEST_F(TransformBucketElementsTest, single_arg_in_place) {
+  transform_in_place<double>(
+      var, scipp::overloaded{transform_flags::expect_no_variance_arg<0>,
+                             [](auto &x) { x *= x; }});
+  Variable expected{
+      std::make_unique<Model>(dims, indices, Dim::X, buffer * buffer)};
+  EXPECT_EQ(var, expected);
 }

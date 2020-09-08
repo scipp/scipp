@@ -9,6 +9,7 @@
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "scipp/core/dimensions.h"
+#include "scipp/core/multi_index.h"
 #include "scipp/core/view_index.h"
 
 namespace scipp::core {
@@ -67,6 +68,9 @@ public:
   scipp::index size() const { return m_iterDims.volume(); }
   constexpr const Dimensions &dims() const noexcept { return m_iterDims; }
   constexpr const Dimensions &dataDims() const noexcept { return m_dataDims; }
+  constexpr const BucketParams &bucketParams() const noexcept {
+    return m_bucketParams;
+  }
 
   bool overlaps(const element_array_view &other) const {
     // TODO We could be less restrictive here and use a more sophisticated check
@@ -75,10 +79,11 @@ public:
     return (m_offset != other.m_offset) || (m_dataDims != other.m_dataDims);
   }
 
-protected:
+public:
   scipp::index m_offset{0};
   Dimensions m_iterDims;
   Dimensions m_dataDims;
+  BucketParams m_bucketParams{};
 };
 
 /// A view into multi-dimensional data, supporting slicing, index reordering,

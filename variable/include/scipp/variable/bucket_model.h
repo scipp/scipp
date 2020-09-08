@@ -11,9 +11,6 @@
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
 
-namespace scipp::dataset {
-class Dataset;
-}
 namespace scipp::variable {
 
 /// Specialization of DataModel for "bucketed" data. T could be Variable,
