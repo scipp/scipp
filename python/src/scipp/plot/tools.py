@@ -4,6 +4,7 @@
 
 # Scipp imports
 from .. import config
+from .._utils import name_with_unit
 from .._scipp import core as sc
 
 # Other imports
@@ -97,6 +98,10 @@ def parse_params(params=None,
     if parsed["color"] is not None:
         parsed["cmap"] = LinearSegmentedColormap.from_list(
             "tmp", [parsed["color"], parsed["color"]])
+
+    if variable is not None:
+        parsed["unit"] = name_with_unit(var=variable, name="")
+
 
     return parsed
 

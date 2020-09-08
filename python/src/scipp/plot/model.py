@@ -15,7 +15,7 @@ import ipywidgets as widgets
 import os
 
 
-class PlotEngine:
+class PlotModel:
     def __init__(self,
                  parent=None,
                  scipp_obj_dict=None,
@@ -82,7 +82,7 @@ class PlotEngine:
         # os.write(1, "Slicer 3\n".encode())
 
         # List mask names for each item
-        self.masks = {}
+        self.mask_names = {}
         # Size of the slider coordinate arrays
         self.dim_to_shape = {}
         # Store coordinates of dimensions that will be in sliders
@@ -288,8 +288,11 @@ class PlotEngine:
                 #     self.contains_multid_coord[name] = True
 
             # Include masks
+            # self.masks[name] = []
             for n, msk in array.masks.items():
                 self.data_arrays[name].masks[n] = msk
+            self.mask_names[name] = list(array.masks.keys())
+
 
         # os.write(1, "Slicer 4\n".encode())
 

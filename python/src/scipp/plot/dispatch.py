@@ -43,8 +43,8 @@ def dispatch(scipp_obj_dict,
                        mpl_line_params=mpl_line_params,
                        **kwargs)
     elif projection == "2d":
-        from .plot_2d import plot_2d
-        return plot_2d(scipp_obj_dict, **kwargs)
+        from .plot2d import plot2d
+        return plot2d(scipp_obj_dict, **kwargs)
     elif projection == "3d":
         from .plot_3d import plot_3d
         return plot_3d(scipp_obj_dict, **kwargs)

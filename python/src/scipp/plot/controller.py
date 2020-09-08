@@ -2,9 +2,9 @@ import ipywidgets as ipw
 import numpy as np
 
 
-class PlotWidgets:
+class PlotController:
 
-    def __init__(self, parent, engine, positions=None,
+    def __init__(self, presenter, positions=None,
                          button_options=None):
 
         # Initialise list for VBox container

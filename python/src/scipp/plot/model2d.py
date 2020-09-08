@@ -1,5 +1,5 @@
+from .model import PlotModel
 from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers, mask_to_float
-from .engine import PlotEngine
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 
@@ -8,7 +8,7 @@ import numpy as np
 import warnings
 
 
-class PlotEngine2d(PlotEngine):
+class PlotModel2d(PlotModel):
 
     def __init__(self,
                  parent=None,
