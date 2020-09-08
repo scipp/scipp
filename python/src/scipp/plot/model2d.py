@@ -11,7 +11,7 @@ import warnings
 class PlotModel2d(PlotModel):
 
     def __init__(self,
-                 parent=None,
+                 controller=None,
                  scipp_obj_dict=None,
                  axes=None,
                  masks=None,
@@ -21,15 +21,7 @@ class PlotModel2d(PlotModel):
                  vmax=None,
                  color=None):
 
-        super().__init__(parent=parent,
-                         scipp_obj_dict=scipp_obj_dict,
-                         axes=axes,
-                         masks=masks,
-                         cmap=cmap,
-                         log=log,
-                         vmin=vmin,
-                         vmax=vmax,
-                         color=color)
+        super().__init__(controller=controller)
 
         self.axparams = {"x": {}, "y": {}}
         self.button_dims = [None, None]
@@ -43,33 +35,33 @@ class PlotModel2d(PlotModel):
 
     def update_buttons(self, owner, event, dummy):
         toggle_slider = False
-        if not self.parent.widgets.slider[owner.dim].disabled:
+        if not self.controller.widgets.slider[owner.dim].disabled:
             toggle_slider = True
-            self.parent.widgets.slider[owner.dim].disabled = True
-            self.parent.widgets.thickness_slider[owner.dim].disabled = True
-        for dim, button in self.parent.widgets.buttons.items():
+            self.controller.widgets.slider[owner.dim].disabled = True
+            self.controller.widgets.thickness_slider[owner.dim].disabled = True
+        for dim, button in self.controller.widgets.buttons.items():
             if (button.value == owner.value) and (dim != owner.dim):
-                if self.parent.widgets.slider[dim].disabled:
+                if self.controller.widgets.slider[dim].disabled:
                     button.value = owner.old_value
                 else:
                     button.value = None
                 button.old_value = button.value
                 if toggle_slider:
-                    self.parent.widgets.slider[dim].disabled = False
-                    self.parent.widgets.thickness_slider[dim].disabled = False
+                    self.controller.widgets.slider[dim].disabled = False
+                    self.controller.widgets.thickness_slider[dim].disabled = False
         owner.old_value = owner.value
         self.update_axes()
         return
 
     def update_axes(self):
         # Go through the buttons and select the right coordinates for the axes
-        for dim, button in self.parent.widgets.buttons.items():
-            if self.parent.widgets.slider[dim].disabled:
+        for dim, button in self.controller.widgets.buttons.items():
+            if self.controller.widgets.slider[dim].disabled:
                 but_val = button.value.lower()
-                self.parent.extent[but_val] = self.slider_xlims[self.name][dim].values
-                self.axparams[but_val]["lims"] = self.parent.extent[but_val].copy()
-                if getattr(self.parent,
-                           "log" + but_val) and (self.parent.extent[but_val][0] <= 0):
+                self.controller.extent[but_val] = self.slider_xlims[self.name][dim].values
+                self.axparams[but_val]["lims"] = self.controller.extent[but_val].copy()
+                if getattr(self.controller,
+                           "log" + but_val) and (self.controller.extent[but_val][0] <= 0):
                     self.axparams[but_val]["lims"][
                         0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
                 # self.axparams[but_val]["labels"] = name_with_unit(
@@ -82,9 +74,9 @@ class PlotModel2d(PlotModel):
                 self.button_dims[but_val == "x"] = button.dim
                 self.dim_to_xy[dim] = but_val
 
-        extent_array = np.array(list(self.parent.extent.values())).flatten()
-        self.parent.current_lims['x'] = extent_array[:2]
-        self.parent.current_lims['y'] = extent_array[2:]
+        extent_array = np.array(list(self.controller.extent.values())).flatten()
+        self.controller.current_lims['x'] = extent_array[:2]
+        self.controller.current_lims['y'] = extent_array[2:]
 
         # TODO: if labels are used on a 2D coordinates, we need to update
         # the axes tick formatter to use xyrebin coords
@@ -95,15 +87,15 @@ class PlotModel2d(PlotModel):
                 dims=[param["dim"]],
                 values=np.linspace(extent_array[0 + offset],
                                    extent_array[1 + offset],
-                                   self.parent.image_resolution[xy] + 1),
+                                   self.controller.image_resolution[xy] + 1),
                 unit=self.data_arrays[self.name].coords[param["dim"]].unit)
 
         # Set axes labels
-        self.parent.ax.set_xlabel(self.axparams["x"]["labels"])
-        self.parent.ax.set_ylabel(self.axparams["y"]["labels"])
+        self.controller.ax.set_xlabel(self.axparams["x"]["labels"])
+        self.controller.ax.set_ylabel(self.axparams["y"]["labels"])
         for xy, param in self.axparams.items():
-            axis = getattr(self.parent.ax, "{}axis".format(xy))
-            is_log = getattr(self.parent, "log{}".format(xy))
+            axis = getattr(self.controller.ax, "{}axis".format(xy))
+            is_log = getattr(self.controller, "log{}".format(xy))
             axis.set_major_formatter(
                 self.axformatter[self.name][param["dim"]][is_log])
             axis.set_major_locator(
@@ -112,12 +104,12 @@ class PlotModel2d(PlotModel):
         # Set axes limits and ticks
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
-            self.parent.image.set_extent(extent_array)
+            self.controller.image.set_extent(extent_array)
             # if len(self.masks[self.name]) > 0:
-            for m, im in self.parent.mask_image.items():
+            for m, im in self.controller.mask_image.items():
                 im.set_extent(extent_array)
-            self.parent.ax.set_xlim(self.axparams["x"]["lims"])
-            self.parent.ax.set_ylim(self.axparams["y"]["lims"])
+            self.controller.ax.set_xlim(self.axparams["x"]["lims"])
+            self.controller.ax.set_ylim(self.axparams["y"]["lims"])
 
         # # If there are no multi-d coords, we update the edges and widths only
         # # once here.
@@ -148,12 +140,12 @@ class PlotModel2d(PlotModel):
         #             # Insert the new tuple
         #             self.fig.canvas.toolbar._nav_stack._elements[0][
         #                 key] = tuple(alist)
-        self.parent.reset_home_button()
+        self.controller.reset_home_button()
 
-        self.parent.rescale_to_data()
+        self.controller.rescale_to_data()
 
 
-        if self.parent.profile_viewer is not None:
+        if self.controller.profile_viewer is not None:
             self.update_profile_axes()
 
         return
@@ -167,7 +159,7 @@ class PlotModel2d(PlotModel):
         data_slice = self.data_arrays[self.name]
 
         # Slice along dimensions with active sliders
-        for dim, val in self.parent.widgets.slider.items():
+        for dim, val in self.controller.widgets.slider.items():
             if not val.disabled:
                 # self.lab[dim].value = self.make_slider_label(
                 #     self.slider_label[self.engine.name][dim]["coord"], val.value)
@@ -175,7 +167,7 @@ class PlotModel2d(PlotModel):
                 # self.lab[dim].value = self.make_slider_label(
                 #     val.value, self.slider_axformatter[self.engine.name][dim][False])
                 # self.lab[dim].value = self.slider_axformatter[self.engine.name][dim][False].format_data_short(val.value)
-                deltax = self.parent.widgets.thickness_slider[dim].value
+                deltax = self.controller.widgets.thickness_slider[dim].value
 
                 # print(data_slice)
                 # print(sc.Variable([dim], values=[val.value - 0.5 * deltax,
@@ -276,12 +268,12 @@ class PlotModel2d(PlotModel):
 
         # Update the matplotlib image data
         arr = self.dslice.values
-        self.parent.image.set_data(arr)
+        self.controller.image.set_data(arr)
         if extent is not None:
-            self.parent.image.set_extent(extent)
+            self.controller.image.set_extent(extent)
 
         # Handle masks
-        if len(self.parent.widgets.mask_checkboxes[self.name]) > 0:
+        if len(self.controller.widgets.mask_checkboxes[self.name]) > 0:
             # Use scipp's automatic broadcast functionality to broadcast
             # lower dimension masks to higher dimensions.
             # TODO: creating a Variable here could become expensive when
@@ -294,18 +286,18 @@ class PlotModel2d(PlotModel):
             base_mask = sc.Variable(dims=self.dslice.dims,
                                     values=np.ones(self.dslice.shape,
                                                    dtype=np.int32))
-            for m in self.parent.widgets.mask_checkboxes[self.name]:
+            for m in self.controller.widgets.mask_checkboxes[self.name]:
                 if m in self.dslice.masks:
                     msk = base_mask * sc.Variable(
                         dims=self.dslice.masks[m].dims,
                         values=self.dslice.masks[m].values.astype(np.int32))
-                    self.parent.mask_image[m].set_data(
+                    self.controller.mask_image[m].set_data(
                         mask_to_float(msk.values, arr))
                     if extent is not None:
-                        self.parent.mask_image[m].set_extent(extent)
+                        self.controller.mask_image[m].set_extent(extent)
                 else:
-                    self.parent.mask_image[m].set_visible(False)
-                    self.parent.mask_image[m].set_url("hide")
+                    self.controller.mask_image[m].set_visible(False)
+                    self.controller.mask_image[m].set_url("hide")
 
         # if self.autoscale_cbar:
         #     cbar_params = parse_params(globs=self.vminmax,
@@ -321,4 +313,4 @@ class PlotModel2d(PlotModel):
         #             self.members["masks"][m].set_norm(
         #                 self.params["values"][self.engine.name]["norm"])
 
-        self.parent.fig.canvas.draw_idle()
+        self.controller.fig.canvas.draw_idle()

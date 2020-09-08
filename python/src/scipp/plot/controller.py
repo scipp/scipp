@@ -25,7 +25,7 @@ class PlotController:
                  vmin=None,
                  vmax=None,
                  color=None,
-                 # button_options=None,
+                 button_options=None,
                  # aspect=None,
                  positions=None):
 
@@ -34,7 +34,7 @@ class PlotController:
         # self.parent = parent
         # self.scipp_obj_dict = scipp_obj_dict
         self.data_arrays = {}
-        self.widgets = None
+        # self.widgets = None
 
         self.axes = axes
 
@@ -214,8 +214,8 @@ class PlotController:
 
         print(self.data_arrays)
 
-        # self.widgets = PlotWidgets(controller=self,
-        #                  button_options=['X'])
+        self.widgets = PlotWidgets(controller=self,
+                         button_options=button_options)
         return
 
     def process_axes_dimensions(self, array, positions=None):

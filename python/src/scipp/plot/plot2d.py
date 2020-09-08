@@ -87,24 +87,24 @@ class SciPlot2d:
                  resolution=None):
 
 
-        self.controller = PlotController()
-
-        self.model = PlotModel2d(controller=self.controller,
-                         scipp_obj_dict=scipp_obj_dict,
+        self.controller = PlotController(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
                          cmap=cmap,
                          log=log,
                          vmin=vmin,
                          vmax=vmax,
-                         color=color)
+                         color=color,
+            button_options=['X', 'Y'])
+
+        self.model = PlotModel2d(controller=self.controller)
                          # aspect=aspect)
                          # button_options=['X', 'Y'])
 
-        self.controller.widgets = PlotWidgets(model=self.model, #engine=self.engine,
-                         button_options=['X', 'Y'])
+        # self.controller.widgets = PlotWidgets(controller=self.controller, #engine=self.engine,
+        #                  button_options=['X', 'Y'])
 
-        self.view = PlotView2d(presenter=self.presenter,
+        self.view = PlotView2d(controller=self.controller,
             ax=ax, cax=cax, aspect=aspect,
             cmap=self.model.params["values"][self.model.name]["cmap"],
             norm=self.model.params["values"][self.model.name]["norm"],

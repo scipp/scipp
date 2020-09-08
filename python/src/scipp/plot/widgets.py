@@ -4,7 +4,7 @@ import numpy as np
 
 class PlotWidgets:
 
-    def __init__(self, presenter, positions=None,
+    def __init__(self, controller, positions=None,
                          button_options=None):
 
         # Initialise list for VBox container

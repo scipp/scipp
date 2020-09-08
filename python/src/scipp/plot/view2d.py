@@ -27,7 +27,7 @@ class PlotView2d:
                  # scipp_obj_dict=None,
                  # axes=None,
                  # masks=None,
-                 presenter=None,
+                 controller=None,
                  ax=None,
                  cax=None,
                  aspect=None,
@@ -122,7 +122,7 @@ class PlotView2d:
             self.ax.set_yscale("log")
 
         # Call update_slice once to make the initial image
-        self.presenter.update_axes()
+        self.controller.update_axes()
 
         self.figure = self.fig.canvas
         # self.vbox = widgets.VBox(self.vbox)
