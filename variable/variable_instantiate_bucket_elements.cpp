@@ -6,6 +6,7 @@
 
 namespace scipp::variable {
 
+INSTANTIATE_VARIABLE(pair_int64, std::pair<scipp::index, scipp::index>)
 INSTANTIATE_BUCKET_VARIABLE(VariableView, bucket<Variable>)
 
 /*
