@@ -177,6 +177,37 @@ TEST_F(MultiIndexTest, 1d_array_of_1d_buckets) {
   check_with_buckets(buf, dim, {{4, 7}, {0, 4}}, x, x, {4, 5, 6, 0, 1, 2, 3});
 }
 
+TEST_F(MultiIndexTest, 1d_array_of_1d_buckets_and_dense) {
+  const Dim dim = Dim::Row;
+  Dimensions buf{{dim}, {7}}; // 1d cut into two sections
+  // natural order no gaps
+  check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, Dimensions{}, Dim::Invalid, {},
+                     x, x, x, {0, 1, 2, 3, 4, 5, 6}, {0, 0, 0, 1, 1, 1, 1});
+  // gap between
+  check_with_buckets(buf, dim, {{0, 3}, {4, 7}}, Dimensions{}, Dim::Invalid, {},
+                     x, x, x, {0, 1, 2, 4, 5, 6}, {0, 0, 0, 1, 1, 1});
+  // gap at start
+  check_with_buckets(buf, dim, {{1, 3}, {3, 7}}, Dimensions{}, Dim::Invalid, {},
+                     x, x, x, {1, 2, 3, 4, 5, 6}, {0, 0, 1, 1, 1, 1});
+  // out of order
+  // Note that out of order bucket indices is *not* to be confused with
+  // reversing a dimension, i.e., we do *not* expect {1,1,1,0,0,0,0} for the
+  // dense part.
+  check_with_buckets(buf, dim, {{4, 7}, {0, 4}}, Dimensions{}, Dim::Invalid, {},
+                     x, x, x, {4, 5, 6, 0, 1, 2, 3}, {0, 0, 0, 1, 1, 1, 1});
+}
+
+TEST_F(MultiIndexTest, two_1d_arrays_of_1d_buckets) {
+  const Dim dim = Dim::Row;
+  Dimensions buf{{dim}, {1}};
+  check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, buf, dim, {{4, 7}, {0, 4}}, x,
+                     x, x, {0, 1, 2, 3, 4, 5, 6}, {4, 5, 6, 0, 1, 2, 3});
+  // slice
+  check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, buf, dim,
+                     {{1, 4}, {5, 9}, {8, 8}, {8, 8}}, x, x, yx,
+                     {0, 1, 2, 3, 4, 5, 6}, {1, 2, 3, 5, 6, 7, 8});
+}
+
 TEST_F(MultiIndexTest, 1d_array_of_2d_buckets) {
   Dimensions buf{{Dim("a"), Dim("b")}, {2, 3}}; // 2d cut into two sections
   // cut along inner
@@ -211,24 +242,4 @@ TEST_F(MultiIndexTest, 2d_array_of_1d_buckets) {
   check_with_buckets(buf, dim,
                      {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}}, y, xy,
                      {0, 1, 2, 3, 4, 5});
-}
-
-TEST_F(MultiIndexTest, 1d_array_of_1d_buckets_and_dense) {
-  const Dim dim = Dim::Row;
-  Dimensions buf{{dim}, {7}}; // 1d cut into two sections
-  // natural order no gaps
-  check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, Dimensions{}, Dim::Invalid, {},
-                     x, x, x, {0, 1, 2, 3, 4, 5, 6}, {0, 0, 0, 1, 1, 1, 1});
-  // gap between
-  check_with_buckets(buf, dim, {{0, 3}, {4, 7}}, Dimensions{}, Dim::Invalid, {},
-                     x, x, x, {0, 1, 2, 4, 5, 6}, {0, 0, 0, 1, 1, 1});
-  // gap at start
-  check_with_buckets(buf, dim, {{1, 3}, {3, 7}}, Dimensions{}, Dim::Invalid, {},
-                     x, x, x, {1, 2, 3, 4, 5, 6}, {0, 0, 1, 1, 1, 1});
-  // out of order
-  // Note that out of order bucket indices is *not* to be confused with
-  // reversing a dimension, i.e., we do *not* expect {1,1,1,0,0,0,0} for the
-  // dense part.
-  check_with_buckets(buf, dim, {{4, 7}, {0, 4}}, Dimensions{}, Dim::Invalid, {},
-                     x, x, x, {4, 5, 6, 0, 1, 2, 3}, {0, 0, 0, 1, 1, 1, 1});
 }
