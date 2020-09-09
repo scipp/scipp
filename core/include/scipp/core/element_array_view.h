@@ -101,7 +101,12 @@ public:
                    const Dimensions &iterDims, const Dimensions &dataDims,
                    const BucketParams &bucketParams = BucketParams{})
       : element_array_view(offset, iterDims, dataDims, bucketParams),
-        m_buffer(buffer) {}
+        m_buffer(buffer) {
+    // Size of buffer referred to be bucket indices along the sliced dim is
+    // irrelevant and gets in the way in MultiIndex.
+    if (m_bucketParams)
+      m_bucketParams.dims.resize(m_bucketParams.dim, 1);
+  }
 
   /// Construct a ElementArrayView from another ElementArrayView, with different
   /// iteration dimensions.
