@@ -8,6 +8,8 @@ import numpy as np
 from ._scipp import core as sc
 from . import config
 from ._utils import is_data_array
+from dataclasses import dataclass
+from typing import Any
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -52,6 +54,13 @@ def _color_variants(hex_color):
     r, g, b = colorsys.hsv_to_rgb(h, s, v)
     side = _rgb_to_hex([r, g, b])
     return [hex_color, top, side]
+
+
+@dataclass
+class Item:
+    name: str
+    data: Any
+    color: str
 
 
 class VariableDrawer():
@@ -405,25 +414,72 @@ class DatasetDrawer():
                 else:
                     area_z.append(item)
 
-        def draw_area(area, layout_direction, reverse=False):
+        def _append_drawer(content, width, height, offset, layout_direction,
+                           area_item):
+            name = area_item[0]
+            data = area_item[1]
+            color = area_item[2]
+            drawer = VariableDrawer(data, margin, target_dims=dims)
+            content += drawer.draw(color=color, offset=offset, title=name)
+            size = drawer.size()
+            if layout_direction == 'x':
+                width += size[0]
+                height = max(height, size[1])
+                offset = [width, 0]
+            else:
+                width = max(width, size[0])
+                height += size[1]
+                offset = [0, height]
+            return content, width, height, offset
+
+        def _append_ellipsis(content, width, height, offset, layout_direction,
+                             text):
+            drawer = VariableDrawer(data, margin, target_dims=dims)
+            content += drawer.draw(color=color, offset=offset, title=name)
+            size = drawer.size()
+            if layout_direction == 'x':
+                width += size[0]
+                height = max(height, size[1])
+                offset = [width, 0]
+            else:
+                width = max(width, size[0])
+                height += size[1]
+                offset = [0, height]
+            return content, width, height, offset
+
+        def draw_area(area, layout_direction, reverse=False, truncate=False):
             content = ''
             width = 0
             height = 0
             offset = [0, 0]
-            if reverse:
-                area = reversed(area)
-            for name, data, color in area:
-                drawer = VariableDrawer(data, margin, target_dims=dims)
-                content += drawer.draw(color=color, offset=offset, title=name)
-                size = drawer.size()
-                if layout_direction == 'x':
-                    width += size[0]
-                    height = max(height, size[1])
-                    offset = [width, 0]
+
+            number_of_items = len(area)
+            min_items_before_worth_truncating = 5
+            if truncate and number_of_items > min_items_before_worth_truncating:
+                if reverse:
+                    first_item = area[-1]
+                    last_item = area[0]
                 else:
-                    width = max(width, size[0])
-                    height += size[1]
-                    offset = [0, height]
+                    first_item = area[0]
+                    last_item = area[-1]
+                # Draw first variable
+                content, width, height, offset = _append_drawer(
+                    content, width, height, offset, layout_direction,
+                    first_item)
+                # Draw ellipsis
+                _append_ellipsis(content, width, height, offset,
+                                 layout_direction,
+                                 f"({number_of_items-2} more 0D variables)")
+                # Draw last variable
+                content, width, height, offset = _append_drawer(
+                    content, width, height, offset, layout_direction,
+                    last_item)
+            else:
+                if reverse:
+                    area = reversed(area)
+                for item in area:
+                    content, width, height, offset = _append_drawer(
+                        content, width, height, offset, layout_direction, item)
             return content, width, height
 
         top = 0
@@ -444,7 +500,7 @@ class DatasetDrawer():
         content += '<g transform="translate({},{})">{}</g>'.format(
             -w_y, height - h_y, c_y)
 
-        c, w_0d, h_0d = draw_area(area_0d, 'x', reverse=True)
+        c, w_0d, h_0d = draw_area(area_0d, 'x', reverse=True, truncate=True)
         content += '<g transform="translate({},{})">{}</g>'.format(
             -w_0d, height, c)
         width += max(w_y, w_0d)
