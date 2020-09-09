@@ -180,7 +180,7 @@ class PlotView2d:
         self.fig.canvas.draw_idle()
 
     def toggle_mask(self, change):
-        im = self.mask_image[change["owner"].masks_name]
+        im = self.mask_image[change["owner"].mask_name]
         if im.get_url() != "hide":
             im.set_visible(change["new"])
         self.fig.canvas.draw_idle()
@@ -304,8 +304,11 @@ class PlotView2d:
     def update_slice(self, new_values):
         self.image.set_data(new_values["values"])
         for m in self.mask_image:
-            self.mask_image[m].set_data(new_values["masks"][m])
-
+            if new_values["masks"][m] is not None:
+                self.mask_image[m].set_data(new_values["masks"][m])
+            else:
+                self.mask_image[m].set_visible(False)
+                self.mask_image[m].set_url("hide")
 
 
     def _ipython_display_(self):

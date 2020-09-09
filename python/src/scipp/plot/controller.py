@@ -492,37 +492,20 @@ class PlotController:
         self.update_slice()
         self.rescale_to_data()
 
-    # def gather_dimensions_to_slice(self):
-    #     slices = {}
-    #     # Slice along dimensions with active sliders
-    #     for dim, val in self.widgets.slider.items():
-    #         if not val.disabled:
-    #             # self.lab[dim].value = self.make_slider_label(
-    #             #     self.slider_label[self.engine.name][dim]["coord"], val.value)
-    #             # print(self.slider_axformatter)
-    #             # self.lab[dim].value = self.make_slider_label(
-    #             #     val.value, self.slider_axformatter[self.engine.name][dim][False])
-    #             # self.lab[dim].value = self.slider_axformatter[self.engine.name][dim][False].format_data_short(val.value)
-    #             slices[dim] = {"location": val.value,
-    #             "thickness": self.controller.widgets.thickness_slider[dim].value}
-    #     return slices
 
     def update_slice(self, change=None):
         slices = {}
         # Slice along dimensions with active sliders
         for dim, val in self.widgets.slider.items():
             if not val.disabled:
-                # self.lab[dim].value = self.make_slider_label(
-                #     self.slider_label[self.engine.name][dim]["coord"], val.value)
-                # print(self.slider_axformatter)
-                # self.lab[dim].value = self.make_slider_label(
-                #     val.value, self.slider_axformatter[self.engine.name][dim][False])
-                # self.lab[dim].value = self.slider_axformatter[self.engine.name][dim][False].format_data_short(val.value)
                 slices[dim] = {"location": val.value,
                 "thickness": self.controller.widgets.thickness_slider[dim].value}
         # return slices
-        new_values = self.model.update_slice(slices)
+        new_values = self.model.update_slice(slices, self.mask_names)
         self.view.update_slice(new_values)
 
-def update_viewport_image(self, xylims):
-    self.model.update_viewport_image(xylims)
+    def update_viewport_image(self, xylims):
+        self.model.update_viewport_image(xylims)
+
+    def toggle_mask(self, change):
+        self.view.toggle_mask(change)

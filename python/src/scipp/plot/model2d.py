@@ -254,7 +254,7 @@ class PlotModel2d(PlotModel):
         self.vslice *= self.xywidth["y"]
 
     # def update_slice(self, change=None):
-    def update_slice(self, slices):
+    def update_slice(self, slices, mask_names):
         """
         Slice data according to new slider value and update the image.
         """
@@ -264,11 +264,11 @@ class PlotModel2d(PlotModel):
         #     self.slice_coords()
         self.slice_data(slices)
         # Update image with resampling
-        new_values = self.update_image()
+        new_values = self.update_image(mask_names=mask_names)
         return new_values
 
 
-    def update_image(self, extent=None):
+    def update_image(self, extent=None, mask_names=None):
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
         xy = "yx"
@@ -320,7 +320,7 @@ class PlotModel2d(PlotModel):
         #     self.controller.image.set_extent(extent)
 
         # Handle masks
-        if len(self.controller.widgets.mask_checkboxes[self.name]) > 0:
+        if len(mask_names[self.name]) > 0:
             # Use scipp's automatic broadcast functionality to broadcast
             # lower dimension masks to higher dimensions.
             # TODO: creating a Variable here could become expensive when
@@ -333,7 +333,7 @@ class PlotModel2d(PlotModel):
             base_mask = sc.Variable(dims=self.dslice.dims,
                                     values=np.ones(self.dslice.shape,
                                                    dtype=np.int32))
-            for m in self.controller.widgets.mask_checkboxes[self.name]:
+            for m in mask_names[self.name]:
                 if m in self.dslice.masks:
                     msk = base_mask * sc.Variable(
                         dims=self.dslice.masks[m].dims,
@@ -341,11 +341,12 @@ class PlotModel2d(PlotModel):
                     # self.controller.mask_image[m].set_data(
                     #     mask_to_float(msk.values, arr))
                     new_values["masks"][m] = mask_to_float(msk.values, arr)
-                    if extent is not None:
-                        self.controller.mask_image[m].set_extent(extent)
+                    # if extent is not None:
+                    #     self.controller.mask_image[m].set_extent(extent)
                 else:
-                    self.controller.mask_image[m].set_visible(False)
-                    self.controller.mask_image[m].set_url("hide")
+                    # self.controller.mask_image[m].set_visible(False)
+                    # self.controller.mask_image[m].set_url("hide")
+                    new_values["masks"][m] = None
 
         # if self.autoscale_cbar:
         #     cbar_params = parse_params(globs=self.vminmax,
