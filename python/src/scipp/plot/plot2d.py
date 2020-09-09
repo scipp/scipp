@@ -4,11 +4,12 @@
 
 # Scipp imports
 from .. import config
-from .engine_2d import PlotEngine2d
-from .render import render_plot
+from .controller import PlotController
+from .model2d import PlotModel2d
+# from .render import render_plot
 # from .profiler import Profiler
 from .tools import to_bin_edges, parse_params
-from .widgets import PlotWidgets
+from .view2d import PlotView2d
 from .._utils import name_with_unit
 from .._scipp import core as sc
 from .. import detail
@@ -61,7 +62,7 @@ def plot2d(scipp_obj_dict=None,
                   resolution=resolution)
 
     if filename is not None:
-        sp.fig.savefig(filename, bbox_inches="tight")
+        sp.savefig(filename)
 
     # if ax is None:
     #     render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
@@ -95,9 +96,16 @@ class SciPlot2d:
                          vmin=vmin,
                          vmax=vmax,
                          color=color,
+                         logx=logx,
+                         logy=logy,
             button_options=['X', 'Y'])
 
-        self.model = PlotModel2d(controller=self.controller)
+        self.model = PlotModel2d(controller=self.controller,
+            scipp_obj_dict=scipp_obj_dict,
+            resolution=resolution)
+
+        # Connect controller to model
+        self.controller.model = self.model
                          # aspect=aspect)
                          # button_options=['X', 'Y'])
 
@@ -106,17 +114,24 @@ class SciPlot2d:
 
         self.view = PlotView2d(controller=self.controller,
             ax=ax, cax=cax, aspect=aspect,
-            cmap=self.model.params["values"][self.model.name]["cmap"],
-            norm=self.model.params["values"][self.model.name]["norm"],
-            title=self.model.name,
-            cbar=self.model.params["values"][self.model.name]["cbar"],
-            unit=self.model.params["values"][self.model.name]["unit"],
-            mask_cmap=self.model.params["masks"][self.model.name]["cmap"],
-            mask_name=self.model.mask_names)
+            cmap=self.controller.params["values"][self.controller.name]["cmap"],
+            norm=self.controller.params["values"][self.controller.name]["norm"],
+            title=self.controller.name,
+            cbar=self.controller.params["values"][self.controller.name]["cbar"],
+            unit=self.controller.params["values"][self.controller.name]["unit"],
+            mask_cmap=self.controller.params["masks"][self.controller.name]["cmap"],
+            mask_names=self.controller.mask_names[self.controller.name],
+            logx=logx,
+            logy=logy)
+
+        self.controller.view = self.view
 
         # Profile view
         self.profile = None
 
+
+        # Call update_slice once to make the initial image
+        self.controller.update_axes()
 
 
         return
@@ -128,5 +143,7 @@ class SciPlot2d:
         # widgets_ = [self.figure, self.widgets]
         # if self.overview["additional_widgets"] is not None:
         #     wdgts.append(self.overview["additional_widgets"])
-        return ipw.VBox([self.figure, self.widgets.container])
+        return ipw.VBox([self.view._to_widget(), self.controller._to_widget()])
 
+    def savefig(self, filename=None):
+        self.view.savefig(filename=filename)

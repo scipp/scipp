@@ -4,6 +4,7 @@
 
 from .. import config
 from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers
+from .widgets import PlotWidgets
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 
@@ -11,7 +12,7 @@ from .._scipp import core as sc
 import numpy as np
 import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
-import ipywidgets as widgets
+# import ipywidgets as widgets
 import os
 
 
@@ -25,6 +26,8 @@ class PlotController:
                  vmin=None,
                  vmax=None,
                  color=None,
+                 logx=False,
+                 logy=False,
                  button_options=None,
                  # aspect=None,
                  positions=None):
@@ -33,10 +36,16 @@ class PlotController:
 
         # self.parent = parent
         # self.scipp_obj_dict = scipp_obj_dict
-        self.data_arrays = {}
+        # self.data_arrays = {}
         # self.widgets = None
 
+        self.model = None
+        self.profile = None
+        self.view = None
+
         self.axes = axes
+        self.logx = logx
+        self.logy = logy
 
         # # Member container for dict output
         # self.members = dict(widgets=dict(sliders=dict(),
@@ -86,9 +95,9 @@ class PlotController:
         # Size of the slider coordinate arrays
         self.dim_to_shape = {}
         # Store coordinates of dimensions that will be in sliders
-        # self.slider_coord = {}
+        self.coords = {}
         # Store coordinate min and max limits
-        self.slider_xlims = {}
+        self.xlims = {}
         # Store ticklabels for a dimension
         # self.slider_ticks = {}
         # Store labels for sliders if any
@@ -132,24 +141,25 @@ class PlotController:
             # self.process_axes_dimensions()
 
 
-            # print(array)
-            adims = array.dims
+            # # print(array)
+            array_dims = array.dims
             for dim in self.axes:
-                if dim not in adims:
+                if dim not in array_dims:
                     underlying_dim = array.coords[dim].dims[-1]
-                    adims[adims.index(underlying_dim)] = dim
+                    array_dims[array_dims.index(underlying_dim)] = dim
+
             # print(adims)
 
-            self.data_arrays[name] = sc.DataArray(
-                data=sc.Variable(dims=adims,
-                                 unit=sc.units.counts,
-                                 values=array.values,
-                                 variances=array.variances,
-                                 dtype=sc.dtype.float64))
-            # print("================")
-            # print(self.data_arrays[name])
-            # print("================")
-            # self.name = name
+            # self.data_arrays[name] = sc.DataArray(
+            #     data=sc.Variable(dims=adims,
+            #                      unit=sc.units.counts,
+            #                      values=array.values,
+            #                      variances=array.variances,
+            #                      dtype=sc.dtype.float64))
+            # # print("================")
+            # # print(self.data_arrays[name])
+            # # print("================")
+            # # self.name = name
 
             self.params["values"][name] = parse_params(globs=globs,
                                                        variable=array.data)
@@ -165,16 +175,21 @@ class PlotController:
             # dim_to_shape = dict(zip(array.dims, array.shape))
 
             # Size of the slider coordinate arrays
-            self.dim_to_shape[name] = dict(zip(self.data_arrays[name].dims, self.data_arrays[name].shape))
+            # self.dim_to_shape[name] = dict(zip(self.data_arrays[name].dims, self.data_arrays[name].shape))
+
+            self.dim_to_shape[name] = dict(zip(array_dims, array.shape))
+
+
+
             # for dim, coord in array.coords.items():
             #     if dim not in self.dim_to_shape[name] and len(coord.dims) > 0:
             #         print(dim, self.dim_to_shape[name], coord)
             #         self.dim_to_shape[name][dim] = self.dim_to_shape[name][coord.dims[-1]]
             # print(self.dim_to_shape[name])
             # Store coordinates of dimensions that will be in sliders
-            # self.slider_coord[name] = {}
+            self.coords[name] = {}
             # Store coordinate min and max limits
-            self.slider_xlims[name] = {}
+            self.xlims[name] = {}
             # Store ticklabels for a dimension
             # self.slider_ticks[name] = {}
             # Store labels for sliders if any
@@ -202,21 +217,24 @@ class PlotController:
 
             # Iterate through axes and collect dimensions
             for dim in self.axes:
-                self.collect_dim_shapes_and_lims(name, dim)
+                self.collect_dim_shapes_and_lims(name, dim, array)
 
             # Include masks
-            for n, msk in array.masks.items():
-                self.data_arrays[name].masks[n] = msk
+            # for n, msk in array.masks.items():
+            #     self.data_arrays[name].masks[n] = msk
             self.mask_names[name] = list(array.masks.keys())
 
 
         # os.write(1, "Slicer 4\n".encode())
 
-        print(self.data_arrays)
+        # print(self.data_arrays)
 
         self.widgets = PlotWidgets(controller=self,
                          button_options=button_options)
         return
+
+    def _to_widget(self):
+        return self.widgets._to_widget()
 
     def process_axes_dimensions(self, array, positions=None):
 
@@ -240,7 +258,7 @@ class PlotController:
         return
 
 
-    def collect_dim_shapes_and_lims(self, name, dim):
+    def collect_dim_shapes_and_lims(self, name, dim, array):
 
         var, formatter, locator = self.axis_label_and_ticks(
             dim, array, name)
@@ -258,43 +276,45 @@ class PlotController:
                 dim_shape = var.shape[i]
 
         if self.histograms[name][dim][dim]:
-            self.data_arrays[name].coords[dim] = var
+            # self.data_arrays[name].coords[dim] = var
+            self.coords[name][dim] = var
         else:
-            self.data_arrays[name].coords[dim] = to_bin_edges(var, dim)
+            # self.data_arrays[name].coords[dim] = to_bin_edges(var, dim)
+            self.coords[name][dim] = to_bin_edges(var, dim)
 
         # The limits for each dimension
-        self.slider_xlims[name][dim] = np.array(
+        self.xlims[name][dim] = np.array(
             [sc.min(var).value, sc.max(var).value], dtype=np.float)
         if sc.is_sorted(var, dim, order='descending'):
-            self.slider_xlims[name][dim] = np.flip(
-                self.slider_xlims[name][dim]).copy()
+            self.xlims[name][dim] = np.flip(
+                self.xlims[name][dim]).copy()
         # The tick formatter and locator
         self.axformatter[name][dim] = formatter
         self.axlocator[name][dim] = locator
 
         # Small correction if xmin == xmax
-        if self.slider_xlims[name][dim][0] == self.slider_xlims[name][
+        if self.xlims[name][dim][0] == self.xlims[name][
                 dim][1]:
-            if self.slider_xlims[name][dim][0] == 0.0:
-                self.slider_xlims[name][dim] = [-0.5, 0.5]
+            if self.xlims[name][dim][0] == 0.0:
+                self.xlims[name][dim] = [-0.5, 0.5]
             else:
-                dx = 0.5 * abs(self.slider_xlims[name][dim][0])
-                self.slider_xlims[name][dim][0] -= dx
-                self.slider_xlims[name][dim][1] += dx
+                dx = 0.5 * abs(self.xlims[name][dim][0])
+                self.xlims[name][dim][0] -= dx
+                self.xlims[name][dim][1] += dx
         # For xylims, if coord is not bin-edge, we make artificial
         # bin-edge. This is simpler than finding the actual index of
         # the smallest and largest values and computing a bin edge from
         # the neighbours.
         if not self.histograms[name][dim][
                 dim] and dim_shape > 1:
-            dx = 0.5 * (self.slider_xlims[name][dim][1] -
-                        self.slider_xlims[name][dim][0]) / float(
+            dx = 0.5 * (self.xlims[name][dim][1] -
+                        self.xlims[name][dim][0]) / float(
                             dim_shape - 1)
-            self.slider_xlims[name][dim][0] -= dx
-            self.slider_xlims[name][dim][1] += dx
+            self.xlims[name][dim][0] -= dx
+            self.xlims[name][dim][1] += dx
 
-        self.slider_xlims[name][dim] = sc.Variable(
-            [dim], values=self.slider_xlims[name][dim], unit=var.unit)
+        self.xlims[name][dim] = sc.Variable(
+            [dim], values=self.xlims[name][dim], unit=var.unit)
         return
 
 
@@ -396,46 +416,46 @@ class PlotController:
 
 
 
-    def select_bins(self, coord, dim, start, end):
-        bins = coord.shape[-1]
-        if len(coord.dims) != 1:  # TODO find combined min/max
-            return dim, slice(0, bins - 1)
-        # scipp treats bins as closed on left and open on right: [left, right)
-        first = sc.sum(coord <= start, dim).value - 1
-        last = bins - sc.sum(coord > end, dim).value
-        if first >= last:  # TODO better handling for decreasing
-            return dim, slice(0, bins - 1)
-        first = max(0, first)
-        last = min(bins - 1, last)
-        return dim, slice(first, last + 1)
+    # def select_bins(self, coord, dim, start, end):
+    #     bins = coord.shape[-1]
+    #     if len(coord.dims) != 1:  # TODO find combined min/max
+    #         return dim, slice(0, bins - 1)
+    #     # scipp treats bins as closed on left and open on right: [left, right)
+    #     first = sc.sum(coord <= start, dim).value - 1
+    #     last = bins - sc.sum(coord > end, dim).value
+    #     if first >= last:  # TODO better handling for decreasing
+    #         return dim, slice(0, bins - 1)
+    #     first = max(0, first)
+    #     last = min(bins - 1, last)
+    #     return dim, slice(first, last + 1)
 
 
-    def resample_image(self, array, rebin_edges):
-        dslice = array
-        # Select bins to speed up rebinning
-        for dim in rebin_edges:
-            this_slice = self.select_bins(array.coords[dim], dim,
-                                          rebin_edges[dim][dim, 0],
-                                          rebin_edges[dim][dim, -1])
-            dslice = dslice[this_slice]
+    # def resample_image(self, array, rebin_edges):
+    #     dslice = array
+    #     # Select bins to speed up rebinning
+    #     for dim in rebin_edges:
+    #         this_slice = self.select_bins(array.coords[dim], dim,
+    #                                       rebin_edges[dim][dim, 0],
+    #                                       rebin_edges[dim][dim, -1])
+    #         dslice = dslice[this_slice]
 
-        # Rebin the data
-        for dim, edges in rebin_edges.items():
-            # print(dim)
-            # print(dslice)
-            # print(edges)
-            dslice = sc.rebin(dslice, dim, edges)
+    #     # Rebin the data
+    #     for dim, edges in rebin_edges.items():
+    #         # print(dim)
+    #         # print(dslice)
+    #         # print(edges)
+    #         dslice = sc.rebin(dslice, dim, edges)
 
-        # Divide by pixel width
-        for dim, edges in rebin_edges.items():
-            # self.image_pixel_size[key] = edges.values[1] - edges.values[0]
-            # print("edges.values[1]", edges.values[1])
-            # print(self.image_pixel_size[key])
-            # dslice /= self.image_pixel_size[key]
-            div = edges[dim, 1:] - edges[dim, :-1]
-            div.unit = sc.units.one
-            dslice /= div
-        return dslice
+    #     # Divide by pixel width
+    #     for dim, edges in rebin_edges.items():
+    #         # self.image_pixel_size[key] = edges.values[1] - edges.values[0]
+    #         # print("edges.values[1]", edges.values[1])
+    #         # print(self.image_pixel_size[key])
+    #         # dslice /= self.image_pixel_size[key]
+    #         div = edges[dim, 1:] - edges[dim, :-1]
+    #         div.unit = sc.units.one
+    #         dslice /= div
+    #     return dslice
 
     # def mask_to_float(self, mask, var):
     #     return np.where(mask, var, None).astype(np.float)
@@ -449,11 +469,60 @@ class PlotController:
         return
 
 
+    def rescale_to_data(self, button=None):
+
+        vmin, vmax = self.model.rescale_to_data()
+        self.view.rescale_to_data(vmin, vmax)
 
 
 
-    def update_buttons(self):
-        self.model.update_buttons()
+    def update_axes(self, change=None):
+        limits = {}
+        for dim, button in self.widgets.buttons.items():
+            if self.widgets.slider[dim].disabled:
+                but_val = button.value.lower()
+                limits[dim] = {"button": but_val,
+                "xlims": self.xlims[self.name][dim].values}
+        axparams = self.model.update_axes(limits)
+        self.view.update_axes(axparams=axparams,
+                              axformatter=self.axformatter[self.name],
+                              axlocator=self.axlocator[self.name],
+                              logx=self.logx,
+                              logy=self.logy)
+        self.update_slice()
+        self.rescale_to_data()
 
-    def update_slice(self):
-        self.model.update_slice()
+    # def gather_dimensions_to_slice(self):
+    #     slices = {}
+    #     # Slice along dimensions with active sliders
+    #     for dim, val in self.widgets.slider.items():
+    #         if not val.disabled:
+    #             # self.lab[dim].value = self.make_slider_label(
+    #             #     self.slider_label[self.engine.name][dim]["coord"], val.value)
+    #             # print(self.slider_axformatter)
+    #             # self.lab[dim].value = self.make_slider_label(
+    #             #     val.value, self.slider_axformatter[self.engine.name][dim][False])
+    #             # self.lab[dim].value = self.slider_axformatter[self.engine.name][dim][False].format_data_short(val.value)
+    #             slices[dim] = {"location": val.value,
+    #             "thickness": self.controller.widgets.thickness_slider[dim].value}
+    #     return slices
+
+    def update_slice(self, change=None):
+        slices = {}
+        # Slice along dimensions with active sliders
+        for dim, val in self.widgets.slider.items():
+            if not val.disabled:
+                # self.lab[dim].value = self.make_slider_label(
+                #     self.slider_label[self.engine.name][dim]["coord"], val.value)
+                # print(self.slider_axformatter)
+                # self.lab[dim].value = self.make_slider_label(
+                #     val.value, self.slider_axformatter[self.engine.name][dim][False])
+                # self.lab[dim].value = self.slider_axformatter[self.engine.name][dim][False].format_data_short(val.value)
+                slices[dim] = {"location": val.value,
+                "thickness": self.controller.widgets.thickness_slider[dim].value}
+        # return slices
+        new_values = self.model.update_slice(slices)
+        self.view.update_slice(new_values)
+
+def update_viewport_image(self, xylims):
+    self.model.update_viewport_image(xylims)

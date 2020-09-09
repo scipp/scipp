@@ -8,9 +8,9 @@ class PlotWidgets:
                          button_options=None):
 
         # Initialise list for VBox container
-        self.parent = parent
+        self.controller = controller
         self.rescale_button = ipw.Button(description="Rescale")
-        self.rescale_button.on_click(self.parent.rescale_to_data)
+        self.rescale_button.on_click(self.controller.rescale_to_data)
         self.container = [self.rescale_button]
 
         # Initialise slider and label containers
@@ -30,7 +30,7 @@ class PlotWidgets:
         # # Additional condition if positions kwarg set
         # # positions_dim = None
         # if positions is not None:
-        #     if scipp_obj_dict[self.parent.engine.name].coords[
+        #     if scipp_obj_dict[self.controller.engine.name].coords[
         #             positions].dtype != sc.dtype.vector_3_float64:
         #         raise RuntimeError(
         #             "Supplied positions coordinate does not contain vectors.")
@@ -43,12 +43,12 @@ class PlotWidgets:
         #             "Supplied positions coordinate does not contain vectors.")
 
         # Now begin loop to construct sliders
-        button_values = [None] * (self.parent.engine.ndim - len(button_options)) + \
+        button_values = [None] * (self.controller.ndim - len(button_options)) + \
             button_options[::-1]
         # for i, dim in enumerate(self.slider_coord[self.name]):
         # for i, dim in enumerate(self.data_arrays[self.name].coords):
         # os.write(1, "Slicer 5.1\n".encode())
-        for i, dim in enumerate(self.parent.engine.axes):
+        for i, dim in enumerate(self.controller.axes):
             # dim_str = self.slider_label[self.name][dim]["name"]
             dim_str = str(dim)
             # Determine if slider should be disabled or not:
@@ -57,12 +57,12 @@ class PlotWidgets:
             disabled = False
             if positions is not None:
                 disabled = dim == positions
-            elif i >= self.parent.engine.ndim - len(button_options):
+            elif i >= self.controller.ndim - len(button_options):
                 disabled = True
             # os.write(1, "Slicer 5.2\n".encode())
 
             # Add an FloatSlider to slide along the z dimension of the array
-            dim_xlims = self.parent.engine.slider_xlims[self.parent.engine.name][dim].values
+            dim_xlims = self.controller.xlims[self.controller.name][dim].values
             dx = dim_xlims[1] - dim_xlims[0]
             self.slider[dim] = ipw.FloatSlider(
                 value=0.5 * np.sum(dim_xlims),
@@ -105,14 +105,14 @@ class PlotWidgets:
                 disabled=False,
                 button_style="",
                 layout={"width": "initial"})
-            self.profile_button[dim].observe(self.parent.engine.toggle_profile_view, names="value")
+            self.profile_button[dim].observe(self.controller.toggle_profile_view, names="value")
 
 
             # labvalue = self.make_slider_label(
             #         self.data_arrays[self.name].coords[dim], indx,
             #         self.slider_axformatter[self.name][dim][False])
-            labvalue = "[{}]".format(self.parent.engine.data_arrays[self.parent.engine.name].coords[dim].unit)
-            if self.parent.engine.ndim == len(button_options):
+            labvalue = "[{}]".format(self.controller.coords[self.controller.name][dim].unit)
+            if self.controller.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
                 self.thickness_slider[dim].layout.display = 'none'
@@ -141,7 +141,7 @@ class PlotWidgets:
             #     disabled=False,
             #     button_style="",
             #     layout={"width": "initial"})
-            # self.profile_button[dim].observe(self.parent.engine.toggle_profile_view, names="value")
+            # self.profile_button[dim].observe(self.controller.engine.toggle_profile_view, names="value")
 
             # os.write(1, "Slicer 5.7\n".encode())
 
@@ -156,7 +156,7 @@ class PlotWidgets:
             # os.write(1, "Slicer 5.8\n".encode())
 
             # Hide buttons and labels for 1d variables
-            if self.parent.engine.ndim == 1:
+            if self.controller.ndim == 1:
                 self.buttons[dim].layout.display = 'none'
                 self.lab[dim].layout.display = 'none'
 
@@ -171,10 +171,10 @@ class PlotWidgets:
             # os.write(1, "Slicer 5.9\n".encode())
 
             # Add observer to buttons
-            self.buttons[dim].on_msg(self.parent.engine.update_buttons)
+            self.buttons[dim].on_msg(self.update_buttons)
             # Add an observer to the sliders
-            self.slider[dim].observe(self.parent.engine.update_slice, names="value")
-            self.thickness_slider[dim].observe(self.parent.engine.update_slice, names="value")
+            self.slider[dim].observe(self.controller.update_slice, names="value")
+            self.thickness_slider[dim].observe(self.controller.update_slice, names="value")
             # Add the row of slider + buttons
             row = [
                 self.slider[dim], self.lab[dim], self.continuous_update[dim],
@@ -195,9 +195,12 @@ class PlotWidgets:
         self.add_masks_controls()
         # os.write(1, "Slicer 7\n".encode())
 
-        self.container = ipw.VBox(self.container)
+        # self.container = ipw.VBox(self.container)
 
         return
+
+    def _to_widget(self):
+        return ipw.VBox(self.container)
 
     # def make_data_array_with_bin_edges(self, array):
     #     da_with_edges = sc.DataArray(
@@ -220,19 +223,19 @@ class PlotWidgets:
         # Add controls for masks
         masks_found = False
         self.mask_checkboxes = {}
-        for name, array in self.parent.engine.data_arrays.items():
+        for name in self.controller.mask_names:
             self.mask_checkboxes[name] = {}
-            if len(array.masks) > 0:
+            if len(self.controller.mask_names[name]) > 0:
                 masks_found = True
-                for key in array.masks:
+                for key in self.controller.mask_names[name]:
                     self.mask_checkboxes[name][key] = ipw.Checkbox(
-                        value=self.parent.engine.params["masks"][name]["show"],
+                        value=self.controller.params["masks"][name]["show"],
                         description="{}:{}".format(name, key),
                         indent=False,
                         layout={"width": "initial"})
                     setattr(self.mask_checkboxes[name][key], "mask_group", name)
                     setattr(self.mask_checkboxes[name][key], "mask_name", key)
-                    self.mask_checkboxes[name][key].observe(self.parent.toggle_mask,
+                    self.mask_checkboxes[name][key].observe(self.controller.toggle_mask,
                                                   names="value")
 
         if masks_found:
@@ -244,15 +247,35 @@ class PlotWidgets:
                 self.masks_box.append(ipw.HBox(mask_list))
             # Add a master button to control all masks in one go
             self.masks_button = ipw.ToggleButton(
-                value=self.parent.engine.params["masks"][self.parent.engine.name]["show"],
+                value=self.controller.params["masks"][self.controller.name]["show"],
                 description="Hide all masks" if
-                self.parent.engine.params["masks"][self.parent.engine.name]["show"] else "Show all masks",
+                self.controller.params["masks"][self.controller.name]["show"] else "Show all masks",
                 disabled=False,
                 button_style="")
             self.masks_button.observe(self.toggle_all_masks, names="value")
             self.container += [self.masks_button, ipw.VBox(self.masks_box)]
             # self.members["widgets"]["togglebutton"]["masks"] = \
             #     self.masks_button
+
+    def update_buttons(self, owner, event, dummy):
+        toggle_slider = False
+        if not self.slider[owner.dim].disabled:
+            toggle_slider = True
+            self.slider[owner.dim].disabled = True
+            self.thickness_slider[owner.dim].disabled = True
+        for dim, button in self.buttons.items():
+            if (button.value == owner.value) and (dim != owner.dim):
+                if self.slider[dim].disabled:
+                    button.value = owner.old_value
+                else:
+                    button.value = None
+                button.old_value = button.value
+                if toggle_slider:
+                    self.slider[dim].disabled = False
+                    self.thickness_slider[dim].disabled = False
+        owner.old_value = owner.value
+        self.controller.update_axes()
+        return
 
     def toggle_all_masks(self, change):
         for name in self.mask_checkboxes:

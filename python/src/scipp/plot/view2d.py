@@ -19,7 +19,7 @@ import ipywidgets as ipw
 import matplotlib.pyplot as plt
 from matplotlib.axes import Subplot
 import warnings
-import os
+import io
 
 
 class PlotView2d:
@@ -46,10 +46,11 @@ class PlotView2d:
                  mask_names=None,
                  resolution=None):
 
+        self.controller = controller
 
         # self.extent = {"x": [1, 2], "y": [1, 2]}
-        self.logx = logx
-        self.logy = logy
+        # self.logx = logx
+        # self.logy = logy
         # self.vminmax = {"vmin": vmin, "vmax": vmax}
         # self.global_vmin = np.Inf
         # self.global_vmax = np.NINF
@@ -64,16 +65,16 @@ class PlotView2d:
         # self.cslice = None
         # self.autoscale_cbar = False
 
-        if resolution is not None:
-            if isinstance(resolution, int):
-                self.image_resolution = {"x": resolution, "y": resolution}
-            else:
-                self.image_resolution = resolution
-        else:
-            self.image_resolution = {
-                "x": config.plot.width,
-                "y": config.plot.height
-            }
+        # if resolution is not None:
+        #     if isinstance(resolution, int):
+        #         self.image_resolution = {"x": resolution, "y": resolution}
+        #     else:
+        #         self.image_resolution = resolution
+        # else:
+        #     self.image_resolution = {
+        #         "x": config.plot.width,
+        #         "y": config.plot.height
+        #     }
         # self.xyrebin = {}
         # # self.xyedges = {}
         # self.xywidth = {}
@@ -116,23 +117,23 @@ class PlotView2d:
                 cmap=mask_cmap,
                 norm=norm,
                 aspect=aspect)
-        if self.logx:
+        if logx:
             self.ax.set_xscale("log")
-        if self.logy:
+        if logy:
             self.ax.set_yscale("log")
 
-        # Call update_slice once to make the initial image
-        self.controller.update_axes()
+        # # Call update_slice once to make the initial image
+        # self.controller.update_axes()
 
-        self.figure = self.fig.canvas
+        # self.figure = self.fig.canvas
         # self.vbox = widgets.VBox(self.vbox)
         # self.vbox.layout.align_items = 'center'
         # self.members["fig"] = self.fig
         # self.members["ax"] = self.ax
 
-        # Connect changes in axes limits to resampling function
-        self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
-        self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
+        # # Connect changes in axes limits to resampling function
+        # self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
+        # self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
 
         # # if self.cbar is not None:
         # #     self.fig.canvas.mpl_connect('pick_event', self.rescale_colorbar)
@@ -159,19 +160,20 @@ class PlotView2d:
                               picker=picker)
 
 
-    def rescale_to_data(self, button=None):
-        vmin = None
-        vmax = None
-        if button is None:
-            # If the colorbar has been clicked, then ignore globally set
-            # limits, as the click signals the user wants to change the
-            # colorscale.
-            vmin =  self.vminmax["vmin"]
-            vmax =  self.vminmax["vmax"]
-        if vmin is None:
-            vmin = sc.min(self.engine.dslice.data).value
-        if vmax is None:
-            vmax = sc.max(self.engine.dslice.data).value
+    def rescale_to_data(self, vmin, vmax):
+        # vmin = None
+        # vmax = None
+        # if button is None:
+        #     # If the colorbar has been clicked, then ignore globally set
+        #     # limits, as the click signals the user wants to change the
+        #     # colorscale.
+        #     vmin =  self.vminmax["vmin"]
+        #     vmax =  self.vminmax["vmax"]
+        # if vmin is None:
+        #     vmin = self.controller.get_slice_min()
+        # if vmax is None:
+        #     vmax = self.controller.get_slice_min()
+
         self.image.set_clim([vmin, vmax])
         for m, im in self.mask_image.items():
             im.set_clim([vmin, vmax])
@@ -226,15 +228,17 @@ class PlotView2d:
         # Only resample image if the changes in axes limits are large enough to
         # avoid too many updates while panning.
         if diff > 0.1:
+
             self.current_lims = xylims
-            for xy, param in self.engine.axparams.items():
-                # Create coordinate axes for resampled image array
-                self.engine.xyrebin[xy] = sc.Variable(
-                    dims=[param["dim"]],
-                    values=np.linspace(xylims[xy][0], xylims[xy][1],
-                                       self.image_resolution[xy] + 1),
-                    unit=self.engine.data_arrays[self.engine.name].coords[param["dim"]].unit)
-            self.engine.update_image(extent=np.array(list(xylims.values())).flatten())
+            self.controller.update_viewport_image(xylims)
+            # for xy, param in self.engine.axparams.items():
+            #     # Create coordinate axes for resampled image array
+            #     self.engine.xyrebin[xy] = sc.Variable(
+            #         dims=[param["dim"]],
+            #         values=np.linspace(xylims[xy][0], xylims[xy][1],
+            #                            self.image_resolution[xy] + 1),
+            #         unit=self.engine.data_arrays[self.engine.name].coords[param["dim"]].unit)
+            # self.engine.update_image(extent=np.array(list(xylims.values())).flatten())
         return
 
 
@@ -261,6 +265,69 @@ class PlotView2d:
                     # Insert the new tuple
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
+
+
+
+    def update_axes(self, axparams, axformatter, axlocator, logx, logy):
+
+        self.current_lims['x'] = axparams["x"]["lims"]
+        self.current_lims['y'] = axparams["y"]["lims"]
+
+        is_log = {"x": logx, "y": logy}
+
+        # Set axes labels
+        self.ax.set_xlabel(axparams["x"]["labels"])
+        self.ax.set_ylabel(axparams["y"]["labels"])
+        for xy, param in axparams.items():
+            axis = getattr(self.ax, "{}axis".format(xy))
+            # is_log = getattr(self.controller, "log{}".format(xy))
+            axis.set_major_formatter(
+                axformatter[param["dim"]][is_log[xy]])
+            axis.set_major_locator(
+                axlocator[param["dim"]][is_log[xy]])
+
+        # Set axes limits and ticks
+        extent_array = np.array([axparams["x"]["lims"], axparams["y"]["lims"]]).flatten()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            self.image.set_extent(extent_array)
+            # if len(self.masks[self.name]) > 0:
+            for m, im in self.mask_image.items():
+                im.set_extent(extent_array)
+            self.ax.set_xlim(axparams["x"]["lims"])
+            self.ax.set_ylim(axparams["y"]["lims"])
+
+        self.reset_home_button()
+        # self.rescale_to_data()
+
+
+    def update_slice(self, new_values):
+        self.image.set_data(new_values["values"])
+        for m in self.mask_image:
+            self.mask_image[m].set_data(new_values["masks"][m])
+
+
+
+    def _ipython_display_(self):
+        # try:
+        #     return self.fig.canvas._ipython_display_()
+        # except AttributeError:
+        #     return display(self.fig)
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+
+        if hasattr(self.fig.canvas, "widgets"):
+            return self.fig.canvas
+        else:
+            buf = io.BytesIO()
+            self.fig.savefig(buf, format='png')
+            buf.seek(0)
+            return ipw.Image(value=buf.getvalue())
+
+    def savefig(self, filename=None):
+        self.fig.savefig(filename=filename, bbox_inches="tight")
+
 
     # def select_bins(self, coord, dim, start, end):
     #     bins = coord.shape[-1]

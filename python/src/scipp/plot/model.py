@@ -17,10 +17,33 @@ import os
 
 class PlotModel:
     def __init__(self,
-                 controller=None):
+                 controller=None,
+                 scipp_obj_dict=None):
+
+        self.controller = controller
+        self.data_arrays = {}
+
+        # Create dict of DataArrays using information from controller
+        for name, array in scipp_obj_dict.items():
+
+            self.data_arrays[name] = sc.DataArray(
+                data=sc.Variable(dims=list(self.controller.dim_to_shape[name].keys()),
+                                 unit=sc.units.counts,
+                                 values=array.values,
+                                 variances=array.variances,
+                                 dtype=sc.dtype.float64))
+
+            # Add coordinates
+            for dim, coord in self.controller.coords[name].items():
+                self.data_arrays[name].coords[dim] = coord
+
+            # Include masks
+            for n, msk in array.masks.items():
+                self.data_arrays[name].masks[n] = msk
 
 
-
+        self.dslice = None
+        self.name = self.controller.name
 
 
     def select_bins(self, coord, dim, start, end):
@@ -74,3 +97,6 @@ class PlotModel:
         else:
             self.hide_profile_view()
         return
+
+    def rescale_to_data(self):
+        return sc.min(self.dslice.data).value, sc.max(self.dslice.data).value
