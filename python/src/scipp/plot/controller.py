@@ -482,18 +482,19 @@ class PlotController:
             if self.widgets.slider[dim].disabled:
                 but_val = button.value.lower()
                 limits[dim] = {"button": but_val,
-                "xlims": self.xlims[self.name][dim].values}
+                "xlims": self.xlims[self.name][dim].values,
+                "log": getattr(self, "log{}".format(but_val))}
         axparams = self.model.update_axes(limits)
         self.view.update_axes(axparams=axparams,
                               axformatter=self.axformatter[self.name],
                               axlocator=self.axlocator[self.name],
                               logx=self.logx,
                               logy=self.logy)
-        self.update_slice()
+        self.update_data()
         self.rescale_to_data()
 
 
-    def update_slice(self, change=None):
+    def update_data(self, change=None):
         slices = {}
         # Slice along dimensions with active sliders
         for dim, val in self.widgets.slider.items():
@@ -501,8 +502,8 @@ class PlotController:
                 slices[dim] = {"location": val.value,
                 "thickness": self.controller.widgets.thickness_slider[dim].value}
         # return slices
-        new_values = self.model.update_slice(slices, self.mask_names)
-        self.view.update_slice(new_values)
+        new_values = self.model.update_data(slices, self.mask_names)
+        self.view.update_data(new_values)
 
     def update_viewport_image(self, xylims):
         self.model.update_viewport_image(xylims)

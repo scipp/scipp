@@ -85,8 +85,9 @@ class PlotModel2d(PlotModel):
             # self.axparams[but_val]["lims"] = self.slider_xlims[self.name][dim].values
             self.axparams[but_val]["lims"] = limits[dim]["xlims"]
 
-            if getattr(self.controller,
-                       "log" + but_val) and (self.axparams[but_val]["lims"][0] <= 0):
+            # if getattr(self.controller,
+            #            "log" + but_val) and (self.axparams[but_val]["lims"][0] <= 0):
+            if limits[dim]["log"] and (self.axparams[but_val]["lims"][0] <= 0):
                 self.axparams[but_val]["lims"][
                     0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
             # self.axparams[but_val]["labels"] = name_with_unit(
@@ -181,8 +182,8 @@ class PlotModel2d(PlotModel):
         # self.controller.rescale_to_data()
 
 
-        if self.controller.profile is not None:
-            self.update_profile_axes()
+        # if self.controller.profile is not None:
+        #     self.update_profile_axes()
 
         return self.axparams
 
@@ -254,7 +255,7 @@ class PlotModel2d(PlotModel):
         self.vslice *= self.xywidth["y"]
 
     # def update_slice(self, change=None):
-    def update_slice(self, slices, mask_names):
+    def update_data(self, slices, mask_names):
         """
         Slice data according to new slider value and update the image.
         """

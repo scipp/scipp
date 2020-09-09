@@ -38,8 +38,8 @@ def dispatch(scipp_obj_dict,
     projection = projection.lower()
 
     if projection == "1d":
-        from .plot_1d import plot_1d
-        return plot_1d(scipp_obj_dict,
+        from .plot1d import plot1d
+        return plot1d(scipp_obj_dict,
                        mpl_line_params=mpl_line_params,
                        **kwargs)
     elif projection == "2d":

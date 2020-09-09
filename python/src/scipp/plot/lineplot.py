@@ -22,7 +22,7 @@ import warnings
 class LinePlot:
 
     def __init__(self,
-                 dict_of_data_arrays=None,
+                 # dict_of_data_arrays=None,
                  errorbars=None,
                  masks=None,
                  is_bin_edge=None,
@@ -34,7 +34,7 @@ class LinePlot:
                  axformatter=None,
                  axlocator=None):
 
-        self.dict_of_data_arrays = dict_of_data_arrays
+        # self.dict_of_data_arrays = dict_of_data_arrays
         self.is_bin_edge = is_bin_edge
         self.axformatter = axformatter
         self.axlocator = axlocator
@@ -155,79 +155,11 @@ class LinePlot:
     def _to_widget(self):
         return self.fig.canvas
 
+    def savefig(self, filename=None):
+        self.fig.savefig(filename=filename, bbox_inches="tight")
 
-    # def get_finite_y(self, arr):
-    #     if self.logy:
-    #         with np.errstate(divide="ignore", invalid="ignore"):
-    #             arr = np.log10(arr, out=arr)
-    #     subset = np.where(np.isfinite(arr))
-    #     return arr[subset]
 
-    # def get_ylim(self, var=None, ymin=None, ymax=None, errorbars=False):
-    #     if errorbars:
-    #         err = self.vars_to_err(var.variances)
-    #     else:
-    #         err = 0.0
 
-    #     ymin_new = np.amin(self.get_finite_y(var.values - err))
-    #     ymax_new = np.amax(self.get_finite_y(var.values + err))
-
-    #     dy = 0.05 * (ymax_new - ymin_new)
-    #     ymin_new -= dy
-    #     ymax_new += dy
-    #     if self.logy:
-    #         ymin_new = 10.0**ymin_new
-    #         ymax_new = 10.0**ymax_new
-    #     return [min(ymin, ymin_new), max(ymax, ymax_new)]
-
-    # def make_keep_button(self):
-    #     drop = widgets.Dropdown(options=self.names,
-    #                             description='',
-    #                             layout={'width': 'initial'})
-    #     but = widgets.Button(description="Keep",
-    #                          disabled=False,
-    #                          button_style="",
-    #                          layout={'width': "70px"})
-    #     # Generate a random color. TODO: should we initialise the seed?
-    #     col = widgets.ColorPicker(concise=True,
-    #                               description='',
-    #                               value='#%02X%02X%02X' %
-    #                               (tuple(np.random.randint(0, 255, 3))),
-    #                               disabled=False)
-    #     # Make a unique id
-    #     key = str(id(but))
-    #     setattr(but, "id", key)
-    #     setattr(col, "id", key)
-    #     but.on_click(self.keep_remove_trace)
-    #     col.observe(self.update_trace_color, names="value")
-    #     self.keep_buttons[key] = {
-    #         "dropdown": drop,
-    #         "button": but,
-    #         "colorpicker": col
-    #     }
-    #     return
-
-    # def update_buttons(self, owner, event, dummy):
-    #     for dim, button in self.buttons.items():
-    #         if dim == owner.dim:
-    #             self.slider[dim].disabled = True
-    #             button.disabled = True
-    #             self.button_axis_to_dim["x"] = dim
-    #         else:
-    #             self.slider[dim].disabled = False
-    #             button.value = None
-    #             button.disabled = False
-    #     self.update_axes(owner.dim)
-    #     self.keep_buttons = dict()
-    #     self.make_keep_button()
-    #     self.update_button_box_widget()
-    #     return
-
-    # def update_button_box_widget(self):
-    #     self.mbox = self.vbox.copy()
-    #     for k, b in self.keep_buttons.items():
-    #         self.mbox.append(widgets.HBox(list(b.values())))
-    #     self.box.children = tuple(self.mbox)
 
     def plot_data(self, dict_of_data_arrays, is_bin_edge=None, clear=False):
         if clear:

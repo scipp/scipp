@@ -140,6 +140,28 @@ class PlotView2d:
 
         return
 
+
+    def _ipython_display_(self):
+        # try:
+        #     return self.fig.canvas._ipython_display_()
+        # except AttributeError:
+        #     return display(self.fig)
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+
+        if hasattr(self.fig.canvas, "widgets"):
+            return self.fig.canvas
+        else:
+            buf = io.BytesIO()
+            self.fig.savefig(buf, format='png')
+            buf.seek(0)
+            return ipw.Image(value=buf.getvalue())
+
+    def savefig(self, filename=None):
+        self.fig.savefig(filename=filename, bbox_inches="tight")
+
+
     # def _ipython_display_(self):
     #     return self._to_widget()._ipython_display_()
 
@@ -301,7 +323,7 @@ class PlotView2d:
         # self.rescale_to_data()
 
 
-    def update_slice(self, new_values):
+    def update_data(self, new_values):
         self.image.set_data(new_values["values"])
         for m in self.mask_image:
             if new_values["masks"][m] is not None:
@@ -311,25 +333,6 @@ class PlotView2d:
                 self.mask_image[m].set_url("hide")
 
 
-    def _ipython_display_(self):
-        # try:
-        #     return self.fig.canvas._ipython_display_()
-        # except AttributeError:
-        #     return display(self.fig)
-        return self._to_widget()._ipython_display_()
-
-    def _to_widget(self):
-
-        if hasattr(self.fig.canvas, "widgets"):
-            return self.fig.canvas
-        else:
-            buf = io.BytesIO()
-            self.fig.savefig(buf, format='png')
-            buf.seek(0)
-            return ipw.Image(value=buf.getvalue())
-
-    def savefig(self, filename=None):
-        self.fig.savefig(filename=filename, bbox_inches="tight")
 
 
     # def select_bins(self, coord, dim, start, end):

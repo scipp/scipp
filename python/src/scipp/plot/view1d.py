@@ -1,0 +1,217 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# @author Neil Vaytet
+
+# Scipp imports
+from .. import config
+# from .profiler import Profiler
+from .tools import to_bin_edges, parse_params
+# from .widgets import PlotWidgets
+from .._utils import name_with_unit
+from .._scipp import core as sc
+from .. import detail
+
+# Other imports
+import numpy as np
+import ipywidgets as ipw
+import matplotlib.pyplot as plt
+from matplotlib.axes import Subplot
+import warnings
+import io
+
+
+class PlotView1d:
+    def __init__(self,
+                 # scipp_obj_dict=None,
+                 # axes=None,
+                 # masks=None,
+                 controller=None,
+                 ax=None,
+                 errorbars=None,
+                 title=None,
+                 unit=None,
+                 logx=False,
+                 logy=False,
+                 mask_names=None,
+                 mpl_line_params=None):
+
+        self.controller = controller
+
+
+
+        self.figure = LinePlot(errorbars=errorbars,
+                 masks=masks,
+                 ax=ax,
+                 mpl_line_params=mpl_line_params,
+                 logx=logx,
+                 logy=logy,
+                 grid=grid)
+
+
+
+        return
+
+    def _ipython_display_(self):
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        # widgets_ = [self.figure, self.widgets]
+        # if self.overview["additional_widgets"] is not None:
+        #     wdgts.append(self.overview["additional_widgets"])
+        return ipw.VBox([self.figure, self.widgets.container])
+
+
+    def savefig(self, filename=None):
+        self.figure.savefig(filename=filename)
+
+
+    def make_keep_button(self):
+        drop = ipw.Dropdown(options=list(self.engine.data_arrays.keys()),
+                                description='',
+                                layout={'width': 'initial'})
+        but = ipw.Button(description="Keep",
+                             disabled=False,
+                             button_style="",
+                             layout={'width': "70px"})
+        # Generate a random color. TODO: should we initialise the seed?
+        col = ipw.ColorPicker(concise=True,
+                                  description='',
+                                  value='#%02X%02X%02X' %
+                                  (tuple(np.random.randint(0, 255, 3))),
+                                  disabled=False)
+        # Make a unique id
+        key = str(id(but))
+        setattr(but, "id", key)
+        setattr(col, "id", key)
+        but.on_click(self.keep_remove_trace)
+        col.observe(self.update_trace_color, names="value")
+        self.keep_buttons[key] = {
+            "dropdown": drop,
+            "button": but,
+            "colorpicker": col
+        }
+        self.additional_widgets.children += ipw.HBox(list(self.keep_buttons[key].values())),
+        return
+
+    def clear_keep_buttons(self):
+        self.keep_buttons.clear()
+        self.update_additional_widgets()
+
+    # def update_buttons(self, owner, event, dummy):
+    #     for dim, button in self.buttons.items():
+    #         if dim == owner.dim:
+    #             self.slider[dim].disabled = True
+    #             button.disabled = True
+    #             self.button_axis_to_dim["x"] = dim
+    #         else:
+    #             self.slider[dim].disabled = False
+    #             button.value = None
+    #             button.disabled = False
+    #     self.update_axes(owner.dim)
+    #     self.keep_buttons = dict()
+    #     self.make_keep_button()
+    #     self.update_button_box_widget()
+    #     return
+
+    def update_additional_widgets(self):
+        # for k, b in self.keep_buttons.items():
+        #     self.mbox.append(widgets.HBox(list(b.values())))
+        # self.box.children = tuple(self.mbox)
+        widget_list = []
+        for key, val in self.keep_buttons.items():
+            widget_list.append(ipw.HBox(list(val.values())))
+        self.additional_widgets.children = tuple(widget_list)
+
+
+
+    def keep_remove_trace(self, owner):
+        if owner.description == "Keep":
+            self.keep_trace(owner)
+        elif owner.description == "Remove":
+            self.remove_trace(owner)
+        # self.fig.canvas.draw_idle()
+        return
+
+    def keep_trace(self, owner):
+        lab = self.keep_buttons[owner.id]["dropdown"].value
+
+        self.figure.keep_line(name=lab, color=self.keep_buttons[owner.id]["colorpicker"].value,
+            line_id=owner.id)
+
+        for dim, val in self.widgets.slider.items():
+            if not val.disabled:
+                lab = "{},{}:{}".format(lab, dim, val.value)
+        self.keep_buttons[owner.id]["dropdown"].options = [lab]
+        self.keep_buttons[owner.id]["dropdown"].disabled = True
+        self.make_keep_button()
+        owner.description = "Remove"
+        # self.update_button_box_widget()
+        return
+
+    def remove_trace(self, owner):
+        self.figure.remove_line(owner.id)
+        del self.keep_buttons[owner.id]
+        self.update_additional_widgets()
+        return
+
+    def update_trace_color(self, change):
+        self.figure.update_line_color(change["owner"].id, change["new"])
+        return
+
+
+    def toggle_mask(self, change):
+        self.figure.toggle_mask(change["owner"].mask_group,
+            change["owner"].mask_name, change["new"])
+        return
+
+    def rescale_to_data(self, button=None):
+        self.figure.rescale_to_data()
+        return
+
+
+
+
+
+    def update_axes(self, axparams, axformatter, axlocator, logx, logy):
+
+        self.current_lims['x'] = axparams["x"]["lims"]
+        self.current_lims['y'] = axparams["y"]["lims"]
+
+        is_log = {"x": logx, "y": logy}
+
+        # Set axes labels
+        self.ax.set_xlabel(axparams["x"]["labels"])
+        self.ax.set_ylabel(axparams["y"]["labels"])
+        for xy, param in axparams.items():
+            axis = getattr(self.ax, "{}axis".format(xy))
+            # is_log = getattr(self.controller, "log{}".format(xy))
+            axis.set_major_formatter(
+                axformatter[param["dim"]][is_log[xy]])
+            axis.set_major_locator(
+                axlocator[param["dim"]][is_log[xy]])
+
+        # Set axes limits and ticks
+        extent_array = np.array([axparams["x"]["lims"], axparams["y"]["lims"]]).flatten()
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=UserWarning)
+            self.image.set_extent(extent_array)
+            # if len(self.masks[self.name]) > 0:
+            for m, im in self.mask_image.items():
+                im.set_extent(extent_array)
+            self.ax.set_xlim(axparams["x"]["lims"])
+            self.ax.set_ylim(axparams["y"]["lims"])
+
+        self.reset_home_button()
+        # self.rescale_to_data()
+
+
+    def update_data(self, new_values):
+        self.image.set_data(new_values["values"])
+        for m in self.mask_image:
+            if new_values["masks"][m] is not None:
+                self.mask_image[m].set_data(new_values["masks"][m])
+            else:
+                self.mask_image[m].set_visible(False)
+                self.mask_image[m].set_url("hide")
+
+

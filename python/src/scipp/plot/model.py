@@ -20,21 +20,21 @@ class PlotModel:
                  controller=None,
                  scipp_obj_dict=None):
 
-        self.controller = controller
+        # self.controller = controller
         self.data_arrays = {}
 
         # Create dict of DataArrays using information from controller
         for name, array in scipp_obj_dict.items():
 
             self.data_arrays[name] = sc.DataArray(
-                data=sc.Variable(dims=list(self.controller.dim_to_shape[name].keys()),
+                data=sc.Variable(dims=list(controller.dim_to_shape[name].keys()),
                                  unit=sc.units.counts,
                                  values=array.values,
                                  variances=array.variances,
                                  dtype=sc.dtype.float64))
 
             # Add coordinates
-            for dim, coord in self.controller.coords[name].items():
+            for dim, coord in controller.coords[name].items():
                 self.data_arrays[name].coords[dim] = coord
 
             # Include masks
@@ -43,7 +43,7 @@ class PlotModel:
 
 
         self.dslice = None
-        self.name = self.controller.name
+        self.name = controller.name
 
 
     def select_bins(self, coord, dim, start, end):
