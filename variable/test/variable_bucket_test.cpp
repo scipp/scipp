@@ -82,5 +82,5 @@ TEST_F(VariableBucketTest, unary_operation) {
   const auto expected =
       Variable{std::make_unique<Model>(dims, indices, Dim::X, sqrt(buffer))};
   EXPECT_EQ(sqrt(var), expected);
-  // EXPECT_EQ(sqrt(var.slice({Dim::Y, 1})), expected.slice({Dim::Y, 1}));
+  EXPECT_EQ(sqrt(var.slice({Dim::Y, 1})), expected.slice({Dim::Y, 1}));
 }

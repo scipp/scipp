@@ -67,8 +67,22 @@ protected:
       const Dimensions &iterDims, const Dimensions &dataDims,
       const std::vector<scipp::index> &expected) {
     BucketParams params{sliceDim, bufferDims, indices};
-    MultiIndex index(params, iterDims, dataDims);
+    MultiIndex index(iterDims, std::pair{dataDims, params});
     check(index, expected);
+  }
+  void check_with_buckets(
+      const Dimensions &bufferDims0, const Dim sliceDim0,
+      const std::vector<std::pair<scipp::index, scipp::index>> &indices0,
+      const Dimensions &bufferDims1, const Dim sliceDim1,
+      const std::vector<std::pair<scipp::index, scipp::index>> &indices1,
+      const Dimensions &iterDims, const Dimensions &dataDims0,
+      const Dimensions &dataDims1, const std::vector<scipp::index> &expected0,
+      const std::vector<scipp::index> &expected1) {
+    BucketParams params0{sliceDim0, bufferDims0, indices0};
+    BucketParams params1{sliceDim1, bufferDims1, indices1};
+    MultiIndex index(iterDims, std::pair{dataDims0, params0},
+                     std::pair{dataDims1, params1});
+    check(index, expected0, expected1);
   }
 
   Dimensions x{{Dim::X}, {2}};
@@ -197,4 +211,24 @@ TEST_F(MultiIndexTest, 2d_array_of_1d_buckets) {
   check_with_buckets(buf, dim,
                      {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}}, y, xy,
                      {0, 1, 2, 3, 4, 5});
+}
+
+TEST_F(MultiIndexTest, 1d_array_of_1d_buckets_and_dense) {
+  const Dim dim = Dim::Row;
+  Dimensions buf{{dim}, {7}}; // 1d cut into two sections
+  // natural order no gaps
+  check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, Dimensions{}, Dim::Invalid, {},
+                     x, x, x, {0, 1, 2, 3, 4, 5, 6}, {0, 0, 0, 1, 1, 1, 1});
+  // gap between
+  check_with_buckets(buf, dim, {{0, 3}, {4, 7}}, Dimensions{}, Dim::Invalid, {},
+                     x, x, x, {0, 1, 2, 4, 5, 6}, {0, 0, 0, 1, 1, 1});
+  // gap at start
+  check_with_buckets(buf, dim, {{1, 3}, {3, 7}}, Dimensions{}, Dim::Invalid, {},
+                     x, x, x, {1, 2, 3, 4, 5, 6}, {0, 0, 1, 1, 1, 1});
+  // out of order
+  // Note that out of order bucket indices is *not* to be confused with
+  // reversing a dimension, i.e., we do *not* expect {1,1,1,0,0,0,0} for the
+  // dense part.
+  check_with_buckets(buf, dim, {{4, 7}, {0, 4}}, Dimensions{}, Dim::Invalid, {},
+                     x, x, x, {4, 5, 6, 0, 1, 2, 3}, {0, 0, 0, 1, 1, 1, 1});
 }

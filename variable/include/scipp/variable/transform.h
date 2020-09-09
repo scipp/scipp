@@ -277,8 +277,9 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
         call(op, indices, out, other...);
     };
     const auto begin = core::MultiIndex(
-        merge(iter::bucket_params(out), iter::bucket_params(other)...),
-        iter::iter_dims(out), iter::data_dims(out), iter::data_dims(other)...);
+        iter::iter_dims(out),
+        std::pair{iter::data_dims(out), iter::bucket_params(out)},
+        std::pair{iter::data_dims(other), iter::bucket_params(other)}...);
     auto run_parallel = [&](const auto &range) {
       auto indices = begin;
       indices.set_index(range.begin());
@@ -621,9 +622,9 @@ template <bool dry_run> struct in_place {
           call_in_place(op, indices, arg, other...);
       };
       const auto begin_ = core::MultiIndex(
-          merge(iter::bucket_params(arg), iter::bucket_params(other)...),
-          iter::iter_dims(arg), iter::data_dims(arg),
-          iter::data_dims(other)...);
+          iter::iter_dims(arg),
+          std::pair{iter::data_dims(arg), iter::bucket_params(arg)},
+          std::pair{iter::data_dims(other), iter::bucket_params(other)}...);
       if (iter::has_stride_zero(std::get<0>(begin))) {
         // The output has a dimension with stride zero so parallelization must
         // be done differently. Explicit and precise control of chunking is
