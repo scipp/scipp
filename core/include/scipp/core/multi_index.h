@@ -11,6 +11,8 @@ namespace scipp::core {
 
 struct SCIPP_CORE_EXPORT BucketParams {
   bool operator==(const BucketParams &other) const noexcept {
+    // TODO actually we need to check equality based on data/iter dims to handle
+    // slicing
     return dim == other.dim && dims == other.dims &&
            std::equal(indices.begin(), indices.end(), other.indices.begin(),
                       other.indices.end());

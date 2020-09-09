@@ -16,7 +16,8 @@ namespace scipp::variable {
 template <class T, class Var> struct VariableAccess {
   VariableAccess(Var &var) : m_var(&var) {}
   bool is_buckets() const {
-    return m_var->dtype() == dtype<core::bucket<Variable>>;
+    return !std::is_same_v<T, std::pair<scipp::index, scipp::index>> &&
+           m_var->dtype() == dtype<core::bucket<Variable>>;
   }
   Dimensions dims() const { return m_var->dims(); }
   auto values() const {
@@ -37,8 +38,6 @@ template <class T, class Var> struct VariableAccess {
   Variable clone() const { return copy(*m_var); }
   Var *m_var{nullptr};
   using value_type = T;
-  // using value_type = typename decltype(m_var->template
-  // values<T>())::value_type;
 };
 template <class T, class Var> auto variable_access(Var &var) {
   return VariableAccess<T, Var>(var);
@@ -51,9 +50,18 @@ template <class V> constexpr auto element_dtype(const V &v) noexcept {
   return v.dtype();
 }
 
+template <class T, class V>
+constexpr bool holds_alternative(const V &v) noexcept {
+  if (v.dtype() == dtype<core::bucket<Variable>> &&
+      std::is_same_v<T, std::pair<scipp::index, scipp::index>>)
+    return true;
+  else
+    return dtype<T> == element_dtype(v);
+}
+
 template <template <class...> class Tuple, class... T, class... V>
 static bool holds_alternatives(Tuple<T...> &&, const V &... v) noexcept {
-  return ((dtype<T> == element_dtype(v)) && ...);
+  return (holds_alternative<T>(v) && ...);
 }
 
 template <template <class...> class Tuple, class... T, class... V>

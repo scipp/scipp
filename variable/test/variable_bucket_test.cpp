@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/math.h"
 #include "scipp/variable/shape.h"
 
 using namespace scipp;
@@ -67,4 +68,19 @@ TEST_F(VariableBucketTest, view) {
 TEST_F(VariableBucketTest, construct_from_view) {
   Variable copy{VariableView(var)};
   EXPECT_EQ(copy, var);
+}
+
+TEST_F(VariableBucketTest, nested_values) {
+  const auto &buckets = var.values<bucket<Variable>>();
+  EXPECT_EQ(buckets.data()[0], indices.data()[0]);
+  EXPECT_EQ(buckets.data()[1], indices.data()[1]);
+  EXPECT_EQ(buckets.values<double>(), buffer.values<double>());
+  EXPECT_EQ(buckets.values<double>().dims(), buffer.dims());
+}
+
+TEST_F(VariableBucketTest, unary_operation) {
+  const auto expected =
+      Variable{std::make_unique<Model>(dims, indices, Dim::X, sqrt(buffer))};
+  EXPECT_EQ(sqrt(var), expected);
+  // EXPECT_EQ(sqrt(var.slice({Dim::Y, 1})), expected.slice({Dim::Y, 1}));
 }

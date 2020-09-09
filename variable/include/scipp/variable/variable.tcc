@@ -21,11 +21,19 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
           std::move(dimensions), std::move(values_), std::move(variances_))) {}
 
 template <class T> const DataModel<T> &cast(const Variable &var) {
-  return requireT<const DataModel<T>>(var.data());
+  try{
+    return requireT<const DataModel<T>>(var.data());
+  } catch (const except::TypeError &){
+    return dynamic_cast<const DataModel<T> &>(var.data());
+  }
 }
 
 template <class T> DataModel<T> &cast(Variable &var) {
-  return requireT<DataModel<T>>(var.data());
+  try{
+    return requireT<DataModel<T>>(var.data());
+  } catch (const except::TypeError &){
+    return dynamic_cast<DataModel<T> &>(var.data());
+  }
 }
 
 template <class T> ElementArrayView<const T> Variable::values() const {

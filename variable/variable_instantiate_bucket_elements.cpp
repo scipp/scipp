@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/bucket_variable.tcc"
+#include "scipp/variable/transform.h"
 
 namespace scipp::variable {
 
@@ -28,6 +29,46 @@ class VariableMakerBucketVariable : public AbstractVariableMaker {
   Variable create_buckets(const DType elem_dtype, const Dimensions &dims,
                           const bool variances,
                           const VariableConstView &parent) const override {
+    // transform indices of all parents?
+    // how to handle and detect gaps?
+    // "regularize", all that is needed are sizes
+    // how to get indices from parent, if it is a view, i.e., has no data()?
+    auto parentIndices = transform<bucket<Variable>::range_type>(
+        parent, [](const auto &x) { return x; });
+    auto indices = parentIndices;
+    scipp::index size = 0;
+    for (auto &range : indices.values<bucket<Variable>::range_type>()) {
+      range.second += size - range.first;
+      range.first = size;
+      size = range.second;
+    }
+    const auto &model =
+        requireT<const DataModel<bucket<Variable>>>(parent.underlying().data());
+    const auto dim = model.dim();
+    auto bufferDims = model.buffer().dims();
+    bufferDims.resize(dim, size);
+    const auto volume = bufferDims.volume();
+
+    Variable buffer;
+    if (variances)
+      buffer = Variable(elem_dtype, bufferDims,
+                        Values(volume, core::default_init_elements),
+                        Variances(volume, core::default_init_elements));
+    else
+      buffer = Variable(elem_dtype, bufferDims,
+                        Values(volume, core::default_init_elements));
+
+    /*
+    const auto &indices = parent.data().indices();
+    if (dims != parent.dims())
+      throw std::runtime_error("xxxxxxxxxx");
+      */
+    auto tmp = indices.values<bucket<Variable>::range_type>();
+    return Variable{std::make_unique<DataModel<bucket<Variable>>>(
+        dims,
+        element_array<typename bucket<Variable>::range_type>(tmp.begin(),
+                                                             tmp.end()),
+        dim, std::move(buffer))};
     return Variable(parent);
     // Need to:
     // - create buffer with new dtype and optional variances
@@ -36,6 +77,7 @@ class VariableMakerBucketVariable : public AbstractVariableMaker {
     // - support dtype not in scipp::variable -> AbstractVariableMaker
     // - copy coords and masks for data arrays
     // - copy bucket indices, taking into account potential broadcast
+    // - handle slices
 
     // create(parents..., dtype, dims, variances)
     // must call maker with parent type, but somehow pass desired elem type?
