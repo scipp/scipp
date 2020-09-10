@@ -99,4 +99,10 @@ class PlotModel:
         return
 
     def rescale_to_data(self):
-        return sc.min(self.dslice.data).value, sc.max(self.dslice.data).value
+        vmin = None
+        vmax = None
+        if self.dslice is not None:
+            vmin = sc.min(self.dslice.data).value
+            vmax = sc.max(self.dslice.data).value
+
+        return vmin, vmax

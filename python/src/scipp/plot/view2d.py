@@ -300,6 +300,7 @@ class PlotView2d:
         # Set axes labels
         self.ax.set_xlabel(axparams["x"]["labels"])
         self.ax.set_ylabel(axparams["y"]["labels"])
+
         for xy, param in axparams.items():
             axis = getattr(self.ax, "{}axis".format(xy))
             # is_log = getattr(self.controller, "log{}".format(xy))
@@ -324,7 +325,7 @@ class PlotView2d:
 
 
     def update_data(self, new_values):
-        self.image.set_data(new_values["values"])
+        self.image.set_data(new_values["data"])
         for m in self.mask_image:
             if new_values["masks"][m] is not None:
                 self.mask_image[m].set_data(new_values["masks"][m])

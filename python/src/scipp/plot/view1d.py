@@ -5,6 +5,7 @@
 # Scipp imports
 from .. import config
 # from .profiler import Profiler
+from .lineplot import LinePlot
 from .tools import to_bin_edges, parse_params
 # from .widgets import PlotWidgets
 from .._utils import name_with_unit
@@ -33,16 +34,19 @@ class PlotView1d:
                  logx=False,
                  logy=False,
                  mask_names=None,
-                 mpl_line_params=None):
+                 mpl_line_params=None,
+                 grid=False):
 
         self.controller = controller
 
 
 
         self.figure = LinePlot(errorbars=errorbars,
-                 masks=masks,
+                 # masks=masks,
                  ax=ax,
                  mpl_line_params=mpl_line_params,
+                 title=title,
+                 unit=unit,
                  logx=logx,
                  logy=logy,
                  grid=grid)
@@ -58,7 +62,8 @@ class PlotView1d:
         # widgets_ = [self.figure, self.widgets]
         # if self.overview["additional_widgets"] is not None:
         #     wdgts.append(self.overview["additional_widgets"])
-        return ipw.VBox([self.figure, self.widgets.container])
+        # return ipw.VBox([self.figure, self.widgets.container])
+        return self.figure._to_widget()
 
 
     def savefig(self, filename=None):
@@ -164,7 +169,7 @@ class PlotView1d:
             change["owner"].mask_name, change["new"])
         return
 
-    def rescale_to_data(self, button=None):
+    def rescale_to_data(self, vmin=None, vmax=None):
         self.figure.rescale_to_data()
         return
 
@@ -174,44 +179,17 @@ class PlotView1d:
 
     def update_axes(self, axparams, axformatter, axlocator, logx, logy):
 
-        self.current_lims['x'] = axparams["x"]["lims"]
-        self.current_lims['y'] = axparams["y"]["lims"]
-
-        is_log = {"x": logx, "y": logy}
-
-        # Set axes labels
-        self.ax.set_xlabel(axparams["x"]["labels"])
-        self.ax.set_ylabel(axparams["y"]["labels"])
-        for xy, param in axparams.items():
-            axis = getattr(self.ax, "{}axis".format(xy))
-            # is_log = getattr(self.controller, "log{}".format(xy))
-            axis.set_major_formatter(
-                axformatter[param["dim"]][is_log[xy]])
-            axis.set_major_locator(
-                axlocator[param["dim"]][is_log[xy]])
-
-        # Set axes limits and ticks
-        extent_array = np.array([axparams["x"]["lims"], axparams["y"]["lims"]]).flatten()
-        with warnings.catch_warnings():
-            warnings.filterwarnings("ignore", category=UserWarning)
-            self.image.set_extent(extent_array)
-            # if len(self.masks[self.name]) > 0:
-            for m, im in self.mask_image.items():
-                im.set_extent(extent_array)
-            self.ax.set_xlim(axparams["x"]["lims"])
-            self.ax.set_ylim(axparams["y"]["lims"])
-
-        self.reset_home_button()
-        # self.rescale_to_data()
+        self.figure.update_axes(axparams, axformatter, axlocator, logx, logy)
 
 
     def update_data(self, new_values):
-        self.image.set_data(new_values["values"])
-        for m in self.mask_image:
-            if new_values["masks"][m] is not None:
-                self.mask_image[m].set_data(new_values["masks"][m])
-            else:
-                self.mask_image[m].set_visible(False)
-                self.mask_image[m].set_url("hide")
+        self.figure.update_data(new_values)
+        # self.image.set_data(new_values["values"])
+        # for m in self.mask_image:
+        #     if new_values["masks"][m] is not None:
+        #         self.mask_image[m].set_data(new_values["masks"][m])
+        #     else:
+        #         self.mask_image[m].set_visible(False)
+        #         self.mask_image[m].set_url("hide")
 
 

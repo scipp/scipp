@@ -76,65 +76,82 @@ class PlotModel1d(PlotModel):
         # })
 
         dim = list(limits.keys())[0]
+        self.axparams["x"]["dim"] = dim
 
         self.axparams["x"]["labels"] = name_with_unit(
                 self.data_arrays[self.name].coords[dim])
 
-        # xmin = np.Inf
-        # xmax = np.NINF
-        to_line_plot = {}
-        is_bin_edge = {}
-        for name, array in self.data_arrays.items():
-            # # new_x = self.slider_coord[name][dim].values
-            # # new_x = array.coords[dim].values
-            # xmin = min(sc.min(array.coords[dim]).value, xmin)
-            # xmax = max(sc.max(array.coords[dim]).value, xmax)
+        
 
-            vslice = self.slice_data(array, name)
-            to_line_plot[name] = vslice
-            # dim = vslice.dims[0]
-            is_bin_edge[name] = self.histograms[name][dim][dim]
+
+        # # xmin = np.Inf
+        # # xmax = np.NINF
+        # to_line_plot = {}
+        # is_bin_edge = {}
+
+        xmin = np.Inf
+        xmax = np.NINF
+
+        self.axparams["x"]["hist"] = {}
+
+        for name, array in self.data_arrays.items():
+
+            xmin = min(sc.min(array.coords[dim]).value, xmin)
+            xmax = max(sc.max(array.coords[dim]).value, xmax)
+
+            self.axparams["x"]["hist"][name] = limits[dim]["hist"][name]
+
+
+            # # # new_x = self.slider_coord[name][dim].values
+            # # # new_x = array.coords[dim].values
+            # # xmin = min(sc.min(array.coords[dim]).value, xmin)
+            # # xmax = max(sc.max(array.coords[dim]).value, xmax)
+
+            # vslice = self.slice_data(array, name)
+            # to_line_plot[name] = vslice
+            # # dim = vslice.dims[0]
+            # is_bin_edge[name] = self.histograms[name][dim][dim]
 
         # if self.parent.figure is None:
         #     self.parent.figure = LinePlot(to_line_plot, is_bin_edge=is_bin_edge,
         #         mpl_line_params=self.parent.mpl_line_params)
         # else:
-        self.parent.figure.plot_data(to_line_plot, is_bin_edge=is_bin_edge, clear=True)
+        # self.parent.figure.plot_data(to_line_plot, is_bin_edge=is_bin_edge, clear=True)
 
-
-        return
-
-    def slice_data(self, var, name):
-        vslice = var
-        # Slice along dimensions with active sliders
-        for dim, val in self.parent.widgets.slider.items():
-            if not val.disabled:
-                # self.lab[dim].value = self.make_slider_label(
-                #     self.slider_label[self.name][dim]["coord"], val.value)
-                # self.lab[dim].value = self.make_slider_label(
-                #     var.coords[dim], val.value)
-                # self.lab[dim].value = self.make_slider_label(
-                #     var.coords[dim], val.value, self.slider_axformatter[name][dim][False])
-
-                # vslice = vslice[val.dim, val.value]
-
-                deltax = self.parent.widgets.thickness_slider[dim].value
-                vslice = self.resample_image(vslice,
-                        rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
-                                                                     val.value + 0.5 * deltax],
-                                                            unit=vslice.coords[dim].unit)})[dim, 0]
-                vslice *= (deltax * sc.units.one)
+        self.axparams["x"]["lims"] = [xmin, xmax]
+        return self.axparams
 
 
 
-        if vslice.unaligned is not None:
-            vslice = sc.histogram(vslice)
-            # self.ylim = get_ylim(var=vslice,
-            #                           ymin=self.ylim[0],
-            #                           ymax=self.ylim[1],
-            #                           errorbars=self.errorbars[name],
-            #                           logy=self.logy)
-        return vslice
+    def slice_data(self, array, slices):
+        data_slice = array
+        # # Slice along dimensions with active sliders
+        # for dim, val in self.parent.widgets.slider.items():
+        #     if not val.disabled:
+
+        for dim in slices:
+            # deltax = self.controller.widgets.thickness_slider[dim].value
+            deltax = slices[dim]["thickness"]
+            loc = slices[dim]["location"]
+
+
+                # deltax = self.parent.widgets.thickness_slider[dim].value
+            data_slice = self.resample_image(data_slice,
+                    rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
+                                                                 loc + 0.5 * deltax],
+                                                        unit=data_slice.coords[dim].unit)})[dim, 0]
+            data_slice *= (deltax * sc.units.one)
+
+
+
+        # if vslice.unaligned is not None:
+        #     vslice = sc.histogram(vslice)
+        #     # self.ylim = get_ylim(var=vslice,
+        #     #                           ymin=self.ylim[0],
+        #     #                           ymax=self.ylim[1],
+        #     #                           errorbars=self.errorbars[name],
+        #     #                           logy=self.logy)
+        return data_slice
 
     # def slice_masks(self):
     #     mslice = self.masks
@@ -143,19 +160,46 @@ class PlotModel1d(PlotModel):
     #             mslice = mslice[dim, val.value]
     #     return mslice
 
-    def update_slice(self, change):
+    def update_data(self, slices, mask_names):
         # Define function to update slices.
         # Special key in the change dict: if "vslice" is found, it means we are
         # calling from a profile viewer, and the slice has hence already been
         # generate.
-        new_slices = {}
-        for name, var in self.data_arrays.items():
+
+        # dim = list(slices.keys())[0]
+        dim = self.axparams["x"]["dim"]
+        new_values = {}
+
+        # xmin = np.Inf
+        # xmax = np.NINF
+
+        for name, array in self.data_arrays.items():
             # if "vslice" in change:
             #     vslice = change["vslice"][name]
             # else:
-            new_slices[name] = self.slice_data(var, name)
+            new_values[name] = {"data": {}, "masks": {}}
 
-        self.parent.figure.update_data(new_slices)
+            data_slice = self.slice_data(array, slices)
+
+            # xmin = min(sc.min(array.coords[dim]).value, xmin)
+            # xmax = max(sc.max(array.coords[dim]).value, xmax)
+
+            ydata = data_slice.values
+            xcenters = to_bin_centers(data_slice.coords[dim], dim).values
+
+            # if self.histograms[name][dim][dim]:
+            if self.axparams["x"]["hist"][name]:
+                new_values[name]["data"]["x"] = data_slice.coords[dim].values
+                new_values[name]["data"]["y"] = np.concatenate((ydata[0:1], ydata))
+                # new_values[name]["data"]["hist"] = True
+            else:
+                new_values[name]["data"]["x"] = xcenters
+                new_values[name]["data"]["y"] = data_slice.values
+                # new_values[name]["data"]["hist"] = False
+
+
+
+        # self.parent.figure.update_data(new_slices)
 
         #     vals = vslice.values
         #     dim = self.button_axis_to_dim["x"]
@@ -198,4 +242,4 @@ class PlotModel1d(PlotModel):
         # #         warnings.filterwarnings("ignore", category=UserWarning)
         # #         self.ax.set_ylim(self.ylim)
 
-        return
+        return new_values

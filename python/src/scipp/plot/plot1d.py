@@ -77,21 +77,20 @@ class SciPlot1d():
         self.controller = PlotController(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
-                         cmap=cmap,
                          logx=logx,
                          logy=logy,
-            button_options=['X', 'Y'])
+                         errorbars=errorbars,
+            button_options=['X'])
 
         self.model = PlotModel1d(controller=self.controller,
-            scipp_obj_dict=scipp_obj_dict,
-            resolution=resolution)
+            scipp_obj_dict=scipp_obj_dict)
 
         # Connect controller to model
         self.controller.model = self.model
 
         self.view = PlotView1d(controller=self.controller,
             ax=ax,
-            errorbars=errorbars,
+            errorbars=self.controller.errorbars,
             title=self.controller.name,
             unit=self.controller.params["values"][self.controller.name]["unit"],
             mask_names=self.controller.mask_names[self.controller.name],
@@ -189,8 +188,7 @@ class SciPlot1d():
         # widgets_ = [self.figure, self.widgets]
         # if self.overview["additional_widgets"] is not None:
         #     wdgts.append(self.overview["additional_widgets"])
-        return ipw.VBox([self.figure._to_widget(), self.widgets.container,
-            self.additional_widgets])
+        return ipw.VBox([self.view._to_widget(), self.controller._to_widget()])
 
 
     # def get_finite_y(self, arr):

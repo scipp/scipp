@@ -30,7 +30,8 @@ class PlotController:
                  logy=False,
                  button_options=None,
                  # aspect=None,
-                 positions=None):
+                 positions=None,
+                 errorbars=None):
 
         # os.write(1, "Slicer 1\n".encode())
 
@@ -110,6 +111,24 @@ class PlotController:
         self.axlocator = {}
         # Save if some dims contain multi-dimensional coords
         # self.contains_multid_coord = {}
+        self.errorbars = {}
+
+
+
+        if errorbars is not None:
+            if isinstance(errorbars, bool):
+                self.errorbars = {name: errorbars for name in scipp_obj_dict}
+            elif isinstance(errorbars, dict):
+                self.errorbars = errorbars
+                # for name, v in errorbars.items():
+                #     if name in self.data_arrays:
+                #         self.errorbars[
+                #             name] = errorbars[name] and self.data_arrays[
+                #                 name].variances is not None
+            else:
+                raise TypeError("Unsupported type for argument "
+                                "'errorbars': {}".format(type(errorbars)))
+
 
         # self.units = {}
 
@@ -223,6 +242,14 @@ class PlotController:
             # for n, msk in array.masks.items():
             #     self.data_arrays[name].masks[n] = msk
             self.mask_names[name] = list(array.masks.keys())
+
+
+            # Determine whether error bars should be plotted or not
+            has_variances = array.variances is not None
+            if name in self.errorbars:
+                self.errorbars[name] &= has_variances
+            else:
+                self.errorbars[name] = has_variances
 
 
         # os.write(1, "Slicer 4\n".encode())
@@ -483,7 +510,9 @@ class PlotController:
                 but_val = button.value.lower()
                 limits[dim] = {"button": but_val,
                 "xlims": self.xlims[self.name][dim].values,
-                "log": getattr(self, "log{}".format(but_val))}
+                "log": getattr(self, "log{}".format(but_val)),
+                "hist": {name: self.histograms[name][dim][dim] for name in self.histograms}}
+
         axparams = self.model.update_axes(limits)
         self.view.update_axes(axparams=axparams,
                               axformatter=self.axformatter[self.name],

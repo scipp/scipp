@@ -173,8 +173,8 @@ class PlotWidgets:
             # Add observer to buttons
             self.buttons[dim].on_msg(self.update_buttons)
             # Add an observer to the sliders
-            self.slider[dim].observe(self.controller.update_slice, names="value")
-            self.thickness_slider[dim].observe(self.controller.update_slice, names="value")
+            self.slider[dim].observe(self.controller.update_data, names="value")
+            self.thickness_slider[dim].observe(self.controller.update_data, names="value")
             # Add the row of slider + buttons
             row = [
                 self.slider[dim], self.lab[dim], self.continuous_update[dim],

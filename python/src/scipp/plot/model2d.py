@@ -312,7 +312,7 @@ class PlotModel2d(PlotModel):
         # return self.dslice.values
 
         # Update the matplotlib image data
-        new_values = {"values": self.dslice.values, "masks": {}}
+        new_values = {"data": self.dslice.values, "masks": {}}
 
 
         arr = self.dslice.values

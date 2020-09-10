@@ -16,10 +16,12 @@ import numpy as np
 import ipywidgets as ipw
 from matplotlib import cm
 import matplotlib as mpl
-from matplotlib.backends import backend_agg
-import PIL as pil
+import matplotlib.pyplot as plt
+# from matplotlib.backends import backend_agg
+# import PIL as pil
 import pythreejs as p3
 from copy import copy
+import io
 
 
 def plot_3d(scipp_obj_dict=None,
@@ -431,9 +433,10 @@ void main() {
         Make image from matplotlib colorbar.
         """
         height_inches = config.plot.height / config.plot.dpi
-        fig = mpl.figure.Figure(figsize=(height_inches * 0.2, height_inches),
+
+        fig = plt.figure(figsize=(height_inches * 0.2, height_inches),
                                 dpi=config.plot.dpi)
-        canvas = backend_agg.FigureCanvasAgg(fig)
+        # canvas = backend_agg.FigureCanvasAgg(fig)
         ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
         cb1 = mpl.colorbar.ColorbarBase(
             ax,
@@ -441,11 +444,31 @@ void main() {
             cmap=self.scalar_map.get_cmap(),
             norm=self.scalar_map.norm)
         cb1.set_label(name_with_unit(var=self.engine.data_arrays[self.engine.name], name=""))
-        canvas.draw()
-        image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
-        shp = list(fig.canvas.get_width_height())[::-1] + [3]
-        self.cbar_image.value = pil.Image.fromarray(
-            image.reshape(shp))._repr_png_()
+
+        buf = io.BytesIO()
+        fig.savefig(buf, format='png')
+        buf.seek(0)
+        self.cbar_image.value = buf.getvalue()
+
+
+
+
+
+        # fig = mpl.figure.Figure(figsize=(height_inches * 0.2, height_inches),
+        #                         dpi=config.plot.dpi)
+        # canvas = backend_agg.FigureCanvasAgg(fig)
+        # ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
+        # cb1 = mpl.colorbar.ColorbarBase(
+        #     ax,
+        #     # cmap=cm.get_cmap(self.engine.params["values"][self.engine.name]["cmap"]),
+        #     cmap=self.scalar_map.get_cmap(),
+        #     norm=self.scalar_map.norm)
+        # cb1.set_label(name_with_unit(var=self.engine.data_arrays[self.engine.name], name=""))
+        # canvas.draw()
+        # image = np.frombuffer(canvas.tostring_rgb(), dtype='uint8')
+        # shp = list(fig.canvas.get_width_height())[::-1] + [3]
+        # self.cbar_image.value = pil.Image.fromarray(
+        #     image.reshape(shp))._repr_png_()
 
 
     def create_cut_surface_controls(self, show_outline):
