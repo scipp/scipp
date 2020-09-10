@@ -33,6 +33,7 @@ class PlotView1d:
                  unit=None,
                  logx=False,
                  logy=False,
+                 mask_params=None,
                  mask_names=None,
                  mpl_line_params=None,
                  grid=False):
@@ -49,7 +50,9 @@ class PlotView1d:
                  unit=unit,
                  logx=logx,
                  logy=logy,
-                 grid=grid)
+                 grid=grid,
+                 mask_params=mask_params,
+                 mask_names=mask_names)
 
 
 
@@ -184,12 +187,5 @@ class PlotView1d:
 
     def update_data(self, new_values):
         self.figure.update_data(new_values)
-        # self.image.set_data(new_values["values"])
-        # for m in self.mask_image:
-        #     if new_values["masks"][m] is not None:
-        #         self.mask_image[m].set_data(new_values["masks"][m])
-        #     else:
-        #         self.mask_image[m].set_visible(False)
-        #         self.mask_image[m].set_url("hide")
 
 

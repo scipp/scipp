@@ -8,7 +8,7 @@ from .model import PlotModel
 # from .lineplot import LinePlot
 from .render import render_plot
 from .slicer import Slicer
-from .tools import to_bin_centers, vars_to_err
+from .tools import to_bin_centers, vars_to_err, mask_to_float
 from .._utils import name_with_unit
 from .._scipp import core as sc
 
@@ -177,7 +177,7 @@ class PlotModel1d(PlotModel):
             # if "vslice" in change:
             #     vslice = change["vslice"][name]
             # else:
-            new_values[name] = {"data": {}, "masks": {}}
+            new_values[name] = {"values": {}, "variances": {}, "masks": {}}
 
             data_slice = self.slice_data(array, slices)
 
@@ -189,13 +189,17 @@ class PlotModel1d(PlotModel):
 
             # if self.histograms[name][dim][dim]:
             if self.axparams["x"]["hist"][name]:
-                new_values[name]["data"]["x"] = data_slice.coords[dim].values
-                new_values[name]["data"]["y"] = np.concatenate((ydata[0:1], ydata))
+                new_values[name]["values"]["x"] = data_slice.coords[dim].values
+                new_values[name]["values"]["y"] = np.concatenate((ydata[0:1], ydata))
                 # new_values[name]["data"]["hist"] = True
             else:
-                new_values[name]["data"]["x"] = xcenters
-                new_values[name]["data"]["y"] = data_slice.values
+                new_values[name]["values"]["x"] = xcenters
+                new_values[name]["values"]["y"] = ydata
                 # new_values[name]["data"]["hist"] = False
+            if data_slice.variances is not None:
+                new_values[name]["variances"]["x"] = xcenters
+                new_values[name]["variances"]["y"] = ydata
+                new_values[name]["variances"]["e"] = vars_to_err(data_slice.variances)
 
 
 
@@ -212,22 +216,26 @@ class PlotModel1d(PlotModel):
         #     # self.members["lines"][name].set_ydata(vals)
         #     self.members["lines"][name].set_data(xcoord.values, vals)
 
-        #     if len(self.masks[name]) > 0:
-        #         base_mask = sc.Variable(dims=vslice.dims,
-        #                                 values=np.ones(vslice.shape,
-        #                                                dtype=np.int32))
-        #         for m in self.masks[name]:
-        #             # Use automatic broadcast to broadcast 0D masks
-        #             msk = (base_mask * sc.Variable(
-        #                 dims=vslice.masks[m].dims,
-        #                 values=vslice.masks[m].values.astype(np.int32))).values
-        #             if hist:
-        #                 msk = np.concatenate((msk[0:1], msk))
-        #             self.members["masks"][name][m].set_data(
-        #                 xcoord.values,
-        #                 self.mask_to_float(msk, vals))
-        #             # self.members["masks"][name][m].set_ydata(
-        #             #     self.mask_to_float(msk, vals))
+            # if len(self.masks[name]) > 0:
+            if len(mask_names[name]) > 0:
+                base_mask = sc.Variable(dims=data_slice.dims,
+                                        values=np.ones(data_slice.shape,
+                                                       dtype=np.int32))
+                for m in mask_names[name]:
+                    # Use automatic broadcast to broadcast 0D masks
+                    msk = (base_mask * sc.Variable(
+                        dims=data_slice.masks[m].dims,
+                        values=data_slice.masks[m].values.astype(np.int32))).values
+                    if self.axparams["x"]["hist"][name]:
+                        msk = np.concatenate((msk[0:1], msk))
+
+                    new_values[name]["masks"][m] = mask_to_float(msk, new_values[name]["values"]["y"])
+
+                    # self.members["masks"][name][m].set_data(
+                    #     xcoord.values,
+                    #     self.mask_to_float(msk, vals))
+                    # # self.members["masks"][name][m].set_ydata(
+                    # #     self.mask_to_float(msk, vals))
 
         #     if self.errorbars[name]:
         #         coll = self.members["error_y"][name].get_children()[0]

@@ -104,5 +104,4 @@ class PlotModel:
         if self.dslice is not None:
             vmin = sc.min(self.dslice.data).value
             vmax = sc.max(self.dslice.data).value
-
         return vmin, vmax

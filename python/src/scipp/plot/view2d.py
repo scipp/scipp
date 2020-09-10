@@ -159,7 +159,7 @@ class PlotView2d:
             return ipw.Image(value=buf.getvalue())
 
     def savefig(self, filename=None):
-        self.fig.savefig(filename=filename, bbox_inches="tight")
+        self.fig.savefig(filename, bbox_inches="tight")
 
 
     # def _ipython_display_(self):
@@ -325,7 +325,7 @@ class PlotView2d:
 
 
     def update_data(self, new_values):
-        self.image.set_data(new_values["data"])
+        self.image.set_data(new_values["values"])
         for m in self.mask_image:
             if new_values["masks"][m] is not None:
                 self.mask_image[m].set_data(new_values["masks"][m])

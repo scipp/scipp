@@ -24,7 +24,6 @@ class LinePlot:
     def __init__(self,
                  # dict_of_data_arrays=None,
                  errorbars=None,
-                 # masks=None,
                  # is_bin_edge=None,
                  ax=None,
                  mpl_line_params=None,
@@ -32,7 +31,9 @@ class LinePlot:
                  unit=None,
                  logx=False,
                  logy=False,
-                 grid=False):
+                 grid=False,
+                 mask_params=None,
+                 mask_names=None):
                  # axformatter=None,
                  # axlocator=None):
 
@@ -45,6 +46,8 @@ class LinePlot:
         self.error_lines = {}
 
         self.errorbars = errorbars
+        self.mask_names = mask_names
+        self.mask_params = mask_params
 
         # self.masks = masks
         # if self.masks is None:
@@ -101,6 +104,8 @@ class LinePlot:
         # self.ylim = [np.Inf, np.NINF]
         self.logx = logx
         self.logy = logy
+        self.unit = unit
+        # print(self.logx, self.logx)
 
         # for name, var in self.dict_of_data_arrays.items():
         # #     self.names.append(name)
@@ -117,18 +122,18 @@ class LinePlot:
         # #         warnings.filterwarnings("ignore", category=UserWarning)
         # #         self.ax.set_ylim(self.ylim)
 
-        if self.logx:
-            self.ax.set_xscale("log")
-        if self.logy:
-            self.ax.set_yscale("log")
+        # if self.logx:
+        #     self.ax.set_xscale("log")
+        # if self.logy:
+        #     self.ax.set_yscale("log")
 
-        # # Disable buttons
-        # for dim, button in self.buttons.items():
-        #     if self.slider[dim].disabled:
-        #         button.disabled = True
-        # self.plot_data(dict_of_data_arrays)
+        # # # Disable buttons
+        # # for dim, button in self.buttons.items():
+        # #     if self.slider[dim].disabled:
+        # #         button.disabled = True
+        # # self.plot_data(dict_of_data_arrays)
 
-        self.ax.set_ylabel(unit)
+        # self.ax.set_ylabel(unit)
         # if len(self.ax.get_legend_handles_labels()[0]) > 0:
         #     self.ax.legend()
 
@@ -161,7 +166,7 @@ class LinePlot:
         return self.fig.canvas
 
     def savefig(self, filename=None):
-        self.fig.savefig(filename=filename, bbox_inches="tight")
+        self.fig.savefig(filename, bbox_inches="tight")
 
 
     def update_axes(self, axparams=None, axformatter=None, axlocator=None, logx=False, logy=False, clear=True):
@@ -178,6 +183,13 @@ class LinePlot:
         # #     "error_xy": {},
         # #     "masks": {}
         # # })
+
+        if self.logx:
+            self.ax.set_xscale("log")
+        if self.logy:
+            self.ax.set_yscale("log")
+
+        self.ax.set_ylabel(self.unit)
 
         if self.grid:
             self.ax.grid()
@@ -205,31 +217,85 @@ class LinePlot:
 
 
         for name, hist in axparams["x"]["hist"].items():
+
+            self.mask_lines[name] = {}
+
             if hist:
                 [self.data_lines[name]
-                 ] = self.ax.step([0, 1],
-                                  [0, 1],
+                 ] = self.ax.step([1, 2],
+                                  [1, 2],
                                   label=name,
                                   zorder=10,
                                   **{
                                       key: self.mpl_line_params[key][name]
                                       for key in ["color", "linewidth"]
                                   })
+                for m in self.mask_names[name]:
+                    [self.mask_lines[name][m]] = self.ax.step(
+                        [1, 2],
+                        [1, 2],
+                        linewidth=self.mpl_line_params["linewidth"][name] *
+                        3.0,
+                        color=self.mask_params["color"],
+                        zorder=9)
+                    # Abuse a mostly unused property `gid` of Line2D to
+                    # identify the line as a mask. We set gid to `onaxes`.
+                    # This is used by the profile viewer in the 2D plotter
+                    # to know whether to show the mask or not, depending on
+                    # whether the cursor is hovering over the 2D image or
+                    # not.
+                    self.mask_lines[name][m].set_gid("onaxes")
             else:
                 [self.data_lines[name]
-                 ] = self.ax.plot([0, 1],
-                                  [0, 1],
+                 ] = self.ax.plot([1, 2],
+                                  [1, 2],
                                   label=name,
                                   zorder=10,
                                   **{
                                       key: self.mpl_line_params[key][name]
                                       for key in self.mpl_line_params.keys()
                                   })
+                # print(self.mask_names)
+                # print(self.mpl_line_params)
+                # print(self.mpl_line_params["marker"])
+                # print(self.mpl_line_params["marker"][name])
+                # print(self.mask_params)
+                # print(self.mask_params["color"])
+                for m in self.mask_names[name]:
+                    [self.mask_lines[name][m]] = self.ax.plot(
+                        [1, 2],
+                        [1, 2],
+                        zorder=11,
+                        mec=self.mask_params["color"],
+                        mfc="None",
+                        mew=3.0,
+                        linestyle="none",
+                        marker=self.mpl_line_params["marker"][name])
+                    self.mask_lines[name][m].set_gid("onaxes")
 
 
 
+            # Add error bars
+            if self.errorbars[name]:
+                # if self.histograms[name][dim][dim]:
+                #     self.current_xcenters = to_bin_centers(
+                #         self.slider_coord[name][dim], dim).values
+                # else:
+                #     self.current_xcenters = new_x
+                self.error_lines[name] = self.ax.errorbar(
+                    [1, 2],
+                    [1, 2],
+                    yerr=[1, 1],
+                    color=self.mpl_line_params["color"][name],
+                    zorder=10,
+                    fmt="none")
 
- 
+
+
+        if len(self.ax.get_legend_handles_labels()[0]) > 0:
+            self.ax.legend()
+
+
 
 
 
@@ -345,24 +411,6 @@ class LinePlot:
 
 
 
-            # Add error bars
-            if self.errorbars[name]:
-                # if self.histograms[name][dim][dim]:
-                #     self.current_xcenters = to_bin_centers(
-                #         self.slider_coord[name][dim], dim).values
-                # else:
-                #     self.current_xcenters = new_x
-                self.error_lines[name] = self.ax.errorbar(
-                    xcenters,
-                    ydata,
-                    yerr=vars_to_err(array.variances),
-                    color=self.mpl_line_params["color"][name],
-                    zorder=10,
-                    fmt="none")
-
-        if len(self.ax.get_legend_handles_labels()[0]) > 0:
-            self.ax.legend()
-
 
 
 
@@ -471,7 +519,7 @@ class LinePlot:
             # # self.members["lines"][name].set_ydata(vals)
 
 
-            self.data_lines[name].set_data(vals["data"]["x"], vals["data"]["y"])
+            self.data_lines[name].set_data(vals["values"]["x"], vals["values"]["y"])
 
 
 
@@ -480,26 +528,19 @@ class LinePlot:
             #     base_mask = sc.Variable(dims=array.dims,
             #                             values=np.ones(array.shape,
             #                                            dtype=np.int32))
-            #     for m in array.masks:
-            #         # Use automatic broadcast to broadcast 0D masks
-            #         msk = (base_mask * sc.Variable(
-            #             dims=array.masks[m].dims,
-            #             values=array.masks[m].values.astype(np.int32))).values
-            #         if self.is_bin_edge[name]:
-            #             msk = np.concatenate((msk[0:1], msk))
-            #         self.mask_lines[name][m].set_data(
-            #             xcoord.values,
-            #             mask_to_float(msk, vals))
-            #         # self.members["masks"][name][m].set_ydata(
-            #         #     self.mask_to_float(msk, vals))
+            for m in vals["masks"]:
+                self.mask_lines[name][m].set_data(
+                    vals["values"]["x"],
+                    vals["masks"][m])
 
-            # if self.errorbars[name]:
-            #     coll = self.error_lines[name].get_children()[0]
-            #     if self.is_bin_edge[name]:
-            #         xcoord = to_bin_centers(xcoord, dim)
-            #     coll.set_segments(
-            #         self.change_segments_y(xcoord.values,
-            #                                array.values, array.variances))
+            if self.errorbars[name]:
+                coll = self.error_lines[name].get_children()[0]
+                # if self.is_bin_edge[name]:
+                #     xcoord = to_bin_centers(xcoord, dim)
+                coll.set_segments(
+                    self.change_segments_y(vals["variances"]["x"],
+                                           vals["variances"]["y"],
+                                           vals["variances"]["e"]))
 
         # if self.input_contains_unaligned_data and (not self.mpl_axes):
         #     with warnings.catch_warnings():
@@ -593,7 +634,7 @@ class LinePlot:
 
 
     def change_segments_y(self, x, y, e):
-        e = vars_to_err(e)
+        # e = vars_to_err(e)
         arr1 = np.repeat(x, 2)
         arr2 = np.array([y - e, y + e]).T.flatten()
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)

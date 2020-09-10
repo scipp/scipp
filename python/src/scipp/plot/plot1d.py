@@ -32,7 +32,8 @@ def plot1d(scipp_obj_dict=None,
             logx=False,
             logy=False,
             logxy=False,
-            grid=False):
+            grid=False,
+            title=None):
     """
     Plot a 1D spectrum.
 
@@ -51,7 +52,8 @@ def plot1d(scipp_obj_dict=None,
                   mpl_line_params=mpl_line_params,
                   logx=logx or logxy,
                   logy=logy or logxy,
-                  grid=grid)
+                  grid=grid,
+                  title=title)
 
     if filename is not None:
         sp.savefig(filename)
@@ -70,7 +72,8 @@ class SciPlot1d():
                  mpl_line_params=None,
                  logx=False,
                  logy=False,
-                 grid=False):
+                 grid=False,
+                 title=None):
 
 
 
@@ -91,12 +94,14 @@ class SciPlot1d():
         self.view = PlotView1d(controller=self.controller,
             ax=ax,
             errorbars=self.controller.errorbars,
-            title=self.controller.name,
+            title=title,
             unit=self.controller.params["values"][self.controller.name]["unit"],
-            mask_names=self.controller.mask_names[self.controller.name],
+            mask_params=self.controller.params["masks"][self.controller.name],
+            mask_names=self.controller.mask_names,
             logx=logx,
             logy=logy,
-            mpl_line_params=mpl_line_params)
+            mpl_line_params=mpl_line_params,
+            grid=grid)
 
         self.controller.view = self.view
 
@@ -190,6 +195,8 @@ class SciPlot1d():
         #     wdgts.append(self.overview["additional_widgets"])
         return ipw.VBox([self.view._to_widget(), self.controller._to_widget()])
 
+    def savefig(self, filename=None):
+        self.view.savefig(filename=filename)
 
     # def get_finite_y(self, arr):
     #     if self.logy:
