@@ -3,7 +3,9 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/variable.tcc"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -15,6 +17,71 @@ VariableConstView::constituents() const {
   view.m_variable = &model.indices();
   return {view, model.dim(), model.buffer()};
 }
+
+auto contiguous_indices(const VariableConstView &parent,
+                        const Dimensions &dims) {
+  auto indices = broadcast(parent, dims);
+  scipp::index size = 0;
+  for (auto &range : indices.values<core::bucket_base::range_type>()) {
+    range.second += size - range.first;
+    range.first = size;
+    size = range.second;
+  }
+  return std::tuple{indices, size};
+}
+
+template <class T> class BucketVariableMaker : public AbstractVariableMaker {
+private:
+  const VariableConstView bucket_parent(const VariableConstView &parent) const {
+    return parent;
+  }
+  const VariableConstView
+  bucket_parent(const VariableConstView &parent1,
+                const VariableConstView &parent2) const {
+    return parent1.dtype() == dtype<bucket<T>> ? parent1 : parent2;
+  }
+  template <class... Parents>
+  const VariableConstView bucket_parent(const VariableConstView &parent,
+                                        const Parents &... parents) const {
+    return parent.dtype() == dtype<bucket<T>> ? parent
+                                              : bucket_parent(parents...);
+  }
+  virtual Variable make_buffer(const VariableConstView &parent,
+                       const VariableConstView &indices, const DType type,
+                       const Dimensions &dims, const bool variances) const = 0;
+  template <class... Parents>
+  Variable create_buckets_impl(const DType elem_dtype, const Dimensions &dims,
+                               const bool variances,
+                               const Parents &... parents) const {
+    const VariableConstView parent = bucket_parent(parents...);
+    const auto &[parentIndices, dim, buffer] = parent.constituents<bucket<T>>();
+    auto [indices, size] = contiguous_indices(parentIndices, dims);
+    auto bufferDims = buffer.dims();
+    bufferDims.resize(dim, size);
+    return Variable{std::make_unique<DataModel<bucket<T>>>(
+        indices, dim,
+        make_buffer(parent, indices, elem_dtype, bufferDims, variances))};
+  }
+
+public:
+  Variable create(const Dimensions &, const bool) const override {
+    throw std::runtime_error("Cannot create Variable with buckets without "
+                             "bucket paremeters obtained from parent(s).");
+  }
+
+  Variable create_buckets(const DType elem_dtype, const Dimensions &dims,
+                          const bool variances,
+                          const VariableConstView &parent) const override {
+    return create_buckets_impl(elem_dtype, dims, variances, parent);
+  }
+
+  Variable create_buckets(const DType elem_dtype, const Dimensions &dims,
+                          const bool variances,
+                          const VariableConstView &parent1,
+                          const VariableConstView &parent2) const override {
+    return create_buckets_impl(elem_dtype, dims, variances, parent1, parent2);
+  }
+};
 
 /// Macro for instantiating classes and functions required for support a new
 /// bucket dtype in Variable.
