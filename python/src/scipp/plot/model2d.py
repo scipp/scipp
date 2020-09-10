@@ -368,7 +368,7 @@ class PlotModel2d(PlotModel):
 
 
 
-    def update_viewport_image(self, xylims, mask_names):
+    def update_viewport(self, xylims, mask_names):
 
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled image array

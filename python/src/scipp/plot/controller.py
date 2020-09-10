@@ -540,8 +540,8 @@ class PlotController:
         new_values = self.model.update_data(slices, self.mask_names)
         self.view.update_data(new_values)
 
-    def update_viewport_image(self, xylims):
-        new_values = self.model.update_viewport_image(xylims, self.mask_names)
+    def update_viewport(self, xylims):
+        new_values = self.model.update_viewport(xylims, self.mask_names)
         self.view.update_data(new_values)
 
     def toggle_mask(self, change):

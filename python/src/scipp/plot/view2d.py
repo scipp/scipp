@@ -230,38 +230,29 @@ class PlotView2d:
         """
         Update the axis limits and resample the image according to new viewport
         """
-        os.write(1, "update_bins_from_axes_limits 1\n".encode())
         self.xlim_updated = False
         self.ylim_updated = False
-        os.write(1, "update_bins_from_axes_limits 2\n".encode())
         xylims = {}
         # Make sure we don't overrun the original array bounds
-        os.write(1, "update_bins_from_axes_limits 3\n".encode())
         xylims["x"] = np.clip(
             self.ax.get_xlim(),
             *sorted(self.controller.xlims[self.controller.name][self.controller.axparams["x"]["dim"]].values))
-        os.write(1, "update_bins_from_axes_limits 4\n".encode())
         xylims["y"] = np.clip(
             self.ax.get_ylim(),
             *sorted(self.controller.xlims[self.controller.name][self.controller.axparams["y"]["dim"]].values))
-        os.write(1, "update_bins_from_axes_limits 5\n".encode())
 
         dx = np.abs(self.current_lims["x"][1] - self.current_lims["x"][0])
         dy = np.abs(self.current_lims["y"][1] - self.current_lims["y"][0])
         diffx = np.abs(self.current_lims["x"] - xylims["x"]) / dx
         diffy = np.abs(self.current_lims["y"] - xylims["y"]) / dy
         diff = diffx.sum() + diffy.sum()
-        os.write(1, "update_bins_from_axes_limits 6\n".encode())
 
         # Only resample image if the changes in axes limits are large enough to
         # avoid too many updates while panning.
         if diff > 0.1:
-            os.write(1, "update_bins_from_axes_limits 7\n".encode())
 
             self.current_lims = xylims
-            os.write(1, "update_bins_from_axes_limits 8\n".encode())
-            self.controller.update_viewport_image(xylims)
-            os.write(1, "update_bins_from_axes_limits 9\n".encode())
+            self.controller.update_viewport(xylims)
             # for xy, param in self.engine.axparams.items():
             #     # Create coordinate axes for resampled image array
             #     self.engine.xyrebin[xy] = sc.Variable(
@@ -270,7 +261,6 @@ class PlotView2d:
             #                            self.image_resolution[xy] + 1),
             #         unit=self.engine.data_arrays[self.engine.name].coords[param["dim"]].unit)
             # self.engine.update_image(extent=np.array(list(xylims.values())).flatten())
-        os.write(1, "update_bins_from_axes_limits 10\n".encode())
         return
 
 

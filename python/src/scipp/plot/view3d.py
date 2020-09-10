@@ -24,157 +24,33 @@ from copy import copy
 import io
 
 
-def plot3d(scipp_obj_dict=None,
-            positions=None,
-            axes=None,
-            masks=None,
-            filename=None,
-            figsize=None,
-            aspect=None,
-            cmap=None,
-            log=False,
-            vmin=None,
-            vmax=None,
-            color=None,
-            background="#f0f0f0",
-            nan_color="#d3d3d3",
-            pixel_size=1.0,
-            tick_size=None,
-            show_outline=True):
-    """
-    Plot a 3D point cloud through a N dimensional dataset.
-    For every dimension above 3, a slider is created to adjust the position of
-    the slice in that particular dimension.
-    It is possible to add cut surfaces as cartesian, cylindrical or spherical
-    planes.
-    """
-
-    sp = SciPlot3d(scipp_obj_dict=scipp_obj_dict,
-                  positions=positions,
-                  axes=axes,
-                  masks=masks,
-                  cmap=cmap,
-                  log=log,
-                  vmin=vmin,
-                  vmax=vmax,
-                  color=color,
-                  aspect=aspect,
-                  background=background,
-                  nan_color=nan_color,
-                  pixel_size=pixel_size,
-                  tick_size=tick_size,
-                  show_outline=show_outline)
-
-    # render_plot(widgets=sv.box, filename=filename)
-
-    return sp
 
 
-class SciPlot3d:
+
+
+
+class PlotView3d:
     def __init__(self,
-                 scipp_obj_dict=None,
-                 positions=None,
-                 axes=None,
-                 masks=None,
+                 # scipp_obj_dict=None,
+                 # axes=None,
+                 # masks=None,
+                 controller=None,
                  cmap=None,
+                 norm=None,
+                 title=None,
+                 unit=None,
                  log=None,
                  vmin=None,
                  vmax=None,
-                 color=None,
-                 aspect=None,
-                 background=None,
                  nan_color=None,
-                 pixel_size=None,
-                 tick_size=None,
-                 show_outline=True):
+                 mask_cmap=None,
+                 mask_names=None):
 
-
-        self.controller = PlotController(scipp_obj_dict=scipp_obj_dict,
-                         axes=axes,
-                         masks=masks,
-                         cmap=cmap,
-                         log=log,
-                         vmin=vmin,
-                         vmax=vmax,
-                         color=color,
-            button_options=['X', 'Y', 'Z'])
-
-        self.model = PlotModel3d(controller=self.controller,
-            scipp_obj_dict=scipp_obj_dict)
-
-        # Connect controller to model
-        self.controller.model = self.model
-
-        self.view = PlotView3d(controller=self.controller,
-            cmap=self.controller.params["values"][self.controller.name]["cmap"],
-            norm=self.controller.params["values"][self.controller.name]["norm"],
-            unit=self.controller.params["values"][self.controller.name]["unit"],
-            mask_cmap=self.controller.params["masks"][self.controller.name]["cmap"],
-            mask_names=self.controller.mask_names[self.controller.name])
-
-        self.controller.view = self.view
-
-        # Profile view
-        self.profile = None
-
-
-        # Call update_slice once to make the initial image
-        self.controller.update_axes()
-
-
-        return
-
-    def _ipython_display_(self):
-        return self._to_widget()._ipython_display_()
-
-    def _to_widget(self):
-        return ipw.VBox([self.view._to_widget(), self.controller._to_widget()])
-
-    def savefig(self, filename=None):
-        self.view.savefig(filename=filename)
+        self.controller = controller
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    def nono:
-
-        self.widgets = PlotWidgets(self, engine=self.engine,
-
-        # self.vslice = None
-        # self.current_cut_surface_value = None
-        # self.cut_slider_steps = 10.
         self.cbar_image = ipw.Image()
         self.cut_options = {
             "Xplane": 0,
@@ -188,12 +64,12 @@ class SciPlot3d:
         }
 
         # Prepare colormaps
-        self.cmap = copy(cm.get_cmap(self.engine.params["values"][self.engine.name]["cmap"]))
+        self.cmap = copy(cm.get_cmap(cmap))
         self.cmap.set_bad(color=nan_color)
         self.scalar_map = cm.ScalarMappable(
-            norm=self.engine.params["values"][self.engine.name]["norm"], cmap=self.cmap)
+            norm=norm, cmap=self.cmap)
         self.masks_scalar_map = None
-        if len(self.engine.data_arrays[self.engine.name].masks) > 0:
+        if len(mask_names) > 0:
             self.masks_cmap = copy(
                 cm.get_cmap(self.engine.params["masks"][self.engine.name]["cmap"]))
             self.masks_cmap.set_bad(color=nan_color)
