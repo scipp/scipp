@@ -30,6 +30,8 @@ public:
                                   const VariableConstView &) const {
     throw std::runtime_error("abc");
   }
+  virtual DType elem_dtype(const VariableConstView &var) const = 0;
+  virtual VariableConstView data(const VariableConstView &var) const = 0;
 };
 
 template <class T> class VariableMaker : public AbstractVariableMaker {
@@ -41,6 +43,16 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
                              Variances(volume, core::default_init_elements));
     else
       return makeVariable<T>(dims, Values(volume, core::default_init_elements));
+  }
+  DType elem_dtype(const VariableConstView &var) const override {
+    return var.dtype();
+  }
+  VariableConstView data(const VariableConstView &var) const override {
+    return var;
+  }
+  element_array_view make_view(const VariableConstView &var) const override {
+    // TODO do we need this? Add VariableConcept::base_view() instead?
+    return var;
   }
 };
 
@@ -62,6 +74,18 @@ public:
                           const Parents &... parents) const {
     return m_makers.at(key)->create_buckets(elem_dtype, dims, variances,
                                             parents...);
+  }
+  DType elem_dtype(const VariableConstView &var) const;
+  template <class T> auto values(const VariableConstView &var) const {
+    const auto &data = m_makers.at(var.dtype())->data(var);
+    return ElementArrayView<T>(model.base_view(), data.values<T>().data());
+    // create element_array_view, then combine with values to
+    // ElementArrayView<T>
+    // TODO need to add here what bucket_array_view::make_nested does
+    // - indices from `var`, known in this module, but not accessible with
+    //   current API
+    // - `data` gives span<T>
+    return var.make_view(data.values<T>());
   }
 
 private:

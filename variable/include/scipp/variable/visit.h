@@ -9,31 +9,22 @@
 #include <variant>
 
 #include "scipp/core/bucket.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
 /// Access wrapper for a variable with known dtype.
+///
+/// This uses VariableFactory to obtain views of the underlying data type, e.g.,
+/// to access the double values for bucket<Variable> or bucket<DataArray>.
+/// DataArray is not known in scipp::variable so the dynamic factory is used for
+/// decoupling this.
 template <class T, class Var> struct VariableAccess {
   VariableAccess(Var &var) : m_var(&var) {}
-  bool is_buckets() const {
-    return m_var->dtype() == dtype<core::bucket<Variable>>;
-  }
   Dimensions dims() const { return m_var->dims(); }
-  auto values() const {
-    return is_buckets() ? m_var->template values<core::bucket<Variable>>()
-                              .template values<T>()
-                        : m_var->template values<T>();
-  }
-  auto variances() const {
-    return is_buckets() ? m_var->template values<core::bucket<Variable>>()
-                              .template variances<T>()
-                        : m_var->template variances<T>();
-  }
-  bool hasVariances() const {
-    return is_buckets()
-               ? m_var->template values<core::bucket<Variable>>().hasVariances()
-               : m_var->hasVariances();
-  }
+  auto values() const { return variableFactory().values<T>(*m_var); }
+  auto variances() const { return variableFactory().variances<T>(*m_var); }
+  bool hasVariances() const { return variableFactory().hasVariances(*m_var); }
   Variable clone() const { return copy(*m_var); }
   Var *m_var{nullptr};
   using value_type = T;
@@ -43,15 +34,10 @@ template <class T, class Var> auto variable_access(Var &var) {
 }
 
 namespace visit_detail {
-template <class V> constexpr auto element_dtype(const V &v) noexcept {
-  if (v.dtype() == dtype<core::bucket<Variable>>)
-    return v.template values<core::bucket<Variable>>()[0].dtype();
-  return v.dtype();
-}
 
 template <template <class...> class Tuple, class... T, class... V>
 static bool holds_alternatives(Tuple<T...> &&, const V &... v) noexcept {
-  return ((dtype<T> == element_dtype(v)) && ...);
+  return ((dtype<T> == variableFactory().elem_dtype(v)) && ...);
 }
 
 template <template <class...> class Tuple, class... T, class... V>

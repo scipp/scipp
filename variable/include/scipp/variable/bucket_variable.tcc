@@ -47,8 +47,9 @@ private:
                                               : bucket_parent(parents...);
   }
   virtual Variable make_buffer(const VariableConstView &parent,
-                       const VariableConstView &indices, const DType type,
-                       const Dimensions &dims, const bool variances) const = 0;
+                               const VariableConstView &indices,
+                               const DType type, const Dimensions &dims,
+                               const bool variances) const = 0;
   template <class... Parents>
   Variable create_buckets_impl(const DType elem_dtype, const Dimensions &dims,
                                const bool variances,
@@ -80,6 +81,9 @@ public:
                           const VariableConstView &parent1,
                           const VariableConstView &parent2) const override {
     return create_buckets_impl(elem_dtype, dims, variances, parent1, parent2);
+  }
+  DType elem_dtype(const VariableConstView &var) const override {
+    return std::get<2>(var.constituents<bucket<T>>()).dtype();
   }
 };
 

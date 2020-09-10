@@ -65,6 +65,15 @@ public:
   const T &buffer() const noexcept { return m_buffer; }
   const Variable &indices() const { return m_indices; }
 
+  element_array_view base_view() const {
+    // TODO access params odd... dims are in VariableConstView, but bucket
+    // params in model? is there a better way?
+    // TODO offset, contiguous range instead of view
+    const auto ranges = indices.values<range_type>();
+    return {
+        0, m_dims, m_dataDims, {m_dim, m_buffer.dims(), scipp::span{ranges}}};
+  }
+
   ElementArrayView<bucket<T>> values() {
     return {index_values(), m_dim, m_buffer};
   }
