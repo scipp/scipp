@@ -6,6 +6,7 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
@@ -172,6 +173,14 @@ std::vector<scipp::index> VariableConstView::strides() const {
 bool VariableConstView::is_trivial() const noexcept {
   return m_variable && m_offset == 0 && m_dims == m_variable->dims() &&
          m_dataDims == m_variable->dims();
+}
+
+VariableConstView VariableConstView::indices() const {
+  auto view = *this;
+  view.m_variable =
+      &requireT<const DataModel<bucket<Variable>>>(underlying().data())
+           .indices();
+  return view;
 }
 
 void Variable::rename(const Dim from, const Dim to) {

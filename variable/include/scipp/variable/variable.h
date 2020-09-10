@@ -251,6 +251,8 @@ public:
   auto &underlying() const { return *m_variable; }
   bool is_trivial() const noexcept;
 
+  VariableConstView indices() const;
+
 protected:
   const Variable *m_variable{nullptr};
   scipp::index m_offset{0};

@@ -63,26 +63,24 @@ public:
 
   Dim dim() const noexcept { return m_dim; }
   const T &buffer() const noexcept { return m_buffer; }
-  auto indices() const { return m_indices.values<range_type>(); }
-  auto indices(const scipp::index offset, const Dimensions &iterDims,
-               const Dimensions &dataDims) const {
-    return cast<range_type>(m_indices).values(offset, iterDims, dataDims);
-  }
+  const Variable &indices() const { return m_indices; }
 
-  ElementArrayView<bucket<T>> values() { return {indices(), m_dim, m_buffer}; }
+  ElementArrayView<bucket<T>> values() {
+    return {index_values(), m_dim, m_buffer};
+  }
   ElementArrayView<const bucket<T>> values() const {
-    return {indices(), m_dim, m_buffer};
+    return {index_values(), m_dim, m_buffer};
   }
 
   ElementArrayView<bucket<T>> values(const scipp::index offset,
                                      const Dimensions &iterDims,
                                      const Dimensions &dataDims) {
-    return {indices(offset, iterDims, dataDims), m_dim, m_buffer};
+    return {index_values(offset, iterDims, dataDims), m_dim, m_buffer};
   }
   ElementArrayView<const bucket<T>> values(const scipp::index offset,
                                            const Dimensions &iterDims,
                                            const Dimensions &dataDims) const {
-    return {indices(offset, iterDims, dataDims), m_dim, m_buffer};
+    return {index_values(offset, iterDims, dataDims), m_dim, m_buffer};
   }
 
 private:
@@ -110,6 +108,11 @@ private:
     const auto &i = indices.values<range_type>();
     std::copy(i.begin(), i.end(), vals.begin());
     return copy;
+  }
+  auto index_values() const { return m_indices.values<range_type>(); }
+  auto index_values(const scipp::index offset, const Dimensions &iterDims,
+                    const Dimensions &dataDims) const {
+    return cast<range_type>(m_indices).values(offset, iterDims, dataDims);
   }
   Variable m_indices;
   Dim m_dim;

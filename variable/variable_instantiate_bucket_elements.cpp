@@ -29,9 +29,9 @@ class VariableMakerBucketVariable : public AbstractVariableMaker {
   Variable create_buckets(const DType elem_dtype, const Dimensions &dims,
                           const bool variances,
                           const VariableConstView &parent) const override {
-    auto parentIndices = transform<bucket<Variable>::range_type>(
-        parent, [](const auto &x) { return x; });
-    auto indices = parentIndices;
+    auto indices = makeVariable<bucket<Variable>::range_type>(dims);
+    transform_in_place<bucket<Variable>::range_type>(
+        indices, parent.indices(), [](auto &x, const auto &y) { x = y; });
     scipp::index size = 0;
     for (auto &range : indices.values<bucket<Variable>::range_type>()) {
       range.second += size - range.first;
@@ -43,7 +43,6 @@ class VariableMakerBucketVariable : public AbstractVariableMaker {
     const auto dim = model.dim();
     auto bufferDims = model.buffer().dims();
     bufferDims.resize(dim, size);
-    const auto volume = bufferDims.volume();
 
     return Variable{std::make_unique<DataModel<bucket<Variable>>>(
         indices, dim,

@@ -207,11 +207,7 @@ void DataModel<T>::copy(const VariableConstView &src,
 }
 
 template <class T> void DataModel<T>::assign(const VariableConcept &other) {
-  const auto &otherT = requireT<const DataModel<T>>(other);
-  std::copy(otherT.m_values.begin(), otherT.m_values.end(), m_values.begin());
-  if (hasVariances())
-    std::copy(otherT.m_variances->begin(), otherT.m_variances->end(),
-              m_variances->begin());
+  *this = requireT<const DataModel<T>>(other);
 }
 
 template <class T> void DataModel<T>::setVariances(Variable &&variances) {
