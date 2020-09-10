@@ -422,29 +422,45 @@ class DatasetDrawer():
             drawer = VariableDrawer(data, margin, target_dims=dims)
             content += drawer.draw(color=color, offset=offset, title=name)
             size = drawer.size()
-            if layout_direction == 'x':
-                width += size[0]
-                height = max(height, size[1])
-                offset = [width, 0]
-            else:
-                width = max(width, size[0])
-                height += size[1]
-                offset = [0, height]
+            width, height, offset = _new_size_and_offset(
+                size, width, height, layout_direction)
             return content, width, height, offset
 
-        def _append_ellipsis(content, width, height, offset, layout_direction,
-                             text):
-            drawer = VariableDrawer(data, margin, target_dims=dims)
-            content += drawer.draw(color=color, offset=offset, title=name)
-            size = drawer.size()
+        def _new_size_and_offset(added_size, width, height, layout_direction):
             if layout_direction == 'x':
-                width += size[0]
-                height = max(height, size[1])
+                width += added_size[0]
+                height = max(height, added_size[1])
                 offset = [width, 0]
             else:
-                width = max(width, size[0])
-                height += size[1]
+                width = max(width, added_size[0])
+                height += added_size[1]
                 offset = [0, height]
+            return width, height, offset
+
+        def _append_ellipsis(content, width, height, offset, layout_direction):
+            def _pad_dot(offset, layout_direction):
+                if layout_direction == 'x':
+                    offset[0] += 0.3
+                else:
+                    offset[1] += 0.3
+                return offset
+
+            def _append_dot(content, offset, layout_direction):
+                dot = f'<circle cx="{offset[0]+0.15}" cy="{offset[1]+1.5}" r="0.1" fill="black" />'  # noqa #501
+                content += dot
+                offset = _pad_dot(offset, layout_direction)
+                return content, offset
+
+            offset = _pad_dot(offset, layout_direction)
+            content, offset = _append_dot(content, offset, layout_direction)
+            content, offset = _append_dot(content, offset, layout_direction)
+            content, offset = _append_dot(content, offset, layout_direction)
+            _pad_dot(offset, layout_direction)
+
+            ellipsis_size = [1.5, 2.0]
+            width, height, offset = _new_size_and_offset(
+                ellipsis_size, width, height, layout_direction)
+
             return content, width, height, offset
 
         def draw_area(area, layout_direction, reverse=False, truncate=False):
@@ -454,8 +470,8 @@ class DatasetDrawer():
             offset = [0, 0]
 
             number_of_items = len(area)
-            min_items_before_worth_truncating = 5
-            if truncate and number_of_items > min_items_before_worth_truncating:
+            min_items_before_worth_truncate = 5
+            if truncate and number_of_items > min_items_before_worth_truncate:
                 if reverse:
                     first_item = area[-1]
                     last_item = area[0]
@@ -467,9 +483,8 @@ class DatasetDrawer():
                     content, width, height, offset, layout_direction,
                     first_item)
                 # Draw ellipsis
-                _append_ellipsis(content, width, height, offset,
-                                 layout_direction,
-                                 f"({number_of_items-2} more 0D variables)")
+                content, width, height, offset = _append_ellipsis(
+                    content, width, height, offset, layout_direction)
                 # Draw last variable
                 content, width, height, offset = _append_drawer(
                     content, width, height, offset, layout_direction,
