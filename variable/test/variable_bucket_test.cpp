@@ -3,8 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/variable/bucket_model.h"
-#include "scipp/variable/math.h"
-#include "scipp/variable/shape.h"
+#include "scipp/variable/operations.h"
 
 using namespace scipp;
 
@@ -76,4 +75,40 @@ TEST_F(VariableBucketTest, unary_operation) {
       Variable{std::make_unique<Model>(indices, Dim::X, sqrt(buffer))};
   EXPECT_EQ(sqrt(var), expected);
   EXPECT_EQ(sqrt(var.slice({Dim::Y, 1})), expected.slice({Dim::Y, 1}));
+}
+
+TEST_F(VariableBucketTest, binary_operation) {
+  const auto expected =
+      Variable{std::make_unique<Model>(indices, Dim::X, buffer + buffer)};
+  EXPECT_EQ(var + var, expected);
+  EXPECT_EQ(var.slice({Dim::Y, 1}) + var.slice({Dim::Y, 1}),
+            expected.slice({Dim::Y, 1}));
+}
+
+TEST_F(VariableBucketTest, binary_operation_with_dense) {
+  Variable dense = makeVariable<double>(var.dims(), Values{0.1, 0.2});
+  Variable expected_buffer =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.1, 2.1, 3.2, 4.2});
+  const auto expected =
+      Variable{std::make_unique<Model>(indices, Dim::X, expected_buffer)};
+  EXPECT_EQ(var + dense, expected);
+  EXPECT_EQ(var.slice({Dim::Y, 1}) + dense.slice({Dim::Y, 1}),
+            expected.slice({Dim::Y, 1}));
+}
+
+TEST_F(VariableBucketTest, binary_operation_with_dense_broadcast) {
+  Variable dense =
+      makeVariable<double>(Dims{Dim::Z}, Shape{2}, Values{0.1, 0.2});
+  Variable expected_buffer = makeVariable<double>(
+      Dims{Dim::X}, Shape{8}, Values{1.1, 2.1, 3.1, 4.1, 1.2, 2.2, 3.2, 4.2});
+  Variable expected_indices =
+      makeVariable<std::pair<scipp::index, scipp::index>>(
+          Dims{Dim::Z, Dim::Y}, Shape{2, 2},
+          Values{std::pair{0, 2}, std::pair{2, 4}, std::pair{4, 6},
+                 std::pair{6, 8}});
+  const auto expected = Variable{
+      std::make_unique<Model>(expected_indices, Dim::X, expected_buffer)};
+  EXPECT_EQ(var + dense, expected);
+  EXPECT_EQ(var.slice({Dim::Y, 1}) + dense, expected.slice({Dim::Y, 1}));
+  EXPECT_EQ(dense + var, expected);
 }
