@@ -572,7 +572,7 @@ class LinePlot:
 
         # The masks
         # if len(self.masks[lab]) > 0:
-        for m in self.dict_of_data_arrays[name].masks:
+        for m in self.mask_lines[name]:
             self.ax.lines.append(cp.copy(self.mask_lines[name][m]))
             self.ax.lines[-1].set_url(line_id)
             self.ax.lines[-1].set_gid(m)

@@ -41,6 +41,7 @@ class PlotView1d:
                  data_names=None):
 
         self.controller = controller
+        # self.slice_label = None
 
 
 
@@ -153,10 +154,10 @@ class PlotView1d:
         self.figure.keep_line(name=lab, color=self.keep_buttons[owner.id]["colorpicker"].value,
             line_id=owner.id)
 
-        for dim, val in self.widgets.slider.items():
-            if not val.disabled:
-                lab = "{},{}:{}".format(lab, dim, val.value)
-        self.keep_buttons[owner.id]["dropdown"].options = [lab]
+        # for dim, val in self.widgets.slider.items():
+        #     if not val.disabled:
+        #         lab = "{},{}:{}".format(lab, dim, val.value)
+        self.keep_buttons[owner.id]["dropdown"].options = lab + self.controller.slice_label
         self.keep_buttons[owner.id]["dropdown"].disabled = True
         self.make_keep_button()
         owner.description = "Remove"

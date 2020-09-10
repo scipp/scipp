@@ -47,6 +47,7 @@ class PlotController:
         self.axes = axes
         self.logx = logx
         self.logy = logy
+        self.slice_label = None
 
         # # Member container for dict output
         # self.members = dict(widgets=dict(sliders=dict(),
@@ -525,11 +526,15 @@ class PlotController:
 
     def update_data(self, change=None):
         slices = {}
+        self.slice_label = ""
         # Slice along dimensions with active sliders
         for dim, val in self.widgets.slider.items():
             if not val.disabled:
                 slices[dim] = {"location": val.value,
                 "thickness": self.widgets.thickness_slider[dim].value}
+                self.slice_label = "{},{}:{}-{}".format(self.slice_label, dim,
+                    slices[dim]["location"] - 0.5*slices[dim]["thickness"],
+                    slices[dim]["location"] + 0.5*slices[dim]["thickness"])
         # return slices
         new_values = self.model.update_data(slices, self.mask_names)
         self.view.update_data(new_values)
