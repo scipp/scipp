@@ -312,13 +312,13 @@ class PlotModel2d(PlotModel):
         # return self.dslice.values
 
         # Update the matplotlib image data
-        new_values = {"values": self.dslice.values, "masks": {}}
+        new_values = {"values": self.dslice.values, "masks": {}, "extent": extent}
 
 
         arr = self.dslice.values
         # self.controller.image.set_data(arr)
         # if extent is not None:
-        #     self.controller.image.set_extent(extent)
+        #     new_values["extent"] = extent
 
         # Handle masks
         if len(mask_names[self.name]) > 0:
@@ -368,7 +368,7 @@ class PlotModel2d(PlotModel):
 
 
 
-    def update_viewport_image(self, xylims):
+    def update_viewport_image(self, xylims, mask_names):
 
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled image array
@@ -377,4 +377,4 @@ class PlotModel2d(PlotModel):
                 values=np.linspace(xylims[xy][0], xylims[xy][1],
                                    self.image_resolution[xy] + 1),
                 unit=self.data_arrays[self.name].coords[param["dim"]].unit)
-        self.update_image(extent=np.array(list(xylims.values())).flatten())
+        return self.update_image(extent=np.array(list(xylims.values())).flatten(), mask_names=mask_names)

@@ -4,10 +4,10 @@
 
 # Scipp imports
 from .. import config
-from .render import render_plot
-from .engine_3d import PlotEngine3d
+# from .render import render_plot
+from .model3d import PlotModel3d
 from .tools import to_bin_centers
-from .widgets import PlotWidgets
+# from .widgets import PlotWidgets
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 
@@ -24,7 +24,7 @@ from copy import copy
 import io
 
 
-def plot_3d(scipp_obj_dict=None,
+def plot3d(scipp_obj_dict=None,
             positions=None,
             axes=None,
             masks=None,

@@ -46,8 +46,8 @@ def dispatch(scipp_obj_dict,
         from .plot2d import plot2d
         return plot2d(scipp_obj_dict, **kwargs)
     elif projection == "3d":
-        from .plot_3d import plot_3d
-        return plot_3d(scipp_obj_dict, **kwargs)
+        from .plot3d import plot3d
+        return plot3d(scipp_obj_dict, **kwargs)
     elif projection == "profile":
         from .profiler import profiler
         return profiler(scipp_obj_dict, **kwargs)

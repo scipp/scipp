@@ -20,7 +20,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Subplot
 import warnings
 import io
-
+import os
 
 class PlotView2d:
     def __init__(self,
@@ -131,9 +131,9 @@ class PlotView2d:
         # self.members["fig"] = self.fig
         # self.members["ax"] = self.ax
 
-        # # Connect changes in axes limits to resampling function
-        # self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
-        # self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
+        # Connect changes in axes limits to resampling function
+        self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
+        self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
 
         # # if self.cbar is not None:
         # #     self.fig.canvas.mpl_connect('pick_event', self.rescale_colorbar)
@@ -230,29 +230,38 @@ class PlotView2d:
         """
         Update the axis limits and resample the image according to new viewport
         """
+        os.write(1, "update_bins_from_axes_limits 1\n".encode())
         self.xlim_updated = False
         self.ylim_updated = False
+        os.write(1, "update_bins_from_axes_limits 2\n".encode())
         xylims = {}
         # Make sure we don't overrun the original array bounds
+        os.write(1, "update_bins_from_axes_limits 3\n".encode())
         xylims["x"] = np.clip(
             self.ax.get_xlim(),
-            *sorted(self.engine.slider_xlims[self.engine.name][self.engine.button_dims[1]].values))
+            *sorted(self.controller.xlims[self.controller.name][self.controller.axparams["x"]["dim"]].values))
+        os.write(1, "update_bins_from_axes_limits 4\n".encode())
         xylims["y"] = np.clip(
             self.ax.get_ylim(),
-            *sorted(self.engine.slider_xlims[self.engine.name][self.engine.button_dims[0]].values))
+            *sorted(self.controller.xlims[self.controller.name][self.controller.axparams["y"]["dim"]].values))
+        os.write(1, "update_bins_from_axes_limits 5\n".encode())
 
         dx = np.abs(self.current_lims["x"][1] - self.current_lims["x"][0])
         dy = np.abs(self.current_lims["y"][1] - self.current_lims["y"][0])
         diffx = np.abs(self.current_lims["x"] - xylims["x"]) / dx
         diffy = np.abs(self.current_lims["y"] - xylims["y"]) / dy
         diff = diffx.sum() + diffy.sum()
+        os.write(1, "update_bins_from_axes_limits 6\n".encode())
 
         # Only resample image if the changes in axes limits are large enough to
         # avoid too many updates while panning.
         if diff > 0.1:
+            os.write(1, "update_bins_from_axes_limits 7\n".encode())
 
             self.current_lims = xylims
+            os.write(1, "update_bins_from_axes_limits 8\n".encode())
             self.controller.update_viewport_image(xylims)
+            os.write(1, "update_bins_from_axes_limits 9\n".encode())
             # for xy, param in self.engine.axparams.items():
             #     # Create coordinate axes for resampled image array
             #     self.engine.xyrebin[xy] = sc.Variable(
@@ -261,6 +270,7 @@ class PlotView2d:
             #                            self.image_resolution[xy] + 1),
             #         unit=self.engine.data_arrays[self.engine.name].coords[param["dim"]].unit)
             # self.engine.update_image(extent=np.array(list(xylims.values())).flatten())
+        os.write(1, "update_bins_from_axes_limits 10\n".encode())
         return
 
 
@@ -281,9 +291,9 @@ class PlotView2d:
                     for x in self.fig.canvas.toolbar._nav_stack._elements[0][
                             key]:
                         alist.append(x)
-                    alist[0] = (*self.engine.slider_xlims[self.name][
-                        self.button_dims[1]].values, *self.engine.slider_xlims[
-                            self.name][self.button_dims[0]].values)
+                    alist[0] = (*self.controller.xlims[self.controller.name][
+                        self.controller.axparams["x"]["dim"]].values, *self.controller.xlims[
+                            self.controller.name][self.controller.axparams["y"]["dim"]].values)
                     # Insert the new tuple
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
@@ -326,12 +336,16 @@ class PlotView2d:
 
     def update_data(self, new_values):
         self.image.set_data(new_values["values"])
+        if new_values["extent"] is not None:
+            self.image.set_extent(new_values["extent"])
         for m in self.mask_image:
             if new_values["masks"][m] is not None:
                 self.mask_image[m].set_data(new_values["masks"][m])
             else:
                 self.mask_image[m].set_visible(False)
                 self.mask_image[m].set_url("hide")
+            if new_values["extent"] is not None:
+                self.mask_image[m].set_extent(new_values["extent"])
         self.fig.canvas.draw_idle()
 
 

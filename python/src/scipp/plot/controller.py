@@ -48,6 +48,7 @@ class PlotController:
         self.logx = logx
         self.logy = logy
         self.slice_label = None
+        self.axparams = None
 
         # # Member container for dict output
         # self.members = dict(widgets=dict(sliders=dict(),
@@ -514,8 +515,8 @@ class PlotController:
                 "log": getattr(self, "log{}".format(but_val)),
                 "hist": {name: self.histograms[name][dim][dim] for name in self.histograms}}
 
-        axparams = self.model.update_axes(limits)
-        self.view.update_axes(axparams=axparams,
+        self.axparams = self.model.update_axes(limits)
+        self.view.update_axes(axparams=self.axparams,
                               axformatter=self.axformatter[self.name],
                               axlocator=self.axlocator[self.name],
                               logx=self.logx,
@@ -540,7 +541,8 @@ class PlotController:
         self.view.update_data(new_values)
 
     def update_viewport_image(self, xylims):
-        self.model.update_viewport_image(xylims)
+        new_values = self.model.update_viewport_image(xylims, self.mask_names)
+        self.view.update_data(new_values)
 
     def toggle_mask(self, change):
         self.view.toggle_mask(change)
