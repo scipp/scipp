@@ -72,7 +72,9 @@ private:
     T *m_buffer;
   };
   template <class Elem> auto make_nested(Elem *buffer) const {
-    return core::ElementArrayView(buffer, m_offset, m_iterDims, m_dataDims,
+    // Note the 0 passed as offset: Offset is taken into account in data() and
+    // is for the bucket *indices*. No offset in buffer required.
+    return core::ElementArrayView(buffer, 0, m_iterDims, m_dataDims,
                                   {m_transform.m_dim,
                                    m_transform.m_buffer->dims(),
                                    scipp::span{data(), data() + size()}});

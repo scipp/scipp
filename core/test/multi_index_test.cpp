@@ -238,8 +238,15 @@ TEST_F(MultiIndexTest, two_1d_arrays_of_1d_buckets) {
   Dimensions buf{{dim}, {1}};
   check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, buf, dim, {{4, 7}, {0, 4}}, x,
                      x, x, {0, 1, 2, 3, 4, 5, 6}, {4, 5, 6, 0, 1, 2, 3});
-  // slice
+  // slice inner
   check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, buf, dim,
-                     {{1, 4}, {5, 9}, {8, 8}, {8, 8}}, x, x, yx,
-                     {0, 1, 2, 3, 4, 5, 6}, {1, 2, 3, 5, 6, 7, 8});
+                     {{1, 4}, {5, 9}, {9, 10}, {10, 11}, {11, 12}, {12, 13}}, x,
+                     x, yx, {0, 1, 2, 3, 4, 5, 6}, {1, 2, 3, 5, 6, 7, 8});
+  // slice outer
+  check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, buf, dim,
+                     {{1, 4}, {9, 10}, {10, 11}, {5, 9}, {11, 12}, {12, 13}}, x,
+                     x, xy, {0, 1, 2, 3, 4, 5, 6}, {1, 2, 3, 5, 6, 7, 8});
+  // slice to scalar
+  check_with_buckets(buf, dim, {{0, 2}}, buf, dim, {{2, 5}, {0, 2}},
+                     Dimensions{}, x, x, {0, 1, 2}, {2, 3, 4});
 }
