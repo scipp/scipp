@@ -36,7 +36,9 @@ class PlotView1d:
                  mask_params=None,
                  mask_names=None,
                  mpl_line_params=None,
-                 grid=False):
+                 grid=False,
+                 ndim=None,
+                 data_names=None):
 
         self.controller = controller
 
@@ -54,7 +56,12 @@ class PlotView1d:
                  mask_params=mask_params,
                  mask_names=mask_names)
 
-
+        self.widgets = ipw.VBox()
+        self.keep_buttons = {}
+        self.data_names = data_names
+        self.make_keep_button()
+        if ndim < 2:
+            self.additional_widgets.layout.display = 'none'
 
         return
 
@@ -63,10 +70,10 @@ class PlotView1d:
 
     def _to_widget(self):
         # widgets_ = [self.figure, self.widgets]
-        # if self.overview["additional_widgets"] is not None:
-        #     wdgts.append(self.overview["additional_widgets"])
-        # return ipw.VBox([self.figure, self.widgets.container])
-        return self.figure._to_widget()
+        # if self.overview["widgets"] is not None:
+        #     wdgts.append(self.overview["widgets"])
+        return ipw.VBox([self.figure._to_widget(), self.widgets])
+        # return self.figure._to_widget()
 
 
     def savefig(self, filename=None):
@@ -74,7 +81,7 @@ class PlotView1d:
 
 
     def make_keep_button(self):
-        drop = ipw.Dropdown(options=list(self.engine.data_arrays.keys()),
+        drop = ipw.Dropdown(options=self.data_names,
                                 description='',
                                 layout={'width': 'initial'})
         but = ipw.Button(description="Keep",
@@ -98,12 +105,12 @@ class PlotView1d:
             "button": but,
             "colorpicker": col
         }
-        self.additional_widgets.children += ipw.HBox(list(self.keep_buttons[key].values())),
+        self.widgets.children += ipw.HBox(list(self.keep_buttons[key].values())),
         return
 
     def clear_keep_buttons(self):
         self.keep_buttons.clear()
-        self.update_additional_widgets()
+        self.update_widgets()
 
     # def update_buttons(self, owner, event, dummy):
     #     for dim, button in self.buttons.items():
@@ -121,14 +128,14 @@ class PlotView1d:
     #     self.update_button_box_widget()
     #     return
 
-    def update_additional_widgets(self):
+    def update_widgets(self):
         # for k, b in self.keep_buttons.items():
         #     self.mbox.append(widgets.HBox(list(b.values())))
         # self.box.children = tuple(self.mbox)
         widget_list = []
         for key, val in self.keep_buttons.items():
             widget_list.append(ipw.HBox(list(val.values())))
-        self.additional_widgets.children = tuple(widget_list)
+        self.widgets.children = tuple(widget_list)
 
 
 
@@ -159,7 +166,7 @@ class PlotView1d:
     def remove_trace(self, owner):
         self.figure.remove_line(owner.id)
         del self.keep_buttons[owner.id]
-        self.update_additional_widgets()
+        self.update_widgets()
         return
 
     def update_trace_color(self, change):

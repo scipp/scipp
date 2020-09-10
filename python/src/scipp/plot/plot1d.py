@@ -101,7 +101,9 @@ class SciPlot1d():
             logx=logx,
             logy=logy,
             mpl_line_params=mpl_line_params,
-            grid=grid)
+            grid=grid,
+            ndim=self.controller.ndim,
+            data_names=list(scipp_obj_dict.keys()))
 
         self.controller.view = self.view
 
@@ -112,7 +114,6 @@ class SciPlot1d():
         # Call update_slice once to make the initial image
         self.controller.update_axes()
 
-        return
 
         # # Save the line parameters (color, linewidth...)
         # self.mpl_line_params = mpl_line_params
@@ -152,11 +153,10 @@ class SciPlot1d():
         # self.ax.set_ylabel(ylab)
         # if len(self.ax.get_legend_handles_labels()[0]) > 0:
         #     self.ax.legend()
-        self.additional_widgets = ipw.VBox()
 
-
-        self.keep_buttons = dict()
-        self.make_keep_button()
+        # self.widget_view = ipw.VBox()
+        # self.keep_buttons = dict()
+        # self.make_keep_button()
 
         # self.additional_widgets = None
 
@@ -173,8 +173,8 @@ class SciPlot1d():
         #     [widgets.VBox(self.vbox), self.additional_widgets])
 
         # self.box.layout.align_items = 'center'
-        if self.engine.ndim < 2:
-            self.additional_widgets.layout.display = 'none'
+        # if self.controller.ndim < 2:
+        #     self.additional_widgets.layout.display = 'none'
 
         # self.additional_widgets = 
 

@@ -332,6 +332,8 @@ class PlotView2d:
             else:
                 self.mask_image[m].set_visible(False)
                 self.mask_image[m].set_url("hide")
+        self.fig.canvas.draw_idle()
+
 
 
 

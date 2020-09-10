@@ -529,7 +529,7 @@ class PlotController:
         for dim, val in self.widgets.slider.items():
             if not val.disabled:
                 slices[dim] = {"location": val.value,
-                "thickness": self.controller.widgets.thickness_slider[dim].value}
+                "thickness": self.widgets.thickness_slider[dim].value}
         # return slices
         new_values = self.model.update_data(slices, self.mask_names)
         self.view.update_data(new_values)
