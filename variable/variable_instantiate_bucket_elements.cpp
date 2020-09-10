@@ -45,12 +45,9 @@ class VariableMakerBucketVariable : public AbstractVariableMaker {
     bufferDims.resize(dim, size);
     const auto volume = bufferDims.volume();
 
-    auto tmp = indices.values<bucket<Variable>::range_type>();
     return Variable{std::make_unique<DataModel<bucket<Variable>>>(
-        dims,
-        element_array<typename bucket<Variable>::range_type>(tmp.begin(),
-                                                             tmp.end()),
-        dim, variableFactory().create(elem_dtype, bufferDims, variances))};
+        indices, dim,
+        variableFactory().create(elem_dtype, bufferDims, variances))};
     return Variable(parent);
 
   }

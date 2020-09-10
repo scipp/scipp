@@ -13,10 +13,11 @@ using Model = variable::DataModel<bucket<Variable>>;
 class VariableBucketTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
-  element_array<std::pair<scipp::index, scipp::index>> indices{{0, 2}, {2, 4}};
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  Variable var{std::make_unique<Model>(dims, indices, Dim::X, buffer)};
+  Variable var{std::make_unique<Model>(indices, Dim::X, buffer)};
 };
 
 TEST_F(VariableBucketTest, comparison) {
@@ -70,17 +71,9 @@ TEST_F(VariableBucketTest, construct_from_view) {
   EXPECT_EQ(copy, var);
 }
 
-TEST_F(VariableBucketTest, nested_values) {
-  const auto &buckets = var.values<bucket<Variable>>();
-  EXPECT_EQ(buckets.data()[0], indices.data()[0]);
-  EXPECT_EQ(buckets.data()[1], indices.data()[1]);
-  EXPECT_EQ(buckets.values<double>(), buffer.values<double>());
-  EXPECT_EQ(buckets.values<double>().dims(), buffer.dims());
-}
-
 TEST_F(VariableBucketTest, unary_operation) {
   const auto expected =
-      Variable{std::make_unique<Model>(dims, indices, Dim::X, sqrt(buffer))};
+      Variable{std::make_unique<Model>(indices, Dim::X, sqrt(buffer))};
   EXPECT_EQ(sqrt(var), expected);
   EXPECT_EQ(sqrt(var.slice({Dim::Y, 1})), expected.slice({Dim::Y, 1}));
 }

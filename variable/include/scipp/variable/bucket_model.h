@@ -18,16 +18,14 @@ namespace scipp::variable {
 ///
 /// A bucket in this context is defined as an element of a variable mapping to a
 /// range of data, such as a slice of a DataArray.
-template <class T>
-class DataModel<bucket<T>> : public DataModel<typename bucket<T>::range_type> {
+template <class T> class DataModel<bucket<T>> : public VariableConcept {
 public:
   using value_type = bucket<T>;
   using range_type = typename bucket<T>::range_type;
-  using base = DataModel<range_type>;
 
-  DataModel(const Dimensions &dimensions,
-            const element_array<range_type> &indices, const Dim dim, T buffer)
-      : base(dimensions, validated_indices(indices, dim, buffer)), m_dim(dim),
+  DataModel(const Variable &indices, const Dim dim, T buffer)
+      : VariableConcept(indices.dims()),
+        m_indices(validated_indices(indices, dim, buffer)), m_dim(dim),
         m_buffer(std::move(buffer)) {}
 
   VariableConceptHandle clone() const override {
@@ -35,8 +33,8 @@ public:
   }
 
   bool operator==(const DataModel &other) const noexcept {
-    return base::operator==(other) && m_dim == other.m_dim &&
-           m_buffer == other.m_buffer;
+    return dims() == other.dims() && m_indices == other.m_indices &&
+           m_dim == other.m_dim && m_buffer == other.m_buffer;
   }
   bool operator!=(const DataModel &other) const noexcept {
     return !(*this == other);
@@ -44,9 +42,8 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
-    return std::make_unique<DataModel>(dims,
-                                       element_array<range_type>(dims.volume()),
-                                       m_dim, T{m_buffer.slice({m_dim, 0, 0})});
+    return std::make_unique<DataModel>(makeVariable<range_type>(dims), m_dim,
+                                       T{m_buffer.slice({m_dim, 0, 0})});
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
@@ -66,12 +63,10 @@ public:
 
   Dim dim() const noexcept { return m_dim; }
   const T &buffer() const noexcept { return m_buffer; }
-  auto indices() const {
-    return base::values();
-  }
+  auto indices() const { return m_indices.values<range_type>(); }
   auto indices(const scipp::index offset, const Dimensions &iterDims,
                const Dimensions &dataDims) const {
-    return base::values(offset, iterDims, dataDims);
+    return cast<range_type>(m_indices).values(offset, iterDims, dataDims);
   }
 
   ElementArrayView<bucket<T>> values() { return {indices(), m_dim, m_buffer}; }
@@ -91,27 +86,32 @@ public:
   }
 
 private:
-  static auto validated_indices(const element_array<range_type> &indices,
-                                const Dim dim, const T &buffer) {
+  static auto validated_indices(const Variable &indices, const Dim dim,
+                                const T &buffer) {
     auto copy(indices);
-    std::sort(copy.begin(), copy.end());
-    if ((!copy.empty() && (copy.begin()->first < 0)) ||
-        (!copy.empty() && ((copy.end() - 1)->second > buffer.dims()[dim])))
+    const auto vals =
+        scipp::span(copy.values<range_type>().data(),
+                    copy.values<range_type>().data() + copy.dims().volume());
+    std::sort(vals.begin(), vals.end());
+    if ((!vals.empty() && (vals.begin()->first < 0)) ||
+        (!vals.empty() && ((vals.end() - 1)->second > buffer.dims()[dim])))
       throw except::SliceError("Bucket indices out of range");
-    if (std::adjacent_find(copy.begin(), copy.end(),
+    if (std::adjacent_find(vals.begin(), vals.end(),
                            [](const auto a, const auto b) {
                              return a.second > b.first;
-                           }) != copy.end())
+                           }) != vals.end())
       throw except::SliceError(
           "Bucket begin index must be less or equal to its end index.");
-    if (std::find_if(copy.begin(), copy.end(), [](const auto x) {
+    if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
           return x.second >= 0 && x.first > x.second;
-        }) != copy.end())
+        }) != vals.end())
       throw except::SliceError("Overlapping bucket indices are not allowed.");
     // Copy to avoid a second memory allocation
-    std::copy(indices.begin(), indices.end(), copy.begin());
+    const auto &i = indices.values<range_type>();
+    std::copy(i.begin(), i.end(), vals.begin());
     return copy;
   }
+  Variable m_indices;
   Dim m_dim;
   T m_buffer;
 };
@@ -145,11 +145,7 @@ void DataModel<bucket<T>>::copy(const VariableConstView &,
 
 template <class T>
 void DataModel<bucket<T>>::assign(const VariableConcept &other) {
-  const auto &otherT = requireT<const DataModel<bucket<T>>>(other);
-  std::copy(otherT.m_values.begin(), otherT.m_values.end(),
-            base::m_values.begin());
-  m_dim = otherT.m_dim;
-  m_buffer = otherT.m_buffer;
+  *this = requireT<const DataModel<bucket<T>>>(other);
 }
 
 } // namespace scipp::variable

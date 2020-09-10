@@ -16,8 +16,7 @@ namespace scipp::variable {
 template <class T, class Var> struct VariableAccess {
   VariableAccess(Var &var) : m_var(&var) {}
   bool is_buckets() const {
-    return !std::is_same_v<T, std::pair<scipp::index, scipp::index>> &&
-           m_var->dtype() == dtype<core::bucket<Variable>>;
+    return m_var->dtype() == dtype<core::bucket<Variable>>;
   }
   Dimensions dims() const { return m_var->dims(); }
   auto values() const {
@@ -50,18 +49,9 @@ template <class V> constexpr auto element_dtype(const V &v) noexcept {
   return v.dtype();
 }
 
-template <class T, class V>
-constexpr bool holds_alternative(const V &v) noexcept {
-  if (v.dtype() == dtype<core::bucket<Variable>> &&
-      std::is_same_v<T, std::pair<scipp::index, scipp::index>>)
-    return true;
-  else
-    return dtype<T> == element_dtype(v);
-}
-
 template <template <class...> class Tuple, class... T, class... V>
 static bool holds_alternatives(Tuple<T...> &&, const V &... v) noexcept {
-  return (holds_alternative<T>(v) && ...);
+  return ((dtype<T> == element_dtype(v)) && ...);
 }
 
 template <template <class...> class Tuple, class... T, class... V>

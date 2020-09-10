@@ -1089,17 +1089,17 @@ class TransformBucketElementsTest : public ::testing::Test {
 protected:
   using Model = variable::DataModel<bucket<Variable>>;
   Dimensions dims{Dim::Y, 2};
-  element_array<std::pair<scipp::index, scipp::index>> indices{{0, 2}, {2, 4}};
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  Variable var{std::make_unique<Model>(dims, indices, Dim::X, buffer)};
+  Variable var{std::make_unique<Model>(indices, Dim::X, buffer)};
 };
 
 TEST_F(TransformBucketElementsTest, single_arg_in_place) {
   transform_in_place<double>(
       var, scipp::overloaded{transform_flags::expect_no_variance_arg<0>,
                              [](auto &x) { x *= x; }});
-  Variable expected{
-      std::make_unique<Model>(dims, indices, Dim::X, buffer * buffer)};
+  Variable expected{std::make_unique<Model>(indices, Dim::X, buffer * buffer)};
   EXPECT_EQ(var, expected);
 }

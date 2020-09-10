@@ -442,10 +442,7 @@ template <class Op> struct Transform {
         (handles.hasVariances() || ...);
     Variable out = variableFactory().create(dtype<Out>, dims, variances);
 
-    if (!(std::is_same_v<typename Ts::value_type,
-                         std::pair<scipp::index, scipp::index>> ||
-          ...) &&
-        ((handles.m_var->dtype() == dtype<bucket<Variable>>) || ...)) {
+    if (((handles.m_var->dtype() == dtype<bucket<Variable>>) || ...)) {
       out =
           variableFactory().create_buckets(dtype<bucket<Variable>>, dtype<Out>,
                                            dims, variances, *handles.m_var...);

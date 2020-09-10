@@ -146,6 +146,14 @@ protected:
   std::optional<element_array<T>> m_variances;
 };
 
+template <class T> const DataModel<T> &cast(const Variable &var) {
+  return requireT<const DataModel<T>>(var.data());
+}
+
+template <class T> DataModel<T> &cast(Variable &var) {
+  return requireT<DataModel<T>>(var.data());
+}
+
 } // namespace scipp::variable
 
 #include "scipp/variable/bucket_model.h"
