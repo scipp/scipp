@@ -251,7 +251,9 @@ public:
   auto &underlying() const { return *m_variable; }
   bool is_trivial() const noexcept;
 
-  VariableConstView indices() const;
+  template <class T>
+  std::tuple<VariableConstView, Dim, typename T::const_element_type>
+  constituents() const;
 
 protected:
   const Variable *m_variable{nullptr};

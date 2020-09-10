@@ -175,14 +175,6 @@ bool VariableConstView::is_trivial() const noexcept {
          m_dataDims == m_variable->dims();
 }
 
-VariableConstView VariableConstView::indices() const {
-  auto view = *this;
-  view.m_variable =
-      &requireT<const DataModel<bucket<Variable>>>(underlying().data())
-           .indices();
-  return view;
-}
-
 void Variable::rename(const Dim from, const Dim to) {
   if (dims().contains(from))
     data().m_dimensions.relabel(dims().index(from), to);
