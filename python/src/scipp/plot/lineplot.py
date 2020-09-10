@@ -218,13 +218,15 @@ class LinePlot:
 
         for name, hist in axparams["x"]["hist"].items():
 
+            label = name if len(name) > 0 else " "
+
             self.mask_lines[name] = {}
 
             if hist:
                 [self.data_lines[name]
                  ] = self.ax.step([1, 2],
                                   [1, 2],
-                                  label=name,
+                                  label=label,
                                   zorder=10,
                                   **{
                                       key: self.mpl_line_params[key][name]
@@ -249,7 +251,7 @@ class LinePlot:
                 [self.data_lines[name]
                  ] = self.ax.plot([1, 2],
                                   [1, 2],
-                                  label=name,
+                                  label=label,
                                   zorder=10,
                                   **{
                                       key: self.mpl_line_params[key][name]
@@ -292,8 +294,8 @@ class LinePlot:
 
 
 
-        if len(self.ax.get_legend_handles_labels()[0]) > 0:
-            self.ax.legend()
+        # if len(self.ax.get_legend_handles_labels()[0]) > 0:
+        self.ax.legend()
 
 
 
@@ -558,12 +560,13 @@ class LinePlot:
     #     self.fig.canvas.draw_idle()
     #     return
 
-    def keep_line(self, name, color, line_id):
+    def keep_line(self, name, color, line_id,):
         # lab = self.keep_buttons[owner.id]["dropdown"].value
         # The main line
         self.ax.lines.append(cp.copy(self.data_lines[name]))
         self.ax.lines[-1].set_url(line_id)
         self.ax.lines[-1].set_zorder(2)
+        self.ax.lines[-1].set_label(None)
         if self.ax.lines[-1].get_marker() == "None":
             self.ax.lines[-1].set_color(color)
         else:
@@ -597,6 +600,7 @@ class LinePlot:
         # self.make_keep_button()
         # owner.description = "Remove"
         # self.update_button_box_widget()
+        self.ax.legend()
         self.fig.canvas.draw_idle()
         return
 

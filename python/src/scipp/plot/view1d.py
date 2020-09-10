@@ -85,6 +85,7 @@ class PlotView1d:
         drop = ipw.Dropdown(options=self.data_names,
                                 description='',
                                 layout={'width': 'initial'})
+        lab = ipw.Label()
         but = ipw.Button(description="Keep",
                              disabled=False,
                              button_style="",
@@ -104,13 +105,15 @@ class PlotView1d:
         self.keep_buttons[key] = {
             "dropdown": drop,
             "button": but,
-            "colorpicker": col
+            "colorpicker": col,
+            "label": lab
         }
         self.widgets.children += ipw.HBox(list(self.keep_buttons[key].values())),
         return
 
     def clear_keep_buttons(self):
         self.keep_buttons.clear()
+        self.make_keep_button()
         self.update_widgets()
 
     # def update_buttons(self, owner, event, dummy):
@@ -149,16 +152,18 @@ class PlotView1d:
         return
 
     def keep_trace(self, owner):
-        lab = self.keep_buttons[owner.id]["dropdown"].value
+        name = self.keep_buttons[owner.id]["dropdown"].value
 
-        self.figure.keep_line(name=lab, color=self.keep_buttons[owner.id]["colorpicker"].value,
+        self.figure.keep_line(name=name, color=self.keep_buttons[owner.id]["colorpicker"].value,
             line_id=owner.id)
 
         # for dim, val in self.widgets.slider.items():
         #     if not val.disabled:
         #         lab = "{},{}:{}".format(lab, dim, val.value)
-        self.keep_buttons[owner.id]["dropdown"].options = lab + self.controller.slice_label
+        # self.keep_buttons[owner.id]["dropdown"].options = name + self.controller.slice_label
+        # self.keep_buttons[owner.id]["dropdown"].layout.width = 'initial'
         self.keep_buttons[owner.id]["dropdown"].disabled = True
+        self.keep_buttons[owner.id]["label"].value = self.controller.slice_label[1:]
         self.make_keep_button()
         owner.description = "Remove"
         # self.update_button_box_widget()
@@ -191,6 +196,7 @@ class PlotView1d:
     def update_axes(self, axparams, axformatter, axlocator, logx, logy):
 
         self.figure.update_axes(axparams, axformatter, axlocator, logx, logy)
+        self.clear_keep_buttons()
 
 
     def update_data(self, new_values):
