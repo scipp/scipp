@@ -182,17 +182,17 @@ class PlotView3d:
         self.outline.visible = show_outline
         self.axticks.visible = show_outline
 
-        self.create_cut_surface_controls(show_outline)
+        # self.create_cut_surface_controls(show_outline)
 
         # Generate the colorbar image
         self.create_colorbar()
 
         self.figure = ipw.HBox([self.renderer, self.cbar_image])
 
-        self.additional_widgets = ipw.HBox([
-                self.opacity_slider, self.opacity_checkbox,
-                self.toggle_outline_button
-            ])
+        # self.additional_widgets = ipw.HBox([
+        #         self.opacity_slider, self.opacity_checkbox,
+        #         self.toggle_outline_button
+        #     ])
 
         # self.box = ipw.VBox([
         #     ipw.HBox([self.renderer, self.cbar_image]),
@@ -219,8 +219,7 @@ class PlotView3d:
         # widgets_ = [self.figure, self.widgets]
         # if self.overview["additional_widgets"] is not None:
         #     wdgts.append(self.overview["additional_widgets"])
-        return ipw.VBox([self.figure, self.widgets.container, self.additional_widgets,
-            self.cut_surface_controls])
+        return self.figure
 
 
 
@@ -450,24 +449,25 @@ void main() {
 
 
 
-    # def update_opacity(self, change):
-    #     """
-    #     Update opacity of all points when opacity slider is changed.
-    #     Take cut surface into account if present.
-    #     """
-    #     if self.cut_surface_buttons.value is None:
-    #         arr = self.points_geometry.attributes["rgba_color"].array
-    #         arr[:, 3] = change["new"][1]
-    #         self.points_geometry.attributes["rgba_color"].array = arr
-    #         # There is a strange effect with point clouds and opacities.
-    #         # Results are best when depthTest is False, at low opacities.
-    #         # But when opacities are high, the points appear in the order
-    #         # they were drawn, and not in the order they are with respect
-    #         # to the camera position. So for high opacities, we switch to
-    #         # depthTest = True.
-    #         self.points_material.depthTest = change["new"][1] > 0.9
-    #     else:
-    #         self.update_cut_surface({"new": self.cut_slider.value})
+    def update_opacity(self, alpha):
+        """
+        Update opacity of all points when opacity slider is changed.
+        Take cut surface into account if present.
+        """
+        # if self.cut_surface_buttons.value is None:
+        arr = self.points_geometry.attributes["rgba_color"].array
+        arr[:, 3] = alpha
+        self.points_geometry.attributes["rgba_color"].array = arr
+        # There is a strange effect with point clouds and opacities.
+        # Results are best when depthTest is False, at low opacities.
+        # But when opacities are high, the points appear in the order
+        # they were drawn, and not in the order they are with respect
+        # to the camera position. So for high opacities, we switch to
+        # depthTest = True.
+        self.points_material.depthTest = alpha > 0.9
+        # else:
+        #     self.update_cut_surface({"new": self.cut_slider.value})
+        return
 
     # def check_if_reset_needed(self, owner, content, buffers):
     #     if owner.value == self.current_cut_surface_value:
@@ -646,7 +646,37 @@ void main() {
     #     desc = "Hide" if change["new"] else "Show"
     #     self.toggle_outline_button.description = desc + " outline"
 
-    def rescale_to_data(self, button=None):
-        # self.scalar_map.set_clim(self.vslice.min(), self.vslice.max())
-        self.engine.update_slice(autoscale_cmap=True)
-        self.create_colorbar()
+
+
+
+    def update_axes(self):
+        return
+
+    def update_data(self, new_values):
+        """
+        Update colors of points.
+        """
+        colors = self.scalar_map.to_rgba(new_values["values"])
+
+        if new_values["masks"] is not None:
+            # In 3D, we change the colors of the points in-place where masks
+            # are True, instead of having an additional point cloud per mask.
+            masks_inds = np.where(new_values["masks"])
+            masks_colors = self.masks_scalar_map.to_rgba(
+                new_values["values"][masks_inds])
+            colors[masks_inds] = masks_colors
+
+
+        # new_colors = self.slice_data(change=change, autoscale_cmap=autoscale_cmap)
+        colors[:,
+                   3] = self.points_geometry.attributes["rgba_color"].array[:,
+                                                                            3]
+        self.points_geometry.attributes["rgba_color"].array = colors
+        # if self.parent.cut_surface_buttons.value == self.parent.cut_options["Value"]:
+        #     self.update_cut_surface(None)
+        return
+
+    def rescale_to_data(self, vmin=None, vmax=None):
+        self.scalar_map.set_clim(vmin, vmax)
+        # self.engine.update_slice(autoscale_cmap=True)
+        # self.create_colorbar()

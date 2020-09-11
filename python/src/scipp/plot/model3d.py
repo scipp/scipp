@@ -34,7 +34,7 @@ class PlotEngine3d(PlotEngine):
 
 
 
-        self.vslice = None
+        self.dslice = None
         self.current_cut_surface_value = None
         # Useful variables
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
@@ -115,68 +115,102 @@ class PlotEngine3d(PlotEngine):
         return self.axparams
 
 
-    def slice_data(self, change=None, autoscale_cmap=False):
+    # def slice_data(self, change=None, autoscale_cmap=False):
+    def slice_data(self, slices):
         """
         Slice the extra dimensions down and update the slice values
         """
-        self.vslice = self.data_arrays[self.name]
+        self.dslice = self.data_arrays[self.name]
         # Slice along dimensions with active sliders
-        for dim, val in self.parent.widgets.slider.items():
-            if not val.disabled:
+        for dim in slices:
+        # for dim, val in self.parent.widgets.slider.items():
+        #     if not val.disabled:
                 # self.lab[dim].value = self.make_slider_label(
                 #     self.slider_coord[self.name][dim], val.value)
                 # self.lab[dim].value = self.make_slider_label(
-                #     self.vslice.coords[dim], val.value, self.slider_axformatter[self.name][dim][False])
-                # self.vslice = self.vslice[val.dim, val.value]
+                #     self.dslice.coords[dim], val.value, self.slider_axformatter[self.name][dim][False])
+                # self.dslice = self.dslice[val.dim, val.value]
 
-                deltax = self.parent.widgets.thickness_slider[dim].value
-                self.vslice = self.resample_image(self.vslice,
-                        rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
-                                                                     val.value + 0.5 * deltax],
-                                                            unit=self.vslice.coords[dim].unit)})[dim, 0]
-                self.vslice *= (deltax * sc.units.one)
+            deltax = slices[dim]["thickness"]
+            loc = slices[dim]["location"]
+
+            self.dslice = self.resample_image(self.dslice,
+                    rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
+                                                                 loc + 0.5 * deltax],
+                                                        unit=self.dslice.coords[dim].unit)})[dim, 0]
+            self.dslice *= (deltax * sc.units.one)
 
 
-        # Handle masks
-        # if len(self.masks[self.name]) > 0:
-        msk = None
-        if len(self.parent.widgets.mask_checkboxes[self.name]) > 0:
-            # Use automatic broadcasting in Scipp variables
-            msk = sc.Variable(dims=self.vslice.dims,
-                              values=np.zeros(self.vslice.shape,
-                                              dtype=np.int32))
-            for m, chbx in self.parent.widgets.mask_checkboxes[self.name].items():
-                if chbx.value:
-                    msk += sc.Variable(
-                        dims=self.vslice.masks[m].dims,
-                        values=self.vslice.masks[m].values.astype(np.int32))
-            msk = msk.values
+        # new_values = {"values": self.dslice.values, "masks": {}, "extent": extent}
 
-        self.vslice = self.vslice.values.flatten()
-        if autoscale_cmap:
-            self.parent.scalar_map.set_clim(self.vslice.min(), self.vslice.max())
-        colors = self.parent.scalar_map.to_rgba(self.vslice).astype(np.float32)
+        # # Handle masks
+        # # if len(self.masks[self.name]) > 0:
+        # msk = None
+        # if len(self.parent.widgets.mask_checkboxes[self.name]) > 0:
+        #     # Use automatic broadcasting in Scipp variables
+        #     msk = sc.Variable(dims=self.dslice.dims,
+        #                       values=np.zeros(self.dslice.shape,
+        #                                       dtype=np.int32))
+        #     for m, chbx in self.parent.widgets.mask_checkboxes[self.name].items():
+        #         if chbx.value:
+        #             msk += sc.Variable(
+        #                 dims=self.dslice.masks[m].dims,
+        #                 values=self.dslice.masks[m].values.astype(np.int32))
+        #     msk = msk.values
 
-        if msk is not None:
-            masks_inds = np.where(msk.flatten())
-            masks_colors = self.parent.masks_scalar_map.to_rgba(
-                self.vslice[masks_inds]).astype(np.float32)
-            colors[masks_inds] = masks_colors
+        # self.dslice = self.dslice.values.flatten()
+        # if autoscale_cmap:
+        #     self.parent.scalar_map.set_clim(self.dslice.min(), self.dslice.max())
+        # colors = self.parent.scalar_map.to_rgba(self.dslice).astype(np.float32)
 
-        return colors
+        # if msk is not None:
+        #     masks_inds = np.where(msk.flatten())
+        #     masks_colors = self.parent.masks_scalar_map.to_rgba(
+        #         self.dslice[masks_inds]).astype(np.float32)
+        #     colors[masks_inds] = masks_colors
 
-    def update_data(self, change=None, autoscale_cmap=False):
+        # return colors
+
+    def update_data(self, slices, mask_info):
         """
         Update colors of points.
         """
-        new_colors = self.slice_data(change=change, autoscale_cmap=autoscale_cmap)
-        new_colors[:,
-                   3] = self.parent.points_geometry.attributes["rgba_color"].array[:,
-                                                                            3]
-        self.parent.points_geometry.attributes["rgba_color"].array = new_colors
-        if self.parent.cut_surface_buttons.value == self.parent.cut_options["Value"]:
-            self.update_cut_surface(None)
-        return
+        self.slice_data(slices)
+
+        new_values = {"values": self.dslice.values.astype(np.float32).ravel(), "masks": None}
+
+        # Handle masks
+        msk = None
+        if len(mask_info[self.name]) > 0:
+            # Use automatic broadcasting in Scipp variables
+            msk = sc.Variable(dims=self.dslice.dims,
+                              values=np.zeros(self.dslice.shape,
+                                              dtype=np.int32))
+            for m, val in mask_info[self.name].items():
+                if val:
+                    msk += sc.Variable(
+                        dims=self.dslice.masks[m].dims,
+                        values=self.dslice.masks[m].values.astype(np.int32))
+            new_values["masks"] = msk.values.ravel()
+
+
+            # msk = msk.values
+
+        # self.dslice = self.dslice.values.flatten()
+
+
+        # # if autoscale_cmap:
+        # #     self.parent.scalar_map.set_clim(self.dslice.min(), self.dslice.max())
+        # colors = self.parent.scalar_map.to_rgba(self.dslice).astype(np.float32)
+
+        # if msk is not None:
+        #     # In 3D, we change the colors of the points in-place where masks
+        #     # are True, instead of having an additional point cloud per mask.
+        #     masks_inds = np.where(msk.flatten())
+        #     masks_colors = self.parent.masks_scalar_map.to_rgba(
+        #         self.dslice[masks_inds]).astype(np.float32)
+        #     colors[masks_inds] = masks_colors
+        return new_values
 
 
 

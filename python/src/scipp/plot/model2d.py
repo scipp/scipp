@@ -266,7 +266,7 @@ class PlotModel2d(PlotModel):
         self.vslice *= self.xywidth["y"]
 
     # def update_slice(self, change=None):
-    def update_data(self, slices, mask_names):
+    def update_data(self, slices, mask_info):
         """
         Slice data according to new slider value and update the image.
         """
@@ -276,7 +276,7 @@ class PlotModel2d(PlotModel):
         #     self.slice_coords()
         self.slice_data(slices)
         # Update image with resampling
-        new_values = self.update_image(mask_names=mask_names)
+        new_values = self.update_image(mask_info=mask_info)
         return new_values
 
 
@@ -332,7 +332,7 @@ class PlotModel2d(PlotModel):
         #     new_values["extent"] = extent
 
         # Handle masks
-        if len(mask_names[self.name]) > 0:
+        if len(mask_info[self.name]) > 0:
             # Use scipp's automatic broadcast functionality to broadcast
             # lower dimension masks to higher dimensions.
             # TODO: creating a Variable here could become expensive when
@@ -345,7 +345,7 @@ class PlotModel2d(PlotModel):
             base_mask = sc.Variable(dims=self.dslice.dims,
                                     values=np.ones(self.dslice.shape,
                                                    dtype=np.int32))
-            for m in mask_names[self.name]:
+            for m in mask_info[self.name]:
                 if m in self.dslice.masks:
                     msk = base_mask * sc.Variable(
                         dims=self.dslice.masks[m].dims,
@@ -379,7 +379,7 @@ class PlotModel2d(PlotModel):
 
 
 
-    def update_viewport(self, xylims, mask_names):
+    def update_viewport(self, xylims, mask_info):
 
         for xy, param in self.axparams.items():
             # Create coordinate axes for resampled image array
@@ -388,4 +388,4 @@ class PlotModel2d(PlotModel):
                 values=np.linspace(xylims[xy][0], xylims[xy][1],
                                    self.image_resolution[xy] + 1),
                 unit=self.data_arrays[self.name].coords[param["dim"]].unit)
-        return self.update_image(extent=np.array(list(xylims.values())).flatten(), mask_names=mask_names)
+        return self.update_image(extent=np.array(list(xylims.values())).flatten(), mask_info=mask_info)

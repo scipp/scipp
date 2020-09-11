@@ -95,7 +95,7 @@ class PlotController:
         # os.write(1, "Slicer 3\n".encode())
 
         # List mask names for each item
-        self.mask_names = {}
+        # self.mask_names = {}
         # Size of the slider coordinate arrays
         self.dim_to_shape = {}
         # Store coordinates of dimensions that will be in sliders
@@ -244,7 +244,7 @@ class PlotController:
             # Include masks
             # for n, msk in array.masks.items():
             #     self.data_arrays[name].masks[n] = msk
-            self.mask_names[name] = list(array.masks.keys())
+            # self.mask_names[name] = list(array.masks.keys())
 
 
             # Determine whether error bars should be plotted or not
@@ -523,7 +523,7 @@ class PlotController:
                               logx=self.logx,
                               logy=self.logy)
         if self.slave is not None:
-            self.slave.update_axes()
+            self.slave.update_axes(axparams=self.axparams)
         self.update_data()
         self.rescale_to_data()
 
@@ -540,14 +540,22 @@ class PlotController:
                     slices[dim]["location"] - 0.5*slices[dim]["thickness"],
                     slices[dim]["location"] + 0.5*slices[dim]["thickness"])
         # return slices
-        new_values = self.model.update_data(slices, self.mask_names)
+        new_values = self.model.update_data(
+            slices, mask_info=self.get_mask_info())
         self.view.update_data(new_values)
         if self.slave is not None:
             self.slave.update_data(info)
 
     def update_viewport(self, xylims):
-        new_values = self.model.update_viewport(xylims, self.mask_names)
+        new_values = self.model.update_viewport(
+            xylims, mask_info=self.get_mask_info())
         self.view.update_data(new_values)
 
     def toggle_mask(self, change):
         self.view.toggle_mask(change)
+
+    def get_mask_info(self):
+        mask_info = {}
+        for name in self.widgets.mask_checkboxes:
+            mask_info[name] = {m: chbx.value for m, chbx in self.widgets.mask_checkboxes[self.name].items()}
+        return mask_info

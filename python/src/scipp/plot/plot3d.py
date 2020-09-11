@@ -139,7 +139,8 @@ class SciPlot3d:
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
-        return ipw.VBox([self.view._to_widget(), self.controller._to_widget()])
+        return ipw.VBox([self.view._to_widget(), self.controller._to_widget(),
+            self.controller3d._to_widget()])
 
     def savefig(self, filename=None):
         self.view.savefig(filename=filename)

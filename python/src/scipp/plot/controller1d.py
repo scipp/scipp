@@ -52,7 +52,7 @@ class PlotController1d:
         self.widgets.children += ipw.HBox(list(self.keep_buttons[key].values())),
         return
 
-    def update_axes(self):
+    def update_axes(self, axparams=None):
         self.keep_buttons.clear()
         self.make_keep_button()
         self.update_widgets()

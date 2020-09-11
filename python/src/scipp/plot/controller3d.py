@@ -3,7 +3,7 @@ import ipywidgets as ipw
 import numpy as np
 
 
-class PlotController1d:
+class PlotController3d:
 
     def __init__(self, data_names, ndim):
 
@@ -15,6 +15,7 @@ class PlotController1d:
         # # self.make_keep_button()
         # if ndim < 2:
         #     self.widgets.layout.display = 'none'
+        self.xminmax = None
 
         self.widgets = self.create_cut_surface_controls()
 
@@ -150,22 +151,28 @@ class PlotController1d:
         ])
 
 
+    def update_axes(self, axparams):
+        self.xminmax["x"] = axparams['x']['lims']
+        self.xminmax["y"] = axparams['y']['lims']
+        self.xminmax["z"] = axparams['z']['lims']
+
     def update_opacity(self, change):
         """
         Update opacity of all points when opacity slider is changed.
         Take cut surface into account if present.
         """
         if self.cut_surface_buttons.value is None:
-            arr = self.points_geometry.attributes["rgba_color"].array
-            arr[:, 3] = change["new"][1]
-            self.points_geometry.attributes["rgba_color"].array = arr
-            # There is a strange effect with point clouds and opacities.
-            # Results are best when depthTest is False, at low opacities.
-            # But when opacities are high, the points appear in the order
-            # they were drawn, and not in the order they are with respect
-            # to the camera position. So for high opacities, we switch to
-            # depthTest = True.
-            self.points_material.depthTest = change["new"][1] > 0.9
+            self.view.update_opacity(alpha=change["new"][1])
+            # arr = self.points_geometry.attributes["rgba_color"].array
+            # arr[:, 3] = change["new"][1]
+            # self.points_geometry.attributes["rgba_color"].array = arr
+            # # There is a strange effect with point clouds and opacities.
+            # # Results are best when depthTest is False, at low opacities.
+            # # But when opacities are high, the points appear in the order
+            # # they were drawn, and not in the order they are with respect
+            # # to the camera position. So for high opacities, we switch to
+            # # depthTest = True.
+            # self.points_material.depthTest = change["new"][1] > 0.9
         else:
             self.update_cut_surface({"new": self.cut_slider.value})
 
@@ -231,7 +238,7 @@ class PlotController1d:
         if self.cut_surface_buttons.value < self.cut_options["Value"]:
             self.cut_slider.step = self.pixel_size * 1.1
 
-    def update_cut_surface(self, change):
+    def update_cut_surface(self, change=None):
         newc = None
         target = self.cut_slider.value
         # Cartesian X, Y, Z
@@ -272,3 +279,7 @@ class PlotController1d:
         c3 = self.points_geometry.attributes["rgba_color"].array
         c3[:, 3] = newc
         self.points_geometry.attributes["rgba_color"].array = c3
+
+    def update_data(self, axparams=None):
+        if self.cut_surface_buttons.value == self.cut_options["Value"]:
+            self.update_cut_surface()
