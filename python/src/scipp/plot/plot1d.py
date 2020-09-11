@@ -5,6 +5,7 @@
 # Scipp imports
 from .. import config
 from .controller import PlotController
+from .controller1d import PlotController1d
 from .model1d import PlotModel1d
 # from .render import render_plot
 # from .profiler import Profiler
@@ -91,6 +92,12 @@ class SciPlot1d():
         # Connect controller to model
         self.controller.model = self.model
 
+
+
+        self.controller1d = PlotController1d(ndim=self.controller.ndim,
+            data_names=list(scipp_obj_dict.keys()))
+
+
         self.view = PlotView1d(controller=self.controller,
             ax=ax,
             errorbars=self.controller.errorbars,
@@ -101,11 +108,11 @@ class SciPlot1d():
             logx=logx,
             logy=logy,
             mpl_line_params=mpl_line_params,
-            grid=grid,
-            ndim=self.controller.ndim,
-            data_names=list(scipp_obj_dict.keys()))
+            grid=grid)
 
         self.controller.view = self.view
+        self.controller1d.view = self.view
+        self.controller.slave = self.controller1d
 
         # Profile view
         self.profile = None
@@ -193,7 +200,8 @@ class SciPlot1d():
         # widgets_ = [self.figure, self.widgets]
         # if self.overview["additional_widgets"] is not None:
         #     wdgts.append(self.overview["additional_widgets"])
-        return ipw.VBox([self.view._to_widget(), self.controller._to_widget()])
+        return ipw.VBox([self.view._to_widget(), self.controller._to_widget(),
+            self.controller1d._to_widget()])
 
     def savefig(self, filename=None):
         self.view.savefig(filename=filename)

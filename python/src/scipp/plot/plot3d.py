@@ -114,6 +114,11 @@ class SciPlot3d:
 
         self.controller.view = self.view
 
+
+
+
+
+
         # Profile view
         self.profile = None
 

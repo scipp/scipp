@@ -107,6 +107,11 @@ class PlotEngine3d(PlotEngine):
             0.5 * np.sum(self.axparams['z']["lims"])
         ]
 
+        self.axparams["box_size"] = np.array([
+            axparams['x']["lims"][1] - axparams['x']["lims"][0],
+            axparams['y']["lims"][1] - axparams['y']["lims"][0],
+            axparams['z']["lims"][1] - axparams['z']["lims"][0]])
+
         return self.axparams
 
 

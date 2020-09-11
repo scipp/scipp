@@ -43,11 +43,12 @@ class PlotController:
         self.model = None
         self.profile = None
         self.view = None
+        self.slave = None
 
         self.axes = axes
         self.logx = logx
         self.logy = logy
-        self.slice_label = None
+        # self.slice_label = None
         self.axparams = None
 
         # # Member container for dict output
@@ -521,24 +522,28 @@ class PlotController:
                               axlocator=self.axlocator[self.name],
                               logx=self.logx,
                               logy=self.logy)
+        if self.slave is not None:
+            self.slave.update_axes()
         self.update_data()
         self.rescale_to_data()
 
 
     def update_data(self, change=None):
         slices = {}
-        self.slice_label = ""
+        info = {"slice_label": ""}
         # Slice along dimensions with active sliders
         for dim, val in self.widgets.slider.items():
             if not val.disabled:
                 slices[dim] = {"location": val.value,
                 "thickness": self.widgets.thickness_slider[dim].value}
-                self.slice_label = "{},{}:{}-{}".format(self.slice_label, dim,
+                info["slice_label"] = "{},{}:{}-{}".format(info["slice_label"], dim,
                     slices[dim]["location"] - 0.5*slices[dim]["thickness"],
                     slices[dim]["location"] + 0.5*slices[dim]["thickness"])
         # return slices
         new_values = self.model.update_data(slices, self.mask_names)
         self.view.update_data(new_values)
+        if self.slave is not None:
+            self.slave.update_data(info)
 
     def update_viewport(self, xylims):
         new_values = self.model.update_viewport(xylims, self.mask_names)

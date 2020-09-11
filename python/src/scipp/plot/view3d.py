@@ -135,7 +135,7 @@ class PlotView3d:
         # Create the point cloud material with pythreejs
         self.points_material = self.create_points_material()
         self.points_geometry = None
-        self.points = None
+        self.point_cloud = None
         self.outline = None
         self.axticks = None
 
@@ -159,23 +159,22 @@ class PlotView3d:
                                            config.plot.height)
 
         # Add red/green/blue axes helper
-        self.axes_3d = p3.AxesHelper(10.0 * np.linalg.norm(camera_pos))
+        # self.axes_3d = p3.AxesHelper(10.0 * np.linalg.norm(camera_pos))
+        self.axes_3d = p3.AxesHelper()
 
         # Create the pythreejs scene
-        self.scene = p3.Scene(children=[
-            self.camera, self.axes_3d, self.points, self.outline, self.axticks
-        ],
+        self.scene = p3.Scene(children=[self.camera, self.axes_3d],
                               background=background)
 
         # Add camera controller
-        self.controller = p3.OrbitControls(controlling=self.camera,
-                                           target=camera_lookat)
-        self.camera.lookAt(camera_lookat)
+        self.controls = p3.OrbitControls(controlling=self.camera)
+                                           # target=camera_lookat)
+        # self.camera.lookAt(camera_lookat)
 
         # Render the scene into a widget
         self.renderer = p3.Renderer(camera=self.camera,
                                     scene=self.scene,
-                                    controls=[self.controller],
+                                    controls=[self.controls],
                                     width=config.plot.width,
                                     height=config.plot.height)
 
@@ -227,12 +226,27 @@ class PlotView3d:
 
 
     def update_axes(self, axparams, axformatter=None, axlocator=None, logx=None, logy=None):
+        self.scene.remove(self.point_cloud)
+        self.scene.remove(self.outline)
+        self.scene.remove(self.axticks)
+
         self.create_point_cloud(axparams["pos"])
         self.create_outline(axparams)
         # Define camera: look at the centre of mass of the points
-        camera_lookat = self.center_of_mass
-        self.camera.position = np.array(self.center_of_mass) + 1.2 * self.box_size
+        # camera_lookat = self.center_of_mass
 
+        # box_size = axparams['x']["lims"][1] - axparams['x']["lims"][0],
+        #     axparams['y']["lims"][1] - axparams['y']["lims"][0],
+        #     axparams['z']["lims"][1] - axparams['z']["lims"][0]
+        self.camera.position = np.array(axparams["centre"]) + 1.2 * axparams["box_size"]
+        # Set camera controller target
+        self.controls.target = axparams["centre"]
+        self.camera.lookAt(axparams["centre"])
+        self.axes_3d.size = 10.0 * np.linalg.norm(self.camera.position)
+
+        self.scene.add(self.point_cloud)
+        self.scene.add(self.outline)
+        self.scene.add(self.axticks)
 
 
 
@@ -262,7 +276,7 @@ class PlotView3d:
                 'rgba_color': p3.BufferAttribute(array=np.ones(rgba_shape))
             })
         # points_material = self.create_points_material()
-        self.points = p3.Points(geometry=self.points_geometry, material=self.points_material)
+        self.point_cloud = p3.Points(geometry=self.points_geometry, material=self.points_material)
         # return points_geometry, points_material, points
 
     def create_points_material(self):
