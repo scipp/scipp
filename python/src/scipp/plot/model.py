@@ -83,9 +83,12 @@ class PlotModel:
             # print("edges.values[1]", edges.values[1])
             # print(self.image_pixel_size[key])
             # dslice /= self.image_pixel_size[key]
+
             div = edges[dim, 1:] - edges[dim, :-1]
             div.unit = sc.units.one
             dslice /= div
+
+            # dslice /= edges.values[1] - edges.values[0]
         return dslice
 
     # def mask_to_float(self, mask, var):

@@ -33,6 +33,7 @@ class PlotModel2d(PlotModel):
         self.xyrebin = {}
         self.xywidth = {}
         self.image_pixel_size = {}
+        self.vslice = None
 
         if resolution is not None:
             if isinstance(resolution, int):
@@ -193,7 +194,16 @@ class PlotModel2d(PlotModel):
         """
         Recursively slice the data along the dimensions of active sliders.
         """
-        data_slice = self.data_arrays[self.name]
+
+        # Note that if we do not perform any slice resampling, we need to make
+        # a copy to avoid mutliplying into the original data when we do the
+        # in-place multiplication by the bin width in preparation for the 2d
+        # image resampling.
+        if len(slices) == 0:
+            self.vslice = self.data_arrays[self.name].copy()
+        else:
+            self.vslice = self.data_arrays[self.name]
+        # print("max value:", sc.max(self.data_arrays[self.name].data))
 
         # Slice along dimensions with active sliders
         # for dim, val in self.controller.widgets.slider.items():
@@ -217,16 +227,17 @@ class PlotModel2d(PlotModel):
 
             # TODO: see if we can call resample_image only once with
             # rebin_edges dict containing all dims to be sliced.
-            data_slice = self.resample_image(data_slice,
+            self.vslice = self.resample_image(self.vslice,
                     # coord_edges={dim: self.slider_coord[self.engine.name][dim]},
                     rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
                                                                  loc + 0.5 * deltax],
-                                                        unit=data_slice.coords[dim].unit)})[dim, 0]
+                                                        unit=self.vslice.coords[dim].unit)})[dim, 0]
                 # depth = self.slider_xlims[self.engine.name][dim][dim, 1] - self.slider_xlims[self.engine.name][dim][dim, 0]
                 # depth.unit = sc.units.one
-            data_slice *= (deltax * sc.units.one)
+            self.vslice *= (deltax * sc.units.one)
 
             # data_slice = data_slice[val.dim, val.value]
+        # print("max value 2:", sc.max(self.data_arrays[self.name].data))
 
 
         # Update the xyedges and xywidth
@@ -242,12 +253,12 @@ class PlotModel2d(PlotModel):
             # # Pixel widths used for scaling before rebin step
             # self.compute_bin_widths(xy, param["dim"])
             self.xywidth[xy] = (
-                data_slice.coords[param["dim"]][param["dim"], 1:] -
-                data_slice.coords[param["dim"]][param["dim"], :-1])
+                self.vslice.coords[param["dim"]][param["dim"], 1:] -
+                self.vslice.coords[param["dim"]][param["dim"], :-1])
             self.xywidth[xy].unit = sc.units.one
 
 
-        self.vslice = data_slice
+        # self.vslice = data_slice#.copy()
         # Scale by bin width and then rebin in both directions
         # Note that this has to be written as 2 inplace operations to avoid
         # creation of large 2D temporary from broadcast
@@ -315,7 +326,7 @@ class PlotModel2d(PlotModel):
         new_values = {"values": self.dslice.values, "masks": {}, "extent": extent}
 
 
-        arr = self.dslice.values
+        # arr = self.dslice.values
         # self.controller.image.set_data(arr)
         # if extent is not None:
         #     new_values["extent"] = extent
@@ -341,7 +352,7 @@ class PlotModel2d(PlotModel):
                         values=self.dslice.masks[m].values.astype(np.int32))
                     # self.controller.mask_image[m].set_data(
                     #     mask_to_float(msk.values, arr))
-                    new_values["masks"][m] = mask_to_float(msk.values, arr)
+                    new_values["masks"][m] = mask_to_float(msk.values, self.dslice.values)
                     # if extent is not None:
                     #     self.controller.mask_image[m].set_extent(extent)
                 else:
