@@ -90,62 +90,71 @@ class PlotView3d:
         self.positions = None
         self.pixel_size = pixel_size
         self.tick_size = tick_size
-        if positions is not None:
-            coord = scipp_obj_dict[self.engine.name].coords[positions]
-            self.positions = np.array(coord.values, dtype=np.float32)
-            self.axlabels.update({
-                "x": name_with_unit(coord, name="X"),
-                "y": name_with_unit(coord, name="Y"),
-                "z": name_with_unit(coord, name="Z")
-            })
-        else:
-            # If no positions are supplied, create a meshgrid from coordinate
-            # axes.
-            coords = []
-            labels = []
-            # for dim, val in self.slider.items():
-            for dim in self.engine.data_arrays[self.engine.name].dims:
-                # print("in here", dim)
-                if self.widgets.slider[dim].disabled:
-                    # arr = self.slider_coord[self.engine.name][dim]
-                    # if self.histograms[self.engine.name][dim][dim]:
-                    #     arr = to_bin_centers(arr, dim)
-                    coord = self.engine.data_arrays[self.engine.name].coords[dim]
-                    coords.append(to_bin_centers(coord, dim).values)
-                    labels.append(name_with_unit(coord))
-            # z, y, x = np.meshgrid(*coords, indexing='ij')
-            x, y, z = np.meshgrid(*coords, indexing='ij')
-            self.positions = np.array(
-                [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
-            if self.pixel_size is None:
-                self.pixel_size = coords[0][1] - coords[0][0]
-            self.axlabels.update({
-                "z": labels[0],
-                "y": labels[1],
-                "x": labels[2]
-            })
+        # if positions is not None:
+        #     coord = scipp_obj_dict[self.engine.name].coords[positions]
+        #     self.positions = np.array(coord.values, dtype=np.float32)
+        #     self.axlabels.update({
+        #         "x": name_with_unit(coord, name="X"),
+        #         "y": name_with_unit(coord, name="Y"),
+        #         "z": name_with_unit(coord, name="Z")
+        #     })
+        # else:
+        #     # If no positions are supplied, create a meshgrid from coordinate
+        #     # axes.
+        #     coords = []
+        #     labels = []
+        #     # for dim, val in self.slider.items():
+        #     for dim in self.engine.data_arrays[self.engine.name].dims:
+        #         # print("in here", dim)
+        #         if self.widgets.slider[dim].disabled:
+        #             # arr = self.slider_coord[self.engine.name][dim]
+        #             # if self.histograms[self.engine.name][dim][dim]:
+        #             #     arr = to_bin_centers(arr, dim)
+        #             coord = self.engine.data_arrays[self.engine.name].coords[dim]
+        #             coords.append(to_bin_centers(coord, dim).values)
+        #             labels.append(name_with_unit(coord))
+        #     # z, y, x = np.meshgrid(*coords, indexing='ij')
+        #     x, y, z = np.meshgrid(*coords, indexing='ij')
+        #     self.positions = np.array(
+        #         [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
+        #     if self.pixel_size is None:
+        #         self.pixel_size = coords[0][1] - coords[0][0]
+        #     self.axlabels.update({
+        #         "z": labels[0],
+        #         "y": labels[1],
+        #         "x": labels[2]
+        #     })
 
-        # Find spatial and value limits
-        self.xminmax, self.center_of_mass = self.get_spatial_extents()
-        self.vminmax = [
-            sc.min(self.engine.data_arrays[self.engine.name].data).value,
-            sc.max(self.engine.data_arrays[self.engine.name].data).value
-        ]
+        # # Find spatial and value limits
+        # self.xminmax, self.center_of_mass = self.get_spatial_extents()
+        # self.vminmax = [
+        #     sc.min(self.engine.data_arrays[self.engine.name].data).value,
+        #     sc.max(self.engine.data_arrays[self.engine.name].data).value
+        # ]
 
-        # Create the point cloud with pythreejs
-        self.points_geometry, self.points_material, self.points = \
-            self.create_points_geometry()
+        # Create the point cloud material with pythreejs
+        self.points_material = self.create_points_material()
+        self.points_geometry = None
+        self.points = None
+        self.outline = None
+        self.axticks = None
 
-        # Create outline around point positions
-        self.outline, self.axticks = self.create_outline()
 
-        # Save the size of the outline box for later
-        self.box_size = np.diff(list(self.xminmax.values()), axis=1).ravel()
 
-        # Define camera: look at the centre of mass of the points
-        camera_lookat = self.center_of_mass
-        camera_pos = np.array(self.center_of_mass) + 1.2 * self.box_size
-        self.camera = p3.PerspectiveCamera(position=list(camera_pos),
+        # self.points_geometry, self.points_material, self.points = \
+        #     self.create_points_geometry()
+
+        # # Create outline around point positions
+        # self.outline, self.axticks = self.create_outline()
+
+        # # Save the size of the outline box for later
+        # self.box_size = np.diff(list(self.xminmax.values()), axis=1).ravel()
+
+        # Define camera
+        # camera_lookat = self.center_of_mass
+        # camera_pos = np.array(self.center_of_mass) + 1.2 * self.box_size
+
+        self.camera = p3.PerspectiveCamera(position=[0, 0, 0],
                                            aspect=config.plot.width /
                                            config.plot.height)
 
@@ -215,18 +224,46 @@ class PlotView3d:
             self.cut_surface_controls])
 
 
-    def create_points_geometry(self):
+
+
+    def update_axes(self, axparams, axformatter=None, axlocator=None, logx=None, logy=None):
+        self.create_point_cloud(axparams["pos"])
+        self.create_outline(axparams)
+        # Define camera: look at the centre of mass of the points
+        camera_lookat = self.center_of_mass
+        self.camera.position = np.array(self.center_of_mass) + 1.2 * self.box_size
+
+
+
+
+    # def create_points_geometry(self, pos_array):
+    #     """
+    #     Make a PointsGeometry using pythreejs
+    #     """
+    #     rgba_shape = list(pos_array.shape)
+    #     rgba_shape[1] += 1
+    #     self.points_geometry = p3.BufferGeometry(
+    #         attributes={
+    #             'position': p3.BufferAttribute(array=pos_array),
+    #             # 'rgba_color': p3.BufferAttribute(array=self.engine.slice_data(change=None, autoscale_cmap=True))
+    #             'rgba_color': p3.BufferAttribute(array=np.ones(rgba_shape))
+    #         })
+
+    def create_point_cloud(self, pos_array):
         """
         Make a PointsGeometry using pythreejs
         """
-        points_geometry = p3.BufferGeometry(
+        rgba_shape = list(pos_array.shape)
+        rgba_shape[1] += 1
+        self.points_geometry = p3.BufferGeometry(
             attributes={
-                'position': p3.BufferAttribute(array=self.positions),
-                'rgba_color': p3.BufferAttribute(array=self.engine.slice_data(change=None, autoscale_cmap=True))
+                'position': p3.BufferAttribute(array=pos_array),
+                # 'rgba_color': p3.BufferAttribute(array=self.engine.slice_data(change=None, autoscale_cmap=True))
+                'rgba_color': p3.BufferAttribute(array=np.ones(rgba_shape))
             })
-        points_material = self.create_points_material()
-        points = p3.Points(geometry=points_geometry, material=points_material)
-        return points_geometry, points_material, points
+        # points_material = self.create_points_material()
+        self.points = p3.Points(geometry=self.points_geometry, material=self.points_material)
+        # return points_geometry, points_material, points
 
     def create_points_material(self):
         """
@@ -262,44 +299,45 @@ void main() {
             transparent=True,
             depthTest=True)
 
-    def get_spatial_extents(self):
-        """
-        Find extents of points in 3D
-        """
-        xminmax = {}
-        for i, x in enumerate('xyz'):
-            xminmax[x] = [
-                np.amin(self.positions[:, i]) - 0.5 * self.pixel_size,
-                np.amax(self.positions[:, i]) + 0.5 * self.pixel_size
-            ]
-        center_of_mass = [
-            0.5 * np.sum(xminmax['x']), 0.5 * np.sum(xminmax['y']),
-            0.5 * np.sum(xminmax['z'])
-        ]
-        return xminmax, center_of_mass
+    # def get_spatial_extents(self):
+    #     """
+    #     Find extents of points in 3D
+    #     """
+    #     xminmax = {}
+    #     for i, x in enumerate('xyz'):
+    #         xminmax[x] = [
+    #             np.amin(self.positions[:, i]) - 0.5 * self.pixel_size,
+    #             np.amax(self.positions[:, i]) + 0.5 * self.pixel_size
+    #         ]
+    #     center_of_mass = [
+    #         0.5 * np.sum(xminmax['x']), 0.5 * np.sum(xminmax['y']),
+    #         0.5 * np.sum(xminmax['z'])
+    #     ]
+    #     return xminmax, center_of_mass
 
-    def create_outline(self):
+    def create_outline(self, axparams):
         """
         Make a wireframe cube with tick labels
         """
 
         box_geometry = p3.BoxBufferGeometry(
-            self.xminmax['x'][1] - self.xminmax['x'][0],
-            self.xminmax['y'][1] - self.xminmax['y'][0],
-            self.xminmax['z'][1] - self.xminmax['z'][0])
+            axparams['x']["lims"][1] - axparams['x']["lims"][0],
+            axparams['y']["lims"][1] - axparams['y']["lims"][0],
+            axparams['z']["lims"][1] - axparams['z']["lims"][0])
         edges = p3.EdgesGeometry(box_geometry)
-        outline = p3.LineSegments(
+        self.outline = p3.LineSegments(
             geometry=edges,
             material=p3.LineBasicMaterial(color='#000000'),
-            position=[
-                0.5 * np.sum(self.xminmax['x']),
-                0.5 * np.sum(self.xminmax['y']),
-                0.5 * np.sum(self.xminmax['z'])
-            ])
+            position=axparams["centre"])
+            # position=[
+            #     0.5 * np.sum(self.xminmax['x']),
+            #     0.5 * np.sum(self.xminmax['y']),
+            #     0.5 * np.sum(self.xminmax['z'])
+            # ])
 
-        ticks_and_labels = self.generate_axis_ticks_and_labels()
+        self.axticks = self.generate_axis_ticks_and_labels(axparams)
 
-        return outline, ticks_and_labels
+        # return outline, ticks_and_labels
 
     def make_axis_tick(self, string, position, color="black", size=1.0):
         """
@@ -315,26 +353,29 @@ void main() {
                          scaleToTexture=True,
                          scale=[size, size, size])
 
-    def generate_axis_ticks_and_labels(self):
+    def generate_axis_ticks_and_labels(self, axparams):
         """
         Create ticklabels on outline edges
         """
         if self.tick_size is None:
-            self.tick_size = 0.05 * np.amin(
-                np.diff(list(self.xminmax.values()), axis=1).ravel())
+            self.tick_size = 0.05 * np.amin([
+                axparams['x']["lims"][1] - axparams['x']["lims"][0],
+                axparams['y']["lims"][1] - axparams['y']["lims"][0],
+                axparams['z']["lims"][1] - axparams['z']["lims"][0]])
+                # np.diff(list(self.xminmax.values()), axis=1).ravel())
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker = mpl.ticker.MaxNLocator(5)
         offsets = {
-            'x': [0, self.xminmax['y'][0], self.xminmax['z'][0]],
-            'y': [self.xminmax['x'][0], 0, self.xminmax['z'][0]],
-            'z': [self.xminmax['x'][0], self.xminmax['y'][0], 0]
+            'x': [0, axparams['y']["lims"][0], axparams['z']["lims"][0]],
+            'y': [axparams['x']["lims"][0], 0, axparams['z']["lims"][0]],
+            'z': [axparams['x']["lims"][0], axparams['y']["lims"][0], 0]
         }
 
         for axis, x in enumerate('xyz'):
-            ticks = ticker.tick_values(self.xminmax[x][0], self.xminmax[x][1])
+            ticks = ticker.tick_values(axparams[x]["lims"][0], axparams[x]["lims"][1])
             for tick in ticks:
-                if tick >= self.xminmax[x][0] and tick <= self.xminmax[x][1]:
+                if tick >= axparams[x]["lims"][0] and tick <= axparams[x]["lims"][1]:
                     tick_pos = iden[axis] * tick + offsets[x]
                     ticks_and_labels.add(
                         self.make_axis_tick(string=value_to_string(
@@ -344,7 +385,7 @@ void main() {
             ticks_and_labels.add(
                 self.make_axis_tick(
                     string=self.axlabels[x],
-                    position=(iden[axis] * 0.5 * np.sum(self.xminmax[x]) +
+                    position=(iden[axis] * 0.5 * np.sum(axparams[x]["lims"]) +
                               offsets[x]).tolist(),
                     size=self.tick_size * 0.3 * len(self.axlabels[x])))
 

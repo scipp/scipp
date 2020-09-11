@@ -43,6 +43,7 @@ class PlotModel:
 
 
         self.dslice = None
+        # Save a copy of the name for simpler access
         self.name = controller.name
 
 

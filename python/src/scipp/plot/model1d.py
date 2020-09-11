@@ -81,7 +81,7 @@ class PlotModel1d(PlotModel):
         self.axparams["x"]["labels"] = name_with_unit(
                 self.data_arrays[self.name].coords[dim])
 
-        
+
 
 
         # # xmin = np.Inf

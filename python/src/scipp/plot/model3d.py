@@ -4,7 +4,7 @@
 
 # Scipp imports
 from .. import config
-from .engine import PlotEngine
+from .model import PlotModel
 from .tools import to_bin_centers
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
@@ -24,26 +24,12 @@ import numpy as np
 class PlotEngine3d(PlotEngine):
 
     def __init__(self,
-                 parent=None,
+                 controller=None,
                  scipp_obj_dict=None,
-                 axes=None,
-                 masks=None,
-                 cmap=None,
-                 log=None,
-                 vmin=None,
-                 vmax=None,
-                 color=None,
                  positions=None):
 
-        super().__init__(parent=parent,
+        super().__init__(controller=controller,
                          scipp_obj_dict=scipp_obj_dict,
-                         axes=axes,
-                         masks=masks,
-                         cmap=cmap,
-                         log=log,
-                         vmin=vmin,
-                         vmax=vmax,
-                         color=color,
                          positions=positions)
 
 
@@ -54,12 +40,75 @@ class PlotEngine3d(PlotEngine):
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
         self.remaining_inds = [0, 1]
 
+        self.axparams = {"x": {}, "y": {}, "z": {}, "pos": None}
+        self.positions = positions
+        self.pos_array = None
+
+
+        # # If positions are specified, then the x, y, z points positions can
+        # # never change
+        # if self.positions is not None:
+        #     coord = scipp_obj_dict[self.name].coords[self.positions]
+        #     self.pos_array = np.array(coord.values, dtype=np.float32)
+        #     for xyz in "xyz":
+        #         x = getattr(sc.geometry, xyz)(coord)
+        #         self.axparams[xyz]["lims"] = [sc.min(x).value - 0.5 * pixel_size, sc.max(x).value + 0.5 * pixel_size]
+        #         self.axparams[xyz]["labels"] = name_with_unit(coord, name=xyz.upper())
+        #     self.axparams["pos"] = self.pos_array
 
         return
 
 
-    def update_buttons(self):
-        return
+
+    def update_axes(self, limits):
+
+        # If positions are specified, then the x, y, z points positions can
+        # never change
+        if self.positions is not None:
+            coord = scipp_obj_dict[self.name].coords[self.positions]
+            self.pos_array = np.array(coord.values, dtype=np.float32)
+            for xyz in "xyz":
+                x = getattr(sc.geometry, xyz)(coord)
+                self.axparams[xyz]["lims"] = [sc.min(x).value - 0.5 * pixel_size, sc.max(x).value + 0.5 * pixel_size]
+                self.axparams[xyz]["labels"] = name_with_unit(coord, name=xyz.upper())
+            # self.axparams["pos"] = self.pos_array
+        else:
+            # If no positions are supplied, create a meshgrid from coordinate
+            # axes.
+            coords = []
+            # labels = []
+            for dim in limits:
+                xyz = limits[dim]["button"]
+                coord = self.data_arrays[self.name].coords[dim]
+                coords.append(to_bin_centers(coord, dim).values)
+                # labels.append(name_with_unit(coord))
+                self.axparams[xyz]["labels"] = name_with_unit(coord)
+                self.axparams[xyz]["lims"] = limits[dim]["xlims"]
+            # z, y, x = np.meshgrid(*coords, indexing='ij')
+            x, y, z = np.meshgrid(*coords, indexing='ij')
+            self.pos_array = np.array(
+                [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
+            # if self.pixel_size is None:
+            #     self.pixel_size = coords[0][1] - coords[0][0]
+            # self.axparams["x"]["labels"] = labels[0]
+            # self.axparams["y"]["labels"] = labels[1]
+            # self.axparams["z"]["labels"] = labels[2]
+            # self.axlabels.update({
+            #     "z": labels[0],
+            #     "y": labels[1],
+            #     "x": labels[2]
+            # })
+
+        self.axparams["pos"] = self.pos_array
+
+
+        self.axparams["centre"] = [
+            0.5 * np.sum(self.axparams['x']["lims"]), 0.5 * np.sum(self.axparams['y']["lims"]),
+            0.5 * np.sum(self.axparams['z']["lims"])
+        ]
+
+        return self.axparams
+
 
     def slice_data(self, change=None, autoscale_cmap=False):
         """
