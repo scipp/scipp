@@ -165,7 +165,7 @@ class PlotEngine3d(PlotEngine):
 
         return colors
 
-    def update_slice(self, change=None, autoscale_cmap=False):
+    def update_data(self, change=None, autoscale_cmap=False):
         """
         Update colors of points.
         """
@@ -178,125 +178,129 @@ class PlotEngine3d(PlotEngine):
             self.update_cut_surface(None)
         return
 
-    def update_opacity(self, change):
-        """
-        Update opacity of all points when opacity slider is changed.
-        Take cut surface into account if present.
-        """
-        if self.parent.cut_surface_buttons.value is None:
-            arr = self.parent.points_geometry.attributes["rgba_color"].array
-            arr[:, 3] = change["new"][1]
-            self.parent.points_geometry.attributes["rgba_color"].array = arr
-            # There is a strange effect with point clouds and opacities.
-            # Results are best when depthTest is False, at low opacities.
-            # But when opacities are high, the points appear in the order
-            # they were drawn, and not in the order they are with respect
-            # to the camera position. So for high opacities, we switch to
-            # depthTest = True.
-            self.parent.points_material.depthTest = change["new"][1] > 0.9
-        else:
-            self.update_cut_surface({"new": self.parent.cut_slider.value})
 
-    def check_if_reset_needed(self, owner, content, buffers):
-        if owner.value == self.current_cut_surface_value:
-            self.parent.cut_surface_buttons.value = None
-        self.current_cut_surface_value = owner.value
 
-    def update_cut_surface_buttons(self, change):
-        if change["new"] is None:
-            self.parent.cut_slider.disabled = True
-            self.parent.cut_checkbox.disabled = True
-            self.parent.cut_surface_thickness.disabled = True
-            self.update_opacity({"new": self.parent.opacity_slider.value})
-        else:
-            self.parent.points_material.depthTest = False
-            if change["old"] is None:
-                self.parent.cut_slider.disabled = False
-                self.parent.cut_checkbox.disabled = False
-                self.parent.cut_surface_thickness.disabled = False
-            self.update_cut_slider_bounds()
 
-    def update_cut_slider_bounds(self):
-        # Cartesian X, Y, Z
-        if self.parent.cut_surface_buttons.value < self.parent.cut_options["Xcylinder"]:
-            minmax = self.parent.xminmax["xyz"[self.parent.cut_surface_buttons.value]]
-            if minmax[0] < self.parent.cut_slider.max:
-                self.parent.cut_slider.min = minmax[0]
-                self.parent.cut_slider.max = minmax[1]
-            else:
-                self.parent.cut_slider.max = minmax[1]
-                self.parent.cut_slider.min = minmax[0]
-            self.parent.cut_slider.value = 0.5 * (minmax[0] + minmax[1])
-        # Cylindrical X, Y, Z
-        elif self.parent.cut_surface_buttons.value < self.parent.cut_options["Sphere"]:
-            j = self.parent.cut_surface_buttons.value - 3
-            remaining_axes = self.permutations["xyz"[j]]
-            self.remaining_inds = [(j + 1) % 3, (j + 2) % 3]
-            rmax = np.abs([
-                self.parent.xminmax[remaining_axes[0]][0],
-                self.parent.xminmax[remaining_axes[1]][0],
-                self.parent.xminmax[remaining_axes[0]][1],
-                self.parent.xminmax[remaining_axes[1]][1]
-            ]).max()
-            self.parent.cut_slider.min = 0
-            self.parent.cut_slider.max = rmax * np.sqrt(2.0)
-            self.parent.cut_slider.value = 0.5 * self.parent.cut_slider.max
-        # Spherical
-        elif self.parent.cut_surface_buttons.value == self.parent.cut_options["Sphere"]:
-            rmax = np.abs(list(self.parent.xminmax.values())).max()
-            self.parent.cut_slider.min = 0
-            self.parent.cut_slider.max = rmax * np.sqrt(3.0)
-            self.parent.cut_slider.value = 0.5 * self.parent.cut_slider.max
-        # Value iso-surface
-        elif self.parent.cut_surface_buttons.value == self.parent.cut_options["Value"]:
-            self.parent.cut_slider.min = self.parent.vminmax[0]
-            self.parent.cut_slider.max = self.parent.vminmax[1]
-            self.parent.cut_slider.value = 0.5 * (self.parent.vminmax[0] + self.parent.vminmax[1])
-            # Update slider step because it is no longer related to pixel size.
-            # Slice thickness is linked to the step via jslink.
-            self.parent.cut_slider.step = (self.parent.cut_slider.max -
-                                    self.parent.cut_slider.min) / 10.0
-        if self.parent.cut_surface_buttons.value < self.parent.cut_options["Value"]:
-            self.parent.cut_slider.step = self.parent.pixel_size * 1.1
 
-    def update_cut_surface(self, change):
-        newc = None
-        target = self.parent.cut_slider.value
-        # Cartesian X, Y, Z
-        if self.parent.cut_surface_buttons.value < self.parent.cut_options["Xcylinder"]:
-            newc = np.where(
-                np.abs(self.parent.positions[:, self.parent.cut_surface_buttons.value] -
-                       target) < 0.5 * self.parent.cut_surface_thickness.value,
-                self.parent.opacity_slider.upper, self.parent.opacity_slider.lower)
-        # Cylindrical X, Y, Z
-        elif self.parent.cut_surface_buttons.value < self.parent.cut_options["Sphere"]:
-            newc = np.where(
-                np.abs(
-                    np.sqrt(self.parent.positions[:, self.remaining_inds[0]] *
-                            self.parent.positions[:, self.remaining_inds[0]] +
-                            self.parent.positions[:, self.remaining_inds[1]] *
-                            self.parent.positions[:, self.remaining_inds[1]]) -
-                    target) < 0.5 * self.parent.cut_surface_thickness.value,
-                self.parent.opacity_slider.upper, self.parent.opacity_slider.lower)
-        # Spherical
-        elif self.parent.cut_surface_buttons.value == self.parent.cut_options["Sphere"]:
-            newc = np.where(
-                np.abs(
-                    np.sqrt(self.parent.positions[:, 0] * self.parent.positions[:, 0] +
-                            self.parent.positions[:, 1] * self.parent.positions[:, 1] +
-                            self.parent.positions[:, 2] * self.parent.positions[:, 2]) -
-                    target) < 0.5 * self.parent.cut_surface_thickness.value,
-                self.parent.opacity_slider.upper, self.parent.opacity_slider.lower)
-        # Value iso-surface
-        elif self.parent.cut_surface_buttons.value == self.parent.cut_options["Value"]:
-            newc = np.where(
-                np.abs(self.vslice - target) <
-                0.5 * self.parent.cut_surface_thickness.value,
-                self.parent.opacity_slider.upper, self.parent.opacity_slider.lower)
+    # def update_opacity(self, change):
+    #     """
+    #     Update opacity of all points when opacity slider is changed.
+    #     Take cut surface into account if present.
+    #     """
+    #     if self.parent.cut_surface_buttons.value is None:
+    #         arr = self.parent.points_geometry.attributes["rgba_color"].array
+    #         arr[:, 3] = change["new"][1]
+    #         self.parent.points_geometry.attributes["rgba_color"].array = arr
+    #         # There is a strange effect with point clouds and opacities.
+    #         # Results are best when depthTest is False, at low opacities.
+    #         # But when opacities are high, the points appear in the order
+    #         # they were drawn, and not in the order they are with respect
+    #         # to the camera position. So for high opacities, we switch to
+    #         # depthTest = True.
+    #         self.parent.points_material.depthTest = change["new"][1] > 0.9
+    #     else:
+    #         self.update_cut_surface({"new": self.parent.cut_slider.value})
 
-        # Unfortunately, one cannot edit the value of the geometry array
-        # in-place, as this does not trigger an update on the threejs side.
-        # We have to update the entire array.
-        c3 = self.parent.points_geometry.attributes["rgba_color"].array
-        c3[:, 3] = newc
-        self.parent.points_geometry.attributes["rgba_color"].array = c3
+    # def check_if_reset_needed(self, owner, content, buffers):
+    #     if owner.value == self.current_cut_surface_value:
+    #         self.parent.cut_surface_buttons.value = None
+    #     self.current_cut_surface_value = owner.value
+
+    # def update_cut_surface_buttons(self, change):
+    #     if change["new"] is None:
+    #         self.parent.cut_slider.disabled = True
+    #         self.parent.cut_checkbox.disabled = True
+    #         self.parent.cut_surface_thickness.disabled = True
+    #         self.update_opacity({"new": self.parent.opacity_slider.value})
+    #     else:
+    #         self.parent.points_material.depthTest = False
+    #         if change["old"] is None:
+    #             self.parent.cut_slider.disabled = False
+    #             self.parent.cut_checkbox.disabled = False
+    #             self.parent.cut_surface_thickness.disabled = False
+    #         self.update_cut_slider_bounds()
+
+    # def update_cut_slider_bounds(self):
+    #     # Cartesian X, Y, Z
+    #     if self.parent.cut_surface_buttons.value < self.parent.cut_options["Xcylinder"]:
+    #         minmax = self.parent.xminmax["xyz"[self.parent.cut_surface_buttons.value]]
+    #         if minmax[0] < self.parent.cut_slider.max:
+    #             self.parent.cut_slider.min = minmax[0]
+    #             self.parent.cut_slider.max = minmax[1]
+    #         else:
+    #             self.parent.cut_slider.max = minmax[1]
+    #             self.parent.cut_slider.min = minmax[0]
+    #         self.parent.cut_slider.value = 0.5 * (minmax[0] + minmax[1])
+    #     # Cylindrical X, Y, Z
+    #     elif self.parent.cut_surface_buttons.value < self.parent.cut_options["Sphere"]:
+    #         j = self.parent.cut_surface_buttons.value - 3
+    #         remaining_axes = self.permutations["xyz"[j]]
+    #         self.remaining_inds = [(j + 1) % 3, (j + 2) % 3]
+    #         rmax = np.abs([
+    #             self.parent.xminmax[remaining_axes[0]][0],
+    #             self.parent.xminmax[remaining_axes[1]][0],
+    #             self.parent.xminmax[remaining_axes[0]][1],
+    #             self.parent.xminmax[remaining_axes[1]][1]
+    #         ]).max()
+    #         self.parent.cut_slider.min = 0
+    #         self.parent.cut_slider.max = rmax * np.sqrt(2.0)
+    #         self.parent.cut_slider.value = 0.5 * self.parent.cut_slider.max
+    #     # Spherical
+    #     elif self.parent.cut_surface_buttons.value == self.parent.cut_options["Sphere"]:
+    #         rmax = np.abs(list(self.parent.xminmax.values())).max()
+    #         self.parent.cut_slider.min = 0
+    #         self.parent.cut_slider.max = rmax * np.sqrt(3.0)
+    #         self.parent.cut_slider.value = 0.5 * self.parent.cut_slider.max
+    #     # Value iso-surface
+    #     elif self.parent.cut_surface_buttons.value == self.parent.cut_options["Value"]:
+    #         self.parent.cut_slider.min = self.parent.vminmax[0]
+    #         self.parent.cut_slider.max = self.parent.vminmax[1]
+    #         self.parent.cut_slider.value = 0.5 * (self.parent.vminmax[0] + self.parent.vminmax[1])
+    #         # Update slider step because it is no longer related to pixel size.
+    #         # Slice thickness is linked to the step via jslink.
+    #         self.parent.cut_slider.step = (self.parent.cut_slider.max -
+    #                                 self.parent.cut_slider.min) / 10.0
+    #     if self.parent.cut_surface_buttons.value < self.parent.cut_options["Value"]:
+    #         self.parent.cut_slider.step = self.parent.pixel_size * 1.1
+
+    # def update_cut_surface(self, change):
+    #     newc = None
+    #     target = self.parent.cut_slider.value
+    #     # Cartesian X, Y, Z
+    #     if self.parent.cut_surface_buttons.value < self.parent.cut_options["Xcylinder"]:
+    #         newc = np.where(
+    #             np.abs(self.parent.positions[:, self.parent.cut_surface_buttons.value] -
+    #                    target) < 0.5 * self.parent.cut_surface_thickness.value,
+    #             self.parent.opacity_slider.upper, self.parent.opacity_slider.lower)
+    #     # Cylindrical X, Y, Z
+    #     elif self.parent.cut_surface_buttons.value < self.parent.cut_options["Sphere"]:
+    #         newc = np.where(
+    #             np.abs(
+    #                 np.sqrt(self.parent.positions[:, self.remaining_inds[0]] *
+    #                         self.parent.positions[:, self.remaining_inds[0]] +
+    #                         self.parent.positions[:, self.remaining_inds[1]] *
+    #                         self.parent.positions[:, self.remaining_inds[1]]) -
+    #                 target) < 0.5 * self.parent.cut_surface_thickness.value,
+    #             self.parent.opacity_slider.upper, self.parent.opacity_slider.lower)
+    #     # Spherical
+    #     elif self.parent.cut_surface_buttons.value == self.parent.cut_options["Sphere"]:
+    #         newc = np.where(
+    #             np.abs(
+    #                 np.sqrt(self.parent.positions[:, 0] * self.parent.positions[:, 0] +
+    #                         self.parent.positions[:, 1] * self.parent.positions[:, 1] +
+    #                         self.parent.positions[:, 2] * self.parent.positions[:, 2]) -
+    #                 target) < 0.5 * self.parent.cut_surface_thickness.value,
+    #             self.parent.opacity_slider.upper, self.parent.opacity_slider.lower)
+    #     # Value iso-surface
+    #     elif self.parent.cut_surface_buttons.value == self.parent.cut_options["Value"]:
+    #         newc = np.where(
+    #             np.abs(self.vslice - target) <
+    #             0.5 * self.parent.cut_surface_thickness.value,
+    #             self.parent.opacity_slider.upper, self.parent.opacity_slider.lower)
+
+    #     # Unfortunately, one cannot edit the value of the geometry array
+    #     # in-place, as this does not trigger an update on the threejs side.
+    #     # We have to update the entire array.
+    #     c3 = self.parent.points_geometry.attributes["rgba_color"].array
+    #     c3[:, 3] = newc
+    #     self.parent.points_geometry.attributes["rgba_color"].array = c3

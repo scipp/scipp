@@ -105,6 +105,10 @@ class SciPlot3d:
         # Connect controller to model
         self.controller.model = self.model
 
+        # Add a slave controller to control the cut surface
+        self.controller3d = PlotController3d(ndim=self.controller.ndim,
+            data_names=list(scipp_obj_dict.keys()))
+
         self.view = PlotView3d(controller=self.controller,
             cmap=self.controller.params["values"][self.controller.name]["cmap"],
             norm=self.controller.params["values"][self.controller.name]["norm"],
@@ -113,6 +117,8 @@ class SciPlot3d:
             mask_names=self.controller.mask_names[self.controller.name])
 
         self.controller.view = self.view
+        self.controller3d.view = self.view
+        self.controller.slave = self.controller3d
 
 
 

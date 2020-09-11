@@ -448,125 +448,6 @@ void main() {
         #     image.reshape(shp))._repr_png_()
 
 
-    def create_cut_surface_controls(self, show_outline):
-
-        # Opacity slider: top value controls opacity if no cut surface is
-        # active. If a cut curface is present, the upper slider is the opacity
-        # of the slice, while the lower slider value is the opacity of the
-        # data not in the cut surface.
-        self.opacity_slider = ipw.FloatRangeSlider(
-            min=0.0,
-            max=1.0,
-            value=[0.1, 1],
-            step=0.01,
-            description="Opacity slider: When no cut surface is active, the "
-            "max value of the range slider controls the overall opacity, "
-            "and the lower value has no effect. When a cut surface is "
-            "present, the max value is the opacity of the slice, while the "
-            "min value is the opacity of the background.",
-            continuous_update=True,
-            style={'description_width': '60px'})
-        self.opacity_slider.observe(self.engine.update_opacity, names="value")
-        self.opacity_checkbox = ipw.Checkbox(
-            value=self.opacity_slider.continuous_update,
-            description="Continuous update",
-            indent=False,
-            layout={"width": "20px"})
-        self.opacity_checkbox_link = ipw.jslink(
-            (self.opacity_checkbox, 'value'),
-            (self.opacity_slider, 'continuous_update'))
-
-        self.toggle_outline_button = ipw.ToggleButton(value=show_outline,
-                                                          description='',
-                                                          button_style='')
-        self.toggle_outline_button.observe(self.toggle_outline, names="value")
-        # Run a trigger to update button text
-        self.toggle_outline({"new": show_outline})
-
-        # Add buttons to provide a choice of different cut surfaces:
-        # - Cartesian X, Y, Z
-        # - Cylindrical X, Y, Z (cylinder major axis)
-        # - Spherical R
-        # - Value-based iso-surface
-        # Note additional spaces required in cylindrical names because
-        # options must be unique.
-        self.cut_surface_buttons = ipw.ToggleButtons(
-            options=[('X ', self.cut_options["Xplane"]),
-                     ('Y ', self.cut_options["Yplane"]),
-                     ('Z ', self.cut_options["Zplane"]),
-                     ('R ', self.cut_options["Sphere"]),
-                     (' X ', self.cut_options["Xcylinder"]),
-                     (' Y ', self.cut_options["Ycylinder"]),
-                     (' Z ', self.cut_options["Zcylinder"]),
-                     ('', self.cut_options["Value"])],
-            value=None,
-            description='Cut surface:',
-            button_style='',
-            tooltips=[
-                'X-plane', 'Y-plane', 'Z-plane', 'Sphere', 'Cylinder-X',
-                'Cylinder-Y', 'Cylinder-Z', 'Value'
-            ],
-            icons=(['cube'] * 3) + ['circle-o'] + (['toggle-on'] * 3) +
-            ['magic'],
-            style={"button_width": "55px"},
-            layout={'width': '350px'})
-        self.cut_surface_buttons.observe(self.engine.update_cut_surface_buttons,
-                                         names="value")
-        # Add a capture for a click event: if the active button is clicked,
-        # this resets the togglebuttons value to None and deletes the cut
-        # surface.
-        self.cut_surface_buttons.on_msg(self.engine.check_if_reset_needed)
-
-        # Allow to change the thickness of the cut surface
-        self.cut_surface_thickness = ipw.BoundedFloatText(
-            value=self.pixel_size * 1.1,
-            min=0,
-            layout={"width": "150px"},
-            disabled=True,
-            description="Thickness:",
-            style={'description_width': 'initial'})
-
-        # Add slider to control position of cut surface
-        self.cut_slider = ipw.FloatSlider(min=0,
-                                              max=1,
-                                              step=self.cut_surface_thickness.value,
-                                              description="Position:",
-                                              disabled=True,
-                                              value=0.5,
-                                              layout={"width": "350px"})
-        self.cut_checkbox = ipw.Checkbox(value=True,
-                                             description="Continuous update",
-                                             indent=False,
-                                             layout={"width": "20px"},
-                                             disabled=True)
-        self.cut_checkbox_link = ipw.jslink(
-            (self.cut_checkbox, 'value'),
-            (self.cut_slider, 'continuous_update'))
-        self.cut_slider.observe(self.engine.update_cut_surface, names="value")
-
-        # Allow to change the thickness of the cut surface
-        self.cut_surface_thickness = ipw.BoundedFloatText(
-            value=0.05 * self.box_size.max(),
-            min=0,
-            layout={"width": "150px"},
-            disabled=True,
-            description="Thickness:",
-            style={'description_width': 'initial'})
-        self.cut_surface_thickness.observe(self.engine.update_cut_surface,
-                                           names="value")
-        self.cut_thickness_link = ipw.jslink(
-            (self.cut_slider, 'step'), (self.cut_surface_thickness, 'value'))
-        self.cut_slider.observe(self.engine.update_cut_surface, names="value")
-
-        # Put widgets into boxes
-        self.cut_surface_controls = ipw.HBox([
-            self.cut_surface_buttons,
-            ipw.VBox([
-                ipw.HBox([self.cut_slider, self.cut_checkbox]),
-                self.cut_surface_thickness
-            ])
-        ])
-        return
 
 
     # def update_opacity(self, change):
@@ -759,11 +640,11 @@ void main() {
         self.engine.update_slice()
         return
 
-    def toggle_outline(self, change):
-        self.outline.visible = change["new"]
-        self.axticks.visible = change["new"]
-        desc = "Hide" if change["new"] else "Show"
-        self.toggle_outline_button.description = desc + " outline"
+    # def toggle_outline(self, change):
+    #     self.outline.visible = change["new"]
+    #     self.axticks.visible = change["new"]
+    #     desc = "Hide" if change["new"] else "Show"
+    #     self.toggle_outline_button.description = desc + " outline"
 
     def rescale_to_data(self, button=None):
         # self.scalar_map.set_clim(self.vslice.min(), self.vslice.max())
