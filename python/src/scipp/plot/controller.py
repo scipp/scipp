@@ -28,6 +28,7 @@ class PlotController:
                  color=None,
                  logx=False,
                  logy=False,
+                 logz=False,
                  button_options=None,
                  # aspect=None,
                  positions=None,
@@ -48,6 +49,7 @@ class PlotController:
         self.axes = axes
         self.logx = logx
         self.logy = logy
+        self.logz = logz
         # self.slice_label = None
         self.axparams = None
 
@@ -95,7 +97,7 @@ class PlotController:
         # os.write(1, "Slicer 3\n".encode())
 
         # List mask names for each item
-        # self.mask_names = {}
+        self.mask_names = {}
         # Size of the slider coordinate arrays
         self.dim_to_shape = {}
         # Store coordinates of dimensions that will be in sliders
@@ -244,7 +246,7 @@ class PlotController:
             # Include masks
             # for n, msk in array.masks.items():
             #     self.data_arrays[name].masks[n] = msk
-            # self.mask_names[name] = list(array.masks.keys())
+            self.mask_names[name] = list(array.masks.keys())
 
 
             # Determine whether error bars should be plotted or not
@@ -503,6 +505,8 @@ class PlotController:
 
         vmin, vmax = self.model.rescale_to_data()
         self.view.rescale_to_data(vmin, vmax)
+        if self.slave is not None:
+            self.slave.rescale_to_data()
 
 
 

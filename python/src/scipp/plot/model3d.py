@@ -21,28 +21,29 @@ import numpy as np
 
 
 
-class PlotEngine3d(PlotEngine):
+class PlotModel3d(PlotModel):
 
     def __init__(self,
                  controller=None,
                  scipp_obj_dict=None,
-                 positions=None):
+                 positions=None,
+                 cut_options=None):
 
         super().__init__(controller=controller,
-                         scipp_obj_dict=scipp_obj_dict,
-                         positions=positions)
+                         scipp_obj_dict=scipp_obj_dict)
 
 
 
         self.dslice = None
-        self.current_cut_surface_value = None
         # Useful variables
-        self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
-        self.remaining_inds = [0, 1]
+        # self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
+        # self.remaining_inds = [0, 1]
 
         self.axparams = {"x": {}, "y": {}, "z": {}, "pos": None}
         self.positions = positions
         self.pos_array = None
+
+        self.cut_options = cut_options
 
 
         # # If positions are specified, then the x, y, z points positions can
@@ -84,8 +85,8 @@ class PlotEngine3d(PlotEngine):
                 # labels.append(name_with_unit(coord))
                 self.axparams[xyz]["labels"] = name_with_unit(coord)
                 self.axparams[xyz]["lims"] = limits[dim]["xlims"]
-            # z, y, x = np.meshgrid(*coords, indexing='ij')
-            x, y, z = np.meshgrid(*coords, indexing='ij')
+            z, y, x = np.meshgrid(*coords, indexing='ij')
+            # x, y, z = np.meshgrid(*coords, indexing='ij')
             self.pos_array = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
             # if self.pixel_size is None:
@@ -108,9 +109,9 @@ class PlotEngine3d(PlotEngine):
         ]
 
         self.axparams["box_size"] = np.array([
-            axparams['x']["lims"][1] - axparams['x']["lims"][0],
-            axparams['y']["lims"][1] - axparams['y']["lims"][0],
-            axparams['z']["lims"][1] - axparams['z']["lims"][0]])
+            self.axparams['x']["lims"][1] - self.axparams['x']["lims"][0],
+            self.axparams['y']["lims"][1] - self.axparams['y']["lims"][0],
+            self.axparams['z']["lims"][1] - self.axparams['z']["lims"][0]])
 
         return self.axparams
 
@@ -171,6 +172,24 @@ class PlotEngine3d(PlotEngine):
 
         # return colors
 
+    # def slice_to_values(self):
+    #     new_values = {"values": self.dslice.values.astype(np.float32).ravel(), "masks": None}
+
+    #     # Handle masks
+    #     msk = None
+    #     if len(mask_info[self.name]) > 0:
+    #         # Use automatic broadcasting in Scipp variables
+    #         msk = sc.Variable(dims=self.dslice.dims,
+    #                           values=np.zeros(self.dslice.shape,
+    #                                           dtype=np.int32))
+    #         for m, val in mask_info[self.name].items():
+    #             if val:
+    #                 msk += sc.Variable(
+    #                     dims=self.dslice.masks[m].dims,
+    #                     values=self.dslice.masks[m].values.astype(np.int32))
+    #         new_values["masks"] = msk.values.ravel()
+    #     return 
+
     def update_data(self, slices, mask_info):
         """
         Update colors of points.
@@ -212,6 +231,49 @@ class PlotEngine3d(PlotEngine):
         #     colors[masks_inds] = masks_colors
         return new_values
 
+
+
+
+    def update_cut_surface(self, target=None, button_value=None, surface_thickness=None,
+        opacity_lower=None, opacity_upper=None):
+        new_colors = None
+        # target = self.cut_slider.value
+
+        # Cartesian X, Y, Z
+        if button_value < self.cut_options["Xcylinder"]:
+            return np.where(
+                np.abs(self.pos_array[:, button_value] -
+                       target) < 0.5 * surface_thickness,
+                opacity_upper, opacity_lower)
+        # Cylindrical X, Y, Z
+        elif button_value < self.cut_options["Sphere"]:
+            axis = button_value - 3
+            remaining_inds = [(axis + 1) % 3, (axis + 2) % 3]
+            return np.where(
+                np.abs(
+                    np.sqrt(self.pos_array[:, remaining_inds[0]] *
+                            self.pos_array[:, remaining_inds[0]] +
+                            self.pos_array[:, remaining_inds[1]] *
+                            self.pos_array[:, remaining_inds[1]]) -
+                    target) < 0.5 * surface_thickness,
+                opacity_upper, opacity_lower)
+        # Spherical
+        elif button_value == self.cut_options["Sphere"]:
+            return np.where(
+                np.abs(
+                    np.sqrt(self.pos_array[:, 0] * self.pos_array[:, 0] +
+                            self.pos_array[:, 1] * self.pos_array[:, 1] +
+                            self.pos_array[:, 2] * self.pos_array[:, 2]) -
+                    target) < 0.5 * surface_thickness,
+                opacity_upper, opacity_lower)
+        # Value iso-surface
+        elif button_value == self.cut_options["Value"]:
+            return np.where(
+                np.abs(self.vslice - target) <
+                0.5 * surface_thickness,
+                opacity_upper, opacity_lower)
+        else:
+            raise RuntimeError("Unknown cut surface type {}".format(button_value))
 
 
 

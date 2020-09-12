@@ -86,6 +86,10 @@ class SciPlot1d():
                          errorbars=errorbars,
             button_options=['X'])
 
+        self.controller1d = PlotController1d(ndim=self.controller.ndim,
+            data_names=list(scipp_obj_dict.keys()))
+
+
         self.model = PlotModel1d(controller=self.controller,
             scipp_obj_dict=scipp_obj_dict)
 
@@ -94,8 +98,8 @@ class SciPlot1d():
 
 
 
-        self.controller1d = PlotController1d(ndim=self.controller.ndim,
-            data_names=list(scipp_obj_dict.keys()))
+        # self.controller1d = PlotController1d(ndim=self.controller.ndim,
+        #     data_names=list(scipp_obj_dict.keys()))
 
 
         self.view = PlotView1d(controller=self.controller,

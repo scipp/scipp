@@ -44,7 +44,11 @@ class PlotView3d:
                  vmax=None,
                  nan_color=None,
                  mask_cmap=None,
-                 mask_names=None):
+                 mask_names=None,
+                 pixel_size=None,
+                 tick_size=None,
+                 background=None,
+                 show_outline=True):
 
         self.controller = controller
 
@@ -52,16 +56,7 @@ class PlotView3d:
 
 
         self.cbar_image = ipw.Image()
-        self.cut_options = {
-            "Xplane": 0,
-            "Yplane": 1,
-            "Zplane": 2,
-            "Xcylinder": 3,
-            "Ycylinder": 4,
-            "Zcylinder": 5,
-            "Sphere": 6,
-            "Value": 7
-        }
+        
 
         # Prepare colormaps
         self.cmap = copy(cm.get_cmap(cmap))
@@ -90,6 +85,8 @@ class PlotView3d:
         self.positions = None
         self.pixel_size = pixel_size
         self.tick_size = tick_size
+        self.show_outline = show_outline
+        self.unit = unit
         # if positions is not None:
         #     coord = scipp_obj_dict[self.engine.name].coords[positions]
         #     self.positions = np.array(coord.values, dtype=np.float32)
@@ -160,7 +157,7 @@ class PlotView3d:
 
         # Add red/green/blue axes helper
         # self.axes_3d = p3.AxesHelper(10.0 * np.linalg.norm(camera_pos))
-        self.axes_3d = p3.AxesHelper()
+        self.axes_3d = p3.AxesHelper(1000.0)
 
         # Create the pythreejs scene
         self.scene = p3.Scene(children=[self.camera, self.axes_3d],
@@ -178,14 +175,14 @@ class PlotView3d:
                                     width=config.plot.width,
                                     height=config.plot.height)
 
-        # Update visibility of outline according to keyword arg
-        self.outline.visible = show_outline
-        self.axticks.visible = show_outline
+        # # Update visibility of outline according to keyword arg
+        # self.outline.visible = show_outline
+        # self.axticks.visible = show_outline
 
         # self.create_cut_surface_controls(show_outline)
 
         # Generate the colorbar image
-        self.create_colorbar()
+        # self.create_colorbar()
 
         self.figure = ipw.HBox([self.renderer, self.cbar_image])
 
@@ -225,9 +222,12 @@ class PlotView3d:
 
 
     def update_axes(self, axparams, axformatter=None, axlocator=None, logx=None, logy=None):
-        self.scene.remove(self.point_cloud)
-        self.scene.remove(self.outline)
-        self.scene.remove(self.axticks)
+        if self.point_cloud is not None:
+            self.scene.remove(self.point_cloud)
+        if self.outline is not None:
+            self.scene.remove(self.outline)
+        if self.axticks is not None:
+            self.scene.remove(self.axticks)
 
         self.create_point_cloud(axparams["pos"])
         self.create_outline(axparams)
@@ -237,16 +237,20 @@ class PlotView3d:
         # box_size = axparams['x']["lims"][1] - axparams['x']["lims"][0],
         #     axparams['y']["lims"][1] - axparams['y']["lims"][0],
         #     axparams['z']["lims"][1] - axparams['z']["lims"][0]
-        self.camera.position = np.array(axparams["centre"]) + 1.2 * axparams["box_size"]
+        self.camera.position = list(np.array(axparams["centre"]) + 1.2 * axparams["box_size"])
         # Set camera controller target
         self.controls.target = axparams["centre"]
         self.camera.lookAt(axparams["centre"])
         self.axes_3d.size = 10.0 * np.linalg.norm(self.camera.position)
+        print(self.axes_3d.size)
 
         self.scene.add(self.point_cloud)
         self.scene.add(self.outline)
         self.scene.add(self.axticks)
 
+        # Update visibility of outline according to keyword arg
+        self.outline.visible = self.show_outline
+        self.axticks.visible = self.show_outline
 
 
     # def create_points_geometry(self, pos_array):
@@ -332,6 +336,7 @@ void main() {
         """
         Make a wireframe cube with tick labels
         """
+        # print(axparams)
 
         box_geometry = p3.BoxBufferGeometry(
             axparams['x']["lims"][1] - axparams['x']["lims"][0],
@@ -397,10 +402,10 @@ void main() {
                                             size=self.tick_size))
             ticks_and_labels.add(
                 self.make_axis_tick(
-                    string=self.axlabels[x],
+                    string=axparams[x]["labels"],
                     position=(iden[axis] * 0.5 * np.sum(axparams[x]["lims"]) +
                               offsets[x]).tolist(),
-                    size=self.tick_size * 0.3 * len(self.axlabels[x])))
+                    size=self.tick_size * 0.3 * len(axparams[x]["labels"])))
 
         return ticks_and_labels
 
@@ -419,7 +424,8 @@ void main() {
             # cmap=cm.get_cmap(self.engine.params["values"][self.engine.name]["cmap"]),
             cmap=self.scalar_map.get_cmap(),
             norm=self.scalar_map.norm)
-        cb1.set_label(name_with_unit(var=self.engine.data_arrays[self.engine.name], name=""))
+        # cb1.set_label(name_with_unit(var=self.engine.data_arrays[self.engine.name], name=""))
+        cb1.set_label(self.unit)
 
         buf = io.BytesIO()
         fig.savefig(buf, format='png')
@@ -468,6 +474,27 @@ void main() {
         # else:
         #     self.update_cut_surface({"new": self.cut_slider.value})
         return
+
+    def disable_depth_test(self):
+        self.points_material.depthTest = False
+
+
+    def update_cut_surface(self, new_colors):
+
+        # Unfortunately, one cannot edit the value of the geometry array
+        # in-place, as this does not trigger an update on the threejs side.
+        # We have to update the entire array.
+        c3 = self.points_geometry.attributes["rgba_color"].array
+        c3[:, 3] = new_colors
+        self.points_geometry.attributes["rgba_color"].array = c3
+
+
+
+
+
+
+
+
 
     # def check_if_reset_needed(self, owner, content, buffers):
     #     if owner.value == self.current_cut_surface_value:
@@ -649,8 +676,8 @@ void main() {
 
 
 
-    def update_axes(self):
-        return
+    # def update_axes(self):
+    #     return
 
     def update_data(self, new_values):
         """
@@ -678,5 +705,5 @@ void main() {
 
     def rescale_to_data(self, vmin=None, vmax=None):
         self.scalar_map.set_clim(vmin, vmax)
-        # self.engine.update_slice(autoscale_cmap=True)
-        # self.create_colorbar()
+        self.update_data(autoscale_cmap=True)
+        self.create_colorbar()

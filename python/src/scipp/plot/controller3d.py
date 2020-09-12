@@ -5,9 +5,13 @@ import numpy as np
 
 class PlotController3d:
 
-    def __init__(self, data_names, ndim):
+    def __init__(self, ndim=None, data_names=None, pixel_size=None):
 
         self.view = None
+        self.model = None
+        self.pixel_size = pixel_size
+        self.current_cut_surface_value = None
+        self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
         # self.widgets = ipw.VBox()
         # self.keep_buttons = {}
         # self.data_names = data_names
@@ -15,7 +19,17 @@ class PlotController3d:
         # # self.make_keep_button()
         # if ndim < 2:
         #     self.widgets.layout.display = 'none'
-        self.xminmax = None
+        self.xminmax = {}
+        self.cut_options = {
+            "Xplane": 0,
+            "Yplane": 1,
+            "Zplane": 2,
+            "Xcylinder": 3,
+            "Ycylinder": 4,
+            "Zcylinder": 5,
+            "Sphere": 6,
+            "Value": 7
+        }
 
         self.widgets = self.create_cut_surface_controls()
 
@@ -108,6 +122,8 @@ class PlotController3d:
             disabled=True,
             description="Thickness:",
             style={'description_width': 'initial'})
+        self.cut_surface_thickness.observe(self.update_cut_surface,
+                                           names="value")
 
         # Add slider to control position of cut surface
         self.cut_slider = ipw.FloatSlider(min=0,
@@ -127,26 +143,27 @@ class PlotController3d:
             (self.cut_slider, 'continuous_update'))
         self.cut_slider.observe(self.update_cut_surface, names="value")
 
-        # Allow to change the thickness of the cut surface
-        self.cut_surface_thickness = ipw.BoundedFloatText(
-            value=0.05 * self.box_size.max(),
-            min=0,
-            layout={"width": "150px"},
-            disabled=True,
-            description="Thickness:",
-            style={'description_width': 'initial'})
-        self.cut_surface_thickness.observe(self.update_cut_surface,
-                                           names="value")
+        # # Allow to change the thickness of the cut surface
+        # self.cut_surface_thickness = ipw.BoundedFloatText(
+        #     value=1.,
+        #     min=0,
+        #     layout={"width": "150px"},
+        #     disabled=True,
+        #     description="Thickness:",
+        #     style={'description_width': 'initial'})
         self.cut_thickness_link = ipw.jslink(
             (self.cut_slider, 'step'), (self.cut_surface_thickness, 'value'))
         self.cut_slider.observe(self.update_cut_surface, names="value")
 
         # Put widgets into boxes
-        return ipw.HBox([
-            self.cut_surface_buttons,
-            ipw.VBox([
-                ipw.HBox([self.cut_slider, self.cut_checkbox]),
-                self.cut_surface_thickness
+        return ipw.VBox([
+            ipw.HBox([self.opacity_slider, self.opacity_checkbox]),
+            ipw.HBox([
+                self.cut_surface_buttons,
+                ipw.VBox([
+                    ipw.HBox([self.cut_slider, self.cut_checkbox]),
+                    self.cut_surface_thickness
+                ])
             ])
         ])
 
@@ -188,7 +205,8 @@ class PlotController3d:
             self.cut_surface_thickness.disabled = True
             self.update_opacity({"new": self.opacity_slider.value})
         else:
-            self.points_material.depthTest = False
+            # self.points_material.depthTest = False
+            self.view.disable_depth_test()
             if change["old"] is None:
                 self.cut_slider.disabled = False
                 self.cut_checkbox.disabled = False
@@ -210,7 +228,7 @@ class PlotController3d:
         elif self.cut_surface_buttons.value < self.cut_options["Sphere"]:
             j = self.cut_surface_buttons.value - 3
             remaining_axes = self.permutations["xyz"[j]]
-            self.remaining_inds = [(j + 1) % 3, (j + 2) % 3]
+            # self.remaining_inds = [(j + 1) % 3, (j + 2) % 3]
             rmax = np.abs([
                 self.xminmax[remaining_axes[0]][0],
                 self.xminmax[remaining_axes[1]][0],
@@ -239,47 +257,60 @@ class PlotController3d:
             self.cut_slider.step = self.pixel_size * 1.1
 
     def update_cut_surface(self, change=None):
-        newc = None
-        target = self.cut_slider.value
-        # Cartesian X, Y, Z
-        if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
-            newc = np.where(
-                np.abs(self.positions[:, self.cut_surface_buttons.value] -
-                       target) < 0.5 * self.cut_surface_thickness.value,
-                self.opacity_slider.upper, self.opacity_slider.lower)
-        # Cylindrical X, Y, Z
-        elif self.cut_surface_buttons.value < self.cut_options["Sphere"]:
-            newc = np.where(
-                np.abs(
-                    np.sqrt(self.positions[:, self.remaining_inds[0]] *
-                            self.positions[:, self.remaining_inds[0]] +
-                            self.positions[:, self.remaining_inds[1]] *
-                            self.positions[:, self.remaining_inds[1]]) -
-                    target) < 0.5 * self.cut_surface_thickness.value,
-                self.opacity_slider.upper, self.opacity_slider.lower)
-        # Spherical
-        elif self.cut_surface_buttons.value == self.cut_options["Sphere"]:
-            newc = np.where(
-                np.abs(
-                    np.sqrt(self.positions[:, 0] * self.positions[:, 0] +
-                            self.positions[:, 1] * self.positions[:, 1] +
-                            self.positions[:, 2] * self.positions[:, 2]) -
-                    target) < 0.5 * self.cut_surface_thickness.value,
-                self.opacity_slider.upper, self.opacity_slider.lower)
-        # Value iso-surface
-        elif self.cut_surface_buttons.value == self.cut_options["Value"]:
-            newc = np.where(
-                np.abs(self.vslice - target) <
-                0.5 * self.cut_surface_thickness.value,
-                self.opacity_slider.upper, self.opacity_slider.lower)
+        # newc = None
+        # target = self.cut_slider.value
 
-        # Unfortunately, one cannot edit the value of the geometry array
-        # in-place, as this does not trigger an update on the threejs side.
-        # We have to update the entire array.
-        c3 = self.points_geometry.attributes["rgba_color"].array
-        c3[:, 3] = newc
-        self.points_geometry.attributes["rgba_color"].array = c3
+        # # Cartesian X, Y, Z
+        # if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
+        #     newc = np.where(
+        #         np.abs(self.positions[:, self.cut_surface_buttons.value] -
+        #                target) < 0.5 * self.cut_surface_thickness.value,
+        #         self.opacity_slider.upper, self.opacity_slider.lower)
+        # # Cylindrical X, Y, Z
+        # elif self.cut_surface_buttons.value < self.cut_options["Sphere"]:
+        #     newc = np.where(
+        #         np.abs(
+        #             np.sqrt(self.positions[:, self.remaining_inds[0]] *
+        #                     self.positions[:, self.remaining_inds[0]] +
+        #                     self.positions[:, self.remaining_inds[1]] *
+        #                     self.positions[:, self.remaining_inds[1]]) -
+        #             target) < 0.5 * self.cut_surface_thickness.value,
+        #         self.opacity_slider.upper, self.opacity_slider.lower)
+        # # Spherical
+        # elif self.cut_surface_buttons.value == self.cut_options["Sphere"]:
+        #     newc = np.where(
+        #         np.abs(
+        #             np.sqrt(self.positions[:, 0] * self.positions[:, 0] +
+        #                     self.positions[:, 1] * self.positions[:, 1] +
+        #                     self.positions[:, 2] * self.positions[:, 2]) -
+        #             target) < 0.5 * self.cut_surface_thickness.value,
+        #         self.opacity_slider.upper, self.opacity_slider.lower)
+        # # Value iso-surface
+        # elif self.cut_surface_buttons.value == self.cut_options["Value"]:
+        #     newc = np.where(
+        #         np.abs(self.vslice - target) <
+        #         0.5 * self.cut_surface_thickness.value,
+        #         self.opacity_slider.upper, self.opacity_slider.lower)
+
+        new_colors = self.model.update_cut_surface(target=self.cut_slider.value,
+            button_value=self.cut_surface_buttons.value,
+            surface_thickness=self.cut_surface_thickness.value,
+            opacity_lower=self.opacity_slider.lower,
+            opacity_upper=self.opacity_slider.upper)
+
+        self.view.update_cut_surface(new_colors)
+
+        # # Unfortunately, one cannot edit the value of the geometry array
+        # # in-place, as this does not trigger an update on the threejs side.
+        # # We have to update the entire array.
+        # c3 = self.points_geometry.attributes["rgba_color"].array
+        # c3[:, 3] = newc
+        # self.points_geometry.attributes["rgba_color"].array = c3
 
     def update_data(self, axparams=None):
         if self.cut_surface_buttons.value == self.cut_options["Value"]:
             self.update_cut_surface()
+
+
+    def rescale_to_data(self):
+        self.model.update_data
