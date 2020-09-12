@@ -19,6 +19,8 @@ class PlotController3d:
         # # self.make_keep_button()
         # if ndim < 2:
         #     self.widgets.layout.display = 'none'
+        self.vmin = None
+        self.vmax = None
         self.xminmax = {}
         self.cut_options = {
             "Xplane": 0,
@@ -246,9 +248,9 @@ class PlotController3d:
             self.cut_slider.value = 0.5 * self.cut_slider.max
         # Value iso-surface
         elif self.cut_surface_buttons.value == self.cut_options["Value"]:
-            self.cut_slider.min = self.vminmax[0]
-            self.cut_slider.max = self.vminmax[1]
-            self.cut_slider.value = 0.5 * (self.vminmax[0] + self.vminmax[1])
+            self.cut_slider.min = self.vmin
+            self.cut_slider.max = self.vmax
+            self.cut_slider.value = 0.5 * (self.vmin + self.vmax)
             # Update slider step because it is no longer related to pixel size.
             # Slice thickness is linked to the step via jslink.
             self.cut_slider.step = (self.cut_slider.max -
@@ -312,5 +314,8 @@ class PlotController3d:
             self.update_cut_surface()
 
 
-    def rescale_to_data(self):
-        self.model.update_data
+    def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
+        self.vmin = vmin
+        self.vmax = vmax
+        new_values = self.model.slice_to_values(mask_info)
+        self.view.update_data(new_values)

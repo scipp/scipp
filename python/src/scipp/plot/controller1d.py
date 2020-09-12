@@ -124,3 +124,7 @@ class PlotController1d:
     def update_line_color(self, change):
         self.view.update_line_color(change["owner"].id, change["new"])
         return
+
+
+    def rescale_to_data(self, mask_info=None):
+        return

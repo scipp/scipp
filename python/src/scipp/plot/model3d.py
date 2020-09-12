@@ -172,30 +172,7 @@ class PlotModel3d(PlotModel):
 
         # return colors
 
-    # def slice_to_values(self):
-    #     new_values = {"values": self.dslice.values.astype(np.float32).ravel(), "masks": None}
-
-    #     # Handle masks
-    #     msk = None
-    #     if len(mask_info[self.name]) > 0:
-    #         # Use automatic broadcasting in Scipp variables
-    #         msk = sc.Variable(dims=self.dslice.dims,
-    #                           values=np.zeros(self.dslice.shape,
-    #                                           dtype=np.int32))
-    #         for m, val in mask_info[self.name].items():
-    #             if val:
-    #                 msk += sc.Variable(
-    #                     dims=self.dslice.masks[m].dims,
-    #                     values=self.dslice.masks[m].values.astype(np.int32))
-    #         new_values["masks"] = msk.values.ravel()
-    #     return 
-
-    def update_data(self, slices, mask_info):
-        """
-        Update colors of points.
-        """
-        self.slice_data(slices)
-
+    def slice_to_values(self, mask_info):
         new_values = {"values": self.dslice.values.astype(np.float32).ravel(), "masks": None}
 
         # Handle masks
@@ -211,25 +188,50 @@ class PlotModel3d(PlotModel):
                         dims=self.dslice.masks[m].dims,
                         values=self.dslice.masks[m].values.astype(np.int32))
             new_values["masks"] = msk.values.ravel()
-
-
-            # msk = msk.values
-
-        # self.dslice = self.dslice.values.flatten()
-
-
-        # # if autoscale_cmap:
-        # #     self.parent.scalar_map.set_clim(self.dslice.min(), self.dslice.max())
-        # colors = self.parent.scalar_map.to_rgba(self.dslice).astype(np.float32)
-
-        # if msk is not None:
-        #     # In 3D, we change the colors of the points in-place where masks
-        #     # are True, instead of having an additional point cloud per mask.
-        #     masks_inds = np.where(msk.flatten())
-        #     masks_colors = self.parent.masks_scalar_map.to_rgba(
-        #         self.dslice[masks_inds]).astype(np.float32)
-        #     colors[masks_inds] = masks_colors
         return new_values
+
+    def update_data(self, slices, mask_info):
+        """
+        Update colors of points.
+        """
+        self.slice_data(slices)
+
+        return self.slice_to_values(mask_info)
+
+        # new_values = {"values": self.dslice.values.astype(np.float32).ravel(), "masks": None}
+
+        # # Handle masks
+        # msk = None
+        # if len(mask_info[self.name]) > 0:
+        #     # Use automatic broadcasting in Scipp variables
+        #     msk = sc.Variable(dims=self.dslice.dims,
+        #                       values=np.zeros(self.dslice.shape,
+        #                                       dtype=np.int32))
+        #     for m, val in mask_info[self.name].items():
+        #         if val:
+        #             msk += sc.Variable(
+        #                 dims=self.dslice.masks[m].dims,
+        #                 values=self.dslice.masks[m].values.astype(np.int32))
+        #     new_values["masks"] = msk.values.ravel()
+
+
+        #     # msk = msk.values
+
+        # # self.dslice = self.dslice.values.flatten()
+
+
+        # # # if autoscale_cmap:
+        # # #     self.parent.scalar_map.set_clim(self.dslice.min(), self.dslice.max())
+        # # colors = self.parent.scalar_map.to_rgba(self.dslice).astype(np.float32)
+
+        # # if msk is not None:
+        # #     # In 3D, we change the colors of the points in-place where masks
+        # #     # are True, instead of having an additional point cloud per mask.
+        # #     masks_inds = np.where(msk.flatten())
+        # #     masks_colors = self.parent.masks_scalar_map.to_rgba(
+        # #         self.dslice[masks_inds]).astype(np.float32)
+        # #     colors[masks_inds] = masks_colors
+        # return new_values
 
 
 
@@ -269,7 +271,7 @@ class PlotModel3d(PlotModel):
         # Value iso-surface
         elif button_value == self.cut_options["Value"]:
             return np.where(
-                np.abs(self.vslice - target) <
+                np.abs(self.dslice.values.ravel() - target) <
                 0.5 * surface_thickness,
                 opacity_upper, opacity_lower)
         else:

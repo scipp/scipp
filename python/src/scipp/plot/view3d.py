@@ -705,5 +705,5 @@ void main() {
 
     def rescale_to_data(self, vmin=None, vmax=None):
         self.scalar_map.set_clim(vmin, vmax)
-        self.update_data(autoscale_cmap=True)
+        # self.update_data(new_values=)
         self.create_colorbar()

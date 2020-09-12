@@ -506,7 +506,7 @@ class PlotController:
         vmin, vmax = self.model.rescale_to_data()
         self.view.rescale_to_data(vmin, vmax)
         if self.slave is not None:
-            self.slave.rescale_to_data()
+            self.slave.rescale_to_data(vmin=vmin, vmax=vmax, mask_info=self.get_mask_info())
 
 
 
