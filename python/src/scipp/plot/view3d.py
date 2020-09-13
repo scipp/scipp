@@ -66,10 +66,10 @@ class PlotView3d:
         self.masks_scalar_map = None
         if len(mask_names) > 0:
             self.masks_cmap = copy(
-                cm.get_cmap(self.engine.params["masks"][self.engine.name]["cmap"]))
+                cm.get_cmap(mask_cmap))
             self.masks_cmap.set_bad(color=nan_color)
             self.masks_scalar_map = cm.ScalarMappable(
-                norm=self.engine.params["values"][self.engine.name]["norm"],
+                norm=norm,
                 cmap=self.masks_cmap)
 
         # # Generate the colorbar image
@@ -157,7 +157,7 @@ class PlotView3d:
 
         # Add red/green/blue axes helper
         # self.axes_3d = p3.AxesHelper(10.0 * np.linalg.norm(camera_pos))
-        self.axes_3d = p3.AxesHelper(1000.0)
+        self.axes_3d = p3.AxesHelper()
 
         # Create the pythreejs scene
         self.scene = p3.Scene(children=[self.camera, self.axes_3d],
@@ -461,9 +461,7 @@ void main() {
         Take cut surface into account if present.
         """
         # if self.cut_surface_buttons.value is None:
-        arr = self.points_geometry.attributes["rgba_color"].array
-        arr[:, 3] = alpha
-        self.points_geometry.attributes["rgba_color"].array = arr
+
         # There is a strange effect with point clouds and opacities.
         # Results are best when depthTest is False, at low opacities.
         # But when opacities are high, the points appear in the order
@@ -471,6 +469,18 @@ void main() {
         # to the camera position. So for high opacities, we switch to
         # depthTest = True.
         self.points_material.depthTest = alpha > 0.9
+
+        arr = self.points_geometry.attributes["rgba_color"].array
+        arr[:, 3] = alpha
+        self.points_geometry.attributes["rgba_color"].array = arr
+
+        # # There is a strange effect with point clouds and opacities.
+        # # Results are best when depthTest is False, at low opacities.
+        # # But when opacities are high, the points appear in the order
+        # # they were drawn, and not in the order they are with respect
+        # # to the camera position. So for high opacities, we switch to
+        # # depthTest = True.
+        # self.points_material.depthTest = alpha > 0.9
         # else:
         #     self.update_cut_surface({"new": self.cut_slider.value})
         return
@@ -664,7 +674,7 @@ void main() {
         """
         Show/hide masks
         """
-        self.engine.update_slice()
+        # self.engine.update_slice()
         return
 
     # def toggle_outline(self, change):

@@ -12,6 +12,7 @@ class PlotController3d:
         self.pixel_size = pixel_size
         self.current_cut_surface_value = None
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
+        self.lock_surface_update = False
         # self.widgets = ipw.VBox()
         # self.keep_buttons = {}
         # self.data_names = data_names
@@ -193,7 +194,8 @@ class PlotController3d:
             # # depthTest = True.
             # self.points_material.depthTest = change["new"][1] > 0.9
         else:
-            self.update_cut_surface({"new": self.cut_slider.value})
+            # self.update_cut_surface({"new": self.cut_slider.value})
+            self.update_cut_surface()
 
     def check_if_reset_needed(self, owner, content, buffers):
         if owner.value == self.current_cut_surface_value:
@@ -216,6 +218,7 @@ class PlotController3d:
             self.update_cut_slider_bounds()
 
     def update_cut_slider_bounds(self):
+        self.lock_surface_update = True
         # Cartesian X, Y, Z
         if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
             minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
@@ -257,6 +260,8 @@ class PlotController3d:
                                     self.cut_slider.min) / 10.0
         if self.cut_surface_buttons.value < self.cut_options["Value"]:
             self.cut_slider.step = self.pixel_size * 1.1
+        self.lock_surface_update = False
+        self.update_cut_surface()
 
     def update_cut_surface(self, change=None):
         # newc = None
@@ -317,5 +322,15 @@ class PlotController3d:
     def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
         self.vmin = vmin
         self.vmax = vmax
-        new_values = self.model.slice_to_values(mask_info)
+        new_values = self.model.get_slice_values(mask_info)
         self.view.update_data(new_values)
+
+
+    
+    def toggle_mask(self, mask_info):
+        """
+        Show/hide masks
+        """
+        new_values = self.model.get_slice_values(mask_info)
+        self.view.update_data(new_values)
+        return

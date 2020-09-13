@@ -172,7 +172,7 @@ class PlotModel3d(PlotModel):
 
         # return colors
 
-    def slice_to_values(self, mask_info):
+    def get_slice_values(self, mask_info):
         new_values = {"values": self.dslice.values.astype(np.float32).ravel(), "masks": None}
 
         # Handle masks
@@ -196,7 +196,7 @@ class PlotModel3d(PlotModel):
         """
         self.slice_data(slices)
 
-        return self.slice_to_values(mask_info)
+        return self.get_slice_values(mask_info)
 
         # new_values = {"values": self.dslice.values.astype(np.float32).ravel(), "masks": None}
 

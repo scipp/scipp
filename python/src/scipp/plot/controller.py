@@ -557,6 +557,8 @@ class PlotController:
 
     def toggle_mask(self, change):
         self.view.toggle_mask(change)
+        if self.slave is not None:
+            self.slave.rescale_to_data(mask_info=self.get_mask_info())
 
     def get_mask_info(self):
         mask_info = {}
