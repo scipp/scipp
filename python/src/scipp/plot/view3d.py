@@ -241,8 +241,8 @@ class PlotView3d:
         # Set camera controller target
         self.controls.target = axparams["centre"]
         self.camera.lookAt(axparams["centre"])
-        self.axes_3d.size = 10.0 * np.linalg.norm(self.camera.position)
-        print(self.axes_3d.size)
+        self.axes_3d.scale = [5.0 * np.linalg.norm(self.camera.position)] * 3
+        # print(self.axes_3d.size)
 
         self.scene.add(self.point_cloud)
         self.scene.add(self.outline)
