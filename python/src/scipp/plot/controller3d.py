@@ -175,6 +175,8 @@ class PlotController3d:
         self.xminmax["x"] = axparams['x']['lims']
         self.xminmax["y"] = axparams['y']['lims']
         self.xminmax["z"] = axparams['z']['lims']
+        self.cut_surface_buttons.value = None
+        self.current_cut_surface_value = None
 
     def update_opacity(self, change):
         """

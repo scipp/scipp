@@ -159,16 +159,18 @@ class PlotWidgets:
             if self.controller.ndim == 1:
                 self.buttons[dim].layout.display = 'none'
                 self.lab[dim].layout.display = 'none'
+                self.thickness_slider[dim].layout.display = 'none'
+                self.profile_button[dim].layout.display = 'none'
+                self.continuous_update[dim].layout.display = 'none'
 
-            # Hide buttons and inactive sliders for 3d projection
-            if len(button_options) == 3:
+            # # Hide buttons and inactive sliders for 3d projection
+            if positions is not None and dim == positions:
                 self.buttons[dim].layout.display = 'none'
-                if self.slider[dim].disabled:
-                    self.slider[dim].layout.display = 'none'
-                    self.continuous_update[dim].layout.display = 'none'
-                    self.lab[dim].layout.display = 'none'
-                    self.thickness_slider[dim].layout.display = 'none'
-            # os.write(1, "Slicer 5.9\n".encode())
+                self.slider[dim].layout.display = 'none'
+                self.continuous_update[dim].layout.display = 'none'
+                self.lab[dim].layout.display = 'none'
+                self.thickness_slider[dim].layout.display = 'none'
+            # # os.write(1, "Slicer 5.9\n".encode())
 
             # Add observer to buttons
             self.buttons[dim].on_msg(self.update_buttons)

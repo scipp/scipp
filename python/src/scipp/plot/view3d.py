@@ -276,7 +276,7 @@ class PlotView3d:
             attributes={
                 'position': p3.BufferAttribute(array=pos_array),
                 # 'rgba_color': p3.BufferAttribute(array=self.engine.slice_data(change=None, autoscale_cmap=True))
-                'rgba_color': p3.BufferAttribute(array=np.ones(rgba_shape))
+                'rgba_color': p3.BufferAttribute(array=np.ones(rgba_shape, dtype=np.float32))
             })
         # points_material = self.create_points_material()
         self.point_cloud = p3.Points(geometry=self.points_geometry, material=self.points_material)
@@ -304,7 +304,7 @@ void main(){
     delta = pow(xDelta + yDelta + zDelta, 0.5);
     gl_PointSize = %f / delta;
 }
-''' % (500.0 * self.pixel_size, ),  # the value of 500 is from trial and error
+''' % (580.0 * self.pixel_size, ),  # the value of 580 is from trial and error
             fragmentShader='''
 precision highp float;
 varying vec4 vColor;
@@ -694,6 +694,8 @@ void main() {
         Update colors of points.
         """
         colors = self.scalar_map.to_rgba(new_values["values"])
+        # print("colors.dtype", colors.dtype)
+        # print(new_values["values"].dtype)
 
         if new_values["masks"] is not None:
             # In 3D, we change the colors of the points in-place where masks
@@ -708,7 +710,7 @@ void main() {
         colors[:,
                    3] = self.points_geometry.attributes["rgba_color"].array[:,
                                                                             3]
-        self.points_geometry.attributes["rgba_color"].array = colors
+        self.points_geometry.attributes["rgba_color"].array = colors.astype(np.float32)
         # if self.parent.cut_surface_buttons.value == self.parent.cut_options["Value"]:
         #     self.update_cut_surface(None)
         return

@@ -76,16 +76,23 @@ class PlotModel3d(PlotModel):
         else:
             # If no positions are supplied, create a meshgrid from coordinate
             # axes.
-            coords = []
+            coords = {}
             # labels = []
             for dim in limits:
                 xyz = limits[dim]["button"]
-                coord = self.data_arrays[self.name].coords[dim]
-                coords.append(to_bin_centers(coord, dim).values)
+                # coord = self.data_arrays[self.name].coords[dim]
+                # self.axparams[xyz]["coord"] = to_bin_centers(coord, dim)#.values
+                self.axparams[xyz]["coord"] = self.data_arrays[self.name].coords[dim]
+                self.axparams[xyz]["dim"] = dim
+                # self.axparams[xyz]["shape"] = self.axparams[xyz]["coord"].shape
+
                 # labels.append(name_with_unit(coord))
-                self.axparams[xyz]["labels"] = name_with_unit(coord)
+                self.axparams[xyz]["labels"] = name_with_unit(self.axparams[xyz]["coord"])
                 self.axparams[xyz]["lims"] = limits[dim]["xlims"]
-            z, y, x = np.meshgrid(*coords, indexing='ij')
+            z, y, x = np.meshgrid(to_bin_centers(self.axparams['z']["coord"], self.axparams["z"]["dim"]).values,
+                                  to_bin_centers(self.axparams['y']["coord"], self.axparams["y"]["dim"]).values,
+                                  to_bin_centers(self.axparams['x']["coord"], self.axparams["x"]["dim"]).values,
+                                  indexing='ij')
             # x, y, z = np.meshgrid(*coords, indexing='ij')
             self.pos_array = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
@@ -121,7 +128,7 @@ class PlotModel3d(PlotModel):
         """
         Slice the extra dimensions down and update the slice values
         """
-        self.dslice = self.data_arrays[self.name]
+        data_slice = self.data_arrays[self.name]
         # Slice along dimensions with active sliders
         for dim in slices:
         # for dim, val in self.parent.widgets.slider.items():
@@ -135,12 +142,36 @@ class PlotModel3d(PlotModel):
             deltax = slices[dim]["thickness"]
             loc = slices[dim]["location"]
 
-            self.dslice = self.resample_image(self.dslice,
+            data_slice = self.resample_image(data_slice,
                     rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
                                                                  loc + 0.5 * deltax],
-                                                        unit=self.dslice.coords[dim].unit)})[dim, 0]
-            self.dslice *= (deltax * sc.units.one)
+                                                        unit=data_slice.coords[dim].unit)})[dim, 0]
+            data_slice *= (deltax * sc.units.one)
 
+
+
+        shape = [self.axparams["z"]["coord"].shape[0] - 1,
+                 self.axparams["y"]["coord"].shape[0] - 1,
+                 self.axparams["x"]["coord"].shape[0] - 1]
+
+        self.dslice = sc.DataArray(coords={
+            self.axparams["z"]["dim"]: self.axparams["z"]["coord"],
+            self.axparams["y"]["dim"]: self.axparams["y"]["coord"],
+            self.axparams["x"]["dim"]: self.axparams["x"]["coord"]
+            },
+                                   data=sc.Variable(dims=[self.axparams["z"]["dim"],
+                                    self.axparams["y"]["dim"],
+                                    self.axparams["x"]["dim"]],
+                                                    values=np.ones(shape),
+                                                    variances=np.zeros(shape),
+                                                    dtype=data_slice.dtype,
+                                                    unit=sc.units.one))
+
+        # print(self.dslice)
+        # print("=======================")
+        # print(data_slice)
+
+        self.dslice *= data_slice
 
         # new_values = {"values": self.dslice.values, "masks": {}, "extent": extent}
 
