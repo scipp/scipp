@@ -44,7 +44,9 @@ class ProfileView:
                  logy=logy,
                  grid=grid,
                  mask_params=mask_params,
-                 mask_names=mask_names)
+                 mask_names=mask_names,
+                 figsize=(config.plot.width / config.plot.dpi,
+                         0.6 * config.plot.height / config.plot.dpi))
 
         self.toggle_view(visible=False)
 
@@ -59,6 +61,12 @@ class ProfileView:
     def toggle_view(self, visible=True):
         # self.profile_dim = change["owner"].dim
         self.figure.toggle_view(visible=visible)
+
+        # if visible:
+        #     self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+        # else:
+        #     i = 1
+
 
         # self.layout.display = 'none'
         # if change["new"]:
@@ -102,7 +110,7 @@ class ProfileView:
 
         return
 
-    def update_profile_axes(self):
+    def update_axes(self):
 
         # Clear profile axes if present and reset to None
         del self.profile_viewer

@@ -100,7 +100,6 @@ class PlotWidgets:
             # os.write(1, "Slicer 5.4\n".encode())
 
             self.profile_button[dim] = ipw.Button(
-                value=False,
                 description="Profile",
                 disabled=False,
                 button_style="",

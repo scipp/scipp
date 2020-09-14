@@ -33,7 +33,8 @@ class LinePlot:
                  logy=False,
                  grid=False,
                  mask_params=None,
-                 mask_names=None):
+                 mask_names=None,
+                 figsize=None):
                  # axformatter=None,
                  # axlocator=None):
 
@@ -59,15 +60,20 @@ class LinePlot:
         # self.input_contains_unaligned_data = False
         self.current_xcenters = None
         if self.ax is None:
+            if figsize is None:
+                figsize = (config.plot.width / config.plot.dpi,
+                         config.plot.height / config.plot.dpi)
             self.fig, self.ax = plt.subplots(
                 1,
                 1,
-                figsize=(config.plot.width / config.plot.dpi,
-                         config.plot.height / config.plot.dpi),
+                figsize=figsize,
                 dpi=config.plot.dpi)
         else:
             self.mpl_axes = True
         self.grid = grid
+
+        plt.tight_layout(pad=1.5)
+
         # if grid:
         #     self.ax.grid()
 

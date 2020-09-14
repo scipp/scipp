@@ -60,6 +60,9 @@ class PlotView2d:
         self.xlim_updated = False
         self.ylim_updated = False
         self.current_lims = {"x": np.zeros(2), "y": np.zeros(2)}
+
+        self.profile_hover_connection = None
+        self.profile_pick_connection = None
         # self.button_dims = [None, None]
         # self.dim_to_xy = {}
         # self.cslice = None
@@ -121,6 +124,8 @@ class PlotView2d:
             self.ax.set_xscale("log")
         if logy:
             self.ax.set_yscale("log")
+        plt.tight_layout(pad=1.5)
+
 
         # # Call update_slice once to make the initial image
         # self.controller.update_axes()
@@ -339,6 +344,18 @@ class PlotView2d:
         self.fig.canvas.draw_idle()
 
 
+
+
+
+
+    def update_profile_connection(self, connect):
+        # Connect picking events
+        if connect:
+            self.profile_pick_connection = self.fig.canvas.mpl_connect('pick_event', self.keep_or_delete_profile)
+            self.profile_hover_connection = self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+        else:
+            self.fig.canvas.mpl_disconnect(self.profile_pick_connection)
+            self.fig.canvas.mpl_disconnect(self.profile_hover_connection)
 
 
 

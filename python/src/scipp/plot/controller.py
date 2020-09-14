@@ -507,6 +507,7 @@ class PlotController:
                     but.button_style = ""
             visible = True
         self.profile.toggle_view(visible=visible)
+        self.view.update_profile_connection(visible=visible)
         # if change["new"]:
         #     self.show_profile_view()
         # else:
