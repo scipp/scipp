@@ -168,6 +168,8 @@ class LinePlot:
     def savefig(self, filename=None):
         self.fig.savefig(filename, bbox_inches="tight")
 
+    def toggle_view(self, visible=True):
+        self.fig.canvas.layout.display = None if visible else 'none'
 
     def update_axes(self, axparams=None, axformatter=None, axlocator=None, logx=False, logy=False, clear=True):
         #if clear:

@@ -495,12 +495,22 @@ class PlotController:
     # def mask_to_float(self, mask, var):
     #     return np.where(mask, var, None).astype(np.float)
 
-    def toggle_profile_view(self, change=None):
-        self.profile_dim = change["owner"].dim
-        if change["new"]:
-            self.show_profile_view()
+    def toggle_profile_view(self, owner):
+        self.profile_dim = owner.dim
+        if owner.button_style == "info":
+            owner.button_style = ""
+            visible = False
         else:
-            self.hide_profile_view()
+            owner.button_style = "info"
+            for dim, but in self.widgets.profile_button.items():
+                if dim != self.profile_dim:
+                    but.button_style = ""
+            visible = True
+        self.profile.toggle_view(visible=visible)
+        # if change["new"]:
+        #     self.show_profile_view()
+        # else:
+        #     self.hide_profile_view()
         return
 
 

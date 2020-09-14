@@ -3,8 +3,9 @@
 # @author Neil Vaytet
 
 from .. import config
-from .slicer import Slicer
-from .slicer_1d import Slicer1d
+# from .slicer import Slicer
+# from .slicer_1d import Slicer1d
+from .lineplot import LinePlot
 from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
@@ -17,39 +18,53 @@ import ipywidgets as widgets
 import os
 
 
-class Profiler(Slicer):
+class ProfileView:
     def __init__(self,
-                 scipp_obj_dict=None,
-                 axes=None,
-                 masks=None,
-                 cmap=None,
-                 log=None,
-                 vmin=None,
-                 vmax=None,
-                 color=None,
-                 button_options=None,
-                 aspect=None,
-                 positions=None):
+                 # controller=None,
+                 ax=None,
+                 errorbars=None,
+                 title=None,
+                 unit=None,
+                 logx=False,
+                 logy=False,
+                 mask_params=None,
+                 mask_names=None,
+                 mpl_line_params=None,
+                 grid=False):
 
-        super().__init__(scipp_obj_dict=scipp_obj_dict,
-                 axes=axes,
-                 masks=masks,
-                 cmap=cmap,
-                 log=log,
-                 vmin=vmin,
-                 vmax=vmax,
-                 color=color,
-                 button_options=button_options,
-                 aspect=aspect,
-                 positions=positions)
+        # self.controller = controller
+
+        self.figure = LinePlot(errorbars=errorbars,
+                 # masks=masks,
+                 ax=ax,
+                 mpl_line_params=mpl_line_params,
+                 title=title,
+                 unit=unit,
+                 logx=logx,
+                 logy=logy,
+                 grid=grid,
+                 mask_params=mask_params,
+                 mask_names=mask_names)
+
+        self.toggle_view(visible=False)
 
 
-    def toggle_profile_view(self, change=None):
-        self.profile_dim = change["owner"].dim
-        if change["new"]:
-            self.show_profile_view()
-        else:
-            self.hide_profile_view()
+    def _ipython_display_(self):
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        return self.figure._to_widget()
+
+
+    def toggle_view(self, visible=True):
+        # self.profile_dim = change["owner"].dim
+        self.figure.toggle_view(visible=visible)
+
+        # self.layout.display = 'none'
+        # if change["new"]:
+        #     self.show_profile_view()
+        # else:
+        #     self.hide_profile_view()
         return
 
 

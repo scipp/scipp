@@ -99,13 +99,14 @@ class PlotWidgets:
                 layout={'width': "270px"})
             # os.write(1, "Slicer 5.4\n".encode())
 
-            self.profile_button[dim] = ipw.ToggleButton(
+            self.profile_button[dim] = ipw.Button(
                 value=False,
                 description="Profile",
                 disabled=False,
                 button_style="",
                 layout={"width": "initial"})
-            self.profile_button[dim].observe(self.controller.toggle_profile_view, names="value")
+            # self.profile_button[dim].observe(self.controller.toggle_profile_view, names="value")
+            self.profile_button[dim].on_click(self.controller.toggle_profile_view)
 
 
             # labvalue = self.make_slider_label(

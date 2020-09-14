@@ -7,7 +7,7 @@ from .. import config
 from .controller import PlotController
 from .model2d import PlotModel2d
 # from .render import render_plot
-# from .profiler import Profiler
+from .profile import ProfileView
 from .tools import to_bin_edges, parse_params
 from .view2d import PlotView2d
 from .._utils import name_with_unit
@@ -127,7 +127,20 @@ class SciPlot2d:
         self.controller.view = self.view
 
         # Profile view
-        self.profile = None
+        self.profile = ProfileView()
+            # controller=self.controller
+                 # ax=None,
+                 # errorbars=None,
+                 # title=None,
+                 # unit=None,
+                 # logx=False,
+                 # logy=False,
+                 # mask_params=None,
+                 # mask_names=None,
+                 # mpl_line_params=None,
+                 # grid=False)
+
+        self.controller.profile = self.profile
 
 
         # Call update_slice once to make the initial image
@@ -143,7 +156,7 @@ class SciPlot2d:
         # widgets_ = [self.figure, self.widgets]
         # if self.overview["additional_widgets"] is not None:
         #     wdgts.append(self.overview["additional_widgets"])
-        return ipw.VBox([self.view._to_widget(), self.controller._to_widget()])
+        return ipw.VBox([self.view._to_widget(), self.profile._to_widget(), self.controller._to_widget()])
 
     def savefig(self, filename=None):
         self.view.savefig(filename=filename)
