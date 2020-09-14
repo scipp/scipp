@@ -213,30 +213,27 @@ class VariableDrawer():
 
         def make_label(dim, extent, axis):
             if axis == 2:
-                return '<text x="{}" y="{}" text-anchor="middle" fill="dim-color" \
-                        style="font-size:#smaller-font">{}</text>'.format(
-                    dx + self._margin + 0.5 * extent,
-                    dy + view_height - self._margin + _smaller_font, dim)
+                x_pos = dx + self._margin + 0.5 * extent
+                y_pos = dy + view_height - self._margin + _smaller_font
+                return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
+                         fill="dim-color" \
+                         style="font-size:#smaller-font">{dim}</text>'
+
             if axis == 1:
-                return '<text x="x_pos" y="y_pos" text-anchor="middle" \
+                x_pos = dx + self._margin - 0.3 * _smaller_font
+                y_pos = dy + view_height - self._margin - 0.5 * extent
+                return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
                     fill="dim-color" style="font-size:#smaller-font" \
-                    transform="rotate(-90, x_pos, y_pos)">{}</text>'.replace(
-                    'x_pos',
-                    str(dx + self._margin - 0.3 * _smaller_font)).replace(
-                        'y_pos',
-                        str(dy + view_height - self._margin -
-                            0.5 * extent)).format(dim)
+                    transform="rotate(-90, {x_pos}, {y_pos})">{dim}</text>'
+
             if axis == 0:
-                return '<text x="x_pos" y="y_pos" text-anchor="middle" \
+                x_pos = dx + self._margin + 0.3 * 0.5 * extent - \
+                        0.2 * _smaller_font
+                y_pos = dy + view_height - self._margin - self._extents(
+                )[-2] - 0.3 * 0.5 * extent - 0.2 * _smaller_font
+                return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
                     fill="dim-color" style="font-size:#smaller-font" \
-                    transform="rotate(-45, x_pos, y_pos)">{}</text>'.replace(
-                    'x_pos',
-                    str(dx + self._margin + 0.3 * 0.5 * extent -
-                        0.2 * _smaller_font)).replace(
-                            'y_pos',
-                            str(dy + view_height - self._margin -
-                                self._extents()[-2] - 0.3 * 0.5 * extent -
-                                0.2 * _smaller_font)).format(dim)
+                    transform="rotate(-45, {x_pos}, {y_pos})">{dim}</text>'
 
         extents = self._extents()
         for dim in self._variable.dims:
@@ -254,16 +251,18 @@ class VariableDrawer():
         details = 'dims={}, shape={}, unit={}, variances={}'.format(
             self._variable.dims, self._variable.shape, unit,
             self._variable.variances is not None)
+        x_pos = offset[0] + 0
+        y_pos = offset[10] + 0.6
         if title is not None:
-            svg = '<text x="{}" y="{}" \
-                    style="font-size:#normal-font">{}</text>'.format(
-                offset[0] + 0, offset[1] + 0.6, title)
-            svg += '<title>{}</title>'.format(details)
+            svg = f'<text x="{x_pos}" y="{y_pos}" \
+                    style="font-size:#normal-font">{title}</text>'
+
+            svg += f'<title>{details}</title>'
         else:
-            svg = '<text x="{}" y="{}" \
+            svg = f'<text x="{x_pos}" y="{y_pos}" \
                     style="font-size:#small-font">\
-                    {}\
-                    </text>'.format(offset[0] + 0, offset[1] + 0.6, details)
+                    {details}</text>'
+
         return svg
 
     def draw(self, color, offset=np.zeros(2), title=None):
