@@ -265,6 +265,9 @@ class PlotController:
                          button_options=button_options)
         return
 
+    def _ipython_display_(self):
+        return self._to_widget()._ipython_display_()
+
     def _to_widget(self):
         return self.widgets._to_widget()
 

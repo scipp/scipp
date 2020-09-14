@@ -160,7 +160,7 @@ class PlotModel1d(PlotModel):
     #             mslice = mslice[dim, val.value]
     #     return mslice
 
-    def update_data(self, slices, mask_names):
+    def update_data(self, slices, mask_info):
         # Define function to update slices.
         # Special key in the change dict: if "vslice" is found, it means we are
         # calling from a profile viewer, and the slice has hence already been
@@ -217,11 +217,11 @@ class PlotModel1d(PlotModel):
         #     self.members["lines"][name].set_data(xcoord.values, vals)
 
             # if len(self.masks[name]) > 0:
-            if len(mask_names[name]) > 0:
+            if len(mask_info[name]) > 0:
                 base_mask = sc.Variable(dims=data_slice.dims,
                                         values=np.ones(data_slice.shape,
                                                        dtype=np.int32))
-                for m in mask_names[name]:
+                for m in mask_info[name]:
                     # Use automatic broadcast to broadcast 0D masks
                     msk = (base_mask * sc.Variable(
                         dims=data_slice.masks[m].dims,

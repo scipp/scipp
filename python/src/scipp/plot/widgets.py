@@ -241,21 +241,31 @@ class PlotWidgets:
                                                   names="value")
 
         if masks_found:
-            self.masks_box = []
-            for name in self.mask_checkboxes:
-                mask_list = []
-                for cbox in self.mask_checkboxes[name].values():
-                    mask_list.append(cbox)
-                self.masks_box.append(ipw.HBox(mask_list))
+            self.masks_lab = ipw.Label(value="Masks:")
+
             # Add a master button to control all masks in one go
             self.masks_button = ipw.ToggleButton(
                 value=self.controller.params["masks"][self.controller.name]["show"],
-                description="Hide all masks" if
-                self.controller.params["masks"][self.controller.name]["show"] else "Show all masks",
+                description="Hide all" if
+                self.controller.params["masks"][self.controller.name]["show"] else "Show all",
                 disabled=False,
-                button_style="")
+                button_style="",
+                layout={"width": "initial"})
             self.masks_button.observe(self.toggle_all_masks, names="value")
-            self.container += [self.masks_button, ipw.VBox(self.masks_box)]
+            # self.masks_box.append(self.masks_button)
+
+            box_layout = ipw.Layout(display='flex',
+                                flex_flow='row wrap',
+                                align_items='stretch',
+                                width='70%')
+            mask_list = []
+            for name in self.mask_checkboxes:
+                for cbox in self.mask_checkboxes[name].values():
+                    mask_list.append(cbox)
+
+            self.masks_box = ipw.Box(children=mask_list, layout=box_layout)
+
+            self.container += [ipw.HBox([self.masks_lab, self.masks_button, self.masks_box])]
             # self.members["widgets"]["togglebutton"]["masks"] = \
             #     self.masks_button
 
@@ -283,6 +293,6 @@ class PlotWidgets:
         for name in self.mask_checkboxes:
             for key in self.mask_checkboxes[name]:
                 self.mask_checkboxes[name][key].value = change["new"]
-        change["owner"].description = "Hide all masks" if change["new"] else \
-            "Show all masks"
+        change["owner"].description = "Hide all" if change["new"] else \
+            "Show all"
         return

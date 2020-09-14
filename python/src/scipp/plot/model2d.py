@@ -280,7 +280,7 @@ class PlotModel2d(PlotModel):
         return new_values
 
 
-    def update_image(self, extent=None, mask_names=None):
+    def update_image(self, extent=None, mask_info=None):
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
         xy = "yx"

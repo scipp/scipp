@@ -328,7 +328,6 @@ class PlotController3d:
         self.view.update_data(new_values)
 
 
-    
     def toggle_mask(self, mask_info):
         """
         Show/hide masks
