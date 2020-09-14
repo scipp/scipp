@@ -144,7 +144,7 @@ class VariableDrawer():
     def size(self):
         """Return the size (width and height) of the rendered output"""
         width = 2 * self._margin
-        height = 3 * self._margin  # double margin on top for title space
+        height = 4 * self._margin  # double margin on top for title space
         shape = self._extents()
 
         if shape[-1] == self._events_flag:
@@ -251,16 +251,22 @@ class VariableDrawer():
         details = 'dims={}, shape={}, unit={}, variances={}'.format(
             self._variable.dims, self._variable.shape, unit,
             self._variable.variances is not None)
-        x_pos = offset[0] + 0
-        y_pos = offset[10] + 0.6
+        # Small addition to horizontal offset avoids clipping part of the
+        # first letter on the left edge of the image (due to its rotation)
+        x_pos = offset[0] + 0.1
+        y_pos = offset[1] + 0.6
         if title is not None:
+            # Apply a small rotation to avoid long titles overlapping
             svg = f'<text x="{x_pos}" y="{y_pos}" \
-                    style="font-size:#normal-font">{title}</text>'
+                    style="font-size:#normal-font" \
+                    transform="rotate(-12, {x_pos}, {y_pos})"> \
+                    {title}</text>'
 
             svg += f'<title>{details}</title>'
         else:
             svg = f'<text x="{x_pos}" y="{y_pos}" \
-                    style="font-size:#small-font">\
+                    style="font-size:#small-font" \
+                    transform="rotate(-12, {x_pos}, {y_pos})"> \
                     {details}</text>'
 
         return svg
