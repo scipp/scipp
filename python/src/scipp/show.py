@@ -8,8 +8,6 @@ import numpy as np
 from ._scipp import core as sc
 from . import config
 from ._utils import is_data_array
-from dataclasses import dataclass
-from typing import Any
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -56,14 +54,7 @@ def _color_variants(hex_color):
     return [hex_color, top, side]
 
 
-@dataclass
-class Item:
-    name: str
-    data: Any
-    color: str
-
-
-class VariableDrawer():
+class VariableDrawer:
     def __init__(self, variable, margin=1.0, target_dims=None):
         self._margin = margin
         self._variable = variable
@@ -257,6 +248,11 @@ class VariableDrawer():
         y_pos = offset[1] + 0.6
         if title is not None:
             # Apply a small rotation to avoid long titles overlapping
+            # and truncate really long ones
+            max_title_length = 13
+            title = str(title)
+            title = (title[:max_title_length] +
+                     '..') if len(title) > max_title_length else title
             svg = f'<text x="{x_pos}" y="{y_pos}" \
                     style="font-size:#normal-font" \
                     transform="rotate(-12, {x_pos}, {y_pos})"> \
@@ -317,7 +313,7 @@ class VariableDrawer():
                 self.size()[1], self.draw(color=config.colors['data'])))
 
 
-class DatasetDrawer():
+class DatasetDrawer:
     def __init__(self, dataset):
         self._dataset = dataset
 
