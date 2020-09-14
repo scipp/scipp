@@ -451,7 +451,7 @@ class DatasetDrawer():
                 return offset
 
             def _append_dot(content, offset, layout_direction):
-                dot = f'<circle cx="{offset[0]+0.15}" cy="{offset[1]+1.5}" r="0.1" fill="black" />'  # noqa #501
+                dot = f'<circle cx="{offset[0]+0.15}" cy="{offset[1]+1.9}" r="0.1" fill="black" />'  # noqa #501
                 content += dot
                 offset = _pad_dot(offset, layout_direction)
                 return content, offset
