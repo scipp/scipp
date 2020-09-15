@@ -18,6 +18,7 @@ _cubes_in_full_width = 24
 # We are effectively rescaling our svg by setting an explicit viewport size.
 # Here we compute relative font sizes, based on a cube width of "1" (px).
 _svg_em = _cubes_in_full_width / _svg_width
+_large_font = round(1.6 * _svg_em, 2)
 _normal_font = round(_svg_em, 2)
 _small_font = round(0.8 * _svg_em, 2)
 _smaller_font = round(0.6 * _svg_em, 2)
@@ -335,29 +336,14 @@ class EllipsisItem:
     @staticmethod
     def append_to_svg(content, width, height, offset, layout_direction,
                       *unused):
-        def _pad_dot(offset, layout_direction):
-            if layout_direction == 'x':
-                offset[0] += 0.3
-            else:
-                offset[1] += 0.3
-            return offset
-
-        def _append_dot(content, offset, layout_direction):
-            dot = f'<circle cx="{offset[0]+0.15}" cy="{offset[1]+1.9}" r="0.1" fill="black" />'  # noqa #501
-            content += dot
-            offset = _pad_dot(offset, layout_direction)
-            return content, offset
-
-        offset = _pad_dot(offset, layout_direction)
-        content, offset = _append_dot(content, offset, layout_direction)
-        content, offset = _append_dot(content, offset, layout_direction)
-        content, offset = _append_dot(content, offset, layout_direction)
-        _pad_dot(offset, layout_direction)
+        x_pos = offset[0] + 0.3
+        y_pos = offset[1] + 2.0
+        content += f'<text x="{x_pos}" y="{y_pos}" \
+                    style="font-size:{_large_font}px"> ... </text>'
 
         ellipsis_size = [1.5, 2.0]
         width, height, offset = _new_size_and_offset(ellipsis_size, width,
                                                      height, layout_direction)
-
         return content, width, height, offset
 
 
