@@ -45,24 +45,6 @@ public:
     return false;
   }
 
-  /// Access bucket element values. Used internally in transform.
-  ///
-  /// Note that the returned view is not fully valid, in particular access such
-  /// as begin() and end() must not be used.
-  template <class Elem> auto values() const noexcept {
-    return make_nested(m_transform.m_buffer->template values<Elem>().data());
-  }
-  /// Access bucket element variances. Used internally in transform.
-  ///
-  /// Note that the returned view is not fully valid, in particular access such
-  /// as begin() and end() must not be used.
-  template <class Elem> auto variances() const noexcept {
-    return make_nested(m_transform.m_buffer->template variances<Elem>().data());
-  }
-  bool hasVariances() const noexcept {
-    return m_transform.m_buffer->hasVariances();
-  }
-
 private:
   struct make_item {
     auto operator()(typename bucket_array_view::value_type &range) const {
@@ -71,14 +53,6 @@ private:
     Dim m_dim;
     T *m_buffer;
   };
-  template <class Elem> auto make_nested(Elem *buffer) const {
-    // Note the 0 passed as offset: Offset is taken into account in data() and
-    // is for the bucket *indices*. No offset in buffer required.
-    return core::ElementArrayView(buffer, 0, m_iterDims, m_dataDims,
-                                  {m_transform.m_dim,
-                                   m_transform.m_buffer->dims(),
-                                   scipp::span{data(), data() + size()}});
-  }
   make_item m_transform;
 };
 

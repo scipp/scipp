@@ -82,9 +82,6 @@ public:
     else
       throw std::runtime_error("Dataset?");
   }
-  // const VariableConcept &underlying() const override { return
-  // m_buffer.data(); } VariableConcept &underlying() override { return
-  // m_buffer.data(); }
 
   ElementArrayView<bucket<T>> values() {
     return {index_values(), m_dim, m_buffer};
