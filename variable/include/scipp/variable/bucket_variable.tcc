@@ -18,6 +18,15 @@ VariableConstView::constituents() const {
   return {view, model.dim(), model.buffer()};
 }
 
+template <class T>
+std::tuple<VariableConstView, Dim, typename T::element_type>
+VariableView::constituents() const {
+  auto view = *this;
+  auto &model = requireT<DataModel<T>>(m_mutableVariable->data());
+  view.m_variable = &model.indices();
+  return {view, model.dim(), model.buffer()};
+}
+
 auto contiguous_indices(const VariableConstView &parent,
                         const Dimensions &dims) {
   auto indices = broadcast(parent, dims);
@@ -46,8 +55,9 @@ private:
     return parent.dtype() == dtype<bucket<T>> ? parent
                                               : bucket_parent(parents...);
   }
-  virtual Variable make_buffer(const VariableConstView &parent,
+  virtual Variable make_buckets(const VariableConstView &parent,
                                const VariableConstView &indices,
+                               const Dim dim,
                                const DType type, const Dimensions &dims,
                                const bool variances) const = 0;
   template <class... Parents>
@@ -59,9 +69,8 @@ private:
     auto [indices, size] = contiguous_indices(parentIndices, dims);
     auto bufferDims = buffer.dims();
     bufferDims.resize(dim, size);
-    return Variable{std::make_unique<DataModel<bucket<T>>>(
-        indices, dim,
-        make_buffer(parent, indices, elem_dtype, bufferDims, variances))};
+    return make_buckets(parent, indices, dim, elem_dtype, bufferDims,
+                        variances);
   }
 
 public:
@@ -84,6 +93,9 @@ public:
   }
   DType elem_dtype(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).dtype();
+  }
+  bool hasVariances(const VariableConstView &var) const override {
+    return std::get<2>(var.constituents<bucket<T>>()).hasVariances();
   }
 };
 

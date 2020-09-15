@@ -35,6 +35,10 @@ element_array_view::element_array_view(const scipp::index offset,
     : m_offset(offset), m_iterDims(iterDims), m_dataDims(dataDims),
       m_bucketParams(bucketParams) {
   expectCanBroadcastFromTo(m_dataDims, m_iterDims);
+  // Size of buffer referred to be bucket indices along the sliced dim is
+  // irrelevant and gets in the way in MultiIndex.
+  if (m_bucketParams)
+    m_bucketParams.dims.resize(m_bucketParams.dim, 1);
 }
 
 /// Construct element_array_view from another element_array_view, with

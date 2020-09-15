@@ -251,6 +251,9 @@ public:
   auto &underlying() const { return *m_variable; }
   bool is_trivial() const noexcept;
 
+  core::element_array_view base_view() const {
+    return underlying().data().base_view(m_offset, m_dims, m_dataDims);
+  }
   template <class T>
   std::tuple<VariableConstView, Dim, typename T::const_element_type>
   constituents() const;
@@ -320,6 +323,11 @@ public:
 
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;
+
+  auto &underlying() const { return *m_mutableVariable; }
+  template <class T>
+  std::tuple<VariableConstView, Dim, typename T::element_type>
+  constituents() const;
 
 private:
   friend class dataset::DataArrayConstView;

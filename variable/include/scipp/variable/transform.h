@@ -440,13 +440,8 @@ template <class Op> struct Transform {
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
         (handles.hasVariances() || ...);
-    Variable out = variableFactory().create(dtype<Out>, dims, variances);
-
-    if (((handles.m_var->dtype() == dtype<bucket<Variable>>) || ...)) {
-      out =
-          variableFactory().create_buckets(dtype<bucket<Variable>>, dtype<Out>,
-                                           dims, variances, *handles.m_var...);
-    }
+    auto out = variableFactory().create(dtype<Out>, dims, variances,
+                                        *handles.m_var...);
     do_transform(op, variable_access<Out>(out), std::tuple<>(),
                  as_view{handles, dims}...);
     return out;

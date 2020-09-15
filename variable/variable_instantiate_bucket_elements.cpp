@@ -11,12 +11,20 @@ INSTANTIATE_BUCKET_VARIABLE(VariableView, bucket<Variable>)
 
 class BucketVariableMakerVariable : public BucketVariableMaker<Variable> {
 private:
-  Variable make_buffer(const VariableConstView &, const VariableConstView &,
-                       const DType type, const Dimensions &dims,
-                       const bool variances) const override {
+  Variable make_buckets(const VariableConstView &,
+                        const VariableConstView &indices, const Dim dim,
+                        const DType type, const Dimensions &dims,
+                        const bool variances) const override {
     // Buffer contains only variable, which is created with new dtype, no
     // information to copy from parent.
-    return variableFactory().create(type, dims, variances);
+    return Variable{std::make_unique<DataModel<bucket<Variable>>>(
+        indices, dim, variableFactory().create(type, dims, variances))};
+  }
+  VariableConstView data(const VariableConstView &var) const override {
+    return std::get<2>(var.constituents<bucket<Variable>>());
+  }
+  VariableView data(const VariableView &var) const override {
+    return std::get<2>(var.constituents<bucket<Variable>>());
   }
 };
 

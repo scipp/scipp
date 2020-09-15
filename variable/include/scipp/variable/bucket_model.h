@@ -23,7 +23,7 @@ public:
   using value_type = bucket<T>;
   using range_type = typename bucket<T>::range_type;
 
-  DataModel(const Variable &indices, const Dim dim, T buffer)
+  DataModel(const VariableConstView &indices, const Dim dim, T buffer)
       : VariableConcept(indices.dims()),
         m_indices(validated_indices(indices, dim, buffer)), m_dim(dim),
         m_buffer(std::move(buffer)) {}
@@ -63,16 +63,28 @@ public:
 
   Dim dim() const noexcept { return m_dim; }
   const T &buffer() const noexcept { return m_buffer; }
+  T &buffer() noexcept { return m_buffer; }
   const Variable &indices() const { return m_indices; }
 
-  element_array_view base_view() const {
+  core::element_array_view
+  base_view(const scipp::index offset, const Dimensions &iterDims,
+            const Dimensions &dataDims) const override {
     // TODO access params odd... dims are in VariableConstView, but bucket
     // params in model? is there a better way?
-    // TODO offset, contiguous range instead of view
-    const auto ranges = indices.values<range_type>();
-    return {
-        0, m_dims, m_dataDims, {m_dim, m_buffer.dims(), scipp::span{ranges}}};
+    const auto ranges = indices().template values<range_type>();
+    if constexpr (std::is_same_v<std::decay_t<decltype(m_buffer.dims())>,
+                                 Dimensions>)
+      return {0,
+              iterDims,
+              dataDims,
+              {m_dim, m_buffer.dims(),
+               scipp::span{&*ranges.begin() + offset, &*ranges.end()}}};
+    else
+      throw std::runtime_error("Dataset?");
   }
+  // const VariableConcept &underlying() const override { return
+  // m_buffer.data(); } VariableConcept &underlying() override { return
+  // m_buffer.data(); }
 
   ElementArrayView<bucket<T>> values() {
     return {index_values(), m_dim, m_buffer};
@@ -93,9 +105,9 @@ public:
   }
 
 private:
-  static auto validated_indices(const Variable &indices, const Dim dim,
+  static auto validated_indices(const VariableConstView &indices, const Dim dim,
                                 const T &buffer) {
-    auto copy(indices);
+    Variable copy(indices);
     const auto vals =
         scipp::span(copy.values<range_type>().data(),
                     copy.values<range_type>().data() + copy.dims().volume());

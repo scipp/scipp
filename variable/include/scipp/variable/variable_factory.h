@@ -31,7 +31,9 @@ public:
     throw std::runtime_error("abc");
   }
   virtual DType elem_dtype(const VariableConstView &var) const = 0;
+  virtual bool hasVariances(const VariableConstView &var) const = 0;
   virtual VariableConstView data(const VariableConstView &var) const = 0;
+  virtual VariableView data(const VariableView &var) const = 0;
 };
 
 template <class T> class VariableMaker : public AbstractVariableMaker {
@@ -47,12 +49,14 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   DType elem_dtype(const VariableConstView &var) const override {
     return var.dtype();
   }
-  VariableConstView data(const VariableConstView &var) const override {
-    return var;
+  bool hasVariances(const VariableConstView &var) const override {
+    return var.hasVariances();
   }
-  element_array_view make_view(const VariableConstView &var) const override {
-    // TODO do we need this? Add VariableConcept::base_view() instead?
-    return var;
+  VariableConstView data(const VariableConstView &var) const override {
+    return var.underlying();
+  }
+  VariableView data(const VariableView &var) const override {
+    return var.underlying();
   }
 };
 
@@ -63,32 +67,52 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
 /// scipp::variable. The main prupose of this is the implementation of
 /// `transform`.
 class SCIPP_VARIABLE_EXPORT VariableFactory {
+private:
+  auto bucket_dtype() const noexcept { return dtype<void>; }
+  template <class T> auto bucket_dtype(const T &var) const noexcept {
+    return var.dtype() == elem_dtype(var) ? dtype<void> : var.dtype();
+  }
+  template <class T, class... Ts>
+  auto bucket_dtype(const T &var, const Ts &... vars) const noexcept {
+    return var.dtype() == elem_dtype(var) ? bucket_dtype(vars...) : var.dtype();
+  }
+
 public:
   void emplace(const DType key, std::unique_ptr<AbstractVariableMaker> makes);
   bool contains(const DType key) const noexcept;
-  Variable create(const DType key, const Dimensions &dims,
-                  const bool variances) const;
   template <class... Parents>
-  Variable create_buckets(const DType key, const DType elem_dtype,
-                          const Dimensions &dims, const bool variances,
-                          const Parents &... parents) const {
-    return m_makers.at(key)->create_buckets(elem_dtype, dims, variances,
-                                            parents...);
+  Variable create(const DType elem_dtype, const Dimensions &dims,
+                  const bool variances, const Parents &... parents) const {
+    const auto key = bucket_dtype(parents...);
+    if(key == dtype<void>)
+      return m_makers.at(elem_dtype)->create(dims, variances);
+    else {
+      if constexpr (sizeof...(parents) < 1)
+        throw std::runtime_error("No parent for obtaining bucket params");
+      else
+        return m_makers.at(key)->create_buckets(elem_dtype, dims, variances,
+                                                parents...);
+    }
   }
   DType elem_dtype(const VariableConstView &var) const;
-  template <class T> auto values(const VariableConstView &var) const {
-    const auto &data = m_makers.at(var.dtype())->data(var);
-    return ElementArrayView<T>(model.base_view(), data.values<T>().data());
-    // create element_array_view, then combine with values to
-    // ElementArrayView<T>
-    // TODO need to add here what bucket_array_view::make_nested does
-    // - indices from `var`, known in this module, but not accessible with
-    //   current API
-    // - `data` gives span<T>
-    return var.make_view(data.values<T>());
+  bool hasVariances(const VariableConstView &var) const;
+  template <class T, class Var> auto values(Var &&var) const {
+    auto &&data = m_makers.at(var.dtype())->data(view(var));
+    return ElementArrayView(base_view(var), data.template values<T>().data());
+  }
+  template <class T, class Var> auto variances(Var &&var) const {
+    auto &&data = m_makers.at(var.dtype())->data(view(var));
+    return ElementArrayView(base_view(var),
+                            data.template variances<T>().data());
   }
 
 private:
+  VariableConstView view(const VariableConstView &var) const { return var; }
+  VariableView view(Variable &var) const { return var; }
+  VariableView view(const VariableView &var) const { return var; }
+  core::element_array_view base_view(const VariableConstView &var) const {
+    return var.base_view();
+  }
   std::map<DType, std::unique_ptr<AbstractVariableMaker>> m_makers;
 };
 

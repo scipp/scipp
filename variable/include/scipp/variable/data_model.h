@@ -103,6 +103,12 @@ public:
     return m_variances.has_value();
   }
 
+  core::element_array_view
+  base_view(const scipp::index offset, const Dimensions &iterDims,
+            const Dimensions &dataDims) const override {
+    return {offset, iterDims, dataDims, {}};
+  }
+
   auto values() const {
     return ElementArrayView(m_values.data(), 0, dims(), dims());
   }

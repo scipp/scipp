@@ -18,12 +18,26 @@ namespace scipp::dataset {
 class BucketVariableMakerDataArray
     : public variable::BucketVariableMaker<DataArray> {
 private:
-  Variable make_buffer(const VariableConstView &parent,
-                       const VariableConstView &indices, const DType type,
-                       const Dimensions &dims,
-                       const bool variances) const override {
-    // TODO copy coord
-    return variable::variableFactory().create(type, dims, variances);
+  Variable make_buckets(const VariableConstView &parent,
+                        const VariableConstView &indices, const Dim dim,
+                        const DType type, const Dimensions &dims,
+                        const bool variances) const override {
+    const auto &source = std::get<2>(parent.constituents<bucket<DataArray>>());
+    if (parent.dims() !=
+        dims) // would need to select and copy slices from source coords
+      throw std::runtime_error(
+          "Shape changing operations with bucket<DataArray> not supported yet");
+    auto buffer = DataArray(
+        variable::variableFactory().create(type, dims, variances),
+        source.aligned_coords(), source.masks(), source.unaligned_coords());
+    return Variable{std::make_unique<variable::DataModel<bucket<DataArray>>>(
+        indices, dim, std::move(buffer))};
+  }
+  VariableConstView data(const VariableConstView &var) const override {
+    return std::get<2>(var.constituents<bucket<DataArray>>()).data();
+  }
+  VariableView data(const VariableView &var) const override {
+    return std::get<2>(var.constituents<bucket<DataArray>>()).data();
   }
 };
 

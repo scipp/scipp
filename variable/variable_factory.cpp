@@ -11,13 +11,11 @@ bool VariableFactory::contains(const DType key) const noexcept {
   return m_makers.find(key) != m_makers.end();
 }
 
-Variable VariableFactory::create(const DType key, const Dimensions &dims,
-                                 const bool variances) const {
-  return m_makers.at(key)->create(dims, variances);
-}
-
 DType VariableFactory::elem_dtype(const VariableConstView &var) const {
   return m_makers.at(var.dtype())->elem_dtype(var);
+}
+bool VariableFactory::hasVariances(const VariableConstView &var) const {
+  return m_makers.at(var.dtype())->hasVariances(var);
 }
 
 VariableFactory &variableFactory() {
