@@ -325,6 +325,8 @@ class PlotPanel3d:
     def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
         self.vmin = vmin
         self.vmax = vmax
+        if self.cut_surface_buttons.value == self.cut_options["Value"]:
+            self.update_cut_slider_bounds()
         # new_values = self.model.get_slice_values(mask_info)
         # self.view.update_data(new_values)
 
