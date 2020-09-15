@@ -313,6 +313,66 @@ class VariableDrawer:
                 self.size()[1], self.draw(color=config.colors['data'])))
 
 
+class DrawerItem:
+    def __init__(self, name, data, color):
+        self._name = name
+        self._data = data
+        self._color = color
+
+    def append_to_svg(self, content, width, height, offset, layout_direction,
+                      margin, dims):
+        drawer = VariableDrawer(self._data, margin, target_dims=dims)
+        content += drawer.draw(color=self._color,
+                               offset=offset,
+                               title=self._name)
+        size = drawer.size()
+        width, height, offset = _new_size_and_offset(size, width, height,
+                                                     layout_direction)
+        return content, width, height, offset
+
+
+class EllipsisItem:
+    @staticmethod
+    def append_to_svg(content, width, height, offset, layout_direction,
+                      *unused):
+        def _pad_dot(offset, layout_direction):
+            if layout_direction == 'x':
+                offset[0] += 0.3
+            else:
+                offset[1] += 0.3
+            return offset
+
+        def _append_dot(content, offset, layout_direction):
+            dot = f'<circle cx="{offset[0]+0.15}" cy="{offset[1]+1.9}" r="0.1" fill="black" />'  # noqa #501
+            content += dot
+            offset = _pad_dot(offset, layout_direction)
+            return content, offset
+
+        offset = _pad_dot(offset, layout_direction)
+        content, offset = _append_dot(content, offset, layout_direction)
+        content, offset = _append_dot(content, offset, layout_direction)
+        content, offset = _append_dot(content, offset, layout_direction)
+        _pad_dot(offset, layout_direction)
+
+        ellipsis_size = [1.5, 2.0]
+        width, height, offset = _new_size_and_offset(ellipsis_size, width,
+                                                     height, layout_direction)
+
+        return content, width, height, offset
+
+
+def _new_size_and_offset(added_size, width, height, layout_direction):
+    if layout_direction == 'x':
+        width += added_size[0]
+        height = max(height, added_size[1])
+        offset = [width, 0]
+    else:
+        width = max(width, added_size[0])
+        height += added_size[1]
+        offset = [0, height]
+    return width, height, offset
+
+
 class DatasetDrawer:
     def __init__(self, dataset):
         self._dataset = dataset
@@ -375,12 +435,13 @@ class DatasetDrawer:
         area_xy = []
         area_0d = []
         if is_data_array(self._dataset):
-            area_xy.append(('', self._dataset, config.colors['data']))
+            area_xy.append(DrawerItem('', self._dataset,
+                                      config.colors['data']))
         else:
             # Render highest-dimension items last so coords are optically
             # aligned
             for name, data in self._dataset.items():
-                item = (name, data, config.colors['data'])
+                item = DrawerItem(name, data, config.colors['data'])
                 # Using only x and 0d areas for 1-D dataset
                 if len(dims) == 1 or data.dims != dims:
                     if len(data.dims) == 0:
@@ -405,7 +466,7 @@ class DatasetDrawer:
             for name, var in items.items():
                 if sc.contains_events(var):
                     continue
-                item = (name, var, config.colors[what])
+                item = DrawerItem(name, var, config.colors[what])
                 if len(var.dims) == 0:
                     area_0d.append(item)
                 elif var.dims[-1] == dims[-1]:
@@ -415,87 +476,22 @@ class DatasetDrawer:
                 else:
                     area_z.append(item)
 
-        def _append_drawer(content, width, height, offset, layout_direction,
-                           area_item):
-            name = area_item[0]
-            data = area_item[1]
-            color = area_item[2]
-            drawer = VariableDrawer(data, margin, target_dims=dims)
-            content += drawer.draw(color=color, offset=offset, title=name)
-            size = drawer.size()
-            width, height, offset = _new_size_and_offset(
-                size, width, height, layout_direction)
-            return content, width, height, offset
-
-        def _new_size_and_offset(added_size, width, height, layout_direction):
-            if layout_direction == 'x':
-                width += added_size[0]
-                height = max(height, added_size[1])
-                offset = [width, 0]
-            else:
-                width = max(width, added_size[0])
-                height += added_size[1]
-                offset = [0, height]
-            return width, height, offset
-
-        def _append_ellipsis(content, width, height, offset, layout_direction):
-            def _pad_dot(offset, layout_direction):
-                if layout_direction == 'x':
-                    offset[0] += 0.3
-                else:
-                    offset[1] += 0.3
-                return offset
-
-            def _append_dot(content, offset, layout_direction):
-                dot = f'<circle cx="{offset[0]+0.15}" cy="{offset[1]+1.9}" r="0.1" fill="black" />'  # noqa #501
-                content += dot
-                offset = _pad_dot(offset, layout_direction)
-                return content, offset
-
-            offset = _pad_dot(offset, layout_direction)
-            content, offset = _append_dot(content, offset, layout_direction)
-            content, offset = _append_dot(content, offset, layout_direction)
-            content, offset = _append_dot(content, offset, layout_direction)
-            _pad_dot(offset, layout_direction)
-
-            ellipsis_size = [1.5, 2.0]
-            width, height, offset = _new_size_and_offset(
-                ellipsis_size, width, height, layout_direction)
-
-            return content, width, height, offset
-
         def draw_area(area, layout_direction, reverse=False, truncate=False):
+            number_of_items = len(area)
+            min_items_before_worth_truncate = 5
+            if truncate and number_of_items > min_items_before_worth_truncate:
+                area[1:-1] = [EllipsisItem()]
+
             content = ''
             width = 0
             height = 0
             offset = [0, 0]
-
-            number_of_items = len(area)
-            min_items_before_worth_truncate = 5
-            if truncate and number_of_items > min_items_before_worth_truncate:
-                if reverse:
-                    first_item = area[-1]
-                    last_item = area[0]
-                else:
-                    first_item = area[0]
-                    last_item = area[-1]
-                # Draw first variable
-                content, width, height, offset = _append_drawer(
-                    content, width, height, offset, layout_direction,
-                    first_item)
-                # Draw ellipsis
-                content, width, height, offset = _append_ellipsis(
-                    content, width, height, offset, layout_direction)
-                # Draw last variable
-                content, width, height, offset = _append_drawer(
-                    content, width, height, offset, layout_direction,
-                    last_item)
-            else:
-                if reverse:
-                    area = reversed(area)
-                for item in area:
-                    content, width, height, offset = _append_drawer(
-                        content, width, height, offset, layout_direction, item)
+            if reverse:
+                area = reversed(area)
+            for item in area:
+                content, width, height, offset = item.append_to_svg(
+                    content, width, height, offset, layout_direction, margin,
+                    dims)
             return content, width, height
 
         top = 0
