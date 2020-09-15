@@ -206,8 +206,8 @@ class PlotView1d:
     def keep_line(self, name=None, color=None, line_id=None):
         self.figure.keep_line(name=name, color=color, line_id=line_id)
 
-    def remove_line(self, owner_id):
-        self.figure.remove_line(owner_id)
+    def remove_line(self, line_id):
+        self.figure.remove_line(line_id)
 
     def update_line_color(self, line_id, color):
         self.figure.update_line_color(line_id, color)

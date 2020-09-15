@@ -44,7 +44,7 @@ class PlotController:
         self.model = None
         self.profile = None
         self.view = None
-        self.slave = None
+        self.panel = None
 
         self.axes = axes
         self.logx = logx
@@ -519,8 +519,8 @@ class PlotController:
 
         vmin, vmax = self.model.rescale_to_data()
         self.view.rescale_to_data(vmin, vmax)
-        if self.slave is not None:
-            self.slave.rescale_to_data(vmin=vmin, vmax=vmax, mask_info=self.get_mask_info())
+        if self.panel is not None:
+            self.panel.rescale_to_data(vmin=vmin, vmax=vmax, mask_info=self.get_mask_info())
 
 
 
@@ -540,8 +540,8 @@ class PlotController:
                               axlocator=self.axlocator[self.name],
                               logx=self.logx,
                               logy=self.logy)
-        if self.slave is not None:
-            self.slave.update_axes(axparams=self.axparams)
+        if self.panel is not None:
+            self.panel.update_axes(axparams=self.axparams)
         self.update_data()
         self.rescale_to_data()
 
@@ -561,8 +561,8 @@ class PlotController:
         new_values = self.model.update_data(
             slices, mask_info=self.get_mask_info())
         self.view.update_data(new_values)
-        if self.slave is not None:
-            self.slave.update_data(info)
+        if self.panel is not None:
+            self.panel.update_data(info)
 
     def update_viewport(self, xylims):
         new_values = self.model.update_viewport(
@@ -571,11 +571,23 @@ class PlotController:
 
     def toggle_mask(self, change):
         self.view.toggle_mask(change)
-        if self.slave is not None:
-            self.slave.rescale_to_data(mask_info=self.get_mask_info())
+        if self.panel is not None:
+            self.panel.rescale_to_data(mask_info=self.get_mask_info())
 
     def get_mask_info(self):
         mask_info = {}
         for name in self.widgets.mask_checkboxes:
             mask_info[name] = {m: chbx.value for m, chbx in self.widgets.mask_checkboxes[self.name].items()}
         return mask_info
+
+    def keep_line(self, view=None, name=None, color=None, line_id=None):
+        if view == "profile":
+            self.profile.keep_line(name=name, color=color, line_id=line_id)
+        else:
+            self.view.keep_line(name=name, color=color, line_id=line_id)
+
+    def remove_line(self, view=None, line_id=None):
+        if view == "profile":
+            self.profile.remove_line(line_id=line_id)
+        else:
+            self.view.remove_line(line_id=line_id)

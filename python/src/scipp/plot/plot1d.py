@@ -5,8 +5,8 @@
 # Scipp imports
 from .. import config
 from .controller import PlotController
-from .controller1d import PlotController1d
 from .model1d import PlotModel1d
+from .panel1d import PlotPanel1d
 # from .render import render_plot
 # from .profiler import Profiler
 from .tools import to_bin_edges, parse_params
@@ -86,8 +86,10 @@ class SciPlot1d():
                          errorbars=errorbars,
             button_options=['X'])
 
-        self.controller1d = PlotController1d(ndim=self.controller.ndim,
-            data_names=list(scipp_obj_dict.keys()))
+        self.panel = None
+        if self.controller.ndim > 1:
+            self.panel = PlotPanel1d(controller=self.controller,
+                data_names=list(scipp_obj_dict.keys()))
 
 
         self.model = PlotModel1d(controller=self.controller,
@@ -115,8 +117,8 @@ class SciPlot1d():
             grid=grid)
 
         self.controller.view = self.view
-        self.controller1d.view = self.view
-        self.controller.slave = self.controller1d
+        # self.controller1d.view = self.view
+        self.controller.panel = self.panel
 
         # Profile view
         self.profile = None
@@ -205,7 +207,7 @@ class SciPlot1d():
         # if self.overview["additional_widgets"] is not None:
         #     wdgts.append(self.overview["additional_widgets"])
         return ipw.VBox([self.view._to_widget(), self.controller._to_widget(),
-            self.controller1d._to_widget()])
+            self.panel._to_widget()])
 
     def savefig(self, filename=None):
         self.view.savefig(filename=filename)

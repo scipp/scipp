@@ -4,7 +4,7 @@
 
 # Scipp imports
 from .. import config
-from .engine_2d import PlotEngine2d
+# from .engine_2d import PlotEngine2d
 from .render import render_plot
 # from .profiler import Profiler
 from .tools import to_bin_edges, parse_params

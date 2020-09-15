@@ -3,18 +3,18 @@ import ipywidgets as ipw
 import numpy as np
 
 
-class PlotController1d:
+class PlotPanel1d:
 
-    def __init__(self, data_names, ndim):
+    def __init__(self, controller, data_names):
 
-        self.view = None
+        self.controller = controller
         self.widgets = ipw.VBox()
         self.keep_buttons = {}
         self.data_names = data_names
         self.slice_label= None
         # self.make_keep_button()
-        if ndim < 2:
-            self.widgets.layout.display = 'none'
+        # if ndim < 2:
+        #     self.widgets.layout.display = 'none'
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
@@ -100,7 +100,7 @@ class PlotController1d:
 
         # self.figure.keep_line(name=name, color=self.keep_buttons[owner.id]["colorpicker"].value,
         #     line_id=owner.id)
-        self.view.keep_line(name=name, color=self.keep_buttons[owner.id]["colorpicker"].value,
+        self.controller.keep_line(name=name, color=self.keep_buttons[owner.id]["colorpicker"].value,
             line_id=owner.id)
 
         # for dim, val in self.widgets.slider.items():
@@ -116,13 +116,13 @@ class PlotController1d:
         return
 
     def remove_line(self, owner):
-        self.view.remove_line(owner.id)
+        self.controller.remove_line(line_id=owner.id)
         del self.keep_buttons[owner.id]
         self.update_widgets()
         return
 
     def update_line_color(self, change):
-        self.view.update_line_color(change["owner"].id, change["new"])
+        self.controller.update_line_color(change["owner"].id, change["new"])
         return
 
 
