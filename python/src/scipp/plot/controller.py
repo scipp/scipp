@@ -591,3 +591,6 @@ class PlotController:
             self.profile.remove_line(line_id=line_id)
         else:
             self.view.remove_line(line_id=line_id)
+
+    def update_line_color(self, line_id=None, color=None):
+        self.view.update_line_color(line_id=line_id, color=color)
