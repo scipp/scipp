@@ -4,7 +4,7 @@
 
 # Scipp imports
 from .. import config
-from .controller import PlotController
+from .controller2d import PlotController2d
 from .model2d import PlotModel2d
 # from .render import render_plot
 from .profile import ProfileView
@@ -88,7 +88,7 @@ class SciPlot2d:
                  resolution=None):
 
 
-        self.controller = PlotController(scipp_obj_dict=scipp_obj_dict,
+        self.controller = PlotController2d(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
                          cmap=cmap,

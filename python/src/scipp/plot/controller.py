@@ -564,15 +564,15 @@ class PlotController:
         if self.panel is not None:
             self.panel.update_data(info)
 
-    def update_viewport(self, xylims):
-        new_values = self.model.update_viewport(
-            xylims, mask_info=self.get_mask_info())
-        self.view.update_data(new_values)
+    # def update_viewport(self, xylims):
+    #     new_values = self.model.update_viewport(
+    #         xylims, mask_info=self.get_mask_info())
+    #     self.view.update_data(new_values)
 
     def toggle_mask(self, change):
         self.view.toggle_mask(change)
-        if self.panel is not None:
-            self.panel.rescale_to_data(mask_info=self.get_mask_info())
+        # if self.panel is not None:
+        #     self.panel.rescale_to_data(mask_info=self.get_mask_info())
 
     def get_mask_info(self):
         mask_info = {}

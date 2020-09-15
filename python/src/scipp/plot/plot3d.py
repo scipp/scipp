@@ -5,9 +5,9 @@
 # Scipp imports
 from .. import config
 # from .render import render_plot
-from .controller import PlotController
 from .controller3d import PlotController3d
 from .model3d import PlotModel3d
+from .panel3d import PlotPanel3d
 from .tools import to_bin_centers
 from .view3d import PlotView3d
 
@@ -93,7 +93,7 @@ class SciPlot3d:
                  show_outline=True):
 
 
-        self.controller = PlotController(scipp_obj_dict=scipp_obj_dict,
+        self.controller = PlotController3d(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
                          cmap=cmap,
@@ -103,19 +103,17 @@ class SciPlot3d:
                          color=color,
             button_options=['X', 'Y', 'Z'])
 
-        # Add a slave controller to control the cut surface
-        self.controller3d = PlotController3d(ndim=self.controller.ndim,
-            data_names=list(scipp_obj_dict.keys()), pixel_size=pixel_size)
+        self.panel = PlotPanel3d(controller=self.controller, pixel_size=pixel_size)
 
 
         self.model = PlotModel3d(controller=self.controller,
             scipp_obj_dict=scipp_obj_dict,
             positions=positions,
-            cut_options=self.controller3d.cut_options)
+            cut_options=self.panel.cut_options)
 
         # Connect controllers to model
         self.controller.model = self.model
-        self.controller3d.model = self.model
+        # self.controller3d.model = self.model
 
         # # Add a slave controller to control the cut surface
         # self.controller3d = PlotController3d(ndim=self.controller.ndim,
@@ -134,8 +132,8 @@ class SciPlot3d:
             show_outline=show_outline)
 
         self.controller.view = self.view
-        self.controller3d.view = self.view
-        self.controller.slave = self.controller3d
+        # self.controller3d.view = self.view
+        self.controller.panel = self.panel
 
 
 
@@ -157,7 +155,7 @@ class SciPlot3d:
 
     def _to_widget(self):
         return ipw.VBox([self.view._to_widget(), self.controller._to_widget(),
-            self.controller3d._to_widget()])
+            self.panel._to_widget()])
 
     def savefig(self, filename=None):
         self.view.savefig(filename=filename)

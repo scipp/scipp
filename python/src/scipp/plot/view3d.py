@@ -462,13 +462,13 @@ void main() {
         """
         # if self.cut_surface_buttons.value is None:
 
-        # There is a strange effect with point clouds and opacities.
-        # Results are best when depthTest is False, at low opacities.
-        # But when opacities are high, the points appear in the order
-        # they were drawn, and not in the order they are with respect
-        # to the camera position. So for high opacities, we switch to
-        # depthTest = True.
-        self.points_material.depthTest = alpha > 0.9
+        # # There is a strange effect with point clouds and opacities.
+        # # Results are best when depthTest is False, at low opacities.
+        # # But when opacities are high, the points appear in the order
+        # # they were drawn, and not in the order they are with respect
+        # # to the camera position. So for high opacities, we switch to
+        # # depthTest = True.
+        # self.points_material.depthTest = alpha > 0.9
 
         arr = self.points_geometry.attributes["rgba_color"].array
         arr[:, 3] = alpha
@@ -485,18 +485,18 @@ void main() {
         #     self.update_cut_surface({"new": self.cut_slider.value})
         return
 
-    def disable_depth_test(self):
-        self.points_material.depthTest = False
+    def update_depth_test(self, value):
+        self.points_material.depthTest = value
 
 
-    def update_cut_surface(self, new_colors):
+    # def update_cut_surface(self, new_colors):
 
-        # Unfortunately, one cannot edit the value of the geometry array
-        # in-place, as this does not trigger an update on the threejs side.
-        # We have to update the entire array.
-        c3 = self.points_geometry.attributes["rgba_color"].array
-        c3[:, 3] = new_colors
-        self.points_geometry.attributes["rgba_color"].array = c3
+    #     # Unfortunately, one cannot edit the value of the geometry array
+    #     # in-place, as this does not trigger an update on the threejs side.
+    #     # We have to update the entire array.
+    #     c3 = self.points_geometry.attributes["rgba_color"].array
+    #     c3[:, 3] = new_colors
+    #     self.points_geometry.attributes["rgba_color"].array = c3
 
 
 
