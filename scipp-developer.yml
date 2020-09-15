@@ -6,7 +6,7 @@ name: scipp-developer
 
 channels:
   - conda-forge
-  - dannixon
+  - scipp
 
 dependencies:
   # Build
