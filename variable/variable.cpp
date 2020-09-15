@@ -6,7 +6,6 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
-#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
