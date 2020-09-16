@@ -55,6 +55,12 @@ def _color_variants(hex_color):
     return [hex_color, top, side]
 
 
+def _truncate_long_string(long_string: str) -> str:
+    max_title_length = 13
+    return (long_string[:max_title_length] +
+            '..') if len(long_string) > max_title_length else long_string
+
+
 class VariableDrawer:
     def __init__(self, variable, margin=1.0, target_dims=None):
         self._margin = margin
@@ -248,22 +254,16 @@ class VariableDrawer:
         x_pos = offset[0] + 0.1
         y_pos = offset[1] + 0.6
         if title is not None:
-            # Apply a small rotation to avoid long titles overlapping
-            # and truncate really long ones
-            max_title_length = 13
-            title = str(title)
-            title = (title[:max_title_length] +
-                     '..') if len(title) > max_title_length else title
+            title = _truncate_long_string(str(title))
             svg = f'<text x="{x_pos}" y="{y_pos}" \
-                    style="font-size:#normal-font" \
-                    transform="rotate(-12, {x_pos}, {y_pos})"> \
+                    style="font-size:#normal-font"> \
                     {title}</text>'
 
             svg += f'<title>{details}</title>'
         else:
+            details = _truncate_long_string(str(details))
             svg = f'<text x="{x_pos}" y="{y_pos}" \
-                    style="font-size:#small-font" \
-                    transform="rotate(-12, {x_pos}, {y_pos})"> \
+                    style="font-size:#small-font"> \
                     {details}</text>'
 
         return svg
