@@ -83,22 +83,12 @@ public:
       throw std::runtime_error("Dataset?");
   }
 
-  ElementArrayView<bucket<T>> values() {
-    return {index_values(), m_dim, m_buffer};
+  ElementArrayView<bucket<T>> values(const core::element_array_view &base) {
+    return {index_values(base), m_dim, m_buffer};
   }
-  ElementArrayView<const bucket<T>> values() const {
-    return {index_values(), m_dim, m_buffer};
-  }
-
-  ElementArrayView<bucket<T>> values(const scipp::index offset,
-                                     const Dimensions &iterDims,
-                                     const Dimensions &dataDims) {
-    return {index_values(offset, iterDims, dataDims), m_dim, m_buffer};
-  }
-  ElementArrayView<const bucket<T>> values(const scipp::index offset,
-                                           const Dimensions &iterDims,
-                                           const Dimensions &dataDims) const {
-    return {index_values(offset, iterDims, dataDims), m_dim, m_buffer};
+  ElementArrayView<const bucket<T>>
+  values(const core::element_array_view &base) const {
+    return {index_values(base), m_dim, m_buffer};
   }
 
 private:
@@ -127,10 +117,8 @@ private:
     std::copy(i.begin(), i.end(), vals.begin());
     return copy;
   }
-  auto index_values() const { return m_indices.values<range_type>(); }
-  auto index_values(const scipp::index offset, const Dimensions &iterDims,
-                    const Dimensions &dataDims) const {
-    return cast<range_type>(m_indices).values(offset, iterDims, dataDims);
+  auto index_values(const core::element_array_view &base) const {
+    return cast<range_type>(m_indices).values(base);
   }
   Variable m_indices;
   Dim m_dim;

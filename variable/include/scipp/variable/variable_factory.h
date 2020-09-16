@@ -13,6 +13,7 @@ namespace scipp::variable {
 class SCIPP_VARIABLE_EXPORT AbstractVariableMaker {
 public:
   virtual ~AbstractVariableMaker() = default;
+  virtual bool is_buckets() const = 0;
   virtual Variable create(const Dimensions &dims,
                           const bool variances) const = 0;
   virtual Variable create_buckets(const DType, const Dimensions &, const bool,
@@ -38,6 +39,7 @@ public:
 
 template <class T> class VariableMaker : public AbstractVariableMaker {
   using AbstractVariableMaker::create;
+  bool is_buckets() const override { return false; }
   Variable create(const Dimensions &dims, const bool variances) const override {
     const auto volume = dims.volume();
     if (variances)
@@ -60,6 +62,8 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   }
 };
 
+SCIPP_VARIABLE_EXPORT bool is_buckets(const VariableConstView &var);
+
 /// Dynamic factory for variables.
 ///
 /// The factory can be used for creating variables with a dtype that is not
@@ -70,16 +74,17 @@ class SCIPP_VARIABLE_EXPORT VariableFactory {
 private:
   auto bucket_dtype() const noexcept { return dtype<void>; }
   template <class T> auto bucket_dtype(const T &var) const noexcept {
-    return var.dtype() == elem_dtype(var) ? dtype<void> : var.dtype();
+    return is_buckets(var) ? var.dtype() : dtype<void>;
   }
   template <class T, class... Ts>
   auto bucket_dtype(const T &var, const Ts &... vars) const noexcept {
-    return var.dtype() == elem_dtype(var) ? bucket_dtype(vars...) : var.dtype();
+    return is_buckets(var) ? var.dtype() : bucket_dtype(vars...);
   }
 
 public:
   void emplace(const DType key, std::unique_ptr<AbstractVariableMaker> makes);
   bool contains(const DType key) const noexcept;
+  bool is_buckets(const VariableConstView &var) const;
   template <class... Parents>
   Variable create(const DType elem_dtype, const Dimensions &dims,
                   const bool variances, const Parents &... parents) const {

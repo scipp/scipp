@@ -74,6 +74,7 @@ private:
   }
 
 public:
+  bool is_buckets() const override { return true; }
   Variable create(const Dimensions &, const bool) const override {
     throw std::runtime_error("Cannot create Variable with buckets without "
                              "bucket paremeters obtained from parent(s).");

@@ -109,36 +109,19 @@ public:
     return {offset, iterDims, dataDims, {}};
   }
 
-  auto values() const {
-    return ElementArrayView(m_values.data(), 0, dims(), dims());
+  auto values(const core::element_array_view &base) const {
+    return ElementArrayView(base, m_values.data());
   }
-  auto values() { return ElementArrayView(m_values.data(), 0, dims(), dims()); }
-  auto variances() const {
+  auto values(const core::element_array_view &base) {
+    return ElementArrayView(base, m_values.data());
+  }
+  auto variances(const core::element_array_view &base) const {
     expectHasVariances();
-    return ElementArrayView(m_variances->data(), 0, dims(), dims());
+    return ElementArrayView(base, m_variances->data());
   }
-  auto variances() {
+  auto variances(const core::element_array_view &base) {
     expectHasVariances();
-    return ElementArrayView(m_variances->data(), 0, dims(), dims());
-  }
-
-  auto values(const scipp::index offset, const Dimensions &iterDims,
-              const Dimensions &dataDims) const {
-    return ElementArrayView(m_values.data(), offset, iterDims, dataDims);
-  }
-  auto values(const scipp::index offset, const Dimensions &iterDims,
-              const Dimensions &dataDims) {
-    return ElementArrayView(m_values.data(), offset, iterDims, dataDims);
-  }
-  auto variances(const scipp::index offset, const Dimensions &iterDims,
-                 const Dimensions &dataDims) const {
-    expectHasVariances();
-    return ElementArrayView(m_variances->data(), offset, iterDims, dataDims);
-  }
-  auto variances(const scipp::index offset, const Dimensions &iterDims,
-                 const Dimensions &dataDims) {
-    expectHasVariances();
-    return ElementArrayView(m_variances->data(), offset, iterDims, dataDims);
+    return ElementArrayView(base, m_variances->data());
   }
 
 private:
