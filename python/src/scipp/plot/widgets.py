@@ -82,7 +82,8 @@ class PlotWidgets:
                 value=True,
                 description="Continuous update",
                 indent=False,
-                layout={"width": "20px"})
+                layout={"width": "20px"},
+                disabled=disabled)
             ipw.jslink((self.continuous_update[dim], 'value'),
                            (self.slider[dim], 'continuous_update'))
             # os.write(1, "Slicer 5.3\n".encode())
@@ -101,7 +102,7 @@ class PlotWidgets:
 
             self.profile_button[dim] = ipw.Button(
                 description="Profile",
-                disabled=False,
+                disabled=disabled,
                 button_style="",
                 layout={"width": "initial"})
             # self.profile_button[dim].observe(self.controller.toggle_profile_view, names="value")
@@ -275,6 +276,9 @@ class PlotWidgets:
             toggle_slider = True
             self.slider[owner.dim].disabled = True
             self.thickness_slider[owner.dim].disabled = True
+            self.profile_button[owner.dim].disabled = True
+            self.continuous_update[owner.dim].disabled = True
+
         for dim, button in self.buttons.items():
             if (button.value == owner.value) and (dim != owner.dim):
                 if self.slider[dim].disabled:
@@ -285,6 +289,8 @@ class PlotWidgets:
                 if toggle_slider:
                     self.slider[dim].disabled = False
                     self.thickness_slider[dim].disabled = False
+                    self.profile_button[owner.dim].disabled = False
+                    self.continuous_update[owner.dim].disabled = False
         owner.old_value = owner.value
         self.controller.update_axes()
         return

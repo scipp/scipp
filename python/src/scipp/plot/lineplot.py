@@ -512,7 +512,9 @@ class LinePlot:
         # Special key in the change dict: if "vslice" is found, it means we are
         # calling from a profile viewer, and the slice has hence already been
         # generate.
+        os.write(1, "lineplot: update_data 1\n".encode())
         for name, vals in new_values.items():
+            os.write(1, ("lineplot: update_data 2" + name + "\n").encode())
             # # if "vslice" in change:
             # #     vslice = change["vslice"][name]
             # # else:
@@ -530,6 +532,7 @@ class LinePlot:
 
 
             self.data_lines[name].set_data(vals["values"]["x"], vals["values"]["y"])
+            os.write(1, "lineplot: update_data 3\n".encode())
 
 
 
@@ -542,6 +545,7 @@ class LinePlot:
                 self.mask_lines[name][m].set_data(
                     vals["values"]["x"],
                     vals["masks"][m])
+            os.write(1, "lineplot: update_data 4\n".encode())
 
             if self.errorbars[name]:
                 coll = self.error_lines[name].get_children()[0]
@@ -551,6 +555,7 @@ class LinePlot:
                     self.change_segments_y(vals["variances"]["x"],
                                            vals["variances"]["y"],
                                            vals["variances"]["e"]))
+            os.write(1, "lineplot: update_data 5\n".encode())
 
         # if self.input_contains_unaligned_data and (not self.mpl_axes):
         #     with warnings.catch_warnings():

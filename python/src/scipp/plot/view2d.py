@@ -60,6 +60,7 @@ class PlotView2d:
         self.xlim_updated = False
         self.ylim_updated = False
         self.current_lims = {"x": np.zeros(2), "y": np.zeros(2)}
+        self.global_lims = {"x": np.zeros(2), "y": np.zeros(2)}
 
         self.profile_hover_connection = None
         self.profile_pick_connection = None
@@ -239,12 +240,19 @@ class PlotView2d:
         self.ylim_updated = False
         xylims = {}
         # Make sure we don't overrun the original array bounds
+        # xylims["x"] = np.clip(
+        #     self.ax.get_xlim(),
+        #     *sorted(self.controller.xlims[self.controller.name][self.controller.axparams["x"]["dim"]].values))
+        # xylims["y"] = np.clip(
+        #     self.ax.get_ylim(),
+        #     *sorted(self.controller.xlims[self.controller.name][self.controller.axparams["y"]["dim"]].values))
+
         xylims["x"] = np.clip(
             self.ax.get_xlim(),
-            *sorted(self.controller.xlims[self.controller.name][self.controller.axparams["x"]["dim"]].values))
+            *sorted(self.global_lims["x"]))
         xylims["y"] = np.clip(
             self.ax.get_ylim(),
-            *sorted(self.controller.xlims[self.controller.name][self.controller.axparams["y"]["dim"]].values))
+            *sorted(self.global_lims["y"]))
 
         dx = np.abs(self.current_lims["x"][1] - self.current_lims["x"][0])
         dy = np.abs(self.current_lims["y"][1] - self.current_lims["y"][0])
@@ -269,7 +277,7 @@ class PlotView2d:
         return
 
 
-    def reset_home_button(self):
+    def reset_home_button(self, axparams):
         # Some annoying house-keeping when using X/Y buttons: we need to update
         # the deeply embedded limits set by the Home button in the matplotlib
         # toolbar. The home button actually brings the first element in the
@@ -286,9 +294,12 @@ class PlotView2d:
                     for x in self.fig.canvas.toolbar._nav_stack._elements[0][
                             key]:
                         alist.append(x)
-                    alist[0] = (*self.controller.xlims[self.controller.name][
-                        self.controller.axparams["x"]["dim"]].values, *self.controller.xlims[
-                            self.controller.name][self.controller.axparams["y"]["dim"]].values)
+                    # alist[0] = (*self.controller.xlims[self.controller.name][
+                    #     self.controller.axparams["x"]["dim"]].values, *self.controller.xlims[
+                    #         self.controller.name][self.controller.axparams["y"]["dim"]].values)
+                    alist[0] = (*axparams["x"]["lims"], *axparams["y"]["lims"].values)
+
+
                     # Insert the new tuple
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
@@ -299,6 +310,8 @@ class PlotView2d:
 
         self.current_lims['x'] = axparams["x"]["lims"]
         self.current_lims['y'] = axparams["y"]["lims"]
+        self.global_lims["x"] = axparams["x"]["lims"]
+        self.global_lims["y"] = axparams["y"]["lims"]
 
         is_log = {"x": logx, "y": logy}
 
@@ -325,7 +338,7 @@ class PlotView2d:
             self.ax.set_xlim(axparams["x"]["lims"])
             self.ax.set_ylim(axparams["y"]["lims"])
 
-        self.reset_home_button()
+        self.reset_home_button(axparams)
         # self.rescale_to_data()
 
 
@@ -344,17 +357,27 @@ class PlotView2d:
         self.fig.canvas.draw_idle()
 
 
+    def update_profile(self, event):
+        os.write(1, "view2d: update_profile 1\n".encode())
+        ev = event.mouseevent
+        os.write(1, "view2d: update_profile 2\n".encode())
+        ev.xdata = ev.xdata - self.current_lims["x"][0]
+        ev.ydata = ev.ydata - self.current_lims["y"][0]
+        os.write(1, "view2d: update_profile 3\n".encode())
+        self.controller.update_profile(ev)
+        os.write(1, "view2d: update_profile 4\n".encode())
 
 
 
 
-    def update_profile_connection(self, connect):
+    def update_profile_connection(self, visible):
         # Connect picking events
-        if connect:
-            self.profile_pick_connection = self.fig.canvas.mpl_connect('pick_event', self.keep_or_delete_profile)
-            self.profile_hover_connection = self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+        if visible:
+            # self.profile_pick_connection = self.fig.canvas.mpl_connect('pick_event', self.keep_or_delete_profile)
+            # self.profile_hover_connection = self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+            self.profile_hover_connection = self.fig.canvas.mpl_connect('pick_event', self.update_profile)
         else:
-            self.fig.canvas.mpl_disconnect(self.profile_pick_connection)
+            # self.fig.canvas.mpl_disconnect(self.profile_pick_connection)
             self.fig.canvas.mpl_disconnect(self.profile_hover_connection)
 
 

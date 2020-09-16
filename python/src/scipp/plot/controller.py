@@ -79,7 +79,7 @@ class PlotController:
         # # Variables for the profile viewer
         # self.profile_viewer = None
         # self.profile_key = None
-        # self.profile_dim = None
+        self.profile_dim = None
         # self.slice_pos_rectangle = None
         # self.profile_scatter = None
         # self.profile_update_lock = False
@@ -534,14 +534,20 @@ class PlotController:
                 "log": getattr(self, "log{}".format(but_val)),
                 "hist": {name: self.histograms[name][dim][dim] for name in self.histograms}}
 
-        self.axparams = self.model.update_axes(limits)
-        self.view.update_axes(axparams=self.axparams,
+        axparams = self.model.update_axes(limits)
+        self.view.update_axes(axparams=axparams,
                               axformatter=self.axformatter[self.name],
                               axlocator=self.axlocator[self.name],
                               logx=self.logx,
                               logy=self.logy)
         if self.panel is not None:
-            self.panel.update_axes(axparams=self.axparams)
+            self.panel.update_axes(axparams=axparams)
+        if self.profile is not None:
+            self.profile.update_axes(axparams=axparams,
+                              axformatter=self.axformatter[self.name],
+                              axlocator=self.axlocator[self.name],
+                              logx=self.logx,
+                              logy=self.logy)
         self.update_data()
         self.rescale_to_data()
 
@@ -594,3 +600,29 @@ class PlotController:
 
     def update_line_color(self, line_id=None, color=None):
         self.view.update_line_color(line_id=line_id, color=color)
+
+
+    def update_profile(self, event):
+        os.write(1, "controller: update_profile 1\n".encode())
+        slices = {}
+        # info = {"slice_label": ""}
+        # Slice along dimensions with active sliders
+        for dim, val in self.widgets.slider.items():
+            if dim != self.profile_dim:
+                slices[dim] = {"location": val.value,
+                "thickness": self.widgets.thickness_slider[dim].value}
+                # info["slice_label"] = "{},{}:{}-{}".format(info["slice_label"], dim,
+                #     slices[dim]["location"] - 0.5*slices[dim]["thickness"],
+                #     slices[dim]["location"] + 0.5*slices[dim]["thickness"])
+        os.write(1, "controller: update_profile 2\n".encode())
+        os.write(1, str(slices).encode())
+        new_values = self.model.update_profile(event, slices)
+        os.write(1, "controller: update_profile 3\n".encode())
+        self.profile.update_data(new_values)
+        os.write(1, "controller: update_profile 4\n".encode())
+
+
+
+
+
+

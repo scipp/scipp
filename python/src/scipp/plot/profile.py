@@ -77,58 +77,60 @@ class ProfileView:
 
 
 
-    def show_profile_view(self):
+    # def show_profile_view(self):
 
-        # Double the figure height
-        self.fig.set_figheight(2 * self.fig.get_figheight())
-        # Change the ax geometry so it becomes a subplot
-        self.ax.change_geometry(2, 1, 1)
-        # Add lower panel
-        self.profile_ax = self.fig.add_subplot(212)
+    #     # Double the figure height
+    #     self.fig.set_figheight(2 * self.fig.get_figheight())
+    #     # Change the ax geometry so it becomes a subplot
+    #     self.ax.change_geometry(2, 1, 1)
+    #     # Add lower panel
+    #     self.profile_ax = self.fig.add_subplot(212)
 
-        # Also need to move the colorbar to the top panel.
-        # Easiest way to do this is to remove it and create it again.
-        if self.params["values"][self.name]["cbar"]:
-            self.cbar.remove()
-            del self.cbar
-            self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
-            self.cbar.set_label(name_with_unit(var=self.data_arrays[self.name], name=""))
-            if self.cax is None:
-                self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-            self.members["colorbar"] = self.cbar
+    #     # Also need to move the colorbar to the top panel.
+    #     # Easiest way to do this is to remove it and create it again.
+    #     if self.params["values"][self.name]["cbar"]:
+    #         self.cbar.remove()
+    #         del self.cbar
+    #         self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
+    #         self.cbar.set_label(name_with_unit(var=self.data_arrays[self.name], name=""))
+    #         if self.cax is None:
+    #             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
+    #         self.members["colorbar"] = self.cbar
 
-        # # self.ax_pick.set_ylim([
-        # #     self.params["values"][self.name]["vmin"],
-        # #     self.params["values"][self.name]["vmax"]
-        # # ])
-        # self.ax_pick.set_ylim(get_ylim(
-        #         var=self.data_array, errorbars=(self.data_array.variances is not None)))
+    #     # # self.ax_pick.set_ylim([
+    #     # #     self.params["values"][self.name]["vmin"],
+    #     # #     self.params["values"][self.name]["vmax"]
+    #     # # ])
+    #     # self.ax_pick.set_ylim(get_ylim(
+    #     #         var=self.data_array, errorbars=(self.data_array.variances is not None)))
 
-        # Connect picking events
-        # self.fig.canvas.mpl_connect('pick_event', self.keep_or_delete_profile)
-        self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+    #     # Connect picking events
+    #     # self.fig.canvas.mpl_connect('pick_event', self.keep_or_delete_profile)
+    #     self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
 
-        return
+    #     return
 
-    def update_axes(self):
+    def update_axes(self, axparams=None, axformatter=None, axlocator=None, logx=False, logy=False):
 
-        # Clear profile axes if present and reset to None
-        del self.profile_viewer
-        if self.profile_ax is not None:
-            self.profile_ax.clear()
-            # # ylim = get_ylim(
-            # #     var=self.data_array, errorbars=(self.data_array.variances is not None))
-            # self.ax_pick.set_ylim(get_ylim(
-            #     var=self.data_array, errorbars=(self.data_array.variances is not None)))
-        self.profile_viewer = None
-        if self.profile_scatter is not None:
-            # self.ax.collections = []
-            self.fig.canvas.draw_idle()
-            del self.profile_scatter
-            self.profile_scatter = None
+        self.figure.update_axes(axparams=axparams, axformatter=axformatter, axlocator=axlocator, logx=logx, logy=logy)
+        # # Clear profile axes if present and reset to None
+        # del self.profile_viewer
+        # if self.profile_ax is not None:
+        #     self.profile_ax.clear()
+        #     # # ylim = get_ylim(
+        #     # #     var=self.data_array, errorbars=(self.data_array.variances is not None))
+        #     # self.ax_pick.set_ylim(get_ylim(
+        #     #     var=self.data_array, errorbars=(self.data_array.variances is not None)))
+        # self.profile_viewer = None
+        # if self.profile_scatter is not None:
+        #     # self.ax.collections = []
+        #     self.fig.canvas.draw_idle()
+        #     del self.profile_scatter
+        #     self.profile_scatter = None
 
 
-
+    def update_data(self, new_values):
+        self.figure.update_data(new_values)
 
 
 

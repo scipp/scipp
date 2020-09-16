@@ -61,4 +61,3 @@ class PlotController2d(PlotController):
         new_values = self.model.update_viewport(
             xylims, mask_info=self.get_mask_info())
         self.view.update_data(new_values)
-
