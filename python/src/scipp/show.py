@@ -249,9 +249,7 @@ class VariableDrawer:
         details = 'dims={}, shape={}, unit={}, variances={}'.format(
             self._variable.dims, self._variable.shape, unit,
             self._variable.variances is not None)
-        # Small addition to horizontal offset avoids clipping part of the
-        # first letter on the left edge of the image (due to its rotation)
-        x_pos = offset[0] + 0.1
+        x_pos = offset[0]
         y_pos = offset[1] + 0.6
         if title is not None:
             title = _truncate_long_string(str(title))
@@ -261,7 +259,6 @@ class VariableDrawer:
 
             svg += f'<title>{details}</title>'
         else:
-            details = _truncate_long_string(str(details))
             svg = f'<text x="{x_pos}" y="{y_pos}" \
                     style="font-size:#small-font"> \
                     {details}</text>'
