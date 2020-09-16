@@ -51,8 +51,8 @@ This is due to some dependencies being too old to work in the same environment a
   $ conda create \
       -n env_with_scipp_and_mantid \
       -c conda-forge \
-      -c dannixon \
       -c scipp/label/dev \
+      -c scipp \
       python=3.7 \
       scipp \
       mantid-framework
