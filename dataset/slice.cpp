@@ -51,29 +51,27 @@ auto get_coord(const DataArrayConstView &data, const Dim dim) {
   return std::tuple(coord, ascending);
 }
 
-} // namespace
-
-DataArrayConstView slice(const DataArrayConstView &data, const Dim dim,
-                         const VariableConstView value) {
+template <class T>
+T slice(const T &data, const Dim dim, const VariableConstView value) {
   core::expect::equals(value.dims(), Dimensions{});
   if (is_histogram(data, dim)) {
     const auto &[coord, ascending] = get_coord(data, dim);
     return data.slice({dim, get_count(coord, dim, value, ascending) - 1});
   } else {
     auto eq = equal(get_1d_coord(data, dim), value);
-    if (sum(eq, dim).value<scipp::index>() != 1)
+    if (sum(eq, dim).template value<scipp::index>() != 1)
       throw except::SliceError("Coord " + to_string(dim) +
                                " does not contain unique point with value " +
                                to_string(value) + '\n');
-    auto values = eq.values<bool>();
+    auto values = eq.template values<bool>();
     auto it = std::find(values.begin(), values.end(), true);
     return data.slice({dim, std::distance(values.begin(), it)});
   }
 }
 
-DataArrayConstView slice(const DataArrayConstView &data, const Dim dim,
-                         const VariableConstView begin,
-                         const VariableConstView end) {
+template <class T>
+T slice(const T &data, const Dim dim, const VariableConstView begin,
+        const VariableConstView end) {
   if (begin)
     core::expect::equals(begin.dims(), Dimensions{});
   if (end)
@@ -87,5 +85,29 @@ DataArrayConstView slice(const DataArrayConstView &data, const Dim dim,
   if (end)
     last = get_index(coord, dim, end, ascending, bin_edges);
   return data.slice({dim, first, last});
+}
+
+} // namespace
+
+DataArrayConstView slice(const DataArrayConstView &data, const Dim dim,
+                         const VariableConstView value) {
+  return slice<DataArrayConstView>(data, dim, value);
+}
+
+DataArrayView slice(const DataArrayView &data, const Dim dim,
+                    const VariableConstView value) {
+  return slice<DataArrayView>(data, dim, value);
+}
+
+DataArrayConstView slice(const DataArrayConstView &data, const Dim dim,
+                         const VariableConstView begin,
+                         const VariableConstView end) {
+  return slice<DataArrayConstView>(data, dim, begin, end);
+}
+
+DataArrayView slice(const DataArrayView &data, const Dim dim,
+                    const VariableConstView begin,
+                    const VariableConstView end) {
+  return slice<DataArrayView>(data, dim, begin, end);
 }
 } // namespace scipp::dataset
