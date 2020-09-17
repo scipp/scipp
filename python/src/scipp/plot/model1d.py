@@ -63,63 +63,64 @@ class PlotModel1d(PlotModel):
     # #         self.mbox.append(widgets.HBox(list(b.values())))
     # #     self.box.children = tuple(self.mbox)
 
-    def update_axes(self, limits):
-        # if not self.mpl_axes:
-        #     self.ax.lines = []
-        #     self.ax.collections = []
-        # self.members.update({
-        #     "lines": {},
-        #     "error_x": {},
-        #     "error_y": {},
-        #     "error_xy": {},
-        #     "masks": {}
-        # })
+    def update_axes(self, axparams):
+        # # if not self.mpl_axes:
+        # #     self.ax.lines = []
+        # #     self.ax.collections = []
+        # # self.members.update({
+        # #     "lines": {},
+        # #     "error_x": {},
+        # #     "error_y": {},
+        # #     "error_xy": {},
+        # #     "masks": {}
+        # # })
 
-        dim = list(limits.keys())[0]
-        self.axparams["x"]["dim"] = dim
+        # dim = list(limits.keys())[0]
+        # self.axparams["x"]["dim"] = dim
 
-        self.axparams["x"]["labels"] = name_with_unit(
-                self.data_arrays[self.name].coords[dim])
-
-
+        # self.axparams["x"]["labels"] = name_with_unit(
+        #         self.data_arrays[self.name].coords[dim])
 
 
-        # # xmin = np.Inf
-        # # xmax = np.NINF
-        # to_line_plot = {}
-        # is_bin_edge = {}
-
-        xmin = np.Inf
-        xmax = np.NINF
-
-        self.axparams["x"]["hist"] = {}
-
-        for name, array in self.data_arrays.items():
-
-            xmin = min(sc.min(array.coords[dim]).value, xmin)
-            xmax = max(sc.max(array.coords[dim]).value, xmax)
-
-            self.axparams["x"]["hist"][name] = limits[dim]["hist"][name]
 
 
-            # # # new_x = self.slider_coord[name][dim].values
-            # # # new_x = array.coords[dim].values
-            # # xmin = min(sc.min(array.coords[dim]).value, xmin)
-            # # xmax = max(sc.max(array.coords[dim]).value, xmax)
+        # # # xmin = np.Inf
+        # # # xmax = np.NINF
+        # # to_line_plot = {}
+        # # is_bin_edge = {}
 
-            # vslice = self.slice_data(array, name)
-            # to_line_plot[name] = vslice
-            # # dim = vslice.dims[0]
-            # is_bin_edge[name] = self.histograms[name][dim][dim]
+        # xmin = np.Inf
+        # xmax = np.NINF
 
-        # if self.parent.figure is None:
-        #     self.parent.figure = LinePlot(to_line_plot, is_bin_edge=is_bin_edge,
-        #         mpl_line_params=self.parent.mpl_line_params)
-        # else:
-        # self.parent.figure.plot_data(to_line_plot, is_bin_edge=is_bin_edge, clear=True)
+        # self.axparams["x"]["hist"] = {}
 
-        self.axparams["x"]["lims"] = [xmin, xmax]
-        return self.axparams
+        # for name, array in self.data_arrays.items():
+
+        #     xmin = min(sc.min(array.coords[dim]).value, xmin)
+        #     xmax = max(sc.max(array.coords[dim]).value, xmax)
+
+        #     self.axparams["x"]["hist"][name] = limits[dim]["hist"][name]
+
+
+        #     # # # new_x = self.slider_coord[name][dim].values
+        #     # # # new_x = array.coords[dim].values
+        #     # # xmin = min(sc.min(array.coords[dim]).value, xmin)
+        #     # # xmax = max(sc.max(array.coords[dim]).value, xmax)
+
+        #     # vslice = self.slice_data(array, name)
+        #     # to_line_plot[name] = vslice
+        #     # # dim = vslice.dims[0]
+        #     # is_bin_edge[name] = self.histograms[name][dim][dim]
+
+        # # if self.parent.figure is None:
+        # #     self.parent.figure = LinePlot(to_line_plot, is_bin_edge=is_bin_edge,
+        # #         mpl_line_params=self.parent.mpl_line_params)
+        # # else:
+        # # self.parent.figure.plot_data(to_line_plot, is_bin_edge=is_bin_edge, clear=True)
+
+        # self.axparams["x"]["lims"] = [xmin, xmax]
+        # return self.axparams
+        return
 
 
 

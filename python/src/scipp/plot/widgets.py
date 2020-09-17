@@ -72,7 +72,7 @@ class PlotWidgets:
                 # max=self.dim_to_shape[self.name][dim] - 1,
                 max=dim_xlims[1],
                 step=0.01 * dx,
-                description=self.controller.labels[dim],
+                description=self.controller.labels[self.controller.name][dim],
                 continuous_update=True,
                 readout=True,
                 disabled=disabled)

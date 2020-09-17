@@ -28,8 +28,9 @@ class PlotModel2d(PlotModel):
         super().__init__(controller=controller,
             scipp_obj_dict=scipp_obj_dict)
 
-        self.axparams = {"x": {}, "y": {}}
-        self.button_dims = [None, None]
+        # self.axparams = {"x": {}, "y": {}}
+        # self.button_dims = [None, None]
+        self.button_dims = {}
         self.dim_to_xy = {}
         self.xyrebin = {}
         self.xywidth = {}
@@ -70,55 +71,56 @@ class PlotModel2d(PlotModel):
     #     self.update_axes()
     #     return
 
-    def update_axes(self, limits):
+    def update_axes(self, axparams):
         # Go through the buttons and select the right coordinates for the axes
         # extents = {}
         # for dim, button in self.controller.widgets.buttons.items():
         #     if self.controller.widgets.slider[dim].disabled:
 
-        for dim in limits:
+        for xy in "yx":
 
-            but_val = limits[dim]["button"]
-            # but_val = button.value.lower()
-            # self.controller.extent[but_val] = self.slider_xlims[self.name][dim].values
-            # self.axparams[but_val]["lims"] = self.controller.extent[but_val].copy()
+        # for xy, param in axparams.items():
 
-            # extents[but_val] = self.slider_xlims[self.name][dim].values
-            # self.axparams[but_val]["lims"] = self.slider_xlims[self.name][dim].values
-            self.axparams[but_val]["lims"] = limits[dim]["xlims"]
+            # # but_val = limits[dim]["button"]
+            # # # but_val = button.value.lower()
+            # # # self.controller.extent[but_val] = self.slider_xlims[self.name][dim].values
+            # # # self.axparams[but_val]["lims"] = self.controller.extent[but_val].copy()
 
-            # if getattr(self.controller,
-            #            "log" + but_val) and (self.axparams[but_val]["lims"][0] <= 0):
-            if limits[dim]["log"] and (self.axparams[but_val]["lims"][0] <= 0):
-                self.axparams[but_val]["lims"][
-                    0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
+            # # # extents[but_val] = self.slider_xlims[self.name][dim].values
+            # # # self.axparams[but_val]["lims"] = self.slider_xlims[self.name][dim].values
+            # # self.axparams[but_val]["lims"] = limits[dim]["xlims"]
+
+            # # if getattr(self.controller,
+            # #            "log" + but_val) and (self.axparams[but_val]["lims"][0] <= 0):
+            # if limits[dim]["log"] and (self.axparams[but_val]["lims"][0] <= 0):
+            #     self.axparams[but_val]["lims"][
+            #         0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
+            # # self.axparams[but_val]["labels"] = name_with_unit(
+            # #     self.slider_label[self.name][dim]["coord"],
+            # #     name=self.slider_label[self.name][dim]["name"])
             # self.axparams[but_val]["labels"] = name_with_unit(
-            #     self.slider_label[self.name][dim]["coord"],
-            #     name=self.slider_label[self.name][dim]["name"])
-            self.axparams[but_val]["labels"] = name_with_unit(
-                self.data_arrays[self.name].coords[dim])
-            self.axparams[but_val]["dim"] = dim
-            # Get the dimensions corresponding to the x/y buttons
-            # self.button_dims[but_val == "x"] = button.dim
-            # TODO: is using dim here ok?
-            self.button_dims[but_val == "x"] = dim
-            self.dim_to_xy[dim] = but_val
+            #     self.data_arrays[self.name].coords[dim])
+            # self.axparams[but_val]["dim"] = dim
+            # # Get the dimensions corresponding to the x/y buttons
+            # # self.button_dims[but_val == "x"] = button.dim
+            # # TODO: is using dim here ok?
+            self.button_dims[xy] = axparams[xy]["dim"]
+            self.dim_to_xy[axparams[xy]["dim"]] = xy
 
         # extent_array = np.array(list(self.controller.extent.values())).flatten()
         # self.controller.current_lims['x'] = extent_array[:2]
         # self.controller.current_lims['y'] = extent_array[2:]
 
-        # TODO: if labels are used on a 2D coordinates, we need to update
-        # the axes tick formatter to use xyrebin coords
-        for xy, param in self.axparams.items():
+            # TODO: if labels are used on a 2D coordinates, we need to update
+            # the axes tick formatter to use xyrebin coords
             # Create coordinate axes for resampled array to be used as image
             # offset = 2 * (xy == "y")
             self.xyrebin[xy] = sc.Variable(
-                dims=[param["dim"]],
-                values=np.linspace(param["lims"][0],
-                                   param["lims"][1],
+                dims=[axparams[xy]["dim"]],
+                values=np.linspace(axparams[xy]["lims"][0],
+                                   axparams[xy]["lims"][1],
                                    self.image_resolution[xy] + 1),
-                unit=self.data_arrays[self.name].coords[param["dim"]].unit)
+                unit=self.data_arrays[self.name].coords[axparams[xy]["dim"]].unit)
 
         # # Set axes labels
         # self.controller.ax.set_xlabel(self.axparams["x"]["labels"])
@@ -187,7 +189,8 @@ class PlotModel2d(PlotModel):
         # if self.controller.profile is not None:
         #     self.update_profile_axes()
 
-        return self.axparams
+        # return self.axparams
+        return
 
 
 
@@ -242,7 +245,8 @@ class PlotModel2d(PlotModel):
 
 
         # Update the xyedges and xywidth
-        for xy, param in self.axparams.items():
+        # for xy, param in self.axparams.items():
+        for xy, dim in self.button_dims.items():
             # # Create bin-edge coordinates in the case of non bin-edges, since
             # # rebin only accepts bin edges.
             # if not self.histograms[self.engine.name][param["dim"]][param["dim"]]:
@@ -254,8 +258,8 @@ class PlotModel2d(PlotModel):
             # # Pixel widths used for scaling before rebin step
             # self.compute_bin_widths(xy, param["dim"])
             self.xywidth[xy] = (
-                self.vslice.coords[param["dim"]][param["dim"], 1:] -
-                self.vslice.coords[param["dim"]][param["dim"], :-1])
+                self.vslice.coords[dim][dim, 1:] -
+                self.vslice.coords[dim][dim, :-1])
             self.xywidth[xy].unit = sc.units.one
 
 
@@ -285,7 +289,7 @@ class PlotModel2d(PlotModel):
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
         xy = "yx"
-        if len(self.vslice.coords[self.button_dims[1]].dims) > 1:
+        if len(self.vslice.coords[self.button_dims["x"]].dims) > 1:
             xy = "xy"
 
         dimy = self.xyrebin[xy[0]].dims[0]
@@ -312,7 +316,7 @@ class PlotModel2d(PlotModel):
             self.xyrebin["y"].shape[0] - 1, self.xyrebin["x"].shape[0] - 1
         ]
         self.dslice = sc.DataArray(coords=rebin_edges,
-                                   data=sc.Variable(dims=self.button_dims,
+                                   data=sc.Variable(dims=list(self.button_dims.values()),
                                                     values=np.ones(shape),
                                                     variances=np.zeros(shape),
                                                     dtype=self.vslice.dtype,
@@ -382,13 +386,13 @@ class PlotModel2d(PlotModel):
 
     def update_viewport(self, xylims, mask_info):
 
-        for xy, param in self.axparams.items():
+        for xy, dim in self.button_dims.items():
             # Create coordinate axes for resampled image array
             self.xyrebin[xy] = sc.Variable(
-                dims=[param["dim"]],
+                dims=[dim],
                 values=np.linspace(xylims[xy][0], xylims[xy][1],
                                    self.image_resolution[xy] + 1),
-                unit=self.data_arrays[self.name].coords[param["dim"]].unit)
+                unit=self.data_arrays[self.name].coords[dim].unit)
         return self.update_image(extent=np.array(list(xylims.values())).flatten(), mask_info=mask_info)
 
 

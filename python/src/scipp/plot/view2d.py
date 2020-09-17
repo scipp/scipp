@@ -316,8 +316,8 @@ class PlotView2d:
         is_log = {"x": logx, "y": logy}
 
         # Set axes labels
-        self.ax.set_xlabel(axparams["x"]["labels"])
-        self.ax.set_ylabel(axparams["y"]["labels"])
+        self.ax.set_xlabel(axparams["x"]["label"])
+        self.ax.set_ylabel(axparams["y"]["label"])
 
         for xy, param in axparams.items():
             axis = getattr(self.ax, "{}axis".format(xy))

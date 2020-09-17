@@ -51,7 +51,7 @@ class PlotController:
         self.logy = logy
         self.logz = logz
         # self.slice_label = None
-        self.axparams = None
+        self.axparams = {}
 
         # # Member container for dict output
         # self.members = dict(widgets=dict(sliders=dict(),
@@ -527,25 +527,43 @@ class PlotController:
 
 
     def update_axes(self, change=None):
-        limits = {}
+        self.axparams.clear()
         for dim, button in self.widgets.buttons.items():
             if self.widgets.slider[dim].disabled:
                 but_val = button.value.lower()
-                limits[dim] = {"button": but_val,
-                "xlims": self.xlims[self.name][dim].values,
-                "log": getattr(self, "log{}".format(but_val)),
-                "hist": {name: self.histograms[name][dim][dim] for name in self.histograms}}
+                xmin = np.Inf
+                xmax = np.NINF
+                for name in self.xlims:
+                    xlims = self.xlims[name][dim].values
+                    xmin = min(xmin, xlims[0])
+                    xmax = max(xmax, xlims[1])
+                self.axparams[but_val] = {
+                    "lims": [xmin, xmax],
+                    "log": getattr(self, "log{}".format(but_val)),
+                    "hist": {name: self.histograms[name][dim][dim] for name in self.histograms},
+                    "dim": dim,
+                    "label": self.labels[self.name][dim]
+                }
+                # Safety check for log axes
+                if self.axparams[but_val]["log"] and (self.axparams[but_val]["lims"][0] <= 0):
+                    self.axparams[but_val]["lims"][
+                        0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
 
-        axparams = self.model.update_axes(limits)
-        self.view.update_axes(axparams=axparams,
+                # limits[dim] = {"button": but_val,
+                # "xlims": self.xlims[self.name][dim].values,
+                # "log": getattr(self, "log{}".format(but_val)),
+                # "hist": {name: self.histograms[name][dim][dim] for name in self.histograms}}
+
+        self.model.update_axes(self.axparams)
+        self.view.update_axes(axparams=self.axparams,
                               axformatter=self.axformatter[self.name],
                               axlocator=self.axlocator[self.name],
                               logx=self.logx,
                               logy=self.logy)
         if self.panel is not None:
-            self.panel.update_axes(axparams=axparams)
+            self.panel.update_axes(axparams=self.axparams)
         if self.profile is not None:
-            self.profile.update_axes(axparams=axparams,
+            self.profile.update_axes(axparams=self.axparams,
                               axformatter=self.axformatter[self.name],
                               axlocator=self.axlocator[self.name],
                               logx=self.logx,

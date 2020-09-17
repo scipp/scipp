@@ -6,7 +6,7 @@
 from .. import config
 from .render import render_plot
 from .slicer import Slicer
-from .tools import to_bin_centers, vars_to_err, mask_to_float
+from .tools import to_bin_centers, vars_to_err, mask_to_float, get_line_param
 from .._utils import name_with_unit
 from .._scipp import core as sc
 
@@ -105,6 +105,13 @@ class LinePlot:
 
         # Save the line parameters (color, linewidth...)
         self.mpl_line_params = mpl_line_params
+        # if self.mpl_line_params is None:
+        #     self.mpl_line_params = {
+        #         "color": get_line_param("color", 0),
+        #         "marker": get_line_param("marker", 0),
+        #         "linestyle": get_line_param("linestyle", 0),
+        #         "linewidth": get_line_param("linewidth", 0)
+        #     }
 
         # self.names = []
         # self.ylim = [np.Inf, np.NINF]
@@ -192,6 +199,20 @@ class LinePlot:
         # #     "masks": {}
         # # })
 
+        if self.mpl_line_params is None:
+            self.mpl_line_params = {
+                "color": {},
+                "marker": {},
+                "linestyle": {},
+                "linewidth": {}
+            }
+            for i, name in enumerate(axparams["x"]["hist"]):
+                self.mpl_line_params["color"][name] = get_line_param("color", i)
+                self.mpl_line_params["marker"][name] =  get_line_param("marker", i)
+                self.mpl_line_params["linestyle"][name] =  get_line_param("linestyle", i)
+                self.mpl_line_params["linewidth"][name] =  get_line_param("linewidth", i)
+
+
         if self.logx:
             self.ax.set_xscale("log")
         if self.logy:
@@ -212,7 +233,7 @@ class LinePlot:
             #     self.ax.set_ylim(self.ylim)
 
 
-        self.ax.set_xlabel(axparams["x"]["labels"])
+        self.ax.set_xlabel(axparams["x"]["label"])
 
         # print(axlocator)
         if axlocator is not None:

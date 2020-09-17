@@ -129,7 +129,11 @@ class SciPlot2d:
         # Profile view
         self.profile = None
         if self.controller.ndim > 2:
-            self.profile = ProfileView()
+            self.profile = ProfileView(
+                errorbars=self.controller.errorbars,
+                unit=self.controller.params["values"][self.controller.name]["unit"],
+                mask_params=self.controller.params["masks"][self.controller.name],
+                mask_names=self.controller.mask_names)
             # controller=self.controller
                  # ax=None,
                  # errorbars=None,
