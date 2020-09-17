@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+#include "scipp/core/element_array_view.h"
 #include "scipp/core/multi_index.h"
 
 using namespace scipp;
@@ -11,9 +12,8 @@ using namespace scipp::core;
 
 class MultiIndexTest : public ::testing::Test {
 protected:
-  template <class... Dims, class... Indices>
-  void check_impl(MultiIndex<Dims...> i,
-                  const std::vector<scipp::index> &indices0,
+  template <scipp::index N, class... Indices>
+  void check_impl(MultiIndex<N> i, const std::vector<scipp::index> &indices0,
                   const Indices &... indices) const {
     ASSERT_NE(i.begin(), i.end());
     const bool skip_set_index_check = i != i.begin();
@@ -52,12 +52,10 @@ protected:
       }
     }
   }
-  void check(MultiIndex<Dimensions> i,
-             const std::vector<scipp::index> &indices) const {
+  void check(MultiIndex<1> i, const std::vector<scipp::index> &indices) const {
     check_impl(i, indices);
   }
-  void check(MultiIndex<Dimensions, Dimensions> i,
-             const std::vector<scipp::index> &indices0,
+  void check(MultiIndex<2> i, const std::vector<scipp::index> &indices0,
              const std::vector<scipp::index> &indices1) const {
     check_impl(i, indices0, indices1);
   }
@@ -66,8 +64,8 @@ protected:
       const std::vector<std::pair<scipp::index, scipp::index>> &indices,
       const Dimensions &iterDims, const Dimensions &dataDims,
       const std::vector<scipp::index> &expected) {
-    BucketParams params{sliceDim, bufferDims, indices};
-    MultiIndex index(iterDims, std::pair{dataDims, params});
+    BucketParams params{sliceDim, bufferDims, indices.data()};
+    MultiIndex<1> index(element_array_view{0, iterDims, dataDims, params});
     check(index, expected);
   }
   void check_with_buckets(
@@ -78,10 +76,10 @@ protected:
       const Dimensions &iterDims, const Dimensions &dataDims0,
       const Dimensions &dataDims1, const std::vector<scipp::index> &expected0,
       const std::vector<scipp::index> &expected1) {
-    BucketParams params0{sliceDim0, bufferDims0, indices0};
-    BucketParams params1{sliceDim1, bufferDims1, indices1};
-    MultiIndex index(iterDims, std::pair{dataDims0, params0},
-                     std::pair{dataDims1, params1});
+    BucketParams params0{sliceDim0, bufferDims0, indices0.data()};
+    BucketParams params1{sliceDim1, bufferDims1, indices1.data()};
+    MultiIndex<2> index(element_array_view{0, iterDims, dataDims0, params0},
+                        element_array_view{0, iterDims, dataDims1, params1});
     check(index, expected0, expected1);
   }
 

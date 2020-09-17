@@ -9,10 +9,40 @@
 #include <boost/iterator/iterator_facade.hpp>
 
 #include "scipp/core/dimensions.h"
-#include "scipp/core/multi_index.h"
 #include "scipp/core/view_index.h"
 
 namespace scipp::core {
+
+struct SCIPP_CORE_EXPORT BucketParams {
+  bool operator==(const BucketParams &other) const noexcept {
+    // TODO actually we need to check equality based on data/iter dims to handle
+    // slicing
+    // TODO more severa problem: if indices differ, we also need to load
+    // different bucket offsets, even if sizes are them same!
+    return dim == other.dim && dims == other.dims && indices == other.indices;
+    // std::equal(indices.begin(), indices.end(), other.indices.begin(),
+    //           other.indices.end());
+  }
+  bool operator!=(const BucketParams &other) const noexcept {
+    return !(*this == other);
+  }
+  explicit operator bool() const noexcept { return *this != BucketParams{}; }
+  Dim dim{Dim::Invalid};
+  Dimensions dims{};
+  const std::pair<scipp::index, scipp::index> *indices{nullptr};
+};
+
+constexpr auto merge(const BucketParams &a) noexcept { return a; }
+inline auto merge(const BucketParams &a, const BucketParams &b) {
+  if (a != b)
+    throw std::runtime_error("Mismatching bucket sizes");
+  return a ? a : b;
+}
+
+template <class... Ts>
+auto merge(const BucketParams &a, const BucketParams &b, const Ts &... params) {
+  return merge(merge(a, b), params...);
+}
 
 template <class T>
 class element_array_view_iterator
