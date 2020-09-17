@@ -1,7 +1,7 @@
 
 from .. import config
 from .model import PlotModel
-from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers, mask_to_float
+from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers, mask_to_float, vars_to_err
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 
@@ -398,7 +398,7 @@ class PlotModel2d(PlotModel):
 
 
 
-    def update_profile(self, event, slices):
+    def update_profile(self, event, slices, axparams):
         # Find indices of pixel where cursor lies
         os.write(1, "compute_profile 1\n".encode())
         dimx = self.xyrebin["x"].dims[0]
@@ -484,8 +484,41 @@ class PlotModel2d(PlotModel):
         # #                                dimy: self.xyrebin["y"][dimy,
         # #                                                        iy:iy + 2],
         # #                                dimx: self.xyrebin["x"][dimx, ix:ix + 2]
+
+        new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
+        os.write(1, "compute_profile 8\n".encode())
+
         # #                            })[dimy, 0][dimx, 0]
 
-        new_values = {self.name: {"values": data_slice.values, "variances": {}, "masks": {}}}
+        dim = data_slice.dims[0]
+
+        ydata = data_slice.values
+        xcenters = to_bin_centers(data_slice.coords[dim], dim).values
+        os.write(1, "compute_profile 9\n".encode())
+        os.write(1, (str(ydata[0:5]) + "\n").encode())
+        os.write(1, (str(ydata.shape) + "\n").encode())
+        os.write(1, (str(data_slice.coords[dim].values[0:5]) + "\n").encode())
+        os.write(1, (str(data_slice.coords[dim].values.shape) + "\n").encode())
+        os.write(1, (str(axparams) + "\n").encode())
+        
+
+        if axparams["x"]["hist"][self.name]:
+            os.write(1, "compute_profile 10\n".encode())
+            new_values[self.name]["values"]["x"] = data_slice.coords[dim].values
+            new_values[self.name]["values"]["y"] = np.concatenate((ydata[0:1], ydata))
+            # new_values[name]["data"]["hist"] = True
+        else:
+            os.write(1, "compute_profile 11\n".encode())
+            new_values[self.name]["values"]["x"] = xcenters
+            new_values[self.name]["values"]["y"] = ydata
+            # new_values[name]["data"]["hist"] = False
+        if data_slice.variances is not None:
+            os.write(1, "compute_profile 12\n".encode())
+            new_values[self.name]["variances"]["x"] = xcenters
+            new_values[self.name]["variances"]["y"] = ydata
+            new_values[self.name]["variances"]["e"] = vars_to_err(data_slice.variances)
+
+        os.write(1, "compute_profile 13\n".encode())
+        # new_values = {self.name: {"values": data_slice.values, "variances": {}, "masks": {}}}
 
         return new_values

@@ -16,6 +16,7 @@ import copy as cp
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import warnings
+import os
 
 
 
@@ -234,6 +235,7 @@ class LinePlot:
 
 
         self.ax.set_xlabel(axparams["x"]["label"])
+        print(axparams)
 
         # print(axlocator)
         if axlocator is not None:
@@ -478,6 +480,7 @@ class LinePlot:
         #         self.axformatter[self.logx])
 
         # self.rescale_to_data()
+        self.fig.canvas.draw_idle()
 
         return
 

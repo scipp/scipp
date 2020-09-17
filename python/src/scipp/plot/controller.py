@@ -52,6 +52,7 @@ class PlotController:
         self.logz = logz
         # self.slice_label = None
         self.axparams = {}
+        self.profile_axparams = {}
 
         # # Member container for dict output
         # self.members = dict(widgets=dict(sliders=dict(),
@@ -497,17 +498,54 @@ class PlotController:
     # def mask_to_float(self, mask, var):
     #     return np.where(mask, var, None).astype(np.float)
 
-    def toggle_profile_view(self, owner):
-        self.profile_dim = owner.dim
-        if owner.button_style == "info":
-            owner.button_style = ""
+    def toggle_profile_view(self, owner=None):
+        if owner is None:
             visible = False
+            for but in self.widgets.profile_button.values():
+                but.button_style = ""
         else:
-            owner.button_style = "info"
-            for dim, but in self.widgets.profile_button.items():
-                if dim != self.profile_dim:
-                    but.button_style = ""
-            visible = True
+            self.profile_dim = owner.dim
+            self.profile_axparams.clear()
+            if owner.button_style == "info":
+                owner.button_style = ""
+                visible = False
+            else:
+                owner.button_style = "info"
+                for dim, but in self.widgets.profile_button.items():
+                    if dim != self.profile_dim:
+                        but.button_style = ""
+                visible = True
+
+
+            if visible:
+                xmin = np.Inf
+                xmax = np.NINF
+                for name in self.xlims:
+                    xlims = self.xlims[name][self.profile_dim].values
+                    xmin = min(xmin, xlims[0])
+                    xmax = max(xmax, xlims[1])
+                self.profile_axparams = {"x": {
+                    "lims": [xmin, xmax],
+                    "log": False,
+                    "hist": {name: self.histograms[name][self.profile_dim][self.profile_dim] for name in self.histograms},
+                    "dim": self.profile_dim,
+                    "label": self.labels[self.name][self.profile_dim]
+                }}
+                # Safety check for log axes
+                if self.profile_axparams["x"]["log"] and (self.profile_axparams["x"]["lims"][0] <= 0):
+                    self.profile_axparams["x"]["lims"][
+                        0] = 1.0e-03 * self.profile_axparams["x"]["lims"][1]
+                self.profile.update_axes(axparams=self.profile_axparams,
+                                  axformatter=self.axformatter[self.name],
+                                  axlocator=self.axlocator[self.name],
+                                  logx=False,
+                                  logy=False)
+
+
+        # limits[dim] = {"button": but_val,
+        # "xlims": self.xlims[self.name][dim].values,
+        # "log": getattr(self, "log{}".format(but_val)),
+
         self.profile.toggle_view(visible=visible)
         self.view.update_profile_connection(visible=visible)
         # if change["new"]:
@@ -563,11 +601,12 @@ class PlotController:
         if self.panel is not None:
             self.panel.update_axes(axparams=self.axparams)
         if self.profile is not None:
-            self.profile.update_axes(axparams=self.axparams,
-                              axformatter=self.axformatter[self.name],
-                              axlocator=self.axlocator[self.name],
-                              logx=self.logx,
-                              logy=self.logy)
+            self.toggle_profile_view()
+            # self.profile.update_axes(axparams=self.axparams,
+            #                   axformatter=self.axformatter[self.name],
+            #                   axlocator=self.axlocator[self.name],
+            #                   logx=self.logx,
+            #                   logy=self.logy)
         self.update_data()
         self.rescale_to_data()
 
@@ -636,7 +675,7 @@ class PlotController:
                 #     slices[dim]["location"] + 0.5*slices[dim]["thickness"])
         os.write(1, "controller: update_profile 2\n".encode())
         os.write(1, str(slices).encode())
-        new_values = self.model.update_profile(event, slices)
+        new_values = self.model.update_profile(event, slices, self.profile_axparams)
         os.write(1, "controller: update_profile 3\n".encode())
         self.profile.update_data(new_values)
         os.write(1, "controller: update_profile 4\n".encode())

@@ -75,7 +75,9 @@ class PlotWidgets:
                 description=self.controller.labels[self.controller.name][dim],
                 continuous_update=True,
                 readout=True,
-                disabled=disabled)
+                disabled=disabled,
+                layout={"width": "300px"},
+                style={'description_width': 'initial'})
             # labvalue = self.make_slider_label(
             #     self.slider_label[self.name][dim]["coord"], indx)
             self.continuous_update[dim] = ipw.Checkbox(
@@ -289,8 +291,8 @@ class PlotWidgets:
                 if toggle_slider:
                     self.slider[dim].disabled = False
                     self.thickness_slider[dim].disabled = False
-                    self.profile_button[owner.dim].disabled = False
-                    self.continuous_update[owner.dim].disabled = False
+                    self.profile_button[dim].disabled = False
+                    self.continuous_update[dim].disabled = False
         owner.old_value = owner.value
         self.controller.update_axes()
         return
