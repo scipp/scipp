@@ -107,7 +107,7 @@ class PlotController:
         # Store ticklabels for a dimension
         # self.slider_ticks = {}
         # Store labels for sliders if any
-        # self.slider_label = {}
+        self.labels = {}
         # Record which variables are histograms along which dimension
         self.histograms = {}
         # Axes tick formatters
@@ -217,7 +217,7 @@ class PlotController:
             # Store ticklabels for a dimension
             # self.slider_ticks[name] = {}
             # Store labels for sliders if any
-            # self.slider_label[name] = {}
+            self.labels[name] = {}
             # Store axis tick formatters and locators
             self.axformatter[name] = {}
             self.axlocator[name] = {}
@@ -350,6 +350,8 @@ class PlotController:
 
         self.xlims[name][dim] = sc.Variable(
             [dim], values=self.xlims[name][dim], unit=var.unit)
+
+        self.labels[name][dim] = name_with_unit(var=var)
         return
 
 
