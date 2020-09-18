@@ -334,36 +334,42 @@ class ProfileView:
         else:
             self.keep_profile(event)
 
-    def keep_profile(self, event):
-        trace = list(
-            self.profile_viewer[self.profile_key].keep_buttons.values())[-1]
-        xdata = event.mouseevent.xdata
-        ydata = event.mouseevent.ydata
-        if self.profile_scatter is None:
-            self.profile_scatter = self.ax.scatter(
-                [xdata], [ydata], c=[trace["colorpicker"].value], picker=5)
-        else:
-            new_offsets = np.concatenate(
-                (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
-            col = np.array(_hex_to_rgb(trace["colorpicker"].value) + [255],
-                           dtype=np.float) / 255.0
-            new_colors = np.concatenate(
-                (self.profile_scatter.get_facecolors(), [col]), axis=0)
-            self.profile_scatter.set_offsets(new_offsets)
-            self.profile_scatter.set_facecolors(new_colors)
-        self.profile_viewer[self.profile_key].keep_trace(trace["button"])
+    # def keep_profile(self, event):
+    #     trace = list(
+    #         self.profile_viewer[self.profile_key].keep_buttons.values())[-1]
+    #     xdata = event.mouseevent.xdata
+    #     ydata = event.mouseevent.ydata
+    #     if self.profile_scatter is None:
+    #         self.profile_scatter = self.ax.scatter(
+    #             [xdata], [ydata], c=[trace["colorpicker"].value], picker=5)
+    #     else:
+    #         new_offsets = np.concatenate(
+    #             (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
+    #         col = np.array(_hex_to_rgb(trace["colorpicker"].value) + [255],
+    #                        dtype=np.float) / 255.0
+    #         new_colors = np.concatenate(
+    #             (self.profile_scatter.get_facecolors(), [col]), axis=0)
+    #         self.profile_scatter.set_offsets(new_offsets)
+    #         self.profile_scatter.set_facecolors(new_colors)
+    #     self.profile_viewer[self.profile_key].keep_trace(trace["button"])
+    def keep_line(self, name, color, line_id):
+        self.figure.keep_line(name=name, color=color, line_id=line_id)
 
-    def delete_profile(self, event):
-        ind = event.ind[0]
-        xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
-        c = np.delete(self.profile_scatter.get_facecolors(), ind, axis=0)
-        self.profile_scatter.set_offsets(xy)
-        self.profile_scatter.set_facecolors(c)
-        self.fig.canvas.draw_idle()
-        # Also remove the line from the 1d plot
-        trace = list(
-            self.profile_viewer[self.profile_key].keep_buttons.values())[ind]
-        self.profile_viewer[self.profile_key].remove_trace(trace["button"])
+    def remove_line(self, line_id):
+        self.figure.remove_line(line_id=line_id)
+
+
+    # def delete_profile(self, event):
+    #     ind = event.ind[0]
+    #     xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
+    #     c = np.delete(self.profile_scatter.get_facecolors(), ind, axis=0)
+    #     self.profile_scatter.set_offsets(xy)
+    #     self.profile_scatter.set_facecolors(c)
+    #     self.fig.canvas.draw_idle()
+    #     # Also remove the line from the 1d plot
+    #     trace = list(
+    #         self.profile_viewer[self.profile_key].keep_buttons.values())[ind]
+    #     self.profile_viewer[self.profile_key].remove_trace(trace["button"])
 
 
 

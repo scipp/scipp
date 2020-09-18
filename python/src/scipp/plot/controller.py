@@ -646,6 +646,8 @@ class PlotController:
         return mask_info
 
     def keep_line(self, view=None, name=None, color=None, line_id=None):
+        if name is None:
+            name = self.name
         if view == "profile":
             self.profile.keep_line(name=name, color=color, line_id=line_id)
         else:
@@ -662,7 +664,7 @@ class PlotController:
 
 
     def update_profile(self, event):
-        os.write(1, "controller: update_profile 1\n".encode())
+        # os.write(1, "controller: update_profile 1\n".encode())
         slices = {}
         # info = {"slice_label": ""}
         # Slice along dimensions with active sliders
@@ -673,12 +675,12 @@ class PlotController:
                 # info["slice_label"] = "{},{}:{}-{}".format(info["slice_label"], dim,
                 #     slices[dim]["location"] - 0.5*slices[dim]["thickness"],
                 #     slices[dim]["location"] + 0.5*slices[dim]["thickness"])
-        os.write(1, "controller: update_profile 2\n".encode())
-        os.write(1, str(slices).encode())
+        # os.write(1, "controller: update_profile 2\n".encode())
+        # os.write(1, str(slices).encode())
         new_values = self.model.update_profile(event, slices, self.profile_axparams)
-        os.write(1, "controller: update_profile 3\n".encode())
+        # os.write(1, "controller: update_profile 3\n".encode())
         self.profile.update_data(new_values)
-        os.write(1, "controller: update_profile 4\n".encode())
+        # os.write(1, "controller: update_profile 4\n".encode())
 
 
 

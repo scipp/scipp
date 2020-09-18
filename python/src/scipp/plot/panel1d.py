@@ -1,4 +1,6 @@
 
+from .._utils import make_random_color
+
 import ipywidgets as ipw
 import numpy as np
 
@@ -12,6 +14,7 @@ class PlotPanel1d:
         self.keep_buttons = {}
         self.data_names = data_names
         self.slice_label= None
+        self.counter = -1
         # self.make_keep_button()
         # if ndim < 2:
         #     self.widgets.layout.display = 'none'
@@ -34,22 +37,22 @@ class PlotPanel1d:
         # Generate a random color. TODO: should we initialise the seed?
         col = ipw.ColorPicker(concise=True,
                                   description='',
-                                  value='#%02X%02X%02X' %
-                                  (tuple(np.random.randint(0, 255, 3))),
+                                  value=make_random_color(fmt='hex'),
                                   disabled=False)
         # Make a unique id
-        key = str(id(but))
-        setattr(but, "id", key)
-        setattr(col, "id", key)
+        self.counter += 1
+        line_id = self.counter
+        setattr(but, "id", line_id)
+        setattr(col, "id", line_id)
         but.on_click(self.keep_remove_line)
         col.observe(self.update_line_color, names="value")
-        self.keep_buttons[key] = {
+        self.keep_buttons[line_id] = {
             "dropdown": drop,
             "button": but,
             "colorpicker": col,
             "label": lab
         }
-        self.widgets.children += ipw.HBox(list(self.keep_buttons[key].values())),
+        self.widgets.children += ipw.HBox(list(self.keep_buttons[line_id].values())),
         return
 
     def update_axes(self, axparams=None):

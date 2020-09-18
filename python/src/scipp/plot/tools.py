@@ -142,6 +142,11 @@ def vars_to_err(v):
 def mask_to_float(mask, var):
     return np.where(mask, var, None).astype(np.float)
 
+
+# def make_random_color():
+#     '#%02X%02X%02X' %
+#                                   (tuple(np.random.randint(0, 255, 3)))
+
 # def get_finite_y(arr, logy=False):
 #     if logy:
 #         with np.errstate(divide="ignore", invalid="ignore"):

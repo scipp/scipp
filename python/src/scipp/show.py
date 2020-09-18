@@ -7,7 +7,7 @@ import colorsys
 import numpy as np
 from ._scipp import core as sc
 from . import config
-from ._utils import is_data_array
+from ._utils import is_data_array, hex_to_rgb, rgb_to_hex
 
 # Unit is `em`. This particular value is chosen to avoid a horizontal scroll
 # bar with the readthedocs theme.
@@ -23,34 +23,34 @@ _small_font = round(0.8 * _svg_em, 2)
 _smaller_font = round(0.6 * _svg_em, 2)
 
 
-def _hex_to_rgb(hex_color):
-    rgb_hex = [hex_color[x:x + 2] for x in [1, 3, 5]]
-    return [int(hex_value, 16) for hex_value in rgb_hex]
+# def _hex_to_rgb(hex_color):
+#     rgb_hex = [hex_color[x:x + 2] for x in [1, 3, 5]]
+#     return [int(hex_value, 16) for hex_value in rgb_hex]
 
 
-def _rgb_to_hex(rgb):
-    hex_value = []
-    for i in rgb:
-        h = hex(int(i))[2:]
-        if len(h) < 2:
-            h = "{}0".format(h)
-        hex_value.append(h)
-    return "#" + "".join(hex_value)
+# def _rgb_to_hex(rgb):
+#     hex_value = []
+#     for i in rgb:
+#         h = hex(int(i))[2:]
+#         if len(h) < 2:
+#             h = "{}0".format(h)
+#         hex_value.append(h)
+#     return "#" + "".join(hex_value)
 
 
 def _color_variants(hex_color):
     # Convert hex to rgb
-    [r, g, b] = _hex_to_rgb(hex_color)
+    [r, g, b] = hex_to_rgb(hex_color)
     # Convert to HSV
     h, s, v = colorsys.rgb_to_hsv(r, g, b)
     # Colorize
     s = min(1.0, max(0.0, s + 0.3))
     r, g, b = colorsys.hsv_to_rgb(h, s, v)
-    top = _rgb_to_hex([r, g, b])
+    top = rgb_to_hex([r, g, b])
     # Darken
     v = min(255, max(0, v - 50))
     r, g, b = colorsys.hsv_to_rgb(h, s, v)
-    side = _rgb_to_hex([r, g, b])
+    side = rgb_to_hex([r, g, b])
     return [hex_color, top, side]
 
 
