@@ -680,7 +680,7 @@ class PlotController:
         self.view.update_line_color(line_id=line_id, color=color)
 
 
-    def update_profile(self, event):
+    def update_profile(self, xdata, ydata):
         # os.write(1, "controller: update_profile 1\n".encode())
         slices = {}
         # info = {"slice_label": ""}
@@ -694,7 +694,7 @@ class PlotController:
                 #     slices[dim]["location"] + 0.5*slices[dim]["thickness"])
         # os.write(1, "controller: update_profile 2\n".encode())
         # os.write(1, str(slices).encode())
-        new_values = self.model.update_profile(event, slices, self.profile_axparams)
+        new_values = self.model.update_profile(xdata, ydata, slices, self.profile_axparams)
         # os.write(1, "controller: update_profile 3\n".encode())
         self.profile.update_data(new_values)
         # os.write(1, "controller: update_profile 4\n".encode())

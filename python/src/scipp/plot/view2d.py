@@ -379,10 +379,10 @@ class PlotView2d:
 
         if event.inaxes == self.ax:
             # os.write(1, "view2d: update_profile 2\n".encode())
-            event.xdata = event.xdata - self.current_lims["x"][0]
-            event.ydata = event.ydata - self.current_lims["y"][0]
+            xdata = event.xdata - self.current_lims["x"][0]
+            ydata = event.ydata - self.current_lims["y"][0]
             # os.write(1, "view2d: update_profile 3\n".encode())
-            self.controller.update_profile(event)
+            self.controller.update_profile(xdata, ydata)
             # os.write(1, "view2d: update_profile 4\n".encode())
             self.controller.toggle_hover_visibility(True)
         else:

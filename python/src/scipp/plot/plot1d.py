@@ -122,7 +122,25 @@ class SciPlot1d():
 
         # Profile view
         self.profile = None
+        if self.controller.ndim > 1:
+            self.profile = ProfileView(
+                errorbars=self.controller.errorbars,
+                unit=self.controller.params["values"][self.controller.name]["unit"],
+                mask_params=self.controller.params["masks"][self.controller.name],
+                mask_names=self.controller.mask_names)
+            # controller=self.controller
+                 # ax=None,
+                 # errorbars=None,
+                 # title=None,
+                 # unit=None,
+                 # logx=False,
+                 # logy=False,
+                 # mask_params=None,
+                 # mask_names=None,
+                 # mpl_line_params=None,
+                 # grid=False)
 
+        self.controller.profile = self.profile
 
         # Call update_slice once to make the initial image
         self.controller.update_axes()
@@ -206,8 +224,13 @@ class SciPlot1d():
         # widgets_ = [self.figure, self.widgets]
         # if self.overview["additional_widgets"] is not None:
         #     wdgts.append(self.overview["additional_widgets"])
-        return ipw.VBox([self.view._to_widget(), self.controller._to_widget(),
-            self.panel._to_widget()])
+        widget_list = [self.view._to_widget()]
+        if self.profile is not None:
+            widget_list.append(self.profile._to_widget())
+        widget_list.append(self.controller._to_widget())
+        if self.panel is not None:
+            widget_list.append(self.panel._to_widget())
+        return ipw.VBox(widget_list)
 
     def savefig(self, filename=None):
         self.view.savefig(filename=filename)

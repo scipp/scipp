@@ -398,7 +398,7 @@ class PlotModel2d(PlotModel):
 
 
 
-    def update_profile(self, event, slices, axparams):
+    def update_profile(self, xdata, ydata, slices, axparams):
         # Find indices of pixel where cursor lies
         # os.write(1, "compute_profile 1\n".encode())
         dimx = self.xyrebin["x"].dims[0]
@@ -412,10 +412,10 @@ class PlotModel2d(PlotModel):
         #          (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
         # os.write(1, "compute_profile 2\n".encode())
 
-        ix = int(event.xdata /
+        ix = int(xdata /
                  (self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]))
         # os.write(1, "compute_profile 1.3\n".encode())
-        iy = int(event.ydata /
+        iy = int(ydata /
                  (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
 
 

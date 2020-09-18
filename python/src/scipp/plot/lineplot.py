@@ -35,7 +35,8 @@ class LinePlot:
                  grid=False,
                  mask_params=None,
                  mask_names=None,
-                 figsize=None):
+                 figsize=None,
+                 picker=None):
                  # axformatter=None,
                  # axlocator=None):
 
@@ -50,6 +51,7 @@ class LinePlot:
         self.errorbars = errorbars
         self.mask_names = mask_names
         self.mask_params = mask_params
+        self.picker = picker
 
         # self.masks = masks
         # if self.masks is None:
@@ -259,6 +261,7 @@ class LinePlot:
                                   [1, 2],
                                   label=label,
                                   zorder=10,
+                                  picker=self.picker,
                                   **{
                                       key: self.mpl_line_params[key][name]
                                       for key in ["color", "linewidth"]
@@ -284,6 +287,7 @@ class LinePlot:
                                   [1, 2],
                                   label=label,
                                   zorder=10,
+                                  picker=self.picker,
                                   **{
                                       key: self.mpl_line_params[key][name]
                                       for key in self.mpl_line_params.keys()

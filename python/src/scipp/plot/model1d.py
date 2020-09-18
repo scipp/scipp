@@ -33,7 +33,9 @@ class PlotModel1d(PlotModel):
             scipp_obj_dict=scipp_obj_dict)
 
 
-        self.axparams = {"x": {}}
+        # self.axparams = {"x": {}}
+        self.dim = None
+        self.hist = None
 
         return
 
@@ -120,6 +122,9 @@ class PlotModel1d(PlotModel):
 
         # self.axparams["x"]["lims"] = [xmin, xmax]
         # return self.axparams
+
+        self.dim = axparams["x"]["dim"]
+        self.hist = axparams["x"]["hist"]
         return
 
 
@@ -168,7 +173,7 @@ class PlotModel1d(PlotModel):
         # generate.
 
         # dim = list(slices.keys())[0]
-        dim = self.axparams["x"]["dim"]
+        # dim = self.axparams["x"]["dim"]
         new_values = {}
 
         # xmin = np.Inf
@@ -182,15 +187,17 @@ class PlotModel1d(PlotModel):
 
             data_slice = self.slice_data(array, slices)
 
+            # dim = data_slice.dims[0]
+
             # xmin = min(sc.min(array.coords[dim]).value, xmin)
             # xmax = max(sc.max(array.coords[dim]).value, xmax)
 
             ydata = data_slice.values
-            xcenters = to_bin_centers(data_slice.coords[dim], dim).values
+            xcenters = to_bin_centers(data_slice.coords[self.dim], self.dim).values
 
             # if self.histograms[name][dim][dim]:
-            if self.axparams["x"]["hist"][name]:
-                new_values[name]["values"]["x"] = data_slice.coords[dim].values
+            if self.hist[name]:
+                new_values[name]["values"]["x"] = data_slice.coords[self.dim].values
                 new_values[name]["values"]["y"] = np.concatenate((ydata[0:1], ydata))
                 # new_values[name]["data"]["hist"] = True
             else:
@@ -227,7 +234,7 @@ class PlotModel1d(PlotModel):
                     msk = (base_mask * sc.Variable(
                         dims=data_slice.masks[m].dims,
                         values=data_slice.masks[m].values.astype(np.int32))).values
-                    if self.axparams["x"]["hist"][name]:
+                    if self.hist[name]:
                         msk = np.concatenate((msk[0:1], msk))
 
                     new_values[name]["masks"][m] = mask_to_float(msk, new_values[name]["values"]["y"])
