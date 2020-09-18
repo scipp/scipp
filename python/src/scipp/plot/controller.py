@@ -549,6 +549,7 @@ class PlotController:
         # "log": getattr(self, "log{}".format(but_val)),
 
         self.profile.toggle_view(visible=visible)
+        self.toggle_hover_visibility(False)
         self.view.update_profile_connection(visible=visible)
 
         if visible:

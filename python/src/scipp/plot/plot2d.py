@@ -7,7 +7,7 @@ from .. import config
 from .controller2d import PlotController2d
 from .model2d import PlotModel2d
 # from .render import render_plot
-from .profile import ProfileView
+from .lineplot import LinePlot
 from .tools import to_bin_edges, parse_params
 from .view2d import PlotView2d
 from .._utils import name_with_unit
@@ -77,6 +77,7 @@ class SciPlot2d:
                  masks=None,
                  ax=None,
                  cax=None,
+                 pax=None,
                  aspect=None,
                  cmap=None,
                  log=None,
@@ -129,22 +130,34 @@ class SciPlot2d:
         # Profile view
         self.profile = None
         if self.controller.ndim > 2:
-            self.profile = ProfileView(
-                errorbars=self.controller.errorbars,
-                unit=self.controller.params["values"][self.controller.name]["unit"],
-                mask_params=self.controller.params["masks"][self.controller.name],
-                mask_names=self.controller.mask_names)
-            # controller=self.controller
-                 # ax=None,
-                 # errorbars=None,
-                 # title=None,
-                 # unit=None,
-                 # logx=False,
-                 # logy=False,
-                 # mask_params=None,
-                 # mask_names=None,
-                 # mpl_line_params=None,
-                 # grid=False)
+            self.profile = LinePlot(errorbars=self.controller.errorbars,
+                 ax=pax,
+                 unit=self.controller.params["values"][self.controller.name]["unit"],
+                 mask_params=self.controller.params["masks"][self.controller.name],
+                 mask_names=self.controller.mask_names,
+                 logx=logx,
+                 logy=logy,
+                 figsize=(config.plot.width / config.plot.dpi,
+                         0.6 * config.plot.height / config.plot.dpi))
+
+
+
+            # self.profile = ProfileView(
+            #     errorbars=self.controller.errorbars,
+            #     unit=self.controller.params["values"][self.controller.name]["unit"],
+            #     mask_params=self.controller.params["masks"][self.controller.name],
+            #     mask_names=self.controller.mask_names)
+            # # controller=self.controller
+            #      # ax=None,
+            #      # errorbars=None,
+            #      # title=None,
+            #      # unit=None,
+            #      # logx=False,
+            #      # logy=False,
+            #      # mask_params=None,
+            #      # mask_names=None,
+            #      # mpl_line_params=None,
+            #      # grid=False)
 
         self.controller.profile = self.profile
 
