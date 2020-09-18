@@ -343,6 +343,11 @@ class PlotView2d:
             self.ax.set_xlim(axparams["x"]["lims"])
             self.ax.set_ylim(axparams["y"]["lims"])
 
+        # if self.profile_scatter is not None:
+        #     self.profile_scatter = None
+        #     self.ax.collections = []
+        self.reset_profile()
+
         self.reset_home_button(axparams)
         # self.rescale_to_data()
 
@@ -361,6 +366,12 @@ class PlotView2d:
                 self.mask_image[m].set_extent(new_values["extent"])
         self.fig.canvas.draw_idle()
 
+
+    def reset_profile(self):
+        if self.profile_scatter is not None:
+            self.profile_scatter = None
+            self.ax.collections = []
+            self.fig.canvas.draw_idle()
 
     def update_profile(self, event):
         # os.write(1, "view2d: update_profile 1\n".encode())
@@ -407,8 +418,10 @@ class PlotView2d:
             self.profile_hover_connection = self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
             # self.profile_hover_connection = self.fig.canvas.mpl_connect('pick_event', self.update_profile)
         else:
-            self.fig.canvas.mpl_disconnect(self.profile_pick_connection)
-            self.fig.canvas.mpl_disconnect(self.profile_hover_connection)
+            if self.profile_pick_connection is not None:
+                self.fig.canvas.mpl_disconnect(self.profile_pick_connection)
+            if self.profile_hover_connection is not None:
+                self.fig.canvas.mpl_disconnect(self.profile_hover_connection)
 
 
     def keep_profile(self, event):

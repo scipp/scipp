@@ -540,6 +540,8 @@ class PlotController:
                                   axlocator=self.axlocator[self.name],
                                   logx=False,
                                   logy=False)
+            else:
+                self.view.reset_profile()
 
 
         # limits[dim] = {"button": but_val,
@@ -548,6 +550,21 @@ class PlotController:
 
         self.profile.toggle_view(visible=visible)
         self.view.update_profile_connection(visible=visible)
+
+        if visible:
+            # Try to guess the y limits in a non-expensive way
+            vmin, vmax = self.model.rescale_to_data()
+            print(vmin, vmax)
+            thickness = self.widgets.thickness_slider[self.profile_dim].value
+            deltay = (vmax - vmin) / (0.25 * thickness)
+            midpoint = 0.5 * (vmin + vmax)
+            vmin = midpoint - deltay
+            vmax = midpoint + deltay
+            print(vmin, vmax, midpoint)
+            self.profile.rescale_to_data(ylim=[vmin, vmax])
+
+
+
         # if change["new"]:
         #     self.show_profile_view()
         # else:

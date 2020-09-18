@@ -693,11 +693,14 @@ class LinePlot:
         self.fig.canvas.draw_idle()
         return
 
-    def rescale_to_data(self):
+    def rescale_to_data(self, ylim=None):
         # self.ax.set_ylim(get_ylim())
-        self.ax.autoscale(True)
-        self.ax.relim()
-        self.ax.autoscale_view()
+        if ylim is None:
+            self.ax.autoscale(True)
+            self.ax.relim()
+            self.ax.autoscale_view()
+        else:
+            self.ax.set_ylim(ylim)
         self.fig.canvas.draw_idle()
         return
 

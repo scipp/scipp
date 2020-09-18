@@ -358,6 +358,9 @@ class ProfileView:
     def remove_line(self, line_id):
         self.figure.remove_line(line_id=line_id)
 
+    def rescale_to_data(self, ylim=None):
+        self.figure.rescale_to_data(ylim=ylim)
+
 
     # def delete_profile(self, event):
     #     ind = event.ind[0]
