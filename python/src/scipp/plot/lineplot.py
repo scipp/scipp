@@ -73,7 +73,7 @@ class LinePlot:
             self.mpl_axes = True
         self.grid = grid
 
-        plt.tight_layout(pad=1.5)
+        plt.tight_layout(rect=config.plot.padding)
 
         # if grid:
         #     self.ax.grid()
@@ -707,3 +707,24 @@ class LinePlot:
     #     non_finites = np.where(np.logical_not(np.isfinite(v)))
     #     v[non_finites] = 0.0
     #     return v
+
+
+    def toggle_hover_visibility(self, value):
+        # return
+        # If the mouse moves off the image, we hide the profile. If it moves
+        # back onto the image, we show the profile
+        for name in self.data_lines:
+            self.data_lines[name].set_visible(value)
+        # if self.profile_viewer[self.profile_key].errorbars[self.name]:
+        #     for item in self.profile_viewer[
+        #             self.profile_key].members["error_y"][self.name]:
+        #         if item is not None:
+        #             for it in item:
+        #                 it.set_visible(value)
+        # mask_dict = self.profile_viewer[self.profile_key].members["masks"][
+        #     self.name]
+        # if len(mask_dict) > 0:
+        #     for m in mask_dict:
+        #         mask_dict[m].set_visible(value if self.profile_viewer[
+        #             self.profile_key].masks[self.name][m].value else False)
+        #         mask_dict[m].set_gid("onaxes" if value else "offaxes")

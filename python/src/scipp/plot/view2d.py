@@ -125,7 +125,7 @@ class PlotView2d:
             self.ax.set_xscale("log")
         if logy:
             self.ax.set_yscale("log")
-        plt.tight_layout(pad=1.5)
+        plt.tight_layout(rect=config.plot.padding)
 
 
         # # Call update_slice once to make the initial image
@@ -359,13 +359,18 @@ class PlotView2d:
 
     def update_profile(self, event):
         os.write(1, "view2d: update_profile 1\n".encode())
-        ev = event.mouseevent
-        os.write(1, "view2d: update_profile 2\n".encode())
-        ev.xdata = ev.xdata - self.current_lims["x"][0]
-        ev.ydata = ev.ydata - self.current_lims["y"][0]
-        os.write(1, "view2d: update_profile 3\n".encode())
-        self.controller.update_profile(ev)
-        os.write(1, "view2d: update_profile 4\n".encode())
+        # ev = event.mouseevent
+
+        if event.inaxes == self.ax:
+            os.write(1, "view2d: update_profile 2\n".encode())
+            event.xdata = event.xdata - self.current_lims["x"][0]
+            event.ydata = event.ydata - self.current_lims["y"][0]
+            os.write(1, "view2d: update_profile 3\n".encode())
+            self.controller.update_profile(event)
+            os.write(1, "view2d: update_profile 4\n".encode())
+            self.controller.toggle_hover_visibility(True)
+        else:
+            self.controller.toggle_hover_visibility(False)
 
 
 
@@ -374,8 +379,8 @@ class PlotView2d:
         # Connect picking events
         if visible:
             # self.profile_pick_connection = self.fig.canvas.mpl_connect('pick_event', self.keep_or_delete_profile)
-            # self.profile_hover_connection = self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
-            self.profile_hover_connection = self.fig.canvas.mpl_connect('pick_event', self.update_profile)
+            self.profile_hover_connection = self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+            # self.profile_hover_connection = self.fig.canvas.mpl_connect('pick_event', self.update_profile)
         else:
             # self.fig.canvas.mpl_disconnect(self.profile_pick_connection)
             self.fig.canvas.mpl_disconnect(self.profile_hover_connection)

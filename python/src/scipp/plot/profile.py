@@ -61,6 +61,7 @@ class ProfileView:
     def toggle_view(self, visible=True):
         # self.profile_dim = change["owner"].dim
         self.figure.toggle_view(visible=visible)
+        self.toggle_hover_visibility(False)
 
         # if visible:
         #     self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
@@ -136,167 +137,173 @@ class ProfileView:
 
 
 
-    def compute_profile(self, event):
-        # Find indices of pixel where cursor lies
-        # os.write(1, "compute_profile 1\n".encode())
-        dimx = self.xyrebin["x"].dims[0]
-        # os.write(1, "compute_profile 1.1\n".encode())
-        dimy = self.xyrebin["y"].dims[0]
-        # os.write(1, "compute_profile 1.2\n".encode())
-        ix = int((event.xdata - self.current_lims["x"][0]) /
-                 (self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]))
-        # os.write(1, "compute_profile 1.3\n".encode())
-        iy = int((event.ydata - self.current_lims["y"][0]) /
-                 (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
-        # os.write(1, "compute_profile 2\n".encode())
+    # def compute_profile(self, event):
+    #     # Find indices of pixel where cursor lies
+    #     # os.write(1, "compute_profile 1\n".encode())
+    #     dimx = self.xyrebin["x"].dims[0]
+    #     # os.write(1, "compute_profile 1.1\n".encode())
+    #     dimy = self.xyrebin["y"].dims[0]
+    #     # os.write(1, "compute_profile 1.2\n".encode())
+    #     ix = int((event.xdata - self.current_lims["x"][0]) /
+    #              (self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]))
+    #     # os.write(1, "compute_profile 1.3\n".encode())
+    #     iy = int((event.ydata - self.current_lims["y"][0]) /
+    #              (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
+    #     # os.write(1, "compute_profile 2\n".encode())
 
-        data_slice = self.data_arrays[self.name]
-        os.write(1, "compute_profile 3\n".encode())
+    #     data_slice = self.data_arrays[self.name]
+    #     os.write(1, "compute_profile 3\n".encode())
 
-        # Slice along dimensions with active sliders
-        for dim, val in self.slider.items():
-            os.write(1, "compute_profile 4\n".encode())
-            if dim != self.profile_dim:
-                os.write(1, "compute_profile 5\n".encode())
-                if dim == dimx:
-                    os.write(1, "compute_profile 6\n".encode())
-                    data_slice = self.resample_image(data_slice,
-                        rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimx, 0]
-                elif dim == dimy:
-                    os.write(1, "compute_profile 7\n".encode())
-                    data_slice = self.resample_image(data_slice,
-                        rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2]})[dimy, 0]
-                else:
-                    os.write(1, "compute_profile 8\n".encode())
-                    deltax = self.thickness_slider[dim].value
-                    data_slice = self.resample_image(data_slice,
-                        rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
-                                                                     val.value + 0.5 * deltax],
-                                                            unit=data_slice.coords[dim].unit)})[dim, 0]
-        os.write(1, "compute_profile 9\n".encode())
+    #     # Slice along dimensions with active sliders
+    #     for dim, val in self.slider.items():
+    #         os.write(1, "compute_profile 4\n".encode())
+    #         if dim != self.profile_dim:
+    #             os.write(1, "compute_profile 5\n".encode())
+    #             if dim == dimx:
+    #                 os.write(1, "compute_profile 6\n".encode())
+    #                 data_slice = self.resample_image(data_slice,
+    #                     rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimx, 0]
+    #             elif dim == dimy:
+    #                 os.write(1, "compute_profile 7\n".encode())
+    #                 data_slice = self.resample_image(data_slice,
+    #                     rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2]})[dimy, 0]
+    #             else:
+    #                 os.write(1, "compute_profile 8\n".encode())
+    #                 deltax = self.thickness_slider[dim].value
+    #                 data_slice = self.resample_image(data_slice,
+    #                     rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
+    #                                                                  val.value + 0.5 * deltax],
+    #                                                         unit=data_slice.coords[dim].unit)})[dim, 0]
+    #     os.write(1, "compute_profile 9\n".encode())
 
-                    # depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
-                    # depth.unit = sc.units.one
-                # data_slice *= (deltax * sc.units.one)
-
-
-        # # Resample the 3d cube down to a 1d profile
-        # return self.resample_image(self.da_with_edges,
-        #                            coord_edges={
-        #                                dimy: self.da_with_edges.coords[dimy],
-        #                                dimx: self.da_with_edges.coords[dimx]
-        #                            },
-        #                            rebin_edges={
-        #                                dimy: self.xyrebin["y"][dimy,
-        #                                                        iy:iy + 2],
-        #                                dimx: self.xyrebin["x"][dimx, ix:ix + 2]
-        #                            })[dimy, 0][dimx, 0]
-        return data_slice
-
-    def create_profile_plot(self, prof):
-        # We need to extract the data again and replace with the original
-        # coordinates, because coordinates have been forced to be bin-edges
-        # so that rebin could be used. Also reset original unit.
-        os.write(1, "create_profile_viewer 1\n".encode())
-        # to_plot = sc.DataArray(data=sc.Variable(dims=prof.dims,
-        #                                         unit=self.data_arrays[self.name].unit,
-        #                                         values=prof.values,
-        #                                         variances=prof.variances))
-
-        prof.unit = self.data_arrays[self.name].unit
-        os.write(1, "create_profile_viewer 1.1\n".encode())
-        dim = prof.dims[0]
-        os.write(1, "create_profile_viewer 1.2\n".encode())
-        if not self.histograms[self.name][dim][dim]:
-            os.write(1, "create_profile_viewer 1.3\n".encode())
-            os.write(1, (str(to_bin_centers(prof.coords[dim], dim)) + "\n").encode())
-            # TODO: there is an issue here when we have non-bin edges
-            prof.coords[dim] = to_bin_centers(prof.coords[dim], dim)
-
-        os.write(1, "create_profile_viewer 2\n".encode())
-        # for dim in prof.dims:
-        #     to_plot.coords[dim] = self.slider_coord[self.name][dim]
-        # if len(prof.masks) > 0:
-        #     for m in prof.masks:
-        #         to_plot.masks[m] = prof.masks[m]
-        # os.write(1, "create_profile_viewer 3\n".encode())
-        self.profile_viewer = Slicer1d({self.name: prof},
-                                   ax=self.profile_ax,
-                                   logy=self.log,
-                                   mpl_line_params={
-        "color": {self.name: config.plot.color[0]},
-        "marker": {self.name: config.plot.marker[0]},
-        "linestyle": {self.name: config.plot.linestyle[0]},
-        "linewidth": {self.name: config.plot.linewidth[0]}
-    })
-        os.write(1, "create_profile_viewer 3\n".encode())
-        self.profile_key = list(self.profile_viewer.keys())[0]
-        os.write(1, "create_profile_viewer 4\n".encode())
-        # if self.flatten_as != "slice":
-        #     self.ax_pick.set_ylim(self.ylim)
-        # os.write(1, "create_profile_viewer 5\n".encode())
-        return prof
+    #                 # depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
+    #                 # depth.unit = sc.units.one
+    #             # data_slice *= (deltax * sc.units.one)
 
 
+    #     # # Resample the 3d cube down to a 1d profile
+    #     # return self.resample_image(self.da_with_edges,
+    #     #                            coord_edges={
+    #     #                                dimy: self.da_with_edges.coords[dimy],
+    #     #                                dimx: self.da_with_edges.coords[dimx]
+    #     #                            },
+    #     #                            rebin_edges={
+    #     #                                dimy: self.xyrebin["y"][dimy,
+    #     #                                                        iy:iy + 2],
+    #     #                                dimx: self.xyrebin["x"][dimx, ix:ix + 2]
+    #     #                            })[dimy, 0][dimx, 0]
+    #     return data_slice
 
-    def update_profile(self, event):
-        os.write(1, "update_profile 1\n".encode())
-        if event.inaxes == self.ax:
-            os.write(1, "update_profile 1.5\n".encode())
-            prof = self.compute_profile(event)
-            os.write(1, "update_profile 2\n".encode())
-            if self.profile_viewer is None:
-                to_plot = self.create_profile_plot(prof)
-                os.write(1, "update_profile 3\n".encode())
+    # def create_profile_plot(self, prof):
+    #     # We need to extract the data again and replace with the original
+    #     # coordinates, because coordinates have been forced to be bin-edges
+    #     # so that rebin could be used. Also reset original unit.
+    #     os.write(1, "create_profile_viewer 1\n".encode())
+    #     # to_plot = sc.DataArray(data=sc.Variable(dims=prof.dims,
+    #     #                                         unit=self.data_arrays[self.name].unit,
+    #     #                                         values=prof.values,
+    #     #                                         variances=prof.variances))
 
-                # if self.flatten_as == "slice":
+    #     prof.unit = self.data_arrays[self.name].unit
+    #     os.write(1, "create_profile_viewer 1.1\n".encode())
+    #     dim = prof.dims[0]
+    #     os.write(1, "create_profile_viewer 1.2\n".encode())
+    #     if not self.histograms[self.name][dim][dim]:
+    #         os.write(1, "create_profile_viewer 1.3\n".encode())
+    #         os.write(1, (str(to_bin_centers(prof.coords[dim], dim)) + "\n").encode())
+    #         # TODO: there is an issue here when we have non-bin edges
+    #         prof.coords[dim] = to_bin_centers(prof.coords[dim], dim)
 
-                # # Add indicator of range covered by current slice
-                # dim = to_plot.dims[0]
-                # xlims = self.ax_pick.get_xlim()
-                # ylims = self.ax_pick.get_ylim()
-                # left = to_plot.coords[dim][dim, self.slider[dim].value].value
-                # if self.histograms[self.name][dim][dim]:
-                #     width = (
-                #         to_plot.coords[dim][dim, self.slider[dim].value + 1] -
-                #         to_plot.coords[dim][dim, self.slider[dim].value]).value
-                # else:
-                #     width = 0.01 * (xlims[1] - xlims[0])
-                #     left -= 0.5 * width
-                # self.slice_pos_rectangle = Rectangle((left, ylims[0]),
-                #                                      width,
-                #                                      ylims[1] - ylims[0],
-                #                                      facecolor="lightgray",
-                #                                      zorder=-10)
-                # self.ax_pick.add_patch(self.slice_pos_rectangle)
+    #     os.write(1, "create_profile_viewer 2\n".encode())
+    #     # for dim in prof.dims:
+    #     #     to_plot.coords[dim] = self.slider_coord[self.name][dim]
+    #     # if len(prof.masks) > 0:
+    #     #     for m in prof.masks:
+    #     #         to_plot.masks[m] = prof.masks[m]
+    #     # os.write(1, "create_profile_viewer 3\n".encode())
+    #     self.profile_viewer = Slicer1d({self.name: prof},
+    #                                ax=self.profile_ax,
+    #                                logy=self.log,
+    #                                mpl_line_params={
+    #     "color": {self.name: config.plot.color[0]},
+    #     "marker": {self.name: config.plot.marker[0]},
+    #     "linestyle": {self.name: config.plot.linestyle[0]},
+    #     "linewidth": {self.name: config.plot.linewidth[0]}
+    # })
+    #     os.write(1, "create_profile_viewer 3\n".encode())
+    #     self.profile_key = list(self.profile_viewer.keys())[0]
+    #     os.write(1, "create_profile_viewer 4\n".encode())
+    #     # if self.flatten_as != "slice":
+    #     #     self.ax_pick.set_ylim(self.ylim)
+    #     # os.write(1, "create_profile_viewer 5\n".encode())
+    #     return prof
 
 
 
+    # def check_inaxes(self, event):
+    #     inaxes = self.figure.check_inaxes(event)
 
-            # else:
-            #     # os.write(1, "update_profile 5\n".encode())
-            #     self.profile_viewer[self.profile_key].update_slice(
-            #         {"vslice": {
-            #             self.name: prof
-            #         }})
+    # def update_profile(self, event):
+    #     os.write(1, "update_profile 1\n".encode())
+    #     if event.inaxes == self.ax:
+    #         os.write(1, "update_profile 1.5\n".encode())
+    #         prof = self.compute_profile(event)
+    #         os.write(1, "update_profile 2\n".encode())
+    #         if self.profile_viewer is None:
+    #             to_plot = self.create_profile_plot(prof)
+    #             os.write(1, "update_profile 3\n".encode())
 
+    #             # if self.flatten_as == "slice":
 
-
-                # os.write(1, "update_profile 6\n".encode())
-            # os.write(1, "update_profile 7\n".encode())
+    #             # # Add indicator of range covered by current slice
+    #             # dim = to_plot.dims[0]
+    #             # xlims = self.ax_pick.get_xlim()
+    #             # ylims = self.ax_pick.get_ylim()
+    #             # left = to_plot.coords[dim][dim, self.slider[dim].value].value
+    #             # if self.histograms[self.name][dim][dim]:
+    #             #     width = (
+    #             #         to_plot.coords[dim][dim, self.slider[dim].value + 1] -
+    #             #         to_plot.coords[dim][dim, self.slider[dim].value]).value
+    #             # else:
+    #             #     width = 0.01 * (xlims[1] - xlims[0])
+    #             #     left -= 0.5 * width
+    #             # self.slice_pos_rectangle = Rectangle((left, ylims[0]),
+    #             #                                      width,
+    #             #                                      ylims[1] - ylims[0],
+    #             #                                      facecolor="lightgray",
+    #             #                                      zorder=-10)
+    #             # self.ax_pick.add_patch(self.slice_pos_rectangle)
 
 
 
 
-            self.toggle_visibility_of_hover_plot(True)
-        elif self.profile_viewer is not None:
-            self.toggle_visibility_of_hover_plot(False)
+    #         # else:
+    #         #     # os.write(1, "update_profile 5\n".encode())
+    #         #     self.profile_viewer[self.profile_key].update_slice(
+    #         #         {"vslice": {
+    #         #             self.name: prof
+    #         #         }})
+
+
+
+    #             # os.write(1, "update_profile 6\n".encode())
+    #         # os.write(1, "update_profile 7\n".encode())
+
+
+
+
+    #         self.toggle_visibility_of_hover_plot(True)
+    #     elif self.profile_viewer is not None:
+    #         self.toggle_visibility_of_hover_plot(False)
 
 
 
 
         # self.fig.canvas.draw_idle()
         # os.write(1, "update_profile 8\n".encode())
+
+    def toggle_hover_visibility(self, value):
+        self.figure.toggle_hover_visibility(value)
 
     def toggle_visibility_of_hover_plot(self, value):
         return

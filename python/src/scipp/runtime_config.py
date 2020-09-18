@@ -75,6 +75,7 @@ defaults = {
         "linewidth": [1.5],
         # Default line style for 1D non-histogram plots
         "linestyle": ["none"],
+        "padding" : [0.02, 0.02, 1, 1]
     },
     # The colors for each dataset member used in table and show functions
     "colors": {
