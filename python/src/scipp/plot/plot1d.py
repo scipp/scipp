@@ -5,6 +5,7 @@
 # Scipp imports
 from .. import config
 from .controller import PlotController
+from .lineplot import LinePlot
 from .model1d import PlotModel1d
 from .panel1d import PlotPanel1d
 # from .render import render_plot
@@ -70,6 +71,7 @@ class SciPlot1d():
                  errorbars=None,
                  masks=None,
                  ax=None,
+                 pax=None,
                  mpl_line_params=None,
                  logx=False,
                  logy=False,
@@ -123,14 +125,23 @@ class SciPlot1d():
         # Profile view
         self.profile = None
         if self.controller.ndim > 1:
-            self.profile = ProfileView(
-                errorbars=self.controller.errorbars,
-                unit=self.controller.params["values"][self.controller.name]["unit"],
-                mask_params=self.controller.params["masks"][self.controller.name],
-                mask_names=self.controller.mask_names)
-            # controller=self.controller
-                 # ax=None,
-                 # errorbars=None,
+            self.profile = LinePlot(errorbars=self.controller.errorbars,
+                 ax=pax,
+                 unit=self.controller.params["values"][self.controller.name]["unit"],
+                 mask_params=self.controller.params["masks"][self.controller.name],
+                 mask_names=self.controller.mask_names,
+                 logx=logx,
+                 logy=logy,
+                 figsize=(config.plot.width / config.plot.dpi,
+                         0.6 * config.plot.height / config.plot.dpi))
+            # self.profile = ProfileView(
+            #     errorbars=self.controller.errorbars,
+            #     unit=self.controller.params["values"][self.controller.name]["unit"],
+            #     mask_params=self.controller.params["masks"][self.controller.name],
+            #     mask_names=self.controller.mask_names)
+            # # controller=self.controller
+            #      # ax=None,
+            #      # errorbars=None,
                  # title=None,
                  # unit=None,
                  # logx=False,
