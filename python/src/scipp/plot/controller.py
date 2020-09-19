@@ -702,7 +702,9 @@ class PlotController:
                 #     slices[dim]["location"] + 0.5*slices[dim]["thickness"])
         # os.write(1, "controller: update_profile 2\n".encode())
         # os.write(1, str(slices).encode())
-        new_values = self.model.update_profile(xdata, ydata, slices, self.profile_axparams)
+        new_values = self.model.update_profile(xdata=xdata, ydata=ydata,
+            slices=slices,
+            axparams=self.profile_axparams, mask_info=self.get_mask_info())
         # os.write(1, "controller: update_profile 3\n".encode())
         self.profile.update_data(new_values)
         # os.write(1, "controller: update_profile 4\n".encode())

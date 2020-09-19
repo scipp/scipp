@@ -398,7 +398,7 @@ class PlotModel2d(PlotModel):
 
 
 
-    def update_profile(self, xdata, ydata, slices, axparams):
+    def update_profile(self, xdata=None, ydata=None, slices=None, axparams=None, mask_info=None):
         # Find indices of pixel where cursor lies
         # os.write(1, "compute_profile 1\n".encode())
         dimx = self.xyrebin["x"].dims[0]
@@ -517,6 +517,36 @@ class PlotModel2d(PlotModel):
             new_values[self.name]["variances"]["x"] = xcenters
             new_values[self.name]["variances"]["y"] = ydata
             new_values[self.name]["variances"]["e"] = vars_to_err(data_slice.variances)
+
+
+
+        # Handle masks
+        if len(mask_info[self.name]) > 0:
+            # base_mask = sc.Variable(dims=self.dslice.dims,
+            #                         values=np.ones(self.dslice.shape,
+            #                                        dtype=np.int32))
+            base_mask = sc.Variable(dims=data_slice.dims,
+                                        values=np.ones(data_slice.shape,
+                                                       dtype=np.int32))
+            for m in mask_info[self.name]:
+                if m in data_slice.masks:
+                    msk = (base_mask * sc.Variable(
+                        dims=self.dslice.masks[m].dims,
+                        values=self.dslice.masks[m].values.astype(np.int32))).values
+                    # self.controller.mask_image[m].set_data(
+                    #     mask_to_float(msk.values, arr))
+                    if axparams["x"]["hist"][self.name]:
+                        msk = np.concatenate((msk[0:1], msk))
+                    new_values[self.name]["masks"][m] = mask_to_float(msk, new_values[self.name]["values"]["y"])
+                    # if extent is not None:
+                    #     self.controller.mask_image[m].set_extent(extent)
+                else:
+                    # self.controller.mask_image[m].set_visible(False)
+                    # self.controller.mask_image[m].set_url("hide")
+                    new_values[self.name]["masks"][m] = None
+
+
+
 
         # os.write(1, "compute_profile 13\n".encode())
         # new_values = {self.name: {"values": data_slice.values, "variances": {}, "masks": {}}}

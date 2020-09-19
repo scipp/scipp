@@ -335,7 +335,7 @@ class LinePlot:
 
 
         if self.is_profile:
-            self.slice_area = self.ax.axvspan(1, 2, alpha=0.2, color='grey')
+            self.slice_area = self.ax.axvspan(1, 2, alpha=0.5, color='lightgrey')
 
 
         # if len(self.ax.get_legend_handles_labels()[0]) > 0:
