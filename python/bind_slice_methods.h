@@ -83,7 +83,8 @@ template <class T> struct slicer {
     return self.slice(Slice(dim, i));
   }
 
-  static auto get_by_value(T &self, const std::tuple<Dim, VariableConstView> &value) {
+  static auto get_by_value(T &self,
+                           const std::tuple<Dim, VariableConstView> &value) {
     auto [dim, i] = value;
     return slice(self, dim, i);
   }
@@ -91,6 +92,13 @@ template <class T> struct slicer {
   static auto get_range(T &self,
                         const std::tuple<Dim, const py::slice> &index) {
     return self.slice(from_py_slice(self, index));
+  }
+
+  static auto get_range_by_value(
+      T &self,
+      const std::tuple<Dim, VariableConstView, VariableConstView> &value) {
+    auto [dim, start, stop] = value;
+    return slice(self, dim, start, stop);
   }
 
   static void set_from_numpy(T &self,
@@ -117,8 +125,9 @@ template <class T> struct slicer {
   }
 
   template <class Other>
-  static void set_by_value(T &self, const std::tuple<Dim, VariableConstView> &value,
-                      const Other &data){
+  static void set_by_value(T &self,
+                           const std::tuple<Dim, VariableConstView> &value,
+                           const Other &data) {
     auto slice = slicer<T>::get_by_value(self, value);
     slice.assign(data);
   }
@@ -127,6 +136,15 @@ template <class T> struct slicer {
   static void set_range(T &self, const std::tuple<Dim, const py::slice> &index,
                         const Other &data) {
     auto slice = slicer<T>::get_range(self, index);
+    slice.assign(data);
+  }
+
+  template <class Other>
+  static void set_range_by_value(
+      T &self,
+      const std::tuple<Dim, VariableConstView, VariableConstView> &value,
+      const Other &data) {
+    auto slice = slicer<T>::get_range_by_value(self, value);
     slice.assign(data);
   }
 };
@@ -147,11 +165,17 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   if constexpr (std::is_same_v<T, DataArray> ||
                 std::is_same_v<T, DataArrayView>) {
     c.def("__getitem__", &slicer<T>::get_by_value, py::keep_alive<0, 1>());
+    c.def("__getitem__", &slicer<T>::get_range_by_value,
+          py::keep_alive<0, 1>());
     c.def("__setitem__", &slicer<T>::template set<DataArrayView>);
     c.def("__setitem__", &slicer<T>::template set_range<DataArrayView>);
     c.def("__setitem__", &slicer<T>::template set_by_value<Variable>);
     c.def("__setitem__", &slicer<T>::template set_by_value<VariableView>);
     c.def("__setitem__", &slicer<T>::template set_by_value<DataArrayView>);
+    c.def("__setitem__", &slicer<T>::template set_range_by_value<Variable>);
+    c.def("__setitem__", &slicer<T>::template set_range_by_value<VariableView>);
+    c.def("__setitem__",
+          &slicer<T>::template set_range_by_value<DataArrayView>);
   }
   if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
     c.def("__setitem__", &slicer<T>::template set<DatasetView>);
