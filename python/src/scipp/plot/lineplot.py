@@ -36,7 +36,8 @@ class LinePlot:
                  mask_params=None,
                  mask_names=None,
                  figsize=None,
-                 picker=None):
+                 picker=None,
+                 is_profile=False):
                  # axformatter=None,
                  # axlocator=None):
 
@@ -52,6 +53,8 @@ class LinePlot:
         self.mask_names = mask_names
         self.mask_params = mask_params
         self.picker = picker
+        self.is_profile = is_profile
+        self.slice_area = None
 
         # self.masks = masks
         # if self.masks is None:
@@ -327,6 +330,12 @@ class LinePlot:
                     zorder=10,
                     fmt="none")
 
+
+
+
+
+        if self.is_profile:
+            self.slice_area = self.ax.axvspan(1, 2, alpha=0.2, color='grey')
 
 
         # if len(self.ax.get_legend_handles_labels()[0]) > 0:
@@ -735,3 +744,32 @@ class LinePlot:
         #         mask_dict[m].set_visible(value if self.profile_viewer[
         #             self.profile_key].masks[self.name][m].value else False)
         #         mask_dict[m].set_gid("onaxes" if value else "offaxes")
+
+    def update_slice_area(self, profile_slice):
+
+        xstart = profile_slice["location"] - 0.5*profile_slice["thickness"]
+        xend = profile_slice["location"] + 0.5*profile_slice["thickness"]
+
+        new_xy = np.array([[xstart, 0.0],
+                           [xstart, 1.0],
+                           [xend, 1.0],
+                           [xend, 0.0],
+                           [xstart, 0.0]])
+
+        self.slice_area.set_xy(new_xy)
+        self.fig.canvas.draw_idle()
+
+        # if self.slice_pos_rectangle is not None:
+
+
+        #     new_pos = self.slider_coord[self.name][dim][
+        #         dim, val.value].value
+
+        #     self.slice_pos_rectangle.set_x(new_pos)
+        #     if self.histograms[self.name][dim][dim]:
+        #         self.slice_pos_rectangle.set_width(self.slider_coord[
+        #             self.name][dim][dim, val.value + 1].value -
+        #                                            new_pos)
+        #     else:
+        #         new_pos -= 0.5 * self.slice_pos_rectangle.get_width()
+        #     self.slice_pos_rectangle.set_x(new_pos)

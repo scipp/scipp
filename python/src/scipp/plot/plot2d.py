@@ -138,7 +138,8 @@ class SciPlot2d:
                  logx=logx,
                  logy=logy,
                  figsize=(config.plot.width / config.plot.dpi,
-                         0.6 * config.plot.height / config.plot.dpi))
+                         0.6 * config.plot.height / config.plot.dpi),
+                 is_profile=True)
 
 
 

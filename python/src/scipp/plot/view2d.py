@@ -367,6 +367,27 @@ class PlotView2d:
         self.fig.canvas.draw_idle()
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     def reset_profile(self):
         if self.profile_scatter is not None:
             self.profile_scatter = None

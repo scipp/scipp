@@ -500,6 +500,7 @@ class PlotController:
 
     def toggle_profile_view(self, owner=None):
         if owner is None:
+            self.profile_dim = None
             visible = False
             for but in self.widgets.profile_button.values():
                 but.button_style = ""
@@ -563,6 +564,10 @@ class PlotController:
             vmax = midpoint + deltay
             print(vmin, vmax, midpoint)
             self.profile.rescale_to_data(ylim=[vmin, vmax])
+            self.profile.update_slice_area(
+                {"location": self.widgets.slider[self.profile_dim].value,
+                 "thickness": self.widgets.thickness_slider[self.profile_dim].value
+                })
 
 
 
@@ -646,6 +651,8 @@ class PlotController:
         self.view.update_data(new_values)
         if self.panel is not None:
             self.panel.update_data(info)
+        if self.profile_dim is not None:
+            self.profile.update_slice_area(slices[self.profile_dim])
 
     # def update_viewport(self, xylims):
     #     new_values = self.model.update_viewport(
