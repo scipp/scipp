@@ -531,8 +531,8 @@ class PlotModel2d(PlotModel):
             for m in mask_info[self.name]:
                 if m in data_slice.masks:
                     msk = (base_mask * sc.Variable(
-                        dims=self.dslice.masks[m].dims,
-                        values=self.dslice.masks[m].values.astype(np.int32))).values
+                        dims=data_slice.masks[m].dims,
+                        values=data_slice.masks[m].values.astype(np.int32))).values
                     # self.controller.mask_image[m].set_data(
                     #     mask_to_float(msk.values, arr))
                     if axparams["x"]["hist"][self.name]:

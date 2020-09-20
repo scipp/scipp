@@ -130,10 +130,12 @@ class SciPlot2d:
         # Profile view
         self.profile = None
         if self.controller.ndim > 2:
+            mask_params = self.controller.params["masks"][self.controller.name]
+            mask_params["color"] = "k"
             self.profile = LinePlot(errorbars=self.controller.errorbars,
                  ax=pax,
                  unit=self.controller.params["values"][self.controller.name]["unit"],
-                 mask_params=self.controller.params["masks"][self.controller.name],
+                 mask_params=mask_params,
                  mask_names=self.controller.mask_names,
                  logx=logx,
                  logy=logy,

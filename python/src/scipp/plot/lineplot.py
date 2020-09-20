@@ -52,6 +52,7 @@ class LinePlot:
         self.errorbars = errorbars
         self.mask_names = mask_names
         self.mask_params = mask_params
+        print(self.mask_params)
         self.picker = picker
         self.is_profile = is_profile
         self.slice_area = None
@@ -731,6 +732,22 @@ class LinePlot:
         # back onto the image, we show the profile
         for name in self.data_lines:
             self.data_lines[name].set_visible(value)
+        for name in self.error_lines:
+            # Need to get the 3rd element of the errorbar container, which
+            # contains the vertical errorbars, and then the first element of
+            # that because it is a tuple itself.
+            self.error_lines[name][2][0].set_visible(value)
+            # print(item[2])
+            # for it in item:
+            #     print("item is", it)
+            #     if it is not None:
+            #         it.set_visible(value)
+            # self.error_lines[name].set_visible(value)
+        for name, mlines in self.mask_lines.items():
+            for ml in mlines.values():
+                ml.set_visible(value)
+
+
         # if self.profile_viewer[self.profile_key].errorbars[self.name]:
         #     for item in self.profile_viewer[
         #             self.profile_key].members["error_y"][self.name]:
