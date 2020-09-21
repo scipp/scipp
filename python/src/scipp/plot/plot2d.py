@@ -178,7 +178,14 @@ class SciPlot2d:
         # widgets_ = [self.figure, self.widgets]
         # if self.overview["additional_widgets"] is not None:
         #     wdgts.append(self.overview["additional_widgets"])
-        return ipw.VBox([self.view._to_widget(), self.profile._to_widget(), self.controller._to_widget()])
+        widget_list = [self.view._to_widget()]
+        if self.profile is not None:
+            widget_list.append(self.profile._to_widget())
+        widget_list.append(self.controller._to_widget())
+        # if self.panel is not None:
+        #     widget_list.append(self.panel._to_widget())
+        return ipw.VBox(widget_list)
+        # return ipw.VBox([self.view._to_widget(), self.profile._to_widget(), self.controller._to_widget()])
 
     def savefig(self, filename=None):
         self.view.savefig(filename=filename)

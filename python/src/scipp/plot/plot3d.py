@@ -101,6 +101,8 @@ class SciPlot3d:
                          vmin=vmin,
                          vmax=vmax,
                          color=color,
+                         positions=positions,
+            pixel_size=pixel_size,
             button_options=['X', 'Y', 'Z'])
 
         self.panel = PlotPanel3d(controller=self.controller, pixel_size=pixel_size)

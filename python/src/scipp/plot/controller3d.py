@@ -37,7 +37,8 @@ class PlotController3d(PlotController):
                  logz=False,
                  button_options=None,
                  positions=None,
-                 errorbars=None):
+                 errorbars=None,
+            pixel_size=None):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                  axes=axes,
@@ -55,7 +56,119 @@ class PlotController3d(PlotController):
                  positions=positions,
                  errorbars=errorbars)
 
+        self.positions = positions
+        self.pos_axparams = {}
+
+        # If positions are specified, then the x, y, z points positions can
+        # never change
+        if self.positions is not None:
+            coord = scipp_obj_dict[self.name].coords[self.positions]
+            # self.pos_array = np.array(coord.values, dtype=np.float32)
+            # self.pos_array = scipp_obj_dict[self.name].coords[self.positions].values.astype(np.float32)
+            for xyz in "xyz":
+                x = getattr(sc.geometry, xyz)(coord)
+                self.pos_axparams[xyz] = {"lims": [sc.min(x).value - 0.5 * pixel_size,
+                                         sc.max(x).value + 0.5 * pixel_size],
+                                         "label": name_with_unit(coord, name=xyz.upper())}
+
+
         return
+
+
+
+    def get_axes_parameters(self):
+        axparams = {}
+        if self.positions is not None:
+            # # axparams = {}
+            # # coord = scipp_obj_dict[self.name].coords[self.positions]
+            # # self.pos_array = np.array(coord.values, dtype=np.float32)
+            # for xyz in "xyz":
+            #     # x = getattr(sc.geometry, xyz)(coord)
+            #     axparams[xyz] = {}
+            #     axparams[xyz]["lims"] = self.model.get_positions_extents(xyz)
+            #     axparams[xyz]["label"] = name_with_unit(
+            #         self.data_arrays[self.name].coords[self.positions], name=xyz.upper())
+            # # self.axparams["pos"] = self.pos_array
+            # # retaxparams
+            axparams = self.pos_axparams
+        else:
+            axparams = super().get_axes_parameters()
+        #     # If no positions are supplied, create a meshgrid from coordinate
+        #     # axes.
+        #     coords = {}
+        #     # labels = []
+        #     for dim, button in self.widgets.buttons.items():
+        #         if self.widgets.slider[dim].disabled:
+        #             # for dim in limits:
+        #             # xyz = limits[dim]["button"]
+        #             xyz = button.value.lower()
+        #             # coord = self.data_arrays[self.name].coords[dim]
+        #             # self.axparams[xyz]["coord"] = to_bin_centers(coord, dim)#.values
+        #             # axparams[xyz]["coord"] = self.data_arrays[self.name].coords[dim]
+        #             axparams[xyz]["dim"] = dim
+        #             # self.axparams[xyz]["shape"] = self.axparams[xyz]["coord"].shape
+
+        #             # labels.append(name_with_unit(coord))
+        #             self.axparams[xyz]["labels"] = name_with_unit(self.axparams[xyz]["coord"])
+        #             self.axparams[xyz]["lims"] = limits[dim]["xlims"]
+        #     z, y, x = np.meshgrid(to_bin_centers(self.axparams['z']["coord"], self.axparams["z"]["dim"]).values,
+        #                           to_bin_centers(self.axparams['y']["coord"], self.axparams["y"]["dim"]).values,
+        #                           to_bin_centers(self.axparams['x']["coord"], self.axparams["x"]["dim"]).values,
+        #                           indexing='ij')
+        #     # x, y, z = np.meshgrid(*coords, indexing='ij')
+        #     self.pos_array = np.array(
+        #         [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
+
+
+        print(axparams)
+        axparams["centre"] = [
+            0.5 * np.sum(axparams['x']["lims"]), 0.5 * np.sum(axparams['y']["lims"]),
+            0.5 * np.sum(axparams['z']["lims"])
+        ]
+
+        axparams["box_size"] = np.array([
+            axparams['x']["lims"][1] - axparams['x']["lims"][0],
+            axparams['y']["lims"][1] - axparams['y']["lims"][0],
+            axparams['z']["lims"][1] - axparams['z']["lims"][0]])
+
+        # axparams["pos"] = self.model.get_positions_array()
+
+        return axparams
+
+    def get_positions_array(self):
+        return self.model.get_positions_array()
+
+
+
+
+
+        # axparams = {}
+        # for dim, button in self.widgets.buttons.items():
+        #     if self.widgets.slider[dim].disabled:
+        #         but_val = button.value.lower()
+        #         xmin = np.Inf
+        #         xmax = np.NINF
+        #         for name in self.xlims:
+        #             xlims = self.xlims[name][dim].values
+        #             xmin = min(xmin, xlims[0])
+        #             xmax = max(xmax, xlims[1])
+        #         axparams[but_val] = {
+        #             "lims": [xmin, xmax],
+        #             "log": getattr(self, "log{}".format(but_val)),
+        #             "hist": {name: self.histograms[name][dim][dim] for name in self.histograms},
+        #             "dim": dim,
+        #             "label": self.labels[self.name][dim]
+        #         }
+        #         # Safety check for log axes
+        #         if axparams[but_val]["log"] and (axparams[but_val]["lims"][0] <= 0):
+        #             axparams[but_val]["lims"][
+        #                 0] = 1.0e-03 * axparams[but_val]["lims"][1]
+
+        #         # limits[dim] = {"button": but_val,
+        #         # "xlims": self.xlims[self.name][dim].values,
+        #         # "log": getattr(self, "log{}".format(but_val)),
+        #         # "hist": {name: self.histograms[name][dim][dim] for name in self.histograms}}
+        # return axparams
 
     def update_opacity(self, alpha):
         self.view.update_opacity(alpha=alpha)

@@ -263,7 +263,8 @@ class PlotController:
         # print(self.data_arrays)
 
         self.widgets = PlotWidgets(controller=self,
-                         button_options=button_options)
+                         button_options=button_options,
+                         positions=positions)
         return
 
     def _ipython_display_(self):
@@ -587,8 +588,8 @@ class PlotController:
 
 
 
-    def update_axes(self, change=None):
-        self.axparams.clear()
+    def get_axes_parameters(self):
+        axparams = {}
         for dim, button in self.widgets.buttons.items():
             if self.widgets.slider[dim].disabled:
                 but_val = button.value.lower()
@@ -598,7 +599,7 @@ class PlotController:
                     xlims = self.xlims[name][dim].values
                     xmin = min(xmin, xlims[0])
                     xmax = max(xmax, xlims[1])
-                self.axparams[but_val] = {
+                axparams[but_val] = {
                     "lims": [xmin, xmax],
                     "log": getattr(self, "log{}".format(but_val)),
                     "hist": {name: self.histograms[name][dim][dim] for name in self.histograms},
@@ -606,14 +607,46 @@ class PlotController:
                     "label": self.labels[self.name][dim]
                 }
                 # Safety check for log axes
-                if self.axparams[but_val]["log"] and (self.axparams[but_val]["lims"][0] <= 0):
-                    self.axparams[but_val]["lims"][
-                        0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
+                if axparams[but_val]["log"] and (axparams[but_val]["lims"][0] <= 0):
+                    axparams[but_val]["lims"][
+                        0] = 1.0e-03 * axparams[but_val]["lims"][1]
 
                 # limits[dim] = {"button": but_val,
                 # "xlims": self.xlims[self.name][dim].values,
                 # "log": getattr(self, "log{}".format(but_val)),
                 # "hist": {name: self.histograms[name][dim][dim] for name in self.histograms}}
+        return axparams
+
+
+
+    def update_axes(self, change=None):
+        self.axparams.clear()
+        self.axparams = self.get_axes_parameters()
+        # for dim, button in self.widgets.buttons.items():
+        #     if self.widgets.slider[dim].disabled:
+        #         but_val = button.value.lower()
+        #         xmin = np.Inf
+        #         xmax = np.NINF
+        #         for name in self.xlims:
+        #             xlims = self.xlims[name][dim].values
+        #             xmin = min(xmin, xlims[0])
+        #             xmax = max(xmax, xlims[1])
+        #         self.axparams[but_val] = {
+        #             "lims": [xmin, xmax],
+        #             "log": getattr(self, "log{}".format(but_val)),
+        #             "hist": {name: self.histograms[name][dim][dim] for name in self.histograms},
+        #             "dim": dim,
+        #             "label": self.labels[self.name][dim]
+        #         }
+        #         # Safety check for log axes
+        #         if self.axparams[but_val]["log"] and (self.axparams[but_val]["lims"][0] <= 0):
+        #             self.axparams[but_val]["lims"][
+        #                 0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
+
+        #         # limits[dim] = {"button": but_val,
+        #         # "xlims": self.xlims[self.name][dim].values,
+        #         # "log": getattr(self, "log{}".format(but_val)),
+        #         # "hist": {name: self.histograms[name][dim][dim] for name in self.histograms}}
 
         self.model.update_axes(self.axparams)
         self.view.update_axes(axparams=self.axparams,

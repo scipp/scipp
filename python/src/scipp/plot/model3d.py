@@ -35,16 +35,49 @@ class PlotModel3d(PlotModel):
 
 
         self.dslice = None
+        self.button_dims = {}
+        self.dim_to_xyz = {}
+
         # Useful variables
         # self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
         # self.remaining_inds = [0, 1]
 
-        self.axparams = {"x": {}, "y": {}, "z": {}, "pos": None}
+        # self.axparams = {"x": {}, "y": {}, "z": {}, "pos": None}
         self.positions = positions
         self.pos_array = None
+        # self.pos_axparams = {}
+        self.pos_unit = None
 
         self.cut_options = cut_options
 
+
+        # If positions are specified, then the x, y, z points positions can
+        # never change
+        if self.positions is not None:
+            # coord = scipp_obj_dict[self.name].coords[self.positions]
+            self.pos_array = np.array(scipp_obj_dict[self.name].coords[self.positions].values, dtype=np.float32)
+            # # self.pos_array = scipp_obj_dict[self.name].coords[self.positions].values.astype(np.float32)
+            # for xyz in "xyz":
+            #     x = getattr(sc.geometry, xyz)(coord)
+            #     self.pos_axparams[xyz] = {"lims": [sc.min(x).value - 0.5 * pixel_size,
+            #                              sc.max(x).value + 0.5 * pixel_size],
+            #                              "label": name_with_unit(coord, name=xyz.upper())}
+
+            #     # self.axparams[xyz]["labels"] = name_with_unit(coord, name=xyz.upper())
+            # # self.axparams["pos"] = self.pos_array
+
+        return
+
+
+
+    # def get_positions_axparams(self):
+    #     return self.pos_axparams
+
+
+    def get_positions_array(self):
+        return self.pos_array
+
+    def update_axes(self, axparams):
 
         # # If positions are specified, then the x, y, z points positions can
         # # never change
@@ -55,44 +88,40 @@ class PlotModel3d(PlotModel):
         #         x = getattr(sc.geometry, xyz)(coord)
         #         self.axparams[xyz]["lims"] = [sc.min(x).value - 0.5 * pixel_size, sc.max(x).value + 0.5 * pixel_size]
         #         self.axparams[xyz]["labels"] = name_with_unit(coord, name=xyz.upper())
-        #     self.axparams["pos"] = self.pos_array
-
-        return
-
-
-
-    def update_axes(self, limits):
-
-        # If positions are specified, then the x, y, z points positions can
-        # never change
-        if self.positions is not None:
-            coord = scipp_obj_dict[self.name].coords[self.positions]
-            self.pos_array = np.array(coord.values, dtype=np.float32)
-            for xyz in "xyz":
-                x = getattr(sc.geometry, xyz)(coord)
-                self.axparams[xyz]["lims"] = [sc.min(x).value - 0.5 * pixel_size, sc.max(x).value + 0.5 * pixel_size]
-                self.axparams[xyz]["labels"] = name_with_unit(coord, name=xyz.upper())
-            # self.axparams["pos"] = self.pos_array
-        else:
+        #     # self.axparams["pos"] = self.pos_array
+        # else:
+        if self.positions is None:
             # If no positions are supplied, create a meshgrid from coordinate
             # axes.
-            coords = {}
-            # labels = []
-            for dim in limits:
-                xyz = limits[dim]["button"]
-                # coord = self.data_arrays[self.name].coords[dim]
-                # self.axparams[xyz]["coord"] = to_bin_centers(coord, dim)#.values
-                self.axparams[xyz]["coord"] = self.data_arrays[self.name].coords[dim]
-                self.axparams[xyz]["dim"] = dim
-                # self.axparams[xyz]["shape"] = self.axparams[xyz]["coord"].shape
+            # coords = {}
+            # # labels = []
+            # # for dim in limits:
+            for xyz in "zyx":
+                self.button_dims[xyz] = axparams[xyz]["dim"]
+                self.dim_to_xyz[axparams[xyz]["dim"]] = xyz
 
-                # labels.append(name_with_unit(coord))
-                self.axparams[xyz]["labels"] = name_with_unit(self.axparams[xyz]["coord"])
-                self.axparams[xyz]["lims"] = limits[dim]["xlims"]
-            z, y, x = np.meshgrid(to_bin_centers(self.axparams['z']["coord"], self.axparams["z"]["dim"]).values,
-                                  to_bin_centers(self.axparams['y']["coord"], self.axparams["y"]["dim"]).values,
-                                  to_bin_centers(self.axparams['x']["coord"], self.axparams["x"]["dim"]).values,
-                                  indexing='ij')
+
+            #     # xyz = limits[dim]["button"]
+            #     # coord = self.data_arrays[self.name].coords[dim]
+            #     # self.axparams[xyz]["coord"] = to_bin_centers(coord, dim)#.values
+            #     self.axparams[xyz]["coord"] = self.data_arrays[self.name].coords[dim]
+            #     self.axparams[xyz]["dim"] = dim
+            #     # self.axparams[xyz]["shape"] = self.axparams[xyz]["coord"].shape
+
+            #     # labels.append(name_with_unit(coord))
+            #     self.axparams[xyz]["labels"] = name_with_unit(self.axparams[xyz]["coord"])
+            #     self.axparams[xyz]["lims"] = limits[dim]["xlims"]
+            z, y, x = np.meshgrid(
+                to_bin_centers(
+                    self.data_arrays[self.name].coords[axparams['z']["dim"]],
+                    axparams["z"]["dim"]).values,
+                to_bin_centers(
+                    self.data_arrays[self.name].coords[axparams['y']["dim"]],
+                    axparams["y"]["dim"]).values,
+                to_bin_centers(
+                    self.data_arrays[self.name].coords[axparams['x']["dim"]],
+                    axparams["x"]["dim"]).values,
+                indexing='ij')
             # x, y, z = np.meshgrid(*coords, indexing='ij')
             self.pos_array = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
@@ -107,20 +136,21 @@ class PlotModel3d(PlotModel):
             #     "x": labels[2]
             # })
 
-        self.axparams["pos"] = self.pos_array
+        # self.axparams["pos"] = self.pos_array
 
 
-        self.axparams["centre"] = [
-            0.5 * np.sum(self.axparams['x']["lims"]), 0.5 * np.sum(self.axparams['y']["lims"]),
-            0.5 * np.sum(self.axparams['z']["lims"])
-        ]
+        # self.axparams["centre"] = [
+        #     0.5 * np.sum(self.axparams['x']["lims"]), 0.5 * np.sum(self.axparams['y']["lims"]),
+        #     0.5 * np.sum(self.axparams['z']["lims"])
+        # ]
 
-        self.axparams["box_size"] = np.array([
-            self.axparams['x']["lims"][1] - self.axparams['x']["lims"][0],
-            self.axparams['y']["lims"][1] - self.axparams['y']["lims"][0],
-            self.axparams['z']["lims"][1] - self.axparams['z']["lims"][0]])
+        # self.axparams["box_size"] = np.array([
+        #     self.axparams['x']["lims"][1] - self.axparams['x']["lims"][0],
+        #     self.axparams['y']["lims"][1] - self.axparams['y']["lims"][0],
+        #     self.axparams['z']["lims"][1] - self.axparams['z']["lims"][0]])
 
-        return self.axparams
+        # return self.axparams
+        return
 
 
     # def slice_data(self, change=None, autoscale_cmap=False):
@@ -149,29 +179,34 @@ class PlotModel3d(PlotModel):
             data_slice *= (deltax * sc.units.one)
 
 
-
-        shape = [self.axparams["z"]["coord"].shape[0] - 1,
-                 self.axparams["y"]["coord"].shape[0] - 1,
-                 self.axparams["x"]["coord"].shape[0] - 1]
-
-        self.dslice = sc.DataArray(coords={
-            self.axparams["z"]["dim"]: self.axparams["z"]["coord"],
-            self.axparams["y"]["dim"]: self.axparams["y"]["coord"],
-            self.axparams["x"]["dim"]: self.axparams["x"]["coord"]
-            },
-                                   data=sc.Variable(dims=[self.axparams["z"]["dim"],
-                                    self.axparams["y"]["dim"],
-                                    self.axparams["x"]["dim"]],
-                                                    values=np.ones(shape),
-                                                    variances=np.zeros(shape),
-                                                    dtype=data_slice.dtype,
-                                                    unit=sc.units.one))
-
-        # print(self.dslice)
-        # print("=======================")
+        # print(slices)
         # print(data_slice)
 
-        self.dslice *= data_slice
+        if self.positions is None:
+            # shape = [self.axparams["z"]["coord"].shape[0] - 1,
+            #          self.axparams["y"]["coord"].shape[0] - 1,
+            #          self.axparams["x"]["coord"].shape[0] - 1]
+
+            shape = [data_slice.coords[self.button_dims["z"]].shape[0] - 1,
+                     data_slice.coords[self.button_dims["y"]].shape[0] - 1,
+                     data_slice.coords[self.button_dims["x"]].shape[0] - 1]
+
+            self.dslice = sc.DataArray(coords={
+                self.button_dims["z"]: data_slice.coords[self.button_dims["z"]],
+                self.button_dims["y"]: data_slice.coords[self.button_dims["y"]],
+                self.button_dims["x"]: data_slice.coords[self.button_dims["x"]]
+                },
+                                       data=sc.Variable(dims=[self.button_dims["z"],
+                                        self.button_dims["y"],
+                                        self.button_dims["x"]],
+                                                        values=np.ones(shape),
+                                                        variances=np.zeros(shape),
+                                                        dtype=data_slice.dtype,
+                                                        unit=sc.units.one))
+
+            self.dslice *= data_slice
+        else:
+            self.dslice = data_slice
 
         # new_values = {"values": self.dslice.values, "masks": {}, "extent": extent}
 

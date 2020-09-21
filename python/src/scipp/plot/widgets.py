@@ -14,7 +14,7 @@ class PlotWidgets:
         self.container = [self.rescale_button]
 
         # Initialise slider and label containers
-        # self.lab = dict()
+        self.dim_labels = dict()
         self.slider = dict()
         # self.slider = dict()
         self.thickness_slider = dict()
@@ -61,6 +61,10 @@ class PlotWidgets:
                 disabled = True
             # os.write(1, "Slicer 5.2\n".encode())
 
+            self.dim_labels[dim] = ipw.Label(
+                value=self.controller.labels[self.controller.name][dim],
+                layout={"width": "100px"})
+
             # Add an FloatSlider to slide along the z dimension of the array
             dim_xlims = self.controller.xlims[self.controller.name][dim].values
             dx = dim_xlims[1] - dim_xlims[0]
@@ -72,12 +76,12 @@ class PlotWidgets:
                 # max=self.dim_to_shape[self.name][dim] - 1,
                 max=dim_xlims[1],
                 step=0.01 * dx,
-                description=self.controller.labels[self.controller.name][dim],
+                # description=self.controller.labels[self.controller.name][dim],
                 continuous_update=True,
                 readout=True,
                 disabled=disabled,
-                layout={"width": "350px"},
-                style={'description_width': '100px'})
+                layout={"width": "250px"})
+                # style={'description_width': '100px'})
             # labvalue = self.make_slider_label(
             #     self.slider_label[self.name][dim]["coord"], indx)
             self.continuous_update[dim] = ipw.Checkbox(
@@ -116,6 +120,7 @@ class PlotWidgets:
             #         self.slider_axformatter[self.name][dim][False])
             # labvalue = "[{}]".format(self.controller.coords[self.controller.name][dim].unit)
             if self.controller.ndim == len(button_options):
+                # self.dim_labels[dim].layout.display = 'none'
                 self.slider[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
                 self.thickness_slider[dim].layout.display = 'none'
@@ -161,16 +166,21 @@ class PlotWidgets:
             # Hide buttons and labels for 1d variables
             if self.controller.ndim == 1:
                 self.buttons[dim].layout.display = 'none'
-                # self.lab[dim].layout.display = 'none'
+                self.dim_labels[dim].layout.display = 'none'
                 self.thickness_slider[dim].layout.display = 'none'
                 self.profile_button[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
 
             # # Hide buttons and inactive sliders for 3d projection
-            if positions is not None and dim == positions:
+            if positions is not None:
                 self.buttons[dim].layout.display = 'none'
+                self.profile_button[dim].disabled = True
+            if dim == positions:
+                # self.buttons[dim].layout.display = 'none'
+                self.dim_labels[dim].layout.display = 'none'
                 self.slider[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
+                self.profile_button[dim].layout.display = 'none'
                 # self.lab[dim].layout.display = 'none'
                 self.thickness_slider[dim].layout.display = 'none'
             # # os.write(1, "Slicer 5.9\n".encode())
@@ -182,6 +192,7 @@ class PlotWidgets:
             self.thickness_slider[dim].observe(self.controller.update_data, names="value")
             # Add the row of slider + buttons
             row = [
+                self.dim_labels[dim],
                 self.slider[dim], self.continuous_update[dim],
                 self.buttons[dim], self.thickness_slider[dim],
                 self.profile_button[dim]

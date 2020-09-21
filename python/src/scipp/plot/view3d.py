@@ -229,7 +229,7 @@ class PlotView3d:
         if self.axticks is not None:
             self.scene.remove(self.axticks)
 
-        self.create_point_cloud(axparams["pos"])
+        self.create_point_cloud(self.controller.get_positions_array())
         self.create_outline(axparams)
         # Define camera: look at the centre of mass of the points
         # camera_lookat = self.center_of_mass
@@ -402,10 +402,10 @@ void main() {
                                             size=self.tick_size))
             ticks_and_labels.add(
                 self.make_axis_tick(
-                    string=axparams[x]["labels"],
+                    string=axparams[x]["label"],
                     position=(iden[axis] * 0.5 * np.sum(axparams[x]["lims"]) +
                               offsets[x]).tolist(),
-                    size=self.tick_size * 0.3 * len(axparams[x]["labels"])))
+                    size=self.tick_size * 0.3 * len(axparams[x]["label"])))
 
         return ticks_and_labels
 
@@ -707,6 +707,7 @@ void main() {
 
 
         # new_colors = self.slice_data(change=change, autoscale_cmap=autoscale_cmap)
+        # print(colors.shape, self.points_geometry.attributes["rgba_color"].array.shape)
         colors[:,
                    3] = self.points_geometry.attributes["rgba_color"].array[:,
                                                                             3]
