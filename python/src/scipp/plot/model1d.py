@@ -18,7 +18,7 @@ import copy as cp
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
 import warnings
-
+import os
 
 
 
@@ -185,29 +185,29 @@ class PlotModel1d(PlotModel):
             # else:
             new_values[name] = {"values": {}, "variances": {}, "masks": {}}
 
-            data_slice = self.slice_data(array, slices)
+            self.dslice = self.slice_data(array, slices)
 
             # dim = data_slice.dims[0]
 
             # xmin = min(sc.min(array.coords[dim]).value, xmin)
             # xmax = max(sc.max(array.coords[dim]).value, xmax)
 
-            ydata = data_slice.values
-            xcenters = to_bin_centers(data_slice.coords[self.dim], self.dim).values
+            ydata = self.dslice.values
+            xcenters = to_bin_centers(self.dslice.coords[self.dim], self.dim).values
 
             # if self.histograms[name][dim][dim]:
             if self.hist[name]:
-                new_values[name]["values"]["x"] = data_slice.coords[self.dim].values
+                new_values[name]["values"]["x"] = self.dslice.coords[self.dim].values
                 new_values[name]["values"]["y"] = np.concatenate((ydata[0:1], ydata))
                 # new_values[name]["data"]["hist"] = True
             else:
                 new_values[name]["values"]["x"] = xcenters
                 new_values[name]["values"]["y"] = ydata
                 # new_values[name]["data"]["hist"] = False
-            if data_slice.variances is not None:
+            if self.dslice.variances is not None:
                 new_values[name]["variances"]["x"] = xcenters
                 new_values[name]["variances"]["y"] = ydata
-                new_values[name]["variances"]["e"] = vars_to_err(data_slice.variances)
+                new_values[name]["variances"]["e"] = vars_to_err(self.dslice.variances)
 
 
 
@@ -226,14 +226,14 @@ class PlotModel1d(PlotModel):
 
             # if len(self.masks[name]) > 0:
             if len(mask_info[name]) > 0:
-                base_mask = sc.Variable(dims=data_slice.dims,
-                                        values=np.ones(data_slice.shape,
+                base_mask = sc.Variable(dims=self.dslice.dims,
+                                        values=np.ones(self.dslice.shape,
                                                        dtype=np.int32))
                 for m in mask_info[name]:
                     # Use automatic broadcast to broadcast 0D masks
                     msk = (base_mask * sc.Variable(
-                        dims=data_slice.masks[m].dims,
-                        values=data_slice.masks[m].values.astype(np.int32))).values
+                        dims=self.dslice.masks[m].dims,
+                        values=self.dslice.masks[m].values.astype(np.int32))).values
                     if self.hist[name]:
                         msk = np.concatenate((msk[0:1], msk))
 
@@ -265,127 +265,143 @@ class PlotModel1d(PlotModel):
 
 
 
-    def update_profile(self, xdata, ydata, slices, axparams):
-        # Find indices of pixel where cursor lies
-        # os.write(1, "compute_profile 1\n".encode())
-        # dimx = self.xyrebin["x"].dims[0]
-        # # os.write(1, "compute_profile 1.1\n".encode())
-        # dimy = self.xyrebin["y"].dims[0]
-        # # os.write(1, "compute_profile 1.2\n".encode())
-        # ix = int((event.xdata - self.current_lims["x"][0]) /
+    def update_profile(self, xdata=None, ydata=None, slices=None, axparams=None, mask_info=None):
+        # # Find indices of pixel where cursor lies
+        # # os.write(1, "compute_profile 1\n".encode())
+        # # dimx = self.xyrebin["x"].dims[0]
+        # # # os.write(1, "compute_profile 1.1\n".encode())
+        # # dimy = self.xyrebin["y"].dims[0]
+        # # # os.write(1, "compute_profile 1.2\n".encode())
+        # # ix = int((event.xdata - self.current_lims["x"][0]) /
+        # #          (self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]))
+        # # # os.write(1, "compute_profile 1.3\n".encode())
+        # # iy = int((event.ydata - self.current_lims["y"][0]) /
+        # #          (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
+        # # os.write(1, "compute_profile 2\n".encode())
+
+        # ix = int(xdata /
         #          (self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]))
         # # os.write(1, "compute_profile 1.3\n".encode())
-        # iy = int((event.ydata - self.current_lims["y"][0]) /
+        # iy = int(ydata /
         #          (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
-        # os.write(1, "compute_profile 2\n".encode())
-
-        ix = int(xdata /
-                 (self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]))
-        # os.write(1, "compute_profile 1.3\n".encode())
-        iy = int(ydata /
-                 (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
 
 
-        # data_slice = self.data_arrays[self.name]
-        # os.write(1, "compute_profile 3\n".encode())
+        # # profile_slice = self.data_arrays[self.name]
+        # # os.write(1, "compute_profile 3\n".encode())
 
-        data_slice = self.resample_image(self.data_arrays[self.name],
-                        rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimx, 0]
-        # os.write(1, "compute_profile 4\n".encode())
-
-        data_slice = self.resample_image(data_slice,
-                        rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2]})[dimy, 0]
-        # os.write(1, "compute_profile 5\n".encode())
-        # os.write(1, str(list(slices.keys())).encode())
-        # os.write(1, (str(dimx) + "," + str(dimy)).encode())
-
-        other_dims = set(slices.keys()) - set((dimx, dimy))
-        # os.write(1, "compute_profile 6\n".encode())
-
-
-        for dim in other_dims:
-
-            deltax = slices[dim]["thickness"]
-            loc = slices[dim]["location"]
-
-            data_slice = self.resample_image(data_slice,
-                    rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
-                                                                 loc + 0.5 * deltax],
-                                                        unit=data_slice.coords[dim].unit)})[dim, 0]
-        # os.write(1, "compute_profile 7\n".encode())
-
-        # # Slice along dimensions with active sliders
-        # for dim, val in self.slider.items():
-        #     os.write(1, "compute_profile 4\n".encode())
-        #     if dim != self.profile_dim:
-        #         os.write(1, "compute_profile 5\n".encode())
-        #         if dim == dimx:
-        #             os.write(1, "compute_profile 6\n".encode())
-        #             data_slice = self.resample_image(data_slice,
+        # profile_slice = self.resample_image(self.data_arrays[self.name],
         #                 rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimx, 0]
-        #         elif dim == dimy:
-        #             os.write(1, "compute_profile 7\n".encode())
-        #             data_slice = self.resample_image(data_slice,
+        # os.write(1, "model1d: update_profile 1\n".encode())
+
+        # profile_slice = self.resample_image(profile_slice,
         #                 rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2]})[dimy, 0]
-        #         else:
-        #             os.write(1, "compute_profile 8\n".encode())
-        #             deltax = self.thickness_slider[dim].value
-        #             data_slice = self.resample_image(data_slice,
-        #                 rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
-        #                                                              val.value + 0.5 * deltax],
-        #                                                     unit=data_slice.coords[dim].unit)})[dim, 0]
-        # os.write(1, "compute_profile 9\n".encode())
+        # # os.write(1, "compute_profile 5\n".encode())
+        # # os.write(1, str(list(slices.keys())).encode())
+        # # os.write(1, (str(dimx) + "," + str(dimy)).encode())
 
-        #             # depth = self.slider_xlims[self.name][dim][dim, 1] - self.slider_xlims[self.name][dim][dim, 0]
-        #             # depth.unit = sc.units.one
-        #         # data_slice *= (deltax * sc.units.one)
+        profile_dim = axparams["x"]["dim"]
+
+        new_values = {}
+
+        other_dims = set(slices.keys()) - set([self.dim])
+        # os.write(1, "compute_profile 6\n".encode())
+        # os.write(1, "model1d: update_profile 2\n".encode())
+
+        # Find closest point to cursor
+        distance_to_cursor = np.abs(self.data_arrays[self.name].coords[self.dim].values - xdata)
+        ind = np.argmin(distance_to_cursor)
+        # os.write(1, ("model1d: update_profile 3: " + str(ind) + "\n").encode())
+
+        xcenters = to_bin_centers(self.data_arrays[self.name].coords[profile_dim], profile_dim).values
+        # os.write(1, "model1d: update_profile 4\n".encode())
+
+        for name, profile_slice in self.data_arrays.items():
+
+            new_values[name] = {"values": {}, "variances": {}, "masks": {}}
+            # os.write(1, "model1d: update_profile 5\n".encode())
 
 
-        # # # Resample the 3d cube down to a 1d profile
-        # # return self.resample_image(self.da_with_edges,
-        # #                            coord_edges={
-        # #                                dimy: self.da_with_edges.coords[dimy],
-        # #                                dimx: self.da_with_edges.coords[dimx]
-        # #                            },
-        # #                            rebin_edges={
-        # #                                dimy: self.xyrebin["y"][dimy,
-        # #                                                        iy:iy + 2],
-        # #                                dimx: self.xyrebin["x"][dimx, ix:ix + 2]
+            for dim in other_dims:
 
-        new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
-        # os.write(1, "compute_profile 8\n".encode())
+                deltax = slices[dim]["thickness"]
+                loc = slices[dim]["location"]
 
-        # #                            })[dimy, 0][dimx, 0]
+                profile_slice = self.resample_image(profile_slice,
+                        rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
+                                                                     loc + 0.5 * deltax],
+                                                            unit=profile_slice.coords[dim].unit)})[dim, 0]
+            # os.write(1, "model1d: update_profile 6\n".encode())
 
-        dim = data_slice.dims[0]
+            profile_slice = profile_slice[self.dim, ind]
 
-        ydata = data_slice.values
-        xcenters = to_bin_centers(data_slice.coords[dim], dim).values
-        # os.write(1, "compute_profile 9\n".encode())
-        # os.write(1, (str(ydata[0:5]) + "\n").encode())
-        # os.write(1, (str(ydata.shape) + "\n").encode())
-        # os.write(1, (str(data_slice.coords[dim].values[0:5]) + "\n").encode())
-        # os.write(1, (str(data_slice.coords[dim].values.shape) + "\n").encode())
-        # os.write(1, (str(axparams) + "\n").encode())
+            ydata = profile_slice.values
+            if axparams["x"]["hist"][name]:
+                new_values[name]["values"]["x"] = profile_slice.coords[profile_dim].values
+                new_values[name]["values"]["y"] = np.concatenate((ydata[0:1], ydata))
+            else:
+                # os.write(1, "compute_profile 11\n".encode())
+                new_values[name]["values"]["x"] = xcenters
+                new_values[name]["values"]["y"] = ydata
+                # new_values[name]["data"]["hist"] = False
+            if profile_slice.variances is not None:
+                # os.write(1, "compute_profile 12\n".encode())
+                new_values[name]["variances"]["x"] = xcenters
+                new_values[name]["variances"]["y"] = ydata
+                new_values[name]["variances"]["e"] = vars_to_err(profile_slice.variances)
+
+
+
+            if len(mask_info[name]) > 0:
+                base_mask = sc.Variable(dims=profile_slice.dims,
+                                        values=np.ones(profile_slice.shape,
+                                                       dtype=np.int32))
+                for m in mask_info[name]:
+                    # Use automatic broadcast to broadcast 0D masks
+                    msk = (base_mask * sc.Variable(
+                        dims=profile_slice.masks[m].dims,
+                        values=profile_slice.masks[m].values.astype(np.int32))).values
+                    if axparams["x"]["hist"][name]:
+                        msk = np.concatenate((msk[0:1], msk))
+
+                    new_values[name]["masks"][m] = mask_to_float(msk, new_values[name]["values"]["y"])
+
+            # os.write(1, "model1d: update_profile 7\n".encode())
+
+
+        # new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
+        # # os.write(1, "compute_profile 8\n".encode())
+
+        # # #                            })[dimy, 0][dimx, 0]
+
+        # dim = profile_slice.dims[0]
+
+        # ydata = profile_slice.values
+        # xcenters = to_bin_centers(profile_slice.coords[dim], dim).values
+        # # os.write(1, "compute_profile 9\n".encode())
+        # # os.write(1, (str(ydata[0:5]) + "\n").encode())
+        # # os.write(1, (str(ydata.shape) + "\n").encode())
+        # # os.write(1, (str(profile_slice.coords[dim].values[0:5]) + "\n").encode())
+        # # os.write(1, (str(profile_slice.coords[dim].values.shape) + "\n").encode())
+        # # os.write(1, (str(axparams) + "\n").encode())
         
 
-        if axparams["x"]["hist"][self.name]:
-            # os.write(1, "compute_profile 10\n".encode())
-            new_values[self.name]["values"]["x"] = data_slice.coords[dim].values
-            new_values[self.name]["values"]["y"] = np.concatenate((ydata[0:1], ydata))
-            # new_values[name]["data"]["hist"] = True
-        else:
-            # os.write(1, "compute_profile 11\n".encode())
-            new_values[self.name]["values"]["x"] = xcenters
-            new_values[self.name]["values"]["y"] = ydata
-            # new_values[name]["data"]["hist"] = False
-        if data_slice.variances is not None:
-            # os.write(1, "compute_profile 12\n".encode())
-            new_values[self.name]["variances"]["x"] = xcenters
-            new_values[self.name]["variances"]["y"] = ydata
-            new_values[self.name]["variances"]["e"] = vars_to_err(data_slice.variances)
+        # if axparams["x"]["hist"][self.name]:
+        #     # os.write(1, "compute_profile 10\n".encode())
+        #     new_values[self.name]["values"]["x"] = profile_slice.coords[dim].values
+        #     new_values[self.name]["values"]["y"] = np.concatenate((ydata[0:1], ydata))
+        #     # new_values[name]["data"]["hist"] = True
+        # else:
+        #     # os.write(1, "compute_profile 11\n".encode())
+        #     new_values[self.name]["values"]["x"] = xcenters
+        #     new_values[self.name]["values"]["y"] = ydata
+        #     # new_values[name]["data"]["hist"] = False
+        # if profile_slice.variances is not None:
+        #     # os.write(1, "compute_profile 12\n".encode())
+        #     new_values[self.name]["variances"]["x"] = xcenters
+        #     new_values[self.name]["variances"]["y"] = ydata
+        #     new_values[self.name]["variances"]["e"] = vars_to_err(profile_slice.variances)
 
-        # os.write(1, "compute_profile 13\n".encode())
-        # new_values = {self.name: {"values": data_slice.values, "variances": {}, "masks": {}}}
+        # # os.write(1, "compute_profile 13\n".encode())
+        # # new_values = {self.name: {"values": profile_slice.values, "variances": {}, "masks": {}}}
 
         return new_values

@@ -76,8 +76,8 @@ class PlotWidgets:
                 continuous_update=True,
                 readout=True,
                 disabled=disabled,
-                layout={"width": "300px"},
-                style={'description_width': 'initial'})
+                layout={"width": "350px"},
+                style={'description_width': '100px'})
             # labvalue = self.make_slider_label(
             #     self.slider_label[self.name][dim]["coord"], indx)
             self.continuous_update[dim] = ipw.Checkbox(

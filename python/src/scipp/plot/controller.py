@@ -688,8 +688,8 @@ class PlotController:
         self.view.update_line_color(line_id=line_id, color=color)
 
 
-    def update_profile(self, xdata, ydata):
-        os.write(1, "controller: update_profile 1\n".encode())
+    def update_profile(self, xdata=None, ydata=None):
+        # os.write(1, "controller: update_profile 1\n".encode())
         slices = {}
         # info = {"slice_label": ""}
         # Slice along dimensions with active sliders
@@ -700,14 +700,14 @@ class PlotController:
                 # info["slice_label"] = "{},{}:{}-{}".format(info["slice_label"], dim,
                 #     slices[dim]["location"] - 0.5*slices[dim]["thickness"],
                 #     slices[dim]["location"] + 0.5*slices[dim]["thickness"])
-        os.write(1, "controller: update_profile 2\n".encode())
-        # os.write(1, str(slices).encode())
+        # os.write(1, "controller: update_profile 2\n".encode())
+        # os.write(1, (str(self.profile_axparams) + "\n").encode())
         new_values = self.model.update_profile(xdata=xdata, ydata=ydata,
             slices=slices,
             axparams=self.profile_axparams, mask_info=self.get_mask_info())
-        os.write(1, "controller: update_profile 3\n".encode())
+        # os.write(1, "controller: update_profile 3\n".encode())
         self.profile.update_data(new_values)
-        os.write(1, "controller: update_profile 4\n".encode())
+        # os.write(1, "controller: update_profile 4\n".encode())
 
 
 

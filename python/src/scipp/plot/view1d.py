@@ -8,7 +8,7 @@ from .. import config
 from .lineplot import LinePlot
 from .tools import to_bin_edges, parse_params
 # from .widgets import PlotWidgets
-from .._utils import name_with_unit
+from .._utils import name_with_unit, make_random_color
 from .._scipp import core as sc
 from .. import detail
 
@@ -19,6 +19,7 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Subplot
 import warnings
 import io
+import os
 
 
 class PlotView1d:
@@ -36,7 +37,8 @@ class PlotView1d:
                  mask_params=None,
                  mask_names=None,
                  mpl_line_params=None,
-                 grid=False):
+                 grid=False,
+                 picker=None):
                  # ndim=None,
                  # data_names=None):
 
@@ -48,7 +50,7 @@ class PlotView1d:
         self.profile_update_lock = False
         self.profile_scatter = None
         self.profile_counter = -1
-        self.profile_ids = []
+        # self.profile_ids = []
 
 
 
@@ -62,7 +64,8 @@ class PlotView1d:
                  logy=logy,
                  grid=grid,
                  mask_params=mask_params,
-                 mask_names=mask_names)
+                 mask_names=mask_names,
+                 picker=picker)
 
         # self.widgets = ipw.VBox()
         # self.keep_buttons = {}
@@ -243,101 +246,123 @@ class PlotView1d:
         # os.write(1, "view1d: update_profile 1\n".encode())
         # ev = event.mouseevent
 
-        if event.inaxes == self.ax:
+        if event.inaxes == self.figure.ax:
             # os.write(1, "view1d: update_profile 2\n".encode())
-            event.xdata = event.xdata - self.current_lims["x"][0]
-            event.ydata = event.ydata - self.current_lims["y"][0]
+            # event.xdata = event.xdata - self.current_lims["x"][0]
+            # event.ydata = event.ydata - self.current_lims["y"][0]
             # os.write(1, "view1d: update_profile 3\n".encode())
-            self.controller.update_profile(event)
+            self.controller.update_profile(xdata=event.xdata)
             # os.write(1, "view1d: update_profile 4\n".encode())
             self.controller.toggle_hover_visibility(True)
         else:
             self.controller.toggle_hover_visibility(False)
+        # os.write(1, "view1d: update_profile 5\n".encode())
 
 
     def keep_or_remove_profile(self, event):
-        os.write(1, "view1d: keep_or_delete_profile 1\n".encode())
-        if isinstance(event.artist, PathCollection):
-            os.write(1, "view1d: keep_or_delete_profile 2\n".encode())
+        # os.write(1, "view1d: keep_or_delete_profile 1\n".encode())
+        if event.artist.get_url() == "axvline":
+            # os.write(1, "view1d: keep_or_delete_profile 2\n".encode())
             self.remove_profile(event)
-            os.write(1, "view1d: keep_or_delete_profile 3\n".encode())
+            # os.write(1, "view1d: keep_or_delete_profile 3\n".encode())
             # We need a profile lock to catch the second time the function is
             # called because the pick event is registed by both the scatter
             # points and the image
-            self.profile_update_lock = True
-            os.write(1, "view1d: keep_or_delete_profile 4\n".encode())
-        elif self.profile_update_lock:
-            os.write(1, "view1d: keep_or_delete_profile 5\n".encode())
-            self.profile_update_lock = False
-            os.write(1, "view1d: keep_or_delete_profile 6\n".encode())
+            # self.profile_update_lock = True
+            # os.write(1, "view1d: keep_or_delete_profile 4\n".encode())
+        # elif self.profile_update_lock:
+        #     os.write(1, "view1d: keep_or_delete_profile 5\n".encode())
+        #     self.profile_update_lock = False
+        #     os.write(1, "view1d: keep_or_delete_profile 6\n".encode())
         else:
-            os.write(1, "view1d: keep_or_delete_profile 7\n".encode())
+            # os.write(1, "view1d: keep_or_delete_profile 7\n".encode())
             self.keep_profile(event)
-            os.write(1, "view1d: keep_or_delete_profile 8\n".encode())
-        self.fig.canvas.draw_idle()
+            # os.write(1, "view1d: keep_or_delete_profile 8\n".encode())
+        self.figure.fig.canvas.draw_idle()
 
 
     def update_profile_connection(self, visible):
         # Connect picking events
+        # os.write(1, "view1d: update_profile_connection 1\n".encode())
         if visible:
-            self.profile_pick_connection = self.fig.canvas.mpl_connect('pick_event', self.keep_or_remove_profile)
-            self.profile_hover_connection = self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
-            # self.profile_hover_connection = self.fig.canvas.mpl_connect('pick_event', self.update_profile)
+            # os.write(1, "view1d: update_profile_connection 2\n".encode())
+            self.profile_pick_connection = self.figure.fig.canvas.mpl_connect('pick_event', self.keep_or_remove_profile)
+            self.profile_hover_connection = self.figure.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+            # os.write(1, "view1d: update_profile_connection 3\n".encode())
+            # self.profile_hover_connection = self.figure.fig.canvas.mpl_connect('pick_event', self.update_profile)
         else:
+            # os.write(1, "view1d: update_profile_connection 4\n".encode())
             if self.profile_pick_connection is not None:
-                self.fig.canvas.mpl_disconnect(self.profile_pick_connection)
+                self.figure.fig.canvas.mpl_disconnect(self.profile_pick_connection)
             if self.profile_hover_connection is not None:
-                self.fig.canvas.mpl_disconnect(self.profile_hover_connection)
+                self.figure.fig.canvas.mpl_disconnect(self.profile_hover_connection)
+        # os.write(1, "view1d: update_profile_connection 5\n".encode())
 
 
     def keep_profile(self, event):
         # trace = list(
         #     self.profile_viewer[self.profile_key].keep_buttons.values())[-1]
-        os.write(1, "view1d: keep_profile 1\n".encode())
+        # os.write(1, "view1d: keep_profile 1\n".encode())
         xdata = event.mouseevent.xdata
-        ydata = event.mouseevent.ydata
-        col = make_random_color(fmt='rgba')
-        os.write(1, "view1d: keep_profile 2\n".encode())
+        # ydata = event.mouseevent.ydata
+        col = make_random_color(fmt='hex')
+        # os.write(1, "view1d: keep_profile 2\n".encode())
         self.profile_counter += 1
         line_id = self.profile_counter
-        self.profile_ids.append(line_id)
-        os.write(1, "view1d: keep_profile 3\n".encode())
-        if self.profile_scatter is None:
-            self.profile_scatter = self.ax.scatter(
-                [xdata], [ydata], c=[col], picker=5)
-        else:
-            new_offsets = np.concatenate(
-                (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
-            # col = np.array(_hex_to_rgb(trace["colorpicker"].value) + [255],
-            #                dtype=np.float) / 255.0
-            new_colors = np.concatenate(
-                (self.profile_scatter.get_facecolors(), [col]), axis=0)
-            self.profile_scatter.set_offsets(new_offsets)
-            self.profile_scatter.set_facecolors(new_colors)
-        os.write(1, "view1d: keep_profile 4\n".encode())
+        # self.profile_ids.append(line_id)
+        # os.write(1, "view1d: keep_profile 3\n".encode())
+        # if self.profile_scatter is None:
+            # self.profile_scatter = []
+        line = self.figure.ax.axvline(xdata, color=col, picker=5)
+        line.set_url("axvline")
+        line.set_gid(line_id)
+
+        # else:
+        #     new_offsets = np.concatenate(
+        #         (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
+        #     # col = np.array(_hex_to_rgb(trace["colorpicker"].value) + [255],
+        #     #                dtype=np.float) / 255.0
+        #     new_colors = np.concatenate(
+        #         (self.profile_scatter.get_facecolors(), [col]), axis=0)
+        #     self.profile_scatter.set_offsets(new_offsets)
+        #     self.profile_scatter.set_facecolors(new_colors)
+        # os.write(1, "view1d: keep_profile 4\n".encode())
         # self.fig.canvas.draw_idle()
 
         self.controller.keep_line(view="profile", color=col, line_id=line_id)
-        os.write(1, "view1d: keep_profile 5\n".encode())
+        # os.write(1, "view1d: keep_profile 5\n".encode())
 
 
 
     def remove_profile(self, event):
-        os.write(1, "view1d: remove_profile 1\n".encode())
-        ind = event.ind[0]
-        os.write(1, "view1d: remove_profile 2\n".encode())
-        xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
-        os.write(1, "view1d: remove_profile 3\n".encode())
-        c = np.delete(self.profile_scatter.get_facecolors(), ind, axis=0)
-        os.write(1, "view1d: remove_profile 4\n".encode())
-        self.profile_scatter.set_offsets(xy)
-        os.write(1, "view1d: remove_profile 5\n".encode())
-        self.profile_scatter.set_facecolors(c)
-        # self.fig.canvas.draw_idle()
-        os.write(1, "view1d: remove_profile 6\n".encode())
+        # os.write(1, "view1d: remove_profile 1\n".encode())
+        new_lines = []
+        # os.write(1, "view1d: remove_profile 2\n".encode())
+        gid = event.artist.get_gid()
+        # os.write(1, "view1d: remove_profile 3\n".encode())
+        url = event.artist.get_url()
+        for line in self.figure.ax.lines:
+            if not ((line.get_gid() == gid) and (line.get_url() == url)):
+                new_lines.append(line)
+        # os.write(1, "view1d: remove_profile 4\n".encode())
+
+        self.figure.ax.lines = new_lines
+        # os.write(1, "view1d: remove_profile 5\n".encode())
+
+        # ind = event.ind[0]
+        # os.write(1, "view1d: remove_profile 2\n".encode())
+        # xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
+        # os.write(1, "view1d: remove_profile 3\n".encode())
+        # c = np.delete(self.profile_scatter.get_facecolors(), ind, axis=0)
+        # os.write(1, "view1d: remove_profile 4\n".encode())
+        # self.profile_scatter.set_offsets(xy)
+        # os.write(1, "view1d: remove_profile 5\n".encode())
+        # self.profile_scatter.set_facecolors(c)
+        # # self.fig.canvas.draw_idle()
+        # os.write(1, "view1d: remove_profile 6\n".encode())
 
         # Also remove the line from the 1d plot
-        self.controller.remove_line(view="profile", line_id=self.profile_ids[ind])
-        os.write(1, "view1d: remove_profile 7\n".encode())
-        self.profile_ids.pop(ind)
-        os.write(1, "view1d: remove_profile 8\n".encode())
+        self.controller.remove_line(view="profile", line_id=gid)
+        # os.write(1, "view1d: remove_profile 7\n".encode())
+        # self.profile_ids.pop(ind)
+        # os.write(1, "view1d: remove_profile 8\n".encode())

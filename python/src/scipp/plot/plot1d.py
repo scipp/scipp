@@ -116,6 +116,7 @@ class SciPlot1d():
             logx=logx,
             logy=logy,
             mpl_line_params=mpl_line_params,
+            picker=5,
             grid=grid)
 
         self.controller.view = self.view
@@ -133,7 +134,8 @@ class SciPlot1d():
                  logx=logx,
                  logy=logy,
                  figsize=(config.plot.width / config.plot.dpi,
-                         0.6 * config.plot.height / config.plot.dpi))
+                         0.6 * config.plot.height / config.plot.dpi),
+                 is_profile=True)
             # self.profile = ProfileView(
             #     errorbars=self.controller.errorbars,
             #     unit=self.controller.params["values"][self.controller.name]["unit"],

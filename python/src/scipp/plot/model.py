@@ -23,6 +23,8 @@ class PlotModel:
         # self.controller = controller
         self.data_arrays = {}
 
+        # self.data_bounds = {}
+
         # Create dict of DataArrays using information from controller
         for name, array in scipp_obj_dict.items():
 
@@ -32,6 +34,10 @@ class PlotModel:
                                  values=array.values,
                                  variances=array.variances,
                                  dtype=sc.dtype.float64))
+
+            # # Get the min and max values once
+            # self.data_bounds[name] = [sc.min(array),
+            #                           sc.max(array)]
 
             # Add coordinates
             for dim, coord in controller.coords[name].items():

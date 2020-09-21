@@ -411,24 +411,24 @@ class PlotView2d:
 
 
     def keep_or_remove_profile(self, event):
-        os.write(1, "view2d: keep_or_delete_profile 1\n".encode())
+        # os.write(1, "view2d: keep_or_delete_profile 1\n".encode())
         if isinstance(event.artist, PathCollection):
-            os.write(1, "view2d: keep_or_delete_profile 2\n".encode())
+            # os.write(1, "view2d: keep_or_delete_profile 2\n".encode())
             self.remove_profile(event)
-            os.write(1, "view2d: keep_or_delete_profile 3\n".encode())
+            # os.write(1, "view2d: keep_or_delete_profile 3\n".encode())
             # We need a profile lock to catch the second time the function is
             # called because the pick event is registed by both the scatter
             # points and the image
             self.profile_update_lock = True
-            os.write(1, "view2d: keep_or_delete_profile 4\n".encode())
+            # os.write(1, "view2d: keep_or_delete_profile 4\n".encode())
         elif self.profile_update_lock:
-            os.write(1, "view2d: keep_or_delete_profile 5\n".encode())
+            # os.write(1, "view2d: keep_or_delete_profile 5\n".encode())
             self.profile_update_lock = False
-            os.write(1, "view2d: keep_or_delete_profile 6\n".encode())
+            # os.write(1, "view2d: keep_or_delete_profile 6\n".encode())
         else:
-            os.write(1, "view2d: keep_or_delete_profile 7\n".encode())
+            # os.write(1, "view2d: keep_or_delete_profile 7\n".encode())
             self.keep_profile(event)
-            os.write(1, "view2d: keep_or_delete_profile 8\n".encode())
+            # os.write(1, "view2d: keep_or_delete_profile 8\n".encode())
         self.fig.canvas.draw_idle()
 
 
@@ -448,15 +448,15 @@ class PlotView2d:
     def keep_profile(self, event):
         # trace = list(
         #     self.profile_viewer[self.profile_key].keep_buttons.values())[-1]
-        os.write(1, "view2d: keep_profile 1\n".encode())
+        # os.write(1, "view2d: keep_profile 1\n".encode())
         xdata = event.mouseevent.xdata
         ydata = event.mouseevent.ydata
         col = make_random_color(fmt='rgba')
-        os.write(1, "view2d: keep_profile 2\n".encode())
+        # os.write(1, "view2d: keep_profile 2\n".encode())
         self.profile_counter += 1
         line_id = self.profile_counter
         self.profile_ids.append(line_id)
-        os.write(1, "view2d: keep_profile 3\n".encode())
+        # os.write(1, "view2d: keep_profile 3\n".encode())
         if self.profile_scatter is None:
             self.profile_scatter = self.ax.scatter(
                 [xdata], [ydata], c=[col], picker=5)
@@ -469,33 +469,33 @@ class PlotView2d:
                 (self.profile_scatter.get_facecolors(), [col]), axis=0)
             self.profile_scatter.set_offsets(new_offsets)
             self.profile_scatter.set_facecolors(new_colors)
-        os.write(1, "view2d: keep_profile 4\n".encode())
+        # os.write(1, "view2d: keep_profile 4\n".encode())
         # self.fig.canvas.draw_idle()
 
         self.controller.keep_line(view="profile", color=col, line_id=line_id)
-        os.write(1, "view2d: keep_profile 5\n".encode())
+        # os.write(1, "view2d: keep_profile 5\n".encode())
 
 
 
     def remove_profile(self, event):
-        os.write(1, "view2d: remove_profile 1\n".encode())
+        # os.write(1, "view2d: remove_profile 1\n".encode())
         ind = event.ind[0]
-        os.write(1, "view2d: remove_profile 2\n".encode())
+        # os.write(1, "view2d: remove_profile 2\n".encode())
         xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
-        os.write(1, "view2d: remove_profile 3\n".encode())
+        # os.write(1, "view2d: remove_profile 3\n".encode())
         c = np.delete(self.profile_scatter.get_facecolors(), ind, axis=0)
-        os.write(1, "view2d: remove_profile 4\n".encode())
+        # os.write(1, "view2d: remove_profile 4\n".encode())
         self.profile_scatter.set_offsets(xy)
-        os.write(1, "view2d: remove_profile 5\n".encode())
+        # os.write(1, "view2d: remove_profile 5\n".encode())
         self.profile_scatter.set_facecolors(c)
         # self.fig.canvas.draw_idle()
-        os.write(1, "view2d: remove_profile 6\n".encode())
+        # os.write(1, "view2d: remove_profile 6\n".encode())
 
         # Also remove the line from the 1d plot
         self.controller.remove_line(view="profile", line_id=self.profile_ids[ind])
-        os.write(1, "view2d: remove_profile 7\n".encode())
+        # os.write(1, "view2d: remove_profile 7\n".encode())
         self.profile_ids.pop(ind)
-        os.write(1, "view2d: remove_profile 8\n".encode())
+        # os.write(1, "view2d: remove_profile 8\n".encode())
 
 
         # trace = list(

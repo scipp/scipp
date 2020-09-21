@@ -551,6 +551,8 @@ class LinePlot:
         # calling from a profile viewer, and the slice has hence already been
         # generate.
         # os.write(1, "lineplot: update_data 1\n".encode())
+        # os.write(1, (str(new_values) + "\n").encode())
+
         for name, vals in new_values.items():
             # os.write(1, ("lineplot: update_data 2" + name + "\n").encode())
             # # if "vslice" in change:
