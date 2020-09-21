@@ -110,4 +110,15 @@ DataArrayView slice(const DataArrayView &data, const Dim dim,
                     const VariableConstView end) {
   return slice<DataArrayView>(data, dim, begin, end);
 }
+
+DataArrayView slice(DataArray &data, const Dim dim,
+                    const VariableConstView value) {
+  return slice(DataArrayView(data), dim, value);
+}
+
+DataArrayView slice(DataArray &data, const Dim dim,
+                    const VariableConstView begin,
+                    const VariableConstView end) {
+  return slice(DataArrayView(data), dim, begin, end);
+}
 } // namespace scipp::dataset

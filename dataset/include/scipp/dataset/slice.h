@@ -23,4 +23,11 @@ slice(const DataArrayView &data, const Dim dim, const VariableConstView value);
 slice(const DataArrayView &data, const Dim dim, const VariableConstView begin,
       const VariableConstView end);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArrayView
+slice(DataArray &data, const Dim dim, const VariableConstView value);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArrayView
+slice(DataArray &data, const Dim dim, const VariableConstView begin,
+      const VariableConstView end);
+
 } // namespace scipp::dataset
