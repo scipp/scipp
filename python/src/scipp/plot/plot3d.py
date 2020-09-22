@@ -22,12 +22,9 @@ import ipywidgets as ipw
 from matplotlib import cm
 import matplotlib as mpl
 import matplotlib.pyplot as plt
-# from matplotlib.backends import backend_agg
-# import PIL as pil
-import pythreejs as p3
-from copy import copy
-import io
-
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# @author Neil Vaytet
 
 def plot3d(scipp_obj_dict=None,
             positions=None,
@@ -93,6 +90,8 @@ class SciPlot3d(Sciplot):
                  pixel_size=None,
                  tick_size=None,
                  show_outline=True):
+
+        super().__init__()
 
         # The main controller module which contains the slider widgets
         self.controller = PlotController3d(scipp_obj_dict=scipp_obj_dict,

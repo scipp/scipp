@@ -76,6 +76,7 @@ class SciPlot1d(SciPlot):
                  grid=False,
                  title=None):
 
+        super().__init__()
 
         # The main controller module which contains the slider widgets
         self.controller = PlotController(scipp_obj_dict=scipp_obj_dict,

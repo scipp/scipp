@@ -10,7 +10,6 @@ class PlotController2d(PlotController):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        return
 
     def update_viewport(self, xylims):
         new_values = self.model.update_viewport(

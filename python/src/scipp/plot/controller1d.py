@@ -10,7 +10,6 @@ class PlotController1d(PlotController):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        return
 
     def update_line_color(self, line_id=None, color=None):
         """

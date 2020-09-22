@@ -2,6 +2,7 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+# Scipp imports
 from .. import config
 from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers
 from .widgets import PlotWidgets

@@ -2,6 +2,10 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+# Scipp imports
+from .lineplot import LinePlot
+
+# Other imports
 import numpy as np
 
 
