@@ -10,7 +10,6 @@ import numpy as np
 
 
 class ProfileView(LinePlot):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         return
@@ -31,15 +30,11 @@ class ProfileView(LinePlot):
 
     def update_slice_area(self, profile_slice):
 
-        xstart = profile_slice["location"] - 0.5*profile_slice["thickness"]
-        xend = profile_slice["location"] + 0.5*profile_slice["thickness"]
+        xstart = profile_slice["location"] - 0.5 * profile_slice["thickness"]
+        xend = profile_slice["location"] + 0.5 * profile_slice["thickness"]
 
-        new_xy = np.array([[xstart, 0.0],
-                           [xstart, 1.0],
-                           [xend, 1.0],
-                           [xend, 0.0],
-                           [xstart, 0.0]])
+        new_xy = np.array([[xstart, 0.0], [xstart, 1.0], [xend, 1.0],
+                           [xend, 0.0], [xstart, 0.0]])
 
         self.slice_area.set_xy(new_xy)
         self.fig.canvas.draw_idle()
-

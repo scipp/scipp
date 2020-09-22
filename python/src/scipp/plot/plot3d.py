@@ -26,23 +26,24 @@ import matplotlib.pyplot as plt
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+
 def plot3d(scipp_obj_dict=None,
-            positions=None,
-            axes=None,
-            masks=None,
-            filename=None,
-            figsize=None,
-            aspect=None,
-            cmap=None,
-            log=False,
-            vmin=None,
-            vmax=None,
-            color=None,
-            background="#f0f0f0",
-            nan_color="#d3d3d3",
-            pixel_size=1.0,
-            tick_size=None,
-            show_outline=True):
+           positions=None,
+           axes=None,
+           masks=None,
+           filename=None,
+           figsize=None,
+           aspect=None,
+           cmap=None,
+           log=False,
+           vmin=None,
+           vmax=None,
+           color=None,
+           background="#f0f0f0",
+           nan_color="#d3d3d3",
+           pixel_size=1.0,
+           tick_size=None,
+           show_outline=True):
     """
     Plot a 3D point cloud through a N dimensional dataset.
     For every dimension above 3, a slider is created to adjust the position of
@@ -52,20 +53,20 @@ def plot3d(scipp_obj_dict=None,
     """
 
     sp = SciPlot3d(scipp_obj_dict=scipp_obj_dict,
-                  positions=positions,
-                  axes=axes,
-                  masks=masks,
-                  cmap=cmap,
-                  log=log,
-                  vmin=vmin,
-                  vmax=vmax,
-                  color=color,
-                  aspect=aspect,
-                  background=background,
-                  nan_color=nan_color,
-                  pixel_size=pixel_size,
-                  tick_size=tick_size,
-                  show_outline=show_outline)
+                   positions=positions,
+                   axes=axes,
+                   masks=masks,
+                   cmap=cmap,
+                   log=log,
+                   vmin=vmin,
+                   vmax=vmax,
+                   color=color,
+                   aspect=aspect,
+                   background=background,
+                   nan_color=nan_color,
+                   pixel_size=pixel_size,
+                   tick_size=tick_size,
+                   show_outline=show_outline)
 
     if filename is not None:
         sp.savefig(filename)
@@ -95,30 +96,35 @@ class SciPlot3d(Sciplot):
 
         # The main controller module which contains the slider widgets
         self.controller = PlotController3d(scipp_obj_dict=scipp_obj_dict,
-                         axes=axes,
-                         masks=masks,
-                         cmap=cmap,
-                         log=log,
-                         vmin=vmin,
-                         vmax=vmax,
-                         color=color,
-                         positions=positions,
-            pixel_size=pixel_size,
-            button_options=['X', 'Y', 'Z'])
+                                           axes=axes,
+                                           masks=masks,
+                                           cmap=cmap,
+                                           log=log,
+                                           vmin=vmin,
+                                           vmax=vmax,
+                                           color=color,
+                                           positions=positions,
+                                           pixel_size=pixel_size,
+                                           button_options=['X', 'Y', 'Z'])
 
         # The model which takes care of all heavy calculations
         self.model = PlotModel3d(controller=self.controller,
-            scipp_obj_dict=scipp_obj_dict,
-            positions=positions,
-            cut_options=self.panel.cut_options)
+                                 scipp_obj_dict=scipp_obj_dict,
+                                 positions=positions,
+                                 cut_options=self.panel.cut_options)
 
         # The view which will display the 3d scene and send pick events back to
         # the controller
-        self.view = PlotView3d(controller=self.controller,
-            cmap=self.controller.params["values"][self.controller.name]["cmap"],
-            norm=self.controller.params["values"][self.controller.name]["norm"],
-            unit=self.controller.params["values"][self.controller.name]["unit"],
-            mask_cmap=self.controller.params["masks"][self.controller.name]["cmap"],
+        self.view = PlotView3d(
+            controller=self.controller,
+            cmap=self.controller.params["values"][
+                self.controller.name]["cmap"],
+            norm=self.controller.params["values"][
+                self.controller.name]["norm"],
+            unit=self.controller.params["values"][
+                self.controller.name]["unit"],
+            mask_cmap=self.controller.params["masks"][
+                self.controller.name]["cmap"],
             mask_names=self.controller.mask_names[self.controller.name],
             nan_color=nan_color,
             pixel_size=pixel_size,
@@ -127,7 +133,8 @@ class SciPlot3d(Sciplot):
             show_outline=show_outline)
 
         # An additional panel view with widgets to control the cut surface
-        self.panel = PlotPanel3d(controller=self.controller, pixel_size=pixel_size)
+        self.panel = PlotPanel3d(controller=self.controller,
+                                 pixel_size=pixel_size)
 
         # Connect controller to model, view, panel and profile
         self._connect_controller_members()
@@ -136,40 +143,6 @@ class SciPlot3d(Sciplot):
         self.controller.update_axes()
 
         return
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #     def nono:
@@ -342,7 +315,6 @@ class SciPlot3d(Sciplot):
 #         return ipw.VBox([self.figure, self.widgets.container, self.additional_widgets,
 #             self.cut_surface_controls])
 
-
 #     def create_points_geometry(self):
 #         """
 #         Make a PointsGeometry using pythreejs
@@ -500,10 +472,6 @@ class SciPlot3d(Sciplot):
 #         buf.seek(0)
 #         self.cbar_image.value = buf.getvalue()
 
-
-
-
-
 #         # fig = mpl.figure.Figure(figsize=(height_inches * 0.2, height_inches),
 #         #                         dpi=config.plot.dpi)
 #         # canvas = backend_agg.FigureCanvasAgg(fig)
@@ -519,7 +487,6 @@ class SciPlot3d(Sciplot):
 #         # shp = list(fig.canvas.get_width_height())[::-1] + [3]
 #         # self.cbar_image.value = pil.Image.fromarray(
 #         #     image.reshape(shp))._repr_png_()
-
 
 #     def create_cut_surface_controls(self, show_outline):
 
@@ -640,7 +607,6 @@ class SciPlot3d(Sciplot):
 #             ])
 #         ])
 #         return
-
 
 #     # def update_opacity(self, change):
 #     #     """
@@ -784,7 +750,6 @@ class SciPlot3d(Sciplot):
 #     #                                                                  val.value + 0.5 * deltax],
 #     #                                                         unit=self.vslice.coords[dim].unit)})[dim, 0]
 #     #             self.vslice *= (deltax * sc.units.one)
-
 
 #     #     # Handle masks
 #     #     if len(self.masks[self.engine.name]) > 0:

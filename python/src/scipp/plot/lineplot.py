@@ -19,7 +19,6 @@ import warnings
 
 
 class LinePlot:
-
     def __init__(self,
                  errorbars=None,
                  ax=None,
@@ -58,12 +57,11 @@ class LinePlot:
         if self.ax is None:
             if figsize is None:
                 figsize = (config.plot.width / config.plot.dpi,
-                         config.plot.height / config.plot.dpi)
-            self.fig, self.ax = plt.subplots(
-                1,
-                1,
-                figsize=figsize,
-                dpi=config.plot.dpi)
+                           config.plot.height / config.plot.dpi)
+            self.fig, self.ax = plt.subplots(1,
+                                             1,
+                                             figsize=figsize,
+                                             dpi=config.plot.dpi)
         else:
             self.mpl_axes = True
         self.grid = grid
@@ -93,7 +91,13 @@ class LinePlot:
     def toggle_view(self, visible=True):
         self.fig.canvas.layout.display = None if visible else 'none'
 
-    def update_axes(self, axparams=None, axformatter=None, axlocator=None, logx=False, logy=False, clear=True):
+    def update_axes(self,
+                    axparams=None,
+                    axformatter=None,
+                    axlocator=None,
+                    logx=False,
+                    logy=False,
+                    clear=True):
         self.ax.clear()
 
         if self.mpl_line_params is None:
@@ -104,11 +108,14 @@ class LinePlot:
                 "linewidth": {}
             }
             for i, name in enumerate(axparams["x"]["hist"]):
-                self.mpl_line_params["color"][name] = get_line_param("color", i)
-                self.mpl_line_params["marker"][name] =  get_line_param("marker", i)
-                self.mpl_line_params["linestyle"][name] =  get_line_param("linestyle", i)
-                self.mpl_line_params["linewidth"][name] =  get_line_param("linewidth", i)
-
+                self.mpl_line_params["color"][name] = get_line_param(
+                    "color", i)
+                self.mpl_line_params["marker"][name] = get_line_param(
+                    "marker", i)
+                self.mpl_line_params["linestyle"][name] = get_line_param(
+                    "linestyle", i)
+                self.mpl_line_params["linewidth"][name] = get_line_param(
+                    "linewidth", i)
 
         if self.logx:
             self.ax.set_xscale("log")
@@ -123,7 +130,10 @@ class LinePlot:
         deltax = 0.05 * (axparams["x"]["lims"][1] - axparams["x"]["lims"][0])
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
-            self.ax.set_xlim([axparams["x"]["lims"][0] - deltax, axparams["x"]["lims"][1] + deltax])
+            self.ax.set_xlim([
+                axparams["x"]["lims"][0] - deltax,
+                axparams["x"]["lims"][1] + deltax
+            ])
 
         self.ax.set_xlabel(axparams["x"]["label"])
 
@@ -134,8 +144,6 @@ class LinePlot:
             self.ax.xaxis.set_major_formatter(
                 axformatter[axparams["x"]["dim"]][logx])
 
-
-
         for name, hist in axparams["x"]["hist"].items():
 
             label = name if len(name) > 0 else " "
@@ -143,20 +151,18 @@ class LinePlot:
             self.mask_lines[name] = {}
 
             if hist:
-                [self.data_lines[name]
-                 ] = self.ax.step([1, 2],
-                                  [1, 2],
-                                  label=label,
-                                  zorder=10,
-                                  picker=self.picker,
-                                  **{
-                                      key: self.mpl_line_params[key][name]
-                                      for key in ["color", "linewidth"]
-                                  })
+                [self.data_lines[name]] = self.ax.step(
+                    [1, 2], [1, 2],
+                    label=label,
+                    zorder=10,
+                    picker=self.picker,
+                    **{
+                        key: self.mpl_line_params[key][name]
+                        for key in ["color", "linewidth"]
+                    })
                 for m in self.mask_names[name]:
                     [self.mask_lines[name][m]] = self.ax.step(
-                        [1, 2],
-                        [1, 2],
+                        [1, 2], [1, 2],
                         linewidth=self.mpl_line_params["linewidth"][name] *
                         3.0,
                         color=self.mask_params["color"],
@@ -169,20 +175,18 @@ class LinePlot:
                     # not.
                     self.mask_lines[name][m].set_gid("onaxes")
             else:
-                [self.data_lines[name]
-                 ] = self.ax.plot([1, 2],
-                                  [1, 2],
-                                  label=label,
-                                  zorder=10,
-                                  picker=self.picker,
-                                  **{
-                                      key: self.mpl_line_params[key][name]
-                                      for key in self.mpl_line_params.keys()
-                                  })
+                [self.data_lines[name]] = self.ax.plot(
+                    [1, 2], [1, 2],
+                    label=label,
+                    zorder=10,
+                    picker=self.picker,
+                    **{
+                        key: self.mpl_line_params[key][name]
+                        for key in self.mpl_line_params.keys()
+                    })
                 for m in self.mask_names[name]:
                     [self.mask_lines[name][m]] = self.ax.plot(
-                        [1, 2],
-                        [1, 2],
+                        [1, 2], [1, 2],
                         zorder=11,
                         mec=self.mask_params["color"],
                         mfc="None",
@@ -194,20 +198,17 @@ class LinePlot:
             # Add error bars
             if self.errorbars[name]:
                 self.error_lines[name] = self.ax.errorbar(
-                    [1, 2],
-                    [1, 2],
+                    [1, 2], [1, 2],
                     yerr=[1, 1],
                     color=self.mpl_line_params["color"][name],
                     zorder=10,
                     fmt="none")
 
-
-
-
-
         if self.is_profile:
-            self.slice_area = self.ax.axvspan(1, 2, alpha=0.5, color='lightgrey')
-
+            self.slice_area = self.ax.axvspan(1,
+                                              2,
+                                              alpha=0.5,
+                                              color='lightgrey')
 
         self.ax.legend()
         self.fig.canvas.draw_idle()
@@ -216,12 +217,12 @@ class LinePlot:
 
         for name, vals in new_values.items():
 
-            self.data_lines[name].set_data(vals["values"]["x"], vals["values"]["y"])
+            self.data_lines[name].set_data(vals["values"]["x"],
+                                           vals["values"]["y"])
 
             for m in vals["masks"]:
-                self.mask_lines[name][m].set_data(
-                    vals["values"]["x"],
-                    vals["masks"][m])
+                self.mask_lines[name][m].set_data(vals["values"]["x"],
+                                                  vals["masks"][m])
 
             if self.errorbars[name]:
                 coll = self.error_lines[name].get_children()[0]

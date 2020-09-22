@@ -1,4 +1,3 @@
-
 from .. import config
 from .model import PlotModel
 from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers, mask_to_float, vars_to_err
@@ -12,14 +11,9 @@ import os
 
 
 class PlotModel2d(PlotModel):
+    def __init__(self, controller=None, scipp_obj_dict=None, resolution=None):
 
-    def __init__(self,
-                 controller=None,
-                 scipp_obj_dict=None,
-                 resolution=None):
-
-        super().__init__(controller=controller,
-            scipp_obj_dict=scipp_obj_dict)
+        super().__init__(controller=controller, scipp_obj_dict=scipp_obj_dict)
 
         self.button_dims = {}
         self.dim_to_xy = {}
@@ -48,7 +42,6 @@ class PlotModel2d(PlotModel):
             self.button_dims[xy] = axparams[xy]["dim"]
             self.dim_to_xy[axparams[xy]["dim"]] = xy
 
-
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
             # Create coordinate axes for resampled array to be used as image
@@ -58,9 +51,8 @@ class PlotModel2d(PlotModel):
                 values=np.linspace(axparams[xy]["lims"][0],
                                    axparams[xy]["lims"][1],
                                    self.image_resolution[xy] + 1),
-                unit=self.data_arrays[self.name].coords[axparams[xy]["dim"]].unit)
-
-
+                unit=self.data_arrays[self.name].coords[axparams[xy]
+                                                        ["dim"]].unit)
 
     def slice_data(self, slices):
         """
@@ -84,20 +76,22 @@ class PlotModel2d(PlotModel):
 
             # TODO: see if we can call resample_data only once with
             # rebin_edges dict containing all dims to be sliced.
-            self.vslice = self.resample_data(self.vslice,
-                    rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
-                                                                 loc + 0.5 * deltax],
-                                                        unit=self.vslice.coords[dim].unit)})[dim, 0]
+            self.vslice = self.resample_data(
+                self.vslice,
+                rebin_edges={
+                    dim:
+                    sc.Variable(
+                        [dim],
+                        values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
+                        unit=self.vslice.coords[dim].unit)
+                })[dim, 0]
             self.vslice *= (deltax * sc.units.one)
-
 
         # Update pixel widths used for scaling before rebin step
         for xy, dim in self.button_dims.items():
-            self.xywidth[xy] = (
-                self.vslice.coords[dim][dim, 1:] -
-                self.vslice.coords[dim][dim, :-1])
+            self.xywidth[xy] = (self.vslice.coords[dim][dim, 1:] -
+                                self.vslice.coords[dim][dim, :-1])
             self.xywidth[xy].unit = sc.units.one
-
 
         # Scale by bin width and then rebin in both directions
         # Note that this has to be written as 2 inplace operations to avoid
@@ -124,10 +118,7 @@ class PlotModel2d(PlotModel):
         dimy = self.xyrebin[xy[0]].dims[0]
         dimx = self.xyrebin[xy[1]].dims[0]
 
-        rebin_edges = {
-            dimy: self.xyrebin[xy[0]],
-            dimx: self.xyrebin[xy[1]]
-        }
+        rebin_edges = {dimy: self.xyrebin[xy[0]], dimx: self.xyrebin[xy[1]]}
 
         resampled_image = self.resample_data(self.vslice,
                                              rebin_edges=rebin_edges)
@@ -139,7 +130,8 @@ class PlotModel2d(PlotModel):
             self.xyrebin["y"].shape[0] - 1, self.xyrebin["x"].shape[0] - 1
         ]
         self.dslice = sc.DataArray(coords=rebin_edges,
-                                   data=sc.Variable(dims=list(self.button_dims.values()),
+                                   data=sc.Variable(dims=list(
+                                       self.button_dims.values()),
                                                     values=np.ones(shape),
                                                     variances=np.zeros(shape),
                                                     dtype=self.vslice.dtype,
@@ -148,7 +140,11 @@ class PlotModel2d(PlotModel):
         self.dslice *= resampled_image
 
         # Update the matplotlib image data
-        new_values = {"values": self.dslice.values, "masks": {}, "extent": extent}
+        new_values = {
+            "values": self.dslice.values,
+            "masks": {},
+            "extent": extent
+        }
 
         # Handle masks
         if len(mask_info[self.name]) > 0:
@@ -169,7 +165,8 @@ class PlotModel2d(PlotModel):
                     msk = base_mask * sc.Variable(
                         dims=self.dslice.masks[m].dims,
                         values=self.dslice.masks[m].values.astype(np.int32))
-                    new_values["masks"][m] = mask_to_float(msk.values, self.dslice.values)
+                    new_values["masks"][m] = mask_to_float(
+                        msk.values, self.dslice.values)
                 else:
                     new_values["masks"][m] = None
 
@@ -184,9 +181,16 @@ class PlotModel2d(PlotModel):
                 values=np.linspace(xylims[xy][0], xylims[xy][1],
                                    self.image_resolution[xy] + 1),
                 unit=self.data_arrays[self.name].coords[dim].unit)
-        return self.update_image(extent=np.array(list(xylims.values())).flatten(), mask_info=mask_info)
+        return self.update_image(extent=np.array(list(
+            xylims.values())).flatten(),
+                                 mask_info=mask_info)
 
-    def update_profile(self, xdata=None, ydata=None, slices=None, axparams=None, mask_info=None):
+    def update_profile(self,
+                       xdata=None,
+                       ydata=None,
+                       slices=None,
+                       axparams=None,
+                       mask_info=None):
         # Find indices of pixel where cursor lies
         dimx = self.xyrebin["x"].dims[0]
         dimy = self.xyrebin["y"].dims[0]
@@ -197,11 +201,15 @@ class PlotModel2d(PlotModel):
         iy = int(ydata /
                  (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
 
-        data_slice = self.resample_data(self.data_arrays[self.name],
-                        rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimx, 0]
+        data_slice = self.resample_data(
+            self.data_arrays[self.name],
+            rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimx, 0]
 
         data_slice = self.resample_data(data_slice,
-                        rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2]})[dimy, 0]
+                                        rebin_edges={
+                                            dimy:
+                                            self.xyrebin["y"][dimy, iy:iy + 2]
+                                        })[dimy, 0]
 
         other_dims = set(slices.keys()) - set((dimx, dimy))
 
@@ -210,10 +218,15 @@ class PlotModel2d(PlotModel):
             deltax = slices[dim]["thickness"]
             loc = slices[dim]["location"]
 
-            data_slice = self.resample_data(data_slice,
-                    rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
-                                                                 loc + 0.5 * deltax],
-                                                        unit=data_slice.coords[dim].unit)})[dim, 0]
+            data_slice = self.resample_data(
+                data_slice,
+                rebin_edges={
+                    dim:
+                    sc.Variable(
+                        [dim],
+                        values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
+                        unit=data_slice.coords[dim].unit)
+                })[dim, 0]
 
         new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
 
@@ -222,29 +235,35 @@ class PlotModel2d(PlotModel):
         xcenters = to_bin_centers(data_slice.coords[dim], dim).values
 
         if axparams["x"]["hist"][self.name]:
-            new_values[self.name]["values"]["x"] = data_slice.coords[dim].values
-            new_values[self.name]["values"]["y"] = np.concatenate((ydata[0:1], ydata))
+            new_values[
+                self.name]["values"]["x"] = data_slice.coords[dim].values
+            new_values[self.name]["values"]["y"] = np.concatenate(
+                (ydata[0:1], ydata))
         else:
             new_values[self.name]["values"]["x"] = xcenters
             new_values[self.name]["values"]["y"] = ydata
         if data_slice.variances is not None:
             new_values[self.name]["variances"]["x"] = xcenters
             new_values[self.name]["variances"]["y"] = ydata
-            new_values[self.name]["variances"]["e"] = vars_to_err(data_slice.variances)
+            new_values[self.name]["variances"]["e"] = vars_to_err(
+                data_slice.variances)
 
         # Handle masks
         if len(mask_info[self.name]) > 0:
             base_mask = sc.Variable(dims=data_slice.dims,
-                                        values=np.ones(data_slice.shape,
-                                                       dtype=np.int32))
+                                    values=np.ones(data_slice.shape,
+                                                   dtype=np.int32))
             for m in mask_info[self.name]:
                 if m in data_slice.masks:
-                    msk = (base_mask * sc.Variable(
-                        dims=data_slice.masks[m].dims,
-                        values=data_slice.masks[m].values.astype(np.int32))).values
+                    msk = (
+                        base_mask *
+                        sc.Variable(dims=data_slice.masks[m].dims,
+                                    values=data_slice.masks[m].values.astype(
+                                        np.int32))).values
                     if axparams["x"]["hist"][self.name]:
                         msk = np.concatenate((msk[0:1], msk))
-                    new_values[self.name]["masks"][m] = mask_to_float(msk, new_values[self.name]["values"]["y"])
+                    new_values[self.name]["masks"][m] = mask_to_float(
+                        msk, new_values[self.name]["values"]["y"])
                 else:
                     new_values[self.name]["masks"][m] = None
 

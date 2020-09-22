@@ -7,7 +7,6 @@ import numpy as np
 
 
 class PlotPanel3d:
-
     def __init__(self, controller=None, pixel_size=None):
 
         self.controller = controller
@@ -111,18 +110,19 @@ class PlotPanel3d:
                                            names="value")
 
         # Add slider to control position of cut surface
-        self.cut_slider = ipw.FloatSlider(min=0,
-                                              max=1,
-                                              step=self.cut_surface_thickness.value,
-                                              description="Position:",
-                                              disabled=True,
-                                              value=0.5,
-                                              layout={"width": "350px"})
+        self.cut_slider = ipw.FloatSlider(
+            min=0,
+            max=1,
+            step=self.cut_surface_thickness.value,
+            description="Position:",
+            disabled=True,
+            value=0.5,
+            layout={"width": "350px"})
         self.cut_checkbox = ipw.Checkbox(value=True,
-                                             description="Continuous update",
-                                             indent=False,
-                                             layout={"width": "20px"},
-                                             disabled=True)
+                                         description="Continuous update",
+                                         indent=False,
+                                         layout={"width": "20px"},
+                                         disabled=True)
         self.cut_checkbox_link = ipw.jslink(
             (self.cut_checkbox, 'value'),
             (self.cut_slider, 'continuous_update'))
@@ -143,7 +143,6 @@ class PlotPanel3d:
                 ])
             ])
         ])
-
 
     def update_axes(self, axparams):
         self.xminmax["x"] = axparams['x']['lims']
@@ -228,7 +227,8 @@ class PlotPanel3d:
         self.lock_surface_update = False
 
     def _update_cut_surface(self, change=None):
-        self.controller.update_cut_surface(target=self.cut_slider.value,
+        self.controller.update_cut_surface(
+            target=self.cut_slider.value,
             button_value=self.cut_surface_buttons.value,
             surface_thickness=self.cut_surface_thickness.value,
             opacity_lower=self.opacity_slider.lower,
@@ -237,7 +237,6 @@ class PlotPanel3d:
     def update_data(self, axparams=None):
         if self.cut_surface_buttons.value == self.cut_options["Value"]:
             self._update_cut_surface()
-
 
     def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
         self.vmin = vmin

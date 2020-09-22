@@ -7,9 +7,7 @@ import numpy as np
 
 
 class PlotWidgets:
-
-    def __init__(self, controller, positions=None,
-                         button_options=None):
+    def __init__(self, controller, positions=None, button_options=None):
 
         self.controller = controller
         self.rescale_button = ipw.Button(description="Rescale")
@@ -49,15 +47,14 @@ class PlotWidgets:
             # Add an FloatSlider to slide along the z dimension of the array
             dim_xlims = self.controller.xlims[self.controller.name][dim].values
             dx = dim_xlims[1] - dim_xlims[0]
-            self.slider[dim] = ipw.FloatSlider(
-                value=0.5 * np.sum(dim_xlims),
-                min=dim_xlims[0],
-                max=dim_xlims[1],
-                step=0.01 * dx,
-                continuous_update=True,
-                readout=True,
-                disabled=disabled,
-                layout={"width": "250px"})
+            self.slider[dim] = ipw.FloatSlider(value=0.5 * np.sum(dim_xlims),
+                                               min=dim_xlims[0],
+                                               max=dim_xlims[1],
+                                               step=0.01 * dx,
+                                               continuous_update=True,
+                                               readout=True,
+                                               disabled=disabled,
+                                               layout={"width": "250px"})
 
             self.continuous_update[dim] = ipw.Checkbox(
                 value=True,
@@ -66,7 +63,7 @@ class PlotWidgets:
                 layout={"width": "20px"},
                 disabled=disabled)
             ipw.jslink((self.continuous_update[dim], 'value'),
-                           (self.slider[dim], 'continuous_update'))
+                       (self.slider[dim], 'continuous_update'))
 
             self.thickness_slider[dim] = ipw.FloatSlider(
                 value=dx,
@@ -79,13 +76,13 @@ class PlotWidgets:
                 disabled=disabled,
                 layout={'width': "270px"})
 
-            self.profile_button[dim] = ipw.Button(
-                description="Profile",
-                disabled=disabled,
-                button_style="",
-                layout={"width": "initial"})
+            self.profile_button[dim] = ipw.Button(description="Profile",
+                                                  disabled=disabled,
+                                                  button_style="",
+                                                  layout={"width": "initial"})
 
-            self.profile_button[dim].on_click(self.controller._toggle_profile_view)
+            self.profile_button[dim].on_click(
+                self.controller._toggle_profile_view)
 
             if self.controller.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
@@ -134,14 +131,15 @@ class PlotWidgets:
             # Add observer to buttons
             self.buttons[dim].on_msg(self.update_buttons)
             # Add an observer to the sliders
-            self.slider[dim].observe(self.controller.update_data, names="value")
-            self.thickness_slider[dim].observe(self.controller.update_data, names="value")
+            self.slider[dim].observe(self.controller.update_data,
+                                     names="value")
+            self.thickness_slider[dim].observe(self.controller.update_data,
+                                               names="value")
             # Add the row of slider + buttons
             row = [
-                self.dim_labels[dim],
-                self.slider[dim], self.continuous_update[dim],
-                self.buttons[dim], self.thickness_slider[dim],
-                self.profile_button[dim]
+                self.dim_labels[dim], self.slider[dim],
+                self.continuous_update[dim], self.buttons[dim],
+                self.thickness_slider[dim], self.profile_button[dim]
             ]
             self.container.append(ipw.HBox(row))
 
@@ -169,28 +167,31 @@ class PlotWidgets:
                         description="{}:{}".format(name, key),
                         indent=False,
                         layout={"width": "initial"})
-                    setattr(self.mask_checkboxes[name][key], "mask_group", name)
+                    setattr(self.mask_checkboxes[name][key], "mask_group",
+                            name)
                     setattr(self.mask_checkboxes[name][key], "mask_name", key)
-                    self.mask_checkboxes[name][key].observe(self.controller.toggle_mask,
-                                                  names="value")
+                    self.mask_checkboxes[name][key].observe(
+                        self.controller.toggle_mask, names="value")
 
         if masks_found:
             self.masks_lab = ipw.Label(value="Masks:")
 
             # Add a master button to control all masks in one go
             self.masks_button = ipw.ToggleButton(
-                value=self.controller.params["masks"][self.controller.name]["show"],
+                value=self.controller.params["masks"][
+                    self.controller.name]["show"],
                 description="Hide all" if
-                self.controller.params["masks"][self.controller.name]["show"] else "Show all",
+                self.controller.params["masks"][self.controller.name]["show"]
+                else "Show all",
                 disabled=False,
                 button_style="",
                 layout={"width": "initial"})
             self.masks_button.observe(self.toggle_all_masks, names="value")
 
             box_layout = ipw.Layout(display='flex',
-                                flex_flow='row wrap',
-                                align_items='stretch',
-                                width='70%')
+                                    flex_flow='row wrap',
+                                    align_items='stretch',
+                                    width='70%')
             mask_list = []
             for name in self.mask_checkboxes:
                 for cbox in self.mask_checkboxes[name].values():
@@ -198,7 +199,9 @@ class PlotWidgets:
 
             self.masks_box = ipw.Box(children=mask_list, layout=box_layout)
 
-            self.container += [ipw.HBox([self.masks_lab, self.masks_button, self.masks_box])]
+            self.container += [
+                ipw.HBox([self.masks_lab, self.masks_button, self.masks_box])
+            ]
 
     def update_buttons(self, owner, event, dummy):
         """

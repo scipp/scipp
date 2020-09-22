@@ -9,14 +9,13 @@ import numpy as np
 
 
 class PlotPanel1d:
-
     def __init__(self, controller, data_names):
 
         self.controller = controller
         self.widgets = ipw.VBox()
         self.keep_buttons = {}
         self.data_names = data_names
-        self.slice_label= None
+        self.slice_label = None
         self.counter = -1
 
     def _ipython_display_(self):
@@ -27,18 +26,18 @@ class PlotPanel1d:
 
     def make_keep_button(self):
         drop = ipw.Dropdown(options=self.data_names,
-                                description='',
-                                layout={'width': 'initial'})
+                            description='',
+                            layout={'width': 'initial'})
         lab = ipw.Label()
         but = ipw.Button(description="Keep",
-                             disabled=False,
-                             button_style="",
-                             layout={'width': "70px"})
+                         disabled=False,
+                         button_style="",
+                         layout={'width': "70px"})
         # Generate a random color. TODO: should we initialise the seed?
         col = ipw.ColorPicker(concise=True,
-                                  description='',
-                                  value=make_random_color(fmt='hex'),
-                                  disabled=False)
+                              description='',
+                              value=make_random_color(fmt='hex'),
+                              disabled=False)
         # Make a unique id
         self.counter += 1
         line_id = self.counter
@@ -52,7 +51,8 @@ class PlotPanel1d:
             "colorpicker": col,
             "label": lab
         }
-        self.widgets.children += ipw.HBox(list(self.keep_buttons[line_id].values())),
+        self.widgets.children += ipw.HBox(
+            list(self.keep_buttons[line_id].values())),
 
     def update_axes(self, axparams=None):
         self.keep_buttons.clear()
@@ -76,7 +76,9 @@ class PlotPanel1d:
 
     def keep_line(self, owner):
         name = self.keep_buttons[owner.id]["dropdown"].value
-        self.controller.keep_line(name=name, color=self.keep_buttons[owner.id]["colorpicker"].value,
+        self.controller.keep_line(
+            name=name,
+            color=self.keep_buttons[owner.id]["colorpicker"].value,
             line_id=owner.id)
         self.keep_buttons[owner.id]["dropdown"].disabled = True
         self.keep_buttons[owner.id]["label"].value = self.slice_label

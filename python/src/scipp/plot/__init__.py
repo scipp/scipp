@@ -50,7 +50,6 @@ try:
     else:
         plt.ioff()
 
-
 except ImportError:
     pass
 

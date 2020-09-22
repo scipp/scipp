@@ -14,17 +14,13 @@ import numpy as np
 
 
 class PlotModel3d(PlotModel):
-
     def __init__(self,
                  controller=None,
                  scipp_obj_dict=None,
                  positions=None,
                  cut_options=None):
 
-        super().__init__(controller=controller,
-                         scipp_obj_dict=scipp_obj_dict)
-
-
+        super().__init__(controller=controller, scipp_obj_dict=scipp_obj_dict)
 
         self.dslice = None
         self.button_dims = {}
@@ -37,10 +33,11 @@ class PlotModel3d(PlotModel):
         # If positions are specified, then the x, y, z points positions can
         # never change
         if self.positions is not None:
-            self.pos_array = np.array(scipp_obj_dict[self.name].coords[self.positions].values, dtype=np.float32)
+            self.pos_array = np.array(
+                scipp_obj_dict[self.name].coords[self.positions].values,
+                dtype=np.float32)
 
         return
-
 
     def get_positions_array(self):
         return self.pos_array
@@ -69,7 +66,6 @@ class PlotModel3d(PlotModel):
             self.pos_array = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
 
-
     def slice_data(self, slices):
         """
         Slice the extra dimensions down and update the slice values
@@ -82,39 +78,54 @@ class PlotModel3d(PlotModel):
             deltax = slices[dim]["thickness"]
             loc = slices[dim]["location"]
 
-            data_slice = self.resample_data(data_slice,
-                    rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
-                                                                 loc + 0.5 * deltax],
-                                                        unit=data_slice.coords[dim].unit)})[dim, 0]
+            data_slice = self.resample_data(
+                data_slice,
+                rebin_edges={
+                    dim:
+                    sc.Variable(
+                        [dim],
+                        values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
+                        unit=data_slice.coords[dim].unit)
+                })[dim, 0]
             data_slice *= (deltax * sc.units.one)
 
         # Use automatic broadcast if positions are not used
         if self.positions is None:
-            shape = [data_slice.coords[self.button_dims["z"]].shape[0] - 1,
-                     data_slice.coords[self.button_dims["y"]].shape[0] - 1,
-                     data_slice.coords[self.button_dims["x"]].shape[0] - 1]
+            shape = [
+                data_slice.coords[self.button_dims["z"]].shape[0] - 1,
+                data_slice.coords[self.button_dims["y"]].shape[0] - 1,
+                data_slice.coords[self.button_dims["x"]].shape[0] - 1
+            ]
 
             self.dslice = sc.DataArray(coords={
-                self.button_dims["z"]: data_slice.coords[self.button_dims["z"]],
-                self.button_dims["y"]: data_slice.coords[self.button_dims["y"]],
-                self.button_dims["x"]: data_slice.coords[self.button_dims["x"]]
-                },
-                                       data=sc.Variable(dims=[self.button_dims["z"],
-                                        self.button_dims["y"],
-                                        self.button_dims["x"]],
-                                                        values=np.ones(shape),
-                                                        variances=np.zeros(shape),
-                                                        dtype=data_slice.dtype,
-                                                        unit=sc.units.one))
+                self.button_dims["z"]:
+                data_slice.coords[self.button_dims["z"]],
+                self.button_dims["y"]:
+                data_slice.coords[self.button_dims["y"]],
+                self.button_dims["x"]:
+                data_slice.coords[self.button_dims["x"]]
+            },
+                                       data=sc.Variable(
+                                           dims=[
+                                               self.button_dims["z"],
+                                               self.button_dims["y"],
+                                               self.button_dims["x"]
+                                           ],
+                                           values=np.ones(shape),
+                                           variances=np.zeros(shape),
+                                           dtype=data_slice.dtype,
+                                           unit=sc.units.one))
 
             self.dslice *= data_slice
         else:
             self.dslice = data_slice
 
-
     def get_slice_values(self, mask_info):
 
-        new_values = {"values": self.dslice.values.astype(np.float32).ravel(), "masks": None}
+        new_values = {
+            "values": self.dslice.values.astype(np.float32).ravel(),
+            "masks": None
+        }
 
         # Handle masks
         msk = None
@@ -139,8 +150,12 @@ class PlotModel3d(PlotModel):
 
         return self.get_slice_values(mask_info)
 
-    def update_cut_surface(self, target=None, button_value=None, surface_thickness=None,
-        opacity_lower=None, opacity_upper=None):
+    def update_cut_surface(self,
+                           target=None,
+                           button_value=None,
+                           surface_thickness=None,
+                           opacity_lower=None,
+                           opacity_upper=None):
         """
         Compute new opacities based on positions of the cut surface.
         """
@@ -150,9 +165,8 @@ class PlotModel3d(PlotModel):
         # Cartesian X, Y, Z
         if button_value < self.cut_options["Xcylinder"]:
             return np.where(
-                np.abs(self.pos_array[:, button_value] -
-                       target) < 0.5 * surface_thickness,
-                opacity_upper, opacity_lower)
+                np.abs(self.pos_array[:, button_value] - target) <
+                0.5 * surface_thickness, opacity_upper, opacity_lower)
         # Cylindrical X, Y, Z
         elif button_value < self.cut_options["Sphere"]:
             axis = button_value - 3
@@ -162,9 +176,8 @@ class PlotModel3d(PlotModel):
                     np.sqrt(self.pos_array[:, remaining_inds[0]] *
                             self.pos_array[:, remaining_inds[0]] +
                             self.pos_array[:, remaining_inds[1]] *
-                            self.pos_array[:, remaining_inds[1]]) -
-                    target) < 0.5 * surface_thickness,
-                opacity_upper, opacity_lower)
+                            self.pos_array[:, remaining_inds[1]]) - target) <
+                0.5 * surface_thickness, opacity_upper, opacity_lower)
         # Spherical
         elif button_value == self.cut_options["Sphere"]:
             return np.where(
@@ -172,13 +185,13 @@ class PlotModel3d(PlotModel):
                     np.sqrt(self.pos_array[:, 0] * self.pos_array[:, 0] +
                             self.pos_array[:, 1] * self.pos_array[:, 1] +
                             self.pos_array[:, 2] * self.pos_array[:, 2]) -
-                    target) < 0.5 * surface_thickness,
-                opacity_upper, opacity_lower)
+                    target) < 0.5 * surface_thickness, opacity_upper,
+                opacity_lower)
         # Value iso-surface
         elif button_value == self.cut_options["Value"]:
             return np.where(
                 np.abs(self.dslice.values.ravel() - target) <
-                0.5 * surface_thickness,
-                opacity_upper, opacity_lower)
+                0.5 * surface_thickness, opacity_upper, opacity_lower)
         else:
-            raise RuntimeError("Unknown cut surface type {}".format(button_value))
+            raise RuntimeError(
+                "Unknown cut surface type {}".format(button_value))

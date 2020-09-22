@@ -19,8 +19,6 @@ from copy import copy
 import io
 
 
-
-
 class PlotView3d:
     def __init__(self,
                  controller=None,
@@ -45,16 +43,13 @@ class PlotView3d:
         # Prepare colormaps
         self.cmap = copy(cm.get_cmap(cmap))
         self.cmap.set_bad(color=nan_color)
-        self.scalar_map = cm.ScalarMappable(
-            norm=norm, cmap=self.cmap)
+        self.scalar_map = cm.ScalarMappable(norm=norm, cmap=self.cmap)
         self.masks_scalar_map = None
         if len(mask_names) > 0:
-            self.masks_cmap = copy(
-                cm.get_cmap(mask_cmap))
+            self.masks_cmap = copy(cm.get_cmap(mask_cmap))
             self.masks_cmap.set_bad(color=nan_color)
-            self.masks_scalar_map = cm.ScalarMappable(
-                norm=norm,
-                cmap=self.masks_cmap)
+            self.masks_scalar_map = cm.ScalarMappable(norm=norm,
+                                                      cmap=self.masks_cmap)
 
         self.axlabels = {"x": "", "y": "", "z": ""}
         self.positions = None
@@ -62,7 +57,6 @@ class PlotView3d:
         self.tick_size = tick_size
         self.show_outline = show_outline
         self.unit = unit
-
 
         # Create the point cloud material with pythreejs
         self.points_material = self._create_points_material()
@@ -107,8 +101,12 @@ class PlotView3d:
         raise RuntimeError("Saving figures is not yet implemented for 3D "
                            "visualization.")
 
-
-    def update_axes(self, axparams, axformatter=None, axlocator=None, logx=None, logy=None):
+    def update_axes(self,
+                    axparams,
+                    axformatter=None,
+                    axlocator=None,
+                    logx=None,
+                    logy=None):
 
         if self.point_cloud is not None:
             self.scene.remove(self.point_cloud)
@@ -121,7 +119,8 @@ class PlotView3d:
         self._create_outline(axparams)
 
         # Set camera controller target
-        self.camera.position = list(np.array(axparams["centre"]) + 1.2 * axparams["box_size"])
+        self.camera.position = list(
+            np.array(axparams["centre"]) + 1.2 * axparams["box_size"])
         self.controls.target = axparams["centre"]
         self.camera.lookAt(axparams["centre"])
         # Rescale axes helper
@@ -143,12 +142,15 @@ class PlotView3d:
         rgba_shape[1] += 1
         self.points_geometry = p3.BufferGeometry(
             attributes={
-                'position': p3.BufferAttribute(array=pos_array),
+                'position':
+                p3.BufferAttribute(array=pos_array),
                 # 'rgba_color': p3.BufferAttribute(array=self.engine.slice_data(change=None, autoscale_cmap=True))
-                'rgba_color': p3.BufferAttribute(array=np.ones(rgba_shape, dtype=np.float32))
+                'rgba_color':
+                p3.BufferAttribute(array=np.ones(rgba_shape, dtype=np.float32))
             })
         # points_material = self.create_points_material()
-        self.point_cloud = p3.Points(geometry=self.points_geometry, material=self.points_material)
+        self.point_cloud = p3.Points(geometry=self.points_geometry,
+                                     material=self.points_material)
         # return points_geometry, points_material, points
 
     def _create_points_material(self):
@@ -224,8 +226,9 @@ void main() {
             self.tick_size = 0.05 * np.amin([
                 axparams['x']["lims"][1] - axparams['x']["lims"][0],
                 axparams['y']["lims"][1] - axparams['y']["lims"][0],
-                axparams['z']["lims"][1] - axparams['z']["lims"][0]])
-                # np.diff(list(self.xminmax.values()), axis=1).ravel())
+                axparams['z']["lims"][1] - axparams['z']["lims"][0]
+            ])
+            # np.diff(list(self.xminmax.values()), axis=1).ravel())
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker = mpl.ticker.MaxNLocator(5)
@@ -236,15 +239,17 @@ void main() {
         }
 
         for axis, x in enumerate('xyz'):
-            ticks = ticker.tick_values(axparams[x]["lims"][0], axparams[x]["lims"][1])
+            ticks = ticker.tick_values(axparams[x]["lims"][0],
+                                       axparams[x]["lims"][1])
             for tick in ticks:
-                if tick >= axparams[x]["lims"][0] and tick <= axparams[x]["lims"][1]:
+                if tick >= axparams[x]["lims"][0] and tick <= axparams[x][
+                        "lims"][1]:
                     tick_pos = iden[axis] * tick + offsets[x]
                     ticks_and_labels.add(
                         self._make_axis_tick(string=value_to_string(
                             tick, precision=1),
-                                            position=tick_pos.tolist(),
-                                            size=self.tick_size))
+                                             position=tick_pos.tolist(),
+                                             size=self.tick_size))
             ticks_and_labels.add(
                 self._make_axis_tick(
                     string=axparams[x]["label"],
@@ -261,7 +266,7 @@ void main() {
         height_inches = config.plot.height / config.plot.dpi
 
         fig = plt.figure(figsize=(height_inches * 0.2, height_inches),
-                                dpi=config.plot.dpi)
+                         dpi=config.plot.dpi)
         # canvas = backend_agg.FigureCanvasAgg(fig)
         ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
         cb1 = mpl.colorbar.ColorbarBase(
@@ -309,10 +314,10 @@ void main() {
                 new_values["values"][masks_inds])
             colors[masks_inds] = masks_colors
 
-        colors[:,
-                   3] = self.points_geometry.attributes["rgba_color"].array[:,
-                                                                            3]
-        self.points_geometry.attributes["rgba_color"].array = colors.astype(np.float32)
+        colors[:, 3] = self.points_geometry.attributes["rgba_color"].array[:,
+                                                                           3]
+        self.points_geometry.attributes["rgba_color"].array = colors.astype(
+            np.float32)
 
     def rescale_to_data(self, vmin=None, vmax=None):
         self.scalar_map.set_clim(vmin, vmax)

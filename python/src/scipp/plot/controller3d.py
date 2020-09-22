@@ -12,11 +12,9 @@ from .._scipp import core as sc
 # Other imports
 import numpy as np
 
-class PlotController3d(PlotController):
 
-    def __init__(self,
-                 pixel_size=None,
-                 **kwargs):
+class PlotController3d(PlotController):
+    def __init__(self, pixel_size=None, **kwargs):
 
         super().__init__(**kwargs)
 
@@ -29,10 +27,14 @@ class PlotController3d(PlotController):
             coord = scipp_obj_dict[self.name].coords[self.positions]
             for xyz in "xyz":
                 x = getattr(sc.geometry, xyz)(coord)
-                self.pos_axparams[xyz] = {"lims": [sc.min(x).value - 0.5 * pixel_size,
-                                         sc.max(x).value + 0.5 * pixel_size],
-                                         "label": name_with_unit(coord, name=xyz.upper())}
-
+                self.pos_axparams[xyz] = {
+                    "lims": [
+                        sc.min(x).value - 0.5 * pixel_size,
+                        sc.max(x).value + 0.5 * pixel_size
+                    ],
+                    "label":
+                    name_with_unit(coord, name=xyz.upper())
+                }
 
     def get_axes_parameters(self):
         axparams = {}
@@ -42,14 +44,16 @@ class PlotController3d(PlotController):
             axparams = super().get_axes_parameters()
 
         axparams["centre"] = [
-            0.5 * np.sum(axparams['x']["lims"]), 0.5 * np.sum(axparams['y']["lims"]),
+            0.5 * np.sum(axparams['x']["lims"]),
+            0.5 * np.sum(axparams['y']["lims"]),
             0.5 * np.sum(axparams['z']["lims"])
         ]
 
         axparams["box_size"] = np.array([
             axparams['x']["lims"][1] - axparams['x']["lims"][0],
             axparams['y']["lims"][1] - axparams['y']["lims"][0],
-            axparams['z']["lims"][1] - axparams['z']["lims"][0]])
+            axparams['z']["lims"][1] - axparams['z']["lims"][0]
+        ])
         return axparams
 
     def get_positions_array(self):
@@ -76,12 +80,14 @@ class PlotController3d(PlotController):
         vmin, vmax = self.model.rescale_to_data()
         self.panel.rescale_to_data(vmin, vmax)
         self.view.rescale_to_data(vmin, vmax)
-        new_values = self.model.get_slice_values(mask_info=self.get_mask_info())
+        new_values = self.model.get_slice_values(
+            mask_info=self.get_mask_info())
         self.view.update_data(new_values)
 
     def toggle_mask(self, change=None):
         """
         Show/hide masks
         """
-        new_values = self.model.get_slice_values(mask_info=self.get_mask_info())
+        new_values = self.model.get_slice_values(
+            mask_info=self.get_mask_info())
         self.view.update_data(new_values)

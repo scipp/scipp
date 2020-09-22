@@ -19,16 +19,10 @@ import ipywidgets as widgets
 import warnings
 
 
-
-
 class PlotModel1d(PlotModel):
+    def __init__(self, controller=None, scipp_obj_dict=None):
 
-    def __init__(self,
-                 controller=None,
-                 scipp_obj_dict=None):
-
-        super().__init__(controller=controller,
-            scipp_obj_dict=scipp_obj_dict)
+        super().__init__(controller=controller, scipp_obj_dict=scipp_obj_dict)
 
         self.dim = None
         self.hist = None
@@ -40,8 +34,6 @@ class PlotModel1d(PlotModel):
         self.hist = axparams["x"]["hist"]
         return
 
-
-
     def slice_data(self, array, slices):
 
         data_slice = array
@@ -51,10 +43,15 @@ class PlotModel1d(PlotModel):
             deltax = slices[dim]["thickness"]
             loc = slices[dim]["location"]
 
-            data_slice = self.resample_data(data_slice,
-                    rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
-                                                                 loc + 0.5 * deltax],
-                                                        unit=data_slice.coords[dim].unit)})[dim, 0]
+            data_slice = self.resample_data(
+                data_slice,
+                rebin_edges={
+                    dim:
+                    sc.Variable(
+                        [dim],
+                        values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
+                        unit=data_slice.coords[dim].unit)
+                })[dim, 0]
             data_slice *= (deltax * sc.units.one)
 
         return data_slice
@@ -69,18 +66,22 @@ class PlotModel1d(PlotModel):
 
             self.dslice = self.slice_data(array, slices)
             ydata = self.dslice.values
-            xcenters = to_bin_centers(self.dslice.coords[self.dim], self.dim).values
+            xcenters = to_bin_centers(self.dslice.coords[self.dim],
+                                      self.dim).values
 
             if self.hist[name]:
-                new_values[name]["values"]["x"] = self.dslice.coords[self.dim].values
-                new_values[name]["values"]["y"] = np.concatenate((ydata[0:1], ydata))
+                new_values[name]["values"]["x"] = self.dslice.coords[
+                    self.dim].values
+                new_values[name]["values"]["y"] = np.concatenate(
+                    (ydata[0:1], ydata))
             else:
                 new_values[name]["values"]["x"] = xcenters
                 new_values[name]["values"]["y"] = ydata
             if self.dslice.variances is not None:
                 new_values[name]["variances"]["x"] = xcenters
                 new_values[name]["variances"]["y"] = ydata
-                new_values[name]["variances"]["e"] = vars_to_err(self.dslice.variances)
+                new_values[name]["variances"]["e"] = vars_to_err(
+                    self.dslice.variances)
 
             if len(mask_info[name]) > 0:
                 base_mask = sc.Variable(dims=self.dslice.dims,
@@ -88,17 +89,25 @@ class PlotModel1d(PlotModel):
                                                        dtype=np.int32))
                 for m in mask_info[name]:
                     # Use automatic broadcast to broadcast 0D masks
-                    msk = (base_mask * sc.Variable(
-                        dims=self.dslice.masks[m].dims,
-                        values=self.dslice.masks[m].values.astype(np.int32))).values
+                    msk = (
+                        base_mask *
+                        sc.Variable(dims=self.dslice.masks[m].dims,
+                                    values=self.dslice.masks[m].values.astype(
+                                        np.int32))).values
                     if self.hist[name]:
                         msk = np.concatenate((msk[0:1], msk))
 
-                    new_values[name]["masks"][m] = mask_to_float(msk, new_values[name]["values"]["y"])
+                    new_values[name]["masks"][m] = mask_to_float(
+                        msk, new_values[name]["values"]["y"])
 
         return new_values
 
-    def update_profile(self, xdata=None, ydata=None, slices=None, axparams=None, mask_info=None):
+    def update_profile(self,
+                       xdata=None,
+                       ydata=None,
+                       slices=None,
+                       axparams=None,
+                       mask_info=None):
 
         profile_dim = axparams["x"]["dim"]
 
@@ -108,10 +117,13 @@ class PlotModel1d(PlotModel):
 
         # Find closest point to cursor
         # TODO: can we optimize this with new buckets?
-        distance_to_cursor = np.abs(self.data_arrays[self.name].coords[self.dim].values - xdata)
+        distance_to_cursor = np.abs(
+            self.data_arrays[self.name].coords[self.dim].values - xdata)
         ind = np.argmin(distance_to_cursor)
 
-        xcenters = to_bin_centers(self.data_arrays[self.name].coords[profile_dim], profile_dim).values
+        xcenters = to_bin_centers(
+            self.data_arrays[self.name].coords[profile_dim],
+            profile_dim).values
 
         for name, profile_slice in self.data_arrays.items():
 
@@ -122,24 +134,32 @@ class PlotModel1d(PlotModel):
                 deltax = slices[dim]["thickness"]
                 loc = slices[dim]["location"]
 
-                profile_slice = self.resample_data(profile_slice,
-                        rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
-                                                                     loc + 0.5 * deltax],
-                                                            unit=profile_slice.coords[dim].unit)})[dim, 0]
+                profile_slice = self.resample_data(
+                    profile_slice,
+                    rebin_edges={
+                        dim:
+                        sc.Variable(
+                            [dim],
+                            values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
+                            unit=profile_slice.coords[dim].unit)
+                    })[dim, 0]
 
             profile_slice = profile_slice[self.dim, ind]
 
             ydata = profile_slice.values
             if axparams["x"]["hist"][name]:
-                new_values[name]["values"]["x"] = profile_slice.coords[profile_dim].values
-                new_values[name]["values"]["y"] = np.concatenate((ydata[0:1], ydata))
+                new_values[name]["values"]["x"] = profile_slice.coords[
+                    profile_dim].values
+                new_values[name]["values"]["y"] = np.concatenate(
+                    (ydata[0:1], ydata))
             else:
                 new_values[name]["values"]["x"] = xcenters
                 new_values[name]["values"]["y"] = ydata
             if profile_slice.variances is not None:
                 new_values[name]["variances"]["x"] = xcenters
                 new_values[name]["variances"]["y"] = ydata
-                new_values[name]["variances"]["e"] = vars_to_err(profile_slice.variances)
+                new_values[name]["variances"]["e"] = vars_to_err(
+                    profile_slice.variances)
 
             if len(mask_info[name]) > 0:
                 base_mask = sc.Variable(dims=profile_slice.dims,
@@ -149,10 +169,12 @@ class PlotModel1d(PlotModel):
                     # Use automatic broadcast to broadcast 0D masks
                     msk = (base_mask * sc.Variable(
                         dims=profile_slice.masks[m].dims,
-                        values=profile_slice.masks[m].values.astype(np.int32))).values
+                        values=profile_slice.masks[m].values.astype(
+                            np.int32))).values
                     if axparams["x"]["hist"][name]:
                         msk = np.concatenate((msk[0:1], msk))
 
-                    new_values[name]["masks"][m] = mask_to_float(msk, new_values[name]["values"]["y"])
+                    new_values[name]["masks"][m] = mask_to_float(
+                        msk, new_values[name]["values"]["y"])
 
         return new_values

@@ -45,16 +45,16 @@ class PlotView1d:
         self.profile_counter = -1
 
         self.figure = LinePlot(errorbars=errorbars,
-                 ax=ax,
-                 mpl_line_params=mpl_line_params,
-                 title=title,
-                 unit=unit,
-                 logx=logx,
-                 logy=logy,
-                 grid=grid,
-                 mask_params=mask_params,
-                 mask_names=mask_names,
-                 picker=picker)
+                               ax=ax,
+                               mpl_line_params=mpl_line_params,
+                               title=title,
+                               unit=unit,
+                               logx=logx,
+                               logy=logy,
+                               grid=grid,
+                               mask_params=mask_params,
+                               mask_names=mask_names,
+                               picker=picker)
 
         return
 
@@ -69,7 +69,7 @@ class PlotView1d:
 
     def toggle_mask(self, change):
         self.figure.toggle_mask(change["owner"].mask_group,
-            change["owner"].mask_name, change["new"])
+                                change["owner"].mask_name, change["new"])
 
     def rescale_to_data(self, vmin=None, vmax=None):
         self.figure.rescale_to_data()
@@ -112,13 +112,17 @@ class PlotView1d:
     def update_profile_connection(self, visible):
         # Connect picking events
         if visible:
-            self.profile_pick_connection = self.figure.fig.canvas.mpl_connect('pick_event', self.keep_or_remove_profile)
-            self.profile_hover_connection = self.figure.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+            self.profile_pick_connection = self.figure.fig.canvas.mpl_connect(
+                'pick_event', self.keep_or_remove_profile)
+            self.profile_hover_connection = self.figure.fig.canvas.mpl_connect(
+                'motion_notify_event', self.update_profile)
         else:
             if self.profile_pick_connection is not None:
-                self.figure.fig.canvas.mpl_disconnect(self.profile_pick_connection)
+                self.figure.fig.canvas.mpl_disconnect(
+                    self.profile_pick_connection)
             if self.profile_hover_connection is not None:
-                self.figure.fig.canvas.mpl_disconnect(self.profile_hover_connection)
+                self.figure.fig.canvas.mpl_disconnect(
+                    self.profile_hover_connection)
 
     def keep_profile(self, event):
         xdata = event.mouseevent.xdata
@@ -129,7 +133,6 @@ class PlotView1d:
         line.set_url("axvline")
         line.set_gid(line_id)
         self.controller.keep_line(target="profile", color=col, line_id=line_id)
-
 
     def remove_profile(self, event):
         new_lines = []

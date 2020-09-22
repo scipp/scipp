@@ -71,7 +71,10 @@ class PlotView2d:
         if aspect is None:
             aspect = config.plot.aspect
 
-        self.image = self.make_default_imshow(cmap=cmap, norm=norm, aspect=aspect, picker=5)
+        self.image = self.make_default_imshow(cmap=cmap,
+                                              norm=norm,
+                                              aspect=aspect,
+                                              picker=5)
         self.ax.set_title(title)
         if cbar:
             self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
@@ -80,10 +83,9 @@ class PlotView2d:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.mask_image = {}
         for m in mask_names:
-            self.mask_image[m] = self.make_default_imshow(
-                cmap=mask_cmap,
-                norm=norm,
-                aspect=aspect)
+            self.mask_image[m] = self.make_default_imshow(cmap=mask_cmap,
+                                                          norm=norm,
+                                                          aspect=aspect)
         if logx:
             self.ax.set_xscale("log")
         if logy:
@@ -95,7 +97,6 @@ class PlotView2d:
         self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
 
         return
-
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
@@ -112,7 +113,6 @@ class PlotView2d:
     def savefig(self, filename=None):
         self.fig.savefig(filename, bbox_inches="tight")
 
-
     def make_default_imshow(self, cmap, norm, aspect=None, picker=None):
         return self.ax.imshow([[1.0, 1.0], [1.0, 1.0]],
                               norm=norm,
@@ -122,7 +122,6 @@ class PlotView2d:
                               interpolation="nearest",
                               cmap=cmap,
                               picker=picker)
-
 
     def rescale_to_data(self, vmin, vmax):
         self.image.set_clim([vmin, vmax])
@@ -155,12 +154,10 @@ class PlotView2d:
         xylims = {}
 
         # Make sure we don't overrun the original array bounds
-        xylims["x"] = np.clip(
-            self.ax.get_xlim(),
-            *sorted(self.global_lims["x"]))
-        xylims["y"] = np.clip(
-            self.ax.get_ylim(),
-            *sorted(self.global_lims["y"]))
+        xylims["x"] = np.clip(self.ax.get_xlim(),
+                              *sorted(self.global_lims["x"]))
+        xylims["y"] = np.clip(self.ax.get_ylim(),
+                              *sorted(self.global_lims["y"]))
 
         dx = np.abs(self.current_lims["x"][1] - self.current_lims["x"][0])
         dy = np.abs(self.current_lims["y"][1] - self.current_lims["y"][0])
@@ -196,8 +193,6 @@ class PlotView2d:
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
 
-
-
     def update_axes(self, axparams, axformatter, axlocator, logx, logy):
 
         self.current_lims['x'] = axparams["x"]["lims"]
@@ -213,13 +208,12 @@ class PlotView2d:
 
         for xy, param in axparams.items():
             axis = getattr(self.ax, "{}axis".format(xy))
-            axis.set_major_formatter(
-                axformatter[param["dim"]][is_log[xy]])
-            axis.set_major_locator(
-                axlocator[param["dim"]][is_log[xy]])
+            axis.set_major_formatter(axformatter[param["dim"]][is_log[xy]])
+            axis.set_major_locator(axlocator[param["dim"]][is_log[xy]])
 
         # Set axes limits and ticks
-        extent_array = np.array([axparams["x"]["lims"], axparams["y"]["lims"]]).flatten()
+        extent_array = np.array([axparams["x"]["lims"],
+                                 axparams["y"]["lims"]]).flatten()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             self.image.set_extent(extent_array)
@@ -260,7 +254,6 @@ class PlotView2d:
         else:
             self.controller.toggle_hover_visibility(False)
 
-
     def keep_or_remove_profile(self, event):
         if isinstance(event.artist, PathCollection):
             self.remove_profile(event)
@@ -274,18 +267,18 @@ class PlotView2d:
             self.keep_profile(event)
         self.fig.canvas.draw_idle()
 
-
     def update_profile_connection(self, visible):
         # Connect picking events
         if visible:
-            self.profile_pick_connection = self.fig.canvas.mpl_connect('pick_event', self.keep_or_remove_profile)
-            self.profile_hover_connection = self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
+            self.profile_pick_connection = self.fig.canvas.mpl_connect(
+                'pick_event', self.keep_or_remove_profile)
+            self.profile_hover_connection = self.fig.canvas.mpl_connect(
+                'motion_notify_event', self.update_profile)
         else:
             if self.profile_pick_connection is not None:
                 self.fig.canvas.mpl_disconnect(self.profile_pick_connection)
             if self.profile_hover_connection is not None:
                 self.fig.canvas.mpl_disconnect(self.profile_hover_connection)
-
 
     def keep_profile(self, event):
         xdata = event.mouseevent.xdata
@@ -295,8 +288,9 @@ class PlotView2d:
         line_id = self.profile_counter
         self.profile_ids.append(line_id)
         if self.profile_scatter is None:
-            self.profile_scatter = self.ax.scatter(
-                [xdata], [ydata], c=[col], picker=5)
+            self.profile_scatter = self.ax.scatter([xdata], [ydata],
+                                                   c=[col],
+                                                   picker=5)
         else:
             new_offsets = np.concatenate(
                 (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
@@ -314,5 +308,6 @@ class PlotView2d:
         self.profile_scatter.set_offsets(xy)
         self.profile_scatter.set_facecolors(c)
         # Also remove the line from the 1d plot
-        self.controller.remove_line(target="profile", line_id=self.profile_ids[ind])
+        self.controller.remove_line(target="profile",
+                                    line_id=self.profile_ids[ind])
         self.profile_ids.pop(ind)

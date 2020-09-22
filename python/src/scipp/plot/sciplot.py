@@ -6,7 +6,6 @@ import ipywidgets as ipw
 
 
 class SciPlot:
-
     def __init__(self):
 
         self.controller = None
@@ -27,7 +26,6 @@ class SciPlot:
 
     def savefig(self, filename=None):
         self.view.savefig(filename=filename)
-
 
     def _connect_controller_members(self):
         self.controller.model = self.model

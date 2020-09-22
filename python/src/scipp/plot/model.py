@@ -16,10 +16,7 @@ import ipywidgets as widgets
 
 
 class PlotModel:
-
-    def __init__(self,
-                 controller=None,
-                 scipp_obj_dict=None):
+    def __init__(self, controller=None, scipp_obj_dict=None):
 
         # The main container of DataArrays
         self.data_arrays = {}
@@ -30,12 +27,12 @@ class PlotModel:
             # Create a DataArray with units of counts, and bin-edge
             # coordinates, because it is to be passed to rebin during the
             # resampling stage.
-            self.data_arrays[name] = sc.DataArray(
-                data=sc.Variable(dims=list(controller.dim_to_shape[name].keys()),
-                                 unit=sc.units.counts,
-                                 values=array.values,
-                                 variances=array.variances,
-                                 dtype=sc.dtype.float64))
+            self.data_arrays[name] = sc.DataArray(data=sc.Variable(
+                dims=list(controller.dim_to_shape[name].keys()),
+                unit=sc.units.counts,
+                values=array.values,
+                variances=array.variances,
+                dtype=sc.dtype.float64))
 
             # Add bin-edge coordinates
             for dim, coord in controller.coords[name].items():
@@ -66,7 +63,6 @@ class PlotModel:
         last = min(bins - 1, last)
         return dim, slice(first, last + 1)
 
-
     def resample_data(self, array, rebin_edges):
         """
         Resample a DataArray according to new bin edges.
@@ -75,8 +71,8 @@ class PlotModel:
         # Select bins to speed up rebinning
         for dim in rebin_edges:
             this_slice = self._select_bins(array.coords[dim], dim,
-                                          rebin_edges[dim][dim, 0],
-                                          rebin_edges[dim][dim, -1])
+                                           rebin_edges[dim][dim, 0],
+                                           rebin_edges[dim][dim, -1])
             dslice = dslice[this_slice]
 
         # Rebin the data
@@ -91,7 +87,6 @@ class PlotModel:
             dslice /= div
 
         return dslice
-
 
     def rescale_to_data(self):
         """

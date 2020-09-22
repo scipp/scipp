@@ -23,18 +23,18 @@ import warnings
 
 
 def plot1d(scipp_obj_dict=None,
-            axes=None,
-            errorbars=None,
-            masks={"color": "k"},
-            filename=None,
-            figsize=None,
-            ax=None,
-            mpl_line_params=None,
-            logx=False,
-            logy=False,
-            logxy=False,
-            grid=False,
-            title=None):
+           axes=None,
+           errorbars=None,
+           masks={"color": "k"},
+           filename=None,
+           figsize=None,
+           ax=None,
+           mpl_line_params=None,
+           logx=False,
+           logy=False,
+           logxy=False,
+           grid=False,
+           title=None):
     """
     Plot a 1D spectrum.
 
@@ -45,15 +45,15 @@ def plot1d(scipp_obj_dict=None,
     """
 
     sp = SciPlot1d(scipp_obj_dict=scipp_obj_dict,
-                  axes=axes,
-                  errorbars=errorbars,
-                  masks=masks,
-                  ax=ax,
-                  mpl_line_params=mpl_line_params,
-                  logx=logx or logxy,
-                  logy=logy or logxy,
-                  grid=grid,
-                  title=title)
+                   axes=axes,
+                   errorbars=errorbars,
+                   masks=masks,
+                   ax=ax,
+                   mpl_line_params=mpl_line_params,
+                   logx=logx or logxy,
+                   logy=logy or logxy,
+                   grid=grid,
+                   title=title)
 
     if filename is not None:
         sp.savefig(filename)
@@ -62,7 +62,6 @@ def plot1d(scipp_obj_dict=None,
 
 
 class SciPlot1d(SciPlot):
-
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
@@ -80,24 +79,26 @@ class SciPlot1d(SciPlot):
 
         # The main controller module which contains the slider widgets
         self.controller = PlotController(scipp_obj_dict=scipp_obj_dict,
-                         axes=axes,
-                         masks=masks,
-                         logx=logx,
-                         logy=logy,
-                         errorbars=errorbars,
-            button_options=['X'])
+                                         axes=axes,
+                                         masks=masks,
+                                         logx=logx,
+                                         logy=logy,
+                                         errorbars=errorbars,
+                                         button_options=['X'])
 
         # The model which takes care of all heavy calculations
         self.model = PlotModel1d(controller=self.controller,
-            scipp_obj_dict=scipp_obj_dict)
+                                 scipp_obj_dict=scipp_obj_dict)
 
         # The view which will display the 1d plot and send pick events back to
         # the controller
-        self.view = PlotView1d(controller=self.controller,
+        self.view = PlotView1d(
+            controller=self.controller,
             ax=ax,
             errorbars=self.controller.errorbars,
             title=title,
-            unit=self.controller.params["values"][self.controller.name]["unit"],
+            unit=self.controller.params["values"][
+                self.controller.name]["unit"],
             mask_params=self.controller.params["masks"][self.controller.name],
             mask_names=self.controller.mask_names,
             logx=logx,
@@ -108,21 +109,24 @@ class SciPlot1d(SciPlot):
 
         # Profile view which displays an additional dimension as a 1d plot
         if self.controller.ndim > 1:
-            self.profile = ProfileView(errorbars=self.controller.errorbars,
-                 ax=pax,
-                 unit=self.controller.params["values"][self.controller.name]["unit"],
-                 mask_params=self.controller.params["masks"][self.controller.name],
-                 mask_names=self.controller.mask_names,
-                 logx=logx,
-                 logy=logy,
-                 figsize=(config.plot.width / config.plot.dpi,
+            self.profile = ProfileView(
+                errorbars=self.controller.errorbars,
+                ax=pax,
+                unit=self.controller.params["values"][
+                    self.controller.name]["unit"],
+                mask_params=self.controller.params["masks"][
+                    self.controller.name],
+                mask_names=self.controller.mask_names,
+                logx=logx,
+                logy=logy,
+                figsize=(config.plot.width / config.plot.dpi,
                          0.6 * config.plot.height / config.plot.dpi),
-                 is_profile=True)
+                is_profile=True)
 
         # An additional panel view with widgets to save/remove lines
         if self.controller.ndim > 1:
             self.panel = PlotPanel1d(controller=self.controller,
-                data_names=list(scipp_obj_dict.keys()))
+                                     data_names=list(scipp_obj_dict.keys()))
 
         # Connect controller to model, view, panel and profile
         self._connect_controller_members()

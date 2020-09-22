@@ -86,7 +86,6 @@ def parse_params(params=None,
     if variable is not None:
         parsed["unit"] = name_with_unit(var=variable, name="")
 
-
     return parsed
 
 

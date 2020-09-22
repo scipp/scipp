@@ -7,7 +7,6 @@ from .controller import PlotController
 
 
 class PlotController1d(PlotController):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
