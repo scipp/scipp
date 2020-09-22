@@ -81,7 +81,7 @@ class PlotWidgets:
                 button_style="",
                 layout={"width": "initial"})
 
-            self.profile_button[dim].on_click(self.controller.toggle_profile_view)
+            self.profile_button[dim].on_click(self.controller._toggle_profile_view)
 
             if self.controller.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'

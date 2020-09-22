@@ -1,3 +1,6 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# @author Neil Vaytet
 
 from .._utils import make_random_color
 
@@ -15,9 +18,6 @@ class PlotPanel1d:
         self.data_names = data_names
         self.slice_label= None
         self.counter = -1
-        # self.make_keep_button()
-        # if ndim < 2:
-        #     self.widgets.layout.display = 'none'
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
@@ -53,7 +53,6 @@ class PlotPanel1d:
             "label": lab
         }
         self.widgets.children += ipw.HBox(list(self.keep_buttons[line_id].values())),
-        return
 
     def update_axes(self, axparams=None):
         self.keep_buttons.clear()
@@ -63,71 +62,34 @@ class PlotPanel1d:
     def update_data(self, info):
         self.slice_label = info["slice_label"][1:]
 
-    # def update_buttons(self, owner, event, dummy):
-    #     for dim, button in self.buttons.items():
-    #         if dim == owner.dim:
-    #             self.slider[dim].disabled = True
-    #             button.disabled = True
-    #             self.button_axis_to_dim["x"] = dim
-    #         else:
-    #             self.slider[dim].disabled = False
-    #             button.value = None
-    #             button.disabled = False
-    #     self.update_axes(owner.dim)
-    #     self.keep_buttons = dict()
-    #     self.make_keep_button()
-    #     self.update_button_box_widget()
-    #     return
-
     def update_widgets(self):
-        # for k, b in self.keep_buttons.items():
-        #     self.mbox.append(widgets.HBox(list(b.values())))
-        # self.box.children = tuple(self.mbox)
         widget_list = []
         for key, val in self.keep_buttons.items():
             widget_list.append(ipw.HBox(list(val.values())))
         self.widgets.children = tuple(widget_list)
-
-
 
     def keep_remove_line(self, owner):
         if owner.description == "Keep":
             self.keep_line(owner)
         elif owner.description == "Remove":
             self.remove_line(owner)
-        # self.fig.canvas.draw_idle()
-        return
 
     def keep_line(self, owner):
         name = self.keep_buttons[owner.id]["dropdown"].value
-
-        # self.figure.keep_line(name=name, color=self.keep_buttons[owner.id]["colorpicker"].value,
-        #     line_id=owner.id)
         self.controller.keep_line(name=name, color=self.keep_buttons[owner.id]["colorpicker"].value,
             line_id=owner.id)
-
-        # for dim, val in self.widgets.slider.items():
-        #     if not val.disabled:
-        #         lab = "{},{}:{}".format(lab, dim, val.value)
-        # self.keep_buttons[owner.id]["dropdown"].options = name + self.controller.slice_label
-        # self.keep_buttons[owner.id]["dropdown"].layout.width = 'initial'
         self.keep_buttons[owner.id]["dropdown"].disabled = True
         self.keep_buttons[owner.id]["label"].value = self.slice_label
         self.make_keep_button()
         owner.description = "Remove"
-        # self.update_button_box_widget()
-        return
 
     def remove_line(self, owner):
         self.controller.remove_line(line_id=owner.id)
         del self.keep_buttons[owner.id]
         self.update_widgets()
-        return
 
     def update_line_color(self, change):
         self.controller.update_line_color(change["owner"].id, change["new"])
-        return
-
 
     def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
         return

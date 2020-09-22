@@ -339,7 +339,7 @@ class PlotController:
         if self.panel is not None:
             self.panel.update_axes(axparams=self.axparams)
         if self.profile is not None:
-            self.toggle_profile_view()
+            self._toggle_profile_view()
         self.update_data()
         self.rescale_to_data()
 
@@ -362,7 +362,7 @@ class PlotController:
                     slices[dim]["location"] - 0.5*slices[dim]["thickness"],
                     slices[dim]["location"] + 0.5*slices[dim]["thickness"])
         new_values = self.model.update_data(
-            slices, mask_info=self.get_mask_info())
+            slices, mask_info=self._get_mask_info())
         self.view.update_data(new_values)
         if self.panel is not None:
             self.panel.update_data(info)
@@ -529,7 +529,7 @@ class PlotController:
         # Get new values from model
         new_values = self.model.update_profile(xdata=xdata, ydata=ydata,
             slices=slices,
-            axparams=self.profile_axparams, mask_info=self.get_mask_info())
+            axparams=self.profile_axparams, mask_info=self._get_mask_info())
         # Send new values to the profile view
         self.profile.update_data(new_values)
 

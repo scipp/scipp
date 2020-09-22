@@ -5,9 +5,9 @@
 # Scipp imports
 from .. import config
 from .controller import PlotController
-from .lineplot import LinePlot
 from .model1d import PlotModel1d
 from .panel1d import PlotPanel1d
+from .profile import ProfileView
 from .sciplot import SciPlot
 from .tools import to_bin_edges, parse_params
 from .view1d import PlotView1d
@@ -42,7 +42,6 @@ def plot1d(scipp_obj_dict=None,
     If the coordinate of the x-axis contains bin edges, then a bar plot is
     made.
     If the data contains more than one dimensions, sliders are added.
-
     """
 
     sp = SciPlot1d(scipp_obj_dict=scipp_obj_dict,
@@ -60,7 +59,6 @@ def plot1d(scipp_obj_dict=None,
         sp.savefig(filename)
 
     return sp
-
 
 
 class SciPlot1d(SciPlot):
@@ -109,7 +107,7 @@ class SciPlot1d(SciPlot):
 
         # Profile view which displays an additional dimension as a 1d plot
         if self.controller.ndim > 1:
-            self.profile = LinePlot(errorbars=self.controller.errorbars,
+            self.profile = ProfileView(errorbars=self.controller.errorbars,
                  ax=pax,
                  unit=self.controller.params["values"][self.controller.name]["unit"],
                  mask_params=self.controller.params["masks"][self.controller.name],

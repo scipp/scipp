@@ -4,11 +4,7 @@
 
 # Scipp imports
 from .. import config
-# from .engine_2d import PlotEngine2d
-from .render import render_plot
-# from .profiler import Profiler
 from .tools import to_bin_edges, parse_params
-# from .widgets import PlotWidgets
 from .._utils import name_with_unit, make_random_color
 from .._scipp import core as sc
 from .. import detail
@@ -21,13 +17,10 @@ from matplotlib.axes import Subplot
 from matplotlib.collections import PathCollection
 import warnings
 import io
-import os
+
 
 class PlotView2d:
     def __init__(self,
-                 # scipp_obj_dict=None,
-                 # axes=None,
-                 # masks=None,
                  controller=None,
                  ax=None,
                  cax=None,
@@ -49,15 +42,6 @@ class PlotView2d:
 
         self.controller = controller
 
-        # self.extent = {"x": [1, 2], "y": [1, 2]}
-        # self.logx = logx
-        # self.logy = logy
-        # self.vminmax = {"vmin": vmin, "vmax": vmax}
-        # self.global_vmin = np.Inf
-        # self.global_vmax = np.NINF
-        # self.vslice = None
-        # self.dslice = None
-        # self.mslice = None
         self.xlim_updated = False
         self.ylim_updated = False
         self.current_lims = {"x": np.zeros(2), "y": np.zeros(2)}
@@ -69,25 +53,6 @@ class PlotView2d:
         self.profile_scatter = None
         self.profile_counter = -1
         self.profile_ids = []
-        # self.button_dims = [None, None]
-        # self.dim_to_xy = {}
-        # self.cslice = None
-        # self.autoscale_cbar = False
-
-        # if resolution is not None:
-        #     if isinstance(resolution, int):
-        #         self.image_resolution = {"x": resolution, "y": resolution}
-        #     else:
-        #         self.image_resolution = resolution
-        # else:
-        #     self.image_resolution = {
-        #         "x": config.plot.width,
-        #         "y": config.plot.height
-        #     }
-        # self.xyrebin = {}
-        # # self.xyedges = {}
-        # self.xywidth = {}
-        # self.image_pixel_size = {}
 
         # Get or create matplotlib axes
         self.fig = None
@@ -103,24 +68,17 @@ class PlotView2d:
                 dpi=config.plot.dpi)
 
         # Save aspect ratio setting
-        # self.aspect = aspect
         if aspect is None:
             aspect = config.plot.aspect
 
         self.image = self.make_default_imshow(cmap=cmap, norm=norm, aspect=aspect, picker=5)
-        # self.ax.set_title(self.engine.name)
         self.ax.set_title(title)
         if cbar:
             self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
             self.cbar.set_label(unit)
-            # self.cbar.ax.set_picker(5)
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-        # self.members["image"] = self.image
-        # self.members["colorbar"] = self.cbar
         self.mask_image = {}
-        # if len(self.masks[self.engine.name]) > 0:
-            # self.members["masks"] = {}
         for m in mask_names:
             self.mask_image[m] = self.make_default_imshow(
                 cmap=mask_cmap,
@@ -130,37 +88,19 @@ class PlotView2d:
             self.ax.set_xscale("log")
         if logy:
             self.ax.set_yscale("log")
-        plt.tight_layout(rect=config.plot.padding)
-
-
-        # # Call update_slice once to make the initial image
-        # self.controller.update_axes()
-
-        # self.figure = self.fig.canvas
-        # self.vbox = widgets.VBox(self.vbox)
-        # self.vbox.layout.align_items = 'center'
-        # self.members["fig"] = self.fig
-        # self.members["ax"] = self.ax
+        self.fig.tight_layout(rect=config.plot.padding)
 
         # Connect changes in axes limits to resampling function
         self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
         self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
 
-        # # if self.cbar is not None:
-        # #     self.fig.canvas.mpl_connect('pick_event', self.rescale_colorbar)
-
         return
 
 
     def _ipython_display_(self):
-        # try:
-        #     return self.fig.canvas._ipython_display_()
-        # except AttributeError:
-        #     return display(self.fig)
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
-
         if hasattr(self.fig.canvas, "widgets"):
             return self.fig.canvas
         else:
@@ -172,15 +112,6 @@ class PlotView2d:
     def savefig(self, filename=None):
         self.fig.savefig(filename, bbox_inches="tight")
 
-
-    # def _ipython_display_(self):
-    #     return self._to_widget()._ipython_display_()
-
-    # def _to_widget(self):
-    #     # widgets_ = [self.figure, self.widgets]
-    #     # if self.overview["additional_widgets"] is not None:
-    #     #     wdgts.append(self.overview["additional_widgets"])
-    #     return ipw.VBox([self.figure, self.widgets.container])
 
     def make_default_imshow(self, cmap, norm, aspect=None, picker=None):
         return self.ax.imshow([[1.0, 1.0], [1.0, 1.0]],
@@ -194,19 +125,6 @@ class PlotView2d:
 
 
     def rescale_to_data(self, vmin, vmax):
-        # vmin = None
-        # vmax = None
-        # if button is None:
-        #     # If the colorbar has been clicked, then ignore globally set
-        #     # limits, as the click signals the user wants to change the
-        #     # colorscale.
-        #     vmin =  self.vminmax["vmin"]
-        #     vmax =  self.vminmax["vmax"]
-        # if vmin is None:
-        #     vmin = self.controller.get_slice_min()
-        # if vmax is None:
-        #     vmax = self.controller.get_slice_min()
-
         self.image.set_clim([vmin, vmax])
         for m, im in self.mask_image.items():
             im.set_clim([vmin, vmax])
@@ -217,15 +135,6 @@ class PlotView2d:
         if im.get_url() != "hide":
             im.set_visible(change["new"])
         self.fig.canvas.draw_idle()
-        return
-
-    # def toggle_profile_view(self, change=None):
-    #     self.profile_dim = change["owner"].dim
-    #     if change["new"]:
-    #         self.show_profile_view()
-    #     else:
-    #         self.hide_profile_view()
-    #     return
 
     def check_for_xlim_update(self, event_ax):
         self.xlim_updated = True
@@ -244,14 +153,8 @@ class PlotView2d:
         self.xlim_updated = False
         self.ylim_updated = False
         xylims = {}
-        # Make sure we don't overrun the original array bounds
-        # xylims["x"] = np.clip(
-        #     self.ax.get_xlim(),
-        #     *sorted(self.controller.xlims[self.controller.name][self.controller.axparams["x"]["dim"]].values))
-        # xylims["y"] = np.clip(
-        #     self.ax.get_ylim(),
-        #     *sorted(self.controller.xlims[self.controller.name][self.controller.axparams["y"]["dim"]].values))
 
+        # Make sure we don't overrun the original array bounds
         xylims["x"] = np.clip(
             self.ax.get_xlim(),
             *sorted(self.global_lims["x"]))
@@ -268,19 +171,8 @@ class PlotView2d:
         # Only resample image if the changes in axes limits are large enough to
         # avoid too many updates while panning.
         if diff > 0.1:
-
             self.current_lims = xylims
             self.controller.update_viewport(xylims)
-            # for xy, param in self.engine.axparams.items():
-            #     # Create coordinate axes for resampled image array
-            #     self.engine.xyrebin[xy] = sc.Variable(
-            #         dims=[param["dim"]],
-            #         values=np.linspace(xylims[xy][0], xylims[xy][1],
-            #                            self.image_resolution[xy] + 1),
-            #         unit=self.engine.data_arrays[self.engine.name].coords[param["dim"]].unit)
-            # self.engine.update_image(extent=np.array(list(xylims.values())).flatten())
-        return
-
 
     def reset_home_button(self, axparams):
         # Some annoying house-keeping when using X/Y buttons: we need to update
@@ -299,12 +191,7 @@ class PlotView2d:
                     for x in self.fig.canvas.toolbar._nav_stack._elements[0][
                             key]:
                         alist.append(x)
-                    # alist[0] = (*self.controller.xlims[self.controller.name][
-                    #     self.controller.axparams["x"]["dim"]].values, *self.controller.xlims[
-                    #         self.controller.name][self.controller.axparams["y"]["dim"]].values)
-                    alist[0] = (*axparams["x"]["lims"], *axparams["y"]["lims"].values)
-
-
+                    alist[0] = (*axparams["x"]["lims"], *axparams["y"]["lims"])
                     # Insert the new tuple
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
@@ -326,7 +213,6 @@ class PlotView2d:
 
         for xy, param in axparams.items():
             axis = getattr(self.ax, "{}axis".format(xy))
-            # is_log = getattr(self.controller, "log{}".format(xy))
             axis.set_major_formatter(
                 axformatter[param["dim"]][is_log[xy]])
             axis.set_major_locator(
@@ -337,20 +223,13 @@ class PlotView2d:
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             self.image.set_extent(extent_array)
-            # if len(self.masks[self.name]) > 0:
             for m, im in self.mask_image.items():
                 im.set_extent(extent_array)
             self.ax.set_xlim(axparams["x"]["lims"])
             self.ax.set_ylim(axparams["y"]["lims"])
 
-        # if self.profile_scatter is not None:
-        #     self.profile_scatter = None
-        #     self.ax.collections = []
         self.reset_profile()
-
         self.reset_home_button(axparams)
-        # self.rescale_to_data()
-
 
     def update_data(self, new_values):
         self.image.set_data(new_values["values"])
@@ -366,28 +245,6 @@ class PlotView2d:
                 self.mask_image[m].set_extent(new_values["extent"])
         self.fig.canvas.draw_idle()
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     def reset_profile(self):
         if self.profile_scatter is not None:
             self.profile_scatter = None
@@ -395,40 +252,26 @@ class PlotView2d:
             self.fig.canvas.draw_idle()
 
     def update_profile(self, event):
-        # os.write(1, "view2d: update_profile 1\n".encode())
-        # ev = event.mouseevent
-
         if event.inaxes == self.ax:
-            # os.write(1, "view2d: update_profile 2\n".encode())
             xdata = event.xdata - self.current_lims["x"][0]
             ydata = event.ydata - self.current_lims["y"][0]
-            # os.write(1, "view2d: update_profile 3\n".encode())
             self.controller.update_profile(xdata, ydata)
-            # os.write(1, "view2d: update_profile 4\n".encode())
             self.controller.toggle_hover_visibility(True)
         else:
             self.controller.toggle_hover_visibility(False)
 
 
     def keep_or_remove_profile(self, event):
-        # os.write(1, "view2d: keep_or_delete_profile 1\n".encode())
         if isinstance(event.artist, PathCollection):
-            # os.write(1, "view2d: keep_or_delete_profile 2\n".encode())
             self.remove_profile(event)
-            # os.write(1, "view2d: keep_or_delete_profile 3\n".encode())
             # We need a profile lock to catch the second time the function is
             # called because the pick event is registed by both the scatter
             # points and the image
             self.profile_update_lock = True
-            # os.write(1, "view2d: keep_or_delete_profile 4\n".encode())
         elif self.profile_update_lock:
-            # os.write(1, "view2d: keep_or_delete_profile 5\n".encode())
             self.profile_update_lock = False
-            # os.write(1, "view2d: keep_or_delete_profile 6\n".encode())
         else:
-            # os.write(1, "view2d: keep_or_delete_profile 7\n".encode())
             self.keep_profile(event)
-            # os.write(1, "view2d: keep_or_delete_profile 8\n".encode())
         self.fig.canvas.draw_idle()
 
 
@@ -437,7 +280,6 @@ class PlotView2d:
         if visible:
             self.profile_pick_connection = self.fig.canvas.mpl_connect('pick_event', self.keep_or_remove_profile)
             self.profile_hover_connection = self.fig.canvas.mpl_connect('motion_notify_event', self.update_profile)
-            # self.profile_hover_connection = self.fig.canvas.mpl_connect('pick_event', self.update_profile)
         else:
             if self.profile_pick_connection is not None:
                 self.fig.canvas.mpl_disconnect(self.profile_pick_connection)
@@ -446,188 +288,31 @@ class PlotView2d:
 
 
     def keep_profile(self, event):
-        # trace = list(
-        #     self.profile_viewer[self.profile_key].keep_buttons.values())[-1]
-        # os.write(1, "view2d: keep_profile 1\n".encode())
         xdata = event.mouseevent.xdata
         ydata = event.mouseevent.ydata
         col = make_random_color(fmt='rgba')
-        # os.write(1, "view2d: keep_profile 2\n".encode())
         self.profile_counter += 1
         line_id = self.profile_counter
         self.profile_ids.append(line_id)
-        # os.write(1, "view2d: keep_profile 3\n".encode())
         if self.profile_scatter is None:
             self.profile_scatter = self.ax.scatter(
                 [xdata], [ydata], c=[col], picker=5)
         else:
             new_offsets = np.concatenate(
                 (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
-            # col = np.array(_hex_to_rgb(trace["colorpicker"].value) + [255],
-            #                dtype=np.float) / 255.0
             new_colors = np.concatenate(
                 (self.profile_scatter.get_facecolors(), [col]), axis=0)
             self.profile_scatter.set_offsets(new_offsets)
             self.profile_scatter.set_facecolors(new_colors)
-        # os.write(1, "view2d: keep_profile 4\n".encode())
-        # self.fig.canvas.draw_idle()
 
-        self.controller.keep_line(view="profile", color=col, line_id=line_id)
-        # os.write(1, "view2d: keep_profile 5\n".encode())
-
-
+        self.controller.keep_line(target="profile", color=col, line_id=line_id)
 
     def remove_profile(self, event):
-        # os.write(1, "view2d: remove_profile 1\n".encode())
         ind = event.ind[0]
-        # os.write(1, "view2d: remove_profile 2\n".encode())
         xy = np.delete(self.profile_scatter.get_offsets(), ind, axis=0)
-        # os.write(1, "view2d: remove_profile 3\n".encode())
         c = np.delete(self.profile_scatter.get_facecolors(), ind, axis=0)
-        # os.write(1, "view2d: remove_profile 4\n".encode())
         self.profile_scatter.set_offsets(xy)
-        # os.write(1, "view2d: remove_profile 5\n".encode())
         self.profile_scatter.set_facecolors(c)
-        # self.fig.canvas.draw_idle()
-        # os.write(1, "view2d: remove_profile 6\n".encode())
-
         # Also remove the line from the 1d plot
-        self.controller.remove_line(view="profile", line_id=self.profile_ids[ind])
-        # os.write(1, "view2d: remove_profile 7\n".encode())
+        self.controller.remove_line(target="profile", line_id=self.profile_ids[ind])
         self.profile_ids.pop(ind)
-        # os.write(1, "view2d: remove_profile 8\n".encode())
-
-
-        # trace = list(
-        #     self.profile_viewer[self.profile_key].keep_buttons.values())[ind]
-        # self.profile_viewer[self.profile_key].remove_trace(trace["button"])
-
-
-
-
-        # self.profile_viewer[self.profile_key].keep_trace(trace["button"])
-
-    # def select_bins(self, coord, dim, start, end):
-    #     bins = coord.shape[-1]
-    #     if len(coord.dims) != 1:  # TODO find combined min/max
-    #         return dim, slice(0, bins - 1)
-    #     # scipp treats bins as closed on left and open on right: [left, right)
-    #     first = sc.sum(coord <= start, dim).value - 1
-    #     last = bins - sc.sum(coord > end, dim).value
-    #     if first >= last:  # TODO better handling for decreasing
-    #         return dim, slice(0, bins - 1)
-    #     first = max(0, first)
-    #     last = min(bins - 1, last)
-    #     return dim, slice(first, last + 1)
-
-    # def resample_image(self, array, coord_edges, rebin_edges):
-    # def resample_image(self, array, rebin_edges):
-    #     dslice = array
-    #     # Select bins to speed up rebinning
-    #     for dim in rebin_edges:
-    #         this_slice = self.select_bins(array.coords[dim], dim,
-    #                                       rebin_edges[dim][dim, 0],
-    #                                       rebin_edges[dim][dim, -1])
-    #         dslice = dslice[this_slice]
-
-    #     # Rebin the data
-    #     for dim, edges in rebin_edges.items():
-    #         # print(dim)
-    #         # print(dslice)
-    #         # print(edges)
-    #         dslice = sc.rebin(dslice, dim, edges)
-
-    #     # Divide by pixel width
-    #     for dim, edges in rebin_edges.items():
-    #         # self.image_pixel_size[key] = edges.values[1] - edges.values[0]
-    #         # print("edges.values[1]", edges.values[1])
-    #         # print(self.image_pixel_size[key])
-    #         # dslice /= self.image_pixel_size[key]
-    #         dslice /= edges[dim, 1:] - edges[dim, :-1]
-    #     return dslice
-
-    # def update_image(self, extent=None):
-    #     # The order of the dimensions that are rebinned matters if 2D coords
-    #     # are present. We must rebin the base dimension of the 2D coord first.
-    #     xy = "yx"
-    #     if len(self.vslice.coords[self.button_dims[1]].dims) > 1:
-    #         xy = "xy"
-
-    #     dimy = self.xyrebin[xy[0]].dims[0]
-    #     dimx = self.xyrebin[xy[1]].dims[0]
-
-    #     rebin_edges = {
-    #         dimy: self.xyrebin[xy[0]],
-    #         dimx: self.xyrebin[xy[1]]
-    #     }
-
-    #     resampled_image = self.resample_image(self.vslice,
-    #                                           # coord_edges={
-    #                                           #     self.xyrebin[xy[0]].dims[0]:
-    #                                           #     self.xyedges[xy[0]],
-    #                                           #     self.xyrebin[xy[1]].dims[0]:
-    #                                           #     self.xyedges[xy[1]]
-    #                                           # },
-    #                                           rebin_edges=rebin_edges)
-
-    #     # Use Scipp's automatic transpose to match the image x/y axes
-    #     # TODO: once transpose is available for DataArrays,
-    #     # use sc.transpose(dslice, self.button_dims) instead.
-    #     shape = [
-    #         self.xyrebin["y"].shape[0] - 1, self.xyrebin["x"].shape[0] - 1
-    #     ]
-    #     self.dslice = sc.DataArray(coords=rebin_edges,
-    #                                data=sc.Variable(dims=self.button_dims,
-    #                                                 values=np.ones(shape),
-    #                                                 variances=np.zeros(shape),
-    #                                                 dtype=self.vslice.dtype,
-    #                                                 unit=sc.units.one))
-
-    #     self.dslice *= resampled_image
-
-    #     # Update the matplotlib image data
-    #     arr = self.dslice.values
-    #     self.image.set_data(arr)
-    #     if extent is not None:
-    #         self.image.set_extent(extent)
-
-    #     # Handle masks
-    #     if len(self.masks[self.engine.name]) > 0:
-    #         # Use scipp's automatic broadcast functionality to broadcast
-    #         # lower dimension masks to higher dimensions.
-    #         # TODO: creating a Variable here could become expensive when
-    #         # sliders are being used. We could consider performing the
-    #         # automatic broadcasting once and store it in the Slicer class,
-    #         # but this could create a large memory overhead if the data is
-    #         # large.
-    #         # Here, the data is at most 2D, so having the Variable creation
-    #         # and broadcasting should remain cheap.
-    #         base_mask = sc.Variable(dims=self.dslice.dims,
-    #                                 values=np.ones(self.dslice.shape,
-    #                                                dtype=np.int32))
-    #         for m in self.masks[self.engine.name]:
-    #             if m in self.dslice.masks:
-    #                 msk = base_mask * sc.Variable(
-    #                     dims=self.dslice.masks[m].dims,
-    #                     values=self.dslice.masks[m].values.astype(np.int32))
-    #                 self.members["masks"][m].set_data(
-    #                     self.mask_to_float(msk.values, arr))
-    #                 if extent is not None:
-    #                     self.members["masks"][m].set_extent(extent)
-    #             else:
-    #                 self.members["masks"][m].set_visible(False)
-    #                 self.members["masks"][m].set_url("hide")
-
-    #     if self.autoscale_cbar:
-    #         cbar_params = parse_params(globs=self.vminmax,
-    #                                    array=arr,
-    #                                    min_val=self.global_vmin,
-    #                                    max_val=self.global_vmax)
-    #         self.global_vmin = cbar_params["vmin"]
-    #         self.global_vmax = cbar_params["vmax"]
-    #         self.engine.params["values"][self.engine.name]["norm"] = cbar_params["norm"]
-    #         self.image.set_norm(self.engine.params["values"][self.engine.name]["norm"])
-    #         if len(self.masks[self.engine.name]) > 0:
-    #             for m in self.masks[self.engine.name]:
-    #                 self.members["masks"][m].set_norm(
-    #                     self.engine.params["values"][self.engine.name]["norm"])

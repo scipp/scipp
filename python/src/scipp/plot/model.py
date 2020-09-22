@@ -73,7 +73,7 @@ class PlotModel:
         dslice = array
         # Select bins to speed up rebinning
         for dim in rebin_edges:
-            this_slice = self.select_bins(array.coords[dim], dim,
+            this_slice = self._select_bins(array.coords[dim], dim,
                                           rebin_edges[dim][dim, 0],
                                           rebin_edges[dim][dim, -1])
             dslice = dslice[this_slice]

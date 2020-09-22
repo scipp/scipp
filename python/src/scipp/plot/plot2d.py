@@ -7,7 +7,7 @@ from .. import config
 from .controller2d import PlotController2d
 from .model2d import PlotModel2d
 # from .render import render_plot
-from .lineplot import LinePlot
+from .profile import ProfileView
 from .sciplot import SciPlot
 from .tools import to_bin_edges, parse_params
 from .view2d import PlotView2d
@@ -87,6 +87,8 @@ class SciPlot2d(SciPlot):
                  logy=False,
                  resolution=None):
 
+        super().__init__()
+
         # The main controller module which contains the slider widgets
         self.controller = PlotController2d(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
@@ -124,7 +126,7 @@ class SciPlot2d(SciPlot):
         if self.controller.ndim > 2:
             mask_params = self.controller.params["masks"][self.controller.name]
             mask_params["color"] = "k"
-            self.profile = LinePlot(errorbars=self.controller.errorbars,
+            self.profile = ProfileView(errorbars=self.controller.errorbars,
                  ax=pax,
                  unit=self.controller.params["values"][self.controller.name]["unit"],
                  mask_params=mask_params,
