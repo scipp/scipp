@@ -26,8 +26,8 @@ class PlotWidgets:
         self.continuous_update = {}
 
         # Now begin loop to construct sliders
-        button_values = [None] * (self.controller.ndim - len(button_options)) + \
-            button_options[::-1]
+        button_values = [None] * (self.controller.ndim -
+                                  len(button_options)) + button_options[::-1]
 
         for i, dim in enumerate(self.controller.axes):
 

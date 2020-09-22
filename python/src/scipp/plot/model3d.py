@@ -3,10 +3,8 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .. import config
 from .model import PlotModel
 from .tools import to_bin_centers
-from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 
 # Other imports
@@ -159,8 +157,6 @@ class PlotModel3d(PlotModel):
         """
         Compute new opacities based on positions of the cut surface.
         """
-
-        new_colors = None
 
         # Cartesian X, Y, Z
         if button_value < self.cut_options["Xcylinder"]:

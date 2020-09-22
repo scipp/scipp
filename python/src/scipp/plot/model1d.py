@@ -3,20 +3,12 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .. import config
 from .model import PlotModel
-from .render import render_plot
-from .slicer import Slicer
 from .tools import to_bin_centers, vars_to_err, mask_to_float
-from .._utils import name_with_unit
 from .._scipp import core as sc
 
 # Other imports
 import numpy as np
-import copy as cp
-import matplotlib.pyplot as plt
-import ipywidgets as widgets
-import warnings
 
 
 class PlotModel1d(PlotModel):

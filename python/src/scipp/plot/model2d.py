@@ -1,16 +1,19 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# @file
+# @author Neil Vaytet
+
 from .. import config
 from .model import PlotModel
-from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers, mask_to_float, vars_to_err
-from .._utils import name_with_unit, value_to_string
+from .tools import to_bin_centers, mask_to_float, vars_to_err
 from .._scipp import core as sc
 
 # Other imports
 import numpy as np
-import warnings
-import os
 
 
 class PlotModel2d(PlotModel):
+
     def __init__(self, controller=None, scipp_obj_dict=None, resolution=None):
 
         super().__init__(controller=controller, scipp_obj_dict=scipp_obj_dict)

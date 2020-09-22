@@ -3,23 +3,8 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .. import config
-# from .profiler import Profiler
 from .lineplot import LinePlot
-from .tools import to_bin_edges, parse_params
-# from .widgets import PlotWidgets
-from .._utils import name_with_unit, make_random_color
-from .._scipp import core as sc
-from .. import detail
-
-# Other imports
-import numpy as np
-import ipywidgets as ipw
-import matplotlib.pyplot as plt
-from matplotlib.axes import Subplot
-import warnings
-import io
-import os
+from .._utils import make_random_color
 
 
 class PlotView1d:

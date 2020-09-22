@@ -3,12 +3,9 @@
 # @file
 # @author Neil Vaytet
 
-import importlib
-
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
 try:
-    import matplotlib
     is_doc_build = False
     try:
         from IPython import get_ipython
@@ -26,35 +23,26 @@ try:
             except KeyError:
                 is_doc_build = False
 
-            # If we are in an IPython kernel, select either widget backend
-            # if installed (for JupyterLan), or notebook backend.
+            # If we are in an IPython kernel, select widget backend
             if "IPKernelApp" in ipy.config and not is_doc_build:
-                matplotlib.use('module://ipympl.backend_nbagg')
+                import matplotlib as mpl
+                mpl.use('module://ipympl.backend_nbagg')
+                # Hide the figure header:
+                # see https://github.com/matplotlib/ipympl/issues/229
                 from ipympl.backend_nbagg import Canvas
                 Canvas.header_visible.default_value = False
-                # try:
-                #     _ = importlib.import_module("ipympl")
-                #     matplotlib.use('module://ipympl.backend_nbagg')
-                # except ImportError:
-                #     matplotlib.use('nbAgg')
-                #     # Remove the title banner and button from figure
-                #     ipy.run_cell_magic(
-                #         "html", "", "<style>.output_wrapper "
-                #         ".ui-dialog-titlebar {display: none;}</style>")
+
     except ImportError:
         pass
-    # Turn interactive plotting off
-    import matplotlib.pyplot as plt
+
     if is_doc_build:
+        import matplotlib.pyplot as plt
         plt.rcParams.update({'figure.max_open_warning': 0})
-    else:
-        plt.ioff()
 
 except ImportError:
     pass
 
 from .plot import plot
-# from .lineplot import LinePlot
 
 
 def superplot(scipp_obj, **kwargs):
@@ -67,7 +55,3 @@ def image(scipp_obj, **kwargs):
 
 def scatter3d(scipp_obj, **kwargs):
     return plot(scipp_obj, projection="3d", **kwargs)
-
-
-def profiler(scipp_obj, **kwargs):
-    return plot(scipp_obj, projection="profile", **kwargs)

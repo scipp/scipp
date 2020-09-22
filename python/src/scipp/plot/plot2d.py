@@ -9,19 +9,7 @@ from .model2d import PlotModel2d
 # from .render import render_plot
 from .profile import ProfileView
 from .sciplot import SciPlot
-from .tools import to_bin_edges, parse_params
 from .view2d import PlotView2d
-from .._utils import name_with_unit
-from .._scipp import core as sc
-from .. import detail
-
-# Other imports
-import numpy as np
-import ipywidgets as ipw
-import matplotlib.pyplot as plt
-from matplotlib.axes import Subplot
-import warnings
-import os
 
 
 def plot2d(scipp_obj_dict=None,

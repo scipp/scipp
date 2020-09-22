@@ -9,17 +9,7 @@ from .model1d import PlotModel1d
 from .panel1d import PlotPanel1d
 from .profile import ProfileView
 from .sciplot import SciPlot
-from .tools import to_bin_edges, parse_params
 from .view1d import PlotView1d
-from .._utils import name_with_unit
-from .._scipp import core as sc
-
-# Other imports
-import numpy as np
-import copy as cp
-import matplotlib.pyplot as plt
-import ipywidgets as ipw
-import warnings
 
 
 def plot1d(scipp_obj_dict=None,

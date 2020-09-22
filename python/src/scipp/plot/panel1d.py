@@ -2,10 +2,11 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+# Scipp imports
 from .._utils import make_random_color
 
+# Other imports
 import ipywidgets as ipw
-import numpy as np
 
 
 class PlotPanel1d:

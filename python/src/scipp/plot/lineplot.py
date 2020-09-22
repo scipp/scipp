@@ -4,18 +4,15 @@
 
 # Scipp imports
 from .. import config
-from .render import render_plot
-from .slicer import Slicer
-from .tools import to_bin_centers, vars_to_err, mask_to_float, get_line_param
-from .._utils import name_with_unit
-from .._scipp import core as sc
+from .tools import get_line_param
 
 # Other imports
 import numpy as np
 import copy as cp
 import matplotlib.pyplot as plt
-import ipywidgets as widgets
+import ipywidgets as ipw
 import warnings
+import io
 
 
 class LinePlot:

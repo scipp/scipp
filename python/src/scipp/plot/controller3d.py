@@ -3,10 +3,8 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .. import config
 from .controller import PlotController
-from .tools import to_bin_centers
-from .._utils import name_with_unit, value_to_string
+from .._utils import name_with_unit
 from .._scipp import core as sc
 
 # Other imports
@@ -14,9 +12,15 @@ import numpy as np
 
 
 class PlotController3d(PlotController):
-    def __init__(self, pixel_size=None, **kwargs):
+    def __init__(self,
+                 scipp_obj_dict=None,
+                 pixel_size=None,
+                 positions=None,
+                 **kwargs):
 
-        super().__init__(**kwargs)
+        super().__init__(scipp_obj_dict=scipp_obj_dict,
+                         positions=positions,
+                         **kwargs)
 
         self.positions = positions
         self.pos_axparams = {}

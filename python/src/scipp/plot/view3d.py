@@ -4,9 +4,7 @@
 
 # Scipp imports
 from .. import config
-from .tools import to_bin_centers
-from .._utils import name_with_unit, value_to_string
-from .._scipp import core as sc
+from .._utils import value_to_string
 
 # Other imports
 import numpy as np
@@ -144,7 +142,6 @@ class PlotView3d:
             attributes={
                 'position':
                 p3.BufferAttribute(array=pos_array),
-                # 'rgba_color': p3.BufferAttribute(array=self.engine.slice_data(change=None, autoscale_cmap=True))
                 'rgba_color':
                 p3.BufferAttribute(array=np.ones(rgba_shape, dtype=np.float32))
             })
@@ -271,10 +268,8 @@ void main() {
         ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
         cb1 = mpl.colorbar.ColorbarBase(
             ax,
-            # cmap=cm.get_cmap(self.engine.params["values"][self.engine.name]["cmap"]),
             cmap=self.scalar_map.get_cmap(),
             norm=self.scalar_map.norm)
-        # cb1.set_label(name_with_unit(var=self.engine.data_arrays[self.engine.name], name=""))
         cb1.set_label(self.unit)
 
         buf = io.BytesIO()

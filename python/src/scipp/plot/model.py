@@ -3,16 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .. import config
-from .tools import parse_params, make_fake_coord, to_bin_edges, to_bin_centers
-from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
-
-# Other imports
-import numpy as np
-import matplotlib.ticker as ticker
-import matplotlib.pyplot as plt
-import ipywidgets as widgets
 
 
 class PlotModel:

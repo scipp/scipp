@@ -4,16 +4,12 @@
 
 # Scipp imports
 from .. import config
-from .tools import to_bin_edges, parse_params
-from .._utils import name_with_unit, make_random_color
-from .._scipp import core as sc
-from .. import detail
+from .._utils import make_random_color
 
 # Other imports
 import numpy as np
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
-from matplotlib.axes import Subplot
 from matplotlib.collections import PathCollection
 import warnings
 import io
