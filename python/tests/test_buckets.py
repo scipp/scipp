@@ -53,19 +53,11 @@ def test_load_events_to_buckets():
         event_group = event_data_groups[0]
         event_index_np = event_group["event_index"][...]
         event_time_offset = sc.Variable(
-            ['event'],
-            values=event_group["event_time_offset"][...],
-            dtype=np.float32)
-        event_id = sc.Variable(['event'],
-                               values=event_group["event_id"][...],
-                               dtype=np.int32)
-        event_index = sc.Variable(['pulse'],
-                                  values=event_index_np,
-                                  dtype=np.int64)
+            ['event'], values=event_group["event_time_offset"][...])
+        event_id = sc.Variable(['event'], values=event_group["event_id"][...])
+        event_index = sc.Variable(['pulse'], values=event_index_np)
         event_time_zero = sc.Variable(
-            ['pulse'],
-            values=event_group["event_time_zero"][...],
-            dtype=np.float64)
+            ['pulse'], values=event_group["event_time_zero"][...])
 
     # Calculate the end index for each pulse
     # The end index for a pulse is the start index of the next pulse
@@ -83,8 +75,13 @@ def test_load_events_to_buckets():
                             'tof': event_time_offset,
                             'detector-id': event_id
                         })
-    sc.DataArray(data=sc.to_buckets(begin=event_index,
-                                    end=end_indices,
-                                    dim='event',
-                                    data=data),
-                 coords={'pulse-time': event_time_zero})
+    events = sc.DataArray(data=sc.to_buckets(begin=event_index,
+                                             end=end_indices,
+                                             dim='event',
+                                             data=data),
+                          coords={'pulse-time': event_time_zero})
+
+    assert events.dims == event_index.dims
+    assert events.shape == event_index.shape
+    assert sc.is_equal(events['pulse', 0].value.coords['detector-id'],
+                       data.coords['detector-id']['event', 0:3])
