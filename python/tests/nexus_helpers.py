@@ -70,7 +70,7 @@ def in_memory_nexus_file_with_event_data() -> Iterator[h5py.File]:
                 1600766733000000000
             ]))
         event_time_zero_ds.attrs["units"] = "ns"
-        event_group.create_dataset("event_index", np.array([0, 3, 3, 5]))
+        event_group.create_dataset("event_index", data=np.array([0, 3, 3, 5]))
 
         yield nexus_file
     finally:

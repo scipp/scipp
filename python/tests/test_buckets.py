@@ -3,6 +3,9 @@
 # @author Simon Heybrock
 import pytest
 import scipp as sc
+import numpy as np
+from nexus_helpers import (find_by_nx_class,
+                           in_memory_nexus_file_with_event_data)
 
 
 def test_to_buckets_default_begin_end():
@@ -40,3 +43,48 @@ def test_to_buckets():
     assert var.shape == begin.shape
     assert sc.is_equal(var['y', 0].value, data['x', 0:2])
     assert sc.is_equal(var['y', 1].value, data['x', 2:4])
+
+
+def test_load_events_to_buckets():
+    with in_memory_nexus_file_with_event_data() as nexus_file:
+        event_data_groups = find_by_nx_class("NXevent_data", nexus_file)
+
+        # Load only the first event data group we found
+        event_group = event_data_groups[0]
+        event_index_np = event_group["event_index"][...]
+        event_time_offset = sc.Variable(
+            ['event'],
+            values=event_group["event_time_offset"][...],
+            dtype=np.float32)
+        event_id = sc.Variable(['event'],
+                               values=event_group["event_id"][...],
+                               dtype=np.int32)
+        event_index = sc.Variable(['pulse'],
+                                  values=event_index_np,
+                                  dtype=np.int64)
+        event_time_zero = sc.Variable(
+            ['pulse'],
+            values=event_group["event_time_zero"][...],
+            dtype=np.float64)
+
+    # Calculate the end index for each pulse
+    # The end index for a pulse is the start index of the next pulse
+    end_indices = event_index_np.astype(np.int64)
+    end_indices = np.roll(end_indices, -1)
+    end_indices[-1] = event_id.shape[0]
+    end_indices = sc.Variable(['pulse'], values=end_indices, dtype=np.int64)
+
+    # TODO weights, often not in file, just 1s?
+    weights = sc.Variable(['event'],
+                          values=np.ones(event_id.shape),
+                          dtype=np.float32)
+    data = sc.DataArray(data=weights,
+                        coords={
+                            'tof': event_time_offset,
+                            'detector-id': event_id
+                        })
+    sc.DataArray(data=sc.to_buckets(begin=event_index,
+                                    end=end_indices,
+                                    dim='event',
+                                    data=data),
+                 coords={'pulse-time': event_time_zero})
