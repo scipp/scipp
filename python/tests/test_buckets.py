@@ -74,7 +74,7 @@ def test_load_events_to_buckets():
     end_indices[-1] = event_id.shape[0]
     end_indices = sc.Variable(['pulse'], values=end_indices, dtype=np.int64)
 
-    # TODO weights, often not in file, just 1s?
+    # Weights are not stored in NeXus, so use 1s
     weights = sc.Variable(['event'],
                           values=np.ones(event_id.shape),
                           dtype=np.float32)
