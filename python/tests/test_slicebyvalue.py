@@ -105,7 +105,8 @@ class TestSliceByValue:
     def test_range_slice_with_step_throws(self):
         with pytest.raises(RuntimeError) as e_info:
             self._d['a']['x', 1.5 * sc.units.m:4.5 * sc.units.m:4]
-        assert str(e_info.value) == 'dimensionless expected to be equal to m'
+        assert str(e_info.value
+                   ) == "Step cannot be specified for value based slicing."
 
     def test_range_start_only(self):
         by_value = self._d['a']['x', 1.5 * sc.units.dimensionless:]

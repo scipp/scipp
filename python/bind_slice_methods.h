@@ -96,20 +96,21 @@ template <class T> struct slicer {
                   std::is_same_v<T, DataArrayView>) {
       try {
         auto step = py::getattr(py_slice, "step");
-        if (step.is_none()) {
-          std::runtime_error(
+        if (!step.is_none()) {
+          throw std::runtime_error(
               "Step cannot be specified for value based slicing.");
         }
         auto start = py::getattr(py_slice, "start");
         auto stop = py::getattr(py_slice, "stop");
         auto start_var =
             start.is_none()
-                ? Variable{}
+                ? VariableConstView{}
                 : py::getattr(py_slice, "start").cast<VariableConstView>();
         auto stop_var =
             stop.is_none()
-                ? Variable{}
+                ? VariableConstView{}
                 : py::getattr(py_slice, "stop").cast<VariableConstView>();
+
         return slice(self, dim, start_var, stop_var);
       } catch (const py::cast_error &) {
       }
