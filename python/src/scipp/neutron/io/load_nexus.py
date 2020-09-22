@@ -4,57 +4,117 @@ import h5py
 import numpy as np
 from os.path import join
 from timeit import default_timer as timer
+from typing import Union, List, Dict, Optional, Any
+from contextlib import contextmanager
+from dataclasses import dataclass
 
 
-def load_nexus(filename, entry="/", verbose=False, convert_ids=False,
-               instrument_file=None):
+def _find_by_nx_class(
+        nx_class_names: List[str],
+        root: Union[h5py.File, h5py.Group]) -> Dict[str, h5py.Group]:
+    groups_with_requested_nx_class = {
+        class_name: []
+        for class_name in nx_class_names
+    }
+
+    def _match_nx_class(_, h5_object):
+        if isinstance(h5_object, h5py.Group):
+            try:
+                if h5_object.attrs["NX_class"].decode(
+                        "utf8") in nx_class_names:
+                    groups_with_requested_nx_class[h5_object.attrs[
+                        "NX_class"].decode("utf8")].append(h5_object)
+            except AttributeError:
+                pass
+
+    root.visititems(_match_nx_class)
+    return groups_with_requested_nx_class
+
+
+@contextmanager
+def _open_if_path(file_in: Union[str, h5py.File]):
+    """
+    Open if file path is provided,
+    otherwise yield the existing h5py.File object
+    """
+    if isinstance(file_in, str):
+        with h5py.File(file_in, "r", libver='latest', swmr=True) as nexus_file:
+            yield nexus_file
+    else:
+        yield file_in
+
+
+def load_nexus(data_file: str,
+               root: str = "/",
+               convert_ids: bool = False,
+               instrument_file: Optional[str] = None):
     """
     Load a hdf/nxs file and return required information.
     Note that the patterns are listed in order of preference,
     i.e. if more than one is present in the file, the data will be read
     from the first one found.
 
+    :param data_file: path of NeXus file containing data to load
+    :param root: path of group in file, only load data from the subtree of
+      this group
+    :param convert_ids:
+    :param instrument_file: path of separate NeXus file containing
+      detector positions, load_nexus will look in the data file for
+      this information if instrument_file is not provided
+
     Usage example:
       data = sc.neutron.load_nexus('PG3_4844_event.nxs')
     """
+    return _load_nexus(data_file, root, convert_ids, instrument_file)
+
+
+@dataclass
+class _Field:
+    name: str
+    dtype: Any  # numpy.typing only available on Python 3.8
+
+
+def _load_nexus(data_file: Union[str, h5py.File],
+                root: str = "/",
+                convert_ids: bool = False,
+                instrument_file: Union[str, h5py.File, None] = None):
+    """
+    Allows h5py.File objects to be passed in place of
+    file path strings in tests
+    """
     total_time = timer()
 
-    fields = {}
-    fields["event_id"] = {"pattern": ["event_id"], "dtype": np.int64}
-    fields["event_time_offset"] = {
-        "pattern": ["event_time_offset"],
-        "dtype": np.float64
-    }
-    fields["event_time_zero"] = {
-        "pattern": ["event_time_zero"],
-        "dtype": np.float64
-    }
-    fields["event_index"] = {"pattern": ["event_index"], "dtype": np.float64}
-    entries = {key: {} for key in fields}
+    fields = [
+        _Field("event_id", np.int64),
+        _Field("event_time_offset", np.float64),
+        _Field("event_time_zero", np.float64),
+        _Field("event_index", np.float64),
+    ]
+
+    entries = {field.name: {} for field in fields}
 
     spec_min = np.Inf  # Min spectrum number
     spec_max = 0  # Max spectrum number
     spec_num = []  # List of unique spectral numbers
 
     start = timer()
-    with h5py.File(filename, "r", libver='latest', swmr=True) as f:
-
+    with _open_if_path(data_file) as f:
         contents = []
-        f[entry].visit(contents.append)
+        f[root].visit(contents.append)
 
         for item in contents:
-            for key in fields.keys():
-                for p in fields[key]["pattern"]:
-                    if item.endswith(p):
-                        root = item.replace(key, '')
-                        entries[key][root] = np.array(
-                            f[item][...],
-                            dtype=fields[key]["dtype"],
-                            copy=True)
-                        if key == "event_id":
-                            spec_min = min(spec_min, entries[key][root].min())
-                            spec_max = max(spec_max, entries[key][root].max())
-                            spec_num.append(np.unique(entries[key][root]))
+            for field in fields:
+                if item.endswith(field.name):
+                    root = item.replace(field.name, '')
+                    entries[field.name][root] = np.array(f[item][...],
+                                                         dtype=field.dtype,
+                                                         copy=True)
+                    if field.name == "event_id":
+                        spec_min = min(spec_min,
+                                       entries[field.name][root].min())
+                        spec_max = max(spec_max,
+                                       entries[field.name][root].max())
+                        spec_num.append(np.unique(entries[field.name][root]))
     print("Reading file:", timer() - start)
 
     # Combine all banks into single arrays into a new dict
@@ -94,21 +154,19 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False,
     locs = np.concatenate([[0], locs, [len(data['event_id'])]])
 
     # Create event list
-    var = sc.Variable(dims=['spectrum'],
-                      shape=[nspec],
-                      dtype=sc.dtype.event_list_float64)
+    var = sc.Variable(dims=['spectrum'], shape=[nspec], dtype=sc.dtype.float64)
     # Weights are set to one by default
     weights = sc.Variable(dims=['spectrum'],
                           shape=[nspec],
                           unit=sc.units.counts,
-                          dtype=sc.dtype.event_list_float64,
+                          dtype=sc.dtype.float64,
                           variances=True)
 
     # Populate event list chunk by chunk
     start = timer()
     for n in range(nspec):
-        var['spectrum', n].values.extend(
-            data["event_time_offset"][locs[n]:locs[n + 1]])
+        var['spectrum',
+            n].values.extend(data["event_time_offset"][locs[n]:locs[n + 1]])
         ones = np.ones_like(var['spectrum', n].values)
         weights['spectrum', n].values = ones
         weights['spectrum', n].variances = ones
@@ -132,7 +190,7 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False,
     # Load positions?
     start = timer()
     if instrument_file is None:
-        instrument_file = filename
+        instrument_file = data_file
     da.coords['position'] = load_positions(instrument_file, dim='spectrum')
     print("Loading positions:", timer() - start)
 
@@ -140,11 +198,21 @@ def load_nexus(filename, entry="/", verbose=False, convert_ids=False,
     return da
 
 
-def load_positions(filename, entry='/', dim='position'):
+def load_positions(instrument_file: str, entry='/', dim='position'):
     """
     Usage:
       d = sc.Dataset()
       d.coords['position'] = sc.neutron.load_positions('LOKI_Definition.hdf5')
+    """
+    return _load_positions(instrument_file, entry, dim)
+
+
+def _load_positions(instrument_file: Union[str, h5py.File],
+                    entry='/',
+                    dim='position'):
+    """
+    Allows h5py.File objects to be passed in place of
+    file path string in tests
     """
 
     # TODO: We need to think about how to link the correct position to the
@@ -156,8 +224,7 @@ def load_positions(filename, entry='/', dim='position'):
     xyz = "xyz"
     positions = {x: [] for x in xyz}
 
-    with h5py.File(filename, "r", libver='latest', swmr=True) as f:
-
+    with _open_if_path(instrument_file) as f:
         contents = []
         f[entry].visit(contents.append)
 
@@ -172,7 +239,8 @@ def load_positions(filename, entry='/', dim='position'):
                 for i, x in enumerate(xyz):
                     entry = join(root, '{}_pixel_offset'.format(x))
                     if entry in f:
-                        offsets[x] = f[entry][()].astype(np.float64).ravel() + pos[i]
+                        offsets[x] = f[entry][()].astype(
+                            np.float64).ravel() + pos[i]
                         size = len(offsets[x])
                 for i, x in enumerate(xyz):
                     if offsets[x] is not None:
