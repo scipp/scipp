@@ -29,6 +29,11 @@ TEST_F(BucketModelTest, construct) {
   EXPECT_THROW(Model(dims, indices, Dim::Y, buffer), except::DimensionError);
 }
 
+TEST_F(BucketModelTest, construct_empty_range) {
+  element_array<std::pair<scipp::index, scipp::index>> empty{{0, 2}, {2, 2}};
+  EXPECT_NO_THROW(Model(dims, empty, Dim::X, buffer));
+}
+
 TEST_F(BucketModelTest, construct_negative_range_fail) {
   element_array<std::pair<scipp::index, scipp::index>> overlapping{{0, 2},
                                                                    {2, 1}};
