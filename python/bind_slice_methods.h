@@ -92,13 +92,25 @@ template <class T> struct slicer {
   static auto get_range(T &self,
                         const std::tuple<Dim, const py::slice> &index) {
     auto [dim, py_slice] = index;
-
     if constexpr (std::is_same_v<T, DataArray> ||
                   std::is_same_v<T, DataArrayView>) {
       try {
-        auto start = py::getattr(py_slice, "start").cast<VariableConstView>();
-        auto stop = py::getattr(py_slice, "stop").cast<VariableConstView>();
-        return slice(self, dim, start, stop);
+        auto step = py::getattr(py_slice, "step");
+        if (step.is_none()) {
+          std::runtime_error(
+              "Step cannot be specified for value based slicing.");
+        }
+        auto start = py::getattr(py_slice, "start");
+        auto stop = py::getattr(py_slice, "stop");
+        auto start_var =
+            start.is_none()
+                ? Variable{}
+                : py::getattr(py_slice, "start").cast<VariableConstView>();
+        auto stop_var =
+            stop.is_none()
+                ? Variable{}
+                : py::getattr(py_slice, "stop").cast<VariableConstView>();
+        return slice(self, dim, start_var, stop_var);
       } catch (const py::cast_error &) {
       }
     }
@@ -153,9 +165,7 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
                 !std::is_same_v<T, DatasetView>) {
     c.def("__setitem__", &slicer<T>::set_from_numpy);
     c.def("__setitem__", &slicer<T>::set_range_from_numpy);
-    c.def("__setitem__", &slicer<T>::template set<Variable>);
     c.def("__setitem__", &slicer<T>::template set<VariableView>);
-    c.def("__setitem__", &slicer<T>::template set_range<Variable>);
     c.def("__setitem__", &slicer<T>::template set_range<VariableView>);
   }
   if constexpr (std::is_same_v<T, DataArray> ||
@@ -163,7 +173,6 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
     c.def("__getitem__", &slicer<T>::get_by_value, py::keep_alive<0, 1>());
     c.def("__setitem__", &slicer<T>::template set<DataArrayView>);
     c.def("__setitem__", &slicer<T>::template set_range<DataArrayView>);
-    c.def("__setitem__", &slicer<T>::template set_by_value<Variable>);
     c.def("__setitem__", &slicer<T>::template set_by_value<VariableView>);
     c.def("__setitem__", &slicer<T>::template set_by_value<DataArrayView>);
   }

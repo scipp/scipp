@@ -101,3 +101,22 @@ class TestSliceByValue:
         with pytest.raises(RuntimeError):
             self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                          sc.units.dimensionless] = self._d['b']['x', 0:-2]
+
+    def test_range_slice_with_step_throws(self):
+        with pytest.raises(RuntimeError) as e_info:
+            self._d['a']['x', 1.5 * sc.units.m:4.5 * sc.units.m:4]
+        assert str(e_info.value) == 'dimensionless expected to be equal to m'
+
+    def test_range_start_only(self):
+        by_value = self._d['a']['x', 1.5 * sc.units.dimensionless:]
+        by_index = self._d['a']['x', 1:]
+        assert sc.is_equal(by_value, by_index)
+
+    def test_range_end_only(self):
+        by_value = self._d['a']['x', :2.5 * sc.units.dimensionless]
+        by_index = self._d['a']['x', :2]
+        assert sc.is_equal(by_value, by_index)
+
+    def test_range_all(self):
+        by_value = self._d['a']['x', :]
+        assert sc.is_equal(by_value, self._d['a'])
