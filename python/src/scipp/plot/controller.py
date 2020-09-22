@@ -12,11 +12,10 @@ from .._scipp import core as sc
 import numpy as np
 import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
-# import ipywidgets as widgets
-import os
 
 
 class PlotController:
+
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
@@ -30,36 +29,20 @@ class PlotController:
                  logy=False,
                  logz=False,
                  button_options=None,
-                 # aspect=None,
                  positions=None,
                  errorbars=None):
 
-        # os.write(1, "Slicer 1\n".encode())
-
-        # self.parent = parent
-        # self.scipp_obj_dict = scipp_obj_dict
-        # self.data_arrays = {}
-        # self.widgets = None
-
         self.model = None
+        self.panel = None
         self.profile = None
         self.view = None
-        self.panel = None
 
         self.axes = axes
         self.logx = logx
         self.logy = logy
         self.logz = logz
-        # self.slice_label = None
         self.axparams = {}
         self.profile_axparams = {}
-
-        # # Member container for dict output
-        # self.members = dict(widgets=dict(sliders=dict(),
-        #                                  togglebuttons=dict(),
-        #                                  togglebutton=dict(),
-        #                                  buttons=dict(),
-        #                                  labels=dict()))
 
         # Parse parameters for values, variances and masks
         self.params = {"values": {}, "variances": {}, "masks": {}}
@@ -70,32 +53,7 @@ class PlotController:
             "vmax": vmax,
             "color": color
         }
-        # os.write(1, "Slicer 2\n".encode())
-
-        # # Save aspect ratio setting
-        # self.aspect = aspect
-        # if self.aspect is None:
-        #     self.aspect = config.plot.aspect
-
-        # # Variables for the profile viewer
-        # self.profile_viewer = None
-        # self.profile_key = None
         self.profile_dim = None
-        # self.slice_pos_rectangle = None
-        # self.profile_scatter = None
-        # self.profile_update_lock = False
-        # self.profile_ax = None
-        # self.log = log
-        # # self.flatten_as = flatten_as
-        # # self.da_with_edges = None
-        # # self.vmin = vmin
-        # # self.vmax = vmax
-        # # self.ylim = None
-
-
-        # Containers: need one per entry in the dict of scipp
-        # objects (=DataArray)
-        # os.write(1, "Slicer 3\n".encode())
 
         # List mask names for each item
         self.mask_names = {}
@@ -105,9 +63,7 @@ class PlotController:
         self.coords = {}
         # Store coordinate min and max limits
         self.xlims = {}
-        # Store ticklabels for a dimension
-        # self.slider_ticks = {}
-        # Store labels for sliders if any
+        # Store labels for sliders
         self.labels = {}
         # Record which variables are histograms along which dimension
         self.histograms = {}
@@ -115,77 +71,37 @@ class PlotController:
         self.axformatter = {}
         # Axes tick locators
         self.axlocator = {}
-        # Save if some dims contain multi-dimensional coords
-        # self.contains_multid_coord = {}
+        # Save if errorbars should be plotted for a given data entry
         self.errorbars = {}
-
-
 
         if errorbars is not None:
             if isinstance(errorbars, bool):
                 self.errorbars = {name: errorbars for name in scipp_obj_dict}
             elif isinstance(errorbars, dict):
                 self.errorbars = errorbars
-                # for name, v in errorbars.items():
-                #     if name in self.data_arrays:
-                #         self.errorbars[
-                #             name] = errorbars[name] and self.data_arrays[
-                #                 name].variances is not None
             else:
                 raise TypeError("Unsupported type for argument "
                                 "'errorbars': {}".format(type(errorbars)))
 
 
-        # self.units = {}
-
         # Get first item in dict and process dimensions.
         # Dimensions should be the same for all dict items.
         self.name = list(scipp_obj_dict.keys())[0]
-        self.process_axes_dimensions(scipp_obj_dict[self.name],
+        self._process_axes_dimensions(scipp_obj_dict[self.name],
             positions=positions)
 
+        # Iterate through data arrays and collect parameters
         for name, array in scipp_obj_dict.items():
 
-            # # Process axes dimensions
-            # if self.axes is None:
-            #     self.axes = array.dims
-            # # Replace positions in axes if positions set
-            # if positions is not None:
-            #     self.axes[self.axes.index(
-            #         array.coords[positions].dims[0])] = positions
-
-            # # Convert to Dim objects
-            # for i in range(len(self.axes)):
-            #     if isinstance(self.axes[i], str):
-            #         self.axes[i] = sc.Dim(self.axes[i])
-
-            # # Protect against duplicate entries in axes
-            # if len(self.axes) != len(set(self.axes)):
-            #     raise RuntimeError("Duplicate entry in axes: {}".format(self.axes))
-            # self.ndim = len(self.axes)
-            # self.process_axes_dimensions()
-
-
-            # # print(array)
+            # If non-dimension coord is requested as labels, replace name in
+            # dims
             array_dims = array.dims
             for dim in self.axes:
                 if dim not in array_dims:
                     underlying_dim = array.coords[dim].dims[-1]
                     array_dims[array_dims.index(underlying_dim)] = dim
 
-            # print(adims)
-
-            # self.data_arrays[name] = sc.DataArray(
-            #     data=sc.Variable(dims=adims,
-            #                      unit=sc.units.counts,
-            #                      values=array.values,
-            #                      variances=array.variances,
-            #                      dtype=sc.dtype.float64))
-            # # print("================")
-            # # print(self.data_arrays[name])
-            # # print("================")
-            # # self.name = name
-
+            # Get the colormap and normalization
             self.params["values"][name] = parse_params(globs=globs,
                                                        variable=array.data)
 
@@ -196,59 +112,28 @@ class PlotController:
                                                       },
                                                       globs=globs)
 
-            # Create a map from dim to shape
-            # dim_to_shape = dict(zip(array.dims, array.shape))
-
-            # Size of the slider coordinate arrays
-            # self.dim_to_shape[name] = dict(zip(self.data_arrays[name].dims, self.data_arrays[name].shape))
-
+            # Create a useful map from dim to shape
             self.dim_to_shape[name] = dict(zip(array_dims, array.shape))
 
-
-
-            # for dim, coord in array.coords.items():
-            #     if dim not in self.dim_to_shape[name] and len(coord.dims) > 0:
-            #         print(dim, self.dim_to_shape[name], coord)
-            #         self.dim_to_shape[name][dim] = self.dim_to_shape[name][coord.dims[-1]]
-            # print(self.dim_to_shape[name])
             # Store coordinates of dimensions that will be in sliders
             self.coords[name] = {}
             # Store coordinate min and max limits
             self.xlims[name] = {}
-            # Store ticklabels for a dimension
-            # self.slider_ticks[name] = {}
-            # Store labels for sliders if any
+            # Store labels for sliders
             self.labels[name] = {}
-            # Store axis tick formatters and locators
+            # Store axis tick formatters
             self.axformatter[name] = {}
+            # Store axis tick locators
             self.axlocator[name] = {}
             # Save information on histograms
             self.histograms[name] = {}
-            # # Save if some dims contain multi-dimensional coords
-            # self.contains_multid_coord[name] = False
-
-            # # Process axes dimensions
-            # if axes is None:
-            #     axes = array.dims
-            # # Replace positions in axes if positions set
-            # if positions is not None:
-            #     axes[axes.index(
-            #         self.data_array.coords[positions].dims[0])] = positions
-
-            # # Protect against duplicate entries in axes
-            # if len(axes) != len(set(axes)):
-            #     raise RuntimeError("Duplicate entry in axes: {}".format(axes))
-            # self.ndim = len(axes)
 
             # Iterate through axes and collect dimensions
             for dim in self.axes:
-                self.collect_dim_shapes_and_lims(name, dim, array)
+                self._collect_dim_shapes_and_lims(name, dim, array)
 
-            # Include masks
-            # for n, msk in array.masks.items():
-            #     self.data_arrays[name].masks[n] = msk
+            # Collect mask names
             self.mask_names[name] = list(array.masks.keys())
-
 
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None
@@ -258,10 +143,8 @@ class PlotController:
                 self.errorbars[name] = has_variances
 
 
-        # os.write(1, "Slicer 4\n".encode())
-
-        # print(self.data_arrays)
-
+        # Create control widgets (sliders and buttons).
+        # Typically one set of slider/buttons for each dimension.
         self.widgets = PlotWidgets(controller=self,
                          button_options=button_options,
                          positions=positions)
@@ -273,7 +156,7 @@ class PlotController:
     def _to_widget(self):
         return self.widgets._to_widget()
 
-    def process_axes_dimensions(self, array, positions=None):
+    def _process_axes_dimensions(self, array, positions=None):
 
         # Process axes dimensions
         if self.axes is None:
@@ -295,9 +178,9 @@ class PlotController:
         return
 
 
-    def collect_dim_shapes_and_lims(self, name, dim, array):
+    def _collect_dim_shapes_and_lims(self, name, dim, array):
 
-        var, formatter, locator = self.axis_label_and_ticks(
+        var, formatter, locator = self._axis_label_and_ticks(
             dim, array, name)
 
         # To allow for 2D coordinates, the histograms are
@@ -306,17 +189,14 @@ class PlotController:
         dim_shape = None
         self.histograms[name][dim] = {}
         for i, d in enumerate(var.dims):
-            # shape = var.shape[i]
             self.histograms[name][dim][d] = self.dim_to_shape[name][
                 d] == var.shape[i] - 1
             if d == dim:
                 dim_shape = var.shape[i]
 
         if self.histograms[name][dim][dim]:
-            # self.data_arrays[name].coords[dim] = var
             self.coords[name][dim] = var
         else:
-            # self.data_arrays[name].coords[dim] = to_bin_edges(var, dim)
             self.coords[name][dim] = to_bin_edges(var, dim)
 
         # The limits for each dimension
@@ -357,9 +237,9 @@ class PlotController:
         return
 
 
-    def axis_label_and_ticks(self, dim, data_array, name):
+    def _axis_label_and_ticks(self, dim, data_array, name):
         """
-        Get dimensions and label (if present) from requested axis.
+        Get dimensions from requested axis.
         Also retun axes tick formatters and locators.
         """
 
@@ -371,13 +251,6 @@ class PlotController:
         }
         locator = {False: ticker.AutoLocator(), True: ticker.LogLocator()}
 
-        # dim = axis
-        # Convert to Dim object?
-        # if isinstance(dim, str):
-        #     dim = sc.Dim(dim)
-
-        # underlying_dim = dim
-        # non_dimension_coord = False
         var = None
 
         if dim in data_array.coords:
@@ -386,8 +259,6 @@ class PlotController:
             tp = data_array.coords[dim].dtype
 
             if tp == sc.dtype.vector_3_float64:
-                # var = make_fake_coord(dim_coord_dim,
-                                      # self.dim_to_shape[name][dim_coord_dim],
                 var = make_fake_coord(dim,
                                       self.dim_to_shape[name][dim],
                                       unit=data_array.coords[dim].unit)
@@ -395,15 +266,10 @@ class PlotController:
                     value_to_string(item, precision=2) for item in data_array.coords[dim].values[int(val)]
                 ]) + ")" if (int(val) >= 0 and int(val) < self.dim_to_shape[name][
                     dim]) else "")
-                    # dim_coord_dim]) else "")
                 formatter.update({False: form, True: form})
                 locator[False] = ticker.MaxNLocator(integer=True)
-                # if dim != dim_coord_dim:
-                #     underlying_dim = dim_coord_dim
 
             elif tp == sc.dtype.string:
-                # var = make_fake_coord(dim_coord_dim,
-                #                       self.dim_to_shape[name][dim_coord_dim],
                 var = make_fake_coord(dim,
                                       self.dim_to_shape[name][dim],
                                       unit=data_array.coords[dim].unit)
@@ -413,12 +279,9 @@ class PlotController:
                             val) < self.dim_to_shape[name][dim]) else "")
                 formatter.update({False: form, True: form})
                 locator[False] = ticker.MaxNLocator(integer=True)
-                # if dim != dim_coord_dim:
-                #     underlying_dim = dim_coord_dim
 
             elif dim != dim_coord_dim:
                 # non-dimension coordinate
-                # non_dimension_coord = True
                 if dim_coord_dim in data_array.coords:
                     coord = data_array.coords[dim_coord_dim]
                     var = sc.Variable(
@@ -430,8 +293,6 @@ class PlotController:
                 else:
                     var = make_fake_coord(dim,
                                           self.dim_to_shape[name][dim_coord_dim])
-                # underlying_dim = dim_coord_dim
-                # var = data_array.coords[dim].astype(sc.dtype.float64)
                 form = ticker.FuncFormatter(
                     lambda val, pos: value_to_string(data_array.coords[
                         dim].values[np.abs(var.values - val).argmin()]))
@@ -444,62 +305,148 @@ class PlotController:
             # dim not found in data_array.coords
             var = make_fake_coord(dim, self.dim_to_shape[name][dim])
 
-        # label = var
-        # if non_dimension_coord:
-        #     label = data_array.coords[dim]
-
-        # return underlying_dim, var, label, formatter, locator
         return var, formatter, locator
 
+    def rescale_to_data(self, button=None):
+        """
+        Automatically rescale the y axis (1D plot) or the colorbar (2D+3D
+        plots) to the minimum and maximum value inside the currently displayed
+        data slice.
+        """
+        vmin, vmax = self.model.rescale_to_data()
+        self.view.rescale_to_data(vmin, vmax)
+        if self.panel is not None:
+            self.panel.rescale_to_data(vmin=vmin, vmax=vmax, mask_info=self._get_mask_info())
 
+    def update_axes(self, change=None):
+        """
+        This function is called when a dimension that is displayed along a
+        given axis is changed. This happens for instance when we want to
+        flip/transpose a 2D image, or display a new dimension along the x-axis
+        in a 1D plot.
+        This functions gather the relevant parameters about the axes currently
+        selected for display, and then offloads the computation of the new
+        state to the model. If then gets the updated data back from the model
+        and sends it over to the view for display.
+        """
+        self.axparams = self._get_axes_parameters()
+        self.model.update_axes(self.axparams)
+        self.view.update_axes(axparams=self.axparams,
+                              axformatter=self.axformatter[self.name],
+                              axlocator=self.axlocator[self.name],
+                              logx=self.logx,
+                              logy=self.logy)
+        if self.panel is not None:
+            self.panel.update_axes(axparams=self.axparams)
+        if self.profile is not None:
+            self.toggle_profile_view()
+        self.update_data()
+        self.rescale_to_data()
 
+    def update_data(self, change=None):
+        """
+        This function is called when the data in the displayed 1D plot or 2D
+        image is to be updated. This happens for instance when we move a slider
+        which is navigating an additional dimension. It is also always
+        called when update_axes is called since the displayed data needs to be
+        updated when the axes have changed.
+        """
+        slices = {}
+        info = {"slice_label": ""}
+        # Slice along dimensions with active sliders
+        for dim, val in self.widgets.slider.items():
+            if not val.disabled:
+                slices[dim] = {"location": val.value,
+                "thickness": self.widgets.thickness_slider[dim].value}
+                info["slice_label"] = "{},{}:{}-{}".format(info["slice_label"], dim,
+                    slices[dim]["location"] - 0.5*slices[dim]["thickness"],
+                    slices[dim]["location"] + 0.5*slices[dim]["thickness"])
+        new_values = self.model.update_data(
+            slices, mask_info=self.get_mask_info())
+        self.view.update_data(new_values)
+        if self.panel is not None:
+            self.panel.update_data(info)
+        if self.profile_dim is not None:
+            self.profile.update_slice_area(slices[self.profile_dim])
 
+    def toggle_mask(self, change):
+        """
+        Hide or show a given mask.
+        """
+        self.view.toggle_mask(change)
 
-    # def select_bins(self, coord, dim, start, end):
-    #     bins = coord.shape[-1]
-    #     if len(coord.dims) != 1:  # TODO find combined min/max
-    #         return dim, slice(0, bins - 1)
-    #     # scipp treats bins as closed on left and open on right: [left, right)
-    #     first = sc.sum(coord <= start, dim).value - 1
-    #     last = bins - sc.sum(coord > end, dim).value
-    #     if first >= last:  # TODO better handling for decreasing
-    #         return dim, slice(0, bins - 1)
-    #     first = max(0, first)
-    #     last = min(bins - 1, last)
-    #     return dim, slice(first, last + 1)
+    def _get_axes_parameters(self):
+        """
+        Gather the information (dimensions, limits, etc...) about the (x, y, z)
+        axes that are displayed on the plots.
+        """
+        axparams = {}
+        for dim, button in self.widgets.buttons.items():
+            if self.widgets.slider[dim].disabled:
+                but_val = button.value.lower()
+                xmin = np.Inf
+                xmax = np.NINF
+                for name in self.xlims:
+                    xlims = self.xlims[name][dim].values
+                    xmin = min(xmin, xlims[0])
+                    xmax = max(xmax, xlims[1])
+                axparams[but_val] = {
+                    "lims": [xmin, xmax],
+                    "log": getattr(self, "log{}".format(but_val)),
+                    "hist": {name: self.histograms[name][dim][dim] for name in self.histograms},
+                    "dim": dim,
+                    "label": self.labels[self.name][dim]
+                }
+                # Safety check for log axes
+                if axparams[but_val]["log"] and (axparams[but_val]["lims"][0] <= 0):
+                    axparams[but_val]["lims"][
+                        0] = 1.0e-03 * axparams[but_val]["lims"][1]
 
+        return axparams
 
-    # def resample_image(self, array, rebin_edges):
-    #     dslice = array
-    #     # Select bins to speed up rebinning
-    #     for dim in rebin_edges:
-    #         this_slice = self.select_bins(array.coords[dim], dim,
-    #                                       rebin_edges[dim][dim, 0],
-    #                                       rebin_edges[dim][dim, -1])
-    #         dslice = dslice[this_slice]
+    def _get_mask_info(self):
+        """
+        Get information of masks such as their names and whether they should be
+        displayed.
+        """
+        mask_info = {}
+        for name in self.widgets.mask_checkboxes:
+            mask_info[name] = {m: chbx.value for m, chbx in self.widgets.mask_checkboxes[self.name].items()}
+        return mask_info
 
-    #     # Rebin the data
-    #     for dim, edges in rebin_edges.items():
-    #         # print(dim)
-    #         # print(dslice)
-    #         # print(edges)
-    #         dslice = sc.rebin(dslice, dim, edges)
+    def keep_line(self, target=None, name=None, color=None, line_id=None):
+        """
+        Get a message from either a panel (1d plot) or a view (picking) to keep
+        the currently displayed line or profile.
+        Send the message to the appropriate target: either the view1d or the
+        profile view.
+        """
+        if name is None:
+            name = self.name
+        if target == "profile":
+            self.profile.keep_line(name=name, color=color, line_id=line_id)
+        else:
+            self.view.keep_line(name=name, color=color, line_id=line_id)
 
-    #     # Divide by pixel width
-    #     for dim, edges in rebin_edges.items():
-    #         # self.image_pixel_size[key] = edges.values[1] - edges.values[0]
-    #         # print("edges.values[1]", edges.values[1])
-    #         # print(self.image_pixel_size[key])
-    #         # dslice /= self.image_pixel_size[key]
-    #         div = edges[dim, 1:] - edges[dim, :-1]
-    #         div.unit = sc.units.one
-    #         dslice /= div
-    #     return dslice
+    def remove_line(self, target=None, line_id=None):
+        """
+        Get a message from either a panel (1d plot) or a view (picking) to
+        remove a given line or profile.
+        Send the message to the appropriate target: either the view1d or the
+        profile view.
+        """
+        if target == "profile":
+            self.profile.remove_line(line_id=line_id)
+        else:
+            self.view.remove_line(line_id=line_id)
 
-    # def mask_to_float(self, mask, var):
-    #     return np.where(mask, var, None).astype(np.float)
-
-    def toggle_profile_view(self, owner=None):
+    def _toggle_profile_view(self, owner=None):
+        """
+        Show or hide the 1d plot displaying the profile along an additional
+        dimension.
+        As we do this, we also collect some information on the limits of the
+        view area to be displayed.
+        """
         if owner is None:
             self.profile_dim = None
             visible = False
@@ -517,7 +464,6 @@ class PlotController:
                     if dim != self.profile_dim:
                         but.button_style = ""
                 visible = True
-
 
             if visible:
                 xmin = np.Inf
@@ -545,11 +491,6 @@ class PlotController:
             else:
                 self.view.reset_profile()
 
-
-        # limits[dim] = {"button": but_val,
-        # "xlims": self.xlims[self.name][dim].values,
-        # "log": getattr(self, "log{}".format(but_val)),
-
         self.profile.toggle_view(visible=visible)
         self.toggle_hover_visibility(False)
         self.view.update_profile_connection(visible=visible)
@@ -557,211 +498,44 @@ class PlotController:
         if visible:
             # Try to guess the y limits in a non-expensive way
             vmin, vmax = self.model.rescale_to_data()
-            print(vmin, vmax)
             thickness = self.widgets.thickness_slider[self.profile_dim].value
             deltay = (vmax - vmin) / (0.25 * thickness)
             midpoint = 0.5 * (vmin + vmax)
             vmin = midpoint - deltay
             vmax = midpoint + deltay
-            print(vmin, vmax, midpoint)
             self.profile.rescale_to_data(ylim=[vmin, vmax])
             self.profile.update_slice_area(
                 {"location": self.widgets.slider[self.profile_dim].value,
                  "thickness": self.widgets.thickness_slider[self.profile_dim].value
                 })
 
-
-
-        # if change["new"]:
-        #     self.show_profile_view()
-        # else:
-        #     self.hide_profile_view()
         return
 
 
-    def rescale_to_data(self, button=None):
-
-        vmin, vmax = self.model.rescale_to_data()
-        self.view.rescale_to_data(vmin, vmax)
-        if self.panel is not None:
-            self.panel.rescale_to_data(vmin=vmin, vmax=vmax, mask_info=self.get_mask_info())
-
-
-
-    def get_axes_parameters(self):
-        axparams = {}
-        for dim, button in self.widgets.buttons.items():
-            if self.widgets.slider[dim].disabled:
-                but_val = button.value.lower()
-                xmin = np.Inf
-                xmax = np.NINF
-                for name in self.xlims:
-                    xlims = self.xlims[name][dim].values
-                    xmin = min(xmin, xlims[0])
-                    xmax = max(xmax, xlims[1])
-                axparams[but_val] = {
-                    "lims": [xmin, xmax],
-                    "log": getattr(self, "log{}".format(but_val)),
-                    "hist": {name: self.histograms[name][dim][dim] for name in self.histograms},
-                    "dim": dim,
-                    "label": self.labels[self.name][dim]
-                }
-                # Safety check for log axes
-                if axparams[but_val]["log"] and (axparams[but_val]["lims"][0] <= 0):
-                    axparams[but_val]["lims"][
-                        0] = 1.0e-03 * axparams[but_val]["lims"][1]
-
-                # limits[dim] = {"button": but_val,
-                # "xlims": self.xlims[self.name][dim].values,
-                # "log": getattr(self, "log{}".format(but_val)),
-                # "hist": {name: self.histograms[name][dim][dim] for name in self.histograms}}
-        return axparams
-
-
-
-    def update_axes(self, change=None):
-        self.axparams.clear()
-        self.axparams = self.get_axes_parameters()
-        # for dim, button in self.widgets.buttons.items():
-        #     if self.widgets.slider[dim].disabled:
-        #         but_val = button.value.lower()
-        #         xmin = np.Inf
-        #         xmax = np.NINF
-        #         for name in self.xlims:
-        #             xlims = self.xlims[name][dim].values
-        #             xmin = min(xmin, xlims[0])
-        #             xmax = max(xmax, xlims[1])
-        #         self.axparams[but_val] = {
-        #             "lims": [xmin, xmax],
-        #             "log": getattr(self, "log{}".format(but_val)),
-        #             "hist": {name: self.histograms[name][dim][dim] for name in self.histograms},
-        #             "dim": dim,
-        #             "label": self.labels[self.name][dim]
-        #         }
-        #         # Safety check for log axes
-        #         if self.axparams[but_val]["log"] and (self.axparams[but_val]["lims"][0] <= 0):
-        #             self.axparams[but_val]["lims"][
-        #                 0] = 1.0e-03 * self.axparams[but_val]["lims"][1]
-
-        #         # limits[dim] = {"button": but_val,
-        #         # "xlims": self.xlims[self.name][dim].values,
-        #         # "log": getattr(self, "log{}".format(but_val)),
-        #         # "hist": {name: self.histograms[name][dim][dim] for name in self.histograms}}
-
-        self.model.update_axes(self.axparams)
-        self.view.update_axes(axparams=self.axparams,
-                              axformatter=self.axformatter[self.name],
-                              axlocator=self.axlocator[self.name],
-                              logx=self.logx,
-                              logy=self.logy)
-        if self.panel is not None:
-            self.panel.update_axes(axparams=self.axparams)
-        if self.profile is not None:
-            self.toggle_profile_view()
-            # self.profile.update_axes(axparams=self.axparams,
-            #                   axformatter=self.axformatter[self.name],
-            #                   axlocator=self.axlocator[self.name],
-            #                   logx=self.logx,
-            #                   logy=self.logy)
-        self.update_data()
-        self.rescale_to_data()
-
-
-    def update_data(self, change=None):
-        slices = {}
-        info = {"slice_label": ""}
-        # Slice along dimensions with active sliders
-        for dim, val in self.widgets.slider.items():
-            if not val.disabled:
-                slices[dim] = {"location": val.value,
-                "thickness": self.widgets.thickness_slider[dim].value}
-                info["slice_label"] = "{},{}:{}-{}".format(info["slice_label"], dim,
-                    slices[dim]["location"] - 0.5*slices[dim]["thickness"],
-                    slices[dim]["location"] + 0.5*slices[dim]["thickness"])
-        # return slices
-        new_values = self.model.update_data(
-            slices, mask_info=self.get_mask_info())
-        self.view.update_data(new_values)
-        if self.panel is not None:
-            self.panel.update_data(info)
-        if self.profile_dim is not None:
-            self.profile.update_slice_area(slices[self.profile_dim])
-
-    # def update_viewport(self, xylims):
-    #     new_values = self.model.update_viewport(
-    #         xylims, mask_info=self.get_mask_info())
-    #     self.view.update_data(new_values)
-
-    def toggle_mask(self, change):
-        self.view.toggle_mask(change)
-        # if self.panel is not None:
-        #     self.panel.rescale_to_data(mask_info=self.get_mask_info())
-
-    def get_mask_info(self):
-        mask_info = {}
-        for name in self.widgets.mask_checkboxes:
-            mask_info[name] = {m: chbx.value for m, chbx in self.widgets.mask_checkboxes[self.name].items()}
-        return mask_info
-
-    def keep_line(self, view=None, name=None, color=None, line_id=None):
-        if name is None:
-            name = self.name
-        if view == "profile":
-            self.profile.keep_line(name=name, color=color, line_id=line_id)
-        else:
-            self.view.keep_line(name=name, color=color, line_id=line_id)
-
-    def remove_line(self, view=None, line_id=None):
-        if view == "profile":
-            self.profile.remove_line(line_id=line_id)
-        else:
-            self.view.remove_line(line_id=line_id)
-
-    def update_line_color(self, line_id=None, color=None):
-        self.view.update_line_color(line_id=line_id, color=color)
-
-
     def update_profile(self, xdata=None, ydata=None):
-        # os.write(1, "controller: update_profile 1\n".encode())
+        """
+        This is called from a mouse move event, which requires an update of the
+        currently displayed profile.
+        We gather the information on which dims should be sliced by the model,
+        ask the model to slice down the data, and send the new data returned by
+        the model to the profile view.
+        """
         slices = {}
-        # info = {"slice_label": ""}
-        # Slice along dimensions with active sliders
+        # Slice all dimensions apart from the profile dim
         for dim, val in self.widgets.slider.items():
             if dim != self.profile_dim:
                 slices[dim] = {"location": val.value,
                 "thickness": self.widgets.thickness_slider[dim].value}
-                # info["slice_label"] = "{},{}:{}-{}".format(info["slice_label"], dim,
-                #     slices[dim]["location"] - 0.5*slices[dim]["thickness"],
-                #     slices[dim]["location"] + 0.5*slices[dim]["thickness"])
-        # os.write(1, "controller: update_profile 2\n".encode())
-        # os.write(1, (str(self.profile_axparams) + "\n").encode())
+        # Get new values from model
         new_values = self.model.update_profile(xdata=xdata, ydata=ydata,
             slices=slices,
             axparams=self.profile_axparams, mask_info=self.get_mask_info())
-        # os.write(1, "controller: update_profile 3\n".encode())
+        # Send new values to the profile view
         self.profile.update_data(new_values)
-        # os.write(1, "controller: update_profile 4\n".encode())
-
-
-
 
     def toggle_hover_visibility(self, value):
+        """
+        Show/hide the profile view depending on the value of the profile button
+        in the widgets.
+        """
         self.profile.toggle_hover_visibility(value)
-        # # If the mouse moves off the image, we hide the profile. If it moves
-        # # back onto the image, we show the profile
-        # self.profile_viewer[self.profile_key].members["lines"][
-        #     self.name].set_visible(value)
-        # if self.profile_viewer[self.profile_key].errorbars[self.name]:
-        #     for item in self.profile_viewer[
-        #             self.profile_key].members["error_y"][self.name]:
-        #         if item is not None:
-        #             for it in item:
-        #                 it.set_visible(value)
-        # mask_dict = self.profile_viewer[self.profile_key].members["masks"][
-        #     self.name]
-        # if len(mask_dict) > 0:
-        #     for m in mask_dict:
-        #         mask_dict[m].set_visible(value if self.profile_viewer[
-        #             self.profile_key].masks[self.name][m].value else False)
-        #         mask_dict[m].set_gid("onaxes" if value else "offaxes")
-

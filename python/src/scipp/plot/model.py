@@ -12,22 +12,23 @@ import numpy as np
 import matplotlib.ticker as ticker
 import matplotlib.pyplot as plt
 import ipywidgets as widgets
-import os
 
 
 class PlotModel:
+
     def __init__(self,
                  controller=None,
                  scipp_obj_dict=None):
 
-        # self.controller = controller
+        # The main container of DataArrays
         self.data_arrays = {}
-
-        # self.data_bounds = {}
 
         # Create dict of DataArrays using information from controller
         for name, array in scipp_obj_dict.items():
 
+            # Create a DataArray with units of counts, and bin-edge
+            # coordinates, because it is to be passed to rebin during the
+            # resampling stage.
             self.data_arrays[name] = sc.DataArray(
                 data=sc.Variable(dims=list(controller.dim_to_shape[name].keys()),
                                  unit=sc.units.counts,
@@ -35,11 +36,7 @@ class PlotModel:
                                  variances=array.variances,
                                  dtype=sc.dtype.float64))
 
-            # # Get the min and max values once
-            # self.data_bounds[name] = [sc.min(array),
-            #                           sc.max(array)]
-
-            # Add coordinates
+            # Add bin-edge coordinates
             for dim, coord in controller.coords[name].items():
                 self.data_arrays[name].coords[dim] = coord
 
@@ -47,13 +44,15 @@ class PlotModel:
             for n, msk in array.masks.items():
                 self.data_arrays[name].masks[n] = msk
 
-
+        # The main currently displayed data slice
         self.dslice = None
         # Save a copy of the name for simpler access
         self.name = controller.name
 
-
-    def select_bins(self, coord, dim, start, end):
+    def _select_bins(self, coord, dim, start, end):
+        """
+        Method to speed up the finding of bin ranges
+        """
         bins = coord.shape[-1]
         if len(coord.dims) != 1:  # TODO find combined min/max
             return dim, slice(0, bins - 1)
@@ -67,7 +66,10 @@ class PlotModel:
         return dim, slice(first, last + 1)
 
 
-    def resample_image(self, array, rebin_edges):
+    def resample_data(self, array, rebin_edges):
+        """
+        Resample a DataArray according to new bin edges.
+        """
         dslice = array
         # Select bins to speed up rebinning
         for dim in rebin_edges:
@@ -78,37 +80,22 @@ class PlotModel:
 
         # Rebin the data
         for dim, edges in rebin_edges.items():
-            # print(dim)
-            # print(dslice)
-            # print(edges)
             dslice = sc.rebin(dslice, dim, edges)
 
         # Divide by pixel width
+        # TODO: can this loop be combined with the one above?
         for dim, edges in rebin_edges.items():
-            # self.image_pixel_size[key] = edges.values[1] - edges.values[0]
-            # print("edges.values[1]", edges.values[1])
-            # print(self.image_pixel_size[key])
-            # dslice /= self.image_pixel_size[key]
-
             div = edges[dim, 1:] - edges[dim, :-1]
             div.unit = sc.units.one
             dslice /= div
 
-            # dslice /= edges.values[1] - edges.values[0]
         return dslice
 
-    # def mask_to_float(self, mask, var):
-    #     return np.where(mask, var, None).astype(np.float)
-
-    def toggle_profile_view(self, change=None):
-        self.profile_dim = change["owner"].dim
-        if change["new"]:
-            self.show_profile_view()
-        else:
-            self.hide_profile_view()
-        return
 
     def rescale_to_data(self):
+        """
+        Get the min and max values of the currently displayed slice.
+        """
         vmin = None
         vmax = None
         if self.dslice is not None:

@@ -8,6 +8,7 @@ from .controller2d import PlotController2d
 from .model2d import PlotModel2d
 # from .render import render_plot
 from .lineplot import LinePlot
+from .sciplot import SciPlot
 from .tools import to_bin_edges, parse_params
 from .view2d import PlotView2d
 from .._utils import name_with_unit
@@ -64,13 +65,11 @@ def plot2d(scipp_obj_dict=None,
     if filename is not None:
         sp.savefig(filename)
 
-    # if ax is None:
-    #     render_plot(figure=sv.fig, widgets=sv.vbox, filename=filename)
-
     return sp
 
 
-class SciPlot2d:
+class SciPlot2d(SciPlot):
+
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
@@ -88,7 +87,7 @@ class SciPlot2d:
                  logy=False,
                  resolution=None):
 
-
+        # The main controller module which contains the slider widgets
         self.controller = PlotController2d(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
@@ -101,18 +100,13 @@ class SciPlot2d:
                          logy=logy,
             button_options=['X', 'Y'])
 
+        # The model which takes care of all heavy calculations
         self.model = PlotModel2d(controller=self.controller,
             scipp_obj_dict=scipp_obj_dict,
             resolution=resolution)
 
-        # Connect controller to model
-        self.controller.model = self.model
-                         # aspect=aspect)
-                         # button_options=['X', 'Y'])
-
-        # self.controller.widgets = PlotWidgets(controller=self.controller, #engine=self.engine,
-        #                  button_options=['X', 'Y'])
-
+        # The view which will display the 2d image and send pick events back to
+        # the controller
         self.view = PlotView2d(controller=self.controller,
             ax=ax, cax=cax, aspect=aspect,
             cmap=self.controller.params["values"][self.controller.name]["cmap"],
@@ -125,10 +119,8 @@ class SciPlot2d:
             logx=logx,
             logy=logy)
 
-        self.controller.view = self.view
 
-        # Profile view
-        self.profile = None
+        # Profile view which displays an additional dimension as a 1d plot
         if self.controller.ndim > 2:
             mask_params = self.controller.params["masks"][self.controller.name]
             mask_params["color"] = "k"
@@ -143,49 +135,11 @@ class SciPlot2d:
                          0.6 * config.plot.height / config.plot.dpi),
                  is_profile=True)
 
-
-
-            # self.profile = ProfileView(
-            #     errorbars=self.controller.errorbars,
-            #     unit=self.controller.params["values"][self.controller.name]["unit"],
-            #     mask_params=self.controller.params["masks"][self.controller.name],
-            #     mask_names=self.controller.mask_names)
-            # # controller=self.controller
-            #      # ax=None,
-            #      # errorbars=None,
-            #      # title=None,
-            #      # unit=None,
-            #      # logx=False,
-            #      # logy=False,
-            #      # mask_params=None,
-            #      # mask_names=None,
-            #      # mpl_line_params=None,
-            #      # grid=False)
-
-        self.controller.profile = self.profile
-
+        # Connect controller to model, view, panel and profile
+        self._connect_controller_members()
 
         # Call update_slice once to make the initial image
         self.controller.update_axes()
 
-
         return
 
-    def _ipython_display_(self):
-        return self._to_widget()._ipython_display_()
-
-    def _to_widget(self):
-        # widgets_ = [self.figure, self.widgets]
-        # if self.overview["additional_widgets"] is not None:
-        #     wdgts.append(self.overview["additional_widgets"])
-        widget_list = [self.view._to_widget()]
-        if self.profile is not None:
-            widget_list.append(self.profile._to_widget())
-        widget_list.append(self.controller._to_widget())
-        # if self.panel is not None:
-        #     widget_list.append(self.panel._to_widget())
-        return ipw.VBox(widget_list)
-        # return ipw.VBox([self.view._to_widget(), self.profile._to_widget(), self.controller._to_widget()])
-
-    def savefig(self, filename=None):
-        self.view.savefig(filename=filename)

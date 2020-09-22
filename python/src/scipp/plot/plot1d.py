@@ -8,8 +8,7 @@ from .controller import PlotController
 from .lineplot import LinePlot
 from .model1d import PlotModel1d
 from .panel1d import PlotPanel1d
-# from .render import render_plot
-# from .profiler import Profiler
+from .sciplot import SciPlot
 from .tools import to_bin_edges, parse_params
 from .view1d import PlotView1d
 from .._utils import name_with_unit
@@ -64,7 +63,8 @@ def plot1d(scipp_obj_dict=None,
 
 
 
-class SciPlot1d():
+class SciPlot1d(SciPlot):
+
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
@@ -79,7 +79,7 @@ class SciPlot1d():
                  title=None):
 
 
-
+        # The main controller module which contains the slider widgets
         self.controller = PlotController(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
@@ -88,24 +88,12 @@ class SciPlot1d():
                          errorbars=errorbars,
             button_options=['X'])
 
-        self.panel = None
-        if self.controller.ndim > 1:
-            self.panel = PlotPanel1d(controller=self.controller,
-                data_names=list(scipp_obj_dict.keys()))
-
-
+        # The model which takes care of all heavy calculations
         self.model = PlotModel1d(controller=self.controller,
             scipp_obj_dict=scipp_obj_dict)
 
-        # Connect controller to model
-        self.controller.model = self.model
-
-
-
-        # self.controller1d = PlotController1d(ndim=self.controller.ndim,
-        #     data_names=list(scipp_obj_dict.keys()))
-
-
+        # The view which will display the 1d plot and send pick events back to
+        # the controller
         self.view = PlotView1d(controller=self.controller,
             ax=ax,
             errorbars=self.controller.errorbars,
@@ -119,12 +107,7 @@ class SciPlot1d():
             picker=5,
             grid=grid)
 
-        self.controller.view = self.view
-        # self.controller1d.view = self.view
-        self.controller.panel = self.panel
-
-        # Profile view
-        self.profile = None
+        # Profile view which displays an additional dimension as a 1d plot
         if self.controller.ndim > 1:
             self.profile = LinePlot(errorbars=self.controller.errorbars,
                  ax=pax,
@@ -136,139 +119,16 @@ class SciPlot1d():
                  figsize=(config.plot.width / config.plot.dpi,
                          0.6 * config.plot.height / config.plot.dpi),
                  is_profile=True)
-            # self.profile = ProfileView(
-            #     errorbars=self.controller.errorbars,
-            #     unit=self.controller.params["values"][self.controller.name]["unit"],
-            #     mask_params=self.controller.params["masks"][self.controller.name],
-            #     mask_names=self.controller.mask_names)
-            # # controller=self.controller
-            #      # ax=None,
-            #      # errorbars=None,
-                 # title=None,
-                 # unit=None,
-                 # logx=False,
-                 # logy=False,
-                 # mask_params=None,
-                 # mask_names=None,
-                 # mpl_line_params=None,
-                 # grid=False)
 
-        self.controller.profile = self.profile
+        # An additional panel view with widgets to save/remove lines
+        if self.controller.ndim > 1:
+            self.panel = PlotPanel1d(controller=self.controller,
+                data_names=list(scipp_obj_dict.keys()))
 
-        # Call update_slice once to make the initial image
+        # Connect controller to model, view, panel and profile
+        self._connect_controller_members()
+
+        # Call update_slice once to make the initial plot
         self.controller.update_axes()
 
-
-        # # Save the line parameters (color, linewidth...)
-        # self.mpl_line_params = mpl_line_params
-
-        # self.engine.update_axes(list(self.widgets.slider.keys())[-1])
-
-        # self.names = []
-        # # self.ylim = [np.Inf, np.NINF]
-        # self.logx = logx
-        # self.logy = logy
-        # for name, var in self.data_arrays.items():
-        #     self.names.append(name)
-        #     # if var.values is not None:
-        #     #     self.ylim = get_ylim(var=var,
-        #     #                               ymin=self.ylim[0],
-        #     #                               ymax=self.ylim[1],
-        #     #                               errorbars=self.errorbars[name],
-        #     #                               logy=self.logy)
-        #     ylab = name_with_unit(var=var, name="")
-
-        # # if (not self.mpl_axes) and (var.values is not None):
-        # #     with warnings.catch_warnings():
-        # #         warnings.filterwarnings("ignore", category=UserWarning)
-        # #         self.ax.set_ylim(self.ylim)
-
-        # if self.logx:
-        #     self.ax.set_xscale("log")
-        # if self.logy:
-        #     self.ax.set_yscale("log")
-
-        # # Disable buttons
-        # for dim, button in self.buttons.items():
-        #     if self.slider[dim].disabled:
-        #         button.disabled = True
-        # self.update_axes(list(self.slider.keys())[-1])
-
-        # self.ax.set_ylabel(ylab)
-        # if len(self.ax.get_legend_handles_labels()[0]) > 0:
-        #     self.ax.legend()
-
-        # self.widget_view = ipw.VBox()
-        # self.keep_buttons = dict()
-        # self.make_keep_button()
-
-        # self.additional_widgets = None
-
-        # vbox contains the original sliders and buttons.
-        # In keep_buttons_box, we include the keep trace buttons.
-        # self.additional_widgets = ipw.VBox()
-        # for key, val in self.keep_buttons.items():
-        #     self.additional_widgets.append(widgets.HBox(list(val.values())))
-        # self.additional_widgets = widgets.VBox(self.additional_widgets)
-
-        # self.update_additional_widgets()
-
-        # self.box = widgets.VBox(
-        #     [widgets.VBox(self.vbox), self.additional_widgets])
-
-        # self.box.layout.align_items = 'center'
-        # if self.controller.ndim < 2:
-        #     self.additional_widgets.layout.display = 'none'
-
-        # self.additional_widgets = 
-
-
-        # # Populate the members
-        # self.members["fig"] = self.fig
-        # self.members["ax"] = self.ax
-
         return
-
-
-    def _ipython_display_(self):
-        return self._to_widget()._ipython_display_()
-
-    def _to_widget(self):
-        # widgets_ = [self.figure, self.widgets]
-        # if self.overview["additional_widgets"] is not None:
-        #     wdgts.append(self.overview["additional_widgets"])
-        widget_list = [self.view._to_widget()]
-        if self.profile is not None:
-            widget_list.append(self.profile._to_widget())
-        widget_list.append(self.controller._to_widget())
-        if self.panel is not None:
-            widget_list.append(self.panel._to_widget())
-        return ipw.VBox(widget_list)
-
-    def savefig(self, filename=None):
-        self.view.savefig(filename=filename)
-
-    # def get_finite_y(self, arr):
-    #     if self.logy:
-    #         with np.errstate(divide="ignore", invalid="ignore"):
-    #             arr = np.log10(arr, out=arr)
-    #     subset = np.where(np.isfinite(arr))
-    #     return arr[subset]
-
-    # def get_ylim(self, var=None, ymin=None, ymax=None, errorbars=False):
-    #     if errorbars:
-    #         err = self.vars_to_err(var.variances)
-    #     else:
-    #         err = 0.0
-
-    #     ymin_new = np.amin(self.get_finite_y(var.values - err))
-    #     ymax_new = np.amax(self.get_finite_y(var.values + err))
-
-    #     dy = 0.05 * (ymax_new - ymin_new)
-    #     ymin_new -= dy
-    #     ymax_new += dy
-    #     if self.logy:
-    #         ymin_new = 10.0**ymin_new
-    #         ymax_new = 10.0**ymax_new
-    #     return [min(ymin, ymin_new), max(ymax, ymax_new)]
-

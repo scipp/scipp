@@ -218,7 +218,9 @@ class PlotView3d:
         #     wdgts.append(self.overview["additional_widgets"])
         return self.figure
 
-
+    def savefig(self, filename=None):
+        raise RuntimeError("Saving figures is not yet implemented for 3D "
+                           "visualization.")
 
 
     def update_axes(self, axparams, axformatter=None, axlocator=None, logx=None, logy=None):

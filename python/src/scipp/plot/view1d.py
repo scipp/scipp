@@ -329,7 +329,7 @@ class PlotView1d:
         # os.write(1, "view1d: keep_profile 4\n".encode())
         # self.fig.canvas.draw_idle()
 
-        self.controller.keep_line(view="profile", color=col, line_id=line_id)
+        self.controller.keep_line(target="profile", color=col, line_id=line_id)
         # os.write(1, "view1d: keep_profile 5\n".encode())
 
 
@@ -362,7 +362,7 @@ class PlotView1d:
         # os.write(1, "view1d: remove_profile 6\n".encode())
 
         # Also remove the line from the 1d plot
-        self.controller.remove_line(view="profile", line_id=gid)
+        self.controller.remove_line(target="profile", line_id=gid)
         # os.write(1, "view1d: remove_profile 7\n".encode())
         # self.profile_ids.pop(ind)
         # os.write(1, "view1d: remove_profile 8\n".encode())

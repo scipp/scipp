@@ -229,9 +229,9 @@ class PlotModel2d(PlotModel):
             #                                                      val.value + 0.5 * deltax],
             #                                             unit=data_slice.coords[dim].unit))
 
-            # TODO: see if we can call resample_image only once with
+            # TODO: see if we can call resample_data only once with
             # rebin_edges dict containing all dims to be sliced.
-            self.vslice = self.resample_image(self.vslice,
+            self.vslice = self.resample_data(self.vslice,
                     # coord_edges={dim: self.slider_coord[self.engine.name][dim]},
                     rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
                                                                  loc + 0.5 * deltax],
@@ -300,7 +300,7 @@ class PlotModel2d(PlotModel):
             dimx: self.xyrebin[xy[1]]
         }
 
-        resampled_image = self.resample_image(self.vslice,
+        resampled_image = self.resample_data(self.vslice,
                                               # coord_edges={
                                               #     self.xyrebin[xy[0]].dims[0]:
                                               #     self.xyedges[xy[0]],
@@ -422,11 +422,11 @@ class PlotModel2d(PlotModel):
         # data_slice = self.data_arrays[self.name]
         # os.write(1, "compute_profile 3\n".encode())
 
-        data_slice = self.resample_image(self.data_arrays[self.name],
+        data_slice = self.resample_data(self.data_arrays[self.name],
                         rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimx, 0]
         # os.write(1, "compute_profile 4\n".encode())
 
-        data_slice = self.resample_image(data_slice,
+        data_slice = self.resample_data(data_slice,
                         rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2]})[dimy, 0]
         # os.write(1, "compute_profile 5\n".encode())
         # os.write(1, str(list(slices.keys())).encode())
@@ -441,7 +441,7 @@ class PlotModel2d(PlotModel):
             deltax = slices[dim]["thickness"]
             loc = slices[dim]["location"]
 
-            data_slice = self.resample_image(data_slice,
+            data_slice = self.resample_data(data_slice,
                     rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
                                                                  loc + 0.5 * deltax],
                                                         unit=data_slice.coords[dim].unit)})[dim, 0]
@@ -454,16 +454,16 @@ class PlotModel2d(PlotModel):
         #         os.write(1, "compute_profile 5\n".encode())
         #         if dim == dimx:
         #             os.write(1, "compute_profile 6\n".encode())
-        #             data_slice = self.resample_image(data_slice,
+        #             data_slice = self.resample_data(data_slice,
         #                 rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimx, 0]
         #         elif dim == dimy:
         #             os.write(1, "compute_profile 7\n".encode())
-        #             data_slice = self.resample_image(data_slice,
+        #             data_slice = self.resample_data(data_slice,
         #                 rebin_edges={dimy: self.xyrebin["y"][dimy, iy:iy + 2]})[dimy, 0]
         #         else:
         #             os.write(1, "compute_profile 8\n".encode())
         #             deltax = self.thickness_slider[dim].value
-        #             data_slice = self.resample_image(data_slice,
+        #             data_slice = self.resample_data(data_slice,
         #                 rebin_edges={dim: sc.Variable([dim], values=[val.value - 0.5 * deltax,
         #                                                              val.value + 0.5 * deltax],
         #                                                     unit=data_slice.coords[dim].unit)})[dim, 0]
@@ -475,7 +475,7 @@ class PlotModel2d(PlotModel):
 
 
         # # # Resample the 3d cube down to a 1d profile
-        # # return self.resample_image(self.da_with_edges,
+        # # return self.resample_data(self.da_with_edges,
         # #                            coord_edges={
         # #                                dimy: self.da_with_edges.coords[dimy],
         # #                                dimx: self.da_with_edges.coords[dimx]

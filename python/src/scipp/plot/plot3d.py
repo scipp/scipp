@@ -8,6 +8,7 @@ from .. import config
 from .controller3d import PlotController3d
 from .model3d import PlotModel3d
 from .panel3d import PlotPanel3d
+from .sciplot import SciPlot
 from .tools import to_bin_centers
 from .view3d import PlotView3d
 
@@ -69,12 +70,13 @@ def plot3d(scipp_obj_dict=None,
                   tick_size=tick_size,
                   show_outline=show_outline)
 
-    # render_plot(widgets=sv.box, filename=filename)
+    if filename is not None:
+        sp.savefig(filename)
 
     return sp
 
 
-class SciPlot3d:
+class SciPlot3d(Sciplot):
     def __init__(self,
                  scipp_obj_dict=None,
                  positions=None,
@@ -92,7 +94,7 @@ class SciPlot3d:
                  tick_size=None,
                  show_outline=True):
 
-
+        # The main controller module which contains the slider widgets
         self.controller = PlotController3d(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          masks=masks,
@@ -105,22 +107,14 @@ class SciPlot3d:
             pixel_size=pixel_size,
             button_options=['X', 'Y', 'Z'])
 
-        self.panel = PlotPanel3d(controller=self.controller, pixel_size=pixel_size)
-
-
+        # The model which takes care of all heavy calculations
         self.model = PlotModel3d(controller=self.controller,
             scipp_obj_dict=scipp_obj_dict,
             positions=positions,
             cut_options=self.panel.cut_options)
 
-        # Connect controllers to model
-        self.controller.model = self.model
-        # self.controller3d.model = self.model
-
-        # # Add a slave controller to control the cut surface
-        # self.controller3d = PlotController3d(ndim=self.controller.ndim,
-        #     data_names=list(scipp_obj_dict.keys()), pixel_size=pixel_size)
-
+        # The view which will display the 3d scene and send pick events back to
+        # the controller
         self.view = PlotView3d(controller=self.controller,
             cmap=self.controller.params["values"][self.controller.name]["cmap"],
             norm=self.controller.params["values"][self.controller.name]["norm"],
@@ -133,34 +127,16 @@ class SciPlot3d:
             background=background,
             show_outline=show_outline)
 
-        self.controller.view = self.view
-        # self.controller3d.view = self.view
-        self.controller.panel = self.panel
+        # An additional panel view with widgets to control the cut surface
+        self.panel = PlotPanel3d(controller=self.controller, pixel_size=pixel_size)
 
-
-
-
-
-
-        # Profile view
-        self.profile = None
-
+        # Connect controller to model, view, panel and profile
+        self._connect_controller_members()
 
         # Call update_slice once to make the initial image
         self.controller.update_axes()
 
-
         return
-
-    def _ipython_display_(self):
-        return self._to_widget()._ipython_display_()
-
-    def _to_widget(self):
-        return ipw.VBox([self.view._to_widget(), self.controller._to_widget(),
-            self.panel._to_widget()])
-
-    def savefig(self, filename=None):
-        self.view.savefig(filename=filename)
 
 
 

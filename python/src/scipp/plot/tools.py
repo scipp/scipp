@@ -72,22 +72,6 @@ def parse_params(params=None,
         for key, val in params.items():
             parsed[key] = val
 
-    # need_norm = False
-    # # TODO: sc.min/max currently return nan if the first value in the
-    # # variable array is a nan. Until sc.nanmin/nanmax are implemented, we fall
-    # # back to using numpy, both when a Variable and a numpy array are supplied.
-    # if variable is not None:
-    #     _find_min_max(variable.values, parsed)
-    #     need_norm = True
-    # if array is not None:
-    #     _find_min_max(array, parsed)
-    #     need_norm = True
-
-    # if (variable is not None) or (array is not None):
-    #     if min_val is not None:
-    #         parsed["vmin"] = min(parsed["vmin"], min_val)
-    #     if max_val is not None:
-    #         parsed["vmax"] = max(parsed["vmax"], max_val)
     if parsed["log"]:
         norm = LogNorm
     else:
@@ -113,24 +97,6 @@ def make_fake_coord(dim, size, unit=None):
     return sc.Variable(dims=[dim], **args)
 
 
-# def _find_min_max(array, params):
-#     if params["vmin"] is None or params["vmax"] is None:
-#         if params["log"]:
-#             with np.errstate(divide="ignore", invalid="ignore"):
-#                 valid = np.ma.log10(array)
-#         else:
-#             valid = np.ma.masked_invalid(array, copy=False)
-#     if params["vmin"] is None:
-#         params["vmin"] = valid.min()
-#         if params["log"]:
-#             params["vmin"] = 10.0**params["vmin"]
-#     if params["vmax"] is None:
-#         params["vmax"] = valid.max()
-#         if params["log"]:
-#             params["vmax"] = 10.0**params["vmax"]
-
-
-
 def vars_to_err(v):
     with np.errstate(invalid="ignore"):
         v = np.sqrt(v)
@@ -141,33 +107,3 @@ def vars_to_err(v):
 
 def mask_to_float(mask, var):
     return np.where(mask, var, None).astype(np.float)
-
-
-# def make_random_color():
-#     '#%02X%02X%02X' %
-#                                   (tuple(np.random.randint(0, 255, 3)))
-
-# def get_finite_y(arr, logy=False):
-#     if logy:
-#         with np.errstate(divide="ignore", invalid="ignore"):
-#             arr = np.log10(arr, out=arr)
-#     subset = np.where(np.isfinite(arr))
-#     return arr[subset]
-
-# def get_ylim(var=None, ymin=None, ymax=None, errorbars=False, logy=False):
-#     if errorbars:
-#         err = vars_to_err(var.variances)
-#     else:
-#         err = 0.0
-
-#     ymin_new = np.amin(get_finite_y(var.values - err, logy=logy))
-#     ymax_new = np.amax(get_finite_y(var.values + err, logy=logy))
-
-#     dy = 0.05 * (ymax_new - ymin_new)
-#     ymin_new -= dy
-#     ymax_new += dy
-#     if logy:
-#         ymin_new = 10.0**ymin_new
-#         ymax_new = 10.0**ymax_new
-#     return [ymin_new if ymin is None else min(ymin, ymin_new),
-#             ymax_new if ymax is None else max(ymax, ymax_new)]

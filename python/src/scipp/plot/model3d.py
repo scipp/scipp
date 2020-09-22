@@ -172,7 +172,7 @@ class PlotModel3d(PlotModel):
             deltax = slices[dim]["thickness"]
             loc = slices[dim]["location"]
 
-            data_slice = self.resample_image(data_slice,
+            data_slice = self.resample_data(data_slice,
                     rebin_edges={dim: sc.Variable([dim], values=[loc - 0.5 * deltax,
                                                                  loc + 0.5 * deltax],
                                                         unit=data_slice.coords[dim].unit)})[dim, 0]
