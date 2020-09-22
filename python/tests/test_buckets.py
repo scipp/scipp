@@ -4,8 +4,8 @@
 import pytest
 import scipp as sc
 import numpy as np
-from nexus_helpers import (find_by_nx_class,
-                           in_memory_nexus_file_with_event_data)
+from .nexus_helpers import (find_by_nx_class,
+                            in_memory_nexus_file_with_event_data)
 
 
 def test_to_buckets_default_begin_end():
