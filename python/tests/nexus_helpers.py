@@ -47,14 +47,13 @@ def in_memory_nexus_file_with_event_data() -> Iterator[h5py.File]:
         nx_class.attrs["NX_class"] = nx_class_name
         return nx_class
 
+    # "core" driver means file is "in-memory" not on disk.
+    # backing_store=False prevents file being written to
+    # disk on flush() or close().
+    nexus_file = h5py.File('in_memory_events.nxs',
+                           driver="core",
+                           backing_store=False)
     try:
-        # "core" driver means file is "in-memory" not on disk.
-        # backing_store=False prevents file being written to
-        # disk on flush() or close().
-        nexus_file = h5py.File('in_memory_events.nxs',
-                               driver="core",
-                               backing_store=False)
-
         entry_group = _create_nx_class("entry", "NXentry", nexus_file)
         event_group = _create_nx_class("events", "NXevent_data", entry_group)
 
