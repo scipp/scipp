@@ -21,32 +21,31 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
           std::move(dimensions), std::move(values_), std::move(variances_))) {}
 
 template <class T> ElementArrayView<const T> Variable::values() const {
-  return cast<T>(*this).values({0, dims(), dims(), {}});
+  return cast<T>(*this).values(array_params());
 }
 template <class T> ElementArrayView<T> Variable::values() {
-  return cast<T>(*this).values({0, dims(), dims(), {}});
+  return cast<T>(*this).values(array_params());
 }
 template <class T> ElementArrayView<const T> Variable::variances() const {
-  return cast<T>(*this).variances({0, dims(), dims(), {}});
+  return cast<T>(*this).variances(array_params());
 }
 template <class T> ElementArrayView<T> Variable::variances() {
-  return cast<T>(*this).variances({0, dims(), dims(), {}});
+  return cast<T>(*this).variances(array_params());
 }
 
 template <class T> ElementArrayView<const T> VariableConstView::values() const {
-  return cast<T>(*m_variable).values({m_offset, m_dims, m_dataDims, {}});
+  return cast<T>(*m_variable).values(array_params());
 }
 template <class T>
 ElementArrayView<const T> VariableConstView::variances() const {
-  return cast<T>(*m_variable).variances({m_offset, m_dims, m_dataDims, {}});
+  return cast<T>(*m_variable).variances(array_params());
 }
 
 template <class T> ElementArrayView<T> VariableView::values() const {
-  return cast<T>(*m_mutableVariable).values({m_offset, m_dims, m_dataDims, {}});
+  return cast<T>(*m_mutableVariable).values(array_params());
 }
 template <class T> ElementArrayView<T> VariableView::variances() const {
-  return cast<T>(*m_mutableVariable)
-      .variances({m_offset, m_dims, m_dataDims, {}});
+  return cast<T>(*m_mutableVariable).variances(array_params());
 }
 
 #define INSTANTIATE_VARIABLE_BASE(name, ...)                                   \

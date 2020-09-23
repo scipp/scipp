@@ -11,6 +11,11 @@ namespace scipp::variable {
 /// Abstract base class for "variable makers", used by VariableFactory to
 /// dynamically create variables with given type.
 class SCIPP_VARIABLE_EXPORT AbstractVariableMaker {
+protected:
+  auto unreachable() const {
+    return std::logic_error("This code path should never be reached");
+  }
+
 public:
   virtual ~AbstractVariableMaker() = default;
   virtual bool is_buckets() const = 0;
@@ -18,23 +23,29 @@ public:
                           const bool variances) const = 0;
   virtual Variable create_buckets(const DType, const Dimensions &, const bool,
                                   const VariableConstView &) const {
-    throw std::runtime_error("abc");
+    throw unreachable();
   }
   virtual Variable create_buckets(const DType, const Dimensions &, const bool,
                                   const VariableConstView &,
                                   const VariableConstView &) const {
-    throw std::runtime_error("abc");
+    throw unreachable();
   }
   virtual Variable create_buckets(const DType, const Dimensions &, const bool,
                                   const VariableConstView &,
                                   const VariableConstView &,
                                   const VariableConstView &) const {
-    throw std::runtime_error("abc");
+    throw unreachable();
   }
   virtual DType elem_dtype(const VariableConstView &var) const = 0;
   virtual bool hasVariances(const VariableConstView &var) const = 0;
-  virtual VariableConstView data(const VariableConstView &var) const = 0;
-  virtual VariableView data(const VariableView &var) const = 0;
+  virtual VariableConstView data(const VariableConstView &) const {
+    throw unreachable();
+  }
+  virtual VariableView data(const VariableView &) const { throw unreachable(); }
+  virtual core::element_array_view
+  array_params(const VariableConstView &) const {
+    throw unreachable();
+  }
 };
 
 template <class T> class VariableMaker : public AbstractVariableMaker {
@@ -53,12 +64,6 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   }
   bool hasVariances(const VariableConstView &var) const override {
     return var.hasVariances();
-  }
-  VariableConstView data(const VariableConstView &var) const override {
-    return var.underlying();
-  }
-  VariableView data(const VariableView &var) const override {
-    return var.underlying();
   }
 };
 
@@ -102,12 +107,19 @@ public:
   DType elem_dtype(const VariableConstView &var) const;
   bool hasVariances(const VariableConstView &var) const;
   template <class T, class Var> auto values(Var &&var) const {
-    auto &&data = m_makers.at(var.dtype())->data(view(var));
-    return ElementArrayView(base_view(var), data.template values<T>().data());
+    if (!is_buckets(var))
+      return var.template values<T>();
+    const auto &maker = *m_makers.at(var.dtype());
+    auto &&data = maker.data(view(var));
+    return ElementArrayView(maker.array_params(var),
+                            data.template values<T>().data());
   }
   template <class T, class Var> auto variances(Var &&var) const {
-    auto &&data = m_makers.at(var.dtype())->data(view(var));
-    return ElementArrayView(base_view(var),
+    if (!is_buckets(var))
+      return var.template variances<T>();
+    const auto &maker = *m_makers.at(var.dtype());
+    auto &&data = maker.data(view(var));
+    return ElementArrayView(maker.array_params(var),
                             data.template variances<T>().data());
   }
 
@@ -115,9 +127,6 @@ private:
   VariableConstView view(const VariableConstView &var) const { return var; }
   VariableView view(Variable &var) const { return var; }
   VariableView view(const VariableView &var) const { return var; }
-  core::element_array_view base_view(const VariableConstView &var) const {
-    return var.base_view();
-  }
   std::map<DType, std::unique_ptr<AbstractVariableMaker>> m_makers;
 };
 

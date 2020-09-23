@@ -97,6 +97,7 @@ public:
   }
 
   scipp::index size() const { return m_iterDims.volume(); }
+  constexpr scipp::index offset() const noexcept { return m_offset; }
   constexpr const Dimensions &dims() const noexcept { return m_iterDims; }
   constexpr const Dimensions &dataDims() const noexcept { return m_dataDims; }
   constexpr const BucketParams &bucketParams() const noexcept {

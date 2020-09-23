@@ -49,7 +49,7 @@ public:
       return;
     }
     m_bucket = std::array{BucketIterator(params)...};
-    const auto &nestedDims = merge(params.bucketParams().dims...);
+    const auto nestedDims = std::array{params.bucketParams().dims...}[0];
     const Dim sliceDim = std::array{params.bucketParams().dim...}[0];
     m_ndim_nested = nestedDims.ndim();
     m_nested_stride = nestedDims.offset(sliceDim);
@@ -197,12 +197,17 @@ private:
   scipp::index m_end_sentinel{1};
   scipp::index m_ndim_nested{NDIM_MAX}; // dims of bucket, enforce same... but
                                         // could use to handle dense?
-  scipp::index m_nested_stride = {};    // same if same dims enforced
+  scipp::index m_nested_stride =
+      {}; // same if same dims enforced <- no, not if slice? but buffer is never
+          // sliced! only length along bucket slicing dim may differ
   scipp::index m_nested_dim_index = {}; // same if same dims enforce
   std::array<BucketIterator, N> m_bucket = {};
 };
 template <class... DataDims>
 MultiIndex(const Dimensions &, DataDims &...)
     -> MultiIndex<sizeof...(DataDims)>;
+template <class... Params>
+MultiIndex(const element_array_view &, const Params &...)
+    -> MultiIndex<sizeof...(Params) + 1>;
 
 } // namespace scipp::core

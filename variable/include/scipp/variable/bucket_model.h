@@ -66,23 +66,6 @@ public:
   T &buffer() noexcept { return m_buffer; }
   const Variable &indices() const { return m_indices; }
 
-  core::element_array_view
-  base_view(const scipp::index offset, const Dimensions &iterDims,
-            const Dimensions &dataDims) const override {
-    // TODO access params odd... dims are in VariableConstView, but bucket
-    // params in model? is there a better way?
-    const auto ranges = indices().template values<range_type>();
-    if constexpr (std::is_same_v<std::decay_t<decltype(m_buffer.dims())>,
-                                 Dimensions>)
-      return {0,
-              iterDims,
-              dataDims,
-              {m_dim, m_buffer.dims(),
-               scipp::span{&*ranges.begin() + offset, &*ranges.end()}}};
-    else
-      throw std::runtime_error("Dataset?");
-  }
-
   ElementArrayView<bucket<T>> values(const core::element_array_view &base) {
     return {index_values(base), m_dim, m_buffer};
   }

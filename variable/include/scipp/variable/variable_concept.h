@@ -61,12 +61,6 @@ public:
                     const VariableView &dest) const = 0;
   virtual void assign(const VariableConcept &other) = 0;
 
-  virtual core::element_array_view
-  base_view(const scipp::index offset, const Dimensions &iterDims,
-            const Dimensions &dataDims) const = 0;
-  // virtual const VariableConcept &underlying() const { return *this; }
-  // virtual VariableConcept &underlying() { return *this; }
-
   friend class Variable;
 
 private:

@@ -146,25 +146,11 @@ static constexpr void advance(T &indices,
                std::make_index_sequence<std::tuple_size_v<T>>{});
 }
 
-template <class T> static constexpr auto bucket_params(T &&iterable) noexcept {
+template <class T> static constexpr auto array_params(T &&iterable) noexcept {
   if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
-    return bucket_params(iterable.values);
+    return iterable.values;
   else
-    return iterable.bucketParams();
-}
-
-template <class T> static constexpr auto iter_dims(T &&iterable) noexcept {
-  if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
-    return iter_dims(iterable.values);
-  else
-    return iterable.dims();
-}
-
-template <class T> static constexpr auto data_dims(T &&iterable) noexcept {
-  if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
-    return data_dims(iterable.values);
-  else
-    return iterable.dataDims();
+    return iterable;
 }
 
 template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
@@ -276,10 +262,8 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
       for (; indices != end; indices.increment())
         call(op, indices, out, other...);
     };
-    const auto begin = core::MultiIndex(
-        iter::iter_dims(out),
-        std::pair{iter::data_dims(out), iter::bucket_params(out)},
-        std::pair{iter::data_dims(other), iter::bucket_params(other)}...);
+    const auto begin =
+        core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
     auto run_parallel = [&](const auto &range) {
       auto indices = begin;
       indices.set_index(range.begin());
@@ -613,10 +597,8 @@ template <bool dry_run> struct in_place {
         for (; indices != end; indices.increment())
           call_in_place(op, indices, arg, other...);
       };
-      const auto begin_ = core::MultiIndex(
-          iter::iter_dims(arg),
-          std::pair{iter::data_dims(arg), iter::bucket_params(arg)},
-          std::pair{iter::data_dims(other), iter::bucket_params(other)}...);
+      const auto begin_ = core::MultiIndex(iter::array_params(arg),
+                                           iter::array_params(other)...);
       if (iter::has_stride_zero(std::get<0>(begin))) {
         // The output has a dimension with stride zero so parallelization must
         // be done differently. Explicit and precise control of chunking is
