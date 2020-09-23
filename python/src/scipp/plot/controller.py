@@ -296,7 +296,6 @@ class PlotController:
                                       unit=coord.unit,
                                       dtype=sc.dtype.float64)
                 else:
-                    print(self.dim_to_shape, dim, dim_coord_dim)
                     var = make_fake_coord(
                         dim, self.dim_to_shape[name][dim])
                 form = ticker.FuncFormatter(
