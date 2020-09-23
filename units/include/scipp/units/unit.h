@@ -48,6 +48,7 @@ constexpr scipp::index unit_index(Unit unit, std::tuple<Units...>) {
 
 namespace boost_units {
 using nanosecond = decltype(boost::units::si::nano * boost::units::si::seconds);
+using millimeter = decltype(boost::units::si::milli * boost::units::si::meter);
 static constexpr boost::units::si::dimensionless dimensionless;
 static constexpr boost::units::si::length m;
 static constexpr boost::units::si::time s;
@@ -55,6 +56,7 @@ static constexpr boost::units::si::mass kg;
 static constexpr boost::units::si::temperature K;
 static constexpr boost::units::si::plane_angle rad;
 static constexpr nanosecond ns;
+static constexpr millimeter mm;
 static constexpr decltype(boost::units::degree::plane_angle{} *
                           dimensionless) deg;
 
@@ -69,7 +71,7 @@ struct supported_units {
                       kg *m / s, m / s, c, c *m, meV / c, dimensionless / c, K,
                       us / angstrom, us / (angstrom * angstrom),
                       us / (m * angstrom), angstrom / us, (m * angstrom) / us,
-                      ns, dimensionless / meV)));
+                      ns, mm, dimensionless / meV)));
 };
 struct counts_unit {
   using type = decltype(boost_units::counts);
@@ -142,5 +144,6 @@ constexpr Unit meV{boost_units::meV};
 constexpr Unit us{boost_units::us};
 constexpr Unit c{boost_units::c};
 constexpr Unit ns{boost_units::ns};
+constexpr Unit mm{boost_units::mm};
 
 } // namespace scipp::units

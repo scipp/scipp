@@ -161,6 +161,7 @@ void init_units_neutron(py::module &m) {
   units.attr("s") = units::s;
   units.attr("us") = units::us;
   units.attr("ns") = units::ns;
+  units.attr("mm") = units::mm;
 
   units.def(
       "supported_units",
