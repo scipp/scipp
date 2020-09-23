@@ -33,12 +33,7 @@ struct SCIPP_CORE_EXPORT BucketParams {
 };
 
 constexpr auto merge(const BucketParams &a) noexcept { return a; }
-inline auto merge(const BucketParams &a, const BucketParams &b) {
-  if (a != b)
-    throw std::runtime_error("Mismatching bucket sizes");
-  return a ? a : b;
-}
-
+BucketParams merge(const BucketParams &a, const BucketParams &b);
 template <class... Ts>
 auto merge(const BucketParams &a, const BucketParams &b, const Ts &... params) {
   return merge(merge(a, b), params...);
