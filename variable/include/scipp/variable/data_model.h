@@ -73,14 +73,6 @@ public:
           element_array<T>(dimensions.volume(), default_init<T>::value());
   }
 
-  bool operator==(const DataModel &other) const noexcept {
-    return dims() == other.dims() && m_values == other.m_values &&
-           m_variances == other.m_variances;
-  }
-  bool operator!=(const DataModel &other) const noexcept {
-    return !(*this == other);
-  }
-
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
 
@@ -123,8 +115,6 @@ private:
     if (!hasVariances())
       throw except::VariancesError("Variable does not have variances.");
   }
-
-protected:
   element_array<T> m_values;
   std::optional<element_array<T>> m_variances;
 };
@@ -136,12 +126,6 @@ template <class T> const DataModel<T> &cast(const Variable &var) {
 template <class T> DataModel<T> &cast(Variable &var) {
   return requireT<DataModel<T>>(var.data());
 }
-
-} // namespace scipp::variable
-
-#include "scipp/variable/bucket_model.h"
-
-namespace scipp::variable {
 
 template <class T>
 VariableConceptHandle
