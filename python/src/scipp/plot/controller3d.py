@@ -12,6 +12,7 @@ import numpy as np
 
 
 class PlotController3d(PlotController):
+
     def __init__(self,
                  scipp_obj_dict=None,
                  pixel_size=None,
@@ -40,12 +41,12 @@ class PlotController3d(PlotController):
                     name_with_unit(coord, name=xyz.upper())
                 }
 
-    def get_axes_parameters(self):
+    def _get_axes_parameters(self):
         axparams = {}
         if self.positions is not None:
             axparams = self.pos_axparams
         else:
-            axparams = super().get_axes_parameters()
+            axparams = super()._get_axes_parameters()
 
         axparams["centre"] = [
             0.5 * np.sum(axparams['x']["lims"]),
@@ -85,7 +86,7 @@ class PlotController3d(PlotController):
         self.panel.rescale_to_data(vmin, vmax)
         self.view.rescale_to_data(vmin, vmax)
         new_values = self.model.get_slice_values(
-            mask_info=self.get_mask_info())
+            mask_info=self._get_mask_info())
         self.view.update_data(new_values)
 
     def toggle_mask(self, change=None):
@@ -93,5 +94,5 @@ class PlotController3d(PlotController):
         Show/hide masks
         """
         new_values = self.model.get_slice_values(
-            mask_info=self.get_mask_info())
+            mask_info=self._get_mask_info())
         self.view.update_data(new_values)

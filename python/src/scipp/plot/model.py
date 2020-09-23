@@ -25,7 +25,8 @@ class PlotModel:
                 variances=array.variances,
                 dtype=sc.dtype.float64))
 
-            # Add bin-edge coordinates
+            # Add bin-edge coordinates, which are either dimension or non-
+            # dimension coordinates
             for dim, coord in controller.coords[name].items():
                 self.data_arrays[name].coords[dim] = coord
 

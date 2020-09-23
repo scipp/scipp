@@ -25,10 +25,10 @@ def plot(scipp_obj,
     # Delayed imports
     from .tools import get_line_param
     from .dispatch import dispatch
-    import matplotlib as mpl
-    interactive_mpl = mpl.is_interactive()
-    if interactive_mpl:
-        mpl.pyplot.ioff()
+    import matplotlib.pyplot as plt
+    # interactive_mpl = mpl.is_interactive()
+    # if interactive_mpl:
+    plt.ioff()
 
     inventory = dict()
     if su.is_dataset(scipp_obj):
@@ -138,8 +138,8 @@ def plot(scipp_obj,
                                **kwargs)
 
     # Remember to switch interactivity back on
-    if interactive_mpl:
-        mpl.pyplot.ion()
+    # if interactive_mpl:
+    plt.ion()
 
     return output
 

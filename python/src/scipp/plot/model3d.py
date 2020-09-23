@@ -12,6 +12,7 @@ import numpy as np
 
 
 class PlotModel3d(PlotModel):
+
     def __init__(self,
                  controller=None,
                  scipp_obj_dict=None,
@@ -34,8 +35,6 @@ class PlotModel3d(PlotModel):
             self.pos_array = np.array(
                 scipp_obj_dict[self.name].coords[self.positions].values,
                 dtype=np.float32)
-
-        return
 
     def get_positions_array(self):
         return self.pos_array

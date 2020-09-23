@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .tools import parse_params, make_fake_coord, to_bin_edges
+from .tools import parse_params, make_fake_coord, to_bin_edges, check_log_limits
 from .widgets import PlotWidgets
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
@@ -42,8 +42,8 @@ class PlotController:
         self.axparams = {}
         self.profile_axparams = {}
 
-        # Parse parameters for values, variances and masks
-        self.params = {"values": {}, "variances": {}, "masks": {}}
+        # Parse parameters for values and masks
+        self.params = {"values": {}, "masks": {}}
         globs = {
             "cmap": cmap,
             "log": log,
@@ -51,8 +51,14 @@ class PlotController:
             "vmax": vmax,
             "color": color
         }
-        self.profile_dim = None
+        masks_globs = {
+            "log": log,
+            "vmin": vmin,
+            "vmax": vmax
+        }
 
+        # Save the current profile dimension
+        self.profile_dim = None
         # List mask names for each item
         self.mask_names = {}
         # Size of the slider coordinate arrays
@@ -107,7 +113,7 @@ class PlotController:
                                                           "cmap": "gray",
                                                           "cbar": False
                                                       },
-                                                      globs=globs)
+                                                      globs=masks_globs)
 
             # Create a useful map from dim to shape
             self.dim_to_shape[name] = dict(zip(array_dims, array.shape))
@@ -302,7 +308,13 @@ class PlotController:
         plots) to the minimum and maximum value inside the currently displayed
         data slice.
         """
-        vmin, vmax = self.model.rescale_to_data()
+        data_min, data_max = self.model.rescale_to_data()
+        param_min = self.params["values"][self.name]["vmin"]
+        param_max = self.params["values"][self.name]["vmax"]
+        vmin = param_min if param_min is not None else data_min
+        vmax = param_max if param_max is not None else data_max
+        vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax,
+            log=self.params["values"][self.name]["log"])
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
             self.panel.rescale_to_data(vmin=vmin,
@@ -395,10 +407,13 @@ class PlotController:
                     "label": self.labels[self.name][dim]
                 }
                 # Safety check for log axes
-                if axparams[but_val]["log"] and (axparams[but_val]["lims"][0]
-                                                 <= 0):
-                    axparams[but_val]["lims"][
-                        0] = 1.0e-03 * axparams[but_val]["lims"][1]
+                axparams[but_val]["lims"] = check_log_limits(
+                    lims=axparams[but_val]["lims"],
+                    log=axparams[but_val]["log"])
+                # if axparams[but_val]["log"] and (axparams[but_val]["lims"][0]
+                #                                  <= 0):
+                #     axparams[but_val]["lims"][
+                #         0] = 1.0e-03 * axparams[but_val]["lims"][1]
 
         return axparams
 

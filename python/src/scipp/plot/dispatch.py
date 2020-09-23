@@ -2,6 +2,8 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+# Scipp imports
+from .._scipp import core as sc
 from .._utils import histogram_events_data
 
 
@@ -30,6 +32,15 @@ def dispatch(scipp_obj_dict,
                     events_dict[key], dim, bn)
         scipp_obj_dict = events_dict
 
+    # Histogram realigned data
+    # TODO: this is potentially a very costly operation, if the input data is
+    # very large.
+    # Histogramming should probably be done closer to the view, when the final
+    # data slice is about to be sent to the display.
+    for name in scipp_obj_dict:
+        if scipp_obj_dict[name].unaligned is not None:
+            scipp_obj_dict[name] = sc.histogram(scipp_obj_dict[name])
+
     if projection is None:
         if ndim < 3:
             projection = "{}d".format(ndim)
@@ -48,10 +59,6 @@ def dispatch(scipp_obj_dict,
     elif projection == "3d":
         from .plot3d import plot3d
         return plot3d(scipp_obj_dict, **kwargs)
-    elif projection == "profile":
-        from .profiler import profiler
-        return profiler(scipp_obj_dict, **kwargs)
     else:
         raise RuntimeError("Wrong projection type. Expected either '1d', "
-                           "'2d', '3d', or 'profile', "
-                           "got {}.".format(projection))
+                           "'2d', or '3d', got {}.".format(projection))

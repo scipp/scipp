@@ -12,6 +12,8 @@ class PlotWidgets:
         self.controller = controller
         self.rescale_button = ipw.Button(description="Rescale")
         self.rescale_button.on_click(self.controller.rescale_to_data)
+        if self.controller.ndim == len(button_options):
+            self.rescale_button.layout.display = 'none'
         # The container list to hold all widgets
         self.container = [self.rescale_button]
 
@@ -117,9 +119,11 @@ class PlotWidgets:
                 self.profile_button[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
 
-            # Hide buttons and inactive sliders for 3d projection
+            # Hide buttons if positions are used
             if positions is not None:
                 self.buttons[dim].layout.display = 'none'
+            # Disable profile picking for 3D plots for now
+            if len(button_options) == 3:
                 self.profile_button[dim].disabled = True
             if dim == positions:
                 self.dim_labels[dim].layout.display = 'none'
@@ -147,6 +151,9 @@ class PlotWidgets:
         self._add_masks_controls()
 
         return
+
+    def _ipython_display_(self):
+        return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         return ipw.VBox(self.container)

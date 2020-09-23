@@ -4,6 +4,7 @@
 
 # Scipp imports
 from .. import config
+from .figure import get_mpl_axes
 from .tools import get_line_param
 
 # Other imports
@@ -16,6 +17,7 @@ import io
 
 
 class LinePlot:
+
     def __init__(self,
                  errorbars=None,
                  ax=None,
@@ -46,29 +48,30 @@ class LinePlot:
         self.logy = logy
         self.unit = unit
 
-        # Matplotlib figure and axes
-        self.fig = None
-        self.ax = ax
-        self.mpl_axes = False
-        self.current_xcenters = None
-        if self.ax is None:
-            if figsize is None:
-                figsize = (config.plot.width / config.plot.dpi,
-                           config.plot.height / config.plot.dpi)
-            self.fig, self.ax = plt.subplots(1,
-                                             1,
-                                             figsize=figsize,
-                                             dpi=config.plot.dpi)
-        else:
-            self.mpl_axes = True
+        # Get matplotlib figure and axes
+        self.fig, self.ax, _, self.own_axes = get_mpl_axes(
+            ax=ax, figsize=figsize)
+        # self.fig = None
+        # self.ax = ax
+        # self.mpl_axes = False
+        # self.current_xcenters = None
+        # if self.ax is None:
+        #     if figsize is None:
+        #         figsize = (config.plot.width / config.plot.dpi,
+        #                    config.plot.height / config.plot.dpi)
+        #     self.fig, self.ax = plt.subplots(1,
+        #                                      1,
+        #                                      figsize=figsize,
+        #                                      dpi=config.plot.dpi)
+        # else:
+        #     self.mpl_axes = True
         self.grid = grid
 
-        self.fig.tight_layout(rect=config.plot.padding)
+        if self.own_axes:
+            self.fig.tight_layout(rect=config.plot.padding)
 
         # Save the line parameters (color, linewidth...)
         self.mpl_line_params = mpl_line_params
-
-        return
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
@@ -80,7 +83,9 @@ class LinePlot:
             buf = io.BytesIO()
             self.fig.savefig(buf, format='png')
             buf.seek(0)
-            return ipw.Image(value=buf.getvalue())
+            return ipw.Image(value=buf.getvalue(),
+                width=config.plot.width,
+                height=config.plot.height)
 
     def savefig(self, filename=None):
         self.fig.savefig(filename, bbox_inches="tight")
@@ -95,7 +100,8 @@ class LinePlot:
                     logx=False,
                     logy=False,
                     clear=True):
-        self.ax.clear()
+        if self.own_axes:
+            self.ax.clear()
 
         if self.mpl_line_params is None:
             self.mpl_line_params = {

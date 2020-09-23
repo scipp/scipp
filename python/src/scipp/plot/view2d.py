@@ -4,6 +4,7 @@
 
 # Scipp imports
 from .. import config
+from .figure import get_mpl_axes
 from .._utils import make_random_color
 
 # Other imports
@@ -20,6 +21,7 @@ class PlotView2d:
                  controller=None,
                  ax=None,
                  cax=None,
+                 figsize=None,
                  aspect=None,
                  cmap=None,
                  norm=None,
@@ -50,18 +52,9 @@ class PlotView2d:
         self.profile_counter = -1
         self.profile_ids = []
 
-        # Get or create matplotlib axes
-        self.fig = None
-        self.ax = ax
-        self.cax = cax
-        self.cbar = None
-        if self.ax is None:
-            self.fig, self.ax = plt.subplots(
-                1,
-                1,
-                figsize=(config.plot.width / config.plot.dpi,
-                         config.plot.height / config.plot.dpi),
-                dpi=config.plot.dpi)
+        # Get matplotlib figure and axes
+        self.fig, self.ax, self.cax, self.own_axes = get_mpl_axes(
+            ax=ax, cax=cax, figsize=figsize)
 
         # Save aspect ratio setting
         if aspect is None:
@@ -86,7 +79,8 @@ class PlotView2d:
             self.ax.set_xscale("log")
         if logy:
             self.ax.set_yscale("log")
-        self.fig.tight_layout(rect=config.plot.padding)
+        if self.own_axes:
+            self.fig.tight_layout(rect=config.plot.padding)
 
         # Connect changes in axes limits to resampling function
         self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
@@ -104,7 +98,9 @@ class PlotView2d:
             buf = io.BytesIO()
             self.fig.savefig(buf, format='png')
             buf.seek(0)
-            return ipw.Image(value=buf.getvalue())
+            return ipw.Image(value=buf.getvalue(),
+                width=config.plot.width,
+                height=config.plot.height)
 
     def savefig(self, filename=None):
         self.fig.savefig(filename, bbox_inches="tight")

@@ -48,9 +48,7 @@ def parse_params(params=None,
                  defaults=None,
                  globs=None,
                  variable=None,
-                 array=None,
-                 min_val=None,
-                 max_val=None):
+                 array=None):
     """
     Construct the colorbar settings using default and input values
     """
@@ -105,4 +103,16 @@ def vars_to_err(v):
 
 
 def mask_to_float(mask, var):
-    return np.where(mask, var, None).astype(np.float)
+    return np.where(mask, var, None).astype(np.float32)
+
+
+def check_log_limits(lims=None, vmin=None, vmax=None, log=None):
+    if lims is not None:
+        vmin = lims[0]
+        vmax = lims[1]
+    if log and vmin <= 0:
+        vmin = 1.0e-03 * vmax
+    if lims is not None:
+        return [vmin, vmax]
+    else:
+        return vmin, vmax

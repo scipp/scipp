@@ -90,6 +90,11 @@ class SciPlot3d(SciPlot):
                                            pixel_size=pixel_size,
                                            button_options=['X', 'Y', 'Z'])
 
+        # An additional panel view with widgets to control the cut surface
+        # Note that the panel needs to be created before the model.
+        self.panel = PlotPanel3d(controller=self.controller,
+                                 pixel_size=pixel_size)
+
         # The model which takes care of all heavy calculations
         self.model = PlotModel3d(controller=self.controller,
                                  scipp_obj_dict=scipp_obj_dict,
@@ -114,10 +119,6 @@ class SciPlot3d(SciPlot):
             tick_size=tick_size,
             background=background,
             show_outline=show_outline)
-
-        # An additional panel view with widgets to control the cut surface
-        self.panel = PlotPanel3d(controller=self.controller,
-                                 pixel_size=pixel_size)
 
         # Connect controller to model, view, panel and profile
         self._connect_controller_members()
