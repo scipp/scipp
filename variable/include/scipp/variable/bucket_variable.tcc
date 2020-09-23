@@ -41,64 +41,30 @@ auto contiguous_indices(const VariableConstView &parent,
 
 template <class T> class BucketVariableMaker : public AbstractVariableMaker {
 private:
-  const VariableConstView bucket_parent(const VariableConstView &parent) const {
-    return parent;
-  }
   const VariableConstView
-  bucket_parent(const VariableConstView &parent1,
-                const VariableConstView &parent2) const {
-    return parent1.dtype() == dtype<bucket<T>> ? parent1 : parent2;
-  }
-  template <class... Parents>
-  const VariableConstView bucket_parent(const VariableConstView &parent,
-                                        const Parents &... parents) const {
-    return parent.dtype() == dtype<bucket<T>> ? parent
-                                              : bucket_parent(parents...);
+  bucket_parent(const scipp::span<const VariableConstView> &parents) const {
+    return parents.front().dtype() == dtype<bucket<T>>
+               ? parents.front()
+               : bucket_parent(parents.subspan(1));
   }
   virtual Variable make_buckets(const VariableConstView &parent,
-                               const VariableConstView &indices,
-                               const Dim dim,
-                               const DType type, const Dimensions &dims,
-                               const bool variances) const = 0;
-  template <class... Parents>
-  Variable create_buckets_impl(const DType elem_dtype, const Dimensions &dims,
-                               const bool variances,
-                               const Parents &... parents) const {
-    const VariableConstView parent = bucket_parent(parents...);
+                                const VariableConstView &indices, const Dim dim,
+                                const DType type, const Dimensions &dims,
+                                const bool variances) const = 0;
+
+public:
+  bool is_buckets() const override { return true; }
+
+  Variable
+  create(const DType elem_dtype, const Dimensions &dims, const bool variances,
+         const std::vector<VariableConstView> &parents) const override {
+    const VariableConstView parent = bucket_parent(parents);
     const auto &[parentIndices, dim, buffer] = parent.constituents<bucket<T>>();
     auto [indices, size] = contiguous_indices(parentIndices, dims);
     auto bufferDims = buffer.dims();
     bufferDims.resize(dim, size);
     return make_buckets(parent, indices, dim, elem_dtype, bufferDims,
                         variances);
-  }
-
-public:
-  bool is_buckets() const override { return true; }
-  Variable create(const Dimensions &, const bool) const override {
-    throw std::runtime_error("Cannot create Variable with buckets without "
-                             "bucket paremeters obtained from parent(s).");
-  }
-
-  Variable create_buckets(const DType elem_dtype, const Dimensions &dims,
-                          const bool variances,
-                          const VariableConstView &parent) const override {
-    return create_buckets_impl(elem_dtype, dims, variances, parent);
-  }
-
-  Variable create_buckets(const DType elem_dtype, const Dimensions &dims,
-                          const bool variances,
-                          const VariableConstView &parent1,
-                          const VariableConstView &parent2) const override {
-    return create_buckets_impl(elem_dtype, dims, variances, parent1, parent2);
-  }
-
-  Variable create_buckets(const DType elem_dtype, const Dimensions &dims,
-                          const bool variances,
-                          const VariableConstView &parent1,
-                          const VariableConstView &parent2,
-                          const VariableConstView &parent3) const override {
-    return create_buckets_impl(elem_dtype, dims, variances, parent1, parent2, parent3);
   }
 
   DType elem_dtype(const VariableConstView &var) const override {
