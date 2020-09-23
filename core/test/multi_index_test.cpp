@@ -5,6 +5,7 @@
 #include <vector>
 
 #include "scipp/core/element_array_view.h"
+#include "scipp/core/except.h"
 #include "scipp/core/multi_index.h"
 
 using namespace scipp;
@@ -245,6 +246,19 @@ TEST_F(MultiIndexTest, two_1d_arrays_of_1d_buckets) {
                      {{1, 4}, {9, 10}, {10, 11}, {5, 9}, {11, 12}, {12, 13}}, x,
                      x, xy, {0, 1, 2, 3, 4, 5, 6}, {1, 2, 3, 5, 6, 7, 8});
   // slice to scalar
-  check_with_buckets(buf, dim, {{0, 2}}, buf, dim, {{2, 5}, {0, 2}},
+  check_with_buckets(buf, dim, {{0, 3}}, buf, dim, {{2, 5}, {0, 2}},
                      Dimensions{}, x, x, {0, 1, 2}, {2, 3, 4});
+}
+
+TEST_F(MultiIndexTest, two_1d_arrays_of_1d_buckets_bucket_size_mismatch) {
+  const Dim dim = Dim::Row;
+  Dimensions buf{{dim}, {7}};
+  EXPECT_THROW(check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, buf, dim,
+                                  {{0, 4}, {3, 7}}, x, x, x,
+                                  {0, 1, 2, 3, 4, 5, 6}, {0, 1, 2, 3, 4, 5, 6}),
+               except::BucketError);
+  EXPECT_THROW(check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, buf, dim,
+                                  {{0, 3}, {4, 7}}, x, x, x,
+                                  {0, 1, 2, 3, 4, 5, 6}, {0, 1, 2, 3, 4, 5, 6}),
+               except::BucketError);
 }

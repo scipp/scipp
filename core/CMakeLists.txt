@@ -9,6 +9,7 @@ set(INC_FILES
     include/scipp/core/element_array_view.h
     include/scipp/core/histogram.h
     include/scipp/core/memory_pool.h
+    include/scipp/core/multi_index.h
     include/scipp/core/parallel-fallback.h
     include/scipp/core/parallel-tbb.h
     include/scipp/core/slice.h
@@ -38,6 +39,7 @@ set(SRC_FILES
     dtype.cpp
     element_array_view.cpp
     except.cpp
+    multi_index.cpp
     slice.cpp
     string.cpp
     view_index.cpp

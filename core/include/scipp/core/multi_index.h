@@ -24,6 +24,10 @@ inline auto get_strides(const Dimensions &iterDims,
   return strides;
 }
 
+SCIPP_CORE_EXPORT void
+validate_bucket_indices_impl(const element_array_view &param0,
+                             const element_array_view &param1);
+
 template <scipp::index N> class SCIPP_CORE_EXPORT MultiIndex {
 public:
   template <class... DataDims>
@@ -42,12 +46,24 @@ public:
     init(param, params...);
   }
 
+  template <class Param> void validate_bucket_indices(const Param &) {}
+
+  /// Check that corresponding buckets have matching sizes.
+  template <class Param0, class Param1, class... Params>
+  void validate_bucket_indices(const Param0 &param0, const Param1 &param1,
+                               const Params &... params) {
+    if (param1.bucketParams())
+      validate_bucket_indices_impl(param0, param1);
+    validate_bucket_indices(param0, params...);
+  }
+
   template <class... Params> void init(const Params &... params) {
     const auto iterDims = std::array<Dimensions, N>{params.dims()...}[0];
     if ((!params.bucketParams() && ...)) {
       *this = MultiIndex(iterDims, params.dataDims()...);
       return;
     }
+    validate_bucket_indices(params...);
     m_bucket = std::array{BucketIterator(params)...};
     const auto nestedDims = std::array{params.bucketParams().dims...}[0];
     const Dim sliceDim = std::array{params.bucketParams().dim...}[0];
@@ -72,19 +88,11 @@ public:
       load_bucket_params(data);
     }
     m_end_sentinel = iterDims.volume();
-    fprintf(stderr, "nested stride %ld nested dim index %ld\n", m_nested_stride,
-            m_nested_dim_index);
-    fprintf(stderr, "shape %ld %ld %ld\n", m_shape[0], m_shape[1], m_shape[2]);
-    fprintf(stderr, "initial strides %ld %ld %ld\n", m_stride[0][0],
-            m_stride[0][1], m_stride[0][2]);
-    fprintf(stderr, "initial strides %ld %ld %ld\n", m_stride[1][0],
-            m_stride[1][1], m_stride[1][2]);
   }
 
   constexpr void load_bucket_params(const scipp::index i) noexcept {
     if (m_bucket[i].m_bucket_index >= m_bucket[i].m_size)
       return; // at end or dense
-    // TODO size check here would be too late for in-place ops
     const auto [begin, end] = m_bucket[i].m_indices[m_bucket[i].m_bucket_index];
     m_shape[m_nested_dim_index] = end - begin;
     m_data_index[i] = m_nested_stride * begin;

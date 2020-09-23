@@ -54,10 +54,4 @@ element_array_view::element_array_view(const element_array_view &other,
       m_dataDims.relabel(m_dataDims.index(label), Dim::Invalid);
 }
 
-BucketParams merge(const BucketParams &a, const BucketParams &b) {
-  if (a != b)
-    throw std::runtime_error("Mismatching bucket sizes");
-  return a ? a : b;
-}
-
 } // namespace scipp::core
