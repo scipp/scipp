@@ -198,9 +198,15 @@ private:
   std::array<std::array<scipp::index, NDIM_MAX>, N> m_stride = {};
   std::array<scipp::index, NDIM_MAX> m_coord = {};
   std::array<scipp::index, NDIM_MAX> m_shape = {};
+  /// End-sentinel, essentially the volume of the iteration dimensions.
   scipp::index m_end_sentinel{1};
-  scipp::index m_ndim_nested{NDIM_MAX}; // ndim within bucket
+  /// Number of dimensions within bucket, NDIM_MAX if no buckets.
+  scipp::index m_ndim_nested{NDIM_MAX};
+  /// Stride in buckets along dim referred to by indices, e.g., 2D buckets
+  /// slicing along first or second dim.
   scipp::index m_nested_stride = {};
+  /// Index of dim referred to by indices to distinguish, e.g., 2D buckets
+  /// slicing along first or second dim.
   scipp::index m_nested_dim_index = {};
   std::array<BucketIterator, N> m_bucket = {};
 };
