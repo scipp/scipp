@@ -21,13 +21,13 @@ namespace scipp::variable {
 /// decoupling this.
 template <class T, class Var> struct VariableAccess {
   VariableAccess(Var &var) : m_var(&var) {}
+  using value_type = T;
   Dimensions dims() const { return m_var->dims(); }
   auto values() const { return variableFactory().values<T>(*m_var); }
   auto variances() const { return variableFactory().variances<T>(*m_var); }
   bool hasVariances() const { return variableFactory().hasVariances(*m_var); }
   Variable clone() const { return copy(*m_var); }
   Var *m_var{nullptr};
-  using value_type = T;
 };
 template <class T, class Var> auto variable_access(Var &var) {
   return VariableAccess<T, Var>(var);
