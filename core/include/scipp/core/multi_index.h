@@ -181,7 +181,6 @@ public:
     return it;
   }
 
-  // TODO this should be removed, end() can compute volume based on m_coord
   scipp::index end_sentinel() const noexcept { return m_end_sentinel; }
 
 private:
@@ -191,11 +190,8 @@ private:
       m_indices = params.bucketParams().indices;
       m_size = params.bucketParams() ? params.dataDims().volume() : 0;
     }
-    scipp::index m_bucket_index{0}; // may be different for each array, because
-                                    // of slicing/broadcast/transpose
-    const std::pair<scipp::index, scipp::index> *m_indices{
-        nullptr}; // this is unsliced, only size-match required after
-                  // slice/broadcast/transpose, offsets may be different
+    scipp::index m_bucket_index{0};
+    const std::pair<scipp::index, scipp::index> *m_indices{nullptr};
     scipp::index m_size{0};
   };
   std::array<scipp::index, N> m_data_index = {};
@@ -203,12 +199,9 @@ private:
   std::array<scipp::index, NDIM_MAX> m_coord = {};
   std::array<scipp::index, NDIM_MAX> m_shape = {};
   scipp::index m_end_sentinel{1};
-  scipp::index m_ndim_nested{NDIM_MAX}; // dims of bucket, enforce same... but
-                                        // could use to handle dense?
-  scipp::index m_nested_stride =
-      {}; // same if same dims enforced <- no, not if slice? but buffer is never
-          // sliced! only length along bucket slicing dim may differ
-  scipp::index m_nested_dim_index = {}; // same if same dims enforce
+  scipp::index m_ndim_nested{NDIM_MAX}; // ndim within bucket
+  scipp::index m_nested_stride = {};
+  scipp::index m_nested_dim_index = {};
   std::array<BucketIterator, N> m_bucket = {};
 };
 template <class... DataDims>
