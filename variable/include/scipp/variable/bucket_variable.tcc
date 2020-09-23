@@ -92,6 +92,15 @@ public:
                           const VariableConstView &parent2) const override {
     return create_buckets_impl(elem_dtype, dims, variances, parent1, parent2);
   }
+
+  Variable create_buckets(const DType elem_dtype, const Dimensions &dims,
+                          const bool variances,
+                          const VariableConstView &parent1,
+                          const VariableConstView &parent2,
+                          const VariableConstView &parent3) const override {
+    return create_buckets_impl(elem_dtype, dims, variances, parent1, parent2, parent3);
+  }
+
   DType elem_dtype(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).dtype();
   }
