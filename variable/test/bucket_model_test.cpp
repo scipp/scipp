@@ -36,8 +36,8 @@ TEST_F(BucketModelTest, construct) {
 }
 
 TEST_F(BucketModelTest, construct_empty_range) {
-  element_array<std::pair<scipp::index, scipp::index>> empty{{0, 2}, {2, 2}};
-  EXPECT_NO_THROW(Model(dims, empty, Dim::X, buffer));
+  auto empty = make_indices({{0, 2}, {2, 2}});
+  EXPECT_NO_THROW(Model(empty, Dim::X, buffer));
 }
 
 TEST_F(BucketModelTest, construct_negative_range_fail) {
