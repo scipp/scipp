@@ -175,3 +175,63 @@ stages:
               set -ex
               PYTHONPATH="$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'
+
+      - job: 'windows'
+        displayName: 'Windows'
+        timeoutInMinutes: 120
+        pool:
+          vmImage: 'windows-latest'
+        variables:
+          build_dir: '$(Build.StagingDirectory)/build'
+          install_dir: '$(Build.StagingDirectory)/install'
+        steps:
+          - checkout: self
+            submodules: true
+          - powershell: Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+            displayName: 'Add Conda to PATH'
+          - bash: |
+              set -ex
+              conda --version
+              conda env create -f scipp-developer-no-mantid.yml
+              mkdir -p  "$(build_dir)" "$(install_dir)"
+            displayName: 'Configure build environment'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              cmake \
+                -G "Visual Studio 16 2019" \
+                -A x64 \
+                -DPYTHON_EXECUTABLE=$(command -v python) \
+                -DCMAKE_INSTALL_PREFIX="$(install_dir)" \
+                -DCMAKE_BUILD_TYPE=Release \
+                "$(Build.Repository.LocalPath)"
+            displayName: 'CMake configuration'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              cmake --build . --target all-tests --config Release
+            displayName: 'Build C++ unit tests'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              common/test/Release/scipp-common-test.exe
+              units/test/Release/scipp-units-test.exe
+              core/test/Release/scipp-core-test.exe
+              variable/test/Release/scipp-variable-test.exe
+              dataset/test/Release/scipp-dataset-test.exe
+              neutron/test/Release/scipp-neutron-test.exe
+            displayName: 'Run C++ unit tests'
+          - bash: |
+              set -ex
+              cd "$(build_dir)"
+              source activate scipp-developer
+              cmake --build . --target install --config Release
+            displayName: 'Build Python library'
+          - bash: |
+              set -ex
+              source activate scipp-developer
+              PYTHONPATH="$(install_dir)" python -m pytest
+            displayName: 'Run Python unit tests'
