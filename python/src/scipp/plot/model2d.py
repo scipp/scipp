@@ -72,6 +72,7 @@ class PlotModel2d(PlotModel):
             self.vslice = self.data_arrays[self.name]
 
         # Slice along dimensions with active sliders
+        print(slices)
         for dim in slices:
 
             deltax = slices[dim]["thickness"]

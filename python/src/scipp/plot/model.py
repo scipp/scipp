@@ -7,6 +7,7 @@ from .._scipp import core as sc
 
 
 class PlotModel:
+
     def __init__(self, controller=None, scipp_obj_dict=None):
 
         # The main container of DataArrays
@@ -31,7 +32,7 @@ class PlotModel:
                 self.data_arrays[name].coords[dim] = coord
 
             # Include masks
-            for n, msk in array.masks.items():
+            for n, msk in controller.masks[name].items():
                 self.data_arrays[name].masks[n] = msk
 
         # The main currently displayed data slice

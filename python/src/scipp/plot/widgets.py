@@ -48,10 +48,10 @@ class PlotWidgets:
 
             # Add an FloatSlider to slide along the z dimension of the array
             dim_xlims = self.controller.xlims[self.controller.name][dim].values
-            dx = dim_xlims[1] - dim_xlims[0]
+            dx = np.abs(dim_xlims[1] - dim_xlims[0])
             self.slider[dim] = ipw.FloatSlider(value=0.5 * np.sum(dim_xlims),
-                                               min=dim_xlims[0],
-                                               max=dim_xlims[1],
+                                               min=dim_xlims.min(),
+                                               max=dim_xlims.max(),
                                                step=0.01 * dx,
                                                continuous_update=True,
                                                readout=True,
@@ -164,11 +164,11 @@ class PlotWidgets:
         """
         masks_found = False
         self.mask_checkboxes = {}
-        for name in self.controller.mask_names:
+        for name in self.controller.masks:
             self.mask_checkboxes[name] = {}
-            if len(self.controller.mask_names[name]) > 0:
+            if len(self.controller.masks[name]) > 0:
                 masks_found = True
-                for key in self.controller.mask_names[name]:
+                for key in self.controller.masks[name]:
                     self.mask_checkboxes[name][key] = ipw.Checkbox(
                         value=self.controller.params["masks"][name]["show"],
                         description="{}:{}".format(name, key),

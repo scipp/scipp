@@ -60,7 +60,7 @@ class PlotController:
         # Save the current profile dimension
         self.profile_dim = None
         # List mask names for each item
-        self.mask_names = {}
+        self.masks = {}
         # Size of the slider coordinate arrays
         self.dim_to_shape = {}
         # Store coordinates of dimensions that will be in sliders
@@ -98,10 +98,12 @@ class PlotController:
 
             # If non-dimension coord is requested as labels, replace name in
             # dims
+            underlying_dim_to_label = {}
             array_dims = array.dims
             for dim in self.axes:
                 if dim not in array_dims:
                     underlying_dim = array.coords[dim].dims[-1]
+                    underlying_dim_to_label[underlying_dim] = dim
                     array_dims[array_dims.index(underlying_dim)] = dim
 
             # Get the colormap and normalization
@@ -120,6 +122,8 @@ class PlotController:
 
             # Store coordinates of dimensions that will be in sliders
             self.coords[name] = {}
+            # Store masks with correct dims
+            self.masks[name] = {}
             # Store coordinate min and max limits
             self.xlims[name] = {}
             # Store labels for sliders
@@ -135,8 +139,14 @@ class PlotController:
             for dim in self.axes:
                 self._collect_dim_shapes_and_lims(name, dim, array)
 
-            # Collect mask names
-            self.mask_names[name] = list(array.masks.keys())
+            # Collect masks
+            for m, msk in array.masks.items():
+                mask_dims = msk.dims
+                for dim in mask_dims:
+                    if dim not in self.axes:
+                        mask_dims[mask_dims.index(dim)] = underlying_dim_to_label[dim]
+                self.masks[name][m] = sc.Variable(dims=mask_dims,
+                    values=msk.values, dtype=msk.dtype)
 
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None
@@ -286,8 +296,9 @@ class PlotController:
                                       unit=coord.unit,
                                       dtype=sc.dtype.float64)
                 else:
+                    print(self.dim_to_shape, dim, dim_coord_dim)
                     var = make_fake_coord(
-                        dim, self.dim_to_shape[name][dim_coord_dim])
+                        dim, self.dim_to_shape[name][dim])
                 form = ticker.FuncFormatter(
                     lambda val, pos: value_to_string(data_array.coords[
                         dim].values[np.abs(var.values - val).argmin()]))

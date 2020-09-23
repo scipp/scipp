@@ -35,7 +35,7 @@ class PlotView2d:
                  logx=False,
                  logy=False,
                  mask_cmap=None,
-                 mask_names=None,
+                 masks=None,
                  resolution=None):
 
         self.controller = controller
@@ -71,7 +71,7 @@ class PlotView2d:
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.mask_image = {}
-        for m in mask_names:
+        for m in masks:
             self.mask_image[m] = self.make_default_imshow(cmap=mask_cmap,
                                                           norm=norm,
                                                           aspect=aspect)

@@ -82,9 +82,7 @@ class PlotController3d(PlotController):
         self.view.update_opacity(alpha=alpha)
 
     def rescale_to_data(self, button=None):
-        vmin, vmax = self.model.rescale_to_data()
-        self.panel.rescale_to_data(vmin, vmax)
-        self.view.rescale_to_data(vmin, vmax)
+        super().rescale_to_data()
         new_values = self.model.get_slice_values(
             mask_info=self._get_mask_info())
         self.view.update_data(new_values)

@@ -90,7 +90,7 @@ class SciPlot1d(SciPlot):
             unit=self.controller.params["values"][
                 self.controller.name]["unit"],
             mask_params=self.controller.params["masks"][self.controller.name],
-            mask_names=self.controller.mask_names,
+            masks=self.controller.masks,
             logx=logx,
             logy=logy,
             mpl_line_params=mpl_line_params,
@@ -106,7 +106,7 @@ class SciPlot1d(SciPlot):
                     self.controller.name]["unit"],
                 mask_params=self.controller.params["masks"][
                     self.controller.name],
-                mask_names=self.controller.mask_names,
+                masks=self.controller.masks,
                 logx=logx,
                 logy=logy,
                 figsize=(config.plot.width / config.plot.dpi,

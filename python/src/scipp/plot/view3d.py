@@ -29,7 +29,7 @@ class PlotView3d:
                  vmax=None,
                  nan_color=None,
                  mask_cmap=None,
-                 mask_names=None,
+                 masks=None,
                  pixel_size=None,
                  tick_size=None,
                  background=None,
@@ -43,7 +43,7 @@ class PlotView3d:
         self.cmap.set_bad(color=nan_color)
         self.scalar_map = cm.ScalarMappable(norm=norm, cmap=self.cmap)
         self.masks_scalar_map = None
-        if len(mask_names) > 0:
+        if len(masks) > 0:
             self.masks_cmap = copy(cm.get_cmap(mask_cmap))
             self.masks_cmap.set_bad(color=nan_color)
             self.masks_scalar_map = cm.ScalarMappable(norm=norm,

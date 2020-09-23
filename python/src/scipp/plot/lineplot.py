@@ -28,7 +28,7 @@ class LinePlot:
                  logy=False,
                  grid=False,
                  mask_params=None,
-                 mask_names=None,
+                 masks=None,
                  figsize=None,
                  picker=None,
                  is_profile=False):
@@ -39,7 +39,7 @@ class LinePlot:
         self.error_lines = {}
 
         self.errorbars = errorbars
-        self.mask_names = mask_names
+        self.masks = masks
         self.mask_params = mask_params
         self.picker = picker
         self.is_profile = is_profile
@@ -91,7 +91,8 @@ class LinePlot:
         self.fig.savefig(filename, bbox_inches="tight")
 
     def toggle_view(self, visible=True):
-        self.fig.canvas.layout.display = None if visible else 'none'
+        if hasattr(self.fig.canvas, "layout"):
+            self.fig.canvas.layout.display = None if visible else 'none'
 
     def update_axes(self,
                     axparams=None,
@@ -163,7 +164,7 @@ class LinePlot:
                         key: self.mpl_line_params[key][name]
                         for key in ["color", "linewidth"]
                     })
-                for m in self.mask_names[name]:
+                for m in self.masks[name]:
                     [self.mask_lines[name][m]] = self.ax.step(
                         [1, 2], [1, 2],
                         linewidth=self.mpl_line_params["linewidth"][name] *
@@ -187,7 +188,7 @@ class LinePlot:
                         key: self.mpl_line_params[key][name]
                         for key in self.mpl_line_params.keys()
                     })
-                for m in self.mask_names[name]:
+                for m in self.masks[name]:
                     [self.mask_lines[name][m]] = self.ax.plot(
                         [1, 2], [1, 2],
                         zorder=11,

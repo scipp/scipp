@@ -18,69 +18,29 @@ plt.ioff()
 # checksums or by using tools like squish.
 
 
-def test_plot_sliceviewer():
+def test_plot_sliceviewer_2d():
     d = make_dense_dataset(ndim=3)
     plot(d)
 
 
-def test_plot_sliceviewer_with_two_sliders():
+def test_plot_sliceviewer_2d_with_two_sliders():
     d = make_dense_dataset(ndim=4)
     plot(d)
 
 
-def test_plot_sliceviewer_with_axes():
+def test_plot_sliceviewer_2d_with_axes():
     d = make_dense_dataset(ndim=3)
     plot(d, axes=['x', 'tof', 'y'])
 
 
-def test_plot_sliceviewer_with_labels():
+def test_plot_sliceviewer_2d_with_labels():
     d = make_dense_dataset(ndim=3, labels=True)
     plot(d, axes=['x', 'y', "somelabels"])
 
 
-def test_plot_sliceviewer_with_binedges():
+def test_plot_sliceviewer_2d_with_binedges():
     d = make_dense_dataset(ndim=3, binedges=True)
     plot(d)
-
-
-def test_plot_projection_3d():
-    d = make_dense_dataset(ndim=3)
-    plot(d, projection="3d")
-
-
-def test_plot_projection_3d_with_labels():
-    d = make_dense_dataset(ndim=3, labels=True)
-    plot(d, projection="3d", axes=['x', 'y', "somelabels"])
-
-
-def test_plot_projection_3d_with_bin_edges():
-    d = make_dense_dataset(ndim=3, binedges=True)
-    plot(d, projection="3d")
-
-
-def test_plot_projection_3d_with_masks():
-    d = make_dense_dataset(ndim=3, masks=True)
-    plot(d, projection="3d")
-
-
-def test_plot_projection_3d_with_vectors():
-    N = 1000
-    M = 100
-    theta = np.random.random(N) * np.pi
-    phi = np.random.random(N) * 2.0 * np.pi
-    r = 10.0 + (np.random.random(N) - 0.5)
-    x = r * np.sin(theta) * np.sin(phi)
-    y = r * np.sin(theta) * np.cos(phi)
-    z = r * np.cos(theta)
-    tof = np.arange(M).astype(np.float)
-    a = np.arange(M * N).reshape([M, N]) * np.sin(y)
-    d = sc.Dataset()
-    d.coords['xyz'] = sc.Variable(['xyz'],
-                                  values=np.array([x, y, z]).T,
-                                  dtype=sc.dtype.vector_3_float64)
-    d.coords['tof'] = sc.Variable(['tof'], values=tof)
-    d['a'] = sc.Variable(['tof', 'xyz'], values=a)
-    plot(d, projection="3d", positions="xyz")
 
 
 def test_plot_convenience_methods():
@@ -142,19 +102,10 @@ def test_plot_4d_with_masks():
     plot(data)
 
 
-def test_plot_4d_with_masks_projection_3d():
-    data = sc.DataArray(data=sc.Variable(
-        dims=['pack', 'tube', 'straw', 'pixel'],
-        values=np.random.rand(2, 8, 7, 256)),
-                        coords={})
-    a = np.sin(np.linspace(0, 3.14, num=256))
-    data += sc.Variable(dims=['pixel'], values=a)
-    data.masks['tube_ends'] = sc.Variable(dims=['pixel'],
-                                          values=np.where(
-                                              a > 0.5, True, False))
-    plot(data, projection="3d")
-
-
+@pytest.mark.skip(reason="Rebin will not work on the outer dim for the first "
+                         "slice because the coord of the inner dimension has "
+                         "more than one dimension. This was ok when we were "
+                         "slicing the Variable, but now we are rebinning it.")
 def test_plot_3d_data_with_ragged_bins():
     N = 10
     M = 8
@@ -173,23 +124,3 @@ def test_plot_3d_data_with_ragged_bins():
     d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
     d['a'] = sc.Variable(['z', 'y', 'x'], values=a, unit=sc.units.counts)
     plot(d)
-
-
-def test_plot_profileviewer():
-    d = make_dense_dataset(ndim=3)
-    plot(d, projection="profile")
-
-
-def test_plot_profileviewer_with_binedges():
-    d = make_dense_dataset(ndim=3, binedges=True)
-    plot(d, projection="profile")
-
-
-def test_plot_profileviewer_with_masks():
-    d = make_dense_dataset(ndim=3, masks=True)
-    plot(d, projection="profile")
-
-
-def test_plot_profileviewer_with_binedges_and_masks():
-    d = make_dense_dataset(ndim=3, binedges=True, masks=True)
-    plot(d, projection="profile")

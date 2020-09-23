@@ -113,7 +113,7 @@ class SciPlot3d(SciPlot):
                 self.controller.name]["unit"],
             mask_cmap=self.controller.params["masks"][
                 self.controller.name]["cmap"],
-            mask_names=self.controller.mask_names[self.controller.name],
+            masks=self.controller.masks[self.controller.name],
             nan_color=nan_color,
             pixel_size=pixel_size,
             tick_size=tick_size,

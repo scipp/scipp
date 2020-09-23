@@ -115,7 +115,7 @@ class SciPlot2d(SciPlot):
                 self.controller.name]["unit"],
             mask_cmap=self.controller.params["masks"][
                 self.controller.name]["cmap"],
-            mask_names=self.controller.mask_names[self.controller.name],
+            masks=self.controller.masks[self.controller.name],
             logx=logx,
             logy=logy)
 
@@ -129,7 +129,7 @@ class SciPlot2d(SciPlot):
                 unit=self.controller.params["values"][
                     self.controller.name]["unit"],
                 mask_params=mask_params,
-                mask_names=self.controller.mask_names,
+                masks=self.controller.masks,
                 logx=logx,
                 logy=logy,
                 figsize=(config.plot.width / config.plot.dpi,

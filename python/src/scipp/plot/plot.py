@@ -26,8 +26,13 @@ def plot(scipp_obj,
     from .tools import get_line_param
     from .dispatch import dispatch
     import matplotlib.pyplot as plt
-    # interactive_mpl = mpl.is_interactive()
-    # if interactive_mpl:
+
+    # Switch interactive plotting off for better control over when figures are
+    # displayed.
+    # TODO: we need to think about what users expect, if they than have custom
+    # figures further down in the notebook. We would want to switch
+    # interactivity back on, but then we would have to turn it off again every
+    # time a SciPlot slider is moved or a button is pressed.
     plt.ioff()
 
     inventory = dict()
@@ -136,10 +141,6 @@ def plot(scipp_obj,
                                mpl_line_params=val["mpl_line_params"],
                                bins=bins,
                                **kwargs)
-
-    # Remember to switch interactivity back on
-    # if interactive_mpl:
-    plt.ion()
 
     return output
 

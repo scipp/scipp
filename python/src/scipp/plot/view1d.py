@@ -17,7 +17,7 @@ class PlotView1d:
                  logx=False,
                  logy=False,
                  mask_params=None,
-                 mask_names=None,
+                 masks=None,
                  mpl_line_params=None,
                  grid=False,
                  picker=None):
@@ -38,7 +38,7 @@ class PlotView1d:
                                logy=logy,
                                grid=grid,
                                mask_params=mask_params,
-                               mask_names=mask_names,
+                               masks=masks,
                                picker=picker)
 
         return
