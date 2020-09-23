@@ -107,15 +107,6 @@ public:
   }
   T *end() noexcept { return m_size < 0 ? begin() : data() + size(); }
 
-  bool operator==(const element_array &other) const noexcept {
-    return m_size == other.m_size &&
-           static_cast<bool>(m_data) == static_cast<bool>(other.m_data) &&
-           (!m_data || std::equal(begin(), end(), other.begin(), other.end()));
-  }
-  bool operator!=(const element_array &other) const noexcept {
-    return !(*this == other);
-  }
-
   void reset() noexcept {
     m_data.reset();
     m_size = -1;
