@@ -27,6 +27,7 @@ VariableView::constituents() const {
   return {view, model.dim(), model.buffer()};
 }
 
+namespace {
 auto contiguous_indices(const VariableConstView &parent,
                         const Dimensions &dims) {
   auto indices = broadcast(parent, dims);
@@ -37,6 +38,7 @@ auto contiguous_indices(const VariableConstView &parent,
     size = range.second;
   }
   return std::tuple{indices, size};
+}
 }
 
 template <class T> class BucketVariableMaker : public AbstractVariableMaker {
