@@ -78,6 +78,8 @@ class PlotController:
         # Save if errorbars should be plotted for a given data entry
         self.errorbars = {}
 
+        self.multid_coord = None
+
         if errorbars is not None:
             if isinstance(errorbars, bool):
                 self.errorbars = {name: errorbars for name in scipp_obj_dict}
@@ -192,6 +194,9 @@ class PlotController:
     def _collect_dim_shapes_and_lims(self, name, dim, array):
 
         var, formatter, locator = self._axis_label_and_ticks(dim, array, name)
+
+        if len(var.dims) > 1:
+            self.multid_coord = dim
 
         # To allow for 2D coordinates, the histograms are
         # stored as dicts, with one key per dimension of the coordinate
@@ -377,6 +382,18 @@ class PlotController:
                     info["slice_label"], dim,
                     slices[dim]["location"] - 0.5 * slices[dim]["thickness"],
                     slices[dim]["location"] + 0.5 * slices[dim]["thickness"])
+
+        # If a multi-dimensional coordinate is present, we need to put it at
+        # the front of the list:
+        print(slices)
+        if self.multid_coord in slices:
+            new_slices = {self.multid_coord: slices[self.multid_coord]}
+            remaining = set(slices.keys()) - set((self.multid_coord))
+            for dim in remaining:
+                new_slices[dim] = slices[dim]
+            slices = new_slices
+        print(slices)
+
         new_values = self.model.update_data(slices,
                                             mask_info=self._get_mask_info())
         self.view.update_data(new_values)
