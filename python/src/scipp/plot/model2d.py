@@ -62,14 +62,7 @@ class PlotModel2d(PlotModel):
         Recursively slice the data along the dimensions of active sliders.
         """
 
-        # Note that if we do not perform any slice resampling, we need to make
-        # a copy to avoid mutliplying into the original data when we do the
-        # in-place multiplication by the bin width in preparation for the 2d
-        # image resampling.
-        if len(slices) == 0:
-            self.vslice = self.data_arrays[self.name].copy()
-        else:
-            self.vslice = self.data_arrays[self.name]
+        data_slice = self.data_arrays[self.name]
 
         # Slice along dimensions with active sliders
         for dim in slices:
@@ -77,41 +70,52 @@ class PlotModel2d(PlotModel):
             deltax = slices[dim]["thickness"]
 
             if deltax == 0.0:
+                # print("deltax is zero: slicing")
                 # ind = slices[dim]["index"]
-                self.vslice = self.vslice[dim, slices[dim]["index"]]
+                data_slice = data_slice[dim, slices[dim]["index"]]
                 #     rebin_edges={
                 #         dim:
                 #         sc.Variable(
                 #             [dim],
                 #             values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
-                #             unit=self.vslice.coords[dim].unit)
+                #             unit=data_slice.coords[dim].unit)
                 #     })[dim, 0]
-                # self.vslice *= (deltax * sc.units.one)
+                # data_slice *= (deltax * sc.units.one)
             else:
+                # print("deltax is non-zero: rebinning")
                 loc = slices[dim]["location"]
                 # TODO: see if we can call resample_data only once with
                 # rebin_edges dict containing all dims to be sliced.
-                self.vslice = self.resample_data(
-                    self.vslice,
+                data_slice = self.resample_data(
+                    data_slice,
                     rebin_edges={
                         dim:
                         sc.Variable(
                             [dim],
                             values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
-                            unit=self.vslice.coords[dim].unit)
+                            unit=data_slice.coords[dim].unit)
                     })[dim, 0]
-                self.vslice *= (deltax * sc.units.one)
+                data_slice *= (deltax * sc.units.one)
 
         # Update pixel widths used for scaling before rebin step
         for xy, dim in self.button_dims.items():
-            self.xywidth[xy] = (self.vslice.coords[dim][dim, 1:] -
-                                self.vslice.coords[dim][dim, :-1])
+            self.xywidth[xy] = (data_slice.coords[dim][dim, 1:] -
+                                data_slice.coords[dim][dim, :-1])
             self.xywidth[xy].unit = sc.units.one
 
         # Scale by bin width and then rebin in both directions
-        # Note that this has to be written as 2 inplace operations to avoid
+        # Note that this has to be written as 2 operations to avoid
         # creation of large 2D temporary from broadcast
-        self.vslice *= self.xywidth["x"]
+        #
+        # In addition, in the first operation we make a copy to avoid two
+        # things:
+        #   1. in the case of no dimensions being sliced, we prevent
+        #      multiplying into the original data
+        #   2. self.vslice needs to be a DataArray and not a DataArrayView for
+        #      the rebin step during image resampling, since non-contiguous
+        #      data is not accepted by rebin (this happens when an outer dim is
+        #      sliced when the slice thickness is zero).
+        self.vslice = data_slice * self.xywidth["x"]
         self.vslice *= self.xywidth["y"]
 
     def update_data(self, slices, mask_info):
@@ -135,7 +139,8 @@ class PlotModel2d(PlotModel):
 
         rebin_edges = {dimy: self.xyrebin[xy[0]], dimx: self.xyrebin[xy[1]]}
 
-        print(self.vslice)
+        # print(self.vslice)
+        # print(rebin_edges)
 
         resampled_image = self.resample_data(self.vslice,
                                              rebin_edges=rebin_edges)
