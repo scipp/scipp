@@ -52,11 +52,7 @@ class PlotController:
             "vmax": vmax,
             "color": color
         }
-        masks_globs = {
-            "log": log,
-            "vmin": vmin,
-            "vmax": vmax
-        }
+        masks_globs = {"log": log, "vmin": vmin, "vmax": vmax}
 
         # Save the current profile dimension
         self.profile_dim = None
@@ -147,9 +143,11 @@ class PlotController:
                 mask_dims = msk.dims
                 for dim in mask_dims:
                     if dim not in self.axes:
-                        mask_dims[mask_dims.index(dim)] = underlying_dim_to_label[dim]
+                        mask_dims[mask_dims.index(
+                            dim)] = underlying_dim_to_label[dim]
                 self.masks[name][m] = sc.Variable(dims=mask_dims,
-                    values=msk.values, dtype=msk.dtype)
+                                                  values=msk.values,
+                                                  dtype=msk.dtype)
 
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None
@@ -302,8 +300,7 @@ class PlotController:
                                       unit=coord.unit,
                                       dtype=sc.dtype.float64)
                 else:
-                    var = make_fake_coord(
-                        dim, self.dim_to_shape[name][dim])
+                    var = make_fake_coord(dim, self.dim_to_shape[name][dim])
                 form = ticker.FuncFormatter(
                     lambda val, pos: value_to_string(data_array.coords[
                         dim].values[np.abs(var.values - val).argmin()]))
@@ -329,8 +326,8 @@ class PlotController:
         param_max = self.params["values"][self.name]["vmax"]
         vmin = param_min if param_min is not None else data_min
         vmax = param_max if param_max is not None else data_max
-        vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax,
-            log=self.params["values"][self.name]["log"])
+        vmin, vmax = check_log_limits(
+            vmin=vmin, vmax=vmax, log=self.params["values"][self.name]["log"])
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
             self.panel.rescale_to_data(vmin=vmin,
@@ -362,14 +359,6 @@ class PlotController:
         self.update_data()
         self.rescale_to_data()
 
-    # def update_slice_thickness(change=None):
-    #     owner_dim = change["owner"].dim
-    #     if self.widgets.thickness_slider[owner_dim].value == 0.0:
-    #         self.slice_instead_of_rebin[owner_dim] = True
-    #     else:
-    #         self.slice_instead_of_rebin[owner_dim] = False
-    #     self.update_data()
-
     def update_data(self, change=None):
         """
         This function is called when the data in the displayed 1D plot or 2D
@@ -386,37 +375,19 @@ class PlotController:
             ind = self.widgets.slider[owner_dim].value
             self.widgets.slider_readout[owner_dim].value = value_to_string(
                 to_bin_centers(
-                        self.coords[
-                            self.name][owner_dim][owner_dim, ind:ind+2], owner_dim).values[0])
-
+                    self.coords[self.name][owner_dim][owner_dim, ind:ind + 2],
+                    owner_dim).values[0])
 
         slices = {}
         info = {"slice_label": ""}
         # Slice along dimensions with active sliders
         for dim, val in self.widgets.slider.items():
             if not val.disabled:
-                # slices[dim] = {
-                #     "index": val.value,
-                #     "location": to_bin_centers(
-                #         self.coords[self.name][dim][dim, val.value:val.value+2], dim).values[0],
-                #     "thickness": self.widgets.thickness_slider[dim].value
-                # }
                 slices[dim] = self._make_slice_dict(val.value, dim)
                 info["slice_label"] = "{},{}:{}-{}".format(
                     info["slice_label"], dim,
                     slices[dim]["location"] - 0.5 * slices[dim]["thickness"],
                     slices[dim]["location"] + 0.5 * slices[dim]["thickness"])
-
-        # # If a multi-dimensional coordinate is present, we need to put it at
-        # # the front of the list:
-        # print(slices)
-        # if self.multid_coord in slices:
-        #     new_slices = {self.multid_coord: slices[self.multid_coord]}
-        #     remaining = set(slices.keys()) - set((self.multid_coord))
-        #     for dim in remaining:
-        #         new_slices[dim] = slices[dim]
-        #     slices = new_slices
-        # print(slices)
 
         new_values = self.model.update_data(slices,
                                             mask_info=self._get_mask_info())
@@ -461,10 +432,6 @@ class PlotController:
                 axparams[but_val]["lims"] = check_log_limits(
                     lims=axparams[but_val]["lims"],
                     log=axparams[but_val]["log"])
-                # if axparams[but_val]["log"] and (axparams[but_val]["lims"][0]
-                #                                  <= 0):
-                #     axparams[but_val]["lims"][
-                #         0] = 1.0e-03 * axparams[but_val]["lims"][1]
 
         return axparams
 
@@ -593,20 +560,6 @@ class PlotController:
         for dim, val in self.widgets.slider.items():
             if dim != self.profile_dim:
                 slices[dim] = self._make_slice_dict(val.value, dim)
-#                 slices[dim] = {
-#                     "index": val.value,
-#                     "thickness": self.widgets.thickness_slider[dim].value
-#                 }
-
-
-
-# slices[dim] = {
-#                     "index": val.value,
-#                     "location": to_bin_centers(
-#                         self.coords[self.name][dim][dim, val.value:val.value+2], dim).values[0],
-#                     "thickness": self.widgets.thickness_slider[dim].value
-#                 }
-
 
         # Get new values from model
         new_values = self.model.update_profile(xdata=xdata,
@@ -626,8 +579,11 @@ class PlotController:
 
     def _make_slice_dict(self, ind, dim):
         return {
-            "index": ind,
-            "location": to_bin_centers(
-                        self.coords[self.name][dim][dim, ind:ind+2], dim).values[0],
-            "thickness": self.widgets.thickness_slider[dim].value
+            "index":
+            ind,
+            "location":
+            to_bin_centers(self.coords[self.name][dim][dim, ind:ind + 2],
+                           dim).values[0],
+            "thickness":
+            self.widgets.thickness_slider[dim].value
         }

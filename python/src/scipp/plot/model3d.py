@@ -12,7 +12,6 @@ import numpy as np
 
 
 class PlotModel3d(PlotModel):
-
     def __init__(self,
                  controller=None,
                  scipp_obj_dict=None,

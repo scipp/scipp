@@ -266,10 +266,9 @@ void main() {
                          dpi=config.plot.dpi)
         # canvas = backend_agg.FigureCanvasAgg(fig)
         ax = fig.add_axes([0.05, 0.02, 0.25, 0.96])
-        cb1 = mpl.colorbar.ColorbarBase(
-            ax,
-            cmap=self.scalar_map.get_cmap(),
-            norm=self.scalar_map.norm)
+        cb1 = mpl.colorbar.ColorbarBase(ax,
+                                        cmap=self.scalar_map.get_cmap(),
+                                        norm=self.scalar_map.norm)
         cb1.set_label(self.unit)
 
         buf = io.BytesIO()

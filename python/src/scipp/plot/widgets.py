@@ -55,25 +55,21 @@ class PlotWidgets:
             # Add a slider to slice along additional dimensions of the array
             size = self.controller.dim_to_shape[self.controller.name][dim]
             self.slider[dim] = ipw.IntSlider(value=size // 2,
-                                               min=0,
-                                               max=size - 1,
-                                               step=1,
-                                               continuous_update=True,
-                                               readout=False,
-                                               disabled=disabled,
-                                               layout={"width": "200px"})
+                                             min=0,
+                                             max=size - 1,
+                                             step=1,
+                                             continuous_update=True,
+                                             readout=False,
+                                             disabled=disabled,
+                                             layout={"width": "200px"})
 
             # TODO: use the ax tick formatter to make the readout value when
             # non-dim coords are used
             ind = self.slider[dim].value
-            print(to_bin_centers(
-                        self.controller.coords[
-                            self.controller.name][dim][dim, ind:ind+2], dim).values[0])
-            self.slider_readout[dim] = ipw.Label(
-                value=value_to_string(
-                    to_bin_centers(
-                        self.controller.coords[
-                            self.controller.name][dim][dim, ind:ind+2], dim).values[0]))
+            self.slider_readout[dim] = ipw.Label(value=value_to_string(
+                to_bin_centers(
+                    self.controller.coords[self.controller.name][dim][
+                        dim, ind:ind + 2], dim).values[0]))
 
             self.continuous_update[dim] = ipw.Checkbox(
                 value=True,
@@ -94,7 +90,8 @@ class PlotWidgets:
                 description="Thickness",
                 continuous_update=False,
                 readout=True,
-                disabled=True if self.controller.multid_coord is not None else disabled,
+                disabled=True
+                if self.controller.multid_coord is not None else disabled,
                 layout={'width': "270px"})
 
             self.profile_button[dim] = ipw.Button(description="Profile",
@@ -161,9 +158,10 @@ class PlotWidgets:
                                                names="value")
             # Add the row of slider + buttons
             row = [
-                self.dim_labels[dim], self.slider[dim], self.slider_readout[dim],
-                self.continuous_update[dim], self.buttons[dim],
-                self.thickness_slider[dim], self.profile_button[dim]
+                self.dim_labels[dim], self.slider[dim],
+                self.slider_readout[dim], self.continuous_update[dim],
+                self.buttons[dim], self.thickness_slider[dim],
+                self.profile_button[dim]
             ]
             self.container.append(ipw.HBox(row))
 

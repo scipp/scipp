@@ -99,8 +99,8 @@ class PlotView2d:
             self.fig.savefig(buf, format='png')
             buf.seek(0)
             return ipw.Image(value=buf.getvalue(),
-                width=config.plot.width,
-                height=config.plot.height)
+                             width=config.plot.width,
+                             height=config.plot.height)
 
     def savefig(self, filename=None):
         self.fig.savefig(filename, bbox_inches="tight")

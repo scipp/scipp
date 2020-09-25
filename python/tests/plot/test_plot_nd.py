@@ -102,10 +102,6 @@ def test_plot_4d_with_masks():
     plot(data)
 
 
-@pytest.mark.skip(reason="Rebin will not work on the outer dim for the first "
-                         "slice because the coord of the inner dimension has "
-                         "more than one dimension. This was ok when we were "
-                         "slicing the Variable, but now we are rebinning it.")
 def test_plot_3d_data_with_ragged_bins():
     N = 10
     M = 8

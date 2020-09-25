@@ -12,7 +12,6 @@ import numpy as np
 
 
 class PlotController3d(PlotController):
-
     def __init__(self,
                  scipp_obj_dict=None,
                  pixel_size=None,

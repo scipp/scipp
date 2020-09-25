@@ -17,7 +17,6 @@ import io
 
 
 class LinePlot:
-
     def __init__(self,
                  errorbars=None,
                  ax=None,
@@ -49,8 +48,8 @@ class LinePlot:
         self.unit = unit
 
         # Get matplotlib figure and axes
-        self.fig, self.ax, _, self.own_axes = get_mpl_axes(
-            ax=ax, figsize=figsize)
+        self.fig, self.ax, _, self.own_axes = get_mpl_axes(ax=ax,
+                                                           figsize=figsize)
         # self.fig = None
         # self.ax = ax
         # self.mpl_axes = False
@@ -84,8 +83,8 @@ class LinePlot:
             self.fig.savefig(buf, format='png')
             buf.seek(0)
             return ipw.Image(value=buf.getvalue(),
-                width=config.plot.width,
-                height=config.plot.height)
+                             width=config.plot.width,
+                             height=config.plot.height)
 
     def savefig(self, filename=None):
         self.fig.savefig(filename, bbox_inches="tight")

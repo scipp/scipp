@@ -118,7 +118,10 @@ class PlotView1d:
         line = self.figure.ax.axvline(xdata, color=col, picker=5)
         line.set_url("axvline")
         line.set_gid(line_id)
-        self.controller.keep_line(target="profile", name=line_name, color=col, line_id=line_id)
+        self.controller.keep_line(target="profile",
+                                  name=line_name,
+                                  color=col,
+                                  line_id=line_id)
 
     def remove_profile(self, event):
         new_lines = []

@@ -13,7 +13,6 @@ import numpy as np
 
 
 class PlotModel2d(PlotModel):
-
     def __init__(self, controller=None, scipp_obj_dict=None, resolution=None):
 
         super().__init__(controller=controller, scipp_obj_dict=scipp_obj_dict)
@@ -183,10 +182,15 @@ class PlotModel2d(PlotModel):
         # In the 2D case, we first resample to pixel resolution, to avoid
         # having to potentially resample a very large array in the following
         # slicing step.
-        profile_slice = self.resample_data(
-            self.data_arrays[self.name],
-            rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2],
-                         dimy: self.xyrebin["y"][dimy, iy:iy + 2]})[dimx, 0][dimy, 0]
+        profile_slice = self.resample_data(self.data_arrays[self.name],
+                                           rebin_edges={
+                                               dimx:
+                                               self.xyrebin["x"][dimx,
+                                                                 ix:ix + 2],
+                                               dimy:
+                                               self.xyrebin["y"][dimy,
+                                                                 iy:iy + 2]
+                                           })[dimx, 0][dimy, 0]
 
         # Remove the current x and y dims since they will have been manually
         # sliced above
@@ -222,11 +226,10 @@ class PlotModel2d(PlotModel):
                                                    dtype=np.int32))
             for m in mask_info[self.name]:
                 if m in profile_slice.masks:
-                    msk = (
-                        base_mask *
-                        sc.Variable(dims=profile_slice.masks[m].dims,
-                                    values=profile_slice.masks[m].values.astype(
-                                        np.int32))).values
+                    msk = (base_mask * sc.Variable(
+                        dims=profile_slice.masks[m].dims,
+                        values=profile_slice.masks[m].values.astype(
+                            np.int32))).values
                     if axparams["x"]["hist"][self.name]:
                         msk = np.concatenate((msk[0:1], msk))
                     new_values[self.name]["masks"][m] = mask_to_float(
