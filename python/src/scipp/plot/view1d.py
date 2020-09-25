@@ -88,10 +88,11 @@ class PlotView1d:
             self.controller.toggle_hover_visibility(False)
 
     def keep_or_remove_profile(self, event):
-        if event.artist.get_url() == "axvline":
+        line_url = event.artist.get_url()
+        if line_url == "axvline":
             self.remove_profile(event)
         else:
-            self.keep_profile(event)
+            self.keep_profile(event, line_url)
         self.figure.fig.canvas.draw_idle()
 
     def update_profile_connection(self, visible):
@@ -109,7 +110,7 @@ class PlotView1d:
                 self.figure.fig.canvas.mpl_disconnect(
                     self.profile_hover_connection)
 
-    def keep_profile(self, event):
+    def keep_profile(self, event, line_name):
         xdata = event.mouseevent.xdata
         col = make_random_color(fmt='hex')
         self.profile_counter += 1
@@ -117,7 +118,7 @@ class PlotView1d:
         line = self.figure.ax.axvline(xdata, color=col, picker=5)
         line.set_url("axvline")
         line.set_gid(line_id)
-        self.controller.keep_line(target="profile", color=col, line_id=line_id)
+        self.controller.keep_line(target="profile", name=line_name, color=col, line_id=line_id)
 
     def remove_profile(self, event):
         new_lines = []

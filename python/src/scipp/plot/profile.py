@@ -10,6 +10,7 @@ import numpy as np
 
 
 class ProfileView(LinePlot):
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.current_visible_state = False

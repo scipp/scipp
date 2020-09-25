@@ -199,6 +199,8 @@ class LinePlot:
                         marker=self.mpl_line_params["marker"][name])
                     self.mask_lines[name][m].set_gid("onaxes")
 
+            self.data_lines[name].set_url(name)
+
             # Add error bars
             if self.errorbars[name]:
                 self.error_lines[name] = self.ax.errorbar(
