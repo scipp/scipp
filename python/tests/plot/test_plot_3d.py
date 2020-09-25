@@ -4,9 +4,8 @@
 # @author Neil Vaytet
 
 import numpy as np
-import pytest
 import scipp as sc
-from plot_helper import make_dense_dataset, make_events_dataset
+from plot_helper import make_dense_dataset
 from scipp.plot import plot
 
 # Prevent figure from being displayed when running the tests
