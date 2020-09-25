@@ -2,6 +2,11 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+# Scipp imports
+from .tools import to_bin_centers
+from .._utils import value_to_string
+
+# Other imports
 import ipywidgets as ipw
 import numpy as np
 
@@ -20,6 +25,7 @@ class PlotWidgets:
         # Initialise slider and label containers
         self.dim_labels = {}
         self.slider = {}
+        self.slider_readout = {}
         self.thickness_slider = {}
         self.buttons = {}
         self.profile_button = {}
@@ -46,17 +52,39 @@ class PlotWidgets:
                 value=self.controller.labels[self.controller.name][dim],
                 layout={"width": "100px"})
 
-            # Add an FloatSlider to slide along the z dimension of the array
-            dim_xlims = self.controller.xlims[self.controller.name][dim].values
-            dx = np.abs(dim_xlims[1] - dim_xlims[0])
-            self.slider[dim] = ipw.FloatSlider(value=0.5 * np.sum(dim_xlims),
-                                               min=dim_xlims.min(),
-                                               max=dim_xlims.max(),
-                                               step=0.01 * dx,
+            # # Add an FloatSlider to slide along the z dimension of the array
+            # dim_xlims = self.controller.xlims[self.controller.name][dim].values
+            # dx = np.abs(dim_xlims[1] - dim_xlims[0])
+            # self.slider[dim] = ipw.FloatSlider(value=0.5 * np.sum(dim_xlims),
+            #                                    min=dim_xlims.min(),
+            #                                    max=dim_xlims.max(),
+            #                                    step=0.01 * dx,
+            #                                    continuous_update=True,
+            #                                    readout=True,
+            #                                    disabled=disabled,
+            #                                    layout={"width": "250px"})
+
+            size = self.controller.dim_to_shape[self.controller.name][dim]
+            self.slider[dim] = ipw.IntSlider(value=size // 2,
+                                               min=0,
+                                               max=size - 1,
+                                               step=1,
                                                continuous_update=True,
-                                               readout=True,
+                                               readout=False,
                                                disabled=disabled,
-                                               layout={"width": "250px"})
+                                               layout={"width": "200px"})
+
+            # TODO: use the ax tick formatter to make the readout value when
+            # non-dim coords are used
+            ind = self.slider[dim].value
+            print(to_bin_centers(
+                        self.controller.coords[
+                            self.controller.name][dim][dim, ind:ind+2], dim).values[0])
+            self.slider_readout[dim] = ipw.Label(
+                value=value_to_string(
+                    to_bin_centers(
+                        self.controller.coords[
+                            self.controller.name][dim][dim, ind:ind+2], dim).values[0]))
 
             self.continuous_update[dim] = ipw.Checkbox(
                 value=True,
@@ -67,9 +95,11 @@ class PlotWidgets:
             ipw.jslink((self.continuous_update[dim], 'value'),
                        (self.slider[dim], 'continuous_update'))
 
+            dim_xlims = self.controller.xlims[self.controller.name][dim].values
+            dx = np.abs(dim_xlims[1] - dim_xlims[0])
             self.thickness_slider[dim] = ipw.FloatSlider(
                 value=dx,
-                min=0.01 * dx,
+                min=0.,
                 max=dx,
                 step=0.01 * dx,
                 description="Thickness",
@@ -88,6 +118,7 @@ class PlotWidgets:
 
             if self.controller.ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
+                self.slider_readout[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
                 self.thickness_slider[dim].layout.display = 'none'
                 self.profile_button[dim].layout.display = 'none'
@@ -141,7 +172,7 @@ class PlotWidgets:
                                                names="value")
             # Add the row of slider + buttons
             row = [
-                self.dim_labels[dim], self.slider[dim],
+                self.dim_labels[dim], self.slider[dim], self.slider_readout[dim],
                 self.continuous_update[dim], self.buttons[dim],
                 self.thickness_slider[dim], self.profile_button[dim]
             ]

@@ -75,20 +75,32 @@ class PlotModel2d(PlotModel):
         for dim in slices:
 
             deltax = slices[dim]["thickness"]
-            loc = slices[dim]["location"]
 
-            # TODO: see if we can call resample_data only once with
-            # rebin_edges dict containing all dims to be sliced.
-            self.vslice = self.resample_data(
-                self.vslice,
-                rebin_edges={
-                    dim:
-                    sc.Variable(
-                        [dim],
-                        values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
-                        unit=self.vslice.coords[dim].unit)
-                })[dim, 0]
-            self.vslice *= (deltax * sc.units.one)
+            if deltax == 0.0:
+                # ind = slices[dim]["index"]
+                self.vslice = self.vslice[dim, slices[dim]["index"]]
+                #     rebin_edges={
+                #         dim:
+                #         sc.Variable(
+                #             [dim],
+                #             values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
+                #             unit=self.vslice.coords[dim].unit)
+                #     })[dim, 0]
+                # self.vslice *= (deltax * sc.units.one)
+            else:
+                loc = slices[dim]["location"]
+                # TODO: see if we can call resample_data only once with
+                # rebin_edges dict containing all dims to be sliced.
+                self.vslice = self.resample_data(
+                    self.vslice,
+                    rebin_edges={
+                        dim:
+                        sc.Variable(
+                            [dim],
+                            values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
+                            unit=self.vslice.coords[dim].unit)
+                    })[dim, 0]
+                self.vslice *= (deltax * sc.units.one)
 
         # Update pixel widths used for scaling before rebin step
         for xy, dim in self.button_dims.items():
@@ -122,6 +134,8 @@ class PlotModel2d(PlotModel):
         dimx = self.xyrebin[xy[1]].dims[0]
 
         rebin_edges = {dimy: self.xyrebin[xy[0]], dimx: self.xyrebin[xy[1]]}
+
+        print(self.vslice)
 
         resampled_image = self.resample_data(self.vslice,
                                              rebin_edges=rebin_edges)

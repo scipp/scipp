@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .tools import parse_params, make_fake_coord, to_bin_edges, check_log_limits
+from .tools import parse_params, make_fake_coord, to_bin_edges, check_log_limits, to_bin_centers
 from .widgets import PlotWidgets
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
@@ -41,6 +41,7 @@ class PlotController:
         self.logz = logz
         self.axparams = {}
         self.profile_axparams = {}
+        self.slice_instead_of_rebin = {}
 
         # Parse parameters for values and masks
         self.params = {"values": {}, "masks": {}}
@@ -361,6 +362,14 @@ class PlotController:
         self.update_data()
         self.rescale_to_data()
 
+    # def update_slice_thickness(change=None):
+    #     owner_dim = change["owner"].dim
+    #     if self.widgets.thickness_slider[owner_dim].value == 0.0:
+    #         self.slice_instead_of_rebin[owner_dim] = True
+    #     else:
+    #         self.slice_instead_of_rebin[owner_dim] = False
+    #     self.update_data()
+
     def update_data(self, change=None):
         """
         This function is called when the data in the displayed 1D plot or 2D
@@ -369,13 +378,27 @@ class PlotController:
         called when update_axes is called since the displayed data needs to be
         updated when the axes have changed.
         """
+
+        if change is not None:
+            owner_dim = change["owner"].dim
+
+            # Update readout label
+            ind = self.widgets.slider[owner_dim].value
+            self.widgets.slider_readout[owner_dim].value = value_to_string(
+                to_bin_centers(
+                        self.coords[
+                            self.name][owner_dim][owner_dim, ind:ind+2], owner_dim).values[0])
+
+
         slices = {}
         info = {"slice_label": ""}
         # Slice along dimensions with active sliders
         for dim, val in self.widgets.slider.items():
             if not val.disabled:
                 slices[dim] = {
-                    "location": val.value,
+                    "index": val.value,
+                    "location": to_bin_centers(
+                        self.coords[self.name][dim][dim, val.value:val.value+2], dim).values[0],
                     "thickness": self.widgets.thickness_slider[dim].value
                 }
                 info["slice_label"] = "{},{}:{}-{}".format(
@@ -383,16 +406,16 @@ class PlotController:
                     slices[dim]["location"] - 0.5 * slices[dim]["thickness"],
                     slices[dim]["location"] + 0.5 * slices[dim]["thickness"])
 
-        # If a multi-dimensional coordinate is present, we need to put it at
-        # the front of the list:
-        print(slices)
-        if self.multid_coord in slices:
-            new_slices = {self.multid_coord: slices[self.multid_coord]}
-            remaining = set(slices.keys()) - set((self.multid_coord))
-            for dim in remaining:
-                new_slices[dim] = slices[dim]
-            slices = new_slices
-        print(slices)
+        # # If a multi-dimensional coordinate is present, we need to put it at
+        # # the front of the list:
+        # print(slices)
+        # if self.multid_coord in slices:
+        #     new_slices = {self.multid_coord: slices[self.multid_coord]}
+        #     remaining = set(slices.keys()) - set((self.multid_coord))
+        #     for dim in remaining:
+        #         new_slices[dim] = slices[dim]
+        #     slices = new_slices
+        # print(slices)
 
         new_values = self.model.update_data(slices,
                                             mask_info=self._get_mask_info())
