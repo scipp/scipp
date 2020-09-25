@@ -12,6 +12,7 @@ import numpy as np
 class ProfileView(LinePlot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.current_visible_state = False
         return
 
     def toggle_hover_visibility(self, value):
@@ -27,6 +28,10 @@ class ProfileView(LinePlot):
         for name, mlines in self.mask_lines.items():
             for ml in mlines.values():
                 ml.set_visible(value)
+        if value != self.current_visible_state:
+            if value:
+                self.rescale_to_data()
+            self.current_visible_state = value
 
     def update_slice_area(self, profile_slice):
 

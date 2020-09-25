@@ -395,12 +395,13 @@ class PlotController:
         # Slice along dimensions with active sliders
         for dim, val in self.widgets.slider.items():
             if not val.disabled:
-                slices[dim] = {
-                    "index": val.value,
-                    "location": to_bin_centers(
-                        self.coords[self.name][dim][dim, val.value:val.value+2], dim).values[0],
-                    "thickness": self.widgets.thickness_slider[dim].value
-                }
+                # slices[dim] = {
+                #     "index": val.value,
+                #     "location": to_bin_centers(
+                #         self.coords[self.name][dim][dim, val.value:val.value+2], dim).values[0],
+                #     "thickness": self.widgets.thickness_slider[dim].value
+                # }
+                slices[dim] = self._make_slice_dict(val.value, dim)
                 info["slice_label"] = "{},{}:{}-{}".format(
                     info["slice_label"], dim,
                     slices[dim]["location"] - 0.5 * slices[dim]["thickness"],
@@ -570,14 +571,6 @@ class PlotController:
         self.view.update_profile_connection(visible=visible)
 
         if visible:
-            # Try to guess the y limits in a non-expensive way
-            vmin, vmax = self.model.rescale_to_data()
-            thickness = self.widgets.thickness_slider[self.profile_dim].value
-            deltay = (vmax - vmin) / (0.25 * thickness)
-            midpoint = 0.5 * (vmin + vmax)
-            vmin = midpoint - deltay
-            vmax = midpoint + deltay
-            self.profile.rescale_to_data(ylim=[vmin, vmax])
             self.profile.update_slice_area({
                 "location":
                 self.widgets.slider[self.profile_dim].value,
@@ -599,10 +592,22 @@ class PlotController:
         # Slice all dimensions apart from the profile dim
         for dim, val in self.widgets.slider.items():
             if dim != self.profile_dim:
-                slices[dim] = {
-                    "location": val.value,
-                    "thickness": self.widgets.thickness_slider[dim].value
-                }
+                slices[dim] = self._make_slice_dict(val.value, dim)
+#                 slices[dim] = {
+#                     "index": val.value,
+#                     "thickness": self.widgets.thickness_slider[dim].value
+#                 }
+
+
+
+# slices[dim] = {
+#                     "index": val.value,
+#                     "location": to_bin_centers(
+#                         self.coords[self.name][dim][dim, val.value:val.value+2], dim).values[0],
+#                     "thickness": self.widgets.thickness_slider[dim].value
+#                 }
+
+
         # Get new values from model
         new_values = self.model.update_profile(xdata=xdata,
                                                ydata=ydata,
@@ -618,3 +623,11 @@ class PlotController:
         in the widgets.
         """
         self.profile.toggle_hover_visibility(value)
+
+    def _make_slice_dict(self, ind, dim):
+        return {
+            "index": ind,
+            "location": to_bin_centers(
+                        self.coords[self.name][dim][dim, ind:ind+2], dim).values[0],
+            "thickness": self.widgets.thickness_slider[dim].value
+        }

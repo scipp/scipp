@@ -5,10 +5,12 @@
 # Scipp imports
 from .model import PlotModel
 from .tools import to_bin_centers, vars_to_err, mask_to_float
+# from .._utils import is_view
 from .._scipp import core as sc
 
 # Other imports
 import numpy as np
+import os
 
 
 class PlotModel1d(PlotModel):
@@ -25,28 +27,6 @@ class PlotModel1d(PlotModel):
         self.dim = axparams["x"]["dim"]
         self.hist = axparams["x"]["hist"]
         return
-
-    def slice_data(self, array, slices):
-
-        data_slice = array
-
-        for dim in slices:
-
-            deltax = slices[dim]["thickness"]
-            loc = slices[dim]["location"]
-
-            data_slice = self.resample_data(
-                data_slice,
-                rebin_edges={
-                    dim:
-                    sc.Variable(
-                        [dim],
-                        values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
-                        unit=data_slice.coords[dim].unit)
-                })[dim, 0]
-            data_slice *= (deltax * sc.units.one)
-
-        return data_slice
 
     def update_data(self, slices, mask_info):
 
@@ -105,7 +85,8 @@ class PlotModel1d(PlotModel):
 
         new_values = {}
 
-        other_dims = set(slices.keys()) - set([self.dim])
+        # Remove the current dim since it will be manually sliced below
+        del slices[self.dim]
 
         # Find closest point to cursor
         # TODO: can we optimize this with new buckets?
@@ -121,21 +102,10 @@ class PlotModel1d(PlotModel):
 
             new_values[name] = {"values": {}, "variances": {}, "masks": {}}
 
-            for dim in other_dims:
+            # Slice all dims apart from profile dim and currently displayed dim
+            profile_slice = self.slice_data(profile_slice, slices)
 
-                deltax = slices[dim]["thickness"]
-                loc = slices[dim]["location"]
-
-                profile_slice = self.resample_data(
-                    profile_slice,
-                    rebin_edges={
-                        dim:
-                        sc.Variable(
-                            [dim],
-                            values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
-                            unit=profile_slice.coords[dim].unit)
-                    })[dim, 0]
-
+            # Now slice the currently displayed dim
             profile_slice = profile_slice[self.dim, ind]
 
             ydata = profile_slice.values

@@ -63,28 +63,88 @@ class PlotModel3d(PlotModel):
             self.pos_array = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
 
-    def slice_data(self, slices):
+    # def slice_data(self, slices):
+    #     """
+    #     Slice the extra dimensions down and update the slice values
+    #     """
+    #     # data_slice = self.data_arrays[self.name]
+
+    #     # # Slice along dimensions supplied in the slices argument
+    #     # for dim in slices:
+
+    #     #     deltax = slices[dim]["thickness"]
+    #     #     loc = slices[dim]["location"]
+
+    #     #     data_slice = self.resample_data(
+    #     #         data_slice,
+    #     #         rebin_edges={
+    #     #             dim:
+    #     #             sc.Variable(
+    #     #                 [dim],
+    #     #                 values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
+    #     #                 unit=data_slice.coords[dim].unit)
+    #     #         })[dim, 0]
+    #     #     data_slice *= (deltax * sc.units.one)
+
+    #     # Use automatic broadcast if positions are not used
+    #     if self.positions is None:
+    #         shape = [
+    #             data_slice.coords[self.button_dims["z"]].shape[0] - 1,
+    #             data_slice.coords[self.button_dims["y"]].shape[0] - 1,
+    #             data_slice.coords[self.button_dims["x"]].shape[0] - 1
+    #         ]
+
+    #         self.dslice = sc.DataArray(coords={
+    #             self.button_dims["z"]:
+    #             data_slice.coords[self.button_dims["z"]],
+    #             self.button_dims["y"]:
+    #             data_slice.coords[self.button_dims["y"]],
+    #             self.button_dims["x"]:
+    #             data_slice.coords[self.button_dims["x"]]
+    #         },
+    #                                    data=sc.Variable(
+    #                                        dims=[
+    #                                            self.button_dims["z"],
+    #                                            self.button_dims["y"],
+    #                                            self.button_dims["x"]
+    #                                        ],
+    #                                        values=np.ones(shape),
+    #                                        variances=np.zeros(shape),
+    #                                        dtype=data_slice.dtype,
+    #                                        unit=sc.units.one))
+
+    #         self.dslice *= data_slice
+    #     else:
+    #         self.dslice = data_slice
+
+    def get_slice_values(self, mask_info):
+
+        new_values = {
+            "values": self.dslice.values.astype(np.float32).ravel(),
+            "masks": None
+        }
+
+        # Handle masks
+        msk = None
+        if len(mask_info[self.name]) > 0:
+            # Use automatic broadcasting in Scipp variables
+            msk = sc.Variable(dims=self.dslice.dims,
+                              values=np.zeros(self.dslice.shape,
+                                              dtype=np.int32))
+            for m, val in mask_info[self.name].items():
+                if val:
+                    msk += sc.Variable(
+                        dims=self.dslice.masks[m].dims,
+                        values=self.dslice.masks[m].values.astype(np.int32))
+            new_values["masks"] = msk.values.ravel()
+        return new_values
+
+    def update_data(self, slices, mask_info):
         """
-        Slice the extra dimensions down and update the slice values
+        Get new slice of data and send it back to the controller.
         """
-        data_slice = self.data_arrays[self.name]
-
-        # Slice along dimensions supplied in the slices argument
-        for dim in slices:
-
-            deltax = slices[dim]["thickness"]
-            loc = slices[dim]["location"]
-
-            data_slice = self.resample_data(
-                data_slice,
-                rebin_edges={
-                    dim:
-                    sc.Variable(
-                        [dim],
-                        values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
-                        unit=data_slice.coords[dim].unit)
-                })[dim, 0]
-            data_slice *= (deltax * sc.units.one)
+        # self.slice_data(slices)
+        data_slice = self.slice_data(self.data_arrays[self.name], slices)
 
         # Use automatic broadcast if positions are not used
         if self.positions is None:
@@ -116,34 +176,6 @@ class PlotModel3d(PlotModel):
             self.dslice *= data_slice
         else:
             self.dslice = data_slice
-
-    def get_slice_values(self, mask_info):
-
-        new_values = {
-            "values": self.dslice.values.astype(np.float32).ravel(),
-            "masks": None
-        }
-
-        # Handle masks
-        msk = None
-        if len(mask_info[self.name]) > 0:
-            # Use automatic broadcasting in Scipp variables
-            msk = sc.Variable(dims=self.dslice.dims,
-                              values=np.zeros(self.dslice.shape,
-                                              dtype=np.int32))
-            for m, val in mask_info[self.name].items():
-                if val:
-                    msk += sc.Variable(
-                        dims=self.dslice.masks[m].dims,
-                        values=self.dslice.masks[m].values.astype(np.int32))
-            new_values["masks"] = msk.values.ravel()
-        return new_values
-
-    def update_data(self, slices, mask_info):
-        """
-        Get new slice of data and send it back to the controller.
-        """
-        self.slice_data(slices)
 
         return self.get_slice_values(mask_info)
 

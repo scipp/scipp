@@ -91,3 +91,27 @@ class PlotModel:
             vmin = sc.min(self.dslice.data).value
             vmax = sc.max(self.dslice.data).value
         return vmin, vmax
+
+    def _slice_or_rebin(self, array, dim, dim_slice):
+        deltax = dim_slice["thickness"]
+        if deltax == 0.0:
+            array = array[dim, dim_slice["index"]]
+        else:
+            loc = dim_slice["location"]
+            array = self.resample_data(
+                array,
+                rebin_edges={
+                    dim:
+                    sc.Variable(
+                        [dim],
+                        values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
+                        unit=array.coords[dim].unit)
+                })[dim, 0]
+            array *= (deltax * sc.units.one)
+        return array
+
+    def slice_data(self, array, slices):
+        data_slice = array
+        for dim in slices:
+            data_slice = self._slice_or_rebin(data_slice, dim, slices[dim])
+        return data_slice

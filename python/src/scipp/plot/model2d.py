@@ -57,46 +57,11 @@ class PlotModel2d(PlotModel):
                 unit=self.data_arrays[self.name].coords[axparams[xy]
                                                         ["dim"]].unit)
 
-    def slice_data(self, slices):
+    def update_data(self, slices, mask_info):
         """
-        Recursively slice the data along the dimensions of active sliders.
+        Slice data according to new slider value and update the image.
         """
-
-        data_slice = self.data_arrays[self.name]
-
-        # Slice along dimensions with active sliders
-        for dim in slices:
-
-            deltax = slices[dim]["thickness"]
-
-            if deltax == 0.0:
-                # print("deltax is zero: slicing")
-                # ind = slices[dim]["index"]
-                data_slice = data_slice[dim, slices[dim]["index"]]
-                #     rebin_edges={
-                #         dim:
-                #         sc.Variable(
-                #             [dim],
-                #             values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
-                #             unit=data_slice.coords[dim].unit)
-                #     })[dim, 0]
-                # data_slice *= (deltax * sc.units.one)
-            else:
-                # print("deltax is non-zero: rebinning")
-                loc = slices[dim]["location"]
-                # TODO: see if we can call resample_data only once with
-                # rebin_edges dict containing all dims to be sliced.
-                data_slice = self.resample_data(
-                    data_slice,
-                    rebin_edges={
-                        dim:
-                        sc.Variable(
-                            [dim],
-                            values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
-                            unit=data_slice.coords[dim].unit)
-                    })[dim, 0]
-                data_slice *= (deltax * sc.units.one)
-
+        data_slice = self.slice_data(self.data_arrays[self.name], slices)
         # Update pixel widths used for scaling before rebin step
         for xy, dim in self.button_dims.items():
             self.xywidth[xy] = (data_slice.coords[dim][dim, 1:] -
@@ -118,11 +83,6 @@ class PlotModel2d(PlotModel):
         self.vslice = data_slice * self.xywidth["x"]
         self.vslice *= self.xywidth["y"]
 
-    def update_data(self, slices, mask_info):
-        """
-        Slice data according to new slider value and update the image.
-        """
-        self.slice_data(slices)
         # Update image with resampling
         new_values = self.update_image(mask_info=mask_info)
         return new_values
@@ -138,9 +98,6 @@ class PlotModel2d(PlotModel):
         dimx = self.xyrebin[xy[1]].dims[0]
 
         rebin_edges = {dimy: self.xyrebin[xy[0]], dimx: self.xyrebin[xy[1]]}
-
-        # print(self.vslice)
-        # print(rebin_edges)
 
         resampled_image = self.resample_data(self.vslice,
                                              rebin_edges=rebin_edges)
@@ -223,64 +180,52 @@ class PlotModel2d(PlotModel):
         iy = int(ydata /
                  (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
 
-        data_slice = self.resample_data(
+        # In the 2D case, we first resample to pixel resolution, to avoid
+        # having to potentially resample a very large array in the following
+        # slicing step.
+        profile_slice = self.resample_data(
             self.data_arrays[self.name],
-            rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2]})[dimx, 0]
+            rebin_edges={dimx: self.xyrebin["x"][dimx, ix:ix + 2],
+                         dimy: self.xyrebin["y"][dimy, iy:iy + 2]})[dimx, 0][dimy, 0]
 
-        data_slice = self.resample_data(data_slice,
-                                        rebin_edges={
-                                            dimy:
-                                            self.xyrebin["y"][dimy, iy:iy + 2]
-                                        })[dimy, 0]
-
-        other_dims = set(slices.keys()) - set((dimx, dimy))
-
-        for dim in other_dims:
-
-            deltax = slices[dim]["thickness"]
-            loc = slices[dim]["location"]
-
-            data_slice = self.resample_data(
-                data_slice,
-                rebin_edges={
-                    dim:
-                    sc.Variable(
-                        [dim],
-                        values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
-                        unit=data_slice.coords[dim].unit)
-                })[dim, 0]
+        # Remove the current x and y dims since they will have been manually
+        # sliced above
+        del slices[dimx]
+        del slices[dimy]
+        # Slice the remaining dims
+        profile_slice = self.slice_data(profile_slice, slices)
 
         new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
 
-        dim = data_slice.dims[0]
-        ydata = data_slice.values
-        xcenters = to_bin_centers(data_slice.coords[dim], dim).values
+        dim = profile_slice.dims[0]
+        ydata = profile_slice.values
+        xcenters = to_bin_centers(profile_slice.coords[dim], dim).values
 
         if axparams["x"]["hist"][self.name]:
             new_values[
-                self.name]["values"]["x"] = data_slice.coords[dim].values
+                self.name]["values"]["x"] = profile_slice.coords[dim].values
             new_values[self.name]["values"]["y"] = np.concatenate(
                 (ydata[0:1], ydata))
         else:
             new_values[self.name]["values"]["x"] = xcenters
             new_values[self.name]["values"]["y"] = ydata
-        if data_slice.variances is not None:
+        if profile_slice.variances is not None:
             new_values[self.name]["variances"]["x"] = xcenters
             new_values[self.name]["variances"]["y"] = ydata
             new_values[self.name]["variances"]["e"] = vars_to_err(
-                data_slice.variances)
+                profile_slice.variances)
 
         # Handle masks
         if len(mask_info[self.name]) > 0:
-            base_mask = sc.Variable(dims=data_slice.dims,
-                                    values=np.ones(data_slice.shape,
+            base_mask = sc.Variable(dims=profile_slice.dims,
+                                    values=np.ones(profile_slice.shape,
                                                    dtype=np.int32))
             for m in mask_info[self.name]:
-                if m in data_slice.masks:
+                if m in profile_slice.masks:
                     msk = (
                         base_mask *
-                        sc.Variable(dims=data_slice.masks[m].dims,
-                                    values=data_slice.masks[m].values.astype(
+                        sc.Variable(dims=profile_slice.masks[m].dims,
+                                    values=profile_slice.masks[m].values.astype(
                                         np.int32))).values
                     if axparams["x"]["hist"][self.name]:
                         msk = np.concatenate((msk[0:1], msk))

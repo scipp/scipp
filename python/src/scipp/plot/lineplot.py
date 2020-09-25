@@ -311,11 +311,11 @@ class LinePlot:
                 line.set_visible(value)
         self.fig.canvas.draw_idle()
 
-    def rescale_to_data(self, ylim=None):
-        if ylim is None:
-            self.ax.autoscale(True)
-            self.ax.relim()
-            self.ax.autoscale_view()
-        else:
-            self.ax.set_ylim(ylim)
+    def rescale_to_data(self):
+        # if ylim is None:
+        self.ax.autoscale(True)
+        self.ax.relim()
+        self.ax.autoscale_view()
+        # else:
+        #     self.ax.set_ylim(ylim)
         self.fig.canvas.draw_idle()

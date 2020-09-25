@@ -52,18 +52,7 @@ class PlotWidgets:
                 value=self.controller.labels[self.controller.name][dim],
                 layout={"width": "100px"})
 
-            # # Add an FloatSlider to slide along the z dimension of the array
-            # dim_xlims = self.controller.xlims[self.controller.name][dim].values
-            # dx = np.abs(dim_xlims[1] - dim_xlims[0])
-            # self.slider[dim] = ipw.FloatSlider(value=0.5 * np.sum(dim_xlims),
-            #                                    min=dim_xlims.min(),
-            #                                    max=dim_xlims.max(),
-            #                                    step=0.01 * dx,
-            #                                    continuous_update=True,
-            #                                    readout=True,
-            #                                    disabled=disabled,
-            #                                    layout={"width": "250px"})
-
+            # Add a slider to slice along additional dimensions of the array
             size = self.controller.dim_to_shape[self.controller.name][dim]
             self.slider[dim] = ipw.IntSlider(value=size // 2,
                                                min=0,
@@ -98,14 +87,14 @@ class PlotWidgets:
             dim_xlims = self.controller.xlims[self.controller.name][dim].values
             dx = np.abs(dim_xlims[1] - dim_xlims[0])
             self.thickness_slider[dim] = ipw.FloatSlider(
-                value=dx,
+                value=0. if self.controller.multid_coord is not None else dx,
                 min=0.,
                 max=dx,
                 step=0.01 * dx,
                 description="Thickness",
                 continuous_update=False,
                 readout=True,
-                disabled=disabled,
+                disabled=True if self.controller.multid_coord is not None else disabled,
                 layout={'width': "270px"})
 
             self.profile_button[dim] = ipw.Button(description="Profile",
