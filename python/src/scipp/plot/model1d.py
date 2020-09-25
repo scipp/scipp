@@ -5,12 +5,10 @@
 # Scipp imports
 from .model import PlotModel
 from .tools import to_bin_centers, vars_to_err, mask_to_float
-# from .._utils import is_view
 from .._scipp import core as sc
 
 # Other imports
 import numpy as np
-import os
 
 
 class PlotModel1d(PlotModel):

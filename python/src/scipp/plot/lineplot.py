@@ -10,7 +10,6 @@ from .tools import get_line_param
 # Other imports
 import numpy as np
 import copy as cp
-import matplotlib.pyplot as plt
 import ipywidgets as ipw
 import warnings
 import io
@@ -50,20 +49,7 @@ class LinePlot:
         # Get matplotlib figure and axes
         self.fig, self.ax, _, self.own_axes = get_mpl_axes(ax=ax,
                                                            figsize=figsize)
-        # self.fig = None
-        # self.ax = ax
-        # self.mpl_axes = False
-        # self.current_xcenters = None
-        # if self.ax is None:
-        #     if figsize is None:
-        #         figsize = (config.plot.width / config.plot.dpi,
-        #                    config.plot.height / config.plot.dpi)
-        #     self.fig, self.ax = plt.subplots(1,
-        #                                      1,
-        #                                      figsize=figsize,
-        #                                      dpi=config.plot.dpi)
-        # else:
-        #     self.mpl_axes = True
+
         self.grid = grid
 
         if self.own_axes:
@@ -313,10 +299,7 @@ class LinePlot:
         self.fig.canvas.draw_idle()
 
     def rescale_to_data(self):
-        # if ylim is None:
         self.ax.autoscale(True)
         self.ax.relim()
         self.ax.autoscale_view()
-        # else:
-        #     self.ax.set_ylim(ylim)
         self.fig.canvas.draw_idle()

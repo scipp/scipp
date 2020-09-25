@@ -3,7 +3,8 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .tools import parse_params, make_fake_coord, to_bin_edges, check_log_limits, to_bin_centers
+from .tools import parse_params, make_fake_coord, to_bin_edges, \
+                   check_log_limits, to_bin_centers
 from .widgets import PlotWidgets
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
