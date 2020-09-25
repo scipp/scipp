@@ -74,3 +74,30 @@ def sqrt(x, out=None):
     :return: The square-root values of the input.
     """
     return _call_cpp_func(_cpp.sqrt, x, out=out)
+
+
+def exp(x):
+    """Element-wise exponentiation.
+
+    :param x: Input data.
+    :returns: e raised to the power of the input.
+    """
+    return _call_cpp_func(_cpp.exp, x)
+
+
+def log(x):
+    """Element-wise natural logarithm.
+
+    :param x: Input data.
+    :returns: Base e logiarithm of the input.
+    """
+    return _call_cpp_func(_cpp.log, x)
+
+
+def log10(x):
+    """Element-wise base 10 logarithm.
+
+    :param x: Input data.
+    :returns: Base 10 logarithm of the input.
+    """
+    return _call_cpp_func(_cpp.log10, x)

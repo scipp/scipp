@@ -96,3 +96,41 @@ TYPED_TEST(ElementNotEqualTest, value) {
   x = -1;
   EXPECT_EQ(not_equal(y, x), true);
 }
+
+template <typename T> class ElementNanMinTest : public ::testing::Test {};
+template <typename T> class ElementNanMaxTest : public ::testing::Test {};
+using ElementNanMinTestTypes = ::testing::Types<double, float>;
+TYPED_TEST_SUITE(ElementNanMinTest, ElementNanMinTestTypes);
+TYPED_TEST_SUITE(ElementNanMaxTest, ElementNanMinTestTypes);
+
+TYPED_TEST(ElementNanMinTest, value) {
+  using T = TypeParam;
+  T y = 1;
+  T x = 2;
+  nanmin_equals(y, x);
+  EXPECT_EQ(y, 1);
+}
+
+TYPED_TEST(ElementNanMinTest, value_nan) {
+  using T = TypeParam;
+  T y = NAN;
+  T x = 2;
+  nanmin_equals(y, x);
+  EXPECT_EQ(y, 2);
+}
+
+TYPED_TEST(ElementNanMaxTest, value) {
+  using T = TypeParam;
+  T y = 1;
+  T x = 2;
+  nanmax_equals(y, x);
+  EXPECT_EQ(y, 2);
+}
+
+TYPED_TEST(ElementNanMaxTest, value_nan) {
+  using T = TypeParam;
+  T y = 1;
+  T x = NAN;
+  nanmax_equals(y, x);
+  EXPECT_EQ(y, 1);
+}

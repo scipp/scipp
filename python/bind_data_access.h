@@ -245,6 +245,10 @@ template <class... Ts> class as_ElementArrayViewImpl {
               // goes out of scope.
               return data[0].to_pybind();
             } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
+              // Views such as VariableView are returned by value and require
+              // separate handling to avoid the
+              // py::return_value_policy::reference_internal in the default case
+              // below.
               auto ret = py::cast(data[0], py::return_value_policy::move);
               pybind11::detail::keep_alive_impl(ret, obj);
               return ret;

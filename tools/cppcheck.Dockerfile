@@ -1,6 +1,6 @@
 FROM archlinux
 
-RUN pacman -Sy --noconfirm cppcheck && \
+RUN pacman -Syu --noconfirm cppcheck && \
     mkdir -p '/data/'
 
 VOLUME ['/data']

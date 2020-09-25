@@ -1,5 +1,3 @@
-Interested in working with us? `We are hiring a C++ developer <https://europeanspallationsource.se/careers/vacancies>`_!
-
 scipp - Multi-dimensional data arrays with labeled dimensions
 =============================================================
 

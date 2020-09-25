@@ -38,7 +38,7 @@ RUN wget --quiet -P "/home/$NB_USER/data" "${SANSURL}LARMOR00049334.nxs" && \
 RUN conda install --yes \
       -c conda-forge \
       -c scipp/label/dev \
-      -c dannixon \
+      -c scipp \
       ipython \
       ipywidgets \
       mantid-framework \

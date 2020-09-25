@@ -4,6 +4,7 @@
 # @author Simon Heybrock
 import scipp as sc
 import numpy as np
+from .common import assert_export
 
 
 def test_all():
@@ -45,3 +46,15 @@ def test_min():
 def test_max():
     var = sc.Variable(['x'], values=[1.0, 2.0, 3.0])
     assert sc.is_equal(sc.max(var, 'x'), sc.Variable(value=3.0))
+
+
+def test_nanmin():
+    var = sc.Variable(['x'], values=np.array([1]))
+    assert_export(sc.nanmin, var)
+    assert_export(sc.nanmin, var, 'x')
+
+
+def test_nanmax():
+    var = sc.Variable(['x'], values=np.array([1]))
+    assert_export(sc.nanmax, var)
+    assert_export(sc.nanmax, var, 'x')

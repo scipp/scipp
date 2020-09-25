@@ -185,3 +185,36 @@ TEST(ElementReciprocalOutArgTest, supported_types) {
   std::get<double>(supported);
   std::get<float>(supported);
 }
+
+TEST(ElementExpTest, value) {
+  EXPECT_EQ(element::exp(1.23), std::exp(1.23));
+  EXPECT_EQ(element::exp(1.23456789f), std::exp(1.23456789f));
+}
+
+TEST(ElementExpTest, unit) {
+  EXPECT_EQ(element::exp(units::dimensionless), units::dimensionless);
+}
+
+TEST(ElementExpTest, bad_unit) { EXPECT_ANY_THROW(element::exp(units::m)); }
+
+TEST(ElementLogTest, value) {
+  EXPECT_EQ(element::log(1.23), std::log(1.23));
+  EXPECT_EQ(element::log(1.23456789f), std::log(1.23456789f));
+}
+
+TEST(ElementLogTest, unit) {
+  EXPECT_EQ(element::log(units::dimensionless), units::dimensionless);
+}
+
+TEST(ElementLogTest, bad_unit) { EXPECT_ANY_THROW(element::log(units::m)); }
+
+TEST(ElementLog10Test, value) {
+  EXPECT_EQ(element::log10(1.23), std::log10(1.23));
+  EXPECT_EQ(element::log10(1.23456789f), std::log10(1.23456789f));
+}
+
+TEST(ElementLog10Test, unit) {
+  EXPECT_EQ(element::log10(units::dimensionless), units::dimensionless);
+}
+
+TEST(ElementLog10Test, bad_unit) { EXPECT_ANY_THROW(element::log10(units::m)); }

@@ -33,8 +33,12 @@ General
    collapse
    concatenate
    dot
+   exp
    filter
    histogram
+   is_sorted
+   log
+   log10
    merge
    nan_to_num
    norm
@@ -79,6 +83,8 @@ Reduction operations are operations to remove one or more dimension, e.g., by pe
    max
    mean
    min
+   nanmax
+   nanmin
    sum
 
 Trigonometric

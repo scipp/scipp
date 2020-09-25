@@ -31,6 +31,11 @@ dependencies:
   - psutil
   - pytest
 
+  # Formatting & static analysis
+  - pre-commit
+  - yapf
+  - flake8
+
   # Docs
   - ipython=7.2.0
   - pandoc
