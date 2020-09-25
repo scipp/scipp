@@ -24,21 +24,6 @@ _small_font = round(0.8 * _svg_em, 2)
 _smaller_font = round(0.6 * _svg_em, 2)
 
 
-# def _hex_to_rgb(hex_color):
-#     rgb_hex = [hex_color[x:x + 2] for x in [1, 3, 5]]
-#     return [int(hex_value, 16) for hex_value in rgb_hex]
-
-
-# def _rgb_to_hex(rgb):
-#     hex_value = []
-#     for i in rgb:
-#         h = hex(int(i))[2:]
-#         if len(h) < 2:
-#             h = "{}0".format(h)
-#         hex_value.append(h)
-#     return "#" + "".join(hex_value)
-
-
 def _color_variants(hex_color):
     # Convert hex to rgb
     [r, g, b] = hex_to_rgb(hex_color)
