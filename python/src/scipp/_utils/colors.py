@@ -42,4 +42,3 @@ def make_random_color(fmt='rgb'):
     else:
         raise RuntimeError("Unknown color format {}. Possible choices are: "
                            "rgb, dec, rgba, and hex.".format(fmt))
-
