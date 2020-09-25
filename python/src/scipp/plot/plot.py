@@ -5,7 +5,6 @@
 # Scipp imports
 from .._scipp import core as sc
 from .. import _utils as su
-# from .sciplot import Plot
 from .tools import make_fake_coord
 
 

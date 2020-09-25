@@ -6,7 +6,6 @@
 from .. import config
 from .controller2d import PlotController2d
 from .model2d import PlotModel2d
-# from .render import render_plot
 from .profile import ProfileView
 from .sciplot import SciPlot
 from .view2d import PlotView2d

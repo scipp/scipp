@@ -40,13 +40,3 @@ def is_data_events(obj):
             return False
         return sc.contains_events(obj.data)
     return sc.contains_events(obj)
-
-
-# def is_view(obj):
-#     """
-#     Return True if the input is of type VariableView, or DataArrayView, or
-#     DatasetView.
-#     """
-#     return (isinstance(obj, sc.VariableView) or
-#             isinstance(obj, sc.DataArrayView) or
-#             isinstance(obj, sc.DatasetView))
