@@ -7,8 +7,12 @@ from .._scipp import core as sc
 from .. import _utils as su
 from .tools import make_fake_coord
 
+# Other imports
+from copy import deepcopy
+
 
 def plot(scipp_obj,
+         interactive=True,
          projection=None,
          axes=None,
          color=None,
@@ -25,6 +29,10 @@ def plot(scipp_obj,
     from .tools import get_line_param
     from .dispatch import dispatch
     import matplotlib.pyplot as plt
+    import matplotlib as mpl
+
+    # Determine if we are using a static or interactive backend
+    interactive = mpl.get_backend().lower().endswith('nbagg')
 
     # Switch interactive plotting off for better control over when figures are
     # displayed.
@@ -132,7 +140,7 @@ def plot(scipp_obj,
     # Plot all the subsets
     output = Plot()
     for key, val in tobeplotted.items():
-        output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
+        sciplot = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
                                name=key,
                                ndim=val["ndims"],
                                projection=projection,
@@ -140,16 +148,21 @@ def plot(scipp_obj,
                                mpl_line_params=val["mpl_line_params"],
                                bins=bins,
                                **kwargs)
+        if interactive:
+            output[key] = sciplot
+        else:
+            output[key] = deepcopy(sciplot.view.figure)
+            del sciplot
 
     return output
 
 
 class Plot(dict):
     """
-    The Plot object is used as output from the plot command.
-    It is a small wrapper around python dict, with a silent repr.
-    The dict will contain all the plot elements as well as the slider and
-    button widgets.
+    The Plot object is used as output for the plot command.
+    It is a small wrapper around python dict, with an ipython repr.
+    The dict will contain one entry for each entry in the input supplied to
+    the plot function.
     More functionalities can be added in the future.
     """
     def __init__(self, *arg, **kw):

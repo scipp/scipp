@@ -3,11 +3,12 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .lineplot import LinePlot
+from .figure1d import PlotFigure1d
 from .._utils import make_random_color
 
 
 class PlotView1d:
+
     def __init__(self,
                  controller=None,
                  ax=None,
@@ -29,7 +30,7 @@ class PlotView1d:
         self.profile_scatter = None
         self.profile_counter = -1
 
-        self.figure = LinePlot(errorbars=errorbars,
+        self.figure = PlotFigure1d(errorbars=errorbars,
                                ax=ax,
                                mpl_line_params=mpl_line_params,
                                title=title,
@@ -40,8 +41,6 @@ class PlotView1d:
                                mask_params=mask_params,
                                masks=masks,
                                picker=picker)
-
-        return
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()

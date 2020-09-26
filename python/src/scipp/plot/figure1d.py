@@ -15,7 +15,8 @@ import warnings
 import io
 
 
-class LinePlot:
+class PlotFigure1d:
+
     def __init__(self,
                  errorbars=None,
                  ax=None,
