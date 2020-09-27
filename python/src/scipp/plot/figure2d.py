@@ -1,7 +1,7 @@
 
 # Scipp imports
 from .. import config
-from .figure import get_mpl_axes
+from .figure import get_mpl_axes, PlotStaticFigure
 from .._utils import make_random_color
 
 # Other imports
@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 from matplotlib.collections import PathCollection
 import warnings
 import io
+from copy import deepcopy
 
 
 class PlotFigure2d:
@@ -60,6 +61,7 @@ class PlotFigure2d:
                                               aspect=aspect,
                                               picker=5)
         self.ax.set_title(title)
+        self.cbar = None
         if cbar:
             self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
             self.cbar.set_label(unit)
@@ -74,14 +76,38 @@ class PlotFigure2d:
             self.ax.set_xscale("log")
         if logy:
             self.ax.set_yscale("log")
-        if self.own_axes:
-            self.fig.tight_layout(rect=config.plot.padding)
+        # if self.own_axes:
+        #     self.fig.tight_layout(rect=config.plot.padding)
 
         # # Connect changes in axes limits to resampling function
         # self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
         # self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
 
         return
+
+    def copy(self):
+        figcopy = PlotStaticFigure()
+        figcopy.fig, figcopy.ax, figcopy.cax, _ = get_mpl_axes(figsize=self.fig.get_size_inches())
+        figcopy.ax.set_xlim(deepcopy(self.ax.get_xlim()))
+        figcopy.ax.set_ylim(deepcopy(self.ax.get_ylim()))
+        # im_list = [deepcopy(im) for im in self.ax.images]
+        extent = deepcopy(self.image.get_extent())
+        figcopy.image = figcopy.ax.imshow(deepcopy(self.image.get_array()), extent=extent)
+        figcopy.mask_image = {}
+        for m in self.mask_image:
+            figcopy.mask_image[m] = figcopy.ax.imshow(deepcopy(self.mask_image[m].get_array()), extent=extent)
+        # mask_image_ = deepcopy(self.mask_image)
+        # ax_.images = [image_] + list(mask_image_.values())
+
+        # figcopy = PlotStaticFigure()
+        # setattr(figcopy, "fig", fig_)
+        # setattr(figcopy, "ax", ax_)
+        # setattr(figcopy, "cax", cax_)
+        # # setattr(figcopy, "cbar", deepcopy(self.cbar))
+        # setattr(figcopy, "image", image_)
+        # setattr(figcopy, "mask_image", mask_image_)
+        return figcopy
+
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()

@@ -151,10 +151,12 @@ def plot(scipp_obj,
         if interactive:
             output[key] = sciplot
         else:
-            output[key] = deepcopy(sciplot.view.figure)
+            output[key] = sciplot.view.figure.copy()
             del sciplot
+    del output
 
-    return output
+    return
+    # return output
 
 
 class Plot(dict):
