@@ -153,6 +153,7 @@ def plot(scipp_obj,
     # del output
 
     # return
+    plt.ion()
     return output
 
 

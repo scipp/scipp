@@ -69,12 +69,20 @@ class PlotFigure2d:
         figcopy.ax.set_ylim(deepcopy(self.ax.get_ylim()))
         extent = deepcopy(self.image.get_extent())
         figcopy.image = figcopy.ax.imshow(deepcopy(self.image.get_array()),
-                                          extent=extent)
+                                          extent=extent, origin="lower",
+                                          aspect="auto")
         figcopy.mask_image = {}
         for m in self.mask_image:
             figcopy.mask_image[m] = figcopy.ax.imshow(deepcopy(
                 self.mask_image[m].get_array()),
-                                                      extent=extent)
+                                                      extent=extent, origin="lower",
+                                          aspect="auto")
+        figcopy.ax.set_xlabel(deepcopy(self.ax.get_xlabel()))
+        figcopy.ax.set_ylabel(deepcopy(self.ax.get_ylabel()))
+        if self.cbar:
+            figcopy.cbar = plt.colorbar(figcopy.image, ax=figcopy.ax, cax=figcopy.cax)
+            figcopy.cbar.set_label(deepcopy(self.cbar.ax.get_ylabel()))
+            figcopy.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         return figcopy
 
     def _ipython_display_(self):
