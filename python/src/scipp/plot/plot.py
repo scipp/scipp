@@ -153,10 +153,10 @@ def plot(scipp_obj,
         else:
             output[key] = sciplot.view.figure.copy()
             del sciplot
-    del output
+    # del output
 
-    return
-    # return output
+    # return
+    return output
 
 
 class Plot(dict):

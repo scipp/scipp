@@ -258,11 +258,11 @@ class PlotView2d:
     def reset_profile(self):
         if self.profile_scatter is not None:
             self.profile_scatter = None
-            self.ax.collections = []
-            self.fig.canvas.draw_idle()
+            self.figure.ax.collections = []
+            self.figure.fig.canvas.draw_idle()
 
     def update_profile(self, event):
-        if event.inaxes == self.ax:
+        if event.inaxes == self.figure.ax:
             xdata = event.xdata - self.current_lims["x"][0]
             ydata = event.ydata - self.current_lims["y"][0]
             self.controller.update_profile(xdata, ydata)
@@ -281,20 +281,20 @@ class PlotView2d:
             self.profile_update_lock = False
         else:
             self.keep_profile(event)
-        self.fig.canvas.draw_idle()
+        self.figure.fig.canvas.draw_idle()
 
     def update_profile_connection(self, visible):
         # Connect picking events
         if visible:
-            self.profile_pick_connection = self.fig.canvas.mpl_connect(
+            self.profile_pick_connection = self.figure.fig.canvas.mpl_connect(
                 'pick_event', self.keep_or_remove_profile)
-            self.profile_hover_connection = self.fig.canvas.mpl_connect(
+            self.profile_hover_connection = self.figure.fig.canvas.mpl_connect(
                 'motion_notify_event', self.update_profile)
         else:
             if self.profile_pick_connection is not None:
-                self.fig.canvas.mpl_disconnect(self.profile_pick_connection)
+                self.figure.fig.canvas.mpl_disconnect(self.profile_pick_connection)
             if self.profile_hover_connection is not None:
-                self.fig.canvas.mpl_disconnect(self.profile_hover_connection)
+                self.figure.fig.canvas.mpl_disconnect(self.profile_hover_connection)
 
     def keep_profile(self, event):
         xdata = event.mouseevent.xdata
@@ -304,7 +304,7 @@ class PlotView2d:
         line_id = self.profile_counter
         self.profile_ids.append(line_id)
         if self.profile_scatter is None:
-            self.profile_scatter = self.ax.scatter([xdata], [ydata],
+            self.profile_scatter = self.figure.ax.scatter([xdata], [ydata],
                                                    c=[col],
                                                    picker=5)
         else:

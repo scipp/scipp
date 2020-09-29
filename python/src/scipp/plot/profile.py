@@ -3,13 +3,13 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .lineplot import LinePlot
+from .figure1d import PlotFigure1d
 
 # Other imports
 import numpy as np
 
 
-class ProfileView(LinePlot):
+class ProfileView(PlotFigure1d):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.current_visible_state = False
