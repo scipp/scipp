@@ -8,7 +8,6 @@ from .._utils import make_random_color
 
 
 class PlotView1d:
-
     def __init__(self,
                  controller=None,
                  ax=None,
@@ -31,16 +30,16 @@ class PlotView1d:
         self.profile_counter = -1
 
         self.figure = PlotFigure1d(errorbars=errorbars,
-                               ax=ax,
-                               mpl_line_params=mpl_line_params,
-                               title=title,
-                               unit=unit,
-                               logx=logx,
-                               logy=logy,
-                               grid=grid,
-                               mask_params=mask_params,
-                               masks=masks,
-                               picker=picker)
+                                   ax=ax,
+                                   mpl_line_params=mpl_line_params,
+                                   title=title,
+                                   unit=unit,
+                                   logx=logx,
+                                   logy=logy,
+                                   grid=grid,
+                                   mask_params=mask_params,
+                                   masks=masks,
+                                   picker=picker)
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()

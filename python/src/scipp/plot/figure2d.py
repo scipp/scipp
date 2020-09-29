@@ -1,21 +1,17 @@
-
 # Scipp imports
 from .. import config
 from .figure import get_mpl_axes, PlotStaticFigure
-from .._utils import make_random_color
 
 # Other imports
 import numpy as np
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
-from matplotlib.collections import PathCollection
 import warnings
 import io
 from copy import deepcopy
 
 
 class PlotFigure2d:
-
     def __init__(self,
                  ax=None,
                  cax=None,
@@ -35,18 +31,6 @@ class PlotFigure2d:
                  mask_cmap=None,
                  masks=None,
                  resolution=None):
-
-        # self.xlim_updated = False
-        # self.ylim_updated = False
-        # self.current_lims = {"x": np.zeros(2), "y": np.zeros(2)}
-        # self.global_lims = {"x": np.zeros(2), "y": np.zeros(2)}
-
-        # self.profile_hover_connection = None
-        # self.profile_pick_connection = None
-        # self.profile_update_lock = False
-        # self.profile_scatter = None
-        # self.profile_counter = -1
-        # self.profile_ids = []
 
         # Get matplotlib figure and axes
         self.fig, self.ax, self.cax, self.own_axes = get_mpl_axes(
@@ -76,38 +60,22 @@ class PlotFigure2d:
             self.ax.set_xscale("log")
         if logy:
             self.ax.set_yscale("log")
-        # if self.own_axes:
-        #     self.fig.tight_layout(rect=config.plot.padding)
-
-        # # Connect changes in axes limits to resampling function
-        # self.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
-        # self.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
-
-        return
 
     def copy(self):
         figcopy = PlotStaticFigure()
-        figcopy.fig, figcopy.ax, figcopy.cax, _ = get_mpl_axes(figsize=self.fig.get_size_inches())
+        figcopy.fig, figcopy.ax, figcopy.cax, _ = get_mpl_axes(
+            figsize=self.fig.get_size_inches())
         figcopy.ax.set_xlim(deepcopy(self.ax.get_xlim()))
         figcopy.ax.set_ylim(deepcopy(self.ax.get_ylim()))
-        # im_list = [deepcopy(im) for im in self.ax.images]
         extent = deepcopy(self.image.get_extent())
-        figcopy.image = figcopy.ax.imshow(deepcopy(self.image.get_array()), extent=extent)
+        figcopy.image = figcopy.ax.imshow(deepcopy(self.image.get_array()),
+                                          extent=extent)
         figcopy.mask_image = {}
         for m in self.mask_image:
-            figcopy.mask_image[m] = figcopy.ax.imshow(deepcopy(self.mask_image[m].get_array()), extent=extent)
-        # mask_image_ = deepcopy(self.mask_image)
-        # ax_.images = [image_] + list(mask_image_.values())
-
-        # figcopy = PlotStaticFigure()
-        # setattr(figcopy, "fig", fig_)
-        # setattr(figcopy, "ax", ax_)
-        # setattr(figcopy, "cax", cax_)
-        # # setattr(figcopy, "cbar", deepcopy(self.cbar))
-        # setattr(figcopy, "image", image_)
-        # setattr(figcopy, "mask_image", mask_image_)
+            figcopy.mask_image[m] = figcopy.ax.imshow(deepcopy(
+                self.mask_image[m].get_array()),
+                                                      extent=extent)
         return figcopy
-
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
@@ -148,42 +116,6 @@ class PlotFigure2d:
             im.set_visible(visible)
         self.fig.canvas.draw_idle()
 
-    # def check_for_xlim_update(self, event_ax):
-    #     self.xlim_updated = True
-    #     if self.ylim_updated:
-    #         self.update_bins_from_axes_limits()
-
-    # def check_for_ylim_update(self, event_ax):
-    #     self.ylim_updated = True
-    #     if self.xlim_updated:
-    #         self.update_bins_from_axes_limits()
-
-    # def update_bins_from_axes_limits(self):
-    #     """
-    #     Update the axis limits and resample the image according to new viewport
-    #     """
-    #     self.xlim_updated = False
-    #     self.ylim_updated = False
-    #     xylims = {}
-
-    #     # Make sure we don't overrun the original array bounds
-    #     xylims["x"] = np.clip(self.ax.get_xlim(),
-    #                           *sorted(self.global_lims["x"]))
-    #     xylims["y"] = np.clip(self.ax.get_ylim(),
-    #                           *sorted(self.global_lims["y"]))
-
-    #     dx = np.abs(self.current_lims["x"][1] - self.current_lims["x"][0])
-    #     dy = np.abs(self.current_lims["y"][1] - self.current_lims["y"][0])
-    #     diffx = np.abs(self.current_lims["x"] - xylims["x"]) / dx
-    #     diffy = np.abs(self.current_lims["y"] - xylims["y"]) / dy
-    #     diff = diffx.sum() + diffy.sum()
-
-    #     # Only resample image if the changes in axes limits are large enough to
-    #     # avoid too many updates while panning.
-    #     if diff > 0.1:
-    #         self.current_lims = xylims
-    #         self.controller.update_viewport(xylims)
-
     def reset_home_button(self, axparams):
         # Some annoying house-keeping when using X/Y buttons: we need to update
         # the deeply embedded limits set by the Home button in the matplotlib
@@ -207,11 +139,6 @@ class PlotFigure2d:
                         key] = tuple(alist)
 
     def update_axes(self, axparams, axformatter, axlocator, logx, logy):
-
-        # self.current_lims['x'] = axparams["x"]["lims"]
-        # self.current_lims['y'] = axparams["y"]["lims"]
-        # self.global_lims["x"] = axparams["x"]["lims"]
-        # self.global_lims["y"] = axparams["y"]["lims"]
 
         is_log = {"x": logx, "y": logy}
 

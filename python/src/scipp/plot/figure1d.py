@@ -16,7 +16,6 @@ import io
 
 
 class PlotFigure1d:
-
     def __init__(self,
                  errorbars=None,
                  ax=None,

@@ -3,21 +3,15 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .. import config
 from .figure2d import PlotFigure2d
 from .._utils import make_random_color
 
 # Other imports
 import numpy as np
-import ipywidgets as ipw
-import matplotlib.pyplot as plt
 from matplotlib.collections import PathCollection
-import warnings
-import io
 
 
 class PlotView2d:
-
     def __init__(self,
                  controller=None,
                  ax=None,
@@ -48,106 +42,49 @@ class PlotView2d:
         self.profile_ids = []
 
         self.figure = PlotFigure2d(ax=ax,
-                 cax=cax,
-                 figsize=figsize,
-                 aspect=aspect,
-                 cmap=cmap,
-                 norm=norm,
-                 title=title,
-                 cbar=cbar,
-                 unit=unit,
-                 log=log,
-                 vmin=vmin,
-                 vmax=vmax,
-                 color=color,
-                 logx=logx,
-                 logy=logy,
-                 mask_cmap=mask_cmap,
-                 masks=masks,
-                 resolution=resolution)
+                                   cax=cax,
+                                   figsize=figsize,
+                                   aspect=aspect,
+                                   cmap=cmap,
+                                   norm=norm,
+                                   title=title,
+                                   cbar=cbar,
+                                   unit=unit,
+                                   log=log,
+                                   vmin=vmin,
+                                   vmax=vmax,
+                                   color=color,
+                                   logx=logx,
+                                   logy=logy,
+                                   mask_cmap=mask_cmap,
+                                   masks=masks,
+                                   resolution=resolution)
 
         self.xlim_updated = False
         self.ylim_updated = False
         self.current_lims = {"x": np.zeros(2), "y": np.zeros(2)}
         self.global_lims = {"x": np.zeros(2), "y": np.zeros(2)}
 
-        # # Get matplotlib figure and axes
-        # self.fig, self.ax, self.cax, self.own_axes = get_mpl_axes(
-        #     ax=ax, cax=cax, figsize=figsize)
-
-        # # Save aspect ratio setting
-        # if aspect is None:
-        #     aspect = config.plot.aspect
-
-        # self.image = self.make_default_imshow(cmap=cmap,
-        #                                       norm=norm,
-        #                                       aspect=aspect,
-        #                                       picker=5)
-        # self.ax.set_title(title)
-        # if cbar:
-        #     self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
-        #     self.cbar.set_label(unit)
-        # if self.cax is None:
-        #     self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
-        # self.mask_image = {}
-        # for m in masks:
-        #     self.mask_image[m] = self.make_default_imshow(cmap=mask_cmap,
-        #                                                   norm=norm,
-        #                                                   aspect=aspect)
-        # if logx:
-        #     self.ax.set_xscale("log")
-        # if logy:
-        #     self.ax.set_yscale("log")
-        # if self.own_axes:
-        #     self.fig.tight_layout(rect=config.plot.padding)
-
         # Connect changes in axes limits to resampling function
-        self.figure.ax.callbacks.connect('xlim_changed', self.check_for_xlim_update)
-        self.figure.ax.callbacks.connect('ylim_changed', self.check_for_ylim_update)
-
-        return
+        self.figure.ax.callbacks.connect('xlim_changed',
+                                         self.check_for_xlim_update)
+        self.figure.ax.callbacks.connect('ylim_changed',
+                                         self.check_for_ylim_update)
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
         return self.figure._to_widget()
-        # if hasattr(self.fig.canvas, "widgets"):
-        #     return self.fig.canvas
-        # else:
-        #     buf = io.BytesIO()
-        #     self.fig.savefig(buf, format='png')
-        #     buf.seek(0)
-        #     return ipw.Image(value=buf.getvalue(),
-        #                      width=config.plot.width,
-        #                      height=config.plot.height)
 
     def savefig(self, filename=None):
         self.figure.savefig(filename)
 
-    # def make_default_imshow(self, cmap, norm, aspect=None, picker=None):
-    #     return self.ax.imshow([[1.0, 1.0], [1.0, 1.0]],
-    #                           norm=norm,
-    #                           extent=[1, 2, 1, 2],
-    #                           origin="lower",
-    #                           aspect=aspect,
-    #                           interpolation="nearest",
-    #                           cmap=cmap,
-    #                           picker=picker)
-
     def rescale_to_data(self, vmin, vmax):
         self.figure.rescale_to_data(vmin=vmin, vmax=vmax)
-        # self.image.set_clim([vmin, vmax])
-        # for m, im in self.mask_image.items():
-        #     im.set_clim([vmin, vmax])
-        # self.fig.canvas.draw_idle()
 
     def toggle_mask(self, change):
         self.figure.toggle_mask(change["owner"].mask_name, change["new"])
-        # im = self.mask_image[change["owner"].mask_name]
-        # if im.get_url() != "hide":
-        #     im.set_visible(change["new"])
-        # self.fig.canvas.draw_idle()
 
     def check_for_xlim_update(self, event_ax):
         self.xlim_updated = True
@@ -185,28 +122,6 @@ class PlotView2d:
             self.current_lims = xylims
             self.controller.update_viewport(xylims)
 
-    # def reset_home_button(self, axparams):
-    #     # Some annoying house-keeping when using X/Y buttons: we need to update
-    #     # the deeply embedded limits set by the Home button in the matplotlib
-    #     # toolbar. The home button actually brings the first element in the
-    #     # navigation stack to the top, so we need to modify the first element
-    #     # in the navigation stack in-place.
-    #     if self.fig is not None:
-    #         if self.fig.canvas.toolbar is not None:
-    #             if len(self.fig.canvas.toolbar._nav_stack._elements) > 0:
-    #                 # Get the first key in the navigation stack
-    #                 key = list(self.fig.canvas.toolbar._nav_stack._elements[0].
-    #                            keys())[0]
-    #                 # Construct a new tuple for replacement
-    #                 alist = []
-    #                 for x in self.fig.canvas.toolbar._nav_stack._elements[0][
-    #                         key]:
-    #                     alist.append(x)
-    #                 alist[0] = (*axparams["x"]["lims"], *axparams["y"]["lims"])
-    #                 # Insert the new tuple
-    #                 self.fig.canvas.toolbar._nav_stack._elements[0][
-    #                     key] = tuple(alist)
-
     def update_axes(self, axparams, axformatter, axlocator, logx, logy):
 
         self.current_lims['x'] = axparams["x"]["lims"]
@@ -214,46 +129,11 @@ class PlotView2d:
         self.global_lims["x"] = axparams["x"]["lims"]
         self.global_lims["y"] = axparams["y"]["lims"]
 
-        # is_log = {"x": logx, "y": logy}
-
-        # # Set axes labels
-        # self.ax.set_xlabel(axparams["x"]["label"])
-        # self.ax.set_ylabel(axparams["y"]["label"])
-
-        # for xy, param in axparams.items():
-        #     axis = getattr(self.ax, "{}axis".format(xy))
-        #     axis.set_major_formatter(axformatter[param["dim"]][is_log[xy]])
-        #     axis.set_major_locator(axlocator[param["dim"]][is_log[xy]])
-
-        # # Set axes limits and ticks
-        # extent_array = np.array([axparams["x"]["lims"],
-        #                          axparams["y"]["lims"]]).flatten()
-        # with warnings.catch_warnings():
-        #     warnings.filterwarnings("ignore", category=UserWarning)
-        #     self.image.set_extent(extent_array)
-        #     for m, im in self.mask_image.items():
-        #         im.set_extent(extent_array)
-        #     self.ax.set_xlim(axparams["x"]["lims"])
-        #     self.ax.set_ylim(axparams["y"]["lims"])
         self.figure.update_axes(axparams, axformatter, axlocator, logx, logy)
-
         self.reset_profile()
-        # self.figure.reset_home_button(axparams)
 
     def update_data(self, new_values):
         self.figure.update_data(new_values)
-        # self.image.set_data(new_values["values"])
-        # if new_values["extent"] is not None:
-        #     self.image.set_extent(new_values["extent"])
-        # for m in self.mask_image:
-        #     if new_values["masks"][m] is not None:
-        #         self.mask_image[m].set_data(new_values["masks"][m])
-        #     else:
-        #         self.mask_image[m].set_visible(False)
-        #         self.mask_image[m].set_url("hide")
-        #     if new_values["extent"] is not None:
-        #         self.mask_image[m].set_extent(new_values["extent"])
-        # self.fig.canvas.draw_idle()
 
     def reset_profile(self):
         if self.profile_scatter is not None:
@@ -292,9 +172,11 @@ class PlotView2d:
                 'motion_notify_event', self.update_profile)
         else:
             if self.profile_pick_connection is not None:
-                self.figure.fig.canvas.mpl_disconnect(self.profile_pick_connection)
+                self.figure.fig.canvas.mpl_disconnect(
+                    self.profile_pick_connection)
             if self.profile_hover_connection is not None:
-                self.figure.fig.canvas.mpl_disconnect(self.profile_hover_connection)
+                self.figure.fig.canvas.mpl_disconnect(
+                    self.profile_hover_connection)
 
     def keep_profile(self, event):
         xdata = event.mouseevent.xdata
@@ -305,8 +187,8 @@ class PlotView2d:
         self.profile_ids.append(line_id)
         if self.profile_scatter is None:
             self.profile_scatter = self.figure.ax.scatter([xdata], [ydata],
-                                                   c=[col],
-                                                   picker=5)
+                                                          c=[col],
+                                                          picker=5)
         else:
             new_offsets = np.concatenate(
                 (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)

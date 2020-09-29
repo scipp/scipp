@@ -3,6 +3,7 @@
 # @file
 # @author Neil Vaytet
 
+from .plot import plot
 
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
@@ -40,18 +41,6 @@ except ImportError:
 if is_doc_build:
     import matplotlib.pyplot as plt
     plt.rcParams.update({'figure.max_open_warning': 0})
-
-# except ImportError:
-#     pass
-
-
-from .plot import plot
-
-# def plot(*args, **kwargs):
-#     from .plot import plot as _plot
-#     # if mpl.get_backend().lower.endswith('nbagg'):
-#     interactive = mpl.get_backend().lower().endswith('nbagg')
-#     return _plot(*args, interactive=interactive, **kwargs)
 
 
 def superplot(scipp_obj, **kwargs):

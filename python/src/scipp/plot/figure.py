@@ -29,9 +29,7 @@ def get_mpl_axes(ax=None, cax=None, figsize=None):
     return fig, ax, cax, own_axes
 
 
-
 class PlotStaticFigure:
-
     def __init__(self):
         self.fig = None
         self.ax = None

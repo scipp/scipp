@@ -7,9 +7,6 @@ from .._scipp import core as sc
 from .. import _utils as su
 from .tools import make_fake_coord
 
-# Other imports
-from copy import deepcopy
-
 
 def plot(scipp_obj,
          interactive=True,
@@ -141,13 +138,13 @@ def plot(scipp_obj,
     output = Plot()
     for key, val in tobeplotted.items():
         sciplot = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                               name=key,
-                               ndim=val["ndims"],
-                               projection=projection,
-                               axes=val["axes"],
-                               mpl_line_params=val["mpl_line_params"],
-                               bins=bins,
-                               **kwargs)
+                           name=key,
+                           ndim=val["ndims"],
+                           projection=projection,
+                           axes=val["axes"],
+                           mpl_line_params=val["mpl_line_params"],
+                           bins=bins,
+                           **kwargs)
         if interactive:
             output[key] = sciplot
         else:
