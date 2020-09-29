@@ -32,3 +32,14 @@ class SciPlot:
         self.controller.panel = self.panel
         self.controller.profile = self.profile
         self.controller.view = self.view
+
+    def reset(self):
+        self.controller.model = None
+        self.controller.panel = None
+        self.controller.profile = None
+        self.controller.view = None
+        self.controller = None
+        self.model = None
+        self.panel = None
+        self.profile = None
+        # self.view = None

@@ -133,6 +133,7 @@ def plot(scipp_obj,
             tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
             for n, p in mpl_line_params.items():
                 tobeplotted[key]["mpl_line_params"][n][name] = p
+    # return
 
     # Plot all the subsets
     output = Plot()
@@ -148,9 +149,20 @@ def plot(scipp_obj,
         if interactive:
             output[key] = sciplot
         else:
-            output[key] = sciplot.view.figure.copy()
+            # output[key] = sciplot.view.figure.copy()
+            output[key] = sciplot.view.figure
+            sciplot.reset()
             del sciplot
+
+        # sciplot.controller.model = None
+        # sciplot.controller.panel = None
+        # sciplot.controller.profile = None
+        # sciplot.controller.view = None
+        # sciplot.controller = None
     # del output
+    # del inventory
+    # del tobeplotted
+    # del sciplot
 
     # return
     plt.ion()
