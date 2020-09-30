@@ -115,11 +115,16 @@ def test_plot_sliceviewer_with_1d_projection_with_nans():
                                   d['Sample'].values)
     d['Sample'].variances = np.where(d['Sample'].values < 0.2, np.nan,
                                      d['Sample'].variances)
-    p = plot(d, projection='1d', is_doc_build=True)
-    # Move the sliders
-    p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('tof')].value = 10
-    p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('x')].value = 10
-    p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('y')].value = 10
+    plot(d, projection='1d')
+
+    # TODO: moving the sliders is disabled for now, because we are not in a
+    # Jupyter backend and once the plot has returned, the widgets no longer
+    # exist. We need to re-enable this once we introduce unit tests for the
+    # widgets themselves, and find a good way to test slider events.
+    # # Move the sliders
+    # p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('tof')].value = 10
+    # p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('x')].value = 10
+    # p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('y')].value = 10
 
 
 def test_plot_1d_events_data_with_bool_bins():
