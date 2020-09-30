@@ -193,3 +193,30 @@ TEST(SliceByValueTest, test_slice_point_on_edge_coord_1D_duplicate) {
   auto da = make_histogram(3, 4, 4, 5);
   EXPECT_EQ(slice(da, Dim::X, 4.0 * units::m), da.slice({Dim::X, 2}));
 }
+
+TEST(SliceByValueTest, test_point_on_point_coord_1D_dataset) {
+  auto da = make_points(1, 3, 5, 4, 2);
+  auto ds =
+      Dataset{{{"a", DataArrayConstView{da}}, {"b", DataArrayConstView{da}}}};
+  EXPECT_EQ(slice(ds, Dim::X, 1.0 * units::m), ds.slice({Dim::X, 0}));
+  EXPECT_EQ(slice(ds, Dim::X, 3.0 * units::m), ds.slice({Dim::X, 1}));
+  EXPECT_EQ(slice(ds, Dim::X, 4.0 * units::m), ds.slice({Dim::X, 3}));
+  EXPECT_EQ(slice(ds, Dim::X, 2.0 * units::m), ds.slice({Dim::X, 4}));
+}
+TEST(SliceByValueTest, test_slice_point_on_edge_coord_1D_dataset) {
+  auto da = make_histogram(3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+  auto ds =
+      Dataset{{{"a", DataArrayConstView{da}}, {"b", DataArrayConstView{da}}}};
+  // Test start on left boundary (closed on left), so includes boundary
+  EXPECT_EQ(slice(ds, Dim::X, 3.0 * units::m), ds.slice({Dim::X, 0}));
+  // Same as above, takes lower bounds of bin so same bin
+  EXPECT_EQ(slice(ds, Dim::X, 3.5 * units::m), ds.slice({Dim::X, 0}));
+  // Next bin
+  EXPECT_EQ(slice(ds, Dim::X, 4.0 * units::m), ds.slice({Dim::X, 1}));
+  // Last bin
+  EXPECT_EQ(slice(ds, Dim::X, 11.9 * units::m), ds.slice({Dim::X, 8}));
+  // (closed on right) so out of bounds
+  EXPECT_THROW(slice(ds, Dim::X, 12.0 * units::m), except::SliceError);
+  // out of bounds for left for completeness
+  EXPECT_THROW(slice(ds, Dim::X, 2.99 * units::m), except::SliceError);
+}

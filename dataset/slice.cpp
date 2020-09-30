@@ -32,7 +32,7 @@ scipp::index get_index(const VariableConstView &coord, const Dim dim,
   return std::clamp<scipp::index>(0, i, coord.dims()[dim]);
 }
 
-auto get_1d_coord(const DataArrayConstView &data, const Dim dim) {
+template <typename T> auto get_1d_coord(const T &data, const Dim dim) {
   const auto &coord = data.coords()[dim];
   if (coord.dims().ndim() != 1)
     throw except::DimensionError(
@@ -40,7 +40,7 @@ auto get_1d_coord(const DataArrayConstView &data, const Dim dim) {
   return coord;
 }
 
-auto get_coord(const DataArrayConstView &data, const Dim dim) {
+template <typename T> auto get_coord(const T &data, const Dim dim) {
   const auto &coord = get_1d_coord(data, dim);
   const bool ascending = is_sorted(coord, dim, variable::SortOrder::Ascending);
   const bool descending =
@@ -120,5 +120,9 @@ DataArrayView slice(DataArray &data, const Dim dim,
                     const VariableConstView begin,
                     const VariableConstView end) {
   return slice(DataArrayView(data), dim, begin, end);
+}
+DatasetConstView slice(const DatasetConstView &ds, const Dim dim,
+                       const VariableConstView value) {
+  return slice<DatasetConstView>(ds, dim, value);
 }
 } // namespace scipp::dataset
