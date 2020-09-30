@@ -33,13 +33,16 @@ class SciPlot:
         self.controller.profile = self.profile
         self.controller.view = self.view
 
-    def reset(self):
+    def as_static(self, keep_widgets=False):
         self.controller.model = None
-        self.controller.panel = None
-        self.controller.profile = None
-        self.controller.view = None
-        self.controller = None
         self.model = None
-        self.panel = None
-        self.profile = None
-        # self.view = None
+        if not keep_widgets:
+            self.controller.panel = None
+            self.controller.profile = None
+            self.controller.view = None
+            self.controller = None
+            self.panel = None
+            self.profile = None
+            return self.view.figure
+        else:
+            return self

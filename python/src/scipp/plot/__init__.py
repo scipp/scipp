@@ -3,7 +3,7 @@
 # @file
 # @author Neil Vaytet
 
-from .plot import plot
+from .plot import plot as _plot
 
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
@@ -41,6 +41,10 @@ except ImportError:
 if is_doc_build:
     import matplotlib.pyplot as plt
     plt.rcParams.update({'figure.max_open_warning': 0})
+
+
+def plot(scipp_obj, **kwargs):
+    return _plot(scipp_obj, is_doc_build=is_doc_build, **kwargs)
 
 
 def superplot(scipp_obj, **kwargs):

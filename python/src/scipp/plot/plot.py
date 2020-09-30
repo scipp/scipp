@@ -17,6 +17,7 @@ def plot(scipp_obj,
          linestyle=None,
          linewidth=None,
          bins=None,
+         is_doc_build=False,
          **kwargs):
     """
     Wrapper function to plot any kind of scipp object.
@@ -133,7 +134,6 @@ def plot(scipp_obj,
             tobeplotted[key]["scipp_obj_dict"][name] = inventory[name]
             for n, p in mpl_line_params.items():
                 tobeplotted[key]["mpl_line_params"][n][name] = p
-    # return
 
     # Plot all the subsets
     output = Plot()
@@ -146,25 +146,10 @@ def plot(scipp_obj,
                            mpl_line_params=val["mpl_line_params"],
                            bins=bins,
                            **kwargs)
-        if interactive:
-            output[key] = sciplot
-        else:
-            # output[key] = sciplot.view.figure.copy()
-            output[key] = sciplot.view.figure
-            sciplot.reset()
-            del sciplot
+        if not interactive:
+            sciplot.as_static(keep_widgets=is_doc_build)
+        output[key] = sciplot
 
-        # sciplot.controller.model = None
-        # sciplot.controller.panel = None
-        # sciplot.controller.profile = None
-        # sciplot.controller.view = None
-        # sciplot.controller = None
-    # del output
-    # del inventory
-    # del tobeplotted
-    # del sciplot
-
-    # return
     plt.ion()
     return output
 
