@@ -127,7 +127,7 @@ class VariableDrawer:
     def size(self):
         """Return the size (width and height) of the rendered output"""
         width = 2 * self._margin
-        height = 4 * self._margin  # double margin on top for title space
+        height = 3 * self._margin  # double margin on top for title space
         shape = self._extents()
 
         if shape[-1] == self._events_flag:
