@@ -1,6 +1,6 @@
 # Scipp imports
 from .. import config
-from .figure import get_mpl_axes, PlotStaticFigure
+from .tools import get_mpl_axes
 
 # Other imports
 import numpy as np

@@ -116,3 +116,23 @@ def check_log_limits(lims=None, vmin=None, vmax=None, log=None):
         return [vmin, vmax]
     else:
         return vmin, vmax
+
+
+def get_mpl_axes(ax=None, cax=None, figsize=None):
+    """
+    Return matplotlib figure and axes
+    """
+    import matplotlib.pyplot as plt
+    fig = None
+    own_axes = True
+    if ax is None:
+        if figsize is None:
+            figsize = (config.plot.width / config.plot.dpi,
+                       config.plot.height / config.plot.dpi)
+        fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=config.plot.dpi)
+        fig.tight_layout(rect=config.plot.padding)
+    else:
+        own_axes = False
+        fig = ax.get_figure()
+
+    return fig, ax, cax, own_axes

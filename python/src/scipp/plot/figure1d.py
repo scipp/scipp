@@ -4,8 +4,7 @@
 
 # Scipp imports
 from .. import config
-from .figure import get_mpl_axes
-from .tools import get_line_param
+from .tools import get_mpl_axes, get_line_param
 
 # Other imports
 import numpy as np

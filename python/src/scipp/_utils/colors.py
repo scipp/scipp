@@ -29,7 +29,6 @@ def make_random_color(fmt='rgb'):
       - 'rgba': (1.0, 1.0, 0.392, 1.0)
       - 'hex': #ffff64
     """
-
     rgb = np.random.randint(0, 255, 3)
     if fmt == 'rgb':
         return rgb
