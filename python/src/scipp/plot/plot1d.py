@@ -94,7 +94,7 @@ class SciPlot1d(SciPlot):
             logx=logx,
             logy=logy,
             mpl_line_params=mpl_line_params,
-            picker=5,
+            picker=True,
             grid=grid)
 
         # Profile view which displays an additional dimension as a 1d plot

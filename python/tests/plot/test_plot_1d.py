@@ -111,11 +111,11 @@ def test_plot_sliceviewer_with_1d_projection():
 
 def test_plot_sliceviewer_with_1d_projection_with_nans():
     d = make_dense_dataset(ndim=3, binedges=True, variances=True)
-    d['Sample'].values = np.where(d['Sample'].values < -0.8, np.nan,
+    d['Sample'].values = np.where(d['Sample'].values < 0.0, np.nan,
                                   d['Sample'].values)
-    d['Sample'].variances = np.where(d['Sample'].values < 0., np.nan,
+    d['Sample'].variances = np.where(d['Sample'].values < 0.2, np.nan,
                                      d['Sample'].variances)
-    p = plot(d, projection='1d')
+    p = plot(d, projection='1d', is_doc_build=True)
     # Move the sliders
     p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('tof')].value = 10
     p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('x')].value = 10

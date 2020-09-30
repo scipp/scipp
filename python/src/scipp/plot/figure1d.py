@@ -27,7 +27,7 @@ class PlotFigure1d:
                  mask_params=None,
                  masks=None,
                  figsize=None,
-                 picker=None,
+                 picker=False,
                  is_profile=False):
 
         # Matplotlib line containers
@@ -183,6 +183,8 @@ class PlotFigure1d:
                         marker=self.mpl_line_params["marker"][name])
                     self.mask_lines[name][m].set_gid("onaxes")
 
+            if self.picker:
+                self.data_lines[name].set_pickradius(5.0)
             self.data_lines[name].set_url(name)
 
             # Add error bars

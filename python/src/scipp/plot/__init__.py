@@ -44,7 +44,9 @@ if is_doc_build:
 
 
 def plot(scipp_obj, **kwargs):
-    return _plot(scipp_obj, is_doc_build=is_doc_build, **kwargs)
+    if "is_doc_build" not in kwargs:
+        kwargs.update({"is_doc_build": is_doc_build})
+    return _plot(scipp_obj, **kwargs)
 
 
 def superplot(scipp_obj, **kwargs):

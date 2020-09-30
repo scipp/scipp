@@ -20,13 +20,12 @@ class PlotView1d:
                  masks=None,
                  mpl_line_params=None,
                  grid=False,
-                 picker=None):
+                 picker=False):
 
         self.controller = controller
         self.profile_hover_connection = None
         self.profile_pick_connection = None
         self.profile_update_lock = False
-        self.profile_scatter = None
         self.profile_counter = -1
 
         self.figure = PlotFigure1d(errorbars=errorbars,
@@ -73,10 +72,12 @@ class PlotView1d:
         self.figure.update_line_color(line_id, color)
 
     def reset_profile(self):
-        if self.profile_scatter is not None:
-            self.profile_scatter = None
-            self.ax.collections = []
-            self.fig.canvas.draw_idle()
+        new_lines = []
+        for line in self.figure.ax.lines:
+            if not (line.get_url() == "axvline"):
+                new_lines.append(line)
+        self.figure.ax.lines = new_lines
+        self.figure.fig.canvas.draw_idle()
 
     def update_profile(self, event):
         if event.inaxes == self.figure.ax:
@@ -113,13 +114,15 @@ class PlotView1d:
         col = make_random_color(fmt='hex')
         self.profile_counter += 1
         line_id = self.profile_counter
-        line = self.figure.ax.axvline(xdata, color=col, picker=5)
+        line = self.figure.ax.axvline(xdata, color=col, picker=True)
+        line.set_pickradius(5.0)
         line.set_url("axvline")
         line.set_gid(line_id)
         self.controller.keep_line(target="profile",
                                   name=line_name,
                                   color=col,
                                   line_id=line_id)
+        self.rescale_to_data()
 
     def remove_profile(self, event):
         new_lines = []
