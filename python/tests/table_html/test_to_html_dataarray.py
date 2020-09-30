@@ -43,7 +43,7 @@ def test_basic(dims, lengths):
     assert_dims_section(data, dim_section)
 
     data_names = [
-        LABEL_NAME,
+        [dims[0], LABEL_NAME],
         "",  # dataarray does not have a data name
         MASK_NAME,
         ATTR_NAME
@@ -156,7 +156,7 @@ def test_bin_edge(dims, lengths):
     dim_section = sections.pop(0)
     assert_dims_section(data, dim_section)
 
-    data_names = [LABEL_NAME, MASK_NAME]
+    data_names = [[dims[-1], LABEL_NAME], MASK_NAME]
 
     for section, name in zip(sections, data_names):
         assert_section(section,
@@ -226,7 +226,7 @@ def test_bin_edge_and_events(dims, lengths):
     dim_section = sections.pop(0)
     assert_dims_section(data, dim_section)
 
-    data_names = [LABEL_NAME, MASK_NAME]
+    data_names = [[dims[-1], LABEL_NAME], MASK_NAME]
 
     for section, name in zip(sections, data_names):
         assert_section(section,
