@@ -34,7 +34,7 @@ def test_basic(dims, lengths):
     sections = html.find_all(class_="xr-section-item")
     assert len(sections) == 5
     expected_sections = [
-        "Dimensions", "Coordinates", "Data", "Masks", "Coordinates (unaligned)"
+        "Dimensions", "Coordinates", "Data", "Masks", "Coords (unaligned)"
     ]
     for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
@@ -142,7 +142,7 @@ def test_bin_edge(dims, lengths):
     sections = html.find_all(class_="xr-section-item")
     assert len(sections) == 5
     expected_sections = [
-        "Dimensions", "Coordinates", "Data", "Masks", "Coordinates (unaligned)"
+        "Dimensions", "Coordinates", "Data", "Masks", "Coords (unaligned)"
     ]
     for actual_section, expected_section in zip(sections, expected_sections):
         assert expected_section in actual_section.text
@@ -206,7 +206,7 @@ def test_bin_edge_and_events(dims, lengths):
     sections = html.find_all(class_="xr-section-item")
 
     expected_sections = [
-        "Dimensions", "Coordinates", "Data", "Masks", "Coordinates (unaligned)"
+        "Dimensions", "Coordinates", "Data", "Masks", "Coords (unaligned)"
     ]
     assert len(sections) == 5
     for actual_section, expected_section in zip(sections, expected_sections):
