@@ -8,6 +8,7 @@
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/reduction.h"
 
 using namespace scipp::core;
 
@@ -30,6 +31,9 @@ Variable equal(const VariableConstView &x, const VariableConstView &y) {
 }
 Variable not_equal(const VariableConstView &x, const VariableConstView &y) {
   return transform(x, y, element::not_equal);
+}
+Variable is_approx(const VariableConstView & a, const VariableConstView& b, const VariableConstView& t){
+  return all(transform(a, b, t, element::approx));
 }
 
 } // namespace scipp::variable
