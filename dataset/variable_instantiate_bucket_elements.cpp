@@ -39,6 +39,16 @@ private:
   VariableView data(const VariableView &var) const override {
     return std::get<2>(var.constituents<bucket<DataArray>>()).data();
   }
+  core::element_array_view
+  array_params(const VariableConstView &var) const override {
+    const auto &[indices, dim, buffer] = var.constituents<bucket<DataArray>>();
+    auto params = var.array_params();
+    return {0, // no offset required in buffer since access via indices
+            params.dims(),
+            params.dataDims(),
+            {dim, buffer.dims(),
+             indices.values<std::pair<scipp::index, scipp::index>>().data()}};
+  }
 };
 
 namespace {
