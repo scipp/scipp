@@ -27,6 +27,7 @@ class PlotWidgets:
         self.slider = {}
         self.slider_readout = {}
         self.thickness_slider = {}
+        self.thickness_readout = {}
         self.buttons = {}
         self.profile_button = {}
         self.showhide = {}
@@ -63,14 +64,6 @@ class PlotWidgets:
                                              disabled=disabled,
                                              layout={"width": "200px"})
 
-            # TODO: use the ax tick formatter to make the readout value when
-            # non-dim coords are used
-            ind = self.slider[dim].value
-            self.slider_readout[dim] = ipw.Label(value=value_to_string(
-                to_bin_centers(
-                    self.controller.coords[self.controller.name][dim][
-                        dim, ind:ind + 2], dim).values[0]))
-
             self.continuous_update[dim] = ipw.Checkbox(
                 value=True,
                 description="Continuous update",
@@ -89,10 +82,23 @@ class PlotWidgets:
                 step=0.01 * dx,
                 description="Thickness",
                 continuous_update=False,
-                readout=True,
+                readout=False,
                 disabled=True
                 if self.controller.multid_coord is not None else disabled,
-                layout={'width': "270px"})
+                layout={'width': "180px"})
+
+            # TODO: use the ax tick formatter to make the readout value when
+            # non-dim coords are used
+            ind = self.slider[dim].value
+            loc = to_bin_centers(
+                self.controller.coords[self.controller.name][dim][dim,
+                                                                  ind:ind + 2],
+                dim).values[0]
+            self.slider_readout[dim] = ipw.Label(value=value_to_string(loc))
+            self.thickness_readout[dim] = ipw.Label(
+                value=self.make_thickness_slider_readout(
+                    dim, loc, ind, self.controller.coords[self.controller.name]
+                    [dim]))
 
             self.profile_button[dim] = ipw.Button(description="Profile",
                                                   disabled=disabled,
@@ -107,6 +113,7 @@ class PlotWidgets:
                 self.slider_readout[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
                 self.thickness_slider[dim].layout.display = 'none'
+                self.thickness_readout[dim].layout.display = 'none'
                 self.profile_button[dim].layout.display = 'none'
 
             # Add one set of buttons per dimension
@@ -126,6 +133,7 @@ class PlotWidgets:
             setattr(self.slider[dim], "dim", dim)
             setattr(self.continuous_update[dim], "dim", dim)
             setattr(self.thickness_slider[dim], "dim", dim)
+            setattr(self.thickness_readout[dim], "dim", dim)
             setattr(self.profile_button[dim], "dim", dim)
 
             # Hide buttons and labels for 1d variables
@@ -133,6 +141,7 @@ class PlotWidgets:
                 self.buttons[dim].layout.display = 'none'
                 self.dim_labels[dim].layout.display = 'none'
                 self.thickness_slider[dim].layout.display = 'none'
+                self.thickness_readout[dim].layout.display = 'none'
                 self.profile_button[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
 
@@ -148,6 +157,7 @@ class PlotWidgets:
                 self.continuous_update[dim].layout.display = 'none'
                 self.profile_button[dim].layout.display = 'none'
                 self.thickness_slider[dim].layout.display = 'none'
+                self.thickness_readout[dim].layout.display = 'none'
 
             # Add observer to buttons
             self.buttons[dim].on_msg(self.update_buttons)
@@ -161,7 +171,7 @@ class PlotWidgets:
                 self.dim_labels[dim], self.slider[dim],
                 self.slider_readout[dim], self.continuous_update[dim],
                 self.buttons[dim], self.thickness_slider[dim],
-                self.profile_button[dim]
+                self.thickness_readout[dim], self.profile_button[dim]
             ]
             self.container.append(ipw.HBox(row))
 
@@ -266,3 +276,17 @@ class PlotWidgets:
         change["owner"].description = "Hide all" if change["new"] else \
             "Show all"
         return
+
+    def make_thickness_slider_readout(self, dim, loc, ind, coord):
+        """
+        Make a label containing start and end of range covered by thickness
+        slider.
+        """
+        thickness = self.thickness_slider[dim].value
+        if thickness == 0.0:
+            thickness_start = value_to_string(coord[dim, ind].value)
+            thickness_end = value_to_string(coord[dim, ind + 1].value)
+        else:
+            thickness_start = value_to_string(loc - 0.5 * thickness)
+            thickness_end = value_to_string(loc + 0.5 * thickness)
+        return "{} - {}".format(thickness_start, thickness_end)

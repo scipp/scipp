@@ -372,12 +372,16 @@ class PlotController:
         if change is not None:
             owner_dim = change["owner"].dim
 
-            # Update readout label
+            # Update slider readout label
             ind = self.widgets.slider[owner_dim].value
-            self.widgets.slider_readout[owner_dim].value = value_to_string(
-                to_bin_centers(
-                    self.coords[self.name][owner_dim][owner_dim, ind:ind + 2],
-                    owner_dim).values[0])
+            loc = to_bin_centers(
+                self.coords[self.name][owner_dim][owner_dim, ind:ind + 2],
+                owner_dim).values[0]
+            self.widgets.slider_readout[owner_dim].value = value_to_string(loc)
+            # Update thickness readout label
+            self.widgets.thickness_readout[
+                owner_dim].value = self.widgets.make_thickness_slider_readout(
+                    owner_dim, loc, ind, self.coords[self.name][owner_dim])
 
         slices = {}
         info = {"slice_label": ""}
