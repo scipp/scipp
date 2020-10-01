@@ -99,6 +99,8 @@ class SciPlot1d(SciPlot):
 
         # Profile view which displays an additional dimension as a 1d plot
         if self.controller.ndim > 1:
+            pad = config.plot.padding
+            pad[2] = 0.75
             self.profile = ProfileView(
                 errorbars=self.controller.errorbars,
                 ax=pax,
@@ -109,9 +111,10 @@ class SciPlot1d(SciPlot):
                 masks=self.controller.masks,
                 logx=logx,
                 logy=logy,
-                figsize=(config.plot.width / config.plot.dpi,
+                figsize=(1.3 * config.plot.width / config.plot.dpi,
                          0.6 * config.plot.height / config.plot.dpi),
-                is_profile=True)
+                padding=pad,
+                legend={"show": True, "loc": (1.02, 0.0)})
 
         # An additional panel view with widgets to save/remove lines
         if self.controller.ndim > 1:

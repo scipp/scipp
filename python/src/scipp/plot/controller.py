@@ -383,8 +383,9 @@ class PlotController:
                 owner_dim].value = self.widgets.make_thickness_slider_readout(
                     owner_dim, loc, ind, self.coords[self.name][owner_dim])
 
-        slices, info = self._get_slices_parameters(
-            lambda dim : not self.widgets.slider[dim].disabled)
+        # slices, info = self._get_slices_parameters(
+        #     lambda dim : not self.widgets.slider[dim].disabled)
+        slices, info = self._get_slices_parameters(self.func2)
 
         new_values = self.model.update_data(slices,
                                             mask_info=self._get_mask_info())
@@ -561,6 +562,12 @@ class PlotController:
 
         return
 
+    def func1(self, dim):
+        return dim != self.profile_dim
+
+    def func2(self, dim):
+        return not self.widgets.slider[dim].disabled
+
     def update_profile(self, xdata=None, ydata=None):
         """
         This is called from a mouse move event, which requires an update of the
@@ -569,8 +576,9 @@ class PlotController:
         ask the model to slice down the data, and send the new data returned by
         the model to the profile view.
         """
-        slices, info = self._get_slices_parameters(
-            lambda dim : dim != self.profile_dim)
+        # slices, info = self._get_slices_parameters(
+        #     lambda dim : dim != self.profile_dim)
+        slices, info = self._get_slices_parameters(self.func1)
 
         # Get new values from model
         new_values = self.model.update_profile(xdata=xdata,

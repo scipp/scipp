@@ -28,7 +28,8 @@ class PlotFigure1d:
                  masks=None,
                  figsize=None,
                  picker=False,
-                 is_profile=False):
+                 legend={"show": True},
+                 padding=None):
 
         # Matplotlib line containers
         self.data_lines = {}
@@ -39,15 +40,19 @@ class PlotFigure1d:
         self.masks = masks
         self.mask_params = mask_params
         self.picker = picker
-        self.is_profile = is_profile
+        # self.is_profile = is_profile
         # self.slice_area = None
         self.logx = logx
         self.logy = logy
         self.unit = unit
+        self.legend = legend
+        if "loc" not in self.legend:
+            self.legend["loc"] = 0
 
         # Get matplotlib figure and axes
         self.fig, self.ax, _, self.own_axes = get_mpl_axes(ax=ax,
-                                                           figsize=figsize)
+                                                           figsize=figsize,
+                                                           padding=padding)
 
         self.grid = grid
 
@@ -205,7 +210,8 @@ class PlotFigure1d:
         #                                       alpha=0.5,
         #                                       color='lightgrey')
 
-        self.ax.legend()
+        if self.legend["show"]:
+            self.ax.legend(loc=self.legend["loc"])
         # self.fig.canvas.draw_idle()
 
     def update_data(self, new_values, info):
@@ -214,9 +220,8 @@ class PlotFigure1d:
 
             self.data_lines[name].set_data(vals["values"]["x"],
                                            vals["values"]["y"])
-            lab = name
-            if len(info["slice_label"]) > 0:
-                lab = "{}:{}".format(lab, info["slice_label"])
+            lab = info["slice_label"] if len(info["slice_label"]) > 0 else name
+                # lab = "{}:{}".format(lab, info["slice_label"])
             self.data_lines[name].set_label(lab)
 
             for m in vals["masks"]:
@@ -233,6 +238,8 @@ class PlotFigure1d:
         self.fig.canvas.draw_idle()
 
     def keep_line(self, name, color, line_id):
+        self.ax._legend = None
+
         # The main line
         self.ax.lines.append(cp.copy(self.data_lines[name]))
         self.ax.lines[-1].set_url(line_id)
@@ -263,7 +270,10 @@ class PlotFigure1d:
             self.ax.collections[-1].set_zorder(2)
 
         self._reset_line_label(name)
-        self.ax.legend()
+
+        if self.legend["show"]:
+            self.ax.legend(loc=self.legend["loc"])
+        # self.ax.legend(loc=(0.9, 0.0))
         # self.rescale_to_data()
         self.fig.canvas.draw_idle()
 

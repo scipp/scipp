@@ -118,7 +118,7 @@ def check_log_limits(lims=None, vmin=None, vmax=None, log=None):
         return vmin, vmax
 
 
-def get_mpl_axes(ax=None, cax=None, figsize=None):
+def get_mpl_axes(ax=None, cax=None, figsize=None, padding=None):
     """
     Return matplotlib figure and axes
     """
@@ -130,7 +130,9 @@ def get_mpl_axes(ax=None, cax=None, figsize=None):
             figsize = (config.plot.width / config.plot.dpi,
                        config.plot.height / config.plot.dpi)
         fig, ax = plt.subplots(1, 1, figsize=figsize, dpi=config.plot.dpi)
-        fig.tight_layout(rect=config.plot.padding)
+        if padding is None:
+            padding = config.plot.padding
+        fig.tight_layout(rect=padding)
     else:
         own_axes = False
         fig = ax.get_figure()

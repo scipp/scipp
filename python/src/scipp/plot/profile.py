@@ -13,7 +13,7 @@ class ProfileView(PlotFigure1d):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.current_visible_state = False
-        self.slice_area = False
+        self.slice_area = None
         return
 
     def update_axes(self, *args, **kwargs):
@@ -30,12 +30,12 @@ class ProfileView(PlotFigure1d):
                                           alpha=0.5,
                                           color='lightgrey')
 
-    def update_data(self, *args, **kwargs):
-        super().update_data(*args, **kwargs)
-        self.slice_area = self.ax.axvspan(1,
-                                          2,
-                                          alpha=0.5,
-                                          color='lightgrey')
+    # def update_data(self, *args, **kwargs):
+    #     super().update_data(*args, **kwargs)
+    #     self.slice_area = self.ax.axvspan(1,
+    #                                       2,
+    #                                       alpha=0.5,
+    #                                       color='lightgrey')
 
     def _reset_line_label(self, name):
         self.data_lines[name].set_label(None)
