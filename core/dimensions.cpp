@@ -203,21 +203,4 @@ Dimensions transpose(const Dimensions &dims, std::vector<Dim> labels) {
   return {labels, shape};
 }
 
-Dimensions concatenate(const Dimensions &a, const Dimensions &b,
-                       const Dim dim) {
-  auto out = a;
-  if (a.contains(dim)) {
-    if (b.contains(dim))
-      out.resize(dim, a[dim] + b[dim]);
-    else
-      out.resize(dim, a[dim] + 1);
-  } else if (b.contains(dim)) {
-    out = b;
-    out.resize(dim, b[dim] + 1);
-  } else {
-    out.add(dim, 2);
-  }
-  return out;
-}
-
 } // namespace scipp::core

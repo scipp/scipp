@@ -144,9 +144,6 @@ Dimensions merge(const Dimensions &a, const Dimensions &b,
 SCIPP_CORE_EXPORT Dimensions transpose(const Dimensions &dims,
                                        std::vector<Dim> labels = {});
 
-SCIPP_CORE_EXPORT Dimensions concatenate(const Dimensions &a,
-                                         const Dimensions &b, const Dim dim);
-
 } // namespace scipp::core
 
 namespace scipp {
