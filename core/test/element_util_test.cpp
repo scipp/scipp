@@ -100,3 +100,22 @@ TEST(ElementUtilTest, is_sorted) {
   test_is_sorted(is_sorted_nondescending, true);
   test_is_sorted(is_sorted_nonascending, false);
 }
+
+TEST(ElementUtilTest, zip) {
+  EXPECT_EQ(zip(1, 2), (std::pair{1, 2}));
+  EXPECT_EQ(zip(3, 4), (std::pair{3, 4}));
+  EXPECT_EQ(zip(units::m, units::m), units::m);
+  EXPECT_EQ(zip(units::s, units::s), units::s);
+  EXPECT_THROW(zip(units::m, units::s), except::UnitError);
+}
+
+TEST(ElementUtilTest, get) {
+  EXPECT_EQ(core::element::get<0>(std::pair{1, 2}), 1);
+  EXPECT_EQ(core::element::get<1>(std::pair{1, 2}), 2);
+  EXPECT_EQ(core::element::get<0>(std::pair{3, 4}), 3);
+  EXPECT_EQ(core::element::get<1>(std::pair{3, 4}), 4);
+  EXPECT_EQ(core::element::get<0>(units::m), units::m);
+  EXPECT_EQ(core::element::get<0>(units::s), units::s);
+  EXPECT_EQ(core::element::get<1>(units::m), units::m);
+  EXPECT_EQ(core::element::get<1>(units::s), units::s);
+}
