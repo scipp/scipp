@@ -90,12 +90,16 @@ void copy(const DataArrayConstView &src, const DataArrayView &dst,
           const Dim dim, const VariableConstView &srcIndices,
           const VariableConstView &dstIndices) {
   copy(src.data(), dst.data(), dim, srcIndices, dstIndices);
+  const auto copy_or_match = [&](const auto &a, const auto &b) {
+    if (a.dims().contains(dim))
+      copy(a, b, dim, srcIndices, dstIndices);
+    else
+      core::expect::equals(a, b);
+  };
   for (const auto &[name, coord] : src.coords())
-    if (coord.dims().contains(dim))
-      copy(coord, dst.coords()[name], dim, srcIndices, dstIndices);
+    copy_or_match(coord, dst.coords()[name]);
   for (const auto &[name, mask] : src.masks())
-    if (mask.dims().contains(dim))
-      copy(mask, dst.masks()[name], dim, srcIndices, dstIndices);
+    copy_or_match(mask, dst.masks()[name]);
 }
 
 auto resize_buffer(const VariableConstView &parent, const Dim dim,
