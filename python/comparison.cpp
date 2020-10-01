@@ -62,60 +62,16 @@ template <typename T> void bind_not_equal(py::module &m) {
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
-template <typename... Args> struct Inserter;
-
-template <typename Arg, typename... Args> struct Inserter<Arg, Args...> {
-  template <typename Map, typename T>
-  static void insert(Map &map, const T &x, const T &y) {
-    map[dtype<Arg>] = [&x, &y](const py::object &obj) {
-      auto tol =
-          pybind11::cast<Arg>(obj); // Will throw if cast does not succeed
-      return is_approx(x, y, tol);
-    };
-    Inserter<Args...>::insert(map, x, y);
-  }
-};
-
-template <> struct Inserter<> {
-  template <typename Map, typename T> static void insert(Map &, T &, T &) {}
-};
-
-template <typename T, typename... Args>
-std::map<DType, std::function<bool(const py::object &)>>
-make_function_map(const T &x, const T &y) {
-  std::map<DType, std::function<bool(const py::object &)>> funcmap;
-  Inserter<Args...>::insert(funcmap, x, y);
-  return funcmap;
-}
-
 template <class T> void bind_is_approx(py::module &m) {
   m.def(
       "is_approx",
       [](const typename T::const_view_type &x,
-         const typename T::const_view_type &y, const py::object &tol) {
-        // Allowed types in following should come from (or be cross-checked
-        // source records from INSTANTIATE_VARIABLE
-        auto executor = make_function_map<typename T::const_view_type, int,
-                                          int64_t, double, float>(x, y);
-        if (executor.find(x.dtype()) == executor.end())
-          throw scipp::except::TypeError(
-              "is_approx does not support inputs of type " +
-              to_string(x.dtype()));
-        return executor[x.dtype()](tol);
+         const typename T::const_view_type &y,
+         const typename T::const_view_type &tol) {
+        return is_approx(x, y, tol);
       },
       py::arg("x"), py::arg("y"), py::arg("tol"),
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("is_approx determine if all values (and variances if "
-                       "present) fall within the specified tolerance")
-          .raises("if the dtype of input arguments (including tolerance) are "
-                  "different")
-          .returns("True if all values within tolerance.")
-          .rtype<T>()
-          .template param<T>("x", "Input left operand.")
-          .template param<T>("y", "Input right operand.")
-          .template param<T>("tol", "tolerance for comparison")
-          .c_str());
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_is_equal(py::module &m) {

@@ -8,8 +8,8 @@
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
-#include "scipp/core/transform_common.h"
 #include "scipp/core/element/math.h"
+#include "scipp/core/transform_common.h"
 
 /// Operators to be used with transform and transform_in_place to implement
 /// operations for Variable.
@@ -29,22 +29,22 @@ constexpr auto less = overloaded{
     [](const auto &x, const auto &y) { return x < y; },
 };
 
-constexpr auto approx = overloaded{
+constexpr auto is_approx = overloaded{
     transform_flags::no_out_variance,
-    arg_list<double, float, int64_t, int32_t,
-        std::tuple<double, double, float>,
-        std::tuple<int64_t, int32_t, int32_t>, std::tuple<int64_t, int64_t, int32_t>, std::tuple<int64_t, int32_t, int64_t>,
-        std::tuple<int32_t, int32_t, int64_t>, std::tuple<int32_t, int64_t, int64_t>
-        >,
-  [](const units::Unit &x, const units::Unit &y, const units::Unit& t) {
+    arg_list<double, float, int64_t, int32_t, std::tuple<double, double, float>,
+             std::tuple<int64_t, int32_t, int32_t>,
+             std::tuple<int64_t, int64_t, int32_t>,
+             std::tuple<int64_t, int32_t, int64_t>,
+             std::tuple<int32_t, int32_t, int64_t>,
+             std::tuple<int32_t, int64_t, int64_t>>,
+    [](const units::Unit &x, const units::Unit &y, const units::Unit &t) {
       expect::equals(x, y);
       expect::equals(x, t);
       return units::dimensionless;
     },
-    [](const auto& x, const auto &y, const auto& t){
-        return abs(x - y) <= t;
-  }
-};
+    [](const auto &x, const auto &y, const auto &t) {
+      return abs(x - y) <= t;
+    }};
 
 constexpr auto greater = overloaded{
     comparison,

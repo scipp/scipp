@@ -3,9 +3,9 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
+#include "fix_typed_test_suite_warnings.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
-#include "fix_typed_test_suite_warnings.h"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -17,19 +17,22 @@ using TestTypes = ::testing::Types<double, float, int64_t, int32_t>;
 TYPED_TEST_SUITE(IsApproxTest, TestTypes);
 
 TYPED_TEST(IsApproxTest, when_variable_equal) {
-  const auto a = makeVariable<TypeParam>(Dims{Dim::X}, Shape{2}, Values{1, 2});
-  EXPECT_EQ(is_approx(a, a, makeVariable<TypeParam>(Values{1})), true * units::one);
+  const auto a = makeVariable<TypeParam>(Values{1});
+  EXPECT_EQ(is_approx(a, a, makeVariable<TypeParam>(Values{1})),
+            true * units::one);
 }
 
 TYPED_TEST(IsApproxTest, when_variables_within_tolerance) {
-  const auto a = makeVariable<TypeParam>(Dims{Dim::X}, Shape{2}, Values{0, 1});
-  const auto b = makeVariable<TypeParam>(Dims{Dim::X}, Shape{2}, Values{1, 1});
-  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{1})), true * units::one);
+  const auto a = makeVariable<TypeParam>(Values{0});
+  const auto b = makeVariable<TypeParam>(Values{1});
+  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{1})),
+            true * units::one);
 }
 TYPED_TEST(IsApproxTest, when_variables_outside_tolerance) {
-  const auto a = makeVariable<TypeParam>(Dims{Dim::X}, Shape{2}, Values{0, 1});
-  const auto b = makeVariable<TypeParam>(Dims{Dim::X}, Shape{2}, Values{2, 1});
-  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{1})), false * units::one);
+  const auto a = makeVariable<TypeParam>(Values{0});
+  const auto b = makeVariable<TypeParam>(Values{2});
+  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{1})),
+            false * units::one);
 }
 
 TEST(IsApproxTest, variances_ignored) {
