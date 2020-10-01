@@ -19,15 +19,6 @@
 
 namespace scipp::core::element::bucket {
 
-constexpr auto sizes =
-    overloaded{element::arg_list<core::bucket_base::range_type>,
-               transform_flags::expect_no_variance_arg<0>,
-               [](const units::Unit &u) {
-                 expect::equals(u, units::one);
-                 return units::one;
-               },
-               [](const auto &range) { return range.second - range.first; }};
-
 constexpr auto zip =
     overloaded{element::arg_list<scipp::index>,
                transform_flags::no_event_list_handling,
@@ -41,15 +32,12 @@ constexpr auto zip =
                  return std::pair{first, second};
                }};
 
-constexpr auto add_to_component = overloaded{
-    element::arg_list<std::tuple<core::bucket_base::range_type, int64_t>>,
-    transform_flags::expect_no_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>,
-    [](units::Unit &a, const units::Unit &b) { a += b; }};
-constexpr auto add_to_first =
-    overloaded{add_to_component, [](auto &a, const auto &b) { a.first += b; }};
-constexpr auto add_to_second =
-    overloaded{add_to_component, [](auto &a, const auto &b) { a.second += b; }};
+template <int N>
+constexpr auto get =
+    overloaded{element::arg_list<core::bucket_base::range_type>,
+               transform_flags::expect_no_variance_arg<0>,
+               [](const auto &x) { return std::get<N>(x); },
+               [](const units::Unit &u) { return u; }};
 
 constexpr auto copy = overloaded{
     element::arg_list<std::tuple<span<double>, span<const double>>>,
@@ -70,30 +58,24 @@ namespace scipp::dataset {
 
 namespace buckets {
 
-/// TODO A number of these functions would be redundant if we used an inner
-/// extra dim of size 2 instead of a pair.
-auto sizes(const VariableConstView &indices) {
-  return transform(indices, core::element::bucket::sizes);
-}
+namespace {
 auto zip(const VariableConstView &first, const VariableConstView &second) {
   return transform(first, second, core::element::bucket::zip);
 }
-void add_to_first(const VariableView &a, const VariableConstView &b) {
-  transform_in_place(a, b, core::element::bucket::add_to_first);
-}
-void add_to_second(const VariableView &a, const VariableConstView &b) {
-  transform_in_place(a, b, core::element::bucket::add_to_second);
+auto unzip(const VariableConstView &var) {
+  return std::pair{transform(var, core::element::bucket::get<0>),
+                   transform(var, core::element::bucket::get<1>)};
 }
 
-auto sizes_to_indices(const VariableConstView &sizes) {
-  auto indices = zip(sizes * makeVariable<scipp::index>(Values{0}), sizes);
+auto sizes_to_begin(const VariableConstView &sizes) {
+  Variable begin(sizes);
   scipp::index size = 0;
-  for (auto &range : indices.values<core::bucket_base::range_type>()) {
-    range.second += size - range.first;
-    range.first = size;
-    size = range.second;
+  for (auto &i : begin.values<scipp::index>()) {
+    const auto old_size = size;
+    size += i;
+    i = old_size;
   }
-  return std::tuple{indices, size};
+  return std::tuple{begin, size};
 }
 
 void copy(const VariableConstView &src, const VariableView &dst, const Dim dim,
@@ -139,21 +121,20 @@ auto resize_buffer(const DataArrayConstView &parent, const Dim dim,
 
 template <class T>
 auto combine(const VariableConstView &var0, const VariableConstView &var1) {
-  const auto &[ranges0, dim0, buffer0] = var0.constituents<bucket<T>>();
-  const auto &[ranges1, dim1, buffer1] = var1.constituents<bucket<T>>();
+  const auto &[indices0, dim0, buffer0] = var0.constituents<bucket<T>>();
+  const auto &[indices1, dim1, buffer1] = var1.constituents<bucket<T>>();
   const Dim dim = dim0;
-  const auto sizes0 = sizes(ranges0);
-  const auto sizes1 = sizes(ranges1);
+  const auto [begin0, end0] = unzip(indices0);
+  const auto [begin1, end1] = unzip(indices1);
+  const auto sizes0 = end0 - begin0;
+  const auto sizes1 = end1 - begin1;
   const auto sizes = sizes0 + sizes1;
-  const auto [indices, size] = sizes_to_indices(sizes);
+  const auto [begin, size] = sizes_to_begin(sizes);
+  const auto end = begin + sizes;
   auto buffer = resize_buffer(buffer0, dim, size);
-  auto target0 = indices;
-  auto target1 = indices;
-  add_to_second(target0, -sizes1);
-  add_to_first(target1, sizes0);
-  copy(buffer0, buffer, dim, ranges0, target0);
-  copy(buffer1, buffer, dim, ranges1, target1);
-  return variable::DataModel<bucket<T>>{std::move(indices), dim,
+  copy(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
+  copy(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
+  return variable::DataModel<bucket<T>>{zip(begin, end), dim,
                                         std::move(buffer)};
 }
 
@@ -163,6 +144,7 @@ auto concatenate_impl(const VariableConstView &var0,
   return Variable{
       std::make_unique<variable::DataModel<bucket<T>>>(combine<T>(var0, var1))};
 }
+} // namespace
 
 Variable concatenate(const VariableConstView &var0,
                      const VariableConstView &var1) {
