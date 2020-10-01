@@ -18,7 +18,6 @@
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 
-
 namespace scipp::dataset::buckets {
 
 namespace {
