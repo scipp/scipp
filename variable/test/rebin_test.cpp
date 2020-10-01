@@ -205,3 +205,21 @@ TEST(Variable, rebin_mask_outer) {
 
   ASSERT_EQ(result, expected);
 }
+
+TEST(Variable, rebin_mask_outer_single) {
+  const auto mask =
+      makeVariable<bool>(Dimensions{{Dim::Y, 3}, {Dim::X, 2}},
+                         Values{false, true, false, false, false, false});
+
+  const auto oldEdge =
+      makeVariable<double>(Dimensions{Dim::Y, 4}, Values{1, 3, 5, 6});
+
+  const auto newEdge =
+      makeVariable<double>(Dimensions{Dim::Y, 2}, Values{0.0, 6.5});
+  const auto expected = makeVariable<bool>(Dimensions{{Dim::Y, 1}, {Dim::X, 2}},
+                                           Values{false, true});
+
+  const auto result = rebin(mask, Dim::Y, oldEdge, newEdge);
+
+  ASSERT_EQ(result, expected);
+}

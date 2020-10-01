@@ -32,6 +32,7 @@
 
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_factory.h"
 #include "scipp/variable/visit.h"
 
 namespace scipp::core::detail {
@@ -145,18 +146,11 @@ static constexpr void advance(T &indices,
                std::make_index_sequence<std::tuple_size_v<T>>{});
 }
 
-template <class T> static constexpr auto iter_dims(T &&iterable) noexcept {
+template <class T> static constexpr auto array_params(T &&iterable) noexcept {
   if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
-    return iter_dims(iterable.values);
+    return iterable.values;
   else
-    return iterable.dims();
-}
-
-template <class T> static constexpr auto data_dims(T &&iterable) noexcept {
-  if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
-    return data_dims(iterable.values);
-  else
-    return iterable.dataDims();
+    return iterable;
 }
 
 template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
@@ -268,13 +262,13 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
       for (; indices != end; indices.increment())
         call(op, indices, out, other...);
     };
-    const auto begin = core::MultiIndex(
-        iter::iter_dims(out), iter::data_dims(out), iter::data_dims(other)...);
+    const auto begin =
+        core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
     auto run_parallel = [&](const auto &range) {
       auto indices = begin;
-      indices.advance(range.begin());
+      indices.set_index(range.begin());
       auto end = begin;
-      end.advance(range.end());
+      end.set_index(range.end());
       run(indices, end);
     };
     core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
@@ -427,16 +421,11 @@ template <class Op> struct Transform {
   template <class... Ts> Variable operator()(Ts &&... handles) const {
     const auto dims = merge(handles.dims()...);
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
-    constexpr bool out_variances =
-        !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op>;
-    auto volume = dims.volume();
-    Variable out =
-        out_variances && (handles.hasVariances() || ...)
-            ? makeVariable<Out>(Dimensions{dims},
-                                Values(volume, core::default_init_elements),
-                                Variances(volume, core::default_init_elements))
-            : makeVariable<Out>(Dimensions{dims},
-                                Values(volume, core::default_init_elements));
+    const bool variances =
+        !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
+        (handles.hasVariances() || ...);
+    auto out = variableFactory().create(dtype<Out>, dims, variances,
+                                        *handles.m_var...);
     do_transform(op, variable_access<Out>(out), std::tuple<>(),
                  as_view{handles, dims}...);
     return out;
@@ -595,35 +584,36 @@ template <bool dry_run> struct in_place {
     }
     if constexpr (dry_run)
       return;
-    auto run = [&](auto indices, const auto &end) {
-      for (; std::get<0>(indices) != end; iter::increment(indices))
-        call_in_place(op, indices, arg, other...);
-    };
 
     if constexpr (transform_detail::is_events_v<std::decay_t<T>> ||
                   (transform_detail::is_events_v<std::decay_t<Ts>> || ...)) {
+      auto run = [&](auto indices, const auto &end) {
+        for (; std::get<0>(indices) != end; iter::increment(indices))
+          call_in_place(op, indices, arg, other...);
+      };
       run(begin, iter::end_index(arg));
     } else {
+      auto run = [&](auto indices, const auto &end) {
+        for (; indices != end; indices.increment())
+          call_in_place(op, indices, arg, other...);
+      };
+      const auto begin_ = core::MultiIndex(iter::array_params(arg),
+                                           iter::array_params(other)...);
       if (iter::has_stride_zero(std::get<0>(begin))) {
         // The output has a dimension with stride zero so parallelization must
         // be done differently. Explicit and precise control of chunking is
         // required to avoid multiple threads writing to the same output. Not
         // implemented for now.
-        run(begin, iter::end_index(arg));
+        auto end = begin_;
+        end.set_index(arg.size());
+        run(begin_, end);
       } else {
-        auto run_ = [&](auto indices, const auto &end) {
-          for (; indices != end; indices.increment())
-            call_in_place(op, indices, arg, other...);
-        };
-        const auto begin_ =
-            core::MultiIndex(iter::iter_dims(arg), iter::data_dims(arg),
-                             iter::data_dims(other)...);
         auto run_parallel = [&](const auto &range) {
           auto indices = begin_;
-          indices.advance(range.begin());
+          indices.set_index(range.begin());
           auto end = begin_;
-          end.advance(range.end());
-          run_(indices, end);
+          end.set_index(range.end());
+          run(indices, end);
         };
         core::parallel::parallel_for(
             core::parallel::blocked_range(0, arg.size()), run_parallel);
