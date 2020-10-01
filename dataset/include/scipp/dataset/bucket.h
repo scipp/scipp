@@ -11,4 +11,7 @@ namespace scipp::dataset::buckets {
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 concatenate(const VariableConstView &var0, const VariableConstView &var1);
 
+SCIPP_DATASET_EXPORT void append(const VariableView &var0,
+                                 const VariableConstView &var1);
+
 } // namespace scipp::dataset::buckets

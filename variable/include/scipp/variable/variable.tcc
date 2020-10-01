@@ -48,6 +48,14 @@ template <class T> ElementArrayView<T> VariableView::variances() const {
   return cast<T>(*m_mutableVariable).variances(array_params());
 }
 
+template <class T> void VariableView::replace_model(T model) const {
+  core::expect::equals(dims(),
+                       m_mutableVariable->dims()); // trivial view (no slice)
+  core::expect::equals(dims(),
+                       model.dims()); // shape change would break DataArray
+  requireT<T>(m_mutableVariable->data()) = std::move(model);
+}
+
 #define INSTANTIATE_VARIABLE_BASE(name, ...)                                   \
   namespace {                                                                  \
   auto register_dtype_name_##name(                                             \
@@ -57,7 +65,9 @@ template <class T> ElementArrayView<T> VariableView::variances() const {
   template ElementArrayView<__VA_ARGS__> Variable::values();                   \
   template ElementArrayView<const __VA_ARGS__> VariableConstView::values()     \
       const;                                                                   \
-  template ElementArrayView<__VA_ARGS__> VariableView::values() const;
+  template ElementArrayView<__VA_ARGS__> VariableView::values() const;         \
+  template void VariableView::replace_model<DataModel<__VA_ARGS__>>(           \
+      DataModel<__VA_ARGS__>) const;
 
 /// Macro for instantiating classes and functions required for support a new
 /// dtype in Variable.

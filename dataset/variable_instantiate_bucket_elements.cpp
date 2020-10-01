@@ -24,7 +24,8 @@ private:
                         const bool variances) const override {
     const auto &source = std::get<2>(parent.constituents<bucket<DataArray>>());
     if (parent.dims() !=
-        dims) // would need to select and copy slices from source coords
+        indices
+            .dims()) // would need to select and copy slices from source coords
       throw std::runtime_error(
           "Shape changing operations with bucket<DataArray> not supported yet");
     auto buffer = DataArray(

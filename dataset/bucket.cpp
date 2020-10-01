@@ -10,9 +10,10 @@
 #include "scipp/core/except.h"
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/reduction.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 
@@ -115,27 +116,67 @@ void copy(const DataArrayConstView &src, const DataArrayView &dst,
       copy(mask, dst.masks()[name], dim, srcIndices, dstIndices);
 }
 
-Variable concatenate(const VariableConstView &var0,
-                     const VariableConstView &var1) {
-  const auto &[ranges0, dim0, buffer0] = var0.constituents<bucket<DataArray>>();
-  const auto &[ranges1, dim1, buffer1] = var1.constituents<bucket<DataArray>>();
-  core::expect::equals(ranges0.dims(), ranges1.dims());
-  // core::expect::equals(dim0, dim1);
+auto resize_buffer(const VariableConstView &parent, const Dim dim,
+                   const scipp::index size) {
+  return resize(parent, dim, size);
+}
+
+auto resize_buffer(const DataArrayConstView &parent, const Dim dim,
+                   const scipp::index size) {
+  const auto copy_or_resize = [dim, size](const auto &var) {
+    // TODO Could avoid init here for better performance.
+    return var.dims().contains(dim) ? resize(var, dim, size) : Variable(var);
+  };
+  DataArray buffer(resize(parent.data(), dim, size));
+  for (const auto &[name, var] : parent.aligned_coords())
+    buffer.aligned_coords().set(name, copy_or_resize(var));
+  for (const auto &[name, var] : parent.masks())
+    buffer.masks().set(name, copy_or_resize(var));
+  for (const auto &[name, var] : parent.unaligned_coords())
+    buffer.unaligned_coords().set(name, copy_or_resize(var));
+  return buffer;
+}
+
+template <class T>
+auto combine(const VariableConstView &var0, const VariableConstView &var1) {
+  const auto &[ranges0, dim0, buffer0] = var0.constituents<bucket<T>>();
+  const auto &[ranges1, dim1, buffer1] = var1.constituents<bucket<T>>();
   const Dim dim = dim0;
-  // const auto dims = concatenate(buffer0.dims(), buffer1.dims(), dim);
-  // TODO This copies, but is later overwritten, should be avoided
-  auto buffer = dataset::concatenate(buffer0, buffer1, dim);
   const auto sizes0 = sizes(ranges0);
   const auto sizes1 = sizes(ranges1);
-  const auto [indices, size] = sizes_to_indices(sizes0 + sizes1);
+  const auto sizes = sizes0 + sizes1;
+  const auto [indices, size] = sizes_to_indices(sizes);
+  auto buffer = resize_buffer(buffer0, dim, size);
   auto target0 = indices;
   auto target1 = indices;
   add_to_second(target0, -sizes1);
   add_to_first(target1, sizes0);
   copy(buffer0, buffer, dim, ranges0, target0);
   copy(buffer1, buffer, dim, ranges1, target1);
-  return Variable{std::make_unique<variable::DataModel<bucket<DataArray>>>(
-      indices, dim, std::move(buffer))};
+  return variable::DataModel<bucket<T>>{std::move(indices), dim,
+                                        std::move(buffer)};
+}
+
+template <class T>
+auto concatenate_impl(const VariableConstView &var0,
+                      const VariableConstView &var1) {
+  return Variable{
+      std::make_unique<variable::DataModel<bucket<T>>>(combine<T>(var0, var1))};
+}
+
+Variable concatenate(const VariableConstView &var0,
+                     const VariableConstView &var1) {
+  if (var0.dtype() == dtype<bucket<Variable>>)
+    return concatenate_impl<Variable>(var0, var1);
+  else
+    return concatenate_impl<DataArray>(var0, var1);
+}
+
+void append(const VariableView &var0, const VariableConstView &var1) {
+  if (var0.dtype() == dtype<bucket<Variable>>)
+    var0.replace_model(combine<Variable>(var0, var1));
+  else
+    var0.replace_model(combine<DataArray>(var0, var1));
 }
 
 } // namespace buckets
