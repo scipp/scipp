@@ -4,16 +4,17 @@
 
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/variable/bucket_model.h"
 #include "scipp/variable/operations.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
 
-using Model = variable::DataModel<bucket<DataArray>>;
 
 class DataArrayBucketTest : public ::testing::Test {
 protected:
+  using Model = variable::DataModel<bucket<DataArray>>;
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
@@ -62,4 +63,61 @@ TEST_F(DataArrayBucketTest, concatenate_with_broadcast) {
 
   // Broadcast not possible for in-place append
   EXPECT_THROW(buckets::append(var, var2), except::DimensionMismatchError);
+}
+
+class DatasetBucketTest : public ::testing::Test {
+protected:
+  using Model = variable::DataModel<bucket<Dataset>>;
+  Dimensions dims{Dim::Y, 2};
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      dims, Values{std::pair{0, 2}, std::pair{2, 3}});
+  Variable column =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  Dataset buffer0;
+  Dataset buffer1;
+
+  void check() {
+    Variable var0{std::make_unique<Model>(indices, Dim::X, buffer0)};
+    Variable var1{std::make_unique<Model>(indices, Dim::X, buffer1)};
+    const auto result = buckets::concatenate(var0, var1);
+    EXPECT_EQ(result.values<bucket<Dataset>>()[0],
+              concatenate(buffer0.slice({Dim::X, 0, 2}),
+                          buffer1.slice({Dim::X, 0, 2}), Dim::X));
+    EXPECT_EQ(result.values<bucket<Dataset>>()[1],
+              concatenate(buffer0.slice({Dim::X, 2, 3}),
+                          buffer1.slice({Dim::X, 2, 3}), Dim::X));
+  }
+  void check_fail() {
+    Variable var0{std::make_unique<Model>(indices, Dim::X, buffer0)};
+    Variable var1{std::make_unique<Model>(indices, Dim::X, buffer1)};
+    EXPECT_ANY_THROW(buckets::concatenate(var0, var1));
+  }
+};
+
+TEST_F(DatasetBucketTest, concatenate) {
+  buffer0.coords().set(Dim::X, column);
+  buffer1.coords().set(Dim::X, column + column);
+  check();
+  buffer0.setData("a", column * column);
+  check_fail();
+  buffer1.setData("a", column);
+  check();
+  buffer0.setData("b", column * column);
+  check_fail();
+  buffer1.setData("b", column / column);
+  check();
+  buffer0["a"].masks().set("mask", column);
+  check_fail();
+  buffer1["a"].masks().set("mask", column);
+  check();
+  buffer0["b"].coords().set(Dim("attr"), column);
+  check_fail();
+  buffer1["b"].coords().set(Dim("attr"), column);
+  check();
+  buffer0.coords().set(Dim("scalar"), 1.0 * units::m);
+  check_fail();
+  buffer1.coords().set(Dim("scalar"), 1.0 * units::m);
+  check();
+  buffer1.coords().set(Dim("scalar2"), 1.0 * units::m);
+  check_fail();
 }

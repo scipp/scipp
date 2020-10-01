@@ -54,20 +54,44 @@ void copy(const VariableConstView &src, const VariableView &dst, const Dim dim,
                      subspan_view(src, dim, srcIndices), copy_spans);
 }
 
+constexpr auto copy_or_match = [](const auto &a, const auto &b, const Dim dim,
+                                  const VariableConstView &srcIndices,
+                                  const VariableConstView &dstIndices) {
+  if (a.dims().contains(dim))
+    copy(a, b, dim, srcIndices, dstIndices);
+  else
+    core::expect::equals(a, b);
+};
+
 void copy(const DataArrayConstView &src, const DataArrayView &dst,
           const Dim dim, const VariableConstView &srcIndices,
           const VariableConstView &dstIndices) {
   copy(src.data(), dst.data(), dim, srcIndices, dstIndices);
-  const auto copy_or_match = [&](const auto &a, const auto &b) {
-    if (a.dims().contains(dim))
-      copy(a, b, dim, srcIndices, dstIndices);
-    else
-      core::expect::equals(a, b);
-  };
+  core::expect::sizeMatches(src.coords(), dst.coords());
+  core::expect::sizeMatches(src.masks(), dst.masks());
   for (const auto &[name, coord] : src.coords())
-    copy_or_match(coord, dst.coords()[name]);
+    copy_or_match(coord, dst.coords()[name], dim, srcIndices, dstIndices);
   for (const auto &[name, mask] : src.masks())
-    copy_or_match(mask, dst.masks()[name]);
+    copy_or_match(mask, dst.masks()[name], dim, srcIndices, dstIndices);
+}
+
+void copy(const DatasetConstView &src, const DatasetView &dst, const Dim dim,
+          const VariableConstView &srcIndices,
+          const VariableConstView &dstIndices) {
+  for (const auto &[name, var] : src.coords())
+    copy_or_match(var, dst.coords()[name], dim, srcIndices, dstIndices);
+  core::expect::sizeMatches(src.coords(), dst.coords());
+  core::expect::sizeMatches(src, dst);
+  for (const auto &item : src) {
+    const auto &dst_ = dst[item.name()];
+    core::expect::sizeMatches(item.unaligned_coords(), dst_.unaligned_coords());
+    core::expect::sizeMatches(item.masks(), dst_.masks());
+    copy_or_match(item.data(), dst_.data(), dim, srcIndices, dstIndices);
+    for (const auto &[name, var] : item.masks())
+      copy_or_match(var, dst_.masks()[name], dim, srcIndices, dstIndices);
+    for (const auto &[name, var] : item.unaligned_coords())
+      copy_or_match(var, dst_.coords()[name], dim, srcIndices, dstIndices);
+  }
 }
 
 auto resize_buffer(const VariableConstView &parent, const Dim dim,
@@ -75,19 +99,39 @@ auto resize_buffer(const VariableConstView &parent, const Dim dim,
   return resize(parent, dim, size);
 }
 
+constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
+                                   const scipp::index size) {
+  // TODO Could avoid init here for better performance.
+  return var.dims().contains(dim) ? resize(var, dim, size) : Variable(var);
+};
+
+// TODO These functions are an unfortunate near-duplicate of `resize`. However,
+// the latter drops coords along the resized dimension. Is there a way to unify
+// this? Can the need to drop coords in resize be avoided?
 auto resize_buffer(const DataArrayConstView &parent, const Dim dim,
                    const scipp::index size) {
-  const auto copy_or_resize = [dim, size](const auto &var) {
-    // TODO Could avoid init here for better performance.
-    return var.dims().contains(dim) ? resize(var, dim, size) : Variable(var);
-  };
   DataArray buffer(resize(parent.data(), dim, size));
   for (const auto &[name, var] : parent.aligned_coords())
-    buffer.aligned_coords().set(name, copy_or_resize(var));
+    buffer.aligned_coords().set(name, copy_or_resize(var, dim, size));
   for (const auto &[name, var] : parent.masks())
-    buffer.masks().set(name, copy_or_resize(var));
+    buffer.masks().set(name, copy_or_resize(var, dim, size));
   for (const auto &[name, var] : parent.unaligned_coords())
-    buffer.unaligned_coords().set(name, copy_or_resize(var));
+    buffer.unaligned_coords().set(name, copy_or_resize(var, dim, size));
+  return buffer;
+}
+
+auto resize_buffer(const DatasetConstView &parent, const Dim dim,
+                   const scipp::index size) {
+  Dataset buffer;
+  for (const auto &[name, var] : parent.coords())
+    buffer.coords().set(name, copy_or_resize(var, dim, size));
+  for (const auto &item : parent) {
+    buffer.setData(item.name(), copy_or_resize(item.data(), dim, size));
+    for (const auto &[name, var] : item.masks())
+      buffer[item.name()].masks().set(name, copy_or_resize(var, dim, size));
+    for (const auto &[name, var] : item.unaligned_coords())
+      buffer[item.name()].coords().set(name, copy_or_resize(var, dim, size));
+  }
   return buffer;
 }
 
@@ -122,15 +166,19 @@ Variable concatenate(const VariableConstView &var0,
                      const VariableConstView &var1) {
   if (var0.dtype() == dtype<bucket<Variable>>)
     return concatenate_impl<Variable>(var0, var1);
-  else
+  else if (var0.dtype() == dtype<bucket<DataArray>>)
     return concatenate_impl<DataArray>(var0, var1);
+  else
+    return concatenate_impl<Dataset>(var0, var1);
 }
 
 void append(const VariableView &var0, const VariableConstView &var1) {
   if (var0.dtype() == dtype<bucket<Variable>>)
     var0.replace_model(combine<Variable>(var0, var1));
-  else
+  else if (var0.dtype() == dtype<bucket<DataArray>>)
     var0.replace_model(combine<DataArray>(var0, var1));
+  else
+    var0.replace_model(combine<Dataset>(var0, var1));
 }
 
 } // namespace scipp::dataset::buckets
