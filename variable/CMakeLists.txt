@@ -23,6 +23,7 @@ set(INC_FILES
     include/scipp/variable/trigonometry.h
     include/scipp/variable/util.h
     include/scipp/variable/variable_concept.h
+    include/scipp/variable/variable_factory.h
     include/scipp/variable/variable.h
     include/scipp/variable/variable_keyword_arg_constructor.h
     include/scipp/variable/variable.tcc
@@ -48,6 +49,7 @@ set(SRC_FILES
     type_conversion.cpp
     util.cpp
     variable_concept.cpp
+    variable_factory.cpp
     variable.cpp
     variable_instantiate_basic.cpp
     variable_instantiate_bucket_elements.cpp

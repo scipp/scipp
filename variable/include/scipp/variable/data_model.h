@@ -88,43 +88,26 @@ public:
   void setVariances(Variable &&variances) override;
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<DataModel<T>>(this->dims(), m_values, m_variances);
+    return std::make_unique<DataModel<T>>(*this);
   }
 
   bool hasVariances() const noexcept override {
     return m_variances.has_value();
   }
 
-  auto values() const {
-    return ElementArrayView(m_values.data(), 0, dims(), dims());
+  auto values(const core::element_array_view &base) const {
+    return ElementArrayView(base, m_values.data());
   }
-  auto values() { return ElementArrayView(m_values.data(), 0, dims(), dims()); }
-  auto variances() const {
+  auto values(const core::element_array_view &base) {
+    return ElementArrayView(base, m_values.data());
+  }
+  auto variances(const core::element_array_view &base) const {
     expectHasVariances();
-    return ElementArrayView(m_variances->data(), 0, dims(), dims());
+    return ElementArrayView(base, m_variances->data());
   }
-  auto variances() {
+  auto variances(const core::element_array_view &base) {
     expectHasVariances();
-    return ElementArrayView(m_variances->data(), 0, dims(), dims());
-  }
-
-  auto values(const scipp::index offset, const Dimensions &iterDims,
-              const Dimensions &dataDims) const {
-    return ElementArrayView(m_values.data(), offset, iterDims, dataDims);
-  }
-  auto values(const scipp::index offset, const Dimensions &iterDims,
-              const Dimensions &dataDims) {
-    return ElementArrayView(m_values.data(), offset, iterDims, dataDims);
-  }
-  auto variances(const scipp::index offset, const Dimensions &iterDims,
-                 const Dimensions &dataDims) const {
-    expectHasVariances();
-    return ElementArrayView(m_variances->data(), offset, iterDims, dataDims);
-  }
-  auto variances(const scipp::index offset, const Dimensions &iterDims,
-                 const Dimensions &dataDims) {
-    expectHasVariances();
-    return ElementArrayView(m_variances->data(), offset, iterDims, dataDims);
+    return ElementArrayView(base, m_variances->data());
   }
 
 private:
@@ -135,6 +118,14 @@ private:
   element_array<T> m_values;
   std::optional<element_array<T>> m_variances;
 };
+
+template <class T> const DataModel<T> &cast(const Variable &var) {
+  return requireT<const DataModel<T>>(var.data());
+}
+
+template <class T> DataModel<T> &cast(Variable &var) {
+  return requireT<DataModel<T>>(var.data());
+}
 
 template <class T>
 VariableConceptHandle
@@ -183,11 +174,7 @@ void DataModel<T>::copy(const VariableConstView &src,
 }
 
 template <class T> void DataModel<T>::assign(const VariableConcept &other) {
-  const auto &otherT = requireT<const DataModel<T>>(other);
-  std::copy(otherT.m_values.begin(), otherT.m_values.end(), m_values.begin());
-  if (hasVariances())
-    std::copy(otherT.m_variances->begin(), otherT.m_variances->end(),
-              m_variances->begin());
+  *this = requireT<const DataModel<T>>(other);
 }
 
 template <class T> void DataModel<T>::setVariances(Variable &&variances) {

@@ -6,6 +6,7 @@
 
 #include <random>
 
+#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
@@ -192,5 +193,39 @@ static void BM_transform_in_place_events(benchmark::State &state) {
 BENCHMARK(BM_transform_in_place_events)
     ->RangeMultiplier(2)
     ->Ranges({{1, 2 << 18}, {8, 2 << 8}, {false, false}});
+
+static void BM_transform_buckets_inplace_unary(benchmark::State &state) {
+  const scipp::index n_bucket = 16 * 1024;
+  Dimensions dims{Dim::Y, n_bucket};
+  auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(dims);
+  std::random_device rd;
+  std::mt19937 mt(rd());
+  std::uniform_int_distribution<scipp::index> dist(1, 10000);
+  scipp::index n_element = 0;
+  auto indices_ = indices.values<std::pair<scipp::index, scipp::index>>();
+  for (scipp::index n = 0; n < n_bucket; ++n) {
+    scipp::index size = dist(mt);
+    indices_[n] = std::pair{n_element, n_element + size};
+    n_element += size;
+  }
+  Variable buffer = makeVariable<double>(Dims{Dim::X}, Shape{n_element});
+  Variable var{std::make_unique<variable::DataModel<bucket<Variable>>>(
+      indices, Dim::X, buffer)};
+
+  for (auto _ : state) {
+    transform_in_place<double>(var, [](auto &x) { x += x; });
+  }
+
+  state.SetItemsProcessed(state.iterations() * n_bucket);
+  state.SetBytesProcessed(state.iterations() * n_element * sizeof(double));
+  state.counters["n_bucket"] =
+      benchmark::Counter(n_bucket, benchmark::Counter::kDefaults,
+                         benchmark::Counter::OneK::kIs1024);
+  state.counters["n_element"] =
+      benchmark::Counter(n_element, benchmark::Counter::kDefaults,
+                         benchmark::Counter::OneK::kIs1024);
+}
+
+BENCHMARK(BM_transform_buckets_inplace_unary);
 
 BENCHMARK_MAIN();

@@ -9,6 +9,7 @@
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -19,40 +20,32 @@ Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
       m_object(std::make_unique<DataModel<typename T::value_type>>(
           std::move(dimensions), std::move(values_), std::move(variances_))) {}
 
-template <class T> const DataModel<T> &cast(const Variable &var) {
-  return requireT<const DataModel<T>>(var.data());
-}
-
-template <class T> DataModel<T> &cast(Variable &var) {
-  return requireT<DataModel<T>>(var.data());
-}
-
 template <class T> ElementArrayView<const T> Variable::values() const {
-  return cast<T>(*this).values();
+  return cast<T>(*this).values(array_params());
 }
 template <class T> ElementArrayView<T> Variable::values() {
-  return cast<T>(*this).values();
+  return cast<T>(*this).values(array_params());
 }
 template <class T> ElementArrayView<const T> Variable::variances() const {
-  return cast<T>(*this).variances();
+  return cast<T>(*this).variances(array_params());
 }
 template <class T> ElementArrayView<T> Variable::variances() {
-  return cast<T>(*this).variances();
+  return cast<T>(*this).variances(array_params());
 }
 
 template <class T> ElementArrayView<const T> VariableConstView::values() const {
-  return cast<T>(*m_variable).values(m_offset, m_dims, m_dataDims);
+  return cast<T>(*m_variable).values(array_params());
 }
 template <class T>
 ElementArrayView<const T> VariableConstView::variances() const {
-  return cast<T>(*m_variable).variances(m_offset, m_dims, m_dataDims);
+  return cast<T>(*m_variable).variances(array_params());
 }
 
 template <class T> ElementArrayView<T> VariableView::values() const {
-  return cast<T>(*m_mutableVariable).values(m_offset, m_dims, m_dataDims);
+  return cast<T>(*m_mutableVariable).values(array_params());
 }
 template <class T> ElementArrayView<T> VariableView::variances() const {
-  return cast<T>(*m_mutableVariable).variances(m_offset, m_dims, m_dataDims);
+  return cast<T>(*m_mutableVariable).variances(array_params());
 }
 
 #define INSTANTIATE_VARIABLE_BASE(name, ...)                                   \
@@ -70,6 +63,12 @@ template <class T> ElementArrayView<T> VariableView::variances() const {
 /// dtype in Variable.
 #define INSTANTIATE_VARIABLE(name, ...)                                        \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
+  namespace {                                                                  \
+  auto register_variable_maker_##name((                                        \
+      variableFactory().emplace(                                               \
+          dtype<__VA_ARGS__>, std::make_unique<VariableMaker<__VA_ARGS__>>()), \
+      0));                                                                     \
+  }                                                                            \
   template Variable::Variable(const units::Unit, const Dimensions &,           \
                               element_array<__VA_ARGS__>,                      \
                               std::optional<element_array<__VA_ARGS__>>);      \
