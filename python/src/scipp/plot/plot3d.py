@@ -127,3 +127,27 @@ class SciPlot3d(SciPlot):
         self.controller.update_axes()
 
         return
+
+
+
+
+
+class SciPlot:
+    self.controller = Controller()
+    self.model = Model()
+    self.view = View()
+    self.profile = Profile()
+
+    self.controller.model = self.model
+    self.controller.view = self.view
+    self.controller.profile = self.profile
+
+
+class Controller:
+    self.model = Model()
+    self.view = View()
+    self.profile = Profile()
+
+    # self.controller.model = self.model
+    # self.controller.view = self.view
+    # self.controller.profile = self.profile

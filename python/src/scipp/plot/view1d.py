@@ -46,8 +46,8 @@ class PlotView1d:
     def _to_widget(self):
         return self.figure._to_widget()
 
-    def savefig(self, filename=None):
-        self.figure.savefig(filename=filename)
+    def savefig(self, *args, **kwargs):
+        self.figure.savefig(*args, **kwargs)
 
     def toggle_mask(self, change):
         self.figure.toggle_mask(change["owner"].mask_group,
@@ -56,20 +56,20 @@ class PlotView1d:
     def rescale_to_data(self, vmin=None, vmax=None):
         self.figure.rescale_to_data()
 
-    def update_axes(self, axparams, axformatter, axlocator, logx, logy):
-        self.figure.update_axes(axparams, axformatter, axlocator, logx, logy)
+    def update_axes(self, *args, **kwargs):
+        self.figure.update_axes(*args, **kwargs)
 
-    def update_data(self, new_values):
-        self.figure.update_data(new_values)
+    def update_data(self, *args, **kwargs):
+        self.figure.update_data(*args, **kwargs)
 
-    def keep_line(self, name=None, color=None, line_id=None):
-        self.figure.keep_line(name=name, color=color, line_id=line_id)
+    def keep_line(self, *args, **kwargs):
+        self.figure.keep_line(*args, **kwargs)
 
-    def remove_line(self, line_id):
-        self.figure.remove_line(line_id)
+    def remove_line(self, *args, **kwargs):
+        self.figure.remove_line(*args, **kwargs)
 
-    def update_line_color(self, line_id, color):
-        self.figure.update_line_color(line_id, color)
+    def update_line_color(self, *args, **kwargs):
+        self.figure.update_line_color(*args, **kwargs)
 
     def reset_profile(self):
         new_lines = []
@@ -122,7 +122,7 @@ class PlotView1d:
                                   name=line_name,
                                   color=col,
                                   line_id=line_id)
-        self.rescale_to_data()
+        # self.rescale_to_data()
 
     def remove_profile(self, event):
         new_lines = []

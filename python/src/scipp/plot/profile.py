@@ -13,7 +13,32 @@ class ProfileView(PlotFigure1d):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.current_visible_state = False
+        self.slice_area = False
         return
+
+    def update_axes(self, *args, **kwargs):
+                    # axparams=None,
+                    # axformatter=None,
+                    # axlocator=None,
+                    # logx=False,
+                    # logy=False,
+                    # clear=True,
+                    # legend_labels=True):
+        super().update_axes(*args, legend_labels=False, **kwargs)
+        self.slice_area = self.ax.axvspan(1,
+                                          2,
+                                          alpha=0.5,
+                                          color='lightgrey')
+
+    def update_data(self, *args, **kwargs):
+        super().update_data(*args, **kwargs)
+        self.slice_area = self.ax.axvspan(1,
+                                          2,
+                                          alpha=0.5,
+                                          color='lightgrey')
+
+    def _reset_line_label(self, name):
+        self.data_lines[name].set_label(None)
 
     def toggle_hover_visibility(self, value):
         # If the mouse moves off the image, we hide the profile. If it moves
@@ -43,3 +68,7 @@ class ProfileView(PlotFigure1d):
 
         self.slice_area.set_xy(new_xy)
         self.fig.canvas.draw_idle()
+
+    def toggle_view(self, visible=True):
+        if hasattr(self.fig.canvas, "layout"):
+            self.fig.canvas.layout.display = None if visible else 'none'

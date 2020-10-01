@@ -40,7 +40,7 @@ class PlotFigure1d:
         self.mask_params = mask_params
         self.picker = picker
         self.is_profile = is_profile
-        self.slice_area = None
+        # self.slice_area = None
         self.logx = logx
         self.logy = logy
         self.unit = unit
@@ -74,9 +74,9 @@ class PlotFigure1d:
     def savefig(self, filename=None):
         self.fig.savefig(filename, bbox_inches="tight")
 
-    def toggle_view(self, visible=True):
-        if hasattr(self.fig.canvas, "layout"):
-            self.fig.canvas.layout.display = None if visible else 'none'
+    # def toggle_view(self, visible=True):
+    #     if hasattr(self.fig.canvas, "layout"):
+    #         self.fig.canvas.layout.display = None if visible else 'none'
 
     def update_axes(self,
                     axparams=None,
@@ -84,7 +84,8 @@ class PlotFigure1d:
                     axlocator=None,
                     logx=False,
                     logy=False,
-                    clear=True):
+                    clear=True,
+                    legend_labels=True):
         if self.own_axes:
             self.ax.clear()
 
@@ -134,7 +135,9 @@ class PlotFigure1d:
 
         for name, hist in axparams["x"]["hist"].items():
 
-            label = name if len(name) > 0 else " "
+            label = None
+            if legend_labels:
+                label = name if len(name) > 0 else " "
 
             self.mask_lines[name] = {}
 
@@ -196,21 +199,25 @@ class PlotFigure1d:
                     zorder=10,
                     fmt="none")
 
-        if self.is_profile:
-            self.slice_area = self.ax.axvspan(1,
-                                              2,
-                                              alpha=0.5,
-                                              color='lightgrey')
+        # if self.is_profile:
+        #     self.slice_area = self.ax.axvspan(1,
+        #                                       2,
+        #                                       alpha=0.5,
+        #                                       color='lightgrey')
 
         self.ax.legend()
-        self.fig.canvas.draw_idle()
+        # self.fig.canvas.draw_idle()
 
-    def update_data(self, new_values):
+    def update_data(self, new_values, info):
 
         for name, vals in new_values.items():
 
             self.data_lines[name].set_data(vals["values"]["x"],
                                            vals["values"]["y"])
+            lab = name
+            if len(info["slice_label"]) > 0:
+                lab = "{}:{}".format(lab, info["slice_label"])
+            self.data_lines[name].set_label(lab)
 
             for m in vals["masks"]:
                 self.mask_lines[name][m].set_data(vals["values"]["x"],
@@ -230,7 +237,7 @@ class PlotFigure1d:
         self.ax.lines.append(cp.copy(self.data_lines[name]))
         self.ax.lines[-1].set_url(line_id)
         self.ax.lines[-1].set_zorder(2)
-        self.ax.lines[-1].set_label(None)
+        # self.ax.lines[-1].set_label(None)
         if self.ax.lines[-1].get_marker() == "None":
             self.ax.lines[-1].set_color(color)
         else:
@@ -255,8 +262,13 @@ class PlotFigure1d:
             self.ax.collections[-1].set_url(line_id)
             self.ax.collections[-1].set_zorder(2)
 
+        self._reset_line_label(name)
         self.ax.legend()
+        # self.rescale_to_data()
         self.fig.canvas.draw_idle()
+
+    def _reset_line_label(self, name):
+        self.data_lines[name].set_label(name)
 
     def remove_line(self, line_id):
         lines = []

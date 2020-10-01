@@ -149,7 +149,7 @@ class PlotFigure2d:
         # self.reset_profile()
         self.reset_home_button(axparams)
 
-    def update_data(self, new_values):
+    def update_data(self, new_values, info=None):
         self.image.set_data(new_values["values"])
         if new_values["extent"] is not None:
             self.image.set_extent(new_values["extent"])

@@ -132,8 +132,8 @@ class PlotView2d:
         self.figure.update_axes(axparams, axformatter, axlocator, logx, logy)
         self.reset_profile()
 
-    def update_data(self, new_values):
-        self.figure.update_data(new_values)
+    def update_data(self, *args, **kwargs):
+        self.figure.update_data(*args, **kwargs)
 
     def reset_profile(self):
         if self.profile_scatter is not None:

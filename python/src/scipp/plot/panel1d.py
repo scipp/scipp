@@ -61,7 +61,7 @@ class PlotPanel1d:
         self.update_widgets()
 
     def update_data(self, info):
-        self.slice_label = info["slice_label"][1:]
+        self.slice_label = info["slice_label"]
 
     def update_widgets(self):
         widget_list = []

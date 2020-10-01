@@ -383,20 +383,12 @@ class PlotController:
                 owner_dim].value = self.widgets.make_thickness_slider_readout(
                     owner_dim, loc, ind, self.coords[self.name][owner_dim])
 
-        slices = {}
-        info = {"slice_label": ""}
-        # Slice along dimensions with active sliders
-        for dim, val in self.widgets.slider.items():
-            if not val.disabled:
-                slices[dim] = self._make_slice_dict(val.value, dim)
-                info["slice_label"] = "{},{}:{}-{}".format(
-                    info["slice_label"], dim,
-                    slices[dim]["location"] - 0.5 * slices[dim]["thickness"],
-                    slices[dim]["location"] + 0.5 * slices[dim]["thickness"])
+        slices, info = self._get_slices_parameters(
+            lambda dim : not self.widgets.slider[dim].disabled)
 
         new_values = self.model.update_data(slices,
                                             mask_info=self._get_mask_info())
-        self.view.update_data(new_values)
+        self.view.update_data(new_values, info=info)
         if self.panel is not None:
             self.panel.update_data(info)
         if self.profile_dim is not None:
@@ -440,6 +432,22 @@ class PlotController:
 
         return axparams
 
+    def _get_slices_parameters(self, func):
+        slices = {}
+        info = {"slice_label": ""}
+        # Slice along dimensions with active sliders
+        for dim in self.widgets.slider:
+            # if not val.disabled:
+            if func(dim):
+                slices[dim] = self._make_slice_dict(
+                    self.widgets.slider[dim].value, dim)
+                info["slice_label"] = "{},{}:{}-{}".format(
+                    info["slice_label"], dim,
+                    slices[dim]["location"] - 0.5 * slices[dim]["thickness"],
+                    slices[dim]["location"] + 0.5 * slices[dim]["thickness"])
+        info["slice_label"] = info["slice_label"][1:]
+        return slices, info
+
     def _get_mask_info(self):
         """
         Get information of masks such as their names and whether they should be
@@ -464,6 +472,7 @@ class PlotController:
             name = self.name
         if target == "profile":
             self.profile.keep_line(name=name, color=color, line_id=line_id)
+            self.profile.rescale_to_data()
         else:
             self.view.keep_line(name=name, color=color, line_id=line_id)
 
@@ -560,11 +569,8 @@ class PlotController:
         ask the model to slice down the data, and send the new data returned by
         the model to the profile view.
         """
-        slices = {}
-        # Slice all dimensions apart from the profile dim
-        for dim, val in self.widgets.slider.items():
-            if dim != self.profile_dim:
-                slices[dim] = self._make_slice_dict(val.value, dim)
+        slices, info = self._get_slices_parameters(
+            lambda dim : dim != self.profile_dim)
 
         # Get new values from model
         new_values = self.model.update_profile(xdata=xdata,
@@ -573,7 +579,7 @@ class PlotController:
                                                axparams=self.profile_axparams,
                                                mask_info=self._get_mask_info())
         # Send new values to the profile view
-        self.profile.update_data(new_values)
+        self.profile.update_data(new_values, info=info)
 
     def toggle_hover_visibility(self, value):
         """
