@@ -113,11 +113,14 @@ def is_equal(x, y):
 
 
 def is_approx(x, y, tol):
-    """Compares values (x, y) element by element against tolerance (tol). Variances are not accounted for. 
-    
-    :param x: Left input. 
-    :param y: Right input. 
-    :param tol: Tolerance value. 
-    :return: Variable same size as input. Element True if absolute difference of value <= specified tolerance otherwise False.
+    """Compares values (x, y) element by element against tolerance (tol).
+    Variances are not accounted for.
+
+    :param x: Left input.
+    :param y: Right input.
+    :param tol: Tolerance value.
+    :return: Variable same size as input.
+             Element True if absolute diff of value <= input tolerance,
+             otherwise False.
     """
     return _call_cpp_func(_cpp.is_approx, x, y, tol)

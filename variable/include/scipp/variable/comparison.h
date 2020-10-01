@@ -29,7 +29,9 @@ SCIPP_VARIABLE_EXPORT Variable equal(const VariableConstView &x,
 SCIPP_VARIABLE_EXPORT Variable not_equal(const VariableConstView &x,
                                          const VariableConstView &y);
 
-SCIPP_VARIABLE_EXPORT Variable is_approx(const VariableConstView & a, const VariableConstView& b, const VariableConstView& t);
+SCIPP_VARIABLE_EXPORT Variable is_approx(const VariableConstView &a,
+                                         const VariableConstView &b,
+                                         const VariableConstView &t);
 
 /*
 /// Tests if the unit, values (and variances where appropriate) of two
