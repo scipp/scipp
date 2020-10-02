@@ -32,16 +32,16 @@ scipp::index get_index(const VariableConstView &coord, const Dim dim,
   return std::clamp<scipp::index>(0, i, coord.dims()[dim]);
 }
 
-template <typename T> auto get_1d_coord(const T &data, const Dim dim) {
-  const auto &coord = data.coords()[dim];
+auto get_1d_coord(const CoordsConstView &coords, const Dim dim) {
+  const auto &coord = coords[dim];
   if (coord.dims().ndim() != 1)
     throw except::DimensionError(
         "Multi-dimensional coordinates cannot be used for value-base slicing.");
   return coord;
 }
 
-template <typename T> auto get_coord(const T &data, const Dim dim) {
-  const auto &coord = get_1d_coord(data, dim);
+auto get_coord(const CoordsConstView &coords, const Dim dim) {
+  const auto &coord = get_1d_coord(coords, dim);
   const bool ascending = is_sorted(coord, dim, variable::SortOrder::Ascending);
   const bool descending =
       is_sorted(coord, dim, variable::SortOrder::Descending);
@@ -55,10 +55,10 @@ template <class T>
 T slice(const T &data, const Dim dim, const VariableConstView value) {
   core::expect::equals(value.dims(), Dimensions{});
   if (is_histogram(data, dim)) {
-    const auto &[coord, ascending] = get_coord(data, dim);
+    const auto &[coord, ascending] = get_coord(data.coords(), dim);
     return data.slice({dim, get_count(coord, dim, value, ascending) - 1});
   } else {
-    auto eq = equal(get_1d_coord(data, dim), value);
+    auto eq = equal(get_1d_coord(data.coords(), dim), value);
     if (sum(eq, dim).template value<scipp::index>() != 1)
       throw except::SliceError("Coord " + to_string(dim) +
                                " does not contain unique point with value " +
@@ -76,7 +76,7 @@ T slice(const T &data, const Dim dim, const VariableConstView begin,
     core::expect::equals(begin.dims(), Dimensions{});
   if (end)
     core::expect::equals(end.dims(), Dimensions{});
-  const auto &[coord, ascending] = get_coord(data, dim);
+  const auto &[coord, ascending] = get_coord(data.coords(), dim);
   const auto bin_edges = is_histogram(data, dim);
   scipp::index first = 0;
   scipp::index last = data.dims()[dim];
