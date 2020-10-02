@@ -183,5 +183,6 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
     c.def("__getitem__", &slicer<T>::get_by_value, py::keep_alive<0, 1>());
     c.def("__setitem__", &slicer<T>::template set<DatasetView>);
     c.def("__setitem__", &slicer<T>::template set_range<DatasetView>);
+    c.def("__setitem__", &slicer<T>::template set_by_value<DatasetView>);
   }
 }

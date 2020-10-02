@@ -36,6 +36,11 @@ class TestSliceByValue:
         slice = self._d['a']['x', 1.5 * sc.units.dimensionless].values
         assert slice == np.array(5.7)
 
+        self._d['x',
+                0.5 * sc.units.dimensionless] = self._d['x', 1.5 *
+                                                        sc.units.dimensionless]
+        assert self._d['x', 0]['a'].value == self._d['x', 1]['a'].value
+
     def test_modifying_slice_in_place(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless] *= 2.5
         slice = self._d['a']['x', 1.5 * sc.units.dimensionless].values
