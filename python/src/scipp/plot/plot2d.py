@@ -122,6 +122,8 @@ class SciPlot2d(SciPlot):
         if self.controller.ndim > 2:
             mask_params = self.controller.params["masks"][self.controller.name]
             mask_params["color"] = "k"
+            pad = config.plot.padding
+            pad[2] = 0.75
             self.profile = ProfileView(
                 errorbars=self.controller.errorbars,
                 ax=pax,
@@ -131,9 +133,10 @@ class SciPlot2d(SciPlot):
                 masks=self.controller.masks,
                 logx=logx,
                 logy=logy,
-                figsize=(config.plot.width / config.plot.dpi,
+                figsize=(1.3 * config.plot.width / config.plot.dpi,
                          0.6 * config.plot.height / config.plot.dpi),
-                is_profile=True)
+                padding=pad,
+                legend={"show": True, "loc": (1.02, 0.0)})
 
         # Connect controller to model, view, panel and profile
         self._connect_controller_members()

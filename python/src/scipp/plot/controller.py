@@ -385,7 +385,20 @@ class PlotController:
 
         # slices, info = self._get_slices_parameters(
         #     lambda dim : not self.widgets.slider[dim].disabled)
-        slices, info = self._get_slices_parameters(self.func2)
+        # slices, info = self._get_slices_parameters(self.func2)
+        slices = {}
+        info = {"slice_label": ""}
+        # Slice along dimensions with active sliders
+        for dim, sl in self.widgets.slider.items():
+            # if not val.disabled:
+            if not sl.disabled:
+                slices[dim] = self._make_slice_dict(
+                    self.widgets.slider[dim].value, dim)
+                info["slice_label"] = "{},{}:{}-{}".format(
+                    info["slice_label"], dim,
+                    value_to_string(slices[dim]["location"] - 0.5 * slices[dim]["thickness"]),
+                    value_to_string(slices[dim]["location"] + 0.5 * slices[dim]["thickness"]))
+        info["slice_label"] = info["slice_label"][1:]
 
         new_values = self.model.update_data(slices,
                                             mask_info=self._get_mask_info())
@@ -433,21 +446,21 @@ class PlotController:
 
         return axparams
 
-    def _get_slices_parameters(self, func):
-        slices = {}
-        info = {"slice_label": ""}
-        # Slice along dimensions with active sliders
-        for dim in self.widgets.slider:
-            # if not val.disabled:
-            if func(dim):
-                slices[dim] = self._make_slice_dict(
-                    self.widgets.slider[dim].value, dim)
-                info["slice_label"] = "{},{}:{}-{}".format(
-                    info["slice_label"], dim,
-                    slices[dim]["location"] - 0.5 * slices[dim]["thickness"],
-                    slices[dim]["location"] + 0.5 * slices[dim]["thickness"])
-        info["slice_label"] = info["slice_label"][1:]
-        return slices, info
+    # def _get_slices_parameters(self, func):
+    #     slices = {}
+    #     info = {"slice_label": ""}
+    #     # Slice along dimensions with active sliders
+    #     for dim in self.widgets.slider:
+    #         # if not val.disabled:
+    #         if func(dim):
+    #             slices[dim] = self._make_slice_dict(
+    #                 self.widgets.slider[dim].value, dim)
+    #             info["slice_label"] = "{},{}:{}-{}".format(
+    #                 info["slice_label"], dim,
+    #                 slices[dim]["location"] - 0.5 * slices[dim]["thickness"],
+    #                 slices[dim]["location"] + 0.5 * slices[dim]["thickness"])
+    #     info["slice_label"] = info["slice_label"][1:]
+    #     return slices, info
 
     def _get_mask_info(self):
         """
@@ -578,7 +591,26 @@ class PlotController:
         """
         # slices, info = self._get_slices_parameters(
         #     lambda dim : dim != self.profile_dim)
-        slices, info = self._get_slices_parameters(self.func1)
+        # slices, info = self._get_slices_parameters(self.func1)
+        slices = {}
+        info = {"slice_label": ""}
+        # Slice along dimensions with active sliders
+        for dim, sl in self.widgets.slider.items():
+            # if not val.disabled:
+            if dim != self.profile_dim:
+                slices[dim] = self._make_slice_dict(sl.value, dim)
+                if dim == self.axparams["x"]["dim"]:
+                    info["slice_label"] = "{},{}:{}".format(
+                    info["slice_label"], dim, value_to_string(xdata))
+                elif dim == self.axparams["y"]["dim"]:
+                    info["slice_label"] = "{},{}:{}".format(
+                    info["slice_label"], dim, value_to_string(ydata))
+                else:
+                    info["slice_label"] = "{},{}:{}-{}".format(
+                        info["slice_label"], dim,
+                        value_to_string(slices[dim]["location"] - 0.5 * slices[dim]["thickness"]),
+                        value_to_string(slices[dim]["location"] + 0.5 * slices[dim]["thickness"]))
+        info["slice_label"] = info["slice_label"][1:]
 
         # Get new values from model
         new_values = self.model.update_profile(xdata=xdata,
