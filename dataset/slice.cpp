@@ -125,10 +125,27 @@ DatasetConstView slice(const DatasetConstView &ds, const Dim dim,
                        const VariableConstView value) {
   return slice<DatasetConstView>(ds, dim, value);
 }
+DatasetView slice(const DatasetView &ds, const Dim dim,
+                  const VariableConstView value) {
+  return slice<DatasetView>(ds, dim, value);
+}
+DatasetView slice(Dataset &ds, const Dim dim, const VariableConstView value) {
+  return slice(DatasetView(ds), dim, value);
+}
 
 DatasetConstView slice(const DatasetConstView &ds, const Dim dim,
                        const VariableConstView begin,
                        const VariableConstView end) {
   return slice<DatasetConstView>(ds, dim, begin, end);
+}
+
+DatasetView slice(const DatasetView &ds, const Dim dim,
+                  const VariableConstView begin, const VariableConstView end) {
+  return slice<DatasetView>(ds, dim, begin, end);
+}
+
+DatasetView slice(Dataset &ds, const Dim dim, const VariableConstView begin,
+                  const VariableConstView end) {
+  return slice(DatasetView(ds), dim, begin, end);
 }
 } // namespace scipp::dataset

@@ -23,9 +23,13 @@ class TestSliceByValue:
                              coords={'x': var})
 
     def test_slice_by_single_value(self):
-        by_value = self._d['a']['x', 1.5 * sc.units.dimensionless]
-        by_index = self._d['a']['x', 1]
-        assert sc.is_equal(by_value, by_index)
+        def test(sliceable):
+            by_value = sliceable['x', 1.5 * sc.units.dimensionless]
+            by_index = sliceable['x', 1]
+            assert sc.is_equal(by_value, by_index)
+
+        test(self._d['a'])
+        test(self._d)
 
     def test_assigning_to_slice_by_value(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless] = 5.7 * sc.units.m
@@ -50,10 +54,15 @@ class TestSliceByValue:
         assert slice == np.array(1.0)
 
     def test_slice_with_range(self):
-        by_value = self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
-                                sc.units.dimensionless]
-        by_index = self._d['a']['x', 1:-1]
-        assert sc.is_equal(by_value, by_index)
+        def test(sliceable):
+
+            by_value = sliceable['x', 1.5 * sc.units.dimensionless:4.5 *
+                                 sc.units.dimensionless]
+            by_index = sliceable['x', 1:-1]
+            assert sc.is_equal(by_value, by_index)
+
+        test(self._d['a'])
+        test(self._d)
 
     def test_assign_variable_to_range(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
