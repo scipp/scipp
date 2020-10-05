@@ -13,7 +13,7 @@ class SciPlot:
                  axes=None,
                  errorbars=None,
                  cmap=None,
-                 log=False,
+                 norm=False,
                  vmin=None,
                  vmax=None,
                  color=None,
@@ -41,12 +41,12 @@ class SciPlot:
         self.params = {"values": {}, "masks": {}}
         globs = {
             "cmap": cmap,
-            "log": log,
+            "norm": norm,
             "vmin": vmin,
             "vmax": vmax,
             "color": color
         }
-        masks_globs = {"log": log, "vmin": vmin, "vmax": vmax}
+        masks_globs = {"norm": norm, "vmin": vmin, "vmax": vmax}
 
         self.errorbars = {}
         self.dim_to_shape = {}
@@ -63,7 +63,8 @@ class SciPlot:
 
             # Get the colormap and normalization
             self.params["values"][name] = parse_params(globs=globs,
-                                                       variable=array.data)
+                                                       variable=array.data,
+                                                       name=name)
 
             self.params["masks"][name] = parse_params(params=masks,
                                                       defaults={
@@ -159,22 +160,22 @@ class SciPlot:
     def savefig(self, filename=None):
         self.view.savefig(filename=filename)
 
-    def _connect_controller_members(self):
-        self.controller.model = self.model
-        self.controller.panel = self.panel
-        self.controller.profile = self.profile
-        self.controller.view = self.view
+    # def _connect_controller_members(self):
+    #     self.controller.model = self.model
+    #     self.controller.panel = self.panel
+    #     self.controller.profile = self.profile
+    #     self.controller.view = self.view
 
-    def as_static(self, keep_widgets=False):
-        self.controller.model = None
-        self.model = None
-        if not keep_widgets:
-            self.controller.panel = None
-            self.controller.profile = None
-            self.controller.view = None
-            self.controller = None
-            self.panel = None
-            self.profile = None
-            return self.view.figure
-        else:
-            return self
+    # def as_static(self, keep_widgets=False):
+    #     self.controller.model = None
+    #     self.model = None
+    #     if not keep_widgets:
+    #         self.controller.panel = None
+    #         self.controller.profile = None
+    #         self.controller.view = None
+    #         self.controller = None
+    #         self.panel = None
+    #         self.profile = None
+    #         return self.view.figure
+    #     else:
+    #         return self

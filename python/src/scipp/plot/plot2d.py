@@ -31,9 +31,9 @@ from .widgets import PlotWidgets
 #            resolution=None):
 def plot2d(*args,
            filename=None,
-           logx=False,
-           logy=False,
-           logxy=False,
+           # logx=False,
+           # logy=False,
+           # logxy=False,
            **kwargs):
     """
     Plot a 2D slice through a N dimensional dataset. For every dimension above
@@ -42,8 +42,8 @@ def plot2d(*args,
     """
 
     sp = SciPlot2d(*args,
-                   logx=logx or logxy,
-                   logy=logy or logxy,
+                   # logx=logx or logxy,
+                   # logy=logy or logxy,
                    **kwargs)
 
     if filename is not None:
@@ -63,18 +63,18 @@ class SciPlot2d(SciPlot):
                  pax=None,
                  aspect=None,
                  cmap=None,
-                 log=None,
+                 norm=None,
                  vmin=None,
                  vmax=None,
                  color=None,
-                 logx=False,
-                 logy=False,
+                 # logx=False,
+                 # logy=False,
                  resolution=None):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                  axes=axes,
                  cmap=cmap,
-                 log=log,
+                 norm=norm,
                  vmin=vmin,
                  vmax=vmax,
                  color=color,
@@ -107,9 +107,9 @@ class SciPlot2d(SciPlot):
         # #                                    # logy=logy,
         # #                                    # button_options=button_options)
 
-        # # The model which takes care of all heavy calculations
-        # self.model = PlotModel2d(scipp_obj_dict=scipp_obj_dict,
-        #                          resolution=resolution)
+        # The model which takes care of all heavy calculations
+        self.model = PlotModel2d(scipp_obj_dict=scipp_obj_dict,
+                                 resolution=resolution)
 
         # The view which will display the 2d image and send pick events back to
         # the controller
@@ -129,9 +129,9 @@ class SciPlot2d(SciPlot):
                 self.name]["unit"],
             mask_cmap=self.params["masks"][
                 self.name]["cmap"],
-            masks=self.mask_names[self.name],
-            logx=logx,
-            logy=logy)
+            masks=self.mask_names[self.name])
+            # logx=logx,
+            # logy=logy)
 
         # # Profile view which displays an additional dimension as a 1d plot
         # if self.controller.ndim > 2:

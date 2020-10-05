@@ -26,13 +26,12 @@ defaults = {
         # The colorbar properties
         "params": {
             "cmap": "viridis",
-            "log": False,
+            "norm": "linear",
             "vmin": None,
             "vmax": None,
             "color": None,
             "show": True,
             "cbar": True,
-            "norm": None,
         },
         # The default image height (in pixels)
         "height":
@@ -75,7 +74,7 @@ defaults = {
         "linewidth": [1.5],
         # Default line style for 1D non-histogram plots
         "linestyle": ["none"],
-        "padding": [0.05, 0.02, 1, 1]
+        "padding": [0.05, 0.02, 1, 1],
     },
     # The colors for each dataset member used in table and show functions
     "colors": {

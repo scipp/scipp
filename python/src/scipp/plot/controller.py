@@ -518,7 +518,7 @@ class PlotController:
                     xmax = max(xmax, xlims[1])
                 axparams[but_val] = {
                     "lims": [xmin, xmax],
-                    # "log": getattr(self, "log{}".format(but_val)),
+                    "log": getattr(self, "log{}".format(but_val)),
                     "hist": {
                         name: self.histograms[name][dim][dim]
                         for name in self.histograms
@@ -529,8 +529,8 @@ class PlotController:
                 # Safety check for log axes
                 axparams[but_val]["lims"] = check_log_limits(
                     lims=axparams[but_val]["lims"],
-                    log=getattr(self, "log{}".format(but_val)))
-                    # log=axparams[but_val]["log"])
+                    # log=getattr(self, "log{}".format(but_val)))
+                    log=axparams[but_val]["log"])
 
         return axparams
 
@@ -609,7 +609,7 @@ class PlotController:
                 self.profile_axparams = {
                     "x": {
                         "lims": [xmin, xmax],
-                        # "log": False,
+                        "log": False,
                         "hist": {
                             name: self.histograms[name][self.profile_dim][
                                 self.profile_dim]
@@ -619,11 +619,11 @@ class PlotController:
                         "label": self.labels[self.name][self.profile_dim]
                     }
                 }
-                # # Safety check for log axes
-                # if self.profile_axparams["x"]["log"] and (
-                #         self.profile_axparams["x"]["lims"][0] <= 0):
-                #     self.profile_axparams["x"]["lims"][
-                #         0] = 1.0e-03 * self.profile_axparams["x"]["lims"][1]
+                # Safety check for log axes
+                if self.profile_axparams["x"]["log"] and (
+                        self.profile_axparams["x"]["lims"][0] <= 0):
+                    self.profile_axparams["x"]["lims"][
+                        0] = 1.0e-03 * self.profile_axparams["x"]["lims"][1]
 
                 # Safety check for log axes
                 self.profile_axparams["x"]["lims"] = check_log_limits(

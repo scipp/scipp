@@ -26,8 +26,8 @@ class PlotFigure2d:
                  vmin=None,
                  vmax=None,
                  color=None,
-                 logx=False,
-                 logy=False,
+                 # logx=False,
+                 # logy=False,
                  mask_cmap=None,
                  masks=None,
                  resolution=None):
@@ -56,12 +56,12 @@ class PlotFigure2d:
             self.mask_image[m] = self.make_default_imshow(cmap=mask_cmap,
                                                           norm=norm,
                                                           aspect=aspect)
-        self.logx = logx
-        self.logy = logy
-        if self.logx:
-            self.ax.set_xscale("log")
-        if self.logy:
-            self.ax.set_yscale("log")
+        # self.logx = logx
+        # self.logy = logy
+        # if self.logx:
+        #     self.ax.set_xscale("log")
+        # if self.logy:
+        #     self.ax.set_yscale("log")
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
@@ -127,16 +127,18 @@ class PlotFigure2d:
     def update_axes(self, axparams, axformatter, axlocator):
       # , logx, logy):
 
-        is_log = {"x": self.logx, "y": self.logy}
+        # is_log = {"x": self.logx, "y": self.logy}
 
         # Set axes labels
         self.ax.set_xlabel(axparams["x"]["label"])
         self.ax.set_ylabel(axparams["y"]["label"])
+        self.ax.set_xscale("log" is axparams["x"]["log"] else "linear")
+        self.ax.set_yscale("log" is axparams["y"]["log"] else "linear")
 
         for xy, param in axparams.items():
             axis = getattr(self.ax, "{}axis".format(xy))
-            axis.set_major_formatter(axformatter[param["dim"]][is_log[xy]])
-            axis.set_major_locator(axlocator[param["dim"]][is_log[xy]])
+            axis.set_major_formatter(axformatter[param["dim"]][param["log"]])
+            axis.set_major_locator(axlocator[param["dim"]][param["log"]])
 
         # Set axes limits and ticks
         extent_array = np.array([axparams["x"]["lims"],

@@ -48,7 +48,8 @@ def parse_params(params=None,
                  defaults=None,
                  globs=None,
                  variable=None,
-                 array=None):
+                 array=None,
+                 name=None):
     """
     Construct the colorbar settings using default and input values
     """
@@ -70,10 +71,13 @@ def parse_params(params=None,
         for key, val in params.items():
             parsed[key] = val
 
-    if parsed["log"]:
+    if parsed["norm"] == "log":
         norm = LogNorm
-    else:
+    elif parsed["norm"] == "linear":
         norm = Normalize
+    else:
+        raise RuntimeError("Unknown norm. Expected 'linear' or 'log', "
+                           "got {}.".format(parsed["norm"]))
     parsed["norm"] = norm(vmin=parsed["vmin"], vmax=parsed["vmax"])
 
     # Convert color into custom colormap

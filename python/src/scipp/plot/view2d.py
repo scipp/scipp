@@ -26,8 +26,8 @@ class PlotView2d:
                  vmin=None,
                  vmax=None,
                  color=None,
-                 logx=False,
-                 logy=False,
+                 # logx=False,
+                 # logy=False,
                  mask_cmap=None,
                  masks=None,
                  resolution=None):
@@ -54,8 +54,8 @@ class PlotView2d:
                                    vmin=vmin,
                                    vmax=vmax,
                                    color=color,
-                                   logx=logx,
-                                   logy=logy,
+                                   # logx=logx,
+                                   # logy=logy,
                                    mask_cmap=mask_cmap,
                                    masks=masks,
                                    resolution=resolution)
@@ -126,14 +126,14 @@ class PlotView2d:
             self.current_lims = xylims
             self.interface["update_viewport"](xylims)
 
-    def update_axes(self, axparams, axformatter, axlocator, logx, logy):
+    def update_axes(self, axparams, axformatter, axlocator): #, logx, logy):
 
         self.current_lims['x'] = axparams["x"]["lims"]
         self.current_lims['y'] = axparams["y"]["lims"]
         self.global_lims["x"] = axparams["x"]["lims"]
         self.global_lims["y"] = axparams["y"]["lims"]
 
-        self.figure.update_axes(axparams, axformatter, axlocator, logx, logy)
+        self.figure.update_axes(axparams, axformatter, axlocator)#, logx, logy)
         self.reset_profile()
 
     def update_data(self, *args, **kwargs):
