@@ -31,11 +31,12 @@ class TestSliceByValue:
         test(self._d['a'])
         test(self._d)
 
-    def test_assigning_to_slice_by_value(self):
+    def test_assigning_to_slice_by_value_dataarray(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless] = 5.7 * sc.units.m
         slice = self._d['a']['x', 1.5 * sc.units.dimensionless].values
         assert slice == np.array(5.7)
 
+    def test_assigning_to_slice_by_value_dataset(self):
         self._d['x',
                 0.5 * sc.units.dimensionless] = self._d['x', 1.5 *
                                                         sc.units.dimensionless]
@@ -77,53 +78,53 @@ class TestSliceByValue:
         test(self._d['a'])
         test(self._d)
 
-    def test_assign_variable_to_range(self):
+    def test_assign_variable_to_range_dataarray(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                      sc.units.dimensionless].data = sc.Variable(
                          dims=['x'], values=[6.0, 6.0, 6.0], unit=sc.units.m)
 
         assert self._d['a'].data.values.tolist() == [1.0, 6.0, 6.0, 6.0, 1.4]
 
+    def test_assign_variable_to_range_dataset(self):
         self._d['x', 1.5 * sc.units.dimensionless:4.5 *
                 sc.units.dimensionless]['a'].data = sc.Variable(
                     dims=['x'], values=[6.0, 6.0, 6.0], unit=sc.units.m)
 
         assert self._d['a'].data.values.tolist() == [1.0, 6.0, 6.0, 6.0, 1.4]
 
-    def test_modify_range_in_place_from_variable(self):
-        orig = self._d.copy()
+    def test_on_dataarray_modify_range_in_place_from_variable(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                      sc.units.dimensionless].data += sc.Variable(
                          dims=['x'], values=[2.0, 2.0, 2.0], unit=sc.units.m)
 
         assert self._d['a'].data.values.tolist() == [1.0, 3.1, 3.2, 3.3, 1.4]
 
-        self._d = orig
+    def test_on_dataset_modify_range_in_place_from_variable(self):
         self._d['x', 1.5 * sc.units.dimensionless:4.5 *
                 sc.units.dimensionless]['a'].data += sc.Variable(
                     dims=['x'], values=[2.0, 2.0, 2.0], unit=sc.units.m)
 
         assert self._d['a'].data.values.tolist() == [1.0, 3.1, 3.2, 3.3, 1.4]
 
-    def test_assign_dataarray_to_range(self):
+    def test_on_dataarray_assign_dataarray_to_range(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                      sc.units.dimensionless] = self._d['b']['x', 1:-1]
 
         assert self._d['a'].data.values.tolist() == [1.0, 2.0, 3.0, 4.0, 1.4]
 
+    def test_on_dataset_assign_dataarray_to_range(self):
         self._d['x', 1.5 * sc.units.dimensionless:4.5 *
                 sc.units.dimensionless]['a'] = self._d['b']['x', 1:-1]
 
         assert self._d['a'].data.values.tolist() == [1.0, 2.0, 3.0, 4.0, 1.4]
 
-    def test_modify_range_in_place_from_dataarray(self):
-        orig = self._d.copy()
+    def test_on_dataarray_modify_range_in_place_from_dataarray(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                      sc.units.dimensionless] += self._d['b']['x', 1:-1]
 
         assert self._d['a'].data.values.tolist() == [1.0, 3.1, 4.2, 5.3, 1.4]
 
-        self._d = orig
+    def test_on_dataset_modify_range_in_place_from_dataarray(self):
         self._d['x', 1.5 * sc.units.dimensionless:4.5 *
                 sc.units.dimensionless]['a'] += self._d['b']['x', 1:-1]
         assert self._d['a'].data.values.tolist() == [1.0, 3.1, 4.2, 5.3, 1.4]
