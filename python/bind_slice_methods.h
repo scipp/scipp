@@ -104,16 +104,19 @@ template <class T> struct slicer {
         }
         auto start = py::getattr(py_slice, "start");
         auto stop = py::getattr(py_slice, "stop");
-        auto start_var =
-            start.is_none()
-                ? VariableConstView{}
-                : py::getattr(py_slice, "start").cast<VariableConstView>();
-        auto stop_var =
-            stop.is_none()
-                ? VariableConstView{}
-                : py::getattr(py_slice, "stop").cast<VariableConstView>();
+        if (!start.is_none() || !stop.is_none()) { // Means default slice : is
+                                                   // treated as index slice
+          auto start_var =
+              start.is_none()
+                  ? VariableConstView{}
+                  : py::getattr(py_slice, "start").cast<VariableConstView>();
+          auto stop_var =
+              stop.is_none()
+                  ? VariableConstView{}
+                  : py::getattr(py_slice, "stop").cast<VariableConstView>();
 
-        return slice(self, dim, start_var, stop_var);
+          return slice(self, dim, start_var, stop_var);
+        }
       } catch (const py::cast_error &) {
       }
     }
