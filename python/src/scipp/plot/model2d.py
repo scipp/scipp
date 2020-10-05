@@ -13,9 +13,9 @@ import numpy as np
 
 
 class PlotModel2d(PlotModel):
-    def __init__(self, controller=None, scipp_obj_dict=None, resolution=None):
+    def __init__(self, scipp_obj_dict=None, resolution=None):
 
-        super().__init__(controller=controller, scipp_obj_dict=scipp_obj_dict)
+        super().__init__(scipp_obj_dict=scipp_obj_dict)
 
         self.button_dims = {}
         self.dim_to_xy = {}

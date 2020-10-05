@@ -25,9 +25,9 @@ class PlotController:
                  # vmin=None,
                  # vmax=None,
                  # color=None,
-                 # logx=False,
-                 # logy=False,
-                 # logz=False,
+                 logx=False,
+                 logy=False,
+                 logz=False,
                  # button_options=None,
                  # positions=None,
                  # errorbars=None,
@@ -46,9 +46,9 @@ class PlotController:
 
         self.name = name
         # self.axes = axes
-        # self.logx = logx
-        # self.logy = logy
-        # self.logz = logz
+        self.logx = logx
+        self.logy = logy
+        self.logz = logz
         self.axparams = {}
         self.profile_axparams = {}
         self.slice_instead_of_rebin = {}
@@ -174,6 +174,8 @@ class PlotController:
         #                            positions=positions)
         self.initialise_widgets(dim_to_shape[self.name])
         self.connect_widgets()
+        self.connect_view()
+
         return
 
     def _ipython_display_(self):
@@ -355,9 +357,9 @@ class PlotController:
                 self.coords[self.name][dim][dim, ind:ind + 2],
                 dim).values[0]
             dim_init[dim]["slider_readout"] = value_to_string(loc)
-            dim_init[dim]["thickness_readout"] = self._make_thickness_slider_readout(
-                    dim, loc, ind, self.coords[self.name]
-                    [dim])
+            # dim_init[dim]["thickness_readout"] = self._make_thickness_slider_readout(
+            #         dim, loc, ind, self.coords[self.name]
+            #         [dim])
 
         mask_init = {}
         for name in self.masks:
@@ -384,6 +386,14 @@ class PlotController:
             "toggle_mask": self.toggle_mask
             })
 
+    def connect_view(self):
+        self.view.connect({
+            "update_viewport": self.update_viewport,
+            "update_profile": self.update_profile,
+            "toggle_hover_visibility": self.toggle_hover_visibility,
+            "keep_line": self.keep_line,
+            "remove_line": self.remove_line
+            })
 
 
 
@@ -430,13 +440,13 @@ class PlotController:
         self.model.update_axes(self.axparams)
         self.view.update_axes(axparams=self.axparams,
                               axformatter=self.axformatter[self.name],
-                              axlocator=self.axlocator[self.name],
-                              logx=self.logx,
-                              logy=self.logy)
+                              axlocator=self.axlocator[self.name])
+                              # logx=self.logx,
+                              # logy=self.logy)
         if self.panel is not None:
             self.panel.update_axes(axparams=self.axparams)
         if self.profile is not None:
-            self._toggle_profile_view()
+            self.toggle_profile_view()
         self.update_data()
         self.rescale_to_data()
 
@@ -508,7 +518,7 @@ class PlotController:
                     xmax = max(xmax, xlims[1])
                 axparams[but_val] = {
                     "lims": [xmin, xmax],
-                    "log": getattr(self, "log{}".format(but_val)),
+                    # "log": getattr(self, "log{}".format(but_val)),
                     "hist": {
                         name: self.histograms[name][dim][dim]
                         for name in self.histograms
@@ -519,7 +529,8 @@ class PlotController:
                 # Safety check for log axes
                 axparams[but_val]["lims"] = check_log_limits(
                     lims=axparams[but_val]["lims"],
-                    log=axparams[but_val]["log"])
+                    log=getattr(self, "log{}".format(but_val)))
+                    # log=axparams[but_val]["log"])
 
         return axparams
 
@@ -563,7 +574,7 @@ class PlotController:
         else:
             self.view.remove_line(line_id=line_id)
 
-    def _toggle_profile_view(self, owner=None):
+    def toggle_profile_view(self, owner=None):
         """
         Show or hide the 1d plot displaying the profile along an additional
         dimension.
@@ -598,7 +609,7 @@ class PlotController:
                 self.profile_axparams = {
                     "x": {
                         "lims": [xmin, xmax],
-                        "log": False,
+                        # "log": False,
                         "hist": {
                             name: self.histograms[name][self.profile_dim][
                                 self.profile_dim]
@@ -608,17 +619,23 @@ class PlotController:
                         "label": self.labels[self.name][self.profile_dim]
                     }
                 }
+                # # Safety check for log axes
+                # if self.profile_axparams["x"]["log"] and (
+                #         self.profile_axparams["x"]["lims"][0] <= 0):
+                #     self.profile_axparams["x"]["lims"][
+                #         0] = 1.0e-03 * self.profile_axparams["x"]["lims"][1]
+
                 # Safety check for log axes
-                if self.profile_axparams["x"]["log"] and (
-                        self.profile_axparams["x"]["lims"][0] <= 0):
-                    self.profile_axparams["x"]["lims"][
-                        0] = 1.0e-03 * self.profile_axparams["x"]["lims"][1]
+                self.profile_axparams["x"]["lims"] = check_log_limits(
+                    lims=self.profile_axparams["x"]["lims"],
+                    log=False)
+
                 self.profile.update_axes(
                     axparams=self.profile_axparams,
                     axformatter=self.axformatter[self.name],
-                    axlocator=self.axlocator[self.name],
-                    logx=False,
-                    logy=False)
+                    axlocator=self.axlocator[self.name])
+                    # logx=False,
+                    # logy=False)
             else:
                 self.view.reset_profile()
 

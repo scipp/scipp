@@ -7,7 +7,7 @@ from .._scipp import core as sc
 
 
 class PlotModel:
-    def __init__(self, controller=None, scipp_obj_dict=None):
+    def __init__(self, scipp_obj_dict=None):
 
         # The main container of DataArrays
         self.data_arrays = {}

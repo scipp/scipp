@@ -108,32 +108,30 @@ class SciPlot2d(SciPlot):
         # #                                    # button_options=button_options)
 
         # # The model which takes care of all heavy calculations
-        # self.model = PlotModel2d(controller=self.controller,
-        #                          scipp_obj_dict=scipp_obj_dict,
+        # self.model = PlotModel2d(scipp_obj_dict=scipp_obj_dict,
         #                          resolution=resolution)
 
-        # # The view which will display the 2d image and send pick events back to
-        # # the controller
-        # self.view = PlotView2d(
-        #     controller=self.controller,
-        #     ax=ax,
-        #     cax=cax,
-        #     figsize=figsize,
-        #     aspect=aspect,
-        #     cmap=self.controller.params["values"][
-        #         self.controller.name]["cmap"],
-        #     norm=self.controller.params["values"][
-        #         self.controller.name]["norm"],
-        #     title=self.controller.name,
-        #     cbar=self.controller.params["values"][
-        #         self.controller.name]["cbar"],
-        #     unit=self.controller.params["values"][
-        #         self.controller.name]["unit"],
-        #     mask_cmap=self.controller.params["masks"][
-        #         self.controller.name]["cmap"],
-        #     masks=self.controller.masks[self.controller.name],
-        #     logx=logx,
-        #     logy=logy)
+        # The view which will display the 2d image and send pick events back to
+        # the controller
+        self.view = PlotView2d(
+            ax=ax,
+            cax=cax,
+            figsize=figsize,
+            aspect=aspect,
+            cmap=self.params["values"][
+                self.name]["cmap"],
+            norm=self.params["values"][
+                self.name]["norm"],
+            title=self.name,
+            cbar=self.params["values"][
+                self.name]["cbar"],
+            unit=self.params["values"][
+                self.name]["unit"],
+            mask_cmap=self.params["masks"][
+                self.name]["cmap"],
+            masks=self.mask_names[self.name],
+            logx=logx,
+            logy=logy)
 
         # # Profile view which displays an additional dimension as a 1d plot
         # if self.controller.ndim > 2:
@@ -163,7 +161,10 @@ class SciPlot2d(SciPlot):
                                            axes=self.axes,
                                            name=self.name,
                                            dim_to_shape=self.dim_to_shape,
-                                           widgets=self.widgets)
+                                           logx=logx,
+                                           logy=logy,
+                                           widgets=self.widgets,
+                                           view=self.view)
                                            # masks=masks,
                                            # cmap=cmap,
                                            # log=log,
@@ -174,7 +175,7 @@ class SciPlot2d(SciPlot):
                                            # logy=logy,
                                            # button_options=button_options)
 
-        # Call update_slice once to make the initial image
-        self.controller.update_axes()
+        # # Call update_slice once to make the initial image
+        # self.controller.update_axes()
 
         return

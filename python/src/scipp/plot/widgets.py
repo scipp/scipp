@@ -344,7 +344,7 @@ class PlotWidgets:
 
             # Slider readouts
             self.slider_readout[dim].value = item["slider_readout"]
-            self.thickness_readout[dim].value = item["thickness_readout"]
+            # self.thickness_readout[dim].value = item["thickness_readout"]
 
         # Add masks
         for name in mask_init:

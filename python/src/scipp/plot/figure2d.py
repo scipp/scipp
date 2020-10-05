@@ -56,9 +56,11 @@ class PlotFigure2d:
             self.mask_image[m] = self.make_default_imshow(cmap=mask_cmap,
                                                           norm=norm,
                                                           aspect=aspect)
-        if logx:
+        self.logx = logx
+        self.logy = logy
+        if self.logx:
             self.ax.set_xscale("log")
-        if logy:
+        if self.logy:
             self.ax.set_yscale("log")
 
     def _ipython_display_(self):
@@ -122,9 +124,10 @@ class PlotFigure2d:
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
 
-    def update_axes(self, axparams, axformatter, axlocator, logx, logy):
+    def update_axes(self, axparams, axformatter, axlocator):
+      # , logx, logy):
 
-        is_log = {"x": logx, "y": logy}
+        is_log = {"x": self.logx, "y": self.logy}
 
         # Set axes labels
         self.ax.set_xlabel(axparams["x"]["label"])

@@ -13,7 +13,6 @@ from matplotlib.collections import PathCollection
 
 class PlotView2d:
     def __init__(self,
-                 controller=None,
                  ax=None,
                  cax=None,
                  figsize=None,
@@ -33,7 +32,8 @@ class PlotView2d:
                  masks=None,
                  resolution=None):
 
-        self.controller = controller
+        self.interface = {}
+
         self.profile_hover_connection = None
         self.profile_pick_connection = None
         self.profile_update_lock = False
@@ -80,6 +80,10 @@ class PlotView2d:
     def savefig(self, filename=None):
         self.figure.savefig(filename)
 
+    def connect(self, function_list):
+        for key, func in function_list.items():
+            self.interface[key] = func
+
     def rescale_to_data(self, vmin, vmax):
         self.figure.rescale_to_data(vmin=vmin, vmax=vmax)
 
@@ -120,7 +124,7 @@ class PlotView2d:
         # avoid too many updates while panning.
         if diff > 0.1:
             self.current_lims = xylims
-            self.controller.update_viewport(xylims)
+            self.interface["update_viewport"](xylims)
 
     def update_axes(self, axparams, axformatter, axlocator, logx, logy):
 
@@ -145,10 +149,10 @@ class PlotView2d:
         if event.inaxes == self.figure.ax:
             xdata = event.xdata - self.current_lims["x"][0]
             ydata = event.ydata - self.current_lims["y"][0]
-            self.controller.update_profile(xdata, ydata)
-            self.controller.toggle_hover_visibility(True)
+            self.interface["update_profile"](xdata, ydata)
+            self.interface["toggle_hover_visibility"](True)
         else:
-            self.controller.toggle_hover_visibility(False)
+            self.interface["toggle_hover_visibility"](False)
 
     def keep_or_remove_profile(self, event):
         if isinstance(event.artist, PathCollection):
@@ -197,7 +201,7 @@ class PlotView2d:
             self.profile_scatter.set_offsets(new_offsets)
             self.profile_scatter.set_facecolors(new_colors)
 
-        self.controller.keep_line(target="profile", color=col, line_id=line_id)
+        self.interface["keep_line"](target="profile", color=col, line_id=line_id)
 
     def remove_profile(self, event):
         ind = event.ind[0]
@@ -206,6 +210,6 @@ class PlotView2d:
         self.profile_scatter.set_offsets(xy)
         self.profile_scatter.set_facecolors(c)
         # Also remove the line from the 1d plot
-        self.controller.remove_line(target="profile",
+        self.interface["remove_line"](target="profile",
                                     line_id=self.profile_ids[ind])
         self.profile_ids.pop(ind)
