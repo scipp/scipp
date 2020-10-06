@@ -7,6 +7,10 @@ add_executable(groupby_benchmark EXCLUDE_FROM_ALL groupby_benchmark.cpp)
 add_dependencies(all-benchmarks groupby_benchmark)
 target_link_libraries(groupby_benchmark LINK_PRIVATE scipp-dataset benchmark)
 
+add_executable(buckets_benchmark EXCLUDE_FROM_ALL buckets_benchmark.cpp)
+add_dependencies(all-benchmarks buckets_benchmark)
+target_link_libraries(buckets_benchmark LINK_PRIVATE scipp-dataset benchmark)
+
 add_executable(slice_benchmark EXCLUDE_FROM_ALL slice_benchmark.cpp)
 add_dependencies(all-benchmarks slice_benchmark)
 target_link_libraries(slice_benchmark LINK_PRIVATE scipp-dataset benchmark)
