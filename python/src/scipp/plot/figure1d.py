@@ -4,6 +4,7 @@
 
 # Scipp imports
 from .. import config
+from .figure import PlotFigure
 from .tools import get_mpl_axes, get_line_param
 
 # Other imports
@@ -14,7 +15,7 @@ import warnings
 import io
 
 
-class PlotFigure1d:
+class PlotFigure1d(PlotFigure):
     def __init__(self,
                  errorbars=None,
                  ax=None,
@@ -30,6 +31,8 @@ class PlotFigure1d:
                  picker=False,
                  legend={"show": True},
                  padding=None):
+
+        super().__init__(ax=ax, cax=cax, figsize=figsize, title=title, padding=padding)
 
         # Matplotlib line containers
         self.data_lines = {}
@@ -49,32 +52,32 @@ class PlotFigure1d:
         if "loc" not in self.legend:
             self.legend["loc"] = 0
 
-        # Get matplotlib figure and axes
-        self.fig, self.ax, _, self.own_axes = get_mpl_axes(ax=ax,
-                                                           figsize=figsize,
-                                                           padding=padding)
+        # # Get matplotlib figure and axes
+        # self.fig, self.ax, _, self.own_axes = get_mpl_axes(ax=ax,
+        #                                                    figsize=figsize,
+        #                                                    padding=padding)
 
         self.grid = grid
 
-        if self.own_axes:
-            self.fig.tight_layout(rect=config.plot.padding)
+        # if self.own_axes:
+        #     self.fig.tight_layout(rect=config.plot.padding)
 
         # Save the line parameters (color, linewidth...)
         self.mpl_line_params = mpl_line_params
 
-    def _ipython_display_(self):
-        return self._to_widget()._ipython_display_()
+    # def _ipython_display_(self):
+    #     return self._to_widget()._ipython_display_()
 
-    def _to_widget(self):
-        if hasattr(self.fig.canvas, "widgets"):
-            return self.fig.canvas
-        else:
-            buf = io.BytesIO()
-            self.fig.savefig(buf, format='png')
-            buf.seek(0)
-            return ipw.Image(value=buf.getvalue(),
-                             width=config.plot.width,
-                             height=config.plot.height)
+    # def _to_widget(self):
+    #     if hasattr(self.fig.canvas, "widgets"):
+    #         return self.fig.canvas
+    #     else:
+    #         buf = io.BytesIO()
+    #         self.fig.savefig(buf, format='png')
+    #         buf.seek(0)
+    #         return ipw.Image(value=buf.getvalue(),
+    #                          width=config.plot.width,
+    #                          height=config.plot.height)
 
     def savefig(self, filename=None):
         self.fig.savefig(filename, bbox_inches="tight")

@@ -1,5 +1,6 @@
 # Scipp imports
 from .. import config
+from .figure import PlotFigure
 from .tools import get_mpl_axes
 
 # Other imports
@@ -11,7 +12,7 @@ import io
 # from copy import deepcopy
 
 
-class PlotFigure2d:
+class PlotFigure2d(PlotFigure):
     def __init__(self,
                  ax=None,
                  cax=None,
@@ -32,9 +33,7 @@ class PlotFigure2d:
                  masks=None,
                  resolution=None):
 
-        # Get matplotlib figure and axes
-        self.fig, self.ax, self.cax, self.own_axes = get_mpl_axes(
-            ax=ax, cax=cax, figsize=figsize)
+        super().__init__(ax=ax, cax=cax, figsize=figsize, title=title)
 
         # Save aspect ratio setting
         if aspect is None:
@@ -44,7 +43,7 @@ class PlotFigure2d:
                                               norm=norm,
                                               aspect=aspect,
                                               picker=5)
-        self.ax.set_title(title)
+        # self.ax.set_title(title)
         self.cbar = None
         if cbar:
             self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
@@ -63,19 +62,19 @@ class PlotFigure2d:
         # if self.logy:
         #     self.ax.set_yscale("log")
 
-    def _ipython_display_(self):
-        return self._to_widget()._ipython_display_()
+    # def _ipython_display_(self):
+    #     return self._to_widget()._ipython_display_()
 
-    def _to_widget(self):
-        if hasattr(self.fig.canvas, "widgets"):
-            return self.fig.canvas
-        else:
-            buf = io.BytesIO()
-            self.fig.savefig(buf, format='png')
-            buf.seek(0)
-            return ipw.Image(value=buf.getvalue(),
-                             width=config.plot.width,
-                             height=config.plot.height)
+    # def _to_widget(self):
+    #     if hasattr(self.fig.canvas, "widgets"):
+    #         return self.fig.canvas
+    #     else:
+    #         buf = io.BytesIO()
+    #         self.fig.savefig(buf, format='png')
+    #         buf.seek(0)
+    #         return ipw.Image(value=buf.getvalue(),
+    #                          width=config.plot.width,
+    #                          height=config.plot.height)
 
     def savefig(self, filename=None):
         self.fig.savefig(filename, bbox_inches="tight")
@@ -124,7 +123,7 @@ class PlotFigure2d:
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
 
-    def update_axes(self, axparams, axformatter, axlocator):
+    def update_axes(self, axparams):#, axformatter, axlocator):
       # , logx, logy):
 
         # is_log = {"x": self.logx, "y": self.logy}
@@ -132,13 +131,13 @@ class PlotFigure2d:
         # Set axes labels
         self.ax.set_xlabel(axparams["x"]["label"])
         self.ax.set_ylabel(axparams["y"]["label"])
-        self.ax.set_xscale("log" is axparams["x"]["log"] else "linear")
-        self.ax.set_yscale("log" is axparams["y"]["log"] else "linear")
+        self.ax.set_xscale("log" if axparams["x"]["log"] else "linear")
+        self.ax.set_yscale("log" if axparams["y"]["log"] else "linear")
 
         for xy, param in axparams.items():
             axis = getattr(self.ax, "{}axis".format(xy))
-            axis.set_major_formatter(axformatter[param["dim"]][param["log"]])
-            axis.set_major_locator(axlocator[param["dim"]][param["log"]])
+            axis.set_major_formatter(self.axformatter[param["dim"]][param["log"]])
+            axis.set_major_locator(self.axlocator[param["dim"]][param["log"]])
 
         # Set axes limits and ticks
         extent_array = np.array([axparams["x"]["lims"],

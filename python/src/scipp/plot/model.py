@@ -2,42 +2,169 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
+from .tools import to_bin_edges
 from .._scipp import core as sc
+import matplotlib.ticker as ticker
 
 
 class PlotModel:
-    def __init__(self, scipp_obj_dict=None):
+    def __init__(self, scipp_obj_dict=None, name=None, axes=None, dim_to_shape=None,
+        dim_label_map=None):
 
         # The main container of DataArrays
         self.data_arrays = {}
 
+        self.axformatter = {}
+
         # Create dict of DataArrays using information from controller
         for name, array in scipp_obj_dict.items():
+
+            # Store axis tick formatters
+            self.axformatter[name] = {}
 
             # Create a DataArray with units of counts, and bin-edge
             # coordinates, because it is to be passed to rebin during the
             # resampling stage.
             self.data_arrays[name] = sc.DataArray(data=sc.Variable(
-                dims=list(controller.dim_to_shape[name].keys()),
+                dims=list(dim_to_shape[name].keys()),
                 unit=sc.units.counts,
                 values=array.values,
                 variances=array.variances,
                 dtype=sc.dtype.float64))
 
-            # Add bin-edge coordinates, which are either dimension or non-
-            # dimension coordinates
-            for dim, coord in controller.coords[name].items():
-                self.data_arrays[name].coords[dim] = coord
+            # # Add bin-edge coordinates, which are either dimension or non-
+            # # dimension coordinates
+            # for dim, coord in controller.coords[name].items():
+            #     self.data_arrays[name].coords[dim] = coord
+
+            # Iterate through axes and collect coordinates
+            for dim in axes:
+                coord, formatter = self._axis_coord_and_formatter(
+                    dim, array, dim_to_shape[name])
+
+                self.axformatter[name][dim] = formatter
+
+                is_histogram = None
+                for i, d in enumerate(coord.dims):
+                    if d == dim:
+                        is_histogram = dim_to_shape[name][d] == coord.shape[i] - 1
+
+                if is_histogram:
+                    self.data_arrays[name].coords[dim] = coord
+                else:
+                    self.data_arrays[name].coords[dim] = to_bin_edges(coord, dim)
+
+                # self._collect_dim_shapes_and_lims(
+                #     name, dim, array, dim_to_shape[name])
 
             # Include masks
-            for n, msk in controller.masks[name].items():
-                self.data_arrays[name].masks[n] = msk
+            for m, msk in array.masks.items():
+                mask_dims = msk.dims
+                for dim in mask_dims:
+                    if dim not in axes:
+                        mask_dims[mask_dims.index(
+                            dim)] = dim_label_map[dim]
+                self.data_arrays[name].masks[m] = sc.Variable(
+                    dims=mask_dims, values=msk.values, dtype=msk.dtype)
+
+
+            # for n, msk in controller.masks[name].items():
+            #     self.data_arrays[name].masks[n] = msk
 
         # The main currently displayed data slice
         self.dslice = None
         # Save a copy of the name for simpler access
-        self.name = controller.name
+        self.name = name
+
+    def _axis_coord_and_formatter(self, dim, data_array, dim_to_shape):
+        """
+        Get dimensions from requested axis.
+        Also retun axes tick formatters and locators.
+        """
+
+        # Create some default axis tick formatter, depending on whether log
+        # for that axis will be True or False
+        # formatter = {
+        #     False: ticker.ScalarFormatter(),
+        #     True: ticker.LogFormatterSciNotation()
+        # }
+        formatter = {
+            False: None,
+            True: None,
+            "custom_locator": False
+        }
+        # locator = {False: ticker.AutoLocator(), True: ticker.LogLocator()}
+
+        coord = None
+
+        if dim in data_array.coords:
+
+            dim_coord_dim = data_array.coords[dim].dims[-1]
+            tp = data_array.coords[dim].dtype
+
+            if tp == sc.dtype.vector_3_float64:
+                coord = make_fake_coord(dim,
+                                      dim_to_shape[dim] + 1,
+                                      unit=data_array.coords[dim].unit)
+                form = lambda val, pos: "(" + ",".join([
+                    value_to_string(item, precision=2)
+                    for item in data_array.coords[dim].values[int(val)]
+                ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim]) else ""
+                formatter.update({False: form, True: form, "custom_locator": False})
+                # locator[False] = ticker.MaxNLocator(integer=True)
+
+            elif tp == sc.dtype.string:
+                coord = make_fake_coord(dim,
+                                      dim_to_shape[dim] + 1,
+                                      unit=data_array.coords[dim].unit)
+                form = lambda val, pos: data_array.coords[
+                    dim].values[int(val)] if (int(val) >= 0 and int(
+                        val) < dim_to_shape[dim]) else ""
+                formatter.update({False: form, True: form, "custom_locator": False})
+                # locator[False] = ticker.MaxNLocator(integer=True)
+
+            elif dim != dim_coord_dim:
+                # non-dimension coordinate
+                if dim_coord_dim in data_array.coords:
+                    coord = data_array.coords[dim_coord_dim]
+                    coord = sc.Variable([dim],
+                                      values=coord.values,
+                                      variances=coord.variances,
+                                      unit=coord.unit,
+                                      dtype=sc.dtype.float64)
+                else:
+                    coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+                form = lambda val, pos: value_to_string(data_array.coords[
+                        dim].values[np.abs(coord.values - val).argmin()])
+                formatter.update({False: form, True: form})
+
+            else:
+                coord = data_array.coords[dim].astype(sc.dtype.float64)
+
+        else:
+            # dim not found in data_array.coords
+            coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+
+        return coord, formatter
+
+    def get_axformatter(self, name, dim):
+        return self.axformatter[dim]
+
+    def get_coord_center_value(self, name, dim, ind):
+        return to_bin_centers(self.data_arrays[name].coords[dim][dim, ind:ind + 2],
+                dim).values[0]
+
+
+
+
+
+
+
+
+
+
+
+
 
     def _select_bins(self, coord, dim, start, end):
         """

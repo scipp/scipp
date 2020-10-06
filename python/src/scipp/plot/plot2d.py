@@ -109,6 +109,10 @@ class SciPlot2d(SciPlot):
 
         # The model which takes care of all heavy calculations
         self.model = PlotModel2d(scipp_obj_dict=scipp_obj_dict,
+                                 axes=self.axes,
+                                 name=self.name,
+                                 dim_to_shape=self.dim_to_shape,
+                                 dim_label_map=self.dim_label_map,
                                  resolution=resolution)
 
         # The view which will display the 2d image and send pick events back to
@@ -161,9 +165,11 @@ class SciPlot2d(SciPlot):
                                            axes=self.axes,
                                            name=self.name,
                                            dim_to_shape=self.dim_to_shape,
-                                           logx=logx,
-                                           logy=logy,
+                                           # logx=logx,
+                                           # logy=logy,
+                                           mask_names=self.mask_names,
                                            widgets=self.widgets,
+                                           model=self.model,
                                            view=self.view)
                                            # masks=masks,
                                            # cmap=cmap,

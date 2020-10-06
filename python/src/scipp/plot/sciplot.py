@@ -33,6 +33,8 @@ class SciPlot:
         self.mask_names = {}
         # self.underlying_dim_to_label = {}
         self.dim_label_map = {}
+        # self.coords_dtype = {}
+
         self.name = list(scipp_obj_dict.keys())[0]
         self._process_axes_dimensions(scipp_obj_dict[self.name],
                                       positions=positions)
@@ -96,6 +98,11 @@ class SciPlot:
 
             # Save mask names
             self.mask_names[name] = [m for m in array.masks]
+
+            # self.coords_dtype[name] = {}
+            # for dim in self.axes:
+
+
 
 
 

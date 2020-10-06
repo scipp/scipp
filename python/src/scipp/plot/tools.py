@@ -92,10 +92,10 @@ def parse_params(params=None,
 
 
 def make_fake_coord(dim, size, unit=None):
-    args = {"values": np.arange(size, dtype=np.float64)}
+    kwargs = {"values": np.arange(size, dtype=np.float64)}
     if unit is not None:
-        args["unit"] = unit
-    return sc.Variable(dims=[dim], **args)
+        kwargs["unit"] = unit
+    return sc.Variable(dims=[dim], **kwargs)
 
 
 def vars_to_err(v):
