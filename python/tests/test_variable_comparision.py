@@ -22,6 +22,11 @@ def test_comparison_op_exports_for_variable():
     _check_comparison_ops_on(var['x', :])
 
 
+def test_is_approx():
+    a = sc.Variable(['x'], values=np.array([1, 2, 3]))
+    assert_export(sc.is_approx, a, a, 0 * sc.units.one)
+
+
 def test_is_equal():
     var = sc.Variable(['x'], values=np.array([1]))
     assert_export(sc.is_equal, var, var)

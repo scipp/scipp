@@ -870,7 +870,9 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   auto unit = op(vars.unit()...);
   Variable out;
   try {
-    if constexpr ((is_any_events<Ts>::value || ...) || sizeof...(Vars) > 2) {
+    if constexpr (std::is_base_of_v<
+                      core::transform_flags::no_event_list_handling_t, Op> ||
+                  (is_any_events<Ts>::value || ...) || sizeof...(Vars) > 2) {
       out = visit_impl<Ts...>::apply(Transform{op}, vars...);
     } else {
       out =

@@ -62,6 +62,18 @@ template <typename T> void bind_not_equal(py::module &m) {
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
 }
 
+template <class T> void bind_is_approx(py::module &m) {
+  m.def(
+      "is_approx",
+      [](const typename T::const_view_type &x,
+         const typename T::const_view_type &y,
+         const typename T::const_view_type &tol) {
+        return is_approx(x, y, tol);
+      },
+      py::arg("x"), py::arg("y"), py::arg("tol"),
+      py::call_guard<py::gil_scoped_release>());
+}
+
 template <typename T> void bind_is_equal(py::module &m) {
   m.def(
       "is_equal",
@@ -77,6 +89,7 @@ void init_comparison(py::module &m) {
   bind_greater_equal<Variable>(m);
   bind_equal<Variable>(m);
   bind_not_equal<Variable>(m);
+  bind_is_approx<Variable>(m);
   bind_is_equal<Variable>(m);
   bind_is_equal<Dataset>(m);
   bind_is_equal<DataArray>(m);
