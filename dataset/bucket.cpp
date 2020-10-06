@@ -17,6 +17,7 @@
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::dataset::buckets {
 
@@ -94,23 +95,29 @@ void copy(const DatasetConstView &src, const DatasetView &dst, const Dim dim,
   }
 }
 
-auto resize_buffer(const VariableConstView &parent, const Dim dim,
-                   const scipp::index size) {
-  return resize(parent, dim, size);
-}
-
 constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
                                    const scipp::index size) {
-  // TODO Could avoid init here for better performance.
-  return var.dims().contains(dim) ? resize(var, dim, size) : Variable(var);
+  auto dims = var.dims();
+  if (dims.contains(dim))
+    dims.resize(dim, size);
+  // Using variableFactory instead of variable::resize for creating
+  // _uninitialized_ variable.
+  return var.dims().contains(dim) ? variable::variableFactory().create(
+                                        var.dtype(), dims, var.hasVariances())
+                                  : Variable(var);
 };
+
+auto resize_buffer(const VariableConstView &parent, const Dim dim,
+                   const scipp::index size) {
+  return copy_or_resize(parent, dim, size);
+}
 
 // TODO These functions are an unfortunate near-duplicate of `resize`. However,
 // the latter drops coords along the resized dimension. Is there a way to unify
 // this? Can the need to drop coords in resize be avoided?
 auto resize_buffer(const DataArrayConstView &parent, const Dim dim,
                    const scipp::index size) {
-  DataArray buffer(resize(parent.data(), dim, size));
+  DataArray buffer(copy_or_resize(parent.data(), dim, size));
   for (const auto &[name, var] : parent.aligned_coords())
     buffer.aligned_coords().set(name, copy_or_resize(var, dim, size));
   for (const auto &[name, var] : parent.masks())
