@@ -521,32 +521,39 @@ class PlotController:
         updated when the axes have changed.
         """
 
+        active_sliders = self.widgets.get_active_slider_values()
+
         if change is not None:
             owner_dim = change["owner"].dim
 
             # Update slider readout label
-            ind = self.widgets.slider[owner_dim].value
-            loc = to_bin_centers(
-                self.coords[self.name][owner_dim][owner_dim, ind:ind + 2],
-                owner_dim).values[0]
-            self.widgets.slider_readout[owner_dim].value = value_to_string(loc)
-            # Update thickness readout label
-            self.widgets.thickness_readout[
-                owner_dim].value = self.widgets.make_thickness_slider_readout(
-                    owner_dim, loc, ind, self.coords[self.name][owner_dim])
+            # ind = self.widgets.slider[owner_dim].value
+            ind = active_sliders[owner_dim]
+            # loc = to_bin_centers(
+            #     self.coords[self.name][owner_dim][owner_dim, ind:ind + 2],
+            #     owner_dim).values[0]
+            loc = self.model.get_coord_center_value(self.name, owner_dim, ind)
+            self.widgets.update_slider_readout(owner_dim, value_to_string(loc))
+            self.widgets.update_thickness_readout(owner_dim, loc)
+
+            # # self.widgets.slider_readout[owner_dim].value = value_to_string(loc)
+            # # Update thickness readout label
+            # self.widgets.thickness_readout[
+            #     owner_dim].value = self.widgets.make_thickness_slider_readout(
+            #         owner_dim, loc, ind, self.coords[self.name][owner_dim])
 
         slices = {}
         info = {"slice_label": ""}
         # Slice along dimensions with active sliders
-        for dim, sl in self.widgets.slider.items():
+        # for dim, sl in self.widgets.slider.items():
+        for dim, val in active_sliders.items():
             # if not val.disabled:
-            if not sl.disabled:
-                slices[dim] = self._make_slice_dict(
-                    self.widgets.slider[dim].value, dim)
-                info["slice_label"] = "{},{}:{}-{}".format(
-                    info["slice_label"], dim,
-                    value_to_string(slices[dim]["location"] - 0.5 * slices[dim]["thickness"]),
-                    value_to_string(slices[dim]["location"] + 0.5 * slices[dim]["thickness"]))
+            # if not sl.disabled:
+            slices[dim] = self._make_slice_dict(val, dim)
+            info["slice_label"] = "{},{}:{}-{}".format(
+                info["slice_label"], dim,
+                value_to_string(slices[dim]["location"] - 0.5 * slices[dim]["thickness"]),
+                value_to_string(slices[dim]["location"] + 0.5 * slices[dim]["thickness"]))
         info["slice_label"] = info["slice_label"][1:]
 
         new_values = self.model.update_data(slices,
@@ -767,8 +774,9 @@ class PlotController:
             "index":
             ind,
             "location":
-            to_bin_centers(self.coords[self.name][dim][dim, ind:ind + 2],
-                           dim).values[0],
+            self.model.get_coord_center_value(self.name, dim, ind),
+            # to_bin_centers(self.coords[self.name][dim][dim, ind:ind + 2],
+            #                dim).values[0],
             "thickness":
             self.widgets.thickness_slider[dim].value
         }

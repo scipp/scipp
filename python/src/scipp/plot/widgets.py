@@ -46,6 +46,7 @@ class PlotWidgets:
         self.button_axis_to_dim = {}
         self.continuous_update = {}
         self.all_masks_button = None
+        # self.active_slider_dims
 
         # Now begin loop to construct sliders
         button_values = [None] * (ndim -
@@ -281,6 +282,7 @@ class PlotWidgets:
                     self.profile_button[dim].disabled = False
                     self.continuous_update[dim].disabled = False
         owner.old_value = owner.value
+
         self.update_axes()
         return
 
@@ -369,3 +371,23 @@ class PlotWidgets:
         # #             self.controller.toggle_mask, names="value")
         # # # self.container += self._add_masks_controls(mask_names)
 
+    def get_active_slider_values(self):
+        slider_values = {}
+        for dim, sl in self.slider.items():
+            if not sl.disabled:
+                slider_values[dim] = sl.value
+        return slider_values
+
+    def update_slider_readout(self, dim, value):
+        self.slider_readout[dim].value = value
+
+    def update_thickness_readout(self, dim, loc):
+        thickness = self.thickness_slider[dim].value
+        # if thickness == 0.0:
+        #     thickness_start = value_to_string(coord[dim, ind].value)
+        #     thickness_end = value_to_string(coord[dim, ind + 1].value)
+        # else:
+        thickness_start = value_to_string(loc - 0.5 * thickness)
+        thickness_end = value_to_string(loc + 0.5 * thickness)
+        # return "{} - {}".format(thickness_start, thickness_end)
+        self.thickness_readout[dim].value = "{} - {}".format(thickness_start, thickness_end)
