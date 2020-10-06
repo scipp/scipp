@@ -11,7 +11,6 @@
 using namespace scipp;
 using namespace scipp::dataset;
 
-
 class DataArrayBucketTest : public ::testing::Test {
 protected:
   using Model = variable::DataModel<bucket<DataArray>>;
