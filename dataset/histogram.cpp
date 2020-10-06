@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/histogram.h"
 #include "scipp/core/element/histogram.h"
+#include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
@@ -34,7 +35,23 @@ DataArray histogram(const DataArrayConstView &events,
   auto dim = binEdges.dims().inner();
 
   DataArray result;
-  if (contains_events(events.coords()[dim])) {
+  if (events.dtype() == dtype<bucket<DataArray>>) {
+    // TODO Histogram data from buckets. Is this the natural choice for the API,
+    // i.e., does it make sense that histograming considers bucket contents?
+    // Should we instead have a separate named function for this case?
+    result = apply_and_drop_dim(
+        events,
+        [](const DataArrayConstView &events_, const Dim dim_,
+           const VariableConstView &binEdges_) {
+          const auto mask = irreducible_mask(events_.masks(), dim_);
+          if (mask)
+            // TODO Creating a full copy of event data here is very inefficient
+            return buckets::histogram(events_.data() * ~mask, binEdges_);
+          else
+            return buckets::histogram(events_.data(), binEdges_);
+        },
+        dim, binEdges);
+  } else if (contains_events(events.coords()[dim])) {
     result = apply_and_drop_dim(
         events,
         [](const DataArrayConstView &events_, const Dim eventDim,

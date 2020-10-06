@@ -4,6 +4,7 @@
 
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/histogram.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bucket_model.h"
 #include "scipp/variable/operations.h"
@@ -62,6 +63,45 @@ TEST_F(DataArrayBucketTest, concatenate_with_broadcast) {
 
   // Broadcast not possible for in-place append
   EXPECT_THROW(buckets::append(var, var2), except::DimensionMismatchError);
+}
+
+TEST_F(DataArrayBucketTest, histogram) {
+  Variable weights = makeVariable<double>(
+      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
+  DataArray events = DataArray(weights, {{Dim::Z, data}});
+  Variable buckets{std::make_unique<Model>(indices, Dim::X, events)};
+  // `buckets` *does not* depend on the histogramming dimension
+  const auto bin_edges =
+      makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
+  EXPECT_EQ(buckets::histogram(buckets, bin_edges),
+            makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
+                                 Values{0, 1, 2, 0, 0, 3},
+                                 Variances{0, 1, 2, 0, 0, 3}));
+}
+
+TEST_F(DataArrayBucketTest, histogram_existing_dim) {
+  Variable weights = makeVariable<double>(
+      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
+  DataArray events = DataArray(weights, {{Dim::Y, data}});
+  Variable buckets{std::make_unique<Model>(indices, Dim::X, events)};
+  // `buckets` *does* depend on the histogramming dimension
+  const auto bin_edges =
+      makeVariable<double>(Dims{Dim::Y}, Shape{4}, Values{0, 1, 2, 4});
+  const auto expected = makeVariable<double>(
+      Dims{Dim::Y}, Shape{3}, Values{0, 1, 5}, Variances{0, 1, 5});
+  EXPECT_EQ(buckets::histogram(buckets, bin_edges), expected);
+
+  // Histogram data array containing bucket variable
+  DataArray a(buckets);
+  EXPECT_EQ(histogram(a, bin_edges),
+            DataArray(expected, {{Dim::Y, bin_edges}}));
+  // Masked data array
+  a.masks().set(
+      "mask", makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{false, true}));
+  EXPECT_EQ(histogram(a, bin_edges),
+            DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{3},
+                                           Values{0, 1, 2}, Variances{0, 1, 2}),
+                      {{Dim::Y, bin_edges}}));
 }
 
 class DatasetBucketTest : public ::testing::Test {
