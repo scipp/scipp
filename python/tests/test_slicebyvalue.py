@@ -23,62 +23,110 @@ class TestSliceByValue:
                              coords={'x': var})
 
     def test_slice_by_single_value(self):
-        by_value = self._d['a']['x', 1.5 * sc.units.dimensionless]
-        by_index = self._d['a']['x', 1]
-        assert sc.is_equal(by_value, by_index)
+        def test(sliceable):
+            by_value = sliceable['x', 1.5 * sc.units.dimensionless]
+            by_index = sliceable['x', 1]
+            assert sc.is_equal(by_value, by_index)
 
-    def test_assigning_to_slice_by_value(self):
+        test(self._d['a'])
+        test(self._d)
+
+    def test_assigning_to_slice_by_value_dataarray(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless] = 5.7 * sc.units.m
         slice = self._d['a']['x', 1.5 * sc.units.dimensionless].values
         assert slice == np.array(5.7)
+
+    def test_assigning_to_slice_by_value_dataset(self):
+        self._d['x',
+                0.5 * sc.units.dimensionless] = self._d['x', 1.5 *
+                                                        sc.units.dimensionless]
+        assert self._d['x', 0]['a'].value == self._d['x', 1]['a'].value
 
     def test_modifying_slice_in_place(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless] *= 2.5
         slice = self._d['a']['x', 1.5 * sc.units.dimensionless].values
         assert slice == np.array(2.75)
+        slice = self._d['x', 1.5 * sc.units.dimensionless]['a'].values
+        assert slice == np.array(2.75)
 
         self._d['a']['x', 1.5 * sc.units.dimensionless] += 2.25 * sc.units.m
         slice = self._d['a']['x', 1.5 * sc.units.dimensionless].values
+        assert slice == np.array(5.0)
+        slice = self._d['x', 1.5 * sc.units.dimensionless]['a'].values
         assert slice == np.array(5.0)
 
         self._d['a']['x', 1.5 * sc.units.dimensionless] -= 3.0 * sc.units.m
         slice = self._d['a']['x', 1.5 * sc.units.dimensionless].values
         assert slice == np.array(2.0)
+        slice = self._d['x', 1.5 * sc.units.dimensionless]['a'].values
+        assert slice == np.array(2.0)
 
         self._d['a']['x', 1.5 * sc.units.dimensionless] /= 2.0
         slice = self._d['a']['x', 1.5 * sc.units.dimensionless].values
         assert slice == np.array(1.0)
+        slice = self._d['x', 1.5 * sc.units.dimensionless]['a'].values
+        assert slice == np.array(1.0)
 
     def test_slice_with_range(self):
-        by_value = self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
-                                sc.units.dimensionless]
-        by_index = self._d['a']['x', 1:-1]
-        assert sc.is_equal(by_value, by_index)
+        def test(sliceable):
 
-    def test_assign_variable_to_range(self):
+            by_value = sliceable['x', 1.5 * sc.units.dimensionless:4.5 *
+                                 sc.units.dimensionless]
+            by_index = sliceable['x', 1:-1]
+            assert sc.is_equal(by_value, by_index)
+
+        test(self._d['a'])
+        test(self._d)
+
+    def test_assign_variable_to_range_dataarray(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
-                     sc.units.dimensionless] = sc.Variable(
+                     sc.units.dimensionless].data = sc.Variable(
                          dims=['x'], values=[6.0, 6.0, 6.0], unit=sc.units.m)
 
         assert self._d['a'].data.values.tolist() == [1.0, 6.0, 6.0, 6.0, 1.4]
 
-    def test_modify_range_in_place_from_variable(self):
+    def test_assign_variable_to_range_dataset(self):
+        self._d['x', 1.5 * sc.units.dimensionless:4.5 *
+                sc.units.dimensionless]['a'].data = sc.Variable(
+                    dims=['x'], values=[6.0, 6.0, 6.0], unit=sc.units.m)
+
+        assert self._d['a'].data.values.tolist() == [1.0, 6.0, 6.0, 6.0, 1.4]
+
+    def test_on_dataarray_modify_range_in_place_from_variable(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
-                     sc.units.dimensionless] += sc.Variable(
+                     sc.units.dimensionless].data += sc.Variable(
                          dims=['x'], values=[2.0, 2.0, 2.0], unit=sc.units.m)
 
         assert self._d['a'].data.values.tolist() == [1.0, 3.1, 3.2, 3.3, 1.4]
 
-    def test_assign_dataarray_to_range(self):
+    def test_on_dataset_modify_range_in_place_from_variable(self):
+        self._d['x', 1.5 * sc.units.dimensionless:4.5 *
+                sc.units.dimensionless]['a'].data += sc.Variable(
+                    dims=['x'], values=[2.0, 2.0, 2.0], unit=sc.units.m)
+
+        assert self._d['a'].data.values.tolist() == [1.0, 3.1, 3.2, 3.3, 1.4]
+
+    def test_on_dataarray_assign_dataarray_to_range(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                      sc.units.dimensionless] = self._d['b']['x', 1:-1]
 
         assert self._d['a'].data.values.tolist() == [1.0, 2.0, 3.0, 4.0, 1.4]
 
-    def test_modify_range_in_place_from_dataarray(self):
+    def test_on_dataset_assign_dataarray_to_range(self):
+        self._d['x', 1.5 * sc.units.dimensionless:4.5 *
+                sc.units.dimensionless]['a'] = self._d['b']['x', 1:-1]
+
+        assert self._d['a'].data.values.tolist() == [1.0, 2.0, 3.0, 4.0, 1.4]
+
+    def test_on_dataarray_modify_range_in_place_from_dataarray(self):
         self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                      sc.units.dimensionless] += self._d['b']['x', 1:-1]
 
+        assert self._d['a'].data.values.tolist() == [1.0, 3.1, 4.2, 5.3, 1.4]
+
+    def test_on_dataset_modify_range_in_place_from_dataarray(self):
+        self._d['x', 1.5 * sc.units.dimensionless:4.5 *
+                sc.units.dimensionless]['a'] += self._d['b']['x', 1:-1]
         assert self._d['a'].data.values.tolist() == [1.0, 3.1, 4.2, 5.3, 1.4]
 
     def test_slice_by_incorrect_unit_throws(self):
@@ -113,11 +161,15 @@ class TestSliceByValue:
         by_index = self._d['a']['x', 1:]
         assert sc.is_equal(by_value, by_index)
 
+        by_value = self._d['x', 1.5 * sc.units.dimensionless:]
+        by_index = self._d['x', 1:]
+        assert sc.is_equal(by_value, by_index)
+
     def test_range_end_only(self):
         by_value = self._d['a']['x', :2.5 * sc.units.dimensionless]
         by_index = self._d['a']['x', :2]
         assert sc.is_equal(by_value, by_index)
 
-    def test_range_all(self):
-        by_value = self._d['a']['x', :]
-        assert sc.is_equal(by_value, self._d['a'])
+        by_value = self._d['x', :2.5 * sc.units.dimensionless]
+        by_index = self._d['x', :2]
+        assert sc.is_equal(by_value, by_index)

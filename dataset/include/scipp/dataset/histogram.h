@@ -23,5 +23,7 @@ SCIPP_DATASET_EXPORT std::set<Dim> edge_dimensions(const DataArrayConstView &a);
 SCIPP_DATASET_EXPORT Dim edge_dimension(const DataArrayConstView &a);
 SCIPP_DATASET_EXPORT bool is_histogram(const DataArrayConstView &a,
                                        const Dim dim);
+SCIPP_DATASET_EXPORT bool is_histogram(const DatasetConstView &a,
+                                       const Dim dim);
 
 } // namespace scipp::dataset

@@ -118,13 +118,23 @@ Dim edge_dimension(const DataArrayConstView &a) {
   return *dims.begin();
 }
 
-/// Return true if the data array respresents a histogram for given dim.
-bool is_histogram(const DataArrayConstView &a, const Dim dim) {
+namespace {
+template <typename T> bool is_histogram_impl(const T &a, const Dim dim) {
   const auto dims = a.dims();
   const auto coords = a.coords();
-  return dims.contains(dim) && coords.contains(dim) &&
+  return dims.count(dim) == 1 && coords.contains(dim) &&
          coords[dim].dims().contains(dim) &&
-         coords[dim].dims()[dim] == dims[dim] + 1;
+         coords[dim].dims()[dim] == dims.at(dim) + 1;
+}
+} // namespace
+/// Return true if the data array represents a histogram for given dim.
+bool is_histogram(const DataArrayConstView &a, const Dim dim) {
+  return is_histogram_impl(a, dim);
+}
+
+/// Return true if the dataset represents a histogram for given dim.
+bool is_histogram(const DatasetConstView &a, const Dim dim) {
+  return is_histogram_impl(a, dim);
 }
 
 namespace {

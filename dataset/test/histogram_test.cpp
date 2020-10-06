@@ -54,6 +54,10 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   const auto histX = DataArray(dataX, {{Dim::X, edgesX}});
   EXPECT_TRUE(is_histogram(histX, Dim::X));
   EXPECT_FALSE(is_histogram(histX, Dim::Y));
+  // Also for Dataset
+  const auto ds_histX = Dataset{DataArrayConstView{histX}};
+  EXPECT_TRUE(is_histogram(ds_histX, Dim::X));
+  EXPECT_FALSE(is_histogram(ds_histX, Dim::Y));
 
   const auto histX2d = DataArray(dataXY, {{Dim::X, edgesX}});
   EXPECT_TRUE(is_histogram(histX2d, Dim::X));
