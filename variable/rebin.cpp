@@ -56,7 +56,7 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
       return;
     begin = std::max(scipp::index(0), begin - 1);
     if (is_dtype_bool(newT)) {
-      slice |= any(oldT.slice({dim, begin, end}), dim);
+      slice |= any(oldT.slice({dim, begin, std::min(end, oldSize)}), dim);
     } else {
       add_from_bin(slice, xn_low, xn_high, begin);
       if (begin + 1 < end - 1)

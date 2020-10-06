@@ -442,7 +442,7 @@ data_section = partial(
 
 attr_section = partial(
     _mapping_section,
-    name="Coordinates (unaligned)",
+    name="Coords (unaligned)",
     details_func=summarize_attrs,
     max_items_collapse=10,
 )
