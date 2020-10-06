@@ -175,48 +175,6 @@ struct Divide {
 };
 } // namespace
 
-template <class Coord, class Edges, class Weights>
-auto apply_op_events_dense(const Coord &coord, const Edges &edges,
-                           const Weights &weights) {
-  using W = std::decay_t<decltype(weights)>;
-  constexpr bool vars = is_ValueAndVariance_v<W>;
-  using ElemT = typename core::detail::element_type_t<W>::value_type;
-  using T = event_list<ElemT>;
-  T out_vals;
-  T out_vars;
-  out_vals.reserve(coord.size());
-  if constexpr (vars)
-    out_vars.reserve(coord.size());
-  constexpr auto get = [](const auto &x, const scipp::index i) {
-    if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-      return ValueAndVariance{x.value[i], x.variance[i]};
-    else
-      return x[i];
-  };
-  if (scipp::numeric::is_linspace(edges)) {
-    const auto [offset, nbin, scale] = core::linear_edge_params(edges);
-    for (const auto c : coord) {
-      const auto bin = (c - offset) * scale;
-      using w_type = decltype(get(weights, bin));
-      constexpr w_type out_of_bounds(0.0);
-      w_type w = bin < 0.0 || bin >= nbin ? out_of_bounds : get(weights, bin);
-      if constexpr (vars) {
-        out_vals.emplace_back(w.value);
-        out_vars.emplace_back(w.variance);
-      } else {
-        out_vals.emplace_back(w);
-      }
-    }
-  } else {
-    core::expect::histogram::sorted_edges(edges);
-    throw std::runtime_error("Non-constant bin width not supported yet.");
-  }
-  if constexpr (vars)
-    return std::pair(std::move(out_vals), std::move(out_vars));
-  else
-    return out_vals;
-}
-
 namespace {
 bool is_self_append(const DataArrayConstView &a, const DataArrayConstView &b) {
   return &a.underlying() == &b.underlying();
