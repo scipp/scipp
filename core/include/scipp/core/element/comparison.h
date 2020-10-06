@@ -8,8 +8,8 @@
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
-#include "scipp/core/element/math.h"
 #include "scipp/core/transform_common.h"
+#include <cmath>
 
 /// Operators to be used with transform and transform_in_place to implement
 /// operations for Variable.
@@ -28,7 +28,6 @@ constexpr auto less = overloaded{
     comparison,
     [](const auto &x, const auto &y) { return x < y; },
 };
-
 constexpr auto is_approx = overloaded{
     transform_flags::no_out_variance, transform_flags::no_event_list_handling,
     arg_list<double, float, int64_t, int32_t, std::tuple<double, double, float>,
@@ -43,6 +42,7 @@ constexpr auto is_approx = overloaded{
       return units::dimensionless;
     },
     [](const auto &x, const auto &y, const auto &t) {
+      using std::abs;
       return abs(x - y) <= t;
     }};
 
