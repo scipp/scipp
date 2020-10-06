@@ -217,31 +217,6 @@ auto apply_op_events_dense(const Coord &coord, const Edges &edges,
     return out_vals;
 }
 
-namespace events_dense_op_impl_detail {
-template <class Coord, class Edge, class Weight>
-using args =
-    std::tuple<event_list<Coord>, span<const Edge>, span<const Weight>>;
-} // namespace events_dense_op_impl_detail
-
-Variable events_dense_op_impl(const VariableConstView &eventsCoord_,
-                              const VariableConstView &edges_,
-                              const VariableConstView &weights_,
-                              const Dim dim) {
-  using namespace events_dense_op_impl_detail;
-  return variable::transform<
-      std::tuple<args<double, double, double>, args<float, double, double>,
-                 args<float, float, float>, args<double, float, float>>>(
-      eventsCoord_, subspan_view(edges_, dim), subspan_view(weights_, dim),
-      overloaded{[](const auto &... a) { return apply_op_events_dense(a...); },
-                 core::transform_flags::expect_no_variance_arg<0>,
-                 core::transform_flags::expect_no_variance_arg<1>,
-                 [](const units::Unit &events, const units::Unit &edges,
-                    const units::Unit &weights) {
-                   core::expect::equals(events, edges);
-                   return weights;
-                 }});
-}
-
 namespace {
 bool is_self_append(const DataArrayConstView &a, const DataArrayConstView &b) {
   return &a.underlying() == &b.underlying();
