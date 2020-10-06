@@ -161,27 +161,30 @@ class SciPlot2d(SciPlot):
         # # self._connect_controller_members()
 
         # The main controller module which contains the slider widgets
-        self.controller = PlotController2d(scipp_obj_dict=scipp_obj_dict,
-                                           axes=self.axes,
-                                           name=self.name,
-                                           dim_to_shape=self.dim_to_shape,
-                                           # logx=logx,
-                                           # logy=logy,
-                                           mask_names=self.mask_names,
-                                           widgets=self.widgets,
-                                           model=self.model,
-                                           view=self.view)
-                                           # masks=masks,
-                                           # cmap=cmap,
-                                           # log=log,
-                                           # vmin=vmin,
-                                           # vmax=vmax,
-                                           # color=color,
-                                           # logx=logx,
-                                           # logy=logy,
-                                           # button_options=button_options)
+        self.controller = PlotController2d(
+          scipp_obj_dict=scipp_obj_dict,
+          axes=self.axes,
+          name=self.name,
+          dim_to_shape=self.dim_to_shape,
+          # logx=logx,
+          # logy=logy,
+          vmin=self.params["values"][self.name]["vmin"],
+          vmax=self.params["values"][self.name]["vmax"],
+          norm=self.params["values"][self.name]["norm"],
+          mask_names=self.mask_names,
+          widgets=self.widgets,
+          model=self.model,
+          view=self.view)
+          # masks=masks,
+          # cmap=cmap,
+          # log=log,
 
-        # # Call update_slice once to make the initial image
-        # self.controller.update_axes()
+           # color=color,
+           # logx=logx,
+           # logy=logy,
+           # button_options=button_options)
+
+        # Call update_slice once to make the initial image
+        self.controller.update_axes()
 
         return

@@ -11,7 +11,6 @@ from .._scipp import core as sc
 
 # Other imports
 import numpy as np
-import matplotlib.ticker as ticker
 
 
 class PlotController:
@@ -22,8 +21,9 @@ class PlotController:
                  # masks=None,
                  # cmap=None,
                  # log=None,
-                 # vmin=None,
-                 # vmax=None,
+                 vmin=None,
+                 vmax=None,
+                 norm=None,
                  # color=None,
                  logx=False,
                  logy=False,
@@ -52,7 +52,12 @@ class PlotController:
         self.logz = logz
         self.axparams = {}
         self.profile_axparams = {}
-        self.slice_instead_of_rebin = {}
+        # self.slice_instead_of_rebin = {}
+        self.mask_names = mask_names
+
+        self.vmin = vmin
+        self.vmax = vmax
+        self.norm = norm
 
         # # Parse parameters for values and masks
         # self.params = {"values": {}, "masks": {}}
@@ -158,30 +163,31 @@ class PlotController:
                 # stored as dicts, with one key per dimension of the coordinate
                 # self.slider_shape[name][dim] = {}
                 # dim_shape = None
-                self.histograms[name][dim] = {}
+                self.histograms[key][dim] = {}
                 for i, d in enumerate(coord.dims):
-                    self.histograms[name][dim][d] = dim_to_shape[
+                    # print(d, dim_to_shape)
+                    self.histograms[key][dim][d] = dim_to_shape[key][
                         d] == coord.shape[i] - 1
 
                 # The limits for each dimension
-                self.xlims[name][dim] = np.array(
+                self.xlims[key][dim] = np.array(
                     [sc.min(coord).value, sc.max(coord).value], dtype=np.float)
                 if sc.is_sorted(coord, dim, order='descending'):
-                    self.xlims[name][dim] = np.flip(self.xlims[name][dim]).copy()
+                    self.xlims[key][dim] = np.flip(self.xlims[key][dim]).copy()
                 # Small correction if xmin == xmax
-                if self.xlims[name][dim][0] == self.xlims[name][dim][1]:
-                    if self.xlims[name][dim][0] == 0.0:
-                        self.xlims[name][dim] = [-0.5, 0.5]
+                if self.xlims[key][dim][0] == self.xlims[key][dim][1]:
+                    if self.xlims[key][dim][0] == 0.0:
+                        self.xlims[key][dim] = [-0.5, 0.5]
                     else:
-                        dx = 0.5 * abs(self.xlims[name][dim][0])
-                        self.xlims[name][dim][0] -= dx
-                        self.xlims[name][dim][1] += dx
+                        dx = 0.5 * abs(self.xlims[key][dim][0])
+                        self.xlims[key][dim][0] -= dx
+                        self.xlims[key][dim][1] += dx
 
-                self.xlims[name][dim] = sc.Variable([dim],
-                                                    values=self.xlims[name][dim],
+                self.xlims[key][dim] = sc.Variable([dim],
+                                                    values=self.xlims[key][dim],
                                                     unit=coord.unit)
 
-                self.labels[name][dim] = name_with_unit(var=coord)
+                self.labels[key][dim] = name_with_unit(var=coord)
 
 
 
@@ -409,9 +415,9 @@ class PlotController:
             #         [dim])
 
         mask_init = {}
-        for name in self.masks:
+        for name in self.mask_names:
             mask_init[name] = {}
-            for m in self.masks[name]:
+            for m in self.mask_names[name]:
                 mask_init[name][m] = self.params["masks"][name]["show"]
 
         # {key: list(self.masks[key].keys()) for key in self.masks}
@@ -427,7 +433,7 @@ class PlotController:
         # axformatters = {dim: self.model.get_axformatter() for dim in axes}
 
         self.view.initialise(
-            axformatters={dim: self.model.get_axformatter() for dim in axes})
+            axformatters={dim: self.model.get_axformatter(self.name, dim) for dim in axes})
 
 
     def connect_widgets(self):
@@ -465,13 +471,16 @@ class PlotController:
         plots) to the minimum and maximum value inside the currently displayed
         data slice.
         """
-        data_min, data_max = self.model.rescale_to_data()
-        param_min = self.params["values"][self.name]["vmin"]
-        param_max = self.params["values"][self.name]["vmax"]
-        vmin = param_min if param_min is not None else data_min
-        vmax = param_max if param_max is not None else data_max
+        vmin, vmax = self.model.rescale_to_data()
+        # param_min = self.params["values"][self.name]["vmin"]
+        # param_max = self.params["values"][self.name]["vmax"]
+        if button is None:
+            if self.vmin is not None:
+                vmin = self.vmin
+            if self.vmax is not None:
+                vmax = self.vmax
         vmin, vmax = check_log_limits(
-            vmin=vmin, vmax=vmax, log=self.params["values"][self.name]["log"])
+            vmin=vmin, vmax=vmax, log=(self.norm == "log"))
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
             self.panel.rescale_to_data(vmin=vmin,
@@ -491,9 +500,9 @@ class PlotController:
         """
         self.axparams = self._get_axes_parameters()
         self.model.update_axes(self.axparams)
-        self.view.update_axes(axparams=self.axparams,
-                              axformatter=self.axformatter[self.name],
-                              axlocator=self.axlocator[self.name])
+        self.view.update_axes(axparams=self.axparams)
+                              # axformatter=self.axformatter[self.name],
+                              # axlocator=self.axlocator[self.name])
                               # logx=self.logx,
                               # logy=self.logy)
         if self.panel is not None:

@@ -6,6 +6,7 @@ from .tools import get_mpl_axes
 import numpy as np
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
 import warnings
 import io
 # from copy import deepcopy

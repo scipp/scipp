@@ -80,6 +80,9 @@ class PlotView2d:
     def savefig(self, filename=None):
         self.figure.savefig(filename)
 
+    def initialise(self, *args, **kwargs):
+        self.figure.initialise(*args, **kwargs)
+
     def connect(self, function_list):
         for key, func in function_list.items():
             self.interface[key] = func
@@ -126,14 +129,14 @@ class PlotView2d:
             self.current_lims = xylims
             self.interface["update_viewport"](xylims)
 
-    def update_axes(self, axparams, axformatter, axlocator): #, logx, logy):
+    def update_axes(self, axparams):#, axformatter, axlocator): #, logx, logy):
 
         self.current_lims['x'] = axparams["x"]["lims"]
         self.current_lims['y'] = axparams["y"]["lims"]
         self.global_lims["x"] = axparams["x"]["lims"]
         self.global_lims["y"] = axparams["y"]["lims"]
 
-        self.figure.update_axes(axparams, axformatter, axlocator)#, logx, logy)
+        self.figure.update_axes(axparams)#, axformatter, axlocator)#, logx, logy)
         self.reset_profile()
 
     def update_data(self, *args, **kwargs):

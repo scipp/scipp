@@ -2,7 +2,7 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import to_bin_edges
+from .tools import to_bin_edges, to_bin_centers
 from .._scipp import core as sc
 import matplotlib.ticker as ticker
 
@@ -148,7 +148,7 @@ class PlotModel:
         return coord, formatter
 
     def get_axformatter(self, name, dim):
-        return self.axformatter[dim]
+        return self.axformatter[name][dim]
 
     def get_coord_center_value(self, name, dim, ind):
         return to_bin_centers(self.data_arrays[name].coords[dim][dim, ind:ind + 2],
