@@ -213,8 +213,7 @@ void Dataset::setData_impl(const std::string &name, detail::DatasetData &&data,
 /// attributes, unless AttrPolicy::Keep is specified.
 void Dataset::setData(const std::string &name, Variable data,
                       const AttrPolicy attrPolicy) {
-  setData_impl(name, detail::DatasetData{std::move(data), {}, {}, {}},
-               attrPolicy);
+  setData_impl(name, detail::DatasetData{std::move(data), {}, {}}, attrPolicy);
 }
 
 /// Set (insert or replace) data from a DataArray with a given name, avoiding

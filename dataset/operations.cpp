@@ -55,11 +55,7 @@ void copy_item(const DataArrayConstView &from, const DataArrayView &to,
   if (attrPolicy == AttrPolicy::Keep)
     for (const auto &[dim, coord] : from.unaligned_coords())
       to.unaligned_coords()[dim].assign(coord);
-  if (from.hasData())
-    to.data().assign(from.data());
-  else
-    throw except::UnalignedError(
-        "Copying unaligned data to output not supported.");
+  to.data().assign(from.data());
 }
 } // namespace
 

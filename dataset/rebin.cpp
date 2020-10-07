@@ -3,7 +3,6 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/rebin.h"
-#include "scipp/common/overloaded.h"
 #include "scipp/variable/rebin.h"
 
 #include "dataset_operations_common.h"
@@ -13,16 +12,11 @@ namespace scipp::dataset {
 DataArray rebin(const DataArrayConstView &a, const Dim dim,
                 const VariableConstView &coord) {
   auto rebinned = apply_to_data_and_drop_dim(
-      a,
-      overloaded{no_realigned_support,
-                 [](auto &&... _) { return rebin(_...); }},
-      dim, a.coords()[dim], coord);
-
+      a, [](auto &&... _) { return rebin(_...); }, dim, a.coords()[dim], coord);
   for (auto &&[name, mask] : a.masks()) {
     if (mask.dims().contains(dim))
       rebinned.masks().set(name, rebin(mask, dim, a.coords()[dim], coord));
   }
-
   rebinned.coords().set(dim, coord);
   return rebinned;
 }

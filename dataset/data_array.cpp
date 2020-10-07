@@ -17,12 +17,12 @@
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/histogram.h"
-#include "scipp/dataset/unaligned.h"
 
 #include "dataset_operations_common.h"
 
 namespace scipp::dataset {
 
+/*
 /// Return the bounds of all sliced realigned dimensions.
 std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
   std::vector<std::pair<Dim, Variable>> bounds;
@@ -54,6 +54,7 @@ std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
   // potentially faster way.
   return bounds;
 }
+*/
 
 namespace {
 
@@ -70,16 +71,10 @@ auto makeDataArray(const DataArrayConstView &view, const AttrPolicy attrPolicy,
 
 } // namespace
 
+// TODO Should bucket variables filter on copy? See unaligned::filter_recurse
 DataArray::DataArray(const DataArrayConstView &view,
                      const AttrPolicy attrPolicy)
-    : DataArray(view.hasData()
-                    ? makeDataArray(view, attrPolicy, Variable(view.data()))
-                    : makeDataArray(
-                          view, attrPolicy,
-                          UnalignedData{view.dims(), unaligned::filter_recurse(
-                                                         view.unaligned(),
-                                                         view.slice_bounds(),
-                                                         attrPolicy)})) {}
+    : DataArray(makeDataArray(view, attrPolicy, Variable(view.data()))) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }
@@ -90,14 +85,10 @@ void requireValid(const DataArray &a) {
 }
 
 const VariableConstView &DataArrayConstView::data() const {
-  if (!hasData())
-    throw except::RealignedDataError("No data in item.");
   return m_view;
 }
 
 const VariableView &DataArrayView::data() const {
-  if (!hasData())
-    throw except::RealignedDataError("No data in item.");
   return m_view;
 }
 
@@ -111,210 +102,19 @@ DataArrayView DataArray::get() {
   return *m_holder.begin();
 }
 
-/// Remove any coords added by realign and switch `data` to refer to previous
-/// `unaligned` content.
-void DataArray::drop_alignment() {
-  if (hasData())
-    throw except::RealignedDataError(
-        "Does not contain unaligned data, cannot drop alignment.");
-  auto &item = m_holder.m_data.begin()->second;
-  auto [dims, array] = std::move(*item.unaligned);
-  constexpr auto move_items = [](auto &from, const auto &to,
-                                 const Dimensions &d) {
-    for (auto &[key, value] : from)
-      if (d.contains(value.dims()))
-        to.set(key, std::move(value));
-  };
-  array.setName(name());
-  move_items(m_holder.m_coords, array.coords(), dims);
-  move_items(item.coords, array.unaligned_coords(), dims);
-  move_items(item.masks, array.masks(), dims);
-  *this = std::move(array);
-}
-
 /// Return true if the dataset proxies have identical content.
 bool operator==(const DataArrayConstView &a, const DataArrayConstView &b) {
-  if (a.hasData() != b.hasData())
-    return false;
   if (a.hasVariances() != b.hasVariances())
     return false;
   if (a.coords() != b.coords())
     return false;
   if (a.masks() != b.masks())
     return false;
-  if (a.hasData())
-    return a.data() == b.data();
-  else
-    return a.dims() == b.dims() && a.unaligned() == b.unaligned();
+  return a.data() == b.data();
 }
 
 bool operator!=(const DataArrayConstView &a, const DataArrayConstView &b) {
   return !operator==(a, b);
-}
-
-namespace {
-struct Times {
-  template <class A, class B>
-  constexpr auto operator()(const A &a, const B &b) const {
-    return a * b;
-  }
-  template <class A, class B>
-  constexpr void inplace(const A &a, const B &b) const {
-    a *= b;
-  }
-};
-struct Divide {
-  template <class A, class B>
-  constexpr auto operator()(const A &a, const B &b) const {
-    return a / b;
-  }
-  template <class A, class B>
-  constexpr void inplace(const A &a, const B &b) const {
-    a /= b;
-  }
-};
-} // namespace
-
-namespace {
-bool is_self_append(const DataArrayConstView &a, const DataArrayConstView &b) {
-  return &a.underlying() == &b.underlying();
-}
-} // namespace
-
-DataArray &DataArray::operator+=(const DataArrayConstView &other) {
-  expect::coordsAreSuperset(*this, other);
-  union_or_in_place(masks(), other.masks());
-  if (hasData() && other.hasData()) {
-    data() += other.data();
-  } else {
-    if (is_self_append(*this, other))
-      event::append(unaligned(), copy(other.unaligned()));
-    else
-      event::append(unaligned(), other.unaligned());
-  }
-  return *this;
-}
-
-DataArray &DataArray::operator-=(const DataArrayConstView &other) {
-  expect::coordsAreSuperset(*this, other);
-  union_or_in_place(masks(), other.masks());
-  if (hasData() && other.hasData()) {
-    data() -= other.data();
-  } else {
-    const DataArray tmp =
-        is_self_append(*this, other) ? copy(other.unaligned()) : DataArray{};
-    auto other_unaligned = tmp ? DataArrayConstView(tmp) : other.unaligned();
-    unaligned().data() *= -1.0 * units::one;
-    event::append(unaligned(), other_unaligned);
-    unaligned().data() *= -1.0 * units::one;
-  }
-  return *this;
-}
-
-namespace {
-Dim realigned_event_histogram_op_dim(const DataArrayConstView &realigned,
-                                     const DataArrayConstView &histogram) {
-  const auto event_dims = unaligned::realigned_event_dims(realigned);
-  const auto edge_dims = edge_dimensions(histogram);
-  std::set<Dim> intersect;
-  std::set_intersection(event_dims.begin(), event_dims.end(), edge_dims.begin(),
-                        edge_dims.end(),
-                        std::inserter(intersect, intersect.begin()));
-  if (intersect.size() != 1)
-    throw except::BinEdgeError(
-        "Operation between realigned event data and histogram currently only "
-        "supports one histogrammed dimension.");
-  return *intersect.begin();
-}
-} // namespace
-
-template <class Op>
-DataArray &events_dense_op_inplace(Op op, DataArray &a,
-                                   const DataArrayConstView &b) {
-  if (unaligned::is_realigned_events(a)) {
-    expect::coordsAreSuperset(a, b);
-    union_or_in_place(a.masks(), b.masks());
-    const auto &events = a.unaligned();
-    const Dim dim = realigned_event_histogram_op_dim(a, b);
-    auto weight_scale = event::map(b, events.coords()[dim], dim);
-    if (contains_events(events.data())) {
-      // Note the inefficiency here: Always creating temporary event data.
-      // Could easily avoided, but requires significant code duplication.
-      op.inplace(events.data(), weight_scale);
-    } else {
-      events.setData(op(events.data(), weight_scale));
-    }
-  } else if (!a.hasData()) {
-    throw except::RealignedDataError(
-        "Operation between realigned data and histograms are currently only "
-        "supported for event data.");
-  } else {
-    expect::coordsAreSuperset(a, b);
-    union_or_in_place(a.masks(), b.masks());
-    op.inplace(a.data(), b.data());
-  }
-  return a;
-}
-
-DataArray &DataArray::operator*=(const DataArrayConstView &other) {
-  return events_dense_op_inplace(Times{}, *this, other);
-}
-
-DataArray &DataArray::operator/=(const DataArrayConstView &other) {
-  return events_dense_op_inplace(Divide{}, *this, other);
-}
-
-template <class Op>
-auto events_dense_op(Op op, const DataArrayConstView &a,
-                     const DataArrayConstView &b) {
-  if (unaligned::is_realigned_events(a)) {
-    const auto &events = a.unaligned();
-    const Dim dim = realigned_event_histogram_op_dim(a, b);
-    auto weight_scale = event::map(b, events.coords()[dim], dim);
-    std::map<Dim, Variable> coords;
-    for (const auto &[d, coord] : events.coords()) {
-      if (contains_events(coord))
-        coords.emplace(d, coord);
-    }
-    // Note that event masks are not supported.
-    return UnalignedData{a.dims(),
-                         DataArray(op(events.data(), std::move(weight_scale)),
-                                   std::move(coords))};
-  } else {
-    // histogram divided by events not supported, would typically result in unit
-    // 1/counts which is meaningless
-    if constexpr (std::is_same_v<Op, Times>)
-      return events_dense_op(op, b, a);
-
-    throw except::RealignedDataError(
-        "Unsupported combination of realigned and dense "
-        "data in binary arithmetic operation.");
-  }
-}
-
-namespace {
-template <class Op>
-DataArray apply_mul_or_div(Op op, const DataArrayConstView &a,
-                           const DataArrayConstView &b) {
-  if (unaligned::is_realigned_events(a) || unaligned::is_realigned_events(b))
-    return {events_dense_op(op, a, b),
-            union_(a.aligned_coords(), b.aligned_coords()),
-            union_or(a.masks(), b.masks()),
-            intersection(a.unaligned_coords(), b.unaligned_coords())};
-  else
-    return {op(a.data(), b.data()),
-            union_(a.aligned_coords(), b.aligned_coords()),
-            union_or(a.masks(), b.masks()),
-            intersection(a.unaligned_coords(), b.unaligned_coords())};
-}
-} // namespace
-
-DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {
-  return apply_mul_or_div(Times{}, a, b);
-}
-
-DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
-  return apply_mul_or_div(Divide{}, a, b);
 }
 
 DataArray astype(const DataArrayConstView &var, const DType type) {

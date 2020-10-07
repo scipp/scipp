@@ -58,9 +58,6 @@ static inline void expectAlignedCoord(const Dim coord_dim,
         to_string(operation_dim) + ". Terminating operation.");
 }
 
-static constexpr auto no_realigned_support = []() {};
-using no_realigned_support_t = decltype(no_realigned_support);
-
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
                                  const Dim dim, Args &&... args) {
@@ -94,17 +91,8 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
       masks.emplace(name, mask);
 
   if constexpr (ApplyToData) {
-    if (a.hasData()) {
-      return DataArray(func(a.data(), dim, args...), std::move(coords),
-                       std::move(masks), std::move(unaligned_coords), a.name());
-    } else {
-      if constexpr (std::is_base_of_v<no_realigned_support_t, Func>)
-        throw std::logic_error("Operation cannot handle realigned data.");
-      else
-        return DataArray(func(a.dims(), a.unaligned(), dim, args...),
-                         std::move(coords), std::move(masks),
-                         std::move(unaligned_coords), a.name());
-    }
+    return DataArray(func(a.data(), dim, args...), std::move(coords),
+                     std::move(masks), std::move(unaligned_coords), a.name());
   } else {
     return DataArray(func(a, dim, std::forward<Args>(args)...),
                      std::move(coords), std::move(masks),

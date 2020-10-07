@@ -22,7 +22,6 @@ set(INC_FILES
     include/scipp/dataset/shape.h
     include/scipp/dataset/sort.h
     include/scipp/dataset/string.h
-    include/scipp/dataset/unaligned.h
 )
 
 set(SRC_FILES
@@ -45,7 +44,6 @@ set(SRC_FILES
     slice.cpp
     sort.cpp
     string.cpp
-    unaligned.cpp
     variable_instantiate_bucket_elements.cpp
     variable_instantiate_dataset.cpp
     variable_reduction.cpp

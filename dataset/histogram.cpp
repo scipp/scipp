@@ -8,7 +8,6 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
-#include "scipp/dataset/unaligned.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform_subspan.h"
 
@@ -180,9 +179,9 @@ void histogram_md_recurse(const VariableView &data,
 } // namespace
 
 DataArray histogram(const DataArrayConstView &realigned) {
-  if (realigned.hasData())
-    throw except::UnalignedError("Expected realigned data, but data appears to "
-                                 "be histogrammed already.");
+  throw except::UnalignedError("Expected realigned data, but data appears to "
+                               "be histogrammed already.");
+  /*
   if (unaligned::is_realigned_events(realigned)) {
     const auto realigned_dims = unaligned::realigned_event_dims(realigned);
     auto bounds = realigned.slice_bounds();
@@ -219,6 +218,7 @@ DataArray histogram(const DataArrayConstView &realigned) {
   histogram_md_recurse(data, unaligned, realigned);
   return DataArray{std::move(data), realigned.aligned_coords(),
                    realigned.masks(), realigned.unaligned_coords()};
+                   */
 }
 
 Dataset histogram(const DatasetConstView &realigned) {

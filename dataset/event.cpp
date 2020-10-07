@@ -18,7 +18,7 @@
 namespace scipp::dataset {
 /// Return true if a data array contains events
 bool contains_events(const DataArrayConstView &array) {
-  if (array.hasData() && contains_events(array.data()))
+  if (contains_events(array.data()))
     return true;
   for (const auto &item : array.coords())
     if (contains_events(item.second))

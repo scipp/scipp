@@ -94,6 +94,8 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
                                    const GroupByGrouping::group &group,
                                    const Dim reductionDim,
                                    const Variable &mask_) {
+  throw std::runtime_error("TODO");
+  /*
   // Here and below: Hack to make flatten work with scalar weights. Proper
   // solution would be to create proper output and broadcast, but this is also
   // bad solution. Removing support for scalar weights altogether might be the
@@ -121,25 +123,19 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
           flatten_impl(coord, array.coords()[dim], mask);
     }
   }
+  */
 };
 
 static constexpr auto sum = [](const DataArrayView &out,
                                const auto &data_container,
                                const GroupByGrouping::group &group,
                                const Dim reductionDim, const Variable &mask) {
-  if (out.hasData()) {
-    for (const auto &slice : group) {
-      const auto data_slice = data_container.slice(slice);
-      if (mask)
-        sum_impl(out.data(), data_slice.data() * mask.slice(slice));
-      else
-        sum_impl(out.data(), data_slice.data());
-    }
-  } else {
-    const auto &unaligned_out = out.unaligned();
-    const auto &unaligned_in = data_container.unaligned();
-    // Flatten in all cases, even if not event data? Try to sum?
-    flatten(unaligned_out, unaligned_in, group, reductionDim, mask);
+  for (const auto &slice : group) {
+    const auto data_slice = data_container.slice(slice);
+    if (mask)
+      sum_impl(out.data(), data_slice.data() * mask.slice(slice));
+    else
+      sum_impl(out.data(), data_slice.data());
   }
 };
 
