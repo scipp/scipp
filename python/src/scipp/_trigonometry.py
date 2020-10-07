@@ -82,4 +82,4 @@ def atan2(y, x, out=None):
     :param out: Optional output buffer.
     :return: The signed inverse tan values of the inputs.
     """
-    return _call_cpp_func(_cpp.atan, x, out=out)
+    return _call_cpp_func(_cpp.atan2, y, x, out=out)
