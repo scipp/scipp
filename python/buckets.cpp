@@ -4,6 +4,7 @@
 /// @author Simon Hezbrock
 #include "pybind11.h"
 #include "scipp/core/except.h"
+#include "scipp/dataset/bucket.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bucket_model.h"
 #include "scipp/variable/shape.h"
@@ -55,10 +56,41 @@ template <class T> void bind_buckets(pybind11::module &m) {
                                         // implicit conversions in functor
 }
 
+template <class T> auto get_buffer(py::object &obj) {
+  auto &view = obj.cast<const VariableView &>();
+  auto &&[indices, dim, buffer] = view.constituents<bucket<T>>();
+  auto ret =
+      py::cast(typename T::view_type(buffer), py::return_value_policy::move);
+  pybind11::detail::keep_alive_impl(ret, obj);
+  return ret;
+}
+
 } // namespace
 
 void init_buckets(py::module &m) {
   bind_buckets<Variable>(m);
   bind_buckets<DataArray>(m);
   bind_buckets<Dataset>(m);
+
+  auto buckets = m.def_submodule("buckets");
+  buckets.def("concatenate", dataset::buckets::concatenate,
+              py::call_guard<py::gil_scoped_release>());
+  buckets.def("append", dataset::buckets::append,
+              py::call_guard<py::gil_scoped_release>());
+  buckets.def("histogram", dataset::buckets::histogram,
+              py::call_guard<py::gil_scoped_release>());
+  buckets.def("map", dataset::buckets::map,
+              py::call_guard<py::gil_scoped_release>());
+  buckets.def("scale", dataset::buckets::scale,
+              py::call_guard<py::gil_scoped_release>());
+  buckets.def("get_buffer", [](py::object &obj) -> py::object {
+    auto &var = obj.cast<const VariableView &>();
+    if (var.dtype() == dtype<bucket<Variable>>)
+      return get_buffer<Variable>(obj);
+    if (var.dtype() == dtype<bucket<DataArray>>)
+      return get_buffer<DataArray>(obj);
+    if (var.dtype() == dtype<bucket<Dataset>>)
+      return get_buffer<Dataset>(obj);
+    return py::none();
+  });
 }

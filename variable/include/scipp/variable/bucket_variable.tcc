@@ -39,7 +39,7 @@ auto contiguous_indices(const VariableConstView &parent,
   }
   return std::tuple{indices, size};
 }
-}
+} // namespace
 
 template <class T> class BucketVariableMaker : public AbstractVariableMaker {
 private:
@@ -81,6 +81,9 @@ public:
 /// bucket dtype in Variable.
 #define INSTANTIATE_BUCKET_VARIABLE(name, ...)                                 \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
+  template std::tuple<VariableConstView, Dim,                                  \
+                      typename __VA_ARGS__::element_type>                      \
+  VariableView::constituents<__VA_ARGS__>() const;                             \
   template std::tuple<VariableConstView, Dim,                                  \
                       typename __VA_ARGS__::const_element_type>                \
   VariableConstView::constituents<__VA_ARGS__>() const;
