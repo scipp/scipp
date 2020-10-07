@@ -25,6 +25,8 @@ void expectCanBroadcastFromTo(const Dimensions &source,
 /// @param offset Start offset from beginning of array.
 /// @param iterDims Dimensions to use for iteration.
 /// @param dataDims Dimensions of array to iterate.
+/// @param bucketParams Optional, in case of view onto bucket-variable this
+/// holds parameters for accessing individual buckets.
 ///
 /// The parameter `iterDims` can be used to remove, slice, broadcast, or
 /// transpose `dataDims`.

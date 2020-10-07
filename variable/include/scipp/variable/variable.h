@@ -11,8 +11,6 @@
 
 #include <Eigen/Dense>
 
-#include "variable_concept.h"
-
 #include "scipp-variable_export.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
@@ -26,6 +24,7 @@
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 
+#include "scipp/variable/variable_concept.h"
 #include "scipp/variable/variable_keyword_arg_constructor.h"
 
 namespace scipp::dataset {
@@ -332,6 +331,8 @@ public:
   template <class T>
   std::tuple<VariableConstView, Dim, typename T::element_type>
   constituents() const;
+
+  template <class T> void replace_model(T model) const;
 
 private:
   friend class dataset::DataArrayConstView;

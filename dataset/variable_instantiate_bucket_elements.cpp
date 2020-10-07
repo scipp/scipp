@@ -24,7 +24,8 @@ private:
                         const bool variances) const override {
     const auto &source = std::get<2>(parent.constituents<bucket<DataArray>>());
     if (parent.dims() !=
-        dims) // would need to select and copy slices from source coords
+        indices
+            .dims()) // would need to select and copy slices from source coords
       throw std::runtime_error(
           "Shape changing operations with bucket<DataArray> not supported yet");
     auto buffer = DataArray(
@@ -38,6 +39,16 @@ private:
   }
   VariableView data(const VariableView &var) const override {
     return std::get<2>(var.constituents<bucket<DataArray>>()).data();
+  }
+  core::element_array_view
+  array_params(const VariableConstView &var) const override {
+    const auto &[indices, dim, buffer] = var.constituents<bucket<DataArray>>();
+    auto params = var.array_params();
+    return {0, // no offset required in buffer since access via indices
+            params.dims(),
+            params.dataDims(),
+            {dim, buffer.dims(),
+             indices.values<std::pair<scipp::index, scipp::index>>().data()}};
   }
 };
 
