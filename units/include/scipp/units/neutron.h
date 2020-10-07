@@ -82,7 +82,9 @@ template <>
 struct boost::units::base_unit_info<
     scipp::units::detail::tof::wavelength_base_unit> {
   static std::string name() { return "angstroms"; }
-  static std::string symbol() { return u8"\u212B"; }
+  static std::string symbol() {
+    return reinterpret_cast<const char *>(u8"\u212B");
+  }
 };
 
 template <>
@@ -102,7 +104,9 @@ struct boost::units::base_unit_info<
 template <>
 struct boost::units::base_unit_info<scipp::units::detail::tof::tof_base_unit> {
   static std::string name() { return "microseconds"; }
-  static std::string symbol() { return u8"\u03BCs"; }
+  static std::string symbol() {
+    return reinterpret_cast<const char *>(u8"\u03BCs");
+  }
 };
 
 template <>
