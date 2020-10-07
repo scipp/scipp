@@ -250,8 +250,9 @@ def validate_and_get_unit(unit, allow_empty=False):
 def _to_spherical(pos, output):
     output["r"] = sc.sqrt(sc.dot(pos, pos))
     output["t"] = sc.acos(sc.geometry.z(pos) / output["r"].data)
-    output["p"] = output["t"].data.copy()
-    sc.atan2(sc.geometry.y(pos), sc.geometry.x(pos), output["p"].data)
+    output["p-sign"] = sc.atan2(sc.geometry.y(pos), sc.geometry.x(pos))
+    output["p-delta"] = sc.Variable(value=np.pi, unit=sc.units.rad) - sc.abs(
+        output["p-sign"].data)
 
 
 def _rot_from_vectors(vec1, vec2):
@@ -314,6 +315,7 @@ def get_detector_properties(ws,
         pos_d["z"] = pos_d["x"]
         pos_d.coords["spectrum"] = sc.Variable(
             ["detector"], values=np.empty(total_detectors))
+
         spectrum_values = pos_d.coords["spectrum"].values
 
         x_values = pos_d["x"].values
@@ -360,6 +362,9 @@ def get_detector_properties(ws,
                                                    len(spec_info) + 0.5,
                                                    1.0))).mean("detector")
 
+        averaged["p-delta"].values *= np.sign(averaged["p-sign"].values)
+        averaged["p"] = sc.Variable(
+            value=np.pi, unit=sc.units.rad) + averaged["p-delta"].data
         averaged["x"] = averaged["r"].data * sc.sin(
             averaged["t"].data) * sc.cos(averaged["p"].data)
         averaged["y"] = averaged["r"].data * sc.sin(
@@ -368,6 +373,7 @@ def get_detector_properties(ws,
 
         pos = sc.geometry.position(averaged["x"].data, averaged["y"].data,
                                    averaged["z"].data)
+
         return (inv_rot * pos,
                 sc.Variable(['spectrum'],
                             values=det_rot,
