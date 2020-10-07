@@ -4,13 +4,13 @@
 
 # Scipp imports
 from .. import config
-from .controller import PlotController
+from .controller1d import PlotController1d
 from .model1d import PlotModel1d
 from .panel1d import PlotPanel1d
 from .profile import ProfileView
 from .sciplot import SciPlot
 from .view1d import PlotView1d
-
+from .widgets import PlotWidgets
 
 def plot1d(*args,
            masks={"color": "k"},
@@ -59,7 +59,11 @@ class SciPlot1d(SciPlot):
                  masks=None,
                  ax=None,
                  pax=None,
+                 figsize=None,
                  mpl_line_params=None,
+                 norm=None,
+                 vmin=None,
+                 vmax=None,
                  # logx=False,
                  # logy=False,
                  grid=False,
@@ -71,7 +75,7 @@ class SciPlot1d(SciPlot):
                  norm=norm,
                  vmin=vmin,
                  vmax=vmax,
-                 color=color,
+                 # color=color,
                  masks=masks)
 
 
@@ -79,7 +83,7 @@ class SciPlot1d(SciPlot):
                                    ndim=self.ndim,
                                    name=self.name,
                                    dim_to_shape=self.dim_to_shape,
-                                   mask_names=self.mask_names,
+                                   masks=self.masks,
                                    button_options=['X'])
 
         # The model which takes care of all heavy calculations
@@ -115,8 +119,8 @@ class SciPlot1d(SciPlot):
             title=title,
             unit=self.params["values"][
                 self.name]["unit"],
-            mask_params=self.controller.params["masks"][self.controller.name],
-            masks=self.controller.masks,
+            # mask_params=self.controller.params["masks"][self.controller.name],
+            masks=self.masks,
             # logx=logx,
             # logy=logy,
             mpl_line_params=mpl_line_params,

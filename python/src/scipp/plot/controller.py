@@ -152,7 +152,7 @@ class PlotController:
             self.histograms[key] = {}
 
             # Iterate through axes and collect dimensions
-            for dim in axes:
+            for dim in axes.values():
 
                 coord = array.coords[dim]
 
@@ -433,7 +433,7 @@ class PlotController:
         # axformatters = {dim: self.model.get_axformatter() for dim in axes}
 
         self.view.initialise(
-            axformatters={dim: self.model.get_axformatter(self.name, dim) for dim in axes})
+            axformatters={dim: self.model.get_axformatter(self.name, dim) for dim in axes.values()})
 
 
     def connect_widgets(self):
@@ -485,7 +485,7 @@ class PlotController:
         if self.panel is not None:
             self.panel.rescale_to_data(vmin=vmin,
                                        vmax=vmax,
-                                       mask_info=self._get_masks_info())
+                                       mask_info=self.get_masks_info())
 
     def update_axes(self, change=None):
         """
@@ -557,7 +557,7 @@ class PlotController:
         info["slice_label"] = info["slice_label"][1:]
 
         new_values = self.model.update_data(slices,
-                                            mask_info=self._get_masks_info())
+                                            mask_info=self.get_masks_info())
         self.view.update_data(new_values, info=info)
         if self.panel is not None:
             self.panel.update_data(info)
@@ -603,7 +603,7 @@ class PlotController:
 
         return axparams
 
-    def _get_masks_info(self):
+    def get_masks_info(self):
         """
         Get information on masks from widgets.
         """
@@ -758,7 +758,7 @@ class PlotController:
                                                ydata=ydata,
                                                slices=slices,
                                                axparams=self.profile_axparams,
-                                               mask_info=self._get_masks_info())
+                                               mask_info=self.get_masks_info())
         # Send new values to the profile view
         self.profile.update_data(new_values, info=info)
 

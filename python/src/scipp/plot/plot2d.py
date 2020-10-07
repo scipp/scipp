@@ -59,14 +59,14 @@ class SciPlot2d(SciPlot):
                  masks=None,
                  ax=None,
                  cax=None,
-                 figsize=None,
                  pax=None,
+                 figsize=None,
                  aspect=None,
                  cmap=None,
                  norm=None,
                  vmin=None,
                  vmax=None,
-                 color=None,
+                 # color=None,
                  # logx=False,
                  # logy=False,
                  resolution=None):
@@ -77,8 +77,8 @@ class SciPlot2d(SciPlot):
                  norm=norm,
                  vmin=vmin,
                  vmax=vmax,
-                 color=color,
-                 masks=masks)
+                 masks=masks,
+                 view_ndims=2)
 
         # button_options = ['X', 'Y']
 

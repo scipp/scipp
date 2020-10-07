@@ -3,7 +3,9 @@
 # @author Neil Vaytet
 
 from .tools import to_bin_edges, to_bin_centers
+from .._utils import value_to_string
 from .._scipp import core as sc
+import numpy as np
 import matplotlib.ticker as ticker
 
 
@@ -15,6 +17,8 @@ class PlotModel:
         self.data_arrays = {}
 
         self.axformatter = {}
+
+        axes_dims = list(axes.values())
 
         # Create dict of DataArrays using information from controller
         for name, array in scipp_obj_dict.items():
@@ -38,14 +42,16 @@ class PlotModel:
             #     self.data_arrays[name].coords[dim] = coord
 
             # Iterate through axes and collect coordinates
-            for dim in axes:
+            for dim in axes_dims:
                 coord, formatter = self._axis_coord_and_formatter(
-                    dim, array, dim_to_shape[name])
+                    dim, array, dim_to_shape[name], dim_label_map)
 
                 self.axformatter[name][dim] = formatter
 
                 is_histogram = None
                 for i, d in enumerate(coord.dims):
+                    print(d, dim)
+                    print(dim_to_shape)
                     if d == dim:
                         is_histogram = dim_to_shape[name][d] == coord.shape[i] - 1
 
@@ -61,7 +67,7 @@ class PlotModel:
             for m, msk in array.masks.items():
                 mask_dims = msk.dims
                 for dim in mask_dims:
-                    if dim not in axes:
+                    if dim not in axes_dims:
                         mask_dims[mask_dims.index(
                             dim)] = dim_label_map[dim]
                 self.data_arrays[name].masks[m] = sc.Variable(
@@ -76,7 +82,7 @@ class PlotModel:
         # Save a copy of the name for simpler access
         self.name = name
 
-    def _axis_coord_and_formatter(self, dim, data_array, dim_to_shape):
+    def _axis_coord_and_formatter(self, dim, data_array, dim_to_shape, dim_label_map):
         """
         Get dimensions from requested axis.
         Also retun axes tick formatters and locators.
@@ -99,7 +105,8 @@ class PlotModel:
 
         if dim in data_array.coords:
 
-            dim_coord_dim = data_array.coords[dim].dims[-1]
+            underlying_dim = data_array.coords[dim].dims[-1]
+            # underlying_dim = dim_label_map[dim]
             tp = data_array.coords[dim].dtype
 
             if tp == sc.dtype.vector_3_float64:
@@ -110,7 +117,7 @@ class PlotModel:
                     value_to_string(item, precision=2)
                     for item in data_array.coords[dim].values[int(val)]
                 ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim]) else ""
-                formatter.update({False: form, True: form, "custom_locator": False})
+                formatter.update({False: form, True: form, "custom_locator": True})
                 # locator[False] = ticker.MaxNLocator(integer=True)
 
             elif tp == sc.dtype.string:
@@ -120,13 +127,13 @@ class PlotModel:
                 form = lambda val, pos: data_array.coords[
                     dim].values[int(val)] if (int(val) >= 0 and int(
                         val) < dim_to_shape[dim]) else ""
-                formatter.update({False: form, True: form, "custom_locator": False})
+                formatter.update({False: form, True: form, "custom_locator": True})
                 # locator[False] = ticker.MaxNLocator(integer=True)
 
-            elif dim != dim_coord_dim:
+            elif dim != underlying_dim:
                 # non-dimension coordinate
-                if dim_coord_dim in data_array.coords:
-                    coord = data_array.coords[dim_coord_dim]
+                if underlying_dim in data_array.coords:
+                    coord = data_array.coords[underlying_dim]
                     coord = sc.Variable([dim],
                                       values=coord.values,
                                       variances=coord.variances,
@@ -134,6 +141,7 @@ class PlotModel:
                                       dtype=sc.dtype.float64)
                 else:
                     coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+                print("in here")
                 form = lambda val, pos: value_to_string(data_array.coords[
                         dim].values[np.abs(coord.values - val).argmin()])
                 formatter.update({False: form, True: form})

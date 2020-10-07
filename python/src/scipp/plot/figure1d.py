@@ -22,10 +22,10 @@ class PlotFigure1d(PlotFigure):
                  mpl_line_params=None,
                  title=None,
                  unit=None,
-                 logx=False,
-                 logy=False,
+                 # logx=False,
+                 # logy=False,
                  grid=False,
-                 mask_params=None,
+                 # mask_params=None,
                  masks=None,
                  figsize=None,
                  picker=False,
@@ -41,7 +41,7 @@ class PlotFigure1d(PlotFigure):
 
         self.errorbars = errorbars
         self.masks = masks
-        self.mask_params = mask_params
+        # self.mask_params = mask_params
         self.picker = picker
         # self.is_profile = is_profile
         # self.slice_area = None
@@ -159,12 +159,12 @@ class PlotFigure1d(PlotFigure):
                         key: self.mpl_line_params[key][name]
                         for key in ["color", "linewidth"]
                     })
-                for m in self.masks[name]:
+                for m in self.masks[name]["names"]:
                     [self.mask_lines[name][m]] = self.ax.step(
                         [1, 2], [1, 2],
                         linewidth=self.mpl_line_params["linewidth"][name] *
                         3.0,
-                        color=self.mask_params["color"],
+                        color=self.masks[name]["color"],
                         zorder=9)
                     # Abuse a mostly unused property `gid` of Line2D to
                     # identify the line as a mask. We set gid to `onaxes`.
@@ -183,11 +183,11 @@ class PlotFigure1d(PlotFigure):
                         key: self.mpl_line_params[key][name]
                         for key in self.mpl_line_params.keys()
                     })
-                for m in self.masks[name]:
+                for m in self.masks[name]["names"]:
                     [self.mask_lines[name][m]] = self.ax.plot(
                         [1, 2], [1, 2],
                         zorder=11,
-                        mec=self.mask_params["color"],
+                        mec=self.masks[name]["color"],
                         mfc="None",
                         mew=3.0,
                         linestyle="none",

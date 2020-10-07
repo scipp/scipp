@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .tools import parse_params
-
+from .._scipp import core as sc
 import ipywidgets as ipw
 
 
@@ -18,7 +18,8 @@ class SciPlot:
                  vmax=None,
                  color=None,
                  masks=None,
-                 positions=None):
+                 positions=None,
+                 view_ndims=None):
 
         self.controller = None
         self.model = None
@@ -29,7 +30,8 @@ class SciPlot:
 
         # Get first item in dict and process dimensions.
         # Dimensions should be the same for all dict items.
-        self.axes = axes
+        self.axes = None
+        # self.view_ndims = view_ndims
         self.masks = {}
         # self.underlying_dim_to_label = {}
         self.dim_label_map = {}
@@ -37,6 +39,8 @@ class SciPlot:
 
         self.name = list(scipp_obj_dict.keys())[0]
         self._process_axes_dimensions(scipp_obj_dict[self.name],
+                                      axes=axes,
+                                      view_ndims=view_ndims,
                                       positions=positions)
 
         # Scan the input data and collect information
@@ -80,7 +84,7 @@ class SciPlot:
             # dims
             # underlying_dim_to_label = {}
             array_dims = array.dims
-            for dim in self.axes:
+            for dim in self.axes.values():
                 if dim not in array_dims:
                     # underlying_dim = array.coords[dim].dims[-1]
                     # underlying_dim_to_label[underlying_dim] = dim
@@ -124,35 +128,70 @@ class SciPlot:
 
 
 
-    def _process_axes_dimensions(self, array, positions=None):
+    def _process_axes_dimensions(self, array=None, axes=None,
+                                 view_ndims=None, positions=None):
+
+        array_dims = array.dims
+        self.ndim = len(array_dims)
+
+        base_axes = ["xyz"[i] for i in range(view_ndims)]#[::-1]
+        print(base_axes)
 
         # Process axes dimensions
-        if self.axes is None:
-            self.axes = array.dims
+        self.axes = {}
+        for i, dim in enumerate(array_dims[::-1]):
+            if i < view_ndims:
+                key = base_axes[i]
+            else:
+                key = i - view_ndims
+            print(key, dim, i)
+            self.axes[key] = dim
+        if axes is not None:
+            dim_list = list(self.axes.values())
+            key_list = list(self.axes.keys())
+            # Axes can be incomplete
+            for key, ax in axes.items():
+                if ax in dim_list:
+                    ind = dim_list.index(ax)
+                    # self.axes[key_list[ind]] = self.axes[key]
+                    # self.axes[key] = sc.Dim(ax)
+                else:
+                    # Non-dimension coordinate
+                    underlying_dim = array.coords[ax].dims[-1]
+                    dim = sc.Dim(ax)
+                    self.dim_label_map[underlying_dim] = dim
+                    self.dim_label_map[dim] = underlying_dim
+                    ind = dim_list.index(underlying_dim)
+                self.axes[key_list[ind]] = self.axes[key]
+                self.axes[key] = dim
+
+        print(self.axes)
+
+
         # Replace positions in axes if positions set
         if positions is not None:
             self.axes[self.axes.index(
-                array.coords[positions].dims[0])] = positions
+                array.coords[positions].dims[0])] = sc.Dim(positions)
 
-        # Convert to Dim objects
-        for i in range(len(self.axes)):
-            if isinstance(self.axes[i], str):
-                self.axes[i] = sc.Dim(self.axes[i])
+        # # Convert to Dim objects
+        # for key, dim in self.axes.items():
+        #     if isinstance(dim, str):
+        #         self.axes[key] = sc.Dim(dim)
 
         # Protect against duplicate entries in axes
         if len(self.axes) != len(set(self.axes)):
             raise RuntimeError("Duplicate entry in axes: {}".format(self.axes))
-        self.ndim = len(self.axes)
+        # self.ndim = len(self.axes)
 
-        # Make a map from non-dimension dim label to dimension dim.
-        # The map goes both from non-dimension label to dimension label and
-        # vice versa.
-        for dim in self.axes:
-            if dim not in array.dims:
-                underlying_dim = array.coords[dim].dims[-1]
-                # self.underlying_dim_to_label[array.coords[dim].dims[-1]] = dim
-                self.dim_label_map[underlying_dim] = dim
-                self.dim_label_map[dim] = underlying_dim
+        # # Make a map from non-dimension dim label to dimension dim.
+        # # The map goes both from non-dimension label to dimension label and
+        # # vice versa.
+        # for dim in self.axes:
+        #     if dim not in array.dims:
+        #         underlying_dim = array.coords[dim].dims[-1]
+        #         # self.underlying_dim_to_label[array.coords[dim].dims[-1]] = dim
+        #         self.dim_label_map[underlying_dim] = dim
+        #         self.dim_label_map[dim] = underlying_dim
 
         return
 

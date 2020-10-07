@@ -50,9 +50,9 @@ class PlotWidgets:
 
         # Now begin loop to construct sliders
         button_values = [None] * (ndim -
-                                  len(button_options)) + button_options[::-1]
+                                  len(button_options)) + button_options#[::-1]
 
-        for i, dim in enumerate(axes):
+        for i, dim in enumerate(axes.values()):
 
             # Determine if slider should be disabled or not:
             # In the case of 3d projection, disable sliders that are for

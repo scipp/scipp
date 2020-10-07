@@ -12,9 +12,9 @@ import numpy as np
 
 
 class PlotModel1d(PlotModel):
-    def __init__(self, controller=None, scipp_obj_dict=None):
+    def __init__(self, *args, **kwargs):
 
-        super().__init__(controller=controller, scipp_obj_dict=scipp_obj_dict)
+        super().__init__(*args, **kwargs)
 
         self.dim = None
         self.hist = None
