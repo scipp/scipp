@@ -358,6 +358,7 @@ def test_variable_histogram():
         hist.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
 
 
+@pytest.mark.skip(reason="Refactor to use bucket variables instead of realign")
 def test_dataset_histogram():
     var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
     var['x', 0].values = np.arange(3)
