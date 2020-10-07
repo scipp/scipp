@@ -11,7 +11,6 @@
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/rebin.h"
 #include "scipp/dataset/sort.h"
-#include "scipp/dataset/unaligned.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
@@ -93,18 +92,6 @@ void bind_mutable_view(py::module &m, const std::string &name) {
   bind_inequality_to_operator<T>(view);
 }
 
-template <class T> void realign_impl(T &self, py::dict coord_dict) {
-  // Python dicts above 3.7 preserve order, but we cannot use
-  // automatic conversion by pybind11 since C++ maps do not.
-  std::vector<std::pair<Dim, Variable>> coords;
-  // Cast to VariableView uses implicit conversion and causes segfault if
-  // GIL is released.
-  for (auto item : coord_dict)
-    coords.emplace_back(Dim(item.first.cast<std::string>()),
-                        item.second.cast<VariableView>());
-  self = unaligned::realign(std::move(self), std::move(coords));
-}
-
 template <class T>
 T filter_impl(const typename T::const_view_type &self, const Dim dim,
               const VariableConstView &interval, bool keep_attrs) {
@@ -129,9 +116,6 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
             "Property `labels` is deprecated. Use `coords` instead.");
       },
       R"(Decprecated, alias for `coords`.)");
-
-  if constexpr (std::is_same_v<T, DataArray> || std::is_same_v<T, Dataset>)
-    c.def("realign", realign_impl<T>);
 }
 
 template <class T, class... Ignored>
@@ -193,21 +177,10 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
     c.def_property_readonly("name", &T::name, R"(The name of the held data.)");
   c.def_property(
       "data",
-      py::cpp_function(
-          [](T &self) {
-            return self.hasData() ? py::cast(self.data()) : py::none();
-          },
-          py::return_value_policy::move, py::keep_alive<0, 1>()),
+      py::cpp_function([](T &self) { return self.data(); },
+                       py::return_value_policy::move, py::keep_alive<0, 1>()),
       [](T &self, const VariableConstView &data) { self.data().assign(data); },
       R"(Underlying data item.)");
-  c.def_property_readonly(
-      "unaligned",
-      py::cpp_function(
-          [](T &self) {
-            return self.hasData() ? py::none() : py::cast(self.unaligned());
-          },
-          py::return_value_policy::move, py::keep_alive<0, 1>()),
-      R"(Underlying unaligned data item.)");
   c.def_property_readonly(
       "aligned_coords",
       py::cpp_function([](T &self) { return self.aligned_coords(); },
@@ -255,29 +228,6 @@ template <class T> void bind_rebin(py::module &m) {
             .param("dim", "Dimension to rebin over.", "Dim")
             .param("bins", "New bin edges.", "Variable")
             .c_str());
-}
-
-template <class T> void bind_realign(py::module &m) {
-  // Note: adding `py::call_guard<py::gil_scoped_release>()` for this binding
-  // causes a segmentation fault.
-  m.def(
-      "realign",
-      [](const typename T::const_view_type &a, py::dict coord_dict) {
-        T copy(a);
-        realign_impl(copy, coord_dict);
-        return copy;
-      },
-      py::arg("data"), py::arg("coords"),
-      Docstring()
-          .description("Realign unaligned data to the supplied coordinate "
-                       "axes.")
-          .raises("If the input does not contain unaligned data.")
-          .returns("A data structure containing unaligned underlying data, "
-                   "along with coordinate axes for alignment.")
-          .rtype<T>()
-          .template param<T>("x", "Unaligned data to realign.")
-          .param("coords", "Coordinates for re-alignment.", "Dict")
-          .c_str());
 }
 
 void init_dataset(py::module &m) {
@@ -506,9 +456,6 @@ void init_dataset(py::module &m) {
 
   bind_rebin<DataArray>(m);
   bind_rebin<Dataset>(m);
-
-  bind_realign<DataArray>(m);
-  bind_realign<Dataset>(m);
 
   py::implicitly_convertible<DataArray, DataArrayConstView>();
   py::implicitly_convertible<DataArray, DataArrayView>();
