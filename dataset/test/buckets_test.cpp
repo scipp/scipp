@@ -104,6 +104,60 @@ TEST_F(DataArrayBucketTest, histogram_existing_dim) {
                       {{Dim::Y, bin_edges}}));
 }
 
+class DataArrayBucketMapTest : public ::testing::Test {
+protected:
+  using ModelVariable = variable::DataModel<bucket<Variable>>;
+  using ModelDataArray = variable::DataModel<bucket<DataArray>>;
+  Dimensions dims{Dim::Y, 2};
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      dims, Values{std::pair{0, 2}, std::pair{2, 4}});
+  Variable data =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  Variable weights = makeVariable<double>(
+      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
+  DataArray events = DataArray(weights, {{Dim::Z, data}});
+  Variable buckets{std::make_unique<ModelDataArray>(indices, Dim::X, events)};
+  // `buckets` *does not* depend on the histogramming dimension
+  Variable bin_edges =
+      makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
+  DataArray histogram = DataArray(Variable(bin_edges.slice({Dim::Z, 1, 4})),
+                                  {{Dim::Z, bin_edges}});
+};
+
+TEST_F(DataArrayBucketMapTest, map) {
+  const auto out = buckets::map(histogram, buckets, Dim::Z);
+  // event coords 1,2,3,4
+  // histogram:
+  // | 1 | 2 | 4 |
+  // 0   1   2   4
+  const auto expected_scale =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{2, 4, 4, 0});
+  EXPECT_EQ(out, Variable(std::make_unique<ModelVariable>(indices, Dim::X,
+                                                          expected_scale)));
+
+  // Mapping result can be used to scale
+  auto scaled = buckets * out;
+  const auto expected = Variable{std::make_unique<ModelDataArray>(
+      indices, Dim::X, events * expected_scale)};
+  EXPECT_EQ(scaled, expected);
+
+  // Mapping and scaling also works for slices
+  auto partial = buckets;
+  for (auto s : {Slice(Dim::Y, 0), Slice(Dim::Y, 1)})
+    partial.slice(s) *= buckets::map(histogram, buckets.slice(s), Dim::Z);
+  EXPECT_EQ(partial, expected);
+}
+
+TEST_F(DataArrayBucketMapTest, map_masked) {
+  histogram.masks().set(
+      "mask", makeVariable<bool>(histogram.dims(), Values{false, true, false}));
+  const auto out = buckets::map(histogram, buckets, Dim::Z);
+  const auto expected_scale =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{0, 4, 4, 0});
+  EXPECT_EQ(out, Variable(std::make_unique<ModelVariable>(indices, Dim::X,
+                                                          expected_scale)));
+}
+
 class DatasetBucketTest : public ::testing::Test {
 protected:
   using Model = variable::DataModel<bucket<Dataset>>;

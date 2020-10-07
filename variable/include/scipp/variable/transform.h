@@ -825,6 +825,15 @@ void transform_in_place(Var &&var, const VariableConstView &var1,
                                            var2);
 }
 
+/// Transform the data elements of a variable in-place.
+template <class... TypePairs, class Var, class Op>
+void transform_in_place(Var &&var, const VariableConstView &var1,
+                        const VariableConstView &var2,
+                        const VariableConstView &var3, Op op) {
+  in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), var1,
+                                           var2, var3);
+}
+
 /// Accumulate data elements of a variable in-place.
 ///
 /// This is equivalent to `transform_in_place`, with the only difference that
