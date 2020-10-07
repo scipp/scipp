@@ -84,13 +84,9 @@ void requireValid(const DataArray &a) {
     throw std::runtime_error("Invalid DataArray.");
 }
 
-const VariableConstView &DataArrayConstView::data() const {
-  return m_view;
-}
+const VariableConstView &DataArrayConstView::data() const { return m_view; }
 
-const VariableView &DataArrayView::data() const {
-  return m_view;
-}
+const VariableView &DataArrayView::data() const { return m_view; }
 
 DataArrayConstView DataArray::get() const {
   requireValid(*this);
