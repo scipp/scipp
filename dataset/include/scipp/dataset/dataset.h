@@ -23,16 +23,12 @@ class DataArray;
 class Dataset;
 class DatasetConstView;
 class DatasetView;
-struct UnalignedData;
 
 namespace detail {
 /// Helper for holding data items in Dataset.
 struct DatasetData {
-  /// Optional data values (with optional variances).
+  /// Data values with optional variances.
   Variable data;
-  /// Unaligned data, a simple struct of aligned dimensions alongside a data
-  /// array with unaligned content.
-  deep_ptr<UnalignedData> unaligned;
   /// Unaligned coords.
   std::unordered_map<Dim, Variable> coords;
   std::unordered_map<std::string, Variable> masks;
@@ -77,12 +73,8 @@ public:
   CoordsConstView unaligned_coords() const noexcept;
   MasksConstView masks() const noexcept;
 
-  /// Return true if the view contains data values.
-  bool hasData() const noexcept { return static_cast<bool>(m_view); }
   /// Return true if the view contains data variances.
-  bool hasVariances() const noexcept {
-    return hasData() ? data().hasVariances() : unaligned().hasVariances();
-  }
+  bool hasVariances() const noexcept { return data().hasVariances(); }
 
   /// Return untyped const view for data (values and optional variances).
   const VariableConstView &data() const;
@@ -93,8 +85,6 @@ public:
   template <class T> auto variances() const {
     return data().template variances<T>();
   }
-
-  DataArrayConstView unaligned() const;
 
   DataArrayConstView slice(const Slice s) const;
 
@@ -159,8 +149,6 @@ public:
   template <class T> auto variances() const {
     return data().template variances<T>();
   }
-
-  DataArrayView unaligned() const;
 
   DataArrayView slice(const Slice s) const;
 
@@ -407,8 +395,6 @@ private:
                             CoordsConstView>
   make_coords(const T &view, const CoordCategory category, const bool is_item);
 
-  void setData(const std::string &name, UnalignedData &&data);
-
   void setExtent(const Dim dim, const scipp::index extent, const bool isCoord);
   void setDims(const Dimensions &dims, const Dim coordDim = Dim::Invalid);
   void rebuildDims();
@@ -596,8 +582,7 @@ public:
   template <class Data, class CoordMap = std::map<Dim, Variable>,
             class MasksMap = std::map<std::string, Variable>,
             class UnalignedCoordMap = std::map<Dim, Variable>,
-            typename = std::enable_if_t<std::is_same_v<Data, Variable> ||
-                                        std::is_same_v<Data, UnalignedData>>>
+            typename = std::enable_if_t<std::is_same_v<Data, Variable>>>
   DataArray(Data data, CoordMap coords = {}, MasksMap masks = {},
             UnalignedCoordMap unaligned_coords = {},
             const std::string &name = "") {
@@ -639,13 +624,8 @@ public:
   DType dtype() const { return get().dtype(); }
   units::Unit unit() const { return get().unit(); }
 
-  DataArrayConstView unaligned() const { return get().unaligned(); }
-  DataArrayView unaligned() { return get().unaligned(); }
-
   void setUnit(const units::Unit unit) { get().setUnit(unit); }
 
-  /// Return true if the data array contains data values.
-  bool hasData() const { return get().hasData(); }
   /// Return true if the data array contains data variances.
   bool hasVariances() const { return get().hasVariances(); }
 
@@ -702,12 +682,6 @@ private:
   DataArrayView get();
 
   Dataset m_holder;
-};
-
-struct UnalignedData {
-  explicit operator bool() const noexcept { return static_cast<bool>(data); }
-  Dimensions dims;
-  DataArray data;
 };
 
 SCIPP_DATASET_EXPORT DataArray operator+(const DataArrayConstView &a,

@@ -6,7 +6,6 @@
 #include "scipp/common/index.h"
 #include "scipp/core/except.h"
 #include "scipp/dataset/except.h"
-#include "scipp/dataset/unaligned.h"
 
 #include "dataset_operations_common.h"
 
@@ -92,13 +91,9 @@ DataArray Dataset::extract(const std::string &name) {
   auto masks = std::move(item->second.masks);
   auto unaligned_coords = std::move(item->second.coords);
 
-  DataArray extracted;
-  if (view.hasData())
-    extracted = DataArray(std::move(item->second.data), std::move(coords),
-                          std::move(masks), std::move(unaligned_coords), name);
-  else
-    extracted = DataArray(std::move(*item->second.unaligned), std::move(coords),
-                          std::move(masks), std::move(unaligned_coords), name);
+  auto extracted =
+      DataArray(std::move(item->second.data), std::move(coords),
+                std::move(masks), std::move(unaligned_coords), name);
   erase(name);
   return extracted;
 }
@@ -202,7 +197,7 @@ void Dataset::setMask(const std::string &name, const std::string &maskName,
 
 void Dataset::setData_impl(const std::string &name, detail::DatasetData &&data,
                            const AttrPolicy attrPolicy) {
-  setDims(data.data ? data.data.dims() : data.unaligned->dims);
+  setDims(data.data.dims());
   const auto replace = contains(name);
   if (replace && attrPolicy == AttrPolicy::Keep)
     data.coords = std::move(m_data[name].coords);
@@ -222,15 +217,6 @@ void Dataset::setData(const std::string &name, Variable data,
                attrPolicy);
 }
 
-/// Private helper for constructor of DataArray and setData
-void Dataset::setData(const std::string &name, UnalignedData &&data) {
-  setData_impl(
-      name,
-      detail::DatasetData{
-          {}, std::make_unique<UnalignedData>(std::move(data)), {}, {}},
-      AttrPolicy::Drop);
-}
-
 /// Set (insert or replace) data from a DataArray with a given name, avoiding
 /// copies where possible by using std::move.
 void Dataset::setData(const std::string &name, DataArray data) {
@@ -246,10 +232,7 @@ void Dataset::setData(const std::string &name, DataArray data) {
       setCoord(dim, std::move(coord));
   }
 
-  if (item->second.data)
-    setData(name, std::move(item->second.data));
-  else
-    setData(name, std::move(*item->second.unaligned));
+  setData(name, std::move(item->second.data));
 
   for (auto &&[dim, coord] : item->second.coords)
     // Drop unaligned coords if there is aligned coord with same name.
@@ -275,10 +258,7 @@ void Dataset::setData(const std::string &name, const DataArrayConstView &data) {
 void DataArrayView::setData(Variable data) const {
   if (!slices().empty())
     throw except::SliceError("Cannot set data via slice.");
-  if (!m_mutableData->second.data && hasData())
-    m_mutableData->second.unaligned->data.setData(std::move(data));
-  else
-    m_mutableDataset->setData(name(), std::move(data), AttrPolicy::Keep);
+  m_mutableDataset->setData(name(), std::move(data), AttrPolicy::Keep);
 }
 
 template <class Key, class Val>
@@ -348,12 +328,7 @@ void Dataset::rename(const Dim from, const Dim to) {
     item.second.rename(from, to);
   for (auto &item : m_data) {
     auto &value = item.second;
-    if (value.data)
-      value.data.rename(from, to);
-    else {
-      value.unaligned->dims.relabel(value.unaligned->dims.index(from), to);
-      value.unaligned->data.rename(from, to);
-    }
+    value.data.rename(from, to);
     for (auto &coord : value.coords)
       coord.second.rename(from, to);
     for (auto &mask : value.masks)
@@ -389,70 +364,21 @@ void DataArray::setName(const std::string &name) {
 }
 
 Dimensions DataArrayConstView::parentDims() const noexcept {
-  if (underlying().data)
-    return underlying().data.dims();
-  else if (hasData()) // view of unaligned content
-    return underlying().unaligned->data.dims();
-  else
-    return underlying().unaligned->dims;
+  return underlying().data.dims();
 }
 
 /// Return an ordered mapping of dimension labels to extents.
-Dimensions DataArrayConstView::dims() const noexcept {
-  if (hasData())
-    return data().dims();
-  else {
-    Dimensions sliced(m_data->second.unaligned->dims);
-    for (const auto &item : slices()) {
-      if (item.first.end() == -1)
-        sliced.erase(item.first.dim());
-      else
-        sliced.resize(item.first.dim(), item.first.end() - item.first.begin());
-    }
-    return sliced;
-  }
-}
+Dimensions DataArrayConstView::dims() const noexcept { return data().dims(); }
 
 /// Return the dtype of the data.
-DType DataArrayConstView::dtype() const {
-  return hasData() ? data().dtype()
-                   : dataset::unaligned::is_realigned_events(*this)
-                         ? event_dtype(unaligned().dtype())
-                         : unaligned().dtype();
-}
+DType DataArrayConstView::dtype() const { return data().dtype(); }
 
 /// Return the unit of the data values.
-units::Unit DataArrayConstView::unit() const {
-  return hasData() ? data().unit() : unaligned().unit();
-}
-
-DataArrayConstView DataArrayConstView::unaligned() const {
-  // This needs to combine coords from m_dataset and from the unaligned data. We
-  // therefore construct with normal dataset and items pointers and only pass
-  // the unaligned data via a variable view.
-  if (hasData())
-    return DataArrayConstView{};
-  auto view = m_data->second.unaligned->data.data();
-  detail::do_make_slice(view, slices());
-  return {*m_dataset, *m_data, slices(), std::move(view)};
-}
-
-DataArrayView DataArrayView::unaligned() const {
-  // See also DataArrayConstView::unaligned.
-  if (hasData())
-    return DataArrayView{};
-  auto view = m_mutableData->second.unaligned->data.data();
-  detail::do_make_slice(view, slices());
-  return {*m_mutableDataset, *m_mutableData, slices(), std::move(view)};
-}
+units::Unit DataArrayConstView::unit() const { return data().unit(); }
 
 /// Set the unit of the data values.
-///
-/// Throws if there are no data values.
 void DataArrayView::setUnit(const units::Unit unit) const {
-  if (hasData())
-    return data().setUnit(unit);
-  throw except::UnalignedError("Realigned data, cannot set unit.");
+  data().setUnit(unit);
 }
 
 namespace {
@@ -525,30 +451,11 @@ make_coords(const T &view, const CoordCategory category,
   // coords of the dataset *excluding* those that exceed the item dims.
   auto items = makeViewItems(view.parentDims(), view.get_dataset().m_coords);
   maybe_drop_aligned_or_unaligned(items, view.slices(), category);
-  // Array is realigned data and we access array.unaligned().coords() (not
-  // array.coords()).
-  const bool is_view_of_unaligned = !view.get_data().data && view.hasData();
   if (category & CoordCategory::Unaligned) {
-    // Unaligned coords, two cases:
-    // 1. Not view of unaligned: Need to include everything, in particular to
-    //    preserve bin edges after non-range slice.
-    // 2. View of unaligned: Filter out coords depending on dims that are not
-    //    dims of unaligned content.
-    const auto tmp =
-        is_view_of_unaligned
-            ? makeViewItems(view.parentDims(), view.get_data().coords)
-            : makeViewItems(view.get_data().coords);
+    // Unaligned coords: Need to include everything, in particular to preserve
+    // bin edges after non-range slice.
+    const auto tmp = makeViewItems(view.get_data().coords);
     items.insert(tmp.begin(), tmp.end());
-  }
-  deep_ptr<CoordAccess> unaligned_ptr{nullptr};
-  if (is_view_of_unaligned) {
-    // This is a view of the unaligned content of a realigned data array.
-    T unaligned = view.get_data().unaligned->data;
-    const auto tmp =
-        make_coords(unaligned, category, category == CoordCategory::Unaligned);
-    if constexpr (std::is_same_v<T, DataArrayView>)
-      unaligned_ptr = std::make_unique<CoordAccess>(tmp.access());
-    items.insert(tmp.items().begin(), tmp.items().end());
   }
   if constexpr (std::is_same_v<T, DataArrayView>)
     return CoordsView(
@@ -561,7 +468,7 @@ make_coords(const T &view, const CoordCategory category,
         //   del ds.coords['x'] # ok
         // Note that del array.coords['x'] works even if 'x' is unaligned
         CoordAccess{view.slices().empty() ? &view.get_dataset() : nullptr,
-                    &view.name(), std::move(unaligned_ptr), is_item},
+                    &view.name(), is_item},
         std::move(items), view.slices());
   else
     return CoordsConstView(std::move(items), view.slices());
@@ -627,36 +534,16 @@ CoordsView DataArray::unaligned_coords() { return get().unaligned_coords(); }
 
 /// Return a const view to all masks of the data view.
 MasksConstView DataArrayConstView::masks() const noexcept {
-  const bool is_view_of_unaligned = !get_data().data && hasData();
-  auto items = is_view_of_unaligned
-                   ? makeViewItems(parentDims(), get_data().masks)
-                   : makeViewItems(get_data().masks);
-  if (is_view_of_unaligned) {
-    // This is a view of the unaligned content of a realigned data array.
-    decltype(*this) unaligned = get_data().unaligned->data;
-    const auto m = unaligned.masks();
-    items.insert(m.items().begin(), m.items().end());
-  }
+  auto items = makeViewItems(get_data().masks);
   return MasksConstView(std::move(items), slices());
 }
 
 /// Return a view to all masks of the data view.
 MasksView DataArrayView::masks() const noexcept {
-  const bool is_view_of_unaligned = !get_data().data && hasData();
-  auto items = is_view_of_unaligned
-                   ? makeViewItems(parentDims(), get_data().masks)
-                   : makeViewItems(get_data().masks);
-  DataArray *unaligned_ptr{nullptr};
-  if (is_view_of_unaligned) {
-    // This is a view of the unaligned content of a realigned data array.
-    unaligned_ptr = &get_data().unaligned->data;
-    decltype(*this) unaligned = get_data().unaligned->data;
-    const auto m = unaligned.masks();
-    items.insert(m.items().begin(), m.items().end());
-  }
-  return MasksView(MaskAccess{slices().empty() ? m_mutableDataset : nullptr,
-                              &name(), unaligned_ptr},
-                   std::move(items), slices());
+  auto items = makeViewItems(get_data().masks);
+  return MasksView(
+      MaskAccess{slices().empty() ? m_mutableDataset : nullptr, &name()},
+      std::move(items), slices());
 }
 
 /// Return a const view to all masks of the data array.
@@ -670,13 +557,7 @@ DataArrayConstView DataArrayConstView::slice(const Slice s) const {
   core::expect::validSlice(dims_, s);
   auto tmp(m_slices);
   tmp.emplace_back(s, dims_[s.dim()]);
-  if (!m_data->second.data && hasData()) {
-    auto view = m_data->second.unaligned->data.data();
-    detail::do_make_slice(view, tmp);
-    return {*m_dataset, *m_data, std::move(tmp), std::move(view)};
-  } else {
-    return {*m_dataset, *m_data, std::move(tmp)};
-  }
+  return {*m_dataset, *m_data, std::move(tmp)};
 }
 
 DataArrayView::DataArrayView(Dataset &dataset,
@@ -693,36 +574,24 @@ DataArrayView DataArrayView::slice(const Slice s) const {
   core::expect::validSlice(dims(), s);
   auto tmp(slices());
   tmp.emplace_back(s, dims()[s.dim()]);
-  if (!m_mutableData->second.data && hasData()) {
-    auto view = m_mutableData->second.unaligned->data.data();
-    detail::do_make_slice(view, tmp);
-    return {*m_mutableDataset, *m_mutableData, std::move(tmp), std::move(view)};
-  } else {
-    return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
-  }
+  return {*m_mutableDataset, *m_mutableData, std::move(tmp)};
 }
 
 DataArrayView DataArrayView::assign(const DataArrayConstView &other) const {
   if (&underlying() == &other.underlying() && slices() == other.slices())
     return *this; // Self-assignment, return early.
-
   expect::coordsAreSuperset(*this, other);
-  // TODO here and below: If other has data, we should either fail, or create
-  // data.
-  if (hasData())
-    data().assign(other.data());
+  data().assign(other.data());
   return *this;
 }
 
 DataArrayView DataArrayView::assign(const Variable &other) const {
-  if (hasData())
-    data().assign(other);
+  data().assign(other);
   return *this;
 }
 
 DataArrayView DataArrayView::assign(const VariableConstView &other) const {
-  if (hasData())
-    data().assign(other);
+  data().assign(other);
   return *this;
 }
 
