@@ -11,7 +11,6 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/unaligned.h"
 #include "scipp/variable/operations.h"
 
 using namespace scipp;
@@ -316,56 +315,4 @@ TEST_F(DataArray_comparison_operators, with_events_dimension_data) {
   c.setData(var_name, data);
   expect_ne(a[var_name], c[var_name]);
   expect_ne(b[var_name], c[var_name]);
-}
-
-class DataArray_comparison_operators_realigned : public ::testing::Test {
-protected:
-  Variable ybins{makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 2, 4})};
-  Variable zbins{makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4})};
-  Variable d{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4})};
-  Variable x{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4})};
-  Variable y{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 3, 3})};
-  Variable z{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 3, 1, 3})};
-};
-
-TEST_F(DataArray_comparison_operators_realigned, self) {
-  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  const auto realigned =
-      unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  expect_eq(realigned, realigned);
-}
-
-TEST_F(DataArray_comparison_operators_realigned, swapped_dims) {
-  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  const auto zy = unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  const auto yz = unaligned::realign(a, {{Dim::Z, zbins}, {Dim::Y, ybins}});
-  expect_ne(yz, zy);
-}
-
-TEST_F(DataArray_comparison_operators_realigned, different_bins) {
-  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  const auto yz1 = unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  const auto yz2 = unaligned::realign(
-      a, {{Dim::Y, ybins}, {Dim::Z, zbins + 0.5 * units::one}});
-  expect_ne(yz1, yz2);
-}
-
-TEST_F(DataArray_comparison_operators_realigned, different_unaligned_data) {
-  DataArray a1(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  DataArray a2(d + 0.5 * units::one, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  const auto realigned1 =
-      unaligned::realign(a1, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  const auto realigned2 =
-      unaligned::realign(a2, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  expect_ne(realigned1, realigned2);
-}
-
-TEST_F(DataArray_comparison_operators_realigned, different_unaligned_coord) {
-  DataArray a1(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  DataArray a2(d, {{Dim::X, x}, {Dim::Y, y + 0.5 * units::one}, {Dim::Z, z}});
-  const auto realigned1 =
-      unaligned::realign(a1, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  const auto realigned2 =
-      unaligned::realign(a2, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  expect_ne(realigned1, realigned2);
 }

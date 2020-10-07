@@ -20,7 +20,7 @@ add_executable(
   dataset_test.cpp
   dataset_view_test.cpp
   data_view_test.cpp
-  event_data_operations_consistency_test.cpp
+  #event_data_operations_consistency_test.cpp
   event_test.cpp
   except_test.cpp
   groupby_test.cpp
@@ -39,7 +39,7 @@ add_executable(
   string_test.cpp
   sum_test.cpp
   transform_events_and_dense_test.cpp
-  unaligned_test.cpp
+  #unaligned_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(

@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <algorithm>
 
-#include "scipp/dataset/unaligned.h"
 #include "scipp/variable/arithmetic.h"
 
 #include "dataset_test_common.h"
@@ -192,13 +191,6 @@ Dataset make_dataset_x() {
   d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::X}, units::m, Shape{3},
                                           Values{1, 2, 3}));
   return d;
-}
-
-Dataset make_dataset_realigned_x_to_y() {
-  auto d = make_dataset_x();
-  const auto edges =
-      makeVariable<double>(Dims{Dim::Y}, units::m, Shape{2}, Values{0, 4});
-  return unaligned::realign(d, {{Dim::Y, edges}});
 }
 
 } // namespace scipp::testdata

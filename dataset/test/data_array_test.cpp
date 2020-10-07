@@ -5,7 +5,6 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/event.h"
 #include "scipp/dataset/histogram.h"
-#include "scipp/dataset/unaligned.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/reduction.h"
@@ -29,9 +28,6 @@ TEST(DataArrayTest, construct) {
 TEST(DataArrayTest, construct_fail) {
   // Invalid data
   EXPECT_THROW(DataArray(Variable{}), std::runtime_error);
-  // Invalid unaligned data
-  EXPECT_THROW(DataArray(UnalignedData{Dimensions{}, DataArray{}}),
-               std::runtime_error);
 }
 
 TEST(DataArrayTest, setName) {
@@ -120,6 +116,7 @@ TEST(DataArrayTest, astype) {
             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1., 2., 3.}));
 }
 
+/*
 TEST(DataArrayRealignedEventsArithmeticTest, fail_events_op_non_histogram) {
   const auto events = make_events();
   auto coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
@@ -394,3 +391,4 @@ TEST_F(DataArrayRealignedEventsPlusMinusTest, minus_nonscalar_weights) {
   EXPECT_EQ(histogram(c - c),
             histogram(a) - histogram(b) - histogram(a) + histogram(b));
 }
+*/

@@ -6,7 +6,6 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
-#include "scipp/dataset/unaligned.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -235,6 +234,7 @@ TEST(HistogramTest, weight_lists) {
   EXPECT_EQ(dataset::histogram(events, edges), expected);
 }
 
+/*
 TEST(HistogramTest, dataset_realigned) {
   Dataset events;
   const auto coord =
@@ -279,3 +279,4 @@ TEST(HistogramTest, dataset_realigned2) {
 
   EXPECT_EQ(dataset::histogram(events), expected);
 }
+*/
