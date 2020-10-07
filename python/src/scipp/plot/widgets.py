@@ -18,7 +18,7 @@ class PlotWidgets:
                  name=None,
                  dim_to_shape=None,
                  positions=None,
-                 mask_names=None,
+                 masks=None,
                  button_options=None):
 
         # self.controller = controller
@@ -194,7 +194,7 @@ class PlotWidgets:
             self.container.append(ipw.HBox(row))
 
         # Add controls for masks
-        self._add_masks_controls(mask_names)
+        self._add_masks_controls(masks)
 
         return
 
@@ -204,19 +204,19 @@ class PlotWidgets:
     def _to_widget(self):
         return ipw.VBox(self.container)
 
-    def _add_masks_controls(self, mask_names):
+    def _add_masks_controls(self, masks):
         """
         Add widgets for masks.
         """
         masks_found = False
         self.mask_checkboxes = {}
-        for name in mask_names:
+        for name in masks:
             self.mask_checkboxes[name] = {}
-            if len(mask_names[name]) > 0:
+            if len(masks[name]["names"]) > 0:
                 masks_found = True
-                for key in mask_names[name]:
+                for key in masks[name]["names"]:
                     self.mask_checkboxes[name][key] = ipw.Checkbox(
-                        # value=self.controller.params["masks"][name]["show"],
+                        value=masks[name]["names"][key],
                         description="{}:{}".format(name, key),
                         indent=False,
                         layout={"width": "initial"})
@@ -254,8 +254,8 @@ class PlotWidgets:
 
             self.masks_box = ipw.Box(children=mask_list, layout=box_layout)
 
-            self.container += ipw.HBox(
-                [self.masks_lab, self.all_masks_button, self.masks_box])
+            self.container += [ipw.HBox(
+                [self.masks_lab, self.all_masks_button, self.masks_box])]
 
     def update_buttons(self, owner, event, dummy):
         """
@@ -311,24 +311,24 @@ class PlotWidgets:
     #         thickness_end = value_to_string(loc + 0.5 * thickness)
     #     return "{} - {}".format(thickness_start, thickness_end)
 
-    def connect(self, function_list):
-        self.rescale_button.on_click(function_list["rescale_to_data"])
+    def connect(self, callbacks):
+        self.rescale_button.on_click(callbacks["rescale_to_data"])
         for dim in self.slider:
             self.profile_button[dim].on_click(
-                function_list["toggle_profile_view"])
-            self.slider[dim].observe(function_list["update_data"],
+                callbacks["toggle_profile_view"])
+            self.slider[dim].observe(callbacks["update_data"],
                                      names="value")
-            self.thickness_slider[dim].observe(function_list["update_data"],
+            self.thickness_slider[dim].observe(callbacks["update_data"],
                                                names="value")
-        self.update_axes = function_list["update_axes"]
+        self.update_axes = callbacks["update_axes"]
 
         for name in self.mask_checkboxes:
             for m in self.mask_checkboxes[name]:
-                self.mask_checkboxes[name][key].observe(
-                    function_list["toggle_mask"], names="value")
+                self.mask_checkboxes[name][m].observe(
+                    callbacks["toggle_mask"], names="value")
 
-    def initialise(self, dim_init, mask_init, multid_coord=False):
-        for dim, item in dim_init.items():
+    def initialise(self, parameters, multid_coord=None):
+        for dim, item in parameters.items():
             # Dimension labels
             self.dim_labels[dim].value = item["labels"]
 
@@ -348,28 +348,28 @@ class PlotWidgets:
             self.slider_readout[dim].value = item["slider_readout"]
             # self.thickness_readout[dim].value = item["thickness_readout"]
 
-        # Add masks
-        for name in mask_init:
-            for m in mask_init[name]:
-                self.mask_checkboxes[name][m].value = mask_init[name][m]
+        # # Add masks
+        # for name in mask_init:
+        #     for m in mask_init[name]:
+        #         self.mask_checkboxes[name][m].value = mask_init[name][m]
 
-        # if self.all_masks_button is not None:
-        #     self.all_masks_button.value = mask_init[name][m]
+        # # if self.all_masks_button is not None:
+        # #     self.all_masks_button.value = mask_init[name][m]
 
-        #      = ipw.ToggleButton(
-        #         # value=self.controller.params["masks"][
-        #             # self.controller.name]["show"],
-        #         description="Hide all",
-        #         # if
-        #         # self.controller.params["masks"][self.controller.name]["show"]
-        #         # else "Show all",
-        #         disabled=False,
-        #         button_style="",
-        #         layout={"width": "initial"})
+        # #      = ipw.ToggleButton(
+        # #         # value=self.controller.params["masks"][
+        # #             # self.controller.name]["show"],
+        # #         description="Hide all",
+        # #         # if
+        # #         # self.controller.params["masks"][self.controller.name]["show"]
+        # #         # else "Show all",
+        # #         disabled=False,
+        # #         button_style="",
+        # #         layout={"width": "initial"})
 
-        # #         self.mask_checkboxes[name][key].observe(
-        # #             self.controller.toggle_mask, names="value")
-        # # # self.container += self._add_masks_controls(mask_names)
+        # # #         self.mask_checkboxes[name][key].observe(
+        # # #             self.controller.toggle_mask, names="value")
+        # # # # self.container += self._add_masks_controls(mask_names)
 
     def get_active_slider_values(self):
         slider_values = {}
@@ -377,6 +377,20 @@ class PlotWidgets:
             if not sl.disabled:
                 slider_values[dim] = sl.value
         return slider_values
+
+    def get_masks_info(self):
+        """
+        Get information on masks: their names and whether they should be
+        displayed.
+        """
+        mask_info = {}
+        for name in self.mask_checkboxes:
+            mask_info[name] = {
+                m: chbx.value
+                for m, chbx in self.mask_checkboxes[name].items()
+            }
+        return mask_info
+
 
     def update_slider_readout(self, dim, value):
         self.slider_readout[dim].value = value

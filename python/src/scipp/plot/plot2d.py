@@ -80,7 +80,7 @@ class SciPlot2d(SciPlot):
                  color=color,
                  masks=masks)
 
-        button_options = ['X', 'Y']
+        # button_options = ['X', 'Y']
 
         # Create control widgets (sliders and buttons).
         # Typically one set of slider/buttons for each dimension.
@@ -88,8 +88,8 @@ class SciPlot2d(SciPlot):
                                    ndim=self.ndim,
                                    name=self.name,
                                    dim_to_shape=self.dim_to_shape,
-                                   mask_names=self.mask_names,
-                                   button_options=button_options)
+                                   masks=self.masks,
+                                   button_options=['X', 'Y'])
                                    # positions=positions)
         # # return
 
@@ -131,9 +131,9 @@ class SciPlot2d(SciPlot):
                 self.name]["cbar"],
             unit=self.params["values"][
                 self.name]["unit"],
-            mask_cmap=self.params["masks"][
-                self.name]["cmap"],
-            masks=self.mask_names[self.name])
+            # mask_cmap=self.params["masks"][
+            #     self.name]["cmap"],
+            masks=self.masks[self.name])
             # logx=logx,
             # logy=logy)
 
@@ -171,7 +171,7 @@ class SciPlot2d(SciPlot):
           vmin=self.params["values"][self.name]["vmin"],
           vmax=self.params["values"][self.name]["vmax"],
           norm=self.params["values"][self.name]["norm"],
-          mask_names=self.mask_names,
+          # masks=self.masks,
           widgets=self.widgets,
           model=self.model,
           view=self.view)

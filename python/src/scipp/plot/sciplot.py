@@ -30,7 +30,7 @@ class SciPlot:
         # Get first item in dict and process dimensions.
         # Dimensions should be the same for all dict items.
         self.axes = axes
-        self.mask_names = {}
+        self.masks = {}
         # self.underlying_dim_to_label = {}
         self.dim_label_map = {}
         # self.coords_dtype = {}
@@ -96,8 +96,13 @@ class SciPlot:
             else:
                 self.errorbars[name] = has_variances
 
-            # Save mask names
-            self.mask_names[name] = [m for m in array.masks]
+            # Save masks information
+            self.masks[name] = [m for m in array.masks]
+            self.masks[name] = {"color": self.params["masks"][name]["color"],
+                                "cmap": self.params["masks"][name]["cmap"],
+                                "names": {}}
+            for m in array.masks:
+                self.masks[name]["names"][m] = self.params["masks"][name]["show"]
 
             # self.coords_dtype[name] = {}
             # for dim in self.axes:

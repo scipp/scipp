@@ -32,7 +32,7 @@ class PlotController:
                  # positions=None,
                  # errorbars=None,
                  dim_to_shape=None,
-                 mask_names=None,
+                 # masks=None,
                  widgets=None,
                  model=None,
                  panel=None,
@@ -53,7 +53,7 @@ class PlotController:
         self.axparams = {}
         self.profile_axparams = {}
         # self.slice_instead_of_rebin = {}
-        self.mask_names = mask_names
+        # self.masks = masks
 
         self.vmin = vmin
         self.vmax = vmax
@@ -386,22 +386,22 @@ class PlotController:
 
 
     def initialise_widgets(self, dim_to_shape):
-        dim_init = {}
+        parameters = {}
         for dim in self.labels[self.name]:
 
             # Dimension labels
-            dim_init[dim] = {
+            parameters[dim] = {
                 "labels": self.labels[self.name][dim]
                 }
 
             # Dimension slider
             print(dim_to_shape)
-            dim_init[dim]["slider"] = dim_to_shape[dim]
+            parameters[dim]["slider"] = dim_to_shape[dim]
 
             # Thickness slider
             dim_xlims = self.xlims[self.name][dim].values
             dx = np.abs(dim_xlims[1] - dim_xlims[0])
-            dim_init[dim]["thickness_slider"] = dx
+            parameters[dim]["thickness_slider"] = dx
 
             # Slider readouts
             ind = dim_to_shape[dim] // 2
@@ -409,22 +409,22 @@ class PlotController:
             #     self.coords[self.name][dim][dim, ind:ind + 2],
             #     dim).values[0]
             loc = self.model.get_coord_center_value(self.name, dim, ind)
-            dim_init[dim]["slider_readout"] = value_to_string(loc)
+            parameters[dim]["slider_readout"] = value_to_string(loc)
             # dim_init[dim]["thickness_readout"] = self._make_thickness_slider_readout(
             #         dim, loc, ind, self.coords[self.name]
             #         [dim])
 
-        mask_init = {}
-        for name in self.mask_names:
-            mask_init[name] = {}
-            for m in self.mask_names[name]:
-                mask_init[name][m] = self.params["masks"][name]["show"]
+        # mask_init = {}
+        # for name in self.mask_names:
+        #     mask_init[name] = {}
+        #     for m in self.mask_names[name]:
+        #         mask_init[name][m] = self.params["masks"][name]["show"]
 
         # {key: list(self.masks[key].keys()) for key in self.masks}
 
         self.widgets.initialise(
-            dim_init=dim_init,
-            mask_init=mask_init,
+            parameters=parameters,
+            # mask_init=mask_init,
             multid_coord=self.multid_coord)
 
 
@@ -485,7 +485,7 @@ class PlotController:
         if self.panel is not None:
             self.panel.rescale_to_data(vmin=vmin,
                                        vmax=vmax,
-                                       mask_info=self._get_mask_info())
+                                       mask_info=self._get_masks_info())
 
     def update_axes(self, change=None):
         """
@@ -557,7 +557,7 @@ class PlotController:
         info["slice_label"] = info["slice_label"][1:]
 
         new_values = self.model.update_data(slices,
-                                            mask_info=self._get_mask_info())
+                                            mask_info=self._get_masks_info())
         self.view.update_data(new_values, info=info)
         if self.panel is not None:
             self.panel.update_data(info)
@@ -603,18 +603,18 @@ class PlotController:
 
         return axparams
 
-    def _get_mask_info(self):
+    def _get_masks_info(self):
         """
-        Get information of masks such as their names and whether they should be
-        displayed.
+        Get information on masks from widgets.
         """
-        mask_info = {}
-        for name in self.widgets.mask_checkboxes:
-            mask_info[name] = {
-                m: chbx.value
-                for m, chbx in self.widgets.mask_checkboxes[self.name].items()
-            }
-        return mask_info
+        # mask_info = {}
+        # for name in self.widgets.mask_checkboxes:
+        #     mask_info[name] = {
+        #         m: chbx.value
+        #         for m, chbx in self.widgets.mask_checkboxes[self.name].items()
+        #     }
+        # return mask_info
+        return self.widgets.get_masks_info()
 
     def keep_line(self, target=None, name=None, color=None, line_id=None):
         """
@@ -758,7 +758,7 @@ class PlotController:
                                                ydata=ydata,
                                                slices=slices,
                                                axparams=self.profile_axparams,
-                                               mask_info=self._get_mask_info())
+                                               mask_info=self._get_masks_info())
         # Send new values to the profile view
         self.profile.update_data(new_values, info=info)
 

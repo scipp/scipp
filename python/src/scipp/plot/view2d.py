@@ -28,7 +28,7 @@ class PlotView2d:
                  color=None,
                  # logx=False,
                  # logy=False,
-                 mask_cmap=None,
+                 # mask_cmap=None,
                  masks=None,
                  resolution=None):
 
@@ -56,7 +56,7 @@ class PlotView2d:
                                    color=color,
                                    # logx=logx,
                                    # logy=logy,
-                                   mask_cmap=mask_cmap,
+                                   # mask_cmap=mask_cmap,
                                    masks=masks,
                                    resolution=resolution)
 

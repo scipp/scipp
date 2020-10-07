@@ -29,7 +29,7 @@ class PlotFigure2d(PlotFigure):
                  color=None,
                  # logx=False,
                  # logy=False,
-                 mask_cmap=None,
+                 # mask_cmap=None,
                  masks=None,
                  resolution=None):
 
@@ -51,8 +51,8 @@ class PlotFigure2d(PlotFigure):
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.mask_image = {}
-        for m in masks:
-            self.mask_image[m] = self.make_default_imshow(cmap=mask_cmap,
+        for m in masks["names"]:
+            self.mask_image[m] = self.make_default_imshow(cmap=masks["cmap"],
                                                           norm=norm,
                                                           aspect=aspect)
         # self.logx = logx

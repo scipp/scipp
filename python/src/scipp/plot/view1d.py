@@ -9,8 +9,9 @@ from .._utils import make_random_color
 
 class PlotView1d:
     def __init__(self,
-                 controller=None,
+                 # controller=None,
                  ax=None,
+                 figsize=None,
                  errorbars=None,
                  title=None,
                  unit=None,
@@ -22,7 +23,7 @@ class PlotView1d:
                  grid=False,
                  picker=False):
 
-        self.controller = controller
+        # self.controller = controller
         self.profile_hover_connection = None
         self.profile_pick_connection = None
         self.profile_update_lock = False
