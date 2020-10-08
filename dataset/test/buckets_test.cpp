@@ -267,6 +267,80 @@ TEST_F(DataArrayBucketScaleTest,
   EXPECT_THROW(buckets::scale(buckets, zx), except::BinEdgeError);
 }
 
+class DataArrayBucketPlusMinusTest : public ::testing::Test {
+protected:
+  auto make_events() const {
+    auto weights = makeVariable<double>(
+        Dims{Dim("event")}, Shape{7}, units::counts,
+        Values{1, 2, 1, 3, 1, 1, 1}, Variances{1, 3, 1, 2, 1, 1, 1});
+    auto coord =
+        makeVariable<double>(Dims{Dim("event")}, Shape{7}, units::us,
+                             Values{1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 5.5});
+    return DataArray(weights, {{Dim::X, coord}});
+  }
+
+  DataArrayBucketPlusMinusTest() {
+    eventsA = make_events();
+    eventsB = eventsA;
+    eventsB.coords()[Dim::X] += 0.01 * units::us;
+    eventsB = concatenate(eventsB, eventsA, Dim("event"));
+    eventsB.coords()[Dim::X] += 0.02 * units::us;
+    using Model = variable::DataModel<bucket<DataArray>>;
+    a = DataArray(Variable(std::make_unique<Model>(
+        makeVariable<std::pair<scipp::index, scipp::index>>(
+            Dims{Dim::Y, Dim::X}, Shape{2, 1},
+            Values{std::pair{0, 3}, std::pair{3, 7}}),
+        Dim("event"), eventsA)));
+    b = DataArray(Variable(std::make_unique<Model>(
+        makeVariable<std::pair<scipp::index, scipp::index>>(
+            Dims{Dim::Y, Dim::X}, Shape{2, 1},
+            Values{std::pair{0, 5}, std::pair{5, 14}}),
+        Dim("event"), eventsB)));
+  }
+
+  DataArray eventsA;
+  DataArray eventsB;
+  Variable edges = makeVariable<double>(Dims{Dim::X}, Shape{4}, units::us,
+                                        Values{0, 2, 4, 6});
+  DataArray a;
+  DataArray b;
+};
+
+TEST_F(DataArrayBucketPlusMinusTest, plus) {
+  using buckets::sum;
+  EXPECT_EQ(sum(buckets::concatenate(a, b)), sum(a) + sum(b));
+}
+
+TEST_F(DataArrayBucketPlusMinusTest, minus) {
+  using buckets::sum;
+  auto tmp = -b;
+  EXPECT_EQ(b.unit(), units::one);
+  EXPECT_EQ(tmp.unit(), units::one);
+  EXPECT_EQ(sum(buckets::concatenate(a, -b)), sum(a) - sum(b));
+}
+
+TEST_F(DataArrayBucketPlusMinusTest, plus_equals) {
+  auto out(a);
+  buckets::append(out, b);
+  EXPECT_EQ(out, buckets::concatenate(a, b));
+  buckets::append(out, -b);
+  EXPECT_NE(out, a); // events not removed by "undo" of addition
+  EXPECT_NE(buckets::sum(out), buckets::sum(a)); // mismatching variances
+  EXPECT_EQ(out, buckets::concatenate(buckets::concatenate(a, b), -b));
+}
+
+TEST_F(DataArrayBucketPlusMinusTest, plus_equals_self) {
+  auto out(a);
+  buckets::append(out, out);
+  EXPECT_EQ(out, buckets::concatenate(a, a));
+}
+
+TEST_F(DataArrayBucketPlusMinusTest, minus_equals) {
+  auto out(a);
+  buckets::append(out, -b);
+  EXPECT_EQ(out, buckets::concatenate(a, -b));
+}
+
 class DatasetBucketTest : public ::testing::Test {
 protected:
   using Model = variable::DataModel<bucket<Dataset>>;

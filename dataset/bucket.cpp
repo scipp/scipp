@@ -211,6 +211,12 @@ void append(const VariableView &var0, const VariableConstView &var1) {
     var0.replace_model(combine<Dataset>(var0, var1));
 }
 
+void append(const DataArrayView &a, const DataArrayConstView &b) {
+  expect::coordsAreSuperset(a, b);
+  union_or_in_place(a.masks(), b.masks());
+  append(a.data(), b.data());
+}
+
 namespace histogram_detail {
 template <class Out, class Coord, class Weight, class Edge>
 using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,

@@ -73,10 +73,30 @@ void init_buckets(py::module &m) {
   bind_buckets<Dataset>(m);
 
   auto buckets = m.def_submodule("buckets");
-  buckets.def("concatenate", dataset::buckets::concatenate,
-              py::call_guard<py::gil_scoped_release>());
-  buckets.def("append", dataset::buckets::append,
-              py::call_guard<py::gil_scoped_release>());
+  buckets.def(
+      "concatenate",
+      [](const VariableConstView &a, const VariableConstView &b) {
+        return dataset::buckets::concatenate(a, b);
+      },
+      py::call_guard<py::gil_scoped_release>());
+  buckets.def(
+      "concatenate",
+      [](const DataArrayConstView &a, const DataArrayConstView &b) {
+        return dataset::buckets::concatenate(a, b);
+      },
+      py::call_guard<py::gil_scoped_release>());
+  buckets.def(
+      "append",
+      [](const VariableView &a, const VariableConstView &b) {
+        return dataset::buckets::append(a, b);
+      },
+      py::call_guard<py::gil_scoped_release>());
+  buckets.def(
+      "append",
+      [](const DataArrayView &a, const DataArrayConstView &b) {
+        return dataset::buckets::append(a, b);
+      },
+      py::call_guard<py::gil_scoped_release>());
   buckets.def("histogram", dataset::buckets::histogram,
               py::call_guard<py::gil_scoped_release>());
   buckets.def("map", dataset::buckets::map,
