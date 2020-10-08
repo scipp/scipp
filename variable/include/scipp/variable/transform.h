@@ -424,7 +424,7 @@ template <class Op> struct Transform {
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
         (handles.hasVariances() || ...);
-    const auto unit = op(variableFactory().elem_unit(*handles.m_var)...);
+    const units::Unit unit = op(variableFactory().elem_unit(*handles.m_var)...);
     auto out = variableFactory().create(dtype<Out>, dims, unit, variances,
                                         *handles.m_var...);
     do_transform(op, variable_access<Out>(out), std::tuple<>(),
