@@ -541,13 +541,36 @@ class TestMantidConversion(unittest.TestCase):
         # after
         self.assertEqual(3, target.sample().getThickness())
 
-    def _do_test_point(self, point):
-        x, y, z = point
-        r, theta, phi = mantidcompat._to_spherical(x, y, z)
-        x_b, y_b, z_b = mantidcompat._to_cartesian(r, theta, phi)
-        self.assertAlmostEqual(x, x_b)
-        self.assertAlmostEqual(y, y_b)
-        self.assertAlmostEqual(z, z_b)
+    def _exec_to_spherical(self, x, y, z):
+        in_out = sc.Dataset()
+        in_out['x'] = sc.Variable(value=x, unit=sc.units.m)
+        in_out['y'] = sc.Variable(value=y, unit=sc.units.m)
+        in_out['z'] = sc.Variable(value=z, unit=sc.units.m)
+        point = sc.geometry.position(in_out['x'].data, in_out['y'].data,
+                                     in_out['z'].data)
+        mantidcompat._to_spherical(point, in_out)
+        return in_out
+
+    def test_spherical_conversion(self):
+        x = 1.0
+        y = 1.0
+        z = 1.0
+        spherical = self._exec_to_spherical(x, y, z)
+        assert spherical['r'].value == np.sqrt(x**2 + y**2 + z**2)
+        assert spherical['t'].value == np.arccos(z /
+                                                 np.sqrt(x**2 + y**2 + z**2))
+        # Phi now should be between 0 and pi
+        assert spherical['p-delta'].value + spherical['p-sign'].value == np.pi
+        assert spherical['p-sign'].value == np.arctan2(y, x)
+        x = -1.0
+        spherical = self._exec_to_spherical(x, y, z)
+        assert spherical['p-delta'].value + spherical['p-sign'].value == np.pi
+        assert spherical['p-sign'].value == np.arctan2(y, x)
+        # Phi now should be between 0 and -pi
+        y = -1.0
+        spherical = self._exec_to_spherical(x, y, z)
+        assert spherical['p-sign'].value - spherical['p-delta'].value == -np.pi
+        assert spherical['p-sign'].value == np.arctan2(y, x)
 
     def test_detector_positions(self):
         import mantid.simpleapi as mantid
