@@ -10,6 +10,7 @@ stages:
         steps:
           - bash: |
               set -ex
+              wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
               sudo add-apt-repository --yes 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
               sudo apt-get update
               sudo apt-get install --yes clang-format-10
