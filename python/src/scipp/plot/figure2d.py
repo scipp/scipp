@@ -132,13 +132,13 @@ class PlotFigure2d(PlotFigure):
         # Set axes labels
         self.ax.set_xlabel(axparams["x"]["label"])
         self.ax.set_ylabel(axparams["y"]["label"])
-        self.ax.set_xscale("log" if axparams["x"]["log"] else "linear")
-        self.ax.set_yscale("log" if axparams["y"]["log"] else "linear")
+        self.ax.set_xscale(axparams["x"]["scale"])
+        self.ax.set_yscale(axparams["y"]["scale"])
 
         for xy, param in axparams.items():
             axis = getattr(self.ax, "{}axis".format(xy))
-            axis.set_major_formatter(self.axformatter[param["dim"]][param["log"]])
-            axis.set_major_locator(self.axlocator[param["dim"]][param["log"]])
+            axis.set_major_formatter(self.axformatter[param["dim"]][param["scale"]])
+            axis.set_major_locator(self.axlocator[param["dim"]][param["scale"]])
 
         # Set axes limits and ticks
         extent_array = np.array([axparams["x"]["lims"],

@@ -88,19 +88,20 @@ def plot(scipp_obj,
         if bins is not None and sc.contains_events(var):
             ndims += 1
         if ndims > 0:
-            ax = axes
+            # ax = axes
             if ndims == 1 or projection == "1d" or projection == "1D":
                 # Construct a key from the dimensions
                 if axes is not None:
-                    # Check if we are dealing with a dict mapping dimensions to
-                    # labels
-                    if isinstance(axes, dict):
-                        key = axes[str(var.dims[0])]
-                        ax = [key]
-                    else:
-                        key = ".".join(axes)
+                    # # Check if we are dealing with a dict mapping dimensions to
+                    # # labels
+                    # if isinstance(axes, dict):
+                    #     key = axes[str(var.dims[0])]
+                    #     ax = [key]
+                    # else:
+                    #     key = ".".join(axes)
+                    key = str(list(axes.values())[0])
                 else:
-                    key = ".".join([str(dim) for dim in var.dims])
+                    key = str(var.dims[0])
                 # Add unit to key
                 key = "{}.{}".format(key, str(var.unit))
                 line_count += 1
@@ -127,7 +128,7 @@ def plot(scipp_obj,
             if key not in tobeplotted.keys():
                 tobeplotted[key] = dict(ndims=ndims,
                                         scipp_obj_dict=dict(),
-                                        axes=ax,
+                                        axes=axes,
                                         mpl_line_params=dict())
                 for n in mpl_line_params.keys():
                     tobeplotted[key]["mpl_line_params"][n] = {}

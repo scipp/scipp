@@ -123,7 +123,9 @@ class PlotFigure1d(PlotFigure):
         #     self.ax.set_xscale("log")
         # if self.logy:
         #     self.ax.set_yscale("log")
-        self.ax.set_xscale("log" if xparams["log"] else "linear")
+        # self.ax.set_xscale("log" if xparams["log"] else "linear")
+        # self.ax.set_yscale("log" if self.norm == "log" else "linear")
+        self.ax.set_xscale(xparams["scale"])
         self.ax.set_yscale("log" if self.norm == "log" else "linear")
 
         self.ax.set_ylabel(self.unit)
@@ -143,10 +145,10 @@ class PlotFigure1d(PlotFigure):
 
         # if axlocator is not None:
         self.ax.xaxis.set_major_locator(
-            self.axlocator[xparams["dim"]][xparams["log"]])
+            self.axlocator[xparams["dim"]][xparams["scale"]])
         # if axformatter is not None:
         self.ax.xaxis.set_major_formatter(
-            self.axformatter[xparams["dim"]][xparams["log"]])
+            self.axformatter[xparams["dim"]][xparams["scale"]])
 
         print(xparams)
 

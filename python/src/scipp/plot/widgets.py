@@ -378,6 +378,13 @@ class PlotWidgets:
                 slider_values[dim] = sl.value
         return slider_values
 
+    def get_buttons_and_disabled_sliders(self):
+        buttons_and_dims = {}
+        for dim, button in self.buttons.items():
+            if self.slider[dim].disabled:
+                buttons_and_dims[dim] = button.value.lower()
+        return buttons_and_dims
+
     def get_masks_info(self):
         """
         Get information on masks: their names and whether they should be

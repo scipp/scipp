@@ -61,12 +61,12 @@ class PlotFigure:
     def initialise(self, axformatters=None):
         for dim in axformatters:
             self.axformatter[dim] = {}
-            for key in [False, True]:
+            for key in ["linear", "log"]:
                 if axformatters[dim][key] is None:
                     self.axformatter[dim][key] = ticker.ScalarFormatter()
                 else:
                     self.axformatter[dim][key] = ticker.FuncFormatter(axformatters[dim][key])
-            self.axlocator[dim] = {False: ticker.AutoLocator(), True: ticker.LogLocator()}
+            self.axlocator[dim] = {"linear": ticker.AutoLocator(), "log": ticker.LogLocator()}
             if axformatters[dim]["custom_locator"]:
-                self.axlocator[dim][False] = ticker.MaxNLocator(integer=True)
+                self.axlocator[dim]["linear"] = ticker.MaxNLocator(integer=True)
 

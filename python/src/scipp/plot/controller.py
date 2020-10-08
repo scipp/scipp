@@ -24,10 +24,11 @@ class PlotController:
                  vmin=None,
                  vmax=None,
                  norm=None,
+                 scale=None,
                  # color=None,
-                 logx=False,
-                 logy=False,
-                 logz=False,
+                 # logx=False,
+                 # logy=False,
+                 # logz=False,
                  # button_options=None,
                  # positions=None,
                  # errorbars=None,
@@ -48,10 +49,11 @@ class PlotController:
 
         self.name = name
         # self.axes = axes
-        self.logx = logx
-        self.logy = logy
-        self.logz = logz
+        # self.logx = logx
+        # self.logy = logy
+        # self.logz = logz
         self.axparams = {}
+
         self.profile_axparams = {}
         # self.slice_instead_of_rebin = {}
         # self.masks = masks
@@ -60,6 +62,13 @@ class PlotController:
         self.vmax = vmax
         self.norm = norm
         # print("controller: self.norm", self.norm)
+
+
+        self.scale = {dim: "linear" for dim in axes.values()}
+        if scale is not None:
+            for dim, item in scale.items():
+                self.scale[sc.Dim(dim)] = item
+
 
         # # Parse parameters for values and masks
         # self.params = {"values": {}, "masks": {}}
@@ -190,6 +199,8 @@ class PlotController:
                                                     unit=coord.unit)
 
                 self.labels[key][dim] = name_with_unit(var=coord)
+
+
 
 
 
@@ -581,30 +592,32 @@ class PlotController:
         axes that are displayed on the plots.
         """
         axparams = {}
-        for dim, button in self.widgets.buttons.items():
-            if self.widgets.slider[dim].disabled:
-                but_val = button.value.lower()
-                xmin = np.Inf
-                xmax = np.NINF
-                for name in self.xlims:
-                    xlims = self.xlims[name][dim].values
-                    xmin = min(xmin, xlims[0])
-                    xmax = max(xmax, xlims[1])
-                axparams[but_val] = {
-                    "lims": [xmin, xmax],
-                    "log": getattr(self, "log{}".format(but_val)),
-                    "hist": {
-                        name: self.histograms[name][dim][dim]
-                        for name in self.histograms
-                    },
-                    "dim": dim,
-                    "label": self.labels[self.name][dim]
-                }
-                # Safety check for log axes
-                axparams[but_val]["lims"] = check_log_limits(
-                    lims=axparams[but_val]["lims"],
-                    # log=getattr(self, "log{}".format(but_val)))
-                    log=axparams[but_val]["log"])
+        # for dim, button in self.widgets.buttons.items():
+        #     if self.widgets.slider[dim].disabled:
+        for dim, but_val in self.widgets.get_buttons_and_disabled_sliders().items():
+            # but_val = button.value.lower()
+            xmin = np.Inf
+            xmax = np.NINF
+            for name in self.xlims:
+                xlims = self.xlims[name][dim].values
+                xmin = min(xmin, xlims[0])
+                xmax = max(xmax, xlims[1])
+            axparams[but_val] = {
+                "lims": [xmin, xmax],
+                # "log": getattr(self, "log{}".format(but_val)),
+                "scale": self.scale[dim],
+                "hist": {
+                    name: self.histograms[name][dim][dim]
+                    for name in self.histograms
+                },
+                "dim": dim,
+                "label": self.labels[self.name][dim]
+            }
+            # Safety check for log axes
+            axparams[but_val]["lims"] = check_log_limits(
+                lims=axparams[but_val]["lims"],
+                # log=getattr(self, "log{}".format(but_val)))
+                log=axparams[but_val]["scale"])
 
         return axparams
 

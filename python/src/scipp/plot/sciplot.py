@@ -18,6 +18,7 @@ class SciPlot:
                  vmax=None,
                  color=None,
                  masks=None,
+                 # scale=None,
                  positions=None,
                  view_ndims=None):
 
@@ -31,6 +32,7 @@ class SciPlot:
         # Get first item in dict and process dimensions.
         # Dimensions should be the same for all dict items.
         self.axes = None
+        # self.scale = scale
         # self.view_ndims = view_ndims
         self.masks = {}
         # self.underlying_dim_to_label = {}

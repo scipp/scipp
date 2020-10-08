@@ -95,8 +95,8 @@ class PlotModel:
         #     True: ticker.LogFormatterSciNotation()
         # }
         formatter = {
-            False: None,
-            True: None,
+            "linear": None,
+            "log": None,
             "custom_locator": False
         }
         # locator = {False: ticker.AutoLocator(), True: ticker.LogLocator()}
@@ -117,7 +117,7 @@ class PlotModel:
                     value_to_string(item, precision=2)
                     for item in data_array.coords[dim].values[int(val)]
                 ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim]) else ""
-                formatter.update({False: form, True: form, "custom_locator": True})
+                formatter.update({"linear": form, "log": form, "custom_locator": True})
                 # locator[False] = ticker.MaxNLocator(integer=True)
 
             elif tp == sc.dtype.string:
@@ -127,7 +127,7 @@ class PlotModel:
                 form = lambda val, pos: data_array.coords[
                     dim].values[int(val)] if (int(val) >= 0 and int(
                         val) < dim_to_shape[dim]) else ""
-                formatter.update({False: form, True: form, "custom_locator": True})
+                formatter.update({"linear": form, "log": form, "custom_locator": True})
                 # locator[False] = ticker.MaxNLocator(integer=True)
 
             elif dim != underlying_dim:
@@ -144,7 +144,7 @@ class PlotModel:
                 print("in here")
                 form = lambda val, pos: value_to_string(data_array.coords[
                         dim].values[np.abs(coord.values - val).argmin()])
-                formatter.update({False: form, True: form})
+                formatter.update({"linear": form, "log": form})
 
             else:
                 coord = data_array.coords[dim].astype(sc.dtype.float64)

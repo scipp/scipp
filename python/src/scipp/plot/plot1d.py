@@ -64,6 +64,7 @@ class SciPlot1d(SciPlot):
                  norm=None,
                  vmin=None,
                  vmax=None,
+                 scale=None,
                  # logx=False,
                  # logy=False,
                  grid=False,
@@ -116,8 +117,7 @@ class SciPlot1d(SciPlot):
             ax=ax,
             figsize=figsize,
             errorbars=self.errorbars,
-            norm=self.params["values"][
-                self.name]["norm"],
+            norm=norm,
             title=title,
             unit=self.params["values"][
                 self.name]["unit"],
@@ -155,6 +155,7 @@ class SciPlot1d(SciPlot):
 
         # # Connect controller to model, view, panel and profile
         # self._connect_controller_members()
+        print("in sciplot", scale)
 
         # The main controller module which contains the slider widgets
         self.controller = PlotController1d(
@@ -168,6 +169,7 @@ class SciPlot1d(SciPlot):
           vmin=self.params["values"][self.name]["vmin"],
           vmax=self.params["values"][self.name]["vmax"],
           norm=norm,
+          scale=scale,
           # mask_names=self.mask_names,
           widgets=self.widgets,
           model=self.model,
