@@ -6,6 +6,7 @@
 
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -44,12 +45,7 @@ template <class Types, class Op, class... Var>
       (std::is_base_of_v<
            core::transform_flags::expect_in_variance_if_out_variance_t, Op> &&
        (var.hasVariances() || ...));
-  Variable out =
-      variance ? Variable(type, dims,
-                          Values(dims.volume(), core::default_init_elements),
-                          Variances(dims.volume(), core::default_init_elements))
-               : Variable(type, dims,
-                          Values(dims.volume(), core::default_init_elements));
+  Variable out = variableFactory().create(type, dims, variance);
 
   const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
 

@@ -7,6 +7,7 @@
 #include "scipp/common/overloaded.h"
 #include "scipp/core/bucket.h"
 #include "scipp/core/element/arg_list.h"
+#include "scipp/core/element/histogram.h"
 #include "scipp/core/except.h"
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
@@ -16,6 +17,7 @@
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
@@ -186,6 +188,39 @@ void append(const VariableView &var0, const VariableConstView &var1) {
     var0.replace_model(combine<DataArray>(var0, var1));
   else
     var0.replace_model(combine<Dataset>(var0, var1));
+}
+
+namespace histogram_detail {
+template <class Out, class Coord, class Weight, class Edge>
+using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
+                        span<const Edge>>;
+}
+
+Variable histogram(const VariableConstView &data,
+                   const VariableConstView &binEdges) {
+  using namespace scipp::core;
+  using namespace histogram_detail;
+  auto hist_dim = binEdges.dims().inner();
+  const auto &[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
+  if (!buffer.masks().empty())
+    throw std::runtime_error("Masked data cannot be histogrammed yet.");
+  VariableConstView spans(indices);
+  Variable merged;
+  if (indices.dims().contains(hist_dim)) {
+    const auto size = indices.dims()[hist_dim];
+    const auto [begin, end] = unzip(indices);
+    // Only contiguous ranges along histogramming dim supported at this point.
+    core::expect::equals(begin.slice({hist_dim, 1, size}),
+                         end.slice({hist_dim, 0, size - 1}));
+    merged = zip(begin.slice({hist_dim, 0}), end.slice({hist_dim, size - 1}));
+    spans = VariableConstView(merged);
+  }
+  return variable::transform_subspan<std::tuple<
+      args<double, double, double, double>, args<double, float, double, double>,
+      args<double, float, double, float>, args<double, double, float, double>>>(
+      buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
+      subspan_view(buffer.coords()[hist_dim], dim, spans),
+      subspan_view(buffer.data(), dim, spans), binEdges, element::histogram);
 }
 
 } // namespace scipp::dataset::buckets
