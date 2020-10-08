@@ -8,7 +8,6 @@
 #include "random.h"
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/unaligned.h"
 #include "scipp/variable/operations.h"
 
 using namespace scipp;
@@ -33,6 +32,7 @@ auto make_edges(const scipp::index nEdge) {
   return edges;
 }
 
+/*
 auto make_2d_events_default_weights(const scipp::index size,
                                     const scipp::index count,
                                     const scipp::index nEdge) {
@@ -118,5 +118,6 @@ static void BM_events_histogram_op(benchmark::State &state) {
 BENCHMARK(BM_events_histogram_op)
     ->RangeMultiplier(4)
     ->Ranges({{64, 2 << 14}, {128, 2 << 11}, {true, false}, {true, false}});
+*/
 
 BENCHMARK_MAIN();
