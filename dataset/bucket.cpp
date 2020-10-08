@@ -269,10 +269,13 @@ void scale(const DataArrayView &data, const DataArrayConstView &histogram) {
 }
 
 Variable sum(const VariableConstView &data) {
-  const auto type = variable::variableFactory().elem_dtype(data);
-  auto summed = variable::variableFactory().create(
-      type == dtype<bool> ? dtype<int64_t> : type, data.dims(),
-      variable::variableFactory().hasVariances(data));
+  auto type = variable::variableFactory().elem_dtype(data);
+  type = type == dtype<bool> ? dtype<int64_t> : type;
+  Variable summed;
+  if (variable::variableFactory().hasVariances(data))
+    summed = Variable(type, data.dims(), Values{}, Variances{});
+  else
+    summed = Variable(type, data.dims(), Values{});
   variable::sum_impl(summed, data);
   return summed;
 }
