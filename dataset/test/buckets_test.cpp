@@ -163,6 +163,110 @@ TEST_F(DataArrayBucketMapTest, map_masked) {
                                                           expected_scale)));
 }
 
+class DataArrayBucketScaleTest : public ::testing::Test {
+protected:
+  using Model = variable::DataModel<bucket<DataArray>>;
+  auto make_indices() const {
+    return makeVariable<std::pair<scipp::index, scipp::index>>(
+        Dims{Dim::Y, Dim::X}, Shape{2, 1},
+        Values{std::pair{0, 3}, std::pair{3, 7}});
+  }
+  auto make_events() const {
+    auto weights = makeVariable<double>(Dims{Dim("event")}, Shape{7}, units::us,
+                                        Values{1, 2, 1, 3, 1, 1, 1},
+                                        Variances{1, 3, 1, 2, 1, 1, 1});
+    auto coord =
+        makeVariable<double>(Dims{Dim("event")}, Shape{7}, units::us,
+                             Values{1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 5.5});
+    return DataArray(weights, {{Dim::X, coord}});
+  }
+
+  auto make_histogram() const {
+    auto edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                      units::us, Values{0, 2, 4, 1, 3, 5});
+    auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                     Values{2.0, 3.0, 2.0, 3.0},
+                                     Variances{0.3, 0.4, 0.3, 0.4});
+    return DataArray(data, {{Dim::X, edges}});
+  }
+
+  auto make_histogram_no_variance() const {
+    auto edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
+                                      units::us, Values{0, 2, 4, 1, 3, 5});
+    auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                     Values{2.0, 3.0, 2.0, 3.0});
+    return DataArray(data, {{Dim::X, edges}});
+  }
+
+  auto make_buckets(const DataArray &events,
+                    const std::map<Dim, VariableConstView> coords = {}) const {
+    auto array = DataArray(Variable(
+        std::make_unique<Model>(make_indices(), Dim("event"), events)));
+    for (const auto &[dim, coord] : coords)
+      array.coords().set(dim, coord);
+    return array;
+  }
+};
+
+TEST_F(DataArrayBucketScaleTest, fail_events_op_non_histogram) {
+  const auto events = make_events();
+  auto coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                    units::us, Values{0, 2, 1, 3});
+  auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                   Values{2.0, 3.0, 2.0, 3.0},
+                                   Variances{0.3, 0.4, 0.3, 0.4});
+  DataArray not_hist(data, {{Dim::X, coord}});
+
+  // Fail due to coord mismatch between event coord and dense coord
+  EXPECT_THROW(events * not_hist, except::CoordMismatchError);
+  EXPECT_THROW(not_hist * events, except::CoordMismatchError);
+  EXPECT_THROW(events / not_hist, except::CoordMismatchError);
+
+  auto buckets = make_buckets(events);
+
+  // Fail because non-event operand has to be a histogram
+  EXPECT_THROW(buckets::scale(buckets, not_hist), except::BinEdgeError);
+  // We have a single bucket in X, so setting the "same" coord as in `not_hist`
+  // we have a matching coord, it it would be a bin-edge coord on `buckets`.
+  buckets.coords().set(Dim::X, not_hist.coords()[Dim::X]);
+  EXPECT_THROW(buckets::scale(buckets, not_hist), except::BinEdgeError);
+}
+
+TEST_F(DataArrayBucketScaleTest, events_times_histogram) {
+  const auto events = make_events();
+  const auto hist = make_histogram();
+  auto buckets = make_buckets(events);
+  buckets::scale(buckets, hist);
+
+  auto expected_weights = makeVariable<double>(
+      Dims{Dim("event")}, Shape{7}, units::us, Values{1, 2, 1, 3, 1, 1, 1},
+      Variances{1, 3, 1, 2, 1, 1, 1});
+  // Last event is out of bounds and scaled to 0.0
+  expected_weights *= makeVariable<double>(
+      Dims{Dim("event")}, Shape{7}, Values{2.0, 3.0, 3.0, 2.0, 2.0, 3.0, 0.0},
+      Variances{0.3, 0.4, 0.4, 0.3, 0.3, 0.4, 0.0});
+  auto expected_events = events;
+  expected_events.data().assign(expected_weights);
+
+  EXPECT_EQ(buckets, make_buckets(expected_events));
+}
+
+TEST_F(DataArrayBucketScaleTest,
+       events_times_histogram_fail_too_many_bucketed_dims) {
+  auto x = make_histogram();
+  auto z(x);
+  z.rename(Dim::X, Dim::Z);
+  auto zx = z * x;
+  auto events = make_events();
+  events.coords().set(Dim::Z, events.coords()[Dim::X]);
+  auto buckets = make_buckets(events);
+  // Ok, `buckets` has multiple bucketed dims, but hist is only for one of them
+  EXPECT_NO_THROW(buckets::scale(buckets, x));
+  EXPECT_NO_THROW(buckets::scale(buckets, z));
+  // Multiple realigned dims and hist for multiple not implemented
+  EXPECT_THROW(buckets::scale(buckets, zx), except::BinEdgeError);
+}
+
 class DatasetBucketTest : public ::testing::Test {
 protected:
   using Model = variable::DataModel<bucket<Dataset>>;

@@ -77,36 +77,6 @@ TEST(DataArrayTest, fail_op_non_matching_coords) {
   EXPECT_THROW(da_1 - da_2, except::CoordMismatchError);
 }
 
-auto make_events() {
-  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  var.setUnit(units::us);
-  auto vals = var.values<event_list<double>>();
-  vals[0] = {1.1, 2.2, 3.3};
-  vals[1] = {1.1, 2.2, 3.3, 5.5};
-  return DataArray(makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::counts,
-                                        Values{1, 1}, Variances{1, 1}),
-                   {{Dim::X, var}});
-}
-
-auto make_histogram() {
-  auto edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                    units::us, Values{0, 2, 4, 1, 3, 5});
-  auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                   Values{2.0, 3.0, 2.0, 3.0},
-                                   Variances{0.3, 0.4, 0.3, 0.4});
-
-  return DataArray(data, {{Dim::X, edges}});
-}
-
-auto make_histogram_no_variance() {
-  auto edges = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
-                                    units::us, Values{0, 2, 4, 1, 3, 5});
-  auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                   Values{2.0, 3.0, 2.0, 3.0});
-
-  return DataArray(data, {{Dim::X, edges}});
-}
-
 TEST(DataArrayTest, astype) {
   DataArray a(
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
@@ -117,66 +87,6 @@ TEST(DataArrayTest, astype) {
 }
 
 /*
-TEST(DataArrayRealignedEventsArithmeticTest, fail_events_op_non_histogram) {
-  const auto events = make_events();
-  auto coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                    units::us, Values{0, 2, 1, 3});
-  auto data = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                   Values{2.0, 3.0, 2.0, 3.0},
-                                   Variances{0.3, 0.4, 0.3, 0.4});
-  DataArray not_hist(data, {{Dim::X, coord}});
-
-  // Fail due to coord mismatch between event coord and dense coord
-  EXPECT_THROW(events * not_hist, except::CoordMismatchError);
-  EXPECT_THROW(not_hist * events, except::CoordMismatchError);
-  EXPECT_THROW(events / not_hist, except::CoordMismatchError);
-
-  const auto realigned = unaligned::realign(
-      events, {{Dim::X, Variable{not_hist.coords()[Dim::X]}}});
-
-  // Fail because non-event operand has to be a histogram
-  EXPECT_THROW(realigned * not_hist, except::BinEdgeError);
-  EXPECT_THROW(not_hist * realigned, except::BinEdgeError);
-  EXPECT_THROW(realigned / not_hist, except::BinEdgeError);
-}
-
-TEST(DataArrayRealignedEventsArithmeticTest, events_times_histogram) {
-  const auto events = make_events();
-  const auto hist = make_histogram();
-  const auto realigned = unaligned::realign(
-      DataArray(events), {{Dim::X, Variable{hist.coords()[Dim::X]}}});
-
-  for (const auto &result : {realigned * hist, hist * realigned}) {
-    EXPECT_EQ(result.coords(), realigned.coords());
-    EXPECT_FALSE(result.hasData());
-    EXPECT_TRUE(result.hasVariances());
-    EXPECT_EQ(result.unit(), units::counts);
-
-    const auto unaligned = result.unaligned();
-    EXPECT_EQ(unaligned.coords()[Dim::X],
-              realigned.unaligned().coords()[Dim::X]);
-    const auto out_vals = unaligned.data().values<event_list<double>>();
-    const auto out_vars = unaligned.data().variances<event_list<double>>();
-
-    auto expected =
-        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 1, 1},
-                             Variances{1, 1, 1}) *
-        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 3.0, 3.0},
-                             Variances{0.3, 0.4, 0.4});
-    EXPECT_TRUE(equals(out_vals[0], expected.values<double>()));
-    EXPECT_TRUE(equals(out_vars[0], expected.variances<double>()));
-    // out of range of edges -> dropped in realign step (independent of this op)
-    expected =
-        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 1, 1},
-                             Variances{1, 1, 1}) *
-        makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2.0, 2.0, 3.0},
-                             Variances{0.3, 0.3, 0.4});
-    EXPECT_TRUE(equals(out_vals[1], expected.values<double>()));
-    EXPECT_TRUE(equals(out_vars[1], expected.variances<double>()));
-  }
-  EXPECT_EQ(copy(realigned) *= hist, realigned * hist);
-}
-
 TEST(DataArrayRealignedEventsArithmeticTest,
      events_times_histogram_fail_too_many_realigned) {
   auto a = make_events();
