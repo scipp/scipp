@@ -83,6 +83,8 @@ void init_buckets(py::module &m) {
               py::call_guard<py::gil_scoped_release>());
   buckets.def("scale", dataset::buckets::scale,
               py::call_guard<py::gil_scoped_release>());
+  buckets.def("sum", dataset::buckets::sum,
+              py::call_guard<py::gil_scoped_release>());
   buckets.def("get_buffer", [](py::object &obj) -> py::object {
     auto &var = obj.cast<const VariableView &>();
     if (var.dtype() == dtype<bucket<Variable>>)
