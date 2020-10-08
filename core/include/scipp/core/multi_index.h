@@ -10,23 +10,24 @@
 
 namespace scipp::core {
 
-/// Strides in dataDims when iterating iterDims.
-inline auto get_strides(const Dimensions &iterDims,
-                        const Dimensions &dataDims) {
-  std::array<scipp::index, NDIM_MAX> strides = {};
-  scipp::index d = iterDims.ndim() - 1;
-  for (const auto dim : iterDims.labels()) {
-    if (dataDims.contains(dim))
-      strides[d--] = dataDims.offset(dim);
-    else
-      strides[d--] = 0;
-  }
-  return strides;
-}
+SCIPP_CORE_EXPORT std::array<scipp::index, NDIM_MAX>
+get_strides(const Dimensions &iterDims, const Dimensions &dataDims);
 
 SCIPP_CORE_EXPORT void
 validate_bucket_indices_impl(const element_array_view &param0,
                              const element_array_view &param1);
+
+inline auto get_nested_dims() { return Dimensions(); }
+template <class T, class... Ts>
+auto get_nested_dims(const T &param, const Ts &... params) {
+  return param ? param.dims : get_nested_dims(params...);
+}
+
+inline auto get_slice_dim() { return Dim::Invalid; }
+template <class T, class... Ts>
+auto get_slice_dim(const T &param, const Ts &... params) {
+  return param ? param.dim : get_slice_dim(params...);
+}
 
 template <scipp::index N> class SCIPP_CORE_EXPORT MultiIndex {
 public:
@@ -52,9 +53,12 @@ public:
   template <class Param0, class Param1, class... Params>
   void validate_bucket_indices(const Param0 &param0, const Param1 &param1,
                                const Params &... params) {
-    if (param1.bucketParams())
+    if (param0.bucketParams() && param1.bucketParams())
       validate_bucket_indices_impl(param0, param1);
-    validate_bucket_indices(param0, params...);
+    if (param0.bucketParams())
+      validate_bucket_indices(param0, params...);
+    else
+      validate_bucket_indices(param1, params...);
   }
 
   template <class... Params> void init(const Params &... params) {
@@ -65,8 +69,8 @@ public:
     }
     validate_bucket_indices(params...);
     m_bucket = std::array{BucketIterator(params)...};
-    const auto nestedDims = std::array{params.bucketParams().dims...}[0];
-    const Dim sliceDim = std::array{params.bucketParams().dim...}[0];
+    const auto nestedDims = get_nested_dims(params.bucketParams()...);
+    const Dim sliceDim = get_slice_dim(params.bucketParams()...);
     m_ndim_nested = nestedDims.ndim();
     m_nested_stride = nestedDims.offset(sliceDim);
     m_nested_dim_index = m_ndim_nested - nestedDims.index(sliceDim) - 1;

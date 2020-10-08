@@ -104,6 +104,11 @@ TEST_F(DataArrayBucketTest, histogram_existing_dim) {
                       {{Dim::Y, bin_edges}}));
 }
 
+TEST_F(DataArrayBucketTest, sum) {
+  EXPECT_EQ(buckets::sum(var),
+            makeVariable<double>(indices.dims(), Values{3, 7}));
+}
+
 class DataArrayBucketMapTest : public ::testing::Test {
 protected:
   using ModelVariable = variable::DataModel<bucket<Variable>>;

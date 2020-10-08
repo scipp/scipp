@@ -24,6 +24,8 @@
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
+#include "../variable/operations_common.h"
+
 namespace scipp::dataset::buckets {
 
 namespace {
@@ -264,6 +266,15 @@ void scale(const DataArrayView &data, const DataArrayConstView &histogram) {
   // multiplication taking care of mask propagation and coord checks, hence the
   // handling above.
   data *= map(histogram, data.data(), histogram.dims().inner());
+}
+
+Variable sum(const VariableConstView &data) {
+  const auto type = variable::variableFactory().elem_dtype(data);
+  auto summed = variable::variableFactory().create(
+      type == dtype<bool> ? dtype<int64_t> : type, data.dims(),
+      variable::variableFactory().hasVariances(data));
+  variable::sum_impl(summed, data);
+  return summed;
 }
 
 } // namespace scipp::dataset::buckets

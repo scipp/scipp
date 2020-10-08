@@ -6,6 +6,21 @@
 #include "scipp/core/except.h"
 
 namespace scipp::core {
+
+/// Strides in dataDims when iterating iterDims.
+std::array<scipp::index, NDIM_MAX> get_strides(const Dimensions &iterDims,
+                                               const Dimensions &dataDims) {
+  std::array<scipp::index, NDIM_MAX> strides = {};
+  scipp::index d = iterDims.ndim() - 1;
+  for (const auto dim : iterDims.labels()) {
+    if (dataDims.contains(dim))
+      strides[d--] = dataDims.offset(dim);
+    else
+      strides[d--] = 0;
+  }
+  return strides;
+}
+
 void validate_bucket_indices_impl(const element_array_view &param0,
                                   const element_array_view &param1) {
   const auto iterDims = param0.dims();
@@ -22,4 +37,5 @@ void validate_bucket_indices_impl(const element_array_view &param0,
     index.increment();
   }
 }
+
 } // namespace scipp::core
