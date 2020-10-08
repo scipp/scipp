@@ -34,6 +34,9 @@ class SciPlot:
         # self.view_ndims = view_ndims
         self.masks = {}
         # self.underlying_dim_to_label = {}
+        self.errorbars = {}
+        self.dim_to_shape = {}
+        self.coord_shapes = {}
         self.dim_label_map = {}
         # self.coords_dtype = {}
 
@@ -54,8 +57,6 @@ class SciPlot:
         }
         masks_globs = {"norm": norm, "vmin": vmin, "vmax": vmax}
 
-        self.errorbars = {}
-        self.dim_to_shape = {}
         if errorbars is not None:
             if isinstance(errorbars, bool):
                 self.errorbars = {name: errorbars for name in scipp_obj_dict}
@@ -92,6 +93,8 @@ class SciPlot:
 
             # Create a useful map from dim to shape
             self.dim_to_shape[name] = dict(zip(array_dims, array.shape))
+            self.coord_shapes[name] = {
+                dim: array.coords[dim].shape for dim in array.coords}
 
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None

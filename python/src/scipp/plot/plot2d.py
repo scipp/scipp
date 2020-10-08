@@ -162,15 +162,16 @@ class SciPlot2d(SciPlot):
 
         # The main controller module which contains the slider widgets
         self.controller = PlotController2d(
-          scipp_obj_dict=scipp_obj_dict,
+          # scipp_obj_dict=scipp_obj_dict,
           axes=self.axes,
           name=self.name,
           dim_to_shape=self.dim_to_shape,
+          coord_shapes=self.coord_shapes,
           # logx=logx,
           # logy=logy,
           vmin=self.params["values"][self.name]["vmin"],
           vmax=self.params["values"][self.name]["vmax"],
-          norm=self.params["values"][self.name]["norm"],
+          norm=norm,
           # masks=self.masks,
           widgets=self.widgets,
           model=self.model,

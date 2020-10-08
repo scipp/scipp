@@ -4,6 +4,7 @@
 
 # Scipp imports
 from .figure2d import PlotFigure2d
+from .view import PlotView
 from .._utils import make_random_color
 
 # Other imports
@@ -11,54 +12,11 @@ import numpy as np
 from matplotlib.collections import PathCollection
 
 
-class PlotView2d:
-    def __init__(self,
-                 ax=None,
-                 cax=None,
-                 figsize=None,
-                 aspect=None,
-                 cmap=None,
-                 norm=None,
-                 title=None,
-                 cbar=None,
-                 unit=None,
-                 # log=None,
-                 vmin=None,
-                 vmax=None,
-                 color=None,
-                 # logx=False,
-                 # logy=False,
-                 # mask_cmap=None,
-                 masks=None,
-                 resolution=None):
+class PlotView2d(PlotView):
+    def __init__(self, *args, **kwargs):
 
-        self.interface = {}
-
-        self.profile_hover_connection = None
-        self.profile_pick_connection = None
-        self.profile_update_lock = False
-        self.profile_scatter = None
-        self.profile_counter = -1
-        self.profile_ids = []
-
-        self.figure = PlotFigure2d(ax=ax,
-                                   cax=cax,
-                                   figsize=figsize,
-                                   aspect=aspect,
-                                   cmap=cmap,
-                                   norm=norm,
-                                   title=title,
-                                   cbar=cbar,
-                                   unit=unit,
-                                   # log=log,
-                                   vmin=vmin,
-                                   vmax=vmax,
-                                   # color=color,
-                                   # logx=logx,
-                                   # logy=logy,
-                                   # mask_cmap=mask_cmap,
-                                   masks=masks,
-                                   resolution=resolution)
+        super().__init__(
+            figure=PlotFigure2d(*args, **kwargs))
 
         self.xlim_updated = False
         self.ylim_updated = False
@@ -71,24 +29,6 @@ class PlotView2d:
         self.figure.ax.callbacks.connect('ylim_changed',
                                          self.check_for_ylim_update)
 
-    def _ipython_display_(self):
-        return self._to_widget()._ipython_display_()
-
-    def _to_widget(self):
-        return self.figure._to_widget()
-
-    def savefig(self, filename=None):
-        self.figure.savefig(filename)
-
-    def initialise(self, *args, **kwargs):
-        self.figure.initialise(*args, **kwargs)
-
-    def connect(self, function_list):
-        for key, func in function_list.items():
-            self.interface[key] = func
-
-    def rescale_to_data(self, vmin, vmax):
-        self.figure.rescale_to_data(vmin=vmin, vmax=vmax)
 
     def toggle_mask(self, change):
         self.figure.toggle_mask(change["owner"].mask_name, change["new"])
@@ -138,9 +78,6 @@ class PlotView2d:
 
         self.figure.update_axes(axparams)#, axformatter, axlocator)#, logx, logy)
         self.reset_profile()
-
-    def update_data(self, *args, **kwargs):
-        self.figure.update_data(*args, **kwargs)
 
     def reset_profile(self):
         if self.profile_scatter is not None:

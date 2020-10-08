@@ -22,6 +22,7 @@ class PlotFigure1d(PlotFigure):
                  mpl_line_params=None,
                  title=None,
                  unit=None,
+                 norm=None,
                  # logx=False,
                  # logy=False,
                  grid=False,
@@ -32,7 +33,7 @@ class PlotFigure1d(PlotFigure):
                  legend={"show": True},
                  padding=None):
 
-        super().__init__(ax=ax, cax=cax, figsize=figsize, title=title, padding=padding)
+        super().__init__(ax=ax, figsize=figsize, title=title, padding=padding)
 
         # Matplotlib line containers
         self.data_lines = {}
@@ -45,9 +46,10 @@ class PlotFigure1d(PlotFigure):
         self.picker = picker
         # self.is_profile = is_profile
         # self.slice_area = None
-        self.logx = logx
-        self.logy = logy
+        # self.logx = logx
+        # self.logy = logy
         self.unit = unit
+        self.norm = norm
         self.legend = legend
         if "loc" not in self.legend:
             self.legend["loc"] = 0
@@ -88,12 +90,15 @@ class PlotFigure1d(PlotFigure):
 
     def update_axes(self,
                     axparams=None,
-                    axformatter=None,
-                    axlocator=None,
-                    logx=False,
-                    logy=False,
+                    # axformatter=None,
+                    # axlocator=None,
+                    # logx=False,
+                    # logy=False,
                     clear=True,
                     legend_labels=True):
+
+        xparams = axparams["x"]
+
         if self.own_axes:
             self.ax.clear()
 
@@ -104,7 +109,7 @@ class PlotFigure1d(PlotFigure):
                 "linestyle": {},
                 "linewidth": {}
             }
-            for i, name in enumerate(axparams["x"]["hist"]):
+            for i, name in enumerate(xparams["hist"]):
                 self.mpl_line_params["color"][name] = get_line_param(
                     "color", i)
                 self.mpl_line_params["marker"][name] = get_line_param(
@@ -114,34 +119,38 @@ class PlotFigure1d(PlotFigure):
                 self.mpl_line_params["linewidth"][name] = get_line_param(
                     "linewidth", i)
 
-        if self.logx:
-            self.ax.set_xscale("log")
-        if self.logy:
-            self.ax.set_yscale("log")
+        # if self.logx:
+        #     self.ax.set_xscale("log")
+        # if self.logy:
+        #     self.ax.set_yscale("log")
+        self.ax.set_xscale("log" if xparams["log"] else "linear")
+        self.ax.set_yscale("log" if self.norm == "log" else "linear")
 
         self.ax.set_ylabel(self.unit)
 
         if self.grid:
             self.ax.grid()
 
-        deltax = 0.05 * (axparams["x"]["lims"][1] - axparams["x"]["lims"][0])
+        deltax = 0.05 * (xparams["lims"][1] - xparams["lims"][0])
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             self.ax.set_xlim([
-                axparams["x"]["lims"][0] - deltax,
-                axparams["x"]["lims"][1] + deltax
+                xparams["lims"][0] - deltax,
+                xparams["lims"][1] + deltax
             ])
 
-        self.ax.set_xlabel(axparams["x"]["label"])
+        self.ax.set_xlabel(xparams["label"])
 
-        if axlocator is not None:
-            self.ax.xaxis.set_major_locator(
-                axlocator[axparams["x"]["dim"]][logx])
-        if axformatter is not None:
-            self.ax.xaxis.set_major_formatter(
-                axformatter[axparams["x"]["dim"]][logx])
+        # if axlocator is not None:
+        self.ax.xaxis.set_major_locator(
+            self.axlocator[xparams["dim"]][xparams["log"]])
+        # if axformatter is not None:
+        self.ax.xaxis.set_major_formatter(
+            self.axformatter[xparams["dim"]][xparams["log"]])
 
-        for name, hist in axparams["x"]["hist"].items():
+        print(xparams)
+
+        for name, hist in xparams["hist"].items():
 
             label = None
             if legend_labels:
@@ -324,7 +333,7 @@ class PlotFigure1d(PlotFigure):
                 line.set_visible(value)
         self.fig.canvas.draw_idle()
 
-    def rescale_to_data(self):
+    def rescale_to_data(self, vmin=None, vmax=None):
         self.ax.autoscale(True)
         self.ax.relim()
         self.ax.autoscale_view()

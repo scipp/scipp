@@ -15,7 +15,7 @@ import numpy as np
 
 class PlotController:
     def __init__(self,
-                 scipp_obj_dict=None,
+                 # scipp_obj_dict=None,
                  axes=None,
                  name=None,
                  # masks=None,
@@ -32,6 +32,7 @@ class PlotController:
                  # positions=None,
                  # errorbars=None,
                  dim_to_shape=None,
+                 coord_shapes=None,
                  # masks=None,
                  widgets=None,
                  model=None,
@@ -58,6 +59,7 @@ class PlotController:
         self.vmin = vmin
         self.vmax = vmax
         self.norm = norm
+        # print("controller: self.norm", self.norm)
 
         # # Parse parameters for values and masks
         # self.params = {"values": {}, "masks": {}}
@@ -167,7 +169,7 @@ class PlotController:
                 for i, d in enumerate(coord.dims):
                     # print(d, dim_to_shape)
                     self.histograms[key][dim][d] = dim_to_shape[key][
-                        d] == coord.shape[i] - 1
+                        d] == coord_shapes[key][dim][i] - 1
 
                 # The limits for each dimension
                 self.xlims[key][dim] = np.array(
@@ -446,8 +448,9 @@ class PlotController:
             })
 
     def connect_view(self):
+        # Connect common functions
         self.view.connect({
-            "update_viewport": self.update_viewport,
+            # "update_viewport": self.update_viewport,
             "update_profile": self.update_profile,
             "toggle_hover_visibility": self.toggle_hover_visibility,
             "keep_line": self.keep_line,
@@ -479,8 +482,10 @@ class PlotController:
                 vmin = self.vmin
             if self.vmax is not None:
                 vmax = self.vmax
+        # print("controller: rescale_to_data 1", vmin, vmax)
         vmin, vmax = check_log_limits(
             vmin=vmin, vmax=vmax, log=(self.norm == "log"))
+        # print("controller: rescale_to_data 2", vmin, vmax)
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
             self.panel.rescale_to_data(vmin=vmin,

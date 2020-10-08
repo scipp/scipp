@@ -90,6 +90,7 @@ class PlotFigure2d(PlotFigure):
                               picker=picker)
 
     def rescale_to_data(self, vmin, vmax):
+        # print("view2d: rescale_to_data 1", vmin, vmax)
         self.image.set_clim([vmin, vmax])
         for m, im in self.mask_image.items():
             im.set_clim([vmin, vmax])
@@ -123,7 +124,7 @@ class PlotFigure2d(PlotFigure):
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
 
-    def update_axes(self, axparams):#, axformatter, axlocator):
+    def update_axes(self, axparams=None):#, axformatter, axlocator):
       # , logx, logy):
 
         # is_log = {"x": self.logx, "y": self.logy}

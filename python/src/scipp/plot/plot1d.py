@@ -76,7 +76,9 @@ class SciPlot1d(SciPlot):
                  vmin=vmin,
                  vmax=vmax,
                  # color=color,
-                 masks=masks)
+                 errorbars=errorbars,
+                 masks=masks,
+                 view_ndims=1)
 
 
         self.widgets = PlotWidgets(axes=self.axes,
@@ -156,16 +158,17 @@ class SciPlot1d(SciPlot):
 
         # The main controller module which contains the slider widgets
         self.controller = PlotController1d(
-          scipp_obj_dict=scipp_obj_dict,
+          # scipp_obj_dict=scipp_obj_dict,
           axes=self.axes,
           name=self.name,
           dim_to_shape=self.dim_to_shape,
+          coord_shapes=self.coord_shapes,
           # logx=logx,
           # logy=logy,
           vmin=self.params["values"][self.name]["vmin"],
           vmax=self.params["values"][self.name]["vmax"],
-          norm=self.params["values"][self.name]["norm"],
-          mask_names=self.mask_names,
+          norm=norm,
+          # mask_names=self.mask_names,
           widgets=self.widgets,
           model=self.model,
           view=self.view)

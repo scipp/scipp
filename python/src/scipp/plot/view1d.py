@@ -4,66 +4,21 @@
 
 # Scipp imports
 from .figure1d import PlotFigure1d
+from .view import PlotView
 from .._utils import make_random_color
 
 
-class PlotView1d:
-    def __init__(self,
-                 # controller=None,
-                 ax=None,
-                 figsize=None,
-                 errorbars=None,
-                 title=None,
-                 unit=None,
-                 norm=None,
-                 # logx=False,
-                 # logy=False,
-                 # mask_params=None,
-                 masks=None,
-                 mpl_line_params=None,
-                 grid=False,
-                 picker=False):
-
-        # self.controller = controller
-        self.profile_hover_connection = None
-        self.profile_pick_connection = None
-        self.profile_update_lock = False
-        self.profile_counter = -1
-
-        self.figure = PlotFigure1d(errorbars=errorbars,
-                                   ax=ax,
-                                   mpl_line_params=mpl_line_params,
-                                   title=title,
-                                   unit=unit,
-                                   norm=norm,
-                                   # logx=logx,
-                                   # logy=logy,
-                                   grid=grid,
-                                   # mask_params=mask_params,
-                                   masks=masks,
-                                   picker=picker)
-
-    def _ipython_display_(self):
-        return self._to_widget()._ipython_display_()
-
-    def _to_widget(self):
-        return self.figure._to_widget()
-
-    def savefig(self, *args, **kwargs):
-        self.figure.savefig(*args, **kwargs)
+class PlotView1d(PlotView):
+    def __init__(self, *args, **kwargs):
+        super().__init__(
+            figure=PlotFigure1d(*args, **kwargs))
 
     def toggle_mask(self, change):
         self.figure.toggle_mask(change["owner"].mask_group,
                                 change["owner"].mask_name, change["new"])
 
-    def rescale_to_data(self, vmin=None, vmax=None):
-        self.figure.rescale_to_data()
-
     def update_axes(self, *args, **kwargs):
         self.figure.update_axes(*args, **kwargs)
-
-    def update_data(self, *args, **kwargs):
-        self.figure.update_data(*args, **kwargs)
 
     def keep_line(self, *args, **kwargs):
         self.figure.keep_line(*args, **kwargs)
