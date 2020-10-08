@@ -568,11 +568,11 @@ struct GroupbyEventsWithMaskTest : public ::testing::Test {
                                             units::m, Values{1, 3})}}};
 };
 
-/*
 TEST_F(GroupbyEventsWithMaskTest, flatten) {
   EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
 }
 
+/*
 TEST_F(GroupbyEventsWithMaskTest, sum_realigned) {
   const auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 10});
