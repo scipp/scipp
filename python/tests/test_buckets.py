@@ -55,7 +55,9 @@ def test_load_events_to_buckets():
         event_time_offset = sc.Variable(
             ['event'], values=event_group["event_time_offset"][...])
         event_id = sc.Variable(['event'], values=event_group["event_id"][...])
-        event_index = sc.Variable(['pulse'], values=event_index_np)
+        event_index = sc.Variable(['pulse'],
+                                  values=event_index_np,
+                                  dtype=np.int64)
         event_time_zero = sc.Variable(
             ['pulse'], values=event_group["event_time_zero"][...])
 
