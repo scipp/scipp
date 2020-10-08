@@ -144,23 +144,25 @@ static constexpr auto sum = [](const DataArrayView &out,
 };
 
 template <void (*Func)(const VariableView &, const VariableConstView &)>
-static constexpr auto reduce_idempotent =
-    [](const DataArrayView &out, const auto &data_container,
-       const GroupByGrouping::group &group, const Dim reductionDim,
-       const Variable &mask) {
-      bool first = true;
-      for (const auto &slice : group) {
-        const auto data_slice = data_container.slice(slice);
-        if (mask)
-          throw std::runtime_error(
-              "This operation does not support masks yet.");
-        if (first) {
-          out.data().assign(data_slice.data().slice({reductionDim, 0}));
-          first = false;
+struct wrap {
+  static constexpr auto reduce_idempotent =
+      [](const DataArrayView &out, const auto &data_container,
+         const GroupByGrouping::group &group, const Dim reductionDim,
+         const Variable &mask) {
+        bool first = true;
+        for (const auto &slice : group) {
+          const auto data_slice = data_container.slice(slice);
+          if (mask)
+            throw std::runtime_error(
+                "This operation does not support masks yet.");
+          if (first) {
+            out.data().assign(data_slice.data().slice({reductionDim, 0}));
+            first = false;
+          }
+          Func(out.data(), data_slice.data());
         }
-        Func(out.data(), data_slice.data());
-      }
-    };
+      };
+};
 } // namespace groupby_detail
 
 /// Flatten provided dimension in each group and return combined data.
@@ -177,22 +179,26 @@ template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
 
 /// Reduce each group using `all` and return combined data.
 template <class T> T GroupBy<T>::all(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<all_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<all_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Reduce each group using `any` and return combined data.
 template <class T> T GroupBy<T>::any(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<any_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<any_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Reduce each group using `max` and return combined data.
 template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<max_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<max_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<min_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<min_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Apply mean to groups and return combined data.
