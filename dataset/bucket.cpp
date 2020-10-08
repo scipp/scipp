@@ -277,4 +277,9 @@ Variable sum(const VariableConstView &data) {
   return summed;
 }
 
+DataArray sum(const DataArrayConstView &data) {
+  return {buckets::sum(data.data()), data.aligned_coords(), data.masks(),
+          data.unaligned_coords()};
+}
+
 } // namespace scipp::dataset::buckets

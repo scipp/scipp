@@ -24,5 +24,7 @@ map(const DataArrayConstView &function, const VariableConstView &x,
 void scale(const DataArrayView &data, const DataArrayConstView &histogram);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable sum(const VariableConstView &data);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+sum(const DataArrayConstView &data);
 
 } // namespace scipp::dataset::buckets
