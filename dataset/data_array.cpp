@@ -22,59 +22,14 @@
 
 namespace scipp::dataset {
 
-/*
-/// Return the bounds of all sliced realigned dimensions.
-std::vector<std::pair<Dim, Variable>> DataArrayConstView::slice_bounds() const {
-  std::vector<std::pair<Dim, Variable>> bounds;
-  std::map<Dim, std::pair<scipp::index, scipp::index>> combined_slices;
-  for (const auto &item : slices()) {
-    const auto s = item.first;
-    const auto dim = s.dim();
-    // Only process realigned dims
-    if (unaligned().dims().contains(dim) ||
-        !unaligned().aligned_coords().contains(dim))
-      continue;
-    const auto left = s.begin();
-    const auto right = s.end() == -1 ? left + 1 : s.end();
-    if (combined_slices.count(dim)) {
-      combined_slices[dim].second = combined_slices[dim].first + right;
-      combined_slices[dim].first += left;
-    } else {
-      combined_slices[dim] = {left, right};
-    }
-  }
-  for (const auto &[dim, interval] : combined_slices) {
-    const auto [left, right] = interval;
-    const auto coord = m_dataset->coords()[dim];
-    bounds.emplace_back(dim, concatenate(coord.slice({dim, left}),
-                                         coord.slice({dim, right}), dim));
-  }
-  // TODO As an optimization we could sort the bounds and put those that slice
-  // out the largest fraction first, to ensure that `filter_recurse` slices in a
-  // potentially faster way.
-  return bounds;
-}
-*/
-
-namespace {
-
-template <class... DataArgs>
-auto makeDataArray(const DataArrayConstView &view, const AttrPolicy attrPolicy,
-                   DataArgs &&... dataArgs) {
-  return DataArray(std::forward<DataArgs>(dataArgs)...,
-                   copy_map(view.aligned_coords()), copy_map(view.masks()),
-                   attrPolicy == AttrPolicy::Keep
-                       ? copy_map(view.unaligned_coords())
-                       : std::map<Dim, Variable>{},
-                   view.name());
-}
-
-} // namespace
-
-// TODO Should bucket variables filter on copy? See unaligned::filter_recurse
 DataArray::DataArray(const DataArrayConstView &view,
                      const AttrPolicy attrPolicy)
-    : DataArray(makeDataArray(view, attrPolicy, Variable(view.data()))) {}
+    : DataArray(Variable(view.data()), copy_map(view.aligned_coords()),
+                copy_map(view.masks()),
+                attrPolicy == AttrPolicy::Keep
+                    ? copy_map(view.unaligned_coords())
+                    : std::map<Dim, Variable>{},
+                view.name()) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
 DataArray::operator DataArrayView() { return get(); }
