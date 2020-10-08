@@ -424,7 +424,8 @@ template <class Op> struct Transform {
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
         (handles.hasVariances() || ...);
-    auto out = variableFactory().create(dtype<Out>, dims, variances,
+    const auto unit = op(variableFactory().elem_unit(*handles.m_var)...);
+    auto out = variableFactory().create(dtype<Out>, dims, unit, variances,
                                         *handles.m_var...);
     do_transform(op, variable_access<Out>(out), std::tuple<>(),
                  as_view{handles, dims}...);
@@ -876,26 +877,21 @@ namespace detail {
 template <class... Ts, class Op, class... Vars>
 Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   using namespace detail;
-  auto unit = op(vars.unit()...);
-  Variable out;
   try {
     if constexpr (std::is_base_of_v<
                       core::transform_flags::no_event_list_handling_t, Op> ||
                   (is_any_events<Ts>::value || ...) || sizeof...(Vars) > 2) {
-      out = visit_impl<Ts...>::apply(Transform{op}, vars...);
+      return visit_impl<Ts...>::apply(Transform{op}, vars...);
     } else {
-      out =
-          variable::visit(
-              augment::insert_events(
-                  std::tuple<visit_detail::maybe_duplicate<Ts, Vars...>...>{}))
-              .apply(Transform{overloaded_events{op, TransformEvents{}}},
-                     vars...);
+      return variable::visit(
+                 augment::insert_events(
+                     std::tuple<
+                         visit_detail::maybe_duplicate<Ts, Vars...>...>{}))
+          .apply(Transform{overloaded_events{op, TransformEvents{}}}, vars...);
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes ", vars...);
   }
-  out.setUnit(unit);
-  return out;
 }
 } // namespace detail
 

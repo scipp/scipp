@@ -20,9 +20,11 @@ public:
   virtual ~AbstractVariableMaker() = default;
   virtual bool is_buckets() const = 0;
   virtual Variable
-  create(const DType elem_dtype, const Dimensions &dims, const bool variances,
+  create(const DType elem_dtype, const Dimensions &dims,
+         const units::Unit &unit, const bool variances,
          const std::vector<VariableConstView> &parents) const = 0;
   virtual DType elem_dtype(const VariableConstView &var) const = 0;
+  virtual units::Unit elem_unit(const VariableConstView &var) const = 0;
   virtual bool hasVariances(const VariableConstView &var) const = 0;
   virtual VariableConstView data(const VariableConstView &) const {
     throw unreachable();
@@ -37,17 +39,23 @@ public:
 template <class T> class VariableMaker : public AbstractVariableMaker {
   using AbstractVariableMaker::create;
   bool is_buckets() const override { return false; }
-  Variable create(const DType, const Dimensions &dims, const bool variances,
+  Variable create(const DType, const Dimensions &dims, const units::Unit &unit,
+                  const bool variances,
                   const std::vector<VariableConstView> &) const override {
     const auto volume = dims.volume();
     if (variances)
-      return makeVariable<T>(dims, Values(volume, core::default_init_elements),
+      return makeVariable<T>(dims, unit,
+                             Values(volume, core::default_init_elements),
                              Variances(volume, core::default_init_elements));
     else
-      return makeVariable<T>(dims, Values(volume, core::default_init_elements));
+      return makeVariable<T>(dims, unit,
+                             Values(volume, core::default_init_elements));
   }
   DType elem_dtype(const VariableConstView &var) const override {
     return var.dtype();
+  }
+  units::Unit elem_unit(const VariableConstView &var) const override {
+    return var.unit();
   }
   bool hasVariances(const VariableConstView &var) const override {
     return var.hasVariances();
@@ -79,13 +87,15 @@ public:
   bool is_buckets(const VariableConstView &var) const;
   template <class... Parents>
   Variable create(const DType elem_dtype, const Dimensions &dims,
-                  const bool variances, const Parents &... parents) const {
+                  const units::Unit &unit, const bool variances,
+                  const Parents &... parents) const {
     const auto key = bucket_dtype(parents...);
     return m_makers.at(key == dtype<void> ? elem_dtype : key)
-        ->create(elem_dtype, dims, variances,
+        ->create(elem_dtype, dims, unit, variances,
                  std::vector<VariableConstView>{parents...});
   }
   DType elem_dtype(const VariableConstView &var) const;
+  units::Unit elem_unit(const VariableConstView &var) const;
   bool hasVariances(const VariableConstView &var) const;
   template <class T, class Var> auto values(Var &&var) const {
     if (!is_buckets(var))

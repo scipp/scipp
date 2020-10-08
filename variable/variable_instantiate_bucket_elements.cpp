@@ -14,11 +14,12 @@ private:
   Variable make_buckets(const VariableConstView &,
                         const VariableConstView &indices, const Dim dim,
                         const DType type, const Dimensions &dims,
+                        const units::Unit &unit,
                         const bool variances) const override {
     // Buffer contains only variable, which is created with new dtype, no
     // information to copy from parent.
     return Variable{std::make_unique<DataModel<bucket<Variable>>>(
-        indices, dim, variableFactory().create(type, dims, variances))};
+        indices, dim, variableFactory().create(type, dims, unit, variances))};
   }
   VariableConstView data(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<Variable>>());

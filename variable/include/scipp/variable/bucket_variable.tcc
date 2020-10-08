@@ -52,25 +52,30 @@ private:
   virtual Variable make_buckets(const VariableConstView &parent,
                                 const VariableConstView &indices, const Dim dim,
                                 const DType type, const Dimensions &dims,
+                                const units::Unit &unit,
                                 const bool variances) const = 0;
 
 public:
   bool is_buckets() const override { return true; }
 
   Variable
-  create(const DType elem_dtype, const Dimensions &dims, const bool variances,
+  create(const DType elem_dtype, const Dimensions &dims,
+         const units::Unit &unit, const bool variances,
          const std::vector<VariableConstView> &parents) const override {
     const VariableConstView parent = bucket_parent(parents);
     const auto &[parentIndices, dim, buffer] = parent.constituents<bucket<T>>();
     auto [indices, size] = contiguous_indices(parentIndices, dims);
     auto bufferDims = buffer.dims();
     bufferDims.resize(dim, size);
-    return make_buckets(parent, indices, dim, elem_dtype, bufferDims,
+    return make_buckets(parent, indices, dim, elem_dtype, bufferDims, unit,
                         variances);
   }
 
   DType elem_dtype(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).dtype();
+  }
+  units::Unit elem_unit(const VariableConstView &var) const override {
+    return std::get<2>(var.constituents<bucket<T>>()).unit();
   }
   bool hasVariances(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).hasVariances();

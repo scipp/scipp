@@ -684,6 +684,8 @@ private:
   Dataset m_holder;
 };
 
+SCIPP_DATASET_EXPORT DataArray operator-(const DataArrayConstView &a);
+
 SCIPP_DATASET_EXPORT DataArray operator+(const DataArrayConstView &a,
                                          const DataArrayConstView &b);
 SCIPP_DATASET_EXPORT DataArray operator-(const DataArrayConstView &a,

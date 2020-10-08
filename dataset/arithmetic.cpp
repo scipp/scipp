@@ -14,6 +14,11 @@ using namespace scipp::core;
 
 namespace scipp::dataset {
 
+DataArray operator-(const DataArrayConstView &a) {
+  return DataArray(-a.data(), a.aligned_coords(), a.masks(),
+                   a.unaligned_coords());
+}
+
 DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
   return DataArray(a.data() + b.data(),
                    union_(a.aligned_coords(), b.aligned_coords()),
