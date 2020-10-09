@@ -140,7 +140,7 @@ class SciPlot:
         self.ndim = len(array_dims)
 
         base_axes = ["xyz"[i] for i in range(view_ndims)]#[::-1]
-        print(base_axes)
+        # print(base_axes)
 
         # Process axes dimensions
         self.axes = {}
@@ -149,26 +149,35 @@ class SciPlot:
                 key = base_axes[i]
             else:
                 key = i - view_ndims
-            print(key, dim, i)
+            # print(key, dim, i)
             self.axes[key] = dim
+        # print('ooooooooooo')
         if axes is not None:
-            dim_list = list(self.axes.values())
-            key_list = list(self.axes.keys())
+            # print(self.axes)
+            # dim_list = list(self.axes.values())
+            # key_list = list(self.axes.keys())
             # Axes can be incomplete
             for key, ax in axes.items():
-                if ax in dim_list:
-                    ind = dim_list.index(ax)
-                    # self.axes[key_list[ind]] = self.axes[key]
-                    # self.axes[key] = sc.Dim(ax)
-                else:
-                    # Non-dimension coordinate
-                    underlying_dim = array.coords[ax].dims[-1]
-                    dim = sc.Dim(ax)
-                    self.dim_label_map[underlying_dim] = dim
-                    self.dim_label_map[dim] = underlying_dim
-                    ind = dim_list.index(underlying_dim)
-                self.axes[key_list[ind]] = self.axes[key]
-                self.axes[key] = dim
+                if self.axes[key] != ax:
+                    dim_list = list(self.axes.values())
+                    key_list = list(self.axes.keys())
+                    # print('before', key, ax, self.axes)
+                    if ax in dim_list:
+                        ind = dim_list.index(ax)
+                        # self.axes[key_list[ind]] = self.axes[key]
+                        # self.axes[key] = sc.Dim(ax)
+                    else:
+                        # Non-dimension coordinate
+                        underlying_dim = array.coords[ax].dims[-1]
+                        dim = sc.Dim(ax)
+                        self.dim_label_map[underlying_dim] = dim
+                        self.dim_label_map[dim] = underlying_dim
+                        ind = dim_list.index(underlying_dim)
+                    # print('ind', ind, key_list[ind])
+                    self.axes[key_list[ind]] = self.axes[key]
+                    # print('between', key, ax, self.axes)
+                    self.axes[key] = dim
+                    # print('after', key, ax, self.axes)
 
         print(self.axes)
 
