@@ -16,3 +16,10 @@ class PlotController1d(PlotController):
         Forward the message to the view.
         """
         self.view.update_line_color(line_id=line_id, color=color)
+
+    def connect_panel(self):
+        self.panel.connect({
+            "keep_line": self.keep_line,
+            "remove_line": self.remove_line,
+            "update_line_color": self.update_line_color
+            })

@@ -148,10 +148,9 @@ class SciPlot1d(SciPlot):
         #         padding=pad,
         #         legend={"show": True, "loc": (1.02, 0.0)})
 
-        # # An additional panel view with widgets to save/remove lines
-        # if self.ndim > 1:
-        #     self.panel = PlotPanel1d(controller=self.controller,
-        #                              data_names=list(scipp_obj_dict.keys()))
+        # An additional panel view with widgets to save/remove lines
+        if self.ndim > 1:
+            self.panel = PlotPanel1d(data_names=list(scipp_obj_dict.keys()))
 
         # # Connect controller to model, view, panel and profile
         # self._connect_controller_members()
@@ -173,7 +172,8 @@ class SciPlot1d(SciPlot):
           # mask_names=self.mask_names,
           widgets=self.widgets,
           model=self.model,
-          view=self.view)
+          view=self.view,
+          panel=self.panel)
 
         # Call update_slice once to make the initial plot
         self.controller.update_axes()

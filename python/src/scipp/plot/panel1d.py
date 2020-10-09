@@ -10,20 +10,26 @@ import ipywidgets as ipw
 
 
 class PlotPanel1d:
-    def __init__(self, controller, data_names):
+    def __init__(self, data_names):
 
-        self.controller = controller
-        self.widgets = ipw.VBox()
+        # self.controller = controller
+        self.container = ipw.VBox()
         self.keep_buttons = {}
         self.data_names = data_names
         self.slice_label = None
         self.counter = -1
+        self.interface = {}
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
-        return self.widgets
+        return self.container
+
+    def connect(self, callbacks):
+        for key, func in callbacks.items():
+            self.interface[key] = func
+
 
     def make_keep_button(self):
         drop = ipw.Dropdown(options=self.data_names,
@@ -52,7 +58,7 @@ class PlotPanel1d:
             "colorpicker": col,
             "label": lab
         }
-        self.widgets.children += ipw.HBox(
+        self.container.children += ipw.HBox(
             list(self.keep_buttons[line_id].values())),
 
     def update_axes(self, axparams=None):
@@ -67,7 +73,7 @@ class PlotPanel1d:
         widget_list = []
         for key, val in self.keep_buttons.items():
             widget_list.append(ipw.HBox(list(val.values())))
-        self.widgets.children = tuple(widget_list)
+        self.container.children = tuple(widget_list)
 
     def keep_remove_line(self, owner):
         if owner.description == "Keep":
@@ -77,7 +83,7 @@ class PlotPanel1d:
 
     def keep_line(self, owner):
         name = self.keep_buttons[owner.id]["dropdown"].value
-        self.controller.keep_line(
+        self.interface["keep_line"](
             name=name,
             color=self.keep_buttons[owner.id]["colorpicker"].value,
             line_id=owner.id)
@@ -87,12 +93,12 @@ class PlotPanel1d:
         owner.description = "Remove"
 
     def remove_line(self, owner):
-        self.controller.remove_line(line_id=owner.id)
+        self.interface["remove_line"](line_id=owner.id)
         del self.keep_buttons[owner.id]
         self.update_widgets()
 
     def update_line_color(self, change):
-        self.controller.update_line_color(change["owner"].id, change["new"])
+        self.interface["update_line_color"](change["owner"].id, change["new"])
 
     def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
         return

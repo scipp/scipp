@@ -125,6 +125,7 @@ class SciPlot:
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
+        # print(self.view, self.profile, self.widgets, self.panel)
         widget_list = []
         for item in [self.view, self.profile, self.widgets, self.panel]:
             if item is not None:

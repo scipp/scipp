@@ -239,6 +239,8 @@ class PlotController:
         self.connect_widgets()
         self.initialise_view(axes)
         self.connect_view()
+        if self.panel is not None:
+            self.connect_panel()
 
         return
 
@@ -469,12 +471,8 @@ class PlotController:
             })
 
 
-
-
-
-
-
-
+    def connect_panel(self):
+        return
 
 
 

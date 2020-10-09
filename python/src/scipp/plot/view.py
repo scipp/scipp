@@ -28,8 +28,8 @@ class PlotView:
     def initialise(self, *args, **kwargs):
         self.figure.initialise(*args, **kwargs)
 
-    def connect(self, functions):
-        for key, func in functions.items():
+    def connect(self, callbacks):
+        for key, func in callbacks.items():
             self.interface[key] = func
 
     def rescale_to_data(self, vmin=None, vmax=None):
