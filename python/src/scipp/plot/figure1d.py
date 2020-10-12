@@ -144,6 +144,8 @@ class PlotFigure1d(PlotFigure):
         self.ax.set_xlabel(xparams["label"])
 
         # if axlocator is not None:
+        print(xparams)
+        print(self.axlocator)
         self.ax.xaxis.set_major_locator(
             self.axlocator[xparams["dim"]][xparams["scale"]])
         # if axformatter is not None:

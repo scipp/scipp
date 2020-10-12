@@ -241,6 +241,8 @@ class PlotController:
         self.connect_view()
         if self.panel is not None:
             self.connect_panel()
+        if self.profile is not None:
+            self.initialise_profile(axes)
 
         return
 
@@ -450,6 +452,9 @@ class PlotController:
         self.view.initialise(
             axformatters={dim: self.model.get_axformatter(self.name, dim) for dim in axes.values()})
 
+    def initialise_profile(self, axes):
+        self.profile.initialise(
+            axformatters={dim: self.model.get_axformatter(self.name, dim) for dim in axes.values()})
 
     def connect_widgets(self):
         self.widgets.connect({
@@ -493,7 +498,7 @@ class PlotController:
                 vmax = self.vmax
         # print("controller: rescale_to_data 1", vmin, vmax)
         vmin, vmax = check_log_limits(
-            vmin=vmin, vmax=vmax, log=(self.norm == "log"))
+            vmin=vmin, vmax=vmax, scale=self.norm)
         # print("controller: rescale_to_data 2", vmin, vmax)
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
@@ -615,7 +620,7 @@ class PlotController:
             axparams[but_val]["lims"] = check_log_limits(
                 lims=axparams[but_val]["lims"],
                 # log=getattr(self, "log{}".format(but_val)))
-                log=axparams[but_val]["scale"])
+                scale=axparams[but_val]["scale"])
 
         return axparams
 
@@ -694,7 +699,7 @@ class PlotController:
                 self.profile_axparams = {
                     "x": {
                         "lims": [xmin, xmax],
-                        "log": False,
+                        "scale": self.scale[self.profile_dim],
                         "hist": {
                             name: self.histograms[name][self.profile_dim][
                                 self.profile_dim]
@@ -704,21 +709,21 @@ class PlotController:
                         "label": self.labels[self.name][self.profile_dim]
                     }
                 }
-                # Safety check for log axes
-                if self.profile_axparams["x"]["log"] and (
-                        self.profile_axparams["x"]["lims"][0] <= 0):
-                    self.profile_axparams["x"]["lims"][
-                        0] = 1.0e-03 * self.profile_axparams["x"]["lims"][1]
+                # # Safety check for log axes
+                # if self.profile_axparams["x"]["log"] and (
+                #         self.profile_axparams["x"]["lims"][0] <= 0):
+                #     self.profile_axparams["x"]["lims"][
+                #         0] = 1.0e-03 * self.profile_axparams["x"]["lims"][1]
 
                 # Safety check for log axes
                 self.profile_axparams["x"]["lims"] = check_log_limits(
                     lims=self.profile_axparams["x"]["lims"],
-                    log=False)
+                    scale=self.profile_axparams["x"]["scale"])
 
                 self.profile.update_axes(
-                    axparams=self.profile_axparams,
-                    axformatter=self.axformatter[self.name],
-                    axlocator=self.axlocator[self.name])
+                    axparams=self.profile_axparams)
+                    # axformatter=self.axformatter[self.name],
+                    # axlocator=self.axlocator[self.name])
                     # logx=False,
                     # logy=False)
             else:

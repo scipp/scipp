@@ -138,25 +138,25 @@ class SciPlot2d(SciPlot):
             # logx=logx,
             # logy=logy)
 
-        # # Profile view which displays an additional dimension as a 1d plot
-        # if self.controller.ndim > 2:
-        #     mask_params = self.controller.params["masks"][self.controller.name]
-        #     mask_params["color"] = "k"
-        #     pad = config.plot.padding
-        #     pad[2] = 0.75
-        #     self.profile = ProfileView(
-        #         errorbars=self.controller.errorbars,
-        #         ax=pax,
-        #         unit=self.controller.params["values"][
-        #             self.controller.name]["unit"],
-        #         mask_params=mask_params,
-        #         masks=self.controller.masks,
-        #         logx=logx,
-        #         logy=logy,
-        #         figsize=(1.3 * config.plot.width / config.plot.dpi,
-        #                  0.6 * config.plot.height / config.plot.dpi),
-        #         padding=pad,
-        #         legend={"show": True, "loc": (1.02, 0.0)})
+        # Profile view which displays an additional dimension as a 1d plot
+        if self.ndim > 2:
+            # mask_params = self.controller.params["masks"][self.controller.name]
+            # mask_params["color"] = "k"
+            pad = config.plot.padding
+            pad[2] = 0.75
+            self.profile = ProfileView(
+                errorbars=self.errorbars,
+                ax=pax,
+                unit=self.params["values"][
+                    self.name]["unit"],
+                # mask_params=mask_params,
+                masks=self.masks,
+                # logx=logx,
+                # logy=logy,
+                figsize=(1.3 * config.plot.width / config.plot.dpi,
+                         0.6 * config.plot.height / config.plot.dpi),
+                padding=pad,
+                legend={"show": True, "loc": (1.02, 0.0)})
 
         # # # Connect controller to model, view, panel and profile
         # # self._connect_controller_members()
@@ -177,7 +177,8 @@ class SciPlot2d(SciPlot):
           # masks=self.masks,
           widgets=self.widgets,
           model=self.model,
-          view=self.view)
+          view=self.view,
+          profile=self.profile)
           # masks=masks,
           # cmap=cmap,
           # log=log,

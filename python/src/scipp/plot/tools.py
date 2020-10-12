@@ -110,11 +110,11 @@ def mask_to_float(mask, var):
     return np.where(mask, var, None).astype(np.float32)
 
 
-def check_log_limits(lims=None, vmin=None, vmax=None, log=None):
+def check_log_limits(lims=None, vmin=None, vmax=None, scale=None):
     if lims is not None:
         vmin = lims[0]
         vmax = lims[1]
-    if log and vmin <= 0:
+    if scale == "log" and vmin <= 0:
         vmin = 1.0e-03 * vmax
     if lims is not None:
         return [vmin, vmax]
