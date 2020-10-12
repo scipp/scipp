@@ -141,6 +141,10 @@ public:
 
   template <class T>
   std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
+  
+  scipp::index sizeInMemory() {
+    return m_object->sizeInMemory();
+  }
 
 private:
   template <class... Ts, class... Args>

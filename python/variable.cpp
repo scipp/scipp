@@ -186,7 +186,8 @@ of variances.)");
       .def(
           "__rtruediv__",
           [](Variable &a, int &b) { return (b * units::one) / a; },
-          py::is_operator());
+          py::is_operator())
+      .def("__sizeof__", &Variable::sizeInMemory);
 
   bind_init_list(variable);
   // Order matters for pybind11's overload resolution. Do not change.

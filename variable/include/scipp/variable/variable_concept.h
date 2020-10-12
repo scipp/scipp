@@ -60,6 +60,7 @@ public:
   virtual void copy(const VariableConstView &src,
                     const VariableView &dest) const = 0;
   virtual void assign(const VariableConcept &other) = 0;
+  virtual scipp::index sizeInMemory() const = 0;
 
   friend class Variable;
 
