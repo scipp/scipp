@@ -209,6 +209,7 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   bind_binary<DatasetView>(c);
   bind_binary<DataArrayView>(c);
   bind_binary<VariableConstView>(c);
+  bind_unary(c);
 }
 
 template <class T> void bind_rebin(py::module &m) {
