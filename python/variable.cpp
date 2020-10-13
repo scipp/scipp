@@ -200,7 +200,8 @@ of variances.)");
   //------------------------------------
 
   py::class_<VariableConstView> variableConstView(m, "VariableConstView");
-  variableConstView.def(py::init<const Variable &>());
+  variableConstView.def(py::init<const Variable &>())
+  .def("__sizeof__", &VariableConstView::sizeInMemory);
 
   py::class_<VariableView, VariableConstView> variableView(
       m, "VariableView", py::buffer_protocol(), R"(
@@ -219,7 +220,8 @@ Mostly equivalent to Variable, see there for details.)");
       .def(
           "__rmul__",
           [](VariableView &a, double &b) { return a * (b * units::one); },
-          py::is_operator());
+          py::is_operator())
+      .def("__sizeof__", &VariableView::sizeInMemory);
 
   bind_common_operators(variable);
   bind_common_operators(variableConstView);

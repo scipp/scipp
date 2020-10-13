@@ -216,6 +216,30 @@ void Dataset::setData(const std::string &name, Variable data,
   setData_impl(name, detail::DatasetData{std::move(data), {}, {}}, attrPolicy);
 }
 
+/// Return the size in memory of the Dataset. 
+/// To avoid double counting and the unecessary
+/// creation of view objects works with the 
+/// private data containers. 
+scipp::index Dataset::sizeInMemory() const {
+    scipp::index size = 0;
+    for (auto const& [name, data]: m_data){
+      size+=data.data.sizeInMemory();
+      for(auto const& [dim, coord]: data.coords){
+        size+=coord.sizeInMemory();
+      }
+      for(auto const& [dim, mask]: data.coords){
+        size+=mask.sizeInMemory();
+      }
+      if(data.unaligned)
+        size+=data.unaligned->data.sizeInMemory();
+    }
+
+    for (auto const& [dim, coord]: m_coords){
+      size+= coord.sizeInMemory();
+    }
+    return size;
+  }
+
 /// Set (insert or replace) data from a DataArray with a given name, avoiding
 /// copies where possible by using std::move.
 void Dataset::setData(const std::string &name, DataArray data) {

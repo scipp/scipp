@@ -265,7 +265,8 @@ void init_dataset(py::module &m) {
       py::arg("coords") = std::map<Dim, VariableConstView>{},
       py::arg("masks") = std::map<std::string, VariableConstView>{},
       py::arg("unaligned_coords") = std::map<Dim, VariableConstView>{},
-      py::arg("name") = std::string{});
+      py::arg("name") = std::string{})
+      .def("__sizeof__", &DataArray::sizeInMemory);
 
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>());
@@ -316,7 +317,8 @@ void init_dataset(py::module &m) {
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())
       .def("clear", &Dataset::clear,
-           R"(Removes all data, preserving coordinates.)");
+           R"(Removes all data, preserving coordinates.)")
+      .def("__sizeof__", &Dataset::sizeInMemory);
   datasetView.def(
       "__setitem__",
       [](const DatasetView &self, const std::string &name,

@@ -392,6 +392,8 @@ public:
   std::unordered_map<Dim, scipp::index> dimensions() const;
   std::unordered_map<Dim, scipp::index> dims() const { return dimensions(); }
 
+  scipp::index sizeInMemory() const;
+
 private:
   friend class DatasetConstView;
   friend class DatasetView;
@@ -683,6 +685,10 @@ public:
   }
 
   void drop_alignment();
+
+  scipp::index sizeInMemory() const {
+    return m_holder.sizeInMemory();
+  }
 
 private:
   DataArrayConstView get() const;
