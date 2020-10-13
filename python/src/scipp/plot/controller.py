@@ -751,22 +751,20 @@ class PlotController:
         ask the model to slice down the data, and send the new data returned by
         the model to the profile view.
         """
-        # slices, info = self._get_slices_parameters(
-        #     lambda dim : dim != self.profile_dim)
-        # slices, info = self._get_slices_parameters(self.func1)
         slices = {}
         info = {"slice_label": ""}
         # Slice along dimensions with active sliders
+
+        ax_dims = {self.axparams[xyz]["dim"]: xyz for xyz in self.axparams}
+        xydata = {'x': xdata, 'y': ydata}
+
         for dim, sl in self.widgets.slider.items():
             # if not val.disabled:
             if dim != self.profile_dim:
                 slices[dim] = self._make_slice_dict(sl.value, dim)
-                if dim == self.axparams["x"]["dim"]:
+                if dim in ax_dims:
                     info["slice_label"] = "{},{}:{}".format(
-                    info["slice_label"], dim, value_to_string(xdata))
-                elif dim == self.axparams["y"]["dim"]:
-                    info["slice_label"] = "{},{}:{}".format(
-                    info["slice_label"], dim, value_to_string(ydata))
+                        info["slice_label"], dim, value_to_string(xydata[ax_dims[dim]]))
                 else:
                     info["slice_label"] = "{},{}:{}-{}".format(
                         info["slice_label"], dim,

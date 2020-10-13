@@ -7,7 +7,6 @@ from .figure1d import PlotFigure1d
 from .view import PlotView
 from .._utils import make_random_color
 
-
 class PlotView1d(PlotView):
     def __init__(self, *args, **kwargs):
         super().__init__(
@@ -39,10 +38,11 @@ class PlotView1d(PlotView):
 
     def update_profile(self, event):
         if event.inaxes == self.figure.ax:
-            self.controller.update_profile(xdata=event.xdata)
-            self.controller.toggle_hover_visibility(True)
+            self.interface["update_profile"](xdata=event.xdata)
+            self.interface["toggle_hover_visibility"](True)
         else:
-            self.controller.toggle_hover_visibility(False)
+            self.interface["toggle_hover_visibility"](False)
+
 
     def keep_or_remove_profile(self, event):
         line_url = event.artist.get_url()
@@ -76,7 +76,7 @@ class PlotView1d(PlotView):
         line.set_pickradius(5.0)
         line.set_url("axvline")
         line.set_gid(line_id)
-        self.controller.keep_line(target="profile",
+        self.interface["keep_line"](target="profile",
                                   name=line_name,
                                   color=col,
                                   line_id=line_id)
@@ -92,4 +92,4 @@ class PlotView1d(PlotView):
         self.figure.ax.lines = new_lines
 
         # Also remove the line from the 1d plot
-        self.controller.remove_line(target="profile", line_id=gid)
+        self.interface["remove_line"](target="profile", line_id=gid)

@@ -129,24 +129,24 @@ class SciPlot1d(SciPlot):
             picker=True,
             grid=grid)
 
-        # # Profile view which displays an additional dimension as a 1d plot
-        # if self.controller.ndim > 1:
-        #     pad = config.plot.padding
-        #     pad[2] = 0.75
-        #     self.profile = ProfileView(
-        #         errorbars=self.controller.errorbars,
-        #         ax=pax,
-        #         unit=self.controller.params["values"][
-        #             self.controller.name]["unit"],
-        #         mask_params=self.controller.params["masks"][
-        #             self.controller.name],
-        #         masks=self.controller.masks,
-        #         logx=logx,
-        #         logy=logy,
-        #         figsize=(1.3 * config.plot.width / config.plot.dpi,
-        #                  0.6 * config.plot.height / config.plot.dpi),
-        #         padding=pad,
-        #         legend={"show": True, "loc": (1.02, 0.0)})
+        # Profile view which displays an additional dimension as a 1d plot
+        if self.ndim > 1:
+            pad = config.plot.padding.copy()
+            pad[2] = 0.77
+            self.profile = ProfileView(
+                errorbars=self.errorbars,
+                ax=pax,
+                unit=self.params["values"][
+                    self.name]["unit"],
+                # mask_params=self.controller.params["masks"][
+                #     self.controller.name],
+                masks=self.masks,
+                # logx=logx,
+                # logy=logy,
+                figsize=(1.3 * config.plot.width / config.plot.dpi,
+                         0.6 * config.plot.height / config.plot.dpi),
+                padding=pad,
+                legend={"show": True, "loc": (1.02, 0.0)})
 
         # An additional panel view with widgets to save/remove lines
         if self.ndim > 1:
@@ -173,7 +173,8 @@ class SciPlot1d(SciPlot):
           widgets=self.widgets,
           model=self.model,
           view=self.view,
-          panel=self.panel)
+          panel=self.panel,
+          profile=self.profile)
 
         # Call update_slice once to make the initial plot
         self.controller.update_axes()

@@ -142,8 +142,8 @@ class SciPlot2d(SciPlot):
         if self.ndim > 2:
             # mask_params = self.controller.params["masks"][self.controller.name]
             # mask_params["color"] = "k"
-            pad = config.plot.padding
-            pad[2] = 0.75
+            pad = config.plot.padding.copy()
+            pad[2] = 0.77
             self.profile = ProfileView(
                 errorbars=self.errorbars,
                 ax=pax,
