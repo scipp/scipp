@@ -94,13 +94,13 @@ class PlotFigure2d(PlotFigure):
         self.image.set_clim([vmin, vmax])
         for m, im in self.mask_image.items():
             im.set_clim([vmin, vmax])
-        self.fig.canvas.draw_idle()
+        self.draw()
 
     def toggle_mask(self, mask_name, visible):
         im = self.mask_image[mask_name]
         if im.get_url() != "hide":
             im.set_visible(visible)
-        self.fig.canvas.draw_idle()
+        self.draw()
 
     def reset_home_button(self, axparams):
         # Some annoying house-keeping when using X/Y buttons: we need to update
@@ -166,4 +166,4 @@ class PlotFigure2d(PlotFigure):
                 self.mask_image[m].set_url("hide")
             if new_values["extent"] is not None:
                 self.mask_image[m].set_extent(new_values["extent"])
-        self.fig.canvas.draw_idle()
+        self.draw()

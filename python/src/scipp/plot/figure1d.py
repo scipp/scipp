@@ -81,8 +81,8 @@ class PlotFigure1d(PlotFigure):
     #                          width=config.plot.width,
     #                          height=config.plot.height)
 
-    def savefig(self, filename=None):
-        self.fig.savefig(filename, bbox_inches="tight")
+    # def savefig(self, filename=None):
+    #     self.fig.savefig(filename, bbox_inches="tight")
 
     # def toggle_view(self, visible=True):
     #     if hasattr(self.fig.canvas, "layout"):
@@ -228,7 +228,7 @@ class PlotFigure1d(PlotFigure):
 
         if self.legend["show"]:
             self.ax.legend(loc=self.legend["loc"])
-        # self.fig.canvas.draw_idle()
+        # self.draw()
 
     def update_data(self, new_values, info):
 
@@ -251,7 +251,7 @@ class PlotFigure1d(PlotFigure):
                                            vals["variances"]["y"],
                                            vals["variances"]["e"]))
 
-        self.fig.canvas.draw_idle()
+        self.draw()
 
     def keep_line(self, name, color, line_id):
         # self.ax._legend = None
@@ -285,18 +285,19 @@ class PlotFigure1d(PlotFigure):
             self.ax.collections[-1].set_url(line_id)
             self.ax.collections[-1].set_zorder(2)
 
-        self._reset_line_label(name)
+        # self._reset_line_label(name)
 
         if self.legend["show"]:
+            self._reset_line_label(name)
             self.ax.legend(loc=self.legend["loc"])
         # self.ax.legend(loc=(0.9, 0.0))
         # self.rescale_to_data()
-        self.fig.canvas.draw_idle()
+        self.draw()
 
     def _reset_line_label(self, name):
         self.data_lines[name].set_label(name)
 
-    def remove_line(self, line_id):
+    def remove_line(self, name, line_id):
         lines = []
         for line in self.ax.lines:
             if line.get_url() != line_id:
@@ -308,8 +309,9 @@ class PlotFigure1d(PlotFigure):
         self.ax.lines = lines
         self.ax.collections = collections
         if self.legend["show"]:
+            self._reset_line_label(name)
             self.ax.legend(loc=self.legend["loc"])
-        self.fig.canvas.draw_idle()
+        self.draw()
 
     def update_line_color(self, line_id, color):
         for line in self.ax.lines:
@@ -322,7 +324,7 @@ class PlotFigure1d(PlotFigure):
         for coll in self.ax.collections:
             if coll.get_url() == line_id:
                 coll.set_color(color)
-        self.fig.canvas.draw_idle()
+        self.draw()
 
     def change_segments_y(self, x, y, e):
         arr1 = np.repeat(x, 2)
@@ -337,10 +339,10 @@ class PlotFigure1d(PlotFigure):
         for line in self.ax.lines:
             if line.get_gid() == mask_name:
                 line.set_visible(value)
-        self.fig.canvas.draw_idle()
+        self.draw()
 
     def rescale_to_data(self, vmin=None, vmax=None):
         self.ax.autoscale(True)
         self.ax.relim()
         self.ax.autoscale_view()
-        self.fig.canvas.draw_idle()
+        self.draw()

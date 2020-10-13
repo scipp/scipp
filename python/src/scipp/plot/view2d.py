@@ -83,7 +83,7 @@ class PlotView2d(PlotView):
         if self.profile_scatter is not None:
             self.profile_scatter = None
             self.figure.ax.collections = []
-            self.figure.fig.canvas.draw_idle()
+            self.figure.draw()
 
     def update_profile(self, event):
         if event.inaxes == self.figure.ax:
@@ -105,22 +105,22 @@ class PlotView2d(PlotView):
             self.profile_update_lock = False
         else:
             self.keep_profile(event)
-        self.figure.fig.canvas.draw_idle()
+        self.figure.draw()
 
-    def update_profile_connection(self, visible):
-        # Connect picking events
-        if visible:
-            self.profile_pick_connection = self.figure.fig.canvas.mpl_connect(
-                'pick_event', self.keep_or_remove_profile)
-            self.profile_hover_connection = self.figure.fig.canvas.mpl_connect(
-                'motion_notify_event', self.update_profile)
-        else:
-            if self.profile_pick_connection is not None:
-                self.figure.fig.canvas.mpl_disconnect(
-                    self.profile_pick_connection)
-            if self.profile_hover_connection is not None:
-                self.figure.fig.canvas.mpl_disconnect(
-                    self.profile_hover_connection)
+    # def update_profile_connection(self, visible):
+    #     # Connect picking events
+    #     if visible:
+    #         self.profile_pick_connection = self.figure.fig.canvas.mpl_connect(
+    #             'pick_event', self.keep_or_remove_profile)
+    #         self.profile_hover_connection = self.figure.fig.canvas.mpl_connect(
+    #             'motion_notify_event', self.update_profile)
+    #     else:
+    #         if self.profile_pick_connection is not None:
+    #             self.figure.fig.canvas.mpl_disconnect(
+    #                 self.profile_pick_connection)
+    #         if self.profile_hover_connection is not None:
+    #             self.figure.fig.canvas.mpl_disconnect(
+    #                 self.profile_hover_connection)
 
     def keep_profile(self, event):
         xdata = event.mouseevent.xdata

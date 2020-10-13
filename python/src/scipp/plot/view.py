@@ -37,3 +37,15 @@ class PlotView:
 
     def update_data(self, *args, **kwargs):
         self.figure.update_data(*args, **kwargs)
+
+    def update_profile_connection(self, visible):
+        # Connect picking events
+        if visible:
+            self.profile_pick_connection, self.profile_hover_connection = \
+                self.figure.connect_profile(
+                    self.keep_or_remove_profile, self.update_profile)
+        else:
+            self.figure.disconnect_profile(
+                self.profile_pick_connection, self.profile_hover_connection)
+            self.profile_pick_connection = None
+            self.profile_hover_connection = None

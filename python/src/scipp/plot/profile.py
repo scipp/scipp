@@ -67,7 +67,7 @@ class ProfileView(PlotFigure1d):
                            [xend, 0.0], [xstart, 0.0]])
 
         self.slice_area.set_xy(new_xy)
-        self.fig.canvas.draw_idle()
+        self.draw()
 
     def toggle_view(self, visible=True):
         if hasattr(self.fig.canvas, "layout"):

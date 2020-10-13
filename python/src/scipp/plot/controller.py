@@ -652,17 +652,19 @@ class PlotController:
         else:
             self.view.keep_line(name=name, color=color, line_id=line_id)
 
-    def remove_line(self, target=None, line_id=None):
+    def remove_line(self, target=None, name=None, line_id=None):
         """
         Get a message from either a panel (1d plot) or a view (picking) to
         remove a given line or profile.
         Send the message to the appropriate target: either the view1d or the
         profile view.
         """
+        if name is None:
+            name = self.name
         if target == "profile":
-            self.profile.remove_line(line_id=line_id)
+            self.profile.remove_line(name=name, line_id=line_id)
         else:
-            self.view.remove_line(line_id=line_id)
+            self.view.remove_line(name=name, line_id=line_id)
 
     def toggle_profile_view(self, owner=None):
         """

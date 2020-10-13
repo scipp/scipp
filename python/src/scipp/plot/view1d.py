@@ -34,7 +34,7 @@ class PlotView1d(PlotView):
             if not (line.get_url() == "axvline"):
                 new_lines.append(line)
         self.figure.ax.lines = new_lines
-        self.figure.fig.canvas.draw_idle()
+        self.figure.draw()
 
     def update_profile(self, event):
         if event.inaxes == self.figure.ax:
@@ -50,22 +50,22 @@ class PlotView1d(PlotView):
             self.remove_profile(event)
         else:
             self.keep_profile(event, line_url)
-        self.figure.fig.canvas.draw_idle()
+        self.figure.draw()
 
-    def update_profile_connection(self, visible):
-        # Connect picking events
-        if visible:
-            self.profile_pick_connection = self.figure.fig.canvas.mpl_connect(
-                'pick_event', self.keep_or_remove_profile)
-            self.profile_hover_connection = self.figure.fig.canvas.mpl_connect(
-                'motion_notify_event', self.update_profile)
-        else:
-            if self.profile_pick_connection is not None:
-                self.figure.fig.canvas.mpl_disconnect(
-                    self.profile_pick_connection)
-            if self.profile_hover_connection is not None:
-                self.figure.fig.canvas.mpl_disconnect(
-                    self.profile_hover_connection)
+    # def update_profile_connection(self, visible):
+    #     # Connect picking events
+    #     if visible:
+    #         self.profile_pick_connection = self.figure.fig.canvas.mpl_connect(
+    #             'pick_event', self.keep_or_remove_profile)
+    #         self.profile_hover_connection = self.figure.fig.canvas.mpl_connect(
+    #             'motion_notify_event', self.update_profile)
+    #     else:
+    #         if self.profile_pick_connection is not None:
+    #             self.figure.fig.canvas.mpl_disconnect(
+    #                 self.profile_pick_connection)
+    #         if self.profile_hover_connection is not None:
+    #             self.figure.fig.canvas.mpl_disconnect(
+    #                 self.profile_hover_connection)
 
     def keep_profile(self, event, line_name):
         # The names of the data variables are stored in the masks information

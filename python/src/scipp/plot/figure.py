@@ -44,6 +44,9 @@ class PlotFigure:
         self.axformatter = {}
         self.axlocator = {}
 
+    def savefig(self, filename=None):
+        self.fig.savefig(filename, bbox_inches="tight")
+
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
 
@@ -70,3 +73,18 @@ class PlotFigure:
             if axformatters[dim]["custom_locator"]:
                 self.axlocator[dim]["linear"] = ticker.MaxNLocator(integer=True)
 
+    def draw(self):
+        self.fig.canvas.draw_idle()
+
+    def connect_profile(self, pick_callback=None, hover_callback=None):
+        pick_connection = self.fig.canvas.mpl_connect(
+                'pick_event', pick_callback)
+        hover_connection = self.fig.canvas.mpl_connect(
+            'motion_notify_event', hover_callback)
+        return pick_connection, hover_connection
+
+    def disconnect_profile(self, pick_connection=None, hover_connection=None):
+        if pick_connection is not None:
+            self.fig.canvas.mpl_disconnect(pick_connection)
+        if hover_connection is not None:
+            self.fig.canvas.mpl_disconnect(hover_connection)
