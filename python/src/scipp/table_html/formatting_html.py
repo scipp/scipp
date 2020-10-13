@@ -7,6 +7,7 @@ import os
 import uuid
 from functools import partial, reduce
 from html import escape
+import sys
 
 import numpy as np
 
@@ -301,6 +302,7 @@ def summarize_variable(name,
     """
     dims_str = escape(f"({_make_dim_str(var, bin_edges, add_dim_size)})")
     unit = '' if var.unit == sc.units.dimensionless else repr(var.unit)
+    size = str(sys.getsizeof(var))
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs)
 
@@ -329,6 +331,7 @@ def summarize_variable(name,
     html += [
         f"<div class='xr-var-dtype'>{escape(repr(var.dtype))}</div>",
         f"<div class='xr-var-unit'>{escape(unit)}</div>",
+        f"<div class='xr-var-size'>{escape(size)} B</div>",
         f"<div class='xr-value-preview xr-preview'><span>{preview}</span>",
         "{}</div>".format(f'<span>{variances_preview}</span>'
                           if variances_preview is not None else ''),
@@ -466,7 +469,10 @@ def _obj_repr(header_components, sections):
 def dataset_repr(ds):
     obj_type = "scipp.{}".format(type(ds).__name__)
 
-    header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
+    header_components = [
+        f"<div class='xr-obj-type'>{escape(obj_type)}"
+        f" size: {sys.getsizeof(ds)} B</div>"
+    ]
 
     sections = [dim_section(ds)]
 
@@ -476,7 +482,8 @@ def dataset_repr(ds):
         else:
             sections.append(coord_section(ds.aligned_coords, ds))
 
-    sections.append(data_section(ds if hasattr(ds, '__len__') else {'': ds}))
+    sections.append(
+        data_section(ds if hasattr(ds, '__len__') else {'': ds.data}))
 
     if not is_dataset(ds):
         if len(ds.masks) > 0:
