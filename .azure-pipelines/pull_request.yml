@@ -46,10 +46,6 @@ stages:
             displayName: 'Process ccache'
           - bash: ccache --show-stats
             displayName: 'Report ccache statistics'
-          - bash: sudo apt-get install gcc-8
-            displayName: 'Update gcc compiler'
-          - bash: sudo apt-get install g++-8
-            displayName: 'Update g++ compiler'
           - bash: echo "##vso[task.prependpath]$CONDA/bin"
             displayName: 'Add Conda to PATH'
           - bash: |
@@ -66,8 +62,6 @@ stages:
               cmake \
                 -G Ninja \
                 -DPYTHON_EXECUTABLE=$(command -v python) \
-                -DCMAKE_CXX_COMPILER="/usr/bin/g++-8" \
-                -DCMAKE_C_COMPILER="/usr/bin/gcc-8" \
                 -DCMAKE_INSTALL_PREFIX="$(install_dir)" \
                 -DCMAKE_BUILD_TYPE=Release \
                 -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
@@ -208,6 +202,7 @@ stages:
               cmake \
                 -G "Visual Studio 16 2019" \
                 -A x64 \
+                -DCMAKE_CXX_STANDARD=20 \
                 -DPYTHON_EXECUTABLE=$(command -v python) \
                 -DCMAKE_INSTALL_PREFIX="$(install_dir)" \
                 -DCMAKE_BUILD_TYPE=Release \

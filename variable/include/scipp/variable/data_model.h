@@ -14,12 +14,12 @@
 
 namespace scipp::variable {
 
-template <class T, class C> auto &requireT(C &scippconcept) {
-  if (scippconcept.dtype() != dtype<typename T::value_type>)
+template <class T, class C> auto &requireT(C &varconcept) {
+  if (varconcept.dtype() != dtype<typename T::value_type>)
     throw except::TypeError("Expected item dtype " +
                             to_string(T::static_dtype()) + ", got " +
-                            to_string(scippconcept.dtype()) + '.');
-  return static_cast<T &>(scippconcept);
+                            to_string(varconcept.dtype()) + '.');
+  return static_cast<T &>(varconcept);
 }
 
 template <class T> struct is_span : std::false_type {};

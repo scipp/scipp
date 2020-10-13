@@ -144,6 +144,9 @@ static constexpr auto sum = [](const DataArrayView &out,
 };
 
 template <void (*Func)(const VariableView &, const VariableConstView &)>
+// The msvc compiler was failing to pass the templated function correctly
+// requiring the introduction of a wrapping struct to aid compiler
+// resolution.
 struct wrap {
   static constexpr auto reduce_idempotent =
       [](const DataArrayView &out, const auto &data_container,
