@@ -162,9 +162,12 @@ class PlotModel:
         return to_bin_centers(self.data_arrays[name].coords[dim][dim, ind:ind + 2],
                 dim).values[0]
 
+    def get_data_names(self):
+        return list(self.data_arrays.keys())
 
 
-
+    def get_data_coord(self, name, dim):
+        return self.data_arrays[name].coords[dim]
 
 
 

@@ -19,7 +19,7 @@ import io
 
 class PlotView3d:
     def __init__(self,
-                 controller=None,
+                 # controller=None,
                  cmap=None,
                  norm=None,
                  title=None,
@@ -35,7 +35,7 @@ class PlotView3d:
                  background=None,
                  show_outline=True):
 
-        self.controller = controller
+        # self.controller = controller
         self.cbar_image = ipw.Image()
 
         # Prepare colormaps

@@ -161,7 +161,7 @@ class SciPlot2d(SciPlot):
         # # # Connect controller to model, view, panel and profile
         # # self._connect_controller_members()
 
-        # The main controller module which contains the slider widgets
+        # The main controller module which connects all the parts
         self.controller = PlotController2d(
           # scipp_obj_dict=scipp_obj_dict,
           axes=self.axes,

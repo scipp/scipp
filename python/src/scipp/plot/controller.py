@@ -121,7 +121,7 @@ class PlotController:
 
         # Iterate through data arrays and collect parameters
         # for name, array in scipp_obj_dict.items():
-        for key, array in self.model.data_arrays.items():
+        for key in self.model.get_data_names():
 
             # # If non-dimension coord is requested as labels, replace name in
             # # dims
@@ -165,7 +165,8 @@ class PlotController:
             # Iterate through axes and collect dimensions
             for dim in axes.values():
 
-                coord = array.coords[dim]
+                # coord = array.coords[dim]
+                coord = self.model.get_data_coord(name, dim)
 
                 if len(coord.dims) > 1:
                     self.multid_coord = dim

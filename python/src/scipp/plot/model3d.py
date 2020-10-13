@@ -13,16 +13,16 @@ import numpy as np
 
 class PlotModel3d(PlotModel):
     def __init__(self,
-                 controller=None,
-                 scipp_obj_dict=None,
+                 *args,
                  positions=None,
-                 cut_options=None):
+                 cut_options=None,
+                 **kwargs):
 
-        super().__init__(controller=controller, scipp_obj_dict=scipp_obj_dict)
+        super().__init__(*args, **kwargs)
 
-        self.dslice = None
+        # self.dslice = None
         self.button_dims = {}
-        self.dim_to_xyz = {}
+        # self.dim_to_xyz = {}
         self.positions = positions
         self.pos_array = None
         self.pos_unit = None
@@ -45,7 +45,7 @@ class PlotModel3d(PlotModel):
 
             for xyz in "zyx":
                 self.button_dims[xyz] = axparams[xyz]["dim"]
-                self.dim_to_xyz[axparams[xyz]["dim"]] = xyz
+                # self.dim_to_xyz[axparams[xyz]["dim"]] = xyz
 
             z, y, x = np.meshgrid(
                 to_bin_centers(

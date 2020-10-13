@@ -18,7 +18,7 @@ class PlotModel2d(PlotModel):
         super().__init__(*args, **kwargs)
 
         self.button_dims = {}
-        self.dim_to_xy = {}
+        # self.dim_to_xy = {}
         self.xyrebin = {}
         self.xywidth = {}
         self.image_pixel_size = {}
@@ -42,7 +42,7 @@ class PlotModel2d(PlotModel):
         for xy in "yx":
             # Useful maps
             self.button_dims[xy] = axparams[xy]["dim"]
-            self.dim_to_xy[axparams[xy]["dim"]] = xy
+            # self.dim_to_xy[axparams[xy]["dim"]] = xy
 
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords

@@ -13,13 +13,13 @@ import numpy as np
 
 class PlotController3d(PlotController):
     def __init__(self,
-                 scipp_obj_dict=None,
+                 *args,
                  pixel_size=None,
-                 positions=None,
+                 # positions=None,
                  **kwargs):
 
-        super().__init__(scipp_obj_dict=scipp_obj_dict,
-                         positions=positions,
+        super().__init__(*args,
+                         # positions=positions,
                          **kwargs)
 
         self.positions = positions

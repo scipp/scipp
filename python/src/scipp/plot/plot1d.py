@@ -13,7 +13,7 @@ from .view1d import PlotView1d
 from .widgets import PlotWidgets
 
 def plot1d(*args,
-           masks={"color": "k"},
+           # masks={"color": "k"},
            filename=None,
            **kwargs):
            # figsize=None,
@@ -33,7 +33,7 @@ def plot1d(*args,
     If the data contains more than one dimensions, sliders are added.
     """
 
-    sp = SciPlot1d(*args, masks=masks, **kwargs)
+    sp = SciPlot1d(*args, **kwargs)
       # scipp_obj_dict=scipp_obj_dict,
       #              axes=axes,
       #              errorbars=errorbars,
@@ -56,7 +56,7 @@ class SciPlot1d(SciPlot):
                  scipp_obj_dict=None,
                  axes=None,
                  errorbars=None,
-                 masks=None,
+                 masks={"color": "k"},
                  ax=None,
                  pax=None,
                  figsize=None,
