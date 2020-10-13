@@ -68,18 +68,20 @@ class PlotView1d(PlotView):
                     self.profile_hover_connection)
 
     def keep_profile(self, event, line_name):
-        xdata = event.mouseevent.xdata
-        col = make_random_color(fmt='hex')
-        self.profile_counter += 1
-        line_id = self.profile_counter
-        line = self.figure.ax.axvline(xdata, color=col, picker=True)
-        line.set_pickradius(5.0)
-        line.set_url("axvline")
-        line.set_gid(line_id)
-        self.interface["keep_line"](target="profile",
-                                  name=line_name,
-                                  color=col,
-                                  line_id=line_id)
+        # The names of the data variables are stored in the masks information
+        if line_name in self.figure.masks:
+            xdata = event.mouseevent.xdata
+            col = make_random_color(fmt='hex')
+            self.profile_counter += 1
+            line_id = self.profile_counter
+            line = self.figure.ax.axvline(xdata, color=col, picker=True)
+            line.set_pickradius(5.0)
+            line.set_url("axvline")
+            line.set_gid(line_id)
+            self.interface["keep_line"](target="profile",
+                                      name=line_name,
+                                      color=col,
+                                      line_id=line_id)
         # self.rescale_to_data()
 
     def remove_profile(self, event):

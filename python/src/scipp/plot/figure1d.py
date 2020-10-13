@@ -254,7 +254,7 @@ class PlotFigure1d(PlotFigure):
         self.fig.canvas.draw_idle()
 
     def keep_line(self, name, color, line_id):
-        self.ax._legend = None
+        # self.ax._legend = None
 
         # The main line
         self.ax.lines.append(cp.copy(self.data_lines[name]))
@@ -307,6 +307,8 @@ class PlotFigure1d(PlotFigure):
                 collections.append(coll)
         self.ax.lines = lines
         self.ax.collections = collections
+        if self.legend["show"]:
+            self.ax.legend(loc=self.legend["loc"])
         self.fig.canvas.draw_idle()
 
     def update_line_color(self, line_id, color):
