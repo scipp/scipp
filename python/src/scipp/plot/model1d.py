@@ -2,12 +2,9 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .model import PlotModel
 from .tools import to_bin_centers, vars_to_err, mask_to_float
 from .._scipp import core as sc
-
-# Other imports
 import numpy as np
 
 

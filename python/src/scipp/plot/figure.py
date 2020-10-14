@@ -1,27 +1,25 @@
-# Scipp imports
-from .. import config
-# from .tools import get_mpl_axes
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# @author Neil Vaytet
 
-# Other imports
-import numpy as np
+from .. import config
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import warnings
 import io
-# from copy import deepcopy
 
 
 class PlotFigure:
+    """
+    Base class for 1d and 2d figures, that holds matplotlib axes.
+    """
     def __init__(self,
                  ax=None,
                  cax=None,
                  figsize=None,
                  title=None,
                  padding=None):
-
         """
-            Return matplotlib figure and axes
         """
         self.fig = None
         self.ax = ax
@@ -31,7 +29,10 @@ class PlotFigure:
             if figsize is None:
                 figsize = (config.plot.width / config.plot.dpi,
                            config.plot.height / config.plot.dpi)
-            self.fig, self.ax = plt.subplots(1, 1, figsize=figsize, dpi=config.plot.dpi)
+            self.fig, self.ax = plt.subplots(1,
+                                             1,
+                                             figsize=figsize,
+                                             dpi=config.plot.dpi)
             if padding is None:
                 padding = config.plot.padding
             self.fig.tight_layout(rect=padding)
@@ -68,19 +69,24 @@ class PlotFigure:
                 if axformatters[dim][key] is None:
                     self.axformatter[dim][key] = ticker.ScalarFormatter()
                 else:
-                    self.axformatter[dim][key] = ticker.FuncFormatter(axformatters[dim][key])
-            self.axlocator[dim] = {"linear": ticker.AutoLocator(), "log": ticker.LogLocator()}
+                    self.axformatter[dim][key] = ticker.FuncFormatter(
+                        axformatters[dim][key])
+            self.axlocator[dim] = {
+                "linear": ticker.AutoLocator(),
+                "log": ticker.LogLocator()
+            }
             if axformatters[dim]["custom_locator"]:
-                self.axlocator[dim]["linear"] = ticker.MaxNLocator(integer=True)
+                self.axlocator[dim]["linear"] = ticker.MaxNLocator(
+                    integer=True)
 
     def draw(self):
         self.fig.canvas.draw_idle()
 
     def connect_profile(self, pick_callback=None, hover_callback=None):
-        pick_connection = self.fig.canvas.mpl_connect(
-                'pick_event', pick_callback)
-        hover_connection = self.fig.canvas.mpl_connect(
-            'motion_notify_event', hover_callback)
+        pick_connection = self.fig.canvas.mpl_connect('pick_event',
+                                                      pick_callback)
+        hover_connection = self.fig.canvas.mpl_connect('motion_notify_event',
+                                                       hover_callback)
         return pick_connection, hover_connection
 
     def disconnect_profile(self, pick_connection=None, hover_connection=None):

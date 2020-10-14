@@ -2,12 +2,9 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .figure2d import PlotFigure2d
 from .view import PlotView
 from .._utils import make_random_color
-
-# Other imports
 import numpy as np
 from matplotlib.collections import PathCollection
 
@@ -15,8 +12,7 @@ from matplotlib.collections import PathCollection
 class PlotView2d(PlotView):
     def __init__(self, *args, **kwargs):
 
-        super().__init__(
-            figure=PlotFigure2d(*args, **kwargs))
+        super().__init__(figure=PlotFigure2d(*args, **kwargs))
 
         self.xlim_updated = False
         self.ylim_updated = False
@@ -28,7 +24,6 @@ class PlotView2d(PlotView):
                                          self.check_for_xlim_update)
         self.figure.ax.callbacks.connect('ylim_changed',
                                          self.check_for_ylim_update)
-
 
     def toggle_mask(self, change):
         self.figure.toggle_mask(change["owner"].mask_name, change["new"])
@@ -69,14 +64,14 @@ class PlotView2d(PlotView):
             self.current_lims = xylims
             self.interface["update_viewport"](xylims)
 
-    def update_axes(self, axparams):#, axformatter, axlocator): #, logx, logy):
+    def update_axes(self, axparams):
 
         self.current_lims['x'] = axparams["x"]["lims"]
         self.current_lims['y'] = axparams["y"]["lims"]
         self.global_lims["x"] = axparams["x"]["lims"]
         self.global_lims["y"] = axparams["y"]["lims"]
 
-        self.figure.update_axes(axparams)#, axformatter, axlocator)#, logx, logy)
+        self.figure.update_axes(axparams)
         self.reset_profile()
 
     def reset_profile(self):
@@ -107,21 +102,6 @@ class PlotView2d(PlotView):
             self.keep_profile(event)
         self.figure.draw()
 
-    # def update_profile_connection(self, visible):
-    #     # Connect picking events
-    #     if visible:
-    #         self.profile_pick_connection = self.figure.fig.canvas.mpl_connect(
-    #             'pick_event', self.keep_or_remove_profile)
-    #         self.profile_hover_connection = self.figure.fig.canvas.mpl_connect(
-    #             'motion_notify_event', self.update_profile)
-    #     else:
-    #         if self.profile_pick_connection is not None:
-    #             self.figure.fig.canvas.mpl_disconnect(
-    #                 self.profile_pick_connection)
-    #         if self.profile_hover_connection is not None:
-    #             self.figure.fig.canvas.mpl_disconnect(
-    #                 self.profile_hover_connection)
-
     def keep_profile(self, event):
         xdata = event.mouseevent.xdata
         ydata = event.mouseevent.ydata
@@ -141,7 +121,9 @@ class PlotView2d(PlotView):
             self.profile_scatter.set_offsets(new_offsets)
             self.profile_scatter.set_facecolors(new_colors)
 
-        self.interface["keep_line"](target="profile", color=col, line_id=line_id)
+        self.interface["keep_line"](target="profile",
+                                    color=col,
+                                    line_id=line_id)
 
     def remove_profile(self, event):
         ind = event.ind[0]
@@ -151,5 +133,5 @@ class PlotView2d(PlotView):
         self.profile_scatter.set_facecolors(c)
         # Also remove the line from the 1d plot
         self.interface["remove_line"](target="profile",
-                                    line_id=self.profile_ids[ind])
+                                      line_id=self.profile_ids[ind])
         self.profile_ids.pop(ind)

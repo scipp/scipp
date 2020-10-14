@@ -135,15 +135,17 @@ class PlotPanel3d(PlotPanel):
         self.cut_slider.observe(self._update_cut_surface, names="value")
 
         # Put widgets into boxes
-        self.container.children = (
-            ipw.HBox([self.opacity_slider, self.opacity_checkbox]),
-            ipw.HBox([
-                self.cut_surface_buttons,
-                ipw.VBox([
-                    ipw.HBox([self.cut_slider, self.cut_checkbox]),
-                    self.cut_surface_thickness
-                ])
-            ]))
+        self.container.children = (ipw.HBox(
+            [self.opacity_slider, self.opacity_checkbox]),
+                                   ipw.HBox([
+                                       self.cut_surface_buttons,
+                                       ipw.VBox([
+                                           ipw.HBox([
+                                               self.cut_slider,
+                                               self.cut_checkbox
+                                           ]), self.cut_surface_thickness
+                                       ])
+                                   ]))
 
     def get_cut_options(self):
         return self.cut_options

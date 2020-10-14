@@ -2,31 +2,22 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .model import PlotModel
 from .tools import to_bin_centers
 from .._scipp import core as sc
-
-# Other imports
 import numpy as np
 
 
 class PlotModel3d(PlotModel):
-    def __init__(self,
-                 *args,
-                 positions=None,
-                 # cut_options=None,
-                 **kwargs):
+    def __init__(self, *args, positions=None, **kwargs):
 
         super().__init__(*args, **kwargs)
 
-        # self.dslice = None
         self.button_dims = {}
-        # self.dim_to_xyz = {}
         self.positions = positions
         self.pos_array = None
         self.pos_unit = None
-        self.cut_options = None #cut_options
+        self.cut_options = None
 
         # If positions are specified, then the x, y, z points positions can
         # never change
@@ -38,10 +29,6 @@ class PlotModel3d(PlotModel):
     def initialise(self, cut_options):
         self.cut_options = cut_options
 
-
-    # def get_positions_array(self):
-    #     return self.pos_array
-
     def update_axes(self, axparams):
 
         # If no positions are supplied, create a meshgrid from coordinates
@@ -49,7 +36,6 @@ class PlotModel3d(PlotModel):
 
             for xyz in "zyx":
                 self.button_dims[xyz] = axparams[xyz]["dim"]
-                # self.dim_to_xyz[axparams[xyz]["dim"]] = xyz
 
             z, y, x = np.meshgrid(
                 to_bin_centers(
@@ -94,7 +80,6 @@ class PlotModel3d(PlotModel):
         """
         Get new slice of data and send it back to the controller.
         """
-        # self.slice_data(slices)
         data_slice = self.slice_data(self.data_arrays[self.name], slices)
 
         # Use automatic broadcast if positions are not used

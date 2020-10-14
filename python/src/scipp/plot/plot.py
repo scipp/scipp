@@ -2,7 +2,6 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .._scipp import core as sc
 from .. import _utils as su
 from .tools import make_fake_coord
@@ -88,17 +87,9 @@ def plot(scipp_obj,
         if bins is not None and sc.contains_events(var):
             ndims += 1
         if ndims > 0:
-            # ax = axes
             if ndims == 1 or projection == "1d" or projection == "1D":
                 # Construct a key from the dimensions
                 if axes is not None:
-                    # # Check if we are dealing with a dict mapping dimensions to
-                    # # labels
-                    # if isinstance(axes, dict):
-                    #     key = axes[str(var.dims[0])]
-                    #     ax = [key]
-                    # else:
-                    #     key = ".".join(axes)
                     key = str(list(axes.values())[0])
                 else:
                     key = str(var.dims[0])

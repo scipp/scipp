@@ -7,8 +7,6 @@ from .. import config
 from .model import PlotModel
 from .tools import to_bin_centers, mask_to_float, vars_to_err
 from .._scipp import core as sc
-
-# Other imports
 import numpy as np
 
 
@@ -18,7 +16,6 @@ class PlotModel2d(PlotModel):
         super().__init__(*args, **kwargs)
 
         self.button_dims = {}
-        # self.dim_to_xy = {}
         self.xyrebin = {}
         self.xywidth = {}
         self.image_pixel_size = {}
@@ -42,12 +39,10 @@ class PlotModel2d(PlotModel):
         for xy in "yx":
             # Useful maps
             self.button_dims[xy] = axparams[xy]["dim"]
-            # self.dim_to_xy[axparams[xy]["dim"]] = xy
 
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
             # Create coordinate axes for resampled array to be used as image
-            # offset = 2 * (xy == "y")
             self.xyrebin[xy] = sc.Variable(
                 dims=[axparams[xy]["dim"]],
                 values=np.linspace(axparams[xy]["lims"][0],

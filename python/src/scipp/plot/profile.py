@@ -2,10 +2,7 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .figure1d import PlotFigure1d
-
-# Other imports
 import numpy as np
 
 
@@ -17,25 +14,8 @@ class ProfileView(PlotFigure1d):
         return
 
     def update_axes(self, *args, **kwargs):
-                    # axparams=None,
-                    # axformatter=None,
-                    # axlocator=None,
-                    # logx=False,
-                    # logy=False,
-                    # clear=True,
-                    # legend_labels=True):
         super().update_axes(*args, legend_labels=False, **kwargs)
-        self.slice_area = self.ax.axvspan(1,
-                                          2,
-                                          alpha=0.5,
-                                          color='lightgrey')
-
-    # def update_data(self, *args, **kwargs):
-    #     super().update_data(*args, **kwargs)
-    #     self.slice_area = self.ax.axvspan(1,
-    #                                       2,
-    #                                       alpha=0.5,
-    #                                       color='lightgrey')
+        self.slice_area = self.ax.axvspan(1, 2, alpha=0.5, color='lightgrey')
 
     def _reset_line_label(self, name):
         self.data_lines[name].set_label(None)

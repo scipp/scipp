@@ -18,7 +18,6 @@ class SciPlot:
                  vmax=None,
                  color=None,
                  masks=None,
-                 # scale=None,
                  positions=None,
                  view_ndims=None):
 
@@ -32,15 +31,11 @@ class SciPlot:
         # Get first item in dict and process dimensions.
         # Dimensions should be the same for all dict items.
         self.axes = None
-        # self.scale = scale
-        # self.view_ndims = view_ndims
         self.masks = {}
-        # self.underlying_dim_to_label = {}
         self.errorbars = {}
         self.dim_to_shape = {}
         self.coord_shapes = {}
         self.dim_label_map = {}
-        # self.coords_dtype = {}
 
         self.name = list(scipp_obj_dict.keys())[0]
         self._process_axes_dimensions(scipp_obj_dict[self.name],
@@ -82,21 +77,19 @@ class SciPlot:
                                                       },
                                                       globs=masks_globs)
 
-
             # If non-dimension coord is requested as labels, replace name in
             # dims
-            # underlying_dim_to_label = {}
             array_dims = array.dims
             for dim in self.axes.values():
                 if dim not in array_dims:
-                    # underlying_dim = array.coords[dim].dims[-1]
-                    # underlying_dim_to_label[underlying_dim] = dim
                     array_dims[array_dims.index(self.dim_label_map[dim])] = dim
 
             # Create a useful map from dim to shape
             self.dim_to_shape[name] = dict(zip(array_dims, array.shape))
             self.coord_shapes[name] = {
-                dim: array.coords[dim].shape for dim in array.coords}
+                dim: array.coords[dim].shape
+                for dim in array.coords
+            }
 
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None
@@ -107,41 +100,35 @@ class SciPlot:
 
             # Save masks information
             self.masks[name] = [m for m in array.masks]
-            self.masks[name] = {"color": self.params["masks"][name]["color"],
-                                "cmap": self.params["masks"][name]["cmap"],
-                                "names": {}}
+            self.masks[name] = {
+                "color": self.params["masks"][name]["color"],
+                "cmap": self.params["masks"][name]["cmap"],
+                "names": {}
+            }
             for m in array.masks:
-                self.masks[name]["names"][m] = self.params["masks"][name]["show"]
-
-            # self.coords_dtype[name] = {}
-            # for dim in self.axes:
-
-
-
-
-
+                self.masks[name]["names"][m] = self.params["masks"][name][
+                    "show"]
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
-        # print(self.view, self.profile, self.widgets, self.panel)
         widget_list = []
         for item in [self.view, self.profile, self.widgets, self.panel]:
             if item is not None:
                 widget_list.append(item._to_widget())
         return ipw.VBox(widget_list)
 
-
-
-    def _process_axes_dimensions(self, array=None, axes=None,
-                                 view_ndims=None, positions=None):
+    def _process_axes_dimensions(self,
+                                 array=None,
+                                 axes=None,
+                                 view_ndims=None,
+                                 positions=None):
 
         array_dims = array.dims
         self.ndim = len(array_dims)
 
-        base_axes = ["xyz"[i] for i in range(view_ndims)]#[::-1]
-        # print(base_axes)
+        base_axes = ["xyz"[i] for i in range(view_ndims)]
 
         # Process axes dimensions
         self.axes = {}
@@ -150,23 +137,16 @@ class SciPlot:
                 key = base_axes[i]
             else:
                 key = i - view_ndims
-            # print(key, dim, i)
             self.axes[key] = dim
-        # print('ooooooooooo')
+
         if axes is not None:
-            # print(self.axes)
-            # dim_list = list(self.axes.values())
-            # key_list = list(self.axes.keys())
             # Axes can be incomplete
             for key, ax in axes.items():
                 if self.axes[key] != ax:
                     dim_list = list(self.axes.values())
                     key_list = list(self.axes.keys())
-                    # print('before', key, ax, self.axes)
                     if ax in dim_list:
                         ind = dim_list.index(ax)
-                        # self.axes[key_list[ind]] = self.axes[key]
-                        # self.axes[key] = sc.Dim(ax)
                     else:
                         # Non-dimension coordinate
                         underlying_dim = array.coords[ax].dims[-1]
@@ -174,74 +154,17 @@ class SciPlot:
                         self.dim_label_map[underlying_dim] = dim
                         self.dim_label_map[dim] = underlying_dim
                         ind = dim_list.index(underlying_dim)
-                    # print('ind', ind, key_list[ind])
                     self.axes[key_list[ind]] = self.axes[key]
-                    # print('between', key, ax, self.axes)
                     self.axes[key] = dim
-                    # print('after', key, ax, self.axes)
-
-        print(self.axes)
-
 
         # Replace positions in axes if positions set
         if positions is not None:
             self.axes[self.axes.index(
                 array.coords[positions].dims[0])] = sc.Dim(positions)
 
-        # # Convert to Dim objects
-        # for key, dim in self.axes.items():
-        #     if isinstance(dim, str):
-        #         self.axes[key] = sc.Dim(dim)
-
         # Protect against duplicate entries in axes
         if len(self.axes) != len(set(self.axes)):
             raise RuntimeError("Duplicate entry in axes: {}".format(self.axes))
-        # self.ndim = len(self.axes)
-
-        # # Make a map from non-dimension dim label to dimension dim.
-        # # The map goes both from non-dimension label to dimension label and
-        # # vice versa.
-        # for dim in self.axes:
-        #     if dim not in array.dims:
-        #         underlying_dim = array.coords[dim].dims[-1]
-        #         # self.underlying_dim_to_label[array.coords[dim].dims[-1]] = dim
-        #         self.dim_label_map[underlying_dim] = dim
-        #         self.dim_label_map[dim] = underlying_dim
-
-        return
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     def savefig(self, filename=None):
         self.view.savefig(filename=filename)
-
-    # def _connect_controller_members(self):
-    #     self.controller.model = self.model
-    #     self.controller.panel = self.panel
-    #     self.controller.profile = self.profile
-    #     self.controller.view = self.view
-
-    # def as_static(self, keep_widgets=False):
-    #     self.controller.model = None
-    #     self.model = None
-    #     if not keep_widgets:
-    #         self.controller.panel = None
-    #         self.controller.profile = None
-    #         self.controller.view = None
-    #         self.controller = None
-    #         self.panel = None
-    #         self.profile = None
-    #         return self.view.figure
-    #     else:
-    #         return self

@@ -2,11 +2,8 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .panel import PlotPanel
 from .._utils import make_random_color
-
-# Other imports
 import ipywidgets as ipw
 
 
@@ -14,24 +11,11 @@ class PlotPanel1d(PlotPanel):
     def __init__(self, data_names):
         super().__init__()
 
-        # self.controller = controller
-        # self.container = ipw.VBox()
         self.keep_buttons = {}
         self.data_names = data_names
         self.slice_label = None
         self.counter = -1
         self.interface = {}
-
-    # def _ipython_display_(self):
-    #     return self._to_widget()._ipython_display_()
-
-    # def _to_widget(self):
-    #     return self.container
-
-    # def connect(self, callbacks):
-    #     for key, func in callbacks.items():
-    #         self.interface[key] = func
-
 
     def make_keep_button(self):
         drop = ipw.Dropdown(options=self.data_names,
@@ -42,7 +26,8 @@ class PlotPanel1d(PlotPanel):
                          disabled=False,
                          button_style="",
                          layout={'width': "70px"})
-        # Generate a random color. TODO: should we initialise the seed?
+        # Generate a random color.
+        # TODO: should we initialise the seed?
         col = ipw.ColorPicker(concise=True,
                               description='',
                               value=make_random_color(fmt='hex'),

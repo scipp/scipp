@@ -2,13 +2,8 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
-from .tools import to_bin_centers
 from .._utils import value_to_string
-
-# Other imports
 import ipywidgets as ipw
-import numpy as np
 
 
 class PlotWidgets:
@@ -21,15 +16,10 @@ class PlotWidgets:
                  masks=None,
                  button_options=None):
 
-        # self.controller = controller
         self.rescale_button = ipw.Button(description="Rescale")
-        # self.rescale_button.on_click(self.controller.rescale_to_data)
         if ndim == len(button_options):
             self.rescale_button.layout.display = 'none'
-        # Function to update axes when axes buttons are clicked.
-        # This will become a function from the controller once
-        # connect_observers is called.
-        self.update_axes = None
+        self.interface = {}
 
         # The container list to hold all widgets
         self.container = [self.rescale_button]
@@ -46,11 +36,9 @@ class PlotWidgets:
         self.button_axis_to_dim = {}
         self.continuous_update = {}
         self.all_masks_button = None
-        # self.active_slider_dims
 
         # Now begin loop to construct sliders
-        button_values = [None] * (ndim -
-                                  len(button_options)) + button_options#[::-1]
+        button_values = [None] * (ndim - len(button_options)) + button_options
 
         for i, dim in enumerate(axes.values()):
 
@@ -63,22 +51,15 @@ class PlotWidgets:
             elif i >= ndim - len(button_options):
                 disabled = True
 
-            self.dim_labels[dim] = ipw.Label(
-                # value=self.controller.labels[self.controller.name][dim],
-                layout={"width": "100px"})
+            self.dim_labels[dim] = ipw.Label(layout={"width": "100px"})
 
             # Add a slider to slice along additional dimensions of the array
-            # size = self.controller.dim_to_shape[self.controller.name][dim]
-            # size = dim_to_shape[name][dim]
-            self.slider[dim] = ipw.IntSlider(
-                # value=size // 2,
-                min=0,
-                # max=size - 1,
-                step=1,
-                continuous_update=True,
-                readout=False,
-                disabled=disabled,
-                layout={"width": "200px"})
+            self.slider[dim] = ipw.IntSlider(min=0,
+                                             step=1,
+                                             continuous_update=True,
+                                             readout=False,
+                                             disabled=disabled,
+                                             layout={"width": "200px"})
 
             self.continuous_update[dim] = ipw.Checkbox(
                 value=True,
@@ -89,42 +70,21 @@ class PlotWidgets:
             ipw.jslink((self.continuous_update[dim], 'value'),
                        (self.slider[dim], 'continuous_update'))
 
-            # dim_xlims = self.controller.xlims[self.controller.name][dim].values
-            # dx = np.abs(dim_xlims[1] - dim_xlims[0])
             self.thickness_slider[dim] = ipw.FloatSlider(
-                # value=0. if self.controller.multid_coord is not None else dx,
                 min=0.,
-                # max=dx,
-                # step=0.01 * dx,
                 description="Thickness",
                 continuous_update=False,
                 readout=False,
                 disabled=disabled,
                 layout={'width': "180px"})
 
-            # # TODO: use the ax tick formatter to make the readout value when
-            # # non-dim coords are used
-            # ind = self.slider[dim].value
-            # loc = to_bin_centers(
-            #     self.controller.coords[self.controller.name][dim][dim,
-            #                                                       ind:ind + 2],
-            #     dim).values[0]
-            # self.slider_readout[dim] = ipw.Label(value=value_to_string(loc))
-            # self.thickness_readout[dim] = ipw.Label(
-            #     value=self.make_thickness_slider_readout(
-            #         dim, loc, ind, self.controller.coords[self.controller.name]
-            #         [dim]))
             self.slider_readout[dim] = ipw.Label()
             self.thickness_readout[dim] = ipw.Label()
-
 
             self.profile_button[dim] = ipw.Button(description="Profile",
                                                   disabled=disabled,
                                                   button_style="",
                                                   layout={"width": "initial"})
-
-            # self.profile_button[dim].on_click(
-            #     self.controller._toggle_profile_view)
 
             if ndim == len(button_options):
                 self.slider[dim].layout.display = 'none'
@@ -179,11 +139,6 @@ class PlotWidgets:
 
             # Add observer to buttons
             self.buttons[dim].on_msg(self.update_buttons)
-            # # Add an observer to the sliders
-            # self.slider[dim].observe(self.controller.update_data,
-            #                          names="value")
-            # self.thickness_slider[dim].observe(self.controller.update_data,
-            #                                    names="value")
             # Add the row of slider + buttons
             row = [
                 self.dim_labels[dim], self.slider[dim],
@@ -195,8 +150,6 @@ class PlotWidgets:
 
         # Add controls for masks
         self._add_masks_controls(masks)
-
-        return
 
     def _ipython_display_(self):
         return self._to_widget()._ipython_display_()
@@ -223,8 +176,6 @@ class PlotWidgets:
                     setattr(self.mask_checkboxes[name][key], "mask_group",
                             name)
                     setattr(self.mask_checkboxes[name][key], "mask_name", key)
-                    # self.mask_checkboxes[name][key].observe(
-                    #     self.controller.toggle_mask, names="value")
 
         if masks_found:
             self.masks_lab = ipw.Label(value="Masks:")
@@ -232,12 +183,7 @@ class PlotWidgets:
             # Add a master button to control all masks in one go
             self.all_masks_button = ipw.ToggleButton(
                 value=True,
-                # value=self.controller.params["masks"][
-                    # self.controller.name]["show"],
                 description="Hide all",
-                # if
-                # self.controller.params["masks"][self.controller.name]["show"]
-                # else "Show all",
                 disabled=False,
                 button_style="",
                 layout={"width": "initial"})
@@ -254,8 +200,10 @@ class PlotWidgets:
 
             self.masks_box = ipw.Box(children=mask_list, layout=box_layout)
 
-            self.container += [ipw.HBox(
-                [self.masks_lab, self.all_masks_button, self.masks_box])]
+            self.container += [
+                ipw.HBox(
+                    [self.masks_lab, self.all_masks_button, self.masks_box])
+            ]
 
     def update_buttons(self, owner, event, dummy):
         """
@@ -283,7 +231,7 @@ class PlotWidgets:
                     self.continuous_update[dim].disabled = False
         owner.old_value = owner.value
 
-        self.update_axes()
+        self.interface["update_axes"]()
         return
 
     def toggle_all_masks(self, change):
@@ -297,35 +245,19 @@ class PlotWidgets:
             "Show all"
         return
 
-    # def make_thickness_slider_readout(self, dim, loc, ind, coord):
-    #     """
-    #     Make a label containing start and end of range covered by thickness
-    #     slider.
-    #     """
-    #     thickness = self.thickness_slider[dim].value
-    #     if thickness == 0.0:
-    #         thickness_start = value_to_string(coord[dim, ind].value)
-    #         thickness_end = value_to_string(coord[dim, ind + 1].value)
-    #     else:
-    #         thickness_start = value_to_string(loc - 0.5 * thickness)
-    #         thickness_end = value_to_string(loc + 0.5 * thickness)
-    #     return "{} - {}".format(thickness_start, thickness_end)
-
     def connect(self, callbacks):
         self.rescale_button.on_click(callbacks["rescale_to_data"])
         for dim in self.slider:
-            self.profile_button[dim].on_click(
-                callbacks["toggle_profile_view"])
-            self.slider[dim].observe(callbacks["update_data"],
-                                     names="value")
+            self.profile_button[dim].on_click(callbacks["toggle_profile_view"])
+            self.slider[dim].observe(callbacks["update_data"], names="value")
             self.thickness_slider[dim].observe(callbacks["update_data"],
                                                names="value")
-        self.update_axes = callbacks["update_axes"]
+        self.interface["update_axes"] = callbacks["update_axes"]
 
         for name in self.mask_checkboxes:
             for m in self.mask_checkboxes[name]:
-                self.mask_checkboxes[name][m].observe(
-                    callbacks["toggle_mask"], names="value")
+                self.mask_checkboxes[name][m].observe(callbacks["toggle_mask"],
+                                                      names="value")
 
     def initialise(self, parameters, multid_coord=None):
         for dim, item in parameters.items():
@@ -338,7 +270,9 @@ class PlotWidgets:
             self.slider[dim].max = size - 1
 
             # Thickness slider
-            self.thickness_slider[dim].value = 0. if multid_coord is not None else item["thickness_slider"]
+            self.thickness_slider[
+                dim].value = 0. if multid_coord is not None else item[
+                    "thickness_slider"]
             self.thickness_slider[dim].max = item["thickness_slider"]
             self.thickness_slider[dim].step = item["thickness_slider"] * 0.01
             if multid_coord is not None:
@@ -346,35 +280,18 @@ class PlotWidgets:
 
             # Slider readouts
             self.slider_readout[dim].value = item["slider_readout"]
-            # self.thickness_readout[dim].value = item["thickness_readout"]
-
-        # # Add masks
-        # for name in mask_init:
-        #     for m in mask_init[name]:
-        #         self.mask_checkboxes[name][m].value = mask_init[name][m]
-
-        # # if self.all_masks_button is not None:
-        # #     self.all_masks_button.value = mask_init[name][m]
-
-        # #      = ipw.ToggleButton(
-        # #         # value=self.controller.params["masks"][
-        # #             # self.controller.name]["show"],
-        # #         description="Hide all",
-        # #         # if
-        # #         # self.controller.params["masks"][self.controller.name]["show"]
-        # #         # else "Show all",
-        # #         disabled=False,
-        # #         button_style="",
-        # #         layout={"width": "initial"})
-
-        # # #         self.mask_checkboxes[name][key].observe(
-        # # #             self.controller.toggle_mask, names="value")
-        # # # # self.container += self._add_masks_controls(mask_names)
 
     def get_active_slider_values(self):
         slider_values = {}
         for dim, sl in self.slider.items():
             if not sl.disabled:
+                slider_values[dim] = sl.value
+        return slider_values
+
+    def get_non_profile_slider_values(self, profile_dim):
+        slider_values = {}
+        for dim, sl in self.slider.items():
+            if dim != profile_dim:
                 slider_values[dim] = sl.value
         return slider_values
 
@@ -398,7 +315,6 @@ class PlotWidgets:
             }
         return mask_info
 
-
     def update_slider_readout(self, dim, value):
         self.slider_readout[dim].value = value
 
@@ -411,4 +327,5 @@ class PlotWidgets:
         thickness_start = value_to_string(loc - 0.5 * thickness)
         thickness_end = value_to_string(loc + 0.5 * thickness)
         # return "{} - {}".format(thickness_start, thickness_end)
-        self.thickness_readout[dim].value = "{} - {}".format(thickness_start, thickness_end)
+        self.thickness_readout[dim].value = "{} - {}".format(
+            thickness_start, thickness_end)

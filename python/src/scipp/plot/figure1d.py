@@ -2,17 +2,11 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
-from .. import config
 from .figure import PlotFigure
 from .tools import get_line_param
-
-# Other imports
 import numpy as np
 import copy as cp
-import ipywidgets as ipw
 import warnings
-import io
 
 
 class PlotFigure1d(PlotFigure):
@@ -23,10 +17,7 @@ class PlotFigure1d(PlotFigure):
                  title=None,
                  unit=None,
                  norm=None,
-                 # logx=False,
-                 # logy=False,
                  grid=False,
-                 # mask_params=None,
                  masks=None,
                  figsize=None,
                  picker=False,
@@ -42,60 +33,19 @@ class PlotFigure1d(PlotFigure):
 
         self.errorbars = errorbars
         self.masks = masks
-        # self.mask_params = mask_params
         self.picker = picker
-        # self.is_profile = is_profile
-        # self.slice_area = None
-        # self.logx = logx
-        # self.logy = logy
         self.unit = unit
         self.norm = norm
         self.legend = legend
         if "loc" not in self.legend:
             self.legend["loc"] = 0
 
-        # # Get matplotlib figure and axes
-        # self.fig, self.ax, _, self.own_axes = get_mpl_axes(ax=ax,
-        #                                                    figsize=figsize,
-        #                                                    padding=padding)
-
         self.grid = grid
-
-        # if self.own_axes:
-        #     self.fig.tight_layout(rect=config.plot.padding)
 
         # Save the line parameters (color, linewidth...)
         self.mpl_line_params = mpl_line_params
 
-    # def _ipython_display_(self):
-    #     return self._to_widget()._ipython_display_()
-
-    # def _to_widget(self):
-    #     if hasattr(self.fig.canvas, "widgets"):
-    #         return self.fig.canvas
-    #     else:
-    #         buf = io.BytesIO()
-    #         self.fig.savefig(buf, format='png')
-    #         buf.seek(0)
-    #         return ipw.Image(value=buf.getvalue(),
-    #                          width=config.plot.width,
-    #                          height=config.plot.height)
-
-    # def savefig(self, filename=None):
-    #     self.fig.savefig(filename, bbox_inches="tight")
-
-    # def toggle_view(self, visible=True):
-    #     if hasattr(self.fig.canvas, "layout"):
-    #         self.fig.canvas.layout.display = None if visible else 'none'
-
-    def update_axes(self,
-                    axparams=None,
-                    # axformatter=None,
-                    # axlocator=None,
-                    # logx=False,
-                    # logy=False,
-                    clear=True,
-                    legend_labels=True):
+    def update_axes(self, axparams=None, clear=True, legend_labels=True):
 
         xparams = axparams["x"]
 
@@ -119,15 +69,8 @@ class PlotFigure1d(PlotFigure):
                 self.mpl_line_params["linewidth"][name] = get_line_param(
                     "linewidth", i)
 
-        # if self.logx:
-        #     self.ax.set_xscale("log")
-        # if self.logy:
-        #     self.ax.set_yscale("log")
-        # self.ax.set_xscale("log" if xparams["log"] else "linear")
-        # self.ax.set_yscale("log" if self.norm == "log" else "linear")
         self.ax.set_xscale(xparams["scale"])
         self.ax.set_yscale("log" if self.norm == "log" else "linear")
-
         self.ax.set_ylabel(self.unit)
 
         if self.grid:
@@ -136,23 +79,15 @@ class PlotFigure1d(PlotFigure):
         deltax = 0.05 * (xparams["lims"][1] - xparams["lims"][0])
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
-            self.ax.set_xlim([
-                xparams["lims"][0] - deltax,
-                xparams["lims"][1] + deltax
-            ])
+            self.ax.set_xlim(
+                [xparams["lims"][0] - deltax, xparams["lims"][1] + deltax])
 
         self.ax.set_xlabel(xparams["label"])
 
-        # if axlocator is not None:
-        print(xparams)
-        print(self.axlocator)
         self.ax.xaxis.set_major_locator(
             self.axlocator[xparams["dim"]][xparams["scale"]])
-        # if axformatter is not None:
         self.ax.xaxis.set_major_formatter(
             self.axformatter[xparams["dim"]][xparams["scale"]])
-
-        print(xparams)
 
         for name, hist in xparams["hist"].items():
 
@@ -220,15 +155,8 @@ class PlotFigure1d(PlotFigure):
                     zorder=10,
                     fmt="none")
 
-        # if self.is_profile:
-        #     self.slice_area = self.ax.axvspan(1,
-        #                                       2,
-        #                                       alpha=0.5,
-        #                                       color='lightgrey')
-
         if self.legend["show"]:
             self.ax.legend(loc=self.legend["loc"])
-        # self.draw()
 
     def update_data(self, new_values, info):
 
@@ -237,7 +165,6 @@ class PlotFigure1d(PlotFigure):
             self.data_lines[name].set_data(vals["values"]["x"],
                                            vals["values"]["y"])
             lab = info["slice_label"] if len(info["slice_label"]) > 0 else name
-                # lab = "{}:{}".format(lab, info["slice_label"])
             self.data_lines[name].set_label(lab)
 
             for m in vals["masks"]:
@@ -254,13 +181,10 @@ class PlotFigure1d(PlotFigure):
         self.draw()
 
     def keep_line(self, name, color, line_id):
-        # self.ax._legend = None
-
         # The main line
         self.ax.lines.append(cp.copy(self.data_lines[name]))
         self.ax.lines[-1].set_url(line_id)
         self.ax.lines[-1].set_zorder(2)
-        # self.ax.lines[-1].set_label(None)
         if self.ax.lines[-1].get_marker() == "None":
             self.ax.lines[-1].set_color(color)
         else:
@@ -285,13 +209,9 @@ class PlotFigure1d(PlotFigure):
             self.ax.collections[-1].set_url(line_id)
             self.ax.collections[-1].set_zorder(2)
 
-        # self._reset_line_label(name)
-
         if self.legend["show"]:
             self._reset_line_label(name)
             self.ax.legend(loc=self.legend["loc"])
-        # self.ax.legend(loc=(0.9, 0.0))
-        # self.rescale_to_data()
         self.draw()
 
     def _reset_line_label(self, name):

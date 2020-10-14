@@ -2,15 +2,14 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .figure1d import PlotFigure1d
 from .view import PlotView
 from .._utils import make_random_color
 
+
 class PlotView1d(PlotView):
     def __init__(self, *args, **kwargs):
-        super().__init__(
-            figure=PlotFigure1d(*args, **kwargs))
+        super().__init__(figure=PlotFigure1d(*args, **kwargs))
 
     def toggle_mask(self, change):
         self.figure.toggle_mask(change["owner"].mask_group,
@@ -43,7 +42,6 @@ class PlotView1d(PlotView):
         else:
             self.interface["toggle_hover_visibility"](False)
 
-
     def keep_or_remove_profile(self, event):
         line_url = event.artist.get_url()
         if line_url == "axvline":
@@ -51,21 +49,6 @@ class PlotView1d(PlotView):
         else:
             self.keep_profile(event, line_url)
         self.figure.draw()
-
-    # def update_profile_connection(self, visible):
-    #     # Connect picking events
-    #     if visible:
-    #         self.profile_pick_connection = self.figure.fig.canvas.mpl_connect(
-    #             'pick_event', self.keep_or_remove_profile)
-    #         self.profile_hover_connection = self.figure.fig.canvas.mpl_connect(
-    #             'motion_notify_event', self.update_profile)
-    #     else:
-    #         if self.profile_pick_connection is not None:
-    #             self.figure.fig.canvas.mpl_disconnect(
-    #                 self.profile_pick_connection)
-    #         if self.profile_hover_connection is not None:
-    #             self.figure.fig.canvas.mpl_disconnect(
-    #                 self.profile_hover_connection)
 
     def keep_profile(self, event, line_name):
         # The names of the data variables are stored in the masks information
@@ -79,10 +62,9 @@ class PlotView1d(PlotView):
             line.set_url("axvline")
             line.set_gid(line_id)
             self.interface["keep_line"](target="profile",
-                                      name=line_name,
-                                      color=col,
-                                      line_id=line_id)
-        # self.rescale_to_data()
+                                        name=line_name,
+                                        color=col,
+                                        line_id=line_id)
 
     def remove_profile(self, event):
         new_lines = []

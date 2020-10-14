@@ -2,7 +2,6 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .controller import PlotController
 
 
@@ -22,4 +21,4 @@ class PlotController1d(PlotController):
             "keep_line": self.keep_line,
             "remove_line": self.remove_line,
             "update_line_color": self.update_line_color
-            })
+        })

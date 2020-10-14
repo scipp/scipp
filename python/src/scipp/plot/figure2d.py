@@ -1,15 +1,12 @@
-# Scipp imports
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# @author Neil Vaytet
+
 from .. import config
 from .figure import PlotFigure
-# from .tools import get_mpl_axes
-
-# Other imports
 import numpy as np
-import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import warnings
-import io
-# from copy import deepcopy
 
 
 class PlotFigure2d(PlotFigure):
@@ -23,13 +20,8 @@ class PlotFigure2d(PlotFigure):
                  title=None,
                  cbar=None,
                  unit=None,
-                 # log=None,
                  vmin=None,
                  vmax=None,
-                 # color=None,
-                 # logx=False,
-                 # logy=False,
-                 # mask_cmap=None,
                  masks=None,
                  resolution=None):
 
@@ -43,7 +35,7 @@ class PlotFigure2d(PlotFigure):
                                               norm=norm,
                                               aspect=aspect,
                                               picker=5)
-        # self.ax.set_title(title)
+
         self.cbar = None
         if cbar:
             self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
@@ -55,26 +47,6 @@ class PlotFigure2d(PlotFigure):
             self.mask_image[m] = self.make_default_imshow(cmap=masks["cmap"],
                                                           norm=norm,
                                                           aspect=aspect)
-        # self.logx = logx
-        # self.logy = logy
-        # if self.logx:
-        #     self.ax.set_xscale("log")
-        # if self.logy:
-        #     self.ax.set_yscale("log")
-
-    # def _ipython_display_(self):
-    #     return self._to_widget()._ipython_display_()
-
-    # def _to_widget(self):
-    #     if hasattr(self.fig.canvas, "widgets"):
-    #         return self.fig.canvas
-    #     else:
-    #         buf = io.BytesIO()
-    #         self.fig.savefig(buf, format='png')
-    #         buf.seek(0)
-    #         return ipw.Image(value=buf.getvalue(),
-    #                          width=config.plot.width,
-    #                          height=config.plot.height)
 
     def savefig(self, filename=None):
         self.fig.savefig(filename, bbox_inches="tight")
@@ -90,7 +62,6 @@ class PlotFigure2d(PlotFigure):
                               picker=picker)
 
     def rescale_to_data(self, vmin, vmax):
-        # print("view2d: rescale_to_data 1", vmin, vmax)
         self.image.set_clim([vmin, vmax])
         for m, im in self.mask_image.items():
             im.set_clim([vmin, vmax])
@@ -124,10 +95,7 @@ class PlotFigure2d(PlotFigure):
                     self.fig.canvas.toolbar._nav_stack._elements[0][
                         key] = tuple(alist)
 
-    def update_axes(self, axparams=None):#, axformatter, axlocator):
-      # , logx, logy):
-
-        # is_log = {"x": self.logx, "y": self.logy}
+    def update_axes(self, axparams=None):
 
         # Set axes labels
         self.ax.set_xlabel(axparams["x"]["label"])
@@ -137,8 +105,10 @@ class PlotFigure2d(PlotFigure):
 
         for xy, param in axparams.items():
             axis = getattr(self.ax, "{}axis".format(xy))
-            axis.set_major_formatter(self.axformatter[param["dim"]][param["scale"]])
-            axis.set_major_locator(self.axlocator[param["dim"]][param["scale"]])
+            axis.set_major_formatter(
+                self.axformatter[param["dim"]][param["scale"]])
+            axis.set_major_locator(
+                self.axlocator[param["dim"]][param["scale"]])
 
         # Set axes limits and ticks
         extent_array = np.array([axparams["x"]["lims"],
@@ -151,7 +121,6 @@ class PlotFigure2d(PlotFigure):
             self.ax.set_xlim(axparams["x"]["lims"])
             self.ax.set_ylim(axparams["y"]["lims"])
 
-        # self.reset_profile()
         self.reset_home_button(axparams)
 
     def update_data(self, new_values, info=None):

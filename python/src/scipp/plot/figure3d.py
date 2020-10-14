@@ -18,22 +18,23 @@ import io
 
 
 class PlotFigure3d:
-    def __init__(self,
-                 # controller=None,
-                 cmap=None,
-                 norm=None,
-                 title=None,
-                 unit=None,
-                 log=None,
-                 vmin=None,
-                 vmax=None,
-                 nan_color=None,
-                 mask_cmap=None,
-                 masks=None,
-                 pixel_size=None,
-                 tick_size=None,
-                 background=None,
-                 show_outline=True):
+    def __init__(
+            self,
+            # controller=None,
+            cmap=None,
+            norm=None,
+            title=None,
+            unit=None,
+            log=None,
+            vmin=None,
+            vmax=None,
+            nan_color=None,
+            mask_cmap=None,
+            masks=None,
+            pixel_size=None,
+            tick_size=None,
+            background=None,
+            show_outline=True):
 
         # self.controller = controller
         # self.cbar_image = ipw.Image()
@@ -109,12 +110,11 @@ class PlotFigure3d:
     def initialise(self, *args, **kwargs):
         return
 
-    def update_axes(self,
-                    axparams):
-                    # axformatter=None,
-                    # axlocator=None,
-                    # logx=None,
-                    # logy=None):
+    def update_axes(self, axparams):
+        # axformatter=None,
+        # axlocator=None,
+        # logx=None,
+        # logy=None):
 
         if self.point_cloud is not None:
             self.scene.remove(self.point_cloud)
@@ -273,13 +273,15 @@ void main() {
         We need to make a dummy imshow so we can later update the limits with
         set_clim, as this method is not available on a ColorbarBase class.
         """
-        a = np.array([[0,1]])
+        a = np.array([[0, 1]])
         height_inches = config.plot.height / config.plot.dpi
 
-        cbar_fig, ax = plt.subplots(figsize=(height_inches * 0.2, height_inches),
-                         dpi=config.plot.dpi)
-        cbar_imshow = ax.imshow(a, cmap=self.scalar_map.get_cmap(),
-                                        norm=self.scalar_map.norm)
+        cbar_fig, ax = plt.subplots(figsize=(height_inches * 0.2,
+                                             height_inches),
+                                    dpi=config.plot.dpi)
+        cbar_imshow = ax.imshow(a,
+                                cmap=self.scalar_map.get_cmap(),
+                                norm=self.scalar_map.norm)
         ax.set_visible(False)
         cbar_ax = cbar_fig.add_axes([0.05, 0.02, 0.25, 0.96])
         cbar = plt.colorbar(cbar_imshow, cax=cbar_ax)

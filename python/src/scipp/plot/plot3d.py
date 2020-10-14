@@ -2,7 +2,6 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .controller3d import PlotController3d
 from .model3d import PlotModel3d
 from .panel3d import PlotPanel3d
@@ -11,26 +10,7 @@ from .view3d import PlotView3d
 from .widgets import PlotWidgets
 
 
-# def plot3d(scipp_obj_dict=None,
-#            positions=None,
-#            axes=None,
-#            masks=None,
-#            filename=None,
-#            figsize=None,
-#            aspect=None,
-#            cmap=None,
-#            log=False,
-#            vmin=None,
-#            vmax=None,
-#            color=None,
-#            background="#f0f0f0",
-#            nan_color="#d3d3d3",
-#            pixel_size=1.0,
-#            tick_size=None,
-#            show_outline=True):
-def plot3d(*args,
-           filename=None,
-           **kwargs):
+def plot3d(*args, filename=None, **kwargs):
     """
     Plot a 3D point cloud through a N dimensional dataset.
     For every dimension above 3, a slider is created to adjust the position of
@@ -67,14 +47,14 @@ class SciPlot3d(SciPlot):
                  show_outline=True):
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,
-                 axes=axes,
-                 cmap=cmap,
-                 norm=norm,
-                 vmin=vmin,
-                 vmax=vmax,
-                 masks=masks,
-                 positions=positions,
-                 view_ndims=3)
+                         axes=axes,
+                         cmap=cmap,
+                         norm=norm,
+                         vmin=vmin,
+                         vmax=vmax,
+                         masks=masks,
+                         positions=positions,
+                         view_ndims=3)
 
         self.widgets = PlotWidgets(axes=self.axes,
                                    ndim=self.ndim,
@@ -83,12 +63,7 @@ class SciPlot3d(SciPlot):
                                    masks=self.masks,
                                    button_options=['X', 'Y', 'Z'])
 
-
         # The model which takes care of all heavy calculations
-        # self.model = PlotModel3d(controller=self.controller,
-        #                          scipp_obj_dict=scipp_obj_dict,
-        #                          positions=positions,
-        #                          cut_options=self.panel.cut_options)
         self.model = PlotModel3d(scipp_obj_dict=scipp_obj_dict,
                                  axes=self.axes,
                                  name=self.name,
@@ -98,51 +73,35 @@ class SciPlot3d(SciPlot):
 
         # The view which will display the 3d scene and send pick events back to
         # the controller
-        self.view = PlotView3d(
-            cmap=self.params["values"][
-                self.name]["cmap"],
-            norm=self.params["values"][
-                self.name]["norm"],
-            unit=self.params["values"][
-                self.name]["unit"],
-            masks=self.masks[self.name],
-            nan_color=nan_color,
-            pixel_size=pixel_size,
-            tick_size=tick_size,
-            background=background,
-            show_outline=show_outline)
-
-        # # Connect controller to model, view, panel and profile
-        # self._connect_controller_members()
+        self.view = PlotView3d(cmap=self.params["values"][self.name]["cmap"],
+                               norm=self.params["values"][self.name]["norm"],
+                               unit=self.params["values"][self.name]["unit"],
+                               masks=self.masks[self.name],
+                               nan_color=nan_color,
+                               pixel_size=pixel_size,
+                               tick_size=tick_size,
+                               background=background,
+                               show_outline=show_outline)
 
         # An additional panel view with widgets to control the cut surface
         self.panel = PlotPanel3d(pixel_size=pixel_size)
 
         # The main controller module which connects all the parts
         self.controller = PlotController3d(
-          # scipp_obj_dict=scipp_obj_dict,
-                                           axes=self.axes,
-                                           name=self.name,
-                                           dim_to_shape=self.dim_to_shape,
-                                           coord_shapes=self.coord_shapes,
-                                           # masks=self.masks,
-                                           # cmap=cmap,
-                                           norm=norm,
-                                           vmin=self.params["values"][self.name]["vmin"],
-                                           vmax=self.params["values"][self.name]["vmax"],
-                                           # color=color,
-                                           # positions=positions,
-                                           pixel_size=pixel_size,
-                                           scale=scale,
-                                           # masks=self.masks,
-                                           widgets=self.widgets,
-                                           model=self.model,
-                                           view=self.view,
-                                           panel=self.panel,
-                                           profile=self.profile)
-
+            axes=self.axes,
+            name=self.name,
+            dim_to_shape=self.dim_to_shape,
+            coord_shapes=self.coord_shapes,
+            norm=norm,
+            vmin=self.params["values"][self.name]["vmin"],
+            vmax=self.params["values"][self.name]["vmax"],
+            pixel_size=pixel_size,
+            scale=scale,
+            widgets=self.widgets,
+            model=self.model,
+            view=self.view,
+            panel=self.panel,
+            profile=self.profile)
 
         # Call update_slice once to make the initial image
         self.controller.update_axes()
-
-        return

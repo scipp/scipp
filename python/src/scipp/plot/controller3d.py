@@ -2,25 +2,16 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .controller import PlotController
 from .._utils import name_with_unit
 from .._scipp import core as sc
-
-# Other imports
 import numpy as np
 
 
 class PlotController3d(PlotController):
-    def __init__(self,
-                 *args,
-                 pixel_size=None,
-                 positions=None,
-                 **kwargs):
+    def __init__(self, *args, pixel_size=None, positions=None, **kwargs):
 
-        super().__init__(*args,
-                         # positions=positions,
-                         **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.positions = positions
         self.pos_axparams = {}
@@ -48,7 +39,7 @@ class PlotController3d(PlotController):
             "update_opacity": self.update_opacity,
             "update_depth_test": self.update_depth_test,
             "update_cut_surface": self.update_cut_surface
-            })
+        })
 
     def _get_axes_parameters(self):
         axparams = {}
