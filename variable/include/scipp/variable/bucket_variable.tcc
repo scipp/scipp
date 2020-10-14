@@ -85,6 +85,10 @@ public:
   units::Unit elem_unit(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).unit();
   }
+  void set_elem_unit(const VariableView &var,
+                     const units::Unit &u) const override {
+    return std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
+  }
   bool hasVariances(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).hasVariances();
   }

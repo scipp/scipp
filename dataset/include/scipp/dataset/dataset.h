@@ -105,11 +105,16 @@ protected:
   // VariableView. The interface guarantees that the invalid mutable view is
   // not accessible. This wrapping avoids inefficient duplication of the view in
   // the child class DataArrayView.
-  VariableView m_view; // empty if the array has no (aligned) data
+  VariableView m_view; // empty if the array has no data
+  // Flag required to allow for removal/addition of coords from DataArray via a
+  // view. This may be another indicator that the current implementation of
+  // DataArray based on Dataset should be refactored.
+  bool m_isItem{true};
 
 private:
   friend class DatasetConstView;
   friend class DatasetView;
+  friend class DataArray;
 
   const Dataset *m_dataset{nullptr};
   const detail::dataset_item_map::value_type *m_data{nullptr};

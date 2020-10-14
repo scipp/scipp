@@ -118,6 +118,7 @@ TEST_F(VariableBucketTest, to_constituents) {
   auto idx_ptr = idx0.values<std::pair<scipp::index, scipp::index>>().data();
   auto buf_ptr = buf0.values<double>().data();
   auto [idx1, dim1, buf1] = var.to_constituents<bucket<Variable>>();
+  EXPECT_FALSE(var);
   EXPECT_EQ((idx1.values<std::pair<scipp::index, scipp::index>>().data()),
             idx_ptr);
   EXPECT_EQ(buf1.values<double>().data(), buf_ptr);

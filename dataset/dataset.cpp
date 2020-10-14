@@ -485,9 +485,11 @@ CoordsConstView DataArrayConstView::coords() const noexcept {
 
 /// Return a view to all coordinates of the data view.
 CoordsView DataArrayView::coords() const noexcept {
-  // Typically view of item of data array, therefore:
+  // Typically view of item of dataset, therefore:
   // ds['a'].coords['x'] = x # inserts unaligned coord
-  return make_coords(*this, CoordCategory::All);
+  // Views created from DataArray set m_isItem = false, so aligned coords can be
+  // inserted.
+  return make_coords(*this, CoordCategory::All, m_isItem);
 }
 
 /// Return a const view to all coordinates of the data array.
