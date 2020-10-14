@@ -112,3 +112,16 @@ TEST_F(VariableBucketTest, binary_operation_with_dense_broadcast) {
   EXPECT_EQ(var.slice({Dim::Y, 1}) + dense, expected.slice({Dim::Y, 1}));
   EXPECT_EQ(dense + var, expected);
 }
+
+TEST_F(VariableBucketTest, to_constituents) {
+  auto [idx0, dim0, buf0] = VariableView(var).constituents<bucket<Variable>>();
+  auto idx_ptr = idx0.values<std::pair<scipp::index, scipp::index>>().data();
+  auto buf_ptr = buf0.values<double>().data();
+  auto [idx1, dim1, buf1] = var.to_constituents<bucket<Variable>>();
+  EXPECT_EQ((idx1.values<std::pair<scipp::index, scipp::index>>().data()),
+            idx_ptr);
+  EXPECT_EQ(buf1.values<double>().data(), buf_ptr);
+  EXPECT_EQ(idx1, indices);
+  EXPECT_EQ(dim1, Dim::X);
+  EXPECT_EQ(buf1, buffer);
+}
