@@ -8,6 +8,7 @@ from .model3d import PlotModel3d
 from .panel3d import PlotPanel3d
 from .sciplot import SciPlot
 from .view3d import PlotView3d
+from .widgets import PlotWidgets
 
 
 # def plot3d(scipp_obj_dict=None,
@@ -53,14 +54,15 @@ class SciPlot3d(SciPlot):
                  axes=None,
                  masks=None,
                  cmap=None,
-                 log=None,
+                 norm=None,
+                 scale=None,
                  vmin=None,
                  vmax=None,
                  color=None,
                  aspect=None,
                  background="#f0f0f0",
                  nan_color="#d3d3d3",
-                 pixel_size=None,
+                 pixel_size=1.0,
                  tick_size=None,
                  show_outline=True):
 
@@ -92,8 +94,7 @@ class SciPlot3d(SciPlot):
                                  name=self.name,
                                  dim_to_shape=self.dim_to_shape,
                                  dim_label_map=self.dim_label_map,
-                                 positions=positions,
-                                 cut_options=self.panel.cut_options)
+                                 positions=positions)
 
         # The view which will display the 3d scene and send pick events back to
         # the controller
@@ -115,9 +116,7 @@ class SciPlot3d(SciPlot):
         # self._connect_controller_members()
 
         # An additional panel view with widgets to control the cut surface
-        # Note that the panel needs to be created before the model.
-        self.panel = PlotPanel3d(data_names=list(scipp_obj_dict.keys()),
-                                 pixel_size=pixel_size)
+        self.panel = PlotPanel3d(pixel_size=pixel_size)
 
         # The main controller module which connects all the parts
         self.controller = PlotController3d(
@@ -133,7 +132,14 @@ class SciPlot3d(SciPlot):
                                            vmax=self.params["values"][self.name]["vmax"],
                                            # color=color,
                                            # positions=positions,
-                                           pixel_size=pixel_size)
+                                           pixel_size=pixel_size,
+                                           scale=scale,
+                                           # masks=self.masks,
+                                           widgets=self.widgets,
+                                           model=self.model,
+                                           view=self.view,
+                                           panel=self.panel,
+                                           profile=self.profile)
 
 
         # Call update_slice once to make the initial image

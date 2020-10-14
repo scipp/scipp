@@ -237,13 +237,15 @@ class PlotController:
         #                            button_options=button_options,
         #                            positions=positions)
         self.initialise_widgets(dim_to_shape[self.name])
-        self.connect_widgets()
         self.initialise_view(axes)
+        self.initialise_model()
+        if self.profile is not None:
+            self.initialise_profile(axes)
+
+        self.connect_widgets()
         self.connect_view()
         if self.panel is not None:
             self.connect_panel()
-        if self.profile is not None:
-            self.initialise_profile(axes)
 
         return
 
@@ -457,6 +459,9 @@ class PlotController:
         self.profile.initialise(
             axformatters={dim: self.model.get_axformatter(self.name, dim) for dim in axes.values()})
 
+    def initialise_model(self):
+        return
+
     def connect_widgets(self):
         self.widgets.connect({
             "rescale_to_data": self.rescale_to_data,
@@ -519,7 +524,9 @@ class PlotController:
         and sends it over to the view for display.
         """
         self.axparams = self._get_axes_parameters()
-        self.model.update_axes(self.axparams)
+        other_params = self.model.update_axes(self.axparams)
+        if other_params is not None:
+            self.axparams.update(other_params)
         self.view.update_axes(axparams=self.axparams)
                               # axformatter=self.axformatter[self.name],
                               # axlocator=self.axlocator[self.name])

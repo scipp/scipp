@@ -15,7 +15,7 @@ class PlotModel3d(PlotModel):
     def __init__(self,
                  *args,
                  positions=None,
-                 cut_options=None,
+                 # cut_options=None,
                  **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -26,7 +26,7 @@ class PlotModel3d(PlotModel):
         self.positions = positions
         self.pos_array = None
         self.pos_unit = None
-        self.cut_options = cut_options
+        self.cut_options = None #cut_options
 
         # If positions are specified, then the x, y, z points positions can
         # never change
@@ -35,8 +35,12 @@ class PlotModel3d(PlotModel):
                 scipp_obj_dict[self.name].coords[self.positions].values,
                 dtype=np.float32)
 
-    def get_positions_array(self):
-        return self.pos_array
+    def initialise(self, cut_options):
+        self.cut_options = cut_options
+
+
+    # def get_positions_array(self):
+    #     return self.pos_array
 
     def update_axes(self, axparams):
 
@@ -61,6 +65,8 @@ class PlotModel3d(PlotModel):
 
             self.pos_array = np.array(
                 [x.ravel(), y.ravel(), z.ravel()], dtype=np.float32).T
+
+        return {"positions": self.pos_array}
 
     def get_slice_values(self, mask_info):
 

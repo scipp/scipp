@@ -35,6 +35,9 @@ class PlotView:
     def rescale_to_data(self, vmin=None, vmax=None):
         self.figure.rescale_to_data(vmin=vmin, vmax=vmax)
 
+    def update_axes(self, *args, **kwargs):
+        self.figure.update_axes(*args, **kwargs)
+
     def update_data(self, *args, **kwargs):
         self.figure.update_data(*args, **kwargs)
 

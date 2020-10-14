@@ -2,14 +2,16 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .panel import PlotPanel
 import ipywidgets as ipw
 import numpy as np
 
 
-class PlotPanel3d:
-    def __init__(self, controller=None, pixel_size=None):
+class PlotPanel3d(PlotPanel):
+    def __init__(self, pixel_size=None):
+        super().__init__()
 
-        self.controller = controller
+        # self.controller = controller
         self.pixel_size = pixel_size
         self.current_cut_surface_value = None
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
@@ -28,13 +30,13 @@ class PlotPanel3d:
             "Value": 7
         }
 
-        self.widgets = self._create_cut_surface_controls()
+        self._create_cut_surface_controls()
 
-    def _ipython_display_(self):
-        return self._to_widget()._ipython_display_()
+    # def _ipython_display_(self):
+    #     return self._to_widget()._ipython_display_()
 
-    def _to_widget(self):
-        return self.widgets
+    # def _to_widget(self):
+    #     return self.container
 
     def _create_cut_surface_controls(self):
 
@@ -133,7 +135,7 @@ class PlotPanel3d:
         self.cut_slider.observe(self._update_cut_surface, names="value")
 
         # Put widgets into boxes
-        return ipw.VBox([
+        self.container.children = (
             ipw.HBox([self.opacity_slider, self.opacity_checkbox]),
             ipw.HBox([
                 self.cut_surface_buttons,
@@ -141,8 +143,10 @@ class PlotPanel3d:
                     ipw.HBox([self.cut_slider, self.cut_checkbox]),
                     self.cut_surface_thickness
                 ])
-            ])
-        ])
+            ]))
+
+    def get_cut_options(self):
+        return self.cut_options
 
     def update_axes(self, axparams):
         self.xminmax["x"] = axparams['x']['lims']
@@ -157,7 +161,7 @@ class PlotPanel3d:
         Take cut surface into account if present.
         """
         if self.cut_surface_buttons.value is None:
-            self.controller.update_opacity(alpha=change["new"][1])
+            self.interface["update_opacity"](alpha=change["new"][1])
         else:
             self._update_cut_surface()
 
@@ -174,7 +178,7 @@ class PlotPanel3d:
             self._update_opacity({"new": self.opacity_slider.value})
         else:
             # self.points_material.depthTest = False
-            self.controller.update_depth_test(False)
+            self.interface["update_depth_test"](False)
             if change["old"] is None:
                 self.cut_slider.disabled = False
                 self.cut_checkbox.disabled = False
@@ -227,7 +231,7 @@ class PlotPanel3d:
         self.lock_surface_update = False
 
     def _update_cut_surface(self, change=None):
-        self.controller.update_cut_surface(
+        self.interface["update_cut_surface"](
             target=self.cut_slider.value,
             button_value=self.cut_surface_buttons.value,
             surface_thickness=self.cut_surface_thickness.value,
