@@ -261,29 +261,34 @@ void DataArrayView::setData(Variable data) const {
 }
 
 template <class Key, class Val>
-void Dataset::erase_from_map(std::unordered_map<Key, Val> &map,
-                             const Key &key) {
+Val Dataset::extract_from_map(std::unordered_map<Key, Val> &map,
+                              const Key &key) {
   using core::to_string;
   if (!map.count(key))
     throw except::NotFoundError("Cannot erase " + to_string(key) +
                                 " -- not found.");
+  auto value = std::move(map.at(key));
   map.erase(key);
   rebuildDims();
+  return value;
 }
 
-/// Removes the coordinate for the given dimension.
-void Dataset::eraseCoord(const Dim dim) { erase_from_map(m_coords, dim); }
-
-/// Removes unaligned coord with given name from the given item.
-void Dataset::eraseCoord(const std::string &name, const Dim dim) {
-  scipp::expect::contains(*this, name);
-  erase_from_map(m_data[name].coords, dim);
+/// Remove and return the coordinate for the given dimension.
+Variable Dataset::extractCoord(const Dim dim) {
+  return extract_from_map(m_coords, dim);
 }
 
-/// Remove mask with given mask name from the given item.
-void Dataset::eraseMask(const std::string &name, const std::string &maskName) {
+/// Remove and return unaligned coord with given name from the given item.
+Variable Dataset::extractCoord(const std::string &name, const Dim dim) {
   scipp::expect::contains(*this, name);
-  erase_from_map(m_data[name].masks, maskName);
+  return extract_from_map(m_data[name].coords, dim);
+}
+
+/// Remove and return mask with given mask name from the given item.
+Variable Dataset::extractMask(const std::string &name,
+                              const std::string &maskName) {
+  scipp::expect::contains(*this, name);
+  return extract_from_map(m_data[name].masks, maskName);
 }
 
 /// Return const slice of the dataset along given dimension with given extents.

@@ -352,9 +352,11 @@ public:
     setData(name, Variable(data), attrPolicy);
   }
 
-  void eraseCoord(const Dim dim);
-  void eraseCoord(const std::string &name, const Dim dim);
-  void eraseMask(const std::string &name, const std::string &maskName);
+  [[maybe_unused]] Variable extractCoord(const Dim dim);
+  [[maybe_unused]] Variable extractCoord(const std::string &name,
+                                         const Dim dim);
+  [[maybe_unused]] Variable extractMask(const std::string &name,
+                                        const std::string &maskName);
 
   DatasetConstView slice(const Slice s) const &;
   DatasetView slice(const Slice s) &;
@@ -400,7 +402,7 @@ private:
   void rebuildDims();
 
   template <class Key, class Val>
-  void erase_from_map(std::unordered_map<Key, Val> &map, const Key &key);
+  Val extract_from_map(std::unordered_map<Key, Val> &map, const Key &key);
 
   void setData_impl(const std::string &name, detail::DatasetData &&data,
                     const AttrPolicy attrPolicy);

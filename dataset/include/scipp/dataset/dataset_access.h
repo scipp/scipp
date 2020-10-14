@@ -26,6 +26,7 @@ public:
 
   void set(const Dim &key, variable::Variable var) const;
   void erase(const Dim &key) const;
+  [[maybe_unused]] variable::Variable extract(const Dim &key) const;
 
 private:
   Dataset *m_parent;
@@ -40,6 +41,7 @@ public:
 
   void set(const std::string &key, variable::Variable var) const;
   void erase(const std::string &key) const;
+  [[maybe_unused]] variable::Variable extract(const std::string &key) const;
 
 private:
   Dataset *m_parent;

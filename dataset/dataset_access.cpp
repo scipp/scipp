@@ -22,24 +22,27 @@ void CoordAccess::set(const Dim &key, Variable var) const {
   } else
     m_parent->setCoord(key, std::move(var));
 }
-void CoordAccess::erase(const Dim &key) const {
+void CoordAccess::erase(const Dim &key) const { extract(key); }
+Variable CoordAccess::extract(const Dim &key) const {
   expectValidParent(m_parent);
   if (m_name) {
     if (!m_isItem && m_parent->coords().contains(key))
-      m_parent->eraseCoord(key); // this is a DataArray, may delete aligned
+      return m_parent->extractCoord(
+          key); // this is a DataArray, may delete aligned
     else
-      m_parent->eraseCoord(*m_name, key);
+      return m_parent->extractCoord(*m_name, key);
   } else
-    m_parent->eraseCoord(key);
+    return m_parent->extractCoord(key);
 }
 
 void MaskAccess::set(const std::string &key, Variable var) const {
   expectValidParent(m_parent);
   m_parent->setMask(*m_name, key, std::move(var));
 }
-void MaskAccess::erase(const std::string &key) const {
+void MaskAccess::erase(const std::string &key) const { extract(key); }
+Variable MaskAccess::extract(const std::string &key) const {
   expectValidParent(m_parent);
-  m_parent->eraseMask(*m_name, key);
+  return m_parent->extractMask(*m_name, key);
 }
 
 } // namespace scipp::dataset
