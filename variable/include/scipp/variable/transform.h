@@ -313,7 +313,7 @@ template <class T> static constexpr auto maybe_eval(T &&_) {
 
 /// Functor for implementing operations with event data, see also
 /// TransformEventsInPlace.
-struct TransformEvents {
+struct TransformEvents : public detail::EventsFlag {
   template <class Op, class... Ts>
   constexpr auto operator()(const Op &op, const Ts &... args) const {
     event_list<std::invoke_result_t<Op, core::detail::element_type_t<Ts>...>>
@@ -424,7 +424,12 @@ template <class Op> struct Transform {
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
         (handles.hasVariances() || ...);
-    const units::Unit unit = op(variableFactory().elem_unit(*handles.m_var)...);
+    units::Unit unit;
+    // Workaround for OSX clang issue with broken overload resolution
+    if constexpr (std::is_base_of_v<EventsFlag, Op>)
+      unit = op.base_op()(variableFactory().elem_unit(*handles.m_var)...);
+    else
+      unit = op(variableFactory().elem_unit(*handles.m_var)...);
     auto out = variableFactory().create(dtype<Out>, dims, unit, variances,
                                         *handles.m_var...);
     do_transform(op, variable_access<Out>(out), std::tuple<>(),
@@ -510,6 +515,7 @@ struct augment {
 };
 
 template <class Op, class EventsOp> struct overloaded_events : Op, EventsOp {
+  const Op &base_op() const noexcept { return *this; }
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
     if constexpr ((transform_detail::is_events_v<std::decay_t<Ts>> || ...))
       return EventsOp::operator()(static_cast<const Op &>(*this),
