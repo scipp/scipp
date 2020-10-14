@@ -17,6 +17,11 @@ bool VariableFactory::is_buckets(const VariableConstView &var) const {
 DType VariableFactory::elem_dtype(const VariableConstView &var) const {
   return m_makers.at(var.dtype())->elem_dtype(var);
 }
+
+units::Unit VariableFactory::elem_unit(const VariableConstView &var) const {
+  return m_makers.at(var.dtype())->elem_unit(var);
+}
+
 bool VariableFactory::hasVariances(const VariableConstView &var) const {
   return m_makers.at(var.dtype())->hasVariances(var);
 }

@@ -21,6 +21,7 @@ private:
   Variable make_buckets(const VariableConstView &parent,
                         const VariableConstView &indices, const Dim dim,
                         const DType type, const Dimensions &dims,
+                        const units::Unit &unit,
                         const bool variances) const override {
     const auto &source = std::get<2>(parent.constituents<bucket<DataArray>>());
     if (parent.dims() !=
@@ -29,7 +30,7 @@ private:
       throw std::runtime_error(
           "Shape changing operations with bucket<DataArray> not supported yet");
     auto buffer = DataArray(
-        variable::variableFactory().create(type, dims, variances),
+        variable::variableFactory().create(type, dims, unit, variances),
         source.aligned_coords(), source.masks(), source.unaligned_coords());
     return Variable{std::make_unique<variable::DataModel<bucket<DataArray>>>(
         indices, dim, std::move(buffer))};

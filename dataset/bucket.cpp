@@ -24,6 +24,9 @@
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
+#include "../variable/operations_common.h"
+#include "dataset_operations_common.h"
+
 namespace scipp::dataset::buckets {
 
 namespace {
@@ -113,9 +116,10 @@ constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
     dims.resize(dim, size);
   // Using variableFactory instead of variable::resize for creating
   // _uninitialized_ variable.
-  return var.dims().contains(dim) ? variable::variableFactory().create(
-                                        var.dtype(), dims, var.hasVariances())
-                                  : Variable(var);
+  return var.dims().contains(dim)
+             ? variable::variableFactory().create(var.dtype(), dims, var.unit(),
+                                                  var.hasVariances())
+             : Variable(var);
 };
 
 auto resize_buffer(const VariableConstView &parent, const Dim dim,
@@ -190,6 +194,14 @@ Variable concatenate(const VariableConstView &var0,
     return concatenate_impl<Dataset>(var0, var1);
 }
 
+DataArray concatenate(const DataArrayConstView &a,
+                      const DataArrayConstView &b) {
+  return {buckets::concatenate(a.data(), b.data()),
+          union_(a.aligned_coords(), b.aligned_coords()),
+          union_or(a.masks(), b.masks()),
+          intersection(a.unaligned_coords(), b.unaligned_coords())};
+}
+
 void append(const VariableView &var0, const VariableConstView &var1) {
   if (var0.dtype() == dtype<bucket<Variable>>)
     var0.replace_model(combine<Variable>(var0, var1));
@@ -197,6 +209,12 @@ void append(const VariableView &var0, const VariableConstView &var1) {
     var0.replace_model(combine<DataArray>(var0, var1));
   else
     var0.replace_model(combine<Dataset>(var0, var1));
+}
+
+void append(const DataArrayView &a, const DataArrayConstView &b) {
+  expect::coordsAreSuperset(a, b);
+  union_or_in_place(a.masks(), b.masks());
+  append(a.data(), b.data());
 }
 
 namespace histogram_detail {
@@ -242,9 +260,9 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
     masked = function.data() * ~mask;
   const auto &[indices, dim, buffer] = x.constituents<bucket<DataArray>>();
   // Note the current inefficiency here: Output buffer is created with full
-  // size, even of `x` is a slice and only subsections of the buffer are needed.
-  auto out = variable::variableFactory().create(function.dtype(), buffer.dims(),
-                                                function.hasVariances());
+  // size, even if `x` is a slice and only subsections of the buffer are needed.
+  auto out = variable::variableFactory().create(
+      function.dtype(), buffer.dims(), units::one, function.hasVariances());
   transform_in_place(subspan_view(out, dim, indices),
                      subspan_view(buffer.coords()[hist_dim], dim, indices),
                      subspan_view(function.coords()[hist_dim], hist_dim),
@@ -264,6 +282,24 @@ void scale(const DataArrayView &data, const DataArrayConstView &histogram) {
   // multiplication taking care of mask propagation and coord checks, hence the
   // handling above.
   data *= map(histogram, data.data(), histogram.dims().inner());
+}
+
+Variable sum(const VariableConstView &data) {
+  auto type = variable::variableFactory().elem_dtype(data);
+  type = type == dtype<bool> ? dtype<int64_t> : type;
+  const auto unit = variable::variableFactory().elem_unit(data);
+  Variable summed;
+  if (variable::variableFactory().hasVariances(data))
+    summed = Variable(type, data.dims(), unit, Values{}, Variances{});
+  else
+    summed = Variable(type, data.dims(), unit, Values{});
+  variable::sum_impl(summed, data);
+  return summed;
+}
+
+DataArray sum(const DataArrayConstView &data) {
+  return {buckets::sum(data.data()), data.aligned_coords(), data.masks(),
+          data.unaligned_coords()};
 }
 
 } // namespace scipp::dataset::buckets

@@ -313,7 +313,7 @@ template <class T> static constexpr auto maybe_eval(T &&_) {
 
 /// Functor for implementing operations with event data, see also
 /// TransformEventsInPlace.
-struct TransformEvents {
+struct TransformEvents : public detail::EventsFlag {
   template <class Op, class... Ts>
   constexpr auto operator()(const Op &op, const Ts &... args) const {
     event_list<std::invoke_result_t<Op, core::detail::element_type_t<Ts>...>>
@@ -424,7 +424,13 @@ template <class Op> struct Transform {
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
         (handles.hasVariances() || ...);
-    auto out = variableFactory().create(dtype<Out>, dims, variances,
+    units::Unit unit;
+    // Workaround for OSX clang issue with broken overload resolution
+    if constexpr (std::is_base_of_v<EventsFlag, Op>)
+      unit = op.base_op()(variableFactory().elem_unit(*handles.m_var)...);
+    else
+      unit = op(variableFactory().elem_unit(*handles.m_var)...);
+    auto out = variableFactory().create(dtype<Out>, dims, unit, variances,
                                         *handles.m_var...);
     do_transform(op, variable_access<Out>(out), std::tuple<>(),
                  as_view{handles, dims}...);
@@ -509,6 +515,7 @@ struct augment {
 };
 
 template <class Op, class EventsOp> struct overloaded_events : Op, EventsOp {
+  const Op &base_op() const noexcept { return *this; }
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
     if constexpr ((transform_detail::is_events_v<std::decay_t<Ts>> || ...))
       return EventsOp::operator()(static_cast<const Op &>(*this),
@@ -876,26 +883,21 @@ namespace detail {
 template <class... Ts, class Op, class... Vars>
 Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   using namespace detail;
-  auto unit = op(vars.unit()...);
-  Variable out;
   try {
     if constexpr (std::is_base_of_v<
                       core::transform_flags::no_event_list_handling_t, Op> ||
                   (is_any_events<Ts>::value || ...) || sizeof...(Vars) > 2) {
-      out = visit_impl<Ts...>::apply(Transform{op}, vars...);
+      return visit_impl<Ts...>::apply(Transform{op}, vars...);
     } else {
-      out =
-          variable::visit(
-              augment::insert_events(
-                  std::tuple<visit_detail::maybe_duplicate<Ts, Vars...>...>{}))
-              .apply(Transform{overloaded_events{op, TransformEvents{}}},
-                     vars...);
+      return variable::visit(
+                 augment::insert_events(
+                     std::tuple<
+                         visit_detail::maybe_duplicate<Ts, Vars...>...>{}))
+          .apply(Transform{overloaded_events{op, TransformEvents{}}}, vars...);
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes ", vars...);
   }
-  out.setUnit(unit);
-  return out;
 }
 } // namespace detail
 

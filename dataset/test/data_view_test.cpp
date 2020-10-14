@@ -6,7 +6,6 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/unaligned.h"
 
 #include "dataset_test_common.h"
 #include "test_macros.h"
@@ -82,22 +81,8 @@ TYPED_TEST(DataArrayViewTest, dtype) {
   EXPECT_EQ(d_ref["b"].dtype(), dtype<int32_t>);
 }
 
-TYPED_TEST(DataArrayViewTest, dtype_realigned) {
-  Dataset d = testdata::make_dataset_realigned_x_to_y();
-  typename TestFixture::dataset_type &d_ref(d);
-  EXPECT_EQ(d_ref["a"].dtype(), dtype<double>);
-  EXPECT_EQ(d_ref["b"].dtype(), dtype<int32_t>);
-}
-
 TYPED_TEST(DataArrayViewTest, unit) {
   Dataset d = testdata::make_dataset_x();
-  typename TestFixture::dataset_type &d_ref(d);
-  EXPECT_EQ(d_ref["a"].unit(), units::kg);
-  EXPECT_EQ(d_ref["b"].unit(), units::s);
-}
-
-TYPED_TEST(DataArrayViewTest, unit_realigned) {
-  Dataset d = testdata::make_dataset_realigned_x_to_y();
   typename TestFixture::dataset_type &d_ref(d);
   EXPECT_EQ(d_ref["a"].unit(), units::kg);
   EXPECT_EQ(d_ref["b"].unit(), units::s);
@@ -112,21 +97,6 @@ TYPED_TEST(DataArrayViewTest, coords) {
   typename TestFixture::dataset_type &d_ref(d);
   ASSERT_NO_THROW(d_ref["a"].coords());
   ASSERT_EQ(d_ref["a"].coords(), d.coords());
-}
-
-TYPED_TEST(DataArrayViewTest, coords_realigned) {
-  Dataset d = testdata::make_dataset_realigned_x_to_y();
-  typename TestFixture::dataset_type &d_ref(d);
-
-  ASSERT_NO_THROW(d_ref["a"].coords());
-  ASSERT_EQ(d_ref["a"].coords(), d.coords());
-  ASSERT_EQ(d_ref["a"].coords().size(), 2);
-  ASSERT_TRUE(d_ref["a"].coords().contains(Dim::Y));
-  ASSERT_TRUE(d_ref["a"].coords().contains(Dim("scalar")));
-
-  const auto unaligned = d_ref["a"].unaligned();
-  ASSERT_NE(unaligned.coords()[Dim::Y], d.coords()[Dim::Y]);
-  ASSERT_EQ(unaligned.coords()[Dim("scalar")], d.coords()[Dim("scalar")]);
 }
 
 TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant) {
@@ -183,17 +153,12 @@ TYPED_TEST(DataArrayViewTest, coords_contains_only_relevant_2d) {
   ASSERT_FALSE(coords.contains(Dim::X));
 }
 
-TYPED_TEST(DataArrayViewTest, hasData_hasVariances) {
+TYPED_TEST(DataArrayViewTest, hasVariances) {
   Dataset d;
   typename TestFixture::dataset_type &d_ref(d);
-
   d.setData("a", makeVariable<double>(Values{double{}}));
   d.setData("b", makeVariable<double>(Values{1}, Variances{1}));
-
-  ASSERT_TRUE(d_ref["a"].hasData());
   ASSERT_FALSE(d_ref["a"].hasVariances());
-
-  ASSERT_TRUE(d_ref["b"].hasData());
   ASSERT_TRUE(d_ref["b"].hasVariances());
 }
 

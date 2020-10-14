@@ -95,10 +95,7 @@ def _data_array_to_dict(da):
         for name, item in getattr(da, key).items():
             out[key][str(name)] = _variable_to_dict(item)
     out['coords'] = out.pop('aligned_coords')
-    if da.unaligned is not None:
-        out["unaligned"] = _data_array_to_dict(da.unaligned)
-    else:
-        out["data"] = _variable_to_dict(da.data)
+    out["data"] = _variable_to_dict(da.data)
     out["name"] = da.name
     return out
 
@@ -125,8 +122,7 @@ def from_dict(dict_obj):
     :rtype: Variable, DataArray, or Dataset
     """
     keys_as_set = set(dict_obj.keys())
-    if ({"coords", "data"}.issubset(keys_as_set)
-            or {"coords", "unaligned"}.issubset(keys_as_set)):
+    if ({"coords", "data"}.issubset(keys_as_set)):
         # Case of a DataArray-like dict (most-likely)
         return _dict_to_data_array(dict_obj)
     elif (keys_as_set.issubset(
@@ -204,21 +200,14 @@ def _dict_to_data_array(d):
     """
     Convert a python dict to a scipp DataArray.
     """
-    if ("data" not in d) and ("unaligned" not in d):
+    if ("data" not in d):
         raise KeyError("To create a DataArray, the supplied dict must contain "
-                       "either 'data' or 'unaligned'. "
-                       "Got {}.".format(d.keys()))
+                       "'data'. Got {}.".format(d.keys()))
     out = {"coords": {}, "masks": {}, "unaligned_coords": {}}
     for key in out.keys():
         if key in d:
             for name, item in d[key].items():
                 out[key][name] = _dict_to_variable(item)
-    unaligned = None
-    if "unaligned" in d:
-        unaligned = _dict_to_data_array(d["unaligned"])
-    else:
-        out["data"] = _dict_to_variable(d["data"])
+    out["data"] = _dict_to_variable(d["data"])
     da = detail.move_to_data_array(**out)
-    if unaligned is not None:
-        da.unaligned = detail.move(unaligned)
     return da

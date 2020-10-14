@@ -4,7 +4,6 @@
 
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/reduction.h"
-#include "scipp/dataset/unaligned.h"
 
 using namespace scipp;
 using namespace scipp::dataset;

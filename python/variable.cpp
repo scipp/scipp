@@ -250,6 +250,9 @@ Mostly equivalent to Variable, see there for details.)");
   bind_binary_scalars(variable);
   bind_binary_scalars(variableView);
 
+  bind_unary(variable);
+  bind_unary(variableView);
+
   bind_boolean_unary(variable);
   bind_boolean_unary(variableView);
   bind_boolean_operators<Variable>(variable);

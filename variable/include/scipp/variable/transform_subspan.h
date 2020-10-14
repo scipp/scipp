@@ -45,11 +45,11 @@ template <class Types, class Op, class... Var>
       (std::is_base_of_v<
            core::transform_flags::expect_in_variance_if_out_variance_t, Op> &&
        (var.hasVariances() || ...));
-  Variable out = variableFactory().create(type, dims, variance);
+  Variable out =
+      variableFactory().create(type, dims, op(var.unit()...), variance);
 
   const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
 
-  out.setUnit(op(var.unit()...));
   in_place<false>::transform_data(Types{}, op, subspan_view(out, dim), var...);
   return out;
 }

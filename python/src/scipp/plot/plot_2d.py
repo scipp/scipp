@@ -336,15 +336,7 @@ class Slicer2d(Slicer):
                 if self.params["masks"][
                         self.name]["show"] and dim in self.mslice.dims:
                     self.mslice = self.mslice[val.dim, val.value]
-        # In the case of unaligned data, we may want to auto-scale the colorbar
-        # as we slice through dimensions. Colorbar limits are allowed to grow
-        # but not shrink.
-        if self.vslice.unaligned is not None:
-            self.vslice = sc.histogram(self.vslice)
-            self.vslice.variances = None
-            self.autoscale_cbar = True
-        else:
-            self.autoscale_cbar = False
+        self.autoscale_cbar = False
         self.vslice = detail.move_to_data_array(
             data=sc.Variable(dims=self.vslice.dims,
                              unit=sc.units.counts,

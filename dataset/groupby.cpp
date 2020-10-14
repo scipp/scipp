@@ -98,7 +98,7 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
   // solution would be to create proper output and broadcast, but this is also
   // bad solution. Removing support for scalar weights altogether might be the
   // way forward.
-  if (in.hasData() && !contains_events(in.data())) {
+  if (!contains_events(in.data())) {
     if (min(in.data(), reductionDim) != max(in.data(), reductionDim))
       throw except::EventDataError(
           "flatten with non-constant scalar weights not possible yet.");
@@ -108,18 +108,16 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
   for (const auto &slice : group) {
     auto mask = mask_ ? mask_.slice(slice) : no_mask;
     const auto &array = in.slice(slice);
-    if (in.hasData()) {
-      if (contains_events(array.data()))
-        flatten_impl(out.data(), array.data(), mask);
-      else if (first) {
-        // Note that masks can be ignored since no weights are concatenated
-        out.data().assign(array.data().slice({reductionDim, 0}));
-        first = false;
-      }
-      for (auto &&[dim, coord] : out.coords())
-        if (contains_events(coord))
-          flatten_impl(coord, array.coords()[dim], mask);
+    if (contains_events(array.data()))
+      flatten_impl(out.data(), array.data(), mask);
+    else if (first) {
+      // Note that masks can be ignored since no weights are concatenated
+      out.data().assign(array.data().slice({reductionDim, 0}));
+      first = false;
     }
+    for (auto &&[dim, coord] : out.coords())
+      if (contains_events(coord))
+        flatten_impl(coord, array.coords()[dim], mask);
   }
 };
 
@@ -127,19 +125,12 @@ static constexpr auto sum = [](const DataArrayView &out,
                                const auto &data_container,
                                const GroupByGrouping::group &group,
                                const Dim reductionDim, const Variable &mask) {
-  if (out.hasData()) {
-    for (const auto &slice : group) {
-      const auto data_slice = data_container.slice(slice);
-      if (mask)
-        sum_impl(out.data(), data_slice.data() * mask.slice(slice));
-      else
-        sum_impl(out.data(), data_slice.data());
-    }
-  } else {
-    const auto &unaligned_out = out.unaligned();
-    const auto &unaligned_in = data_container.unaligned();
-    // Flatten in all cases, even if not event data? Try to sum?
-    flatten(unaligned_out, unaligned_in, group, reductionDim, mask);
+  for (const auto &slice : group) {
+    const auto data_slice = data_container.slice(slice);
+    if (mask)
+      sum_impl(out.data(), data_slice.data() * mask.slice(slice));
+    else
+      sum_impl(out.data(), data_slice.data());
   }
 };
 

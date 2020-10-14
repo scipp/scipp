@@ -68,28 +68,11 @@ class TestMantidConversion(unittest.TestCase):
         target_tof = binned_mantid.coords['tof']
         d = mantidcompat.convert_EventWorkspace_to_data_array(
             eventWS, load_pulse_times=False)
-        d.realign({'tof': target_tof})
-        binned = sc.histogram(d)
+        binned = sc.histogram(d, target_tof)
 
         delta = sc.sum(binned_mantid - binned, 'spectrum')
         delta = sc.sum(delta, 'tof')
         self.assertLess(np.abs(delta.value), 1e-5)
-
-    def test_EventWorkspace_realign_events(self):
-        import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
-
-        realigned = mantidcompat.convert_EventWorkspace_to_data_array(
-            eventWS, realign_events=True, load_pulse_times=False)
-
-        d = mantidcompat.convert_EventWorkspace_to_data_array(
-            eventWS, realign_events=False, load_pulse_times=False)
-        d.realign({'tof': realigned.coords['tof']})
-
-        # Removing sample due to missing comparison operators
-        del d.unaligned_coords['sample']
-        del realigned.unaligned_coords['sample']
-        assert sc.is_equal(realigned, d)
 
     def test_comparison(self):
         a = mantidcompat.convert_EventWorkspace_to_data_array(
@@ -139,8 +122,7 @@ class TestMantidConversion(unittest.TestCase):
 
         da = mantidcompat.convert_EventWorkspace_to_data_array(
             eventWS, load_pulse_times=False)
-        da.realign({'tof': target_tof})
-        da = sc.histogram(da)
+        da = sc.histogram(da, target_tof)
         d = sc.Dataset(da)
         converted = sc.neutron.convert(d, 'tof', 'wavelength')
 

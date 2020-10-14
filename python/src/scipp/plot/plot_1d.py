@@ -8,7 +8,6 @@ from .render import render_plot
 from .slicer import Slicer
 from .tools import to_bin_centers
 from .._utils import name_with_unit
-from .._scipp.core import histogram as scipp_histogram
 
 # Other imports
 import numpy as np
@@ -77,7 +76,6 @@ class Slicer1d(Slicer):
         self.fig = None
         self.ax = ax
         self.mpl_axes = False
-        self.input_contains_unaligned_data = False
         self.current_xcenters = None
         if self.ax is None:
             self.fig, self.ax = plt.subplots(
@@ -94,11 +92,7 @@ class Slicer1d(Slicer):
         # Determine whether error bars should be plotted or not
         self.errorbars = {}
         for name, var in self.scipp_obj_dict.items():
-            if var.unaligned is not None:
-                self.errorbars[name] = var.unaligned.variances is not None
-                self.input_contains_unaligned_data = True
-            else:
-                self.errorbars[name] = var.variances is not None
+            self.errorbars[name] = var.variances is not None
         if errorbars is not None:
             if isinstance(errorbars, bool):
                 for name, var in self.scipp_obj_dict.items():
@@ -337,8 +331,6 @@ class Slicer1d(Slicer):
             with warnings.catch_warnings():
                 warnings.filterwarnings("ignore", category=UserWarning)
                 self.ax.set_xlim([xmin - deltax, xmax + deltax])
-                if self.input_contains_unaligned_data:
-                    self.ax.set_ylim(self.ylim)
 
         self.ax.set_xlabel(
             name_with_unit(
@@ -360,12 +352,6 @@ class Slicer1d(Slicer):
                 self.lab[dim].value = self.make_slider_label(
                     self.slider_label[self.name][dim]["coord"], val.value)
                 vslice = vslice[val.dim, val.value]
-        if vslice.unaligned is not None:
-            vslice = scipp_histogram(vslice)
-            self.ylim = self.get_ylim(var=vslice,
-                                      ymin=self.ylim[0],
-                                      ymax=self.ylim[1],
-                                      errorbars=self.errorbars[name])
         return vslice
 
     def slice_masks(self):
@@ -399,11 +385,6 @@ class Slicer1d(Slicer):
                 coll.set_segments(
                     self.change_segments_y(self.current_xcenters,
                                            vslice.values, vslice.variances))
-        if self.input_contains_unaligned_data and (not self.mpl_axes):
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=UserWarning)
-                self.ax.set_ylim(self.ylim)
-
         return
 
     def keep_remove_trace(self, owner):

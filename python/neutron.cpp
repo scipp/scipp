@@ -75,19 +75,6 @@ template <class T> void bind_beamline(py::module &m) {
     :rtype: Variable)");
 }
 
-namespace {
-auto realign_flag(const py::object &obj) {
-  if (obj.is_none())
-    return ConvertRealign::None;
-  const auto &r = obj.cast<std::string>();
-  if (r == "linear")
-    return ConvertRealign::Linear;
-  else
-    throw std::runtime_error(
-        "Allowed values for `realign` are: None, 'linear'");
-}
-} // namespace
-
 template <class T> void bind_convert(py::module &m) {
   using ConstView = const typename T::const_view_type &;
   const char *doc = R"(
@@ -99,31 +86,26 @@ template <class T> void bind_convert(py::module &m) {
     :param from: Dimension to convert from
     :param to: Dimension to convert into
     :param out: Optional output container
-    :param realign: Optionally realign realigned data to keep 1D coords, allowed values: None, 'linear'
     :return: New data array or dataset with converted dimension (dimension labels, coordinate values, and units)
     :rtype: DataArray or Dataset)";
   m.def(
       "convert",
-      [](ConstView data, const Dim from, const Dim to,
-         const py::object &realign_obj) {
-        return py::cast(convert(data, from, to, realign_flag(realign_obj)));
+      [](ConstView data, const Dim from, const Dim to) {
+        return py::cast(convert(data, from, to));
       },
       py::arg("data"), py::arg("from"), py::arg("to"),
-      py::arg("realign") = py::none(), py::call_guard<py::gil_scoped_release>(),
-      doc);
+      py::call_guard<py::gil_scoped_release>(), doc);
   m.def(
       "convert",
-      [](py::object &obj, const Dim from, const Dim to, T &out,
-         const py::object &realign_obj) {
+      [](py::object &obj, const Dim from, const Dim to, T &out) {
         auto &data = obj.cast<T &>();
         if (&data != &out)
           throw std::runtime_error("Currently only out=<input> is supported");
-        data = convert(std::move(data), from, to, realign_flag(realign_obj));
+        data = convert(std::move(data), from, to);
         return obj;
       },
       py::arg("data"), py::arg("from"), py::arg("to"), py::arg("out"),
-      py::arg("realign") = py::none(), py::call_guard<py::gil_scoped_release>(),
-      doc);
+      py::call_guard<py::gil_scoped_release>(), doc);
 }
 
 template <class T> void bind_convert_with_calibration(py::module &m) {

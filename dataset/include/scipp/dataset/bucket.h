@@ -10,9 +10,13 @@ namespace scipp::dataset::buckets {
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 concatenate(const VariableConstView &var0, const VariableConstView &var1);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+concatenate(const DataArrayConstView &var0, const DataArrayConstView &var1);
 
 SCIPP_DATASET_EXPORT void append(const VariableView &var0,
                                  const VariableConstView &var1);
+SCIPP_DATASET_EXPORT void append(const DataArrayView &a,
+                                 const DataArrayConstView &b);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 histogram(const VariableConstView &data, const VariableConstView &binEdges);
@@ -22,5 +26,9 @@ map(const DataArrayConstView &function, const VariableConstView &x,
     Dim hist_dim);
 
 void scale(const DataArrayView &data, const DataArrayConstView &histogram);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable sum(const VariableConstView &data);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+sum(const DataArrayConstView &data);
 
 } // namespace scipp::dataset::buckets
