@@ -7,10 +7,13 @@
 #include "scipp/common/overloaded.h"
 #include "scipp/core/bucket.h"
 #include "scipp/core/element/arg_list.h"
+#include "scipp/core/element/event_operations.h"
 #include "scipp/core/element/histogram.h"
 #include "scipp/core/except.h"
+#include "scipp/core/histogram.h"
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/histogram.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bucket_model.h"
 #include "scipp/variable/reduction.h"
@@ -49,6 +52,12 @@ constexpr auto copy_spans = overloaded{
         std::copy(src.begin(), src.end(), dst.begin());
       }
     }};
+
+namespace scale_detail {
+template <class Out, class Coord, class Weight, class Edge>
+using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
+                        span<const Edge>>;
+}
 
 void copy(const VariableConstView &src, const VariableView &dst, const Dim dim,
           const VariableConstView &srcIndices,
@@ -221,6 +230,40 @@ Variable histogram(const VariableConstView &data,
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
       subspan_view(buffer.coords()[hist_dim], dim, spans),
       subspan_view(buffer.data(), dim, spans), binEdges, element::histogram);
+}
+
+Variable map(const DataArrayConstView &function, const VariableConstView &x,
+             Dim hist_dim) {
+  if (hist_dim == Dim::Invalid)
+    hist_dim = edge_dimension(function);
+  const auto mask = irreducible_mask(function.masks(), hist_dim);
+  Variable masked;
+  if (mask)
+    masked = function.data() * ~mask;
+  const auto &[indices, dim, buffer] = x.constituents<bucket<DataArray>>();
+  // Note the current inefficiency here: Output buffer is created with full
+  // size, even of `x` is a slice and only subsections of the buffer are needed.
+  auto out = variable::variableFactory().create(function.dtype(), buffer.dims(),
+                                                function.hasVariances());
+  transform_in_place(subspan_view(out, dim, indices),
+                     subspan_view(buffer.coords()[hist_dim], dim, indices),
+                     subspan_view(function.coords()[hist_dim], hist_dim),
+                     subspan_view(mask ? masked : function.data(), hist_dim),
+                     core::element::event::map_in_place);
+  return Variable{std::make_unique<variable::DataModel<bucket<Variable>>>(
+      indices, dim, std::move(out))};
+}
+
+void scale(const DataArrayView &data, const DataArrayConstView &histogram) {
+  const auto dim = edge_dimension(histogram);
+  // Coords along dim are ignored since "binning" is dynamic for buckets.
+  expect::coordsAreSuperset(data, histogram.slice({dim, 0}));
+  // buckets::map applies masks along dim
+  union_or_in_place(data.masks(), histogram.slice({dim, 0}).masks());
+  // The result of buckets::map is a variable, i.e., we cannot rely on the
+  // multiplication taking care of mask propagation and coord checks, hence the
+  // handling above.
+  data *= map(histogram, data.data(), histogram.dims().inner());
 }
 
 } // namespace scipp::dataset::buckets

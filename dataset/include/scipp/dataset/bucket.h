@@ -17,4 +17,10 @@ SCIPP_DATASET_EXPORT void append(const VariableView &var0,
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 histogram(const VariableConstView &data, const VariableConstView &binEdges);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+map(const DataArrayConstView &function, const VariableConstView &x,
+    Dim hist_dim);
+
+void scale(const DataArrayView &data, const DataArrayConstView &histogram);
+
 } // namespace scipp::dataset::buckets
