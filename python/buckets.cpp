@@ -97,8 +97,6 @@ void init_buckets(py::module &m) {
         return dataset::buckets::append(a, b);
       },
       py::call_guard<py::gil_scoped_release>());
-  buckets.def("histogram", dataset::buckets::histogram,
-              py::call_guard<py::gil_scoped_release>());
   buckets.def("map", dataset::buckets::map,
               py::call_guard<py::gil_scoped_release>());
   buckets.def("scale", dataset::buckets::scale,
