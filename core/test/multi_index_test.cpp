@@ -16,7 +16,9 @@ protected:
   template <scipp::index N, class... Indices>
   void check_impl(MultiIndex<N> i, const std::vector<scipp::index> &indices0,
                   const Indices &... indices) const {
-    ASSERT_NE(i.begin(), i.end());
+    if (scipp::size(indices0) > 0) {
+      ASSERT_NE(i.begin(), i.end());
+    }
     const bool skip_set_index_check = i != i.begin();
     for (scipp::index n = 0; n < scipp::size(indices0); ++n) {
       EXPECT_EQ(i.get(), (std::array{indices0[n], indices[n]...}));
@@ -82,6 +84,11 @@ protected:
     MultiIndex<2> index(element_array_view{0, iterDims, dataDims0, params0},
                         element_array_view{0, iterDims, dataDims1, params1});
     check(index, expected0, expected1);
+    // Order of arguments should not matter, in particular this also tests that
+    // the dense argument may be the first argument.
+    MultiIndex<2> swapped(element_array_view{0, iterDims, dataDims1, params1},
+                          element_array_view{0, iterDims, dataDims0, params0});
+    check(swapped, expected1, expected0);
   }
 
   Dimensions x{{Dim::X}, {2}};
@@ -230,6 +237,22 @@ TEST_F(MultiIndexTest, 1d_array_of_1d_buckets_and_dense) {
   // dense part.
   check_with_buckets(buf, dim, {{4, 7}, {0, 4}}, Dimensions{}, Dim::Invalid, {},
                      x, x, x, {4, 5, 6, 0, 1, 2, 3}, {0, 0, 0, 1, 1, 1, 1});
+}
+
+TEST_F(MultiIndexTest, 1d_array_of_1d_buckets_and_dense_with_empty_buckets) {
+  const Dim dim = Dim::Row;
+  Dimensions buf{{dim}, {7}};
+  Dimensions x1{{Dim::X}, {1}};
+  check_with_buckets(buf, dim, {{0, 0}}, Dimensions{}, Dim::Invalid, {}, x1, x1,
+                     x1, {}, {});
+  check_with_buckets(buf, dim, {{1, 1}, {0, 0}}, Dimensions{}, Dim::Invalid, {},
+                     x, x, x, {}, {});
+  check_with_buckets(buf, dim, {{0, 0}, {0, 3}}, Dimensions{}, Dim::Invalid, {},
+                     x, x, x, {0, 1, 2}, {1, 1, 1});
+  check_with_buckets(buf, dim, {{0, 2}, {2, 2}, {3, 5}}, Dimensions{},
+                     Dim::Invalid, {}, y, y, y, {0, 1, 3, 4}, {0, 0, 2, 2});
+  check_with_buckets(buf, dim, {{0, 2}, {3, 5}, {5, 5}}, Dimensions{},
+                     Dim::Invalid, {}, y, y, y, {0, 1, 3, 4}, {0, 0, 1, 1});
 }
 
 TEST_F(MultiIndexTest, two_1d_arrays_of_1d_buckets) {
