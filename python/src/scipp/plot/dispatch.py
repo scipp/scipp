@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 # Scipp imports
-from .._scipp import core as sc
 from .._utils import histogram_events_data
 
 
