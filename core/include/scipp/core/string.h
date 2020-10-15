@@ -105,7 +105,7 @@ std::string array_to_string(const T &arr,
   return s;
 }
 
-/// Return the global dtype name registry instrance
+/// Return the global dtype name registry instance
 SCIPP_CORE_EXPORT std::map<DType, std::string> &dtypeNameRegistry();
 
 } // namespace scipp::core
