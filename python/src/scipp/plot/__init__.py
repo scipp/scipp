@@ -7,7 +7,6 @@ from .plot import plot as _plot
 
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
-# try:
 is_doc_build = False
 try:
     from IPython import get_ipython
@@ -28,7 +27,6 @@ try:
 
         # If we are in an IPython kernel, select widget backend
         if "IPKernelApp" in ipy.config and not is_doc_build:
-            # import matplotlib as mpl
             mpl.use('module://ipympl.backend_nbagg')
             # Hide the figure header:
             # see https://github.com/matplotlib/ipympl/issues/229

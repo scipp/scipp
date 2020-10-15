@@ -98,8 +98,7 @@ def make_fake_coord(dim, size, unit=None):
 def vars_to_err(v):
     with np.errstate(invalid="ignore"):
         v = np.sqrt(v)
-    non_finites = np.where(np.logical_not(np.isfinite(v)))
-    v[non_finites] = 0.0
+    np.nan_to_num(v, copy=False)
     return v
 
 
