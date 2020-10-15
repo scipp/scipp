@@ -13,5 +13,10 @@ SCIPP_DATASET_EXPORT DataArray sortby(const DataArrayConstView &data,
 SCIPP_DATASET_EXPORT Variable bucketby(const DataArrayConstView &data,
                                        const Dim dim,
                                        const VariableConstView &bins);
+SCIPP_DATASET_EXPORT Variable bucketby(const DataArrayConstView &data,
+                                       const Dim dim0,
+                                       const VariableConstView &bins0,
+                                       const Dim dim1,
+                                       const VariableConstView &bins1);
 
 } // namespace scipp::dataset

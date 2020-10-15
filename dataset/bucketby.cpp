@@ -49,6 +49,16 @@ template <class T> auto find_sorting_permutation(const T &key) {
   return p;
 }
 
+template <class A, class B>
+auto find_sorting_permutation(const A &a, const B &b) {
+  element_array<scipp::index> p(a.size(), core::default_init_elements);
+  std::iota(p.begin(), p.end(), 0);
+  core::parallel::parallel_sort(p.begin(), p.end(), [&](auto i, auto j) {
+    return a[i] != a[j] ? a[i] < a[j] : b[i] < b[j];
+  });
+  return p;
+}
+
 Variable permute(const VariableConstView &var, const Dim dim,
                  const VariableConstView &permutation) {
   return variable::transform(subspan_view(var, dim), permutation,
@@ -67,13 +77,31 @@ template <class T> struct BoundIndices {
   }
 };
 
-template <class T> struct MakePermutation {
+template <class T> struct MakePermutation1 {
   static auto apply(const VariableConstView &key) {
     expectValidGroupbyKey(key);
     // Using span over data since random access via ElementArrayView is slow.
-    const auto range = scipp::span(key.values<T>().data(), key.dims().volume());
-    return makeVariable<scipp::index>(key.dims(),
-                                      Values(find_sorting_permutation(range)));
+    return makeVariable<scipp::index>(
+        key.dims(), Values(find_sorting_permutation(scipp::span(
+                        key.values<T>().data(), key.dims().volume()))));
+  }
+};
+
+template <class A> struct MakePermutation2 {
+  template <class B> struct Inner {
+    static auto apply(const VariableConstView &a, const VariableConstView &b) {
+      expectValidGroupbyKey(a);
+      expectValidGroupbyKey(b);
+      // Using span over data since random access via ElementArrayView is slow.
+      return makeVariable<scipp::index>(
+          a.dims(), Values(find_sorting_permutation(
+                        scipp::span(a.values<A>().data(), a.dims().volume()),
+                        scipp::span(b.values<B>().data(), b.dims().volume()))));
+    }
+  };
+  static auto apply(const VariableConstView &a, const VariableConstView &b) {
+    return core::CallDType<double, float, int64_t, int32_t, bool,
+                           std::string>::apply<Inner>(b.dtype(), a, b);
   }
 };
 
@@ -86,38 +114,112 @@ auto permute(const DataArrayConstView &data, const Dim dim,
 }
 } // namespace
 
-
 auto edge_indices(const VariableConstView &x, const VariableConstView &edges) {
-  return core::CallDType<double, float, int64_t, int32_t, bool,
-                         std::string>::apply<BoundIndices>(x.dtype(), x, edges);
+  auto indices =
+      core::CallDType<double, float, int64_t, int32_t, bool,
+                      std::string>::apply<BoundIndices>(x.dtype(), x, edges);
+  const auto &dims = indices.dims();
+  const auto dim = dims.inner();
+  const auto nbin = dims[dim] - 1;
+  return zip(indices.slice({dim, 0, nbin}), indices.slice({dim, 1, nbin + 1}));
 }
 
 template <class T>
-auto call_bucketby(const T &array, const VariableConstView &key) {
+auto edge_indices(const VariableConstView &a, const VariableConstView &edges_a,
+                  const T &b, const T &edges_b) {
+  const auto outer_indices = edge_indices(a, edges_a);
+  const auto outer_indices_ =
+      outer_indices.values<std::pair<scipp::index, scipp::index>>();
+  const auto size_b = scipp::size(edges_b);
+  element_array<scipp::index> indices(outer_indices_.size() * size_b,
+                                      core::default_init_elements);
+  auto it = indices.begin();
+  for (const auto &[begin, end] : outer_indices_) {
+    auto inner_indices = edge_indices(b.subspan(begin, end - begin), edges_b);
+    std::copy(inner_indices.begin(), inner_indices.end(), it);
+    it += size_b;
+  }
+  return indices;
+}
+
+template <class T> struct BoundIndices2 {
+  static auto apply(const VariableConstView &a,
+                    const VariableConstView &edges_a,
+                    const VariableConstView &b,
+                    const VariableConstView &edges_b) {
+    // Using span over data since random access via ElementArrayView is slow.
+    const auto b_ = scipp::span(b.values<T>().data(), b.dims().volume());
+    const auto edges_b_ =
+        scipp::span(edges_b.values<T>().data(), edges_b.dims().volume());
+    auto dims = merge(edges_a.dims(), edges_b.dims());
+    const auto outer_dim = edges_a.dims().inner();
+    dims.resize(outer_dim, dims[outer_dim] - 1);
+    return makeVariable<scipp::index>(
+        dims, Values(edge_indices(a, edges_a, b_, edges_b_)));
+  }
+};
+
+auto edge_indices(const VariableConstView &a, const VariableConstView &edges_a,
+                  const VariableConstView &b,
+                  const VariableConstView &edges_b) {
+  auto indices =
+      core::CallDType<double, float, int64_t, int32_t, bool,
+                      std::string>::apply<BoundIndices2>(b.dtype(), a, edges_a,
+                                                         b, edges_b);
+  const auto &dims = indices.dims();
+  const auto dim = dims.inner();
+  const auto nbin = dims[dim] - 1;
+  return zip(indices.slice({dim, 0, nbin}), indices.slice({dim, 1, nbin + 1}));
+}
+
+template <class T>
+auto call_sortby(const T &array, const VariableConstView &key) {
   return permute(
       array, key.dims().inner(),
       core::CallDType<double, float, int64_t, int32_t, bool,
-                      std::string>::apply<MakePermutation>(key.dtype(), key));
+                      std::string>::apply<MakePermutation1>(key.dtype(), key));
 }
 
+template <class T>
+auto call_sortby(const T &array, const VariableConstView &a,
+                 const VariableConstView &b) {
+  return permute(
+      array, a.dims().inner(),
+      core::CallDType<double, float, int64_t, int32_t, bool,
+                      std::string>::apply<MakePermutation2>(a.dtype(), a, b));
+}
+
+template <class... T>
+DataArray sortby_impl(const DataArrayConstView &array, const T &... dims) {
+  return call_sortby(array, array.coords()[dims]...);
+}
 
 DataArray sortby(const DataArrayConstView &array, const Dim dim) {
-  const auto &key = array.coords()[dim];
-  return call_bucketby(array, key);
+  return sortby_impl(array, dim);
+}
+
+DataArray sortby(const DataArrayConstView &array, const Dim dim0,
+                 const Dim dim1) {
+  return sortby_impl(array, dim0, dim1);
 }
 
 Variable bucketby(const DataArrayConstView &array, const Dim dim,
                   const VariableConstView &bins) {
   auto sorted = sortby(array, dim);
   const auto &key = sorted.coords()[dim];
-  auto indices = edge_indices(key, bins);
-  const auto &dims = bins.dims();
-  const auto bin_dim = dims.inner();
-  const auto nbin = dims[bin_dim] - 1;
   // Note that data outside bin bounds is *not* dropped. Should it?
-  return buckets::from_constituents(zip(indices.slice({bin_dim, 0, nbin}),
-                                        indices.slice({bin_dim, 1, nbin + 1})),
-                                    key.dims().inner(), std::move(sorted));
+  return buckets::from_constituents(edge_indices(key, bins), key.dims().inner(),
+                                    std::move(sorted));
+}
+
+Variable bucketby(const DataArrayConstView &array, const Dim dim0,
+                  const VariableConstView &bins0, const Dim dim1,
+                  const VariableConstView &bins1) {
+  auto sorted = sortby(array, dim0, dim1);
+  const auto &key0 = sorted.coords()[dim0];
+  const auto &key1 = sorted.coords()[dim1];
+  return buckets::from_constituents(edge_indices(key0, bins0, key1, bins1),
+                                    key0.dims().inner(), std::move(sorted));
 }
 
 } // namespace scipp::dataset
