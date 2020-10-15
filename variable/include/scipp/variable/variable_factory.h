@@ -25,6 +25,8 @@ public:
          const std::vector<VariableConstView> &parents) const = 0;
   virtual DType elem_dtype(const VariableConstView &var) const = 0;
   virtual units::Unit elem_unit(const VariableConstView &var) const = 0;
+  virtual void set_elem_unit(const VariableView &var,
+                             const units::Unit &u) const = 0;
   virtual bool hasVariances(const VariableConstView &var) const = 0;
   virtual VariableConstView data(const VariableConstView &) const {
     throw unreachable();
@@ -56,6 +58,10 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   }
   units::Unit elem_unit(const VariableConstView &var) const override {
     return var.unit();
+  }
+  void set_elem_unit(const VariableView &var,
+                     const units::Unit &u) const override {
+    var.setUnit(u);
   }
   bool hasVariances(const VariableConstView &var) const override {
     return var.hasVariances();
@@ -96,6 +102,7 @@ public:
   }
   DType elem_dtype(const VariableConstView &var) const;
   units::Unit elem_unit(const VariableConstView &var) const;
+  void set_elem_unit(const VariableView &var, const units::Unit &u) const;
   bool hasVariances(const VariableConstView &var) const;
   template <class T, class Var> auto values(Var &&var) const {
     if (!is_buckets(var))

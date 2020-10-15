@@ -790,8 +790,8 @@ template <bool dry_run> struct in_place {
   static void transform(Op op, Var &&var, const Other &... other) {
     using namespace detail;
     (scipp::expect::contains(var.dims(), other.dims()), ...);
-    auto unit = var.unit();
-    op(unit, other.unit()...);
+    auto unit = variableFactory().elem_unit(var);
+    op(unit, variableFactory().elem_unit(other)...);
     // Stop early in bad cases of changing units (if `var` is a slice):
     var.expectCanSetUnit(unit);
     // Wrapped implementation to convert multiple tuples into a parameter pack.
@@ -799,7 +799,7 @@ template <bool dry_run> struct in_place {
                    other...);
     if constexpr (dry_run)
       return;
-    var.setUnit(unit);
+    variableFactory().set_elem_unit(var, unit);
   }
 };
 

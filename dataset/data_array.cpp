@@ -45,12 +45,16 @@ const VariableView &DataArrayView::data() const { return m_view; }
 
 DataArrayConstView DataArray::get() const {
   requireValid(*this);
-  return *m_holder.begin();
+  auto view = *m_holder.begin();
+  view.m_isItem = false;
+  return view;
 }
 
 DataArrayView DataArray::get() {
   requireValid(*this);
-  return *m_holder.begin();
+  auto view = *m_holder.begin();
+  view.m_isItem = false;
+  return view;
 }
 
 /// Return true if the dataset proxies have identical content.
