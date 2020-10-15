@@ -97,4 +97,4 @@ def test_neutron_instrument_view_with_cmap_args():
                                vmin=0.001,
                                vmax=5.0,
                                cmap="magma",
-                               log=True)
+                               norm="log")

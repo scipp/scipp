@@ -8,14 +8,6 @@ import scipp as sc
 from plot_helper import make_dense_dataset
 from scipp.plot import plot
 
-# Prevent figure from being displayed when running the tests
-import matplotlib.pyplot as plt
-plt.ioff()
-
-# TODO: For now we are just checking that the plot does not throw any errors.
-# In the future it would be nice to check the output by either comparing
-# checksums or by using tools like squish.
-
 
 def test_plot_projection_3d():
     d = make_dense_dataset(ndim=3)

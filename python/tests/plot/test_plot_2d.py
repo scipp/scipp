@@ -8,10 +8,6 @@ import scipp as sc
 from plot_helper import make_dense_dataset, make_events_dataset
 from scipp.plot import plot
 
-# Prevent figure from being displayed when running the tests
-import matplotlib.pyplot as plt
-plt.ioff()
-
 
 def test_plot_2d_image():
     d = make_dense_dataset(ndim=2)
