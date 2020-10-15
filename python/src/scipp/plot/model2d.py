@@ -146,6 +146,8 @@ class PlotModel2d(PlotModel):
         return new_values
 
     def update_viewport(self, xylims, mask_info):
+        if self.vslice is None:
+            return None
 
         for xy, dim in self.button_dims.items():
             # Create coordinate axes for resampled image array
