@@ -94,7 +94,9 @@ class SciPlot:
             # They will be replaced by fake coordinates in the model.
             for dim in array_dims:
                 if dim not in self.coord_shapes[name]:
-                    self.coord_shapes[name][dim] = [self.dim_to_shape[name][dim]]
+                    self.coord_shapes[name][dim] = [
+                        self.dim_to_shape[name][dim]
+                    ]
 
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None

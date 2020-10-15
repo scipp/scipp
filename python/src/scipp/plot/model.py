@@ -94,7 +94,7 @@ class PlotModel:
                 coord = make_fake_coord(dim,
                                         dim_to_shape[dim] + 1,
                                         unit=data_array.coords[dim].unit)
-                form = lambda val, pos: "(" + ",".join([
+                form = lambda val, pos: "(" + ",".join([  # noqa: E731
                     value_to_string(item, precision=2)
                     for item in data_array.coords[dim].values[int(val)]
                 ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim]
@@ -109,9 +109,9 @@ class PlotModel:
                 coord = make_fake_coord(dim,
                                         dim_to_shape[dim] + 1,
                                         unit=data_array.coords[dim].unit)
-                form = lambda val, pos: data_array.coords[dim].values[int(
-                    val)] if (int(val) >= 0 and int(val) < dim_to_shape[dim]
-                              ) else ""
+                form = lambda val, pos: data_array.coords[  # noqa: E731
+                    dim].values[int(val)] if (int(val) >= 0 and int(val) <
+                                              dim_to_shape[dim]) else ""
                 formatter.update({
                     "linear": form,
                     "log": form,
@@ -132,8 +132,9 @@ class PlotModel:
                     coord_values = coord.values
                     if data_array.coords[dim].shape[-1] == dim_to_shape[dim]:
                         coord_values = to_bin_centers(coord, dim).values
-                form = lambda val, pos: value_to_string(data_array.coords[
-                    dim].values[np.abs(coord_values - val).argmin()])
+                form = lambda val, pos: value_to_string(  # noqa: E731
+                    data_array.coords[dim].values[np.abs(coord_values - val).
+                                                  argmin()])
                 formatter.update({"linear": form, "log": form})
 
             else:

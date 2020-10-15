@@ -4,7 +4,6 @@
 
 from .controller import PlotController
 from .._utils import name_with_unit
-from .._scipp import core as sc
 import numpy as np
 
 
@@ -20,13 +19,10 @@ class PlotController3d(PlotController):
         # never change
         if self.positions is not None:
             extents = self.model.get_positions_extents(pixel_size)
-            # coord = scipp_obj_dict[self.name].coords[self.positions]
             for xyz, ex in extents.items():
-                # x = getattr(sc.geometry, xyz)(coord)
                 self.pos_axparams[xyz] = {
                     "lims": ex["lims"],
-                    "label":
-                    name_with_unit(1.0 * ex["unit"], name=xyz.upper())
+                    "label": name_with_unit(1.0 * ex["unit"], name=xyz.upper())
                 }
 
     def initialise_model(self):

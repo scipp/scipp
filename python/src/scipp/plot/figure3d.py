@@ -18,22 +18,21 @@ import io
 
 
 class PlotFigure3d:
-    def __init__(
-            self,
-            cmap=None,
-            norm=None,
-            title=None,
-            unit=None,
-            log=None,
-            vmin=None,
-            vmax=None,
-            nan_color=None,
-            mask_cmap=None,
-            masks=None,
-            pixel_size=None,
-            tick_size=None,
-            background=None,
-            show_outline=True):
+    def __init__(self,
+                 cmap=None,
+                 norm=None,
+                 title=None,
+                 unit=None,
+                 log=None,
+                 vmin=None,
+                 vmax=None,
+                 nan_color=None,
+                 mask_cmap=None,
+                 masks=None,
+                 pixel_size=None,
+                 tick_size=None,
+                 background=None,
+                 show_outline=True):
 
         # Prepare colormaps
         self.cmap = copy(cm.get_cmap(cmap))

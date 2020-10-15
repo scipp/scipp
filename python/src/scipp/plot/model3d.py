@@ -169,6 +169,7 @@ class PlotModel3d(PlotModel):
                     sc.min(x).value - 0.5 * pixel_size,
                     sc.max(x).value + 0.5 * pixel_size
                 ],
-                "unit": self.pos_coord.unit
+                "unit":
+                self.pos_coord.unit
             }
         return extents

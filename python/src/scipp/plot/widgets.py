@@ -38,7 +38,6 @@ class PlotWidgets:
         self.all_masks_button = None
 
         # Now begin loop to construct sliders
-        # button_values = [None] * (ndim - len(button_options)) + button_options
 
         for ax, dim in axes.items():
 
@@ -50,7 +49,6 @@ class PlotWidgets:
             disabled = False
             if positions is not None:
                 disabled = dim == positions
-            # elif i >= ndim - len(button_options):
             elif string_ax:
                 disabled = True
 
@@ -102,12 +100,10 @@ class PlotWidgets:
                 options=button_options,
                 description='',
                 value=ax if string_ax else None,
-                # value=button_values[i],
                 disabled=False,
                 button_style='',
                 style={"button_width": "50px"})
 
-            # if button_values[i] is not None:
             if string_ax:
                 self.button_axis_to_dim[ax] = dim
 
