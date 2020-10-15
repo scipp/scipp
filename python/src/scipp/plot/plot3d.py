@@ -61,7 +61,8 @@ class SciPlot3d(SciPlot):
                                    name=self.name,
                                    dim_to_shape=self.dim_to_shape,
                                    masks=self.masks,
-                                   button_options=['X', 'Y', 'Z'])
+                                   positions=positions,
+                                   button_options=['x', 'y', 'z'])
 
         # The model which takes care of all heavy calculations
         self.model = PlotModel3d(scipp_obj_dict=scipp_obj_dict,
@@ -97,6 +98,7 @@ class SciPlot3d(SciPlot):
             vmax=self.params["values"][self.name]["vmax"],
             pixel_size=pixel_size,
             scale=scale,
+            positions=positions,
             widgets=self.widgets,
             model=self.model,
             view=self.view,

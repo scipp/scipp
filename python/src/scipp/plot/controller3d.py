@@ -19,16 +19,14 @@ class PlotController3d(PlotController):
         # If positions are specified, then the x, y, z points positions can
         # never change
         if self.positions is not None:
-            coord = scipp_obj_dict[self.name].coords[self.positions]
-            for xyz in "xyz":
-                x = getattr(sc.geometry, xyz)(coord)
+            extents = self.model.get_positions_extents(pixel_size)
+            # coord = scipp_obj_dict[self.name].coords[self.positions]
+            for xyz, ex in extents.items():
+                # x = getattr(sc.geometry, xyz)(coord)
                 self.pos_axparams[xyz] = {
-                    "lims": [
-                        sc.min(x).value - 0.5 * pixel_size,
-                        sc.max(x).value + 0.5 * pixel_size
-                    ],
+                    "lims": ex["lims"],
                     "label":
-                    name_with_unit(coord, name=xyz.upper())
+                    name_with_unit(1.0 * ex["unit"], name=xyz.upper())
                 }
 
     def initialise_model(self):

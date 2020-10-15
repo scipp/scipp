@@ -30,12 +30,22 @@ def test_plot_sliceviewer_2d_with_two_sliders():
 
 def test_plot_sliceviewer_2d_with_axes():
     d = make_dense_dataset(ndim=3)
-    plot(d, axes=['x', 'tof', 'y'])
+    plot(d, axes={'y': 'tof'})
+
+
+def test_plot_sliceviewer_2d_with_axes_redundant():
+    d = make_dense_dataset(ndim=3)
+    plot(d, axes={'y': 'tof', 'x': 'x'})
+
+
+def test_plot_sliceviewer_2d_with_two_axes():
+    d = make_dense_dataset(ndim=3)
+    plot(d, axes={'x': 'y', 'y': 'tof'})
 
 
 def test_plot_sliceviewer_2d_with_labels():
     d = make_dense_dataset(ndim=3, labels=True)
-    plot(d, axes=['x', 'y', "somelabels"])
+    plot(d, axes={'x': "somelabels"})
 
 
 def test_plot_sliceviewer_2d_with_binedges():
@@ -103,6 +113,9 @@ def test_plot_4d_with_masks():
 
 
 def test_plot_3d_data_with_ragged_bins():
+    """
+    This test has caught MANY bugs and should never be disabled.
+    """
     N = 10
     M = 8
     L = 5

@@ -9,22 +9,22 @@ import numpy as np
 
 
 class PlotModel3d(PlotModel):
-    def __init__(self, *args, positions=None, **kwargs):
+    def __init__(self, *args, scipp_obj_dict=None, positions=None, **kwargs):
 
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, scipp_obj_dict=scipp_obj_dict, **kwargs)
 
         self.button_dims = {}
         self.positions = positions
         self.pos_array = None
+        self.pos_coord = None
         self.pos_unit = None
         self.cut_options = None
 
         # If positions are specified, then the x, y, z points positions can
         # never change
         if self.positions is not None:
-            self.pos_array = np.array(
-                scipp_obj_dict[self.name].coords[self.positions].values,
-                dtype=np.float32)
+            self.pos_coord = scipp_obj_dict[self.name].coords[self.positions]
+            self.pos_array = np.array(self.pos_coord.values, dtype=np.float32)
 
     def initialise(self, cut_options):
         self.cut_options = cut_options
@@ -158,3 +158,17 @@ class PlotModel3d(PlotModel):
         else:
             raise RuntimeError(
                 "Unknown cut surface type {}".format(button_value))
+
+    def get_positions_extents(self, pixel_size):
+        # coord = scipp_obj_dict[self.name].coords[self.positions]
+        extents = {}
+        for xyz in "xyz":
+            x = getattr(sc.geometry, xyz)(self.pos_coord)
+            extents[xyz] = {
+                "lims": [
+                    sc.min(x).value - 0.5 * pixel_size,
+                    sc.max(x).value + 0.5 * pixel_size
+                ],
+                "unit": self.pos_coord.unit
+            }
+        return extents

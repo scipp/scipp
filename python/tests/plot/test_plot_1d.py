@@ -34,14 +34,14 @@ def test_plot_1d_bin_edges():
 
 def test_plot_1d_with_labels():
     d = make_dense_dataset(ndim=1, labels=True)
-    plot(d, axes=["somelabels"])
+    plot(d, axes={"x": "somelabels"})
 
 
 def test_plot_1d_log_axes():
     d = make_dense_dataset(ndim=1)
-    plot(d, logx=True)
-    plot(d, logy=True)
-    plot(d, logxy=True)
+    plot(d, scale={'tof': 'log'})
+    plot(d, norm='log')
+    plot(d, norm='log', scale={'tof': 'log'})
 
 
 def test_plot_1d_bin_edges_with_variances():
@@ -74,24 +74,6 @@ def test_plot_1d_two_entries_hide_variances():
     # When variances are not present, the plot does not fail, is silently does
     # not show variances
     plot(d, errorbars={"Sample": False, "Background": True})
-
-
-def test_plot_1d_three_entries_with_labels():
-    N = 50
-    d = make_dense_dataset(ndim=1, labels=True)
-    d["Background"] = sc.Variable(['tof'],
-                                  values=2.0 * np.random.rand(N),
-                                  unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(['x'],
-                                values=np.arange(N).astype(np.float64),
-                                unit=sc.units.m)
-    d["Sample2"] = sc.Variable(['x'],
-                               values=10.0 * np.random.rand(N),
-                               unit=sc.units.counts)
-    d.coords["Xlabels"] = sc.Variable(['x'],
-                                      values=np.linspace(151., 155., N),
-                                      unit=sc.units.s)
-    plot(d, axes={'x': "Xlabels", 'tof': "somelabels"})
 
 
 def test_plot_1d_with_masks():

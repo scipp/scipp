@@ -90,6 +90,11 @@ class SciPlot:
                 dim: array.coords[dim].shape
                 for dim in array.coords
             }
+            # Add shapes for dims that have no coord in the original data.
+            # They will be replaced by fake coordinates in the model.
+            for dim in array_dims:
+                if dim not in self.coord_shapes[name]:
+                    self.coord_shapes[name][dim] = [self.dim_to_shape[name][dim]]
 
             # Determine whether error bars should be plotted or not
             has_variances = array.variances is not None
@@ -142,25 +147,32 @@ class SciPlot:
         if axes is not None:
             # Axes can be incomplete
             for key, ax in axes.items():
-                if self.axes[key] != ax:
-                    dim_list = list(self.axes.values())
-                    key_list = list(self.axes.keys())
-                    if ax in dim_list:
-                        ind = dim_list.index(ax)
-                    else:
-                        # Non-dimension coordinate
-                        underlying_dim = array.coords[ax].dims[-1]
-                        dim = sc.Dim(ax)
-                        self.dim_label_map[underlying_dim] = dim
-                        self.dim_label_map[dim] = underlying_dim
-                        ind = dim_list.index(underlying_dim)
-                    self.axes[key_list[ind]] = self.axes[key]
-                    self.axes[key] = dim
+                dim = sc.Dim(ax)
+                dim_list = list(self.axes.values())
+                key_list = list(self.axes.keys())
+                if ax in dim_list:
+                    ind = dim_list.index(ax)
+                else:
+                    # Non-dimension coordinate
+                    underlying_dim = array.coords[ax].dims[-1]
+                    self.dim_label_map[underlying_dim] = dim
+                    self.dim_label_map[dim] = underlying_dim
+                    ind = dim_list.index(underlying_dim)
+                self.axes[key_list[ind]] = self.axes[key]
+                self.axes[key] = dim
 
         # Replace positions in axes if positions set
         if positions is not None:
-            self.axes[self.axes.index(
-                array.coords[positions].dims[0])] = sc.Dim(positions)
+            if positions not in self.axes:
+                dim = sc.Dim(positions)
+                underlying_dim = array.coords[positions].dims[-1]
+                self.dim_label_map[underlying_dim] = dim
+                self.dim_label_map[dim] = underlying_dim
+                dim_list = list(self.axes.values())
+                key_list = list(self.axes.keys())
+                ind = dim_list.index(underlying_dim)
+                self.axes[key_list[ind]] = self.axes[key]
+                self.axes[key] = dim
 
         # Protect against duplicate entries in axes
         if len(self.axes) != len(set(self.axes)):

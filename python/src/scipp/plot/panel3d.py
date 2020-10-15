@@ -11,7 +11,6 @@ class PlotPanel3d(PlotPanel):
     def __init__(self, pixel_size=None):
         super().__init__()
 
-        # self.controller = controller
         self.pixel_size = pixel_size
         self.current_cut_surface_value = None
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
@@ -31,12 +30,6 @@ class PlotPanel3d(PlotPanel):
         }
 
         self._create_cut_surface_controls()
-
-    # def _ipython_display_(self):
-    #     return self._to_widget()._ipython_display_()
-
-    # def _to_widget(self):
-    #     return self.container
 
     def _create_cut_surface_controls(self):
 
@@ -104,7 +97,7 @@ class PlotPanel3d(PlotPanel):
         self.cut_surface_thickness = ipw.BoundedFloatText(
             value=self.pixel_size * 1.1,
             min=0,
-            layout={"width": "150px"},
+            layout={"width": "200px"},
             disabled=True,
             description="Thickness:",
             style={'description_width': 'initial'})
@@ -221,6 +214,7 @@ class PlotPanel3d(PlotPanel):
             self.cut_slider.value = 0.5 * self.cut_slider.max
         # Value iso-surface
         elif self.cut_surface_buttons.value == self.cut_options["Value"]:
+            self.cut_surface_thickness.max = self.vmax - self.vmin
             self.cut_slider.min = self.vmin
             self.cut_slider.max = self.vmax
             self.cut_slider.value = 0.5 * (self.vmin + self.vmax)

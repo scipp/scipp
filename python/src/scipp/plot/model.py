@@ -129,8 +129,11 @@ class PlotModel:
                                         dtype=sc.dtype.float64)
                 else:
                     coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+                    coord_values = coord.values
+                    if data_array.coords[dim].shape[-1] == dim_to_shape[dim]:
+                        coord_values = to_bin_centers(coord, dim).values
                 form = lambda val, pos: value_to_string(data_array.coords[
-                    dim].values[np.abs(coord.values - val).argmin()])
+                    dim].values[np.abs(coord_values - val).argmin()])
                 formatter.update({"linear": form, "log": form})
 
             else:

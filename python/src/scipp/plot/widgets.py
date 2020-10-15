@@ -38,9 +38,11 @@ class PlotWidgets:
         self.all_masks_button = None
 
         # Now begin loop to construct sliders
-        button_values = [None] * (ndim - len(button_options)) + button_options
+        # button_values = [None] * (ndim - len(button_options)) + button_options
 
-        for i, dim in enumerate(axes.values()):
+        for ax, dim in axes.items():
+
+            string_ax = isinstance(ax, str)
 
             # Determine if slider should be disabled or not:
             # In the case of 3d projection, disable sliders that are for
@@ -48,7 +50,8 @@ class PlotWidgets:
             disabled = False
             if positions is not None:
                 disabled = dim == positions
-            elif i >= ndim - len(button_options):
+            # elif i >= ndim - len(button_options):
+            elif string_ax:
                 disabled = True
 
             self.dim_labels[dim] = ipw.Label(layout={"width": "100px"})
@@ -98,13 +101,15 @@ class PlotWidgets:
             self.buttons[dim] = ipw.ToggleButtons(
                 options=button_options,
                 description='',
-                value=button_values[i],
+                value=ax if string_ax else None,
+                # value=button_values[i],
                 disabled=False,
                 button_style='',
                 style={"button_width": "50px"})
 
-            if button_values[i] is not None:
-                self.button_axis_to_dim[button_values[i].lower()] = dim
+            # if button_values[i] is not None:
+            if string_ax:
+                self.button_axis_to_dim[ax] = dim
 
             setattr(self.buttons[dim], "dim", dim)
             setattr(self.buttons[dim], "old_value", self.buttons[dim].value)
@@ -299,7 +304,7 @@ class PlotWidgets:
         buttons_and_dims = {}
         for dim, button in self.buttons.items():
             if self.slider[dim].disabled:
-                buttons_and_dims[dim] = button.value.lower()
+                buttons_and_dims[dim] = button.value
         return buttons_and_dims
 
     def get_masks_info(self):

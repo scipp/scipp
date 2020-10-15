@@ -58,7 +58,7 @@ class SciPlot2d(SciPlot):
                                    name=self.name,
                                    dim_to_shape=self.dim_to_shape,
                                    masks=self.masks,
-                                   button_options=['X', 'Y'])
+                                   button_options=['x', 'y'])
 
         # The model which takes care of all heavy calculations
         self.model = PlotModel2d(scipp_obj_dict=scipp_obj_dict,

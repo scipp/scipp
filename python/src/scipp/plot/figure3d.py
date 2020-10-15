@@ -20,7 +20,6 @@ import io
 class PlotFigure3d:
     def __init__(
             self,
-            # controller=None,
             cmap=None,
             norm=None,
             title=None,
@@ -35,12 +34,6 @@ class PlotFigure3d:
             tick_size=None,
             background=None,
             show_outline=True):
-
-        # self.controller = controller
-        # self.cbar_image = ipw.Image()
-        # self.cbar_fig = None
-        # self.cbar_ax = None
-        # self.cbar = None
 
         # Prepare colormaps
         self.cmap = copy(cm.get_cmap(cmap))
@@ -111,11 +104,6 @@ class PlotFigure3d:
         return
 
     def update_axes(self, axparams):
-        # axformatter=None,
-        # axlocator=None,
-        # logx=None,
-        # logy=None):
-
         if self.point_cloud is not None:
             self.scene.remove(self.point_cloud)
         if self.outline is not None:
@@ -123,7 +111,6 @@ class PlotFigure3d:
         if self.axticks is not None:
             self.scene.remove(self.axticks)
 
-        # self._create_point_cloud(self.controller.get_positions_array())
         self._create_point_cloud(axparams["positions"])
         self._create_outline(axparams)
 
@@ -156,10 +143,8 @@ class PlotFigure3d:
                 'rgba_color':
                 p3.BufferAttribute(array=np.ones(rgba_shape, dtype=np.float32))
             })
-        # points_material = self.create_points_material()
         self.point_cloud = p3.Points(geometry=self.points_geometry,
                                      material=self.points_material)
-        # return points_geometry, points_material, points
 
     def _create_points_material(self):
         """
@@ -236,7 +221,6 @@ void main() {
                 axparams['y']["lims"][1] - axparams['y']["lims"][0],
                 axparams['z']["lims"][1] - axparams['z']["lims"][0]
             ])
-            # np.diff(list(self.xminmax.values()), axis=1).ravel())
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker = mpl.ticker.MaxNLocator(5)
@@ -283,7 +267,7 @@ void main() {
                                 cmap=self.scalar_map.get_cmap(),
                                 norm=self.scalar_map.norm)
         ax.set_visible(False)
-        cbar_ax = cbar_fig.add_axes([0.05, 0.02, 0.25, 0.96])
+        cbar_ax = cbar_fig.add_axes([0.05, 0.02, 0.25, 0.94])
         cbar = plt.colorbar(cbar_imshow, cax=cbar_ax)
         cbar.set_label(self.unit)
         return cbar_fig, cbar_imshow
