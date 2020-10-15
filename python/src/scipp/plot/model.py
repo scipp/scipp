@@ -127,6 +127,7 @@ class PlotModel:
                                         variances=coord.variances,
                                         unit=coord.unit,
                                         dtype=sc.dtype.float64)
+                    coord_values = coord.values
                 else:
                     coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
                     coord_values = coord.values
