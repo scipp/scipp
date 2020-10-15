@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 #include <boost/container/small_vector.hpp>
+#include <iosfwd>
 #include <typeindex>
 
 #include "scipp-core_export.h"
@@ -48,6 +49,9 @@ template <class T> constexpr bool canHaveVariances() noexcept {
          std::is_same_v<U, span<const float>> ||
          std::is_same_v<U, span<double>> || std::is_same_v<U, span<float>>;
 }
+
+SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,
+                                           const DType &dtype);
 
 } // namespace scipp::core
 
