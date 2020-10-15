@@ -6,10 +6,12 @@
 
 #include "scipp/core/element/arg_list.h"
 
+#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/event.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 
+#include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/dataset_util.h"
 
@@ -35,8 +37,22 @@ T convert_generic(T &&d, const Dim from, const Dim to, Op op,
       d.coords().set(from, broadcast(coord, arg.dims()));
     transform_in_place(d.coords()[from], arg, op_);
   }
-  // TODO Should we transform coordinates contained in bucket variables?
-  // 2. Rename dims
+  // 2. Transform coordinates in bucket variables
+  for (const auto &item : iter(d)) {
+    if (item.dtype() != dtype<bucket<DataArray>>)
+      continue;
+    const auto &[indices, dim, buffer] =
+        item.data().template constituents<bucket<DataArray>>();
+    if (!buffer.coords().contains(from))
+      continue;
+    auto coord = buckets::from_constituents(Variable(indices), dim,
+                                            buffer.coords().extract(from));
+    transform_in_place(coord, arg, op_);
+    buffer.coords().set(
+        to, std::get<2>(coord.template to_constituents<bucket<Variable>>()));
+  }
+
+  // 3. Rename dims
   d.rename(from, to);
   return std::move(d);
 }

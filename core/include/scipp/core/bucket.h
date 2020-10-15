@@ -14,6 +14,7 @@ struct bucket_base {
   using range_type = std::pair<scipp::index, scipp::index>;
 };
 template <class T> struct bucket : bucket_base {
+  using buffer_type = T;
   using element_type = typename T::view_type;
   using const_element_type = typename T::const_view_type;
 };

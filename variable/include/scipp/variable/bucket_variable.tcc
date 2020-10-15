@@ -10,6 +10,14 @@
 namespace scipp::variable {
 
 template <class T>
+std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
+  Variable tmp;
+  std::swap(*this, tmp);
+  auto &model = requireT<DataModel<T>>(tmp.data());
+  return {std::move(model.indices()), model.dim(), std::move(model.buffer())};
+}
+
+template <class T>
 std::tuple<VariableConstView, Dim, typename T::const_element_type>
 VariableConstView::constituents() const {
   auto view = *this;
@@ -77,6 +85,10 @@ public:
   units::Unit elem_unit(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).unit();
   }
+  void set_elem_unit(const VariableView &var,
+                     const units::Unit &u) const override {
+    return std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
+  }
   bool hasVariances(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).hasVariances();
   }
@@ -86,6 +98,8 @@ public:
 /// bucket dtype in Variable.
 #define INSTANTIATE_BUCKET_VARIABLE(name, ...)                                 \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
+  template std::tuple<Variable, Dim, typename __VA_ARGS__::buffer_type>        \
+  Variable::to_constituents<__VA_ARGS__>();                                    \
   template std::tuple<VariableConstView, Dim,                                  \
                       typename __VA_ARGS__::element_type>                      \
   VariableView::constituents<__VA_ARGS__>() const;                             \

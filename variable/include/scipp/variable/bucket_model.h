@@ -62,9 +62,12 @@ public:
   void assign(const VariableConcept &other) override;
 
   Dim dim() const noexcept { return m_dim; }
+  // TODO Should the mutable version return a view to prevent risk of clients
+  // breaking invariants of variable?
   const T &buffer() const noexcept { return m_buffer; }
   T &buffer() noexcept { return m_buffer; }
   const Variable &indices() const { return m_indices; }
+  Variable &indices() { return m_indices; }
 
   ElementArrayView<bucket<T>> values(const core::element_array_view &base) {
     return {index_values(base), m_dim, m_buffer};

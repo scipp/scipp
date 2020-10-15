@@ -18,6 +18,7 @@ public:
     DSpacing,
     Energy,
     EnergyTransfer,
+    Event,
     Group,
     Position,
     PulseTime,
@@ -43,6 +44,7 @@ public:
   constexpr static auto DSpacing = Id::DSpacing;
   constexpr static auto Energy = Id::Energy;
   constexpr static auto EnergyTransfer = Id::EnergyTransfer;
+  constexpr static auto Event = Id::Event;
   constexpr static auto Group = Id::Group;
   constexpr static auto Invalid = Id::Invalid;
   constexpr static auto Position = Id::Position;

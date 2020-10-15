@@ -54,7 +54,9 @@ TEST(DatasetTest, extract) {
   auto dataset = factory.make();
   Dataset reference(dataset);
 
+  auto ptr = dataset["data_xyz"].values<double>().data();
   auto array = dataset.extract("data_xyz");
+  EXPECT_EQ(array.values<double>().data(), ptr);
 
   ASSERT_FALSE(dataset.contains("data_xyz"));
   EXPECT_EQ(array, reference["data_xyz"]);
@@ -383,12 +385,14 @@ TEST(DatasetTest, sum_and_mean) {
                except::TypeError);
 }
 
-TEST(DatasetTest, erase_coord) {
+TEST(DatasetTest, extract_coord) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
   auto coord = Variable(ds.coords()[Dim::X]);
-  ds.eraseCoord(Dim::X);
+  auto ptr = ds.coords()[Dim::X].values<double>().data();
+  auto var = ds.extractCoord(Dim::X);
+  EXPECT_EQ(var.values<double>().data(), ptr);
   EXPECT_FALSE(ds.coords().contains(Dim::X));
   ds.setCoord(Dim::X, coord);
   EXPECT_EQ(ref, ds);
@@ -408,12 +412,12 @@ TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
   EXPECT_THROW(ds["data_x"].coords().erase(Dim::X), except::NotFoundError);
 }
 
-TEST(DatasetTest, erase_labels) {
+TEST(DatasetTest, extract_labels) {
   DatasetFactory3D factory;
   const auto ref = factory.make();
   Dataset ds(ref);
   auto labels = Variable(ds.coords()[Dim("labels_x")]);
-  ds.eraseCoord(Dim("labels_x"));
+  ds.extractCoord(Dim("labels_x"));
   EXPECT_FALSE(ds.coords().contains(Dim("labels_x")));
   ds.setCoord(Dim("labels_x"), labels);
   EXPECT_EQ(ref, ds);

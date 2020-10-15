@@ -73,6 +73,13 @@ void MutableView<Base, Access>::erase(
   m_access.erase(key);
 }
 
+template <class Base, class Access>
+typename Base::mapped_type
+MutableView<Base, Access>::extract(const typename Base::key_type &key) const {
+  scipp::expect::contains(*this, key);
+  return m_access.extract(key);
+}
+
 template class ConstView<ViewId::Coords, Dim, variable::Variable>;
 template class MutableView<CoordsConstView, CoordAccess>;
 template class ConstView<ViewId::Masks, std::string, variable::Variable>;

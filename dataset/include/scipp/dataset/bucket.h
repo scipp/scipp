@@ -31,4 +31,9 @@ void scale(const DataArrayView &data, const DataArrayConstView &histogram);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 sum(const DataArrayConstView &data);
 
+[[nodiscard]] Variable from_constituents(Variable &&indices, const Dim dim,
+                                         Variable &&buffer);
+[[nodiscard]] Variable from_constituents(Variable &&indices, const Dim dim,
+                                         DataArray &&buffer);
+
 } // namespace scipp::dataset::buckets

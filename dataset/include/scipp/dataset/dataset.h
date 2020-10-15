@@ -105,11 +105,16 @@ protected:
   // VariableView. The interface guarantees that the invalid mutable view is
   // not accessible. This wrapping avoids inefficient duplication of the view in
   // the child class DataArrayView.
-  VariableView m_view; // empty if the array has no (aligned) data
+  VariableView m_view; // empty if the array has no data
+  // Flag required to allow for removal/addition of coords from DataArray via a
+  // view. This may be another indicator that the current implementation of
+  // DataArray based on Dataset should be refactored.
+  bool m_isItem{true};
 
 private:
   friend class DatasetConstView;
   friend class DatasetView;
+  friend class DataArray;
 
   const Dataset *m_dataset{nullptr};
   const detail::dataset_item_map::value_type *m_data{nullptr};
@@ -352,9 +357,11 @@ public:
     setData(name, Variable(data), attrPolicy);
   }
 
-  void eraseCoord(const Dim dim);
-  void eraseCoord(const std::string &name, const Dim dim);
-  void eraseMask(const std::string &name, const std::string &maskName);
+  [[maybe_unused]] Variable extractCoord(const Dim dim);
+  [[maybe_unused]] Variable extractCoord(const std::string &name,
+                                         const Dim dim);
+  [[maybe_unused]] Variable extractMask(const std::string &name,
+                                        const std::string &maskName);
 
   DatasetConstView slice(const Slice s) const &;
   DatasetView slice(const Slice s) &;
@@ -400,7 +407,7 @@ private:
   void rebuildDims();
 
   template <class Key, class Val>
-  void erase_from_map(std::unordered_map<Key, Val> &map, const Key &key);
+  Val extract_from_map(std::unordered_map<Key, Val> &map, const Key &key);
 
   void setData_impl(const std::string &name, detail::DatasetData &&data,
                     const AttrPolicy attrPolicy);

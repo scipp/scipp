@@ -139,6 +139,9 @@ public:
     return {0, dims(), dims(), {}};
   }
 
+  template <class T>
+  std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
+
 private:
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
