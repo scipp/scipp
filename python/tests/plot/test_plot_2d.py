@@ -198,13 +198,6 @@ def test_plot_2d_with_dimension_of_size_2():
     plot(a)
 
 
-def test_plot_realigned_2d():
-    d = make_events_dataset(ndim=1)
-    tbins = sc.Variable(dims=['tof'], unit=sc.units.us, values=np.arange(100.))
-    r = sc.realign(d, {'tof': tbins})
-    plot(r)
-
-
 def test_plot_2d_ragged_coord():
     N = 10
     M = 5

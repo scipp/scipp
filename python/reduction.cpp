@@ -39,6 +39,11 @@ template <class T> void bind_mean_out(py::module &m) {
 }
 
 template <class T> void bind_sum(py::module &m) {
+  if constexpr (std::is_same_v<T, Variable>) {
+    m.def(
+        "sum", [](const typename T::const_view_type &x) { return sum(x); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  }
   m.def(
       "sum",
       [](const typename T::const_view_type &x, const Dim dim) {

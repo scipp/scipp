@@ -11,7 +11,6 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/reduction.h"
-#include "scipp/dataset/unaligned.h"
 #include "scipp/variable/operations.h"
 
 #include "dataset_test_common.h"
@@ -229,33 +228,7 @@ protected:
   Variable var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
   Variable y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 3});
   DataArray data{var, {{Dim::Y, var}}};
-  DataArray realigned = unaligned::realign(data, {{Dim::Y, y}});
 };
-
-TEST_F(SetDataTest, DataArray_unaligned) {
-  EXPECT_THROW(realigned.unaligned().setData(
-                   makeVariable<double>(Dims{Dim::X}, Shape{4})),
-               except::DimensionError);
-  EXPECT_EQ(realigned.unaligned().data(), var);
-  EXPECT_NO_THROW(realigned.unaligned().setData(var + var));
-  EXPECT_EQ(realigned.unaligned().data(), var + var);
-}
-
-TEST_F(SetDataTest, DataArray_realigned) {
-  // Set dense data on realigned, dropping unaligned content.
-  const Variable dense_data(y.slice({Dim::Y, 0, 1}));
-  EXPECT_NO_THROW(realigned.setData(dense_data));
-  EXPECT_TRUE(realigned.hasData());
-  EXPECT_FALSE(realigned.unaligned());
-}
-
-TEST_F(SetDataTest, DataArrayView_realigned) {
-  // Set dense data on realigned via view, dropping unaligned content.
-  const Variable dense_data(y.slice({Dim::Y, 0, 1}));
-  EXPECT_NO_THROW(DataArrayView(realigned).setData(dense_data));
-  EXPECT_TRUE(realigned.hasData());
-  EXPECT_FALSE(realigned.unaligned());
-}
 
 TEST(DatasetTest, setCoord_with_name_matching_data_name) {
   Dataset d;
@@ -503,66 +476,4 @@ TEST_F(DatasetRenameTest, rename) {
   DatasetFactory3D factory(4, 5, 6, Dim::Row);
   factory.seed(0);
   EXPECT_EQ(d, factory.make());
-}
-
-TEST(DatasetCoordsRealignedTest, set_erase) {
-  auto d = testdata::make_dataset_realigned_x_to_y();
-
-  // Add coord to unaligned
-  EXPECT_NO_THROW(d["a"].unaligned().coords().set(
-      Dim::Z, d["a"].unaligned().coords()[Dim::Y]));
-  EXPECT_FALSE(d["a"].coords().contains(Dim::Z));
-
-  // Scalar could be added to realigned -> fail
-  EXPECT_THROW(d["a"].unaligned().coords().set(Dim("scalar"), 1.3 * units::K),
-               except::RealignedDataError);
-
-  // Depending only on dims of realigned -> fail
-  EXPECT_THROW(d["a"].unaligned().coords().set(Dim::Y, d.coords()[Dim::Y]),
-               except::RealignedDataError);
-
-  // Depending on dim of unaligned -> works
-  EXPECT_NO_THROW(d["a"].unaligned().coords().set(
-      Dim::Y, d["a"].unaligned().coords()[Dim::Y] * (2.0 * units::one)));
-
-  EXPECT_NO_THROW(d["a"].unaligned().coords().erase(Dim::Y));
-  EXPECT_TRUE(d["a"].coords().contains(Dim::Y)); // bin edges still present
-  EXPECT_FALSE(d["a"].unaligned().coords().contains(Dim::Y));
-
-  // Potentially surprising but consistent behavior: "scalar" mapped from
-  // realigned but cannot erase via unaligned.
-  EXPECT_TRUE(d["a"].unaligned().coords().contains(Dim("scalar")));
-  EXPECT_THROW(d["a"].unaligned().coords().erase(Dim("scalar")),
-               except::NotFoundError);
-}
-
-TEST(DatasetMasksRealignedTest, set_erase) {
-  auto d = testdata::make_dataset_realigned_x_to_y();
-
-  // Add mask to unaligned
-  EXPECT_NO_THROW(
-      d["a"].unaligned().masks().set("x", d["a"].unaligned().coords()[Dim::Y]));
-  EXPECT_FALSE(d["a"].masks().contains("x"));
-
-  // Scalar could be added to realigned -> fail
-  EXPECT_THROW(d["a"].unaligned().masks().set("scalar", 1.3 * units::K),
-               except::RealignedDataError);
-
-  // Depending only on dims of realigned -> fail
-  EXPECT_THROW(d["a"].unaligned().masks().set("y", d.coords()[Dim::Y]),
-               except::RealignedDataError);
-
-  // Depending on dim of unaligned -> works
-  EXPECT_NO_THROW(d["a"].unaligned().masks().set(
-      "mask", d["a"].unaligned().coords()[Dim::Y] * (2.0 * units::one)));
-
-  EXPECT_NO_THROW(d["a"].unaligned().masks().erase("mask"));
-  EXPECT_FALSE(d["a"].unaligned().masks().contains("mask"));
-
-  // Potentially surprising but consistent behavior: "scalar" mapped from
-  // realigned but cannot erase via unaligned.
-  d["a"].masks().set("scalar", 1.3 * units::K);
-  EXPECT_TRUE(d["a"].unaligned().masks().contains("scalar"));
-  EXPECT_THROW(d["a"].unaligned().masks().erase("scalar"),
-               except::NotFoundError);
 }

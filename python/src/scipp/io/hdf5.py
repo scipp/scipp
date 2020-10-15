@@ -197,8 +197,7 @@ class DataArrayIO:
         _write_scipp_header(group, 'DataArray')
         group.attrs['name'] = data.name
         if data.data is None:
-            raise RuntimeError(
-                "Writing realigned data is not implemented yet.")
+            raise RuntimeError("Cannot write object with invalid data.")
         VariableIO.write(group.create_group('data'), var=data.data)
         views = [data.coords, data.masks]
         aligned = data.aligned_coords.keys()

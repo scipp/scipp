@@ -2,6 +2,7 @@
 # contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-dataset")
 set(INC_FILES
+    include/scipp/dataset/bucket.h
     include/scipp/dataset/choose.h
     include/scipp/dataset/counts.h
     include/scipp/dataset/dataset_access.h
@@ -21,11 +22,11 @@ set(INC_FILES
     include/scipp/dataset/shape.h
     include/scipp/dataset/sort.h
     include/scipp/dataset/string.h
-    include/scipp/dataset/unaligned.h
 )
 
 set(SRC_FILES
     arithmetic.cpp
+    bucket.cpp
     counts.cpp
     data_array.cpp
     dataset_access.cpp
@@ -43,7 +44,6 @@ set(SRC_FILES
     slice.cpp
     sort.cpp
     string.cpp
-    unaligned.cpp
     variable_instantiate_bucket_elements.cpp
     variable_instantiate_dataset.cpp
     variable_reduction.cpp

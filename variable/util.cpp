@@ -71,4 +71,16 @@ bool is_sorted(const VariableConstView &x, const Dim dim,
   return out.value<bool>();
 }
 
+/// Zip elements of two variables into a variable where each element is a pair.
+Variable zip(const VariableConstView &first, const VariableConstView &second) {
+  return transform(first, second, core::element::zip);
+}
+
+/// For an input where elements are pairs, return two variables containing the
+/// first and second components of the input pairs.
+std::pair<Variable, Variable> unzip(const VariableConstView &var) {
+  return {transform(var, core::element::get<0>),
+          transform(var, core::element::get<1>)};
+}
+
 } // namespace scipp::variable

@@ -190,6 +190,11 @@ Variable nanmin(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::nanmin_equals);
 }
 
+/// Return the sum along all dimensions.
+Variable sum(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return sum(_...); });
+}
+
 /// Return the maximum along all dimensions.
 Variable max(const VariableConstView &var) {
   return reduce_all_dims(var, [](auto &&... _) { return max(_...); });

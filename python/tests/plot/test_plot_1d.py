@@ -187,10 +187,3 @@ def test_plot_string_axis_labels_1d_short():
                               values=np.random.rand(N),
                               unit=sc.units.counts)
     plot(d)
-
-
-def test_plot_realigned_1d():
-    d = make_events_dataset(ndim=1)
-    tbins = sc.Variable(dims=['tof'], unit=sc.units.us, values=np.arange(100.))
-    r = sc.realign(d, {'tof': tbins})
-    plot(r['x', 25])

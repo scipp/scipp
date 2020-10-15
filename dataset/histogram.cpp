@@ -4,10 +4,10 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/histogram.h"
 #include "scipp/core/element/histogram.h"
+#include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
-#include "scipp/dataset/unaligned.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform_subspan.h"
 
@@ -34,7 +34,23 @@ DataArray histogram(const DataArrayConstView &events,
   auto dim = binEdges.dims().inner();
 
   DataArray result;
-  if (contains_events(events.coords()[dim])) {
+  if (events.dtype() == dtype<bucket<DataArray>>) {
+    // TODO Histogram data from buckets. Is this the natural choice for the API,
+    // i.e., does it make sense that histograming considers bucket contents?
+    // Should we instead have a separate named function for this case?
+    result = apply_and_drop_dim(
+        events,
+        [](const DataArrayConstView &events_, const Dim dim_,
+           const VariableConstView &binEdges_) {
+          const auto mask = irreducible_mask(events_.masks(), dim_);
+          if (mask)
+            // TODO Creating a full copy of event data here is very inefficient
+            return buckets::histogram(events_.data() * ~mask, binEdges_);
+          else
+            return buckets::histogram(events_.data(), binEdges_);
+        },
+        dim, binEdges);
+  } else if (contains_events(events.coords()[dim])) {
     result = apply_and_drop_dim(
         events,
         [](const DataArrayConstView &events_, const Dim eventDim,
@@ -118,13 +134,23 @@ Dim edge_dimension(const DataArrayConstView &a) {
   return *dims.begin();
 }
 
-/// Return true if the data array respresents a histogram for given dim.
-bool is_histogram(const DataArrayConstView &a, const Dim dim) {
+namespace {
+template <typename T> bool is_histogram_impl(const T &a, const Dim dim) {
   const auto dims = a.dims();
   const auto coords = a.coords();
-  return dims.contains(dim) && coords.contains(dim) &&
+  return dims.count(dim) == 1 && coords.contains(dim) &&
          coords[dim].dims().contains(dim) &&
-         coords[dim].dims()[dim] == dims[dim] + 1;
+         coords[dim].dims()[dim] == dims.at(dim) + 1;
+}
+} // namespace
+/// Return true if the data array represents a histogram for given dim.
+bool is_histogram(const DataArrayConstView &a, const Dim dim) {
+  return is_histogram_impl(a, dim);
+}
+
+/// Return true if the dataset represents a histogram for given dim.
+bool is_histogram(const DatasetConstView &a, const Dim dim) {
+  return is_histogram_impl(a, dim);
 }
 
 namespace {
@@ -153,9 +179,9 @@ void histogram_md_recurse(const VariableView &data,
 } // namespace
 
 DataArray histogram(const DataArrayConstView &realigned) {
-  if (realigned.hasData())
-    throw except::UnalignedError("Expected realigned data, but data appears to "
-                                 "be histogrammed already.");
+  throw except::UnalignedError("Expected realigned data, but data appears to "
+                               "be histogrammed already.");
+  /*
   if (unaligned::is_realigned_events(realigned)) {
     const auto realigned_dims = unaligned::realigned_event_dims(realigned);
     auto bounds = realigned.slice_bounds();
@@ -192,6 +218,7 @@ DataArray histogram(const DataArrayConstView &realigned) {
   histogram_md_recurse(data, unaligned, realigned);
   return DataArray{std::move(data), realigned.aligned_coords(),
                    realigned.masks(), realigned.unaligned_coords()};
+                   */
 }
 
 Dataset histogram(const DatasetConstView &realigned) {

@@ -230,24 +230,3 @@ def test_reciprocal():
     a = sc.DataArray(data=sc.Variable(['x'], values=np.array([5.0])))
     r = sc.reciprocal(a)
     assert r.values[0] == 1.0 / 5.0
-
-
-def test_realign():
-    co = sc.Variable(['y'], shape=[1], dtype=sc.dtype.event_list_float64)
-    co.values[0].append(1.0)
-    co.values[0].append(2.0)
-    co.values[0].append(2.0)
-    data = sc.Variable(['y'],
-                       dtype=sc.dtype.float64,
-                       values=np.array([1]),
-                       variances=np.array([1]))
-    da = sc.DataArray(data=data, coords={'x': co})
-    assert not da.unaligned
-    da_r = sc.realign(
-        da, {'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
-    assert da_r.shape == [1, 2]
-    assert sc.is_equal(da_r.unaligned, da)
-    assert not da_r.data
-    assert np.allclose(sc.histogram(da_r).values, np.array([0, 3]), atol=1e-9)
-    da.realign({'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
-    assert da.shape == [1, 2]

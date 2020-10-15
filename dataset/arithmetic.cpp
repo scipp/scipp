@@ -14,29 +14,34 @@ using namespace scipp::core;
 
 namespace scipp::dataset {
 
+DataArray operator-(const DataArrayConstView &a) {
+  return DataArray(-a.data(), a.aligned_coords(), a.masks(),
+                   a.unaligned_coords());
+}
+
 DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
-  if (a.hasData() && b.hasData()) {
-    return DataArray(a.data() + b.data(),
-                     union_(a.aligned_coords(), b.aligned_coords()),
-                     union_or(a.masks(), b.masks()),
-                     intersection(a.unaligned_coords(), b.unaligned_coords()));
-  } else {
-    DataArray out(a);
-    out += b; // No broadcast possible for now
-    return out;
-  }
+  return DataArray(a.data() + b.data(),
+                   union_(a.aligned_coords(), b.aligned_coords()),
+                   union_or(a.masks(), b.masks()),
+                   intersection(a.unaligned_coords(), b.unaligned_coords()));
 }
 
 DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
-  if (a.hasData() && b.hasData()) {
-    return {a.data() - b.data(), union_(a.aligned_coords(), b.aligned_coords()),
-            union_or(a.masks(), b.masks()),
-            intersection(a.unaligned_coords(), b.unaligned_coords())};
-  } else {
-    DataArray out(a);
-    out -= b; // No broadcast possible for now
-    return out;
-  }
+  return {a.data() - b.data(), union_(a.aligned_coords(), b.aligned_coords()),
+          union_or(a.masks(), b.masks()),
+          intersection(a.unaligned_coords(), b.unaligned_coords())};
+}
+
+DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {
+  return {a.data() * b.data(), union_(a.aligned_coords(), b.aligned_coords()),
+          union_or(a.masks(), b.masks()),
+          intersection(a.unaligned_coords(), b.unaligned_coords())};
+}
+
+DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
+  return {a.data() / b.data(), union_(a.aligned_coords(), b.aligned_coords()),
+          union_or(a.masks(), b.masks()),
+          intersection(a.unaligned_coords(), b.unaligned_coords())};
 }
 
 DataArray operator+(const DataArrayConstView &a, const VariableConstView &b) {
@@ -77,6 +82,34 @@ DataArray operator*(const VariableConstView &a, const DataArrayConstView &b) {
 DataArray operator/(const VariableConstView &a, const DataArrayConstView &b) {
   return DataArray(a / b.data(), b.aligned_coords(), b.masks(),
                    b.unaligned_coords());
+}
+
+DataArray &DataArray::operator+=(const DataArrayConstView &other) {
+  expect::coordsAreSuperset(*this, other);
+  union_or_in_place(masks(), other.masks());
+  data() += other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator-=(const DataArrayConstView &other) {
+  expect::coordsAreSuperset(*this, other);
+  union_or_in_place(masks(), other.masks());
+  data() -= other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator*=(const DataArrayConstView &other) {
+  expect::coordsAreSuperset(*this, other);
+  union_or_in_place(masks(), other.masks());
+  data() *= other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator/=(const DataArrayConstView &other) {
+  expect::coordsAreSuperset(*this, other);
+  union_or_in_place(masks(), other.masks());
+  data() /= other.data();
+  return *this;
 }
 
 DataArray &DataArray::operator+=(const VariableConstView &other) {

@@ -92,13 +92,6 @@ def test_plot_variable_3d():
     plot(v3d)
 
 
-def test_plot_realigned_3d():
-    d = make_events_dataset(ndim=2)
-    tbins = sc.Variable(dims=['tof'], unit=sc.units.us, values=np.arange(100.))
-    r = sc.realign(d, {'tof': tbins})
-    plot(r)
-
-
 def test_plot_4d_with_masks():
     data = sc.DataArray(data=sc.Variable(
         dims=['pack', 'tube', 'straw', 'pixel'],

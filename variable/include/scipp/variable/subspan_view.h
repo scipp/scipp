@@ -8,10 +8,19 @@
 
 namespace scipp::variable {
 
-SCIPP_VARIABLE_EXPORT Variable subspan_view(Variable &var, const Dim dim);
-SCIPP_VARIABLE_EXPORT Variable subspan_view(const VariableView &var,
-                                            const Dim dim);
-SCIPP_VARIABLE_EXPORT Variable subspan_view(const VariableConstView &var,
-                                            const Dim dim);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable subspan_view(Variable &var,
+                                                          const Dim dim);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+subspan_view(const VariableView &var, const Dim dim);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+subspan_view(const VariableConstView &var, const Dim dim);
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+subspan_view(Variable &var, const Dim dim, const VariableConstView &indices);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable subspan_view(
+    const VariableView &var, const Dim dim, const VariableConstView &indices);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+subspan_view(const VariableConstView &var, const Dim dim,
+             const VariableConstView &indices);
 
 } // namespace scipp::variable

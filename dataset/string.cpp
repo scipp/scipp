@@ -54,14 +54,7 @@ template <class Key>
 auto format_data_view(const Key &name, const DataArrayConstView &data,
                       const Dimensions &datasetDims = Dimensions()) {
   std::stringstream s;
-  if (data.hasData())
-    s << format_variable(name, data.data(), datasetDims);
-  else {
-    s << tab << name << " (data not histogrammed yet)\n";
-    s << tab << "Unaligned:\n";
-    s << do_to_string(data.unaligned(), "", data.unaligned().dims(),
-                      std::string(tab) + tab);
-  }
+  s << format_variable(name, data.data(), datasetDims);
   if (!data.masks().empty()) {
     s << tab << "Masks:\n";
     for (const auto &[key, var] : sorted(data.masks()))
