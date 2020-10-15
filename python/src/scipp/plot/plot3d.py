@@ -32,6 +32,7 @@ class SciPlot3d(SciPlot):
                  scipp_obj_dict=None,
                  positions=None,
                  axes=None,
+                 figsize=None,
                  masks=None,
                  cmap=None,
                  norm=None,
@@ -82,7 +83,8 @@ class SciPlot3d(SciPlot):
                                pixel_size=pixel_size,
                                tick_size=tick_size,
                                background=background,
-                               show_outline=show_outline)
+                               show_outline=show_outline,
+                               figsize=figsize)
 
         # An additional panel view with widgets to control the cut surface
         self.panel = PlotPanel3d(pixel_size=pixel_size)

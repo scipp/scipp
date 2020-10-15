@@ -32,15 +32,6 @@ def dispatch(scipp_obj_dict,
                     events_dict[key], dim, bn)
         scipp_obj_dict = events_dict
 
-    # Histogram realigned data
-    # TODO: this is potentially a very costly operation, if the input data is
-    # very large.
-    # Histogramming should probably be done closer to the view, when the final
-    # data slice is about to be sent to the display.
-    for name in scipp_obj_dict:
-        if scipp_obj_dict[name].unaligned is not None:
-            scipp_obj_dict[name] = sc.histogram(scipp_obj_dict[name])
-
     if projection is None:
         if ndim < 3:
             projection = "{}d".format(ndim)

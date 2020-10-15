@@ -21,7 +21,7 @@ class PlotFigure3d:
     def __init__(self,
                  cmap=None,
                  norm=None,
-                 title=None,
+                 figsize=None,
                  unit=None,
                  log=None,
                  vmin=None,
@@ -33,6 +33,9 @@ class PlotFigure3d:
                  tick_size=None,
                  background=None,
                  show_outline=True):
+
+        if figsize is None:
+            figsize = (config.plot.width, config.plot.height)
 
         # Prepare colormaps
         self.cmap = copy(cm.get_cmap(cmap))
@@ -54,7 +57,7 @@ class PlotFigure3d:
 
         # Create the colorbar image
         self.cbar_image = ipw.Image()
-        self.cbar_fig, self.cbar = self._create_colorbar()
+        self.cbar_fig, self.cbar = self._create_colorbar(figsize)
 
         # Create the point cloud material with pythreejs
         self.points_material = self._create_points_material()
@@ -82,8 +85,8 @@ class PlotFigure3d:
         self.renderer = p3.Renderer(camera=self.camera,
                                     scene=self.scene,
                                     controls=[self.controls],
-                                    width=config.plot.width,
-                                    height=config.plot.height)
+                                    width=figsize[0],
+                                    height=figsize[1])
 
         self.figure = ipw.HBox([self.renderer, self.cbar_image])
 
@@ -250,14 +253,14 @@ void main() {
 
         return ticks_and_labels
 
-    def _create_colorbar(self):
+    def _create_colorbar(self, figsize):
         """
         Make image from matplotlib colorbar.
         We need to make a dummy imshow so we can later update the limits with
         set_clim, as this method is not available on a ColorbarBase class.
         """
         a = np.array([[0, 1]])
-        height_inches = config.plot.height / config.plot.dpi
+        height_inches = figsize[1] / config.plot.dpi
 
         cbar_fig, ax = plt.subplots(figsize=(height_inches * 0.2,
                                              height_inches),

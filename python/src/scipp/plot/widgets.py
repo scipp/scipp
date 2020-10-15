@@ -267,14 +267,17 @@ class PlotWidgets:
 
             # Dimension slider
             size = item["slider"]
-            self.slider[dim].value = size // 2
+            # Caution: we need to update max first because it is set to 100 by
+            # default in ipywidgets, thus preventing a value to be set above
+            # 100.
             self.slider[dim].max = size - 1
+            self.slider[dim].value = size // 2
 
             # Thickness slider
+            self.thickness_slider[dim].max = item["thickness_slider"]
             self.thickness_slider[
                 dim].value = 0. if multid_coord is not None else item[
                     "thickness_slider"]
-            self.thickness_slider[dim].max = item["thickness_slider"]
             self.thickness_slider[dim].step = item["thickness_slider"] * 0.01
             if multid_coord is not None:
                 self.thickness_slider[dim].disabled = True
