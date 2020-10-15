@@ -25,7 +25,6 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 namespace py = pybind11;
-
 template <template <class> class View, class T>
 void bind_helper_view(py::module &m, const std::string &name) {
   std::string suffix;
@@ -99,12 +98,52 @@ T filter_impl(const typename T::const_view_type &self, const Dim dim,
                        keep_attrs ? AttrPolicy::Keep : AttrPolicy::Drop);
 }
 
+struct CoordsAdapter {
+  virtual CoordsView aligned_coords() = 0;
+  virtual CoordsView unaligned_coords() = 0;
+  virtual CoordsView coords() = 0;
+  virtual ~CoordsAdapter(){};
+};
+
+template <typename T> struct CoordsTypedAdapter : public CoordsAdapter {
+  T *m_ptr; // Non-owning!
+  CoordsTypedAdapter(T *ptr) : m_ptr(ptr) {}
+  virtual CoordsView aligned_coords() override {
+    return m_ptr->aligned_coords();
+  }
+  virtual CoordsView unaligned_coords() override {
+    return m_ptr->unaligned_coords();
+  }
+  virtual CoordsView coords() override { return m_ptr->coords(); }
+};
+
+struct Coords {
+  std::unique_ptr<CoordsAdapter> m_ptr;
+  template <typename V>
+  Coords(V *ptr) : m_ptr(std::make_unique<CoordsTypedAdapter<V>>(ptr)){};
+  Coords(Coords &&other) { m_ptr = std::move(other.m_ptr); };
+  // CoordsConstView coords(){return m_ptr->coords();}
+  CoordsView aligned_coords() { return m_ptr->aligned_coords(); }
+  CoordsView unaligned_coords() { return m_ptr->unaligned_coords(); }
+  CoordsView operator()() { return m_ptr->coords(); }
+};
+
 template <class T, class... Ignored>
 void bind_coord_properties(py::class_<T, Ignored...> &c) {
+  if constexpr (std::is_same_v<T, DataArrayConstView> ||
+                std::is_same_v<T, DataArrayView> ||
+                std::is_same_v<T, DataArray>) {
+    c.def_property_readonly(
+        "coords",
+        py::cpp_function([](T &self) { return Coords{&self}; },
+                         py::return_value_policy::move, py::keep_alive<0, 1>()),
+        R"(
+      Dict of coordinates.)");
+  }
   // For some reason the return value policy and/or keep-alive policy do not
   // work unless we wrap things in py::cpp_function.
   c.def_property_readonly(
-      "coords",
+      "coords_old",
       py::cpp_function([](T &self) { return self.coords(); },
                        py::return_value_policy::move, py::keep_alive<0, 1>()),
       R"(
@@ -232,6 +271,11 @@ template <class T> void bind_rebin(py::module &m) {
 }
 
 void init_dataset(py::module &m) {
+  py::class_<Coords> coords(m, "Coords");
+  coords.def_property_readonly("aligned_coords", &Coords::aligned_coords);
+  coords.def_property_readonly("unaligned_coords", &Coords::unaligned_coords);
+  coords.def("__call__", &Coords::operator());
+
   py::class_<Slice>(m, "Slice");
 
   bind_helper_view<items_view, Dataset>(m, "Dataset");
