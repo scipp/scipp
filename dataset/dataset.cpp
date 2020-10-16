@@ -665,8 +665,8 @@ bool DatasetConstView::contains(const std::string &name) const noexcept {
 
 /// Return the size of the referanced Dataset in memory.
 scipp::index DatasetConstView::sizeInMemory() const {
-    return m_dataset->sizeInMemory();
-  }
+  return m_dataset->sizeInMemory();
+}
 
 namespace {
 template <class T> const auto &getitem(const T &view, const std::string &name) {

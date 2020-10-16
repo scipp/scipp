@@ -201,7 +201,7 @@ of variances.)");
 
   py::class_<VariableConstView> variableConstView(m, "VariableConstView");
   variableConstView.def(py::init<const Variable &>())
-  .def("__sizeof__", &VariableConstView::sizeInMemory);
+      .def("__sizeof__", &VariableConstView::sizeInMemory);
 
   py::class_<VariableView, VariableConstView> variableView(
       m, "VariableView", py::buffer_protocol(), R"(

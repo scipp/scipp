@@ -86,7 +86,7 @@ TEST(DataArrayTest, astype) {
             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1., 2., 3.}));
 }
 
-TEST(DataArrayTest, test_size_in_memory){
+TEST(DataArrayTest, test_size_in_memory) {
   DataArray a(
       makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
       {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}});

@@ -141,10 +141,8 @@ public:
 
   template <class T>
   std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
-  
-  scipp::index sizeInMemory() const {
-    return m_object->sizeInMemory();
-  }
+
+  scipp::index sizeInMemory() const { return m_object->sizeInMemory(); }
 
 private:
   template <class... Ts, class... Args>
@@ -270,7 +268,7 @@ public:
   constituents() const;
 
   scipp::index sizeInMemory() {
-    if(m_variable)
+    if (m_variable)
       return m_variable->sizeInMemory();
     else
       return 0;

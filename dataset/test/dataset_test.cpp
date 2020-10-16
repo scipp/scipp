@@ -237,7 +237,7 @@ TEST(DatasetTest, size_in_memory_test) {
 
   d.setCoord(Dim::X, coords);
   EXPECT_EQ(d.sizeInMemory(), sizeof(double) * 6);
-  
+
   d["a"].masks().set("unaligned", mask);
   EXPECT_EQ(d.sizeInMemory(), sizeof(double) * 9);
 }

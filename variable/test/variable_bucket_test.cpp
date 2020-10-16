@@ -128,6 +128,7 @@ TEST_F(VariableBucketTest, to_constituents) {
 }
 
 TEST_F(VariableBucketTest, size_in_memory) {
-  EXPECT_EQ(var.sizeInMemory(), sizeof(double) * 4 +
-                     sizeof(std::pair<scipp::index, scipp::index>) * 2);
+  EXPECT_EQ(var.sizeInMemory(),
+            sizeof(double) * 4 +
+                sizeof(std::pair<scipp::index, scipp::index>) * 2);
 }
