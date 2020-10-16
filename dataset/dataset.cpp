@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <boost/range/adaptor/map.hpp>
 #include "scipp/dataset/dataset.h"
 #include "scipp/common/index.h"
 #include "scipp/core/except.h"
@@ -216,29 +217,29 @@ void Dataset::setData(const std::string &name, Variable data,
   setData_impl(name, detail::DatasetData{std::move(data), {}, {}}, attrPolicy);
 }
 
-/// Return the size in memory of the Dataset. 
+/// Return the size in memory of the Dataset.
 /// To avoid double counting and the unecessary
-/// creation of view objects works with the 
-/// private data containers. 
+/// creation of view objects works with the
+/// private data containers.
 scipp::index Dataset::sizeInMemory() const {
-    scipp::index size = 0;
-    for (auto const& [name, data]: m_data){
-      size+=data.data.sizeInMemory();
-      for(auto const& [dim, coord]: data.coords){
-        size+=coord.sizeInMemory();
-      }
-      for(auto const& [dim, mask]: data.coords){
-        size+=mask.sizeInMemory();
-      }
-      if(data.unaligned)
-        size+=data.unaligned->data.sizeInMemory();
+  scipp::index size = 0;
+  for (auto const &data : m_data | boost::adaptors::map_values) {
+    size += data.data.sizeInMemory();
+    for (auto const &coord : data.coords | boost::adaptors::map_values) {
+      size += coord.sizeInMemory();
     }
-
-    for (auto const& [dim, coord]: m_coords){
-      size+= coord.sizeInMemory();
+    for (auto const &mask : data.masks | boost::adaptors::map_values) {
+      size += mask.sizeInMemory();
     }
-    return size;
+    if (data.unaligned)
+      size += data.unaligned->data.sizeInMemory();
   }
+
+  for (auto const &coord : m_coords | boost::adaptors::map_values) {
+    size += coord.sizeInMemory();
+  }
+  return size;
+}
 
 /// Set (insert or replace) data from a DataArray with a given name, avoiding
 /// copies where possible by using std::move.
