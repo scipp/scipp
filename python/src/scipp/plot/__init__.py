@@ -37,21 +37,33 @@ except ImportError:
     pass
 
 if is_doc_build:
-    import matplotlib.pyplot as plt
-    plt.rcParams.update({'figure.max_open_warning': 0})
+    mpl.pyplot.rcParams.update({'figure.max_open_warning': 0})
 
 
-def plot(scipp_obj, **kwargs):
-    return _plot(scipp_obj, is_doc_build=is_doc_build, **kwargs)
+def plot(*args, **kwargs):
+    # Determine if we are using a static or interactive backend
+    interactive = mpl.get_backend().lower().endswith('nbagg')
+    # Switch auto figure display off for better control over when figures are
+    # displayed.
+    mpl.pyplot.ioff()
+    output = _plot(*args, **kwargs)
+    if not interactive:
+        for key in output:
+            output[key].as_static(keep_widgets=is_doc_build)
+    # Turn auto figure display back on.
+    # TODO: we need to consider whether users manually turned auto figure
+    # display off, in which case we would not want to turn it back on here.
+    mpl.pyplot.ion()
+    return output
 
 
-def superplot(scipp_obj, **kwargs):
-    return plot(scipp_obj, projection="1d", **kwargs)
+def superplot(*args, **kwargs):
+    return plot(*args, projection="1d", **kwargs)
 
 
-def image(scipp_obj, **kwargs):
-    return plot(scipp_obj, projection="2d", **kwargs)
+def image(*args, **kwargs):
+    return plot(*args, projection="2d", **kwargs)
 
 
-def scatter3d(scipp_obj, **kwargs):
-    return plot(scipp_obj, projection="3d", **kwargs)
+def scatter3d(*args, **kwargs):
+    return plot(*args, projection="3d", **kwargs)

@@ -4,11 +4,30 @@
 
 from .._scipp import core as sc
 from .. import _utils as su
-from .tools import make_fake_coord
+from .dispatch import dispatch
+from .tools import make_fake_coord, get_line_param
+
+
+class Plot(dict):
+    """
+    The Plot object is used as output for the plot command.
+    It is a small wrapper around python dict, with an ipython repr.
+    The dict will contain one entry for each entry in the input supplied to
+    the plot function.
+    More functionalities can be added in the future.
+    """
+    def __init__(self, *arg, **kw):
+        super(Plot, self).__init__(*arg, **kw)
+
+    def _ipython_display_(self):
+        import ipywidgets as widgets
+        contents = []
+        for key, val in self.items():
+            contents.append(val._to_widget())
+        return widgets.VBox(contents)._ipython_display_()
 
 
 def plot(scipp_obj,
-         interactive=True,
          projection=None,
          axes=None,
          color=None,
@@ -16,28 +35,10 @@ def plot(scipp_obj,
          linestyle=None,
          linewidth=None,
          bins=None,
-         is_doc_build=False,
          **kwargs):
     """
     Wrapper function to plot any kind of scipp object.
     """
-
-    # Delayed imports
-    from .tools import get_line_param
-    from .dispatch import dispatch
-    import matplotlib.pyplot as plt
-    import matplotlib as mpl
-
-    # Determine if we are using a static or interactive backend
-    interactive = mpl.get_backend().lower().endswith('nbagg')
-
-    # Switch interactive plotting off for better control over when figures are
-    # displayed.
-    # TODO: we need to think about what users expect, if they than have custom
-    # figures further down in the notebook. We would want to switch
-    # interactivity back on, but then we would have to turn it off again every
-    # time a SciPlot slider is moved or a button is pressed.
-    plt.ioff()
 
     inventory = dict()
     if su.is_dataset(scipp_obj):
@@ -130,36 +131,12 @@ def plot(scipp_obj,
     # Plot all the subsets
     output = Plot()
     for key, val in tobeplotted.items():
-        sciplot = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
-                           name=key,
-                           ndim=val["ndims"],
-                           projection=projection,
-                           axes=val["axes"],
-                           mpl_line_params=val["mpl_line_params"],
-                           bins=bins,
-                           **kwargs)
-        if not interactive:
-            sciplot.as_static(keep_widgets=is_doc_build)
-        output[key] = sciplot
-
-    plt.ion()
+        output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
+                               name=key,
+                               ndim=val["ndims"],
+                               projection=projection,
+                               axes=val["axes"],
+                               mpl_line_params=val["mpl_line_params"],
+                               bins=bins,
+                               **kwargs)
     return output
-
-
-class Plot(dict):
-    """
-    The Plot object is used as output for the plot command.
-    It is a small wrapper around python dict, with an ipython repr.
-    The dict will contain one entry for each entry in the input supplied to
-    the plot function.
-    More functionalities can be added in the future.
-    """
-    def __init__(self, *arg, **kw):
-        super(Plot, self).__init__(*arg, **kw)
-
-    def _ipython_display_(self):
-        import ipywidgets as widgets
-        contents = []
-        for key, val in self.items():
-            contents.append(val._to_widget())
-        return widgets.VBox(contents)._ipython_display_()
