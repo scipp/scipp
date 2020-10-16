@@ -55,9 +55,6 @@ class PlotController3d(PlotController):
         ])
         return axparams
 
-    def get_positions_array(self):
-        return self.model.get_positions_array()
-
     def update_opacity(self, alpha):
         self.view.update_opacity(alpha=alpha)
         # There is a strange effect with point clouds and opacities.
