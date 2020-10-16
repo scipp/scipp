@@ -154,6 +154,7 @@ bool is_histogram(const DatasetConstView &a, const Dim dim) {
 }
 
 namespace {
+/*
 void histogram_md_recurse(const VariableView &data,
                           const DataArrayConstView &unaligned,
                           const DataArrayConstView &realigned,
@@ -176,9 +177,10 @@ void histogram_md_recurse(const VariableView &data,
     histogram_md_recurse(data.slice({dim, i}), slice, realigned, dim_index + 1);
   }
 }
+*/
 } // namespace
 
-DataArray histogram(const DataArrayConstView &realigned) {
+DataArray histogram(const DataArrayConstView &) {
   throw except::UnalignedError("Expected realigned data, but data appears to "
                                "be histogrammed already.");
   /*
