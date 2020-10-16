@@ -87,7 +87,9 @@ TEST(DataArrayTest, astype) {
 }
 
 TEST(DataArrayTest, test_size_in_memory){
-  const auto hist = make_histogram();
+  DataArray a(
+      makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}),
+      {{Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{4, 5, 6})}});
 
-  EXPECT_EQ(sizeof(double) * 14, hist.sizeInMemory());
+  EXPECT_EQ(sizeof(int) * 6, a.sizeInMemory());
 }

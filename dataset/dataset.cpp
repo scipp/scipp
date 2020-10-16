@@ -231,8 +231,6 @@ scipp::index Dataset::sizeInMemory() const {
     for (auto const &mask : data.masks | boost::adaptors::map_values) {
       size += mask.sizeInMemory();
     }
-    if (data.unaligned)
-      size += data.unaligned->data.sizeInMemory();
   }
 
   for (auto const &coord : m_coords | boost::adaptors::map_values) {
