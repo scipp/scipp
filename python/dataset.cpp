@@ -276,14 +276,14 @@ void init_dataset(py::module &m) {
       m, "DataArrayView", R"(
         View for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset;
         Mostly equivalent to DataArray, see there for details.)");
-  dataArrayView.def(py::init<DataArray &>())
-  .def("__sizeof__", &DataArrayView::sizeInMemory);
+  dataArrayView.def(py::init<DataArray &>());
 
   bind_data_array_properties(dataArray);
   bind_data_array_properties(dataArrayView);
 
   py::class_<DatasetConstView>(m, "DatasetConstView")
-      .def(py::init<const Dataset &>());
+      .def(py::init<const Dataset &>())
+      .def("__sizeof__", &DatasetConstView::sizeInMemory);
   py::class_<DatasetView, DatasetConstView> datasetView(m, "DatasetView",
                                                         R"(
         View for Dataset, representing a sliced view onto a Dataset;

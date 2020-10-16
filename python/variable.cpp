@@ -220,8 +220,7 @@ Mostly equivalent to Variable, see there for details.)");
       .def(
           "__rmul__",
           [](VariableView &a, double &b) { return a * (b * units::one); },
-          py::is_operator())
-      .def("__sizeof__", &VariableView::sizeInMemory);
+          py::is_operator());
 
   bind_common_operators(variable);
   bind_common_operators(variableConstView);
