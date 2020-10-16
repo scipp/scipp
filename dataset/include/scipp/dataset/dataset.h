@@ -11,6 +11,7 @@
 #include <unordered_map>
 
 #include <boost/iterator/transform_iterator.hpp>
+#include <boost/range/adaptor/map.hpp>
 
 #include "scipp/common/deep_ptr.h"
 #include "scipp/dataset/dataset_access.h"
@@ -32,6 +33,18 @@ struct DatasetData {
   /// Unaligned coords.
   std::unordered_map<Dim, Variable> coords;
   std::unordered_map<std::string, Variable> masks;
+
+  scipp::index sizeInMemory() const {
+    scipp::index size = 0;
+    size += data.sizeInMemory();
+    for (auto const &coord : coords | boost::adaptors::map_values) {
+      size += coord.sizeInMemory();
+    }
+    for (auto const &mask : masks | boost::adaptors::map_values) {
+      size += mask.sizeInMemory();
+    }
+    return size;
+  }
 };
 
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
@@ -97,6 +110,8 @@ public:
 
   const auto &get_dataset() const { return *m_dataset; }
   const auto &get_data() const { return m_data->second; }
+
+  scipp::index sizeInMemory() const;
 
 protected:
   // Note that m_view is a VariableView, not a VariableConstView. In case
@@ -498,6 +513,8 @@ public:
   std::unordered_map<Dim, scipp::index> dimensions() const;
   std::unordered_map<Dim, scipp::index> dims() const { return dimensions(); }
 
+  scipp::index sizeInMemory() const;
+
 protected:
   explicit DatasetConstView() : m_dataset(nullptr) {}
   template <class T>
@@ -686,9 +703,7 @@ public:
 
   void drop_alignment();
 
-  scipp::index sizeInMemory() const {
-    return m_holder.sizeInMemory();
-  }
+  scipp::index sizeInMemory() const { return m_holder.sizeInMemory(); }
 
 private:
   DataArrayConstView get() const;

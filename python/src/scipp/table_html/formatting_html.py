@@ -468,7 +468,6 @@ def _obj_repr(header_components, sections):
 
 def dataset_repr(ds):
     obj_type = "scipp.{}".format(type(ds).__name__)
-
     header_components = [
         f"<div class='xr-obj-type'>{escape(obj_type)}"
         f" size: {sys.getsizeof(ds)} B</div>"

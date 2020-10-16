@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <boost/range/adaptor/map.hpp>
 #include "scipp/dataset/dataset.h"
 #include "scipp/common/index.h"
 #include "scipp/core/except.h"
@@ -224,13 +223,7 @@ void Dataset::setData(const std::string &name, Variable data,
 scipp::index Dataset::sizeInMemory() const {
   scipp::index size = 0;
   for (auto const &data : m_data | boost::adaptors::map_values) {
-    size += data.data.sizeInMemory();
-    for (auto const &coord : data.coords | boost::adaptors::map_values) {
-      size += coord.sizeInMemory();
-    }
-    for (auto const &mask : data.masks | boost::adaptors::map_values) {
-      size += mask.sizeInMemory();
-    }
+    size += data.sizeInMemory();
   }
 
   for (auto const &coord : m_coords | boost::adaptors::map_values) {
@@ -406,6 +399,11 @@ units::Unit DataArrayConstView::unit() const { return data().unit(); }
 /// Set the unit of the data values.
 void DataArrayView::setUnit(const units::Unit unit) const {
   data().setUnit(unit);
+}
+
+/// Return the memory footprint of the underlying DataArray.
+scipp::index DataArrayConstView::sizeInMemory() const {
+  return get_data().sizeInMemory();
 }
 
 namespace {
@@ -664,6 +662,11 @@ CoordsView DatasetView::coords() const noexcept {
 bool DatasetConstView::contains(const std::string &name) const noexcept {
   return find(name) != end();
 }
+
+/// Return the size of the referanced Dataset in memory.
+scipp::index DatasetConstView::sizeInMemory() const {
+    return m_dataset->sizeInMemory();
+  }
 
 namespace {
 template <class T> const auto &getitem(const T &view, const std::string &name) {
