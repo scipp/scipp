@@ -78,7 +78,7 @@ public:
   }
 
   scipp::index sizeInMemory() const {
-    return m_buffer.sizeInMemory();
+    return m_buffer.sizeInMemory() + m_indices.sizeInMemory();
   }
 
 private:
