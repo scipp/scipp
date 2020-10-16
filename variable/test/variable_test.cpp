@@ -100,6 +100,18 @@ TEST(Variable, span_references_Variable) {
   EXPECT_EQ(observer[0], 1.0);
 }
 
+TEST(Variable, size_in_memory) {
+  auto var = makeVariable<double>(units::kg, Shape{1, 2}, Dims{Dim::X, Dim::Y},
+                                  Values{3, 4});
+  EXPECT_EQ(var.sizeInMemory(), sizeof(double) * 2);
+
+  auto var_with_variance =
+      makeVariable<double>(units::kg, Shape{1, 2}, Dims{Dim::X, Dim::Y},
+                           Values{3, 4}, Variances{1, 2});
+
+  EXPECT_EQ(var_with_variance.sizeInMemory(), sizeof(double) * 4);
+}
+
 class Variable_comparison_operators : public ::testing::Test {
 private:
   template <class A, class B>

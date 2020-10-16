@@ -225,6 +225,23 @@ TEST(DatasetTest, DataArrayView_setData) {
   EXPECT_EQ(d["a"].data(), var + var);
 }
 
+TEST(DatasetTest, size_in_memory_test) {
+  Dataset d;
+  const auto data =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+  const auto mask = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  const auto coords = makeVariable<double>(Dims{Dim::X}, Shape{3});
+
+  d.setData("a", data);
+  EXPECT_EQ(d.sizeInMemory(), sizeof(double) * 3);
+
+  d.setCoord(Dim::X, coords);
+  EXPECT_EQ(d.sizeInMemory(), sizeof(double) * 6);
+  
+  d["a"].masks().set("unaligned", mask);
+  EXPECT_EQ(d.sizeInMemory(), sizeof(double) * 9);
+}
+
 struct SetDataTest : public ::testing::Test {
 protected:
   Variable var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});

@@ -85,3 +85,9 @@ TEST(DataArrayTest, astype) {
   EXPECT_EQ(x.data(),
             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1., 2., 3.}));
 }
+
+TEST(DataArrayTest, test_size_in_memory){
+  const auto hist = make_histogram();
+
+  EXPECT_EQ(sizeof(double) * 14, hist.sizeInMemory());
+}

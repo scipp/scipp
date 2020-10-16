@@ -111,7 +111,11 @@ public:
   }
 
   scipp::index sizeInMemory() const {
-    return sizeof(T) * m_values.size(); 
+    if (m_variances) {
+      return sizeof(T) * (m_values.size() + m_variances.value().size());
+    } else {
+      return sizeof(T) * m_values.size();
+    }
   }
 
 private:
