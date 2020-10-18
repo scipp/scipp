@@ -232,9 +232,10 @@ class PlotController:
 
             # Update slider readout label
             ind = active_sliders[owner_dim]
-            loc = self.model.get_coord_center_value(self.name, owner_dim, ind)
+            left, mid, right = self.model.get_bin_coord_values(
+                self.name, owner_dim, ind)
             self.widgets.update_slider_readout(owner_dim, value_to_string(loc))
-            self.widgets.update_thickness_readout(owner_dim, loc)
+            self.widgets.update_thickness_readout(owner_dim, loc, ind)
 
         slices = {}
         info = {"slice_label": ""}

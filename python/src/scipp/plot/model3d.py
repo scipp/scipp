@@ -160,7 +160,6 @@ class PlotModel3d(PlotModel):
                 "Unknown cut surface type {}".format(button_value))
 
     def get_positions_extents(self, pixel_size):
-        # coord = scipp_obj_dict[self.name].coords[self.positions]
         extents = {}
         for xyz in "xyz":
             x = getattr(sc.geometry, xyz)(self.pos_coord)

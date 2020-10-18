@@ -127,9 +127,9 @@ class PlotWidgets:
             # Hide buttons if positions are used
             if positions is not None:
                 self.buttons[dim].layout.display = 'none'
-            # Disable profile picking for 3D plots for now
+            # Hide profile picking for 3D plots for now
             if len(button_options) == 3:
-                self.profile_button[dim].disabled = True
+                self.profile_button[dim].layout.display = 'none'
             if dim == positions:
                 self.dim_labels[dim].layout.display = 'none'
                 self.slider[dim].layout.display = 'none'
@@ -322,7 +322,7 @@ class PlotWidgets:
     def update_slider_readout(self, dim, value):
         self.slider_readout[dim].value = value
 
-    def update_thickness_readout(self, dim, loc):
+    def update_thickness_readout(self, dim, loc. ind):
         thickness = self.thickness_slider[dim].value
         # if thickness == 0.0:
         #     thickness_start = value_to_string(coord[dim, ind].value)
