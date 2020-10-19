@@ -14,6 +14,7 @@ std::unordered_map<std::string, Dim::Id> Dim::builtin_ids{
     {"d-spacing", Dim::DSpacing},
     {"E", Dim::Energy},
     {"Delta-E", Dim::EnergyTransfer},
+    {"event", Dim::Event},
     {"group", Dim::Group},
     {"<invalid>", Dim::Invalid},
     {"position", Dim::Position},

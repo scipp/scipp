@@ -10,6 +10,7 @@
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/slice.h"
 #include "scipp/variable/variable.h"
 
 namespace py = pybind11;
@@ -82,8 +83,44 @@ template <class T> struct slicer {
     return self.slice(Slice(dim, i));
   }
 
+  static auto get_by_value(T &self,
+                           const std::tuple<Dim, VariableConstView> &value) {
+    auto [dim, i] = value;
+    return slice(self, dim, i);
+  }
+
   static auto get_range(T &self,
                         const std::tuple<Dim, const py::slice> &index) {
+    auto [dim, py_slice] = index;
+    if constexpr (std::is_same_v<T, DataArray> ||
+                  std::is_same_v<T, DataArrayView> ||
+                  std::is_same_v<T, Dataset> ||
+                  std::is_same_v<T, DatasetView>) {
+      try {
+        auto step = py::getattr(py_slice, "step");
+        if (!step.is_none()) {
+          throw std::runtime_error(
+              "Step cannot be specified for value based slicing.");
+        }
+        auto start = py::getattr(py_slice, "start");
+        auto stop = py::getattr(py_slice, "stop");
+        if (!start.is_none() || !stop.is_none()) { // Means default slice : is
+                                                   // treated as index slice
+          auto start_var =
+              start.is_none()
+                  ? VariableConstView{}
+                  : py::getattr(py_slice, "start").cast<VariableConstView>();
+          auto stop_var =
+              stop.is_none()
+                  ? VariableConstView{}
+                  : py::getattr(py_slice, "stop").cast<VariableConstView>();
+
+          return slice(self, dim, start_var, stop_var);
+        }
+      } catch (const py::cast_error &) {
+      }
+    }
+
     return self.slice(from_py_slice(self, index));
   }
 
@@ -111,6 +148,14 @@ template <class T> struct slicer {
   }
 
   template <class Other>
+  static void set_by_value(T &self,
+                           const std::tuple<Dim, VariableConstView> &value,
+                           const Other &data) {
+    auto slice = slicer<T>::get_by_value(self, value);
+    slice.assign(data);
+  }
+
+  template <class Other>
   static void set_range(T &self, const std::tuple<Dim, const py::slice> &index,
                         const Other &data) {
     auto slice = slicer<T>::get_range(self, index);
@@ -126,18 +171,21 @@ void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
                 !std::is_same_v<T, DatasetView>) {
     c.def("__setitem__", &slicer<T>::set_from_numpy);
     c.def("__setitem__", &slicer<T>::set_range_from_numpy);
-    c.def("__setitem__", &slicer<T>::template set<Variable>);
     c.def("__setitem__", &slicer<T>::template set<VariableView>);
-    c.def("__setitem__", &slicer<T>::template set_range<Variable>);
     c.def("__setitem__", &slicer<T>::template set_range<VariableView>);
   }
   if constexpr (std::is_same_v<T, DataArray> ||
                 std::is_same_v<T, DataArrayView>) {
+    c.def("__getitem__", &slicer<T>::get_by_value, py::keep_alive<0, 1>());
     c.def("__setitem__", &slicer<T>::template set<DataArrayView>);
     c.def("__setitem__", &slicer<T>::template set_range<DataArrayView>);
+    c.def("__setitem__", &slicer<T>::template set_by_value<VariableView>);
+    c.def("__setitem__", &slicer<T>::template set_by_value<DataArrayView>);
   }
   if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
+    c.def("__getitem__", &slicer<T>::get_by_value, py::keep_alive<0, 1>());
     c.def("__setitem__", &slicer<T>::template set<DatasetView>);
     c.def("__setitem__", &slicer<T>::template set_range<DatasetView>);
+    c.def("__setitem__", &slicer<T>::template set_by_value<DatasetView>);
   }
 }

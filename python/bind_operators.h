@@ -169,6 +169,13 @@ void bind_binary_scalars(pybind11::class_<T, Ignored...> &c) {
 }
 
 template <class T, class... Ignored>
+void bind_unary(pybind11::class_<T, Ignored...> &c) {
+  c.def(
+      "__neg__", [](T &a) { return -a; }, py::is_operator(),
+      py::call_guard<py::gil_scoped_release>());
+}
+
+template <class T, class... Ignored>
 void bind_boolean_unary(pybind11::class_<T, Ignored...> &c) {
   c.def(
       "__invert__", [](T &a) { return ~a; }, py::is_operator(),

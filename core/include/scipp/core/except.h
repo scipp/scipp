@@ -67,6 +67,10 @@ struct SCIPP_CORE_EXPORT EventsDimensionError : public DimensionError {
       : DimensionError("Unsupported operation for events dimensions.") {}
 };
 
+struct SCIPP_CORE_EXPORT BucketError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
+};
+
 struct SCIPP_CORE_EXPORT SizeError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };

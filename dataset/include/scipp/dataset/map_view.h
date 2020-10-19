@@ -242,6 +242,7 @@ public:
   }
 
   void erase(const typename Base::key_type &key) const;
+  typename Base::mapped_type extract(const typename Base::key_type &key) const;
 
   const Access &access() const { return m_access; }
 };

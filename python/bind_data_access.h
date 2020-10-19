@@ -94,12 +94,7 @@ class DataAccessHelper {
     }
 
     template <class View> static bool valid(py::object &obj) {
-      auto &view = obj.cast<View &>();
-      if constexpr (std::is_same_v<DataArray, View> ||
-                    std::is_base_of_v<DataArrayConstView, View>)
-        return view.hasData() && bool(view.data());
-      else
-        return bool(view);
+      return bool(obj.cast<View &>());
     }
   };
 
@@ -109,12 +104,7 @@ class DataAccessHelper {
     }
 
     template <class View> static bool valid(py::object &obj) {
-      auto &view = obj.cast<View &>();
-      if constexpr (std::is_same_v<DataArray, View> ||
-                    std::is_base_of_v<DataArrayConstView, View>)
-        return view.hasData() && view.hasVariances();
-      else
-        return view.hasVariances();
+      return obj.cast<View &>().hasVariances();
     }
   };
 };

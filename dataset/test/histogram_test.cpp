@@ -6,7 +6,6 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
-#include "scipp/dataset/unaligned.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -54,6 +53,10 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   const auto histX = DataArray(dataX, {{Dim::X, edgesX}});
   EXPECT_TRUE(is_histogram(histX, Dim::X));
   EXPECT_FALSE(is_histogram(histX, Dim::Y));
+  // Also for Dataset
+  const auto ds_histX = Dataset{DataArrayConstView{histX}};
+  EXPECT_TRUE(is_histogram(ds_histX, Dim::X));
+  EXPECT_FALSE(is_histogram(ds_histX, Dim::Y));
 
   const auto histX2d = DataArray(dataXY, {{Dim::X, edgesX}});
   EXPECT_TRUE(is_histogram(histX2d, Dim::X));
@@ -231,6 +234,7 @@ TEST(HistogramTest, weight_lists) {
   EXPECT_EQ(dataset::histogram(events, edges), expected);
 }
 
+/*
 TEST(HistogramTest, dataset_realigned) {
   Dataset events;
   const auto coord =
@@ -275,3 +279,4 @@ TEST(HistogramTest, dataset_realigned2) {
 
   EXPECT_EQ(dataset::histogram(events), expected);
 }
+*/

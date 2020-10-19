@@ -11,9 +11,6 @@
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
 
-namespace scipp::dataset {
-class Dataset;
-}
 namespace scipp::variable {
 
 /// Specialization of DataModel for "bucketed" data. T could be Variable,
@@ -26,23 +23,17 @@ public:
   using value_type = bucket<T>;
   using range_type = typename bucket<T>::range_type;
 
-  DataModel(const Dimensions &dimensions,
-            const element_array<range_type> &indices, const Dim dim, T buffer)
-      : VariableConcept(dimensions), m_dim(dim), m_buffer(std::move(buffer)),
-        m_indices(validated_indices(indices)) {
-    if (this->dims().volume() != scipp::size(m_indices))
-      throw except::DimensionError(
-          "Creating Variable: data size does not match "
-          "volume given by dimension extents.");
-  }
+  DataModel(const VariableConstView &indices, const Dim dim, T buffer)
+      : VariableConcept(indices.dims()),
+        m_indices(validated_indices(indices, dim, buffer)), m_dim(dim),
+        m_buffer(std::move(buffer)) {}
 
   VariableConceptHandle clone() const override {
-    return std::make_unique<DataModel>(this->dims(), m_indices, m_dim,
-                                       m_buffer);
+    return std::make_unique<DataModel>(*this);
   }
 
   bool operator==(const DataModel &other) const noexcept {
-    return dims() == other.dims() && equal(m_indices, other.m_indices) &&
+    return dims() == other.dims() && m_indices == other.m_indices &&
            m_dim == other.m_dim && m_buffer == other.m_buffer;
   }
   bool operator!=(const DataModel &other) const noexcept {
@@ -51,9 +42,8 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
-    return std::make_unique<DataModel>(dims,
-                                       element_array<range_type>(dims.volume()),
-                                       m_dim, T{m_buffer.slice({m_dim, 0, 0})});
+    return std::make_unique<DataModel>(makeVariable<range_type>(dims), m_dim,
+                                       T{m_buffer.slice({m_dim, 0, 0})});
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
@@ -71,54 +61,54 @@ public:
             const VariableView &dest) const override;
   void assign(const VariableConcept &other) override;
 
-  auto indices() const {
-    return ElementArrayView{m_indices.data(), 0, dims(), dims()};
-  }
-  auto indices(const scipp::index offset, const Dimensions &iterDims,
-               const Dimensions &dataDims) const {
-    return ElementArrayView(m_indices.data(), offset, iterDims, dataDims);
-  }
+  Dim dim() const noexcept { return m_dim; }
+  // TODO Should the mutable version return a view to prevent risk of clients
+  // breaking invariants of variable?
+  const T &buffer() const noexcept { return m_buffer; }
+  T &buffer() noexcept { return m_buffer; }
+  const Variable &indices() const { return m_indices; }
+  Variable &indices() { return m_indices; }
 
-  ElementArrayView<bucket<T>> values() { return {indices(), m_dim, m_buffer}; }
-  ElementArrayView<const bucket<T>> values() const {
-    return {indices(), m_dim, m_buffer};
+  ElementArrayView<bucket<T>> values(const core::element_array_view &base) {
+    return {index_values(base), m_dim, m_buffer};
   }
-
-  ElementArrayView<bucket<T>> values(const scipp::index offset,
-                                     const Dimensions &iterDims,
-                                     const Dimensions &dataDims) {
-    return {indices(offset, iterDims, dataDims), m_dim, m_buffer};
-  }
-  ElementArrayView<const bucket<T>> values(const scipp::index offset,
-                                           const Dimensions &iterDims,
-                                           const Dimensions &dataDims) const {
-    return {indices(offset, iterDims, dataDims), m_dim, m_buffer};
+  ElementArrayView<const bucket<T>>
+  values(const core::element_array_view &base) const {
+    return {index_values(base), m_dim, m_buffer};
   }
 
 private:
-  auto validated_indices(const element_array<range_type> &indices) {
-    auto copy(indices);
-    std::sort(copy.begin(), copy.end());
-    if ((!copy.empty() && (copy.begin()->first < 0)) ||
-        (!copy.empty() && ((copy.end() - 1)->second > m_buffer.dims()[m_dim])))
+  static auto validated_indices(const VariableConstView &indices, const Dim dim,
+                                const T &buffer) {
+    Variable copy(indices);
+    const auto vals =
+        scipp::span(copy.values<range_type>().data(),
+                    copy.values<range_type>().data() + copy.dims().volume());
+    std::sort(vals.begin(), vals.end());
+    if ((!vals.empty() && (vals.begin()->first < 0)) ||
+        (!vals.empty() && ((vals.end() - 1)->second > buffer.dims()[dim])))
       throw except::SliceError("Bucket indices out of range");
-    if (std::adjacent_find(copy.begin(), copy.end(),
+    if (std::adjacent_find(vals.begin(), vals.end(),
                            [](const auto a, const auto b) {
                              return a.second > b.first;
-                           }) != copy.end())
+                           }) != vals.end())
       throw except::SliceError(
           "Bucket begin index must be less or equal to its end index.");
-    if (std::find_if(copy.begin(), copy.end(), [](const auto x) {
+    if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
           return x.second >= 0 && x.first > x.second;
-        }) != copy.end())
+        }) != vals.end())
       throw except::SliceError("Overlapping bucket indices are not allowed.");
     // Copy to avoid a second memory allocation
-    std::copy(indices.begin(), indices.end(), copy.begin());
+    const auto &i = indices.values<range_type>();
+    std::copy(i.begin(), i.end(), vals.begin());
     return copy;
   }
+  auto index_values(const core::element_array_view &base) const {
+    return cast<range_type>(m_indices).values(base);
+  }
+  Variable m_indices;
   Dim m_dim;
   T m_buffer;
-  element_array<range_type> m_indices;
 };
 
 template <class T>
@@ -150,11 +140,7 @@ void DataModel<bucket<T>>::copy(const VariableConstView &,
 
 template <class T>
 void DataModel<bucket<T>>::assign(const VariableConcept &other) {
-  const auto &otherT = requireT<const DataModel<bucket<T>>>(other);
-  std::copy(otherT.m_indices.begin(), otherT.m_indices.end(),
-            m_indices.begin());
-  m_dim = otherT.m_dim;
-  m_buffer = otherT.m_buffer;
+  *this = requireT<const DataModel<bucket<T>>>(other);
 }
 
 } // namespace scipp::variable

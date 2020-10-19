@@ -76,10 +76,8 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
 
 DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                       const Dim dim) {
-  auto out = DataArray(
-      a.hasData() || b.hasData() ? concatenate(a.data(), b.data(), dim)
-                                 : Variable{},
-      {}, concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
+  auto out = DataArray(concatenate(a.data(), b.data(), dim), {},
+                       concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
   for (auto &&[d, coord] :
        concat(a.coords(), b.coords(), dim, a.dims(), b.dims())) {
     if (d == dim || a.aligned_coords().contains(d) ||
@@ -113,14 +111,6 @@ Dataset concatenate(const DatasetConstView &a, const DatasetConstView &b,
     }
   return result;
 }
-
-namespace {
-UnalignedData resize(Dimensions dims, const DataArrayConstView &unaligned,
-                     const Dim dim, const scipp::index size) {
-  dims.resize(dim, size);
-  return {dims, resize(unaligned, dim, size)};
-}
-} // namespace
 
 DataArray resize(const DataArrayConstView &a, const Dim dim,
                  const scipp::index size) {

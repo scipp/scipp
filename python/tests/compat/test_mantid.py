@@ -68,28 +68,11 @@ class TestMantidConversion(unittest.TestCase):
         target_tof = binned_mantid.coords['tof']
         d = mantidcompat.convert_EventWorkspace_to_data_array(
             eventWS, load_pulse_times=False)
-        d.realign({'tof': target_tof})
-        binned = sc.histogram(d)
+        binned = sc.histogram(d, target_tof)
 
         delta = sc.sum(binned_mantid - binned, 'spectrum')
         delta = sc.sum(delta, 'tof')
         self.assertLess(np.abs(delta.value), 1e-5)
-
-    def test_EventWorkspace_realign_events(self):
-        import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
-
-        realigned = mantidcompat.convert_EventWorkspace_to_data_array(
-            eventWS, realign_events=True, load_pulse_times=False)
-
-        d = mantidcompat.convert_EventWorkspace_to_data_array(
-            eventWS, realign_events=False, load_pulse_times=False)
-        d.realign({'tof': realigned.coords['tof']})
-
-        # Removing sample due to missing comparison operators
-        del d.unaligned_coords['sample']
-        del realigned.unaligned_coords['sample']
-        assert sc.is_equal(realigned, d)
 
     def test_comparison(self):
         a = mantidcompat.convert_EventWorkspace_to_data_array(
@@ -139,8 +122,7 @@ class TestMantidConversion(unittest.TestCase):
 
         da = mantidcompat.convert_EventWorkspace_to_data_array(
             eventWS, load_pulse_times=False)
-        da.realign({'tof': target_tof})
-        da = sc.histogram(da)
+        da = sc.histogram(da, target_tof)
         d = sc.Dataset(da)
         converted = sc.neutron.convert(d, 'tof', 'wavelength')
 
@@ -541,13 +523,36 @@ class TestMantidConversion(unittest.TestCase):
         # after
         self.assertEqual(3, target.sample().getThickness())
 
-    def _do_test_point(self, point):
-        x, y, z = point
-        r, theta, phi = mantidcompat._to_spherical(x, y, z)
-        x_b, y_b, z_b = mantidcompat._to_cartesian(r, theta, phi)
-        self.assertAlmostEqual(x, x_b)
-        self.assertAlmostEqual(y, y_b)
-        self.assertAlmostEqual(z, z_b)
+    def _exec_to_spherical(self, x, y, z):
+        in_out = sc.Dataset()
+        in_out['x'] = sc.Variable(value=x, unit=sc.units.m)
+        in_out['y'] = sc.Variable(value=y, unit=sc.units.m)
+        in_out['z'] = sc.Variable(value=z, unit=sc.units.m)
+        point = sc.geometry.position(in_out['x'].data, in_out['y'].data,
+                                     in_out['z'].data)
+        mantidcompat._to_spherical(point, in_out)
+        return in_out
+
+    def test_spherical_conversion(self):
+        x = 1.0
+        y = 1.0
+        z = 1.0
+        spherical = self._exec_to_spherical(x, y, z)
+        assert spherical['r'].value == np.sqrt(x**2 + y**2 + z**2)
+        assert spherical['t'].value == np.arccos(z /
+                                                 np.sqrt(x**2 + y**2 + z**2))
+        # Phi now should be between 0 and pi
+        assert spherical['p-delta'].value + spherical['p-sign'].value == np.pi
+        assert spherical['p-sign'].value == np.arctan2(y, x)
+        x = -1.0
+        spherical = self._exec_to_spherical(x, y, z)
+        assert spherical['p-delta'].value + spherical['p-sign'].value == np.pi
+        assert spherical['p-sign'].value == np.arctan2(y, x)
+        # Phi now should be between 0 and -pi
+        y = -1.0
+        spherical = self._exec_to_spherical(x, y, z)
+        assert spherical['p-sign'].value - spherical['p-delta'].value == -np.pi
+        assert spherical['p-sign'].value == np.arctan2(y, x)
 
     def test_detector_positions(self):
         import mantid.simpleapi as mantid

@@ -32,6 +32,7 @@
 
 #include "scipp/variable/except.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_factory.h"
 #include "scipp/variable/visit.h"
 
 namespace scipp::core::detail {
@@ -145,18 +146,11 @@ static constexpr void advance(T &indices,
                std::make_index_sequence<std::tuple_size_v<T>>{});
 }
 
-template <class T> static constexpr auto iter_dims(T &&iterable) noexcept {
+template <class T> static constexpr auto array_params(T &&iterable) noexcept {
   if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
-    return iter_dims(iterable.values);
+    return iterable.values;
   else
-    return iterable.dims();
-}
-
-template <class T> static constexpr auto data_dims(T &&iterable) noexcept {
-  if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
-    return data_dims(iterable.values);
-  else
-    return iterable.dataDims();
+    return iterable;
 }
 
 template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
@@ -268,13 +262,13 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
       for (; indices != end; indices.increment())
         call(op, indices, out, other...);
     };
-    const auto begin = core::MultiIndex(
-        iter::iter_dims(out), iter::data_dims(out), iter::data_dims(other)...);
+    const auto begin =
+        core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
     auto run_parallel = [&](const auto &range) {
       auto indices = begin;
-      indices.advance(range.begin());
+      indices.set_index(range.begin());
       auto end = begin;
-      end.advance(range.end());
+      end.set_index(range.end());
       run(indices, end);
     };
     core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
@@ -319,7 +313,7 @@ template <class T> static constexpr auto maybe_eval(T &&_) {
 
 /// Functor for implementing operations with event data, see also
 /// TransformEventsInPlace.
-struct TransformEvents {
+struct TransformEvents : public detail::EventsFlag {
   template <class Op, class... Ts>
   constexpr auto operator()(const Op &op, const Ts &... args) const {
     event_list<std::invoke_result_t<Op, core::detail::element_type_t<Ts>...>>
@@ -427,16 +421,17 @@ template <class Op> struct Transform {
   template <class... Ts> Variable operator()(Ts &&... handles) const {
     const auto dims = merge(handles.dims()...);
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
-    constexpr bool out_variances =
-        !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op>;
-    auto volume = dims.volume();
-    Variable out =
-        out_variances && (handles.hasVariances() || ...)
-            ? makeVariable<Out>(Dimensions{dims},
-                                Values(volume, core::default_init_elements),
-                                Variances(volume, core::default_init_elements))
-            : makeVariable<Out>(Dimensions{dims},
-                                Values(volume, core::default_init_elements));
+    const bool variances =
+        !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
+        (handles.hasVariances() || ...);
+    units::Unit unit;
+    // Workaround for OSX clang issue with broken overload resolution
+    if constexpr (std::is_base_of_v<EventsFlag, Op>)
+      unit = op.base_op()(variableFactory().elem_unit(*handles.m_var)...);
+    else
+      unit = op(variableFactory().elem_unit(*handles.m_var)...);
+    auto out = variableFactory().create(dtype<Out>, dims, unit, variances,
+                                        *handles.m_var...);
     do_transform(op, variable_access<Out>(out), std::tuple<>(),
                  as_view{handles, dims}...);
     return out;
@@ -520,6 +515,7 @@ struct augment {
 };
 
 template <class Op, class EventsOp> struct overloaded_events : Op, EventsOp {
+  const Op &base_op() const noexcept { return *this; }
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
     if constexpr ((transform_detail::is_events_v<std::decay_t<Ts>> || ...))
       return EventsOp::operator()(static_cast<const Op &>(*this),
@@ -595,35 +591,36 @@ template <bool dry_run> struct in_place {
     }
     if constexpr (dry_run)
       return;
-    auto run = [&](auto indices, const auto &end) {
-      for (; std::get<0>(indices) != end; iter::increment(indices))
-        call_in_place(op, indices, arg, other...);
-    };
 
     if constexpr (transform_detail::is_events_v<std::decay_t<T>> ||
                   (transform_detail::is_events_v<std::decay_t<Ts>> || ...)) {
+      auto run = [&](auto indices, const auto &end) {
+        for (; std::get<0>(indices) != end; iter::increment(indices))
+          call_in_place(op, indices, arg, other...);
+      };
       run(begin, iter::end_index(arg));
     } else {
+      auto run = [&](auto indices, const auto &end) {
+        for (; indices != end; indices.increment())
+          call_in_place(op, indices, arg, other...);
+      };
+      const auto begin_ = core::MultiIndex(iter::array_params(arg),
+                                           iter::array_params(other)...);
       if (iter::has_stride_zero(std::get<0>(begin))) {
         // The output has a dimension with stride zero so parallelization must
         // be done differently. Explicit and precise control of chunking is
         // required to avoid multiple threads writing to the same output. Not
         // implemented for now.
-        run(begin, iter::end_index(arg));
+        auto end = begin_;
+        end.set_index(arg.size());
+        run(begin_, end);
       } else {
-        auto run_ = [&](auto indices, const auto &end) {
-          for (; indices != end; indices.increment())
-            call_in_place(op, indices, arg, other...);
-        };
-        const auto begin_ =
-            core::MultiIndex(iter::iter_dims(arg), iter::data_dims(arg),
-                             iter::data_dims(other)...);
         auto run_parallel = [&](const auto &range) {
           auto indices = begin_;
-          indices.advance(range.begin());
+          indices.set_index(range.begin());
           auto end = begin_;
-          end.advance(range.end());
-          run_(indices, end);
+          end.set_index(range.end());
+          run(indices, end);
         };
         core::parallel::parallel_for(
             core::parallel::blocked_range(0, arg.size()), run_parallel);
@@ -793,8 +790,8 @@ template <bool dry_run> struct in_place {
   static void transform(Op op, Var &&var, const Other &... other) {
     using namespace detail;
     (scipp::expect::contains(var.dims(), other.dims()), ...);
-    auto unit = var.unit();
-    op(unit, other.unit()...);
+    auto unit = variableFactory().elem_unit(var);
+    op(unit, variableFactory().elem_unit(other)...);
     // Stop early in bad cases of changing units (if `var` is a slice):
     var.expectCanSetUnit(unit);
     // Wrapped implementation to convert multiple tuples into a parameter pack.
@@ -802,7 +799,7 @@ template <bool dry_run> struct in_place {
                    other...);
     if constexpr (dry_run)
       return;
-    var.setUnit(unit);
+    variableFactory().set_elem_unit(var, unit);
   }
 };
 
@@ -833,6 +830,15 @@ void transform_in_place(Var &&var, const VariableConstView &var1,
                         const VariableConstView &var2, Op op) {
   in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), var1,
                                            var2);
+}
+
+/// Transform the data elements of a variable in-place.
+template <class... TypePairs, class Var, class Op>
+void transform_in_place(Var &&var, const VariableConstView &var1,
+                        const VariableConstView &var2,
+                        const VariableConstView &var3, Op op) {
+  in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), var1,
+                                           var2, var3);
 }
 
 /// Accumulate data elements of a variable in-place.
@@ -877,24 +883,21 @@ namespace detail {
 template <class... Ts, class Op, class... Vars>
 Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   using namespace detail;
-  auto unit = op(vars.unit()...);
-  Variable out;
   try {
-    if constexpr ((is_any_events<Ts>::value || ...) || sizeof...(Vars) > 2) {
-      out = visit_impl<Ts...>::apply(Transform{op}, vars...);
+    if constexpr (std::is_base_of_v<
+                      core::transform_flags::no_event_list_handling_t, Op> ||
+                  (is_any_events<Ts>::value || ...) || sizeof...(Vars) > 2) {
+      return visit_impl<Ts...>::apply(Transform{op}, vars...);
     } else {
-      out =
-          variable::visit(
-              augment::insert_events(
-                  std::tuple<visit_detail::maybe_duplicate<Ts, Vars...>...>{}))
-              .apply(Transform{overloaded_events{op, TransformEvents{}}},
-                     vars...);
+      return variable::visit(
+                 augment::insert_events(
+                     std::tuple<
+                         visit_detail::maybe_duplicate<Ts, Vars...>...>{}))
+          .apply(Transform{overloaded_events{op, TransformEvents{}}}, vars...);
     }
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes ", vars...);
   }
-  out.setUnit(unit);
-  return out;
 }
 } // namespace detail
 

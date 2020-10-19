@@ -11,8 +11,6 @@
 
 #include <Eigen/Dense>
 
-#include "variable_concept.h"
-
 #include "scipp-variable_export.h"
 #include "scipp/common/index.h"
 #include "scipp/common/span.h"
@@ -26,6 +24,7 @@
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 
+#include "scipp/variable/variable_concept.h"
 #include "scipp/variable/variable_keyword_arg_constructor.h"
 
 namespace scipp::dataset {
@@ -135,6 +134,13 @@ public:
   VariableConcept &data() & { return *m_object; }
 
   void setVariances(Variable v);
+
+  core::element_array_view array_params() const noexcept {
+    return {0, dims(), dims(), {}};
+  }
+
+  template <class T>
+  std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
 
 private:
   template <class... Ts, class... Args>
@@ -251,6 +257,14 @@ public:
   auto &underlying() const { return *m_variable; }
   bool is_trivial() const noexcept;
 
+  core::element_array_view array_params() const noexcept {
+    return {m_offset, m_dims, m_dataDims, {}};
+  }
+
+  template <class T>
+  std::tuple<VariableConstView, Dim, typename T::const_element_type>
+  constituents() const;
+
 protected:
   const Variable *m_variable{nullptr};
   scipp::index m_offset{0};
@@ -316,6 +330,12 @@ public:
 
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;
+
+  template <class T>
+  std::tuple<VariableConstView, Dim, typename T::element_type>
+  constituents() const;
+
+  template <class T> void replace_model(T model) const;
 
 private:
   friend class dataset::DataArrayConstView;

@@ -4,10 +4,10 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dimensions.h"
+#include "scipp/dataset/bucket.h"
 #include "scipp/dataset/counts.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
-#include "scipp/dataset/unaligned.h"
 #include "scipp/neutron/convert.h"
 #include "scipp/variable/operations.h"
 
@@ -60,6 +60,19 @@ Dataset makeTofDatasetEvents() {
                                    Values{1, 1}, Variances{1, 1}));
 
   return tof;
+}
+
+Variable makeTofBucketedEvents() {
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::Spectrum}, Shape{2}, Values{std::pair{0, 4}, std::pair{4, 7}});
+  Variable tofs =
+      makeVariable<double>(Dims{Dim::Event}, Shape{7}, units::us,
+                           Values{1000, 3000, 2000, 4000, 5000, 6000, 3000});
+  Variable weights =
+      makeVariable<double>(Dims{Dim::Event}, Shape{7}, Values{}, Variances{});
+  DataArray buffer = DataArray(weights, {{Dim::Tof, tofs}});
+  return dataset::buckets::from_constituents(std::move(indices), Dim::Event,
+                                             std::move(buffer));
 }
 
 Variable makeCountDensityData(const units::Unit &unit) {
@@ -516,34 +529,29 @@ TEST_P(ConvertTest, convert_with_factor_type_promotion) {
   }
 }
 
-TEST(ConvertRealignedTest, default) {
-  const Dataset events = makeTofDatasetEvents();
-  const auto tof_edges = makeVariable<double>(
-      Dims{Dim::Tof}, Shape{4}, units::us, Values{0, 1500, 5500, 6500});
-  auto realigned = dataset::unaligned::realign(events, {{Dim::Tof, tof_edges}});
-  // Cannot use this testing approach for Dim::Energy since it leads to
-  // decreasing coord which prevents histograming.
-  for (const auto &dim : {Dim::DSpacing, Dim::Wavelength})
-    EXPECT_EQ(histogram(convert(realigned, Dim::Tof, dim)),
-              convert(histogram(events, tof_edges), Dim::Tof, dim));
-}
-
-TEST(ConvertRealignedTest, realign_linear) {
-  const Dataset events = makeTofDatasetEvents();
-  const auto tof_edges = makeVariable<double>(
-      Dims{Dim::Tof}, Shape{4}, units::us, Values{500, 1500, 5500, 6500});
-  auto realigned = dataset::unaligned::realign(events, {{Dim::Tof, tof_edges}});
-  for (const auto &dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
-    // Comparing to case without realignment enabled
-    const auto reference = convert(realigned, Dim::Tof, dim);
-    auto out = convert(realigned, Dim::Tof, dim, ConvertRealign::Linear);
-    const auto coord = out.coords()[dim];
-    EXPECT_EQ(min(coord), min(reference.coords()[dim]));
-    EXPECT_EQ(max(coord), max(reference.coords()[dim]));
-    EXPECT_EQ(coord.dims(), Dimensions(dim, 4));
-    out.coords().erase(dim);
-    out.coords().set(dim, reference.coords()[dim]);
-    EXPECT_EQ(out, reference);
+TEST(ConvertBucketsTest, events_converted) {
+  Dataset tof = makeTofDataset();
+  // Standard dense coord for comparison purposes. The final 0 is a dummy.
+  const auto coord = makeVariable<double>(
+      Dims{Dim::Spectrum, Dim::Tof}, Shape{2, 4}, units::us,
+      Values{1000, 3000, 2000, 4000, 5000, 6000, 3000, 0});
+  tof.coords().set(Dim::Tof, coord);
+  tof.setData("bucketed", makeTofBucketedEvents());
+  for (auto &&d : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
+    auto res = convert(tof, Dim::Tof, d);
+    auto values = res["bucketed"].values<bucket<DataArray>>();
+    Variable expected(
+        res.coords()[d].slice({Dim::Spectrum, 0}).slice({d, 0, 4}));
+    expected.rename(d, Dim::Event);
+    EXPECT_FALSE(values[0].coords().contains(Dim::Tof));
+    EXPECT_TRUE(values[0].coords().contains(d));
+    EXPECT_EQ(values[0].coords()[d], expected);
+    expected =
+        Variable(res.coords()[d].slice({Dim::Spectrum, 1}).slice({d, 0, 3}));
+    expected.rename(d, Dim::Event);
+    EXPECT_FALSE(values[1].coords().contains(Dim::Tof));
+    EXPECT_TRUE(values[1].coords().contains(d));
+    EXPECT_EQ(values[1].coords()[d], expected);
   }
 }
 

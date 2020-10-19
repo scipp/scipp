@@ -25,13 +25,17 @@ void expectCanBroadcastFromTo(const Dimensions &source,
 /// @param offset Start offset from beginning of array.
 /// @param iterDims Dimensions to use for iteration.
 /// @param dataDims Dimensions of array to iterate.
+/// @param bucketParams Optional, in case of view onto bucket-variable this
+/// holds parameters for accessing individual buckets.
 ///
 /// The parameter `iterDims` can be used to remove, slice, broadcast, or
 /// transpose `dataDims`.
 element_array_view::element_array_view(const scipp::index offset,
                                        const Dimensions &iterDims,
-                                       const Dimensions &dataDims)
-    : m_offset(offset), m_iterDims(iterDims), m_dataDims(dataDims) {
+                                       const Dimensions &dataDims,
+                                       const BucketParams &bucketParams)
+    : m_offset(offset), m_iterDims(iterDims), m_dataDims(dataDims),
+      m_bucketParams(bucketParams) {
   expectCanBroadcastFromTo(m_dataDims, m_iterDims);
 }
 
@@ -44,7 +48,7 @@ element_array_view::element_array_view(const scipp::index offset,
 element_array_view::element_array_view(const element_array_view &other,
                                        const Dimensions &iterDims)
     : m_offset(other.m_offset), m_iterDims(iterDims),
-      m_dataDims(other.m_dataDims) {
+      m_dataDims(other.m_dataDims), m_bucketParams(other.m_bucketParams) {
   expectCanBroadcastFromTo(other.m_iterDims, m_iterDims);
   // See implementation of ViewIndex regarding this relabeling.
   for (const auto label : m_dataDims.labels())

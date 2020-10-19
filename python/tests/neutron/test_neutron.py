@@ -48,27 +48,6 @@ def test_neutron_convert_out_arg():
     assert dspacing is d
 
 
-def test_neutron_convert_realign():
-    d = make_dataset_with_beamline()
-    # note that on the C++ side the request for realignment will be
-    # ignored since this is not realigned event data.
-    dspacing = sc.neutron.convert(d, 'tof', 'd-spacing', realign='linear')
-    assert dspacing.coords['d-spacing'].unit == sc.units.angstrom
-
-
-def test_neutron_convert_out_arg_realign():
-    d = make_dataset_with_beamline()
-    # note that on the C++ side the request for realignment will be
-    # ignored since this is not realigned event data.
-    dspacing = sc.neutron.convert(d,
-                                  'tof',
-                                  'd-spacing',
-                                  out=d,
-                                  realign='linear')
-    assert dspacing.coords['d-spacing'].unit == sc.units.angstrom
-    assert dspacing is d
-
-
 def test_neutron_beamline():
     d = make_dataset_with_beamline()
 

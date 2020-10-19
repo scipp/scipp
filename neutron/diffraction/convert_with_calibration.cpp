@@ -23,8 +23,7 @@ template <class T> bool has_dim(const T &d, const Dim dim) {
 
 template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
   for (const auto &item : iter(d))
-    if (item.hasData())
-      core::expect::notCountDensity(item.unit());
+    core::expect::notCountDensity(item.unit());
 
   // 1. There may be a grouping of detectors, in which case we need to apply it
   // to the cal information first.
@@ -67,13 +66,6 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
                                    cal["difc"].data());
     }
   }
-
-  // 3. Transform realigned items
-  for (const auto &item : iter(d))
-    if (item.unaligned() && contains_events(item.unaligned())) {
-      item.unaligned().coords()[Dim::Tof] -= cal["tzero"].data();
-      item.unaligned().coords()[Dim::Tof] *= reciprocal(cal["difc"].data());
-    }
 
   d.rename(Dim::Tof, Dim::DSpacing);
   return d;

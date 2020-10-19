@@ -6,10 +6,12 @@
 
 #include "scipp/core/element/arg_list.h"
 
+#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/event.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 
+#include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/dataset_util.h"
 
@@ -23,47 +25,43 @@ using namespace scipp::dataset;
 namespace scipp::neutron {
 
 template <class T, class Op>
-T convert_generic(T &&d, const Dim from, const Dim to,
-                  const ConvertRealign realign, Op op,
+T convert_generic(T &&d, const Dim from, const Dim to, Op op,
                   const VariableConstView &arg) {
   using core::element::arg_list;
   const auto op_ = overloaded{arg_list<double, std::tuple<float, double>>, op};
   const auto items = iter(d);
-  const bool any_aligned =
-      std::any_of(items.begin(), items.end(),
-                  [](const auto &item) { return item.hasData(); });
   // 1. Transform coordinate
   if (d.coords().contains(from)) {
     const auto coord = d.coords()[from];
-    if (realign == ConvertRealign::None || any_aligned) {
-      // Cannot realign if any item has aligned (histogrammed) data
-      if (!coord.dims().contains(arg.dims()))
-        d.coords().set(from, broadcast(coord, arg.dims()));
-      transform_in_place(d.coords()[from], arg, op_);
-    } else {
-      // Unit conversion may swap what min and max are, so we treat them jointly
-      // as extrema and extract min and max at the end.
-      auto extrema = concatenate(broadcast(min(coord, from), arg.dims()),
-                                 broadcast(max(coord, from), arg.dims()), from);
-      transform_in_place(extrema, arg, op_);
-      d.coords().set(
-          from, linspace(min(extrema), max(extrema), from, coord.dims()[from]));
-    }
+    if (!coord.dims().contains(arg.dims()))
+      d.coords().set(from, broadcast(coord, arg.dims()));
+    transform_in_place(d.coords()[from], arg, op_);
   }
-  // 2. Transform realigned items
-  for (const auto &item : iter(d))
-    if (item.unaligned() && contains_events(item.unaligned()))
-      transform_in_place(item.unaligned().coords()[from], arg, op_);
+  // 2. Transform coordinates in bucket variables
+  for (const auto &item : iter(d)) {
+    if (item.dtype() != dtype<bucket<DataArray>>)
+      continue;
+    const auto &[indices, dim, buffer] =
+        item.data().template constituents<bucket<DataArray>>();
+    if (!buffer.coords().contains(from))
+      continue;
+    auto coord = buckets::from_constituents(Variable(indices), dim,
+                                            buffer.coords().extract(from));
+    transform_in_place(coord, arg, op_);
+    buffer.coords().set(
+        to, std::get<2>(coord.template to_constituents<bucket<Variable>>()));
+  }
+
+  // 3. Rename dims
   d.rename(from, to);
   return std::move(d);
 }
 
 template <class T>
 static T convert_with_factor(T &&d, const Dim from, const Dim to,
-                             const ConvertRealign realign,
                              const Variable &factor) {
   return convert_generic(
-      std::forward<T>(d), from, to, realign,
+      std::forward<T>(d), from, to,
       [](auto &coord, const auto &c) { coord *= c; }, factor);
 }
 
@@ -200,12 +198,9 @@ template <class T> T attrs_to_coords(T &&x, const Dim from, const Dim to) {
 
 } // namespace
 
-template <class T>
-T convert_impl(T d, const Dim from, const Dim to,
-               const ConvertRealign realign) {
+template <class T> T convert_impl(T d, const Dim from, const Dim to) {
   for (const auto &item : iter(d))
-    if (item.hasData())
-      core::expect::notCountDensity(item.unit());
+    core::expect::notCountDensity(item.unit());
   d = attrs_to_coords(std::move(d), from, to);
   // This will need to be cleanup up in the future, but it is unclear how to do
   // so in a future-proof way. Some sort of double-dynamic dispatch based on
@@ -218,59 +213,50 @@ T convert_impl(T d, const Dim from, const Dim to,
   // to `transform`) and are not readily stored as function pointers or
   // std::function.
   if ((from == Dim::Tof) && (to == Dim::DSpacing))
-    return convert_with_factor(std::move(d), from, to, realign,
+    return convert_with_factor(std::move(d), from, to,
                                constants::tof_to_dspacing(d));
   if ((from == Dim::DSpacing) && (to == Dim::Tof))
-    return convert_with_factor(std::move(d), from, to, realign,
+    return convert_with_factor(std::move(d), from, to,
                                reciprocal(constants::tof_to_dspacing(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Wavelength))
-    return convert_with_factor(std::move(d), from, to, realign,
+    return convert_with_factor(std::move(d), from, to,
                                constants::tof_to_wavelength(d));
   if ((from == Dim::Wavelength) && (to == Dim::Tof))
-    return convert_with_factor(std::move(d), from, to, realign,
+    return convert_with_factor(std::move(d), from, to,
                                reciprocal(constants::tof_to_wavelength(d)));
 
   if ((from == Dim::Tof) && (to == Dim::Energy))
-    return convert_generic(std::move(d), from, to, realign,
-                           conversions::tof_to_energy,
+    return convert_generic(std::move(d), from, to, conversions::tof_to_energy,
                            constants::tof_to_energy(d));
   if ((from == Dim::Energy) && (to == Dim::Tof))
-    return convert_generic(std::move(d), from, to, realign,
-                           conversions::energy_to_tof,
+    return convert_generic(std::move(d), from, to, conversions::energy_to_tof,
                            constants::tof_to_energy(d));
 
   // lambda <-> Q conversion is symmetric
   if (((from == Dim::Wavelength) && (to == Dim::Q)) ||
       ((from == Dim::Q) && (to == Dim::Wavelength)))
-    return convert_generic(std::move(d), from, to, realign,
-                           conversions::wavelength_to_q,
+    return convert_generic(std::move(d), from, to, conversions::wavelength_to_q,
                            constants::wavelength_to_q(d));
 
   throw except::UnitError(
       "Conversion between requested dimensions not implemented yet.");
 }
 
-DataArray convert(DataArray d, const Dim from, const Dim to,
-                  const ConvertRealign realign) {
-  return coords_to_attrs(convert_impl(std::move(d), from, to, realign), from,
-                         to);
+DataArray convert(DataArray d, const Dim from, const Dim to) {
+  return coords_to_attrs(convert_impl(std::move(d), from, to), from, to);
 }
 
-DataArray convert(const DataArrayConstView &d, const Dim from, const Dim to,
-                  const ConvertRealign realign) {
-  return convert(DataArray(d), from, to, realign);
+DataArray convert(const DataArrayConstView &d, const Dim from, const Dim to) {
+  return convert(DataArray(d), from, to);
 }
 
-Dataset convert(Dataset d, const Dim from, const Dim to,
-                const ConvertRealign realign) {
-  return coords_to_attrs(convert_impl(std::move(d), from, to, realign), from,
-                         to);
+Dataset convert(Dataset d, const Dim from, const Dim to) {
+  return coords_to_attrs(convert_impl(std::move(d), from, to), from, to);
 }
 
-Dataset convert(const DatasetConstView &d, const Dim from, const Dim to,
-                const ConvertRealign realign) {
-  return convert(Dataset(d), from, to, realign);
+Dataset convert(const DatasetConstView &d, const Dim from, const Dim to) {
+  return convert(Dataset(d), from, to);
 }
 
 } // namespace scipp::neutron

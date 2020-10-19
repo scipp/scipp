@@ -13,6 +13,13 @@
 
 namespace scipp::core {
 
+struct SCIPP_CORE_EXPORT BucketParams {
+  explicit operator bool() const noexcept { return dim != Dim::Invalid; }
+  Dim dim{Dim::Invalid};
+  Dimensions dims{};
+  const std::pair<scipp::index, scipp::index> *indices{nullptr};
+};
+
 template <class T>
 class element_array_view_iterator
     : public boost::iterator_facade<element_array_view_iterator<T>, T,
@@ -53,7 +60,8 @@ private:
 class SCIPP_CORE_EXPORT element_array_view {
 public:
   element_array_view(const scipp::index offset, const Dimensions &iterDims,
-                     const Dimensions &dataDims);
+                     const Dimensions &dataDims,
+                     const BucketParams &bucketParams);
   element_array_view(const element_array_view &other,
                      const Dimensions &iterDims);
 
@@ -65,8 +73,12 @@ public:
   }
 
   scipp::index size() const { return m_iterDims.volume(); }
+  constexpr scipp::index offset() const noexcept { return m_offset; }
   constexpr const Dimensions &dims() const noexcept { return m_iterDims; }
   constexpr const Dimensions &dataDims() const noexcept { return m_dataDims; }
+  constexpr const BucketParams &bucketParams() const noexcept {
+    return m_bucketParams;
+  }
 
   bool overlaps(const element_array_view &other) const {
     // TODO We could be less restrictive here and use a more sophisticated check
@@ -79,6 +91,7 @@ protected:
   scipp::index m_offset{0};
   Dimensions m_iterDims;
   Dimensions m_dataDims;
+  BucketParams m_bucketParams{};
 };
 
 /// A view into multi-dimensional data, supporting slicing, index reordering,
@@ -92,8 +105,14 @@ public:
 
   /// Construct an ElementArrayView over given buffer.
   ElementArrayView(T *buffer, const scipp::index offset,
-                   const Dimensions &iterDims, const Dimensions &dataDims)
-      : element_array_view(offset, iterDims, dataDims), m_buffer(buffer) {}
+                   const Dimensions &iterDims, const Dimensions &dataDims,
+                   const BucketParams &bucketParams = BucketParams{})
+      : element_array_view(offset, iterDims, dataDims, bucketParams),
+        m_buffer(buffer) {}
+
+  /// Construct an ElementArrayView over given buffer.
+  ElementArrayView(const element_array_view &base, T *buffer)
+      : element_array_view(base), m_buffer(buffer) {}
 
   /// Construct a ElementArrayView from another ElementArrayView, with different
   /// iteration dimensions.
