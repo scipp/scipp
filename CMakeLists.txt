@@ -2,7 +2,9 @@
 # contributors (https://github.com/scipp)
 cmake_minimum_required(VERSION 3.13)
 project(scipp)
-set(CMAKE_CXX_STANDARD 17)
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif(NOT DEFINED CMAKE_CXX_STANDARD)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -32,6 +34,7 @@ if(MSVC)
     message(STATUS "CLCACHE_PATH not specified. Not enabled.")
     unset(CMAKE_VS_GLOBALS) # Clear all vs globals
   endif(EXISTS ${CLCACHE_PATH})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /constexpr:steps2000000")
 endif(MSVC)
 
 if(NOT CMAKE_BUILD_TYPE)
