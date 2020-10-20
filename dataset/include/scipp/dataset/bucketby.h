@@ -12,6 +12,6 @@ SCIPP_DATASET_EXPORT DataArray sortby(const DataArrayConstView &data,
                                       const Dim dim);
 SCIPP_DATASET_EXPORT DataArray
 bucketby(const DataArrayConstView &array,
-         const std::map<Dim, VariableConstView> &edges);
+         const std::vector<VariableConstView> &edges);
 
 } // namespace scipp::dataset

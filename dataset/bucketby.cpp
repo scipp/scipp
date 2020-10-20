@@ -57,10 +57,10 @@ auto shrink(const Dimensions &dims) {
 }
 
 Variable bin_sizes(const VariableConstView &indices,
-                   const std::map<Dim, VariableConstView> &edges) {
+                   const std::vector<VariableConstView> &edges) {
   Dimensions dims;
   for (const auto &item : edges)
-    dims = merge(dims, shrink(item.second.dims()));
+    dims = merge(dims, shrink(item.dims()));
   Variable sizes = makeVariable<scipp::index>(dims);
   const auto s = sizes.values<scipp::index>();
   for (const auto i : indices.values<scipp::index>())
@@ -165,11 +165,11 @@ DataArray sortby(const DataArrayConstView &array, const Dim dim) {
 }
 
 DataArray bucketby(const DataArrayConstView &array,
-                   const std::map<Dim, VariableConstView> &edges) {
+                   const std::vector<VariableConstView> &edges) {
   Variable indices;
   Dim bucket_dim = Dim::Invalid;
-  for (const auto &[dim, edge] : edges) {
-    const auto coord = array.coords()[dim];
+  for (const auto &edge : edges) {
+    const auto coord = array.coords()[edge.dims().inner()];
     const auto inner_indices = bin_index(coord, edge);
     const auto nbin = edge.dims()[edge.dims().inner()] - 1;
     if (indices) {
@@ -196,9 +196,12 @@ DataArray bucketby(const DataArrayConstView &array,
   const auto [begin, total_size] = buckets::sizes_to_begin(sizes);
   const auto end = begin + sizes;
   auto binned = bin(array, indices, sizes);
+  std::map<Dim, Variable> coords;
+  for (const auto &edge : edges)
+    coords[edge.dims().inner()] = copy(edge);
   return {buckets::from_constituents(zip(begin, end), bucket_dim,
                                      std::move(binned)),
-          edges};
+          std::move(coords)};
 }
 
 } // namespace scipp::dataset

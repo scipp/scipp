@@ -47,7 +47,7 @@ TEST_F(DataArrayBucketByTest, 1d) {
       DataArray(sorted_data, {{Dim::X, sorted_x}, {Dim("scalar"), scalar}},
                 {{"mask", sorted_mask}});
 
-  const auto bucketed = bucketby(table, {{Dim::X, edges_x}});
+  const auto bucketed = bucketby(table, {edges_x});
 
   EXPECT_EQ(bucketed.dims(), Dimensions({Dim::X}, {2}));
   EXPECT_EQ(bucketed.coords()[Dim::X], edges_x);
@@ -77,7 +77,7 @@ TEST_F(DataArrayBucketByTest, 2d) {
       {{Dim::X, sorted_x}, {Dim::Y, sorted_y}, {Dim("scalar"), scalar}},
       {{"mask", sorted_mask}});
 
-  const auto bucketed = bucketby(table, {{Dim::X, edges_x}, {Dim::Y, edges_y}});
+  const auto bucketed = bucketby(table, {edges_x, edges_y});
 
   EXPECT_EQ(bucketed.dims(), Dimensions({Dim::X, Dim::Y}, {2, 2}));
   EXPECT_EQ(bucketed.coords()[Dim::X], edges_x);
