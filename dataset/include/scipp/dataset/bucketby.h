@@ -10,13 +10,8 @@ namespace scipp::dataset {
 
 SCIPP_DATASET_EXPORT DataArray sortby(const DataArrayConstView &data,
                                       const Dim dim);
-SCIPP_DATASET_EXPORT DataArray bucketby(const DataArrayConstView &data,
-                                        const Dim dim,
-                                        const VariableConstView &bins);
-SCIPP_DATASET_EXPORT DataArray bucketby(const DataArrayConstView &data,
-                                        const Dim dim0,
-                                        const VariableConstView &bins0,
-                                        const Dim dim1,
-                                        const VariableConstView &bins1);
+SCIPP_DATASET_EXPORT DataArray
+bucketby(const DataArrayConstView &array,
+         const std::map<Dim, VariableConstView> &edges);
 
 } // namespace scipp::dataset

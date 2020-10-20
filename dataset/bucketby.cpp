@@ -22,7 +22,6 @@
 
 namespace scipp::dataset {
 
-
 namespace {
 static void expectValidGroupbyKey(const VariableConstView &key) {
   if (key.dims().ndim() != 1)
@@ -57,9 +56,11 @@ auto shrink(const Dimensions &dims) {
   return shrunk;
 }
 
-template <class... Edges>
-Variable bin_sizes(const VariableConstView &indices, const Edges &... edges) {
-  auto dims = merge(shrink(edges.dims())...);
+Variable bin_sizes(const VariableConstView &indices,
+                   const std::map<Dim, VariableConstView> &edges) {
+  Dimensions dims;
+  for (const auto &item : edges)
+    dims = merge(dims, shrink(item.second.dims()));
   Variable sizes = makeVariable<scipp::index>(dims);
   const auto s = sizes.values<scipp::index>();
   for (const auto i : indices.values<scipp::index>())
@@ -163,42 +164,41 @@ DataArray sortby(const DataArrayConstView &array, const Dim dim) {
   return sortby_impl(array, dim);
 }
 
-DataArray bucketby(const DataArrayConstView &array, const Dim dim,
-                   const VariableConstView &bins) {
-  const auto indices = bin_index(array.coords()[dim], bins);
-  const auto sizes = bin_sizes(indices, bins);
+DataArray bucketby(const DataArrayConstView &array,
+                   const std::map<Dim, VariableConstView> &edges) {
+  Variable indices;
+  Dim bucket_dim = Dim::Invalid;
+  for (const auto &[dim, edge] : edges) {
+    const auto coord = array.coords()[dim];
+    const auto inner_indices = bin_index(coord, edge);
+    const auto nbin = edge.dims()[edge.dims().inner()] - 1;
+    if (indices) {
+      if (bucket_dim != coord.dims().inner())
+        throw except::DimensionError(
+            "Coords of data to be bucketed have inconsistent dimensions. Data "
+            "that can be bucketed should generally resemble a table, with a "
+            "coord column for each bucketed dimension.");
+      indices = variable::transform<scipp::index>(
+          indices, inner_indices,
+          overloaded{[](const units::Unit &u0, const units::Unit &u1) {
+                       return units::one;
+                     },
+                     [nbin](const auto i0, const auto i1) {
+                       return i0 < 0 || i1 < 0 ? -1 : i0 * nbin + i1;
+                     }} // namespace scipp::dataset
+      );
+    } else {
+      indices = inner_indices;
+    }
+    bucket_dim = coord.dims().inner();
+  }
+  const auto sizes = bin_sizes(indices, edges);
   const auto [begin, total_size] = buckets::sizes_to_begin(sizes);
   const auto end = begin + sizes;
   auto binned = bin(array, indices, sizes);
-  const auto &key = binned.coords()[dim];
-  return {buckets::from_constituents(zip(begin, end), key.dims().inner(),
+  return {buckets::from_constituents(zip(begin, end), bucket_dim,
                                      std::move(binned)),
-          {{dim, copy(bins)}}};
-}
-
-DataArray bucketby(const DataArrayConstView &array, const Dim dim0,
-                   const VariableConstView &bins0, const Dim dim1,
-                   const VariableConstView &bins1) {
-  const auto indices0 = bin_index(array.coords()[dim0], bins0);
-  const auto indices1 = bin_index(array.coords()[dim1], bins1);
-  const auto nbin1 = bins1.dims()[bins1.dims().inner()] - 1;
-  const auto indices = variable::transform<scipp::index>(
-      indices0, indices1,
-      overloaded{[](const units::Unit &u0, const units::Unit &u1) {
-                   return units::one;
-                 },
-                 [nbin1](const auto i0, const auto i1) {
-                   return i0 < 0 || i1 < 0 ? -1 : i0 * nbin1 + i1;
-                 }} // namespace scipp::dataset
-  );
-  const auto sizes = bin_sizes(indices, bins0, bins1);
-  const auto [begin, total_size] = buckets::sizes_to_begin(sizes);
-  const auto end = begin + sizes;
-  auto binned = bin(array, indices, sizes);
-  const auto &key = binned.coords()[dim0]; // should be same for dim1
-  return {buckets::from_constituents(zip(begin, end), key.dims().inner(),
-                                     std::move(binned)),
-          {{dim0, copy(bins0)}, {dim1, copy(bins1)}}};
+          edges};
 }
 
 } // namespace scipp::dataset
