@@ -180,7 +180,7 @@ DataArray bucketby(const DataArrayConstView &array,
             "coord column for each bucketed dimension.");
       indices = variable::transform<scipp::index>(
           indices, inner_indices,
-          overloaded{[](const units::Unit &u0, const units::Unit &u1) {
+          overloaded{[](const units::Unit &, const units::Unit &) {
                        return units::one;
                      },
                      [nbin](const auto i0, const auto i1) {

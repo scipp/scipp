@@ -60,7 +60,8 @@ TEST(MeanTest, in_place_fail_output_dtype) {
   const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                         units::m, Values{1.0, 2.0, 3.0, 4.0});
   auto out = makeVariable<int>(Dims{Dim::Y}, Shape{2}, units::m);
-  EXPECT_THROW(const auto view = mean(var, Dim::X, out), except::UnitError);
+  EXPECT_THROW([[maybe_unused]] const auto view = mean(var, Dim::X, out),
+               except::UnitError);
 }
 
 TEST(MeanTest, masked_data_array) {

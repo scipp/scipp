@@ -121,18 +121,17 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
   }
 };
 
-static constexpr auto sum = [](const DataArrayView &out,
-                               const auto &data_container,
-                               const GroupByGrouping::group &group,
-                               const Dim reductionDim, const Variable &mask) {
-  for (const auto &slice : group) {
-    const auto data_slice = data_container.slice(slice);
-    if (mask)
-      sum_impl(out.data(), data_slice.data() * mask.slice(slice));
-    else
-      sum_impl(out.data(), data_slice.data());
-  }
-};
+static constexpr auto sum =
+    [](const DataArrayView &out, const auto &data_container,
+       const GroupByGrouping::group &group, const Dim, const Variable &mask) {
+      for (const auto &slice : group) {
+        const auto data_slice = data_container.slice(slice);
+        if (mask)
+          sum_impl(out.data(), data_slice.data() * mask.slice(slice));
+        else
+          sum_impl(out.data(), data_slice.data());
+      }
+    };
 
 template <void (*Func)(const VariableView &, const VariableConstView &)>
 // The msvc compiler was failing to pass the templated function correctly

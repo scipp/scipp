@@ -49,7 +49,7 @@ TEST_F(DataArrayBucketByTest, 1d) {
 
   const auto bucketed = bucketby(table, {edges_x});
 
-  EXPECT_EQ(bucketed.dims(), Dimensions({Dim::X}, {2}));
+  EXPECT_EQ(bucketed.dims(), Dimensions(Dim::X, 2));
   EXPECT_EQ(bucketed.coords()[Dim::X], edges_x);
   EXPECT_EQ(bucketed.values<bucket<DataArray>>()[0],
             sorted_table.slice({Dim::Event, 0, 1}));

@@ -366,7 +366,8 @@ protected:
   void check_fail() {
     Variable var0{std::make_unique<Model>(indices, Dim::X, buffer0)};
     Variable var1{std::make_unique<Model>(indices, Dim::X, buffer1)};
-    EXPECT_ANY_THROW(buckets::concatenate(var0, var1));
+    EXPECT_ANY_THROW([[maybe_unused]] auto joined =
+                         buckets::concatenate(var0, var1));
   }
 };
 
