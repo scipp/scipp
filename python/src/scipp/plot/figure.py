@@ -52,7 +52,8 @@ class PlotFigure:
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
-        if hasattr(self.fig.canvas, "widgets"):
+        # "on_widget_constructed" is an attribute specific to ipywidgets
+        if hasattr(self.fig.canvas, "on_widget_constructed"):
             return self.fig.canvas
         else:
             buf = io.BytesIO()

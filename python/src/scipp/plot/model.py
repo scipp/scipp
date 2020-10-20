@@ -151,9 +151,15 @@ class PlotModel:
         return self.axformatter[name][dim]
 
     def get_bin_coord_values(self, name, dim, ind):
-        left = self.data_arrays[name].coords[dim][dim, ind].value
-        right = self.data_arrays[name].coords[dim][dim, ind + 1].value
-        return left, 0.5 * (left + right), right
+        # print(name, dim, ind)
+        # print(self.data_arrays[name].coords[dim])
+        # print(self.data_arrays[name].coords[dim][dim, ind])
+
+        left = self.data_arrays[name].coords[dim][dim, ind:ind+1]
+        right = self.data_arrays[name].coords[dim][dim, ind+1:ind+2]
+        # print(right.values[0])
+        return left.values[0], to_bin_centers(
+            self.data_arrays[name].coords[dim][dim, ind:ind + 2], dim).values[0], right.values[0]
 
     def get_data_names(self):
         return list(self.data_arrays.keys())
@@ -189,9 +195,22 @@ class PlotModel:
                                            rebin_edges[dim][dim, -1])
             dslice = dslice[this_slice]
 
+        # da = sc.DataArray(coords={x: dslice.coords[x] for x in (
+        #         set(dslice.coords.keys()) - set() }
+
         # Rebin the data
         for dim, edges in rebin_edges.items():
             dslice = sc.rebin(dslice, dim, edges)
+            # # print(dim)
+            # # print(edges)
+            # # print(dslice)
+            # # print({x: dslice.coords[x] for x in (
+            # #     set(dslice.coords.keys()) - set([dim]))})
+
+            # dslice = sc.DataArray(coords={x: dslice.coords[x] for x in (
+            #     set(dslice.coords.keys()) - set([dim]))},
+            #     data=sc.rebin(dslice.data, dim, dslice.coords[dim], edges))
+            # dslice.coords[dim] = edges
 
         # Divide by pixel width
         # TODO: can this loop be combined with the one above?

@@ -44,5 +44,6 @@ class ProfileView(PlotFigure1d):
         self.draw()
 
     def toggle_view(self, visible=True):
-        if hasattr(self.fig.canvas, "layout"):
+        # "on_widget_constructed" is an attribute specific to ipywidgets
+        if hasattr(self.fig.canvas, "on_widget_constructed"):
             self.fig.canvas.layout.display = None if visible else 'none'

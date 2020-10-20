@@ -13,6 +13,7 @@
 
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/rebin.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
@@ -308,4 +309,22 @@ Mostly equivalent to Variable, see there for details.)");
                    "values, False otherwise.")
           .rtype("bool")
           .c_str());
+
+  m.def("rebin",
+        [](const VariableConstView &x, const Dim dim, const VariableConstView &old_bins,
+                          const VariableConstView &new_bins){ return rebin(x, dim, old_bins, new_bins);},
+        py::arg("x"), py::arg("dim"), py::arg("old_bins"), py::arg("new_bins"),
+        py::call_guard<py::gil_scoped_release>(),
+        Docstring()
+            .description("Rebin a dimension of a Variable.")
+            .raises("If data cannot be rebinned, e.g., if the unit is not "
+                    "counts, or the existing coordinate is not a bin-edge "
+                    "coordinate.")
+            .returns("Data rebinned according to the new coordinate.")
+            .rtype("Variable")
+            .param("x", "Data to rebin.", "Variable")
+            .param("dim", "Dimension to rebin over.", "Dim")
+            .param("old_bins", "Old bin edges.", "Variable")
+            .param("new_bins", "New bin edges.", "Variable")
+            .c_str());
 }

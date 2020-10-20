@@ -131,9 +131,10 @@ class PlotController:
 
             # Slider readouts
             ind = dim_to_shape[dim] // 2
+            print(self.name, dim, ind)
             left, centre, right = self.model.get_bin_coord_values(
                 self.name, dim, ind)
-            parameters[dim]["slider_readout"] = [dim, left, centre, right]
+            parameters[dim]["slider_readout"] = [dim, ind, left, centre, right, self.multid_coord]
 
         self.widgets.initialise(parameters=parameters,
                                 multid_coord=self.multid_coord)
@@ -235,18 +236,21 @@ class PlotController:
             ind = active_sliders[owner_dim]
             left, mid, right = self.model.get_bin_coord_values(
                 self.name, owner_dim, ind)
-            self.widgets.update_slider_readout(owner_dim, left, mid, right)
+            self.widgets.update_slider_readout(
+                owner_dim, ind, left, mid, right, self.multid_coord)
 
         slices = {}
         info = {"slice_label": ""}
         # Slice along dimensions with active sliders
         for dim, val in active_sliders.items():
             slices[dim] = self._make_slice_dict(val, dim)
-            lower, upper = self.widgets.get_slice_bounds_as_strings(
-                dim, slices[dim]["bin_left"], slices[dim]["bin_centre"],
-                slices[dim]["bin_right"])
-            info["slice_label"] = "{},{}:{}-{}".format(info["slice_label"],
-                                                       dim, lower, upper)
+            # lower, upper = self.widgets.get_slice_bounds_as_strings(
+            #     dim, slices[dim]["bin_left"], slices[dim]["bin_centre"],
+            #     slices[dim]["bin_right"])
+            info["slice_label"] = "{},{}[{}]".format(info["slice_label"],
+                                                       dim, self.widgets.get_slice_bounds_as_string(
+                dim, val, slices[dim]["bin_left"], slices[dim]["bin_centre"],
+                slices[dim]["bin_right"], self.multid_coord))
         info["slice_label"] = info["slice_label"][1:]
 
         new_values = self.model.update_data(slices,
@@ -423,11 +427,13 @@ class PlotController:
                     info["slice_label"], dim,
                     value_to_string(xydata[ax_dims[dim]]))
             else:
-                lower, upper = self.widgets.get_slice_bounds_as_strings(
-                    dim, slices[dim]["bin_left"], slices[dim]["bin_centre"],
-                    slices[dim]["bin_right"])
-                info["slice_label"] = "{},{}:{}-{}".format(
-                    info["slice_label"], dim, lower, upper)
+                # lower, upper = self.widgets.get_slice_bounds_as_string(
+                #     dim, val, slices[dim]["bin_left"], slices[dim]["bin_centre"],
+                #     slices[dim]["bin_right"], self.multid_coord)
+                info["slice_label"] = "{},{}[{}]".format(
+                    info["slice_label"], dim, self.widgets.get_slice_bounds_as_string(
+                    dim, val, slices[dim]["bin_left"], slices[dim]["bin_centre"],
+                    slices[dim]["bin_right"], self.multid_coord))
         info["slice_label"] = info["slice_label"][1:]
 
         # Get new values from model
