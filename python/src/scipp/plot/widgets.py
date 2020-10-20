@@ -29,7 +29,6 @@ class PlotWidgets:
         self.slider = {}
         self.slider_readout = {}
         self.thickness_slider = {}
-        self.thickness_readout = {}
         self.buttons = {}
         self.profile_button = {}
         self.showhide = {}
@@ -80,7 +79,6 @@ class PlotWidgets:
                 layout={'width': "180px"})
 
             self.slider_readout[dim] = ipw.Label()
-            self.thickness_readout[dim] = ipw.Label()
 
             self.profile_button[dim] = ipw.Button(description="Profile",
                                                   disabled=disabled,
@@ -92,7 +90,6 @@ class PlotWidgets:
                 self.slider_readout[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
                 self.thickness_slider[dim].layout.display = 'none'
-                self.thickness_readout[dim].layout.display = 'none'
                 self.profile_button[dim].layout.display = 'none'
 
             # Add one set of buttons per dimension
@@ -112,7 +109,6 @@ class PlotWidgets:
             setattr(self.slider[dim], "dim", dim)
             setattr(self.continuous_update[dim], "dim", dim)
             setattr(self.thickness_slider[dim], "dim", dim)
-            setattr(self.thickness_readout[dim], "dim", dim)
             setattr(self.profile_button[dim], "dim", dim)
 
             # Hide buttons and labels for 1d variables
@@ -120,7 +116,6 @@ class PlotWidgets:
                 self.buttons[dim].layout.display = 'none'
                 self.dim_labels[dim].layout.display = 'none'
                 self.thickness_slider[dim].layout.display = 'none'
-                self.thickness_readout[dim].layout.display = 'none'
                 self.profile_button[dim].layout.display = 'none'
                 self.continuous_update[dim].layout.display = 'none'
 
@@ -136,7 +131,6 @@ class PlotWidgets:
                 self.continuous_update[dim].layout.display = 'none'
                 self.profile_button[dim].layout.display = 'none'
                 self.thickness_slider[dim].layout.display = 'none'
-                self.thickness_readout[dim].layout.display = 'none'
 
             # Add observer to buttons
             self.buttons[dim].on_msg(self.update_buttons)
@@ -145,7 +139,7 @@ class PlotWidgets:
                 self.dim_labels[dim], self.slider[dim],
                 self.slider_readout[dim], self.continuous_update[dim],
                 self.buttons[dim], self.thickness_slider[dim],
-                self.thickness_readout[dim], self.profile_button[dim]
+                self.profile_button[dim]
             ]
             self.container.append(ipw.HBox(row))
 
@@ -283,7 +277,10 @@ class PlotWidgets:
                 self.thickness_slider[dim].disabled = True
 
             # Slider readouts
-            self.slider_readout[dim].value = item["slider_readout"]
+            self.update_slider_readout(*item["slider_readout"])
+
+    def get_slider_value(self, dim):
+        return self.slider[dim].value
 
     def get_active_slider_values(self):
         slider_values = {}
@@ -319,17 +316,21 @@ class PlotWidgets:
             }
         return mask_info
 
-    def update_slider_readout(self, dim, value):
-        self.slider_readout[dim].value = value
-
-    def update_thickness_readout(self, dim, loc. ind):
+    def get_slice_bounds(self, dim, left, centre, right):
         thickness = self.thickness_slider[dim].value
-        # if thickness == 0.0:
-        #     thickness_start = value_to_string(coord[dim, ind].value)
-        #     thickness_end = value_to_string(coord[dim, ind + 1].value)
-        # else:
-        thickness_start = value_to_string(loc - 0.5 * thickness)
-        thickness_end = value_to_string(loc + 0.5 * thickness)
-        # return "{} - {}".format(thickness_start, thickness_end)
-        self.thickness_readout[dim].value = "{} - {}".format(
-            thickness_start, thickness_end)
+        if thickness == 0.0:
+            lower = left
+            upper = right
+        else:
+            lower = centre - 0.5 * thickness
+            upper = centre + 0.5 * thickness
+        return lower, upper
+
+    def get_slice_bounds_as_strings(self, dim, left, centre, right):
+        lower, upper = self.get_slice_bounds(dim, left, centre, right)
+        return value_to_string(lower), value_to_string(upper)
+
+    def update_slider_readout(self, dim, left, centre, right):
+        lower, upper = self.get_slice_bounds_as_strings(
+            dim, left, centre, right)
+        self.slider_readout[dim].value = "{} - {}".format(lower, upper)

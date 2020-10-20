@@ -218,7 +218,7 @@ class PlotModel:
         if deltax == 0.0:
             array = array[dim, dim_slice["index"]]
         else:
-            loc = dim_slice["location"]
+            loc = dim_slice["bin_centre"]
             array = self.resample_data(
                 array,
                 rebin_edges={

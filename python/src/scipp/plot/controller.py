@@ -131,8 +131,9 @@ class PlotController:
 
             # Slider readouts
             ind = dim_to_shape[dim] // 2
-            loc = self.model.get_coord_center_value(self.name, dim, ind)
-            parameters[dim]["slider_readout"] = value_to_string(loc)
+            left, centre, right = self.model.get_bin_coord_values(
+                self.name, dim, ind)
+            parameters[dim]["slider_readout"] = [dim, left, centre, right]
 
         self.widgets.initialise(parameters=parameters,
                                 multid_coord=self.multid_coord)
@@ -234,20 +235,18 @@ class PlotController:
             ind = active_sliders[owner_dim]
             left, mid, right = self.model.get_bin_coord_values(
                 self.name, owner_dim, ind)
-            self.widgets.update_slider_readout(owner_dim, value_to_string(loc))
-            self.widgets.update_thickness_readout(owner_dim, loc, ind)
+            self.widgets.update_slider_readout(owner_dim, left, mid, right)
 
         slices = {}
         info = {"slice_label": ""}
         # Slice along dimensions with active sliders
         for dim, val in active_sliders.items():
             slices[dim] = self._make_slice_dict(val, dim)
-            info["slice_label"] = "{},{}:{}-{}".format(
-                info["slice_label"], dim,
-                value_to_string(slices[dim]["location"] -
-                                0.5 * slices[dim]["thickness"]),
-                value_to_string(slices[dim]["location"] +
-                                0.5 * slices[dim]["thickness"]))
+            lower, upper = self.widgets.get_slice_bounds_as_strings(
+                dim, slices[dim]["bin_left"], slices[dim]["bin_centre"],
+                slices[dim]["bin_right"])
+            info["slice_label"] = "{},{}:{}-{}".format(info["slice_label"],
+                                                       dim, lower, upper)
         info["slice_label"] = info["slice_label"][1:]
 
         new_values = self.model.update_data(slices,
@@ -256,7 +255,11 @@ class PlotController:
         if self.panel is not None:
             self.panel.update_data(info)
         if self.profile_dim is not None:
-            self.profile.update_slice_area(slices[self.profile_dim])
+            lower, upper = self.widgets.get_slice_bounds(
+                self.profile_dim, slices[self.profile_dim]["bin_left"],
+                slices[self.profile_dim]["bin_centre"],
+                slices[self.profile_dim]["bin_right"])
+            self.profile.update_slice_area(lower, upper)
 
     def toggle_mask(self, change):
         """
@@ -390,14 +393,13 @@ class PlotController:
         self.view.update_profile_connection(visible=visible)
 
         if visible:
-            self.profile.update_slice_area({
-                "location":
-                self.widgets.slider[self.profile_dim].value,
-                "thickness":
-                self.widgets.thickness_slider[self.profile_dim].value
-            })
-
-        return
+            slice_dict = self._make_slice_dict(
+                self.widgets.get_slider_value(self.profile_dim),
+                self.profile_dim)
+            lower, upper = self.widgets.get_slice_bounds(
+                self.profile_dim, slice_dict["bin_left"],
+                slice_dict["bin_centre"], slice_dict["bin_right"])
+            self.profile.update_slice_area(lower, upper)
 
     def update_profile(self, xdata=None, ydata=None):
         """
@@ -421,12 +423,11 @@ class PlotController:
                     info["slice_label"], dim,
                     value_to_string(xydata[ax_dims[dim]]))
             else:
+                lower, upper = self.widgets.get_slice_bounds_as_strings(
+                    dim, slices[dim]["bin_left"], slices[dim]["bin_centre"],
+                    slices[dim]["bin_right"])
                 info["slice_label"] = "{},{}:{}-{}".format(
-                    info["slice_label"], dim,
-                    value_to_string(slices[dim]["location"] -
-                                    0.5 * slices[dim]["thickness"]),
-                    value_to_string(slices[dim]["location"] +
-                                    0.5 * slices[dim]["thickness"]))
+                    info["slice_label"], dim, lower, upper)
         info["slice_label"] = info["slice_label"][1:]
 
         # Get new values from model
@@ -446,24 +447,12 @@ class PlotController:
         self.profile.toggle_hover_visibility(value)
 
     def _make_slice_dict(self, ind, dim):
+        left, centre, right = self.model.get_bin_coord_values(
+            self.name, dim, ind)
         return {
             "index": ind,
-            "location": self.model.get_coord_center_value(self.name, dim, ind),
+            "bin_left": left,
+            "bin_centre": centre,
+            "bin_right": right,
             "thickness": self.widgets.thickness_slider[dim].value
         }
-
-    def _make_thickness_slider_readout(self, dim, loc, ind, coord):
-        """
-        Make a label containing start and end of range covered by thickness
-        slider.
-        """
-
-        # make and return both options
-        thickness = self.thickness_slider[dim].value
-        if thickness == 0.0:
-            thickness_start = value_to_string(coord[dim, ind].value)
-            thickness_end = value_to_string(coord[dim, ind + 1].value)
-        else:
-            thickness_start = value_to_string(loc - 0.5 * thickness)
-            thickness_end = value_to_string(loc + 0.5 * thickness)
-        return "{} - {}".format(thickness_start, thickness_end)

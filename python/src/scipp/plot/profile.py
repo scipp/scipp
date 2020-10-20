@@ -11,7 +11,6 @@ class ProfileView(PlotFigure1d):
         super().__init__(*args, **kwargs)
         self.current_visible_state = False
         self.slice_area = None
-        return
 
     def update_axes(self, *args, **kwargs):
         super().update_axes(*args, legend_labels=False, **kwargs)
@@ -38,14 +37,9 @@ class ProfileView(PlotFigure1d):
                 self.rescale_to_data()
             self.current_visible_state = value
 
-    def update_slice_area(self, profile_slice):
-
-        xstart = profile_slice["location"] - 0.5 * profile_slice["thickness"]
-        xend = profile_slice["location"] + 0.5 * profile_slice["thickness"]
-
+    def update_slice_area(self, xstart, xend):
         new_xy = np.array([[xstart, 0.0], [xstart, 1.0], [xend, 1.0],
                            [xend, 0.0], [xstart, 0.0]])
-
         self.slice_area.set_xy(new_xy)
         self.draw()
 
