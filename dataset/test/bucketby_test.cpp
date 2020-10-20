@@ -48,6 +48,9 @@ TEST_F(DataArrayBucketByTest, 1d) {
                 {{"mask", sorted_mask}});
 
   const auto bucketed = bucketby(table, Dim::X, edges_x);
+
+  EXPECT_EQ(bucketed.dims(), Dimensions({Dim::X}, {2}));
+  EXPECT_EQ(bucketed.coords()[Dim::X], edges_x);
   EXPECT_EQ(bucketed.values<bucket<DataArray>>()[0],
             sorted_table.slice({Dim::Event, 0, 1}));
   EXPECT_EQ(bucketed.values<bucket<DataArray>>()[1],
@@ -56,28 +59,34 @@ TEST_F(DataArrayBucketByTest, 1d) {
 
 TEST_F(DataArrayBucketByTest, 2d) {
   Variable edges_y =
-      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 1, 2});
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 1, 3});
   Variable y =
       makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 1, 2});
   table.coords().set(Dim::Y, y);
 
-  // TODO
   Variable sorted_data = makeVariable<double>(
-      Dims{Dim::Event}, Shape{4}, Values{4, 3, 2, 1}, Variances{4, 2, 3, 1});
+      Dims{Dim::Event}, Shape{3}, Values{4, 1, 2}, Variances{4, 1, 3});
   Variable sorted_x =
-      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4});
+      makeVariable<double>(Dims{Dim::Event}, Shape{3}, Values{1, 3, 2});
   Variable sorted_y =
-      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{2, 1, 2, 1});
-  Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{4},
-                                            Values{false, false, false, true});
+      makeVariable<double>(Dims{Dim::Event}, Shape{3}, Values{2, 1, 2});
+  Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{3},
+                                            Values{false, true, false});
   DataArray sorted_table = DataArray(
       sorted_data,
       {{Dim::X, sorted_x}, {Dim::Y, sorted_y}, {Dim("scalar"), scalar}},
       {{"mask", sorted_mask}});
 
   const auto bucketed = bucketby(table, Dim::X, edges_x, Dim::Y, edges_y);
-  EXPECT_EQ(bucketed.values<bucket<DataArray>>()[0],
-            sorted_table.slice({Dim::Event, 0, 1}));
+
+  EXPECT_EQ(bucketed.dims(), Dimensions({Dim::X, Dim::Y}, {2, 2}));
+  EXPECT_EQ(bucketed.coords()[Dim::X], edges_x);
+  EXPECT_EQ(bucketed.coords()[Dim::Y], edges_y);
+  const auto empty_bucket = sorted_table.slice({Dim::Event, 0, 0});
+  EXPECT_EQ(bucketed.values<bucket<DataArray>>()[0], empty_bucket);
   EXPECT_EQ(bucketed.values<bucket<DataArray>>()[1],
+            sorted_table.slice({Dim::Event, 0, 1}));
+  EXPECT_EQ(bucketed.values<bucket<DataArray>>()[2], empty_bucket);
+  EXPECT_EQ(bucketed.values<bucket<DataArray>>()[3],
             sorted_table.slice({Dim::Event, 1, 3}));
 }

@@ -64,11 +64,16 @@ Variable bin_index(const VariableConstView &var,
   return indices;
 }
 
-Variable bin_sizes(const VariableConstView &indices,
-                   const VariableConstView &edges) {
-  auto dims = edges.dims();
-  dims.resize(dims.inner(), dims[dims.inner()] - 1);
-  auto sizes = makeVariable<scipp::index>(dims);
+auto shrink(const Dimensions &dims) {
+  auto shrunk = dims;
+  shrunk.resize(dims.inner(), dims[dims.inner()] - 1);
+  return shrunk;
+}
+
+template <class... Edges>
+Variable bin_sizes(const VariableConstView &indices, const Edges &... edges) {
+  auto dims = merge(shrink(edges.dims())...);
+  Variable sizes = makeVariable<scipp::index>(dims);
   const auto s = sizes.values<scipp::index>();
   for (const auto i : indices.values<scipp::index>())
     if (i >= 0)
@@ -257,7 +262,26 @@ DataArray bucketby(const DataArrayConstView &array, const Dim dim,
 DataArray bucketby(const DataArrayConstView &array, const Dim dim0,
                    const VariableConstView &bins0, const Dim dim1,
                    const VariableConstView &bins1) {
-  return bucketby(array, dim0, bins0);
+  const auto indices0 = bin_index(array.coords()[dim0], bins0);
+  const auto indices1 = bin_index(array.coords()[dim1], bins1);
+  const auto nbin1 = bins1.dims()[bins1.dims().inner()] - 1;
+  const auto indices = variable::transform<scipp::index>(
+      indices0, indices1,
+      overloaded{[](const units::Unit &u0, const units::Unit &u1) {
+                   return units::one;
+                 },
+                 [nbin1](const auto i0, const auto i1) {
+                   return i0 < 0 || i1 < 0 ? -1 : i0 * nbin1 + i1;
+                 }} // namespace scipp::dataset
+  );
+  const auto sizes = bin_sizes(indices, bins0, bins1);
+  const auto [begin, total_size] = buckets::sizes_to_begin(sizes);
+  const auto end = begin + sizes;
+  auto binned = bin(array, indices, sizes);
+  const auto &key = binned.coords()[dim0]; // should be same for dim1
+  return {buckets::from_constituents(zip(begin, end), key.dims().inner(),
+                                     std::move(binned)),
+          {{dim0, copy(bins0)}, {dim1, copy(bins1)}}};
   // auto sorted = sortby(array, dim0, dim1);
   // const auto &key0 = sorted.coords()[dim0];
   // const auto &key1 = sorted.coords()[dim1];
