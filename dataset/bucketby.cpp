@@ -4,13 +4,16 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/core/element/histogram.h"
 #include "scipp/core/element/permute.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
+#include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/bucketby.h"
@@ -49,14 +52,81 @@ template <class T> auto find_sorting_permutation(const T &key) {
   return p;
 }
 
-template <class A, class B>
-auto find_sorting_permutation(const A &a, const B &b) {
-  element_array<scipp::index> p(a.size(), core::default_init_elements);
-  std::iota(p.begin(), p.end(), 0);
-  core::parallel::parallel_sort(p.begin(), p.end(), [&](auto i, auto j) {
-    return a[i] != a[j] ? a[i] < a[j] : b[i] < b[j];
+Variable bin_index(const VariableConstView &var,
+                   const VariableConstView &edges) {
+  const auto dim = var.dims().inner();
+  auto indices = variable::variableFactory().create(
+      dtype<scipp::index>, var.dims(), units::one, false);
+  variable::transform_in_place(
+      variable::subspan_view(indices, dim), variable::subspan_view(var, dim),
+      variable::subspan_view(edges, edges.dims().inner()),
+      core::element::bin_index);
+  return indices;
+}
+
+Variable bin_sizes(const VariableConstView &indices,
+                   const VariableConstView &edges) {
+  auto dims = edges.dims();
+  dims.resize(dims.inner(), dims[dims.inner()] - 1);
+  auto sizes = makeVariable<scipp::index>(dims);
+  const auto s = sizes.values<scipp::index>();
+  for (const auto i : indices.values<scipp::index>())
+    if (i >= 0)
+      ++s[i];
+  return sizes;
+}
+
+template <class T> struct Bin {
+  static auto apply(const VariableConstView &var,
+                    const VariableConstView &indices,
+                    const VariableConstView &sizes) {
+    auto [begin, total_size] = buckets::sizes_to_begin(sizes);
+    auto dims = var.dims();
+    // Output may be smaller since values outside bins are dropped.
+    dims.resize(dims.inner(), total_size);
+    auto binned = variable::variableFactory().create(
+        var.dtype(), dims, var.unit(), var.hasVariances());
+    const auto indices_ = indices.values<scipp::index>();
+    const auto values = var.values<T>();
+    const auto binned_values = binned.values<T>();
+    const auto current = begin.values<scipp::index>();
+    const auto size = scipp::size(values);
+    if (var.hasVariances()) {
+      const auto variances = var.variances<T>();
+      const auto binned_variances = binned.variances<T>();
+      for (scipp::index i = 0; i < size; ++i) {
+        const auto i_bin = indices_[i];
+        if (i_bin < 0)
+          continue;
+        binned_variances[current[i_bin]] = variances[i];
+        binned_values[current[i_bin]++] = values[i];
+      }
+    } else {
+      for (scipp::index i = 0; i < size; ++i) {
+        const auto i_bin = indices_[i];
+        if (i_bin < 0)
+          continue;
+        binned_values[current[i_bin]++] = values[i];
+      }
+    }
+    return binned;
+  }
+};
+
+auto bin(const VariableConstView &var, const VariableConstView &indices,
+         const VariableConstView &sizes) {
+  return core::CallDType<double, float, int64_t, int32_t, bool,
+                         std::string>::apply<Bin>(var.dtype(), var, indices,
+                                                  sizes);
+}
+
+auto bin(const DataArrayConstView &data, const VariableConstView &indices,
+         const VariableConstView &sizes) {
+  return dataset::transform(data, [indices, sizes](const auto &var) {
+    return var.dims().contains(indices.dims().inner())
+               ? bin(var, indices, sizes)
+               : copy(var);
   });
-  return p;
 }
 
 Variable permute(const VariableConstView &var, const Dim dim,
@@ -77,31 +147,13 @@ template <class T> struct BoundIndices {
   }
 };
 
-template <class T> struct MakePermutation1 {
+template <class T> struct MakePermutation {
   static auto apply(const VariableConstView &key) {
     expectValidGroupbyKey(key);
     // Using span over data since random access via ElementArrayView is slow.
     return makeVariable<scipp::index>(
         key.dims(), Values(find_sorting_permutation(scipp::span(
                         key.values<T>().data(), key.dims().volume()))));
-  }
-};
-
-template <class A> struct MakePermutation2 {
-  template <class B> struct Inner {
-    static auto apply(const VariableConstView &a, const VariableConstView &b) {
-      expectValidGroupbyKey(a);
-      expectValidGroupbyKey(b);
-      // Using span over data since random access via ElementArrayView is slow.
-      return makeVariable<scipp::index>(
-          a.dims(), Values(find_sorting_permutation(
-                        scipp::span(a.values<A>().data(), a.dims().volume()),
-                        scipp::span(b.values<B>().data(), b.dims().volume()))));
-    }
-  };
-  static auto apply(const VariableConstView &a, const VariableConstView &b) {
-    return core::CallDType<double, float, int64_t, int32_t, bool,
-                           std::string>::apply<Inner>(b.dtype(), a, b);
   }
 };
 
@@ -177,16 +229,7 @@ auto call_sortby(const T &array, const VariableConstView &key) {
   return permute(
       array, key.dims().inner(),
       core::CallDType<double, float, int64_t, int32_t, bool,
-                      std::string>::apply<MakePermutation1>(key.dtype(), key));
-}
-
-template <class T>
-auto call_sortby(const T &array, const VariableConstView &a,
-                 const VariableConstView &b) {
-  return permute(
-      array, a.dims().inner(),
-      core::CallDType<double, float, int64_t, int32_t, bool,
-                      std::string>::apply<MakePermutation2>(a.dtype(), a, b));
+                      std::string>::apply<MakePermutation>(key.dtype(), key));
 }
 
 template <class... T>
@@ -198,28 +241,28 @@ DataArray sortby(const DataArrayConstView &array, const Dim dim) {
   return sortby_impl(array, dim);
 }
 
-DataArray sortby(const DataArrayConstView &array, const Dim dim0,
-                 const Dim dim1) {
-  return sortby_impl(array, dim0, dim1);
+DataArray bucketby(const DataArrayConstView &array, const Dim dim,
+                   const VariableConstView &bins) {
+  const auto indices = bin_index(array.coords()[dim], bins);
+  const auto sizes = bin_sizes(indices, bins);
+  const auto [begin, total_size] = buckets::sizes_to_begin(sizes);
+  const auto end = begin + sizes;
+  auto binned = bin(array, indices, sizes);
+  const auto &key = binned.coords()[dim];
+  return {buckets::from_constituents(zip(begin, end), key.dims().inner(),
+                                     std::move(binned)),
+          {{dim, copy(bins)}}};
 }
 
-Variable bucketby(const DataArrayConstView &array, const Dim dim,
-                  const VariableConstView &bins) {
-  auto sorted = sortby(array, dim);
-  const auto &key = sorted.coords()[dim];
-  // Note that data outside bin bounds is *not* dropped. Should it?
-  return buckets::from_constituents(edge_indices(key, bins), key.dims().inner(),
-                                    std::move(sorted));
-}
-
-Variable bucketby(const DataArrayConstView &array, const Dim dim0,
-                  const VariableConstView &bins0, const Dim dim1,
-                  const VariableConstView &bins1) {
-  auto sorted = sortby(array, dim0, dim1);
-  const auto &key0 = sorted.coords()[dim0];
-  const auto &key1 = sorted.coords()[dim1];
-  return buckets::from_constituents(edge_indices(key0, bins0, key1, bins1),
-                                    key0.dims().inner(), std::move(sorted));
+DataArray bucketby(const DataArrayConstView &array, const Dim dim0,
+                   const VariableConstView &bins0, const Dim dim1,
+                   const VariableConstView &bins1) {
+  return bucketby(array, dim0, bins0);
+  // auto sorted = sortby(array, dim0, dim1);
+  // const auto &key0 = sorted.coords()[dim0];
+  // const auto &key1 = sorted.coords()[dim1];
+  // return buckets::from_constituents(edge_indices(key0, bins0, key1, bins1),
+  //                                  key0.dims().inner(), std::move(sorted));
 }
 
 } // namespace scipp::dataset

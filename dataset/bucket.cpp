@@ -29,9 +29,8 @@
 
 namespace scipp::dataset::buckets {
 
-namespace {
-
-auto sizes_to_begin(const VariableConstView &sizes) {
+std::tuple<Variable, scipp::index>
+sizes_to_begin(const VariableConstView &sizes) {
   Variable begin(sizes);
   scipp::index size = 0;
   for (auto &i : begin.values<scipp::index>()) {
@@ -39,8 +38,10 @@ auto sizes_to_begin(const VariableConstView &sizes) {
     size += i;
     i = old_size;
   }
-  return std::tuple{begin, size};
+  return {begin, size};
 }
+
+namespace {
 
 constexpr auto copy_spans = overloaded{
     core::element::arg_list<std::tuple<span<double>, span<const double>>>,
