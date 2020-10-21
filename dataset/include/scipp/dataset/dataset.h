@@ -787,10 +787,6 @@ SCIPP_DATASET_EXPORT void union_or_in_place(const MasksView &currentMasks,
 SCIPP_DATASET_EXPORT bool
 contains_events(const dataset::DataArrayConstView &array);
 
-scipp::index size_of(const DatasetConstView &dataset);
-scipp::index size_of(const DataArrayConstView &dataarray,
-                     bool include_aligned_coords = false);
-
 } // namespace scipp::dataset
 
 namespace scipp {
@@ -800,7 +796,6 @@ using dataset::DataArrayView;
 using dataset::Dataset;
 using dataset::DatasetConstView;
 using dataset::DatasetView;
-using dataset::size_of;
 template <> struct is_view<DataArrayView> : std::true_type {};
 template <> struct is_view<DatasetView> : std::true_type {};
 } // namespace scipp

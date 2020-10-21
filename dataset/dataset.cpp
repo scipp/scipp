@@ -821,34 +821,5 @@ void union_or_in_place(const MasksView &currentMasks,
     }
   }
 }
-scipp::index size_of(const DatasetConstView &dataset) {
-  scipp::index size = 0;
-  for (const auto &data : dataset) {
-    size += size_of(data);
-  }
-  for (const auto &coord : dataset.coords()) {
-    size += size_of(coord.second);
-  }
-  return size;
-}
 
-/// Return the size in memory of a DataArray object. The aligned coord is optional
-/// becuase for a DataArray owned by a dataset aligned coords are assumed to be owned
-/// by the dataset as they can apply to multiple arrays.
-scipp::index size_of(const DataArrayConstView &dataarray, bool include_aligned_coords) {
-  scipp::index size = 0;
-  size += size_of(dataarray.data());
-  for (const auto &coord : dataarray.unaligned_coords()) {
-    size += size_of(coord.second);
-  }
-  for (const auto &mask : dataarray.masks()) {
-    size += size_of(mask.second);
-  }
-  if (include_aligned_coords) {
-    for (const auto &coord : dataarray.aligned_coords()) {
-      size += size_of(coord.second);
-    }
-  }
-  return size;
-}
 } // namespace scipp::dataset

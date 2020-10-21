@@ -18,6 +18,7 @@ set(INC_FILES
     include/scipp/dataset/math.h
     include/scipp/dataset/rebin.h
     include/scipp/dataset/reduction.h
+    include/scipp/dataset/util.h
     include/scipp/dataset/slice.h
     include/scipp/dataset/shape.h
     include/scipp/dataset/sort.h

@@ -352,8 +352,6 @@ SCIPP_VARIABLE_EXPORT Variable copy(const VariableConstView &var);
 
 SCIPP_VARIABLE_EXPORT bool contains_events(const VariableConstView &var);
 
-scipp::index size_of(const VariableConstView &view);
-scipp::index size_of(const Variable &view);
 } // namespace scipp::variable
 
 namespace scipp {
@@ -365,7 +363,6 @@ using variable::Variable;
 using variable::VariableConstView;
 using variable::VariableView;
 using variable::Variances;
-using variable::size_of;
 template <class T> struct is_view : std::false_type {};
 template <class T> inline constexpr bool is_view_v = is_view<T>::value;
 template <> struct is_view<VariableConstView> : std::true_type {};

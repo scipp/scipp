@@ -194,18 +194,6 @@ void VariableView::setVariances(Variable v) const {
         "Cannot add variances via sliced or reshaped view of Variable.");
 }
 
-scipp::index size_of(const VariableConstView &view) {
-    auto value_size = view.underlying().data().dtype_size();
-    auto variance_scale = view.hasVariances() ? 2 : 1;
-    return view.dims().volume() * value_size * variance_scale;
-  }
-
-scipp::index size_of(const Variable &view) {
-    auto value_size = view.data().dtype_size();
-    auto variance_scale = view.hasVariances() ? 2 : 1;
-    return view.dims().volume() * value_size * variance_scale;
-  }
-
 namespace detail {
 void throw_keyword_arg_constructor_bad_dtype(const DType dtype) {
   throw except::TypeError("Can't create the Variable with type " +
