@@ -187,7 +187,7 @@ of variances.)");
           "__rtruediv__",
           [](Variable &a, int &b) { return (b * units::one) / a; },
           py::is_operator())
-      .def("__sizeof__", &Variable::sizeInMemory);
+      .def("__sizeof__", size_of);
 
   bind_init_list(variable);
   // Order matters for pybind11's overload resolution. Do not change.
@@ -201,7 +201,7 @@ of variances.)");
 
   py::class_<VariableConstView> variableConstView(m, "VariableConstView");
   variableConstView.def(py::init<const Variable &>())
-      .def("__sizeof__", &VariableConstView::sizeInMemory);
+      .def("__sizeof__", size_of);
 
   py::class_<VariableView, VariableConstView> variableView(
       m, "VariableView", py::buffer_protocol(), R"(

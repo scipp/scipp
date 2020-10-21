@@ -216,22 +216,6 @@ void Dataset::setData(const std::string &name, Variable data,
   setData_impl(name, detail::DatasetData{std::move(data), {}, {}}, attrPolicy);
 }
 
-/// Return the size in memory of the Dataset.
-/// To avoid double counting and the unecessary
-/// creation of view objects works with the
-/// private data containers.
-scipp::index Dataset::sizeInMemory() const {
-  scipp::index size = 0;
-  for (auto const &data : m_data | boost::adaptors::map_values) {
-    size += data.sizeInMemory();
-  }
-
-  for (auto const &coord : m_coords | boost::adaptors::map_values) {
-    size += coord.sizeInMemory();
-  }
-  return size;
-}
-
 /// Set (insert or replace) data from a DataArray with a given name, avoiding
 /// copies where possible by using std::move.
 void Dataset::setData(const std::string &name, DataArray data) {
@@ -399,11 +383,6 @@ units::Unit DataArrayConstView::unit() const { return data().unit(); }
 /// Set the unit of the data values.
 void DataArrayView::setUnit(const units::Unit unit) const {
   data().setUnit(unit);
-}
-
-/// Return the memory footprint of the underlying DataArray.
-scipp::index DataArrayConstView::sizeInMemory() const {
-  return get_data().sizeInMemory();
 }
 
 namespace {
@@ -663,11 +642,6 @@ bool DatasetConstView::contains(const std::string &name) const noexcept {
   return find(name) != end();
 }
 
-/// Return the size of the referanced Dataset in memory.
-scipp::index DatasetConstView::sizeInMemory() const {
-  return m_dataset->sizeInMemory();
-}
-
 namespace {
 template <class T> const auto &getitem(const T &view, const std::string &name) {
   if (auto it = view.find(name); it != view.end())
@@ -846,5 +820,35 @@ void union_or_in_place(const MasksView &currentMasks,
       currentMasks.set(key, item);
     }
   }
+}
+scipp::index size_of(const DatasetConstView &dataset) {
+  scipp::index size = 0;
+  for (const auto &data : dataset) {
+    size += size_of(data);
+  }
+  for (const auto &coord : dataset.coords()) {
+    size += size_of(coord.second);
+  }
+  return size;
+}
+
+/// Return the size in memory of a DataArray object. The aligned coord is optional
+/// becuase for a DataArray owned by a dataset aligned coords are assumed to be owned
+/// by the dataset as they can apply to multiple arrays.
+scipp::index size_of(const DataArrayConstView &dataarray, bool include_aligned_coords) {
+  scipp::index size = 0;
+  size += size_of(dataarray.data());
+  for (const auto &coord : dataarray.unaligned_coords()) {
+    size += size_of(coord.second);
+  }
+  for (const auto &mask : dataarray.masks()) {
+    size += size_of(mask.second);
+  }
+  if (include_aligned_coords) {
+    for (const auto &coord : dataarray.aligned_coords()) {
+      size += size_of(coord.second);
+    }
+  }
+  return size;
 }
 } // namespace scipp::dataset

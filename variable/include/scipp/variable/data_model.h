@@ -110,14 +110,6 @@ public:
     return ElementArrayView(base, m_variances->data());
   }
 
-  scipp::index sizeInMemory() const {
-    if (m_variances) {
-      return sizeof(T) * (m_values.size() + m_variances.value().size());
-    } else {
-      return sizeof(T) * m_values.size();
-    }
-  }
-
 private:
   void expectHasVariances() const {
     if (!hasVariances())

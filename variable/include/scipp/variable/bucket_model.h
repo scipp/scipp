@@ -77,10 +77,6 @@ public:
     return {index_values(base), m_dim, m_buffer};
   }
 
-  scipp::index sizeInMemory() const {
-    return m_buffer.sizeInMemory() + m_indices.sizeInMemory();
-  }
-
 private:
   static auto validated_indices(const VariableConstView &indices, const Dim dim,
                                 const T &buffer) {

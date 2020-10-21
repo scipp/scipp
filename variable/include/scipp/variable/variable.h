@@ -142,8 +142,6 @@ public:
   template <class T>
   std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
 
-  scipp::index sizeInMemory() const { return m_object->sizeInMemory(); }
-
 private:
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
@@ -267,13 +265,6 @@ public:
   std::tuple<VariableConstView, Dim, typename T::const_element_type>
   constituents() const;
 
-  scipp::index sizeInMemory() {
-    if (m_variable)
-      return m_variable->sizeInMemory();
-    else
-      return 0;
-  }
-
 protected:
   const Variable *m_variable{nullptr};
   scipp::index m_offset{0};
@@ -361,6 +352,7 @@ SCIPP_VARIABLE_EXPORT Variable copy(const VariableConstView &var);
 
 SCIPP_VARIABLE_EXPORT bool contains_events(const VariableConstView &var);
 
+scipp::index size_of(const VariableConstView &view);
 } // namespace scipp::variable
 
 namespace scipp {
@@ -372,6 +364,7 @@ using variable::Variable;
 using variable::VariableConstView;
 using variable::VariableView;
 using variable::Variances;
+using variable::size_of;
 template <class T> struct is_view : std::false_type {};
 template <class T> inline constexpr bool is_view_v = is_view<T>::value;
 template <> struct is_view<VariableConstView> : std::true_type {};

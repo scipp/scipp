@@ -233,13 +233,13 @@ TEST(DatasetTest, size_in_memory_test) {
   const auto coords = makeVariable<double>(Dims{Dim::X}, Shape{3});
 
   d.setData("a", data);
-  EXPECT_EQ(d.sizeInMemory(), sizeof(double) * 3);
+  EXPECT_EQ(size_of(d), size_of(data));
 
   d.setCoord(Dim::X, coords);
-  EXPECT_EQ(d.sizeInMemory(), sizeof(double) * 6);
+  EXPECT_EQ(size_of(d), size_of(data) + size_of(coords));
 
-  d["a"].masks().set("unaligned", mask);
-  EXPECT_EQ(d.sizeInMemory(), sizeof(double) * 9);
+  d["a"].masks().set("beam-stop", mask);
+  EXPECT_EQ(size_of(d), size_of(data) + size_of(coords) + size_of(mask));
 }
 
 struct SetDataTest : public ::testing::Test {

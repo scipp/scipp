@@ -33,18 +33,6 @@ struct DatasetData {
   /// Unaligned coords.
   std::unordered_map<Dim, Variable> coords;
   std::unordered_map<std::string, Variable> masks;
-
-  scipp::index sizeInMemory() const {
-    scipp::index size = 0;
-    size += data.sizeInMemory();
-    for (auto const &coord : coords | boost::adaptors::map_values) {
-      size += coord.sizeInMemory();
-    }
-    for (auto const &mask : masks | boost::adaptors::map_values) {
-      size += mask.sizeInMemory();
-    }
-    return size;
-  }
 };
 
 using dataset_item_map = std::unordered_map<std::string, DatasetData>;
@@ -110,8 +98,6 @@ public:
 
   const auto &get_dataset() const { return *m_dataset; }
   const auto &get_data() const { return m_data->second; }
-
-  scipp::index sizeInMemory() const;
 
 protected:
   // Note that m_view is a VariableView, not a VariableConstView. In case
@@ -407,8 +393,6 @@ public:
   std::unordered_map<Dim, scipp::index> dimensions() const;
   std::unordered_map<Dim, scipp::index> dims() const { return dimensions(); }
 
-  scipp::index sizeInMemory() const;
-
 private:
   friend class DatasetConstView;
   friend class DatasetView;
@@ -512,8 +496,6 @@ public:
   bool operator!=(const DatasetConstView &other) const;
   std::unordered_map<Dim, scipp::index> dimensions() const;
   std::unordered_map<Dim, scipp::index> dims() const { return dimensions(); }
-
-  scipp::index sizeInMemory() const;
 
 protected:
   explicit DatasetConstView() : m_dataset(nullptr) {}
@@ -703,8 +685,6 @@ public:
 
   void drop_alignment();
 
-  scipp::index sizeInMemory() const { return m_holder.sizeInMemory(); }
-
 private:
   DataArrayConstView get() const;
   DataArrayView get();
@@ -807,6 +787,10 @@ SCIPP_DATASET_EXPORT void union_or_in_place(const MasksView &currentMasks,
 SCIPP_DATASET_EXPORT bool
 contains_events(const dataset::DataArrayConstView &array);
 
+scipp::index size_of(const DatasetConstView &dataset);
+scipp::index size_of(const DataArrayConstView &dataarray,
+                     bool include_aligned_coords = false);
+
 } // namespace scipp::dataset
 
 namespace scipp {
@@ -816,6 +800,7 @@ using dataset::DataArrayView;
 using dataset::Dataset;
 using dataset::DatasetConstView;
 using dataset::DatasetView;
+using dataset::size_of;
 template <> struct is_view<DataArrayView> : std::true_type {};
 template <> struct is_view<DatasetView> : std::true_type {};
 } // namespace scipp
