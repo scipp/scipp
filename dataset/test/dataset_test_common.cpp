@@ -20,10 +20,6 @@ std::vector<bool> make_bools(const scipp::index size,
 std::vector<bool> make_bools(const scipp::index size, bool pattern) {
   return make_bools(size, std::initializer_list<bool>{pattern});
 }
-Variable makeRandom(const Dimensions &dims) {
-  Random rand;
-  return makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
-}
 
 DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
                                    const scipp::index ly_,

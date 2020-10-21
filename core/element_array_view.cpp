@@ -56,4 +56,9 @@ element_array_view::element_array_view(const element_array_view &other,
       m_dataDims.relabel(m_dataDims.index(label), Dim::Invalid);
 }
 
+void element_array_view::requireContiguous() const {
+  if (m_iterDims != m_dataDims || m_bucketParams)
+    throw std::runtime_error("Data is not contiguous");
+}
+
 } // namespace scipp::core

@@ -153,6 +153,22 @@ Dataset apply_to_items(const DatasetConstView &d, Func func, Args &&... args) {
   return result;
 }
 
+/// Return a copy of map-like objects such as CoordView with `func` applied to
+/// each item.
+template <class T, class Func> auto transform_map(const T &map, Func func) {
+  std::map<typename T::key_type, typename T::mapped_type> out;
+  for (const auto &[key, item] : map)
+    out.emplace(key, func(item));
+  return out;
+}
+
+template <class Func>
+DataArray transform(const DataArrayConstView &a, Func func) {
+  return DataArray(func(a.data()), transform_map(a.aligned_coords(), func),
+                   transform_map(a.masks(), func),
+                   transform_map(a.unaligned_coords(), func), a.name());
+}
+
 // Helpers for reductions for DataArray and Dataset, which include masks.
 [[nodiscard]] Variable mean(const VariableConstView &var, const Dim dim,
                             const MasksConstView &masks);

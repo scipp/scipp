@@ -5,6 +5,7 @@
 #include "pybind11.h"
 #include "scipp/core/except.h"
 #include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bucket_model.h"
 #include "scipp/variable/shape.h"
@@ -119,4 +120,7 @@ void init_buckets(py::module &m) {
       return get_buffer<Dataset>(obj);
     return py::none();
   });
+
+  m.def("bucketby", dataset::bucketby,
+        py::call_guard<py::gil_scoped_release>());
 }

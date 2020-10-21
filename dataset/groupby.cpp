@@ -121,18 +121,17 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
   }
 };
 
-static constexpr auto sum = [](const DataArrayView &out,
-                               const auto &data_container,
-                               const GroupByGrouping::group &group,
-                               const Dim reductionDim, const Variable &mask) {
-  for (const auto &slice : group) {
-    const auto data_slice = data_container.slice(slice);
-    if (mask)
-      sum_impl(out.data(), data_slice.data() * mask.slice(slice));
-    else
-      sum_impl(out.data(), data_slice.data());
-  }
-};
+static constexpr auto sum =
+    [](const DataArrayView &out, const auto &data_container,
+       const GroupByGrouping::group &group, const Dim, const Variable &mask) {
+      for (const auto &slice : group) {
+        const auto data_slice = data_container.slice(slice);
+        if (mask)
+          sum_impl(out.data(), data_slice.data() * mask.slice(slice));
+        else
+          sum_impl(out.data(), data_slice.data());
+      }
+    };
 
 template <void (*Func)(const VariableView &, const VariableConstView &)>
 // The msvc compiler was failing to pass the templated function correctly
@@ -237,16 +236,9 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   return out;
 }
 
-static void expectValidGroupbyKey(const VariableConstView &key) {
-  if (key.dims().ndim() != 1)
-    throw except::DimensionError("Group-by key must be 1-dimensional");
-  if (key.hasVariances())
-    throw except::VariancesError("Group-by key cannot have variances");
-}
-
 template <class T> struct MakeGroups {
   static auto apply(const VariableConstView &key, const Dim targetDim) {
-    expectValidGroupbyKey(key);
+    expect::isKey(key);
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
@@ -281,7 +273,7 @@ template <class T> struct MakeGroups {
 template <class T> struct MakeBinGroups {
   static auto apply(const VariableConstView &key,
                     const VariableConstView &bins) {
-    expectValidGroupbyKey(key);
+    expect::isKey(key);
     if (bins.dims().ndim() != 1)
       throw except::DimensionError("Group-by bins must be 1-dimensional");
     if (key.unit() != bins.unit())

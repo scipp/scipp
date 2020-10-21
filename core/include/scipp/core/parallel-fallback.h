@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <algorithm>
+
 #include "scipp/common/index.h"
 
 /// Fallback wrappers without actual threading, in case TBB is not available.
@@ -26,6 +28,10 @@ private:
 
 template <class Op> void parallel_for(const blocked_range &range, Op &&op) {
   op(range);
+}
+
+template <class... Args> void parallel_sort(Args &&... args) {
+  std::sort(std::forward<Args>(args)...);
 }
 
 } // namespace scipp::core::parallel
