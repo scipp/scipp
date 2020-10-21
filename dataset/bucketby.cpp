@@ -175,9 +175,10 @@ DataArray bucketby(const DataArrayConstView &array,
     if (indices) {
       if (bucket_dim != coord.dims().inner())
         throw except::DimensionError(
-            "Coords of data to be bucketed have inconsistent dimensions. Data "
-            "that can be bucketed should generally resemble a table, with a "
-            "coord column for each bucketed dimension.");
+            "Coords of data to be bucketed have inconsistent dimensions " +
+            to_string(bucket_dim) + " and " + to_string(coord.dims().inner()) +
+            ". Data that can be bucketed should generally resemble a table, "
+            "with a coord column for each bucketed dimension.");
       indices = variable::transform<scipp::index>(
           indices, inner_indices,
           overloaded{[](const units::Unit &, const units::Unit &) {
