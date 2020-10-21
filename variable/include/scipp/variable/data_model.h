@@ -170,8 +170,7 @@ void DataModel<T>::copy(const VariableConstView &src,
                         const VariableView &dest) const {
   transform_in_place<T>(
       dest, src,
-      overloaded{core::transform_flags::no_event_list_handling,
-                 core::transform_flags::expect_in_variance_if_out_variance,
+      overloaded{core::transform_flags::expect_in_variance_if_out_variance,
                  [](auto &a, const auto &b) { a = b; }});
 }
 

@@ -85,7 +85,6 @@ constexpr auto is_sorted_nonascending = overloaded{
 
 constexpr auto zip =
     overloaded{arg_list<scipp::index>,
-               transform_flags::no_event_list_handling,
                transform_flags::expect_no_variance_arg<0>,
                transform_flags::expect_no_variance_arg<1>,
                [](const units::Unit &first, const units::Unit &second) {
