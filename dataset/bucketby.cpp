@@ -57,8 +57,8 @@ Variable bin_sizes(const VariableConstView &indices,
   for (const auto &item : edges)
     dims = merge(dims, shrink(item.dims()));
   Variable sizes = makeVariable<scipp::index>(dims);
-  const auto s = sizes.values<scipp::index>();
-  for (const auto i : indices.values<scipp::index>())
+  const auto s = sizes.values<scipp::index>().as_span();
+  for (const auto i : indices.values<scipp::index>().as_span())
     if (i >= 0)
       ++s[i];
   return sizes;
@@ -74,14 +74,14 @@ template <class T> struct Bin {
     dims.resize(dims.inner(), total_size);
     auto binned = variable::variableFactory().create(
         var.dtype(), dims, var.unit(), var.hasVariances());
-    const auto indices_ = indices.values<scipp::index>();
-    const auto values = var.values<T>();
-    const auto binned_values = binned.values<T>();
-    const auto current = begin.values<scipp::index>();
+    const auto indices_ = indices.values<scipp::index>().as_span();
+    const auto values = var.values<T>().as_span();
+    const auto binned_values = binned.values<T>().as_span();
+    const auto current = begin.values<scipp::index>().as_span();
     const auto size = scipp::size(values);
     if (var.hasVariances()) {
-      const auto variances = var.variances<T>();
-      const auto binned_variances = binned.variances<T>();
+      const auto variances = var.variances<T>().as_span();
+      const auto binned_variances = binned.variances<T>().as_span();
       for (scipp::index i = 0; i < size; ++i) {
         const auto i_bin = indices_[i];
         if (i_bin < 0)
@@ -128,8 +128,8 @@ template <class T> struct MakePermutation {
     expect::isKey(key);
     // Using span over data since random access via ElementArrayView is slow.
     return makeVariable<scipp::index>(
-        key.dims(), Values(find_sorting_permutation(scipp::span(
-                        key.values<T>().data(), key.dims().volume()))));
+        key.dims(),
+        Values(find_sorting_permutation(key.values<T>().as_span())));
   }
 };
 

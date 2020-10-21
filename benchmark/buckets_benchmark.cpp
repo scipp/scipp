@@ -4,10 +4,13 @@
 #include <benchmark/benchmark.h>
 
 #include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bucket_model.h"
 #include "scipp/variable/operations.h"
+
+#include "../test/random.h"
 
 using namespace scipp;
 
@@ -48,5 +51,30 @@ static void BM_buckets_concatenate(benchmark::State &state) {
 BENCHMARK(BM_buckets_concatenate)
     ->RangeMultiplier(4)
     ->Ranges({{64, 1e6}, {2 << 20, 1e9}});
+
+auto make_table(const scipp::index size) {
+  Dimensions dims(Dim::Event, size);
+  Variable data = makeVariable<double>(Dims{Dim::Event}, Shape{size});
+  // Range is -2.0 to 2.0
+  Variable x = makeRandom(dims);
+  Variable y = makeRandom(dims);
+  return DataArray(data, {{Dim::X, x}, {Dim::Y, y}});
+}
+
+static void BM_bucketby(benchmark::State &state) {
+  const scipp::index nEvent = state.range(0);
+  auto table = make_table(nEvent);
+  auto edges_x =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  auto edges_y =
+      makeVariable<double>(Dims{Dim::Y}, Shape{5}, Values{-2, -1, 0, 1, 2});
+
+  for (auto _ : state) {
+    auto a = dataset::bucketby(table, {edges_x, edges_y});
+  }
+  state.SetItemsProcessed(state.iterations() * nEvent);
+  state.counters["events"] = nEvent;
+}
+BENCHMARK(BM_bucketby)->RangeMultiplier(4)->Ranges({{64, 1e7}});
 
 BENCHMARK_MAIN();

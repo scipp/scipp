@@ -88,6 +88,7 @@ public:
   }
 
 protected:
+  void requireContiguous() const;
   scipp::index m_offset{0};
   Dimensions m_iterDims;
   Dimensions m_dataDims;
@@ -133,6 +134,16 @@ public:
 
   const T *data() const { return m_buffer + m_offset; }
   T *data() { return m_buffer + m_offset; }
+
+  auto as_span() const {
+    requireContiguous();
+    return scipp::span(data(), data() + size());
+  }
+
+  auto as_span() {
+    requireContiguous();
+    return scipp::span(data(), data() + size());
+  }
 
   bool operator==(const ElementArrayView<T> &other) const {
     if (dims() != other.dims())

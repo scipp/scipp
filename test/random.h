@@ -8,6 +8,8 @@
 #include <random>
 #include <vector>
 
+#include "scipp/variable/variable.h"
+
 class Random {
   std::mt19937 mt{std::random_device()()};
   std::uniform_real_distribution<double> dist;
@@ -35,3 +37,9 @@ public:
   }
   void seed(const uint32_t value) { mt.seed(value); }
 };
+
+inline scipp::Variable makeRandom(const scipp::Dimensions &dims) {
+  using namespace scipp;
+  Random rand;
+  return makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
+}
