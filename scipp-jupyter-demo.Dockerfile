@@ -54,7 +54,7 @@ RUN pip install --upgrade nbconvert
 
 # Get code for SANS direct-beam iteration demo
 RUN cd "/home/$NB_USER/code" && \
-    git clone https://github.com/scipp/ess.git && \
+    git clone https://github.com/scipp/ess-legacy.git ess && \
     cd ess/sans && \
     python make_config.py -f "/home/$NB_USER/data" && \
     ln -s "/home/$NB_USER/code/ess/sans" "/home/$NB_USER/sans-demo"
