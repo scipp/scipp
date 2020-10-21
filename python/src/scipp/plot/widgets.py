@@ -256,6 +256,15 @@ class PlotWidgets:
 
     def initialise(self, parameters, multid_coord=None):
         for dim, item in parameters.items():
+            # TODO: for now we prevent a ragged coord from being along a slider
+            # dimension, as it causes conceptual issues with respect to
+            # resampling a displayed image.
+            if dim == multid_coord:
+                if not self.slider[dim].disabled:
+                    raise RuntimeError("A ragged coordinate cannot lie along "
+                                       "a slider dimension, it must be one of "
+                                       "the displayed dimensions.")
+                self.buttons[dim].disabled = True
             # Dimension labels
             self.dim_labels[dim].value = item["labels"]
 
@@ -269,12 +278,12 @@ class PlotWidgets:
 
             # Thickness slider
             self.thickness_slider[dim].max = item["thickness_slider"]
-            self.thickness_slider[
-                dim].value = 0. if multid_coord is not None else item[
-                    "thickness_slider"]
-            self.thickness_slider[dim].step = item["thickness_slider"] * 0.01
+            self.thickness_slider[dim].value = item["thickness_slider"]
+            # Only index slicing is allowed when ragged coords are present
             if multid_coord is not None:
-                self.thickness_slider[dim].disabled = True
+                self.thickness_slider[dim].value = 0.
+                self.thickness_slider[dim].layout.display = 'none'
+            self.thickness_slider[dim].step = item["thickness_slider"] * 0.01
 
             # Slider readouts
             self.update_slider_readout(*item["slider_readout"])

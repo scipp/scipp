@@ -126,4 +126,11 @@ def test_plot_3d_data_with_ragged_bins():
     d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
     d['a'] = sc.Variable(['z', 'y', 'x'], values=a, unit=sc.units.counts)
     plot(d)
-    plot(d, axes={'x': 'z'})
+
+    # Also check that it raises an error if we try to have ragged coord along
+    # slider dim
+    with pytest.raises(RuntimeError) as e:
+        plot(d, axes={'x': 'z'})
+    assert str(e.value) == ("A ragged coordinate cannot lie along "
+                            "a slider dimension, it must be one of "
+                            "the displayed dimensions.")
