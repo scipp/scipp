@@ -291,6 +291,9 @@ class PlotWidgets:
     def get_slider_value(self, dim):
         return self.slider[dim].value
 
+    def get_thickness_slider_value(self, dim):
+        return self.thickness_slider[dim].value
+
     def get_active_slider_values(self):
         slider_values = {}
         for dim, sl in self.slider.items():
@@ -311,6 +314,11 @@ class PlotWidgets:
             if self.slider[dim].disabled:
                 buttons_and_dims[dim] = button.value
         return buttons_and_dims
+
+    def clear_profile_buttons(self, profile_dim=None):
+        for dim, but in self.profile_button.items():
+            if dim != profile_dim:
+                but.button_style = ""
 
     def get_masks_info(self):
         """
@@ -356,11 +364,5 @@ class PlotWidgets:
                               centre,
                               right,
                               multid_coord=None):
-        # lower, upper = self.get_slice_bounds_as_strings(
-        #     dim, ind, left, centre, right, multid_coord)
-        # if multid_coord:
-        #     self.slider_readout[dim].value = "{} - {}".format(lower, upper)
-        # else:
-        #     self.slider_readout[dim].value = "{} - {}".format(lower, upper)
         self.slider_readout[dim].value = self.get_slice_bounds_as_string(
             dim, ind, left, centre, right, multid_coord)

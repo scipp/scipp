@@ -156,7 +156,9 @@ class PlotFigure1d(PlotFigure):
                     fmt="none")
 
         if self.legend["show"]:
-            self.ax.legend(loc=self.legend["loc"])
+            with warnings.catch_warnings():
+                warnings.filterwarnings("ignore", category=UserWarning)
+                self.ax.legend(loc=self.legend["loc"])
 
     def update_data(self, new_values, info):
 

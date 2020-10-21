@@ -11,6 +11,7 @@ class ProfileView(PlotFigure1d):
         super().__init__(*args, **kwargs)
         self.current_visible_state = False
         self.slice_area = None
+        self.visible = False
 
     def update_axes(self, *args, **kwargs):
         super().update_axes(*args, legend_labels=False, **kwargs)
@@ -47,3 +48,7 @@ class ProfileView(PlotFigure1d):
         # "on_widget_constructed" is an attribute specific to ipywidgets
         if hasattr(self.fig.canvas, "on_widget_constructed"):
             self.fig.canvas.layout.display = None if visible else 'none'
+        self.visible = visible
+
+    def is_visible(self):
+        return self.visible

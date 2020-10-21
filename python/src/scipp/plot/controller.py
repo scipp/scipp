@@ -347,8 +347,7 @@ class PlotController:
         if owner is None:
             self.profile_dim = None
             visible = False
-            for but in self.widgets.profile_button.values():
-                but.button_style = ""
+            self.widgets.clear_profile_buttons()
         else:
             self.profile_dim = owner.dim
             self.profile_axparams.clear()
@@ -357,9 +356,8 @@ class PlotController:
                 visible = False
             else:
                 owner.button_style = "info"
-                for dim, but in self.widgets.profile_button.items():
-                    if dim != self.profile_dim:
-                        but.button_style = ""
+                self.widgets.clear_profile_buttons(
+                    profile_dim=self.profile_dim)
                 visible = True
 
             if visible:
@@ -389,7 +387,7 @@ class PlotController:
                     scale=self.profile_axparams["x"]["scale"])
 
                 self.profile.update_axes(axparams=self.profile_axparams)
-            else:
+            if not visible or self.profile.is_visible():
                 self.view.reset_profile()
 
         self.profile.toggle_view(visible=visible)
@@ -459,5 +457,5 @@ class PlotController:
             "bin_left": left,
             "bin_centre": centre,
             "bin_right": right,
-            "thickness": self.widgets.thickness_slider[dim].value
+            "thickness": self.widgets.get_thickness_slider_value(dim)
         }
