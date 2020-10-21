@@ -144,6 +144,32 @@ auto concatenate_impl(const VariableConstView &var0,
   return Variable{
       std::make_unique<variable::DataModel<bucket<T>>>(combine<T>(var0, var1))};
 }
+
+template <class T>
+auto concatenate_impl(const VariableConstView &var, const Dim dim) {
+  const auto &[indices, buffer_dim, buffer] = var.constituents<bucket<T>>();
+  const auto [begin, end] = unzip(indices);
+  const auto sizes = end - begin;
+  const auto out_sizes = sum(sizes, dim);
+  const auto [out_begin, size] = sizes_to_begin(out_sizes);
+  const auto out_end = out_begin + out_sizes;
+  auto out_buffer = resize_buffer(buffer, dim, size);
+  const auto nslice = indices.dims()[dim];
+  auto out_current = out_begin;
+  auto out_next = out_current;
+  for (scipp::index i = 0; i < nslice; ++i) {
+    const auto slice_indices = indices.slice({dim, i});
+    const auto [slice_begin, slice_end] = unzip(slice_indices);
+    out_next += slice_end;
+    out_next -= slice_begin;
+    copy(buffer, out_buffer, buffer_dim, slice_indices,
+         zip(out_current, out_next));
+    out_current = out_next;
+  }
+  return Variable{std::make_unique<variable::DataModel<bucket<T>>>(
+      zip(out_begin, out_end), buffer_dim, std::move(out_buffer))};
+}
+
 } // namespace
 
 Variable concatenate(const VariableConstView &var0,
@@ -162,6 +188,18 @@ DataArray concatenate(const DataArrayConstView &a,
           union_(a.aligned_coords(), b.aligned_coords()),
           union_or(a.masks(), b.masks()),
           intersection(a.unaligned_coords(), b.unaligned_coords())};
+}
+
+/// Reduce a dimension by concatenating all elements along the dimension.
+///
+/// This is the analogue to summing non-bucket data.
+Variable concatenate(const VariableConstView &var, const Dim dim) {
+  if (var.dtype() == dtype<bucket<Variable>>)
+    return concatenate_impl<Variable>(var, dim);
+  else if (var.dtype() == dtype<bucket<DataArray>>)
+    return concatenate_impl<DataArray>(var, dim);
+  else
+    return concatenate_impl<Dataset>(var, dim);
 }
 
 void append(const VariableView &var0, const VariableConstView &var1) {

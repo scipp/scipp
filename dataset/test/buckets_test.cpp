@@ -25,6 +25,44 @@ protected:
   Variable var{std::make_unique<Model>(indices, Dim::X, buffer)};
 };
 
+TEST_F(DataArrayBucketTest, concatenate_dim_1d) {
+  Variable expected_indices =
+      makeVariable<std::pair<scipp::index, scipp::index>>(
+          Values{std::pair{0, 4}});
+  Variable expected{std::make_unique<Model>(expected_indices, Dim::X, buffer)};
+  EXPECT_EQ(buckets::concatenate(var, Dim::Y), expected);
+}
+
+TEST(DataArrayBucket2dTest, concatenate_dim_2d) {
+  using Model = variable::DataModel<bucket<DataArray>>;
+  Variable indicesZY = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::Z, Dim::Y}, Shape{2, 2},
+      Values{std::pair{0, 2}, std::pair{2, 3}, std::pair{4, 6},
+             std::pair{6, 6}});
+  Variable data =
+      makeVariable<double>(Dims{Dim::X}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
+  DataArray buffer = DataArray(data, {{Dim::X, data + data}});
+  Variable zy{std::make_unique<Model>(indicesZY, Dim::X, buffer)};
+
+  // Note that equality ignores data not in any bucket.
+  Variable indicesZ = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::Z}, Shape{2}, Values{std::pair{0, 3}, std::pair{4, 6}});
+  Variable z{std::make_unique<Model>(indicesZ, Dim::X, buffer)};
+
+  Variable indicesY = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 4}, std::pair{4, 5}});
+  data = makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{1, 2, 5, 6, 3});
+  buffer = DataArray(data, {{Dim::X, data + data}});
+  Variable y{std::make_unique<Model>(indicesY, Dim::X, buffer)};
+
+  EXPECT_EQ(buckets::concatenate(zy, Dim::Y), z);
+  EXPECT_EQ(buckets::concatenate(zy, Dim::Z), y);
+  EXPECT_EQ(buckets::sum(
+                buckets::concatenate(buckets::concatenate(zy, Dim::Y), Dim::Z)),
+            buckets::sum(buckets::concatenate(buckets::concatenate(zy, Dim::Z),
+                                              Dim::Y)));
+}
+
 TEST_F(DataArrayBucketTest, concatenate) {
   const auto result = buckets::concatenate(var, var * (3.0 * units::one));
   Variable out_indices = makeVariable<std::pair<scipp::index, scipp::index>>(
