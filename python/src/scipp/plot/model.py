@@ -151,15 +151,11 @@ class PlotModel:
         return self.axformatter[name][dim]
 
     def get_bin_coord_values(self, name, dim, ind):
-        # print(name, dim, ind)
-        # print(self.data_arrays[name].coords[dim])
-        # print(self.data_arrays[name].coords[dim][dim, ind])
-
-        left = self.data_arrays[name].coords[dim][dim, ind:ind+1]
-        right = self.data_arrays[name].coords[dim][dim, ind+1:ind+2]
-        # print(right.values[0])
+        left = self.data_arrays[name].coords[dim][dim, ind:ind + 1]
+        right = self.data_arrays[name].coords[dim][dim, ind + 1:ind + 2]
         return left.values[0], to_bin_centers(
-            self.data_arrays[name].coords[dim][dim, ind:ind + 2], dim).values[0], right.values[0]
+            self.data_arrays[name].coords[dim][dim, ind:ind + 2],
+            dim).values[0], right.values[0]
 
     def get_data_names(self):
         return list(self.data_arrays.keys())

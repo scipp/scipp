@@ -93,9 +93,6 @@ class PlotModel2d(PlotModel):
 
         rebin_edges = {dimy: self.xyrebin[xy[0]], dimx: self.xyrebin[xy[1]]}
 
-        print("=====================")
-        print(rebin_edges)
-        print("=======================")
         resampled_image = self.resample_data(self.vslice,
                                              rebin_edges=rebin_edges)
 

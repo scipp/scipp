@@ -335,14 +335,27 @@ class PlotWidgets:
             upper = centre + 0.5 * thickness
         return lower, upper
 
-    def get_slice_bounds_as_string(self, dim, ind, left, centre, right, multid_coord=None):
+    def get_slice_bounds_as_string(self,
+                                   dim,
+                                   ind,
+                                   left,
+                                   centre,
+                                   right,
+                                   multid_coord=None):
         if dim == multid_coord:
             return "slice-{}".format(ind)
         else:
             lower, upper = self.get_slice_bounds(dim, left, centre, right)
-            return "{}:{}".format(value_to_string(lower), value_to_string(upper))
+            return "{}:{}".format(value_to_string(lower),
+                                  value_to_string(upper))
 
-    def update_slider_readout(self, dim, ind, left, centre, right, multid_coord=None):
+    def update_slider_readout(self,
+                              dim,
+                              ind,
+                              left,
+                              centre,
+                              right,
+                              multid_coord=None):
         # lower, upper = self.get_slice_bounds_as_strings(
         #     dim, ind, left, centre, right, multid_coord)
         # if multid_coord:
