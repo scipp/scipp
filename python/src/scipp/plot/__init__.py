@@ -32,28 +32,34 @@ try:
             # see https://github.com/matplotlib/ipympl/issues/229
             from ipympl.backend_nbagg import Canvas
             Canvas.header_visible.default_value = False
+    import matplotlib.pyplot as plt
 
 except ImportError:
     pass
 
 if is_doc_build:
-    mpl.pyplot.rcParams.update({'figure.max_open_warning': 0})
+    plt.rcParams.update({'figure.max_open_warning': 0})
+
+
+def is_interactive():
+    """
+    Determine if we are using a static or interactive backend
+    """
+    return mpl.get_backend().lower().endswith('nbagg')
 
 
 def plot(*args, **kwargs):
-    # Determine if we are using a static or interactive backend
-    interactive = mpl.get_backend().lower().endswith('nbagg')
     # Switch auto figure display off for better control over when figures are
     # displayed.
-    mpl.pyplot.ioff()
+    plt.ioff()
     output = _plot(*args, **kwargs)
-    if not interactive:
+    if not is_interactive():
         for key in output:
             output[key].as_static(keep_widgets=is_doc_build)
     # Turn auto figure display back on.
     # TODO: we need to consider whether users manually turned auto figure
     # display off, in which case we would not want to turn it back on here.
-    mpl.pyplot.ion()
+    plt.ion()
     return output
 
 
