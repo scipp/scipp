@@ -181,8 +181,7 @@ DataArray bucketby(const DataArrayConstView &array,
                      },
                      [nbin](const auto i0, const auto i1) {
                        return i0 < 0 || i1 < 0 ? -1 : i0 * nbin + i1;
-                     }} // namespace scipp::dataset
-      );
+                     }});
     } else {
       indices = inner_indices;
     }
