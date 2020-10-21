@@ -26,6 +26,10 @@ class Plot(dict):
             contents.append(val._to_widget())
         return widgets.VBox(contents)._ipython_display_()
 
+    def as_static(self, *args, **kwargs):
+        for key, item in self.items():
+            self[key] = item.as_static(*args, **kwargs)
+
 
 def plot(scipp_obj,
          projection=None,

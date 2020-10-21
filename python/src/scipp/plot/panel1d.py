@@ -90,5 +90,5 @@ class PlotPanel1d(PlotPanel):
     def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
         return
 
-    def toggle_mask(self, mask_info=None):
-        return
+    # def toggle_mask(self, mask_info=None):
+    #     return

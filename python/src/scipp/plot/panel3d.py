@@ -40,7 +40,7 @@ class PlotPanel3d(PlotPanel):
         self.opacity_slider = ipw.FloatRangeSlider(
             min=0.0,
             max=1.0,
-            value=[0.1, 1],
+            value=[0.01, 1],
             step=0.01,
             description="Opacity slider: When no cut surface is active, the "
             "max value of the range slider controls the overall opacity, "
@@ -215,8 +215,14 @@ class PlotPanel3d(PlotPanel):
         # Value iso-surface
         elif self.cut_surface_buttons.value == self.cut_options["Value"]:
             self.cut_surface_thickness.max = self.vmax - self.vmin
-            self.cut_slider.min = self.vmin
-            self.cut_slider.max = self.vmax
+            # We need to be careful about the order here, as ipywidgets throws
+            # if we set min larger than the current max
+            if self.vmax > self.cut_slider.min:
+                self.cut_slider.max = self.vmax
+                self.cut_slider.min = self.vmin
+            else:
+                self.cut_slider.min = self.vmin
+                self.cut_slider.max = self.vmax
             self.cut_slider.value = 0.5 * (self.vmin + self.vmax)
             # Update slider step because it is no longer related to pixel size.
             # Slice thickness is linked to the step via jslink.
@@ -244,9 +250,9 @@ class PlotPanel3d(PlotPanel):
         if self.cut_surface_buttons.value == self.cut_options["Value"]:
             self._update_cut_slider_bounds()
 
-    def toggle_mask(self, mask_info):
-        """
-        Show/hide masks
-        """
-        new_values = self.model.get_slice_values(mask_info)
-        self.view.update_data(new_values)
+    # def toggle_mask(self, mask_info):
+    #     """
+    #     Show/hide masks
+    #     """
+    #     new_values = self.model.get_slice_values(mask_info)
+    #     self.view.update_data(new_values)

@@ -45,6 +45,10 @@ class PlotFigure1d(PlotFigure):
         # Save the line parameters (color, linewidth...)
         self.mpl_line_params = mpl_line_params
 
+        for name in self.masks:
+            if self.masks[name]["color"] is None:
+                self.masks[name]["color"] = "k"
+
     def update_axes(self, axparams=None, clear=True, legend_labels=True):
 
         xparams = axparams["x"]

@@ -85,6 +85,7 @@ class SciPlot2d(SciPlot):
         if self.ndim > 2:
             pad = config.plot.padding.copy()
             pad[2] = 0.77
+            print(self.masks)
             self.profile = ProfileView(
                 errorbars=self.errorbars,
                 ax=pax,
