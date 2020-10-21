@@ -202,6 +202,14 @@ Variable concatenate(const VariableConstView &var, const Dim dim) {
     return concatenate_impl<Dataset>(var, dim);
 }
 
+/// Reduce a dimension by concatenating all elements along the dimension.
+///
+/// This is the analogue to summing non-bucket data.
+DataArray concatenate(const DataArrayConstView &array, const Dim dim) {
+  return {buckets::concatenate(array.data(), dim), array.aligned_coords(),
+          array.masks(), array.unaligned_coords()};
+}
+
 void append(const VariableView &var0, const VariableConstView &var1) {
   if (var0.dtype() == dtype<bucket<Variable>>)
     var0.replace_model(combine<Variable>(var0, var1));

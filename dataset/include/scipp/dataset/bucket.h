@@ -33,6 +33,8 @@ concatenate(const DataArrayConstView &var0, const DataArrayConstView &var1);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 concatenate(const VariableConstView &var, const Dim dim);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+concatenate(const DataArrayConstView &var, const Dim dim);
 
 SCIPP_DATASET_EXPORT void append(const VariableView &var0,
                                  const VariableConstView &var1);

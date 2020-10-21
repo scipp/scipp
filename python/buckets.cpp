@@ -86,6 +86,18 @@ void init_buckets(py::module &m) {
       },
       py::call_guard<py::gil_scoped_release>());
   buckets.def(
+      "concatenate",
+      [](const VariableConstView &var, const Dim dim) {
+        return dataset::buckets::concatenate(var, dim);
+      },
+      py::call_guard<py::gil_scoped_release>());
+  buckets.def(
+      "concatenate",
+      [](const DataArrayConstView &array, const Dim dim) {
+        return dataset::buckets::concatenate(array, dim);
+      },
+      py::call_guard<py::gil_scoped_release>());
+  buckets.def(
       "append",
       [](const VariableView &a, const VariableConstView &b) {
         return dataset::buckets::append(a, b);
