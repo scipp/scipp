@@ -17,18 +17,13 @@
 
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/bucketby.h"
+#include "scipp/dataset/except.h"
 
 #include "dataset_operations_common.h"
 
 namespace scipp::dataset {
 
 namespace {
-static void expectValidGroupbyKey(const VariableConstView &key) {
-  if (key.dims().ndim() != 1)
-    throw except::DimensionError("Group-by key must be 1-dimensional");
-  if (key.hasVariances())
-    throw except::VariancesError("Group-by key cannot have variances");
-}
 
 template <class T> auto find_sorting_permutation(const T &key) {
   element_array<scipp::index> p(key.size(), core::default_init_elements);
@@ -130,7 +125,7 @@ Variable permute(const VariableConstView &var, const Dim dim,
 
 template <class T> struct MakePermutation {
   static auto apply(const VariableConstView &key) {
-    expectValidGroupbyKey(key);
+    expect::isKey(key);
     // Using span over data since random access via ElementArrayView is slow.
     return makeVariable<scipp::index>(
         key.dims(), Values(find_sorting_permutation(scipp::span(

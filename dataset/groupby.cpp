@@ -236,16 +236,9 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   return out;
 }
 
-static void expectValidGroupbyKey(const VariableConstView &key) {
-  if (key.dims().ndim() != 1)
-    throw except::DimensionError("Group-by key must be 1-dimensional");
-  if (key.hasVariances())
-    throw except::VariancesError("Group-by key cannot have variances");
-}
-
 template <class T> struct MakeGroups {
   static auto apply(const VariableConstView &key, const Dim targetDim) {
-    expectValidGroupbyKey(key);
+    expect::isKey(key);
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
@@ -280,7 +273,7 @@ template <class T> struct MakeGroups {
 template <class T> struct MakeBinGroups {
   static auto apply(const VariableConstView &key,
                     const VariableConstView &bins) {
-    expectValidGroupbyKey(key);
+    expect::isKey(key);
     if (bins.dims().ndim() != 1)
       throw except::DimensionError("Group-by bins must be 1-dimensional");
     if (key.unit() != bins.unit())
