@@ -112,6 +112,19 @@ TEST(Variable, size_in_memory) {
   EXPECT_EQ(size_of(var_with_variance), sizeof(double) * 4);
 }
 
+TEST(Variable, size_in_memory_for_non_trivial_dtype) {
+  auto var = makeVariable<Eigen::Vector3d>(units::kg, Shape{1, 1}, Dims{Dim::X, Dim::Y},
+                                  Values{Eigen::Vector3d{1,2,3}});
+  EXPECT_EQ(size_of(var), sizeof(Eigen::Vector3d));
+}
+
+TEST(Variable, size_in_memory_sliced_variables) {
+  auto var = makeVariable<double>(units::kg, Shape{4}, Dims{Dim::X},
+                                  Values{3, 4, 5, 6});
+  auto sliced_view = var.slice(Slice(Dim::X, 0, 2));
+  EXPECT_EQ(size_of(sliced_view), 2*sizeof(double));
+}
+
 class Variable_comparison_operators : public ::testing::Test {
 private:
   template <class A, class B>

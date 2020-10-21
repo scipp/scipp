@@ -353,6 +353,7 @@ SCIPP_VARIABLE_EXPORT Variable copy(const VariableConstView &var);
 SCIPP_VARIABLE_EXPORT bool contains_events(const VariableConstView &var);
 
 scipp::index size_of(const VariableConstView &view);
+scipp::index size_of(const Variable &view);
 } // namespace scipp::variable
 
 namespace scipp {

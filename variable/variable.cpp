@@ -195,7 +195,13 @@ void VariableView::setVariances(Variable v) const {
 }
 
 scipp::index size_of(const VariableConstView &view) {
-    auto value_size = sizeof(std::type_index(view.dtype().index));
+    auto value_size = view.underlying().data().dtype_size();
+    auto variance_scale = view.hasVariances() ? 2 : 1;
+    return view.dims().volume() * value_size * variance_scale;
+  }
+
+scipp::index size_of(const Variable &view) {
+    auto value_size = view.data().dtype_size();
     auto variance_scale = view.hasVariances() ? 2 : 1;
     return view.dims().volume() * value_size * variance_scale;
   }

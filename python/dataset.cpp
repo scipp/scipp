@@ -266,12 +266,14 @@ void init_dataset(py::module &m) {
            py::arg("coords") = std::map<Dim, VariableConstView>{},
            py::arg("masks") = std::map<std::string, VariableConstView>{},
            py::arg("unaligned_coords") = std::map<Dim, VariableConstView>{},
-           py::arg("name") = std::string{});
-      // .def("__sizeof__", 1);
+           py::arg("name") = std::string{})
+      .def("__sizeof__",
+           [](const DataArrayConstView &array) { return size_of(array, true); });
 
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
-      .def(py::init<const DataArray &>());
-      // .def("__sizeof__", 1);
+      .def(py::init<const DataArray &>())
+      .def("__sizeof__",
+           [](const DataArrayConstView &array) { return size_of(array, false); });
 
   py::class_<DataArrayView, DataArrayConstView> dataArrayView(
       m, "DataArrayView", R"(
@@ -283,8 +285,8 @@ void init_dataset(py::module &m) {
   bind_data_array_properties(dataArrayView);
 
   py::class_<DatasetConstView>(m, "DatasetConstView")
-      .def(py::init<const Dataset &>());
-      // .def("__sizeof__", 1);
+      .def(py::init<const Dataset &>())
+      .def("__sizeof__", py::overload_cast<const DatasetConstView &>(&size_of));
   py::class_<DatasetView, DatasetConstView> datasetView(m, "DatasetView",
                                                         R"(
         View for Dataset, representing a sliced view onto a Dataset;
@@ -320,8 +322,8 @@ void init_dataset(py::module &m) {
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())
       .def("clear", &Dataset::clear,
-           R"(Removes all data, preserving coordinates.)");
-      // .def("__sizeof__", 1);
+           R"(Removes all data, preserving coordinates.)")
+      .def("__sizeof__", py::overload_cast<const DatasetConstView &>(&size_of));
   datasetView.def(
       "__setitem__",
       [](const DatasetView &self, const std::string &name,
