@@ -199,8 +199,10 @@ class PlotModel:
         #         set(dslice.coords.keys()) - set() }
 
         # Rebin the data
+        var = dslice.data
+
         for dim, edges in rebin_edges.items():
-            dslice = sc.rebin(dslice, dim, edges)
+            # dslice = sc.rebin(dslice, dim, edges)
             # # print(dim)
             # # print(edges)
             # # print(dslice)
@@ -212,14 +214,21 @@ class PlotModel:
             #     data=sc.rebin(dslice.data, dim, dslice.coords[dim], edges))
             # dslice.coords[dim] = edges
 
+            var = sc.rebin(var, dim, dslice.coords[dim], edges)
+
+        da = sc.DataArray(coords=rebin_edges,
+            data=var)
+
         # Divide by pixel width
         # TODO: can this loop be combined with the one above?
         for dim, edges in rebin_edges.items():
+            # da.coords[dim] = edges
             div = edges[dim, 1:] - edges[dim, :-1]
             div.unit = sc.units.one
-            dslice /= div
+            # dslice /= div
+            da /= div
 
-        return dslice
+        return da #slice
 
     def rescale_to_data(self):
         """
