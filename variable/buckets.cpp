@@ -47,4 +47,27 @@ void copy_slices(const VariableConstView &src, const VariableView &dst,
                      subspan_view(src, dim, srcIndices), copy_spans);
 }
 
+Variable resize_default_init(const VariableConstView &var, const Dim dim,
+                             const scipp::index size) {
+  auto dims = var.dims();
+  if (dims.contains(dim))
+    dims.resize(dim, size);
+  // Using variableFactory instead of variable::resize for creating
+  // _uninitialized_ variable.
+  return variable::variableFactory().create(var.dtype(), dims, var.unit(),
+                                            var.hasVariances());
+}
+
+std::tuple<Variable, scipp::index>
+sizes_to_begin(const VariableConstView &sizes) {
+  Variable begin(sizes);
+  scipp::index size = 0;
+  for (auto &i : begin.values<scipp::index>()) {
+    const auto old_size = size;
+    size += i;
+    i = old_size;
+  }
+  return {begin, size};
+}
+
 } // namespace scipp::variable

@@ -70,21 +70,6 @@ void copy_slices(const DatasetConstView &src, const DatasetView &dst,
   }
 }
 
-} // namespace scipp::dataset
-
-namespace scipp::dataset::buckets {
-
-std::tuple<Variable, scipp::index>
-sizes_to_begin(const VariableConstView &sizes) {
-  Variable begin(sizes);
-  scipp::index size = 0;
-  for (auto &i : begin.values<scipp::index>()) {
-    const auto old_size = size;
-    size += i;
-    i = old_size;
-  }
-  return {begin, size};
-}
 
 namespace {
 constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
@@ -99,17 +84,13 @@ constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
                                                   var.hasVariances())
              : Variable(var);
 };
-
-auto resize_buffer(const VariableConstView &parent, const Dim dim,
-                   const scipp::index size) {
-  return copy_or_resize(parent, dim, size);
 }
 
 // TODO These functions are an unfortunate near-duplicate of `resize`. However,
 // the latter drops coords along the resized dimension. Is there a way to unify
 // this? Can the need to drop coords in resize be avoided?
-auto resize_buffer(const DataArrayConstView &parent, const Dim dim,
-                   const scipp::index size) {
+DataArray resize_default_init(const DataArrayConstView &parent, const Dim dim,
+                              const scipp::index size) {
   DataArray buffer(copy_or_resize(parent.data(), dim, size));
   for (const auto &[name, var] : parent.aligned_coords())
     buffer.aligned_coords().set(name, copy_or_resize(var, dim, size));
@@ -120,8 +101,8 @@ auto resize_buffer(const DataArrayConstView &parent, const Dim dim,
   return buffer;
 }
 
-auto resize_buffer(const DatasetConstView &parent, const Dim dim,
-                   const scipp::index size) {
+Dataset resize_default_init(const DatasetConstView &parent, const Dim dim,
+                            const scipp::index size) {
   Dataset buffer;
   for (const auto &[name, var] : parent.coords())
     buffer.coords().set(name, copy_or_resize(var, dim, size));
@@ -134,6 +115,10 @@ auto resize_buffer(const DatasetConstView &parent, const Dim dim,
   }
   return buffer;
 }
+} // namespace scipp::dataset
+
+namespace scipp::dataset::buckets {
+namespace {
 
 template <class T>
 auto combine(const VariableConstView &var0, const VariableConstView &var1) {
@@ -147,7 +132,7 @@ auto combine(const VariableConstView &var0, const VariableConstView &var1) {
   const auto sizes = sizes0 + sizes1;
   const auto [begin, size] = sizes_to_begin(sizes);
   const auto end = begin + sizes;
-  auto buffer = resize_buffer(buffer0, dim, size);
+  auto buffer = resize_default_init(buffer0, dim, size);
   copy_slices(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
   copy_slices(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
   return variable::DataModel<bucket<T>>{zip(begin, end), dim,

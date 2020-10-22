@@ -13,4 +13,10 @@ SCIPP_VARIABLE_EXPORT void copy_slices(const VariableConstView &src,
                                        const VariableConstView &srcIndices,
                                        const VariableConstView &dstIndices);
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable resize_default_init(
+    const VariableConstView &var, const Dim dim, const scipp::index size);
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT std::tuple<Variable, scipp::index>
+sizes_to_begin(const VariableConstView &sizes);
+
 } // namespace scipp::variable

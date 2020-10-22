@@ -10,6 +10,7 @@
 #include "scipp/core/tag_util.h"
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/buckets.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
@@ -69,7 +70,7 @@ template <class T> struct Bin {
   static auto apply(const VariableConstView &var,
                     const VariableConstView &indices,
                     const VariableConstView &sizes) {
-    auto [begin, total_size] = buckets::sizes_to_begin(sizes);
+    auto [begin, total_size] = sizes_to_begin(sizes);
     auto dims = var.dims();
     // Output may be smaller since values outside bins are dropped.
     dims.resize(dims.inner(), total_size);
@@ -191,7 +192,7 @@ DataArray bucketby_impl(const DataArrayConstView &array,
     bucket_dim = coord.dims().inner();
   }
   const auto sizes = bin_sizes(indices, dims, edges);
-  const auto [begin, total_size] = buckets::sizes_to_begin(sizes);
+  const auto [begin, total_size] = sizes_to_begin(sizes);
   const auto end = begin + sizes;
   auto binned = bin(array, indices, sizes);
   std::map<Dim, Variable> coords;

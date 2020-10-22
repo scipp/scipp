@@ -17,12 +17,14 @@ SCIPP_DATASET_EXPORT void copy_slices(const DatasetConstView &src,
                                       const VariableConstView &srcIndices,
                                       const VariableConstView &dstIndices);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray resize_default_init(
+    const DataArrayConstView &parent, const Dim dim, const scipp::index size);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset resize_default_init(
+    const DatasetConstView &parent, const Dim dim, const scipp::index size);
+
 } // namespace scipp::dataset
 
 namespace scipp::dataset::buckets {
-
-[[nodiscard]] SCIPP_DATASET_EXPORT std::tuple<Variable, scipp::index>
-sizes_to_begin(const VariableConstView &sizes);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 concatenate(const VariableConstView &var0, const VariableConstView &var1);
