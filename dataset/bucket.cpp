@@ -70,7 +70,6 @@ void copy_slices(const DatasetConstView &src, const DatasetView &dst,
   }
 }
 
-
 namespace {
 constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
                                    const scipp::index size) {
