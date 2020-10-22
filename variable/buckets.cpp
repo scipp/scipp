@@ -16,8 +16,11 @@
 namespace scipp::variable {
 
 namespace {
+template <class T> using copy_spans_args = std::tuple<span<T>, span<const T>>;
 constexpr auto copy_spans = overloaded{
-    core::element::arg_list<std::tuple<span<double>, span<const double>>>,
+    core::element::arg_list<copy_spans_args<double>, copy_spans_args<float>,
+                            copy_spans_args<int64_t>, copy_spans_args<int32_t>,
+                            copy_spans_args<bool>>,
     core::transform_flags::expect_all_or_none_have_variance,
     [](units::Unit &a, const units::Unit &b) { a = b; },
     [](auto &dst, const auto &src) {
