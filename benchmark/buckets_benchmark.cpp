@@ -8,6 +8,7 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/buckets.h"
 #include "scipp/variable/operations.h"
 
 #include "../test/random.h"
