@@ -89,4 +89,6 @@ TEST_F(DataArrayBucketByTest, 2d) {
   EXPECT_EQ(bucketed.values<bucket<DataArray>>()[2], empty_bucket);
   EXPECT_EQ(bucketed.values<bucket<DataArray>>()[3],
             sorted_table.slice({Dim::Event, 1, 3}));
+
+  EXPECT_EQ(bucketby(bucketby(table, {edges_x}), {edges_y}), bucketed);
 }
