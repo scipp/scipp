@@ -125,8 +125,9 @@ protected:
   // `buckets` *does not* depend on the histogramming dimension
   Variable bin_edges =
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
-  DataArray histogram = DataArray(Variable(bin_edges.slice({Dim::Z, 1, 4})),
-                                  {{Dim::Z, bin_edges}});
+  DataArray histogram = DataArray(
+      makeVariable<double>(Dims{Dim::Z}, Shape{3}, units::K, Values{1, 2, 4}),
+      {{Dim::Z, bin_edges}});
 };
 
 TEST_F(DataArrayBucketMapTest, map) {
@@ -135,8 +136,8 @@ TEST_F(DataArrayBucketMapTest, map) {
   // histogram:
   // | 1 | 2 | 4 |
   // 0   1   2   4
-  const auto expected_scale =
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{2, 4, 4, 0});
+  const auto expected_scale = makeVariable<double>(
+      Dims{Dim::X}, Shape{4}, units::K, Values{2, 4, 4, 0});
   EXPECT_EQ(out, Variable(std::make_unique<ModelVariable>(indices, Dim::X,
                                                           expected_scale)));
 
@@ -147,9 +148,11 @@ TEST_F(DataArrayBucketMapTest, map) {
   EXPECT_EQ(scaled, expected);
 
   // Mapping and scaling also works for slices
+  histogram.setUnit(units::one); // cannot change unit of slice
   auto partial = buckets;
   for (auto s : {Slice(Dim::Y, 0), Slice(Dim::Y, 1)})
     partial.slice(s) *= buckets::map(histogram, buckets.slice(s), Dim::Z);
+  variable::variableFactory().set_elem_unit(partial, units::K);
   EXPECT_EQ(partial, expected);
 }
 
@@ -157,8 +160,8 @@ TEST_F(DataArrayBucketMapTest, map_masked) {
   histogram.masks().set(
       "mask", makeVariable<bool>(histogram.dims(), Values{false, true, false}));
   const auto out = buckets::map(histogram, buckets, Dim::Z);
-  const auto expected_scale =
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{0, 4, 4, 0});
+  const auto expected_scale = makeVariable<double>(
+      Dims{Dim::X}, Shape{4}, units::K, Values{0, 4, 4, 0});
   EXPECT_EQ(out, Variable(std::make_unique<ModelVariable>(indices, Dim::X,
                                                           expected_scale)));
 }

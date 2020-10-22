@@ -264,11 +264,14 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
   // size, even if `x` is a slice and only subsections of the buffer are needed.
   auto out = variable::variableFactory().create(
       function.dtype(), buffer.dims(), units::one, function.hasVariances());
+  // TODO "bug" here: subspan_view creates a new variable, so out unit not set!
   transform_in_place(subspan_view(out, dim, indices),
                      subspan_view(buffer.coords()[hist_dim], dim, indices),
                      subspan_view(function.coords()[hist_dim], hist_dim),
                      subspan_view(mask ? masked : function.data(), hist_dim),
                      core::element::event::map_in_place);
+  // TODO Workaround, see comment above
+  out.setUnit(function.unit());
   return Variable{std::make_unique<variable::DataModel<bucket<Variable>>>(
       indices, dim, std::move(out))};
 }
