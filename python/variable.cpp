@@ -18,6 +18,7 @@
 #include "scipp/variable/variable.h"
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/util.h"
 #include "scipp/dataset/sort.h"
 
 #include "bind_data_access.h"

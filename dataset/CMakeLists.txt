@@ -41,6 +41,7 @@ set(SRC_FILES
     operations.cpp
     rebin.cpp
     reduction.cpp
+    util.cpp
     shape.cpp
     slice.cpp
     sort.cpp

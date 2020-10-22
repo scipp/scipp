@@ -10,6 +10,7 @@
 #include "scipp/dataset/map_view.h"
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/rebin.h"
+#include "scipp/dataset/util.h"
 #include "scipp/dataset/sort.h"
 
 #include "bind_data_access.h"
