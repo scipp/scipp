@@ -2,11 +2,33 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .._scipp import core as sc
 from .. import _utils as su
-from .sciplot import SciPlot
-from .tools import make_fake_coord
+from .dispatch import dispatch
+from .tools import make_fake_coord, get_line_param
+
+
+class Plot(dict):
+    """
+    The Plot object is used as output for the plot command.
+    It is a small wrapper around python dict, with an ipython repr.
+    The dict will contain one entry for each entry in the input supplied to
+    the plot function.
+    More functionalities can be added in the future.
+    """
+    def __init__(self, *arg, **kw):
+        super(Plot, self).__init__(*arg, **kw)
+
+    def _ipython_display_(self):
+        import ipywidgets as widgets
+        contents = []
+        for key, val in self.items():
+            contents.append(val._to_widget())
+        return widgets.VBox(contents)._ipython_display_()
+
+    def as_static(self, *args, **kwargs):
+        for key, item in self.items():
+            self[key] = item.as_static(*args, **kwargs)
 
 
 def plot(scipp_obj,
@@ -21,10 +43,6 @@ def plot(scipp_obj,
     """
     Wrapper function to plot any kind of scipp object.
     """
-
-    # Delayed imports
-    from .tools import get_line_param
-    from .dispatch import dispatch
 
     inventory = dict()
     if su.is_dataset(scipp_obj):
@@ -74,19 +92,12 @@ def plot(scipp_obj,
         if bins is not None and sc.contains_events(var):
             ndims += 1
         if ndims > 0:
-            ax = axes
             if ndims == 1 or projection == "1d" or projection == "1D":
                 # Construct a key from the dimensions
                 if axes is not None:
-                    # Check if we are dealing with a dict mapping dimensions to
-                    # labels
-                    if isinstance(axes, dict):
-                        key = axes[str(var.dims[0])]
-                        ax = [key]
-                    else:
-                        key = ".".join(axes)
+                    key = str(list(axes.values())[0])
                 else:
-                    key = ".".join([str(dim) for dim in var.dims])
+                    key = str(var.dims[0])
                 # Add unit to key
                 key = "{}.{}".format(key, str(var.unit))
                 line_count += 1
@@ -113,7 +124,7 @@ def plot(scipp_obj,
             if key not in tobeplotted.keys():
                 tobeplotted[key] = dict(ndims=ndims,
                                         scipp_obj_dict=dict(),
-                                        axes=ax,
+                                        axes=axes,
                                         mpl_line_params=dict())
                 for n in mpl_line_params.keys():
                     tobeplotted[key]["mpl_line_params"][n] = {}
@@ -122,7 +133,7 @@ def plot(scipp_obj,
                 tobeplotted[key]["mpl_line_params"][n][name] = p
 
     # Plot all the subsets
-    output = SciPlot()
+    output = Plot()
     for key, val in tobeplotted.items():
         output[key] = dispatch(scipp_obj_dict=val["scipp_obj_dict"],
                                name=key,
@@ -132,5 +143,4 @@ def plot(scipp_obj,
                                mpl_line_params=val["mpl_line_params"],
                                bins=bins,
                                **kwargs)
-
     return output

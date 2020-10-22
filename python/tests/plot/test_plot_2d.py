@@ -8,10 +8,6 @@ import scipp as sc
 from plot_helper import make_dense_dataset, make_events_dataset
 from scipp.plot import plot
 
-# Prevent figure from being displayed when running the tests
-import matplotlib.pyplot as plt
-plt.ioff()
-
 
 def test_plot_2d_image():
     d = make_dense_dataset(ndim=2)
@@ -20,7 +16,7 @@ def test_plot_2d_image():
 
 def test_plot_2d_image_with_log():
     d = make_dense_dataset(ndim=2)
-    plot(d, log=True)
+    plot(d, norm='log')
 
 
 def test_plot_2d_image_with_vmin_vmax():
@@ -30,54 +26,59 @@ def test_plot_2d_image_with_vmin_vmax():
 
 def test_plot_2d_image_with_vmin_vmax_with_log():
     d = make_dense_dataset(ndim=2)
-    plot(d, vmin=0.1, vmax=0.9, log=True)
+    plot(d, vmin=0.1, vmax=0.9, norm='log')
 
 
-def test_plot_2d_image_with_logx():
+def test_plot_2d_image_with_log_scale_x():
     d = make_dense_dataset(ndim=2)
-    plot(d, logx=True)
+    plot(d, scale={'tof': 'log'})
 
 
-def test_plot_2d_image_with_logy():
+def test_plot_2d_image_with_log_scale_y():
     d = make_dense_dataset(ndim=2)
-    plot(d, logy=True)
+    plot(d, scale={'x': 'log'})
 
 
-def test_plot_2d_image_with_logxy():
+def test_plot_2d_image_with_log_scale_xy():
     d = make_dense_dataset(ndim=2)
-    plot(d, logxy=True)
+    plot(d, scale={'tof': 'log', 'x': 'log'})
 
 
 def test_plot_2d_image_with_with_nan():
     d = make_dense_dataset(ndim=2)
-    d["Sample"].values[0, 0] = np.nan
+    d['Sample'].values[0, 0] = np.nan
     plot(d)
 
 
 def test_plot_2d_image_with_with_nan_with_log():
     d = make_dense_dataset(ndim=2)
-    d["Sample"].values[0, 0] = np.nan
-    plot(d, log=True)
+    d['Sample'].values[0, 0] = np.nan
+    plot(d, norm='log')
 
 
 def test_plot_2d_image_with_cmap():
     d = make_dense_dataset(ndim=2)
-    plot(d, cmap="jet")
+    plot(d, cmap='jet')
 
 
-def test_plot_2d_image_with_axes():
+def test_plot_2d_image_with_xaxis_specified():
     d = make_dense_dataset(ndim=2)
-    plot(d, axes=['tof', 'x'])
+    plot(d, axes={'x': 'x'})
+
+
+def test_plot_2d_image_with_yaxis_specified():
+    d = make_dense_dataset(ndim=2)
+    plot(d, axes={'y': 'tof'})
 
 
 def test_plot_2d_image_with_labels():
     d = make_dense_dataset(ndim=2, labels=True)
-    plot(d, axes=['x', "somelabels"])
+    plot(d, axes={'x': 'somelabels'})
 
 
 def test_plot_2d_image_with_filename():
     d = make_dense_dataset(ndim=2)
-    plot(d, filename="image.pdf")
+    plot(d, filename='image.pdf')
 
 
 def test_plot_2d_image_with_bin_edges():
@@ -92,7 +93,7 @@ def test_plot_2d_with_masks():
 
 def test_plot_2d_with_masks_and_labels():
     d = make_dense_dataset(ndim=2, masks=True, labels=True)
-    plot(d, axes=['x', "somelabels"])
+    plot(d, axes={'x': 'somelabels'})
 
 
 def test_plot_2d_image_with_non_regular_bin_edges():
@@ -156,9 +157,9 @@ def test_plot_string_and_vector_axis_labels_2d():
                                 unit=sc.units.m,
                                 dtype=sc.dtype.vector_3_float64)
     d.coords['y'] = sc.Variable(['y'],
-                                values=["a", "b", "c", "d", "e"],
+                                values=['a', 'b', 'c', 'd', 'e'],
                                 unit=sc.units.m)
-    d["Signal"] = sc.Variable(['y', 'x'],
+    d['Signal'] = sc.Variable(['y', 'x'],
                               values=np.random.random([M, N]),
                               unit=sc.units.counts)
     plot(d)
@@ -174,14 +175,14 @@ def test_plot_2d_with_dimension_of_size_1():
     d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
     d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
     d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
-    d["a"] = sc.Variable(['y', 'x'],
+    d['a'] = sc.Variable(['y', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
-    d["b"] = sc.Variable(['z', 'x'],
+    d['b'] = sc.Variable(['z', 'x'],
                          values=np.random.random([M, N]),
                          unit=sc.units.counts)
-    plot(d["a"])
-    plot(d["b"])
+    plot(d['a'])
+    plot(d['b'])
 
 
 def test_plot_2d_with_dimension_of_size_2():
@@ -287,7 +288,7 @@ def test_plot_2d_with_labels_but_no_dimension_coord():
     d.coords['somelabels'] = sc.Variable(['x'],
                                          values=np.linspace(101., 155., N),
                                          unit=sc.units.s)
-    plot(d, axes=['y', 'somelabels'])
+    plot(d, axes={'x': 'somelabels'})
 
 
 def test_plot_2d_with_decreasing_edges():

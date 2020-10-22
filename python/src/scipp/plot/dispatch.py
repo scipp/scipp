@@ -2,6 +2,7 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+# Scipp imports
 from .._utils import histogram_events_data
 
 
@@ -38,16 +39,16 @@ def dispatch(scipp_obj_dict,
     projection = projection.lower()
 
     if projection == "1d":
-        from .plot_1d import plot_1d
-        return plot_1d(scipp_obj_dict,
-                       mpl_line_params=mpl_line_params,
-                       **kwargs)
+        from .plot1d import plot1d
+        return plot1d(scipp_obj_dict,
+                      mpl_line_params=mpl_line_params,
+                      **kwargs)
     elif projection == "2d":
-        from .plot_2d import plot_2d
-        return plot_2d(scipp_obj_dict, **kwargs)
+        from .plot2d import plot2d
+        return plot2d(scipp_obj_dict, **kwargs)
     elif projection == "3d":
-        from .plot_3d import plot_3d
-        return plot_3d(scipp_obj_dict, **kwargs)
+        from .plot3d import plot3d
+        return plot3d(scipp_obj_dict, **kwargs)
     else:
-        raise RuntimeError("Wrong projection type. Expected either '2d' "
-                           "or '3d', got {}.".format(projection))
+        raise RuntimeError("Wrong projection type. Expected either '1d', "
+                           "'2d', or '3d', got {}.".format(projection))

@@ -8,10 +8,6 @@ import scipp as sc
 from plot_helper import make_dense_dataset, make_events_dataset
 from scipp.plot import plot
 
-# Prevent figure from being displayed when running the tests
-import matplotlib.pyplot as plt
-plt.ioff()
-
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
 # checksums or by using tools like squish.
@@ -34,14 +30,14 @@ def test_plot_1d_bin_edges():
 
 def test_plot_1d_with_labels():
     d = make_dense_dataset(ndim=1, labels=True)
-    plot(d, axes=["somelabels"])
+    plot(d, axes={"x": "somelabels"})
 
 
 def test_plot_1d_log_axes():
     d = make_dense_dataset(ndim=1)
-    plot(d, logx=True)
-    plot(d, logy=True)
-    plot(d, logxy=True)
+    plot(d, scale={'tof': 'log'})
+    plot(d, norm='log')
+    plot(d, norm='log', scale={'tof': 'log'})
 
 
 def test_plot_1d_bin_edges_with_variances():
@@ -76,24 +72,6 @@ def test_plot_1d_two_entries_hide_variances():
     plot(d, errorbars={"Sample": False, "Background": True})
 
 
-def test_plot_1d_three_entries_with_labels():
-    N = 50
-    d = make_dense_dataset(ndim=1, labels=True)
-    d["Background"] = sc.Variable(['tof'],
-                                  values=2.0 * np.random.rand(N),
-                                  unit=sc.units.counts)
-    d.coords['x'] = sc.Variable(['x'],
-                                values=np.arange(N).astype(np.float64),
-                                unit=sc.units.m)
-    d["Sample2"] = sc.Variable(['x'],
-                               values=10.0 * np.random.rand(N),
-                               unit=sc.units.counts)
-    d.coords["Xlabels"] = sc.Variable(['x'],
-                                      values=np.linspace(151., 155., N),
-                                      unit=sc.units.s)
-    plot(d, axes={'x': "Xlabels", 'tof': "somelabels"})
-
-
 def test_plot_1d_with_masks():
     d = make_dense_dataset(ndim=1, masks=True)
     plot(d)
@@ -111,15 +89,20 @@ def test_plot_sliceviewer_with_1d_projection():
 
 def test_plot_sliceviewer_with_1d_projection_with_nans():
     d = make_dense_dataset(ndim=3, binedges=True, variances=True)
-    d['Sample'].values = np.where(d['Sample'].values < -0.8, np.nan,
+    d['Sample'].values = np.where(d['Sample'].values < 0.0, np.nan,
                                   d['Sample'].values)
-    d['Sample'].variances = np.where(d['Sample'].values < 0., np.nan,
+    d['Sample'].variances = np.where(d['Sample'].values < 0.2, np.nan,
                                      d['Sample'].variances)
-    p = plot(d, projection='1d')
-    # Move the sliders
-    p['tof.x.y.counts']['widgets']['sliders']['tof'].value = 10
-    p['tof.x.y.counts']['widgets']['sliders']['x'].value = 10
-    p['tof.x.y.counts']['widgets']['sliders']['y'].value = 10
+    plot(d, projection='1d')
+
+    # TODO: moving the sliders is disabled for now, because we are not in a
+    # Jupyter backend and once the plot has returned, the widgets no longer
+    # exist. We need to re-enable this once we introduce unit tests for the
+    # widgets themselves, and find a good way to test slider events.
+    # # Move the sliders
+    # p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('tof')].value = 10
+    # p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('x')].value = 10
+    # p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('y')].value = 10
 
 
 def test_plot_1d_events_data_with_bool_bins():

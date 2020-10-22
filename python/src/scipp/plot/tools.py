@@ -2,11 +2,9 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .. import config
+from .._utils import name_with_unit
 from .._scipp import core as sc
-
-# Other imports
 import numpy as np
 
 
@@ -48,8 +46,7 @@ def parse_params(params=None,
                  globs=None,
                  variable=None,
                  array=None,
-                 min_val=None,
-                 max_val=None):
+                 name=None):
     """
     Construct the colorbar settings using default and input values
     """
@@ -71,52 +68,51 @@ def parse_params(params=None,
         for key, val in params.items():
             parsed[key] = val
 
-    need_norm = False
-    # TODO: sc.min/max currently return nan if the first value in the
-    # variable array is a nan. Until sc.nanmin/nanmax are implemented, we fall
-    # back to using numpy, both when a Variable and a numpy array are supplied.
-    if variable is not None:
-        _find_min_max(variable.values, parsed)
-        need_norm = True
-    if array is not None:
-        _find_min_max(array, parsed)
-        need_norm = True
-
-    if need_norm:
-        if min_val is not None:
-            parsed["vmin"] = min(parsed["vmin"], min_val)
-        if max_val is not None:
-            parsed["vmax"] = max(parsed["vmax"], max_val)
-        if parsed["log"]:
-            norm = LogNorm(vmin=10.0**parsed["vmin"],
-                           vmax=10.0**parsed["vmax"])
-        else:
-            norm = Normalize(vmin=parsed["vmin"], vmax=parsed["vmax"])
-        parsed["norm"] = norm
+    if parsed["norm"] == "log":
+        norm = LogNorm
+    elif parsed["norm"] == "linear":
+        norm = Normalize
+    else:
+        raise RuntimeError("Unknown norm. Expected 'linear' or 'log', "
+                           "got {}.".format(parsed["norm"]))
+    parsed["norm"] = norm(vmin=parsed["vmin"], vmax=parsed["vmax"])
 
     # Convert color into custom colormap
     if parsed["color"] is not None:
         parsed["cmap"] = LinearSegmentedColormap.from_list(
             "tmp", [parsed["color"], parsed["color"]])
 
+    if variable is not None:
+        parsed["unit"] = name_with_unit(var=variable, name="")
+
     return parsed
 
 
 def make_fake_coord(dim, size, unit=None):
-    args = {"values": np.arange(size, dtype=np.float64)}
+    kwargs = {"values": np.arange(size, dtype=np.float64)}
     if unit is not None:
-        args["unit"] = unit
-    return sc.Variable(dims=[dim], **args)
+        kwargs["unit"] = unit
+    return sc.Variable(dims=[dim], **kwargs)
 
 
-def _find_min_max(array, params):
-    if params["vmin"] is None or params["vmax"] is None:
-        if params["log"]:
-            with np.errstate(divide="ignore", invalid="ignore"):
-                valid = np.ma.log10(array)
-        else:
-            valid = np.ma.masked_invalid(array, copy=False)
-    if params["vmin"] is None:
-        params["vmin"] = valid.min()
-    if params["vmax"] is None:
-        params["vmax"] = valid.max()
+def vars_to_err(v):
+    with np.errstate(invalid="ignore"):
+        v = np.sqrt(v)
+    np.nan_to_num(v, copy=False)
+    return v
+
+
+def mask_to_float(mask, var):
+    return np.where(mask, var, None).astype(np.float32)
+
+
+def check_log_limits(lims=None, vmin=None, vmax=None, scale=None):
+    if lims is not None:
+        vmin = lims[0]
+        vmax = lims[1]
+    if scale == "log" and vmin <= 0:
+        vmin = 1.0e-03 * vmax
+    if lims is not None:
+        return [vmin, vmax]
+    else:
+        return vmin, vmax
