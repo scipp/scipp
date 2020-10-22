@@ -244,9 +244,13 @@ TEST(SliceByValueTest, test_slice_point_on_edge_coord_1D) {
     EXPECT_EQ(slice(sliceable, Dim::X, 11.9 * units::m),
               sliceable.slice({Dim::X, 8}));
     // (closed on right) so out of bounds
-    EXPECT_THROW(slice(sliceable, Dim::X, 12.0 * units::m), except::SliceError);
+    EXPECT_THROW([[maybe_unused]] auto view =
+                     slice(sliceable, Dim::X, 12.0 * units::m),
+                 except::SliceError);
     // out of bounds for left for completeness
-    EXPECT_THROW(slice(sliceable, Dim::X, 2.99 * units::m), except::SliceError);
+    EXPECT_THROW([[maybe_unused]] auto view =
+                     slice(sliceable, Dim::X, 2.99 * units::m),
+                 except::SliceError);
   };
   test(da);                              // Test for DataArray
   test(Dataset{DataArrayConstView{da}}); // Test for Dataset

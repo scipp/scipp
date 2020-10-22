@@ -15,4 +15,13 @@ void coordsAreSuperset(const DataArrayConstView &a,
       throw except::CoordMismatchError(*a_coords.find(b_coord.first), b_coord);
 }
 
+void isKey(const VariableConstView &key) {
+  if (key.dims().ndim() != 1)
+    throw except::DimensionError(
+        "Coord for binning or grouping must be 1-dimensional");
+  if (key.hasVariances())
+    throw except::VariancesError(
+        "Coord for binning or grouping cannot have variances");
+}
+
 } // namespace scipp::dataset::expect

@@ -83,6 +83,42 @@ stages:
               ArtifactName: 'osx-64'
             displayName: 'Publish Conda package artefacts'
 
+      - job: 'windows'
+        displayName: 'Windows'
+        timeoutInMinutes: 120
+        strategy:
+          matrix:
+            Python37:
+              PYTHON_VERSION: '3.7'
+            Python38:
+              PYTHON_VERSION: '3.8'
+        pool:
+          vmImage: 'windows-latest'
+        variables:
+          - group: tokens
+        steps:
+          - checkout: self
+            submodules: true
+          - powershell: |
+              Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
+              Write-Host "##vso[task.setvariable variable=conda_dir]$env:CONDA"
+            displayName: 'Configure Conda directories'
+          - script: |
+              conda --version
+              conda install --yes anaconda-client conda-build
+              conda config --set always_yes yes --set changeps1 no
+            displayName: 'Conda configuration'
+          - script: |
+              conda build --user scipp --token "%ANACONDA_TOKEN%" --channel conda-forge --label dev --python="%PYTHON_VERSION%" ./conda
+            env:
+              ANACONDA_TOKEN: $(anaconda_token_secret)
+            displayName: 'Package build'
+          - task: PublishBuildArtifacts@1
+            inputs:
+              PathtoPublish: '$(conda_dir)/conda-bld/win-64'
+              ArtifactName: 'win-64'
+            displayName: 'Publish Conda package artefacts'
+
   - stage: 'post_build_checks'
     displayName: 'Post Build Checks'
 

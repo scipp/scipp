@@ -91,8 +91,8 @@ protected:
     check(swapped, expected1, expected0);
   }
 
-  Dimensions x{{Dim::X}, {2}};
-  Dimensions y{{Dim::Y}, {3}};
+  Dimensions x{Dim::X, 2};
+  Dimensions y{Dim::Y, 3};
   Dimensions yx{{Dim::Y, Dim::X}, {3, 2}};
   Dimensions xy{{Dim::X, Dim::Y}, {2, 3}};
   Dimensions xz{{Dim::X, Dim::Z}, {2, 4}};
@@ -172,7 +172,7 @@ TEST_F(MultiIndexTest, advance_slice_and_broadcast) {
 
 TEST_F(MultiIndexTest, 1d_array_of_1d_buckets) {
   const Dim dim = Dim::Row;
-  Dimensions buf{{dim}, {7}}; // 1d cut into two sections
+  Dimensions buf{dim, 7}; // 1d cut into two sections
   // natural order no gaps
   check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, x, x, {0, 1, 2, 3, 4, 5, 6});
   // gap between
@@ -198,7 +198,7 @@ TEST_F(MultiIndexTest, 1d_array_of_2d_buckets) {
 
 TEST_F(MultiIndexTest, 2d_array_of_1d_buckets) {
   const Dim dim = Dim::Row;
-  Dimensions buf{{dim}, {12}}; // 1d cut into xy=2x3 sections
+  Dimensions buf{dim, 12}; // 1d cut into xy=2x3 sections
   check_with_buckets(buf, dim,
                      {{0, 2}, {2, 4}, {4, 6}, {6, 8}, {8, 10}, {10, 12}}, xy,
                      xy, {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11});
@@ -221,7 +221,7 @@ TEST_F(MultiIndexTest, 2d_array_of_1d_buckets) {
 
 TEST_F(MultiIndexTest, 1d_array_of_1d_buckets_and_dense) {
   const Dim dim = Dim::Row;
-  Dimensions buf{{dim}, {7}}; // 1d cut into two sections
+  Dimensions buf{dim, 7}; // 1d cut into two sections
   // natural order no gaps
   check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, Dimensions{}, Dim::Invalid, {},
                      x, x, x, {0, 1, 2, 3, 4, 5, 6}, {0, 0, 0, 1, 1, 1, 1});
@@ -241,8 +241,8 @@ TEST_F(MultiIndexTest, 1d_array_of_1d_buckets_and_dense) {
 
 TEST_F(MultiIndexTest, 1d_array_of_1d_buckets_and_dense_with_empty_buckets) {
   const Dim dim = Dim::Row;
-  Dimensions buf{{dim}, {7}};
-  Dimensions x1{{Dim::X}, {1}};
+  Dimensions buf{dim, 7};
+  Dimensions x1{Dim::X, 1};
   check_with_buckets(buf, dim, {{0, 0}}, Dimensions{}, Dim::Invalid, {}, x1, x1,
                      x1, {}, {});
   check_with_buckets(buf, dim, {{1, 1}, {0, 0}}, Dimensions{}, Dim::Invalid, {},
@@ -257,7 +257,7 @@ TEST_F(MultiIndexTest, 1d_array_of_1d_buckets_and_dense_with_empty_buckets) {
 
 TEST_F(MultiIndexTest, two_1d_arrays_of_1d_buckets) {
   const Dim dim = Dim::Row;
-  Dimensions buf{{dim}, {1}};
+  Dimensions buf{dim, 1};
   check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, buf, dim, {{4, 7}, {0, 4}}, x,
                      x, x, {0, 1, 2, 3, 4, 5, 6}, {4, 5, 6, 0, 1, 2, 3});
   // slice inner
@@ -275,7 +275,7 @@ TEST_F(MultiIndexTest, two_1d_arrays_of_1d_buckets) {
 
 TEST_F(MultiIndexTest, two_1d_arrays_of_1d_buckets_bucket_size_mismatch) {
   const Dim dim = Dim::Row;
-  Dimensions buf{{dim}, {7}};
+  Dimensions buf{dim, 7};
   EXPECT_THROW(check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, buf, dim,
                                   {{0, 4}, {3, 7}}, x, x, x,
                                   {0, 1, 2, 3, 4, 5, 6}, {0, 1, 2, 3, 4, 5, 6}),

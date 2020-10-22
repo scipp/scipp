@@ -11,12 +11,12 @@ VariableConceptHandle::operator=(const VariableConceptHandle &other) {
   if (*this && other) {
     // Avoid allocation of new element_array if output is of correct shape.
     // This yields a 5x speedup in assignment operations of variables.
-    auto &concept = **this;
+    auto &varconcept = **this;
     auto &otherConcept = *other;
-    if (concept.dtype() == otherConcept.dtype() &&
-        concept.dims() == otherConcept.dims() &&
-        concept.hasVariances() == otherConcept.hasVariances()) {
-      concept.assign(otherConcept);
+    if (varconcept.dtype() == otherConcept.dtype() &&
+        varconcept.dims() == otherConcept.dims() &&
+        varconcept.hasVariances() == otherConcept.hasVariances()) {
+      varconcept.assign(otherConcept);
       return *this;
     }
   }
