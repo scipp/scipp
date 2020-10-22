@@ -207,6 +207,13 @@ DataArray bucketby_impl(const DataArrayConstView &array,
 DataArray bucketby(const DataArrayConstView &array,
                    const std::vector<VariableConstView> &edges) {
   if (array.dtype() == dtype<bucket<DataArray>>) {
+    // TODO The need for this check may be an indicator that we should support
+    // adding another bucketed dimension via a separate function instead of
+    // having this dual-purpose `bucketby`.
+    for (const auto &edge : edges)
+      if (array.dims().contains(edge.dims().inner()))
+        throw std::runtime_error(
+            "Recursive buckets cannot be created with bucketby.");
     const auto &[begin_end, dim, buffer] =
         array.data().constituents<bucket<DataArray>>();
     auto indices =

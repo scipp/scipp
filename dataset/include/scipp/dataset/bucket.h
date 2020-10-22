@@ -48,6 +48,7 @@ void scale(const DataArrayView &data, const DataArrayConstView &histogram);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable sum(const VariableConstView &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 sum(const DataArrayConstView &data);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset sum(const DatasetConstView &data);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 from_constituents(Variable &&indices, const Dim dim, Variable &&buffer);

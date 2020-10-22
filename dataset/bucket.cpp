@@ -268,6 +268,10 @@ DataArray sum(const DataArrayConstView &data) {
           data.unaligned_coords()};
 }
 
+Dataset sum(const DatasetConstView &d) {
+  return apply_to_items(d, [](auto &&... _) { return buckets::sum(_...); });
+}
+
 template <class T>
 Variable from_constituents_impl(Variable &&indices, const Dim dim, T &&buffer) {
   return {std::make_unique<variable::DataModel<bucket<T>>>(
