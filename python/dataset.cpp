@@ -274,7 +274,7 @@ void init_dataset(py::module &m) {
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>())
       .def("__sizeof__",
-           [](const DataArrayConstView &array) { return size_of(array, false); });
+           [](const DataArrayConstView &array) { return size_of(array, true); });
 
   py::class_<DataArrayView, DataArrayConstView> dataArrayView(
       m, "DataArrayView", R"(

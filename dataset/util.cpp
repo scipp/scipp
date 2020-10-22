@@ -3,25 +3,45 @@
 /// @file
 /// @author Matthew Andrew
 #include "scipp/dataset/util.h"
+#include "scipp/variable/arithmetic.h"
+#include "scipp/variable/reduction.h"
+#include "scipp/variable/util.h"
+#include "scipp/variable/variable_factory.h"
 
+using namespace scipp::variable;
 namespace scipp {
-SCIPP_DATASET_EXPORT scipp::index size_of(const VariableConstView &view) {
-  auto value_size = view.underlying().data().dtype_size();
-  auto variance_scale = view.hasVariances() ? 2 : 1;
-  return view.dims().volume() * value_size * variance_scale;
+
+template <class T>
+scipp::index size_of_bucket_impl(const VariableConstView &view) {
+  const auto &[indices, dim, buffer] = view.constituents<T>();
+  const auto &[begin, end] = unzip(indices);
+  const auto scale = sum(end - begin).template value<scipp::index>() /
+                     static_cast<double>(buffer.dims()[dim]);
+  return size_of(indices) + size_of(buffer) * scale;
 }
 
-SCIPP_DATASET_EXPORT scipp::index size_of(const Variable &view) {
-  auto value_size = view.data().dtype_size();
-  auto variance_scale = view.hasVariances() ? 2 : 1;
-  return view.dims().volume() * value_size * variance_scale;
+scipp::index size_of(const VariableConstView &view) {
+  if (is_buckets(view)) {
+    if (view.dtype() == dtype<bucket<Variable>>)
+      return size_of_bucket_impl<bucket<Variable>>(view);
+    if (view.dtype() == dtype<bucket<DataArray>>)
+      return size_of_bucket_impl<bucket<DataArray>>(view);
+    if (view.dtype() == dtype<bucket<Dataset>>)
+      return size_of_bucket_impl<bucket<Dataset>>(view);
+    throw std::runtime_error(
+        "Bucket contents expected to be Variable, DataArray or Dataset.");
+  } else {
+    auto value_size = view.underlying().data().dtype_size();
+    auto variance_scale = view.hasVariances() ? 2 : 1;
+    return view.dims().volume() * value_size * variance_scale;
+  }
 }
 
 /// Return the size in memory of a DataArray object. The aligned coord is
 /// optional becuase for a DataArray owned by a dataset aligned coords are
 /// assumed to be owned by the dataset as they can apply to multiple arrays.
-SCIPP_DATASET_EXPORT scipp::index size_of(const DataArrayConstView &dataarray,
-                                          bool include_aligned_coords) {
+scipp::index size_of(const DataArrayConstView &dataarray,
+                     bool include_aligned_coords) {
   scipp::index size = 0;
   size += size_of(dataarray.data());
   for (const auto &coord : dataarray.unaligned_coords()) {
@@ -38,7 +58,7 @@ SCIPP_DATASET_EXPORT scipp::index size_of(const DataArrayConstView &dataarray,
   return size;
 }
 
-SCIPP_DATASET_EXPORT scipp::index size_of(const DatasetConstView &dataset) {
+scipp::index size_of(const DatasetConstView &dataset) {
   scipp::index size = 0;
   for (const auto &data : dataset) {
     size += size_of(data);

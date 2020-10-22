@@ -85,17 +85,3 @@ TEST(DataArrayTest, astype) {
   EXPECT_EQ(x.data(),
             makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1., 2., 3.}));
 }
-
-// TEST(DataArrayTest, test_size_in_memory) {
-//   auto aligned_coord =
-//       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-//   auto unaligned_coord =
-//       makeVariable<double>(Dims{Dim::Y}, Shape{5}, Values{1, 2, 4, 6, 9});
-//   auto mask = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-//   auto data = makeVariable<int>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-//   DataArray a(data, {{Dim::X, aligned_coord}}, {{"beam-stop", mask}},
-//               {{Dim::Y, unaligned_coord}});
-
-//   EXPECT_EQ(size_of(a),
-//             size_of(data) + size_of(unaligned_coord) + size_of(mask));
-// }

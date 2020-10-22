@@ -9,8 +9,6 @@
 namespace scipp {
 SCIPP_DATASET_EXPORT scipp::index size_of(const VariableConstView &view);
 
-SCIPP_DATASET_EXPORT scipp::index size_of(const Variable &view);
-
 /// Return the size in memory of a DataArray object. The aligned coord is
 /// optional becuase for a DataArray owned by a dataset aligned coords are
 /// assumed to be owned by the dataset as they can apply to multiple arrays.
