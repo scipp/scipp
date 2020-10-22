@@ -32,7 +32,7 @@ constexpr auto copy_spans = overloaded{
         std::copy(src.begin(), src.end(), dst.begin());
       }
     }};
-}
+} // namespace
 
 void copy_slices(const VariableConstView &src, const VariableView &dst,
                  const Dim dim, const VariableConstView &srcIndices,
