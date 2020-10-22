@@ -18,5 +18,7 @@ using UnitMismatchError = MismatchError<units::Unit>;
 // mismatch and VariableView mismatch are the same type.
 template <class T>
 MismatchError(const units::Unit &, const T &) -> MismatchError<units::Unit>;
+template <class T>
+MismatchError(const units::Dim &, const T &) -> MismatchError<units::Dim>;
 
 } // namespace scipp::except

@@ -4,6 +4,7 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/buckets.h"
 
 using namespace scipp;
 using namespace scipp::variable;

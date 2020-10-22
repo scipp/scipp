@@ -7,6 +7,7 @@
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/buckets.h"
 #include "scipp/variable/operations.h"
 
 using namespace scipp;

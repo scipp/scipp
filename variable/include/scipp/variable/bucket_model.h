@@ -129,13 +129,12 @@ bool DataModel<bucket<T>>::equals(const VariableConstView &a,
 }
 
 template <class T>
-void DataModel<bucket<T>>::copy(const VariableConstView &,
-                                const VariableView &) const {
-  // Need to rethink the entire mechanism of shape-changing operations such as
-  // `concatenate` since we cannot just copy indices but need to manage the
-  // buffer as well.
-  throw std::runtime_error(
-      "Shape-related operations for bucketed data are not supported yet.");
+void DataModel<bucket<T>>::copy(const VariableConstView &src,
+                                const VariableView &dst) const {
+  const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
+  const auto &[indices1, dim1, buffer1] = dst.constituents<bucket<T>>();
+  core::expect::equals(dim0, dim1);
+  copy_slices(buffer0, buffer1, dim0, indices0, indices1);
 }
 
 template <class T>
