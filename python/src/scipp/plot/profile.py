@@ -33,6 +33,7 @@ class ProfileView(PlotFigure1d):
         for name, mlines in self.mask_lines.items():
             for ml in mlines.values():
                 ml.set_visible(value)
+                ml.set_gid("onaxes" if value else "offaxes")
         if value != self.current_visible_state:
             if value:
                 self.rescale_to_data()

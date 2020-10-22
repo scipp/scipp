@@ -159,10 +159,8 @@ class PlotFigure1d(PlotFigure):
                     zorder=10,
                     fmt="none")
 
-        if self.legend["show"]:
-            with warnings.catch_warnings():
-                warnings.filterwarnings("ignore", category=UserWarning)
-                self.ax.legend(loc=self.legend["loc"])
+        if self.show_legend():
+            self.ax.legend(loc=self.legend["loc"])
 
     def update_data(self, new_values, info):
 
@@ -215,7 +213,7 @@ class PlotFigure1d(PlotFigure):
             self.ax.collections[-1].set_url(line_id)
             self.ax.collections[-1].set_zorder(2)
 
-        if self.legend["show"]:
+        if self.show_legend():
             self._reset_line_label(name)
             self.ax.legend(loc=self.legend["loc"])
         self.draw()
@@ -234,7 +232,7 @@ class PlotFigure1d(PlotFigure):
                 collections.append(coll)
         self.ax.lines = lines
         self.ax.collections = collections
-        if self.legend["show"]:
+        if self.show_legend():
             self._reset_line_label(name)
             self.ax.legend(loc=self.legend["loc"])
         self.draw()
@@ -258,9 +256,10 @@ class PlotFigure1d(PlotFigure):
         return np.array([arr1, arr2]).T.flatten().reshape(len(y), 2, 2)
 
     def toggle_mask(self, mask_group, mask_name, value):
-        msk = self.mask_lines[mask_group][mask_name]
-        if msk.get_gid() == "onaxes":
-            msk.set_visible(value)
+        if mask_group in self.mask_lines:
+            msk = self.mask_lines[mask_group][mask_name]
+            if msk.get_gid() == "onaxes":
+                msk.set_visible(value)
         # Also toggle masks on additional lines created by keep button
         for line in self.ax.lines:
             if line.get_gid() == mask_name:
@@ -272,3 +271,7 @@ class PlotFigure1d(PlotFigure):
         self.ax.relim()
         self.ax.autoscale_view()
         self.draw()
+
+    def show_legend(self):
+        return self.legend["show"] and len(
+            self.ax.get_legend_handles_labels()[1]) > 0

@@ -272,7 +272,7 @@ class PlotController:
         self.view.toggle_mask(change)
         if self.profile is not None:
             self.profile.toggle_mask(change["owner"].mask_group,
-                                change["owner"].mask_name, change["new"])
+                                     change["owner"].mask_name, change["new"])
 
     def _get_axes_parameters(self):
         """
