@@ -225,23 +225,6 @@ TEST(DatasetTest, DataArrayView_setData) {
   EXPECT_EQ(d["a"].data(), var + var);
 }
 
-// TEST(DatasetTest, size_in_memory_test) {
-//   Dataset d;
-//   const auto data =
-//       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
-//   const auto mask = makeVariable<double>(Dims{Dim::X}, Shape{3});
-//   const auto coords = makeVariable<double>(Dims{Dim::X}, Shape{3});
-
-//   d.setData("a", data);
-//   EXPECT_EQ(size_of(d), size_of(data));
-
-//   d.setCoord(Dim::X, coords);
-//   EXPECT_EQ(size_of(d), size_of(data) + size_of(coords));
-
-//   d["a"].masks().set("beam-stop", mask);
-//   EXPECT_EQ(size_of(d), size_of(data) + size_of(coords) + size_of(mask));
-// }
-
 struct SetDataTest : public ::testing::Test {
 protected:
   Variable var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});

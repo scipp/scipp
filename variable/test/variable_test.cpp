@@ -100,7 +100,6 @@ TEST(Variable, span_references_Variable) {
   EXPECT_EQ(observer[0], 1.0);
 }
 
-
 class Variable_comparison_operators : public ::testing::Test {
 private:
   template <class A, class B>

@@ -11,7 +11,6 @@
 #include <unordered_map>
 
 #include <boost/iterator/transform_iterator.hpp>
-#include <boost/range/adaptor/map.hpp>
 
 #include "scipp/common/deep_ptr.h"
 #include "scipp/dataset/dataset_access.h"

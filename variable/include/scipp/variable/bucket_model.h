@@ -77,9 +77,7 @@ public:
     return {index_values(base), m_dim, m_buffer};
   }
 
-  scipp::index dtype_size() const {
-    return sizeof(T);
-  }
+  scipp::index dtype_size() const override { return sizeof(range_type); }
 
 private:
   static auto validated_indices(const VariableConstView &indices, const Dim dim,

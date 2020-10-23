@@ -10,8 +10,8 @@
 #include "scipp/dataset/map_view.h"
 #include "scipp/dataset/math.h"
 #include "scipp/dataset/rebin.h"
-#include "scipp/dataset/util.h"
 #include "scipp/dataset/sort.h"
+#include "scipp/dataset/util.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
@@ -268,13 +268,15 @@ void init_dataset(py::module &m) {
            py::arg("masks") = std::map<std::string, VariableConstView>{},
            py::arg("unaligned_coords") = std::map<Dim, VariableConstView>{},
            py::arg("name") = std::string{})
-      .def("__sizeof__",
-           [](const DataArrayConstView &array) { return size_of(array, true); });
+      .def("__sizeof__", [](const DataArrayConstView &array) {
+        return size_of(array, true);
+      });
 
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>())
-      .def("__sizeof__",
-           [](const DataArrayConstView &array) { return size_of(array, true); });
+      .def("__sizeof__", [](const DataArrayConstView &array) {
+        return size_of(array, true);
+      });
 
   py::class_<DataArrayView, DataArrayConstView> dataArrayView(
       m, "DataArrayView", R"(

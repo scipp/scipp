@@ -59,7 +59,7 @@ scipp::index size_of(const DataArrayConstView &dataarray,
 scipp::index size_of(const DatasetConstView &dataset) {
   scipp::index size = 0;
   for (const auto &data : dataset) {
-    size += size_of(data);
+    size += size_of(data, false);
   }
   for (const auto &coord : dataset.coords()) {
     size += size_of(coord.second);

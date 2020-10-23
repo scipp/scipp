@@ -20,8 +20,7 @@ protected:
   Dimensions dims{Dim::Y, 3};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 3}, std::pair{3, 4}});
-  Variable buffer =
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  Variable buffer = makeVariable<double>(Dims{Dim::X}, Shape{4});
   Variable var{std::make_unique<Model>(indices, Dim::X, buffer)};
 };
 
@@ -31,8 +30,7 @@ protected:
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
-  Variable data =
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  Variable data = makeVariable<double>(Dims{Dim::X}, Shape{4});
   DataArray buffer = DataArray(data, {{Dim::X, data + data}});
   Variable var{std::make_unique<Model>(indices, Dim::X, buffer)};
 };
@@ -43,19 +41,16 @@ protected:
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
-  Variable column =
-      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  Variable column = makeVariable<double>(Dims{Dim::X}, Shape{4});
   Dataset buffer;
 };
 
 TEST(SizeOf, variable) {
-  auto var = makeVariable<double>(units::kg, Shape{4}, Dims{Dim::X},
-                                  Values{3, 4, 5, 6});
+  auto var = makeVariable<double>(Shape{4}, Dims{Dim::X});
   EXPECT_EQ(size_of(var), sizeof(double) * 4);
 
-  auto var_with_variance =
-      makeVariable<double>(units::kg, Shape{1, 2}, Dims{Dim::X, Dim::Y},
-                           Values{3, 4}, Variances{1, 2});
+  auto var_with_variance = makeVariable<double>(
+      Shape{1, 2}, Dims{Dim::X, Dim::Y}, Values{3, 4}, Variances{1, 2});
 
   EXPECT_EQ(size_of(var_with_variance), sizeof(double) * 4);
 
@@ -64,15 +59,12 @@ TEST(SizeOf, variable) {
 }
 
 TEST(SizeOf, size_in_memory_for_non_trivial_dtype) {
-  auto var = makeVariable<Eigen::Vector3d>(units::kg, Shape{1, 1},
-                                           Dims{Dim::X, Dim::Y},
-                                           Values{Eigen::Vector3d{1, 2, 3}});
+  auto var = makeVariable<Eigen::Vector3d>(Shape{1, 1}, Dims{Dim::X, Dim::Y});
   EXPECT_EQ(size_of(var), sizeof(Eigen::Vector3d));
 }
 
 TEST(SizeOf, size_in_memory_sliced_variables) {
-  auto var = makeVariable<double>(units::kg, Shape{4}, Dims{Dim::X},
-                                  Values{3, 4, 5, 6});
+  auto var = makeVariable<double>(Shape{4}, Dims{Dim::X});
   auto sliced_view = var.slice(Slice(Dim::X, 0, 2));
   EXPECT_EQ(size_of(sliced_view), 2 * sizeof(double));
 }

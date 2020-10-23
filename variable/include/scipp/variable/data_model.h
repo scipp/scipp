@@ -110,9 +110,7 @@ public:
     return ElementArrayView(base, m_variances->data());
   }
 
-  scipp::index dtype_size() const {
-    return sizeof(T);
-  }
+  scipp::index dtype_size() const override { return sizeof(T); }
 
 private:
   void expectHasVariances() const {
