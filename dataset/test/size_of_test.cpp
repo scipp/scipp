@@ -42,9 +42,9 @@ protected:
   using Model = variable::DataModel<bucket<Dataset>>;
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
-      dims, Values{std::pair{0, 2}, std::pair{2, 3}});
+      dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable column =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   Dataset buffer;
 };
 

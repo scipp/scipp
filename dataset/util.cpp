@@ -6,7 +6,6 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
-#include "scipp/variable/variable_factory.h"
 
 using namespace scipp::variable;
 namespace scipp {
@@ -21,20 +20,19 @@ scipp::index size_of_bucket_impl(const VariableConstView &view) {
 }
 
 scipp::index size_of(const VariableConstView &view) {
-  if (is_buckets(view)) {
-    if (view.dtype() == dtype<bucket<Variable>>)
-      return size_of_bucket_impl<bucket<Variable>>(view);
-    if (view.dtype() == dtype<bucket<DataArray>>)
-      return size_of_bucket_impl<bucket<DataArray>>(view);
-    if (view.dtype() == dtype<bucket<Dataset>>)
-      return size_of_bucket_impl<bucket<Dataset>>(view);
-    throw std::runtime_error(
-        "Bucket contents expected to be Variable, DataArray or Dataset.");
-  } else {
-    auto value_size = view.underlying().data().dtype_size();
-    auto variance_scale = view.hasVariances() ? 2 : 1;
-    return view.dims().volume() * value_size * variance_scale;
+  if (view.dtype() == dtype<bucket<Variable>>) {
+    return size_of_bucket_impl<bucket<Variable>>(view);
   }
+  if (view.dtype() == dtype<bucket<DataArray>>) {
+    return size_of_bucket_impl<bucket<DataArray>>(view);
+  }
+  if (view.dtype() == dtype<bucket<Dataset>>) {
+    return size_of_bucket_impl<bucket<Dataset>>(view);
+  }
+
+  auto value_size = view.underlying().data().dtype_size();
+  auto variance_scale = view.hasVariances() ? 2 : 1;
+  return view.dims().volume() * value_size * variance_scale;
 }
 
 /// Return the size in memory of a DataArray object. The aligned coord is

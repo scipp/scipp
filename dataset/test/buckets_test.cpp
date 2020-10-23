@@ -8,6 +8,7 @@
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bucket_model.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/variable_factory.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
