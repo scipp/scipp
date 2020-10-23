@@ -9,6 +9,9 @@ import numpy as np
 
 
 class PlotModel1d(PlotModel):
+    """
+    Model class for 1 dimensional plots.
+    """
     def __init__(self, *args, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -19,12 +22,19 @@ class PlotModel1d(PlotModel):
         return
 
     def update_axes(self, axparams):
+        """
+        Update axes parameters on axis change.
+        """
         self.dim = axparams["x"]["dim"]
         self.hist = axparams["x"]["hist"]
         return
 
     def update_data(self, slices, mask_info):
-
+        """
+        Slice the data along dimension sliders that are not disabled for all
+        entries in the dict of data arrays, and return a dict of 1d value
+        arrays for data values, variances, and masks.
+        """
         new_values = {}
 
         for name, array in self.data_arrays.items():
@@ -75,6 +85,10 @@ class PlotModel1d(PlotModel):
                        slices=None,
                        axparams=None,
                        mask_info=None):
+        """
+        Slice down all dimensions apart from the profile dimension, and send
+        the data values, variances and masks back to the `controller`.
+        """
 
         profile_dim = axparams["x"]["dim"]
 

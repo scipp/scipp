@@ -11,6 +11,9 @@ import numpy as np
 
 
 class PlotModel2d(PlotModel):
+    """
+    Model class for 2 dimensional plots.
+    """
     def __init__(self, *args, resolution=None, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -35,7 +38,10 @@ class PlotModel2d(PlotModel):
         return
 
     def update_axes(self, axparams):
-
+        """
+        Update axes parameters and coordinate edges for dynamic resampling on
+        axis change.
+        """
         for xy in "yx":
             # Useful maps
             self.button_dims[xy] = axparams[xy]["dim"]
@@ -53,7 +59,9 @@ class PlotModel2d(PlotModel):
 
     def update_data(self, slices, mask_info):
         """
-        Slice data according to new slider value and update the image.
+        Slice the data along dimension sliders that are not disabled for all
+        entries in the dict of data arrays.
+        Then perform dynamic image resampling based on current viewport.
         """
         data_slice = self.slice_data(self.data_arrays[self.name], slices)
         # Update pixel widths used for scaling before rebin step
@@ -82,6 +90,9 @@ class PlotModel2d(PlotModel):
         return new_values
 
     def update_image(self, extent=None, mask_info=None):
+        """
+        Resample 2d images to a fixed resolution to handle very large images.
+        """
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
         xy = "yx"
@@ -146,6 +157,10 @@ class PlotModel2d(PlotModel):
         return new_values
 
     def update_viewport(self, xylims, mask_info):
+        """
+        When an update to the viewport is requested on a zoom event, set new
+        rebin edges and call for a resample of the image.
+        """
         if self.vslice is None:
             return None
 
@@ -166,6 +181,13 @@ class PlotModel2d(PlotModel):
                        slices=None,
                        axparams=None,
                        mask_info=None):
+        """
+        Slice down all dimensions apart from the profile dimension, and send
+        the data values, variances and masks back to the `controller`.
+
+        TODO: remove duplicate code between this and update_profile in model1d.
+        """
+
         # Find indices of pixel where cursor lies
         dimx = self.xyrebin["x"].dims[0]
         dimy = self.xyrebin["y"].dims[0]

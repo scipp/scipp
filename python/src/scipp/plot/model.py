@@ -10,7 +10,20 @@ import numpy as np
 
 class PlotModel:
     """
-    Base class for 
+    Base class for `model`.
+
+    Upon creation, it:
+    - makes a copy of the input data array (including masks)
+    - units of the original data are saved, and units of the copy are set to
+        counts, because `rebin` is used for resampling and only accepts counts.
+    - it replaces all coordinates with corresponding bin-edges, which allows
+        for much more generic plotting code
+    - coordinates that contain strings or vectors are converted to fake
+        integer coordinates, and axes formatters are updated with lambda
+        function formatters.
+
+    The model is where all operations on the data (slicing and resampling) are
+    performed.
     """
     def __init__(self,
                  scipp_obj_dict=None,
@@ -82,8 +95,8 @@ class PlotModel:
         Also retun axes tick formatters and locators.
         """
 
-        # Create some default axis tick formatter, depending on whether log
-        # for that axis will be True or False
+        # Create some default axis tick formatter, depending on linear or log
+        # scaling.
         formatter = {"linear": None, "log": None, "custom_locator": False}
 
         coord = None
@@ -151,9 +164,15 @@ class PlotModel:
         return coord, formatter
 
     def get_axformatter(self, name, dim):
+        """
+        Get an axformatter for a given data name and dimension.
+        """
         return self.axformatter[name][dim]
 
     def get_bin_coord_values(self, name, dim, ind):
+        """
+        Return the left, center, and right coordinates for a bin index.
+        """
         left = self.data_arrays[name].coords[dim][dim, ind:ind + 1]
         right = self.data_arrays[name].coords[dim][dim, ind + 1:ind + 2]
         return left.values[0], to_bin_centers(
@@ -161,9 +180,17 @@ class PlotModel:
             dim).values[0], right.values[0]
 
     def get_data_names(self):
+        """
+        List all names in dict of data arrays.
+        This is usually only a single name, but can be more than one for 1d
+        plots.
+        """
         return list(self.data_arrays.keys())
 
     def get_data_coord(self, name, dim):
+        """
+        Get a coordinate along a requested dimension.
+        """
         return self.data_arrays[name].coords[dim]
 
     def _select_bins(self, coord, dim, start, end):
@@ -219,6 +246,11 @@ class PlotModel:
         return vmin, vmax
 
     def _slice_or_rebin(self, array, dim, dim_slice):
+        """
+        The convetion is:
+        - if the slider thickness is zero, us index-based slicing
+        - otherwise, use `rebin`.
+        """
         deltax = dim_slice["thickness"]
         if deltax == 0.0:
             array = array[dim, dim_slice["index"]]
@@ -237,6 +269,10 @@ class PlotModel:
         return array
 
     def slice_data(self, array, slices):
+        """
+        Slice the data array according to the dimensions and extents listed
+        in slices.
+        """
         data_slice = array
         for dim in slices:
             data_slice = self._slice_or_rebin(data_slice, dim, slices[dim])
