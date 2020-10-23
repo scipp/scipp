@@ -9,6 +9,9 @@ import numpy as np
 
 
 class PlotModel:
+    """
+    Base class for 
+    """
     def __init__(self,
                  scipp_obj_dict=None,
                  name=None,

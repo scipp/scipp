@@ -54,8 +54,6 @@ class PlotPanel1d(PlotPanel):
             "label": lab
         }
         self.update_widgets()
-        # self.container.children += ipw.HBox(
-        #     list(self.keep_buttons[line_id].values())),
 
     def update_axes(self, axparams=None):
         """

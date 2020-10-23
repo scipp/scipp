@@ -272,9 +272,9 @@ class PlotWidgets:
 
     def initialise(self, parameters, multid_coord=None):
         """
-        Initialise widget parameters once the model, view and controller have
-        been created, since, for instance, slider limits depend on the
-        dimensions of the input data, which are not known until the model is
+        Initialise widget parameters once the `model`, `view` and `controller`
+        have been created, since, for instance, slider limits depend on the
+        dimensions of the input data, which are not known until the `model` is
         created.
         """
         for dim, item in parameters.items():
