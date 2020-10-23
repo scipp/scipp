@@ -821,5 +821,4 @@ void union_or_in_place(const MasksView &currentMasks,
     }
   }
 }
-
 } // namespace scipp::dataset

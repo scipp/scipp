@@ -45,7 +45,7 @@
 .xr-sections {
   padding-left: 0 !important;
   display: grid;
-  grid-template-columns: 150px auto auto auto auto 1fr 20px 20px;
+  grid-template-columns: 150px auto auto auto 1fr 20px 20px;
 }
 
 .xr-section-item {
@@ -111,7 +111,7 @@
 }
 
 .xr-section-inline-details {
-  grid-column: 2 / 6;
+  grid-column: 2 / 5;
 }
 
 .xr-section-details {
@@ -225,13 +225,8 @@
   text-align: left;
   color: #222;
 }
-.xr-var-size {
-  grid-column: 5;
-  text-align: left;
-  color: #222;
-}
 .xr-value-preview {
-  grid-column: 6;
+  grid-column: 5;
 }
 .xr-var-preview-variances{
   text-align:right;
@@ -251,7 +246,6 @@
 .xr-var-dims,
 .xr-var-dtype,
 .xr-var-unit,
-.xr-var-size,
 .xr-preview,
 .xr-attrs dt {
   white-space: nowrap;
@@ -264,7 +258,6 @@
 .xr-var-dims:hover,
 .xr-var-dtype:hover,
 .xr-var-unit:hover,
-.xr-var-size:hover,
 .xr-attrs dt:hover {
   overflow: visible;
   width: auto;

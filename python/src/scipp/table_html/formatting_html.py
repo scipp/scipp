@@ -331,7 +331,6 @@ def summarize_variable(name,
     html += [
         f"<div class='xr-var-dtype'>{escape(repr(var.dtype))}</div>",
         f"<div class='xr-var-unit'>{escape(unit)}</div>",
-        f"<div class='xr-var-size'>{escape(size)} B</div>",
         f"<div class='xr-value-preview xr-preview'><span>{preview}</span>",
         "{}</div>".format(f'<span>{variances_preview}</span>'
                           if variances_preview is not None else ''),

@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "dataset_test_common.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/util.h"
 #include "scipp/variable/arithmetic.h"
