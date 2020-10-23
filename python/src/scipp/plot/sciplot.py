@@ -8,6 +8,28 @@ import ipywidgets as ipw
 
 
 class SciPlot:
+    """
+    Base class for plot objects. It uses the Model-View-Controller pattern to
+    separate displayed figures and user-interaction via widgets from the
+    operations performed on the data.
+
+    It contains:
+      - a `model`: contains the input data and performs all the heavy
+          calculations.
+      - a `view`: contains a `figure` which is displayed and handles
+          communications between `controller` and `figure`, as well as updating
+          the `profile` depending on signals captured by the `figure`.
+      - some `widgets`: a base collection of sliders and buttons which provide
+          interactivity to the user.
+      - a `panel` (optional): an extra set of widgets which is not part of the
+          base `widgets`.
+      - a `profile` (optional): used to display a profile plot under the
+          `figure` to show one of the slider dimensions as a 1 dimensional line
+          plot.
+      - a `controller`: handles all the communication between all the pieces
+          above.
+
+    """
     def __init__(self,
                  scipp_obj_dict,
                  axes=None,
@@ -117,9 +139,15 @@ class SciPlot:
                     "show"]
 
     def _ipython_display_(self):
+        """
+        IPython display representation for Jupyter notebooks.
+        """
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
+        """
+        Get the SciPlot object as an `ipywidget`.
+        """
         widget_list = []
         for item in [self.view, self.profile, self.widgets, self.panel]:
             if item is not None:
@@ -131,6 +159,11 @@ class SciPlot:
                                  axes=None,
                                  view_ndims=None,
                                  positions=None):
+        """
+        Assign dimensions of input object to figure axes.
+        If `axes` is not specified, the dimensions are assigned in the order
+        they appear in the input object.
+        """
 
         array_dims = array.dims
         self.ndim = len(array_dims)
@@ -181,9 +214,17 @@ class SciPlot:
             raise RuntimeError("Duplicate entry in axes: {}".format(self.axes))
 
     def savefig(self, filename=None):
+        """
+        Save plot to file.
+        Possible file extensions are `.jpg`, `.png` and `.pdf`.
+        """
         self.view.savefig(filename=filename)
 
     def as_static(self, keep_widgets=False):
+        """
+        Convert the plot to a static plot, releasing the memory held (a full
+        copy of the data is made on input).
+        """
         # Delete all members of controller
         self.controller.widgets = None
         self.controller.model = None

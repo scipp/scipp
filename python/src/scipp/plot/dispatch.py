@@ -2,7 +2,6 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .._utils import histogram_events_data
 
 
@@ -14,8 +13,8 @@ def dispatch(scipp_obj_dict,
              mpl_line_params=None,
              **kwargs):
     """
-    Function to automatically dispatch the dict of scipp objects to the
-    appropriate plotting function depending on its dimensions.
+    Function to automatically dispatch the dict of DataArrays to the
+    appropriate plotting function, depending on the number of dimensions.
     """
 
     if ndim < 1:

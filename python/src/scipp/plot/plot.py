@@ -11,7 +11,7 @@ from .tools import make_fake_coord, get_line_param
 class Plot(dict):
     """
     The Plot object is used as output for the plot command.
-    It is a small wrapper around python dict, with an ipython repr.
+    It is a small wrapper around python dict, with an _ipython_display_ repr.
     The dict will contain one entry for each entry in the input supplied to
     the plot function.
     More functionalities can be added in the future.
@@ -20,6 +20,9 @@ class Plot(dict):
         super(Plot, self).__init__(*arg, **kw)
 
     def _ipython_display_(self):
+        """
+        IPython display representation for Jupyter notebooks.
+        """
         import ipywidgets as widgets
         contents = []
         for key, val in self.items():
@@ -27,11 +30,20 @@ class Plot(dict):
         return widgets.VBox(contents)._ipython_display_()
 
     def as_static(self, *args, **kwargs):
+        """
+        Convert all the contents of the dict to static plots, releasing the
+        memory held by the plot (which makes a full copy of the input data).
+        """
         for key, item in self.items():
             self[key] = item.as_static(*args, **kwargs)
 
 
 def _variable_to_data_array(variable):
+    """
+    Convert a Variable to a DataArray by giving it some fake integer
+    coordinates, which makes it possible to write generic code in the rest of
+    the plotting library.
+    """
     coords = {}
     for dim, size in zip(variable.dims, variable.shape):
         coords[dim] = make_fake_coord(dim, size)
@@ -39,6 +51,9 @@ def _variable_to_data_array(variable):
 
 
 def _raise_plot_input_error(intype):
+    """
+    Raise an error on bad input type.
+    """
     raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
                        "a Dataset, a DataArray, a Variable (and their "
                        "respective proxies), and a dict of "
@@ -46,6 +61,15 @@ def _raise_plot_input_error(intype):
 
 
 def _parse_input(scipp_obj):
+    """
+    Parse plot input. Possible inputs are:
+      - Variable
+      - Dataset
+      - DataArray
+      - dict of Variables
+      - dict of DataArrays
+    Decompose the input and return a dict of DataArrays.
+    """
     inventory = dict()
     if su.is_dataset(scipp_obj):
         for name in sorted(scipp_obj.keys()):
@@ -77,7 +101,21 @@ def plot(scipp_obj,
          bins=None,
          **kwargs):
     """
-    Wrapper function to plot any kind of scipp object.
+    Wrapper function to plot a scipp object.
+
+    Possible inputs are:
+      - Variable
+      - Dataset
+      - DataArray
+      - dict of Variables
+      - dict of DataArrays
+
+    1D Variables are grouped onto the same axes if they have the same dimension
+    and the same unit.
+
+    Any other Variables are displayed in their own figure.
+
+    Returns a Plot object which can be displayed in a Jupyter notebook.
     """
 
     inventory = _parse_input(scipp_obj)

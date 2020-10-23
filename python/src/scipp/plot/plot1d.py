@@ -14,12 +14,12 @@ from .widgets import PlotWidgets
 
 def plot1d(*args, filename=None, **kwargs):
     """
-    Plot a 1D spectrum.
+    Plot one or more Scipp data objects as a 1 dimensional line plot.
 
-    Input is a Dataset containing one or more Variables.
     If the coordinate of the x-axis contains bin edges, then a bar plot is
     made.
-    If the data contains more than one dimensions, sliders are added.
+    If the data contains more than one dimensions, sliders are added to
+    navigate to extra dimensions.
     """
 
     sp = SciPlot1d(*args, **kwargs)
@@ -31,6 +31,14 @@ def plot1d(*args, filename=None, **kwargs):
 
 
 class SciPlot1d(SciPlot):
+    """
+    Class for 1 dimensional plots.
+
+    If the input data has more than 1 dimensions, a panel with additional
+    buttons is displayed. That allow the duplication of the currently
+    displayed line, a functionality inspired by the Superplot in the Lamp
+    software.
+    """
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,

@@ -20,3 +20,9 @@ class PlotPanel:
     def connect(self, callbacks):
         for key, func in callbacks.items():
             self.interface[key] = func
+
+    def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
+        """
+        Default dummy rescale function.
+        """
+        return

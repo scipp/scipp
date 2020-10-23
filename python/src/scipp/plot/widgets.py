@@ -7,6 +7,11 @@ import ipywidgets as ipw
 
 
 class PlotWidgets:
+    """
+    Widgets containing a slider for each of the input's dimensions, as well as
+    buttons to modify the currently displayed axes.
+    It also provides buttons to hide/show masks.
+    """
     def __init__(self,
                  axes=None,
                  ndim=None,
@@ -147,14 +152,21 @@ class PlotWidgets:
         self._add_masks_controls(masks)
 
     def _ipython_display_(self):
+        """
+        IPython display representation for Jupyter notebooks.
+        """
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
+        """
+        Gather all widgets in a single container box.
+        """
         return ipw.VBox(self.container)
 
     def _add_masks_controls(self, masks):
         """
-        Add widgets for masks.
+        Add checkboxes for individual masks, as well as a global hide/show all
+        toggle button.
         """
         masks_found = False
         self.mask_checkboxes = {}
@@ -202,7 +214,7 @@ class PlotWidgets:
 
     def update_buttons(self, owner, event, dummy):
         """
-        Custom update for 2D grid ot toggle buttons.
+        Custom update for 2D grid of toggle buttons.
         """
         toggle_slider = False
         if not self.slider[owner.dim].disabled:
@@ -241,6 +253,10 @@ class PlotWidgets:
         return
 
     def connect(self, callbacks):
+        """
+        Connect the widget interface to the callbacks provided by the
+        `controller`.
+        """
         self.rescale_button.on_click(callbacks["rescale_to_data"])
         for dim in self.slider:
             self.profile_button[dim].on_click(callbacks["toggle_profile_view"])
@@ -255,6 +271,12 @@ class PlotWidgets:
                                                       names="value")
 
     def initialise(self, parameters, multid_coord=None):
+        """
+        Initialise widget parameters once the model, view and controller have
+        been created, since, for instance, slider limits depend on the
+        dimensions of the input data, which are not known until the model is
+        created.
+        """
         for dim, item in parameters.items():
             # TODO: for now we prevent a ragged coord from being along a slider
             # dimension, as it causes conceptual issues with respect to
@@ -289,12 +311,22 @@ class PlotWidgets:
             self.update_slider_readout(*item["slider_readout"])
 
     def get_slider_value(self, dim):
+        """
+        Return value of the slider corresponding to the requested dimension.
+        """
         return self.slider[dim].value
 
     def get_thickness_slider_value(self, dim):
+        """
+        Return value of the thickness slider corresponding to the requested
+        dimension.
+        """
         return self.thickness_slider[dim].value
 
     def get_active_slider_values(self):
+        """
+        Return the values of all sliders that are not disabled.
+        """
         slider_values = {}
         for dim, sl in self.slider.items():
             if not sl.disabled:
@@ -302,6 +334,10 @@ class PlotWidgets:
         return slider_values
 
     def get_non_profile_slider_values(self, profile_dim):
+        """
+        Return the values of all sliders that do not correspond to the profile
+        dimension.
+        """
         slider_values = {}
         for dim, sl in self.slider.items():
             if dim != profile_dim:
@@ -309,6 +345,10 @@ class PlotWidgets:
         return slider_values
 
     def get_buttons_and_disabled_sliders(self):
+        """
+        Get the values and dimensions of the buttons for dimensions that have
+        active sliders.
+        """
         buttons_and_dims = {}
         for dim, button in self.buttons.items():
             if self.slider[dim].disabled:
@@ -316,6 +356,10 @@ class PlotWidgets:
         return buttons_and_dims
 
     def clear_profile_buttons(self, profile_dim=None):
+        """
+        Reset all profile buttons, when for example a new dimension is
+        displayed along one of the figure axes.
+        """
         for dim, but in self.profile_button.items():
             if dim != profile_dim:
                 but.button_style = ""
@@ -334,6 +378,10 @@ class PlotWidgets:
         return mask_info
 
     def get_slice_bounds(self, dim, left, centre, right):
+        """
+        Get the bounds of the slice for a given dimension, computed from the
+        slider position and the thickness of the slice. Return as floats.
+        """
         thickness = self.thickness_slider[dim].value
         if thickness == 0.0:
             lower = left
@@ -350,6 +398,9 @@ class PlotWidgets:
                                    centre,
                                    right,
                                    multid_coord=None):
+        """
+        Get the bounds of the slice for a given dimension as a single string.
+        """
         if dim == multid_coord:
             return "slice-{}".format(ind)
         else:
@@ -364,5 +415,8 @@ class PlotWidgets:
                               centre,
                               right,
                               multid_coord=None):
+        """
+        Update the slider readout with new slider bounds.
+        """
         self.slider_readout[dim].value = self.get_slice_bounds_as_string(
             dim, ind, left, centre, right, multid_coord)

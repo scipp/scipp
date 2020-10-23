@@ -8,6 +8,11 @@ import ipywidgets as ipw
 
 
 class PlotPanel1d(PlotPanel):
+    """
+    Additional widgets that allow the duplication of the currently
+    displayed line, a functionality inspired by the Superplot in the Lamp
+    software.
+    """
     def __init__(self, data_names):
         super().__init__()
 
@@ -15,9 +20,12 @@ class PlotPanel1d(PlotPanel):
         self.data_names = data_names
         self.slice_label = None
         self.counter = -1
-        self.interface = {}
 
     def make_keep_button(self):
+        """
+        Dynamically create a new "keep" button, when a line is saved, as the
+        old "keep" button gets converted to a "remove" button.
+        """
         drop = ipw.Dropdown(options=self.data_names,
                             description='',
                             layout={'width': 'initial'})
@@ -45,30 +53,47 @@ class PlotPanel1d(PlotPanel):
             "colorpicker": col,
             "label": lab
         }
-        self.container.children += ipw.HBox(
-            list(self.keep_buttons[line_id].values())),
+        self.update_widgets()
+        # self.container.children += ipw.HBox(
+        #     list(self.keep_buttons[line_id].values())),
 
     def update_axes(self, axparams=None):
+        """
+        Clear all widgets when figure axes are changed.
+        """
         self.keep_buttons.clear()
         self.make_keep_button()
         self.update_widgets()
 
     def update_data(self, info):
+        """
+        Save label (slice position and thickness) of current line so that it
+        can be labeled accordingly when the "keep" button is pressed.
+        """
         self.slice_label = info["slice_label"]
 
     def update_widgets(self):
+        """
+        Update the container of all widgets when a line is kept or removed.
+        """
         widget_list = []
         for key, val in self.keep_buttons.items():
             widget_list.append(ipw.HBox(list(val.values())))
         self.container.children = tuple(widget_list)
 
     def keep_remove_line(self, owner):
+        """
+        Forward the keep or remove event to the correct function.
+        """
         if owner.description == "Keep":
             self.keep_line(owner)
         elif owner.description == "Remove":
             self.remove_line(owner)
 
     def keep_line(self, owner):
+        """
+        Send a "keep line" event to the `controller`.
+        """
         name = self.keep_buttons[owner.id]["dropdown"].value
         self.interface["keep_line"](
             name=name,
@@ -80,15 +105,15 @@ class PlotPanel1d(PlotPanel):
         owner.description = "Remove"
 
     def remove_line(self, owner):
+        """
+        Send a "remove line" event to the `controller`.
+        """
         self.interface["remove_line"](line_id=owner.id)
         del self.keep_buttons[owner.id]
         self.update_widgets()
 
     def update_line_color(self, change):
+        """
+        Send a "update line color" event to the controller.
+        """
         self.interface["update_line_color"](change["owner"].id, change["new"])
-
-    def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
-        return
-
-    # def toggle_mask(self, mask_info=None):
-    #     return
