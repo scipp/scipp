@@ -8,6 +8,12 @@ import numpy as np
 
 
 class PlotController3d(PlotController):
+    """
+    Controller class for 3d plots.
+
+    It handles some additional events from the cut surface panel, compared to
+    the base class controller.
+    """
     def __init__(self, *args, pixel_size=None, positions=None, **kwargs):
 
         super().__init__(*args, **kwargs)
@@ -26,9 +32,15 @@ class PlotController3d(PlotController):
                 }
 
     def initialise_model(self):
+        """
+        Give the model3d the list of available options for the cut surface.
+        """
         self.model.initialise(self.panel.get_cut_options())
 
     def connect_panel(self):
+        """
+        Establish connection to the panel interface.
+        """
         self.panel.connect({
             "update_opacity": self.update_opacity,
             "update_depth_test": self.update_depth_test,
@@ -36,6 +48,15 @@ class PlotController3d(PlotController):
         })
 
     def _get_axes_parameters(self):
+        """
+        Gather the information (dimensions, limits, etc...) about the (x, y, z)
+        axes that are displayed on the plots.
+        If `positions` is specified, the axes never change and we simply return
+        some axes parameters that were set upon creation.
+        In addition, we give the centre of the positions as half-way between
+        the axes limits, as well as the extent of the positions which will be
+        use to show an outline/box around the points in space.
+        """
         axparams = {}
         if self.positions is not None:
             axparams = self.pos_axparams
@@ -56,6 +77,10 @@ class PlotController3d(PlotController):
         return axparams
 
     def update_opacity(self, alpha):
+        """
+        When the opacity slider in the panel is changed, ask the view to update
+        the opacity.
+        """
         self.view.update_opacity(alpha=alpha)
         # There is a strange effect with point clouds and opacities.
         # Results are best when depthTest is False, at low opacities.
@@ -66,13 +91,26 @@ class PlotController3d(PlotController):
         self.view.update_depth_test(alpha > 0.9)
 
     def update_depth_test(self, value):
+        """
+        Update the state of depth test in the view (see `update_opacity`).
+        """
         self.view.update_depth_test(value)
 
-    def update_cut_surface(self, **kwargs):
-        alpha = self.model.update_cut_surface(**kwargs)
+    def update_cut_surface(self, *args, **kwargs):
+        """
+        When the position or thickness of the cut surface is changed via the
+        widgets in the `panel3d`, get new alpha values from the `model` and
+        send them to the `view` for updating the color array.
+        """
+        alpha = self.model.update_cut_surface(*args, **kwargs)
         self.view.update_opacity(alpha=alpha)
 
     def rescale_to_data(self, button=None):
+        """
+        When we rescale the colorbar limits, we also have to manually update
+        the colors in the figure, as opposed to Matplotlib's `imshow` which
+        does the update automatically.
+        """
         super().rescale_to_data()
         new_values = self.model.get_slice_values(
             mask_info=self.get_masks_info())

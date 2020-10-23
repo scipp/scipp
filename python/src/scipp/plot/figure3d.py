@@ -18,6 +18,11 @@ import io
 
 
 class PlotFigure3d:
+    """
+    Class for 3 dimensional plots.
+
+    It renders an interactive scene containing a point cloud using `pythreejs`.
+    """
     def __init__(self,
                  cmap=None,
                  norm=None,
@@ -93,19 +98,38 @@ class PlotFigure3d:
         return
 
     def _ipython_display_(self):
+        """
+        IPython display representation for Jupyter notebooks.
+        """
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
+        """
+        Return the renderer and the colorbar into a widget box.
+        """
         return self.figure
 
     def savefig(self, filename=None):
+        """
+        Save scene to file.
+        TODO: would be nice to save as static png, as well as interactive html,
+        like `ipyvolume`.
+        """
         raise RuntimeError("Saving figures is not yet implemented for 3D "
                            "visualization.")
 
     def initialise(self, *args, **kwargs):
+        """
+        Dummy initialise function.
+        """
         return
 
     def update_axes(self, axparams):
+        """
+        When a point cloud is created, one cannot modify the number of points.
+        Hence, when axes are updated, we have to remove the point cloud from
+        the scene and create a new one.
+        """
         if self.point_cloud is not None:
             self.scene.remove(self.point_cloud)
         if self.outline is not None:
@@ -284,6 +308,12 @@ void main() {
         self.points_geometry.attributes["rgba_color"].array = arr
 
     def update_depth_test(self, value):
+        """
+        Update the `depthTest` property of the point cloud. If `depthTest` is
+        `True`, the distance of the point with respect to the camera is
+        conserved. When it is `False`, the points simply appear in the order
+        they are drawn.
+        """
         self.points_material.depthTest = value
 
     def toggle_mask(self, change):
@@ -312,6 +342,11 @@ void main() {
             np.float32)
 
     def rescale_to_data(self, vmin=None, vmax=None):
+        """
+        Rescale the colorbar limits according to the supplied values.
+        Also create a new colorbar image and update the colorbar widget
+        container.
+        """
         self.scalar_map.set_clim(vmin, vmax)
         self.cbar.set_clim(vmin, vmax)
         buf = io.BytesIO()
