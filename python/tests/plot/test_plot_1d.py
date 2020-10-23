@@ -48,7 +48,7 @@ def test_plot_1d_bin_edges_with_variances():
 def test_plot_1d_two_separate_entries():
     d = make_dense_dataset(ndim=1)
     d["Background"] = sc.Variable(['tof'],
-                                  values=2.0 * np.random.rand(50),
+                                  values=2.0 * np.random.random(50),
                                   unit=sc.units.kg)
     plot(d)
 
@@ -56,7 +56,7 @@ def test_plot_1d_two_separate_entries():
 def test_plot_1d_two_entries_on_same_plot():
     d = make_dense_dataset(ndim=1)
     d["Background"] = sc.Variable(['tof'],
-                                  values=2.0 * np.random.rand(50),
+                                  values=2.0 * np.random.random(50),
                                   unit=sc.units.counts)
     plot(d)
 
@@ -64,7 +64,7 @@ def test_plot_1d_two_entries_on_same_plot():
 def test_plot_1d_two_entries_hide_variances():
     d = make_dense_dataset(ndim=1, variances=True)
     d["Background"] = sc.Variable(['tof'],
-                                  values=2.0 * np.random.rand(50),
+                                  values=2.0 * np.random.random(50),
                                   unit=sc.units.counts)
     plot(d, errorbars=False)
     # When variances are not present, the plot does not fail, is silently does
@@ -130,8 +130,15 @@ def test_plot_1d_events_data_with_Variable_bins():
 
 def test_plot_variable_1d():
     N = 50
-    v1d = sc.Variable(['tof'], values=np.random.rand(N), unit=sc.units.counts)
+    v1d = sc.Variable(['tof'], values=np.random.random(N), unit=sc.units.counts)
     plot(v1d)
+
+
+def test_plot_dict_of_variables_1d():
+    N = 50
+    v1 = sc.Variable(['tof'], values=np.random.random(N), unit=sc.units.counts)
+    v2 = sc.Variable(['tof'], values=5.0*np.random.random(N), unit=sc.units.counts)
+    plot({'v1': v1, 'v2': v2})
 
 
 def test_plot_dataset_view():
@@ -155,7 +162,7 @@ def test_plot_vector_axis_labels_1d():
                                 unit=sc.units.m,
                                 dtype=sc.dtype.vector_3_float64)
     d["Sample"] = sc.Variable(['x'],
-                              values=np.random.rand(N),
+                              values=np.random.random(N),
                               unit=sc.units.counts)
     plot(d)
 
@@ -168,7 +175,7 @@ def test_plot_string_axis_labels_1d():
         values=["a", "b", "c", "d", "e", "f", "g", "h", "i", "j"],
         unit=sc.units.m)
     d["Sample"] = sc.Variable(['x'],
-                              values=np.random.rand(N),
+                              values=np.random.random(N),
                               unit=sc.units.counts)
     plot(d)
 
@@ -180,6 +187,6 @@ def test_plot_string_axis_labels_1d_short():
                                 values=["a", "b", "c", "d", "e"],
                                 unit=sc.units.m)
     d["Sample"] = sc.Variable(['x'],
-                              values=np.random.rand(N),
+                              values=np.random.random(N),
                               unit=sc.units.counts)
     plot(d)

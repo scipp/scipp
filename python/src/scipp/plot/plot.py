@@ -31,6 +31,42 @@ class Plot(dict):
             self[key] = item.as_static(*args, **kwargs)
 
 
+def _variable_to_data_array(variable):
+    coords = {}
+    for dim, size in zip(variable.dims, variable.shape):
+        coords[dim] = make_fake_coord(dim, size)
+    return sc.DataArray(data=variable, coords=coords)
+
+
+def _raise_plot_input_error(intype):
+    raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
+                       "a Dataset, a DataArray, a Variable (and their "
+                       "respective proxies), and a dict of "
+                       "Variables or DataArrays.".format(intype))
+
+
+def _parse_input(scipp_obj):
+    inventory = dict()
+    if su.is_dataset(scipp_obj):
+        for name in sorted(scipp_obj.keys()):
+            inventory[name] = scipp_obj[name]
+    elif su.is_variable(scipp_obj):
+        inventory[str(type(scipp_obj))] = _variable_to_data_array(scipp_obj)
+    elif su.is_data_array(scipp_obj):
+        inventory[scipp_obj.name] = scipp_obj
+    elif isinstance(scipp_obj, dict):
+        for key in scipp_obj.keys():
+            if su.is_variable(scipp_obj[key]):
+                inventory[key] = _variable_to_data_array(scipp_obj[key])
+            elif su.is_data_array(scipp_obj[key]):
+                inventory[key] = scipp_obj[key]
+            else:
+                _raise_plot_input_error(type(scipp_obj[key]))
+    else:
+        _raise_plot_input_error(type(scipp_obj))
+    return inventory
+
+
 def plot(scipp_obj,
          projection=None,
          axes=None,
@@ -44,25 +80,7 @@ def plot(scipp_obj,
     Wrapper function to plot any kind of scipp object.
     """
 
-    inventory = dict()
-    if su.is_dataset(scipp_obj):
-        for name in sorted(scipp_obj.keys()):
-            inventory[name] = scipp_obj[name]
-    elif su.is_variable(scipp_obj):
-        coords = {}
-        for dim, size in zip(scipp_obj.dims, scipp_obj.shape):
-            coords[dim] = make_fake_coord(dim, size)
-        inventory[str(type(scipp_obj))] = sc.DataArray(data=scipp_obj,
-                                                       coords=coords)
-    elif su.is_data_array(scipp_obj):
-        inventory[scipp_obj.name] = scipp_obj
-    elif isinstance(scipp_obj, dict):
-        inventory = scipp_obj
-    else:
-        raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
-                           "a Dataset, a DataArray, a Variable (and their "
-                           "respective proxies), and a dict of "
-                           "DataArrays.".format(type(scipp_obj)))
+    inventory = _parse_input(scipp_obj)
 
     # Prepare container for matplotlib line parameters
     line_params = {
