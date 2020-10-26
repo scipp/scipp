@@ -130,14 +130,18 @@ def test_plot_1d_events_data_with_Variable_bins():
 
 def test_plot_variable_1d():
     N = 50
-    v1d = sc.Variable(['tof'], values=np.random.random(N), unit=sc.units.counts)
+    v1d = sc.Variable(['tof'],
+                      values=np.random.random(N),
+                      unit=sc.units.counts)
     plot(v1d)
 
 
 def test_plot_dict_of_variables_1d():
     N = 50
     v1 = sc.Variable(['tof'], values=np.random.random(N), unit=sc.units.counts)
-    v2 = sc.Variable(['tof'], values=5.0*np.random.random(N), unit=sc.units.counts)
+    v2 = sc.Variable(['tof'],
+                     values=5.0 * np.random.random(N),
+                     unit=sc.units.counts)
     plot({'v1': v1, 'v2': v2})
 
 
