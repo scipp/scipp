@@ -13,20 +13,23 @@ from .widgets import PlotWidgets
 
 def plot2d(*args, filename=None, **kwargs):
     """
-    Plot a 2D slice through a N dimensional dataset.
+    Plot a 2d slice through a N dimensional dataset.
     For every dimension above 2, a slider is created to adjust the position
     of the slice in that particular dimension.
     """
-
     sp = SciPlot2d(*args, **kwargs)
-
     if filename is not None:
         sp.savefig(filename)
-
     return sp
 
 
 class SciPlot2d(SciPlot):
+    """
+    Class for 2 dimensional plots.
+
+    It uses Matplotlib's `imshow` to view 2d arrays are images, and implements
+    a dynamic image resampling for better performance with large images.
+    """
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,

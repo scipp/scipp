@@ -21,12 +21,9 @@ def plot1d(*args, filename=None, **kwargs):
     If the data contains more than one dimensions, sliders are added to
     navigate to extra dimensions.
     """
-
     sp = SciPlot1d(*args, **kwargs)
-
     if filename is not None:
         sp.savefig(filename)
-
     return sp
 
 

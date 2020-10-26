@@ -35,8 +35,6 @@ class PlotModel2d(PlotModel):
                 "y": config.plot.height
             }
 
-        return
-
     def update_axes(self, axparams):
         """
         Update axes parameters and coordinate edges for dynamic resampling on

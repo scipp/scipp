@@ -9,6 +9,12 @@ import numpy as np
 
 
 class PlotModel3d(PlotModel):
+    """
+    Model class for 3 dimensional plots.
+
+    It handles updating the data values when using dimension sliders as well as
+    updating opacities for the cut surfaces.
+    """
     def __init__(self, *args, scipp_obj_dict=None, positions=None, **kwargs):
 
         super().__init__(*args, scipp_obj_dict=scipp_obj_dict, **kwargs)
@@ -27,9 +33,17 @@ class PlotModel3d(PlotModel):
             self.pos_array = np.array(self.pos_coord.values, dtype=np.float32)
 
     def initialise(self, cut_options):
+        """
+        The model handles calculations of opacities for the cut surface, so it
+        needs to know which are the possible cut surface options. Those are set
+        once the `panel3d` has been created.
+        """
         self.cut_options = cut_options
 
     def update_axes(self, axparams):
+        """
+        When axes are changed, a new meshgrid of positions is computed.
+        """
 
         # If no positions are supplied, create a meshgrid from coordinates
         if self.positions is None:
@@ -55,7 +69,9 @@ class PlotModel3d(PlotModel):
         return {"positions": self.pos_array}
 
     def get_slice_values(self, mask_info):
-
+        """
+        Get data and mask values as numpy arrays.
+        """
         new_values = {
             "values": self.dslice.values.astype(np.float32).ravel(),
             "masks": None

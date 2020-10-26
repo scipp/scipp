@@ -11,7 +11,7 @@ from matplotlib.collections import PathCollection
 
 class PlotView2d(PlotView):
     """
-    View object for 2 dimensional plots. Contains a `figure2d`.
+    View object for 2 dimensional plots. Contains a `PlotFigure2d`.
 
     The difference between `view2d` and `figure2d` is that `view2d` also
     handles the communications with the `controller` that are to do with the

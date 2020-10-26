@@ -18,16 +18,21 @@ def plot3d(*args, filename=None, **kwargs):
     It is possible to add cut surfaces as cartesian, cylindrical or spherical
     planes.
     """
-
     sp = SciPlot3d(*args, **kwargs)
-
     if filename is not None:
         sp.savefig(filename)
-
     return sp
 
 
 class SciPlot3d(SciPlot):
+    """
+    Class for 3 dimensional plots.
+
+    It uses `pythreejs` to render the data as an interactive 3d point cloud.
+    All points are rendered as 2d squares for best performance.
+    It also holds a `panel3d` with additional control for spatial slicing based
+    on altering the opacity of the points.
+    """
     def __init__(self,
                  scipp_obj_dict=None,
                  positions=None,

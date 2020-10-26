@@ -89,6 +89,11 @@ def parse_params(params=None,
 
 
 def make_fake_coord(dim, size, unit=None):
+    """
+    Make a Variable with indices as values, to be used as a fake coordinate
+    for either missing coordinates or non-number coordinates (e.g. vector or
+    string coordinates).
+    """
     kwargs = {"values": np.arange(size, dtype=np.float64)}
     if unit is not None:
         kwargs["unit"] = unit
@@ -96,6 +101,9 @@ def make_fake_coord(dim, size, unit=None):
 
 
 def vars_to_err(v):
+    """
+    Convert variances to errors.
+    """
     with np.errstate(invalid="ignore"):
         v = np.sqrt(v)
     np.nan_to_num(v, copy=False)
@@ -103,10 +111,20 @@ def vars_to_err(v):
 
 
 def mask_to_float(mask, var):
+    """
+    Return an array of masks as floats.
+    """
     return np.where(mask, var, None).astype(np.float32)
 
 
 def check_log_limits(lims=None, vmin=None, vmax=None, scale=None):
+    """
+    Check if a limit is negative when a "log" norm is used.
+    If so, set the lower limits as 1.0e-3 * max_value.
+    Input can either be:
+      - 2 values `vmin` and `vmax` -> return vmin, vmax
+      - a list of length 2 `lims` -> return [vmin, vmax]
+    """
     if lims is not None:
         vmin = lims[0]
         vmax = lims[1]
