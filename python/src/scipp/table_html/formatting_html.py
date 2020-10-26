@@ -479,8 +479,7 @@ def dataset_repr(ds):
         else:
             sections.append(coord_section(ds.aligned_coords, ds))
 
-    sections.append(
-        data_section(ds if hasattr(ds, '__len__') else {'': ds.data}))
+    sections.append(data_section(ds if hasattr(ds, '__len__') else {'': ds}))
 
     if not is_dataset(ds):
         if len(ds.masks) > 0:
