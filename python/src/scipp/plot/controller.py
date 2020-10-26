@@ -44,6 +44,7 @@ class PlotController:
         self.view = view
 
         self.name = name
+        self.dim_to_shape = dim_to_shape
         self.axparams = {}
 
         self.profile_axparams = {}
@@ -86,7 +87,7 @@ class PlotController:
                 # stored as dicts, with one key per dimension of the coordinate
                 self.histograms[key][dim] = {}
                 for i, d in enumerate(coord.dims):
-                    self.histograms[key][dim][d] = dim_to_shape[key][
+                    self.histograms[key][dim][d] = self.dim_to_shape[key][
                         d] == coord_shapes[key][dim][i] - 1
 
                 # The limits for each dimension
@@ -120,6 +121,9 @@ class PlotController:
         self.connect_view()
         if self.panel is not None:
             self.connect_panel()
+
+    def get_dim_shape(self, dim):
+        return self.dim_to_shape[dim]
 
     def initialise_widgets(self, dim_to_shape):
         """
@@ -187,7 +191,8 @@ class PlotController:
             "toggle_profile_view": self.toggle_profile_view,
             "update_data": self.update_data,
             "update_axes": self.update_axes,
-            "toggle_mask": self.toggle_mask
+            "toggle_mask": self.toggle_mask.
+            "get_dim_shape": self.get_dim_shape
         })
 
     def connect_view(self):

@@ -32,6 +32,7 @@ class PlotWidgets:
         # Initialise slider and label containers
         self.unit_labels = {}
         self.slider = {}
+        self.slider_dims = {}
         self.slider_readout = {}
         self.thickness_slider = {}
         self.dim_buttons = {}
@@ -100,17 +101,20 @@ class PlotWidgets:
             # Add one set of buttons per dimension
             self.dim_buttons[index] = {}
             for dim_ in possible_dims:
-                self.dim_buttons[index][dim_] = ipw.Button(
-                description=str(dim_),
+                dstr = str(dim_)
+                self.dim_buttons[index][dstr] = ipw.Button(
+                description=dstr,
                 # value=dim == dim_,
                 button_style='info' if dim == dim_ else '',
                 # style={"button_width": "initial"}
+                disabled=((dim != dim_) and (dim_ in slider_dims.values())),
                 layout={"width":'initial'})
                 # Add observer to buttons
                 # self.dim_buttons[index][dim_].on_msg(self.update_buttons)
-                self.dim_buttons[index][dim_].on_click(self.update_buttons)
-                setattr(self.dim_buttons[index][dim_], "index", index)
+                self.dim_buttons[index][dstr].on_click(self.update_buttons)
+                setattr(self.dim_buttons[index][dstr], "index", index)
 
+            self.slider_dims[index] = dim
 
             # if string_ax:
             #     self.button_axis_to_dim[ax] = dim
@@ -231,6 +235,8 @@ class PlotWidgets:
         """
         Custom update for 2D grid of toggle buttons.
         """
+        if owner.button_style == "info":
+            return
         # toggle_slider = False
         # if not self.slider[owner.dim].disabled:
         #     toggle_slider = True
@@ -238,10 +244,30 @@ class PlotWidgets:
         #     self.thickness_slider[owner.dim].disabled = True
         #     self.profile_button[owner.dim].disabled = True
         #     self.continuous_update[owner.dim].disabled = True
+        new_ind = owner.index
+        new_dim = owner.description
+
+        old_dim = None
+        for dim in self.dim_buttons[new_ind]:
+            if self.dim_buttons[new_ind][dim].button_style == "info":
+                old_dim = self.dim_buttons[new_ind][dim].description
+            # if self.dim_buttons[owner.index][dim].description != owner.description:
+            self.dim_buttons[new_ind][dim].button_style = ""
         owner.button_style = "info"
-        for dim in self.dim_buttons[owner.index]:
-            if self.dim_buttons[owner.index][dim].description != owner.description:
-                self.dim_buttons[owner.index][dim].button_style = ""
+        slider_max = self.interface["get_dim_shape"](new_dim)
+        if slider_max < self.slider[new_ind].value:
+            self.slider[new_ind].value = slider_max // 2
+            self.slider[new_ind].max = slider_max - 1
+        else:
+            self.slider[new_ind].max = slider_max - 1
+            self.slider[new_ind].value = slider_max // 2
+        # for dim in self.dim_buttons[owner.index]:
+        #     if self.dim_buttons[owner.index][dim].description != owner.description:
+        #         self.dim_buttons[owner.index][dim].button_style = ""
+        for index in set(self.dim_buttons.keys()) - set([new_ind]):
+            self.dim_buttons[index][new_dim].disabled = True
+            self.dim_buttons[index][old_dim].disabled = False
+
 
         # for index in self.dim_buttons:
         #     for dim in self.dim_buttons[index]:
@@ -259,7 +285,7 @@ class PlotWidgets:
         #             self.continuous_update[dim].disabled = False
         # owner.old_value = owner.value
 
-        # self.interface["update_axes"]()
+        self.interface["update_axes"]()
         return
 
     def toggle_all_masks(self, change):
@@ -285,6 +311,7 @@ class PlotWidgets:
             self.thickness_slider[dim].observe(callbacks["update_data"],
                                                names="value")
         self.interface["update_axes"] = callbacks["update_axes"]
+        self.interface["get_dim_shape"] = callbacks["get_dim_shape"]
 
         for name in self.mask_checkboxes:
             for m in self.mask_checkboxes[name]:
