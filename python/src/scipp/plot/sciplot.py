@@ -28,7 +28,6 @@ class SciPlot:
           plot.
       - a `controller`: handles all the communication between all the pieces
           above.
-
     """
     def __init__(self,
                  scipp_obj_dict,
