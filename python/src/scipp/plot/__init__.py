@@ -53,11 +53,11 @@ def plot(*args, **kwargs):
     Plot a Scipp object.
 
     Possible inputs are:
-      - Variable
-      - Dataset
-      - DataArray
-      - dict of Variables
-      - dict of DataArrays
+    - Variable
+    - DataArray
+    - Dataset
+    - dict of Variables
+    - dict of DataArrays
 
     For more details, see
     https://scipp.github.io/visualization/plotting-overview.html.
@@ -78,9 +78,9 @@ def plot(*args, **kwargs):
 
     :param bins: Specify on-the-fly binning when plotting event data.
         Possible values are:
-          - an integer setting the number of bins
-          - a `numpy` array setting the bin edges
-          - a Variable setting the bin edges
+        - an integer setting the number of bins
+        - a `numpy` array setting the bin edges
+        - a Variable setting the bin edges
         Defaults to `None`.
     :type bins: int or ndarray or Variable, optional
 
@@ -89,7 +89,7 @@ def plot(*args, **kwargs):
     :type cax: matplotlib.axes.Axes, optional
 
     :param cmap: Matplotlib colormap (2d and 3d only).
-        See https://matplotlib.org/tutorials/colors/colormaps.html
+        See https://matplotlib.org/tutorials/colors/colormaps.html.
         Defaults to `None`.
     :type cmap: str, optional
 
