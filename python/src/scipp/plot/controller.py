@@ -110,7 +110,7 @@ class PlotController:
 
                 self.labels[key][dim] = name_with_unit(var=coord)
 
-        self.initialise_widgets(dim_to_shape[self.name])
+        # self.initialise_widgets(dim_to_shape[self.name])
         self.initialise_view(axes)
         self.initialise_model()
         if self.profile is not None:

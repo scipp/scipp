@@ -117,4 +117,4 @@ class SciPlot2d(SciPlot):
             profile=self.profile)
 
         # Call update_slice once to make the initial image
-        self.controller.update_axes()
+        # self.controller.update_axes()

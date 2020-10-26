@@ -30,121 +30,135 @@ class PlotWidgets:
         self.container = [self.rescale_button]
 
         # Initialise slider and label containers
-        self.dim_labels = {}
+        self.unit_labels = {}
         self.slider = {}
         self.slider_readout = {}
         self.thickness_slider = {}
-        self.buttons = {}
+        self.dim_buttons = {}
         self.profile_button = {}
         self.showhide = {}
         self.button_axis_to_dim = {}
         self.continuous_update = {}
         self.all_masks_button = None
 
-        # Now begin loop to construct sliders
-
+        slider_dims = {}
         for ax, dim in axes.items():
+            if isinstance(ax, int) and dim != positions:
+                slider_dims[ax] = dim
+        possible_dims = list(axes.values())
 
-            string_ax = isinstance(ax, str)
+        # Now begin loop to construct sliders
+        # for ax, dim in axes.items():
+        for index, (ax, dim) in enumerate(slider_dims.items()):
 
-            # Determine if slider should be disabled or not:
-            # In the case of 3d projection, disable sliders that are for
-            # dims < 3, or sliders that contain vectors.
-            disabled = False
-            if positions is not None:
-                disabled = dim == positions
-            elif string_ax:
-                disabled = True
+            # # Determine if slider should be disabled or not:
+            # # In the case of 3d projection, disable sliders that are for
+            # # dims < 3, or sliders that contain vectors.
+            # disabled = False
+            # if positions is not None:
+            #     disabled = dim == positions
+            # elif string_ax:
+            #     disabled = True
 
-            self.dim_labels[dim] = ipw.Label(layout={"width": "100px"})
+            self.unit_labels[index] = ipw.Label(layout={"width": "40px"})
 
             # Add a slider to slice along additional dimensions of the array
-            self.slider[dim] = ipw.IntSlider(min=0,
+            self.slider[index] = ipw.IntSlider(min=0,
                                              step=1,
                                              continuous_update=True,
                                              readout=False,
-                                             disabled=disabled,
                                              layout={"width": "200px"})
 
-            self.continuous_update[dim] = ipw.Checkbox(
+            self.continuous_update[index] = ipw.Checkbox(
                 value=True,
                 description="Continuous update",
                 indent=False,
-                layout={"width": "20px"},
-                disabled=disabled)
-            ipw.jslink((self.continuous_update[dim], 'value'),
-                       (self.slider[dim], 'continuous_update'))
+                layout={"width": "20px"})
+            ipw.jslink((self.continuous_update[index], 'value'),
+                       (self.slider[index], 'continuous_update'))
 
-            self.thickness_slider[dim] = ipw.FloatSlider(
+            self.thickness_slider[index] = ipw.FloatSlider(
                 min=0.,
                 description="Thickness",
                 continuous_update=False,
                 readout=False,
-                disabled=disabled,
                 layout={'width': "180px"})
 
-            self.slider_readout[dim] = ipw.Label()
+            self.slider_readout[index] = ipw.Label()
 
-            self.profile_button[dim] = ipw.Button(description="Profile",
-                                                  disabled=disabled,
+            self.profile_button[index] = ipw.Button(description="Profile",
                                                   button_style="",
                                                   layout={"width": "initial"})
 
-            if ndim == len(button_options):
-                self.slider[dim].layout.display = 'none'
-                self.slider_readout[dim].layout.display = 'none'
-                self.continuous_update[dim].layout.display = 'none'
-                self.thickness_slider[dim].layout.display = 'none'
-                self.profile_button[dim].layout.display = 'none'
+            # if ndim == len(button_options):
+            #     self.slider[dim].layout.display = 'none'
+            #     self.slider_readout[dim].layout.display = 'none'
+            #     self.continuous_update[dim].layout.display = 'none'
+            #     self.thickness_slider[dim].layout.display = 'none'
+            #     self.profile_button[dim].layout.display = 'none'
 
             # Add one set of buttons per dimension
-            self.buttons[dim] = ipw.ToggleButtons(
-                options=button_options,
-                description='',
-                value=ax if string_ax else None,
-                disabled=False,
-                button_style='',
-                style={"button_width": "50px"})
+            self.dim_buttons[index] = {}
+            for dim_ in possible_dims:
+                self.dim_buttons[index][dim_] = ipw.Button(
+                description=str(dim_),
+                # value=dim == dim_,
+                button_style='info' if dim == dim_ else '',
+                # style={"button_width": "initial"}
+                layout={"width":'initial'})
+                # Add observer to buttons
+                # self.dim_buttons[index][dim_].on_msg(self.update_buttons)
+                self.dim_buttons[index][dim_].on_click(self.update_buttons)
+                setattr(self.dim_buttons[index][dim_], "index", index)
 
-            if string_ax:
-                self.button_axis_to_dim[ax] = dim
 
-            setattr(self.buttons[dim], "dim", dim)
-            setattr(self.buttons[dim], "old_value", self.buttons[dim].value)
-            setattr(self.slider[dim], "dim", dim)
-            setattr(self.continuous_update[dim], "dim", dim)
-            setattr(self.thickness_slider[dim], "dim", dim)
-            setattr(self.profile_button[dim], "dim", dim)
+            # if string_ax:
+            #     self.button_axis_to_dim[ax] = dim
 
-            # Hide buttons and labels for 1d variables
-            if ndim == 1:
-                self.buttons[dim].layout.display = 'none'
-                self.dim_labels[dim].layout.display = 'none'
-                self.thickness_slider[dim].layout.display = 'none'
-                self.profile_button[dim].layout.display = 'none'
-                self.continuous_update[dim].layout.display = 'none'
+            # setattr(self.dim_buttons[index], "index", index)
+            # setattr(self.dim_buttons[index], "old_value", self.dim_buttons[index].value)
+            # setattr(self.slider[index], "index", index)
+            # setattr(self.continuous_update[index], "index", index)
+            # setattr(self.thickness_slider[index], "index", index)
+            # setattr(self.profile_button[index], "index", index)
 
-            # Hide buttons if positions are used
-            if positions is not None:
-                self.buttons[dim].layout.display = 'none'
-            # Hide profile picking for 3D plots for now
-            if len(button_options) == 3:
-                self.profile_button[dim].layout.display = 'none'
-            if dim == positions:
-                self.dim_labels[dim].layout.display = 'none'
-                self.slider[dim].layout.display = 'none'
-                self.continuous_update[dim].layout.display = 'none'
-                self.profile_button[dim].layout.display = 'none'
-                self.thickness_slider[dim].layout.display = 'none'
+            # # Hide buttons and labels for 1d variables
+            # if ndim == 1:
+            #     self.buttons[dim].layout.display = 'none'
+            #     self.dim_labels[dim].layout.display = 'none'
+            #     self.thickness_slider[dim].layout.display = 'none'
+            #     self.profile_button[dim].layout.display = 'none'
+            #     self.continuous_update[dim].layout.display = 'none'
+
+            # # Hide buttons if positions are used
+            # if positions is not None:
+            #     self.buttons[dim].layout.display = 'none'
+            # # Hide profile picking for 3D plots for now
+            # if len(button_options) == 3:
+            #     self.profile_button[dim].layout.display = 'none'
+            # if dim == positions:
+            #     self.dim_labels[dim].layout.display = 'none'
+            #     self.slider[dim].layout.display = 'none'
+            #     self.continuous_update[dim].layout.display = 'none'
+            #     self.profile_button[dim].layout.display = 'none'
+            #     self.thickness_slider[dim].layout.display = 'none'
 
             # Add observer to buttons
-            self.buttons[dim].on_msg(self.update_buttons)
+            # self.dim_buttons[index].on_msg(self.update_buttons)
             # Add the row of slider + buttons
-            row = [
-                self.dim_labels[dim], self.slider[dim],
-                self.slider_readout[dim], self.continuous_update[dim],
-                self.buttons[dim], self.thickness_slider[dim],
-                self.profile_button[dim]
+            # row = [
+            #     self.dim_labels[dim], self.slider[dim],
+            #     self.slider_readout[dim], self.continuous_update[dim],
+            #     self.buttons[dim], self.thickness_slider[dim],
+            #     self.profile_button[dim]
+            # ]
+            row = list(self.dim_buttons[index].values()) + [
+                self.slider[index],
+                self.slider_readout[index],
+                self.unit_labels[index],
+                self.continuous_update[index],
+                self.thickness_slider[index],
+                self.profile_button[index]
             ]
             self.container.append(ipw.HBox(row))
 
@@ -212,33 +226,40 @@ class PlotWidgets:
                     [self.masks_lab, self.all_masks_button, self.masks_box])
             ]
 
-    def update_buttons(self, owner, event, dummy):
+    # def update_buttons(self, owner=None, event=None, dummy=None):
+    def update_buttons(self, owner=None):
         """
         Custom update for 2D grid of toggle buttons.
         """
-        toggle_slider = False
-        if not self.slider[owner.dim].disabled:
-            toggle_slider = True
-            self.slider[owner.dim].disabled = True
-            self.thickness_slider[owner.dim].disabled = True
-            self.profile_button[owner.dim].disabled = True
-            self.continuous_update[owner.dim].disabled = True
+        # toggle_slider = False
+        # if not self.slider[owner.dim].disabled:
+        #     toggle_slider = True
+        #     self.slider[owner.dim].disabled = True
+        #     self.thickness_slider[owner.dim].disabled = True
+        #     self.profile_button[owner.dim].disabled = True
+        #     self.continuous_update[owner.dim].disabled = True
+        owner.button_style = "info"
+        for dim in self.dim_buttons[owner.index]:
+            if self.dim_buttons[owner.index][dim].description != owner.description:
+                self.dim_buttons[owner.index][dim].button_style = ""
 
-        for dim, button in self.buttons.items():
-            if (button.value == owner.value) and (dim != owner.dim):
-                if self.slider[dim].disabled:
-                    button.value = owner.old_value
-                else:
-                    button.value = None
-                button.old_value = button.value
-                if toggle_slider:
-                    self.slider[dim].disabled = False
-                    self.thickness_slider[dim].disabled = False
-                    self.profile_button[dim].disabled = False
-                    self.continuous_update[dim].disabled = False
-        owner.old_value = owner.value
+        # for index in self.dim_buttons:
+        #     for dim in self.dim_buttons[index]:
 
-        self.interface["update_axes"]()
+        #     if (button.value == owner.value) and (dim != owner.dim):
+        #         if self.slider[dim].disabled:
+        #             button.value = owner.old_value
+        #         else:
+        #             button.value = None
+        #         button.old_value = button.value
+        #         if toggle_slider:
+        #             self.slider[dim].disabled = False
+        #             self.thickness_slider[dim].disabled = False
+        #             self.profile_button[dim].disabled = False
+        #             self.continuous_update[dim].disabled = False
+        # owner.old_value = owner.value
+
+        # self.interface["update_axes"]()
         return
 
     def toggle_all_masks(self, change):
@@ -287,8 +308,8 @@ class PlotWidgets:
                                        "a slider dimension, it must be one of "
                                        "the displayed dimensions.")
                 self.buttons[dim].disabled = True
-            # Dimension labels
-            self.dim_labels[dim].value = item["labels"]
+            # # Dimension labels
+            # self.dim_labels[dim].value = item["labels"]
 
             # Dimension slider
             size = item["slider"]
