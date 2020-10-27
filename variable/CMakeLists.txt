@@ -4,6 +4,7 @@ set(TARGET_NAME "scipp-variable")
 set(INC_FILES
     include/scipp/variable/apply.h
     include/scipp/variable/arithmetic.h
+    include/scipp/variable/buckets.h
     include/scipp/variable/comparison.h
     include/scipp/variable/event.h
     include/scipp/variable/except.h
@@ -32,6 +33,7 @@ set(INC_FILES
 
 set(SRC_FILES
     arithmetic.cpp
+    buckets.cpp
     comparison.cpp
     event.cpp
     except.cpp

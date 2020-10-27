@@ -7,6 +7,7 @@
 #include <random>
 
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/buckets.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
