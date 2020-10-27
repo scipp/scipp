@@ -36,15 +36,10 @@ TYPED_TEST(DataArrayViewTest, name_ignored_in_comparison) {
 TYPED_TEST(DataArrayViewTest, dims) {
   Dataset d;
   const auto dense = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 2});
-  const auto events =
-      makeVariable<event_list<double>>(Dims{Dim::X, Dim::Y}, Shape{1, 2});
   typename TestFixture::dataset_type &d_ref(d);
 
   d.setData("dense", dense);
   ASSERT_EQ(d_ref["dense"].dims(), dense.dims());
-
-  d.setData("events_data", events);
-  ASSERT_EQ(d_ref["events_data"].dims(), events.dims());
 }
 
 TYPED_TEST(DataArrayViewTest, dims_with_extra_coords) {

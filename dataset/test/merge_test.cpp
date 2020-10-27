@@ -48,28 +48,6 @@ TEST(MergeTest, simple) {
             d["data_2"].unaligned_coords()[Dim("attr_2")]);
 }
 
-TEST(MergeTest, events) {
-  auto eventsCoord = makeVariable<event_list<int>>(Dims{}, Shape{});
-  eventsCoord.values<event_list<int>>()[0] = {1, 2, 3, 4};
-
-  Dataset a;
-  {
-    a.setData("events", makeVariable<event_list<int>>(Dims{}, Shape{}));
-    a.coords().set(Dim::X, eventsCoord);
-  }
-
-  Dataset b;
-  {
-    b.setData("events", makeVariable<event_list<int>>(Dims{}, Shape{}));
-    b.coords().set(Dim::X, eventsCoord);
-  }
-
-  const auto d = merge(a, b);
-
-  EXPECT_EQ(a["events"], d["events"]);
-  EXPECT_EQ(b["events"], d["events"]);
-}
-
 TEST(MergeTest, non_matching_dense_data) {
   Dataset a;
   Dataset b;
@@ -77,24 +55,6 @@ TEST(MergeTest, non_matching_dense_data) {
             makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
   b.setData("data",
             makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{2, 3, 4, 5, 6}));
-  EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
-}
-
-TEST(MergeTest, non_matching_events_data) {
-  Dataset a;
-  {
-    auto data = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    data.values<event_list<int>>()[0] = {2, 3};
-    a.setData("events", data);
-  }
-
-  Dataset b;
-  {
-    auto data = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    data.values<event_list<int>>()[0] = {1, 2};
-    b.setData("events", data);
-  }
-
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
@@ -108,24 +68,6 @@ TEST(MergeTest, non_matching_dense_coords) {
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }
 
-TEST(MergeTest, non_matching_events_coords) {
-  Dataset a;
-  {
-    auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    coord.values<event_list<int>>()[0] = {2, 3};
-    a.coords().set(Dim::Y, coord);
-  }
-
-  Dataset b;
-  {
-    auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    coord.values<event_list<int>>()[0] = {1, 2};
-    b.coords().set(Dim::Y, coord);
-  }
-
-  EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
-}
-
 TEST(MergeTest, non_matching_dense_labels) {
   Dataset a;
   Dataset b;
@@ -133,28 +75,5 @@ TEST(MergeTest, non_matching_dense_labels) {
              makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{1, 2, 3, 4, 5}));
   b.setCoord(Dim("l"),
              makeVariable<int>(Dims{Dim::X}, Shape{5}, Values{2, 3, 4, 5, 6}));
-  EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
-}
-
-TEST(MergeTest, non_matching_events_labels) {
-  auto coord = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-  coord.values<event_list<int>>()[0] = {1, 2};
-
-  Dataset a;
-  {
-    auto label = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    label.values<event_list<int>>()[0] = {2, 3};
-    a.coords().set(Dim::Y, coord);
-    a.coords().set(Dim("l"), label);
-  }
-
-  Dataset b;
-  {
-    auto label = makeVariable<event_list<int>>(Dims{Dim::X}, Shape{1});
-    label.values<event_list<int>>()[0] = {1, 2};
-    b.coords().set(Dim::Y, coord);
-    b.coords().set(Dim("l"), label);
-  }
-
   EXPECT_THROW(auto d = merge(a, b), std::runtime_error);
 }

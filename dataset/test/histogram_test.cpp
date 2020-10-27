@@ -4,8 +4,10 @@
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
+#include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
+#include "scipp/variable/shape.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -74,21 +76,21 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   // Coord length X is 2 and data does not depend on X, but this is *not*
   // interpreted as a single-bin histogram.
   EXPECT_FALSE(is_histogram(DataArray(dataY, {{Dim::X, coordX}}), Dim::X));
-
-  const auto events = makeVariable<event_list<double>>(Dims{}, Shape{});
-  EXPECT_FALSE(is_histogram(DataArray(events, {{Dim::X, coordX}}), Dim::X));
 }
 
 DataArray make_1d_events_default_weights() {
-  DataArray events(makeVariable<double>(Dims{Dim::X}, Shape{3}, units::counts,
-                                        Values{1, 1, 1}, Variances{1, 1, 1}));
-  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
-  var.values<event_list<double>>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
-  var.values<event_list<double>>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
-  var.values<event_list<double>>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
-
-  events.coords().set(Dim::Y, var);
-  return events;
+  const auto y = makeVariable<double>(
+      Dims{Dim::Event}, Shape{22},
+      Values{1.5, 2.5, 3.5, 4.5, 5.5, 3.5, 4.5, 5.5, 6.5, 7.5, -1.0,
+             0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0, 4.0, 4.0, 4.0, 6.0});
+  const auto weights = broadcast(
+      makeVariable<double>(units::counts, Values{1}, Variances{1}), y.dims());
+  const DataArray table(weights, {{Dim::Y, y}});
+  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{3},
+      Values{std::pair{0, 5}, std::pair{5, 10}, std::pair{10, 22}});
+  auto var = buckets::from_constituents(indices, Dim::Event, table);
+  return DataArray(var, {});
 }
 
 TEST(HistogramTest, fail_edges_not_sorted) {
@@ -100,12 +102,16 @@ TEST(HistogramTest, fail_edges_not_sorted) {
 }
 
 auto make_single_events() {
+  const auto x =
+      makeVariable<double>(Dims{Dim::Event}, Shape{5}, Values{0, 1, 1, 2, 3});
+  const auto weights = broadcast(
+      makeVariable<double>(units::counts, Values{1}, Variances{1}), x.dims());
+  const DataArray table(weights, {{Dim::X, x}});
+  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Values{std::pair{0, 5}});
   Dataset events;
-  auto x = makeVariable<event_list<double>>(Dims{}, Shape{});
-  x.values<event_list<double>>()[0] = {0, 1, 1, 2, 3};
-  events.coords().set(Dim::X, x);
-  events.setData("events", makeVariable<double>(Dims{}, Shape{}, units::counts,
-                                                Values{1}, Variances{1}));
+  events.setData("events",
+                 buckets::from_constituents(indices, Dim::Event, table));
   return events;
 }
 
@@ -183,23 +189,6 @@ TEST(HistogramTest, dense) {
   EXPECT_EQ(dataset::histogram(dense, edges2), expected);
 }
 
-TEST(HistogramTest, drops_other_event_coords) {
-  auto events = make_1d_events_default_weights();
-  events.coords().set(Dim("pulse-time"), events.coords()[Dim::Y]);
-  std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
-  auto edges =
-      makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
-  auto hist = dataset::histogram(events, edges);
-  auto expected = make_expected(
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5}, units::counts,
-                           Values(ref.begin(), ref.end()),
-                           Variances(ref.begin(), ref.end())),
-      edges);
-
-  EXPECT_FALSE(hist.coords().contains(Dim("pulse=time")));
-  EXPECT_EQ(hist, expected);
-}
-
 TEST(HistogramTest, keeps_scalar_coords) {
   auto events = make_1d_events_default_weights();
   events.coords().set(Dim("scalar"), makeVariable<double>(Values{1.2}));
@@ -208,20 +197,26 @@ TEST(HistogramTest, keeps_scalar_coords) {
   EXPECT_TRUE(hist.coords().contains(Dim("scalar")));
 }
 
+DataArray make_1d_events() {
+  const auto y = makeVariable<double>(
+      Dims{Dim::Event}, Shape{22},
+      Values{1.5, 2.5, 3.5, 4.5, 5.5, 3.5, 4.5, 5.5, 6.5, 7.5, -1.0,
+             0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0, 4.0, 4.0, 4.0, 6.0});
+  const auto weights = makeVariable<double>(
+      y.dims(), units::counts,
+      Values{1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+      Variances{1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+  const DataArray table(weights, {{Dim::Y, y}});
+  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{3},
+      Values{std::pair{0, 5}, std::pair{5, 10}, std::pair{10, 22}});
+  auto var = buckets::from_constituents(indices, Dim::Event, table);
+  return DataArray(var, {});
+}
+
 TEST(HistogramTest, weight_lists) {
-  Variable data = makeVariable<event_list<double>>(Dimensions{{Dim::X, 3}},
-                                                   Values{}, Variances{});
-  data.values<event_list<double>>()[0] = {1, 1, 1, 2, 2};
-  data.values<event_list<double>>()[1] = {2, 2, 2, 2, 2};
-  data.values<event_list<double>>()[2] = {1, 1, 1, 1, 1, 1, 1,
-                                          1, 1, 1, 1, 1, 1};
-  data.variances<event_list<double>>()[0] = {1, 1, 1, 2, 2};
-  data.variances<event_list<double>>()[1] = {2, 2, 2, 2, 2};
-  data.variances<event_list<double>>()[2] = {1, 1, 1, 1, 1, 1, 1,
-                                             1, 1, 1, 1, 1, 1};
-  data.setUnit(units::counts);
-  auto events = make_1d_events_default_weights();
-  events.setData(data);
+  const auto events = make_1d_events();
   auto edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
   std::vector<double> ref{1, 1, 1, 2, 2, 0, 0, 2, 2, 2, 2, 3, 0, 3, 0};
@@ -230,7 +225,6 @@ TEST(HistogramTest, weight_lists) {
                            Values(ref.begin(), ref.end()),
                            Variances(ref.begin(), ref.end())),
       edges);
-
   EXPECT_EQ(dataset::histogram(events, edges), expected);
 }
 

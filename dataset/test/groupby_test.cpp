@@ -436,6 +436,7 @@ TEST_F(GroupbyWithBinsTest, dataset_variable) {
   EXPECT_THROW(groupby(d, var_bad, bins), except::DimensionError);
 }
 
+/*
 auto make_events_in() {
   auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{3});
   const auto &var_ = var.values<event_list<double>>();
@@ -486,7 +487,6 @@ TEST_F(GroupbyFlattenDefaultWeight, flatten_coord_only) {
   EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
 }
 
-/*
 TEST_F(GroupbyFlattenDefaultWeight, sum_realigned_coord_only) {
   const auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 10});
@@ -495,7 +495,6 @@ TEST_F(GroupbyFlattenDefaultWeight, sum_realigned_coord_only) {
   const auto summed = groupby(realigned, Dim("labels")).sum(Dim::Y);
   EXPECT_EQ(summed.unaligned(), expected);
 }
-*/
 
 TEST_F(GroupbyFlattenDefaultWeight, flatten_dataset_coord_only) {
   a.coords().erase(Dim::X);
@@ -572,7 +571,6 @@ TEST_F(GroupbyEventsWithMaskTest, flatten) {
   EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
 }
 
-/*
 TEST_F(GroupbyEventsWithMaskTest, sum_realigned) {
   const auto edges =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 10});

@@ -22,7 +22,7 @@ add_executable(
   dataset_view_test.cpp
   data_view_test.cpp
   # event_data_operations_consistency_test.cpp
-  event_test.cpp
+  # event_test.cpp
   except_test.cpp
   groupby_test.cpp
   histogram_test.cpp
@@ -31,7 +31,7 @@ add_executable(
   mean_test.cpp
   merge_test.cpp
   rebin_test.cpp
-  reduce_events_test.cpp
+  # reduce_events_test.cpp
   self_assignment_test.cpp
   shape_test.cpp
   size_of_test.cpp
@@ -40,7 +40,7 @@ add_executable(
   sort_test.cpp
   string_test.cpp
   sum_test.cpp
-  transform_events_and_dense_test.cpp
+  # transform_events_and_dense_test.cpp
   # unaligned_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})

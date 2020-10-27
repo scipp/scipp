@@ -18,14 +18,6 @@ TEST(MeanTest, unknown_dim_fail) {
   EXPECT_THROW(const auto view = mean(var, Dim::Z), except::DimensionError);
 }
 
-TEST(MeanTest, event_fail) {
-  const auto var =
-      makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2}, units::m);
-  EXPECT_THROW(const auto view = mean(var, Dim::X), except::DimensionError);
-  EXPECT_THROW(const auto view = mean(var, Dim::Y), except::TypeError);
-  EXPECT_THROW(const auto view = mean(var, Dim::Z), except::DimensionError);
-}
-
 TEST(MeanTest, basic) {
   const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                         units::m, Values{1.0, 2.0, 3.0, 4.0});

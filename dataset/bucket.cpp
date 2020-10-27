@@ -339,13 +339,11 @@ Variable from_constituents_impl(Variable &&indices, const Dim dim, T &&buffer) {
       std::move(indices), dim, std::move(buffer))};
 }
 
-Variable from_constituents(Variable &&indices, const Dim dim,
-                           DataArray &&buffer) {
+Variable from_constituents(Variable indices, const Dim dim, DataArray buffer) {
   return from_constituents_impl(std::move(indices), dim, std::move(buffer));
 }
 
-Variable from_constituents(Variable &&indices, const Dim dim,
-                           Dataset &&buffer) {
+Variable from_constituents(Variable indices, const Dim dim, Dataset buffer) {
   return from_constituents_impl(std::move(indices), dim, std::move(buffer));
 }
 

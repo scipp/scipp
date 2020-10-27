@@ -118,50 +118,6 @@ Dataset DatasetFactory3D::make(const bool randomMasks) {
 
 Dataset make_empty() { return Dataset(); }
 
-Dataset make_simple_events(std::initializer_list<double> values,
-                           std::string key) {
-  Dataset ds;
-  auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-  var.values<event_list<double>>()[0] = values;
-  ds.setData(key, var);
-  return ds;
-}
-
-Dataset make_events_with_coords_and_labels(
-    std::initializer_list<double> values,
-    std::initializer_list<double> coords_and_labels, std::string key) {
-  Dataset ds;
-
-  {
-    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.values<event_list<double>>()[0] = values;
-    ds.setData(key, var);
-  }
-
-  {
-    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.values<event_list<double>>()[0] = coords_and_labels;
-    ds.coords().set(Dim::X, var);
-  }
-
-  {
-    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.values<event_list<double>>()[0] = coords_and_labels;
-    ds.coords().set(Dim("l"), var);
-  }
-
-  return ds;
-}
-
-Dataset make_events_2d(std::initializer_list<double> values, std::string key) {
-  Dataset ds;
-  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
-  var.values<event_list<double>>()[0] = values;
-  var.values<event_list<double>>()[1] = values;
-  ds.setData(key, var);
-  return ds;
-}
-
 Dataset make_1d_masked() {
   Random random;
   Dataset ds;
