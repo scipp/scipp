@@ -65,7 +65,8 @@ class PlotController:
         # Store coordinate min and max limits
         self.xlims = {}
         # Store labels for sliders
-        self.labels = {}
+        self.coord_labels = {}
+        self.coord_units = {}
         # Record which variables are histograms along which dimension
         self.histograms = {}
         # Keep track if a coordinate with more than one dimension is present
@@ -74,7 +75,8 @@ class PlotController:
         for key in self.model.get_data_names():
 
             self.xlims[key] = {}
-            self.labels[key] = {}
+            self.coord_labels[key] = {}
+            self.coord_units[key] = {}
             self.histograms[key] = {}
 
             # Iterate through axes and collect dimensions
@@ -111,7 +113,8 @@ class PlotController:
                                                    values=self.xlims[key][dim],
                                                    unit=coord.unit)
 
-                self.labels[key][dim] = name_with_unit(var=coord)
+                self.coord_labels[key][dim] = name_with_unit(var=coord)
+                self.coord_units[key][dim] = name_with_unit(var=coord, name="")
 
         self.initialise_widgets(dim_to_shape[self.name])
         self.initialise_view()
@@ -128,6 +131,12 @@ class PlotController:
         if name is None:
             name = self.name
         return self.dim_to_shape[name][dim]
+
+    def get_coord_unit(self, dim, name=None):
+        if name is None:
+            name = self.name
+        return self.coord_units[name][dim]
+
 
     def initialise_widgets(self, dim_to_shape):
         """
@@ -159,7 +168,15 @@ class PlotController:
 
         # # self.widgets.initialise(parameters=parameters,
         # #                         multid_coord=self.multid_coord)
-        self.widgets.initialise(dim_to_shape)
+
+        
+        # for dim, bounds in self.widgets.get_slider_bounds().items():
+        # lower, upper = self.model.get_slice_coord_bounds(
+        #         self.name, owner_dim, slices[owner_dim])
+        #     self.widgets.update_slider_readout(change["owner"].index,
+        #         lower, upper, slices[owner_dim], owner_dim == self.multid_coord)
+        self.widgets.initialise(dim_to_shape, self.xlims[self.name],
+            self.coord_units[self.name])
 
     def initialise_view(self):
         """
@@ -200,7 +217,8 @@ class PlotController:
             "get_dim_shape": self.get_dim_shape,
             "lock_update_data": self.lock_update_data,
             "unlock_update_data": self.unlock_update_data,
-            "swap_axes": self.swap_axes
+            "swap_axes": self.swap_axes,
+            "get_coord_unit": self.get_coord_unit
         })
 
     def connect_view(self):
@@ -362,7 +380,7 @@ class PlotController:
                     for name in self.histograms
                 },
                 "dim": dim,
-                "label": self.labels[self.name][dim]
+                "label": self.coord_labels[self.name][dim]
             }
             # Safety check for log axes
             axparams[ax]["lims"] = check_log_limits(
@@ -446,7 +464,7 @@ class PlotController:
                             for name in self.histograms
                         },
                         "dim": self.profile_dim,
-                        "label": self.labels[self.name][self.profile_dim]
+                        "label": self.coord_labels[self.name][self.profile_dim]
                     }
                 }
 

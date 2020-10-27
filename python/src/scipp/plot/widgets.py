@@ -125,6 +125,7 @@ class PlotWidgets:
             setattr(self.slider[index], "dim", dim)
             setattr(self.slider[index], "index", index)
             # setattr(self.continuous_update[index], "index", index)
+            setattr(self.thickness_slider[index], "dim", dim)
             setattr(self.thickness_slider[index], "index", index)
             # setattr(self.profile_button[index], "index", index)
 
@@ -261,6 +262,7 @@ class PlotWidgets:
         owner.button_style = "info"
 
         self.slider[new_ind].dim = new_dim
+        self.thickness_slider[new_ind].dim = new_dim
 
         # Update the slider max and value.
         self.update_thickness_slider_range({new_ind: new_dim})
@@ -300,6 +302,7 @@ class PlotWidgets:
         #             self.profile_button[dim].disabled = False
         #             self.continuous_update[dim].disabled = False
         # owner.old_value = owner.value
+        self.unit_labels[new_ind].value = self.interface["get_coord_unit"](new_dim)
 
         self.interface["swap_axes"](new_ind, old_dim, new_dim)
         self.interface["update_axes"]()
@@ -327,7 +330,7 @@ class PlotWidgets:
         index = change["owner"].index
         self.update_slider_range(index, change["new"], change["owner"].max - 1,
             set_value=False)
-        self.interface["update_data"]()
+        self.interface["update_data"](change)
 
 
     def update_thickness_slider_range(self, inds_and_dims):
@@ -390,6 +393,7 @@ class PlotWidgets:
         self.interface["lock_update_data"] = callbacks["lock_update_data"]
         self.interface["unlock_update_data"] = callbacks["unlock_update_data"]
         self.interface["swap_axes"] = callbacks["swap_axes"]
+        self.interface["get_coord_unit"] = callbacks["get_coord_unit"]
 
         for name in self.mask_checkboxes:
             for m in self.mask_checkboxes[name]:
@@ -397,7 +401,7 @@ class PlotWidgets:
                                                       names="value")
 
     # def initialise(self, parameters, multid_coord=None):
-    def initialise(self, dim_to_shape):
+    def initialise(self, dim_to_shape, xlims, coord_units):
         """
         Initialise widget parameters once the `model`, `view` and `controller`
         have been created, since, for instance, slider limits depend on the
@@ -405,10 +409,20 @@ class PlotWidgets:
         created.
         """
         for index in self.thickness_slider:
-            nmax = dim_to_shape[self.index_to_dim[index]]
+            dim = self.index_to_dim[index]
+            nmax = dim_to_shape[dim]
             self.thickness_slider[index].max = nmax
             self.thickness_slider[index].value = nmax
             self.update_slider_range(index, nmax, nmax - 1)
+
+            lims = xlims[dim].values
+            self.update_slider_readout(
+                              index,
+                              lims[0],
+                              lims[1],
+                              [0, nmax - 1])
+
+            self.unit_labels[index].value = coord_units[dim]
         # for dim, item in parameters.items():
         #     # TODO: for now we prevent a ragged coord from being along a slider
         #     # dimension, as it causes conceptual issues with respect to
