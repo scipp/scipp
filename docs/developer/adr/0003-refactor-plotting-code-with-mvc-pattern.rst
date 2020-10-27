@@ -60,13 +60,6 @@ Moving the slider in a 2D plot:
   :width: 640
   :alt: Moving the slider in a 2D plot
 
-In addition, we are now using the ``ipympl`` matplotlib backend, where figures are now also ``ipywidgets`` and can be ordered in containers alongside other widgets, which unifies the matplotlib figures with the slider widgets and the ``pythreejs`` scene for 3d plots.
-This is also currently the only interactive matplotlib backend that works on JupyterLab.
-
-Finally, it was decided to make a copy of the entire input data to make sure that interactive plots are not broken by in-place operations in cells further down the notebook.
-This leads to larger memory use.
-Note that the memory can be released by converting the plots to static plots using the ``as_static()`` method of the ``SciPlot`` object.
-
 Consequences
 ------------
 
@@ -78,5 +71,3 @@ Positive:
 
 Negative:
 ~~~~~~~~~
-
-- Making a copy of the data for each plot leads to larger memory use.
