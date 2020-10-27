@@ -282,8 +282,9 @@ Variable histogram(const VariableConstView &data,
     spans = VariableConstView(merged);
   }
   return variable::transform_subspan<std::tuple<
-      args<double, double, double, double>, args<double, float, double, double>,
-      args<double, float, double, float>, args<double, double, float, double>>>(
+      args<float, double, float, double>, args<double, double, double, double>,
+      args<double, float, double, double>, args<double, float, double, float>,
+      args<double, double, float, double>>>(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
       subspan_view(buffer.coords()[hist_dim], dim, spans),
       subspan_view(buffer.data(), dim, spans), binEdges, element::histogram);
