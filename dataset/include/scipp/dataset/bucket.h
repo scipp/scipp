@@ -6,10 +6,25 @@
 
 #include "scipp/dataset/dataset.h"
 
-namespace scipp::dataset::buckets {
+namespace scipp::dataset {
 
-[[nodiscard]] SCIPP_DATASET_EXPORT std::tuple<Variable, scipp::index>
-sizes_to_begin(const VariableConstView &sizes);
+SCIPP_DATASET_EXPORT void copy_slices(const DataArrayConstView &src,
+                                      const DataArrayView &dst, const Dim dim,
+                                      const VariableConstView &srcIndices,
+                                      const VariableConstView &dstIndices);
+SCIPP_DATASET_EXPORT void copy_slices(const DatasetConstView &src,
+                                      const DatasetView &dst, const Dim dim,
+                                      const VariableConstView &srcIndices,
+                                      const VariableConstView &dstIndices);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray resize_default_init(
+    const DataArrayConstView &parent, const Dim dim, const scipp::index size);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset resize_default_init(
+    const DatasetConstView &parent, const Dim dim, const scipp::index size);
+
+} // namespace scipp::dataset
+
+namespace scipp::dataset::buckets {
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 concatenate(const VariableConstView &var0, const VariableConstView &var1);
@@ -33,10 +48,13 @@ void scale(const DataArrayView &data, const DataArrayConstView &histogram);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable sum(const VariableConstView &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 sum(const DataArrayConstView &data);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset sum(const DatasetConstView &data);
 
-[[nodiscard]] Variable from_constituents(Variable &&indices, const Dim dim,
-                                         Variable &&buffer);
-[[nodiscard]] Variable from_constituents(Variable &&indices, const Dim dim,
-                                         DataArray &&buffer);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+from_constituents(Variable &&indices, const Dim dim, Variable &&buffer);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+from_constituents(Variable &&indices, const Dim dim, DataArray &&buffer);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+from_constituents(Variable &&indices, const Dim dim, Dataset &&buffer);
 
 } // namespace scipp::dataset::buckets

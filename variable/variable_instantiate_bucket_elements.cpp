@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/bucket_variable.tcc"
+#include "scipp/variable/buckets.h"
 
 namespace scipp::variable {
 

@@ -7,7 +7,6 @@
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/shape.h"
-#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable.h"
 
@@ -47,10 +46,10 @@ template <class T> void bind_buckets(pybind11::module &m) {
         } else {
           throw std::runtime_error("`end` given but not `begin`");
         }
-        return Variable(std::make_unique<variable::DataModel<bucket<T>>>(
+        return dataset::buckets::from_constituents(
             makeVariable<std::pair<scipp::index, scipp::index>>(
                 dims, Values(std::move(indices))),
-            dim, T(data)));
+            dim, T(data));
       },
       py::arg("begin") = py::none(), py::arg("end") = py::none(),
       py::arg("dim"), py::arg("data")); // do not release GIL since using
@@ -109,6 +108,9 @@ void init_buckets(py::module &m) {
   buckets.def(
       "sum",
       [](const DataArrayConstView &x) { return dataset::buckets::sum(x); },
+      py::call_guard<py::gil_scoped_release>());
+  buckets.def(
+      "sum", [](const DatasetConstView &x) { return dataset::buckets::sum(x); },
       py::call_guard<py::gil_scoped_release>());
   buckets.def("get_buffer", [](py::object &obj) -> py::object {
     auto &var = obj.cast<const VariableView &>();

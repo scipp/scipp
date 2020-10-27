@@ -8,8 +8,10 @@
 #include "scipp/core/bucket_array_view.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/util.h"
 
 namespace scipp::variable {
 
@@ -129,13 +131,17 @@ bool DataModel<bucket<T>>::equals(const VariableConstView &a,
 }
 
 template <class T>
-void DataModel<bucket<T>>::copy(const VariableConstView &,
-                                const VariableView &) const {
-  // Need to rethink the entire mechanism of shape-changing operations such as
-  // `concatenate` since we cannot just copy indices but need to manage the
-  // buffer as well.
-  throw std::runtime_error(
-      "Shape-related operations for bucketed data are not supported yet.");
+void DataModel<bucket<T>>::copy(const VariableConstView &src,
+                                const VariableView &dst) const {
+  const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
+  const auto [begin0, end0] = unzip(indices0);
+  const auto sizes1 = end0 - begin0;
+  auto [begin1, size1] = sizes_to_begin(sizes1);
+  auto indices1 = zip(begin1, begin1 + sizes1);
+  auto buffer1 = resize_default_init(buffer0, dim0, size1);
+  copy_slices(buffer0, buffer1, dim0, indices0, indices1);
+  dst.replace_model(
+      DataModel<bucket<T>>{std::move(indices1), dim0, std::move(buffer1)});
 }
 
 template <class T>
