@@ -27,15 +27,14 @@ constexpr auto plus_equals =
 constexpr auto minus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};
 
-constexpr auto mul_inplace_types =
-    arg_list<double, float, int64_t, int32_t, std::tuple<double, float>,
-             std::tuple<float, double>, std::tuple<int64_t, int32_t>,
-             std::tuple<int32_t, int64_t>, std::tuple<double, int64_t>,
-             std::tuple<double, int32_t>, std::tuple<float, int64_t>,
-             std::tuple<float, int32_t>, std::tuple<Eigen::Vector3d, double>,
-             std::tuple<Eigen::Vector3d, float>,
-             std::tuple<Eigen::Vector3d, int64_t>,
-             std::tuple<Eigen::Vector3d, int32_t>>;
+constexpr auto mul_inplace_types = arg_list<
+    double, float, int64_t, int32_t, std::tuple<double, float>,
+    std::tuple<float, double>, std::tuple<int64_t, int32_t>,
+    std::tuple<int64_t, bool>, std::tuple<int32_t, int64_t>,
+    std::tuple<double, int64_t>, std::tuple<double, int32_t>,
+    std::tuple<float, int64_t>, std::tuple<float, int32_t>,
+    std::tuple<Eigen::Vector3d, double>, std::tuple<Eigen::Vector3d, float>,
+    std::tuple<Eigen::Vector3d, int64_t>, std::tuple<Eigen::Vector3d, int32_t>>;
 
 // Note that we do *not* support any integer type as left-hand-side, to match
 // Python 3 and numpy "truediv" behavior. If "floordiv" is required it should be

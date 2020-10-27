@@ -33,6 +33,19 @@ TEST_F(DataArrayBucketTest, concatenate_dim_1d) {
   EXPECT_EQ(buckets::concatenate(var, Dim::Y), expected);
 }
 
+TEST_F(DataArrayBucketTest, concatenate_dim_1d_masked) {
+  const auto y = makeVariable<double>(dims);
+  const auto scalar = makeVariable<double>(Values{1.2});
+  const auto mask = makeVariable<bool>(dims, Values{true, false});
+  const auto scalar_mask = makeVariable<bool>(Values{false});
+  DataArray a(var, {{Dim::Y, y}, {Dim("scalar"), scalar}},
+              {{"mask", mask}, {"scalar", scalar_mask}});
+  auto expected = copy(a.slice({Dim::Y, 1}));
+  expected.coords().erase(Dim::Y);
+  expected.masks().erase("mask");
+  EXPECT_EQ(buckets::concatenate(a, Dim::Y), expected);
+}
+
 TEST(DataArrayBucket2dTest, concatenate_dim_2d) {
   using Model = variable::DataModel<bucket<DataArray>>;
   Variable indicesZY = makeVariable<std::pair<scipp::index, scipp::index>>(
