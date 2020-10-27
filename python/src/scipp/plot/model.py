@@ -248,7 +248,7 @@ class PlotModel:
     def _slice_or_rebin(self, array, dim, dim_slice):
         """
         The convetion is:
-        - if the slider thickness is zero, us index-based slicing
+        - if the slider thickness is zero, use index-based slicing
         - otherwise, use `rebin`.
         """
         deltax = dim_slice["thickness"]

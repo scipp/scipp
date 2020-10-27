@@ -110,8 +110,9 @@ def plot(*args, **kwargs):
     :type figsize: tuple, optional
 
     :param filename: If specified, the figure will be saved to disk. Possible
-        file extensions are `.jpg`, `.png` and `.pdf`.
-        Defaults to `None`.
+        file extensions are `.jpg`, `.png` and `.pdf`. The default directory
+        for writing the file is the same as the directory where the script or
+        notebook is running. Defaults to `None`.
     :type filename: str, optional
 
     :param grid: Show grid on axes if `True`. Defaults to `False`.
