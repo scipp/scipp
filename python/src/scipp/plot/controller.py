@@ -43,6 +43,7 @@ class PlotController:
         self.profile = profile
         self.view = view
 
+        self.axes = axes
         self.name = name
         self.dim_to_shape = dim_to_shape
         self.update_data_lock = False
@@ -54,7 +55,7 @@ class PlotController:
         self.vmax = vmax
         self.norm = norm
 
-        self.scale = {dim: "linear" for dim in axes.values()}
+        self.scale = {dim: "linear" for dim in self.axes.values()}
         if scale is not None:
             for dim, item in scale.items():
                 self.scale[sc.Dim(dim)] = item
@@ -77,7 +78,7 @@ class PlotController:
             self.histograms[key] = {}
 
             # Iterate through axes and collect dimensions
-            for dim in axes.values():
+            for dim in self.axes.values():
 
                 coord = self.model.get_data_coord(name, dim)
 
@@ -112,19 +113,21 @@ class PlotController:
 
                 self.labels[key][dim] = name_with_unit(var=coord)
 
-        # self.initialise_widgets(dim_to_shape[self.name])
-        self.initialise_view(axes)
+        self.initialise_widgets(dim_to_shape[self.name])
+        self.initialise_view()
         self.initialise_model()
         if self.profile is not None:
-            self.initialise_profile(axes)
+            self.initialise_profile()
 
         self.connect_widgets()
         self.connect_view()
         if self.panel is not None:
             self.connect_panel()
 
-    def get_dim_shape(self, dim):
-        return self.dim_to_shape[dim]
+    def get_dim_shape(self, dim, name=None):
+        if name is None:
+            name = self.name
+        return self.dim_to_shape[name][dim]
 
     def initialise_widgets(self, dim_to_shape):
         """
@@ -132,49 +135,50 @@ class PlotController:
         have been created.
         Update slider labels and ranges as well as readout values.
         """
-        parameters = {}
-        for dim in self.labels[self.name]:
+        # parameters = {}
+        # for dim in self.labels[self.name]:
 
-            # Dimension labels
-            parameters[dim] = {"labels": self.labels[self.name][dim]}
+        #     # Dimension labels
+        #     parameters[dim] = {"labels": self.labels[self.name][dim]}
 
-            # Dimension slider
-            parameters[dim]["slider"] = dim_to_shape[dim]
+        #     # Dimension slider
+        #     parameters[dim]["slider"] = dim_to_shape[dim]
 
-            # Thickness slider
-            dim_xlims = self.xlims[self.name][dim].values
-            dx = np.abs(dim_xlims[1] - dim_xlims[0])
-            parameters[dim]["thickness_slider"] = dx
+        #     # Thickness slider
+        #     dim_xlims = self.xlims[self.name][dim].values
+        #     dx = np.abs(dim_xlims[1] - dim_xlims[0])
+        #     parameters[dim]["thickness_slider"] = dx
 
-            # Slider readouts
-            ind = dim_to_shape[dim] // 2
-            left, centre, right = self.model.get_bin_coord_values(
-                self.name, dim, ind)
-            parameters[dim]["slider_readout"] = [
-                dim, ind, left, centre, right, self.multid_coord
-            ]
+        #     # Slider readouts
+        #     ind = dim_to_shape[dim] // 2
+        #     left, centre, right = self.model.get_bin_coord_values(
+        #         self.name, dim, ind)
+        #     parameters[dim]["slider_readout"] = [
+        #         dim, ind, left, centre, right, self.multid_coord
+        #     ]
 
-        self.widgets.initialise(parameters=parameters,
-                                multid_coord=self.multid_coord)
+        # # self.widgets.initialise(parameters=parameters,
+        # #                         multid_coord=self.multid_coord)
+        self.widgets.initialise(dim_to_shape)
 
-    def initialise_view(self, axes):
+    def initialise_view(self):
         """
         Send axformatter information to `view`.
         """
         self.view.initialise(
             axformatters={
                 dim: self.model.get_axformatter(self.name, dim)
-                for dim in axes.values()
+                for dim in self.axes.values()
             })
 
-    def initialise_profile(self, axes):
+    def initialise_profile(self):
         """
         Send axformatter information to `profile`.
         """
         self.profile.initialise(
             axformatters={
                 dim: self.model.get_axformatter(self.name, dim)
-                for dim in axes.values()
+                for dim in self.axes.values()
             })
 
     def initialise_model(self):
@@ -195,7 +199,8 @@ class PlotController:
             "toggle_mask": self.toggle_mask,
             "get_dim_shape": self.get_dim_shape,
             "lock_update_data": self.lock_update_data,
-            "unlock_update_data": self.unlock_update_data
+            "unlock_update_data": self.unlock_update_data,
+            "swap_axes": self.swap_axes
         })
 
     def connect_view(self):
@@ -240,17 +245,27 @@ class PlotController:
                                        vmax=vmax,
                                        mask_info=self.get_masks_info())
 
+    def swap_axes(self, index, old_dim, new_dim):
+        print("before", self.axes)
+        # Find position of new dim in axes values
+        pos = list(self.axes.values()).index(new_dim)
+        key = list(self.axes.keys())[pos]
+        self.axes[key] = old_dim
+        self.axes[index] = new_dim
+        print("after", self.axes)
+
     def update_axes(self, change=None):
         """
         This function is called when a dimension that is displayed along a
         given axis is changed. This happens for instance when we want to
         flip/transpose a 2D image, or display a new dimension along the x-axis
         in a 1D plot.
-        This functions gather the relevant parameters about the axes currently
+        This function gathers the relevant parameters about the axes currently
         selected for display, and then offloads the computation of the new
         state to the model. If then gets the updated data back from the model
         and sends it over to the view for display.
         """
+
         self.axparams = self._get_axes_parameters()
         other_params = self.model.update_axes(self.axparams)
         if other_params is not None:
@@ -275,29 +290,31 @@ class PlotController:
         if self.update_data_lock:
             return
 
-        active_sliders = self.widgets.get_active_slider_values()
+        # slider_params = self.widgets.get_slider_dims_and_values()
+        slices = self.widgets.get_slider_bounds()
+        print(slices)
 
         if change is not None:
             owner_dim = change["owner"].dim
-
             # Update slider readout label
-            ind = active_sliders[owner_dim]
-            left, mid, right = self.model.get_bin_coord_values(
-                self.name, owner_dim, ind)
-            self.widgets.update_slider_readout(owner_dim, ind, left, mid,
-                                               right, self.multid_coord)
+            # ind = active_sliders[owner_dim]
+            lower, upper = self.model.get_slice_coord_bounds(
+                self.name, owner_dim, slices[owner_dim])
+            self.widgets.update_slider_readout(change["owner"].index,
+                lower, upper, slices[owner_dim], owner_dim == self.multid_coord)
 
-        slices = {}
+        # slices = {}
         info = {"slice_label": ""}
-        # Slice along dimensions with active sliders
-        for dim, val in active_sliders.items():
-            slices[dim] = self._make_slice_dict(val, dim)
-            info["slice_label"] = "{},{}[{}]".format(
-                info["slice_label"], dim,
-                self.widgets.get_slice_bounds_as_string(
-                    dim, val, slices[dim]["bin_left"],
-                    slices[dim]["bin_centre"], slices[dim]["bin_right"],
-                    self.multid_coord))
+        # # Slice along dimensions with active sliders
+        # for dim, [lower, upper] in slider_bounds.items():
+        #     # slices[dim] = self._make_slice_dict(val, key, dim)
+        #     slices[dim] = self.widgets.get_slider_bounds()
+        #     info["slice_label"] = "{},{}[{}]".format(
+        #         info["slice_label"], dim,
+        #         self.widgets.get_slice_bounds_as_string(
+        #             val, key, slices[dim]["bin_left"],
+        #             slices[dim]["bin_centre"], slices[dim]["bin_right"],
+        #             dim == self.multid_coord))
         info["slice_label"] = info["slice_label"][1:]
 
         new_values = self.model.update_data(slices,
@@ -327,15 +344,17 @@ class PlotController:
         axes that are displayed on the plots.
         """
         axparams = {}
-        for dim, but_val in self.widgets.get_buttons_and_disabled_sliders(
-        ).items():
+        # for dim, but_val in self.widgets.get_buttons_and_disabled_sliders(
+        # ).items():
+        for ax in set(['x', 'y', 'z']) & set(self.axes.keys()):
+            dim = self.axes[ax]
             xmin = np.Inf
             xmax = np.NINF
             for name in self.xlims:
                 xlims = self.xlims[name][dim].values
                 xmin = min(xmin, xlims[0])
                 xmax = max(xmax, xlims[1])
-            axparams[but_val] = {
+            axparams[ax] = {
                 "lims": [xmin, xmax],
                 "scale": self.scale[dim],
                 "hist": {
@@ -346,9 +365,9 @@ class PlotController:
                 "label": self.labels[self.name][dim]
             }
             # Safety check for log axes
-            axparams[but_val]["lims"] = check_log_limits(
-                lims=axparams[but_val]["lims"],
-                scale=axparams[but_val]["scale"])
+            axparams[ax]["lims"] = check_log_limits(
+                lims=axparams[ax]["lims"],
+                scale=axparams[ax]["scale"])
 
         return axparams
 
@@ -499,7 +518,7 @@ class PlotController:
         """
         self.profile.toggle_hover_visibility(value)
 
-    def _make_slice_dict(self, ind, dim):
+    def _make_slice_dict(self, ind, key, dim):
         """
         Create a dict of parameters with enough information for the model to
         carry out slicing along slider dimensions.
@@ -511,5 +530,5 @@ class PlotController:
             "bin_left": left,
             "bin_centre": centre,
             "bin_right": right,
-            "thickness": self.widgets.get_thickness_slider_value(dim)
+            "thickness": self.widgets.get_thickness_slider_value(key)
         }
