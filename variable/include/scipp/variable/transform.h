@@ -142,21 +142,21 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
 
 template <class Op, class Out, class... Ts>
 static void transform_elements(Op op, Out &&out, Ts &&... other) {
-    auto run = [&](auto indices, const auto &end) {
-      for (; indices != end; indices.increment())
-        call(op, indices, out, other...);
-    };
-    const auto begin =
-        core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
-    auto run_parallel = [&](const auto &range) {
-      auto indices = begin;
-      indices.set_index(range.begin());
-      auto end = begin;
-      end.set_index(range.end());
-      run(indices, end);
-    };
-    core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
-                                 run_parallel);
+  auto run = [&](auto indices, const auto &end) {
+    for (; indices != end; indices.increment())
+      call(op, indices, out, other...);
+  };
+  const auto begin =
+      core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
+  auto run_parallel = [&](const auto &range) {
+    auto indices = begin;
+    indices.set_index(range.begin());
+    auto end = begin;
+    end.set_index(range.end());
+    run(indices, end);
+  };
+  core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
+                               run_parallel);
 }
 
 template <class T>
