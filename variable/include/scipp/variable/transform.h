@@ -291,6 +291,8 @@ template <class Op> struct wrap_eigen : Op {
       // returned from the operator. One way to identify this is using
       // address-sanitizer, which finds a `stack-use-after-scope`.
       return Op::template operator()<Ts...>(std::forward<Ts>(args)...);
+    else if constexpr ((std::is_same_v<std::decay_t<Ts>, units::Unit> && ...))
+      return Op::template operator()(args...); // OSX overload resolution issue
     else
       return Op::template operator()(std::forward<Ts>(args)...);
   }
