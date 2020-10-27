@@ -10,6 +10,7 @@
 #include "scipp/core/tag_util.h"
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/buckets.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
@@ -51,9 +52,10 @@ auto shrink(const Dimensions &dims) {
   return shrunk;
 }
 
-Variable bin_sizes(const VariableConstView &indices,
+/// `dims` provides dimensions of pre-existing binning, `edges` define
+/// additional dimensions.
+Variable bin_sizes(const VariableConstView &indices, Dimensions dims,
                    const std::vector<VariableConstView> &edges) {
-  Dimensions dims;
   for (const auto &item : edges)
     dims = merge(dims, shrink(item.dims()));
   Variable sizes = makeVariable<scipp::index>(dims);
@@ -68,7 +70,7 @@ template <class T> struct Bin {
   static auto apply(const VariableConstView &var,
                     const VariableConstView &indices,
                     const VariableConstView &sizes) {
-    auto [begin, total_size] = buckets::sizes_to_begin(sizes);
+    auto [begin, total_size] = sizes_to_begin(sizes);
     auto dims = var.dims();
     // Output may be smaller since values outside bins are dropped.
     dims.resize(dims.inner(), total_size);
@@ -159,10 +161,12 @@ DataArray sortby(const DataArrayConstView &array, const Dim dim) {
   return sortby_impl(array, dim);
 }
 
-DataArray bucketby(const DataArrayConstView &array,
-                   const std::vector<VariableConstView> &edges) {
-  Variable indices;
-  Dim bucket_dim = Dim::Invalid;
+namespace {
+DataArray bucketby_impl(const DataArrayConstView &array,
+                        const std::vector<VariableConstView> &edges,
+                        Variable indices = Variable{},
+                        Dim bucket_dim = Dim::Invalid,
+                        const Dimensions &dims = Dimensions{}) {
   for (const auto &edge : edges) {
     const auto coord = array.coords()[edge.dims().inner()];
     const auto inner_indices = bin_index(coord, edge);
@@ -187,8 +191,8 @@ DataArray bucketby(const DataArrayConstView &array,
     }
     bucket_dim = coord.dims().inner();
   }
-  const auto sizes = bin_sizes(indices, edges);
-  const auto [begin, total_size] = buckets::sizes_to_begin(sizes);
+  const auto sizes = bin_sizes(indices, dims, edges);
+  const auto [begin, total_size] = sizes_to_begin(sizes);
   const auto end = begin + sizes;
   auto binned = bin(array, indices, sizes);
   std::map<Dim, Variable> coords;
@@ -197,6 +201,39 @@ DataArray bucketby(const DataArrayConstView &array,
   return {buckets::from_constituents(zip(begin, end), bucket_dim,
                                      std::move(binned)),
           std::move(coords)};
+}
+} // namespace
+
+DataArray bucketby(const DataArrayConstView &array,
+                   const std::vector<VariableConstView> &edges) {
+  if (array.dtype() == dtype<bucket<DataArray>>) {
+    // TODO The need for this check may be an indicator that we should support
+    // adding another bucketed dimension via a separate function instead of
+    // having this dual-purpose `bucketby`.
+    for (const auto &edge : edges)
+      if (array.dims().contains(edge.dims().inner()))
+        throw std::runtime_error(
+            "Recursive buckets cannot be created with bucketby.");
+    const auto &[begin_end, dim, buffer] =
+        array.data().constituents<bucket<DataArray>>();
+    auto indices =
+        makeVariable<scipp::index>(Dims{dim}, Shape{buffer.dims()[dim]});
+    indices -= 1 * units::one;
+    const auto indices_ = indices.values<scipp::index>().as_span();
+    scipp::index current = 0;
+    for (const auto [begin, end] :
+         begin_end.values<std::pair<scipp::index, scipp::index>>().as_span()) {
+      for (scipp::index i = begin; i < end; ++i)
+        indices_[i] = current;
+      ++current;
+    }
+    auto bucketed =
+        bucketby_impl(buffer, edges, std::move(indices), dim, begin_end.dims());
+    copy_metadata(array, bucketed);
+    return bucketed;
+  } else {
+    return bucketby_impl(array, edges);
+  }
 }
 
 } // namespace scipp::dataset

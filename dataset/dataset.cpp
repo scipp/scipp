@@ -821,4 +821,11 @@ void union_or_in_place(const MasksView &currentMasks,
     }
   }
 }
+
+void copy_metadata(const DataArrayConstView &a, const DataArrayView &b) {
+  copy_items(a.aligned_coords(), b.aligned_coords());
+  copy_items(a.masks(), b.masks());
+  copy_items(a.unaligned_coords(), b.unaligned_coords());
+}
+
 } // namespace scipp::dataset

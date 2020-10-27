@@ -216,6 +216,8 @@ class SciPlot:
         """
         Save plot to file.
         Possible file extensions are `.jpg`, `.png` and `.pdf`.
+        The default directory for writing the file is the same as the
+        directory where the script or notebook is running.
         """
         self.view.savefig(filename=filename)
 

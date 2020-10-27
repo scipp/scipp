@@ -6,7 +6,6 @@
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/bucket.h"
-#include "scipp/core/element/arg_list.h"
 #include "scipp/core/element/event_operations.h"
 #include "scipp/core/element/histogram.h"
 #include "scipp/core/except.h"
@@ -16,6 +15,7 @@
 #include "scipp/dataset/histogram.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/buckets.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
@@ -27,62 +27,22 @@
 #include "../variable/operations_common.h"
 #include "dataset_operations_common.h"
 
-namespace scipp::dataset::buckets {
-
-std::tuple<Variable, scipp::index>
-sizes_to_begin(const VariableConstView &sizes) {
-  Variable begin(sizes);
-  scipp::index size = 0;
-  for (auto &i : begin.values<scipp::index>()) {
-    const auto old_size = size;
-    size += i;
-    i = old_size;
-  }
-  return {begin, size};
-}
-
+namespace scipp::dataset {
 namespace {
-
-constexpr auto copy_spans = overloaded{
-    core::element::arg_list<std::tuple<span<double>, span<const double>>>,
-    core::transform_flags::expect_all_or_none_have_variance,
-    [](units::Unit &a, const units::Unit &b) { core::expect::equals(a, b); },
-    [](auto &dst, const auto &src) {
-      if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(dst)>>) {
-        std::copy(src.value.begin(), src.value.end(), dst.value.begin());
-        std::copy(src.variance.begin(), src.variance.end(),
-                  dst.variance.begin());
-      } else {
-        std::copy(src.begin(), src.end(), dst.begin());
-      }
-    }};
-
-namespace scale_detail {
-template <class Out, class Coord, class Weight, class Edge>
-using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
-                        span<const Edge>>;
-}
-
-void copy(const VariableConstView &src, const VariableView &dst, const Dim dim,
-          const VariableConstView &srcIndices,
-          const VariableConstView &dstIndices) {
-  transform_in_place(subspan_view(dst, dim, dstIndices),
-                     subspan_view(src, dim, srcIndices), copy_spans);
-}
-
 constexpr auto copy_or_match = [](const auto &a, const auto &b, const Dim dim,
                                   const VariableConstView &srcIndices,
                                   const VariableConstView &dstIndices) {
   if (a.dims().contains(dim))
-    copy(a, b, dim, srcIndices, dstIndices);
+    copy_slices(a, b, dim, srcIndices, dstIndices);
   else
     core::expect::equals(a, b);
 };
+} // namespace
 
-void copy(const DataArrayConstView &src, const DataArrayView &dst,
-          const Dim dim, const VariableConstView &srcIndices,
-          const VariableConstView &dstIndices) {
-  copy(src.data(), dst.data(), dim, srcIndices, dstIndices);
+void copy_slices(const DataArrayConstView &src, const DataArrayView &dst,
+                 const Dim dim, const VariableConstView &srcIndices,
+                 const VariableConstView &dstIndices) {
+  copy_slices(src.data(), dst.data(), dim, srcIndices, dstIndices);
   core::expect::sizeMatches(src.coords(), dst.coords());
   core::expect::sizeMatches(src.masks(), dst.masks());
   for (const auto &[name, coord] : src.coords())
@@ -91,9 +51,9 @@ void copy(const DataArrayConstView &src, const DataArrayView &dst,
     copy_or_match(mask, dst.masks()[name], dim, srcIndices, dstIndices);
 }
 
-void copy(const DatasetConstView &src, const DatasetView &dst, const Dim dim,
-          const VariableConstView &srcIndices,
-          const VariableConstView &dstIndices) {
+void copy_slices(const DatasetConstView &src, const DatasetView &dst,
+                 const Dim dim, const VariableConstView &srcIndices,
+                 const VariableConstView &dstIndices) {
   for (const auto &[name, var] : src.coords())
     copy_or_match(var, dst.coords()[name], dim, srcIndices, dstIndices);
   core::expect::sizeMatches(src.coords(), dst.coords());
@@ -110,6 +70,7 @@ void copy(const DatasetConstView &src, const DatasetView &dst, const Dim dim,
   }
 }
 
+namespace {
 constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
                                    const scipp::index size) {
   auto dims = var.dims();
@@ -122,17 +83,13 @@ constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
                                                   var.hasVariances())
              : Variable(var);
 };
-
-auto resize_buffer(const VariableConstView &parent, const Dim dim,
-                   const scipp::index size) {
-  return copy_or_resize(parent, dim, size);
 }
 
 // TODO These functions are an unfortunate near-duplicate of `resize`. However,
 // the latter drops coords along the resized dimension. Is there a way to unify
 // this? Can the need to drop coords in resize be avoided?
-auto resize_buffer(const DataArrayConstView &parent, const Dim dim,
-                   const scipp::index size) {
+DataArray resize_default_init(const DataArrayConstView &parent, const Dim dim,
+                              const scipp::index size) {
   DataArray buffer(copy_or_resize(parent.data(), dim, size));
   for (const auto &[name, var] : parent.aligned_coords())
     buffer.aligned_coords().set(name, copy_or_resize(var, dim, size));
@@ -143,8 +100,8 @@ auto resize_buffer(const DataArrayConstView &parent, const Dim dim,
   return buffer;
 }
 
-auto resize_buffer(const DatasetConstView &parent, const Dim dim,
-                   const scipp::index size) {
+Dataset resize_default_init(const DatasetConstView &parent, const Dim dim,
+                            const scipp::index size) {
   Dataset buffer;
   for (const auto &[name, var] : parent.coords())
     buffer.coords().set(name, copy_or_resize(var, dim, size));
@@ -157,6 +114,10 @@ auto resize_buffer(const DatasetConstView &parent, const Dim dim,
   }
   return buffer;
 }
+} // namespace scipp::dataset
+
+namespace scipp::dataset::buckets {
+namespace {
 
 template <class T>
 auto combine(const VariableConstView &var0, const VariableConstView &var1) {
@@ -170,9 +131,9 @@ auto combine(const VariableConstView &var0, const VariableConstView &var1) {
   const auto sizes = sizes0 + sizes1;
   const auto [begin, size] = sizes_to_begin(sizes);
   const auto end = begin + sizes;
-  auto buffer = resize_buffer(buffer0, dim, size);
-  copy(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
-  copy(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
+  auto buffer = resize_default_init(buffer0, dim, size);
+  copy_slices(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
+  copy_slices(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
   return variable::DataModel<bucket<T>>{zip(begin, end), dim,
                                         std::move(buffer)};
 }
@@ -264,11 +225,14 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
   // size, even if `x` is a slice and only subsections of the buffer are needed.
   auto out = variable::variableFactory().create(
       function.dtype(), buffer.dims(), units::one, function.hasVariances());
+  // TODO "bug" here: subspan_view creates a new variable, so out unit not set!
   transform_in_place(subspan_view(out, dim, indices),
                      subspan_view(buffer.coords()[hist_dim], dim, indices),
                      subspan_view(function.coords()[hist_dim], hist_dim),
                      subspan_view(mask ? masked : function.data(), hist_dim),
                      core::element::event::map_in_place);
+  // TODO Workaround, see comment above
+  out.setUnit(function.unit());
   return Variable{std::make_unique<variable::DataModel<bucket<Variable>>>(
       indices, dim, std::move(out))};
 }
@@ -303,6 +267,10 @@ DataArray sum(const DataArrayConstView &data) {
           data.unaligned_coords()};
 }
 
+Dataset sum(const DatasetConstView &d) {
+  return apply_to_items(d, [](auto &&... _) { return buckets::sum(_...); });
+}
+
 template <class T>
 Variable from_constituents_impl(Variable &&indices, const Dim dim, T &&buffer) {
   return {std::make_unique<variable::DataModel<bucket<T>>>(
@@ -316,6 +284,11 @@ Variable from_constituents(Variable &&indices, const Dim dim,
 
 Variable from_constituents(Variable &&indices, const Dim dim,
                            DataArray &&buffer) {
+  return from_constituents_impl(std::move(indices), dim, std::move(buffer));
+}
+
+Variable from_constituents(Variable &&indices, const Dim dim,
+                           Dataset &&buffer) {
   return from_constituents_impl(std::move(indices), dim, std::move(buffer));
 }
 
