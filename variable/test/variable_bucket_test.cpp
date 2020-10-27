@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/buckets.h"
 #include "scipp/variable/operations.h"
 
 using namespace scipp;
@@ -32,6 +33,12 @@ TEST_F(VariableBucketTest, assign) {
   EXPECT_NE(copy, var);
   copy = var;
   EXPECT_EQ(copy, var);
+}
+
+TEST_F(VariableBucketTest, copy_view) {
+  EXPECT_EQ(Variable(var.slice({Dim::Y, 0, 2})), var);
+  EXPECT_EQ(Variable(var.slice({Dim::Y, 0, 1})), var.slice({Dim::Y, 0, 1}));
+  EXPECT_EQ(Variable(var.slice({Dim::Y, 1, 2})), var.slice({Dim::Y, 1, 2}));
 }
 
 TEST_F(VariableBucketTest, shape_operations) {

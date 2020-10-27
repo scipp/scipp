@@ -15,10 +15,10 @@ dependencies:
 
   # Run
   - appdirs
+  - ipympl
   - ipywidgets
   - matplotlib
   - numpy >=1.15.3
-  - Pillow
   - python
   - python-configuration
   - pythreejs

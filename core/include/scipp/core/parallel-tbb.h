@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <tbb/parallel_for.h>
+#include <tbb/parallel_sort.h>
 
 #include "scipp/common/index.h"
 #cmakedefine ENABLE_THREAD_LIMIT
@@ -37,6 +38,10 @@ template <class... Args> void parallel_for(Args &&... args) {
 #else
   tbb::parallel_for(std::forward<Args>(args)...);
 #endif
+}
+
+template <class... Args> void parallel_sort(Args &&... args) {
+  tbb::parallel_sort(std::forward<Args>(args)...);
 }
 
 } // namespace scipp::core::parallel

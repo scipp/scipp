@@ -121,37 +121,41 @@ static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
   }
 };
 
-static constexpr auto sum = [](const DataArrayView &out,
-                               const auto &data_container,
-                               const GroupByGrouping::group &group,
-                               const Dim reductionDim, const Variable &mask) {
-  for (const auto &slice : group) {
-    const auto data_slice = data_container.slice(slice);
-    if (mask)
-      sum_impl(out.data(), data_slice.data() * mask.slice(slice));
-    else
-      sum_impl(out.data(), data_slice.data());
-  }
-};
-
-template <void (*Func)(const VariableView &, const VariableConstView &)>
-static constexpr auto reduce_idempotent =
+static constexpr auto sum =
     [](const DataArrayView &out, const auto &data_container,
-       const GroupByGrouping::group &group, const Dim reductionDim,
-       const Variable &mask) {
-      bool first = true;
+       const GroupByGrouping::group &group, const Dim, const Variable &mask) {
       for (const auto &slice : group) {
         const auto data_slice = data_container.slice(slice);
         if (mask)
-          throw std::runtime_error(
-              "This operation does not support masks yet.");
-        if (first) {
-          out.data().assign(data_slice.data().slice({reductionDim, 0}));
-          first = false;
-        }
-        Func(out.data(), data_slice.data());
+          sum_impl(out.data(), data_slice.data() * mask.slice(slice));
+        else
+          sum_impl(out.data(), data_slice.data());
       }
     };
+
+template <void (*Func)(const VariableView &, const VariableConstView &)>
+// The msvc compiler was failing to pass the templated function correctly
+// requiring the introduction of a wrapping struct to aid compiler
+// resolution.
+struct wrap {
+  static constexpr auto reduce_idempotent =
+      [](const DataArrayView &out, const auto &data_container,
+         const GroupByGrouping::group &group, const Dim reductionDim,
+         const Variable &mask) {
+        bool first = true;
+        for (const auto &slice : group) {
+          const auto data_slice = data_container.slice(slice);
+          if (mask)
+            throw std::runtime_error(
+                "This operation does not support masks yet.");
+          if (first) {
+            out.data().assign(data_slice.data().slice({reductionDim, 0}));
+            first = false;
+          }
+          Func(out.data(), data_slice.data());
+        }
+      };
+};
 } // namespace groupby_detail
 
 /// Flatten provided dimension in each group and return combined data.
@@ -168,22 +172,26 @@ template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
 
 /// Reduce each group using `all` and return combined data.
 template <class T> T GroupBy<T>::all(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<all_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<all_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Reduce each group using `any` and return combined data.
 template <class T> T GroupBy<T>::any(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<any_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<any_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Reduce each group using `max` and return combined data.
 template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<max_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<max_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<min_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<min_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Apply mean to groups and return combined data.
@@ -228,16 +236,9 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   return out;
 }
 
-static void expectValidGroupbyKey(const VariableConstView &key) {
-  if (key.dims().ndim() != 1)
-    throw except::DimensionError("Group-by key must be 1-dimensional");
-  if (key.hasVariances())
-    throw except::VariancesError("Group-by key cannot have variances");
-}
-
 template <class T> struct MakeGroups {
   static auto apply(const VariableConstView &key, const Dim targetDim) {
-    expectValidGroupbyKey(key);
+    expect::isKey(key);
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
@@ -272,7 +273,7 @@ template <class T> struct MakeGroups {
 template <class T> struct MakeBinGroups {
   static auto apply(const VariableConstView &key,
                     const VariableConstView &bins) {
-    expectValidGroupbyKey(key);
+    expect::isKey(key);
     if (bins.dims().ndim() != 1)
       throw except::DimensionError("Group-by bins must be 1-dimensional");
     if (key.unit() != bins.unit())

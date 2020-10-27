@@ -1,0 +1,97 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# @author Neil Vaytet
+
+from .. import config
+import ipywidgets as ipw
+import matplotlib.pyplot as plt
+import matplotlib.ticker as ticker
+import io
+
+
+class PlotFigure:
+    """
+    Base class for 1d and 2d figures, that holds matplotlib axes.
+    """
+    def __init__(self,
+                 ax=None,
+                 cax=None,
+                 figsize=None,
+                 title=None,
+                 padding=None):
+        """
+        """
+        self.fig = None
+        self.ax = ax
+        self.cax = cax
+        self.own_axes = True
+        if self.ax is None:
+            if figsize is None:
+                figsize = (config.plot.width / config.plot.dpi,
+                           config.plot.height / config.plot.dpi)
+            self.fig, self.ax = plt.subplots(1,
+                                             1,
+                                             figsize=figsize,
+                                             dpi=config.plot.dpi)
+            if padding is None:
+                padding = config.plot.padding
+            self.fig.tight_layout(rect=padding)
+        else:
+            self.own_axes = False
+            self.fig = self.ax.get_figure()
+
+        self.ax.set_title(title)
+
+        self.axformatter = {}
+        self.axlocator = {}
+
+    def savefig(self, filename=None):
+        self.fig.savefig(filename, bbox_inches="tight")
+
+    def _ipython_display_(self):
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        # "on_widget_constructed" is an attribute specific to ipywidgets
+        if hasattr(self.fig.canvas, "on_widget_constructed"):
+            return self.fig.canvas
+        else:
+            buf = io.BytesIO()
+            self.fig.savefig(buf, format='png')
+            buf.seek(0)
+            return ipw.Image(value=buf.getvalue(),
+                             width=config.plot.width,
+                             height=config.plot.height)
+
+    def initialise(self, axformatters=None):
+        for dim in axformatters:
+            self.axformatter[dim] = {}
+            for key in ["linear", "log"]:
+                if axformatters[dim][key] is None:
+                    self.axformatter[dim][key] = ticker.ScalarFormatter()
+                else:
+                    self.axformatter[dim][key] = ticker.FuncFormatter(
+                        axformatters[dim][key])
+            self.axlocator[dim] = {
+                "linear": ticker.AutoLocator(),
+                "log": ticker.LogLocator()
+            }
+            if axformatters[dim]["custom_locator"]:
+                self.axlocator[dim]["linear"] = ticker.MaxNLocator(
+                    integer=True)
+
+    def draw(self):
+        self.fig.canvas.draw_idle()
+
+    def connect_profile(self, pick_callback=None, hover_callback=None):
+        pick_connection = self.fig.canvas.mpl_connect('pick_event',
+                                                      pick_callback)
+        hover_connection = self.fig.canvas.mpl_connect('motion_notify_event',
+                                                       hover_callback)
+        return pick_connection, hover_connection
+
+    def disconnect_profile(self, pick_connection=None, hover_connection=None):
+        if pick_connection is not None:
+            self.fig.canvas.mpl_disconnect(pick_connection)
+        if hover_connection is not None:
+            self.fig.canvas.mpl_disconnect(hover_connection)

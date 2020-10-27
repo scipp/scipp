@@ -3,62 +3,73 @@
 # @file
 # @author Neil Vaytet
 
-import importlib
+from .plot import plot as _plot
 
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
+is_doc_build = False
 try:
-    import matplotlib
-    is_doc_build = False
-    try:
-        from IPython import get_ipython
-        ipy = get_ipython()
-        if ipy is not None:
+    from IPython import get_ipython
+    import matplotlib as mpl
+    ipy = get_ipython()
+    if ipy is not None:
 
-            # Check if a docs build is requested in the metadata. If so,
-            # use the default Qt/inline backend.
-            cfg = ipy.config
-            try:
-                meta = cfg["Session"]["metadata"]
-                if hasattr(meta, "to_dict"):
-                    meta = meta.to_dict()
-                is_doc_build = meta["scipp_docs_build"]
-            except KeyError:
-                is_doc_build = False
+        # Check if a docs build is requested in the metadata. If so,
+        # use the default Qt/inline backend.
+        cfg = ipy.config
+        try:
+            meta = cfg["Session"]["metadata"]
+            if hasattr(meta, "to_dict"):
+                meta = meta.to_dict()
+            is_doc_build = meta["scipp_docs_build"]
+        except KeyError:
+            is_doc_build = False
 
-            # If we are in an IPython kernel, select either widget backend
-            # if installed (for JupyterLan), or notebook backend.
-            if "IPKernelApp" in ipy.config and not is_doc_build:
-                try:
-                    _ = importlib.import_module("ipympl")
-                    matplotlib.use('module://ipympl.backend_nbagg')
-                except ImportError:
-                    matplotlib.use('nbAgg')
-                    # Remove the title banner and button from figure
-                    ipy.run_cell_magic(
-                        "html", "", "<style>.output_wrapper "
-                        ".ui-dialog-titlebar {display: none;}</style>")
-    except ImportError:
-        pass
-    # Turn interactive plotting on
+        # If we are in an IPython kernel, select widget backend
+        if "IPKernelApp" in ipy.config and not is_doc_build:
+            mpl.use('module://ipympl.backend_nbagg')
+            # Hide the figure header:
+            # see https://github.com/matplotlib/ipympl/issues/229
+            from ipympl.backend_nbagg import Canvas
+            Canvas.header_visible.default_value = False
     import matplotlib.pyplot as plt
-    plt.ion()
-    if is_doc_build:
-        plt.rcParams.update({'figure.max_open_warning': 0})
 
 except ImportError:
     pass
 
-from .plot import plot
+if is_doc_build:
+    plt.rcParams.update({'figure.max_open_warning': 0})
 
 
-def superplot(dataset, **kwargs):
-    return plot(dataset, projection="1d", **kwargs)
+def is_interactive():
+    """
+    Determine if we are using a static or interactive backend
+    """
+    return mpl.get_backend().lower().endswith('nbagg')
 
 
-def image(dataset, **kwargs):
-    return plot(dataset, projection="2d", **kwargs)
+def plot(*args, **kwargs):
+    # Switch auto figure display off for better control over when figures are
+    # displayed.
+    plt.ioff()
+    output = _plot(*args, **kwargs)
+    if not is_interactive():
+        for key in output:
+            output[key].as_static(keep_widgets=is_doc_build)
+    # Turn auto figure display back on.
+    # TODO: we need to consider whether users manually turned auto figure
+    # display off, in which case we would not want to turn it back on here.
+    plt.ion()
+    return output
 
 
-def scatter3d(dataset, **kwargs):
-    return plot(dataset, projection="3d", **kwargs)
+def superplot(*args, **kwargs):
+    return plot(*args, projection="1d", **kwargs)
+
+
+def image(*args, **kwargs):
+    return plot(*args, projection="2d", **kwargs)
+
+
+def scatter3d(*args, **kwargs):
+    return plot(*args, projection="3d", **kwargs)

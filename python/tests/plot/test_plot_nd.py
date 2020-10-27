@@ -9,78 +9,44 @@ import scipp as sc
 from plot_helper import make_dense_dataset, make_events_dataset
 from scipp.plot import plot
 
-# Prevent figure from being displayed when running the tests
-import matplotlib.pyplot as plt
-plt.ioff()
-
 # TODO: For now we are just checking that the plot does not throw any errors.
 # In the future it would be nice to check the output by either comparing
 # checksums or by using tools like squish.
 
 
-def test_plot_sliceviewer():
+def test_plot_sliceviewer_2d():
     d = make_dense_dataset(ndim=3)
     plot(d)
 
 
-def test_plot_sliceviewer_with_two_sliders():
+def test_plot_sliceviewer_2d_with_two_sliders():
     d = make_dense_dataset(ndim=4)
     plot(d)
 
 
-def test_plot_sliceviewer_with_axes():
+def test_plot_sliceviewer_2d_with_axes():
     d = make_dense_dataset(ndim=3)
-    plot(d, axes=['x', 'tof', 'y'])
+    plot(d, axes={'y': 'tof'})
 
 
-def test_plot_sliceviewer_with_labels():
+def test_plot_sliceviewer_2d_with_axes_redundant():
+    d = make_dense_dataset(ndim=3)
+    plot(d, axes={'y': 'tof', 'x': 'x'})
+
+
+def test_plot_sliceviewer_2d_with_two_axes():
+    d = make_dense_dataset(ndim=3)
+    plot(d, axes={'x': 'y', 'y': 'tof'})
+
+
+def test_plot_sliceviewer_2d_with_labels():
     d = make_dense_dataset(ndim=3, labels=True)
-    plot(d, axes=['x', 'y', "somelabels"])
+    plot(d, axes={'x': "somelabels"})
 
 
-def test_plot_sliceviewer_with_binedges():
+def test_plot_sliceviewer_2d_with_binedges():
     d = make_dense_dataset(ndim=3, binedges=True)
     plot(d)
-
-
-def test_plot_projection_3d():
-    d = make_dense_dataset(ndim=3)
-    plot(d, projection="3d")
-
-
-def test_plot_projection_3d_with_labels():
-    d = make_dense_dataset(ndim=3, labels=True)
-    plot(d, projection="3d", axes=['x', 'y', "somelabels"])
-
-
-def test_plot_projection_3d_with_bin_edges():
-    d = make_dense_dataset(ndim=3, binedges=True)
-    plot(d, projection="3d")
-
-
-def test_plot_projection_3d_with_masks():
-    d = make_dense_dataset(ndim=3, masks=True)
-    plot(d, projection="3d")
-
-
-def test_plot_projection_3d_with_vectors():
-    N = 1000
-    M = 100
-    theta = np.random.random(N) * np.pi
-    phi = np.random.random(N) * 2.0 * np.pi
-    r = 10.0 + (np.random.random(N) - 0.5)
-    x = r * np.sin(theta) * np.sin(phi)
-    y = r * np.sin(theta) * np.cos(phi)
-    z = r * np.cos(theta)
-    tof = np.arange(M).astype(np.float)
-    a = np.arange(M * N).reshape([M, N]) * np.sin(y)
-    d = sc.Dataset()
-    d.coords['xyz'] = sc.Variable(['xyz'],
-                                  values=np.array([x, y, z]).T,
-                                  dtype=sc.dtype.vector_3_float64)
-    d.coords['tof'] = sc.Variable(['tof'], values=tof)
-    d['a'] = sc.Variable(['tof', 'xyz'], values=a)
-    plot(d, projection="3d", positions="xyz")
 
 
 def test_plot_convenience_methods():
@@ -135,20 +101,10 @@ def test_plot_4d_with_masks():
     plot(data)
 
 
-def test_plot_4d_with_masks_projection_3d():
-    data = sc.DataArray(data=sc.Variable(
-        dims=['pack', 'tube', 'straw', 'pixel'],
-        values=np.random.rand(2, 8, 7, 256)),
-                        coords={})
-    a = np.sin(np.linspace(0, 3.14, num=256))
-    data += sc.Variable(dims=['pixel'], values=a)
-    data.masks['tube_ends'] = sc.Variable(dims=['pixel'],
-                                          values=np.where(
-                                              a > 0.5, True, False))
-    plot(data, projection="3d")
-
-
 def test_plot_3d_data_with_ragged_bins():
+    """
+    This test has caught MANY bugs and should not be disabled.
+    """
     N = 10
     M = 8
     L = 5
@@ -166,3 +122,11 @@ def test_plot_3d_data_with_ragged_bins():
     d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
     d['a'] = sc.Variable(['z', 'y', 'x'], values=a, unit=sc.units.counts)
     plot(d)
+
+    # Also check that it raises an error if we try to have ragged coord along
+    # slider dim
+    with pytest.raises(RuntimeError) as e:
+        plot(d, axes={'x': 'z'})
+    assert str(e.value) == ("A ragged coordinate cannot lie along "
+                            "a slider dimension, it must be one of "
+                            "the displayed dimensions.")

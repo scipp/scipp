@@ -2,9 +2,11 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/bucket_variable.tcc"
+#include "scipp/variable/buckets.h"
 #include "scipp/variable/string.h"
 
 namespace scipp::variable {

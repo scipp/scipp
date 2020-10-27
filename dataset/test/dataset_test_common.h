@@ -16,8 +16,6 @@ std::vector<bool> make_bools(const scipp::index size,
                              std::initializer_list<bool> pattern);
 std::vector<bool> make_bools(const scipp::index size, bool pattern);
 
-Variable makeRandom(const Dimensions &dims);
-
 /// Factory for creating datasets for testing. For a given instance, `make()`
 /// will return datasets with identical coords, such that they are compatible in
 /// binary operations.
