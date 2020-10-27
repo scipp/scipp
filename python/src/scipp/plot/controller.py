@@ -45,6 +45,7 @@ class PlotController:
 
         self.name = name
         self.dim_to_shape = dim_to_shape
+        self.update_data_lock = False
         self.axparams = {}
 
         self.profile_axparams = {}
@@ -192,7 +193,9 @@ class PlotController:
             "update_data": self.update_data,
             "update_axes": self.update_axes,
             "toggle_mask": self.toggle_mask.
-            "get_dim_shape": self.get_dim_shape
+            "get_dim_shape": self.get_dim_shape,
+            "lock_update_data": self.lock_update_data,
+            "unlock_update_data": self.unlock_update_data
         })
 
     def connect_view(self):
@@ -211,6 +214,12 @@ class PlotController:
         Dummy connect for `panel`.
         """
         return
+
+    def lock_update_data(self):
+        self.update_data_lock = True
+
+    def unlock_update_data(self):
+        self.update_data_lock = False
 
     def rescale_to_data(self, button=None):
         """
@@ -262,6 +271,9 @@ class PlotController:
         called when update_axes is called since the displayed data needs to be
         updated when the axes have changed.
         """
+
+        if self.update_data_lock:
+            return
 
         active_sliders = self.widgets.get_active_slider_values()
 

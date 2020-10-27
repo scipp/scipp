@@ -254,13 +254,18 @@ class PlotWidgets:
             # if self.dim_buttons[owner.index][dim].description != owner.description:
             self.dim_buttons[new_ind][dim].button_style = ""
         owner.button_style = "info"
-        slider_max = self.interface["get_dim_shape"](new_dim)
+
+        # Update the slider max and value. Before we update the value, we need
+        # to lock the data update which is linked to the slider.
+        self.interface["lock_update_data"]()
+        slider_max = self.interface["get_dim_shape"](new_dim) - 1
         if slider_max < self.slider[new_ind].value:
             self.slider[new_ind].value = slider_max // 2
-            self.slider[new_ind].max = slider_max - 1
+            self.slider[new_ind].max = slider_max
         else:
-            self.slider[new_ind].max = slider_max - 1
+            self.slider[new_ind].max = slider_max
             self.slider[new_ind].value = slider_max // 2
+        self.interface["unlock_update_data"]()
         # for dim in self.dim_buttons[owner.index]:
         #     if self.dim_buttons[owner.index][dim].description != owner.description:
         #         self.dim_buttons[owner.index][dim].button_style = ""
@@ -312,6 +317,8 @@ class PlotWidgets:
                                                names="value")
         self.interface["update_axes"] = callbacks["update_axes"]
         self.interface["get_dim_shape"] = callbacks["get_dim_shape"]
+        self.interface["lock_update_data"] = callbacks["lock_update_data"]
+        self.interface["unlock_update_data"] = callbacks["unlock_update_data"]
 
         for name in self.mask_checkboxes:
             for m in self.mask_checkboxes[name]:
