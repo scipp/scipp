@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "scipp/variable/buckets.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {

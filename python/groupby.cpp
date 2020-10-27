@@ -71,23 +71,6 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing to split-apply-combine mechanism.)");
 
-  groupBy.def(
-      "flatten", &GroupBy<T>::flatten, py::arg("dim"),
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Flatten specified dimension into event lists.\n\n"
-                       "This is a event-data equivalent to calling ``sum`` on "
-                       "dense data.\n"
-                       "In particular, summing the result of histogrammed data "
-                       "yields the same result as histgramming data that has "
-                       "been flattened.")
-          .returns(
-              "Flattened event data for each group, combined along "
-              "the dimension specified when calling :py:func:`scipp.groupby`.")
-          .rtype<T>()
-          .param("dim", "Dimension to flatten.", "Dim")
-          .c_str());
-
   groupBy.def("mean", &GroupBy<T>::mean, py::arg("dim"),
               py::call_guard<py::gil_scoped_release>(),
               docstring_groupby<T>("mean").c_str());
