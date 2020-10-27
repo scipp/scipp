@@ -6,7 +6,7 @@ set(INC_FILES
     include/scipp/variable/arithmetic.h
     include/scipp/variable/buckets.h
     include/scipp/variable/comparison.h
-    #include/scipp/variable/event.h
+    # include/scipp/variable/event.h
     include/scipp/variable/except.h
     include/scipp/variable/indexed_slice_view.h
     include/scipp/variable/logical.h
@@ -35,7 +35,7 @@ set(SRC_FILES
     arithmetic.cpp
     buckets.cpp
     comparison.cpp
-    #event.cpp
+    # event.cpp
     except.cpp
     inplace_arithmetic.cpp
     logical.cpp
