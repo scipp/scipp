@@ -326,7 +326,6 @@ template <bool dry_run> struct in_place {
   template <class Op, class T, class... Ts>
   static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
-    // TODO Is MultiIndex doing all required size checks for us?
     const auto begin =
         core::MultiIndex(iter::array_params(arg), iter::array_params(other)...);
     if constexpr (dry_run)

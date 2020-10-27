@@ -10,7 +10,7 @@ set(INC_FILES
     include/scipp/dataset/dataset.h
     include/scipp/dataset/dataset_index.h
     include/scipp/dataset/dataset_util.h
-    include/scipp/dataset/event.h
+    #include/scipp/dataset/event.h
     include/scipp/dataset/except.h
     include/scipp/dataset/groupby.h
     include/scipp/dataset/histogram.h
@@ -34,7 +34,7 @@ set(SRC_FILES
     data_array.cpp
     dataset_access.cpp
     dataset.cpp
-    event.cpp
+    #event.cpp
     except.cpp
     groupby.cpp
     histogram.cpp

@@ -14,25 +14,6 @@
 
 namespace scipp::dataset {
 
-DataArray flatten(const DataArrayConstView &a, const Dim dim) {
-  return apply_to_data_and_drop_dim(
-      a,
-      [](const auto &x, const Dim dim_, const auto &mask_) {
-        if (!contains_events(x) && min(x, dim_) != max(x, dim_))
-          throw except::EventDataError(
-              "flatten with non-constant scalar weights not "
-              "possible yet.");
-        return contains_events(x) ? flatten(x, dim_, mask_)
-                                  : copy(x.slice({dim_, 0}));
-      },
-      dim, a.masks());
-}
-
-Dataset flatten(const DatasetConstView &d, const Dim dim) {
-  return apply_to_items(
-      d, [](auto &&... _) { return flatten(_...); }, dim);
-}
-
 DataArray sum(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return sum(_...); }, dim, a.masks());

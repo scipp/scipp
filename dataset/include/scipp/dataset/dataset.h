@@ -783,9 +783,6 @@ union_or(const MasksConstView &currentMasks, const MasksConstView &otherMasks);
 SCIPP_DATASET_EXPORT void union_or_in_place(const MasksView &currentMasks,
                                             const MasksConstView &otherMasks);
 
-SCIPP_DATASET_EXPORT bool
-contains_events(const dataset::DataArrayConstView &array);
-
 } // namespace scipp::dataset
 
 namespace scipp {

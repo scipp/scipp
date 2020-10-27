@@ -90,36 +90,38 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
 }
 
 namespace groupby_detail {
+/*
 static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
-                                   const GroupByGrouping::group &group,
-                                   const Dim reductionDim,
-                                   const Variable &mask_) {
-  // Here and below: Hack to make flatten work with scalar weights. Proper
-  // solution would be to create proper output and broadcast, but this is also
-  // bad solution. Removing support for scalar weights altogether might be the
-  // way forward.
-  if (!contains_events(in.data())) {
-    if (min(in.data(), reductionDim) != max(in.data(), reductionDim))
-      throw except::EventDataError(
-          "flatten with non-constant scalar weights not possible yet.");
+                                 const GroupByGrouping::group &group,
+                                 const Dim reductionDim,
+                                 const Variable &mask_) {
+// Here and below: Hack to make flatten work with scalar weights. Proper
+// solution would be to create proper output and broadcast, but this is also
+// bad solution. Removing support for scalar weights altogether might be the
+// way forward.
+if (!contains_events(in.data())) {
+  if (min(in.data(), reductionDim) != max(in.data(), reductionDim))
+    throw except::EventDataError(
+        "flatten with non-constant scalar weights not possible yet.");
+}
+bool first = true;
+const auto no_mask = makeVariable<bool>(Values{true});
+for (const auto &slice : group) {
+  auto mask = mask_ ? mask_.slice(slice) : no_mask;
+  const auto &array = in.slice(slice);
+  if (contains_events(array.data()))
+    flatten_impl(out.data(), array.data(), mask);
+  else if (first) {
+    // Note that masks can be ignored since no weights are concatenated
+    out.data().assign(array.data().slice({reductionDim, 0}));
+    first = false;
   }
-  bool first = true;
-  const auto no_mask = makeVariable<bool>(Values{true});
-  for (const auto &slice : group) {
-    auto mask = mask_ ? mask_.slice(slice) : no_mask;
-    const auto &array = in.slice(slice);
-    if (contains_events(array.data()))
-      flatten_impl(out.data(), array.data(), mask);
-    else if (first) {
-      // Note that masks can be ignored since no weights are concatenated
-      out.data().assign(array.data().slice({reductionDim, 0}));
-      first = false;
-    }
-    for (auto &&[dim, coord] : out.coords())
-      if (contains_events(coord))
-        flatten_impl(coord, array.coords()[dim], mask);
-  }
+  for (auto &&[dim, coord] : out.coords())
+    if (contains_events(coord))
+      flatten_impl(coord, array.coords()[dim], mask);
+}
 };
+*/
 
 static constexpr auto sum =
     [](const DataArrayView &out, const auto &data_container,
@@ -161,9 +163,9 @@ struct wrap {
 /// Flatten provided dimension in each group and return combined data.
 ///
 /// This only supports event data.
-template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
-  return reduce(groupby_detail::flatten, reductionDim);
-}
+// template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
+//  return reduce(groupby_detail::flatten, reductionDim);
+//}
 
 /// Reduce each group using `sum` and return combined data.
 template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {

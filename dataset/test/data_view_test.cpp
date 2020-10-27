@@ -33,20 +33,6 @@ TYPED_TEST(DataArrayViewTest, name_ignored_in_comparison) {
   EXPECT_EQ(d_ref["a"], d_ref["b"]);
 }
 
-TYPED_TEST(DataArrayViewTest, events_eventsDim) {
-  Dataset d;
-  typename TestFixture::dataset_type &d_ref(d);
-
-  d.setData("dense", makeVariable<double>(Values{double{}}));
-  ASSERT_FALSE(dataset::contains_events(d_ref["dense"]));
-
-  d.setData("events_data", makeVariable<event_list<double>>(Dims{}, Shape{}));
-  ASSERT_TRUE(dataset::contains_events(d_ref["events_data"]));
-
-  // TODO Event data can have non-list data (only coords would be event_list),
-  // what should contains_events return in that case?
-}
-
 TYPED_TEST(DataArrayViewTest, dims) {
   Dataset d;
   const auto dense = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{1, 2});
