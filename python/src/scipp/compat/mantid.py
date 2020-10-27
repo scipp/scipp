@@ -13,7 +13,6 @@ import numpy as np
 from .. import detail
 from .._utils import is_data_array
 from .._scipp import core as sc
-from .._scipp.core import contains_events
 
 
 @contextmanager
@@ -958,9 +957,6 @@ def to_mantid(data, dim, instrument_file=None):
         raise RuntimeError(
             "Currently only data arrays can be converted to a Mantid workspace"
         )
-    if data.data is None or contains_events(data):
-        raise RuntimeError(
-            "Currently only histogrammed data can be converted.")
     try:
         import mantid.simpleapi as mantid
     except ImportError:
