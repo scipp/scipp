@@ -150,14 +150,7 @@ def plot(scipp_obj,
     # {number_of_dimensions, Dataset, axes, line_parameters}.
     tobeplotted = dict()
     for name, var in sorted(inventory.items()):
-
-        if sc.contains_events(var) and bins is None:
-            raise RuntimeError("The `bins` argument must be specified when "
-                               "plotting event data.")
-
         ndims = len(var.dims)
-        if bins is not None and sc.contains_events(var):
-            ndims += 1
         if ndims > 0:
             if ndims == 1 or projection == "1d" or projection == "1D":
                 # Construct a key from the dimensions
