@@ -20,7 +20,8 @@ template <class T> using copy_spans_args = std::tuple<span<T>, span<const T>>;
 constexpr auto copy_spans = overloaded{
     core::element::arg_list<copy_spans_args<double>, copy_spans_args<float>,
                             copy_spans_args<int64_t>, copy_spans_args<int32_t>,
-                            copy_spans_args<bool>>,
+                            copy_spans_args<bool>, copy_spans_args<std::string>,
+                            copy_spans_args<core::time_point>>,
     core::transform_flags::expect_all_or_none_have_variance,
     [](units::Unit &a, const units::Unit &b) { a = b; },
     [](auto &dst, const auto &src) {
