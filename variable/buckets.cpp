@@ -5,6 +5,7 @@
 #include "scipp/core/element/arg_list.h"
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/buckets.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/reduction.h"
@@ -72,6 +73,11 @@ sizes_to_begin(const VariableConstView &sizes) {
     i = old_size;
   }
   return {begin, size};
+}
+
+Variable from_constituents(Variable indices, const Dim dim, Variable buffer) {
+  return {std::make_unique<variable::DataModel<bucket<Variable>>>(
+      std::move(indices), dim, std::move(buffer))};
 }
 
 } // namespace scipp::variable

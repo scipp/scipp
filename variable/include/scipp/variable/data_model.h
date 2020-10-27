@@ -26,12 +26,13 @@ template <class T> struct is_span : std::false_type {};
 template <class T> struct is_span<scipp::span<T>> : std::true_type {};
 template <class T> inline constexpr bool is_span_v = is_span<T>::value;
 
-template <class T1, class T2> bool equal(const T1 &view1, const T2 &view2) {
+template <class T1, class T2>
+bool equals_impl(const T1 &view1, const T2 &view2) {
   // TODO Use optimizations in case of contigous views (instead of slower
   // ElementArrayView iteration). Add multi threading?
   if constexpr (is_span_v<typename T1::value_type>)
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end(),
-                      [](auto &a, auto &b) { return equal(a, b); });
+                      [](auto &a, auto &b) { return equals_impl(a, b); });
   else
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
@@ -157,8 +158,8 @@ bool DataModel<T>::equals(const VariableConstView &a,
     return false;
   if (a.dims().volume() == 0 && a.dims() == b.dims())
     return true;
-  return equal(a.values<T>(), b.values<T>()) &&
-         (!a.hasVariances() || equal(a.variances<T>(), b.variances<T>()));
+  return equals_impl(a.values<T>(), b.values<T>()) &&
+         (!a.hasVariances() || equals_impl(a.variances<T>(), b.variances<T>()));
 }
 
 /// Helper for implementing Variable(View) copy operations.

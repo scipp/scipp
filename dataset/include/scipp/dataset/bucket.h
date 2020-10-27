@@ -56,8 +56,6 @@ sum(const DataArrayConstView &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset sum(const DatasetConstView &data);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
-from_constituents(Variable &&indices, const Dim dim, Variable &&buffer);
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable
 from_constituents(Variable &&indices, const Dim dim, DataArray &&buffer);
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 from_constituents(Variable &&indices, const Dim dim, Dataset &&buffer);

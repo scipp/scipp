@@ -129,7 +129,7 @@ bool DataModel<bucket<T>>::equals(const VariableConstView &a,
   if (a.dims().volume() == 0 && a.dims() == b.dims())
     return true;
   // TODO This implementation is slow since it creates a view for every bucket.
-  return equal(a.values<bucket<T>>(), b.values<bucket<T>>());
+  return equals_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
 }
 
 template <class T>
