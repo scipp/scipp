@@ -28,23 +28,6 @@ Dataset makeTofDataset() {
   return tof;
 }
 
-Dataset makeTofDatasetEvents() {
-  Dataset tof;
-
-  tof.setData("events",
-              makeVariable<double>(Dims{Dim::Spectrum}, Shape{2}, units::counts,
-                                   Values{1, 1}, Variances{1, 1}));
-  auto events = makeVariable<event_list<double>>(Dims{Dim::Spectrum}, Shape{2});
-  events.setUnit(units::us);
-  auto eventLists = events.values<event_list<double>>();
-  eventLists[0] = {1000, 3000, 2000, 4000};
-  eventLists[1] = {5000, 6000, 3000};
-  tof.setCoord(Dim::Tof, events);
-  tof.setCoord(Dim("aux"), events);
-
-  return tof;
-}
-
 Dataset makeCalTable() {
   Dataset cal;
   cal.setData("tzero", makeVariable<double>(Dims{Dim::Spectrum}, Shape{2},
@@ -60,8 +43,7 @@ Dataset makeCalTable() {
 class ConvertWithCalibrationTest : public testing::TestWithParam<Dataset> {};
 
 INSTANTIATE_TEST_SUITE_P(SingleEntryDataset, ConvertWithCalibrationTest,
-                         testing::Values(makeTofDataset(),
-                                         makeTofDatasetEvents()));
+                         testing::Values(makeTofDataset()));
 
 TEST_P(ConvertWithCalibrationTest, data_array) {
   const auto tof = GetParam();

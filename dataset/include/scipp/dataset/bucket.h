@@ -22,6 +22,13 @@ SCIPP_DATASET_EXPORT void copy_slices(const DatasetConstView &src,
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset resize_default_init(
     const DatasetConstView &parent, const Dim dim, const scipp::index size);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable from_constituents(Variable indices,
+                                                              const Dim dim,
+                                                              DataArray buffer);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable from_constituents(Variable indices,
+                                                              const Dim dim,
+                                                              Dataset buffer);
+
 } // namespace scipp::dataset
 
 namespace scipp::dataset::buckets {
@@ -54,12 +61,5 @@ void scale(const DataArrayView &data, const DataArrayConstView &histogram);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 sum(const DataArrayConstView &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset sum(const DatasetConstView &data);
-
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable from_constituents(Variable indices,
-                                                              const Dim dim,
-                                                              DataArray buffer);
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable from_constituents(Variable indices,
-                                                              const Dim dim,
-                                                              Dataset buffer);
 
 } // namespace scipp::dataset::buckets
