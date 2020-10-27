@@ -5,7 +5,7 @@
 
 import numpy as np
 import scipp as sc
-from plot_helper import make_dense_dataset, make_events_dataset
+from plot_helper import make_dense_dataset
 from scipp.plot import plot
 
 
@@ -112,29 +112,6 @@ def test_plot_2d_image_with_non_regular_bin_edges_with_masks():
     d = make_dense_dataset(ndim=2, masks=True, binedges=True)
     d.coords['tof'].values = d.coords['tof'].values**2
     plot(d)
-
-
-def test_plot_2d_events_data_with_int_bins():
-    d = make_events_dataset(ndim=1)
-    plot(d, bins={'tof': 50})
-
-
-def test_plot_2d_events_data_with_nparray_bins():
-    d = make_events_dataset(ndim=1)
-    plot(d, bins={'tof': np.linspace(0.0, 105.0, 50)})
-
-
-def test_plot_2d_events_data_with_Variable_bins():
-    d = make_events_dataset(ndim=1)
-    bins = sc.Variable(['tof'],
-                       values=np.linspace(0.0, 105.0, 50),
-                       unit=sc.units.us)
-    plot(d, bins={'tof': bins})
-
-
-def test_plot_2d_events_data_with_nparray_bins_and_extra_dim():
-    d = make_events_dataset(ndim=2)
-    plot(d, bins={'tof': np.linspace(0.0, 105.0, 50)})
 
 
 def test_plot_variable_2d():
