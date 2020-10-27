@@ -561,7 +561,7 @@ TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               std::runtime_error);
+               except::NotFoundError);
   EXPECT_EQ(a, original);
 }
 
@@ -572,69 +572,48 @@ TEST_F(TransformInPlaceDryRunTest, variances_fail) {
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               std::runtime_error);
+               except::VariancesError);
   EXPECT_EQ(a, original);
 }
 
-/*
-TEST_F(TransformInPlaceDryRunTest, events_variance_length_fail) {
-  auto a = make_events_variable_with_variance<double>();
-  a.setUnit(units::m);
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8, 9}});
+class TransformInPlaceBucketsDryRunTest : public TransformInPlaceDryRunTest {
+protected:
+  Variable indicesA = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 4}});
+  Variable indicesB = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 5}});
+  Variable tableA =
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, units::m,
+                           Values{1, 2, 3, 4}, Variances{5, 6, 7, 8});
+  Variable tableB =
+      makeVariable<double>(Dims{Dim::Event}, Shape{5}, units::m,
+                           Values{1, 2, 3, 4, 5}, Variances{5, 6, 7, 8, 9});
+  Variable a = from_constituents(indicesA, Dim::Event, tableA);
+  Variable b = from_constituents(indicesB, Dim::Event, tableB);
+};
+
+TEST_F(TransformInPlaceBucketsDryRunTest, events_length_fail) {
   const auto original(a);
-
-  EXPECT_THROW(dry_run::transform_in_place<double>(a, unary),
-               except::SizeError);
-  EXPECT_EQ(a, original);
-  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, a, binary),
-               except::SizeError);
-  EXPECT_EQ(a, original);
-}
-
-TEST_F(TransformInPlaceDryRunTest, events_length_fail) {
-  auto a = make_events_variable_with_variance<double>();
-  a.setUnit(units::m);
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8}});
-  auto b = make_events_variable_with_variance<double>();
-  b.setUnit(units::m);
-  set_events_values<double>(b, {{1, 2, 3}, {4, 5}});
-  set_events_variances<double>(b, {{5, 6, 7}, {8, 9}});
-  const auto original(a);
-
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               except::SizeError);
+               except::BucketError);
   EXPECT_EQ(a, original);
 }
 
-TEST_F(TransformInPlaceDryRunTest, events_no_variances_length_fail) {
-  auto a = make_events_variable<double>();
-  a.setUnit(units::m);
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  auto b = make_events_variable<double>();
-  b.setUnit(units::m);
-  set_events_values<double>(b, {{1, 2, 3}, {4, 5}});
+TEST_F(TransformInPlaceBucketsDryRunTest, variances_fail) {
+  a = from_constituents(indicesA, Dim::Event, values(tableA));
   const auto original(a);
-
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               except::SizeError);
+               except::VariancesError);
   EXPECT_EQ(a, original);
 }
 
-TEST_F(TransformInPlaceDryRunTest, unchanged_if_success) {
-  auto a = make_events_variable_with_variance<double>();
-  a.setUnit(units::m);
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8}});
+TEST_F(TransformInPlaceBucketsDryRunTest, unchanged_if_success) {
   const auto original(a);
-
   dry_run::transform_in_place<double>(a, unary);
   EXPECT_EQ(a, original);
   dry_run::transform_in_place<pair_self_t<double>>(a, a, binary);
   EXPECT_EQ(a, original);
 }
-*/
 
 TEST(TransformFlagsTest, no_variance_on_arg) {
   auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
