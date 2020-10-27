@@ -221,6 +221,7 @@ TEST_F(Variable_comparison_operators, dtype) {
   expect_ne(base, makeVariable<float>(Values{1.0}));
 }
 
+/*
 TEST_F(Variable_comparison_operators, dense_events) {
   auto dense = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 0l});
   auto events = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
@@ -281,6 +282,7 @@ TEST_F(Variable_comparison_operators, events_variances) {
   expect_ne(a, c);
   expect_ne(a, a_no_vars);
 }
+*/
 
 TEST(VariableTest, copy_and_move) {
   const auto reference =
@@ -863,87 +865,6 @@ TEST(VariableTest, rename) {
 
   var.rename(Dim::Y, Dim::Z);
   ASSERT_EQ(var, expected);
-}
-
-TEST(EventsVariable, create) {
-  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  EXPECT_TRUE(contains_events(var));
-  EXPECT_EQ(var.dims().volume(), 2);
-}
-
-TEST(EventsVariable, dtype) {
-  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  EXPECT_EQ(var.dtype(), dtype<event_list<double>>);
-  EXPECT_EQ(var.data().dtype(), dtype<event_list<double>>);
-}
-
-TEST(EventsVariable, non_events_access_fail) {
-  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
-                                                    Values{}, Variances{});
-  ASSERT_THROW(var.values<double>(), except::TypeError);
-  ASSERT_THROW(var.variances<double>(), except::TypeError);
-}
-
-TEST(EventsVariable, access) {
-  const auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
-                                                    Values{}, Variances{});
-  ASSERT_NO_THROW(var.values<event_list<double>>());
-  ASSERT_NO_THROW(var.variances<event_list<double>>());
-  const auto values = var.values<event_list<double>>();
-  const auto variances = var.variances<event_list<double>>();
-  ASSERT_EQ(values.size(), 2);
-  EXPECT_TRUE(values[0].empty());
-  EXPECT_TRUE(values[1].empty());
-  ASSERT_EQ(variances.size(), 2);
-  EXPECT_TRUE(variances[0].empty());
-  EXPECT_TRUE(variances[1].empty());
-}
-
-TEST(EventsVariable, resize_events) {
-  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto data = var.values<event_list<double>>();
-  data[1] = {1, 2, 3};
-}
-
-TEST(EventsVariable, copy) {
-  const auto a = make_events_var_2d_with_variances();
-
-  Variable copy(a);
-  EXPECT_EQ(a, copy);
-}
-
-TEST(EventsVariable, move) {
-  auto a = make_events_var_2d_with_variances();
-
-  Variable copy(a);
-  Variable moved(std::move(copy));
-  EXPECT_EQ(a, moved);
-}
-
-TEST(EventsVariable, slice) {
-  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{4});
-  auto data = var.values<event_list<double>>();
-  data[0] = {1, 2, 3};
-  data[1] = {1, 2};
-  data[2] = {1};
-  data[3] = {};
-  auto slice = var.slice({Dim::Y, 1, 3});
-  EXPECT_TRUE(contains_events(slice));
-  EXPECT_EQ(slice.dims().volume(), 2);
-  auto slice_data = slice.values<event_list<double>>();
-  EXPECT_TRUE(equals(slice_data[0], {1, 2}));
-  EXPECT_TRUE(equals(slice_data[1], {1}));
-}
-
-TEST(EventsVariable, slice_fail) {
-  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{4});
-  auto data = var.values<event_list<double>>();
-  data[0] = {1, 2, 3};
-  data[1] = {1, 2};
-  data[2] = {1};
-  data[3] = {};
-  ASSERT_THROW(var.slice({Dim::X, 0}), except::DimensionNotFoundError);
-  ASSERT_THROW(var.slice({Dim::X, 0, 1}), except::DimensionNotFoundError);
 }
 
 TEST(VariableTest, create_with_variance) {

@@ -15,15 +15,11 @@ static constexpr auto erase = [](Dimensions dims, const Dim dim) {
   dims.erase(dim);
   return dims;
 };
-static constexpr auto need_subspan = [](const VariableConstView &var,
-                                        const Dim dim) {
-  return !contains_events(var) && var.dims().contains(dim);
-};
 
 static constexpr auto maybe_subspan = [](VariableConstView &var,
                                          const Dim dim) {
   auto ret = std::make_unique<Variable>();
-  if (need_subspan(var, dim)) {
+  if (var.dims().contains(dim)) {
     *ret = subspan_view(var, dim);
     var = *ret;
   }

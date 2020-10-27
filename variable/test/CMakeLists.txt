@@ -7,12 +7,12 @@ add_executable(
   bucket_model_test.cpp
   comparison_test.cpp
   indexed_slice_view_test.cpp
-  operations_test.cpp
+  #operations_test.cpp
   rebin_test.cpp
   reduce_logical_test.cpp
   reduce_various_test.cpp
   sort_test.cpp
-  subspan_view_test.cpp
+  #subspan_view_test.cpp
   transform_test.cpp
   trigonometry_test.cpp
   util_test.cpp

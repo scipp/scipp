@@ -346,8 +346,8 @@ private:
 };
 
 SCIPP_VARIABLE_EXPORT Variable copy(const VariableConstView &var);
-
-SCIPP_VARIABLE_EXPORT bool contains_events(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT VariableView copy(const VariableConstView &dataset,
+                                        const VariableView &out);
 
 } // namespace scipp::variable
 

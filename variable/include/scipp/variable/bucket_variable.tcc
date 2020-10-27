@@ -38,7 +38,8 @@ VariableView::constituents() const {
 namespace {
 auto contiguous_indices(const VariableConstView &parent,
                         const Dimensions &dims) {
-  auto indices = broadcast(parent, dims);
+  auto indices = Variable(parent, dims);
+  copy(parent, indices);
   scipp::index size = 0;
   for (auto &range : indices.values<core::bucket_base::range_type>()) {
     range.second += size - range.first;

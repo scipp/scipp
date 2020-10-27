@@ -56,6 +56,12 @@ Variable filter(const Variable &var, const Variable &filter) {
 /// Return a deep copy of a Variable or of a VariableView.
 Variable copy(const VariableConstView &var) { return Variable(var); }
 
+/// Copy variable to output variable.
+VariableView copy(const VariableConstView &var, const VariableView &out) {
+  var.underlying().data().copy(var, out);
+  return out;
+}
+
 VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {

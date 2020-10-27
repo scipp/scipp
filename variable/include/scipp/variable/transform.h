@@ -326,7 +326,9 @@ template <bool dry_run> struct in_place {
   template <class Op, class T, class... Ts>
   static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
-    // TODO Is MultiIndex doing this check for as? Dry run should abort there
+    // TODO Is MultiIndex doing all required size checks for us?
+    const auto begin =
+        core::MultiIndex(iter::array_params(arg), iter::array_params(other)...);
     if constexpr (dry_run)
       return;
 
@@ -334,8 +336,6 @@ template <bool dry_run> struct in_place {
       for (; indices != end; indices.increment())
         call_in_place(op, indices, arg, other...);
     };
-    const auto begin =
-        core::MultiIndex(iter::array_params(arg), iter::array_params(other)...);
     if (begin.has_stride_zero()) {
       // The output has a dimension with stride zero so parallelization must
       // be done differently. Explicit and precise control of chunking is

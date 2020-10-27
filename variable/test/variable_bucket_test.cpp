@@ -107,17 +107,17 @@ TEST_F(VariableBucketTest, binary_operation_with_dense_broadcast) {
   Variable dense =
       makeVariable<double>(Dims{Dim::Z}, Shape{2}, Values{0.1, 0.2});
   Variable expected_buffer = makeVariable<double>(
-      Dims{Dim::X}, Shape{8}, Values{1.1, 2.1, 3.1, 4.1, 1.2, 2.2, 3.2, 4.2});
+      Dims{Dim::X}, Shape{8}, Values{1.1, 2.1, 1.2, 2.2, 3.1, 4.1, 3.2, 4.2});
   Variable expected_indices =
       makeVariable<std::pair<scipp::index, scipp::index>>(
-          Dims{Dim::Z, Dim::Y}, Shape{2, 2},
+          Dims{Dim::Y, Dim::Z}, Shape{2, 2},
           Values{std::pair{0, 2}, std::pair{2, 4}, std::pair{4, 6},
                  std::pair{6, 8}});
   const auto expected = Variable{
       std::make_unique<Model>(expected_indices, Dim::X, expected_buffer)};
   EXPECT_EQ(var + dense, expected);
   EXPECT_EQ(var.slice({Dim::Y, 1}) + dense, expected.slice({Dim::Y, 1}));
-  EXPECT_EQ(dense + var, expected);
+  EXPECT_EQ(dense + var, transpose(expected));
 }
 
 TEST_F(VariableBucketTest, to_constituents) {

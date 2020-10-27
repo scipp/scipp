@@ -72,16 +72,6 @@ TEST(CreateVariableTest, from_vector) {
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values(v));
 }
 
-TEST(CreateVariableTest, construct_events) {
-  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
-
-  auto dimensions = Dimensions{Dim::X, 2};
-  makeVariable<event_list<double>>(
-      Dimensions{dimensions},
-      Values{event_list<double>(), event_list<double>()},
-      Variances{event_list<double>(), event_list<double>()});
-}
-
 TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {
   auto variable =
       Variable(dtype<float>, Dims{Dim::X, Dim::Y}, Shape{2, 3}, units::kg);

@@ -8,7 +8,6 @@
 #include "scipp/core/element/comparison.h"
 #include "scipp/core/element/logical.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/event.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"
 
@@ -19,9 +18,6 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
-  if (contains_events(var))
-    throw except::TypeError("`sum` can only be used for dense data, use "
-                            "`flatten` for event data.");
   accumulate_in_place(summed, var, element::plus_equals);
 }
 
