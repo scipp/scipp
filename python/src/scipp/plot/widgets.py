@@ -101,9 +101,9 @@ class PlotWidgets:
             # Add one set of buttons per dimension
             self.dim_buttons[index] = {}
             for dim_ in possible_dims:
-                dstr = str(dim_)
-                self.dim_buttons[index][dstr] = ipw.Button(
-                description=dstr,
+                # dstr = str(dim_)
+                self.dim_buttons[index][dim_] = ipw.Button(
+                description=dim_,
                 # value=dim == dim_,
                 button_style='info' if dim == dim_ else '',
                 # style={"button_width": "initial"}
@@ -111,8 +111,8 @@ class PlotWidgets:
                 layout={"width":'initial'})
                 # Add observer to buttons
                 # self.dim_buttons[index][dim_].on_msg(self.update_buttons)
-                self.dim_buttons[index][dstr].on_click(self.update_buttons)
-                setattr(self.dim_buttons[index][dstr], "index", index)
+                self.dim_buttons[index][dim_].on_click(self.update_buttons)
+                setattr(self.dim_buttons[index][dim_], "index", index)
 
             self.slider_dims[index] = dim
 

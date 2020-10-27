@@ -192,7 +192,7 @@ class PlotController:
             "toggle_profile_view": self.toggle_profile_view,
             "update_data": self.update_data,
             "update_axes": self.update_axes,
-            "toggle_mask": self.toggle_mask.
+            "toggle_mask": self.toggle_mask,
             "get_dim_shape": self.get_dim_shape,
             "lock_update_data": self.lock_update_data,
             "unlock_update_data": self.unlock_update_data

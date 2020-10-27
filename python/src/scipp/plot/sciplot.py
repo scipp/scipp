@@ -180,15 +180,15 @@ class SciPlot:
 
         if axes is not None:
             # Axes can be incomplete
-            for key, ax in axes.items():
-                dim = sc.Dim(ax)
+            for key, dim in axes.items():
+                # dim = sc.Dim(ax)
                 dim_list = list(self.axes.values())
                 key_list = list(self.axes.keys())
-                if ax in dim_list:
-                    ind = dim_list.index(ax)
+                if dim in dim_list:
+                    ind = dim_list.index(dim)
                 else:
                     # Non-dimension coordinate
-                    underlying_dim = array.coords[ax].dims[-1]
+                    underlying_dim = array.coords[dim].dims[-1]
                     self.dim_label_map[underlying_dim] = dim
                     self.dim_label_map[dim] = underlying_dim
                     ind = dim_list.index(underlying_dim)
@@ -198,15 +198,15 @@ class SciPlot:
         # Replace positions in axes if positions set
         if positions is not None:
             if positions not in self.axes:
-                dim = sc.Dim(positions)
+                # dim = sc.Dim(positions)
                 underlying_dim = array.coords[positions].dims[-1]
-                self.dim_label_map[underlying_dim] = dim
-                self.dim_label_map[dim] = underlying_dim
+                self.dim_label_map[underlying_dim] = positions
+                self.dim_label_map[positions] = underlying_dim
                 dim_list = list(self.axes.values())
                 key_list = list(self.axes.keys())
                 ind = dim_list.index(underlying_dim)
                 self.axes[key_list[ind]] = self.axes[key]
-                self.axes[key] = dim
+                self.axes[key] = positions
 
         # Protect against duplicate entries in axes
         if len(self.axes) != len(set(self.axes)):

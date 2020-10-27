@@ -149,9 +149,9 @@ void bind_dataset_view_methods(py::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "dims",
       [](const T &self) {
-        std::vector<Dim> dims;
+        std::vector<std::string> dims;
         for (const auto &dim : self.dimensions()) {
-          dims.push_back(dim.first);
+          dims.push_back(dim.first.name());
         }
         return dims;
       },
