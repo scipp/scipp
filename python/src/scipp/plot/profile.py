@@ -6,7 +6,7 @@ from .figure1d import PlotFigure1d
 import numpy as np
 
 
-class ProfileView(PlotFigure1d):
+class PlotProfile(PlotFigure1d):
     """
     Class for 1 dimensional profile plots, that are displayed as 1d slices into
     a higher dimensional data.

@@ -29,7 +29,7 @@ class PlotPanel:
     def connect(self, callbacks):
         """
         Connect the panel interface to the callbacks provided by the
-        `controller`.
+        `PlotController`.
         """
         for key, func in callbacks.items():
             self.interface[key] = func

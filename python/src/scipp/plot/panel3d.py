@@ -8,6 +8,10 @@ import numpy as np
 
 
 class PlotPanel3d(PlotPanel):
+    """
+    Additional widgets that control the position, opacity and shape of the
+    cut surface in the 3d plot.
+    """
     def __init__(self, pixel_size=None):
         super().__init__()
 
@@ -32,6 +36,9 @@ class PlotPanel3d(PlotPanel):
         self._create_cut_surface_controls()
 
     def _create_cut_surface_controls(self):
+        """
+        Generate the buttons and sliders with `ipywidgets`.
+        """
 
         # Opacity slider: top value controls opacity if no cut surface is
         # active. If a cut curface is present, the upper slider is the opacity
@@ -141,9 +148,17 @@ class PlotPanel3d(PlotPanel):
                                    ]))
 
     def get_cut_options(self):
+        """
+        Accessor for the current possible cut options, so that they can be
+        defined only here, and retrieved by the `PlotModel3d` upon
+        initialisation.
+        """
         return self.cut_options
 
     def update_axes(self, axparams):
+        """
+        Reset axes limits and cut surface buttons.
+        """
         self.xminmax["x"] = axparams['x']['lims']
         self.xminmax["y"] = axparams['y']['lims']
         self.xminmax["z"] = axparams['z']['lims']
@@ -161,11 +176,18 @@ class PlotPanel3d(PlotPanel):
             self._update_cut_surface()
 
     def _check_if_reset_needed(self, owner, content, buffers):
+        """
+        If the currently selected surface button is clicked again, then we do
+        a reset by hiding the cut surface.
+        """
         if owner.value == self.current_cut_surface_value:
             self.cut_surface_buttons.value = None
         self.current_cut_surface_value = owner.value
 
     def _update_cut_surface_buttons(self, change):
+        """
+        Handle button update when the type of cut surface is changed.
+        """
         if change["new"] is None:
             self.cut_slider.disabled = True
             self.cut_checkbox.disabled = True
@@ -182,6 +204,11 @@ class PlotPanel3d(PlotPanel):
             self._update_cut_surface()
 
     def _update_cut_slider_bounds(self):
+        """
+        When axes are changed, we update the possible spatial range for the cut
+        surface position sliders.
+        We also update the possible range for value-based slicing.
+        """
         self.lock_surface_update = True
         # Cartesian X, Y, Z
         if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
@@ -233,6 +260,9 @@ class PlotPanel3d(PlotPanel):
         self.lock_surface_update = False
 
     def _update_cut_surface(self, change=None):
+        """
+        Ask the `PlotController3d` to update the pixel colors.
+        """
         self.interface["update_cut_surface"](
             target=self.cut_slider.value,
             button_value=self.cut_surface_buttons.value,
@@ -241,18 +271,18 @@ class PlotPanel3d(PlotPanel):
             opacity_upper=self.opacity_slider.upper)
 
     def update_data(self, axparams=None):
+        """
+        If we are currently using value-based slicing, the cut surface needs an
+        update when a data update is performed when a slider is moved.
+        """
         if self.cut_surface_buttons.value == self.cut_options["Value"]:
             self._update_cut_surface()
 
     def rescale_to_data(self, vmin=None, vmax=None, mask_info=None):
+        """
+        Update the pixel colors using new colorbar limits.
+        """
         self.vmin = vmin
         self.vmax = vmax
         if self.cut_surface_buttons.value == self.cut_options["Value"]:
             self._update_cut_slider_bounds()
-
-    # def toggle_mask(self, mask_info):
-    #     """
-    #     Show/hide masks
-    #     """
-    #     new_values = self.model.get_slice_values(mask_info)
-    #     self.view.update_data(new_values)

@@ -5,7 +5,7 @@
 from .. import config
 from .controller2d import PlotController2d
 from .model2d import PlotModel2d
-from .profile import ProfileView
+from .profile import PlotProfile
 from .sciplot import SciPlot
 from .view2d import PlotView2d
 from .widgets import PlotWidgets
@@ -88,7 +88,7 @@ class SciPlot2d(SciPlot):
         if self.ndim > 2:
             pad = config.plot.padding.copy()
             pad[2] = 0.77
-            self.profile = ProfileView(
+            self.profile = PlotProfile(
                 errorbars=self.errorbars,
                 ax=pax,
                 unit=self.params["values"][self.name]["unit"],

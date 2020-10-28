@@ -11,7 +11,8 @@ from .tools import make_fake_coord, get_line_param
 class Plot(dict):
     """
     The Plot object is used as output for the plot command.
-    It is a small wrapper around python dict, with an _ipython_display_ repr.
+    It is a small wrapper around python dict, with an `_ipython_display_`
+    representation.
     The dict will contain one entry for each entry in the input supplied to
     the plot function.
     More functionalities can be added in the future.

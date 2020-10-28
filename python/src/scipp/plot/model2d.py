@@ -181,7 +181,7 @@ class PlotModel2d(PlotModel):
                        mask_info=None):
         """
         Slice down all dimensions apart from the profile dimension, and send
-        the data values, variances and masks back to the `controller`.
+        the data values, variances and masks back to the `PlotController`.
 
         TODO: remove duplicate code between this and update_profile in model1d.
         """

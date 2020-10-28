@@ -90,7 +90,7 @@ class PlotPanel1d(PlotPanel):
 
     def keep_line(self, owner):
         """
-        Send a "keep line" event to the `controller`.
+        Send a "keep line" event to the `PlotController`.
         """
         name = self.keep_buttons[owner.id]["dropdown"].value
         self.interface["keep_line"](
@@ -104,7 +104,7 @@ class PlotPanel1d(PlotPanel):
 
     def remove_line(self, owner):
         """
-        Send a "remove line" event to the `controller`.
+        Send a "remove line" event to the `PlotController`.
         """
         self.interface["remove_line"](line_id=owner.id)
         del self.keep_buttons[owner.id]
@@ -112,6 +112,6 @@ class PlotPanel1d(PlotPanel):
 
     def update_line_color(self, change):
         """
-        Send a "update line color" event to the controller.
+        Send a "update line color" event to the `PlotController`.
         """
         self.interface["update_line_color"](change["owner"].id, change["new"])

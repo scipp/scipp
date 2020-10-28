@@ -99,8 +99,9 @@ class PlotController3d(PlotController):
     def update_cut_surface(self, *args, **kwargs):
         """
         When the position or thickness of the cut surface is changed via the
-        widgets in the `panel3d`, get new alpha values from the `model` and
-        send them to the `view` for updating the color array.
+        widgets in the `PlotPanel3d`, get new alpha values from the
+        `PlotModel3d` and send them to the `PlotView3d` for updating the color
+        array.
         """
         alpha = self.model.update_cut_surface(*args, **kwargs)
         self.view.update_opacity(alpha=alpha)

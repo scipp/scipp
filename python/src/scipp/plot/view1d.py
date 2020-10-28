@@ -9,11 +9,11 @@ from .._utils import make_random_color
 
 class PlotView1d(PlotView):
     """
-    View object for 1 dimensional plots. Contains a `figure1d`.
+    View object for 1 dimensional plots. Contains a `PlotFigure1d`.
 
-    The difference between `view1d` and `figure1d` is that `view1d` also
-    handles the communications with the `controller` that are to do with the
-    `profile` plot displayed below the `figure1d`.
+    The difference between `PlotView1d` and `PlotFigure1d` is that `PlotView1d`
+    also handles the communications with the `PlotController` that are to do
+    with the `PlotProfile` plot displayed below the `PlotFigure1d`.
 
     """
     def __init__(self, *args, **kwargs):

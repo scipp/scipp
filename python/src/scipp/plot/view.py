@@ -9,9 +9,9 @@ class PlotView:
     It holds a `figure`, which can be either a Matplotlib based figure (1d and
     2d) or a pythreejs scene (3d).
 
-    The difference between a `view` and a `figure` is that the `view` also
-    handles the communications with the `controller` that are to do with the
-    `profile` plot displayed below the `figure`.
+    The difference between a `PlotView` and a `PlotFigure` is that the
+    `PlotView` also handles the communications with the `PlotController` that
+    are to do with the `PlotProfile` plot displayed below the `PlotFigure`.
     """
     def __init__(self, figure=None):
         self.figure = figure

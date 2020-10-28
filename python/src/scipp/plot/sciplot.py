@@ -14,20 +14,21 @@ class SciPlot:
     operations performed on the data.
 
     It contains:
-      - a `model`: contains the input data and performs all the heavy
+      - a `PlotModel`: contains the input data and performs all the heavy
           calculations.
-      - a `view`: contains a `figure` which is displayed and handles
-          communications between `controller` and `figure`, as well as updating
-          the `profile` depending on signals captured by the `figure`.
-      - some `widgets`: a base collection of sliders and buttons which provide
-          interactivity to the user.
-      - a `panel` (optional): an extra set of widgets which is not part of the
-          base `widgets`.
-      - a `profile` (optional): used to display a profile plot under the
-          `figure` to show one of the slider dimensions as a 1 dimensional line
-          plot.
-      - a `controller`: handles all the communication between all the pieces
-          above.
+      - a `PlotView`: contains a `PlotFigure` which is displayed and handles
+          communications between `PlotController` and `PlotFigure`, as well as
+          updating the `PlotProfile` depending on signals captured by the
+          `PlotFigure`.
+      - some `PlotWidgets`: a base collection of sliders and buttons which
+          provide interactivity to the user.
+      - a `PlotPanel` (optional): an extra set of widgets which is not part of
+          the base `PlotWidgets`.
+      - a `PlotProfile` (optional): used to display a profile plot under the
+          `PlotFigure` to show one of the slider dimensions as a 1 dimensional
+          line plot.
+      - a `PlotController`: handles all the communication between all the
+          pieces above.
     """
     def __init__(self,
                  scipp_obj_dict,

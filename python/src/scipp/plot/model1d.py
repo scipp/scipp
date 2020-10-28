@@ -87,7 +87,7 @@ class PlotModel1d(PlotModel):
                        mask_info=None):
         """
         Slice down all dimensions apart from the profile dimension, and send
-        the data values, variances and masks back to the `controller`.
+        the data values, variances and masks back to the `PlotController`.
         """
 
         profile_dim = axparams["x"]["dim"]
