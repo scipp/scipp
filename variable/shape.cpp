@@ -104,9 +104,12 @@ Variable resize(const VariableConstView &var, const Dim dim,
 /// Return new variable resized to given shape.
 ///
 /// For bucket variables the values of `shape` are interpreted as bucket sizes
-/// and the buffer is also rsized accordingly. For normal (non-bucket) variable
-/// the values of `shape` are ignored, i.e., only `shape.dims()` is used to
-/// determine the shape of the output.
+/// to RESERVE and the buffer is also resized accordingly. The emphasis is on
+/// "reserve", i.e., buffer size and begin indices are set up accordingly, but
+/// end=begin is set, i.e., the buckets are empty, but may be grown up to the
+/// requested size. For normal (non-bucket) variable the values of `shape` are
+/// ignored, i.e., only `shape.dims()` is used to determine the shape of the
+/// output.
 Variable resize(const VariableConstView &var, const VariableConstView &shape) {
   return Variable(var, var.underlying().data().makeDefaultFromParent(shape));
 }

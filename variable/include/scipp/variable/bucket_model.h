@@ -12,6 +12,7 @@
 #include "scipp/variable/buckets.h"
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 
 namespace scipp::variable {
@@ -52,9 +53,8 @@ public:
   VariableConceptHandle
   makeDefaultFromParent(const VariableConstView &shape) const override {
     const auto [begin, size] = sizes_to_begin(shape);
-    const auto end = begin + shape;
     return std::make_unique<DataModel>(
-        zip(begin, end), m_dim, resize_default_init(m_buffer, m_dim, size));
+        zip(begin, begin), m_dim, resize_default_init(m_buffer, m_dim, size));
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }

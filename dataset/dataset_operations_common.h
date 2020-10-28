@@ -187,4 +187,38 @@ VariableView mean(const VariableConstView &var, const Dim dim,
 VariableView sum(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks, const VariableView &out);
 
+template <class T>
+void concatenate_out(const VariableConstView &var, const Dim dim,
+                     const VariableConstView &inverse_mask,
+                     const VariableView &out) {
+  const auto &[indices, buffer_dim, buffer] = var.constituents<bucket<T>>();
+  auto [begin, end] = unzip(indices);
+  if (inverse_mask) {
+    begin *= inverse_mask;
+    end *= inverse_mask;
+  }
+  const auto masked_indices = zip(begin, end);
+  const auto &[out_indices, out_buffer_dim, out_buffer] =
+      out.constituents<bucket<T>>();
+  auto [out_begin, out_end] = unzip(out_indices);
+  const auto nslice = masked_indices.dims()[dim];
+  auto out_current = out_end;
+  auto out_next = out_current;
+  // For now we use a relatively inefficient implementation, copying the
+  // contents of every slice of input buckets to the same output bucket. A more
+  // efficient solution might be to use `transform` directly. Masking is taken
+  // care of by setting indidces (and begin/end indices) to {0,0} for masked
+  // input buckets.
+  for (scipp::index i = 0; i < nslice; ++i) {
+    const auto slice_indices = masked_indices.slice({dim, i});
+    const auto [slice_begin, slice_end] = unzip(slice_indices);
+    out_next += slice_end;
+    out_next -= slice_begin;
+    copy_slices(buffer, out_buffer, buffer_dim, slice_indices,
+                zip(out_current, out_next));
+    out_current = out_next;
+  }
+  out_indices.assign(zip(out_begin, out_current));
+}
+
 } // namespace scipp::dataset

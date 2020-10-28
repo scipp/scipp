@@ -27,11 +27,12 @@ VariableConstView::constituents() const {
 }
 
 template <class T>
-std::tuple<VariableConstView, Dim, typename T::element_type>
+std::tuple<VariableView, Dim, typename T::element_type>
 VariableView::constituents() const {
   auto view = *this;
   auto &model = requireT<DataModel<T>>(m_mutableVariable->data());
   view.m_variable = &model.indices();
+  view.m_mutableVariable = &model.indices();
   return {view, model.dim(), model.buffer()};
 }
 
@@ -101,8 +102,7 @@ public:
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
   template std::tuple<Variable, Dim, typename __VA_ARGS__::buffer_type>        \
   Variable::to_constituents<__VA_ARGS__>();                                    \
-  template std::tuple<VariableConstView, Dim,                                  \
-                      typename __VA_ARGS__::element_type>                      \
+  template std::tuple<VariableView, Dim, typename __VA_ARGS__::element_type>   \
   VariableView::constituents<__VA_ARGS__>() const;                             \
   template std::tuple<VariableConstView, Dim,                                  \
                       typename __VA_ARGS__::const_element_type>                \

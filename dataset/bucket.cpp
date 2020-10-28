@@ -200,44 +200,11 @@ auto concatenate_impl(const VariableConstView &var0,
 }
 
 template <class T>
-void concatenate_impl(const VariableConstView &var, const Dim dim,
-                      const VariableConstView &mask, const VariableView &out) {
-  const auto &[indices, buffer_dim, buffer] = var.constituents<bucket<T>>();
-  auto [begin, end] = unzip(indices);
-  if (mask) {
-    begin *= ~mask;
-    end *= ~mask;
-  }
-  const auto masked_indices = zip(begin, end);
-  const auto sizes = end - begin;
-  const auto &[out_indices, out_buffer_dim, out_buffer] =
-      out.constituents<bucket<T>>();
-  auto [out_begin, out_end] = unzip(out_indices);
-  const auto nslice = masked_indices.dims()[dim];
-  auto out_current = out_begin;
-  auto out_next = out_current;
-  // For now we use a relatively inefficient implementation, copying the
-  // contents of every slice of input buckets to the same output bucket. A more
-  // efficient solution might be to use `transform` directly. Masking is taken
-  // care of by setting indidces (and begin/end indices) to {0,0} for masked
-  // input buckets.
-  for (scipp::index i = 0; i < nslice; ++i) {
-    const auto slice_indices = masked_indices.slice({dim, i});
-    const auto [slice_begin, slice_end] = unzip(slice_indices);
-    out_next += slice_end;
-    out_next -= slice_begin;
-    copy_slices(buffer, out_buffer, buffer_dim, slice_indices,
-                zip(out_current, out_next));
-    out_current = out_next;
-  }
-}
-
-template <class T>
 auto concatenate_typed(const VariableConstView &var, const Dim dim,
                        const VariableConstView &shape,
                        const VariableConstView &mask) {
   auto out = resize(var, shape);
-  concatenate_impl<T>(var, dim, mask, out);
+  concatenate_out<T>(var, dim, mask ? ~mask : mask, out);
   return out;
 }
 

@@ -65,8 +65,8 @@ T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
     out = resize(m_data, reductionDim, out_sizes);
   } else {
     out = resize(m_data, reductionDim, size());
+    out.rename(reductionDim, dim());
   }
-  out.rename(reductionDim, dim());
   out.coords().set(dim(), key());
   return out;
 }
@@ -101,29 +101,20 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
 }
 
 namespace groupby_detail {
-static constexpr auto concatenate = [](const DataArrayView &out, const auto &in,
-                                       const GroupByGrouping::group &group,
-                                       const Dim reductionDim,
-                                       const Variable &mask_) {
-  /*
-bool first = true;
-const auto no_mask = makeVariable<bool>(Values{true});
-for (const auto &slice : group) {
-  auto mask = mask_ ? mask_.slice(slice) : no_mask;
-  const auto &array = in.slice(slice);
-  if (contains_events(array.data()))
-    flatten_impl(out.data(), array.data(), mask);
-  else if (first) {
-    // Note that masks can be ignored since no weights are concatenated
-    out.data().assign(array.data().slice({reductionDim, 0}));
-    first = false;
-  }
-  for (auto &&[dim, coord] : out.coords())
-    if (contains_events(coord))
-      flatten_impl(coord, array.coords()[dim], mask);
-}
-*/
-};
+static constexpr auto concatenate =
+    [](const DataArrayView &out, const auto &data_container,
+       const GroupByGrouping::group &group, const Dim reduction_dim,
+       const Variable &mask) {
+      for (const auto &slice : group) {
+        const auto data_slice = data_container.slice(slice);
+        if (mask)
+          concatenate_out<DataArray>(data_slice.data(), reduction_dim,
+                                     mask.slice(slice), out.data());
+        else
+          concatenate_out<DataArray>(data_slice.data(), reduction_dim, {},
+                                     out.data());
+      }
+    };
 
 static constexpr auto sum =
     [](const DataArrayView &out, const auto &data_container,

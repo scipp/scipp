@@ -329,8 +329,7 @@ public:
   void expectCanSetUnit(const units::Unit &unit) const;
 
   template <class T>
-  std::tuple<VariableConstView, Dim, typename T::element_type>
-  constituents() const;
+  std::tuple<VariableView, Dim, typename T::element_type> constituents() const;
 
   template <class T> void replace_model(T model) const;
 
