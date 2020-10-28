@@ -242,8 +242,8 @@ class PlotModel:
         vmin = None
         vmax = None
         if self.dslice is not None:
-            vmin = sc.min(self.dslice.data).value
-            vmax = sc.max(self.dslice.data).value
+            vmin = sc.nanmin(self.dslice.data).value
+            vmax = sc.nanmax(self.dslice.data).value
         return vmin, vmax
 
     # def _slice_or_rebin(self, array, dim, dim_slice):
@@ -278,5 +278,11 @@ class PlotModel:
         # for dim in slices:
         for dim, [lower, upper] in slices.items():
             # data_slice = self._slice_or_rebin(data_slice, dim, slices[dim])
-            array = sc.sum(array[dim, lower:upper], dim)
+            # array = sc.sum(array[dim, lower:upper], dim)
+            array = array[dim, lower:upper]
+            # Here we rebin to a single bin instead of using sc.sum because the
+            # sum would apply the masks (i.e. zero the data values)
+            array = sc.rebin(array, dim,
+                sc.concatenate(array.coords[dim][dim, 0],
+                               array.coords[dim][dim, -1], dim))[dim, 0]
         return array

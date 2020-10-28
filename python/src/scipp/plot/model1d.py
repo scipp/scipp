@@ -89,13 +89,14 @@ class PlotModel1d(PlotModel):
         Slice down all dimensions apart from the profile dimension, and send
         the data values, variances and masks back to the `PlotController`.
         """
+        # os.write(1, "model1d update_profile 1\n)
 
         profile_dim = axparams["x"]["dim"]
 
         new_values = {}
 
-        # Remove the current dim since it will be manually sliced below
-        del slices[self.dim]
+        # # Remove the current dim since it will be manually sliced below
+        # del slices[self.dim]
 
         # Find closest point to cursor
         # TODO: can we optimize this with new buckets?

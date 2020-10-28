@@ -274,8 +274,9 @@ class PlotController:
         """
         Roll the order of the displayed axes.
         """
-        dims = [self.axes[key] for key in sorted(self.axes.keys())]
-        keys = list(np.roll(self._get_xyz_axes(), 1))
+        xyz = self._get_xyz_axes()
+        dims = [self.axes[key] for key in xyz]
+        keys = list(np.roll(xyz, 1))
         for i in range(len(dims)):
             self.axes[keys[i]] = dims[i]
         self.update_axes()
