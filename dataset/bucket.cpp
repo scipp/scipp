@@ -144,6 +144,53 @@ auto concatenate_impl(const VariableConstView &var0,
   return Variable{
       std::make_unique<variable::DataModel<bucket<T>>>(combine<T>(var0, var1))};
 }
+
+template <class T>
+auto concatenate_impl(const VariableConstView &var, const Dim dim,
+                      const VariableConstView &mask) {
+  const auto &[indices, buffer_dim, buffer] = var.constituents<bucket<T>>();
+  auto [begin, end] = unzip(indices);
+  if (mask) {
+    begin *= ~mask;
+    end *= ~mask;
+  }
+  const auto masked_indices = zip(begin, end);
+  const auto sizes = end - begin;
+  const auto out_sizes = sum(sizes, dim);
+  const auto [out_begin, size] = sizes_to_begin(out_sizes);
+  const auto out_end = out_begin + out_sizes;
+  auto out_buffer = resize_default_init(buffer, dim, size);
+  const auto nslice = masked_indices.dims()[dim];
+  auto out_current = out_begin;
+  auto out_next = out_current;
+  // For now we use a relatively inefficient implementation, copying the
+  // contents of every slice of input buckets to the same output bucket. A more
+  // efficient solution might be to use `transform` directly. Masking is taken
+  // care of by setting indidces (and begin/end indices) to {0,0} for masked
+  // input buckets.
+  for (scipp::index i = 0; i < nslice; ++i) {
+    const auto slice_indices = masked_indices.slice({dim, i});
+    const auto [slice_begin, slice_end] = unzip(slice_indices);
+    out_next += slice_end;
+    out_next -= slice_begin;
+    copy_slices(buffer, out_buffer, buffer_dim, slice_indices,
+                zip(out_current, out_next));
+    out_current = out_next;
+  }
+  return Variable{std::make_unique<variable::DataModel<bucket<T>>>(
+      zip(out_begin, out_end), buffer_dim, std::move(out_buffer))};
+}
+
+Variable concatenate_untyped(const VariableConstView &var, const Dim dim,
+                             const VariableConstView &mask = {}) {
+  if (var.dtype() == dtype<bucket<Variable>>)
+    return concatenate_impl<Variable>(var, dim, mask);
+  else if (var.dtype() == dtype<bucket<DataArray>>)
+    return concatenate_impl<DataArray>(var, dim, mask);
+  else
+    return concatenate_impl<Dataset>(var, dim, mask);
+}
+
 } // namespace
 
 Variable concatenate(const VariableConstView &var0,
@@ -162,6 +209,21 @@ DataArray concatenate(const DataArrayConstView &a,
           union_(a.aligned_coords(), b.aligned_coords()),
           union_or(a.masks(), b.masks()),
           intersection(a.unaligned_coords(), b.unaligned_coords())};
+}
+
+/// Reduce a dimension by concatenating all elements along the dimension.
+///
+/// This is the analogue to summing non-bucket data.
+Variable concatenate(const VariableConstView &var, const Dim dim) {
+  return concatenate_untyped(var, dim);
+}
+
+/// Reduce a dimension by concatenating all elements along the dimension.
+///
+/// This is the analogue to summing non-bucket data.
+DataArray concatenate(const DataArrayConstView &array, const Dim dim) {
+  return apply_to_data_and_drop_dim(array, concatenate_untyped, dim,
+                                    irreducible_mask(array.masks(), dim));
 }
 
 void append(const VariableView &var0, const VariableConstView &var1) {

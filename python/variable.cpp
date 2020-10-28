@@ -19,6 +19,7 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/sort.h"
+#include "scipp/dataset/util.h"
 
 #include "bind_data_access.h"
 #include "bind_operators.h"
@@ -186,7 +187,9 @@ of variances.)");
       .def(
           "__rtruediv__",
           [](Variable &a, int &b) { return (b * units::one) / a; },
-          py::is_operator());
+          py::is_operator())
+      .def("__sizeof__",
+           py::overload_cast<const VariableConstView &>(&size_of));
 
   bind_init_list(variable);
   // Order matters for pybind11's overload resolution. Do not change.
@@ -199,7 +202,9 @@ of variances.)");
   //------------------------------------
 
   py::class_<VariableConstView> variableConstView(m, "VariableConstView");
-  variableConstView.def(py::init<const Variable &>());
+  variableConstView.def(py::init<const Variable &>())
+      .def("__sizeof__",
+           py::overload_cast<const VariableConstView &>(&size_of));
 
   py::class_<VariableView, VariableConstView> variableView(
       m, "VariableView", py::buffer_protocol(), R"(

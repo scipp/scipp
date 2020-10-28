@@ -7,6 +7,7 @@ import os
 import uuid
 from functools import partial, reduce
 from html import escape
+import sys
 
 import numpy as np
 
@@ -465,8 +466,10 @@ def _obj_repr(header_components, sections):
 
 def dataset_repr(ds):
     obj_type = "scipp.{}".format(type(ds).__name__)
-
-    header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
+    header_components = [
+        f"<div class='xr-obj-type'>{escape(obj_type)}"
+        f"({human_readable_size(sys.getsizeof(ds))})</div>"
+    ]
 
     sections = [dim_section(ds)]
 
@@ -490,8 +493,22 @@ def dataset_repr(ds):
 def variable_repr(var):
     obj_type = "scipp.{}".format(type(var).__name__)
 
-    header_components = [f"<div class='xr-obj-type'>{escape(obj_type)}</div>"]
+    header_components = [
+        f"<div class='xr-obj-type'>{escape(obj_type)}"
+        f"({human_readable_size(sys.getsizeof(var))})</div>"
+    ]
 
     sections = [variable_section(var)]
 
     return _obj_repr(header_components, sections)
+
+
+def human_readable_size(size_in_bytes):
+    if size_in_bytes / (1024 * 1024 * 1024) > 1:
+        return f'{size_in_bytes/(1024*1024*1024):.2f} GB'
+    if size_in_bytes / (1024 * 1024) > 1:
+        return f'{size_in_bytes/(1024*1024):.2f} MB'
+    if size_in_bytes / (1024) > 1:
+        return f'{size_in_bytes/(1024):.2f} KB'
+
+    return f'{size_in_bytes} Bytes'
