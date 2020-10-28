@@ -109,7 +109,7 @@ class SciPlot:
             # Create a useful map from dim to shape
             self.dim_to_shape[name] = dict(zip(array_dims, array.shape))
             self.coord_shapes[name] = {
-                dim: array.coords[dim].shape
+                str(dim): array.coords[dim].shape
                 for dim in array.coords
             }
             # Add shapes for dims that have no coord in the original data.

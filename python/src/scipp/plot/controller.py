@@ -55,10 +55,11 @@ class PlotController:
         self.vmax = vmax
         self.norm = norm
 
+        print(self.axes, self.axes.values())
         self.scale = {dim: "linear" for dim in self.axes.values()}
         if scale is not None:
             for dim, item in scale.items():
-                self.scale[sc.Dim(dim)] = item
+                self.scale[dim] = item
 
         # Save the current profile dimension
         self.profile_dim = None
@@ -115,6 +116,8 @@ class PlotController:
 
                 self.coord_labels[key][dim] = name_with_unit(var=coord)
                 self.coord_units[key][dim] = name_with_unit(var=coord, name="")
+
+        print(self.histograms)
 
         self.initialise_widgets(dim_to_shape[self.name])
         self.initialise_view()
@@ -268,17 +271,17 @@ class PlotController:
                                        mask_info=self.get_masks_info())
 
     def swap_axes(self, owner=None):
-        print("before", self.axes)
+        # print("before", self.axes)
         # Find position of new dim in axes values
         # pos = list(self.axes.values()).index(new_dim)
-        print(self._get_xyz_axes())
+        # print(self._get_xyz_axes())
         keys = np.roll(self._get_xyz_axes(), 1)
         dims = list(self.axes.values())
-        print(keys)
-        print(dims)
+        # print(keys)
+        # print(dims)
         for ax, dim in zip(keys, dims):
             self.axes[ax] = dim
-        print("after", self.axes)
+        # print("after", self.axes)
         self.update_axes()
 
 
@@ -333,7 +336,8 @@ class PlotController:
         print(slices)
 
         if change is not None:
-            owner_dim = change["owner"].dim
+            owner_dim = self.widgets.get_index_dim(change["owner"].index)
+            # print(owner_dim)
             # Update slider readout label
             # ind = active_sliders[owner_dim]
             lower, upper = self.model.get_slice_coord_bounds(
@@ -342,7 +346,7 @@ class PlotController:
                 lower, upper, slices[owner_dim], owner_dim == self.multid_coord)
 
         # slices = {}
-        info = {"slice_label": ""}
+        # info = {"slice_label": ""}
         # # Slice along dimensions with active sliders
         # for dim, [lower, upper] in slider_bounds.items():
         #     # slices[dim] = self._make_slice_dict(val, key, dim)
@@ -353,7 +357,9 @@ class PlotController:
         #             val, key, slices[dim]["bin_left"],
         #             slices[dim]["bin_centre"], slices[dim]["bin_right"],
         #             dim == self.multid_coord))
-        info["slice_label"] = info["slice_label"][1:]
+        # info["slice_label"] = info["slice_label"][1:]
+
+        info = {"slice_label": self._make_slice_label(slices, "")[1:]}
 
         new_values = self.model.update_data(slices,
                                             mask_info=self.get_masks_info())
@@ -361,10 +367,10 @@ class PlotController:
         if self.panel is not None:
             self.panel.update_data(info)
         if self.profile_dim is not None:
-            lower, upper = self.widgets.get_slice_bounds(
-                self.profile_dim, slices[self.profile_dim]["bin_left"],
-                slices[self.profile_dim]["bin_centre"],
-                slices[self.profile_dim]["bin_right"])
+            # lower, upper = self.widgets.get_slice_bounds(
+            #     self.profile_dim, slices[self.profile_dim]["bin_left"],
+            #     slices[self.profile_dim]["bin_centre"],
+            #     slices[self.profile_dim]["bin_right"])
             self.profile.update_slice_area(lower, upper)
 
     def toggle_mask(self, change):
@@ -459,15 +465,14 @@ class PlotController:
             visible = False
             self.widgets.clear_profile_buttons()
         else:
-            self.profile_dim = owner.dim
+            self.profile_dim = self.widgets.get_index_dim(owner.index)
             self.profile_axparams.clear()
             if owner.button_style == "info":
                 owner.button_style = ""
                 visible = False
             else:
                 owner.button_style = "info"
-                self.widgets.clear_profile_buttons(
-                    profile_dim=self.profile_dim)
+                self.widgets.clear_profile_buttons(exclude=owner.index)
                 visible = True
 
             if visible:
@@ -505,12 +510,17 @@ class PlotController:
         self.view.update_profile_connection(visible=visible)
 
         if visible:
-            slice_dict = self._make_slice_dict(
-                self.widgets.get_slider_value(self.profile_dim),
-                self.profile_dim)
-            lower, upper = self.widgets.get_slice_bounds(
-                self.profile_dim, slice_dict["bin_left"],
-                slice_dict["bin_centre"], slice_dict["bin_right"])
+            # slice_dict = self._make_slice_dict(
+            #     self.widgets.get_slider_value(self.profile_dim),
+            #     self.profile_dim)
+            # lower, upper = self.widgets.get_slice_bounds(
+            #     self.profile_dim, slice_dict["bin_left"],
+            #     slice_dict["bin_centre"], slice_dict["bin_right"])
+            slices = self.widgets.get_slider_bounds()
+            lower, upper = self.model.get_slice_coord_bounds(
+                self.name, self.profile_dim, slices[self.profile_dim])
+            # self.widgets.update_slider_readout(owner.index,
+            #     lower, upper, slices[self.profile_dim])
             self.profile.update_slice_area(lower, upper)
 
     def update_profile(self, xdata=None, ydata=None):
@@ -521,27 +531,50 @@ class PlotController:
         ask the model to slice down the data, and send the new data returned by
         the model to the profile view.
         """
-        slices = {}
+        # slices = {}
         info = {"slice_label": ""}
 
         ax_dims = {self.axparams[xyz]["dim"]: xyz for xyz in self.axparams}
         xydata = {'x': xdata, 'y': ydata}
 
-        for dim, val in self.widgets.get_non_profile_slider_values(
-                self.profile_dim).items():
-            slices[dim] = self._make_slice_dict(val, dim)
-            if dim in ax_dims:
-                info["slice_label"] = "{},{}:{}".format(
-                    info["slice_label"], dim,
-                    value_to_string(xydata[ax_dims[dim]]))
-            else:
-                info["slice_label"] = "{},{}[{}]".format(
-                    info["slice_label"], dim,
-                    self.widgets.get_slice_bounds_as_string(
-                        dim, val, slices[dim]["bin_left"],
-                        slices[dim]["bin_centre"], slices[dim]["bin_right"],
-                        self.multid_coord))
-        info["slice_label"] = info["slice_label"][1:]
+        slices = self.widgets.get_slider_bounds(exclude=self.profile_dim)
+
+        # for dim, val in self.widgets.get_non_profile_slider_values(
+        #         self.profile_dim).items():
+
+        # Add pixel locations to profile label
+        for dim in ax_dims:
+            info["slice_label"] = "{},{}:{}".format(
+                info["slice_label"], dim,
+                value_to_string(xydata[ax_dims[dim]], precision=1))
+
+        # Add slice ranges to profile label
+        # for dim in slices:
+        #     lower, upper = self.model.get_slice_coord_bounds(
+        #         self.name, dim, slices[dim])
+        #     info["slice_label"] = "{},{}[{}]".format(
+        #         info["slice_label"], dim,
+        #         self.widgets.get_slice_bounds_as_string(
+        #             dim, val, slices[dim]["bin_left"],
+        #             slices[dim]["bin_centre"], slices[dim]["bin_right"],
+        #             self.multid_coord))
+
+        info["slice_label"] = self._make_slice_label(slices, info["slice_label"])[1:]
+
+
+        #     # slices[dim] = self._make_slice_dict(val, dim)
+        #     if dim in ax_dims:
+        #         info["slice_label"] = "{},{}:{}".format(
+        #             info["slice_label"], dim,
+        #             value_to_string(xydata[ax_dims[dim]]))
+        #     else:
+        #         info["slice_label"] = "{},{}[{}]".format(
+        #             info["slice_label"], dim,
+        #             self.widgets.get_slice_bounds_as_string(
+        #                 dim, val, slices[dim]["bin_left"],
+        #                 slices[dim]["bin_centre"], slices[dim]["bin_right"],
+        #                 self.multid_coord))
+        # info["slice_label"] = info["slice_label"][1:]
 
         # Get new values from model
         new_values = self.model.update_profile(xdata=xdata,
@@ -551,6 +584,20 @@ class PlotController:
                                                mask_info=self.get_masks_info())
         # Send new values to the profile view
         self.profile.update_data(new_values, info=info)
+
+    def _make_slice_label(self, slices, label):
+        # Add slice ranges to profile label
+        for dim in slices:
+            lower, upper = self.model.get_slice_coord_bounds(
+                self.name, dim, slices[dim])
+            label = "{},{}[{}]".format(
+                label, dim,
+                self.widgets.get_slice_extent(
+                                   lower,
+                                   upper,
+                                   slices[dim],
+                    dim == self.multid_coord))
+        return label
 
     def toggle_hover_visibility(self, value):
         """

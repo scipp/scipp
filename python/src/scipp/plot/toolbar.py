@@ -9,11 +9,12 @@ class PlotToolbar:
     """
     Custom toolbar with additional buttons.
     """
-    def __init__(self, fig_toolbar):
+    def __init__(self, fig_toolbar, swap_axes_button=False):
         self.members = {"original": fig_toolbar}
         self.container = ipw.VBox(list(self.members.values()))
         self.add_button("rescale", "arrows-v", "Rescale")
-        self.add_button("swap", "exchange", "Swap axes")
+        if swap_axes_button:
+            self.add_button("swap", "exchange", "Swap axes")
 
     def _ipython_display_(self):
         """
@@ -39,4 +40,5 @@ class PlotToolbar:
 
     def connect(self, callbacks):
         self.members["rescale"].on_click(callbacks["rescale_to_data"])
-        self.members["swap"].on_click(callbacks["swap_axes"])
+        if "swap" in self.members:
+            self.members["swap"].on_click(callbacks["swap_axes"])

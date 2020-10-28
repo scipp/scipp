@@ -19,7 +19,8 @@ class PlotFigure:
                  cax=None,
                  figsize=None,
                  title=None,
-                 padding=None):
+                 padding=None,
+                 swap_axes_button=False):
         self.fig = None
         self.ax = ax
         self.cax = cax
@@ -37,7 +38,8 @@ class PlotFigure:
                 padding = config.plot.padding
             self.fig.tight_layout(rect=padding)
             if self.is_widget():
-                self.toolbar = PlotToolbar(self.fig.canvas.toolbar)
+                self.toolbar = PlotToolbar(self.fig.canvas.toolbar,
+                    swap_axes_button)
                 self.fig.canvas.toolbar_visible = False
         else:
             self.own_axes = False

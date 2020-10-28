@@ -62,6 +62,7 @@ class PlotFigure1d(PlotFigure):
         the horizontal axis is changed.
         """
         xparams = axparams["x"]
+        print(xparams)
 
         if self.own_axes:
             self.ax.clear()

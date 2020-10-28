@@ -124,12 +124,12 @@ class PlotWidgets:
 
             # setattr(self.dim_buttons[index], "index", index)
             # setattr(self.dim_buttons[index], "old_value", self.dim_buttons[index].value)
-            setattr(self.slider[index], "dim", dim)
+            # setattr(self.slider[index], "dim", dim)
             setattr(self.slider[index], "index", index)
             # setattr(self.continuous_update[index], "index", index)
-            setattr(self.thickness_slider[index], "dim", dim)
+            # setattr(self.thickness_slider[index], "dim", dim)
             setattr(self.thickness_slider[index], "index", index)
-            # setattr(self.profile_button[index], "index", index)
+            setattr(self.profile_button[index], "index", index)
 
             # # Hide buttons and labels for 1d variables
             # if ndim == 1:
@@ -263,8 +263,8 @@ class PlotWidgets:
             self.dim_buttons[new_ind][dim].button_style = ""
         owner.button_style = "info"
 
-        self.slider[new_ind].dim = new_dim
-        self.thickness_slider[new_ind].dim = new_dim
+        # self.slider[new_ind].dim = new_dim
+        # self.thickness_slider[new_ind].dim = new_dim
 
         # Update the slider max and value.
         self.update_thickness_slider_range({new_ind: new_dim})
@@ -309,6 +309,10 @@ class PlotWidgets:
         self.interface["swap_dimensions"](new_ind, old_dim, new_dim)
         # self.interface["update_axes"]()
         return
+
+    def get_index_dim(self, index):
+        return self.index_to_dim[index]
+
 
     def update_slider_range(self, index, thickness, nmax, set_value=True):
         sl_min = (thickness // 2) + (thickness % 2) - 1
@@ -457,14 +461,16 @@ class PlotWidgets:
         #     # Slider readouts
         #     self.update_slider_readout(*item["slider_readout"])
 
-    def get_slider_bounds(self):
+    def get_slider_bounds(self, exclude=None):
         bounds = {}
         for index, sl in self.slider.items():
-            pos = sl.value
-            delta = self.thickness_slider[index].value
-            lower = pos - (delta // 2) + ((delta + 1) % 2)
-            upper = pos + (delta // 2) + 1
-            bounds[self.index_to_dim[index]] = [lower, upper]
+            dim = self.index_to_dim[index]
+            if dim != exclude:
+                pos = sl.value
+                delta = self.thickness_slider[index].value
+                lower = pos - (delta // 2) + ((delta + 1) % 2)
+                upper = pos + (delta // 2) + 1
+                bounds[dim] = [lower, upper]
         return bounds
 
     def get_slider_value(self, key):
@@ -491,35 +497,35 @@ class PlotWidgets:
         # return slider_values
         return {self.index_to_dim[index]: [index, sl.value] for index, sl in self.slider.items()}
 
-    def get_non_profile_slider_values(self, profile_dim):
-        """
-        Return the values of all sliders that do not correspond to the profile
-        dimension.
-        """
-        slider_values = {}
-        for dim, sl in self.slider.items():
-            if dim != profile_dim:
-                slider_values[dim] = sl.value
-        return slider_values
+    # def get_non_profile_slider_values(self, profile_dim):
+    #     """
+    #     Return the values of all sliders that do not correspond to the profile
+    #     dimension.
+    #     """
+    #     slider_values = {}
+    #     for dim, sl in self.slider.items():
+    #         if dim != profile_dim:
+    #             slider_values[dim] = sl.value
+    #     return slider_values
 
-    def get_buttons_and_disabled_sliders(self):
-        """
-        Get the values and dimensions of the buttons for dimensions that have
-        active sliders.
-        """
-        buttons_and_dims = {}
-        for dim, button in self.buttons.items():
-            if self.slider[dim].disabled:
-                buttons_and_dims[dim] = button.value
-        return buttons_and_dims
+    # def get_buttons_and_disabled_sliders(self):
+    #     """
+    #     Get the values and dimensions of the buttons for dimensions that have
+    #     active sliders.
+    #     """
+    #     buttons_and_dims = {}
+    #     for dim, button in self.buttons.items():
+    #         if self.slider[dim].disabled:
+    #             buttons_and_dims[dim] = button.value
+    #     return buttons_and_dims
 
-    def clear_profile_buttons(self, profile_dim=None):
+    def clear_profile_buttons(self, exclude=None):
         """
         Reset all profile buttons, when for example a new dimension is
         displayed along one of the figure axes.
         """
-        for dim, but in self.profile_button.items():
-            if dim != profile_dim:
+        for index, but in self.profile_button.items():
+            if index != exclude:
                 but.button_style = ""
 
     def get_masks_info(self):
@@ -549,20 +555,20 @@ class PlotWidgets:
     #         upper = centre + 0.5 * thickness
     #     return lower, upper
 
-    def get_slice_bounds(self,
-                                   key,
+    def get_slice_extent(self,
                                    lower,
                                    upper,
                                    indices,
-                                   is_multid=False):
+                                   is_multid=False,
+                                   precision=1):
         """
         Get the bounds of the slice for a given dimension as a single string.
         """
         if is_multid:
             return "i{}:i{}".format(indices[0], indices[1])
         else:
-            return "{}:{}".format(value_to_string(lower),
-                                  value_to_string(upper))
+            return "{}:{}".format(value_to_string(lower, precision=precision),
+                                  value_to_string(upper, precision=precision))
 
     def update_slider_readout(self,
                               key,
@@ -573,5 +579,5 @@ class PlotWidgets:
         """
         Update the slider readout with new slider bounds.
         """
-        self.slider_readout[key].value = self.get_slice_bounds(
-            key, lower, upper, indices, is_multid)
+        self.slider_readout[key].value = self.get_slice_extent(
+            lower, upper, indices, is_multid)

@@ -250,10 +250,10 @@ class PlotModel2d(PlotModel):
                                                                  iy:iy + 2]
                                            })[dimx, 0][dimy, 0]
 
-        # Remove the current x and y dims since they will have been manually
-        # sliced above
-        del slices[dimx]
-        del slices[dimy]
+        # # Remove the current x and y dims since they will have been manually
+        # # sliced above
+        # del slices[dimx]
+        # del slices[dimy]
         # Slice the remaining dims
         profile_slice = self.slice_data(profile_slice, slices)
 
