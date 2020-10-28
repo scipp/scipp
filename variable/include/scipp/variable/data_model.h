@@ -80,6 +80,11 @@ public:
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override;
 
+  VariableConceptHandle
+  makeDefaultFromParent(const VariableConstView &shape) const override {
+    return makeDefaultFromParent(shape.dims());
+  }
+
   bool equals(const VariableConstView &a,
               const VariableConstView &b) const override;
   void copy(const VariableConstView &src,

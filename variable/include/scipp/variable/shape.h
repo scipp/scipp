@@ -19,6 +19,8 @@ permute(const Variable &var, const Dim dim,
         const std::vector<scipp::index> &indices);
 SCIPP_VARIABLE_EXPORT Variable resize(const VariableConstView &var,
                                       const Dim dim, const scipp::index size);
+SCIPP_VARIABLE_EXPORT Variable resize(const VariableConstView &var,
+                                      const VariableConstView &shape);
 SCIPP_VARIABLE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_VARIABLE_EXPORT VariableView reshape(Variable &var,
                                            const Dimensions &dims);

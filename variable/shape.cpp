@@ -101,6 +101,16 @@ Variable resize(const VariableConstView &var, const Dim dim,
   return Variable(var, dims);
 }
 
+/// Return new variable resized to given shape.
+///
+/// For bucket variables the values of `shape` are interpreted as bucket sizes
+/// and the buffer is also rsized accordingly. For normal (non-bucket) variable
+/// the values of `shape` are ignored, i.e., only `shape.dims()` is used to
+/// determine the shape of the output.
+Variable resize(const VariableConstView &var, const VariableConstView &shape) {
+  return Variable(var, var.underlying().data().makeDefaultFromParent(shape));
+}
+
 namespace {
 void swap(Variable &var, const Dim dim, const scipp::index a,
           const scipp::index b) {

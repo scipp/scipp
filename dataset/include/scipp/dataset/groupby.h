@@ -17,7 +17,7 @@ namespace scipp::dataset {
 class SCIPP_DATASET_EXPORT GroupByGrouping {
 public:
   using group = boost::container::small_vector<Slice, 4>;
-  GroupByGrouping(Variable &&key, std::vector<group> &&groups)
+  GroupByGrouping(Variable key, std::vector<group> groups)
       : m_key(std::move(key)), m_groups(std::move(groups)) {}
 
   scipp::index size() const noexcept { return scipp::size(m_groups); }
@@ -45,7 +45,7 @@ public:
   T copy(const scipp::index group,
          const AttrPolicy attrPolicy = AttrPolicy::Keep) const;
 
-  T flatten(const Dim reductionDim) const;
+  T concatenate(const Dim reductionDim) const;
   T mean(const Dim reductionDim) const;
   T sum(const Dim reductionDim) const;
   T all(const Dim reductionDim) const;

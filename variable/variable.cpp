@@ -20,6 +20,10 @@ Variable::Variable(const VariableConstView &slice)
     data().copy(slice, *this);
 }
 
+/// Construct from parent with same dtype, unit, and hasVariances but new dims.
+///
+/// Note that in the case of bucket variables the buffer is *not* resized so
+/// this constructor may be expensive even if dims.volume() is small.
 Variable::Variable(const Variable &parent, const Dimensions &dims)
     : m_unit(parent.unit()),
       m_object(parent.data().makeDefaultFromParent(dims)) {}
@@ -28,7 +32,7 @@ Variable::Variable(const VariableConstView &parent, const Dimensions &dims)
     : m_unit(parent.unit()),
       m_object(parent.underlying().data().makeDefaultFromParent(dims)) {}
 
-Variable::Variable(const Variable &parent, VariableConceptHandle data)
+Variable::Variable(const VariableConstView &parent, VariableConceptHandle data)
     : m_unit(parent.unit()), m_object(std::move(data)) {}
 
 Variable::Variable(VariableConceptHandle data) : m_object(std::move(data)) {}

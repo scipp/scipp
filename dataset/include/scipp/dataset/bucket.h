@@ -30,6 +30,18 @@ SCIPP_DATASET_EXPORT void copy_slices(const DatasetConstView &src,
                                                               const Dim dim,
                                                               Dataset buffer);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+bucket_sizes(const VariableConstView &var);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+bucket_sizes(const DataArrayConstView &array);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
+bucket_sizes(const DatasetConstView &dataset);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT bool
+is_buckets(const DataArrayConstView &array);
+[[nodiscard]] SCIPP_DATASET_EXPORT bool
+is_buckets(const DatasetConstView &dataset);
+
 } // namespace scipp::dataset
 
 namespace scipp::dataset::buckets {

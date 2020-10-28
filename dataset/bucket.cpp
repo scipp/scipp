@@ -13,6 +13,8 @@
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
+#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bucket_model.h"
 #include "scipp/variable/buckets.h"
@@ -129,6 +131,43 @@ Variable from_constituents(Variable indices, const Dim dim, Dataset buffer) {
   return from_constituents_impl(std::move(indices), dim, std::move(buffer));
 }
 
+namespace {
+template <class T> Variable bucket_sizes_impl(const VariableConstView &view) {
+  const auto &indices = std::get<0>(view.constituents<bucket<T>>());
+  const auto [begin, end] = unzip(indices);
+  return end - begin;
+}
+} // namespace
+
+Variable bucket_sizes(const VariableConstView &var) {
+  if (var.dtype() == dtype<bucket<Variable>>)
+    return bucket_sizes_impl<Variable>(var);
+  else if (var.dtype() == dtype<bucket<DataArray>>)
+    return bucket_sizes_impl<DataArray>(var);
+  else if (var.dtype() == dtype<bucket<Dataset>>)
+    return bucket_sizes_impl<Dataset>(var);
+  else
+    return makeVariable<scipp::index>(var.dims());
+}
+
+DataArray bucket_sizes(const DataArrayConstView &array) {
+  return {bucket_sizes(array.data()), array.aligned_coords(), array.masks(),
+          array.unaligned_coords()};
+}
+
+Dataset bucket_sizes(const DatasetConstView &dataset) {
+  return apply_to_items(dataset, [](auto &&_) { return bucket_sizes(_); });
+}
+
+bool is_buckets(const DataArrayConstView &array) {
+  return is_buckets(array.data());
+}
+
+bool is_buckets(const DatasetConstView &dataset) {
+  return std::any_of(dataset.begin(), dataset.end(),
+                     [](const auto &item) { return is_buckets(item); });
+}
+
 } // namespace scipp::dataset
 
 namespace scipp::dataset::buckets {
@@ -161,8 +200,8 @@ auto concatenate_impl(const VariableConstView &var0,
 }
 
 template <class T>
-auto concatenate_impl(const VariableConstView &var, const Dim dim,
-                      const VariableConstView &mask) {
+void concatenate_impl(const VariableConstView &var, const Dim dim,
+                      const VariableConstView &mask, const VariableView &out) {
   const auto &[indices, buffer_dim, buffer] = var.constituents<bucket<T>>();
   auto [begin, end] = unzip(indices);
   if (mask) {
@@ -171,10 +210,9 @@ auto concatenate_impl(const VariableConstView &var, const Dim dim,
   }
   const auto masked_indices = zip(begin, end);
   const auto sizes = end - begin;
-  const auto out_sizes = sum(sizes, dim);
-  const auto [out_begin, size] = sizes_to_begin(out_sizes);
-  const auto out_end = out_begin + out_sizes;
-  auto out_buffer = resize_default_init(buffer, dim, size);
+  const auto &[out_indices, out_buffer_dim, out_buffer] =
+      out.constituents<bucket<T>>();
+  auto [out_begin, out_end] = unzip(out_indices);
   const auto nslice = masked_indices.dims()[dim];
   auto out_current = out_begin;
   auto out_next = out_current;
@@ -192,18 +230,26 @@ auto concatenate_impl(const VariableConstView &var, const Dim dim,
                 zip(out_current, out_next));
     out_current = out_next;
   }
-  return Variable{std::make_unique<variable::DataModel<bucket<T>>>(
-      zip(out_begin, out_end), buffer_dim, std::move(out_buffer))};
+}
+
+template <class T>
+auto concatenate_typed(const VariableConstView &var, const Dim dim,
+                       const VariableConstView &shape,
+                       const VariableConstView &mask) {
+  auto out = resize(var, shape);
+  concatenate_impl<T>(var, dim, mask, out);
+  return out;
 }
 
 Variable concatenate_untyped(const VariableConstView &var, const Dim dim,
+                             const VariableConstView &shape,
                              const VariableConstView &mask = {}) {
   if (var.dtype() == dtype<bucket<Variable>>)
-    return concatenate_impl<Variable>(var, dim, mask);
+    return concatenate_typed<Variable>(var, dim, shape, mask);
   else if (var.dtype() == dtype<bucket<DataArray>>)
-    return concatenate_impl<DataArray>(var, dim, mask);
+    return concatenate_typed<DataArray>(var, dim, shape, mask);
   else
-    return concatenate_impl<Dataset>(var, dim, mask);
+    return concatenate_typed<Dataset>(var, dim, shape, mask);
 }
 
 } // namespace
@@ -230,7 +276,7 @@ DataArray concatenate(const DataArrayConstView &a,
 ///
 /// This is the analogue to summing non-bucket data.
 Variable concatenate(const VariableConstView &var, const Dim dim) {
-  return concatenate_untyped(var, dim);
+  return concatenate_untyped(var, dim, sum(bucket_sizes(var), dim));
 }
 
 /// Reduce a dimension by concatenating all elements along the dimension.
@@ -238,6 +284,7 @@ Variable concatenate(const VariableConstView &var, const Dim dim) {
 /// This is the analogue to summing non-bucket data.
 DataArray concatenate(const DataArrayConstView &array, const Dim dim) {
   return apply_to_data_and_drop_dim(array, concatenate_untyped, dim,
+                                    sum(bucket_sizes(array), dim).data(),
                                     irreducible_mask(array.masks(), dim));
 }
 

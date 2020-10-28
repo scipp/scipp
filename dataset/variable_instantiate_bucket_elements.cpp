@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/bucket_variable.tcc"
 #include "scipp/variable/buckets.h"

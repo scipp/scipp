@@ -9,6 +9,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/buckets.h"
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/util.h"
@@ -45,7 +46,15 @@ public:
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
     return std::make_unique<DataModel>(makeVariable<range_type>(dims), m_dim,
-                                       T{m_buffer.slice({m_dim, 0, 0})});
+                                       T{m_buffer});
+  }
+
+  VariableConceptHandle
+  makeDefaultFromParent(const VariableConstView &shape) const override {
+    const auto [begin, size] = sizes_to_begin(shape);
+    const auto end = begin + shape;
+    return std::make_unique<DataModel>(
+        zip(begin, end), m_dim, resize_default_init(m_buffer, m_dim, size));
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
