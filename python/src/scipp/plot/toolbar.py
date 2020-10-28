@@ -15,11 +15,12 @@ class PlotToolbar:
         if fig_toolbar is not None:
             self.members["original"] = fig_toolbar
         else:
-            self.add_button("menu", "navicon", "Menu")
-            self.add_button("home", "home", "Reset original view")
-        self.add_button("rescale_to_data", "arrows-v", "Rescale")
+            self.add_button(name="menu", icon="navicon", tooltip="Menu")
+            self.add_button(name="home", icon="home", tooltip="Reset original view")
+        self.add_button(name="rescale_to_data", icon="arrows-v", tooltip="Rescale")
+        self.add_togglebutton(name="logx", description="Logx", tooltip="Log(x)")
         if swap_axes_button:
-            self.add_button("swap_axes", "exchange", "Swap axes")
+            self.add_button(name="swap_axes", icon="exchange", tooltip="Swap axes")
         self._update_container()
 
     def _ipython_display_(self):
@@ -38,10 +39,25 @@ class PlotToolbar:
         """
         self.container.layout.display = None if visible else 'none'
 
-    def add_button(self, name, icon, tooltip=None):
+    def add_button(self, name, icon=None, description=None, tooltip=None):
         """
         """
-        self.members[name] = ipw.Button(icon=icon, layout={"width": "34px"}, tooltip=tooltip)
+        # args = {}
+        # if icon is not None:
+        #     args["icon"] = icon
+        # if description is not None:
+        #     args["description"] = description
+        # if tooltip is not None:
+        #     args["tooltip"] = tooltip
+        args = self._parse_button_args(icon=icon, description=description, tooltip=tooltip)
+        self.members[name] = ipw.Button(**args, layout={"width": "34px"})
+        # self.container.children = tuple(self.members.values())
+
+    def add_togglebutton(self, name, icon=None, description=None, tooltip=None):
+        """
+        """
+        args = self._parse_button_args(icon=icon, description=description, tooltip=tooltip)
+        self.members[name] = ipw.ToggleButton(value=False, layout={"width": "34px"}, **args)
         # self.container.children = tuple(self.members.values())
 
     def connect(self, callbacks):
@@ -53,3 +69,10 @@ class PlotToolbar:
 
     def _update_container(self):
         self.container.children = tuple(self.members.values())
+
+    def _parse_button_args(self, **kwargs):
+        args = {}
+        for key, value in kwargs.items():
+            if value is not None:
+                args[key] = value
+        return args

@@ -62,7 +62,7 @@ class PlotWidgets:
             # elif string_ax:
             #     disabled = True
 
-            self.unit_labels[index] = ipw.Label(layout={"width": "40px"})
+            self.unit_labels[index] = ipw.Label(layout={"width": "60px"})
 
             # Add a slider to slice along additional dimensions of the array
             self.slider[index] = ipw.IntSlider(step=1,
