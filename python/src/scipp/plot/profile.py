@@ -6,7 +6,20 @@ from .figure1d import PlotFigure1d
 import numpy as np
 
 
-class ProfileView(PlotFigure1d):
+class PlotProfile(PlotFigure1d):
+    """
+    Class for 1 dimensional profile plots, that are displayed as 1d slices into
+    a higher dimensional data.
+
+    This is using the `PlotFigure1d` extensively which can display 1d lines and
+    keep or remove lines for comparison of spectra.
+    In addition, it has a `slice_area` indicator to show the current range
+    occupied by the slice that is displayed in the main subplot as a grey
+    rectangle (using `axvspan`).
+
+    Finally, it shows or hide the profile line depending on whether the mouse
+    cursor is inside the main plot axes or not (`toggle_hover_visibility`).
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.current_visible_state = False
@@ -14,15 +27,25 @@ class ProfileView(PlotFigure1d):
         self.visible = False
 
     def update_axes(self, *args, **kwargs):
+        """
+        Upon axes update, we reset the slice area indicator.
+        """
         super().update_axes(*args, legend_labels=False, **kwargs)
         self.slice_area = self.ax.axvspan(1, 2, alpha=0.5, color='lightgrey')
 
     def _reset_line_label(self, name):
+        """
+        In the profile plot, we do not repeat the data name, as it is already
+        displayed in the main subplot (as the title for 2d plots and as a
+        legend entry for 1d plots).
+        """
         self.data_lines[name].set_label(None)
 
     def toggle_hover_visibility(self, value):
-        # If the mouse moves off the image, we hide the profile. If it moves
-        # back onto the image, we show the profile
+        """
+        If the mouse moves off the image, we hide the profile. If it moves
+        back onto the image, we show the profile.
+        """
         for name in self.data_lines:
             self.data_lines[name].set_visible(value)
         for name in self.error_lines:
@@ -40,16 +63,26 @@ class ProfileView(PlotFigure1d):
             self.current_visible_state = value
 
     def update_slice_area(self, xstart, xend):
+        """
+        When the data slice is updated (position or thickness), we update the
+        slice area indicator.
+        """
         new_xy = np.array([[xstart, 0.0], [xstart, 1.0], [xend, 1.0],
                            [xend, 0.0], [xstart, 0.0]])
         self.slice_area.set_xy(new_xy)
         self.draw()
 
     def toggle_view(self, visible=True):
+        """
+        Show or hide profile view.
+        """
         # "on_widget_constructed" is an attribute specific to ipywidgets
         if hasattr(self.fig.canvas, "on_widget_constructed"):
             self.fig.canvas.layout.display = None if visible else 'none'
         self.visible = visible
 
     def is_visible(self):
+        """
+        Get visible state of profile view.
+        """
         return self.visible

@@ -41,7 +41,7 @@ if is_doc_build:
     plt.rcParams.update({'figure.max_open_warning': 0})
 
 
-def is_interactive():
+def _is_interactive():
     """
     Determine if we are using a static or interactive backend
     """
@@ -49,11 +49,126 @@ def is_interactive():
 
 
 def plot(*args, **kwargs):
+    """
+    Plot a Scipp object.
+
+    Possible inputs are:
+    - Variable
+    - DataArray
+    - Dataset
+    - dict of Variables
+    - dict of DataArrays
+
+    For more details, see
+    https://scipp.github.io/visualization/plotting-overview.html.
+
+    :param aspect: Specify the aspect ratio for 2d images. Defaults to
+        `"auto"`.
+    :type aspect: str, optional
+
+    :param ax: Attach returned plot to supplied Matplotlib axes (1d and 2d
+        only). Defaults to `None`.
+    :type ax: matplotlib.axes.Axes, optional
+
+    :param axes: Specify which input dimension should be shown along which
+        figure axis. E.g. to show the `"tof"` dimension along the vertical
+        axis of a 2d image, use `axes={"y": "tof"}`.
+        Defaults to `None`.
+    :type axes: dict, optional
+
+    :param bins: Specify on-the-fly binning when plotting event data.
+        Possible values are:
+        - an integer setting the number of bins
+        - a `numpy` array setting the bin edges
+        - a Variable setting the bin edges
+        Defaults to `None`.
+    :type bins: int or ndarray or Variable, optional
+
+    :param cax: Attach colorbar to supplied Matplotlib axes.
+        Defaults to `None`.
+    :type cax: matplotlib.axes.Axes, optional
+
+    :param cmap: Matplotlib colormap (2d and 3d only).
+        See https://matplotlib.org/tutorials/colors/colormaps.html.
+        Defaults to `None`.
+    :type cmap: str, optional
+
+    :param color: Matplotlib line color (1d only).
+        See https://matplotlib.org/tutorials/colors/colors.html.
+        Defaults to None.
+    :type color: str, optional
+
+    :param errorbars: Show errorbars if `True`, hide them if `False` (1d only).
+        Defaults to `True`. This can also be a dict of `bool` where the keys
+        correspond to data entries.
+    :type errorbars: str or dict, optional
+
+    :param figsize: The size of the figure in inches (1d and 2d only).
+        See
+        https://matplotlib.org/api/_as_gen/matplotlib.pyplot.figure.html.
+        Defaults to `None`.
+    :type figsize: tuple, optional
+
+    :param filename: If specified, the figure will be saved to disk. Possible
+        file extensions are `.jpg`, `.png` and `.pdf`. The default directory
+        for writing the file is the same as the directory where the script or
+        notebook is running. Defaults to `None`.
+    :type filename: str, optional
+
+    :param grid: Show grid on axes if `True`. Defaults to `False`.
+    :type grid: bool, optional
+
+    :param linestyle: Matplotlib linestyle (1d only).
+        See
+        https://matplotlib.org/gallery/lines_bars_and_markers/linestyles.html.
+        Defaults to "none".
+    :type linestyle: str, optional
+
+    :param marker: Matplotlib line marker (1d only).
+        See https://matplotlib.org/api/markers_api.html.
+        Defaults to `'o'`.
+    :type marker: str, optional
+
+    :param masks: A dict to hold display parameters for masks such as a `color`
+        or a `cmap`. Defaults to `None`.
+    :type masks: dict, optional
+
+    :param norm: Normalization of the data. Possible choices are `"linear"` and
+        `"log"`. Defaults to `"linear"`.
+    :type norm: str, optional
+
+    :param pax: Attach profile plot to supplied Matplotlib axes.
+        Defaults to `None`.
+    :type pax: matplotlib.axes.Axes, optional
+
+    :param positions: Specify an array of position vectors to be used as
+        scatter points positions (3d only). Defaults to `None`.
+    :type positions: Variable, optional
+
+    :param projection: Specify the projection to be used. Possible choices are
+        `"1d"`, `"2d"`, or `"3d"`. Defaults to `"2d"` if the number of
+        dimensions of the input is >= 2.
+    :type projection: str, optional
+
+    :param scale: Specify the scale (`"linear"` or `"log"`) for a displayed
+        dimension axis. E.g. `scale={"tof": "log"}`. Defaults to None.
+    :type scale: dict, optional
+
+    :param vmin: Minimum value for the colorscale (2d and 3d only).
+        Defaults to None.
+    :type vmin: float, optional
+
+    :param vmax: Maximum value for the colorscale (2d and 3d only).
+        Defaults to None.
+    :type vmax: float, optional
+
+    """
+
     # Switch auto figure display off for better control over when figures are
     # displayed.
     plt.ioff()
     output = _plot(*args, **kwargs)
-    if not is_interactive():
+    if not _is_interactive():
         for key in output:
             output[key].as_static(keep_widgets=is_doc_build)
     # Turn auto figure display back on.
@@ -64,12 +179,22 @@ def plot(*args, **kwargs):
 
 
 def superplot(*args, **kwargs):
+    """
+    Plot a Scipp object with a 1d projection that offers the possibility to
+    keep individual profiles as coloured lines.
+    """
     return plot(*args, projection="1d", **kwargs)
 
 
 def image(*args, **kwargs):
+    """
+    Plot a Scipp object as a 2d image.
+    """
     return plot(*args, projection="2d", **kwargs)
 
 
 def scatter3d(*args, **kwargs):
+    """
+    Plot a Scipp object as a 3d scatter plot.
+    """
     return plot(*args, projection="3d", **kwargs)

@@ -6,7 +6,7 @@ from .. import config
 from .controller1d import PlotController1d
 from .model1d import PlotModel1d
 from .panel1d import PlotPanel1d
-from .profile import ProfileView
+from .profile import PlotProfile
 from .sciplot import SciPlot
 from .view1d import PlotView1d
 from .widgets import PlotWidgets
@@ -14,23 +14,28 @@ from .widgets import PlotWidgets
 
 def plot1d(*args, filename=None, **kwargs):
     """
-    Plot a 1D spectrum.
+    Plot one or more Scipp data objects as a 1 dimensional line plot.
 
-    Input is a Dataset containing one or more Variables.
     If the coordinate of the x-axis contains bin edges, then a bar plot is
     made.
-    If the data contains more than one dimensions, sliders are added.
+    If the data contains more than one dimensions, sliders are added to
+    navigate to extra dimensions.
     """
-
     sp = SciPlot1d(*args, **kwargs)
-
     if filename is not None:
         sp.savefig(filename)
-
     return sp
 
 
 class SciPlot1d(SciPlot):
+    """
+    Class for 1 dimensional plots.
+
+    If the input data has more than 1 dimensions, a `PlotPanel` with additional
+    buttons is displayed. This allow the duplication of the currently
+    displayed line, a functionality inspired by the Superplot in the Lamp
+    software.
+    """
     def __init__(self,
                  scipp_obj_dict=None,
                  axes=None,
@@ -87,7 +92,7 @@ class SciPlot1d(SciPlot):
         if self.ndim > 1:
             pad = config.plot.padding.copy()
             pad[2] = 0.77
-            self.profile = ProfileView(
+            self.profile = PlotProfile(
                 errorbars=self.errorbars,
                 ax=pax,
                 unit=self.params["values"][self.name]["unit"],

@@ -10,6 +10,9 @@ import warnings
 
 
 class PlotFigure2d(PlotFigure):
+    """
+    Class for 2 dimensional plots, based on Matplotlib's `imshow`.
+    """
     def __init__(self,
                  ax=None,
                  cax=None,
@@ -27,7 +30,6 @@ class PlotFigure2d(PlotFigure):
 
         super().__init__(ax=ax, cax=cax, figsize=figsize, title=title)
 
-        # Save aspect ratio setting
         if aspect is None:
             aspect = config.plot.aspect
 
@@ -48,10 +50,12 @@ class PlotFigure2d(PlotFigure):
                                                           norm=norm,
                                                           aspect=aspect)
 
-    def savefig(self, filename=None):
-        self.fig.savefig(filename, bbox_inches="tight")
-
     def make_default_imshow(self, cmap, norm, aspect=None, picker=None):
+        """
+        Make a base `imshow` object whose contents and extents will be later
+        updated to display a 2d data array.
+        This is used for both a data image and for masks images.
+        """
         return self.ax.imshow([[1.0, 1.0], [1.0, 1.0]],
                               norm=norm,
                               extent=[1, 2, 1, 2],
@@ -62,23 +66,31 @@ class PlotFigure2d(PlotFigure):
                               picker=picker)
 
     def rescale_to_data(self, vmin, vmax):
+        """
+        Rescale the colorbar limits according to the supplied values.
+        """
         self.image.set_clim([vmin, vmax])
         for m, im in self.mask_image.items():
             im.set_clim([vmin, vmax])
         self.draw()
 
     def toggle_mask(self, mask_name, visible):
+        """
+        Show or hide a given mask.
+        """
         im = self.mask_image[mask_name]
         if im.get_url() != "hide":
             im.set_visible(visible)
         self.draw()
 
     def reset_home_button(self, axparams):
-        # Some annoying house-keeping when using X/Y buttons: we need to update
-        # the deeply embedded limits set by the Home button in the matplotlib
-        # toolbar. The home button actually brings the first element in the
-        # navigation stack to the top, so we need to modify the first element
-        # in the navigation stack in-place.
+        """
+        Some annoying house-keeping when using X/Y buttons: we need to update
+        the deeply embedded limits set by the Home button in the matplotlib
+        toolbar. The home button actually brings the first element in the
+        navigation stack to the top, so we need to modify the first element
+        in the navigation stack in-place.
+        """
         if self.fig is not None:
             if self.fig.canvas.toolbar is not None:
                 if len(self.fig.canvas.toolbar._nav_stack._elements) > 0:
@@ -96,8 +108,10 @@ class PlotFigure2d(PlotFigure):
                         key] = tuple(alist)
 
     def update_axes(self, axparams=None):
-
-        # Set axes labels
+        """
+        Update axes labels, scales, tick locations and labels, as well as axes
+        limits.
+        """
         self.ax.set_xlabel(axparams["x"]["label"])
         self.ax.set_ylabel(axparams["y"]["label"])
         self.ax.set_xscale(axparams["x"]["scale"])
@@ -124,6 +138,9 @@ class PlotFigure2d(PlotFigure):
         self.reset_home_button(axparams)
 
     def update_data(self, new_values, info=None):
+        """
+        Update image array with new values.
+        """
         self.image.set_data(new_values["values"])
         if new_values["extent"] is not None:
             self.image.set_extent(new_values["extent"])

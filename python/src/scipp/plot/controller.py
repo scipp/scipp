@@ -9,6 +9,19 @@ import numpy as np
 
 
 class PlotController:
+    """
+    Main controller class.
+
+    This handles all communications between the `PlotWidgets`, `PlotView`,
+    `PlotModel`, `PlotPanel` and `PlotProfile`.
+
+    It mainly holds information about limits and dimension labels of coordinate
+    axes, which is necessary to update figures in a generic way.
+    It also keeps a record of which coordinates contain bin-edges and
+    bin-centers, as this information is lost once the model has converted
+    everything to bin edges to allow for more generic code.
+
+    """
     def __init__(self,
                  axes=None,
                  name=None,
@@ -108,13 +121,12 @@ class PlotController:
         if self.panel is not None:
             self.connect_panel()
 
-    def _ipython_display_(self):
-        return self._to_widget()._ipython_display_()
-
-    def _to_widget(self):
-        return self.widgets._to_widget()
-
     def initialise_widgets(self, dim_to_shape):
+        """
+        Initialise widget parameters once the `PlotModel`, `PlotView` and
+        `PlotController` have been created.
+        Update slider labels and ranges as well as readout values.
+        """
         parameters = {}
         for dim in self.labels[self.name]:
 
@@ -141,6 +153,9 @@ class PlotController:
                                 multid_coord=self.multid_coord)
 
     def initialise_view(self, axes):
+        """
+        Send axformatter information to the `PlotView`.
+        """
         self.view.initialise(
             axformatters={
                 dim: self.model.get_axformatter(self.name, dim)
@@ -148,6 +163,9 @@ class PlotController:
             })
 
     def initialise_profile(self, axes):
+        """
+        Send axformatter information to the `PlotProfile`.
+        """
         self.profile.initialise(
             axformatters={
                 dim: self.model.get_axformatter(self.name, dim)
@@ -155,9 +173,15 @@ class PlotController:
             })
 
     def initialise_model(self):
+        """
+        Dummy initialization for `PlotModel`.
+        """
         return
 
     def connect_widgets(self):
+        """
+        Connect callbacks to the `PlotWidgets` interface.
+        """
         self.widgets.connect({
             "rescale_to_data": self.rescale_to_data,
             "toggle_profile_view": self.toggle_profile_view,
@@ -167,6 +191,9 @@ class PlotController:
         })
 
     def connect_view(self):
+        """
+        Connect callbacks to the `PlotView` interface.
+        """
         self.view.connect({
             "update_profile": self.update_profile,
             "toggle_hover_visibility": self.toggle_hover_visibility,
@@ -175,6 +202,9 @@ class PlotController:
         })
 
     def connect_panel(self):
+        """
+        Dummy connect for `PlotPanel`.
+        """
         return
 
     def rescale_to_data(self, button=None):
@@ -453,6 +483,10 @@ class PlotController:
         self.profile.toggle_hover_visibility(value)
 
     def _make_slice_dict(self, ind, dim):
+        """
+        Create a dict of parameters with enough information for the model to
+        carry out slicing along slider dimensions.
+        """
         left, centre, right = self.model.get_bin_coord_values(
             self.name, dim, ind)
         return {

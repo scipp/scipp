@@ -7,8 +7,15 @@ from .view import PlotView
 
 
 class PlotView3d(PlotView):
-    def __init__(self, *args, **kwargs):
+    """
+    View object for 3 dimensional plots. Contains a `PlotFigure3d`.
 
+    The view also handles events to do with updating opacities of the cut
+    surface.
+
+    This will also be handling profile picking events in the future.
+    """
+    def __init__(self, *args, **kwargs):
         super().__init__(figure=PlotFigure3d(*args, **kwargs))
 
     def update_opacity(self, *args, **kwargs):

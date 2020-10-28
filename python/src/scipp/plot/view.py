@@ -4,8 +4,16 @@
 
 
 class PlotView:
-    def __init__(self, figure=None):
+    """
+    Base class for a plot view.
+    It holds a `figure`, which can be either a Matplotlib based figure (1d and
+    2d) or a pythreejs scene (3d).
 
+    The difference between a `PlotView` and a `PlotFigure` is that the
+    `PlotView` also handles the communications with the `PlotController` that
+    are to do with the `PlotProfile` plot displayed below the `PlotFigure`.
+    """
+    def __init__(self, figure=None):
         self.figure = figure
         self.interface = {}
         self.profile_hover_connection = None
@@ -16,32 +24,59 @@ class PlotView:
         self.profile_ids = []
 
     def _ipython_display_(self):
+        """
+        IPython display representation for Jupyter notebooks.
+        """
         return self._to_widget()._ipython_display_()
 
     def _to_widget(self):
+        """
+        The `view` as a widget is just the `figure` as a widget.
+        """
         return self.figure._to_widget()
 
     def savefig(self, *args, **kwargs):
+        """
+        Forward figure saving to the `figure`.
+        """
         self.figure.savefig(*args, **kwargs)
 
     def initialise(self, *args, **kwargs):
+        """
+        Forward figure initialization.
+        """
         self.figure.initialise(*args, **kwargs)
 
     def connect(self, callbacks):
+        """
+        Connect the view interface to the callbacks provided by the
+        `controller`.
+        """
         for key, func in callbacks.items():
             self.interface[key] = func
 
     def rescale_to_data(self, vmin=None, vmax=None):
+        """
+        Forward rescaling to the `figure`.
+        """
         self.figure.rescale_to_data(vmin=vmin, vmax=vmax)
 
     def update_axes(self, *args, **kwargs):
+        """
+        Forward axes update to the `figure`.
+        """
         self.figure.update_axes(*args, **kwargs)
 
     def update_data(self, *args, **kwargs):
+        """
+        Forward data update to the `figure`.
+        """
         self.figure.update_data(*args, **kwargs)
 
     def update_profile_connection(self, visible):
-        # Connect picking events
+        """
+        Connect or disconnect profile pick and hover events.
+        """
         if visible:
             self.profile_pick_connection, self.profile_hover_connection = \
                 self.figure.connect_profile(

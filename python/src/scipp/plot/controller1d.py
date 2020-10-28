@@ -6,6 +6,9 @@ from .controller import PlotController
 
 
 class PlotController1d(PlotController):
+    """
+    Controller class for 1d plots.
+    """
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -17,6 +20,9 @@ class PlotController1d(PlotController):
         self.view.update_line_color(line_id=line_id, color=color)
 
     def connect_panel(self):
+        """
+        Establish connection to the panel interface.
+        """
         self.panel.connect({
             "keep_line": self.keep_line,
             "remove_line": self.remove_line,
