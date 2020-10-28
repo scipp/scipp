@@ -46,7 +46,8 @@ class PlotToolbar:
 
     def connect(self, callbacks):
         for key in callbacks:
-            self.members[key].on_click(callbacks[key])
+            if key in self.members:
+                self.members[key].on_click(callbacks[key])
         # if "swap" in self.members:
         #     self.members["swap"].on_click(callbacks["swap_axes"])
 

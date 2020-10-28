@@ -271,31 +271,23 @@ class PlotController:
                                        mask_info=self.get_masks_info())
 
     def swap_axes(self, owner=None):
-        # print("before", self.axes)
-        # Find position of new dim in axes values
-        # pos = list(self.axes.values()).index(new_dim)
-        # print(self._get_xyz_axes())
-        dims = list(self.axes.values())
-        # keys = list(np.roll(self._get_xyz_axes(), 1))
-        keys = self._get_xyz_axes()
-        # print(keys)
-        # print(dims)
-        # print(zip(keys, dims))
-        for ax, dim in zip(keys, dims):
-            # print(ax, dim, self.axes)
-            self.axes[ax] = dim
-        # print("after", self.axes)
+        """
+        Roll the order of the displayed axes.
+        """
+        dims = [self.axes[key] for key in sorted(self.axes.keys())]
+        keys = list(np.roll(self._get_xyz_axes(), 1))
+        for i in range(len(dims)):
+            self.axes[keys[i]] = dims[i]
         self.update_axes()
 
-
     def swap_dimensions(self, index, old_dim, new_dim):
-        # print("before", self.axes)
-        # Find position of new dim in axes values
+        """
+        Swap one dimension for another in the displayed axes.
+        """
         pos = list(self.axes.values()).index(new_dim)
         key = list(self.axes.keys())[pos]
         self.axes[key] = old_dim
         self.axes[index] = new_dim
-        # print("after", self.axes)
         self.update_axes()
 
     def update_axes(self, change=None):
@@ -309,9 +301,6 @@ class PlotController:
         state to the model. If then gets the updated data back from the model
         and sends it over to the view for display.
         """
-
-        print("controller update_axes")
-        print(self.axes)
         self.axparams = self._get_axes_parameters()
         other_params = self.model.update_axes(self.axparams)
         if other_params is not None:
@@ -388,7 +377,7 @@ class PlotController:
                                      change["owner"].mask_name, change["new"])
 
     def _get_xyz_axes(self):
-        return list(set(['x', 'y', 'z']) & set(self.axes.keys()))
+        return sorted(list(set(['x', 'y', 'z']) & set(self.axes.keys())))
 
     def _get_axes_parameters(self):
         """
