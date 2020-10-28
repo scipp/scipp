@@ -2,11 +2,9 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .. import config
+from .toolbar import PlotToolbar
 from .._utils import value_to_string
-
-# Other imports
 import numpy as np
 import ipywidgets as ipw
 from matplotlib import cm
@@ -41,6 +39,9 @@ class PlotFigure3d:
         if figsize is None:
             figsize = (config.plot.width, config.plot.height)
 
+        # Figure toolbar
+        self.toolbar = PlotToolbar(swap_axes_button=True)
+
         # Prepare colormaps
         self.cmap = copy(cm.get_cmap(cmap))
         self.cmap.set_bad(color=nan_color)
@@ -69,6 +70,7 @@ class PlotFigure3d:
         self.point_cloud = None
         self.outline = None
         self.axticks = None
+        self.camera_reset = {}
 
         # Define camera
         self.camera = p3.PerspectiveCamera(position=[0, 0, 0],
@@ -92,7 +94,7 @@ class PlotFigure3d:
                                     width=figsize[0],
                                     height=figsize[1])
 
-        self.figure = ipw.HBox([self.renderer, self.cbar_image])
+        self.figure = ipw.HBox([self.toolbar._to_widget(), self.renderer, self.cbar_image])
 
         return
 
@@ -123,6 +125,10 @@ class PlotFigure3d:
         """
         return
 
+    def connect(self, callbacks):
+        callbacks.update({"home": self.reset_camera})
+        self.toolbar.connect(callbacks)
+
     def update_axes(self, axparams):
         """
         When a point cloud is created, one cannot modify the number of points.
@@ -144,6 +150,10 @@ class PlotFigure3d:
             np.array(axparams["centre"]) + 1.2 * axparams["box_size"])
         self.controls.target = axparams["centre"]
         self.camera.lookAt(axparams["centre"])
+        # Save camera settings for reset button
+        self.camera_reset["position"] = copy(self.camera.position)
+        self.camera_reset["lookat"] = copy(axparams["centre"])
+
         # Rescale axes helper
         self.axes_3d.scale = [5.0 * np.linalg.norm(self.camera.position)] * 3
 
@@ -295,6 +305,7 @@ void main() {
         cbar_ax = cbar_fig.add_axes([0.05, 0.02, 0.25, 0.94])
         cbar = plt.colorbar(cbar_imshow, cax=cbar_ax)
         cbar.set_label(self.unit)
+        cbar.ax.yaxis.set_label_coords(-0.9, 0.5)
         return cbar_fig, cbar_imshow
 
     def update_opacity(self, alpha):
@@ -349,6 +360,11 @@ void main() {
         self.scalar_map.set_clim(vmin, vmax)
         self.cbar.set_clim(vmin, vmax)
         buf = io.BytesIO()
-        self.cbar_fig.savefig(buf, format='png')
+        self.cbar_fig.savefig(buf, format='png', bbox_inches='tight')
         buf.seek(0)
         self.cbar_image.value = buf.getvalue()
+
+    def reset_camera(self, owner=None):
+        self.camera.position = self.camera_reset["position"]
+        self.controls.target = self.camera_reset["lookat"]
+        self.camera.lookAt(self.camera_reset["lookat"])

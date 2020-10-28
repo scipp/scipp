@@ -55,7 +55,7 @@ class PlotController:
         self.vmax = vmax
         self.norm = norm
 
-        print(self.axes, self.axes.values())
+        # print(self.axes, self.axes.values())
         self.scale = {dim: "linear" for dim in self.axes.values()}
         if scale is not None:
             for dim, item in scale.items():
@@ -117,7 +117,7 @@ class PlotController:
                 self.coord_labels[key][dim] = name_with_unit(var=coord)
                 self.coord_units[key][dim] = name_with_unit(var=coord, name="")
 
-        print(self.histograms)
+        # print(self.histograms)
 
         self.initialise_widgets(dim_to_shape[self.name])
         self.initialise_view()
@@ -275,11 +275,14 @@ class PlotController:
         # Find position of new dim in axes values
         # pos = list(self.axes.values()).index(new_dim)
         # print(self._get_xyz_axes())
-        keys = np.roll(self._get_xyz_axes(), 1)
         dims = list(self.axes.values())
+        # keys = list(np.roll(self._get_xyz_axes(), 1))
+        keys = self._get_xyz_axes()
         # print(keys)
         # print(dims)
+        # print(zip(keys, dims))
         for ax, dim in zip(keys, dims):
+            # print(ax, dim, self.axes)
             self.axes[ax] = dim
         # print("after", self.axes)
         self.update_axes()
@@ -307,6 +310,8 @@ class PlotController:
         and sends it over to the view for display.
         """
 
+        print("controller update_axes")
+        print(self.axes)
         self.axparams = self._get_axes_parameters()
         other_params = self.model.update_axes(self.axparams)
         if other_params is not None:
@@ -333,7 +338,7 @@ class PlotController:
 
         # slider_params = self.widgets.get_slider_dims_and_values()
         slices = self.widgets.get_slider_bounds()
-        print(slices)
+        # print(slices)
 
         if change is not None:
             owner_dim = self.widgets.get_index_dim(change["owner"].index)

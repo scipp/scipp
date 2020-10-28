@@ -9,12 +9,18 @@ class PlotToolbar:
     """
     Custom toolbar with additional buttons.
     """
-    def __init__(self, fig_toolbar, swap_axes_button=False):
-        self.members = {"original": fig_toolbar}
-        self.container = ipw.VBox(list(self.members.values()))
-        self.add_button("rescale", "arrows-v", "Rescale")
+    def __init__(self, fig_toolbar=None, swap_axes_button=False):
+        self.container = ipw.VBox()
+        self.members = {}
+        if fig_toolbar is not None:
+            self.members["original"] = fig_toolbar
+        else:
+            self.add_button("menu", "navicon", "Menu")
+            self.add_button("home", "home", "Reset original view")
+        self.add_button("rescale_to_data", "arrows-v", "Rescale")
         if swap_axes_button:
-            self.add_button("swap", "exchange", "Swap axes")
+            self.add_button("swap_axes", "exchange", "Swap axes")
+        self._update_container()
 
     def _ipython_display_(self):
         """
@@ -36,9 +42,13 @@ class PlotToolbar:
         """
         """
         self.members[name] = ipw.Button(icon=icon, layout={"width": "34px"}, tooltip=tooltip)
-        self.container.children = tuple(self.members.values())
+        # self.container.children = tuple(self.members.values())
 
     def connect(self, callbacks):
-        self.members["rescale"].on_click(callbacks["rescale_to_data"])
-        if "swap" in self.members:
-            self.members["swap"].on_click(callbacks["swap_axes"])
+        for key in callbacks:
+            self.members[key].on_click(callbacks[key])
+        # if "swap" in self.members:
+        #     self.members["swap"].on_click(callbacks["swap_axes"])
+
+    def _update_container(self):
+        self.container.children = tuple(self.members.values())
