@@ -262,7 +262,7 @@ template <class Op> struct Transform {
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
         (handles.hasVariances() || ...);
-    auto unit = op(variableFactory().elem_unit(*handles.m_var)...);
+    auto unit = op.base_op()(variableFactory().elem_unit(*handles.m_var)...);
     auto out = variableFactory().create(dtype<Out>, dims, unit, variances,
                                         *handles.m_var...);
     do_transform(op, variable_access<Out>(out), std::tuple<>(),
@@ -282,6 +282,7 @@ struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
 template <class... Ts> using tuple_cat_t = typename tuple_cat<Ts...>::type;
 
 template <class Op> struct wrap_eigen : Op {
+  const Op &base_op() const noexcept { return *this; }
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
     if constexpr ((is_eigen_type_v<std::decay_t<Ts>> || ...))
       // WARNING! The explicit specification of the template arguments of
@@ -291,8 +292,6 @@ template <class Op> struct wrap_eigen : Op {
       // returned from the operator. One way to identify this is using
       // address-sanitizer, which finds a `stack-use-after-scope`.
       return Op::template operator()<Ts...>(std::forward<Ts>(args)...);
-    else if constexpr ((std::is_same_v<std::decay_t<Ts>, units::Unit> && ...))
-      return Op::template operator()(args...); // OSX overload resolution issue
     else
       return Op::template operator()(std::forward<Ts>(args)...);
   }
