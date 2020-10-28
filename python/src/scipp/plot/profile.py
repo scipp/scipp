@@ -6,7 +6,7 @@ from .figure1d import PlotFigure1d
 import numpy as np
 
 
-class ProfileView(PlotFigure1d):
+class PlotProfile(PlotFigure1d):
     """
     Class for 1 dimensional profile plots, that are displayed as 1d slices into
     a higher dimensional data.
@@ -78,7 +78,7 @@ class ProfileView(PlotFigure1d):
         """
         if self.is_widget():
             self.fig.canvas.layout.display = None if visible else 'none'
-            self.fig.toolbar.set_visible(visible)
+            self.toolbar.set_visible(visible)
         self.visible = visible
 
     def is_visible(self):

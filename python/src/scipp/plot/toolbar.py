@@ -36,3 +36,6 @@ class PlotToolbar:
         """
         self.members[name] = ipw.Button(icon=icon, layout={"width": "34px"}, tooltip=tooltip)
         self.container.children = tuple(self.members.values())
+
+    def connect(self, callbacks):
+        self.members["rescale"].on_click(callbacks["rescale_to_data"])

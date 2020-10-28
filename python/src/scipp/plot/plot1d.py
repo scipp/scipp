@@ -6,7 +6,7 @@ from .. import config
 from .controller1d import PlotController1d
 from .model1d import PlotModel1d
 from .panel1d import PlotPanel1d
-from .profile import ProfileView
+from .profile import PlotProfile
 from .sciplot import SciPlot
 from .view1d import PlotView1d
 from .widgets import PlotWidgets
@@ -31,8 +31,8 @@ class SciPlot1d(SciPlot):
     """
     Class for 1 dimensional plots.
 
-    If the input data has more than 1 dimensions, a panel with additional
-    buttons is displayed. That allow the duplication of the currently
+    If the input data has more than 1 dimensions, a `PlotPanel` with additional
+    buttons is displayed. This allow the duplication of the currently
     displayed line, a functionality inspired by the Superplot in the Lamp
     software.
     """
@@ -92,7 +92,7 @@ class SciPlot1d(SciPlot):
         if self.ndim > 1:
             pad = config.plot.padding.copy()
             pad[2] = 0.77
-            self.profile = ProfileView(
+            self.profile = PlotProfile(
                 errorbars=self.errorbars,
                 ax=pax,
                 unit=self.params["values"][self.name]["unit"],

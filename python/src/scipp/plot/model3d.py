@@ -36,7 +36,7 @@ class PlotModel3d(PlotModel):
         """
         The model handles calculations of opacities for the cut surface, so it
         needs to know which are the possible cut surface options. Those are set
-        once the `panel3d` has been created.
+        once the `PlotPanel3d` has been created.
         """
         self.cut_options = cut_options
 

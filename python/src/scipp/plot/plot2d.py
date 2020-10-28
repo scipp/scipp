@@ -5,7 +5,7 @@
 from .. import config
 from .controller2d import PlotController2d
 from .model2d import PlotModel2d
-from .profile import ProfileView
+from .profile import PlotProfile
 from .sciplot import SciPlot
 from .view2d import PlotView2d
 from .widgets import PlotWidgets
@@ -84,22 +84,22 @@ class SciPlot2d(SciPlot):
                                unit=self.params["values"][self.name]["unit"],
                                masks=self.masks[self.name])
 
-        # # Profile view which displays an additional dimension as a 1d plot
-        # if self.ndim > 2:
-        #     pad = config.plot.padding.copy()
-        #     pad[2] = 0.77
-        #     self.profile = ProfileView(
-        #         errorbars=self.errorbars,
-        #         ax=pax,
-        #         unit=self.params["values"][self.name]["unit"],
-        #         masks=self.masks,
-        #         figsize=(1.3 * config.plot.width / config.plot.dpi,
-        #                  0.6 * config.plot.height / config.plot.dpi),
-        #         padding=pad,
-        #         legend={
-        #             "show": True,
-        #             "loc": (1.02, 0.0)
-        #         })
+        # Profile view which displays an additional dimension as a 1d plot
+        if self.ndim > 2:
+            pad = config.plot.padding.copy()
+            pad[2] = 0.77
+            self.profile = PlotProfile(
+                errorbars=self.errorbars,
+                ax=pax,
+                unit=self.params["values"][self.name]["unit"],
+                masks=self.masks,
+                figsize=(1.3 * config.plot.width / config.plot.dpi,
+                         0.6 * config.plot.height / config.plot.dpi),
+                padding=pad,
+                legend={
+                    "show": True,
+                    "loc": (1.02, 0.0)
+                })
 
         # The main controller module which connects and controls all the parts
         self.controller = PlotController2d(

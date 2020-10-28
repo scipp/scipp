@@ -32,7 +32,6 @@ class PlotFigure3d:
                  vmin=None,
                  vmax=None,
                  nan_color=None,
-                 mask_cmap=None,
                  masks=None,
                  pixel_size=None,
                  tick_size=None,
@@ -48,7 +47,7 @@ class PlotFigure3d:
         self.scalar_map = cm.ScalarMappable(norm=norm, cmap=self.cmap)
         self.masks_scalar_map = None
         if len(masks) > 0:
-            self.masks_cmap = copy(cm.get_cmap(mask_cmap))
+            self.masks_cmap = copy(cm.get_cmap(masks["cmap"]))
             self.masks_cmap.set_bad(color=nan_color)
             self.masks_scalar_map = cm.ScalarMappable(norm=norm,
                                                       cmap=self.masks_cmap)

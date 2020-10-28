@@ -11,10 +11,10 @@ import warnings
 
 class PlotFigure1d(PlotFigure):
     """
-    Class for 1 dimensional plots. This is used by both the `view1d` for normal
-    1d plots, as well as the `profile` view.
+    Class for 1 dimensional plots. This is used by both the `Plotview1d` for
+    normal 1d plots, and the `PlotProfile`.
 
-    The figure can "keep" the currently displayed line, or "remove" a
+    `PlotFigure1d` can "keep" the currently displayed line, or "remove" a
     previously saved line.
     """
     def __init__(self,
@@ -200,7 +200,7 @@ class PlotFigure1d(PlotFigure):
     def keep_line(self, name, color, line_id):
         """
         Duplicate the current main line and give it an arbitrary color.
-        Triggered by a `panel1d` keep button or a `keep_profile` event.
+        Triggered by a `PlotPanel1d` keep button or a `keep_profile` event.
         """
         # The main line
         self.ax.lines.append(cp.copy(self.data_lines[name]))
@@ -239,8 +239,8 @@ class PlotFigure1d(PlotFigure):
         """
         When a line is saved, it is useful to see its parameters (location and
         thickness of slice that correspond to the line). The main line label
-        is thus constantly updated by the `model` when a dimension slider is
-        being moved. This can then easily be duplicated in `keep_line()`.
+        is thus constantly updated by the `PlotModel` when a dimension slider
+        is being moved. This can then easily be duplicated in `keep_line()`.
         Just before we show the legend, we need to reset the line
         name to its original name.
         """
@@ -249,7 +249,7 @@ class PlotFigure1d(PlotFigure):
     def remove_line(self, name, line_id):
         """
         Remove a previously saved line.
-        Triggered by a `panel1d` remove button or a `remove_profile` event.
+        Triggered by a `PlotPanel1d` remove button or a `remove_profile` event.
         """
         lines = []
         for line in self.ax.lines:
@@ -268,8 +268,8 @@ class PlotFigure1d(PlotFigure):
 
     def update_line_color(self, line_id, color):
         """
-        Change the line color when the `ColorPicker` in the `panel1d` is being
-        used.
+        Change the line color when the `ColorPicker` in the `PlotPanel1d` is
+        being used.
         """
         for line in self.ax.lines:
             if line.get_url() == line_id:

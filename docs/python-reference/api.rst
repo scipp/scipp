@@ -168,6 +168,7 @@ Visualization
 
    show
    table
+   to_html
    plot.plot
 
 

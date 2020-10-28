@@ -13,12 +13,12 @@ class PlotView2d(PlotView):
     """
     View object for 2 dimensional plots. Contains a `PlotFigure2d`.
 
-    The difference between `view2d` and `figure2d` is that `view2d` also
-    handles the communications with the `controller` that are to do with the
-    `profile` plot displayed below the `figure2d`.
+    The difference between `PlotView2d` and `PlotFigure2d` is that
+    `PlotView2d` also handles the communications with the `PlotController` that
+    are to do with the `PlotProfile` plot displayed below the `PlotFigure2d`.
 
-    In addition, `view2d` provides a dynamic image resampling for large input
-    data.
+    In addition, `PlotView2d` provides a dynamic image resampling for large
+    input data.
     """
     def __init__(self, *args, **kwargs):
 

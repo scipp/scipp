@@ -21,13 +21,14 @@ class PlotWidgets:
                  masks=None,
                  button_options=None):
 
-        self.rescale_button = ipw.Button(description="Rescale")
-        if ndim == len(button_options):
-            self.rescale_button.layout.display = 'none'
+        # self.rescale_button = ipw.Button(description="Rescale")
+        # if ndim == len(button_options):
+        #     self.rescale_button.layout.display = 'none'
         self.interface = {}
 
         # The container list to hold all widgets
-        self.container = [self.rescale_button]
+        # self.container = [self.rescale_button]
+        self.container = []
 
         # Initialise slider and label containers
         self.unit_labels = {}
@@ -376,9 +377,9 @@ class PlotWidgets:
     def connect(self, callbacks):
         """
         Connect the widget interface to the callbacks provided by the
-        `controller`.
+        `PlotController`.
         """
-        self.rescale_button.on_click(callbacks["rescale_to_data"])
+        # self.rescale_button.on_click(callbacks["rescale_to_data"])
         for index in self.slider:
             self.profile_button[index].on_click(callbacks["toggle_profile_view"])
             self.slider[index].observe(callbacks["update_data"], names="value")
@@ -402,10 +403,10 @@ class PlotWidgets:
     # def initialise(self, parameters, multid_coord=None):
     def initialise(self, dim_to_shape, xlims, coord_units):
         """
-        Initialise widget parameters once the `model`, `view` and `controller`
-        have been created, since, for instance, slider limits depend on the
-        dimensions of the input data, which are not known until the `model` is
-        created.
+        Initialise widget parameters once the `PlotModel`, `PlotView` and
+        `PlotController` have been created, since, for instance, slider limits
+        depend on the dimensions of the input data, which are not known until
+        the `PlotModel` is created.
         """
         for index in self.thickness_slider:
             dim = self.index_to_dim[index]

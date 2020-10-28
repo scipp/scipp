@@ -12,8 +12,8 @@ class PlotController:
     """
     Main controller class.
 
-    This handles all communications between the `widgets`, `view`, `model`,
-    `panel` and `profile`.
+    This handles all communications between the `PlotWidgets`, `PlotView`,
+    `PlotModel`, `PlotPanel` and `PlotProfile`.
 
     It mainly holds information about limits and dimension labels of coordinate
     axes, which is necessary to update figures in a generic way.
@@ -140,8 +140,8 @@ class PlotController:
 
     def initialise_widgets(self, dim_to_shape):
         """
-        Initialise widget parameters once the `model`, `view` and `controller`
-        have been created.
+        Initialise widget parameters once the `PlotModel`, `PlotView` and
+        `PlotController` have been created.
         Update slider labels and ranges as well as readout values.
         """
         # parameters = {}
@@ -180,7 +180,7 @@ class PlotController:
 
     def initialise_view(self):
         """
-        Send axformatter information to `view`.
+        Send axformatter information to the `PlotView`.
         """
         self.view.initialise(
             axformatters={
@@ -190,7 +190,7 @@ class PlotController:
 
     def initialise_profile(self):
         """
-        Send axformatter information to `profile`.
+        Send axformatter information to the `PlotProfile`.
         """
         self.profile.initialise(
             axformatters={
@@ -200,16 +200,16 @@ class PlotController:
 
     def initialise_model(self):
         """
-        Dummy initialization for `model`.
+        Dummy initialization for `PlotModel`.
         """
         return
 
     def connect_widgets(self):
         """
-        Connect callbacks to the `widgets` interface.
+        Connect callbacks to the `PlotWidgets` interface.
         """
         self.widgets.connect({
-            "rescale_to_data": self.rescale_to_data,
+            # "rescale_to_data": self.rescale_to_data,
             "toggle_profile_view": self.toggle_profile_view,
             "update_data": self.update_data,
             "update_axes": self.update_axes,
@@ -223,18 +223,21 @@ class PlotController:
 
     def connect_view(self):
         """
-        Connect callbacks to the `view` interface.
+        Connect callbacks to the `PlotView` interface.
         """
-        self.view.connect({
+        view_callbacks = {
             "update_profile": self.update_profile,
             "toggle_hover_visibility": self.toggle_hover_visibility,
             "keep_line": self.keep_line,
             "remove_line": self.remove_line
-        })
+        }
+        figure_callbacks = {"rescale_to_data": self.rescale_to_data}
+        self.view.connect(view_callbacks=view_callbacks,
+                          figure_callbacks=figure_callbacks)
 
     def connect_panel(self):
         """
-        Dummy connect for `panel`.
+        Dummy connect for `PlotPanel`.
         """
         return
 

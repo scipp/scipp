@@ -34,6 +34,7 @@ add_executable(
   reduce_events_test.cpp
   self_assignment_test.cpp
   shape_test.cpp
+  size_of_test.cpp
   slice_by_value_test.cpp
   slice_test.cpp
   sort_test.cpp

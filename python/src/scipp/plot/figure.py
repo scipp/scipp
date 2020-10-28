@@ -108,6 +108,9 @@ class PlotFigure:
                 self.axlocator[dim]["linear"] = ticker.MaxNLocator(
                     integer=True)
 
+    def connect(self, callbacks):
+        self.toolbar.connect(callbacks)
+
     def draw(self):
         """
         Manually update the figure.
