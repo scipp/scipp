@@ -13,7 +13,7 @@ class PlotToolbar:
         self.members = {"original": fig_toolbar}
         self.container = ipw.VBox(list(self.members.values()))
         self.add_button("rescale", "arrows-v", "Rescale")
-
+        self.add_button("swap", "exchange", "Swap axes")
 
     def _ipython_display_(self):
         """
@@ -39,3 +39,4 @@ class PlotToolbar:
 
     def connect(self, callbacks):
         self.members["rescale"].on_click(callbacks["rescale_to_data"])
+        self.members["swap"].on_click(callbacks["swap_axes"])

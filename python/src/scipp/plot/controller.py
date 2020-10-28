@@ -212,12 +212,12 @@ class PlotController:
             # "rescale_to_data": self.rescale_to_data,
             "toggle_profile_view": self.toggle_profile_view,
             "update_data": self.update_data,
-            "update_axes": self.update_axes,
+            # "update_axes": self.update_axes,
             "toggle_mask": self.toggle_mask,
             "get_dim_shape": self.get_dim_shape,
             "lock_update_data": self.lock_update_data,
             "unlock_update_data": self.unlock_update_data,
-            "swap_axes": self.swap_axes,
+            "swap_dimensions": self.swap_dimensions,
             "get_coord_unit": self.get_coord_unit
         })
 
@@ -231,7 +231,8 @@ class PlotController:
             "keep_line": self.keep_line,
             "remove_line": self.remove_line
         }
-        figure_callbacks = {"rescale_to_data": self.rescale_to_data}
+        figure_callbacks = {"rescale_to_data": self.rescale_to_data,
+                            "swap_axes": self.swap_axes}
         self.view.connect(view_callbacks=view_callbacks,
                           figure_callbacks=figure_callbacks)
 
@@ -266,14 +267,30 @@ class PlotController:
                                        vmax=vmax,
                                        mask_info=self.get_masks_info())
 
-    def swap_axes(self, index, old_dim, new_dim):
+    def swap_axes(self, owner=None):
         print("before", self.axes)
+        # Find position of new dim in axes values
+        # pos = list(self.axes.values()).index(new_dim)
+        print(self._get_xyz_axes())
+        keys = np.roll(self._get_xyz_axes(), 1)
+        dims = list(self.axes.values())
+        print(keys)
+        print(dims)
+        for ax, dim in zip(keys, dims):
+            self.axes[ax] = dim
+        print("after", self.axes)
+        self.update_axes()
+
+
+    def swap_dimensions(self, index, old_dim, new_dim):
+        # print("before", self.axes)
         # Find position of new dim in axes values
         pos = list(self.axes.values()).index(new_dim)
         key = list(self.axes.keys())[pos]
         self.axes[key] = old_dim
         self.axes[index] = new_dim
-        print("after", self.axes)
+        # print("after", self.axes)
+        self.update_axes()
 
     def update_axes(self, change=None):
         """
@@ -359,6 +376,9 @@ class PlotController:
             self.profile.toggle_mask(change["owner"].mask_group,
                                      change["owner"].mask_name, change["new"])
 
+    def _get_xyz_axes(self):
+        return list(set(['x', 'y', 'z']) & set(self.axes.keys()))
+
     def _get_axes_parameters(self):
         """
         Gather the information (dimensions, limits, etc...) about the (x, y, z)
@@ -367,7 +387,7 @@ class PlotController:
         axparams = {}
         # for dim, but_val in self.widgets.get_buttons_and_disabled_sliders(
         # ).items():
-        for ax in set(['x', 'y', 'z']) & set(self.axes.keys()):
+        for ax in self._get_xyz_axes():
             dim = self.axes[ax]
             xmin = np.Inf
             xmax = np.NINF

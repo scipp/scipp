@@ -84,7 +84,8 @@ class PlotWidgets:
                 description="Thickness",
                 continuous_update=False,
                 readout=False,
-                layout={'width': "180px"})
+                layout={'width': "180px"},
+                style={'description_width': 'initial'})
 
             self.slider_readout[index] = ipw.Label()
 
@@ -161,10 +162,10 @@ class PlotWidgets:
             #     self.profile_button[dim]
             # ]
             row = list(self.dim_buttons[index].values()) + [
+                self.continuous_update[index],
                 self.slider[index],
                 self.slider_readout[index],
                 self.unit_labels[index],
-                self.continuous_update[index],
                 self.thickness_slider[index],
                 self.profile_button[index]
             ]
@@ -305,8 +306,8 @@ class PlotWidgets:
         # owner.old_value = owner.value
         self.unit_labels[new_ind].value = self.interface["get_coord_unit"](new_dim)
 
-        self.interface["swap_axes"](new_ind, old_dim, new_dim)
-        self.interface["update_axes"]()
+        self.interface["swap_dimensions"](new_ind, old_dim, new_dim)
+        # self.interface["update_axes"]()
         return
 
     def update_slider_range(self, index, thickness, nmax, set_value=True):
@@ -387,12 +388,12 @@ class PlotWidgets:
             #                                    names="value")
             self.thickness_slider[index].observe(self.update_thickness,
                                                names="value")
-        self.interface["update_axes"] = callbacks["update_axes"]
+        # self.interface["update_axes"] = callbacks["update_axes"]
         self.interface["update_data"] = callbacks["update_data"]
         self.interface["get_dim_shape"] = callbacks["get_dim_shape"]
         self.interface["lock_update_data"] = callbacks["lock_update_data"]
         self.interface["unlock_update_data"] = callbacks["unlock_update_data"]
-        self.interface["swap_axes"] = callbacks["swap_axes"]
+        self.interface["swap_dimensions"] = callbacks["swap_dimensions"]
         self.interface["get_coord_unit"] = callbacks["get_coord_unit"]
 
         for name in self.mask_checkboxes:
