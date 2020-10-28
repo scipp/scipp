@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
+from .toolbar import PlotToolbar
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -23,6 +24,7 @@ class PlotFigure:
         self.ax = ax
         self.cax = cax
         self.own_axes = True
+        self.toolbar = None
         if self.ax is None:
             if figsize is None:
                 figsize = (config.plot.width / config.plot.dpi,
@@ -34,6 +36,9 @@ class PlotFigure:
             if padding is None:
                 padding = config.plot.padding
             self.fig.tight_layout(rect=padding)
+            if self.is_widget():
+                self.toolbar = PlotToolbar(self.fig.canvas.toolbar)
+                self.fig.canvas.toolbar_visible = False
         else:
             self.own_axes = False
             self.fig = self.ax.get_figure()
@@ -42,6 +47,13 @@ class PlotFigure:
 
         self.axformatter = {}
         self.axlocator = {}
+
+    def is_widget(self):
+        """
+        Check whether we are using the Matplotlib widget backend or not.
+        "on_widget_constructed" is an attribute specific to `ipywidgets`.
+        """
+        return hasattr(self.fig.canvas, "on_widget_constructed")
 
     def savefig(self, filename=None):
         """
@@ -65,9 +77,8 @@ class PlotFigure:
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
-        # "on_widget_constructed" is an attribute specific to ipywidgets
-        if hasattr(self.fig.canvas, "on_widget_constructed"):
-            return self.fig.canvas
+        if self.is_widget():
+            return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
         else:
             buf = io.BytesIO()
             self.fig.savefig(buf, format='png')

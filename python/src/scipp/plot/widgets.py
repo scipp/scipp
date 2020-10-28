@@ -312,16 +312,15 @@ class PlotWidgets:
         sl_min = (thickness // 2) + (thickness % 2) - 1
         sl_max = nmax - (thickness // 2)
         # print(sl_min, sl_mid, sl_max)
-        print(self.slider[index].min, self.slider[index].value, self.slider[index].max)
-        # if sl_max < self.slider[index].min:
-        #     if sl_max <
-        #     self.slider[index].value = sl_mid
-        #     self.slider[index].max = sl_max
-        # else:
-        #     self.slider[index].max = sl_max
-        #     self.slider[index].value = sl_mid
-        self.slider[index].min = sl_min
-        self.slider[index].max = sl_max
+        # print(self.slider[index].min, self.slider[index].value, self.slider[index].max)
+        if sl_max < self.slider[index].min:
+            self.slider[index].min = sl_min
+            self.slider[index].max = sl_max
+        else:
+            self.slider[index].max = sl_max
+            self.slider[index].min = sl_min
+        # self.slider[index].min = sl_min
+        # self.slider[index].max = sl_max
         if set_value:
             # sl_mid = (sl_min + sl_max) // 2
             self.slider[index].value = (sl_min + sl_max) // 2

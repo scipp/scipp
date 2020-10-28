@@ -76,9 +76,9 @@ class ProfileView(PlotFigure1d):
         """
         Show or hide profile view.
         """
-        # "on_widget_constructed" is an attribute specific to ipywidgets
-        if hasattr(self.fig.canvas, "on_widget_constructed"):
+        if self.is_widget():
             self.fig.canvas.layout.display = None if visible else 'none'
+            self.fig.toolbar.set_visible(visible)
         self.visible = visible
 
     def is_visible(self):
