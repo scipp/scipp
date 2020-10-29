@@ -124,6 +124,7 @@ class PlotController:
         self.initialise_model()
         if self.profile is not None:
             self.initialise_profile()
+            self.connect_profile()
 
         self.connect_widgets()
         self.connect_view()
@@ -248,6 +249,12 @@ class PlotController:
         Dummy connect for `PlotPanel`.
         """
         return
+
+    def connect_profile(self):
+        """
+        Connect callbacks to the `PlotWidgets` interface.
+        """
+        self.profile.connect()
 
     def lock_update_data(self):
         self.update_data_lock = True

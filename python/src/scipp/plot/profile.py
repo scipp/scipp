@@ -86,3 +86,13 @@ class PlotProfile(PlotFigure1d):
         Get visible state of profile view.
         """
         return self.visible
+
+    def connect(self):
+        self.toolbar.connect({"toggle_xaxis_scale": self.toggle_xaxis_scale,
+            "toggle_norm": self.toggle_norm})
+
+    def toggle_xaxis_scale(self, change):
+        self.ax.set_xscale("log" if change["new"] else "linear")
+
+    def toggle_norm(self, change):
+        self.ax.set_yscale("log" if change["new"] else "linear")
