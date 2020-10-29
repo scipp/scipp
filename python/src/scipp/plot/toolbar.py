@@ -7,20 +7,36 @@ import ipywidgets as ipw
 
 class PlotToolbar:
     """
-    Custom toolbar with additional buttons.
+    Custom toolbar with additional buttons and back/forward buttons removed.
     """
-    def __init__(self, fig_toolbar=None, swap_axes_button=False):
+    def __init__(self, canvas=None, ndim=1):
+        # Prepare containers
         self.container = ipw.VBox()
         self.members = {}
-        if fig_toolbar is not None:
-            self.members["original"] = fig_toolbar
+
+        # Construct  toolbar
+        if canvas is not None:
+            old_tools = canvas.toolbar.toolitems
+            new_tools = [old_tools[0], old_tools[3], old_tools[4], old_tools[5]]
+            canvas.toolbar.toolitems = new_tools
+            self.members["mpl_toolbar"] = canvas.toolbar
+            canvas.toolbar_visible = False
         else:
-            self.add_button(name="menu", icon="navicon", tooltip="Menu")
+            self.add_button(name="menu", icon="bars", tooltip="Menu")
             self.add_button(name="home", icon="home", tooltip="Reset original view")
         self.add_button(name="rescale_to_data", icon="arrows-v", tooltip="Rescale")
-        self.add_togglebutton(name="logx", description="Logx", tooltip="Log(x)")
-        if swap_axes_button:
+        if ndim > 1:
             self.add_button(name="swap_axes", icon="exchange", tooltip="Swap axes")
+
+        self.add_togglebutton(name="toggle_xaxis_scale", description="logx", tooltip="Log(x)")
+        # In the case of a 1d plot, we connect the logy button to the
+        # toggle_norm function.
+        if ndim == 1:
+            self.add_togglebutton(name="toggle_norm", description="logy", tooltip="Log(y)")
+        else:
+            self.add_togglebutton(name="toggle_yaxis_scale", description="logy", tooltip="Log(y)")
+            self.add_togglebutton(name="toggle_norm", icon="signal", tooltip="Log(data)")
+
         self._update_container()
 
     def _ipython_display_(self):
@@ -39,39 +55,37 @@ class PlotToolbar:
         """
         self.container.layout.display = None if visible else 'none'
 
-    def add_button(self, name, icon=None, description=None, tooltip=None):
+    def add_button(self, name, **kwargs):
         """
         """
-        # args = {}
-        # if icon is not None:
-        #     args["icon"] = icon
-        # if description is not None:
-        #     args["description"] = description
-        # if tooltip is not None:
-        #     args["tooltip"] = tooltip
-        args = self._parse_button_args(icon=icon, description=description, tooltip=tooltip)
-        self.members[name] = ipw.Button(**args, layout={"width": "34px"})
-        # self.container.children = tuple(self.members.values())
+        args = self._parse_button_args(**kwargs)
+        self.members[name] = ipw.Button(**args)
 
-    def add_togglebutton(self, name, icon=None, description=None, tooltip=None):
+    def add_togglebutton(self, name, **kwargs):
         """
         """
-        args = self._parse_button_args(icon=icon, description=description, tooltip=tooltip)
-        self.members[name] = ipw.ToggleButton(value=False, layout={"width": "34px"}, **args)
-        # self.container.children = tuple(self.members.values())
+        args = self._parse_button_args(**kwargs)
+        self.members[name] = ipw.ToggleButton(value=False, **args)
 
     def connect(self, callbacks):
         for key in callbacks:
             if key in self.members:
-                self.members[key].on_click(callbacks[key])
-        # if "swap" in self.members:
-        #     self.members["swap"].on_click(callbacks["swap_axes"])
+                if hasattr(self.members[key], "on_click"):
+                    self.members[key].on_click(callbacks[key])
+                else:
+                    self.members[key].observe(callbacks[key], names="value")
 
     def _update_container(self):
+        # for group, item in self.containers.items():
         self.container.children = tuple(self.members.values())
 
-    def _parse_button_args(self, **kwargs):
-        args = {}
+    def _parse_button_args(self, layout=None, **kwargs):
+        # layout = {"width": "34px"}
+        # if "layout" in kwargs:
+        #     layout.update(kwargs["layout"])
+        args = {"layout": {"width": "34px", "padding": "0px 0px 0px 0px"}}
+        if layout is not None:
+            args["layout"].update(layout)
         for key, value in kwargs.items():
             if value is not None:
                 args[key] = value

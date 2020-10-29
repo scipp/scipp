@@ -20,7 +20,7 @@ class PlotFigure:
                  figsize=None,
                  title=None,
                  padding=None,
-                 swap_axes_button=False):
+                 ndim=1):
         self.fig = None
         self.ax = ax
         self.cax = cax
@@ -38,8 +38,8 @@ class PlotFigure:
                 padding = config.plot.padding
             self.fig.tight_layout(rect=padding)
             if self.is_widget():
-                self.toolbar = PlotToolbar(self.fig.canvas.toolbar,
-                    swap_axes_button)
+                self.toolbar = PlotToolbar(canvas=self.fig.canvas,
+                    ndim=ndim)
                 self.fig.canvas.toolbar_visible = False
         else:
             self.own_axes = False
@@ -81,6 +81,12 @@ class PlotFigure:
         """
         if self.is_widget():
             return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
+            # # print(self.fig.canvas.layout.width)
+            # # return ipw.HBox([ipw.ToggleButton(description="log", layout={"width": "40px"}), self.fig.canvas, ipw.VBox([ipw.ToggleButton(description="log2", layout={"width": "40px"})])],
+            # #      layout={"justify_items": "flex-start"})
+            # return ipw.HBox([self.toolbar._to_widget(),
+            #     ipw.VBox([ipw.HBox([ipw.Label(layout={"width": "50px"}), ipw.ToggleButton(description="log", layout={"width": "34px", "padding": '0px 0px 0px 0px'})]), self.fig.canvas]),
+            #     ipw.VBox([ipw.Label(layout={"height": "440px"}), ipw.ToggleButton(description="log", layout={"width": "34px", "padding": '0px 0px 0px 0px'})])])
         else:
             buf = io.BytesIO()
             self.fig.savefig(buf, format='png')

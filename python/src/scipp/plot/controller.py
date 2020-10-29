@@ -235,7 +235,11 @@ class PlotController:
             "remove_line": self.remove_line
         }
         figure_callbacks = {"rescale_to_data": self.rescale_to_data,
-                            "swap_axes": self.swap_axes}
+                            "swap_axes": self.swap_axes,
+                            "toggle_xaxis_scale": self.toggle_xaxis_scale,
+                            "toggle_yaxis_scale": self.toggle_yaxis_scale,
+                            "toggle_norm": self.toggle_norm,
+                            }
         self.view.connect(view_callbacks=view_callbacks,
                           figure_callbacks=figure_callbacks)
 
@@ -280,6 +284,24 @@ class PlotController:
         for i in range(len(dims)):
             self.axes[keys[i]] = dims[i]
         self.update_axes()
+
+    def toggle_xaxis_scale(self, change):
+        dim = self.axes["x"]
+        self.scale[dim] = "log" if change["new"] else "linear"
+        self.update_axes()
+
+    def toggle_yaxis_scale(self, change):
+        dim = self.axes["y"]
+        self.scale[dim] = "log" if change["new"] else "linear"
+        self.update_axes()
+
+    def toggle_zaxis_scale(self, change):
+        dim = self.axes["z"]
+        self.scale[dim] = "log" if change["new"] else "linear"
+        self.update_axes()
+
+    def toggle_norm(self, owner):
+        return
 
     def swap_dimensions(self, index, old_dim, new_dim):
         """

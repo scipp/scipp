@@ -29,7 +29,7 @@ class PlotFigure2d(PlotFigure):
                  resolution=None):
 
         super().__init__(ax=ax, cax=cax, figsize=figsize, title=title,
-          swap_axes_button=True)
+          ndim=2)
 
         if aspect is None:
             aspect = config.plot.aspect
