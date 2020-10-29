@@ -124,3 +124,9 @@ class PlotController3d(PlotController):
         new_values = self.model.get_slice_values(
             mask_info=self.get_masks_info())
         self.view.update_data(new_values)
+
+    def toggle_norm(self, change):
+        super().toggle_norm(change)
+        new_values = self.model.get_slice_values(
+            mask_info=self.get_masks_info())
+        self.view.update_data(new_values)

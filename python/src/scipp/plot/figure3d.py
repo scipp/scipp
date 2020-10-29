@@ -7,9 +7,10 @@ from .toolbar import PlotToolbar
 from .._utils import value_to_string
 import numpy as np
 import ipywidgets as ipw
-from matplotlib import cm
-import matplotlib as mpl
+from matplotlib import cm, ticker
+# import matplotlib as mpl
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize, LogNorm
 import pythreejs as p3
 from copy import copy
 import io
@@ -40,7 +41,7 @@ class PlotFigure3d:
             figsize = (config.plot.width, config.plot.height)
 
         # Figure toolbar
-        self.toolbar = PlotToolbar(swap_axes_button=True)
+        self.toolbar = PlotToolbar(ndim=3)
 
         # Prepare colormaps
         self.cmap = copy(cm.get_cmap(cmap))
@@ -258,7 +259,7 @@ void main() {
             ])
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
-        ticker = mpl.ticker.MaxNLocator(5)
+        ticker_ = ticker.MaxNLocator(5)
         offsets = {
             'x': [0, axparams['y']["lims"][0], axparams['z']["lims"][0]],
             'y': [axparams['x']["lims"][0], 0, axparams['z']["lims"][0]],
@@ -266,7 +267,7 @@ void main() {
         }
 
         for axis, x in enumerate('xyz'):
-            ticks = ticker.tick_values(axparams[x]["lims"][0],
+            ticks = ticker_.tick_values(axparams[x]["lims"][0],
                                        axparams[x]["lims"][1])
             for tick in ticks:
                 if tick >= axparams[x]["lims"][0] and tick <= axparams[x][
@@ -368,3 +369,8 @@ void main() {
         self.camera.position = self.camera_reset["position"]
         self.controls.target = self.camera_reset["lookat"]
         self.camera.lookAt(self.camera_reset["lookat"])
+
+    def toggle_norm(self, norm=None, vmin=None, vmax=None):
+        new_norm = LogNorm(vmin=vmin, vmax=vmax) if norm == "log" else Normalize(vmin=vmin, vmax=vmax)
+        self.scalar_map.set_norm(new_norm)
+        self.masks_scalar_map.set_norm(new_norm)

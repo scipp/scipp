@@ -28,13 +28,15 @@ class PlotToolbar:
         if ndim > 1:
             self.add_button(name="swap_axes", icon="exchange", tooltip="Swap axes")
 
-        self.add_togglebutton(name="toggle_xaxis_scale", description="logx", tooltip="Log(x)")
-        # In the case of a 1d plot, we connect the logy button to the
-        # toggle_norm function.
+        if ndim < 3:
+            self.add_togglebutton(name="toggle_xaxis_scale", description="logx", tooltip="Log(x)")
         if ndim == 1:
+            # In the case of a 1d plot, we connect the logy button to the
+            # toggle_norm function.
             self.add_togglebutton(name="toggle_norm", description="logy", tooltip="Log(y)")
         else:
-            self.add_togglebutton(name="toggle_yaxis_scale", description="logy", tooltip="Log(y)")
+            if ndim < 3:
+                self.add_togglebutton(name="toggle_yaxis_scale", description="logy", tooltip="Log(y)")
             self.add_togglebutton(name="toggle_norm", icon="signal", tooltip="Log(data)")
 
         self._update_container()
