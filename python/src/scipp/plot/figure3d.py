@@ -360,6 +360,13 @@ void main() {
         """
         self.scalar_map.set_clim(vmin, vmax)
         self.cbar.set_clim(vmin, vmax)
+        self.update_colorbar()
+        # buf = io.BytesIO()
+        # self.cbar_fig.savefig(buf, format='png', bbox_inches='tight')
+        # buf.seek(0)
+        # self.cbar_image.value = buf.getvalue()
+
+    def update_colorbar(self):
         buf = io.BytesIO()
         self.cbar_fig.savefig(buf, format='png', bbox_inches='tight')
         buf.seek(0)
@@ -374,3 +381,5 @@ void main() {
         new_norm = LogNorm(vmin=vmin, vmax=vmax) if norm == "log" else Normalize(vmin=vmin, vmax=vmax)
         self.scalar_map.set_norm(new_norm)
         self.masks_scalar_map.set_norm(new_norm)
+        self.cbar.set_norm(new_norm)
+        self.update_colorbar()
