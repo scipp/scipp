@@ -321,3 +321,7 @@ class PlotFigure1d(PlotFigure):
         """
         return self.legend["show"] and len(
             self.ax.get_legend_handles_labels()[1]) > 0
+
+    def toggle_norm(self, norm=None, vmin=None, vmax=None):
+        self.norm = norm
+        self.ax.set_yscale("log" if self.norm == "log" else "linear")

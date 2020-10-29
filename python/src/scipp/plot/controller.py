@@ -300,8 +300,11 @@ class PlotController:
         self.scale[dim] = "log" if change["new"] else "linear"
         self.update_axes()
 
-    def toggle_norm(self, owner):
-        return
+    def toggle_norm(self, change):
+        self.norm = "log" if change["new"] else "linear"
+        vmin, vmax = self.model.rescale_to_data()
+        vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax, scale=self.norm)
+        self.view.toggle_norm(self.norm, vmin, vmax)
 
     def swap_dimensions(self, index, old_dim, new_dim):
         """

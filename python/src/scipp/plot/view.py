@@ -58,11 +58,17 @@ class PlotView:
         if figure_callbacks is not None:
             self.figure.connect(figure_callbacks)
 
-    def rescale_to_data(self, vmin=None, vmax=None):
+    def rescale_to_data(self, *args, **kwargs):
         """
         Forward rescaling to the `figure`.
         """
-        self.figure.rescale_to_data(vmin=vmin, vmax=vmax)
+        self.figure.rescale_to_data(*args, **kwargs)
+
+    def toggle_norm(self, *args, **kwargs):
+        """
+        Forward norm change to the `figure`.
+        """
+        self.figure.toggle_norm(*args, **kwargs)
 
     def update_axes(self, *args, **kwargs):
         """

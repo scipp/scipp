@@ -6,6 +6,7 @@ from .. import config
 from .figure import PlotFigure
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize, LogNorm
 import warnings
 
 
@@ -154,3 +155,9 @@ class PlotFigure2d(PlotFigure):
             if new_values["extent"] is not None:
                 self.mask_image[m].set_extent(new_values["extent"])
         self.draw()
+
+    def toggle_norm(self, norm=None, vmin=None, vmax=None):
+        new_norm = LogNorm(vmin=vmin, vmax=vmax) if norm == "log" else Normalize(vmin=vmin, vmax=vmax)
+        self.image.set_norm(new_norm)
+        for m in self.mask_image:
+            self.mask_image[m].set_norm(new_norm)
