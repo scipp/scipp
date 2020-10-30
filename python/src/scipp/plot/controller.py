@@ -55,7 +55,6 @@ class PlotController:
         self.vmax = vmax
         self.norm = norm
 
-        # print(self.axes, self.axes.values())
         self.scale = {dim: "linear" for dim in self.axes.values()}
         if scale is not None:
             for dim, item in scale.items():
@@ -117,8 +116,6 @@ class PlotController:
                 self.coord_labels[key][dim] = name_with_unit(var=coord)
                 self.coord_units[key][dim] = name_with_unit(var=coord, name="")
 
-        # print(self.histograms)
-
         self.initialise_widgets(dim_to_shape[self.name])
         self.initialise_view()
         self.initialise_model()
@@ -141,46 +138,13 @@ class PlotController:
             name = self.name
         return self.coord_units[name][dim]
 
-
     def initialise_widgets(self, dim_to_shape):
         """
         Initialise widget parameters once the `PlotModel`, `PlotView` and
         `PlotController` have been created.
-        Update slider labels and ranges as well as readout values.
         """
-        # parameters = {}
-        # for dim in self.labels[self.name]:
-
-        #     # Dimension labels
-        #     parameters[dim] = {"labels": self.labels[self.name][dim]}
-
-        #     # Dimension slider
-        #     parameters[dim]["slider"] = dim_to_shape[dim]
-
-        #     # Thickness slider
-        #     dim_xlims = self.xlims[self.name][dim].values
-        #     dx = np.abs(dim_xlims[1] - dim_xlims[0])
-        #     parameters[dim]["thickness_slider"] = dx
-
-        #     # Slider readouts
-        #     ind = dim_to_shape[dim] // 2
-        #     left, centre, right = self.model.get_bin_coord_values(
-        #         self.name, dim, ind)
-        #     parameters[dim]["slider_readout"] = [
-        #         dim, ind, left, centre, right, self.multid_coord
-        #     ]
-
-        # # self.widgets.initialise(parameters=parameters,
-        # #                         multid_coord=self.multid_coord)
-
-        
-        # for dim, bounds in self.widgets.get_slider_bounds().items():
-        # lower, upper = self.model.get_slice_coord_bounds(
-        #         self.name, owner_dim, slices[owner_dim])
-        #     self.widgets.update_slider_readout(change["owner"].index,
-        #         lower, upper, slices[owner_dim], owner_dim == self.multid_coord)
         self.widgets.initialise(dim_to_shape, self.xlims[self.name],
-            self.coord_units[self.name])
+                                self.coord_units[self.name])
 
     def initialise_view(self):
         """
@@ -213,10 +177,8 @@ class PlotController:
         Connect callbacks to the `PlotWidgets` interface.
         """
         self.widgets.connect({
-            # "rescale_to_data": self.rescale_to_data,
             "toggle_profile_view": self.toggle_profile_view,
             "update_data": self.update_data,
-            # "update_axes": self.update_axes,
             "toggle_mask": self.toggle_mask,
             "get_dim_shape": self.get_dim_shape,
             "lock_update_data": self.lock_update_data,
@@ -235,12 +197,13 @@ class PlotController:
             "keep_line": self.keep_line,
             "remove_line": self.remove_line
         }
-        figure_callbacks = {"rescale_to_data": self.rescale_to_data,
-                            "swap_axes": self.swap_axes,
-                            "toggle_xaxis_scale": self.toggle_xaxis_scale,
-                            "toggle_yaxis_scale": self.toggle_yaxis_scale,
-                            "toggle_norm": self.toggle_norm,
-                            }
+        figure_callbacks = {
+            "rescale_to_data": self.rescale_to_data,
+            "swap_axes": self.swap_axes,
+            "toggle_xaxis_scale": self.toggle_xaxis_scale,
+            "toggle_yaxis_scale": self.toggle_yaxis_scale,
+            "toggle_norm": self.toggle_norm,
+        }
         self.view.connect(view_callbacks=view_callbacks,
                           figure_callbacks=figure_callbacks)
 
@@ -257,9 +220,18 @@ class PlotController:
         self.profile.connect()
 
     def lock_update_data(self):
+        """
+        When the thickness slider is changed, the range, and possibly the
+        value, of the position slider are changed. We therfore temporary lock
+        data updates until all slider ranges and values have been updated
+        before manually updating the displayed data slice.
+        """
         self.update_data_lock = True
 
     def unlock_update_data(self):
+        """
+        Release the data update lock.
+        """
         self.update_data_lock = False
 
     def rescale_to_data(self, button=None):
@@ -294,21 +266,33 @@ class PlotController:
         self.update_log_axes_buttons()
 
     def toggle_xaxis_scale(self, owner):
+        """
+        Toggle x-axis scale from toolbar button signal.
+        """
         dim = self.axes["x"]
         self.scale[dim] = "log" if owner.value else "linear"
         self.update_axes()
 
     def toggle_yaxis_scale(self, owner):
+        """
+        Toggle y-axis scale from toolbar button signal.
+        """
         dim = self.axes["y"]
         self.scale[dim] = "log" if owner.value else "linear"
         self.update_axes()
 
     def toggle_zaxis_scale(self, owner):
+        """
+        Toggle z-axis scale from toolbar button signal.
+        """
         dim = self.axes["z"]
         self.scale[dim] = "log" if owner.value else "linear"
         self.update_axes()
 
     def toggle_norm(self, owner):
+        """
+        Toggle data normalization from toolbar button signal.
+        """
         self.norm = "log" if owner.value else "linear"
         vmin, vmax = self.model.rescale_to_data()
         vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax, scale=self.norm)
@@ -318,18 +302,22 @@ class PlotController:
         """
         Swap one dimension for another in the displayed axes.
         """
-        print(self.scale)
         pos = list(self.axes.values()).index(new_dim)
         key = list(self.axes.keys())[pos]
         self.axes[key] = old_dim
         self.axes[index] = new_dim
         self.update_axes()
-        # axes_scales = _get_xyz_axes
         self.update_log_axes_buttons()
 
     def update_log_axes_buttons(self):
-        self.view.update_log_axes_buttons({ax: self.scale[self.axes[ax]] for
-            ax in self._get_xyz_axes()})
+        """
+        When either axes or dimensions are swapped, we need to update the
+        status (color and value) of the toolbar log buttons. We send this to
+        the view which in turn with forward it to the toolbar.
+        """
+        self.view.update_log_axes_buttons(
+            {ax: self.scale[self.axes[ax]]
+             for ax in self._get_xyz_axes()})
 
     def update_axes(self, change=None):
         """
@@ -366,33 +354,14 @@ class PlotController:
         if self.update_data_lock:
             return
 
-        # slider_params = self.widgets.get_slider_dims_and_values()
         slices = self.widgets.get_slider_bounds()
-        # print(slices)
-
         if change is not None:
             owner_dim = self.widgets.get_index_dim(change["owner"].index)
-            # print(owner_dim)
-            # Update slider readout label
-            # ind = active_sliders[owner_dim]
             lower, upper = self.model.get_slice_coord_bounds(
                 self.name, owner_dim, slices[owner_dim])
-            self.widgets.update_slider_readout(change["owner"].index,
-                lower, upper, slices[owner_dim], owner_dim == self.multid_coord)
-
-        # slices = {}
-        # info = {"slice_label": ""}
-        # # Slice along dimensions with active sliders
-        # for dim, [lower, upper] in slider_bounds.items():
-        #     # slices[dim] = self._make_slice_dict(val, key, dim)
-        #     slices[dim] = self.widgets.get_slider_bounds()
-        #     info["slice_label"] = "{},{}[{}]".format(
-        #         info["slice_label"], dim,
-        #         self.widgets.get_slice_bounds_as_string(
-        #             val, key, slices[dim]["bin_left"],
-        #             slices[dim]["bin_centre"], slices[dim]["bin_right"],
-        #             dim == self.multid_coord))
-        # info["slice_label"] = info["slice_label"][1:]
+            self.widgets.update_slider_readout(change["owner"].index, lower,
+                                               upper, slices[owner_dim],
+                                               owner_dim == self.multid_coord)
 
         info = {"slice_label": self._make_slice_label(slices, "")[1:]}
 
@@ -402,10 +371,6 @@ class PlotController:
         if self.panel is not None:
             self.panel.update_data(info)
         if self.profile_dim is not None:
-            # lower, upper = self.widgets.get_slice_bounds(
-            #     self.profile_dim, slices[self.profile_dim]["bin_left"],
-            #     slices[self.profile_dim]["bin_centre"],
-            #     slices[self.profile_dim]["bin_right"])
             self.profile.update_slice_area(lower, upper)
 
     def toggle_mask(self, change):
@@ -418,6 +383,10 @@ class PlotController:
                                      change["owner"].mask_name, change["new"])
 
     def _get_xyz_axes(self):
+        """
+        Get the list of displated axes for the current plot. This is ["x"] for
+        1d plots, ["x", "y"] for 2d plots, and ["x", "y", "z"] for 3d plots.
+        """
         return sorted(list(set(['x', 'y', 'z']) & set(self.axes.keys())))
 
     def _get_axes_parameters(self):
@@ -426,8 +395,6 @@ class PlotController:
         axes that are displayed on the plots.
         """
         axparams = {}
-        # for dim, but_val in self.widgets.get_buttons_and_disabled_sliders(
-        # ).items():
         for ax in self._get_xyz_axes():
             dim = self.axes[ax]
             xmin = np.Inf
@@ -448,8 +415,7 @@ class PlotController:
             }
             # Safety check for log axes
             axparams[ax]["lims"] = check_log_limits(
-                lims=axparams[ax]["lims"],
-                scale=axparams[ax]["scale"])
+                lims=axparams[ax]["lims"], scale=axparams[ax]["scale"])
 
         return axparams
 
@@ -545,17 +511,9 @@ class PlotController:
         self.view.update_profile_connection(visible=visible)
 
         if visible:
-            # slice_dict = self._make_slice_dict(
-            #     self.widgets.get_slider_value(self.profile_dim),
-            #     self.profile_dim)
-            # lower, upper = self.widgets.get_slice_bounds(
-            #     self.profile_dim, slice_dict["bin_left"],
-            #     slice_dict["bin_centre"], slice_dict["bin_right"])
             slices = self.widgets.get_slider_bounds()
             lower, upper = self.model.get_slice_coord_bounds(
                 self.name, self.profile_dim, slices[self.profile_dim])
-            # self.widgets.update_slider_readout(owner.index,
-            #     lower, upper, slices[self.profile_dim])
             self.profile.update_slice_area(lower, upper)
 
     def update_profile(self, xdata=None, ydata=None):
@@ -566,16 +524,11 @@ class PlotController:
         ask the model to slice down the data, and send the new data returned by
         the model to the profile view.
         """
-        # slices = {}
         info = {"slice_label": ""}
-
         ax_dims = {self.axparams[xyz]["dim"]: xyz for xyz in self.axparams}
         xydata = {'x': xdata, 'y': ydata}
 
         slices = self.widgets.get_slider_bounds(exclude=self.profile_dim)
-
-        # for dim, val in self.widgets.get_non_profile_slider_values(
-        #         self.profile_dim).items():
 
         # Add pixel locations to profile label
         for dim in ax_dims:
@@ -583,33 +536,8 @@ class PlotController:
                 info["slice_label"], dim,
                 value_to_string(xydata[ax_dims[dim]], precision=1))
 
-        # Add slice ranges to profile label
-        # for dim in slices:
-        #     lower, upper = self.model.get_slice_coord_bounds(
-        #         self.name, dim, slices[dim])
-        #     info["slice_label"] = "{},{}[{}]".format(
-        #         info["slice_label"], dim,
-        #         self.widgets.get_slice_bounds_as_string(
-        #             dim, val, slices[dim]["bin_left"],
-        #             slices[dim]["bin_centre"], slices[dim]["bin_right"],
-        #             self.multid_coord))
-
-        info["slice_label"] = self._make_slice_label(slices, info["slice_label"])[1:]
-
-
-        #     # slices[dim] = self._make_slice_dict(val, dim)
-        #     if dim in ax_dims:
-        #         info["slice_label"] = "{},{}:{}".format(
-        #             info["slice_label"], dim,
-        #             value_to_string(xydata[ax_dims[dim]]))
-        #     else:
-        #         info["slice_label"] = "{},{}[{}]".format(
-        #             info["slice_label"], dim,
-        #             self.widgets.get_slice_bounds_as_string(
-        #                 dim, val, slices[dim]["bin_left"],
-        #                 slices[dim]["bin_centre"], slices[dim]["bin_right"],
-        #                 self.multid_coord))
-        # info["slice_label"] = info["slice_label"][1:]
+        info["slice_label"] = self._make_slice_label(slices,
+                                                     info["slice_label"])[1:]
 
         # Get new values from model
         new_values = self.model.update_profile(xdata=xdata,
@@ -627,11 +555,8 @@ class PlotController:
                 self.name, dim, slices[dim])
             label = "{},{}[{}]".format(
                 label, dim,
-                self.widgets.get_slice_extent(
-                                   lower,
-                                   upper,
-                                   slices[dim],
-                    dim == self.multid_coord))
+                self.widgets.get_slice_extent(lower, upper, slices[dim],
+                                              dim == self.multid_coord))
         return label
 
     def toggle_hover_visibility(self, value):
@@ -640,18 +565,3 @@ class PlotController:
         in the widgets.
         """
         self.profile.toggle_hover_visibility(value)
-
-    def _make_slice_dict(self, ind, key, dim):
-        """
-        Create a dict of parameters with enough information for the model to
-        carry out slicing along slider dimensions.
-        """
-        left, centre, right = self.model.get_bin_coord_values(
-            self.name, dim, ind)
-        return {
-            "index": ind,
-            "bin_left": left,
-            "bin_centre": centre,
-            "bin_right": right,
-            "thickness": self.widgets.get_thickness_slider_value(key)
-        }

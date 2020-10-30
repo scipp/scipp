@@ -95,7 +95,8 @@ class PlotFigure3d:
                                     width=figsize[0],
                                     height=figsize[1])
 
-        self.figure = ipw.HBox([self.toolbar._to_widget(), self.renderer, self.cbar_image])
+        self.figure = ipw.HBox(
+            [self.toolbar._to_widget(), self.renderer, self.cbar_image])
 
         return
 
@@ -127,6 +128,9 @@ class PlotFigure3d:
         return
 
     def connect(self, callbacks):
+        """
+        Connect the toolbar Home button to reset the camera position.
+        """
         callbacks.update({"home": self.reset_camera})
         self.toolbar.connect(callbacks)
 
@@ -268,7 +272,7 @@ void main() {
 
         for axis, x in enumerate('xyz'):
             ticks = ticker_.tick_values(axparams[x]["lims"][0],
-                                       axparams[x]["lims"][1])
+                                        axparams[x]["lims"][1])
             for tick in ticks:
                 if tick >= axparams[x]["lims"][0] and tick <= axparams[x][
                         "lims"][1]:
@@ -361,24 +365,31 @@ void main() {
         self.scalar_map.set_clim(vmin, vmax)
         self.cbar.set_clim(vmin, vmax)
         self.update_colorbar()
-        # buf = io.BytesIO()
-        # self.cbar_fig.savefig(buf, format='png', bbox_inches='tight')
-        # buf.seek(0)
-        # self.cbar_image.value = buf.getvalue()
 
     def update_colorbar(self):
+        """
+        Save the colorbar figure to png and update the image widget.
+        """
         buf = io.BytesIO()
         self.cbar_fig.savefig(buf, format='png', bbox_inches='tight')
         buf.seek(0)
         self.cbar_image.value = buf.getvalue()
 
     def reset_camera(self, owner=None):
+        """
+        Reset the camera position.
+        """
         self.camera.position = self.camera_reset["position"]
         self.controls.target = self.camera_reset["lookat"]
         self.camera.lookAt(self.camera_reset["lookat"])
 
     def toggle_norm(self, norm=None, vmin=None, vmax=None):
-        new_norm = LogNorm(vmin=vmin, vmax=vmax) if norm == "log" else Normalize(vmin=vmin, vmax=vmax)
+        """
+        Toggle color normalization when toolbar button is clicked.
+        """
+        new_norm = LogNorm(
+            vmin=vmin, vmax=vmax) if norm == "log" else Normalize(vmin=vmin,
+                                                                  vmax=vmax)
         self.scalar_map.set_norm(new_norm)
         self.masks_scalar_map.set_norm(new_norm)
         self.cbar.set_norm(new_norm)

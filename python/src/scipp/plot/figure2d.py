@@ -29,8 +29,7 @@ class PlotFigure2d(PlotFigure):
                  masks=None,
                  resolution=None):
 
-        super().__init__(ax=ax, cax=cax, figsize=figsize, title=title,
-          ndim=2)
+        super().__init__(ax=ax, cax=cax, figsize=figsize, title=title, ndim=2)
 
         if aspect is None:
             aspect = config.plot.aspect
@@ -157,7 +156,9 @@ class PlotFigure2d(PlotFigure):
         self.draw()
 
     def toggle_norm(self, norm=None, vmin=None, vmax=None):
-        new_norm = LogNorm(vmin=vmin, vmax=vmax) if norm == "log" else Normalize(vmin=vmin, vmax=vmax)
+        new_norm = LogNorm(
+            vmin=vmin, vmax=vmax) if norm == "log" else Normalize(vmin=vmin,
+                                                                  vmax=vmax)
         self.image.set_norm(new_norm)
         for m in self.mask_image:
             self.mask_image[m].set_norm(new_norm)

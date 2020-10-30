@@ -38,8 +38,8 @@ class PlotFigure:
                 padding = config.plot.padding
             self.fig.tight_layout(rect=padding)
             if self.is_widget():
-                self.toolbar = PlotToolbar(canvas=self.fig.canvas,
-                    ndim=ndim)
+                # We create a custom toolbar
+                self.toolbar = PlotToolbar(canvas=self.fig.canvas, ndim=ndim)
                 self.fig.canvas.toolbar_visible = False
         else:
             self.own_axes = False
@@ -75,18 +75,12 @@ class PlotFigure:
     def _to_widget(self):
         """
         Convert the Matplotlib figure to a widget. If the ipympl (widget)
-        backend is in use, just return the figure canvas.
+        backend is in use, return the custom toolbar and the figure canvas.
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
         if self.is_widget():
             return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
-            # # print(self.fig.canvas.layout.width)
-            # # return ipw.HBox([ipw.ToggleButton(description="log", layout={"width": "40px"}), self.fig.canvas, ipw.VBox([ipw.ToggleButton(description="log2", layout={"width": "40px"})])],
-            # #      layout={"justify_items": "flex-start"})
-            # return ipw.HBox([self.toolbar._to_widget(),
-            #     ipw.VBox([ipw.HBox([ipw.Label(layout={"width": "50px"}), ipw.ToggleButton(description="log", layout={"width": "34px", "padding": '0px 0px 0px 0px'})]), self.fig.canvas]),
-            #     ipw.VBox([ipw.Label(layout={"height": "440px"}), ipw.ToggleButton(description="log", layout={"width": "34px", "padding": '0px 0px 0px 0px'})])])
         else:
             buf = io.BytesIO()
             self.fig.savefig(buf, format='png')

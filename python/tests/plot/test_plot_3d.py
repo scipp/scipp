@@ -49,6 +49,29 @@ def test_plot_projection_3d_with_vectors():
     plot(d, projection="3d", positions="xyz")
 
 
+def test_plot_projection_3d_with_vectors_non_dim_coord():
+    N = 1000
+    M = 100
+    theta = np.random.random(N) * np.pi
+    phi = np.random.random(N) * 2.0 * np.pi
+    r = 10.0 + (np.random.random(N) - 0.5)
+    x = r * np.sin(theta) * np.sin(phi)
+    y = r * np.sin(theta) * np.cos(phi)
+    z = r * np.cos(theta)
+    tof = np.arange(M).astype(np.float)
+    a = np.arange(M * N).reshape([M, N]) * np.sin(y)
+    d = sc.Dataset()
+    d.coords['xyz'] = sc.Variable(['xyz'],
+                                  values=np.array([x, y, z]).T,
+                                  dtype=sc.dtype.vector_3_float64)
+    d.coords['pos'] = sc.Variable(['xyz'],
+                                  values=np.array([x, y, z]).T + 20.0,
+                                  dtype=sc.dtype.vector_3_float64)
+    d.coords['tof'] = sc.Variable(['tof'], values=tof)
+    d['a'] = sc.Variable(['tof', 'xyz'], values=a)
+    plot(d, projection="3d", positions="pos")
+
+
 def test_plot_variable_3d():
     N = 50
     v3d = sc.Variable(['tof', 'x', 'y'],

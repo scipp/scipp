@@ -97,4 +97,7 @@ class PlotView:
             self.profile_hover_connection = None
 
     def update_log_axes_buttons(self, *args, **kwargs):
+        """
+        Forward log buttons update to the `figure`.
+        """
         self.figure.update_log_axes_buttons(*args, **kwargs)

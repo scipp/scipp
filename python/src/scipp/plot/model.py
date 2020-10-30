@@ -173,12 +173,9 @@ class PlotModel:
         """
         Return the left, center, and right coordinates for a bin index.
         """
-        # lower = self.data_arrays[name].coords[dim][dim, ind:ind + 1]
-        # right = self.data_arrays[name].coords[dim][dim, ind + 1:ind + 2]
-        # return left.values[0], to_bin_centers(
-        #     self.data_arrays[name].coords[dim][dim, ind:ind + 2],
-        #     dim).values[0], right.values[0]
-        return self.data_arrays[name].coords[dim][dim, bounds[0]].value, self.data_arrays[name].coords[dim][dim, bounds[1]].value
+        return self.data_arrays[name].coords[dim][
+            dim, bounds[0]].value, self.data_arrays[name].coords[dim][
+                dim, bounds[1]].value
 
     def get_data_names(self):
         """
@@ -194,47 +191,6 @@ class PlotModel:
         """
         return self.data_arrays[name].coords[dim]
 
-    # def _select_bins(self, coord, dim, start, end):
-    #     """
-    #     Method to speed up the finding of bin ranges
-    #     """
-    #     bins = coord.shape[-1]
-    #     if len(coord.dims) != 1:  # TODO find combined min/max
-    #         return dim, slice(0, bins - 1)
-    #     # scipp treats bins as closed on left and open on right: [left, right)
-    #     first = sc.sum(coord <= start, dim).value - 1
-    #     last = bins - sc.sum(coord > end, dim).value
-    #     if first >= last:  # TODO better handling for decreasing
-    #         return dim, slice(0, bins - 1)
-    #     first = max(0, first)
-    #     last = min(bins - 1, last)
-    #     return dim, slice(first, last + 1)
-
-    # def resample_data(self, array, rebin_edges):
-    #     """
-    #     Resample a DataArray according to new bin edges.
-    #     """
-    #     dslice = array
-    #     # Select bins to speed up rebinning
-    #     for dim in rebin_edges:
-    #         this_slice = self._select_bins(array.coords[dim], dim,
-    #                                        rebin_edges[dim][dim, 0],
-    #                                        rebin_edges[dim][dim, -1])
-    #         dslice = dslice[this_slice]
-
-    #     # Rebin the data
-    #     for dim, edges in rebin_edges.items():
-    #         dslice = sc.rebin(dslice, dim, edges)
-
-    #     # Divide by pixel width
-    #     # TODO: can this loop be combined with the one above?
-    #     for dim, edges in rebin_edges.items():
-    #         div = edges[dim, 1:] - edges[dim, :-1]
-    #         div.unit = sc.units.one
-    #         dslice /= div
-
-    #     return dslice
-
     def rescale_to_data(self):
         """
         Get the min and max values of the currently displayed slice.
@@ -246,43 +202,17 @@ class PlotModel:
             vmax = sc.nanmax(self.dslice.data).value
         return vmin, vmax
 
-    # def _slice_or_rebin(self, array, dim, dim_slice):
-    #     """
-    #     The convetion is:
-    #     - if the slider thickness is zero, use index-based slicing
-    #     - otherwise, use `rebin`.
-    #     """
-    #     deltax = dim_slice["thickness"]
-    #     if deltax == 0.0:
-    #         array = array[dim, dim_slice["index"]]
-    #     else:
-    #         loc = dim_slice["bin_centre"]
-    #         array = self.resample_data(
-    #             array,
-    #             rebin_edges={
-    #                 dim:
-    #                 sc.Variable(
-    #                     [dim],
-    #                     values=[loc - 0.5 * deltax, loc + 0.5 * deltax],
-    #                     unit=array.coords[dim].unit)
-    #             })[dim, 0]
-    #         array *= (deltax * sc.units.one)
-    #     return array
-
     def slice_data(self, array, slices):
         """
         Slice the data array according to the dimensions and extents listed
         in slices.
         """
-        # data_slice = array
-        # for dim in slices:
         for dim, [lower, upper] in slices.items():
-            # data_slice = self._slice_or_rebin(data_slice, dim, slices[dim])
-            # array = sc.sum(array[dim, lower:upper], dim)
             array = array[dim, lower:upper]
             # Here we rebin to a single bin instead of using sc.sum because the
             # sum would apply the masks (i.e. zero the data values)
-            array = sc.rebin(array, dim,
+            array = sc.rebin(
+                array, dim,
                 sc.concatenate(array.coords[dim][dim, 0],
                                array.coords[dim][dim, -1], dim))[dim, 0]
         return array

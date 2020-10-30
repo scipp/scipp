@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 from .tools import parse_params
-from .._scipp import core as sc
 import ipywidgets as ipw
 
 
@@ -173,44 +172,42 @@ class SciPlot:
         # Process axes dimensions
         self.axes = {}
         for i, dim in enumerate(array_dims[::-1]):
-            if i < view_ndims:
-                key = base_axes[i]
+            if positions is not None:
+                if (dim == positions) or (dim
+                                          == array.coords[positions].dims[-1]):
+                    key = "x"
+                else:
+                    key = i - ("x" in self.axes)
             else:
-                key = i - view_ndims
+                if i < view_ndims:
+                    key = base_axes[i]
+                else:
+                    key = i - view_ndims
             self.axes[key] = dim
 
+        # Replace axes with supplied axes dimensions
+        supplied_axes = {}
         if axes is not None:
-            # Axes can be incomplete
-            for key, dim in axes.items():
-                # dim = sc.Dim(ax)
-                dim_list = list(self.axes.values())
-                key_list = list(self.axes.keys())
-                if dim in dim_list:
-                    ind = dim_list.index(dim)
-                else:
-                    # Non-dimension coordinate
-                    underlying_dim = array.coords[dim].dims[-1]
-                    self.dim_label_map[underlying_dim] = dim
-                    self.dim_label_map[dim] = underlying_dim
-                    ind = dim_list.index(underlying_dim)
-                self.axes[key_list[ind]] = self.axes[key]
-                self.axes[key] = dim
+            supplied_axes.update(axes)
+        if positions is not None and (positions not in self.axes.values()):
+            supplied_axes.update({"x": positions})
 
-        # Replace positions in axes if positions set
-        if positions is not None:
-            if positions not in self.axes:
-                # dim = sc.Dim(positions)
-                underlying_dim = array.coords[positions].dims[-1]
-                self.dim_label_map[underlying_dim] = positions
-                self.dim_label_map[positions] = underlying_dim
-                dim_list = list(self.axes.values())
-                key_list = list(self.axes.keys())
+        for key, dim in supplied_axes.items():
+            dim_list = list(self.axes.values())
+            key_list = list(self.axes.keys())
+            if dim in dim_list:
+                ind = dim_list.index(dim)
+            else:
+                # Non-dimension coordinate
+                underlying_dim = array.coords[dim].dims[-1]
+                self.dim_label_map[underlying_dim] = dim
+                self.dim_label_map[dim] = underlying_dim
                 ind = dim_list.index(underlying_dim)
-                self.axes[key_list[ind]] = self.axes[key]
-                self.axes[key] = positions
+            self.axes[key_list[ind]] = self.axes[key]
+            self.axes[key] = dim
 
         # Protect against duplicate entries in axes
-        if len(self.axes) != len(set(self.axes)):
+        if len(self.axes.values()) != len(set(self.axes.values())):
             raise RuntimeError("Duplicate entry in axes: {}".format(self.axes))
 
     def savefig(self, filename=None):

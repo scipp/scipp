@@ -7,7 +7,8 @@ import ipywidgets as ipw
 
 class PlotToolbar:
     """
-    Custom toolbar with additional buttons and back/forward buttons removed.
+    Custom toolbar with additional buttons for controlling log scales and
+    normalization, and with back/forward buttons removed.
     """
     def __init__(self, canvas=None, ndim=1):
         # Prepare containers
@@ -17,27 +18,43 @@ class PlotToolbar:
         # Construct  toolbar
         if canvas is not None:
             old_tools = canvas.toolbar.toolitems
-            new_tools = [old_tools[0], old_tools[3], old_tools[4], old_tools[5]]
+            new_tools = [
+                old_tools[0], old_tools[3], old_tools[4], old_tools[5]
+            ]
             canvas.toolbar.toolitems = new_tools
             self.members["mpl_toolbar"] = canvas.toolbar
             canvas.toolbar_visible = False
         else:
             self.add_button(name="menu", icon="bars", tooltip="Menu")
-            self.add_button(name="home", icon="home", tooltip="Reset original view")
-        self.add_button(name="rescale_to_data", icon="arrows-v", tooltip="Rescale")
+            self.add_button(name="home",
+                            icon="home",
+                            tooltip="Reset original view")
+        self.add_button(name="rescale_to_data",
+                        icon="arrows-v",
+                        tooltip="Rescale")
         if ndim > 1:
-            self.add_button(name="swap_axes", icon="exchange", tooltip="Swap axes")
+            self.add_button(name="swap_axes",
+                            icon="exchange",
+                            tooltip="Swap axes")
 
         if ndim < 3:
-            self.add_togglebutton(name="toggle_xaxis_scale", description="logx", tooltip="Log(x)")
+            self.add_togglebutton(name="toggle_xaxis_scale",
+                                  description="logx",
+                                  tooltip="Log(x)")
         if ndim == 1:
             # In the case of a 1d plot, we connect the logy button to the
             # toggle_norm function.
-            self.add_togglebutton(name="toggle_norm", description="logy", tooltip="Log(y)")
+            self.add_togglebutton(name="toggle_norm",
+                                  description="logy",
+                                  tooltip="Log(y)")
         else:
             if ndim < 3:
-                self.add_togglebutton(name="toggle_yaxis_scale", description="logy", tooltip="Log(y)")
-            self.add_togglebutton(name="toggle_norm", description="log", tooltip="Log(data)")
+                self.add_togglebutton(name="toggle_yaxis_scale",
+                                      description="logy",
+                                      tooltip="Log(y)")
+            self.add_togglebutton(name="toggle_norm",
+                                  description="log",
+                                  tooltip="Log(data)")
 
         self._update_container()
 
@@ -49,16 +66,19 @@ class PlotToolbar:
 
     def _to_widget(self):
         """
+        Return the VBox container
         """
         return self.container
 
     def set_visible(self, visible):
         """
+        Need to hide/show the toolbar when a canvas is hidden/shown.
         """
         self.container.layout.display = None if visible else 'none'
 
     def add_button(self, name, **kwargs):
         """
+        Create a new button and add it to the toolbar members list.
         """
         args = self._parse_button_args(**kwargs)
         self.members[name] = ipw.Button(**args)
@@ -77,6 +97,9 @@ class PlotToolbar:
         self.members[name].on_click(self.toggle_button_color)
 
     def toggle_button_color(self, owner, value=None):
+        """
+        Change the color of the button to make it look like a ToggleButton.
+        """
         if value is None:
             owner.value = not owner.value
         else:
@@ -84,21 +107,24 @@ class PlotToolbar:
         owner.style.button_color = "#bdbdbd" if owner.value else "#eeeeee"
 
     def connect(self, callbacks):
+        """
+        Connect callbacks to button clicks.
+        """
         for key in callbacks:
             if key in self.members:
-                # if hasattr(self.members[key], "on_click"):
                 self.members[key].on_click(callbacks[key])
-                # else:
-                    # self.members[key].observe(callbacks[key], names="value")
 
     def _update_container(self):
-        # for group, item in self.containers.items():
+        """
+        Update the container's children according to the buttons in the
+        members.
+        """
         self.container.children = tuple(self.members.values())
 
     def _parse_button_args(self, layout=None, **kwargs):
-        # layout = {"width": "34px"}
-        # if "layout" in kwargs:
-        #     layout.update(kwargs["layout"])
+        """
+        Parse button arguments and add some default styling options.
+        """
         args = {"layout": {"width": "34px", "padding": "0px 0px 0px 0px"}}
         if layout is not None:
             args["layout"].update(layout)
@@ -108,10 +134,12 @@ class PlotToolbar:
         return args
 
     def update_log_axes_buttons(self, axes_scales):
-        # print("in toolbar clear_log_axes_buttons")
+        """
+        When axes are changed or swapped, update the value and color of the
+        custom togglebuttons without triggering a new update.
+        """
         for xyz, scale in axes_scales.items():
             key = "toggle_{}axis_scale".format(xyz)
             if key in self.members:
-                self.toggle_button_color(self.members[key], value=scale=="log")
-        # if "toggle_yaxis_scale" in self.members:
-        #     self.toggle_button_color(self.members["toggle_yaxis_scale"], value=False)
+                self.toggle_button_color(self.members[key],
+                                         value=scale == "log")

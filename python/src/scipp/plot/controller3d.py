@@ -126,6 +126,10 @@ class PlotController3d(PlotController):
         self.view.update_data(new_values)
 
     def toggle_norm(self, change):
+        """
+        When toggling the color normalization, we need to get values from
+        the model to update the colors in 3d plots.
+        """
         super().toggle_norm(change)
         new_values = self.model.get_slice_values(
             mask_info=self.get_masks_info())

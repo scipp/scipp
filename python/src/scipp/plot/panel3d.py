@@ -194,7 +194,6 @@ class PlotPanel3d(PlotPanel):
             self.cut_surface_thickness.disabled = True
             self._update_opacity({"new": self.opacity_slider.value})
         else:
-            # self.points_material.depthTest = False
             self.interface["update_depth_test"](False)
             if change["old"] is None:
                 self.cut_slider.disabled = False

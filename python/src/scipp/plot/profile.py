@@ -88,11 +88,24 @@ class PlotProfile(PlotFigure1d):
         return self.visible
 
     def connect(self):
-        self.toolbar.connect({"toggle_xaxis_scale": self.toggle_xaxis_scale,
-            "toggle_norm": self.toggle_norm})
+        """
+        For the profile, we connect the log buttons of the toolbar directly to
+        callbacks local to `PlotProfile`, since all we need to do is toggle
+        the scale on the matplotlib axes.
+        """
+        self.toolbar.connect({
+            "toggle_xaxis_scale": self.toggle_xaxis_scale,
+            "toggle_norm": self.toggle_norm
+        })
 
     def toggle_xaxis_scale(self, change):
+        """
+        Toggle x-axis scale from toolbar button signal.
+        """
         self.ax.set_xscale("log" if change["new"] else "linear")
 
     def toggle_norm(self, change):
+        """
+        Toggle y-axis scale from toolbar button signal.
+        """
         self.ax.set_yscale("log" if change["new"] else "linear")
