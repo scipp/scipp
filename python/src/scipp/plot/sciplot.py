@@ -57,6 +57,7 @@ class SciPlot:
         self.dim_to_shape = {}
         self.coord_shapes = {}
         self.dim_label_map = {}
+        self.multid_coord = None
 
         self.name = list(scipp_obj_dict.keys())[0]
         self._process_axes_dimensions(scipp_obj_dict[self.name],
@@ -107,10 +108,15 @@ class SciPlot:
 
             # Create a useful map from dim to shape
             self.dim_to_shape[name] = dict(zip(array_dims, array.shape))
-            self.coord_shapes[name] = {
-                str(dim): array.coords[dim].shape
-                for dim in array.coords
-            }
+            self.coord_shapes[name] = {}
+            for dim, coord in array.coords.items():
+                # TODO: this would no longer be necessary once coords.items()
+                # returns strings
+                dimstr = str(dim)
+                if len(coord.dims) > 1:
+                    self.multid_coord = dimstr
+                self.coord_shapes[name][dimstr] = coord.shape
+
             # Add shapes for dims that have no coord in the original data.
             # They will be replaced by fake coordinates in the model.
             for dim in array_dims:

@@ -31,6 +31,7 @@ class PlotController:
                  scale=None,
                  dim_to_shape=None,
                  coord_shapes=None,
+                 multid_coord=None,
                  widgets=None,
                  model=None,
                  panel=None,
@@ -70,7 +71,7 @@ class PlotController:
         # Record which variables are histograms along which dimension
         self.histograms = {}
         # Keep track if a coordinate with more than one dimension is present
-        self.multid_coord = None
+        self.multid_coord = multid_coord
 
         for key in self.model.get_data_names():
 
@@ -83,9 +84,6 @@ class PlotController:
             for dim in self.axes.values():
 
                 coord = self.model.get_data_coord(name, dim)
-
-                if len(coord.dims) > 1:
-                    self.multid_coord = dim
 
                 # To allow for 2D coordinates, the histograms are
                 # stored as dicts, with one key per dimension of the coordinate

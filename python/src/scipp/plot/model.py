@@ -208,11 +208,27 @@ class PlotModel:
         in slices.
         """
         for dim, [lower, upper] in slices.items():
-            array = array[dim, lower:upper]
-            # Here we rebin to a single bin instead of using sc.sum because the
-            # sum would apply the masks (i.e. zero the data values)
-            array = sc.rebin(
-                array, dim,
-                sc.concatenate(array.coords[dim][dim, 0],
-                               array.coords[dim][dim, -1], dim))[dim, 0]
+            aslice = array[dim, lower:upper]
+            # Summing the DataArray applies the masks. To preserve the masks,
+            # we sum the data and ANY the masks
+            array = sc.DataArray(data=sc.sum(aslice.data, dim))
+            for dim_, coord in aslice.coords.items():
+                if dim_ != dim:
+                    if dim in coord.dims:
+                        # We need to slice the dim if it is still present in
+                        # the coord
+                        array.coords[dim_] = coord[dim, 0]
+                    else:
+                        array.coords[dim_] = coord
+            for m, msk in aslice.masks.items():
+                array.masks[m] = sc.any(msk, dim)
+
+            # TODO: alternative here is to use rebin into a single bin with
+            # array = sc.rebin(
+            #     array, dim,
+            #     sc.concatenate(array.coords[dim][dim, 0],
+            #                    array.coords[dim][dim, -1], dim))[dim, 0]
+            # Which is more efficient?
+            # Note that rebin wouldn't work with multid coords
+
         return array

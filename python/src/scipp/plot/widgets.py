@@ -19,13 +19,14 @@ class PlotWidgets:
                  dim_to_shape=None,
                  positions=None,
                  masks=None,
-                 button_options=None):
+                 multid_coord=None):
 
+        self.multid_coord = multid_coord
+
+        # Dict of callbacks passed on from the `PlotController`
         self.interface = {}
-
         # The container list to hold all widgets
         self.container = []
-
         # unit_labels: label to display slider coordinate unit
         self.unit_labels = {}
         # slider: slider to slice along additional dimensions of the array
@@ -77,6 +78,9 @@ class PlotWidgets:
                 readout=False,
                 layout={'width': "180px"},
                 style={'description_width': 'initial'})
+            # If there is a multid coord, we only allow slices of thickness 1
+            if self.multid_coord is not None:
+                self.thickness_slider[index].layout.display = 'none'
 
             self.slider_readout[index] = ipw.Label()
 
@@ -91,8 +95,8 @@ class PlotWidgets:
                 self.dim_buttons[index][dim_] = ipw.Button(
                     description=dim_,
                     button_style='info' if dim == dim_ else '',
-                    disabled=((dim != dim_)
-                              and (dim_ in slider_dims.values())),
+                    disabled=((dim != dim_) and (dim_ in slider_dims.values())
+                              or (dim_ == self.multid_coord)),
                     layout={"width": 'initial'})
                 # Add observer to buttons
                 self.dim_buttons[index][dim_].on_click(self.update_buttons)
@@ -252,9 +256,12 @@ class PlotWidgets:
         self.interface["lock_update_data"]()
         for ind, dim in inds_and_dims.items():
             slider_max = self.interface["get_dim_shape"](dim)
-            self.thickness_slider[ind].max = slider_max
-            self.thickness_slider[ind].value = slider_max
-            self.update_slider_range(ind, slider_max, slider_max - 1)
+            # If there is a multid coord, we only allow slices of thickness 1
+            self.thickness_slider[
+                ind].max = 1 if self.multid_coord is not None else slider_max
+            self.thickness_slider[ind].value = self.thickness_slider[ind].max
+            self.update_slider_range(ind, self.thickness_slider[ind].value,
+                                     slider_max - 1)
         self.interface["unlock_update_data"]()
 
     def toggle_all_masks(self, change):
@@ -301,11 +308,17 @@ class PlotWidgets:
         for index in self.thickness_slider:
             dim = self.index_to_dim[index]
             nmax = dim_to_shape[dim]
-            self.thickness_slider[index].max = nmax
-            self.thickness_slider[index].value = nmax
-            self.update_slider_range(index, nmax, nmax - 1)
+            # If there is a multid coord, we only allow slices of thickness 1
+            self.thickness_slider[
+                index].max = 1 if self.multid_coord is not None else nmax
+            self.thickness_slider[index].value = self.thickness_slider[
+                index].max
+            self.update_slider_range(index, self.thickness_slider[index].value,
+                                     nmax - 1)
             lims = xlims[dim].values
-            self.update_slider_readout(index, lims[0], lims[1], [0, nmax - 1])
+            self.update_slider_readout(
+                index, lims[0], lims[1],
+                [0, self.thickness_slider[index].value - 1])
             self.unit_labels[index].value = coord_units[dim]
 
     def get_slider_bounds(self, exclude=None):
