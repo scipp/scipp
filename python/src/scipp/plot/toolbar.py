@@ -37,7 +37,7 @@ class PlotToolbar:
         else:
             if ndim < 3:
                 self.add_togglebutton(name="toggle_yaxis_scale", description="logy", tooltip="Log(y)")
-            self.add_togglebutton(name="toggle_norm", icon="signal", tooltip="Log(data)")
+            self.add_togglebutton(name="toggle_norm", description="log", tooltip="Log(data)")
 
         self._update_container()
 
@@ -65,17 +65,31 @@ class PlotToolbar:
 
     def add_togglebutton(self, name, **kwargs):
         """
+        Create a fake ToggleButton using Button because sometimes we want to
+        change the value of the button without triggering an update, e.g. when
+        we swap the axes.
         """
         args = self._parse_button_args(**kwargs)
-        self.members[name] = ipw.ToggleButton(value=False, **args)
+        self.members[name] = ipw.Button(**args)
+        setattr(self.members[name], "value", False)
+        # Add a local observer to change the color of the button according to
+        # its value.
+        self.members[name].on_click(self.toggle_button_color)
+
+    def toggle_button_color(self, owner, value=None):
+        if value is None:
+            owner.value = not owner.value
+        else:
+            owner.value = value
+        owner.style.button_color = "#bdbdbd" if owner.value else "#eeeeee"
 
     def connect(self, callbacks):
         for key in callbacks:
             if key in self.members:
-                if hasattr(self.members[key], "on_click"):
-                    self.members[key].on_click(callbacks[key])
-                else:
-                    self.members[key].observe(callbacks[key], names="value")
+                # if hasattr(self.members[key], "on_click"):
+                self.members[key].on_click(callbacks[key])
+                # else:
+                    # self.members[key].observe(callbacks[key], names="value")
 
     def _update_container(self):
         # for group, item in self.containers.items():
@@ -92,3 +106,12 @@ class PlotToolbar:
             if value is not None:
                 args[key] = value
         return args
+
+    def update_log_axes_buttons(self, axes_scales):
+        # print("in toolbar clear_log_axes_buttons")
+        for xyz, scale in axes_scales.items():
+            key = "toggle_{}axis_scale".format(xyz)
+            if key in self.members:
+                self.toggle_button_color(self.members[key], value=scale=="log")
+        # if "toggle_yaxis_scale" in self.members:
+        #     self.toggle_button_color(self.members["toggle_yaxis_scale"], value=False)

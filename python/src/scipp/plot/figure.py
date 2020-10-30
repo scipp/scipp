@@ -148,3 +148,6 @@ class PlotFigure:
             self.fig.canvas.mpl_disconnect(pick_connection)
         if hover_connection is not None:
             self.fig.canvas.mpl_disconnect(hover_connection)
+
+    def update_log_axes_buttons(self, *args, **kwargs):
+        self.toolbar.update_log_axes_buttons(*args, **kwargs)

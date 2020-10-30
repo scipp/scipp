@@ -291,24 +291,25 @@ class PlotController:
         for i in range(len(dims)):
             self.axes[keys[i]] = dims[i]
         self.update_axes()
+        self.update_log_axes_buttons()
 
-    def toggle_xaxis_scale(self, change):
+    def toggle_xaxis_scale(self, owner):
         dim = self.axes["x"]
-        self.scale[dim] = "log" if change["new"] else "linear"
+        self.scale[dim] = "log" if owner.value else "linear"
         self.update_axes()
 
-    def toggle_yaxis_scale(self, change):
+    def toggle_yaxis_scale(self, owner):
         dim = self.axes["y"]
-        self.scale[dim] = "log" if change["new"] else "linear"
+        self.scale[dim] = "log" if owner.value else "linear"
         self.update_axes()
 
-    def toggle_zaxis_scale(self, change):
+    def toggle_zaxis_scale(self, owner):
         dim = self.axes["z"]
-        self.scale[dim] = "log" if change["new"] else "linear"
+        self.scale[dim] = "log" if owner.value else "linear"
         self.update_axes()
 
-    def toggle_norm(self, change):
-        self.norm = "log" if change["new"] else "linear"
+    def toggle_norm(self, owner):
+        self.norm = "log" if owner.value else "linear"
         vmin, vmax = self.model.rescale_to_data()
         vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax, scale=self.norm)
         self.view.toggle_norm(self.norm, vmin, vmax)
@@ -317,11 +318,18 @@ class PlotController:
         """
         Swap one dimension for another in the displayed axes.
         """
+        print(self.scale)
         pos = list(self.axes.values()).index(new_dim)
         key = list(self.axes.keys())[pos]
         self.axes[key] = old_dim
         self.axes[index] = new_dim
         self.update_axes()
+        # axes_scales = _get_xyz_axes
+        self.update_log_axes_buttons()
+
+    def update_log_axes_buttons(self):
+        self.view.update_log_axes_buttons({ax: self.scale[self.axes[ax]] for
+            ax in self._get_xyz_axes()})
 
     def update_axes(self, change=None):
         """

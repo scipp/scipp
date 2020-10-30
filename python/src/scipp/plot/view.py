@@ -95,3 +95,6 @@ class PlotView:
                                            self.profile_hover_connection)
             self.profile_pick_connection = None
             self.profile_hover_connection = None
+
+    def update_log_axes_buttons(self, *args, **kwargs):
+        self.figure.update_log_axes_buttons(*args, **kwargs)
