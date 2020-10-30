@@ -93,10 +93,11 @@ class PlotProfile(PlotFigure1d):
         callbacks local to `PlotProfile`, since all we need to do is toggle
         the scale on the matplotlib axes.
         """
-        self.toolbar.connect({
-            "toggle_xaxis_scale": self.toggle_xaxis_scale,
-            "toggle_norm": self.toggle_norm
-        })
+        if self.toolbar is not None:
+            self.toolbar.connect({
+                "toggle_xaxis_scale": self.toggle_xaxis_scale,
+                "toggle_norm": self.toggle_norm
+            })
 
     def toggle_xaxis_scale(self, change):
         """

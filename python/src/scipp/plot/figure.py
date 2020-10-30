@@ -111,7 +111,8 @@ class PlotFigure:
                     integer=True)
 
     def connect(self, callbacks):
-        self.toolbar.connect(callbacks)
+        if self.toolbar is not None:
+            self.toolbar.connect(callbacks)
 
     def draw(self):
         """
