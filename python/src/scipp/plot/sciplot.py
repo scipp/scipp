@@ -108,14 +108,10 @@ class SciPlot:
 
             # Create a useful map from dim to shape
             self.dim_to_shape[name] = dict(zip(array_dims, array.shape))
-            self.coord_shapes[name] = {}
-            for dim, coord in array.coords.items():
-                # TODO: this would no longer be necessary once coords.items()
-                # returns strings
-                dimstr = str(dim)
-                if len(coord.dims) > 1:
-                    self.multid_coord = dimstr
-                self.coord_shapes[name][dimstr] = coord.shape
+            self.coord_shapes[name] = {
+                str(dim): coord.shape
+                for dim, coord in array.coords.items()
+            }
 
             # Add shapes for dims that have no coord in the original data.
             # They will be replaced by fake coordinates in the model.
@@ -211,6 +207,24 @@ class SciPlot:
                 ind = dim_list.index(underlying_dim)
             self.axes[key_list[ind]] = self.axes[key]
             self.axes[key] = dim
+
+        self._validate_axes(array)
+
+    def _validate_axes(self, array):
+        """
+        Validation checks on axes.
+        """
+        for dim, coord in array.coords.items():
+            if len(coord.dims) > 1:
+                self.multid_coord = dim
+
+        # Protect against having a multi-dimensional coord along a slider axis
+        for ax, dim in self.axes.items():
+            print(ax, dim, self.multid_coord)
+            if isinstance(ax, int) and (dim == self.multid_coord):
+                raise RuntimeError("A ragged coordinate cannot lie along "
+                                   "a slider dimension, it must be one of "
+                                   "the displayed dimensions.")
 
         # Protect against duplicate entries in axes
         if len(self.axes.values()) != len(set(self.axes.values())):

@@ -221,7 +221,10 @@ class PlotModel:
                     else:
                         array.coords[dim_] = coord
             for m, msk in aslice.masks.items():
-                array.masks[m] = sc.any(msk, dim)
+                if dim in msk.dims:
+                    array.masks[m] = sc.any(msk, dim)
+                else:
+                    array.masks[m] = msk
 
             # TODO: alternative here is to use rebin into a single bin with
             # array = sc.rebin(
