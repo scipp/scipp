@@ -152,9 +152,9 @@ def plot(scipp_obj,
             if ndims == 1 or projection == "1d" or projection == "1D":
                 # Construct a key from the dimensions
                 if axes is not None:
-                    key = str(list(axes.values())[0])
+                    key = list(axes.values())[0]
                 else:
-                    key = str(var.dims[0])
+                    key = var.dims[0]
                 # Add unit to key
                 key = "{}.{}".format(key, str(var.unit))
                 line_count += 1

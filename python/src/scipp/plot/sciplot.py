@@ -108,6 +108,8 @@ class SciPlot:
 
             # Create a useful map from dim to shape
             self.dim_to_shape[name] = dict(zip(array_dims, array.shape))
+            # TODO: once Dim has been replaced by strings, the str(dim) can
+            # then here be replaced by dim
             self.coord_shapes[name] = {
                 str(dim): coord.shape
                 for dim, coord in array.coords.items()
