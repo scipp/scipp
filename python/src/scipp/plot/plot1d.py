@@ -124,6 +124,3 @@ class SciPlot1d(SciPlot):
             view=self.view,
             panel=self.panel,
             profile=self.profile)
-
-        # Call update_slice once to make the initial plot
-        self.controller.update_axes()

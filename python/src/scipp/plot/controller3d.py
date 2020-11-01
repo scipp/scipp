@@ -14,7 +14,12 @@ class PlotController3d(PlotController):
     It handles some additional events from the cut surface panel, compared to
     the base class controller.
     """
-    def __init__(self, *args, pixel_size=None, positions=None, **kwargs):
+    def __init__(self,
+                 *args,
+                 pixel_size=None,
+                 positions=None,
+                 initial_update=False,
+                 **kwargs):
 
         super().__init__(*args, **kwargs)
 
@@ -30,6 +35,10 @@ class PlotController3d(PlotController):
                     "lims": ex["lims"],
                     "label": name_with_unit(1.0 * ex["unit"], name=xyz.upper())
                 }
+
+        # Call axes once to make the initial plot
+        self.update_axes()
+        self.update_log_axes_buttons()
 
     def initialise_model(self):
         """

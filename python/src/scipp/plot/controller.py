@@ -36,7 +36,8 @@ class PlotController:
                  model=None,
                  panel=None,
                  profile=None,
-                 view=None):
+                 view=None,
+                 initial_update=True):
 
         self.widgets = widgets
         self.model = model
@@ -125,6 +126,11 @@ class PlotController:
         self.connect_view()
         if self.panel is not None:
             self.connect_panel()
+
+        # Call axes once to make the initial plot
+        if initial_update:
+            self.update_axes()
+            self.update_log_axes_buttons()
 
     def get_dim_shape(self, dim, name=None):
         if name is None:
