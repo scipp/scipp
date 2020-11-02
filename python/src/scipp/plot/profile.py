@@ -99,14 +99,14 @@ class PlotProfile(PlotFigure1d):
                 "toggle_norm": self.toggle_norm
             })
 
-    def toggle_xaxis_scale(self, change):
+    def toggle_xaxis_scale(self, owner):
         """
         Toggle x-axis scale from toolbar button signal.
         """
-        self.ax.set_xscale("log" if change["new"] else "linear")
+        self.ax.set_xscale("log" if owner.value else "linear")
 
-    def toggle_norm(self, change):
+    def toggle_norm(self, owner):
         """
         Toggle y-axis scale from toolbar button signal.
         """
-        self.ax.set_yscale("log" if change["new"] else "linear")
+        self.ax.set_yscale("log" if owner.value else "linear")
