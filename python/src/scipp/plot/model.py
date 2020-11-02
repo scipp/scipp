@@ -209,13 +209,13 @@ class PlotModel:
         """
         for dim, [lower, upper] in slices.items():
             # TODO: Could this be optimized for performance?
-            array = array[dim, lower:upper]
             if (upper - lower) > 1:
+                array = array[dim, lower:upper]
                 array = sc.rebin(
                     array, dim,
                     sc.concatenate(array.coords[dim][dim, 0],
                                    array.coords[dim][dim, -1], dim))[dim, 0]
             else:
-                array = array[dim, 0]
+                array = array[dim, lower]
 
         return array
