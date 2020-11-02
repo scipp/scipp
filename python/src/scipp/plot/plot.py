@@ -68,7 +68,10 @@ def _ndarray_to_variable(ndarray):
     Convert a numpy ndarray to a Variable.
     Fake dimension labels begin at 'x' and cycle through the alphabet.
     """
-    dims = [chr(ord('@')+(((i+23)%26) + 1)).lower() for i in range(len(ndarray.shape))]
+    dims = [
+        chr(ord('@') + (((i + 23) % 26) + 1)).lower()
+        for i in range(len(ndarray.shape))
+    ]
     return sc.Variable(dims=dims, values=ndarray)
 
 
@@ -97,7 +100,8 @@ def _input_to_data_array(item, key=None):
         raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
                            "a Dataset, a DataArray, a Variable (and their "
                            "respective views), a numpy ndarray, and a dict of "
-                           "Variables, DataArrays or ndarrays".format(intype))
+                           "Variables, DataArrays or ndarrays".format(
+                               type(item)))
     return to_plot
 
 
@@ -136,7 +140,7 @@ def plot(scipp_obj,
     if isinstance(scipp_obj, dict):
         try:
             inventory.update(_input_to_data_array(from_dict(scipp_obj)))
-        except:
+        except:  # noqa: E722
             for key, item in scipp_obj.items():
                 inventory.update(_input_to_data_array(item, key=key))
     else:

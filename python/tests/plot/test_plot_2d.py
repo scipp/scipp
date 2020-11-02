@@ -145,6 +145,37 @@ def test_plot_variable_2d():
     plot(v2d)
 
 
+def test_plot_ndarray_2d():
+    plot(np.random.random([10, 50]))
+
+
+def test_plot_dict_of_ndarrays_2d():
+    plot({'a': np.arange(50).reshape(5, 10), 'b': np.random.random([30, 40])})
+
+
+def test_plot_from_dict_variable_2d():
+    plot({"dims": ['x', 'y'], "values": np.random.random([20, 10])})
+
+
+def test_plot_from_dict_data_array_2d():
+    plot({
+        "data": {
+            "dims": ["x", "y"],
+            "values": np.random.random([20, 10])
+        },
+        "coords": {
+            "x": {
+                "dims": ["x"],
+                "values": np.arange(21)
+            },
+            "y": {
+                "dims": ["y"],
+                "values": np.arange(11)
+            }
+        }
+    })
+
+
 def test_plot_string_and_vector_axis_labels_2d():
     N = 10
     M = 5
