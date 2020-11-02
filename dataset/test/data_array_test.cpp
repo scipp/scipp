@@ -3,7 +3,6 @@
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/event.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"

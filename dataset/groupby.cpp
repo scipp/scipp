@@ -16,7 +16,6 @@
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/choose.h"
 #include "scipp/dataset/dataset_util.h"
-#include "scipp/dataset/event.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/reduction.h"
@@ -157,12 +156,6 @@ struct wrap {
 ///
 /// This only supports bucketed data.
 template <class T> T GroupBy<T>::concatenate(const Dim reductionDim) const {
-  // const auto &[indices, d, b] =
-  //    m_data.data().template constituents<bucket<DataArray>>();
-  // const auto [begin, end] = unzip(indices);
-  // const DataArray sizes(end - begin, {}, m_data.masks());
-  // const auto out_sizes = GroupBy(sizes, {key(), groups()}).sum(reductionDim);
-
   return reduce(groupby_detail::concatenate, reductionDim);
 }
 
