@@ -255,14 +255,21 @@ class PlotWidgets:
         """
         self.interface["lock_update_data"]()
         for ind, dim in inds_and_dims.items():
-            slider_max = self.interface["get_dim_shape"](dim)
-            # If there is a multid coord, we only allow slices of thickness 1
-            self.thickness_slider[
-                ind].max = 1 if self.multid_coord is not None else slider_max
-            self.thickness_slider[ind].value = self.thickness_slider[ind].max
-            self.update_slider_range(ind, self.thickness_slider[ind].value,
-                                     slider_max - 1)
+            self._set_slider_defaults(ind,
+                                      self.interface["get_dim_shape"](dim))
         self.interface["unlock_update_data"]()
+
+    def _set_slider_defaults(self, index, max_value):
+        """
+        On axes change, set the thickness to 1, its max range to the shape of
+        the dim, and set the position slider to accordingly.
+        """
+        self.thickness_slider[
+            index].max = 1 if self.multid_coord is not None else max_value
+        self.thickness_slider[
+            index].value = 1  # self.thickness_slider[ind].max
+        self.update_slider_range(index, self.thickness_slider[index].value,
+                                 max_value - 1)
 
     def toggle_all_masks(self, change):
         """
@@ -307,14 +314,7 @@ class PlotWidgets:
         """
         for index in self.thickness_slider:
             dim = self.index_to_dim[index]
-            nmax = dim_to_shape[dim]
-            # If there is a multid coord, we only allow slices of thickness 1
-            self.thickness_slider[
-                index].max = 1 if self.multid_coord is not None else nmax
-            self.thickness_slider[index].value = self.thickness_slider[
-                index].max
-            self.update_slider_range(index, self.thickness_slider[index].value,
-                                     nmax - 1)
+            self._set_slider_defaults(index, dim_to_shape[dim])
             lims = xlims[dim].values
             self.update_slider_readout(
                 index, lims[0], lims[1],
