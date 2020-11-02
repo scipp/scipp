@@ -208,30 +208,14 @@ class PlotModel:
         in slices.
         """
         for dim, [lower, upper] in slices.items():
-            aslice = array[dim, lower:upper]
-            # Summing the DataArray applies the masks. To preserve the masks,
-            # we sum the data and ANY the masks
-            array = sc.DataArray(data=sc.sum(aslice.data, dim))
-            for dim_, coord in aslice.coords.items():
-                if dim_ != dim:
-                    if dim in coord.dims:
-                        # We need to slice the dim if it is still present in
-                        # the coord
-                        array.coords[dim_] = coord[dim, 0]
-                    else:
-                        array.coords[dim_] = coord
-            for m, msk in aslice.masks.items():
-                if dim in msk.dims:
-                    array.masks[m] = sc.any(msk, dim)
-                else:
-                    array.masks[m] = msk
-
-            # TODO: alternative here is to use rebin into a single bin with
-            # array = sc.rebin(
-            #     array, dim,
-            #     sc.concatenate(array.coords[dim][dim, 0],
-            #                    array.coords[dim][dim, -1], dim))[dim, 0]
-            # Which is more efficient?
-            # Note that rebin wouldn't work with multid coords
+            # TODO: Could this be optimized for performance?
+            array = array[dim, lower:upper]
+            if (upper - lower) > 1:
+                array = sc.rebin(
+                    array, dim,
+                    sc.concatenate(array.coords[dim][dim, 0],
+                                   array.coords[dim][dim, -1], dim))[dim, 0]
+            else:
+                array = array[dim, 0]
 
         return array

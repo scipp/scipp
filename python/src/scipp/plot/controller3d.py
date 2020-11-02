@@ -14,14 +14,9 @@ class PlotController3d(PlotController):
     It handles some additional events from the cut surface panel, compared to
     the base class controller.
     """
-    def __init__(self,
-                 *args,
-                 pixel_size=None,
-                 positions=None,
-                 initial_update=False,
-                 **kwargs):
+    def __init__(self, *args, pixel_size=None, positions=None, **kwargs):
 
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, initial_update=False, **kwargs)
 
         self.positions = positions
         self.pos_axparams = {}

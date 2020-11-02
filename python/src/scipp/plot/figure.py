@@ -111,6 +111,11 @@ class PlotFigure:
                     integer=True)
 
     def connect(self, callbacks):
+        """
+        Connect the toolbar to callback from the controller. This includes
+        rescaling the data norm, and change the scale (log or linear) on the
+        axes.
+        """
         if self.toolbar is not None:
             self.toolbar.connect(callbacks)
 
@@ -145,4 +150,9 @@ class PlotFigure:
             self.fig.canvas.mpl_disconnect(hover_connection)
 
     def update_log_axes_buttons(self, *args, **kwargs):
-        self.toolbar.update_log_axes_buttons(*args, **kwargs)
+        """
+        Update the state (value and color) of toolbar log axes buttons when
+        axes or dimensions are swapped.
+        """
+        if self.toolbar is not None:
+            self.toolbar.update_log_axes_buttons(*args, **kwargs)
