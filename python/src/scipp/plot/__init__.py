@@ -44,9 +44,8 @@ if ipy is not None:
             warnings.warn(
                 "The ipympl backend, which is required for "
                 "interactive plots in Jupyter, was not found. "
-                "Falling back to a static backend. Visit "
-                "https://github.com/matplotlib/ipympl for "
-                "instructions on how to install ipympl.", UserWarning)
+                "Falling back to a static backend. Use "
+                "conda install -c conda-forge ipympl to install ipympl.")
 
 try:
     import matplotlib.pyplot as plt
