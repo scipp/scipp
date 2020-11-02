@@ -47,7 +47,7 @@ public:
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
     return std::make_unique<DataModel>(makeVariable<range_type>(dims), m_dim,
-                                       T{m_buffer});
+                                       T{m_buffer.slice({m_dim, 0, 0})});
   }
 
   VariableConceptHandle

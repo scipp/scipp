@@ -7,7 +7,6 @@
 #include "scipp/core/element/arg_list.h"
 
 #include "scipp/variable/bucket_model.h"
-#include "scipp/variable/event.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 

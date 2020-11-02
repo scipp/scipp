@@ -22,8 +22,7 @@ Variable::Variable(const VariableConstView &slice)
 
 /// Construct from parent with same dtype, unit, and hasVariances but new dims.
 ///
-/// Note that in the case of bucket variables the buffer is *not* resized so
-/// this constructor may be expensive even if dims.volume() is small.
+/// In the case of bucket variables the buffer size is set to zero.
 Variable::Variable(const Variable &parent, const Dimensions &dims)
     : m_unit(parent.unit()),
       m_object(parent.data().makeDefaultFromParent(dims)) {}
