@@ -4,6 +4,7 @@
 # @author Neil Vaytet
 
 from .plot import plot as _plot
+import warnings
 
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
@@ -28,10 +29,18 @@ try:
         # If we are in an IPython kernel, select widget backend
         if "IPKernelApp" in ipy.config and not is_doc_build:
             mpl.use('module://ipympl.backend_nbagg')
-            # Hide the figure header:
-            # see https://github.com/matplotlib/ipympl/issues/229
-            from ipympl.backend_nbagg import Canvas
-            Canvas.header_visible.default_value = False
+            try:
+                # Hide the figure header:
+                # see https://github.com/matplotlib/ipympl/issues/229
+                from ipympl.backend_nbagg import Canvas
+                Canvas.header_visible.default_value = False
+            except ImportError:
+                warnings.warn(
+                    "The ipympl backend, which is required for "
+                    "interactive plots in Jupyter, was not found. "
+                    "Falling back to a static backend. Visit "
+                    "https://github.com/matplotlib/ipympl for "
+                    "instructions on how to install ipympl.", ImportWarning)
     import matplotlib.pyplot as plt
 
 except ImportError:
@@ -45,7 +54,7 @@ def _is_interactive():
     """
     Determine if we are using a static or interactive backend
     """
-    return mpl.get_backend().lower().endswith('nbagg')
+    return not mpl.get_backend().lower().endswith('inline')
 
 
 def plot(*args, **kwargs):

@@ -157,6 +157,12 @@ class SciPlot:
                 widget_list.append(item._to_widget())
         return ipw.VBox(widget_list)
 
+    def show(self):
+        """
+        Call the show() method of a matplotlib figure.
+        """
+        self.view.show()
+
     def _process_axes_dimensions(self,
                                  array=None,
                                  axes=None,

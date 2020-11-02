@@ -89,6 +89,12 @@ class PlotFigure:
                              width=config.plot.width,
                              height=config.plot.height)
 
+    def show(self):
+        """
+        Show the matplotlib figure.
+        """
+        self.fig.show()
+
     def initialise(self, axformatters=None):
         """
         Initialise figure parameters once the model has been created, since

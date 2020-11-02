@@ -35,6 +35,12 @@ class PlotView:
         """
         return self.figure._to_widget()
 
+    def show(self):
+        """
+        Forward the call to show() to the figure.
+        """
+        self.figure.show()
+
     def savefig(self, *args, **kwargs):
         """
         Forward figure saving to the `figure`.
