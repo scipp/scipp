@@ -31,7 +31,6 @@ add_executable(
   mean_test.cpp
   merge_test.cpp
   rebin_test.cpp
-  # reduce_events_test.cpp
   self_assignment_test.cpp
   shape_test.cpp
   size_of_test.cpp
