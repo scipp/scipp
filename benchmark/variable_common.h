@@ -29,4 +29,3 @@ template <typename T> struct GenerateEvents {
                            sizeof(T) * size);
   }
 };
-
