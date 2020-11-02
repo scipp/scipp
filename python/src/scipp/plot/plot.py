@@ -4,8 +4,10 @@
 
 from .._scipp import core as sc
 from .. import _utils as su
+from ..compat.dict import from_dict
 from .dispatch import dispatch
 from .tools import make_fake_coord, get_line_param
+import numpy as np
 
 
 class Plot(dict):
@@ -61,45 +63,42 @@ def _variable_to_data_array(variable):
     return sc.DataArray(data=variable, coords=coords)
 
 
-def _raise_plot_input_error(intype):
+def _ndarray_to_variable(ndarray):
     """
-    Raise an error on bad input type.
+    Convert a numpy ndarray to a Variable.
+    Fake dimension labels begin at 'x' and cycle through the alphabet.
     """
-    raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
-                       "a Dataset, a DataArray, a Variable (and their "
-                       "respective proxies), and a dict of "
-                       "Variables or DataArrays.".format(intype))
+    dims = [chr(ord('@')+(((i+23)%26) + 1)).lower() for i in range(len(ndarray.shape))]
+    return sc.Variable(dims=dims, values=ndarray)
 
 
-def _parse_input(scipp_obj):
+def _input_to_data_array(item, key=None):
     """
-    Parse plot input. Possible inputs are:
-      - Variable
-      - Dataset
-      - DataArray
-      - dict of Variables
-      - dict of DataArrays
-    Decompose the input and return a dict of DataArrays.
+    Convert an input for the plot function to a DataArray or a dict of
+    DataArrays.
     """
-    inventory = dict()
-    if su.is_dataset(scipp_obj):
-        for name in sorted(scipp_obj.keys()):
-            inventory[name] = scipp_obj[name]
-    elif su.is_variable(scipp_obj):
-        inventory[str(type(scipp_obj))] = _variable_to_data_array(scipp_obj)
-    elif su.is_data_array(scipp_obj):
-        inventory[scipp_obj.name] = scipp_obj
-    elif isinstance(scipp_obj, dict):
-        for key in scipp_obj.keys():
-            if su.is_variable(scipp_obj[key]):
-                inventory[key] = _variable_to_data_array(scipp_obj[key])
-            elif su.is_data_array(scipp_obj[key]):
-                inventory[key] = scipp_obj[key]
-            else:
-                _raise_plot_input_error(type(scipp_obj[key]))
+    to_plot = {}
+    if su.is_dataset(item):
+        for name in sorted(item.keys()):
+            to_plot[name] = item[name]
+    elif su.is_variable(item):
+        if key is None:
+            key = str(type(item))
+        to_plot[key] = _variable_to_data_array(item)
+    elif su.is_data_array(item):
+        if key is None:
+            key = item.name
+        to_plot[key] = item
+    elif isinstance(item, np.ndarray):
+        if key is None:
+            key = str(type(item))
+        to_plot[key] = _variable_to_data_array(_ndarray_to_variable(item))
     else:
-        _raise_plot_input_error(type(scipp_obj))
-    return inventory
+        raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
+                           "a Dataset, a DataArray, a Variable (and their "
+                           "respective views), a numpy ndarray, and a dict of "
+                           "Variables, DataArrays or ndarrays".format(intype))
+    return to_plot
 
 
 def plot(scipp_obj,
@@ -118,8 +117,11 @@ def plot(scipp_obj,
       - Variable
       - Dataset
       - DataArray
+      - numpy ndarray
       - dict of Variables
       - dict of DataArrays
+      - dict of numpy ndarrays
+      - dict that can be converted to a Scipp object via `from_dict`
 
     1D Variables are grouped onto the same axes if they have the same dimension
     and the same unit.
@@ -129,7 +131,16 @@ def plot(scipp_obj,
     Returns a Plot object which can be displayed in a Jupyter notebook.
     """
 
-    inventory = _parse_input(scipp_obj)
+    # Decompose the input and return a dict of DataArrays.
+    inventory = {}
+    if isinstance(scipp_obj, dict):
+        try:
+            inventory.update(_input_to_data_array(from_dict(scipp_obj)))
+        except:
+            for key, item in scipp_obj.items():
+                inventory.update(_input_to_data_array(item, key=key))
+    else:
+        inventory.update(_input_to_data_array(scipp_obj))
 
     # Prepare container for matplotlib line parameters
     line_params = {
