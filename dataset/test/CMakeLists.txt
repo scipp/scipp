@@ -22,7 +22,6 @@ add_executable(
   dataset_view_test.cpp
   data_view_test.cpp
   event_data_operations_consistency_test.cpp
-  # event_test.cpp
   except_test.cpp
   groupby_test.cpp
   histogram_test.cpp
