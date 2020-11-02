@@ -164,15 +164,20 @@ static void BM_transform_in_place_events(benchmark::State &state) {
   const auto n = nx * ny;
   const Dimensions dims{{Dim::Y, ny}};
   bool variances = state.range(2);
-  auto a = variances ? makeVariable<event_list<double>>(Dimensions{dims},
-                                                        Values{}, Variances{})
-                     : makeVariable<event_list<double>>(Dimensions(dims));
-
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(dims);
   std::random_device rd;
   std::mt19937 mt(rd());
   std::uniform_int_distribution<scipp::index> dist(0, 2 * nx);
-  for (auto &elems : a.values<event_list<double>>())
-    elems.resize(dist(mt));
+  scipp::index size = 0;
+  for (auto &range : indices.values<std::pair<scipp::index, scipp::index>>()) {
+    const auto l = dist(mt);
+    range = {size, size + l};
+    size += l;
+  }
+  auto buf = variances ? makeVariable<double>(Dims{Dim::Event}, Shape{size},
+                                              Values{}, Variances{})
+                       : makeVariable<double>(Dims{Dim::Event}, Shape{size});
+  auto a = from_constituents(indices, Dim::Event, buf);
 
   // events * dense typically occurs in unit conversion
   auto b = makeVariable<double>(Dims{Dim::Y}, Shape{ny});
