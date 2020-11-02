@@ -214,6 +214,7 @@ def _dict_to_data_array(d):
     da = detail.move_to_data_array(**out)
     return da
 
+
 def _check_dict_input(d):
     """
     Throw if the input is not a dict
