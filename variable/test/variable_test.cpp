@@ -6,6 +6,7 @@
 #include "test_macros.h"
 
 #include "scipp/core/except.h"
+#include "scipp/variable/buckets.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable.h"
@@ -220,68 +221,37 @@ TEST_F(Variable_comparison_operators, dtype) {
   expect_ne(base, makeVariable<float>(Values{1.0}));
 }
 
-/*
 TEST_F(Variable_comparison_operators, dense_events) {
+  Dimensions dims{Dim::Y, 2};
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      dims, Values{std::pair{0, 2}, std::pair{2, 4}});
+  auto buf = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  auto events = from_constituents(indices, Dim::X, buf);
   auto dense = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 0l});
-  auto events = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
   expect_ne(dense, events);
 }
 
 TEST_F(Variable_comparison_operators, events) {
-  auto a = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto a_ = a.values<event_list<double>>();
-  a_[0] = {1, 2, 3};
-  a_[1] = {1, 2};
-  auto b = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto b_ = b.values<event_list<double>>();
-  b_[0] = {1, 2, 3};
-  b_[1] = {1, 2};
-  auto c = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto c_ = c.values<event_list<double>>();
-  c_[0] = {1, 3};
-  c_[1] = {};
+  Dimensions dims{Dim::Y, 2};
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      dims, Values{std::pair{0, 2}, std::pair{2, 4}});
+  Variable indices2 = makeVariable<std::pair<scipp::index, scipp::index>>(
+      dims, Values{std::pair{0, 3}, std::pair{3, 4}});
+  auto buf = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  auto buf_with_vars = makeVariable<double>(Dims{Dim::X}, Shape{4},
+                                            Values{1, 2, 3, 4}, Variances{});
+  auto a = from_constituents(indices, Dim::X, buf);
+  auto b = from_constituents(indices, Dim::X, buf);
+  auto c = from_constituents(indices, Dim::X, buf * (2.0 * units::one));
+  auto d = from_constituents(indices2, Dim::X, buf);
+  auto a_with_vars = from_constituents(indices, Dim::X, buf_with_vars);
 
   expect_eq(a, a);
   expect_eq(a, b);
   expect_ne(a, c);
+  expect_ne(a, d);
+  expect_ne(a, a_with_vars);
 }
-
-auto make_events_var_2d_with_variances() {
-  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2}, Values{},
-                                              Variances{});
-  auto vals = var.values<event_list<double>>();
-  vals[0] = {1, 2, 3};
-  vals[1] = {1, 2};
-  auto vars = var.variances<event_list<double>>();
-  vars[0] = {4, 5, 6};
-  vars[1] = {4, 5};
-  return var;
-}
-
-TEST_F(Variable_comparison_operators, events_variances) {
-  const auto a = make_events_var_2d_with_variances();
-  const auto b = make_events_var_2d_with_variances();
-  auto c = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2}, Values{},
-                                            Variances{});
-  auto c_vals = c.values<event_list<double>>();
-  c_vals[0] = {1, 2, 3};
-  c_vals[1] = {1, 2};
-  auto c_vars = c.variances<event_list<double>>();
-  c_vars[0] = {1, 3};
-  c_vars[1] = {};
-
-  auto a_no_vars = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto a_no_vars_ = a_no_vars.values<event_list<double>>();
-  a_no_vars_[0] = {1, 2, 3};
-  a_no_vars_[1] = {1, 2};
-
-  expect_eq(a, a);
-  expect_eq(a, b);
-
-  expect_ne(a, c);
-  expect_ne(a, a_no_vars);
-}
-*/
 
 TEST(VariableTest, copy_and_move) {
   const auto reference =
