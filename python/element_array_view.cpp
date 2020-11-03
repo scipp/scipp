@@ -56,7 +56,7 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
   view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
                              [[maybe_unused]] const T value) {
     if constexpr (is_view_v<decltype(self[i])>)
-      throw std::runtime_error("Setting items of this type is not possible.");
+      throw std::runtime_error("Assigning bin contents is not possible.");
     else
       self[i] = value;
   });
