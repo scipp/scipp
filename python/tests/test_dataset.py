@@ -333,9 +333,9 @@ def test_sum_masked():
 def test_nansum_masked():
     d = sc.Dataset({
         'a':
-            sc.Variable(dims=['x'],
-                        values=np.array([1, 5, np.nan, np.nan, 1],
-                                        dtype=np.float64))
+        sc.Variable(dims=['x'],
+                    values=np.array([1, 5, np.nan, np.nan, 1],
+                                    dtype=np.float64))
     })
     d['a'].masks['m1'] = sc.Variable(dims=['x'],
                                      values=np.array(
