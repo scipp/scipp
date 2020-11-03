@@ -8,7 +8,9 @@
 #include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/shape.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
+#include "scipp/variable/variable_factory.h"
 
 using namespace scipp;
 
@@ -65,6 +67,16 @@ template <class T> void bind_bin_size(pybind11::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
+template <class T> auto bin_begin_end(const VariableConstView &var) {
+  auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
+  return py::cast(unzip(indices));
+}
+
+template <class T> auto bin_dim(const VariableConstView &var) {
+  auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
+  return py::cast(dim);
+}
+
 template <class T> auto get_buffer(py::object &obj) {
   auto &view = obj.cast<const VariableView &>();
   auto &&[indices, dim, buffer] = view.constituents<bucket<T>>();
@@ -84,6 +96,39 @@ void init_buckets(py::module &m) {
   bind_bin_size<Variable>(m);
   bind_bin_size<DataArray>(m);
   bind_bin_size<Dataset>(m);
+
+  m.def("is_bins", variable::is_buckets);
+
+  m.def("bins_begin_end", [](const VariableConstView &var) -> py::object {
+    if (var.dtype() == dtype<bucket<Variable>>)
+      return bin_begin_end<Variable>(var);
+    if (var.dtype() == dtype<bucket<DataArray>>)
+      return bin_begin_end<DataArray>(var);
+    if (var.dtype() == dtype<bucket<Dataset>>)
+      return bin_begin_end<Dataset>(var);
+    return py::none();
+  });
+
+  m.def("bins_dim", [](const VariableConstView &var) -> py::object {
+    if (var.dtype() == dtype<bucket<Variable>>)
+      return bin_dim<Variable>(var);
+    if (var.dtype() == dtype<bucket<DataArray>>)
+      return bin_dim<DataArray>(var);
+    if (var.dtype() == dtype<bucket<Dataset>>)
+      return bin_dim<Dataset>(var);
+    return py::none();
+  });
+
+  m.def("bins_data", [](py::object &obj) -> py::object {
+    auto &var = obj.cast<const VariableView &>();
+    if (var.dtype() == dtype<bucket<Variable>>)
+      return get_buffer<Variable>(obj);
+    if (var.dtype() == dtype<bucket<DataArray>>)
+      return get_buffer<DataArray>(obj);
+    if (var.dtype() == dtype<bucket<Dataset>>)
+      return get_buffer<Dataset>(obj);
+    return py::none();
+  });
 
   auto buckets = m.def_submodule("buckets");
   buckets.def(
@@ -137,16 +182,6 @@ void init_buckets(py::module &m) {
   buckets.def(
       "sum", [](const DatasetConstView &x) { return dataset::buckets::sum(x); },
       py::call_guard<py::gil_scoped_release>());
-  buckets.def("get_buffer", [](py::object &obj) -> py::object {
-    auto &var = obj.cast<const VariableView &>();
-    if (var.dtype() == dtype<bucket<Variable>>)
-      return get_buffer<Variable>(obj);
-    if (var.dtype() == dtype<bucket<DataArray>>)
-      return get_buffer<DataArray>(obj);
-    if (var.dtype() == dtype<bucket<Dataset>>)
-      return get_buffer<Dataset>(obj);
-    return py::none();
-  });
 
   m.def("bucketby", dataset::bucketby,
         py::call_guard<py::gil_scoped_release>());
