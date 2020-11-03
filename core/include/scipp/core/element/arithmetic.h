@@ -24,6 +24,24 @@ constexpr auto add_inplace_types =
 
 constexpr auto plus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};
+constexpr auto nan_plus_equals =
+    overloaded{arg_list<double, float>, [](auto &&a, const auto &b) {
+                 using ElementType = std::decay_t<decltype(a)>;
+                 auto constexpr zero = []() {
+                   if constexpr (is_ValueAndVariance_v<ElementType>)
+                     return ElementType{0, 0};
+                   else
+                     return ElementType{0};
+                 }();
+                 using std::isnan;
+                 if (isnan(a))
+                   a = zero;
+                 if (isnan(b)) {
+                   a += zero;
+                   return;
+                 }
+                 a += b;
+               }};
 constexpr auto minus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};
 
