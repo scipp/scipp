@@ -56,6 +56,7 @@ def sum(x, dim=None, out=None):
     else:
         return _call_cpp_func(_cpp.sum, x, dim=dim, out=out)
 
+
 def nansum(x, dim=None, out=None):
     """Element-wise sum over the specified dimension. NaNs are treated as zero.
 

@@ -59,6 +59,7 @@ def test_nanmax():
     assert_export(sc.nanmax, var)
     assert_export(sc.nanmax, var, 'x')
 
+
 def test_sum():
     var = sc.Variable(['x', 'y'],
                       values=np.arange(4.0).reshape(2, 2))
@@ -70,6 +71,8 @@ def test_sum():
     sc.sum(var, 'x', out)
     assert sc.is_equal(out,
                        sc.Variable(dims=['y'], values=[2.0, 4.0]))
+
+
 def test_nansum():
     var = sc.Variable(['x', 'y'],
                       values=np.array([1.0, 1.0, 1.0,
@@ -82,4 +85,3 @@ def test_nansum():
     sc.nansum(var, 'x', out)
     assert sc.is_equal(out,
                        sc.Variable(dims=['y'], values=[2.0, 1.0]))
-
