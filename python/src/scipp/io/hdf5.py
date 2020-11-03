@@ -18,7 +18,7 @@ def _dtype_lut():
     # variable-length strings.
     dtypes = [
         d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.DataArray,
-        d.Dataset
+        d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
@@ -38,6 +38,30 @@ class NumpyDataIO():
         group['values'].read_direct(data.values)
         if 'variances' in group:
             group['variances'].read_direct(data.variances)
+
+
+class BinDataIO():
+    @staticmethod
+    def write(group, data):
+        from .._scipp import core as sc
+        values = group.create_group('values')
+        begin, end = sc.bins_begin_end(data)
+        VariableIO.write(values.create_group('begin'), var=begin)
+        VariableIO.write(values.create_group('end'), var=end)
+        data_group = values.create_group('data')
+        data_group.attrs['dim'] = str(sc.bins_dim(data))
+        HDF5IO.write(data_group, sc.bins_data(data))
+        return values
+
+    @staticmethod
+    def read(group):
+        from .._scipp import core as sc
+        values = group['values']
+        begin = VariableIO.read(values['begin'])
+        end = VariableIO.read(values['end'])
+        dim = values['data'].attrs['dim']
+        data = HDF5IO.read(values['data'])
+        return sc.to_buckets(begin=begin, end=end, dim=dim, data=data)
 
 
 class ScippDataIO():
@@ -104,6 +128,8 @@ def _data_handler_lut():
     handler = {}
     for dtype in [d.float64, d.float32, d.int64, d.int32, d.bool]:
         handler[str(dtype)] = NumpyDataIO
+    for dtype in [d.VariableView, d.DataArrayView, d.DatasetView]:
+        handler[str(dtype)] = BinDataIO
     for dtype in [d.DataArray, d.Dataset]:
         handler[str(dtype)] = ScippDataIO
     for dtype in [d.string]:
@@ -143,13 +169,19 @@ class VariableIO:
     def read(cls, group):
         _check_scipp_header(group, 'Variable')
         from .._scipp import core as sc
+        from .._scipp.core import dtype as d
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]
         contents['unit'] = cls._units[values.attrs['unit']]
         contents['variances'] = 'variances' in group
-        var = sc.Variable(**contents)
-        cls._read_data(group, var)
+        if contents['dtype'] in [
+                d.VariableView, d.DataArrayView, d.DatasetView
+        ]:
+            var = BinDataIO.read(group)
+        else:
+            var = sc.Variable(**contents)
+            cls._read_data(group, var)
         return var
 
 
