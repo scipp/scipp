@@ -61,6 +61,30 @@ template <class T> void bind_sum_out(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
+template <class T> void bind_nansum(py::module &m) {
+  if constexpr (std::is_same_v<T, Variable>) {
+    m.def(
+        "nansum",
+        [](const typename T::const_view_type &x) { return nansum(x); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  }
+  m.def(
+      "nansum",
+      [](const typename T::const_view_type &x, const Dim dim) {
+        return nansum(x, dim);
+      },
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
+}
+
+template <class T> void bind_nansum_out(py::module &m) {
+  m.def(
+      "nansum",
+      [](const typename T::const_view_type &x, const Dim dim,
+         const typename T::view_type &out) { return nansum(x, dim, out); },
+      py::arg("x"), py::arg("dim"), py::arg("out"), py::keep_alive<0, 3>(),
+      py::call_guard<py::gil_scoped_release>());
+}
+
 template <class T> void bind_min(py::module &m) {
   m.def(
       "min", [](const typename T::const_view_type &x) { return min(x); },
@@ -147,6 +171,11 @@ void init_reduction(py::module &m) {
   bind_sum<DataArray>(m);
   bind_sum<Dataset>(m);
   bind_sum_out<Variable>(m);
+
+  bind_nansum<Variable>(m);
+  bind_nansum<DataArray>(m);
+  bind_nansum<Dataset>(m);
+  bind_nansum_out<Variable>(m);
 
   bind_min<Variable>(m);
   bind_max<Variable>(m);
