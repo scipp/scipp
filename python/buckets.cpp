@@ -56,6 +56,15 @@ template <class T> void bind_buckets(pybind11::module &m) {
                                         // implicit conversions in functor
 }
 
+template <class T> void bind_bin_size(pybind11::module &m) {
+  m.def(
+      "bin_size",
+      [](const typename T::const_view_type &x) {
+        return dataset::bucket_sizes(x);
+      },
+      py::call_guard<py::gil_scoped_release>());
+}
+
 template <class T> auto get_buffer(py::object &obj) {
   auto &view = obj.cast<const VariableView &>();
   auto &&[indices, dim, buffer] = view.constituents<bucket<T>>();
@@ -71,6 +80,10 @@ void init_buckets(py::module &m) {
   bind_buckets<Variable>(m);
   bind_buckets<DataArray>(m);
   bind_buckets<Dataset>(m);
+
+  bind_bin_size<Variable>(m);
+  bind_bin_size<DataArray>(m);
+  bind_bin_size<Dataset>(m);
 
   auto buckets = m.def_submodule("buckets");
   buckets.def(
