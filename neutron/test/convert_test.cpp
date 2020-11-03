@@ -122,7 +122,7 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
   const double L = 10.0 + sqrt(1.0 * 1.0 + 0.1 * 0.1);
   const double lambda_to_d = 1.0 / (2.0 * sin(0.5 * asin(0.1 / (L - 10.0))));
 
-  ASSERT_TRUE(dspacing.contains("counts") || dspacing.contains("events"));
+  ASSERT_TRUE(dspacing.contains("counts"));
   EXPECT_EQ(dspacing["counts"].dims(),
             Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
   // Due to conversion, the coordinate now also depends on Dim::Spectrum.
@@ -178,7 +178,7 @@ TEST_P(ConvertTest, DSpacing_to_Tof) {
   const auto dspacing = convert(tof_original, Dim::Tof, Dim::DSpacing);
   const auto tof = convert(dspacing, Dim::DSpacing, Dim::Tof);
 
-  ASSERT_TRUE(tof.contains("counts") || tof.contains("events"));
+  ASSERT_TRUE(tof.contains("counts"));
   /* Broadcasting is needed as conversion introduces the dependance on
    * Dim::Spectrum */
   const auto expected_tofs =
@@ -204,7 +204,7 @@ TEST_P(ConvertTest, Tof_to_Wavelength) {
 
   const auto &coord = wavelength.coords()[Dim::Wavelength];
 
-  ASSERT_TRUE(wavelength.contains("counts") || wavelength.contains("events"));
+  ASSERT_TRUE(wavelength.contains("counts"));
   EXPECT_EQ(wavelength["counts"].dims(),
             Dimensions({{Dim::Spectrum, 2}, {Dim::Wavelength, 3}}));
   // Due to conversion, the coordinate now also depends on Dim::Spectrum.
@@ -249,7 +249,7 @@ TEST_P(ConvertTest, Wavelength_to_Tof) {
   const auto wavelength = convert(tof_original, Dim::Tof, Dim::Wavelength);
   const auto tof = convert(wavelength, Dim::Wavelength, Dim::Tof);
 
-  ASSERT_TRUE(tof.contains("counts") || tof.contains("events"));
+  ASSERT_TRUE(tof.contains("counts"));
   // Broadcasting is needed as conversion introduces the dependance on
   // Dim::Spectrum
   EXPECT_EQ(tof.coords()[Dim::Tof], broadcast(tof_original.coords()[Dim::Tof],
@@ -281,7 +281,7 @@ TEST_P(ConvertTest, Tof_to_Energy_Elastic) {
   // sin(2 theta) = 0.1/(L-10)
   const double L = 10.0 + sqrt(1.0 * 1.0 + 0.1 * 0.1);
 
-  ASSERT_TRUE(energy.contains("counts") || energy.contains("events"));
+  ASSERT_TRUE(energy.contains("counts"));
   EXPECT_EQ(energy["counts"].dims(),
             Dimensions({{Dim::Spectrum, 2}, {Dim::Energy, 3}}));
   // Due to conversion, the coordinate now also depends on Dim::Spectrum.
@@ -339,7 +339,7 @@ TEST_P(ConvertTest, Energy_to_Tof_Elastic) {
   const auto energy = convert(tof_original, Dim::Tof, Dim::Energy);
   const auto tof = convert(energy, Dim::Energy, Dim::Tof);
 
-  ASSERT_TRUE(tof.contains("counts") || tof.contains("events"));
+  ASSERT_TRUE(tof.contains("counts"));
   /* Broadcasting is needed as conversion introduces the dependance on
    * Dim::Spectrum */
   const auto expected =
