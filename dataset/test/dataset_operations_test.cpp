@@ -22,6 +22,14 @@ TEST(DatasetOperationsTest, sum) {
                except::TypeError);
 }
 
+TEST(DatasetOperationsTest, nansum) {
+  auto ds = make_1_values_and_variances<double>(
+      "a", {Dim::X, 3}, units::dimensionless, {1.0, 2.0, double(NAN)},
+      {2.0, 5.0, 6.0});
+  EXPECT_EQ(dataset::nansum(ds, Dim::X)["a"].data(),
+            makeVariable<double>(Values{3}, Variances{7}));
+}
+
 TEST(DatasetOperationsTest, mean) {
   auto ds = make_1_values_and_variances<float>(
       "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});

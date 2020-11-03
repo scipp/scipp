@@ -47,6 +47,20 @@ Dataset sum(const DatasetConstView &d, const Dim dim) {
       d, [](auto &&... _) { return sum(_...); }, dim);
 }
 
+DataArray nansum(const DataArrayConstView &a, const Dim dim) {
+  return apply_to_data_and_drop_dim(
+      a, [](auto &&... _) { return nansum(_...); }, dim, a.masks());
+}
+
+Dataset nansum(const DatasetConstView &d, const Dim dim) {
+  // Currently not supporting sum/mean of dataset if one or more items do not
+  // depend on the input dimension. The definition is ambiguous (return
+  // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
+  // now.
+  return apply_to_items(
+      d, [](auto &&... _) { return nansum(_...); }, dim);
+}
+
 DataArray mean(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return mean(_...); }, dim, a.masks());

@@ -188,5 +188,9 @@ VariableView mean(const VariableConstView &var, const Dim dim,
                            const MasksConstView &masks);
 VariableView sum(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks, const VariableView &out);
+[[nodiscard]] Variable nansum(const VariableConstView &var, const Dim dim,
+                              const MasksConstView &masks);
+VariableView nansum(const VariableConstView &var, const Dim dim,
+                    const MasksConstView &masks, const VariableView &out);
 
 } // namespace scipp::dataset

@@ -329,6 +329,21 @@ def test_sum_masked():
     result = sc.sum(d, 'x')['a']
     assert sc.is_equal(result, d_ref['a'])
 
+def test_nansum_masked():
+    d = sc.Dataset({
+        'a':
+            sc.Variable(dims=['x'],
+                        values=np.array([1, 5, np.nan, np.nan, 1], dtype=np.float64))
+    })
+    d['a'].masks['m1'] = sc.Variable(dims=['x'],
+                                     values=np.array(
+                                         [False, True, False, True, False]))
+
+    d_ref = sc.Dataset({'a': sc.Variable(np.float64(2))})
+
+    result = sc.nansum(d, 'x')['a']
+    assert sc.is_equal(result, d_ref['a'])
+
 
 def test_mean_masked():
     d = sc.Dataset(

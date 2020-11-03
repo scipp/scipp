@@ -50,6 +50,22 @@ VariableView sum(const VariableConstView &var, const Dim dim,
   return sum(var, dim, out);
 }
 
+Variable nansum(const VariableConstView &var, const Dim dim,
+                const MasksConstView &masks) {
+  if (const auto mask_union = irreducible_mask(masks, dim)) {
+    return nansum(applyMask(var, mask_union), dim);
+  }
+  return nansum(var, dim);
+}
+
+VariableView nansum(const VariableConstView &var, const Dim dim,
+                    const MasksConstView &masks, const VariableView &out) {
+  if (const auto mask_union = irreducible_mask(masks, dim)) {
+    return nansum(applyMask(var, mask_union), dim, out);
+  }
+  return nansum(var, dim, out);
+}
+
 Variable mean(const VariableConstView &var, const Dim dim,
               const MasksConstView &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
