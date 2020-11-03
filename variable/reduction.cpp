@@ -62,7 +62,9 @@ void nansum_impl(const VariableView &summed, const VariableConstView &var) {
   accumulate_in_place(summed, var, element::nan_plus_equals);
 }
 
-Variable sum(const VariableConstView &var, const Dim dim) {
+template <typename Op>
+Variable sum_with_dim_impl(const Op op, const VariableConstView &var,
+                           const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
   // Bool DType is a bit special in that it cannot contain it's sum.
@@ -70,54 +72,45 @@ Variable sum(const VariableConstView &var, const Dim dim) {
   Variable summed{var.dtype() == dtype<bool>
                       ? makeVariable<int64_t>(Dimensions(dims))
                       : Variable(var, dims)};
-  sum_impl(summed, var);
+  op(summed, var);
   return summed;
 }
 
-Variable nansum(const VariableConstView &var, const Dim dim) {
+template <typename Op>
+VariableView sum_with_dim_inplace_impl(const Op op,
+                                       const VariableConstView &var,
+                                       const Dim dim, const VariableView &out) {
+  if (var.dtype() == dtype<bool> && out.dtype() != dtype<int64_t>)
+    throw except::UnitError("In-place sum of Bool dtype must be stored in an "
+                            "output variable of Int64 dtype.");
+
   auto dims = var.dims();
   dims.erase(dim);
-  // Bool DType is a bit special in that it cannot contain it's sum.
-  // Instead the sum is stored in a int64_t Variable
-  Variable summed{var.dtype() == dtype<bool>
-                  ? makeVariable<int64_t>(Dimensions(dims))
-                  : Variable(var, dims)};
-  nansum_impl(summed, var);
-  return summed;
+  if (dims != out.dims())
+    throw except::DimensionError(
+        "Output argument dimensions must be equal to input dimensions without "
+        "the summing dimension.");
+
+  op(out, var);
+  return out;
+}
+
+Variable sum(const VariableConstView &var, const Dim dim) {
+  return sum_with_dim_impl(sum_impl, var, dim);
+}
+
+Variable nansum(const VariableConstView &var, const Dim dim) {
+  return sum_with_dim_impl(nansum_impl, var, dim);
 }
 
 VariableView sum(const VariableConstView &var, const Dim dim,
                  const VariableView &out) {
-  if (var.dtype() == dtype<bool> && out.dtype() != dtype<int64_t>)
-    throw except::UnitError("In-place sum of Bool dtype must be stored in an "
-                            "output variable of Int64 dtype.");
-
-  auto dims = var.dims();
-  dims.erase(dim);
-  if (dims != out.dims())
-    throw except::DimensionError(
-        "Output argument dimensions must be equal to input dimensions without "
-        "the summing dimension.");
-
-  sum_impl(out, var);
-  return out;
+  return sum_with_dim_inplace_impl(sum_impl, var, dim, out);
 }
 
 VariableView nansum(const VariableConstView &var, const Dim dim,
-                 const VariableView &out) {
-  if (var.dtype() == dtype<bool> && out.dtype() != dtype<int64_t>)
-    throw except::UnitError("In-place sum of Bool dtype must be stored in an "
-                            "output variable of Int64 dtype.");
-
-  auto dims = var.dims();
-  dims.erase(dim);
-  if (dims != out.dims())
-    throw except::DimensionError(
-        "Output argument dimensions must be equal to input dimensions without "
-        "the summing dimension.");
-
-  nansum_impl(out, var);
-  return out;
+                    const VariableView &out) {
+  return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
 }
 
 Variable mean_impl(const VariableConstView &var, const Dim dim,
