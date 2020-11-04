@@ -101,6 +101,9 @@ void init_buckets(py::module &m) {
   m.def("is_bins", [](const DataArrayConstView &array) {
     return dataset::is_buckets(array);
   });
+  m.def("is_bins", [](const DatasetConstView &dataset) {
+    return dataset::is_buckets(dataset);
+  });
 
   m.def("bins_begin_end", [](const VariableConstView &var) -> py::object {
     if (var.dtype() == dtype<bucket<Variable>>)

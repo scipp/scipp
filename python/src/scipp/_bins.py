@@ -6,6 +6,9 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
 class Bins:
+    """
+    Proxy for operations on bins of a variable
+    """
     def __init__(self, obj):
         self._obj = obj
 
