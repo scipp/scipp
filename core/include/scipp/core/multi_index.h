@@ -207,6 +207,14 @@ public:
 
   scipp::index end_sentinel() const noexcept { return m_end_sentinel; }
 
+  /// Return true if the first subindex has a 0 stride
+  bool has_stride_zero() const noexcept {
+    for (scipp::index i = 0; i < m_ndim; ++i)
+      if (m_stride[0][i] == 0)
+        return true;
+    return false;
+  }
+
 private:
   struct BucketIterator {
     BucketIterator() = default;

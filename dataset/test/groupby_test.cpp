@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/dataset/bucket.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
@@ -437,31 +438,35 @@ TEST_F(GroupbyWithBinsTest, dataset_variable) {
 }
 
 auto make_events_in() {
-  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{3});
-  const auto &var_ = var.values<event_list<double>>();
-  var_[0] = {1, 2, 3};
-  var_[1] = {4, 5};
-  var_[2] = {6, 7};
-  return var;
+  const auto weights = makeVariable<double>(Dims{Dim::Event}, Shape{7},
+                                            Values{1, 2, 1, 3, 1, 4, 1},
+                                            Variances{1, 5, 1, 6, 1, 7, 1});
+  const auto x = makeVariable<double>(Dims{Dim::Event}, Shape{7},
+                                      Values{1, 2, 3, 4, 5, 6, 7});
+  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::Y}, Shape{3},
+      Values{std::pair{0, 3}, std::pair{3, 5}, std::pair{5, 7}});
+  const DataArray table(weights, {{Dim::X, x}});
+  return from_constituents(indices, Dim::Event, table);
 }
 
 auto make_events_out(bool mask = false) {
-  auto var = makeVariable<event_list<double>>(Dims{Dim("labels")}, Shape{2});
-  const auto &var_ = var.values<event_list<double>>();
-  if (mask)
-    var_[0] = {1, 2, 3};
-  else
-    var_[0] = {1, 2, 3, 4, 5};
-  var_[1] = {6, 7};
-  return var;
+  const auto weights = makeVariable<double>(Dims{Dim::Event}, Shape{7},
+                                            Values{1, 2, 1, 3, 1, 4, 1},
+                                            Variances{1, 5, 1, 6, 1, 7, 1});
+  const auto x = makeVariable<double>(Dims{Dim::Event}, Shape{7},
+                                      Values{1, 2, 3, 4, 5, 6, 7});
+  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim("labels")}, Shape{2},
+      Values{mask ? std::pair{0, 3} : std::pair{0, 5}, std::pair{5, 7}});
+  const DataArray table(weights, {{Dim::X, x}});
+  return from_constituents(indices, Dim::Event, table);
 }
 
-struct GroupbyFlattenDefaultWeight : public ::testing::Test {
+struct GroupbyBucketsTest : public ::testing::Test {
   DataArray a{
-      makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
-                           Values{1, 1, 1}, Variances{1, 1, 1}),
-      {{Dim::X, make_events_in()},
-       {Dim("0-d"), makeVariable<double>(Values{1.2})},
+      make_events_in(),
+      {{Dim("0-d"), makeVariable<double>(Values{1.2})},
        {Dim("labels"), makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::m,
                                             Values{1, 1, 3})},
        {Dim("dense"), makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
@@ -470,10 +475,8 @@ struct GroupbyFlattenDefaultWeight : public ::testing::Test {
       {{Dim("scalar_attr"), makeVariable<double>(Values{1.2})}}};
 
   DataArray expected{
-      makeVariable<double>(Dims{Dim("labels")}, Shape{2}, units::counts,
-                           Values{1, 1}, Variances{1, 1}),
-      {{Dim::X, make_events_out()},
-       {Dim("0-d"), makeVariable<double>(Values{1.2})},
+      make_events_out(),
+      {{Dim("0-d"), makeVariable<double>(Values{1.2})},
        {Dim("labels"), makeVariable<double>(Dims{Dim("labels")}, Shape{2},
                                             units::m, Values{1, 3})},
        {Dim("dense"), makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
@@ -482,105 +485,34 @@ struct GroupbyFlattenDefaultWeight : public ::testing::Test {
       {{Dim("scalar_attr"), makeVariable<double>(Values{1.2})}}};
 };
 
-TEST_F(GroupbyFlattenDefaultWeight, flatten_coord_only) {
-  EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
+TEST_F(GroupbyBucketsTest, concatenate_data_array) {
+  EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
 }
 
-/*
-TEST_F(GroupbyFlattenDefaultWeight, sum_realigned_coord_only) {
-  const auto edges =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 10});
-  const auto realigned = unaligned::realign(a, {{Dim::X, edges}});
-
-  const auto summed = groupby(realigned, Dim("labels")).sum(Dim::Y);
-  EXPECT_EQ(summed.unaligned(), expected);
-}
-*/
-
-TEST_F(GroupbyFlattenDefaultWeight, flatten_dataset_coord_only) {
-  a.coords().erase(Dim::X);
-  a.unaligned_coords().set(Dim::X, make_events_in());
-  expected.coords().erase(Dim::X);
-  expected.unaligned_coords().set(Dim::X, make_events_out());
+TEST_F(GroupbyBucketsTest, concatenate_dataset) {
   const Dataset d{{{"a", a}, {"b", a}}};
   const Dataset expected_d{{{"a", expected}, {"b", expected}}};
-  EXPECT_EQ(groupby(d, Dim("labels")).flatten(Dim::Y), expected_d);
+  EXPECT_EQ(groupby(d, Dim("labels")).concatenate(Dim::Y), expected_d);
 }
 
-TEST_F(GroupbyFlattenDefaultWeight, flatten_non_constant_scalar_weight_fail) {
-  Dataset d{{{"a", a}, {"b", a}}};
-  d["a"].values<double>()[0] += 0.1;
-  EXPECT_THROW(groupby(d, Dim("labels")).flatten(Dim::Y),
-               except::EventDataError);
-}
-
-TEST(GroupbyFlattenTest, flatten_coord_and_labels) {
-  DataArray a{
-      makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::counts,
-                           Values{1, 1, 1}, Variances{1, 1, 1}),
-      {{Dim::X, make_events_in()},
-       {Dim("events"), make_events_in() * (0.3 * units::one)},
-       {Dim("labels"), makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::m,
-                                            Values{1, 1, 3})}}};
-
-  DataArray expected{
-      makeVariable<double>(Dims{Dim("labels")}, Shape{2}, units::counts,
-                           Values{1, 1}, Variances{1, 1}),
-      {{Dim::X, make_events_out()},
-       {Dim("labels"), makeVariable<double>(Dims{Dim("labels")}, Shape{2},
-                                            units::m, Values{1, 3})},
-       {Dim("events"), make_events_out() * (0.3 * units::one)}}};
-
-  EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
-}
-
-TEST(GroupbyFlattenTest, flatten_coord_and_data) {
-  DataArray a{
-      make_events_in() * (1.5 * units::one),
-      {{Dim::X, make_events_in()},
-       {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3})},
-       {Dim("labels"), makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::m,
-                                            Values{1, 1, 3})}}};
-
-  DataArray expected{
-      make_events_out() * (1.5 * units::one),
-      {{Dim::X, make_events_out()},
-       {Dim("labels"), makeVariable<double>(Dims{Dim("labels")}, Shape{2},
-                                            units::m, Values{1, 3})}}};
-
-  EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
-}
-
-struct GroupbyEventsWithMaskTest : public ::testing::Test {
+struct GroupbyBucketsMaskTest : public ::testing::Test {
   const DataArray a{
-      make_events_in() * (1.5 * units::one),
-      {{Dim::X, make_events_in()},
-       {Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3})},
+      make_events_in(),
+      {{Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3})},
        {Dim("labels"), makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::m,
                                             Values{1, 1, 3})}},
       {{"mask_y", makeVariable<bool>(Dims{Dim::Y}, Shape{3},
                                      Values{false, true, false})}}};
   const bool mask = true;
   const DataArray expected{
-      make_events_out(mask) * (1.5 * units::one),
-      {{Dim::X, make_events_out(mask)},
-       {Dim("labels"), makeVariable<double>(Dims{Dim("labels")}, Shape{2},
+      make_events_out(mask),
+      {{Dim("labels"), makeVariable<double>(Dims{Dim("labels")}, Shape{2},
                                             units::m, Values{1, 3})}}};
 };
 
-TEST_F(GroupbyEventsWithMaskTest, flatten) {
-  EXPECT_EQ(groupby(a, Dim("labels")).flatten(Dim::Y), expected);
+TEST_F(GroupbyBucketsMaskTest, concatenate) {
+  EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
 }
-
-/*
-TEST_F(GroupbyEventsWithMaskTest, sum_realigned) {
-  const auto edges =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 10});
-  const auto realigned = unaligned::realign(a, {{Dim::X, edges}});
-  const auto summed = groupby(realigned, Dim("labels")).sum(Dim::Y);
-  EXPECT_EQ(summed.unaligned(), expected);
-}
-*/
 
 struct GroupbyLogicalTest : public ::testing::Test {
   GroupbyLogicalTest() {

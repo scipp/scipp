@@ -80,8 +80,6 @@ element_to_string(const T &item,
     return {"(" + element_to_string(Eigen::Vector3d(item.row(0))) + ", " +
             element_to_string(Eigen::Vector3d(item.row(1))) + ", " +
             element_to_string(Eigen::Vector3d(item.row(2))) + "), "};
-  else if constexpr (is_events_v<T>)
-    return array_to_string(item) + ", ";
   else
     return to_string(item) + ", ";
 }

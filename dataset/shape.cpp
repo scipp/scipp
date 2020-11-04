@@ -124,4 +124,19 @@ Dataset resize(const DatasetConstView &d, const Dim dim,
       d, [](auto &&... _) { return resize(_...); }, dim, size);
 }
 
+DataArray resize(const DataArrayConstView &a, const Dim dim,
+                 const DataArrayConstView &shape) {
+  return apply_to_data_and_drop_dim(
+      a, [](auto &&v, const Dim, auto &&s) { return resize(v, s); }, dim,
+      shape.data());
+}
+
+Dataset resize(const DatasetConstView &d, const Dim dim,
+               const DatasetConstView &shape) {
+  Dataset result;
+  for (const auto &data : d)
+    result.setData(data.name(), resize(data, dim, shape[data.name()]));
+  return result;
+}
+
 } // namespace scipp::dataset

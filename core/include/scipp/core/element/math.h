@@ -47,19 +47,13 @@ constexpr auto sqrt_out_arg =
 
 constexpr auto reciprocal = overloaded{
     arg_list<double, float>,
-    [](const auto &x) {
-      return static_cast<
-                 core::detail::element_type_t<std::decay_t<decltype(x)>>>(1) /
-             x;
-    },
+    [](const auto &x) { return static_cast<std::decay_t<decltype(x)>>(1) / x; },
     [](const units::Unit &unit) { return units::one / unit; }};
 
 constexpr auto reciprocal_out_arg = overloaded{
     arg_list<double, float>,
     [](auto &x, const auto &y) {
-      x = static_cast<core::detail::element_type_t<std::decay_t<decltype(y)>>>(
-              1) /
-          y;
+      x = static_cast<std::decay_t<decltype(y)>>(1) / y;
     },
     [](units::Unit &x, const units::Unit &y) { x = units::one / y; }};
 

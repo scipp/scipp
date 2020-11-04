@@ -9,8 +9,8 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/buckets.h"
 
-#include "../variable/test/make_events.h"
 #include "dataset_test_common.h"
 #include "test_macros.h"
 #include "test_operations.h"
@@ -348,49 +348,6 @@ TYPED_TEST(DatasetBinaryEqualsOpTest, rhs_DatasetView_coord_mismatch) {
                except::CoordMismatchError);
 }
 
-TYPED_TEST(DatasetBinaryEqualsOpTest,
-           with_single_var_with_single_events_dimensions_sized_same) {
-  Dataset a = make_simple_events({1.1, 2.2});
-  Dataset b = make_simple_events({3.3, 4.4});
-  Dataset c = TestFixture::op(a, b);
-  auto c_data = c["events"].data().values<event_list<double>>()[0];
-  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
-  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
-}
-
-TYPED_TEST(DatasetBinaryEqualsOpTest,
-           with_single_var_dense_and_events_dimension) {
-  Dataset a = make_events_2d({1.1, 2.2});
-  Dataset b = make_events_2d({3.3, 4.4});
-  Dataset c = TestFixture::op(a, b);
-  ASSERT_EQ(c["events"].data().values<event_list<double>>().size(), 2);
-  auto c_data = c["events"].data().values<event_list<double>>()[0];
-  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
-  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
-}
-
-TYPED_TEST(DatasetBinaryEqualsOpTest, with_multiple_variables) {
-  Dataset a = make_simple_events({1.1, 2.2});
-  a.setData("events2", a["events"].data());
-  Dataset b = make_simple_events({3.3, 4.4});
-  b.setData("events2", b["events"].data());
-  Dataset c = TestFixture::op(a, b);
-  ASSERT_EQ(c.size(), 2);
-  auto c_data = c["events"].data().values<event_list<double>>()[0];
-  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
-  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
-  c_data = c["events2"].data().values<event_list<double>>()[1];
-  ASSERT_EQ(c_data[0], TestFixture::op(1.1, 3.3));
-  ASSERT_EQ(c_data[1], TestFixture::op(2.2, 4.4));
-}
-
-TYPED_TEST(DatasetBinaryEqualsOpTest,
-           with_events_dimensions_of_different_sizes) {
-  Dataset a = make_simple_events({1.1, 2.2});
-  Dataset b = make_simple_events({3.3, 4.4, 5.5});
-  ASSERT_THROW(TestFixture::op(a, b), std::runtime_error);
-}
-
 TYPED_TEST(DatasetBinaryEqualsOpTest, masks_propagate) {
   auto a = datasetFactory().make();
   auto b = datasetFactory().make();
@@ -704,147 +661,6 @@ TYPED_TEST(DatasetBinaryOpTest, scalar_lhs_dataset_rhs) {
   EXPECT_EQ(res.coords(), dataset.coords());
 }
 
-TYPED_TEST(DatasetBinaryOpTest, dataset_events_lhs_dataset_events_rhs) {
-  const auto dataset_a =
-      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
-  const auto dataset_b =
-      make_events_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
-
-  const auto res = TestFixture::op(dataset_a, dataset_b);
-
-  /* Only one variable should be present in result as only one common name
-   * existed between input datasets. */
-  EXPECT_EQ(1, res.size());
-
-  /* Test that the dataset contains the equivalent of operating on the Variable
-   * directly. */
-  /* Correctness of results is tested via Variable tests. */
-  const auto reference =
-      TestFixture::op(dataset_a["events"].data(), dataset_b["events"].data());
-  EXPECT_EQ(reference, res["events"].data());
-
-  EXPECT_EQ(dataset_a["events"].coords(), res["events"].coords());
-}
-
-TYPED_TEST(DatasetBinaryOpTest,
-           dataset_events_lhs_dataarrayconstview_events_rhs) {
-  const auto dataset_a =
-      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
-  const auto dataset_b =
-      make_events_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
-
-  const auto res = TestFixture::op(dataset_a, dataset_b["events"]);
-
-  EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
-}
-
-TYPED_TEST(DatasetBinaryOpTest, events_with_dense_broadcast) {
-  Dataset dense;
-  dense.setData("a",
-                makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2}));
-  Dataset events;
-  events.setData("a", makeVariable<event_list<double>>(Dims{}, Shape{}));
-
-  // Note: In the old way of handling event data, the events dim would result in
-  // a failure here. Now we just get a broadcast, since `dense` has no coord
-  // that would prevent this.
-  ASSERT_NO_THROW(TestFixture::op(events, dense));
-}
-
-TYPED_TEST(DatasetBinaryOpTest, events_with_dense) {
-  Dataset dense;
-  dense.setData("a", makeVariable<double>(Values{2.0}));
-  const auto events =
-      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
-
-  const auto res = TestFixture::op(events, dense);
-
-  EXPECT_EQ(res.size(), 1);
-  EXPECT_TRUE(res.contains("a"));
-  EXPECT_EQ(res["a"].data(),
-            TestFixture::op(events["a"].data(), dense["a"].data()));
-}
-
-TYPED_TEST(DatasetBinaryOpTest, dense_with_events) {
-  Dataset dense;
-  dense.setData("a", makeVariable<double>(Values{2.0}));
-  const auto events =
-      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0}, "a");
-
-  const auto res = TestFixture::op(dense, events);
-
-  EXPECT_EQ(res.size(), 1);
-  EXPECT_TRUE(res.contains("a"));
-  EXPECT_EQ(res["a"].data(),
-            TestFixture::op(dense["a"].data(), events["a"].data()));
-}
-
-TYPED_TEST(DatasetBinaryOpTest,
-           dataarrayconstview_events_lhs_dataset_events_rhs) {
-  const auto dataset_a =
-      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
-  const auto dataset_b =
-      make_events_with_coords_and_labels({3.3, 4.4}, {1.0, 2.0});
-
-  const auto res = TestFixture::op(dataset_a["events"], dataset_b);
-
-  EXPECT_EQ(res, TestFixture::op(dataset_a, dataset_b));
-}
-
-TYPED_TEST(DatasetBinaryOpTest, events_dataarrayconstview_coord_mismatch) {
-  const auto dataset_a =
-      make_events_with_coords_and_labels({1.1, 2.2}, {1.0, 2.0});
-  const auto dataset_b =
-      make_events_with_coords_and_labels({3.3, 4.4}, {1.0, 2.1});
-
-  ASSERT_THROW(TestFixture::op(dataset_a, dataset_b["events"]),
-               except::CoordMismatchError);
-  ASSERT_THROW(TestFixture::op(dataset_a["events"], dataset_b),
-               except::CoordMismatchError);
-}
-
-TYPED_TEST(DatasetBinaryOpTest,
-           dataset_events_lhs_dataset_events_rhs_fail_when_coords_mismatch) {
-  auto dataset_a = make_simple_events({1.1, 2.2});
-  auto dataset_b = make_simple_events({3.3, 4.4});
-
-  {
-    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.values<event_list<double>>()[0] = {0.5, 1.0};
-    dataset_a.coords().set(Dim::X, var);
-  }
-
-  {
-    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.values<event_list<double>>()[0] = {0.5, 1.5};
-    dataset_b.coords().set(Dim::X, var);
-  }
-
-  EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::CoordMismatchError);
-}
-
-TYPED_TEST(DatasetBinaryOpTest,
-           dataset_events_lhs_dataset_events_rhs_fail_when_labels_mismatch) {
-  auto dataset_a = make_simple_events({1.1, 2.2});
-  auto dataset_b = make_simple_events({3.3, 4.4});
-
-  {
-    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.values<event_list<double>>()[0] = {0.5, 1.0};
-    dataset_a.coords().set(Dim("l"), var);
-  }
-
-  {
-    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.values<event_list<double>>()[0] = {0.5, 1.5};
-    dataset_b.coords().set(Dim("l"), var);
-  }
-
-  EXPECT_THROW(TestFixture::op(dataset_a, dataset_b),
-               except::CoordMismatchError);
-}
-
 TYPED_TEST(DatasetBinaryOpTest, dataset_lhs_datasetconstview_rhs) {
   auto dataset_a = datasetFactory().make();
   auto dataset_b = datasetFactory().make();
@@ -953,13 +769,19 @@ TEST(DatasetSetData, labels) {
 }
 
 TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
-  auto good = make_events_variable_with_variance<double>();
-  set_events_values<double>(good, {{1, 2, 3}, {4}});
-  set_events_variances<double>(good, {{5, 6, 7}, {8}});
-  auto bad = make_events_variable_with_variance<double>();
-  set_events_values<double>(bad, {{0.1, 0.2, 0.3}, {0.4}});
-  set_events_variances<double>(bad, {{0.5, 0.6}, {0.8}});
+  Variable indicesGood = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 3}});
+  Variable indicesBad = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 4}});
+  Variable table =
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, units::m,
+                           Values{1, 2, 3, 4}, Variances{5, 6, 7, 8});
+  Variable good = from_constituents(indicesGood, Dim::Event, table);
+  Variable bad = from_constituents(indicesBad, Dim::Event, table);
   DataArray good_array(good, {}, {});
+  Dataset good_dataset;
+  good_dataset.setData("a", good);
+  good_dataset.setData("b", good);
 
   // We have no control over the iteration order in the implementation of binary
   // operations. All we know that data is in some sort of (unordered) map.
@@ -977,10 +799,10 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
       d.setData(key2, value2);
       auto original(d);
 
-      ASSERT_ANY_THROW(d += d);
+      ASSERT_ANY_THROW(d += good_dataset);
       ASSERT_EQ(d, original);
       // Note that we should not use an item of d in this test, since then
-      // operation is delayed and we me end up bypassing the problem that the
+      // operation is delayed and we may end up bypassing the problem that the
       // "dry run" fixes.
       ASSERT_ANY_THROW(d += good_array);
       ASSERT_EQ(d, original);

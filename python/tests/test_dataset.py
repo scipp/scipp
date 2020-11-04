@@ -106,26 +106,6 @@ def test_coord_setitem():
     assert sc.is_equal(d.coords['y'], sc.Variable(1.0))
 
 
-def test_coord_setitem_events():
-    events = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
-    d = sc.Dataset({'a': events})
-    d.coords['x'] = events
-    assert len(d.coords) == 1
-    assert len(d['a'].coords) == 1
-    assert sc.is_equal(d['a'].coords['x'], events)
-    assert sc.is_equal(d['a'].coords['x'], d.coords['x'])
-
-
-def test_create_events_via_DataArray():
-    d = sc.Dataset()
-    events = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
-    d['a'] = sc.DataArray(data=events, coords={'x': events})
-    assert len(d.coords) == 1
-    assert len(d['a'].coords) == 1
-    assert sc.is_equal(d['a'].coords['x'], events)
-    assert sc.is_equal(d['a'].coords['x'], d.coords['x'])
-
-
 def test_contains_coord():
     d = sc.Dataset()
     assert 'x' not in d.coords
@@ -169,15 +149,6 @@ def test_set_item_slice_with_variances_from_numpy():
     d['a']['x', 2:4].variances = np.arange(2, 4)
     assert np.array_equal(d['a'].values, np.array([0.0, 1.0, 0.0, 1.0]))
     assert np.array_equal(d['a'].variances, np.array([0.0, 1.0, 2.0, 3.0]))
-
-
-def test_events_setitem():
-    d = sc.Dataset({
-        'a':
-        sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
-    })
-    d['a']['x', 0].values = np.arange(4)
-    assert len(d['a']['x', 0].values) == 4
 
 
 def test_iadd_slice():
@@ -340,75 +311,6 @@ def test_mean_masked():
     assert sc.is_equal(sc.mean(d, 'x')['a'], d_ref['a'])
 
 
-def test_variable_histogram():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
-    var['x', 0].values = np.arange(3)
-    var['x', 0].values.append(42)
-    var['x', 0].values.extend(np.ones(3))
-    var['x', 1].values = np.ones(6)
-    ds = sc.Dataset()
-    ds['events'] = sc.DataArray(data=sc.Variable(dims=['x'],
-                                                 values=np.ones(2),
-                                                 variances=np.ones(2)),
-                                coords={'y': var})
-    hist = sc.histogram(
-        ds['events'],
-        sc.Variable(values=np.arange(5, dtype=np.float64), dims=['y']))
-    assert np.array_equal(
-        hist.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
-
-
-@pytest.mark.skip(reason="Refactor to use bucket variables instead of realign")
-def test_dataset_histogram():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
-    var['x', 0].values = np.arange(3)
-    var['x', 0].values.append(42)
-    var['x', 0].values.extend(np.ones(3))
-    var['x', 1].values = np.ones(6)
-    ds = sc.Dataset()
-    s = sc.DataArray(data=sc.Variable(dims=['x'],
-                                      values=np.ones(2),
-                                      variances=np.ones(2)),
-                     coords={'y': var})
-    s1 = sc.DataArray(data=sc.Variable(dims=['x'],
-                                       values=np.ones(2),
-                                       variances=np.ones(2)),
-                      coords={'y': var * 5.0})
-    realign_coords = {
-        'y': sc.Variable(values=np.arange(5, dtype=np.float64), dims=['y'])
-    }
-    ds['s'] = sc.realign(s, realign_coords)
-    ds['s1'] = sc.realign(s1, realign_coords)
-    h = sc.histogram(ds)
-    assert np.array_equal(
-        h['s'].values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
-    assert np.array_equal(
-        h['s1'].values, np.array([[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]))
-
-
-def test_histogram_and_setitem():
-    var = sc.Variable(dims=['x'],
-                      shape=[2],
-                      dtype=sc.dtype.event_list_float64,
-                      unit=sc.units.us)
-    var['x', 0].values = np.arange(3)
-    var['x', 0].values.append(42)
-    var['x', 0].values.extend(np.ones(3))
-    var['x', 1].values = np.ones(6)
-    ds = sc.Dataset()
-    ds['s'] = sc.DataArray(data=sc.Variable(dims=['x'],
-                                            values=np.ones(2),
-                                            variances=np.ones(2)),
-                           coords={'tof': var})
-    assert 'tof' in ds.coords
-    assert 'tof' in ds['s'].coords
-    edges = sc.Variable(dims=['tof'], values=np.arange(5.0), unit=sc.units.us)
-    h = sc.histogram(ds['s'], edges)
-    assert np.array_equal(
-        h.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
-    assert 'tof' in ds.coords
-
-
 def test_dataset_merge():
     a = sc.Dataset({'d1': sc.Variable(dims=['x'], values=np.array([1, 2, 3]))})
     b = sc.Dataset({'d2': sc.Variable(dims=['x'], values=np.array([4, 5, 6]))})
@@ -487,16 +389,6 @@ def test_dataset_set_data():
                                 variances=np.arange(1.0))
     expected['b'] = sc.Variable(dims=['row'], values=np.arange(10.0, 11.0))
     assert sc.is_equal(d2, expected)
-
-
-def test_dataset_data_access():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
-    ds = sc.Dataset()
-    ds['events'] = sc.DataArray(data=sc.Variable(dims=['x'],
-                                                 values=np.ones(2),
-                                                 variances=np.ones(2)),
-                                coords={'y': var})
-    assert ds['events'].values is not None
 
 
 def test_binary_with_broadcast():

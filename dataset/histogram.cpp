@@ -18,10 +18,6 @@ using namespace scipp::variable;
 
 namespace scipp::dataset {
 
-namespace histogram_events_detail {
-template <class Out, class Coord, class Weight, class Edge>
-using args = std::tuple<span<Out>, event_list<Coord>, Weight, span<const Edge>>;
-}
 namespace histogram_dense_detail {
 template <class Out, class Coord, class Weight, class Edge>
 using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
@@ -50,28 +46,6 @@ DataArray histogram(const DataArrayConstView &events,
             return buckets::histogram(events_.data(), binEdges_);
         },
         dim, binEdges);
-  } else if (contains_events(events.coords()[dim])) {
-    result = apply_and_drop_dim(
-        events,
-        [](const DataArrayConstView &events_, const Dim eventDim,
-           const Dim dim_, const VariableConstView &binEdges_) {
-          static_cast<void>(eventDim); // This is just Dim::Invalid
-          using namespace histogram_events_detail;
-          // This supports scalar weights as well as event_list weights.
-          return transform_subspan<
-              std::tuple<args<double, double, double, double>,
-                         args<double, float, double, double>,
-                         args<double, float, double, float>,
-                         args<double, double, float, double>,
-                         args<double, double, event_list<double>, double>,
-                         args<double, float, event_list<double>, double>,
-                         args<double, float, event_list<double>, float>,
-                         args<double, double, event_list<float>, double>>>(
-              dtype<double>, dim_, binEdges_.dims()[dim_] - 1,
-              events_.coords()[dim_], events_.data(), binEdges_,
-              element::histogram);
-        },
-        dim_of_coord(events.coords()[dim], dim), dim, binEdges);
   } else if (!is_histogram(events, dim)) {
     result = apply_and_drop_dim(
         events,

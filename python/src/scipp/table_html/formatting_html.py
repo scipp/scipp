@@ -12,7 +12,7 @@ import sys
 import numpy as np
 
 from .._scipp import core as sc
-from .._utils import is_dataset, is_data_events
+from .._utils import is_dataset
 
 CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
 with open(CSS_FILE_PATH, 'r') as f:
@@ -116,10 +116,7 @@ def _ordered_dict(data):
 
 
 def inline_variable_repr(var, has_variances=False):
-    if is_data_events(var):
-        return _format_events(var, has_variances)
-    else:
-        return _format_non_events(var, has_variances)
+    return _format_non_events(var, has_variances)
 
 
 def retrieve(var, variances=False, single=False):
@@ -146,10 +143,7 @@ def _short_data_repr_html_events(var, variances=False):
 
 def short_data_repr_html(var, variances=False):
     """Format "data" for DataArray and Variable."""
-    if is_data_events(var):
-        data_repr = _short_data_repr_html_events(var, variances)
-    else:
-        data_repr = _short_data_repr_html_non_events(var, variances)
+    data_repr = _short_data_repr_html_non_events(var, variances)
     return escape(data_repr)
 
 

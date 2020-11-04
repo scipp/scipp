@@ -11,8 +11,6 @@ def _make_default_bins_for_events(obj, bins):
     If the DataArray contains events but no bins are specified,
     return a default of 1 bin.
     """
-    if sc.contains_events(obj):
-        bins = {"tof": 1}
     return bins
 
 
@@ -24,15 +22,13 @@ def _rebin_histogram_data(obj, bins):
     new_bins = bins
     if not isinstance(bins, dict):
         new_bins = {"tof": bins}
-    if not sc.contains_events(obj):
-        for dim, val in new_bins.items():
-            obj = sc.rebin(obj, dim,
-                           su.make_bins(data_array=obj, bins=val, dim=dim))
-        # Once data has been histogrammed, we return None as the new bins,
-        # since the plot function expects event data if bins are specified.
-        return obj, None
-    else:
-        return obj, new_bins
+    for dim, val in new_bins.items():
+        obj = sc.rebin(obj, dim, su.make_bins(data_array=obj,
+                                              bins=val,
+                                              dim=dim))
+    # Once data has been histogrammed, we return None as the new bins,
+    # since the plot function expects event data if bins are specified.
+    return obj, None
 
 
 def _raise_input_error():

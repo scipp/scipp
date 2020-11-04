@@ -123,10 +123,6 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return {Getter::template get<double>(view)};
     if (type == dtype<float>)
       return {Getter::template get<float>(view)};
-    if (type == dtype<event_list<double>>)
-      return {Getter::template get<event_list<double>>(view)};
-    if (type == dtype<event_list<float>>)
-      return {Getter::template get<event_list<float>>(view)};
     if constexpr (std::is_same_v<Getter, get_values>) {
       if (type == dtype<int64_t>)
         return {Getter::template get<int64_t>(view)};
@@ -138,10 +134,6 @@ template <class... Ts> class as_ElementArrayViewImpl {
         return {Getter::template get<std::string>(view)};
       if (type == dtype<scipp::core::time_point>)
         return {Getter::template get<scipp::core::time_point>(view)};
-      if (type == dtype<event_list<int64_t>>)
-        return {Getter::template get<event_list<int64_t>>(view)};
-      if (type == dtype<event_list<int32_t>>)
-        return {Getter::template get<event_list<int32_t>>(view)};
       if (type == dtype<DataArray>)
         return {Getter::template get<DataArray>(view)};
       if (type == dtype<Dataset>)
@@ -150,8 +142,6 @@ template <class... Ts> class as_ElementArrayViewImpl {
         return {Getter::template get<Eigen::Vector3d>(view)};
       if (type == dtype<Eigen::Matrix3d>)
         return {Getter::template get<Eigen::Matrix3d>(view)};
-      if (type == dtype<event_list<core::time_point>>)
-        return {Getter::template get<event_list<core::time_point>>(view)};
       if (type == dtype<scipp::python::PyObject>)
         return {Getter::template get<scipp::python::PyObject>(view)};
       if (type == dtype<bucket<Variable>>)
@@ -180,20 +170,6 @@ template <class... Ts> class as_ElementArrayViewImpl {
                                            "does not match the existing "
                                            "object.");
             copy_flattened<T>(data, view_);
-          } else if constexpr (core::is_events_v<T>) {
-            auto &data = obj.cast<const py::array_t<typename T::value_type>>();
-            // Event data can be set from an array only for a single item.
-            if (dims.shape().size() != 0)
-              throw except::DimensionError(
-                  "Event data cannot be set from a single "
-                  "array, unless the events dimension is the "
-                  "only dimension.");
-            if (data.ndim() != 1)
-              throw except::DimensionError("Expected 1-D data.");
-            auto r = data.unchecked();
-            view_[0].clear();
-            for (ssize_t i = 0; i < r.shape(0); ++i)
-              view_[0].emplace_back(r(i));
           } else {
             const auto &data = obj.cast<const std::vector<T>>();
             // TODO Related to #290, we should properly support
@@ -376,10 +352,8 @@ public:
 };
 
 using as_ElementArrayView = as_ElementArrayViewImpl<
-    double, float, int64_t, int32_t, bool, std::string, event_list<double>,
-    scipp::core::time_point, event_list<scipp::core::time_point>,
-    event_list<float>, event_list<int64_t>, event_list<int32_t>, DataArray,
-    Dataset, bucket<Variable>, bucket<DataArray>, bucket<Dataset>,
+    double, float, int64_t, int32_t, bool, std::string, scipp::core::time_point,
+    DataArray, Dataset, bucket<Variable>, bucket<DataArray>, bucket<Dataset>,
     Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject>;
 
 template <class T, class... Ignored>

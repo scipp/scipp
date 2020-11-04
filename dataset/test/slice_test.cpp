@@ -159,8 +159,6 @@ class Dataset3DTest_slice_y : public Dataset3DTest,
                               public ::testing::WithParamInterface<int> {};
 class Dataset3DTest_slice_z : public Dataset3DTest,
                               public ::testing::WithParamInterface<int> {};
-class Dataset3DTest_slice_events : public Dataset3DTest,
-                                   public ::testing::WithParamInterface<int> {};
 
 class Dataset3DTest_slice_range_x : public Dataset3DTest,
                                     public ::testing::WithParamInterface<
@@ -239,8 +237,6 @@ INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_y,
                          ::testing::ValuesIn(ranges_y));
 INSTANTIATE_TEST_SUITE_P(NonEmptyRanges, Dataset3DTest_slice_range_z,
                          ::testing::ValuesIn(ranges_z));
-INSTANTIATE_TEST_SUITE_P(AllPositions, Dataset3DTest_slice_events,
-                         ::testing::Range(0, 2));
 
 TEST_P(Dataset3DTest_slice_x, slice) {
   const auto pos = GetParam();
@@ -252,31 +248,6 @@ TEST_P(Dataset3DTest_slice_x, slice) {
       expected[name].coords().set(
           Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::X, pos}));
   EXPECT_EQ(dataset.slice({Dim::X, pos}), expected);
-}
-
-TEST_P(Dataset3DTest_slice_events, slice) {
-  Dataset ds;
-  const auto pos = GetParam();
-  auto var =
-      makeVariable<event_list<double>>(Dims{Dim::X, Dim::Y}, Shape{2, 2});
-  var.values<event_list<double>>()[0] = {1, 2, 3};
-  var.values<event_list<double>>()[1] = {4, 5, 6};
-  var.values<event_list<double>>()[2] = {7};
-  var.values<event_list<double>>()[3] = {8, 9};
-
-  ds.setData("xyz_data", var);
-  ds.setCoord(Dim::X,
-              makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 1}));
-  ds.setCoord(Dim::Y,
-              makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{0, 1}));
-
-  auto sliced = ds.slice({Dim::X, pos});
-  auto data = sliced["xyz_data"].data().values<event_list<double>>();
-  EXPECT_EQ(data.size(), 2);
-  event_list<double> expected = var.values<event_list<double>>()[pos * 2];
-  EXPECT_EQ(data[0], expected);
-  expected = var.values<event_list<double>>()[pos * 2 + 1];
-  EXPECT_EQ(data[1], expected);
 }
 
 TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {

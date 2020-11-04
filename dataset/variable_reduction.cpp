@@ -19,21 +19,6 @@ Variable applyMask(const VariableConstView &var, const Variable &masks) {
                                     scipp::core::element::convertMaskedToZero);
 }
 
-/// Flatten with mask, skipping masked elements.
-Variable flatten(const VariableConstView &var, const Dim dim,
-                 const MasksConstView &masks) {
-  auto dims = var.dims();
-  dims.erase(dim);
-  Variable flattened(var, dims);
-  auto mask = irreducible_mask(masks, dim);
-  if (mask)
-    mask = ~std::move(mask);
-  else
-    mask = makeVariable<bool>(Values{true});
-  flatten_impl(flattened, var, mask);
-  return flattened;
-}
-
 Variable sum(const VariableConstView &var, const Dim dim,
              const MasksConstView &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {

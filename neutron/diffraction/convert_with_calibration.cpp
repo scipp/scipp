@@ -58,13 +58,8 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
 
   // 2. Transform coordinate
   if (d.coords().contains(Dim::Tof)) {
-    if (contains_events(d.coords()[Dim::Tof])) {
-      d.coords()[Dim::Tof] -= cal["tzero"].data();
-      d.coords()[Dim::Tof] *= reciprocal(cal["difc"].data());
-    } else {
-      d.coords().set(Dim::Tof, (d.coords()[Dim::Tof] - cal["tzero"].data()) /
-                                   cal["difc"].data());
-    }
+    d.coords().set(Dim::Tof, (d.coords()[Dim::Tof] - cal["tzero"].data()) /
+                                 cal["difc"].data());
   }
 
   d.rename(Dim::Tof, Dim::DSpacing);

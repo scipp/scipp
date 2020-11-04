@@ -12,6 +12,7 @@
 
 using namespace scipp;
 
+/*
 auto make_2d_events_coord(const scipp::index size, const scipp::index count) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{size});
   auto vals = var.values<event_list<double>>();
@@ -32,7 +33,6 @@ auto make_edges(const scipp::index nEdge) {
   return edges;
 }
 
-/*
 auto make_2d_events_default_weights(const scipp::index size,
                                     const scipp::index count,
                                     const scipp::index nEdge) {

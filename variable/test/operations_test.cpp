@@ -177,31 +177,6 @@ TEST(Variable, operator_plus_equal_custom_type) {
   EXPECT_EQ(a.values<float>()[1], 4.4f);
 }
 
-TEST(Variable, operator_plus) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
-                                Variances{3.0, 4.0});
-  auto b = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
-  auto b_ = b.values<event_list<float>>();
-  b_[0] = {0.1, 0.2};
-  b_[1] = {0.3};
-
-  auto sum = a + b;
-
-  auto expected = makeVariable<event_list<double>>(
-      Dimensions{{Dim::X, 2}, {Dim::Y, 2}}, Variances{}, Values{});
-  auto vals = expected.values<event_list<double>>();
-  vals[0] = {1.0 + 0.1f, 1.0 + 0.2f};
-  vals[1] = {1.0 + 0.3f};
-  vals[2] = {2.0 + 0.1f, 2.0 + 0.2f};
-  vals[3] = {2.0 + 0.3f};
-  auto vars = expected.variances<event_list<double>>();
-  vars[0] = {3.0, 3.0};
-  vars[1] = {3.0};
-  vars[2] = {4.0, 4.0};
-  vars[3] = {4.0};
-  EXPECT_EQ(sum, expected);
-}
-
 TEST(Variable, operator_plus_unit_fail) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
                                 Variances{3.0, 4.0});
@@ -224,19 +199,6 @@ TEST(Variable, operator_plus_eigen_type) {
   const auto result = var.slice({Dim::X, 0}) + var.slice({Dim::X, 1});
 
   EXPECT_EQ(result, expected);
-}
-
-TEST(EventsVariable, operator_plus) {
-  auto events = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto events_ = events.values<event_list<double>>();
-  events_[0] = {1, 2, 3};
-  events_[1] = {4};
-  auto dense = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 0.5});
-
-  events += dense;
-
-  EXPECT_TRUE(equals(events_[0], {2.5, 3.5, 4.5}));
-  EXPECT_TRUE(equals(events_[1], {4.5}));
 }
 
 TEST(Variable, operator_times_equal) {
@@ -269,80 +231,6 @@ TEST(Variable, operator_times_equal_unit_fail_integrity) {
 
   // This test relies on m^4 being an unsupported unit.
   ASSERT_THROW(a *= a, std::runtime_error);
-  EXPECT_EQ(a, expected);
-}
-
-TEST(Variable, operator_binary_equal_data_fail_unit_integrity) {
-  auto a = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
-  auto a_ = a.values<event_list<float>>();
-  auto b(a);
-  a_[0] = {0.1, 0.2};
-  a_[1] = {0.3};
-  b.setUnit(units::m);
-  auto expected(a);
-
-  ASSERT_THROW(a *= b, except::SizeError);
-  EXPECT_EQ(a, expected);
-  ASSERT_THROW(a /= b, except::SizeError);
-  EXPECT_EQ(a, expected);
-}
-
-TEST(Variable, operator_binary_equal_data_fail_data_integrity) {
-  auto a = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
-  auto a_ = a.values<event_list<float>>();
-  a_[0] = {0.1, 0.2};
-  auto b(a);
-  a_[1] = {0.3};
-  b.setUnit(units::m);
-  auto expected(a);
-
-  ASSERT_THROW(a *= b, except::SizeError);
-  EXPECT_EQ(a, expected);
-  ASSERT_THROW(a /= b, except::SizeError);
-  EXPECT_EQ(a, expected);
-}
-
-TEST(Variable, operator_binary_equal_with_variances_data_fail_data_integrity) {
-  auto a = makeVariable<event_list<float>>(Dimensions{{Dim::Y, 2}}, Values{},
-                                           Variances{});
-  auto a_ = a.values<event_list<float>>();
-  auto a_vars = a.variances<event_list<float>>();
-  a_[0] = {0.1, 0.2};
-  a_vars[0] = {0.1, 0.2};
-  auto b(a);
-  a_[1] = {0.3};
-  a_vars[1] = {0.3};
-  b.setUnit(units::m);
-  auto expected(a);
-
-  // Length mismatch of second events item
-  ASSERT_THROW(a *= b, except::SizeError);
-  EXPECT_EQ(a, expected);
-  ASSERT_THROW(a /= b, except::SizeError);
-  EXPECT_EQ(a, expected);
-
-  b = a;
-  b.setUnit(units::m);
-  a_vars[1].clear();
-  expected = a;
-
-  // Length mismatch between values and variances
-  ASSERT_THROW(a *= b, except::SizeError);
-  EXPECT_EQ(a, expected);
-  ASSERT_THROW(a /= b, except::SizeError);
-  EXPECT_EQ(a, expected);
-}
-
-TEST(Variable, operator_times_equal_slice_unit_fail_integrity) {
-  auto a = makeVariable<event_list<float>>(Dims{Dim::Y}, Shape{2});
-  auto a_ = a.values<event_list<float>>();
-  a_[0] = {0.1, 0.2};
-  a_[1] = {0.3};
-  auto b(a);
-  b.setUnit(units::m);
-  auto expected(a);
-
-  ASSERT_THROW(a.slice({Dim::Y, 0}) *= b.slice({Dim::Y, 0}), except::UnitError);
   EXPECT_EQ(a, expected);
 }
 
@@ -517,16 +405,6 @@ TEST(Variable, concatenate_from_slices_with_broadcast) {
   auto expected = {0.1, 0.2, 0.3, 0.0, 0.1, 0.2};
   EXPECT_EQ(out, makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 3},
                                       Values(expected), Variances(expected)));
-}
-
-TEST(EventsVariable, concatenate) {
-  const auto a = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2},
-                                                  Values{}, Variances{});
-  const auto b = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{3},
-                                                  Values{}, Variances{});
-  auto var = concatenate(a, b, Dim::Y);
-  EXPECT_EQ(var, makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{5},
-                                                  Values{}, Variances{}));
 }
 
 TEST(Variable, sum) {

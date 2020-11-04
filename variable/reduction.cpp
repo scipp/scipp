@@ -7,9 +7,7 @@
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/core/element/comparison.h"
 #include "scipp/core/element/logical.h"
-#include "scipp/core/element/reduction.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/event.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"
 
@@ -19,39 +17,7 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-void flatten_impl(const VariableView &summed, const VariableConstView &var,
-                  const VariableConstView &mask) {
-  // Note that mask may often be "empty" (0-D false). Benchmarks show no
-  // significant penalty from handling it anyway. We thus avoid two separate
-  // code branches here.
-  if (!contains_events(var))
-    throw except::TypeError("`flatten` can only be used for event data, "
-                            "use `sum` for dense data.");
-  // 1. Reserve space in output. This yields approx. 3x speedup.
-  auto summed_sizes = event::sizes(summed);
-  sum_impl(summed_sizes, event::sizes(var) * mask);
-  event::reserve(summed, summed_sizes);
-
-  // 2. Flatten dimension(s) by concatenating along events dim.
-  accumulate_in_place(summed, var, mask, element::flatten);
-}
-
-/// Flatten dimension by concatenating along events dimension.
-///
-/// This is equivalent to summing dense data along a dimension, in the sense
-/// that summing histogrammed data is the same as histogramming flattened data.
-Variable flatten(const VariableConstView &var, const Dim dim) {
-  auto dims = var.dims();
-  dims.erase(dim);
-  Variable flattened(var, dims);
-  flatten_impl(flattened, var, makeVariable<bool>(Values{true}));
-  return flattened;
-}
-
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
-  if (contains_events(var))
-    throw except::TypeError("`sum` can only be used for dense data, use "
-                            "`flatten` for event data.");
   accumulate_in_place(summed, var, element::plus_equals);
 }
 

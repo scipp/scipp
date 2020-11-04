@@ -263,10 +263,6 @@ struct is_ValueAndVariance<ValueAndVariance<T>> : std::true_type {};
 template <class T>
 inline constexpr bool is_ValueAndVariance_v = is_ValueAndVariance<T>::value;
 
-namespace detail {
-template <class T> struct element_type<ValueAndVariance<T>> { using type = T; };
-} // namespace detail
-
 } // namespace scipp::core
 
 namespace scipp {
