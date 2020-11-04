@@ -661,16 +661,16 @@ def convert_EventWorkspace_to_data_array(ws,
     # buckets. Use just a single bucket along dim and use extents given by
     # workspace edges.
     # TODO If there are events outside edges this might create buckets with
-    # events that are not within bucket bounds. Consider using bucketby
-    # instead?
+    # events that are not within bucket bounds. Consider using `bin` instead
+    # of `bins`?
     edges = coords_labs_data['coords'][dim]
     coords_labs_data['coords'][dim] = sc.concatenate(edges[dim, 0],
                                                      edges[dim, -1], dim)
 
-    coords_labs_data["data"] = sc.to_buckets(begin=begins,
-                                             end=ends,
-                                             dim='event',
-                                             data=events)
+    coords_labs_data["data"] = sc.bins(begin=begins,
+                                       end=ends,
+                                       dim='event',
+                                       data=events)
     return detail.move_to_data_array(**coords_labs_data)
 
 

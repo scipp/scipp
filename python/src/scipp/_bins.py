@@ -137,12 +137,44 @@ def _bins(obj):
 
 
 def bin(x, edges):
-    """Bin data along all dimensions given by edges.
+    """Create binned data by binning data along all dimensions given by edges.
 
     This does not histogram the data, each output bin will contain a "list" of
     input values.
 
     :return: Variable containing data in bins.
-    :seealso: :py:func:`scipp.histogram` for histogramming data
+    :seealso: :py:func:`scipp.histogram` for histogramming data,
+              :py:func:`scipp.bins` for creating binned data based on
+              explicitly given index ranges.
     """
     return _call_cpp_func(_cpp.bucketby, x, edges)
+
+
+def bins(*args, **kwargs):
+    """Create binned data, i.e., a variable with elements that are bins.
+
+    The elements of the returned variable are "bins", defined as views into
+    `data`. The returned variable keeps and manages a copy of `data`
+    internally.
+
+    The variables `begin` and `end` must have the same dims and shape and
+    `dtype=sc.dtype.int64`. The output dims and shape are given by `begin`.
+    If only `begin` is given, each bucket is a slice containing a non-range
+    slice of `data` at the given indices. If neither `begin` nor `end` are
+    given, the output has `dims=[dim]` and contains all non-range slices along
+    that dimension.
+
+    :param begin: Optional begin indices of bins, used for slicing `data`.
+                  If not provided each row of `data` is mapped to a different
+                  bin.
+    :param end: Optional end indices of bins, used for slicing `data`. If not
+                provided this is assumed to be begin + 1.
+    :param dim: Dimension of `data` that will be sliced to obtain data for any
+                given bin.
+    :param data: A variable, data array, or dataset containing combined data
+                 of all bins.
+    :return: Variable containing data in bins.
+    :seealso: :py:func:`scipp.bin` for creating such variables based on
+              binning of coord value instead of explicitly given index ranges.
+    """
+    return _call_cpp_func(_cpp.bins, *args, **kwargs)

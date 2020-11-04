@@ -18,6 +18,7 @@ INSTANTIATE_BUCKET_VARIABLE(DataArrayView, bucket<DataArray>)
 } // namespace scipp::variable
 
 namespace scipp::dataset {
+
 class BucketVariableMakerDataArray
     : public variable::BucketVariableMaker<DataArray> {
 private:
@@ -58,6 +59,28 @@ private:
   }
 };
 
+/// This is currently a dummy implemented just to make `is_buckets` work.
+class BucketVariableMakerDataset : public variable::AbstractVariableMaker {
+  bool is_buckets() const override { return true; }
+  Variable create(const DType, const Dimensions &, const units::Unit &,
+                  const bool,
+                  const std::vector<VariableConstView> &) const override {
+    throw std::runtime_error("not implemented");
+  }
+  DType elem_dtype(const VariableConstView &) const override {
+    throw std::runtime_error("undefined");
+  }
+  units::Unit elem_unit(const VariableConstView &) const override {
+    throw std::runtime_error("undefined");
+  }
+  void set_elem_unit(const VariableView &, const units::Unit &) const override {
+    throw std::runtime_error("undefined");
+  }
+  bool hasVariances(const VariableConstView &) const override {
+    throw std::runtime_error("undefined");
+  }
+};
+
 namespace {
 auto register_dataset_types(
     (variable::formatterRegistry().emplace(
@@ -67,10 +90,12 @@ auto register_dataset_types(
          dtype<bucket<DataArray>>,
          std::make_unique<variable::Formatter<bucket<DataArray>>>()),
      0));
-auto register_variable_maker_bucket_DataArray(
-    (variable::variableFactory().emplace(
-         dtype<bucket<DataArray>>,
-         std::make_unique<BucketVariableMakerDataArray>()),
-     0));
+auto register_variable_maker_bucket_DataArray((
+    variable::variableFactory().emplace(
+        dtype<bucket<DataArray>>,
+        std::make_unique<BucketVariableMakerDataArray>()),
+    variable::variableFactory().emplace(
+        dtype<bucket<Dataset>>, std::make_unique<BucketVariableMakerDataset>()),
+    0));
 } // namespace
 } // namespace scipp::dataset

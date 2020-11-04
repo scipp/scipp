@@ -59,7 +59,7 @@ class BinDataIO():
         end = VariableIO.read(values['end'])
         dim = values['data'].attrs['dim']
         data = HDF5IO.read(values['data'])
-        return sc.to_buckets(begin=begin, end=end, dim=dim, data=data)
+        return sc.bins(begin=begin, end=end, dim=dim, data=data)
 
 
 class ScippDataIO():

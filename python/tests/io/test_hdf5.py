@@ -61,18 +61,18 @@ def test_variable_2d():
 def test_variable_binned_variable():
     begin = sc.Variable(dims=['y'], values=[0, 3])
     end = sc.Variable(dims=['y'], values=[3, 4])
-    binned = sc.to_buckets(begin=begin, end=end, dim='x', data=x)
+    binned = sc.bins(begin=begin, end=end, dim='x', data=x)
     check_roundtrip(binned)
 
 
 def test_variable_binned_data_array():
-    binned = sc.to_buckets(dim='x', data=array_1d)
+    binned = sc.bins(dim='x', data=array_1d)
     check_roundtrip(binned)
 
 
 def test_variable_binned_dataset():
     d = sc.Dataset({'a': array_1d, 'b': array_1d})
-    binned = sc.to_buckets(dim='x', data=d)
+    binned = sc.bins(dim='x', data=d)
     check_roundtrip(binned)
 
 

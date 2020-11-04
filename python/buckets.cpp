@@ -18,9 +18,9 @@ namespace py = pybind11;
 
 namespace {
 
-template <class T> void bind_buckets(pybind11::module &m) {
+template <class T> void bind_bins(pybind11::module &m) {
   m.def(
-      "to_buckets",
+      "bins",
       [](const py::object &begin_obj, const py::object &end_obj, const Dim dim,
          const typename T::const_view_type &data) {
         element_array<std::pair<scipp::index, scipp::index>> indices;
@@ -89,9 +89,9 @@ template <class T> auto get_buffer(py::object &obj) {
 } // namespace
 
 void init_buckets(py::module &m) {
-  bind_buckets<Variable>(m);
-  bind_buckets<DataArray>(m);
-  bind_buckets<Dataset>(m);
+  bind_bins<Variable>(m);
+  bind_bins<DataArray>(m);
+  bind_bins<Dataset>(m);
 
   bind_bin_size<Variable>(m);
   bind_bin_size<DataArray>(m);
