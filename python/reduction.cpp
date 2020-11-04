@@ -39,9 +39,11 @@ template <class T> void bind_mean_out(py::module &m) {
 }
 
 template <class T> void bind_sum(py::module &m) {
-  m.def(
-      "sum", [](const typename T::const_view_type &x) { return sum(x); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  if constexpr (!std::is_same_v<T, Dataset>) {
+    m.def(
+        "sum", [](const typename T::const_view_type &x) { return sum(x); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  }
   m.def(
       "sum",
       [](const typename T::const_view_type &x, const Dim dim) {
@@ -60,9 +62,12 @@ template <class T> void bind_sum_out(py::module &m) {
 }
 
 template <class T> void bind_nansum(py::module &m) {
-  m.def(
-      "nansum", [](const typename T::const_view_type &x) { return nansum(x); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  if constexpr (!std::is_same_v<T, Dataset>) {
+    m.def(
+        "nansum",
+        [](const typename T::const_view_type &x) { return nansum(x); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  }
   m.def(
       "nansum",
       [](const typename T::const_view_type &x, const Dim dim) {
