@@ -24,6 +24,9 @@ TEST(DatasetOperationsTest, sum_all_dims) {
   DataArray da{makeVariable<double>(Dims{Dim::X, Dim::Y}, Values{1, 1, 1, 1},
                                     Shape{2, 2})};
   EXPECT_EQ(dataset::sum(da).data(), makeVariable<double>(Values{4}));
+
+  Dataset ds{{{"a", da}}};
+  EXPECT_EQ(dataset::nansum(ds)["a"], dataset::nansum(da));
 }
 
 TEST(DatasetOperationsTest, nansum_over_dim) {
@@ -38,6 +41,9 @@ TEST(DatasetOperationsTest, nansum_all_dims) {
   DataArray da{makeVariable<double>(
       Dims{Dim::X, Dim::Y}, Values{1.0, 1.0, double(NAN), 1.0}, Shape{2, 2})};
   EXPECT_EQ(dataset::nansum(da).data(), makeVariable<double>(Values{3}));
+
+  Dataset ds{{{"a", da}}};
+  EXPECT_EQ(dataset::nansum(ds)["a"], dataset::nansum(da));
 }
 
 TEST(DatasetOperationsTest, mean) {
