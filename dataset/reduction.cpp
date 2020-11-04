@@ -51,6 +51,10 @@ Dataset sum(const DatasetConstView &d, const Dim dim) {
       d, [](auto &&... _) { return sum(_...); }, dim);
 }
 
+Dataset sum(const DatasetConstView &d) {
+  return apply_to_items(d, [](auto &&... _) { return sum(_...); });
+}
+
 DataArray nansum(const DataArrayConstView &a) {
   return apply_to_data_and_drop_all_dims(
       a, [&](auto &&... _) { return nansum(_...); });
@@ -68,6 +72,10 @@ Dataset nansum(const DatasetConstView &d, const Dim dim) {
   // now.
   return apply_to_items(
       d, [](auto &&... _) { return nansum(_...); }, dim);
+}
+
+Dataset nansum(const DatasetConstView &d) {
+  return apply_to_items(d, [](auto &&... _) { return nansum(_...); });
 }
 
 DataArray mean(const DataArrayConstView &a, const Dim dim) {
