@@ -11,23 +11,33 @@
 using namespace scipp;
 using namespace scipp::dataset;
 
-TEST(DatasetOperationsTest, sum) {
+TEST(DatasetOperationsTest, sum_over_dim) {
   auto ds = make_1_values_and_variances<float>(
       "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
   EXPECT_EQ(dataset::sum(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{6}, Variances{45}));
   EXPECT_EQ(dataset::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{3}, Variances{27}));
-  EXPECT_THROW(dataset::sum(make_events_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
-               except::TypeError);
 }
 
-TEST(DatasetOperationsTest, nansum) {
+TEST(DatasetOperationsTest, sum_all_dims) {
+  DataArray da{makeVariable<double>(Dims{Dim::X, Dim::Y}, Values{1, 1, 1, 1},
+                                    Shape{2, 2})};
+  EXPECT_EQ(dataset::sum(da).data(), makeVariable<double>(Values{4}));
+}
+
+TEST(DatasetOperationsTest, nansum_over_dim) {
   auto ds = make_1_values_and_variances<double>(
       "a", {Dim::X, 3}, units::dimensionless, {1.0, 2.0, double(NAN)},
       {2.0, 5.0, 6.0});
   EXPECT_EQ(dataset::nansum(ds, Dim::X)["a"].data(),
             makeVariable<double>(Values{3}, Variances{7}));
+}
+
+TEST(DatasetOperationsTest, nansum_all_dims) {
+  DataArray da{makeVariable<double>(
+      Dims{Dim::X, Dim::Y}, Values{1.0, 1.0, double(NAN), 1.0}, Shape{2, 2})};
+  EXPECT_EQ(dataset::nansum(da).data(), makeVariable<double>(Values{3}));
 }
 
 TEST(DatasetOperationsTest, mean) {

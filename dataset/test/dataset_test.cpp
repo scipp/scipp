@@ -380,9 +380,6 @@ TEST(DatasetTest, sum_and_mean) {
             makeVariable<float>(Values{2}, Variances{5.0}));
   EXPECT_EQ(dataset::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{1.5}, Variances{6.75}));
-
-  EXPECT_THROW(dataset::sum(make_events_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
-               except::TypeError);
 }
 
 TEST(DatasetTest, extract_coord) {

@@ -184,10 +184,14 @@ VariableView mean(const VariableConstView &var, const Dim dim,
                   const MasksConstView &masks, const VariableView &out);
 [[nodiscard]] Variable flatten(const VariableConstView &var, const Dim dim,
                                const MasksConstView &masks);
+[[nodiscard]] Variable sum(const VariableConstView &var,
+                           const MasksConstView &masks);
 [[nodiscard]] Variable sum(const VariableConstView &var, const Dim dim,
                            const MasksConstView &masks);
 VariableView sum(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks, const VariableView &out);
+[[nodiscard]] Variable nansum(const VariableConstView &var,
+                              const MasksConstView &masks);
 [[nodiscard]] Variable nansum(const VariableConstView &var, const Dim dim,
                               const MasksConstView &masks);
 VariableView nansum(const VariableConstView &var, const Dim dim,

@@ -33,6 +33,16 @@ Dataset flatten(const DatasetConstView &d, const Dim dim) {
       d, [](auto &&... _) { return flatten(_...); }, dim);
 }
 
+DataArray sum(const DataArrayConstView &a) {
+  const auto &dimensions = a.data().dims();
+  DataArray out(a);
+  for (scipp::index i = 0; i < dimensions.ndim(); ++i) {
+    out = apply_to_data_and_drop_dim(
+        out, [](auto &&... _) { return sum(_...); }, dimensions.label(i),
+        a.masks());
+  }
+  return out;
+}
 DataArray sum(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return sum(_...); }, dim, a.masks());
@@ -45,6 +55,17 @@ Dataset sum(const DatasetConstView &d, const Dim dim) {
   // now.
   return apply_to_items(
       d, [](auto &&... _) { return sum(_...); }, dim);
+}
+
+DataArray nansum(const DataArrayConstView &a) {
+  const auto &dimensions = a.data().dims();
+  DataArray out(a);
+  for (scipp::index i = 0; i < dimensions.ndim(); ++i) {
+    out = apply_to_data_and_drop_dim(
+        out, [](auto &&... _) { return nansum(_...); }, dimensions.label(i),
+        a.masks());
+  }
+  return out;
 }
 
 DataArray nansum(const DataArrayConstView &a, const Dim dim) {

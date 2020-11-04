@@ -49,16 +49,10 @@ Variable flatten(const VariableConstView &var, const Dim dim) {
 }
 
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
-  if (contains_events(var))
-    throw except::TypeError("`sum` can only be used for dense data, use "
-                            "`flatten` for event data.");
   accumulate_in_place(summed, var, element::plus_equals);
 }
 
 void nansum_impl(const VariableView &summed, const VariableConstView &var) {
-  if (contains_events(var))
-    throw except::TypeError("`nansum` can only be used for dense data, use "
-                            "`flatten` for event data.");
   accumulate_in_place(summed, var, element::nan_plus_equals);
 }
 
