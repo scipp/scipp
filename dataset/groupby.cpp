@@ -4,15 +4,18 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/core/bucket.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 
 #include "scipp/variable/indexed_slice_view.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/util.h"
 
+#include "scipp/dataset/bucket.h"
 #include "scipp/dataset/choose.h"
-#include "scipp/dataset/event.h"
+#include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/reduction.h"
@@ -54,8 +57,15 @@ T GroupBy<T>::copy(const scipp::index group,
 /// - Default-init data.
 template <class T>
 T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
-  auto out = resize(m_data, reductionDim, size());
-  out.rename(reductionDim, dim());
+  T out;
+  if (is_buckets(m_data)) {
+    const auto out_sizes =
+        GroupBy(bucket_sizes(m_data), {key(), groups()}).sum(reductionDim);
+    out = resize(m_data, reductionDim, out_sizes);
+  } else {
+    out = resize(m_data, reductionDim, size());
+    out.rename(reductionDim, dim());
+  }
   out.coords().set(dim(), key());
   return out;
 }
@@ -90,36 +100,20 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
 }
 
 namespace groupby_detail {
-static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
-                                   const GroupByGrouping::group &group,
-                                   const Dim reductionDim,
-                                   const Variable &mask_) {
-  // Here and below: Hack to make flatten work with scalar weights. Proper
-  // solution would be to create proper output and broadcast, but this is also
-  // bad solution. Removing support for scalar weights altogether might be the
-  // way forward.
-  if (!contains_events(in.data())) {
-    if (min(in.data(), reductionDim) != max(in.data(), reductionDim))
-      throw except::EventDataError(
-          "flatten with non-constant scalar weights not possible yet.");
-  }
-  bool first = true;
-  const auto no_mask = makeVariable<bool>(Values{true});
-  for (const auto &slice : group) {
-    auto mask = mask_ ? mask_.slice(slice) : no_mask;
-    const auto &array = in.slice(slice);
-    if (contains_events(array.data()))
-      flatten_impl(out.data(), array.data(), mask);
-    else if (first) {
-      // Note that masks can be ignored since no weights are concatenated
-      out.data().assign(array.data().slice({reductionDim, 0}));
-      first = false;
-    }
-    for (auto &&[dim, coord] : out.coords())
-      if (contains_events(coord))
-        flatten_impl(coord, array.coords()[dim], mask);
-  }
-};
+static constexpr auto concatenate =
+    [](const DataArrayView &out, const auto &data_container,
+       const GroupByGrouping::group &group, const Dim reduction_dim,
+       const Variable &mask) {
+      for (const auto &slice : group) {
+        const auto data_slice = data_container.slice(slice);
+        if (mask)
+          concatenate_out<DataArray>(data_slice.data(), reduction_dim,
+                                     mask.slice(slice), out.data());
+        else
+          concatenate_out<DataArray>(data_slice.data(), reduction_dim, {},
+                                     out.data());
+      }
+    };
 
 static constexpr auto sum =
     [](const DataArrayView &out, const auto &data_container,
@@ -158,11 +152,11 @@ struct wrap {
 };
 } // namespace groupby_detail
 
-/// Flatten provided dimension in each group and return combined data.
+/// Reduce each group by concatenating elements and return combined data.
 ///
-/// This only supports event data.
-template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
-  return reduce(groupby_detail::flatten, reductionDim);
+/// This only supports bucketed data.
+template <class T> T GroupBy<T>::concatenate(const Dim reductionDim) const {
+  return reduce(groupby_detail::concatenate, reductionDim);
 }
 
 /// Reduce each group using `sum` and return combined data.

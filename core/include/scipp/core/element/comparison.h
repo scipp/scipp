@@ -29,7 +29,7 @@ constexpr auto less = overloaded{
     [](const auto &x, const auto &y) { return x < y; },
 };
 constexpr auto is_approx = overloaded{
-    transform_flags::no_out_variance, transform_flags::no_event_list_handling,
+    transform_flags::no_out_variance,
     arg_list<double, float, int64_t, int32_t, std::tuple<double, double, float>,
              std::tuple<int64_t, int32_t, int32_t>,
              std::tuple<int64_t, int64_t, int32_t>,

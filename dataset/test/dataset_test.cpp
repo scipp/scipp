@@ -128,13 +128,6 @@ TEST(DatasetTest, setCoord_shrink) {
   ASSERT_NO_THROW(d.setCoord(Dim::Y, var3));
 }
 
-TEST(DatasetTest, setCoord_fail_events_on_edges) {
-  const auto events = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{4});
-  Dataset d;
-  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{3}));
-  ASSERT_THROW(d.setCoord(Dim::Y, events), except::DimensionError);
-}
-
 TEST(DatasetTest, set_item_mask) {
   Dataset d;
   d.setData("x", makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3}));
@@ -247,14 +240,6 @@ TEST(DatasetTest, setCoord_with_name_matching_data_name) {
   ASSERT_EQ(d["b"].coords().size(), 1);
 }
 
-TEST(DatasetTest, set_event_coord) {
-  Dataset d;
-  const auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
-
-  ASSERT_NO_THROW(d.coords().set(Dim::Y, var));
-  ASSERT_EQ(d.size(), 0);
-}
-
 TEST(DatasetTest, iterators_return_types) {
   Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArrayView>));
@@ -265,23 +250,6 @@ TEST(DatasetTest, const_iterators_return_types) {
   const Dataset d;
   ASSERT_TRUE((std::is_same_v<decltype(*d.begin()), DataArrayConstView>));
   ASSERT_TRUE((std::is_same_v<decltype(*d.end()), DataArrayConstView>));
-}
-
-TEST(DatasetTest, set_dense_data_with_events_coord) {
-  auto events_variable =
-      makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto dense_variable =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 2l});
-
-  Dataset a;
-  a.setData("events_coord_and_val", dense_variable);
-  // Events handled via dtype, not dimension, so this is valid.
-  ASSERT_NO_THROW(a.coords().set(Dim::X, events_variable));
-
-  // Setting coords first yields same response.
-  Dataset b;
-  b.coords().set(Dim::X, events_variable);
-  ASSERT_NO_THROW(b.setData("events_coord_and_val", dense_variable));
 }
 
 TEST(DatasetTest, construct_from_view) {

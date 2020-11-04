@@ -17,24 +17,11 @@ def _dtype_lut():
     # handling, but will do as we add support for other types such as
     # variable-length strings.
     dtypes = [
-        d.float64, d.float32, d.int64, d.int32, d.bool, d.string,
-        d.event_list_float64, d.event_list_float32, d.event_list_int64,
-        d.event_list_int32, d.DataArray, d.Dataset
+        d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.DataArray,
+        d.Dataset
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
-
-
-def _event_list_dtype_lut():
-    from .._scipp.core import dtype as d
-    import numpy as np
-    dtypes = [
-        d.event_list_float64, d.event_list_float32, d.event_list_int64,
-        d.event_list_int32
-    ]
-    numpy_dtypes = [np.float64, np.float32, np.int64, np.int32]
-    names = [str(dtype) for dtype in dtypes]
-    return dict(zip(names, numpy_dtypes))
 
 
 class NumpyDataIO():
@@ -72,29 +59,6 @@ class ScippDataIO():
         else:
             for i in range(len(data.values)):
                 data.values[i] = HDF5IO.read(values[f'value-{i}'])
-
-
-class EventListDataIO():
-    @staticmethod
-    def write(group, data):
-        if len(data.shape) == 0:
-            dset = group.create_dataset('values', data=data.values)
-        else:
-            import h5py
-            dt = h5py.vlen_dtype(_event_list_dtype_lut()[str(data.dtype)])
-            dset = group.create_dataset('values', shape=data.shape, dtype=dt)
-            for i in range(len(data.values)):
-                dset[i] = data.values[i]
-        return dset
-
-    @staticmethod
-    def read(group, data):
-        values = group['values']
-        if len(data.shape) == 0:
-            data.values = values
-        else:
-            for i in range(len(data.values)):
-                data.values[i] = values[i]
 
 
 class StringDataIO():
@@ -142,8 +106,6 @@ def _data_handler_lut():
         handler[str(dtype)] = NumpyDataIO
     for dtype in [d.DataArray, d.Dataset]:
         handler[str(dtype)] = ScippDataIO
-    for dtype in _event_list_dtype_lut().keys():
-        handler[dtype] = EventListDataIO
     for dtype in [d.string]:
         handler[str(dtype)] = StringDataIO
     return handler

@@ -2,8 +2,6 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
-
-from itertools import product
 import numpy as np
 import scipp as sc
 
@@ -42,51 +40,4 @@ def make_dense_dataset(ndim=1,
         d["Sample"].masks["mask"] = sc.Variable(dims,
                                                 values=np.where(
                                                     a > 0, True, False))
-    return d
-
-
-def make_events_dataset(ndim=1):
-
-    dim_list = ['x', 'y', 'z', 'Q_x']
-
-    N = 50
-    M = 10
-
-    dims = []
-    shapes = []
-    for i in range(ndim):
-        n = N - (i * M)
-        dims.append(dim_list[i])
-        shapes.append(n)
-
-    var = sc.Variable(dims=dims,
-                      shape=shapes,
-                      unit=sc.units.us,
-                      dtype=sc.dtype.event_list_float64)
-    dat = sc.Variable(dims=dims,
-                      unit=sc.units.counts,
-                      values=np.ones(shapes),
-                      variances=np.ones(shapes))
-
-    indices = tuple()
-    for i in range(ndim):
-        indices += range(shapes[i]),
-    # Now construct all indices combinations using itertools
-    for ind in product(*indices):
-        # And for each indices combination, slice the original data
-        vslice = var
-        for i in range(ndim):
-            vslice = vslice[dims[i], ind[i]]
-        v = np.random.normal(float(N),
-                             scale=2.0 * M,
-                             size=int(np.random.rand() * N))
-        vslice.values = v
-
-    d = sc.Dataset()
-    for i in range(ndim):
-        d.coords[dim_list[i]] = sc.Variable([dim_list[i]],
-                                            values=np.arange(N - (i * M),
-                                                             dtype=np.float),
-                                            unit=sc.units.m)
-    d["a"] = sc.DataArray(data=dat, coords={'tof': var})
     return d

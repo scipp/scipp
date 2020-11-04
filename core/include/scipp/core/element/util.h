@@ -83,18 +83,16 @@ constexpr auto is_sorted_nonascending = overloaded{
       out = out && (left >= right);
     }};
 
-constexpr auto zip =
-    overloaded{arg_list<scipp::index>,
-               transform_flags::no_event_list_handling,
-               transform_flags::expect_no_variance_arg<0>,
-               transform_flags::expect_no_variance_arg<1>,
-               [](const units::Unit &first, const units::Unit &second) {
-                 expect::equals(first, second);
-                 return first;
-               },
-               [](const auto first, const auto second) {
-                 return std::pair{first, second};
-               }};
+constexpr auto zip = overloaded{
+    arg_list<scipp::index>, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](const units::Unit &first, const units::Unit &second) {
+      expect::equals(first, second);
+      return first;
+    },
+    [](const auto first, const auto second) {
+      return std::pair{first, second};
+    }};
 
 template <int N>
 constexpr auto get = overloaded{arg_list<std::pair<scipp::index, scipp::index>>,

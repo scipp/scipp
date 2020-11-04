@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/event.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/map_view.h"
@@ -91,13 +90,6 @@ void bind_mutable_view(py::module &m, const std::string &name) {
           R"(view on self's items)")
       .def("__contains__", &T::contains);
   bind_inequality_to_operator<T>(view);
-}
-
-template <class T>
-T filter_impl(const typename T::const_view_type &self, const Dim dim,
-              const VariableConstView &interval, bool keep_attrs) {
-  return event::filter(self, dim, interval,
-                       keep_attrs ? AttrPolicy::Keep : AttrPolicy::Drop);
 }
 
 template <class T, class... Ignored>
@@ -420,47 +412,6 @@ void init_dataset(py::module &m) {
           .rtype("DataArray")
           .param("x", "Input data array.", "DataArray")
           .c_str());
-
-  m.def("filter", filter_impl<DataArray>, py::arg("data"), py::arg("filter"),
-        py::arg("interval"), py::arg("keep_attrs") = true,
-        py::call_guard<py::gil_scoped_release>(),
-        Docstring()
-            .description(
-                "Return filtered event data. This only supports event data.")
-            .returns("Filtered data.")
-            .rtype("DataArray")
-            .param("data", "Input event data.", "DataArray")
-            .param("filter", "Name of coord to use for filtering.", "str")
-            .param("interval",
-                   "Variable defining the valid interval of coord values to "
-                   "include in the output.",
-                   "Variable")
-            .param("keep_attrs",
-                   "If `False`, attributes are not copied to the output, "
-                   "default is `True`.",
-                   "bool")
-            .c_str());
-
-  m.def("map", event::map, py::arg("function"), py::arg("iterable"),
-        py::arg("dim") = to_string(Dim::Invalid),
-        py::call_guard<py::gil_scoped_release>(),
-        Docstring()
-            .description(
-                "Return mapped event data. This only supports event data.")
-            .returns("Mapped event data.")
-            .rtype("Variable")
-            .param("function",
-                   "Data array serving as a discretized mapping function.",
-                   "DataArray")
-            .param("iterable",
-                   "Variable with values to map, must be event data.",
-                   "Variable")
-            .param("dim",
-                   "Optional dimension to use for mapping, if not given, `map` "
-                   "will attempt to determine the dimension from the "
-                   "`function` argument.",
-                   "Dim")
-            .c_str());
 
   bind_astype(dataArray);
   bind_astype(dataArrayView);

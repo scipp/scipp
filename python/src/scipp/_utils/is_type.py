@@ -32,11 +32,3 @@ def is_dataset_or_array(obj):
     Return True if the input object is either a Dataset or DataArray.
     """
     return is_dataset(obj) or is_data_array(obj)
-
-
-def is_data_events(obj):
-    if hasattr(obj, "data"):
-        if obj.data is None:
-            return False
-        return sc.contains_events(obj.data)
-    return sc.contains_events(obj)

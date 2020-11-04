@@ -53,7 +53,7 @@ public:
   explicit Variable(const VariableConstView &slice);
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const VariableConstView &parent, const Dimensions &dims);
-  Variable(const Variable &parent, VariableConceptHandle data);
+  Variable(const VariableConstView &parent, VariableConceptHandle data);
   Variable(VariableConceptHandle data);
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
@@ -191,12 +191,9 @@ Variable Variable::construct(const DType &type, Args &&... args) {
 
 template <class... Ts>
 Variable::Variable(const DType &type, Ts &&... args)
-    : Variable{
-          construct<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-                    Eigen::Matrix3d, std::string, scipp::core::time_point,
-                    event_list<double>, event_list<float>, event_list<int64_t>,
-                    event_list<int32_t>, event_list<scipp::core::time_point>>(
-              type, std::forward<Ts>(args)...)} {}
+    : Variable{construct<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
+                         Eigen::Matrix3d, std::string, scipp::core::time_point>(
+          type, std::forward<Ts>(args)...)} {}
 
 /// Non-mutable view into (a subset of) a Variable.
 class SCIPP_VARIABLE_EXPORT VariableConstView {
@@ -332,8 +329,7 @@ public:
   void expectCanSetUnit(const units::Unit &unit) const;
 
   template <class T>
-  std::tuple<VariableConstView, Dim, typename T::element_type>
-  constituents() const;
+  std::tuple<VariableView, Dim, typename T::element_type> constituents() const;
 
   template <class T> void replace_model(T model) const;
 
@@ -349,8 +345,8 @@ private:
 };
 
 SCIPP_VARIABLE_EXPORT Variable copy(const VariableConstView &var);
-
-SCIPP_VARIABLE_EXPORT bool contains_events(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT VariableView copy(const VariableConstView &dataset,
+                                        const VariableView &out);
 
 } // namespace scipp::variable
 

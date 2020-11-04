@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/shape.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/bucket_variable.tcc"
 #include "scipp/variable/buckets.h"
@@ -31,6 +32,8 @@ private:
             .dims()) // would need to select and copy slices from source coords
       throw std::runtime_error(
           "Shape changing operations with bucket<DataArray> not supported yet");
+    // TODO This may also fail if the input buffer has extra capacity (rows not
+    // in any bucket).
     auto buffer = DataArray(
         variable::variableFactory().create(type, dims, unit, variances),
         source.aligned_coords(), source.masks(), source.unaligned_coords());

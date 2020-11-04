@@ -8,7 +8,6 @@ from .._scipp import core as sc
 
 import numpy as np
 from collections import defaultdict
-from itertools import product
 
 
 def to_dict(scipp_obj):
@@ -44,13 +43,6 @@ def _vec_parser(x, shp):
     return np.array(x)
 
 
-def _event_parser(x, shp):
-    """
-    Parse event list data to numpy array of numpy arrays
-    """
-    return np.reshape([np.array(x[i]) for i in range(len(x))], shp)
-
-
 def _variable_to_dict(v):
     """
     Convert a scipp Variable to a python dict.
@@ -70,8 +62,6 @@ def _variable_to_dict(v):
         str(sc.dtype.vector_3_float64): _vec_parser,
         str(sc.dtype.matrix_3_float64): _vec_parser,
         str(sc.dtype.string): _vec_parser,
-        str(sc.dtype.event_list_float32): _event_parser,
-        str(sc.dtype.event_list_float64): _event_parser
     })
 
     str_dtype = str(v.dtype)
@@ -156,44 +146,12 @@ def _dict_to_variable(d):
         keylist.remove("shape")
     out = {}
 
-    is_event_data = False
-    if "dtype" in keylist:
-        is_event_data = str(d["dtype"]).startswith("event_list_float")
-
-    # TODO: maybe this constructor would be worth adding to the scipp module
-    # itself?
-    if is_event_data:
-        if "shape" not in d:
-            shp = d["values"].shape
+    for key in keylist:
+        if key == "dtype" and isinstance(d[key], str):
+            out[key] = getattr(sc.dtype, d[key])
         else:
-            shp = d["shape"]
-
-        var = sc.Variable(dims=d["dims"],
-                          shape=shp,
-                          dtype=getattr(sc.dtype, str(d["dtype"])))
-
-        ndim = len(d["dims"])
-        indices = tuple()
-        for i in range(ndim):
-            indices += range(shp[i]),
-        # Now construct all indices combinations using itertools
-        for ind in product(*indices):
-            # And for each indices combination, slice the original data
-            vslice = var
-            aslice = d["values"]
-            for i in range(ndim):
-                vslice = vslice[d["dims"][i], ind[i]]
-                aslice = aslice[ind[i]]
-            vslice.values = aslice
-        return var
-
-    else:
-        for key in keylist:
-            if key == "dtype" and isinstance(d[key], str):
-                out[key] = getattr(sc.dtype, d[key])
-            else:
-                out[key] = d[key]
-        return sc.Variable(**out)
+            out[key] = d[key]
+    return sc.Variable(**out)
 
 
 def _dict_to_data_array(d):

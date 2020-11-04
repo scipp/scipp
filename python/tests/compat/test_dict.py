@@ -76,19 +76,6 @@ def test_variable_0D_matrix_to_dict():
     assert var_dict["dtype"] == sc.dtype.matrix_3_float64
 
 
-def test_variable_event_to_dict():
-    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
-    var['x', 1].values.append(42)
-    var['x', 0].values.extend(np.ones(3))
-    var['x', 3].values = np.ones(6)
-    var_dict = sc.to_dict(var)
-    assert var_dict["shape"] == [4]
-    assert np.array_equal(var_dict["values"][0], [1, 1, 1])
-    assert np.array_equal(var_dict["values"][1], [42])
-    assert len(var_dict["values"][2]) == 0
-    assert np.array_equal(var_dict["values"][3], [1, 1, 1, 1, 1, 1])
-
-
 def test_variable_from_dict():
     var_dict = {
         "dims": ['x'],
@@ -164,30 +151,6 @@ def test_variable_0D_matrix_from_dict():
     assert var.dtype == sc.dtype.matrix_3_float64
 
 
-def test_variable_event_from_dict():
-    var_dict = {
-        'dims': ['x'],
-        'dtype':
-        'event_list_float64',
-        'values':
-        np.array([
-            np.array([1., 1., 1.]),
-            np.array([42.]),
-            np.array([]),
-            np.array([1., 1., 1., 1., 1., 1.])
-        ])
-    }
-    var = sc.from_dict(var_dict)
-    assert var.dims == ['x']
-    assert var.shape == [4]
-    assert np.array_equal(var['x', 0].values, [1., 1., 1.])
-    assert np.array_equal(var['x', 1].values, [42.])
-    assert len(var['x', 2].values) == 0
-    assert np.array_equal(var['x', 3].values, [1., 1., 1., 1., 1., 1.])
-    assert var.unit == sc.units.one
-    assert var.dtype == sc.dtype.event_list_float64
-
-
 def test_variable_round_trip():
     var = sc.Variable(dims=["x"],
                       values=np.arange(10.),
@@ -231,14 +194,6 @@ def test_variable_matrix_round_trip():
 def test_variable_0D_matrix_round_trip():
     var = sc.Variable(value=np.arange(1, 10).reshape(3, 3),
                       dtype=sc.dtype.matrix_3_float64)
-    assert sc.is_equal(var, sc.from_dict(sc.to_dict(var)))
-
-
-def test_variable_event_round_trip():
-    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
-    var['x', 1].values.append(42)
-    var['x', 0].values.extend(np.ones(3))
-    var['x', 3].values = np.ones(6)
     assert sc.is_equal(var, sc.from_dict(sc.to_dict(var)))
 
 

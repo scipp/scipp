@@ -50,20 +50,6 @@ TYPED_TEST(CoordsViewTest, item_access) {
   ASSERT_EQ(coords[Dim::Y], y);
 }
 
-TYPED_TEST(CoordsViewTest, events_coords_values_and_coords) {
-  Dataset d;
-  auto data = makeVariable<event_list<double>>(Dims{}, Shape{});
-  data.values<event_list<double>>()[0] = {1, 2, 3};
-  auto s_coords = makeVariable<event_list<double>>(Dims{}, Shape{});
-  s_coords.values<event_list<double>>()[0] = {4, 5, 6};
-  d.setData("test", data);
-  d.coords().set(Dim::X, s_coords);
-  ASSERT_EQ(1, d["test"].coords().size());
-  auto eventsX = d["test"].coords()[Dim::X].values<event_list<double>>()[0];
-  ASSERT_EQ(3, eventsX.size());
-  ASSERT_EQ(scipp::event_list<double>({4, 5, 6}), eventsX);
-}
-
 TYPED_TEST(CoordsViewTest, iterators_empty_coords) {
   Dataset d;
   const auto coords = TestFixture::access(d).coords();

@@ -35,16 +35,6 @@
 #include "scipp/variable/variable_factory.h"
 #include "scipp/variable/visit.h"
 
-namespace scipp::core::detail {
-template <class T> struct element_type<ValuesAndVariances<event_list<T>>> {
-  using type = T;
-};
-template <class T>
-struct element_type<ValuesAndVariances<const event_list<T>>> {
-  using type = T;
-};
-} // namespace scipp::core::detail
-
 namespace scipp::variable {
 
 namespace detail {
@@ -63,12 +53,7 @@ template <class T>
 static constexpr decltype(auto) value_maybe_variance(T &&range,
                                                      const scipp::index i) {
   if constexpr (has_variances_v<std::decay_t<T>>) {
-    if constexpr (core::is_events_v<decltype(range.values.data()[0])>)
-      return ValuesAndVariances{range.values.data()[i],
-                                range.variances.data()[i]};
-    else
-      return ValueAndVariance{range.values.data()[i],
-                              range.variances.data()[i]};
+    return ValueAndVariance{range.values.data()[i], range.variances.data()[i]};
   } else {
     return range.data()[i];
   }
@@ -77,98 +62,17 @@ static constexpr decltype(auto) value_maybe_variance(T &&range,
 template <class T> struct is_eigen_type : std::false_type {};
 template <class T, int Rows, int Cols>
 struct is_eigen_type<Eigen::Matrix<T, Rows, Cols>> : std::true_type {};
-template <class T, int Rows, int Cols>
-struct is_eigen_type<event_list<Eigen::Matrix<T, Rows, Cols>>>
-    : std::true_type {};
 template <class T>
 inline constexpr bool is_eigen_type_v = is_eigen_type<T>::value;
 
-namespace transform_detail {
-template <class T> struct is_events : std::false_type {};
-template <class T> struct is_events<event_list<T>> : std::true_type {};
-template <class T>
-struct is_events<ValuesAndVariances<event_list<T>>> : std::true_type {};
-template <class T>
-struct is_events<ValuesAndVariances<const event_list<T>>> : std::true_type {};
-template <class T> inline constexpr bool is_events_v = is_events<T>::value;
-} // namespace transform_detail
-
-template <class T> static auto check_and_get_size(const T &a) {
-  return scipp::size(a);
-}
-
-template <class T1, class T2>
-static auto check_and_get_size(const T1 &a, const T2 &b) {
-  if constexpr (transform_detail::is_events_v<T1>) {
-    if constexpr (transform_detail::is_events_v<T2>)
-      core::expect::sizeMatches(a, b);
-    return scipp::size(a);
-  } else {
-    return scipp::size(b);
-  }
-}
-
-struct EventsFlag {};
-
 // Helpers for handling a tuple of indices (integers or ViewIndex).
 namespace iter {
-
-template <class T, size_t... I>
-static constexpr void increment_impl(T &&indices,
-                                     std::index_sequence<I...>) noexcept {
-  auto inc = [](auto &&i) {
-    if constexpr (std::is_same_v<std::decay_t<decltype(i)>, core::ViewIndex>)
-      i.increment();
-    else
-      ++i;
-  };
-  (inc(std::get<I>(indices)), ...);
-}
-template <class T> static constexpr void increment(T &indices) noexcept {
-  increment_impl(indices, std::make_index_sequence<std::tuple_size_v<T>>{});
-}
-
-template <class T, size_t... I>
-static constexpr void advance_impl(T &&indices, const scipp::index distance,
-                                   std::index_sequence<I...>) noexcept {
-  auto inc = [distance](auto &&i) {
-    if constexpr (std::is_same_v<std::decay_t<decltype(i)>, core::ViewIndex>)
-      i.setIndex(i.index() + distance);
-    else
-      i += distance;
-  };
-  (inc(std::get<I>(indices)), ...);
-}
-template <class T>
-static constexpr void advance(T &indices,
-                              const scipp::index distance) noexcept {
-  advance_impl(indices, distance,
-               std::make_index_sequence<std::tuple_size_v<T>>{});
-}
 
 template <class T> static constexpr auto array_params(T &&iterable) noexcept {
   if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
     return iterable.values;
   else
     return iterable;
-}
-
-template <class T> static constexpr auto begin_index(T &&iterable) noexcept {
-  if constexpr (std::is_base_of_v<core::element_array_view, std::decay_t<T>>)
-    return iterable.begin_index();
-  else if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
-    return begin_index(iterable.values);
-  else
-    return scipp::index(0);
-}
-
-template <class T> static constexpr auto end_index(T &&iterable) noexcept {
-  if constexpr (std::is_base_of_v<core::element_array_view, std::decay_t<T>>)
-    return iterable.end_index();
-  else if constexpr (is_ValuesAndVariances_v<std::decay_t<T>>)
-    return end_index(iterable.values);
-  else
-    return scipp::size(iterable);
 }
 
 template <int N, class T> static constexpr auto get(const T &index) noexcept {
@@ -179,14 +83,6 @@ template <int N, class T> static constexpr auto get(const T &index) noexcept {
       return std::get<N>(index).get();
   } else
     return std::get<N>(index.get());
-}
-
-template <class T>
-static constexpr auto has_stride_zero(const T &index) noexcept {
-  if constexpr (std::is_integral_v<T>)
-    return false;
-  else
-    return index.has_stride_zero();
 }
 
 } // namespace iter
@@ -204,9 +100,6 @@ static constexpr void call(Op &&op, const Indices &indices, Out &&out,
   out_ = call_impl(std::forward<Op>(op), indices,
                    std::make_index_sequence<sizeof...(Args)>{},
                    std::forward<Args>(args)...);
-  // If the output is events, ValuesAndVariances::operator= already does the job
-  // in the line above (since ValuesAndVariances wraps references), if not
-  // events then copy to actual output.
   if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(out_)>>) {
     out.values.data()[i] = out_.value;
     out.variances.data()[i] = out_.variance;
@@ -249,56 +142,22 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
 
 template <class Op, class Out, class... Ts>
 static void transform_elements(Op op, Out &&out, Ts &&... other) {
-  if constexpr (transform_detail::is_events_v<std::decay_t<Out>>) {
-    auto run = [&](auto indices, const auto &end) {
-      for (; std::get<0>(indices) != end; iter::increment(indices))
-        call(op, indices, out, other...);
-    };
-    const auto begin =
-        std::tuple{iter::begin_index(out), iter::begin_index(other)...};
-    run(begin, iter::end_index(out));
-  } else {
-    auto run = [&](auto indices, const auto &end) {
-      for (; indices != end; indices.increment())
-        call(op, indices, out, other...);
-    };
-    const auto begin =
-        core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
-    auto run_parallel = [&](const auto &range) {
-      auto indices = begin;
-      indices.set_index(range.begin());
-      auto end = begin;
-      end.set_index(range.end());
-      run(indices, end);
-    };
-    core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
-                                 run_parallel);
-  }
+  auto run = [&](auto indices, const auto &end) {
+    for (; indices != end; indices.increment())
+      call(op, indices, out, other...);
+  };
+  const auto begin =
+      core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
+  auto run_parallel = [&](const auto &range) {
+    auto indices = begin;
+    indices.set_index(range.begin());
+    auto end = begin;
+    end.set_index(range.end());
+    run(indices, end);
+  };
+  core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
+                               run_parallel);
 }
-
-/// Broadcast a constant to arbitrary size. Helper for TransformEvents.
-///
-/// This helper allows the use of a common transform implementation when mixing
-/// events and non-event data.
-template <class T> struct broadcast {
-  using value_type = std::remove_const_t<T>;
-  constexpr auto operator[](const scipp::index) const noexcept { return value; }
-  constexpr auto data() const noexcept { return *this; }
-  T value;
-};
-template <class T> broadcast(T) -> broadcast<T>;
-
-template <class T> static decltype(auto) maybe_broadcast(T &&value) {
-  if constexpr (transform_detail::is_events_v<std::decay_t<T>>)
-    return std::forward<T>(value);
-  else
-    return broadcast{value};
-}
-
-template <class T> struct is_broadcast : std::false_type {};
-template <class T> struct is_broadcast<broadcast<T>> : std::true_type {};
-template <class T>
-inline constexpr bool is_broadcast_v = is_broadcast<T>::value;
 
 template <class T>
 struct is_eigen_expression
@@ -310,27 +169,6 @@ template <class T> static constexpr auto maybe_eval(T &&_) {
   else
     return std::forward<T>(_);
 }
-
-/// Functor for implementing operations with event data, see also
-/// TransformEventsInPlace.
-struct TransformEvents : public detail::EventsFlag {
-  template <class Op, class... Ts>
-  constexpr auto operator()(const Op &op, const Ts &... args) const {
-    event_list<std::invoke_result_t<Op, core::detail::element_type_t<Ts>...>>
-        vals(check_and_get_size(args...));
-    if constexpr (!std::is_base_of_v<core::transform_flags::no_out_variance_t,
-                                     Op> &&
-                  (has_variances_v<Ts> || ...)) {
-      auto vars(vals);
-      ValuesAndVariances out{vals, vars};
-      transform_elements(op, out, maybe_broadcast(args)...);
-      return std::pair(std::move(vals), std::move(vars));
-    } else {
-      transform_elements(op, vals, maybe_broadcast(args)...);
-      return vals;
-    }
-  }
-};
 
 template <class Op, class... Args>
 constexpr bool check_all_or_none_variances =
@@ -424,12 +262,7 @@ template <class Op> struct Transform {
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
         (handles.hasVariances() || ...);
-    units::Unit unit;
-    // Workaround for OSX clang issue with broken overload resolution
-    if constexpr (std::is_base_of_v<EventsFlag, Op>)
-      unit = op.base_op()(variableFactory().elem_unit(*handles.m_var)...);
-    else
-      unit = op(variableFactory().elem_unit(*handles.m_var)...);
+    auto unit = op.base_op()(variableFactory().elem_unit(*handles.m_var)...);
     auto out = variableFactory().create(dtype<Out>, dims, unit, variances,
                                         *handles.m_var...);
     do_transform(op, variable_access<Out>(out), std::tuple<>(),
@@ -438,13 +271,6 @@ template <class Op> struct Transform {
   }
 };
 template <class Op> Transform(Op) -> Transform<Op>;
-
-template <class T, class Handle> struct optional_events;
-template <class T, class... Known>
-struct optional_events<T, std::tuple<Known...>> {
-  using type = std::conditional_t<std::disjunction_v<std::is_same<T, Known>...>,
-                                  std::tuple<T>, std::tuple<>>;
-};
 
 // std::tuple_cat does not work correctly on with clang-7. Issue with
 // Eigen::Vector3d.
@@ -455,72 +281,10 @@ struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
     : public tuple_cat<C<Ts1..., Ts2...>, Ts3...> {};
 template <class... Ts> using tuple_cat_t = typename tuple_cat<Ts...>::type;
 
-template <class T1, class T2, class Handle> struct optional_events_pair;
-template <class T1, class T2, class... Known>
-struct optional_events_pair<T1, T2, std::tuple<Known...>> {
-  using type =
-      std::conditional_t<std::disjunction_v<std::is_same<T1, Known>...> &&
-                             std::disjunction_v<std::is_same<T2, Known>...>,
-                         std::tuple<std::tuple<T1, T2>>, std::tuple<>>;
-};
-using supported_event_types =
-    std::tuple<double, float, int64_t, int32_t, bool, event_list<double>,
-               event_list<float>, event_list<int64_t>, event_list<int32_t>,
-               event_list<bool>>;
-template <class T>
-using optional_events_t =
-    typename optional_events<T, supported_event_types>::type;
-template <class T1, class T2>
-using optional_events_pair_t =
-    typename optional_events_pair<T1, T2, supported_event_types>::type;
-
-/// Augment a tuple of types with the corresponding events types, if they exist.
-struct augment {
-  template <class... Ts> static auto insert_events(const std::tuple<Ts...> &) {
-    return tuple_cat_t<std::tuple<Ts...>,
-                       optional_events_t<event_list<Ts>>...>{};
-  }
-
-  template <class... Ts>
-  static auto insert_events_in_place(const std::tuple<Ts...> &tuple) {
-    return insert_events(tuple);
-  }
-
-  template <class... T>
-  static auto insert_events_in_place(const std::tuple<std::tuple<T>...> &) {
-    return tuple_cat_t<std::tuple<std::tuple<T>...>,
-                       optional_events_t<event_list<T>>...>{};
-  }
-  template <class... First, class... Second>
-  static auto
-  insert_events_in_place(const std::tuple<std::tuple<First, Second>...> &) {
-    return tuple_cat_t<
-        std::tuple<std::tuple<First, Second>...>,
-        optional_events_pair_t<event_list<First>, Second>...,
-        optional_events_pair_t<event_list<First>, event_list<Second>>...>{};
-  }
-  template <class... T>
-  static auto insert_events(const std::tuple<std::tuple<T>...> &) {
-    return tuple_cat_t<std::tuple<std::tuple<T>...>,
-                       optional_events_t<event_list<T>>...>{};
-  }
-  template <class... First, class... Second>
-  static auto insert_events(const std::tuple<std::tuple<First, Second>...> &) {
-    return tuple_cat_t<
-        std::tuple<std::tuple<First, Second>...>,
-        optional_events_pair_t<First, event_list<Second>>...,
-        optional_events_pair_t<event_list<First>, Second>...,
-        optional_events_pair_t<event_list<First>, event_list<Second>>...>{};
-  }
-};
-
-template <class Op, class EventsOp> struct overloaded_events : Op, EventsOp {
+template <class Op> struct wrap_eigen : Op {
   const Op &base_op() const noexcept { return *this; }
   template <class... Ts> constexpr auto operator()(Ts &&... args) const {
-    if constexpr ((transform_detail::is_events_v<std::decay_t<Ts>> || ...))
-      return EventsOp::operator()(static_cast<const Op &>(*this),
-                                  std::forward<Ts>(args)...);
-    else if constexpr ((is_eigen_type_v<std::decay_t<Ts>> || ...))
+    if constexpr ((is_eigen_type_v<std::decay_t<Ts>> || ...))
       // WARNING! The explicit specification of the template arguments of
       // operator() is EXTREMELY IMPORTANT. It ensures that Eigen types are
       // passed BY REFERENCE and NOT BY VALUE. Passing by value leads to
@@ -532,15 +296,7 @@ template <class Op, class EventsOp> struct overloaded_events : Op, EventsOp {
       return Op::template operator()(std::forward<Ts>(args)...);
   }
 };
-template <class... Ts> overloaded_events(Ts...) -> overloaded_events<Ts...>;
-
-template <class T>
-struct is_any_events : std::conditional_t<core::is_events<T>::value,
-                                          std::true_type, std::false_type> {};
-template <class... Ts>
-struct is_any_events<std::tuple<Ts...>>
-    : std::conditional_t<(core::is_events<Ts>::value || ...), std::true_type,
-                         std::false_type> {};
+template <class... Ts> wrap_eigen(Ts...) -> wrap_eigen<Ts...>;
 
 } // namespace detail
 
@@ -572,59 +328,32 @@ template <bool dry_run> struct in_place {
   static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
     const auto begin =
-        std::tuple{iter::begin_index(arg), iter::begin_index(other)...};
-    // For event data we can fail for any subitem if the sizes to not match.
-    // To avoid partially modifying (and thus corrupting) data in an in-place
-    // operation we need to do the checks before any modification happens.
-    if constexpr (core::is_events_v<typename std::decay_t<T>::value_type> ||
-                  (core::is_events_v<typename std::decay_t<Ts>::value_type> ||
-                   ...)) {
-      const auto end = iter::end_index(arg);
-      for (auto i = begin; std::get<0>(i) != end; iter::increment(i)) {
-        call_in_place(
-            [](auto &&... args) {
-              if constexpr (std::is_base_of_v<EventsFlag, Op>)
-                static_cast<void>(check_and_get_size(args...));
-            },
-            i, arg, other...);
-      }
-    }
+        core::MultiIndex(iter::array_params(arg), iter::array_params(other)...);
     if constexpr (dry_run)
       return;
 
-    if constexpr (transform_detail::is_events_v<std::decay_t<T>> ||
-                  (transform_detail::is_events_v<std::decay_t<Ts>> || ...)) {
-      auto run = [&](auto indices, const auto &end) {
-        for (; std::get<0>(indices) != end; iter::increment(indices))
-          call_in_place(op, indices, arg, other...);
-      };
-      run(begin, iter::end_index(arg));
+    auto run = [&](auto indices, const auto &end) {
+      for (; indices != end; indices.increment())
+        call_in_place(op, indices, arg, other...);
+    };
+    if (begin.has_stride_zero()) {
+      // The output has a dimension with stride zero so parallelization must
+      // be done differently. Explicit and precise control of chunking is
+      // required to avoid multiple threads writing to the same output. Not
+      // implemented for now.
+      auto end = begin;
+      end.set_index(arg.size());
+      run(begin, end);
     } else {
-      auto run = [&](auto indices, const auto &end) {
-        for (; indices != end; indices.increment())
-          call_in_place(op, indices, arg, other...);
+      auto run_parallel = [&](const auto &range) {
+        auto indices = begin;
+        indices.set_index(range.begin());
+        auto end = begin;
+        end.set_index(range.end());
+        run(indices, end);
       };
-      const auto begin_ = core::MultiIndex(iter::array_params(arg),
-                                           iter::array_params(other)...);
-      if (iter::has_stride_zero(std::get<0>(begin))) {
-        // The output has a dimension with stride zero so parallelization must
-        // be done differently. Explicit and precise control of chunking is
-        // required to avoid multiple threads writing to the same output. Not
-        // implemented for now.
-        auto end = begin_;
-        end.set_index(arg.size());
-        run(begin_, end);
-      } else {
-        auto run_parallel = [&](const auto &range) {
-          auto indices = begin_;
-          indices.set_index(range.begin());
-          auto end = begin_;
-          end.set_index(range.end());
-          run(indices, end);
-        };
-        core::parallel::parallel_for(
-            core::parallel::blocked_range(0, arg.size()), run_parallel);
-      }
+      core::parallel::parallel_for(core::parallel::blocked_range(0, arg.size()),
+                                   run_parallel);
     }
   }
 
@@ -704,22 +433,6 @@ template <bool dry_run> struct in_place {
     }
   }
 
-  /// Functor for implementing in-place operations with event data.
-  ///
-  /// This is (conditionally) added to an overloaded set of operators provided
-  /// by the user. If the data is events the overloads by this functor will
-  /// match in place of the user-provided ones. We then recursively call the
-  /// transform function. In this second call we have descended into the events
-  /// container so now the user-provided overload will match directly.
-  struct TransformEventsInPlace : public detail::EventsFlag {
-    template <class Op, class... Ts>
-    constexpr void operator()(const Op &op, Ts &&... args) const {
-      using namespace detail;
-      static_cast<void>(check_and_get_size(args...));
-      transform_in_place_impl(op, maybe_broadcast(args)...);
-    }
-  };
-
   /// Functor for in-place transformation, applying `op` to all elements.
   ///
   /// This is responsible for converting the client-provided functor `Op` which
@@ -749,7 +462,7 @@ template <bool dry_run> struct in_place {
   };
   // gcc cannot deal with deduction guide for nested class => helper function.
   template <class Op> static auto makeTransformInPlace(Op op) {
-    return TransformInPlace<Op>{op};
+    return TransformInPlace<Op>{detail::wrap_eigen{op}};
   }
 
   template <class... Ts, class Op, class Var, class... Other>
@@ -757,30 +470,8 @@ template <bool dry_run> struct in_place {
                              const Other &... other) {
     using namespace detail;
     try {
-      // If a event_list<T> is specified explicitly as a type we assume
-      // that the caller provides a matching overload. Otherwise we assume the
-      // provided operator is for individual elements (regardless of whether
-      // they are elements of dense or event data), so we add overloads for
-      // event data processing.
-      if constexpr (std::is_base_of_v<
-                        core::transform_flags::no_event_list_handling_t, Op> ||
-                    (is_any_events<Ts>::value || ...)) {
-        visit_impl<Ts...>::apply(makeTransformInPlace(op), var, other...);
-      } else if constexpr (sizeof...(Other) > 1) {
-        // No event data supported yet in this case.
-        variable::visit(std::tuple<Ts...>{})
-            .apply(makeTransformInPlace(op), var, other...);
-      } else {
-        // Note that if only one of the inputs is events it must be the one
-        // being transformed in-place, so there are only three cases here.
-        variable::visit(
-            augment::insert_events_in_place(
-                std::tuple<
-                    visit_detail::maybe_duplicate<Ts, Var, Other...>...>{}))
-            .apply(makeTransformInPlace(
-                       overloaded_events{op, TransformEventsInPlace{}}),
-                   var, other...);
-      }
+      variable::visit(std::tuple<Ts...>{})
+          .apply(makeTransformInPlace(op), var, other...);
     } catch (const std::bad_variant_access &) {
       throw except::TypeError("Cannot apply operation to item dtypes ", var,
                               other...);
@@ -884,17 +575,7 @@ template <class... Ts, class Op, class... Vars>
 Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   using namespace detail;
   try {
-    if constexpr (std::is_base_of_v<
-                      core::transform_flags::no_event_list_handling_t, Op> ||
-                  (is_any_events<Ts>::value || ...) || sizeof...(Vars) > 2) {
-      return visit_impl<Ts...>::apply(Transform{op}, vars...);
-    } else {
-      return variable::visit(
-                 augment::insert_events(
-                     std::tuple<
-                         visit_detail::maybe_duplicate<Ts, Vars...>...>{}))
-          .apply(Transform{overloaded_events{op, TransformEvents{}}}, vars...);
-    }
+    return visit_impl<Ts...>::apply(Transform{wrap_eigen{op}}, vars...);
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes ", vars...);
   }

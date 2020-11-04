@@ -27,18 +27,20 @@ VariableConstView::constituents() const {
 }
 
 template <class T>
-std::tuple<VariableConstView, Dim, typename T::element_type>
+std::tuple<VariableView, Dim, typename T::element_type>
 VariableView::constituents() const {
   auto view = *this;
   auto &model = requireT<DataModel<T>>(m_mutableVariable->data());
   view.m_variable = &model.indices();
+  view.m_mutableVariable = &model.indices();
   return {view, model.dim(), model.buffer()};
 }
 
 namespace {
 auto contiguous_indices(const VariableConstView &parent,
                         const Dimensions &dims) {
-  auto indices = broadcast(parent, dims);
+  auto indices = Variable(parent, dims);
+  copy(parent, indices);
   scipp::index size = 0;
   for (auto &range : indices.values<core::bucket_base::range_type>()) {
     range.second += size - range.first;
@@ -100,8 +102,7 @@ public:
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
   template std::tuple<Variable, Dim, typename __VA_ARGS__::buffer_type>        \
   Variable::to_constituents<__VA_ARGS__>();                                    \
-  template std::tuple<VariableConstView, Dim,                                  \
-                      typename __VA_ARGS__::element_type>                      \
+  template std::tuple<VariableView, Dim, typename __VA_ARGS__::element_type>   \
   VariableView::constituents<__VA_ARGS__>() const;                             \
   template std::tuple<VariableConstView, Dim,                                  \
                       typename __VA_ARGS__::const_element_type>                \

@@ -18,14 +18,6 @@ protected:
       Variances{7, 8, 9, 10, 11, 12})};
 };
 
-TEST_F(SubspanViewTest, fail_events) {
-  auto events = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  EXPECT_THROW([[maybe_unused]] auto view = subspan_view(events, Dim::X),
-               except::TypeError);
-  EXPECT_THROW([[maybe_unused]] auto view = subspan_view(events, Dim::Y),
-               except::TypeError);
-}
-
 TEST_F(SubspanViewTest, fail_not_inner) {
   EXPECT_THROW([[maybe_unused]] auto view = subspan_view(var, Dim::Y),
                except::DimensionError);

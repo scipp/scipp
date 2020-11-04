@@ -389,9 +389,8 @@ namespace {
 auto unaligned_by_dim_slice = [](const auto &item, const Dim dim) {
   const auto &[key, var] = item;
   if constexpr (std::is_same_v<std::decay_t<decltype(item.first)>, Dim>) {
-    const bool is_dimension_coord =
-        !contains_events(var) && var.dims().contains(key);
-    return !contains_events(var) && var.dims().contains(dim) &&
+    const bool is_dimension_coord = var.dims().contains(key);
+    return var.dims().contains(dim) &&
            (is_dimension_coord ? key == dim : var.dims().inner() == dim);
   } else {
     return false;

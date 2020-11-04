@@ -9,9 +9,6 @@
 namespace scipp::variable {
 
 // Helpers for in-place reductions and reductions with groupby.
-SCIPP_VARIABLE_EXPORT void flatten_impl(const VariableView &summed,
-                                        const VariableConstView &var,
-                                        const VariableConstView &mask);
 SCIPP_VARIABLE_EXPORT void sum_impl(const VariableView &summed,
                                     const VariableConstView &var);
 SCIPP_VARIABLE_EXPORT void all_impl(const VariableView &out,

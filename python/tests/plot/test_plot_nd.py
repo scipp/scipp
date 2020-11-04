@@ -6,7 +6,7 @@
 import numpy as np
 import pytest
 import scipp as sc
-from plot_helper import make_dense_dataset, make_events_dataset
+from plot_helper import make_dense_dataset
 from scipp.plot import plot
 
 # TODO: For now we are just checking that the plot does not throw any errors.
@@ -54,30 +54,6 @@ def test_plot_convenience_methods():
     sc.plot.superplot(d)
     sc.plot.image(d)
     sc.plot.scatter3d(d)
-
-
-@pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
-                  "be constructed for now: 2 dims including events.")
-def test_plot_3d_events_data_with_int_bins():
-    d = make_events_dataset(ndim=3)
-    plot(d, bins=50)
-
-
-@pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
-                  "be constructed for now: 2 dims including events.")
-def test_plot_3d_events_data_with_nparray_bins():
-    d = make_events_dataset(ndim=3)
-    plot(d, bins=np.linspace(0.0, 105.0, 50))
-
-
-@pytest.mark.skip(reason="RuntimeError: Only the simple case histograms may "
-                  "be constructed for now: 2 dims including events.")
-def test_plot_3d_events_data_with_Variable_bins():
-    d = make_events_dataset(ndim=3)
-    bins = sc.Variable(['tof'],
-                       values=np.linspace(0.0, 105.0, 50),
-                       unit=sc.units.us)
-    plot(d, bins=bins)
 
 
 def test_plot_variable_3d():

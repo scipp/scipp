@@ -8,10 +8,6 @@
 
 namespace scipp::dataset {
 
-SCIPP_DATASET_EXPORT DataArray flatten(const DataArrayConstView &a,
-                                       const Dim dim);
-SCIPP_DATASET_EXPORT Dataset flatten(const DatasetConstView &d, const Dim dim);
-
 SCIPP_DATASET_EXPORT DataArray sum(const DataArrayConstView &a);
 SCIPP_DATASET_EXPORT DataArray sum(const DataArrayConstView &a, const Dim dim);
 SCIPP_DATASET_EXPORT Dataset sum(const DatasetConstView &d, const Dim dim);
