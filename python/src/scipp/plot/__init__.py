@@ -4,40 +4,55 @@
 # @author Neil Vaytet
 
 from .plot import plot as _plot
+import warnings
+
+is_doc_build = False
+
+try:
+    import matplotlib as mpl
+except ImportError:
+    mpl = None
+
+try:
+    from IPython import get_ipython
+    ipy = get_ipython()
+except ImportError:
+    ipy = None
 
 # If we are running inside a notebook, then make plot interactive by default.
 # From: https://stackoverflow.com/a/22424821
-is_doc_build = False
-try:
-    from IPython import get_ipython
-    import matplotlib as mpl
-    ipy = get_ipython()
-    if ipy is not None:
-
-        # Check if a docs build is requested in the metadata. If so,
-        # use the default Qt/inline backend.
-        cfg = ipy.config
-        try:
-            meta = cfg["Session"]["metadata"]
-            if hasattr(meta, "to_dict"):
-                meta = meta.to_dict()
+if ipy is not None:
+    # Check if a docs build is requested in the metadata. If so,
+    # use the default Qt/inline backend.
+    cfg = ipy.config
+    meta = cfg["Session"]["metadata"]
+    if hasattr(meta, "to_dict"):
+        meta = meta.to_dict()
+        if "scipp_docs_build" in meta:
             is_doc_build = meta["scipp_docs_build"]
-        except KeyError:
-            is_doc_build = False
-
-        # If we are in an IPython kernel, select widget backend
-        if "IPKernelApp" in ipy.config and not is_doc_build:
+    # If we are in an IPython kernel, try to select widget backend
+    if ("IPKernelApp" in ipy.config) and (not is_doc_build) and (mpl
+                                                                 is not None):
+        try:
+            # Attempt to use ipympl backend
+            from ipympl.backend_nbagg import Canvas
             mpl.use('module://ipympl.backend_nbagg')
             # Hide the figure header:
             # see https://github.com/matplotlib/ipympl/issues/229
-            from ipympl.backend_nbagg import Canvas
             Canvas.header_visible.default_value = False
+        except ImportError:
+            warnings.warn(
+                "The ipympl backend, which is required for "
+                "interactive plots in Jupyter, was not found. "
+                "Falling back to a static backend. Use "
+                "conda install -c conda-forge ipympl to install ipympl.")
+
+try:
     import matplotlib.pyplot as plt
-
 except ImportError:
-    pass
+    plt = None
 
-if is_doc_build:
+if is_doc_build and plt is not None:
     plt.rcParams.update({'figure.max_open_warning': 0})
 
 
@@ -45,7 +60,7 @@ def _is_interactive():
     """
     Determine if we are using a static or interactive backend
     """
-    return mpl.get_backend().lower().endswith('nbagg')
+    return not mpl.get_backend().lower().endswith('inline')
 
 
 def plot(*args, **kwargs):
@@ -163,6 +178,10 @@ def plot(*args, **kwargs):
     :type vmax: float, optional
 
     """
+
+    if plt is None:
+        raise RuntimeError("Matplotlib not found. Matplotlib is required to "
+                           "use plotting in Scipp.")
 
     # Switch auto figure display off for better control over when figures are
     # displayed.

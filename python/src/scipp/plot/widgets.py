@@ -19,132 +19,101 @@ class PlotWidgets:
                  dim_to_shape=None,
                  positions=None,
                  masks=None,
-                 button_options=None):
+                 multid_coord=None):
 
-        self.rescale_button = ipw.Button(description="Rescale")
-        if ndim == len(button_options):
-            self.rescale_button.layout.display = 'none'
+        self.multid_coord = multid_coord
+
+        # Dict of callbacks passed on from the `PlotController`
         self.interface = {}
-
         # The container list to hold all widgets
-        self.container = [self.rescale_button]
-
-        # Initialise slider and label containers
-        self.dim_labels = {}
+        self.container = []
+        # unit_labels: label to display slider coordinate unit
+        self.unit_labels = {}
+        # slider: slider to slice along additional dimensions of the array
         self.slider = {}
+        # index_to_dim: map slider index to coordinate dim
+        self.index_to_dim = {}
+        # slider_readout: label to display range currently covered by slider
         self.slider_readout = {}
+        # thickness_slider: slider to control thickness of slice
         self.thickness_slider = {}
-        self.buttons = {}
+        # dim_buttons: buttons to control which dimension the slider controls
+        self.dim_buttons = {}
+        # profile_button: button to show/hide a profile plot along selected dim
         self.profile_button = {}
-        self.showhide = {}
-        self.button_axis_to_dim = {}
+        # continuous_update: checkbox to turn on/off slider continuous update
         self.continuous_update = {}
+        # all_masks_button: button to hide/show all masks in a single click
         self.all_masks_button = None
 
-        # Now begin loop to construct sliders
-
+        slider_dims = {}
         for ax, dim in axes.items():
+            if isinstance(ax, int) and dim != positions:
+                slider_dims[ax] = dim
+        possible_dims = list(axes.values())
 
-            string_ax = isinstance(ax, str)
+        # Now begin loop to construct sliders
+        for index, (ax, dim) in enumerate(slider_dims.items()):
 
-            # Determine if slider should be disabled or not:
-            # In the case of 3d projection, disable sliders that are for
-            # dims < 3, or sliders that contain vectors.
-            disabled = False
-            if positions is not None:
-                disabled = dim == positions
-            elif string_ax:
-                disabled = True
+            self.unit_labels[index] = ipw.Label(layout={"width": "60px"})
 
-            self.dim_labels[dim] = ipw.Label(layout={"width": "100px"})
+            self.slider[index] = ipw.IntSlider(step=1,
+                                               continuous_update=True,
+                                               readout=False,
+                                               layout={"width": "200px"})
 
-            # Add a slider to slice along additional dimensions of the array
-            self.slider[dim] = ipw.IntSlider(min=0,
-                                             step=1,
-                                             continuous_update=True,
-                                             readout=False,
-                                             disabled=disabled,
-                                             layout={"width": "200px"})
-
-            self.continuous_update[dim] = ipw.Checkbox(
+            self.continuous_update[index] = ipw.Checkbox(
                 value=True,
                 description="Continuous update",
                 indent=False,
-                layout={"width": "20px"},
-                disabled=disabled)
-            ipw.jslink((self.continuous_update[dim], 'value'),
-                       (self.slider[dim], 'continuous_update'))
+                layout={"width": "20px"})
+            ipw.jslink((self.continuous_update[index], 'value'),
+                       (self.slider[index], 'continuous_update'))
 
-            self.thickness_slider[dim] = ipw.FloatSlider(
-                min=0.,
+            self.thickness_slider[index] = ipw.IntSlider(
+                min=1,
+                step=1,
                 description="Thickness",
                 continuous_update=False,
                 readout=False,
-                disabled=disabled,
-                layout={'width': "180px"})
+                layout={'width': "180px"},
+                style={'description_width': 'initial'})
+            # If there is a multid coord, we only allow slices of thickness 1
+            if self.multid_coord is not None:
+                self.thickness_slider[index].layout.display = 'none'
 
-            self.slider_readout[dim] = ipw.Label()
+            self.slider_readout[index] = ipw.Label()
 
-            self.profile_button[dim] = ipw.Button(description="Profile",
-                                                  disabled=disabled,
-                                                  button_style="",
-                                                  layout={"width": "initial"})
-
-            if ndim == len(button_options):
-                self.slider[dim].layout.display = 'none'
-                self.slider_readout[dim].layout.display = 'none'
-                self.continuous_update[dim].layout.display = 'none'
-                self.thickness_slider[dim].layout.display = 'none'
-                self.profile_button[dim].layout.display = 'none'
+            self.profile_button[index] = ipw.Button(
+                description="Profile",
+                button_style="",
+                layout={"width": "initial"})
 
             # Add one set of buttons per dimension
-            self.buttons[dim] = ipw.ToggleButtons(
-                options=button_options,
-                description='',
-                value=ax if string_ax else None,
-                disabled=False,
-                button_style='',
-                style={"button_width": "50px"})
+            self.dim_buttons[index] = {}
+            for dim_ in possible_dims:
+                self.dim_buttons[index][dim_] = ipw.Button(
+                    description=dim_,
+                    button_style='info' if dim == dim_ else '',
+                    disabled=((dim != dim_) and (dim_ in slider_dims.values())
+                              or (dim_ == self.multid_coord)),
+                    layout={"width": 'initial'})
+                # Add observer to buttons
+                self.dim_buttons[index][dim_].on_click(self.update_buttons)
+                setattr(self.dim_buttons[index][dim_], "index", index)
 
-            if string_ax:
-                self.button_axis_to_dim[ax] = dim
+            self.index_to_dim[index] = dim
+            self.index_to_dim[dim] = index
 
-            setattr(self.buttons[dim], "dim", dim)
-            setattr(self.buttons[dim], "old_value", self.buttons[dim].value)
-            setattr(self.slider[dim], "dim", dim)
-            setattr(self.continuous_update[dim], "dim", dim)
-            setattr(self.thickness_slider[dim], "dim", dim)
-            setattr(self.profile_button[dim], "dim", dim)
+            setattr(self.slider[index], "index", index)
+            setattr(self.thickness_slider[index], "index", index)
+            setattr(self.profile_button[index], "index", index)
 
-            # Hide buttons and labels for 1d variables
-            if ndim == 1:
-                self.buttons[dim].layout.display = 'none'
-                self.dim_labels[dim].layout.display = 'none'
-                self.thickness_slider[dim].layout.display = 'none'
-                self.profile_button[dim].layout.display = 'none'
-                self.continuous_update[dim].layout.display = 'none'
-
-            # Hide buttons if positions are used
-            if positions is not None:
-                self.buttons[dim].layout.display = 'none'
-            # Hide profile picking for 3D plots for now
-            if len(button_options) == 3:
-                self.profile_button[dim].layout.display = 'none'
-            if dim == positions:
-                self.dim_labels[dim].layout.display = 'none'
-                self.slider[dim].layout.display = 'none'
-                self.continuous_update[dim].layout.display = 'none'
-                self.profile_button[dim].layout.display = 'none'
-                self.thickness_slider[dim].layout.display = 'none'
-
-            # Add observer to buttons
-            self.buttons[dim].on_msg(self.update_buttons)
-            # Add the row of slider + buttons
-            row = [
-                self.dim_labels[dim], self.slider[dim],
-                self.slider_readout[dim], self.continuous_update[dim],
-                self.buttons[dim], self.thickness_slider[dim],
-                self.profile_button[dim]
+            # Add the row of sliders + buttons
+            row = list(self.dim_buttons[index].values()) + [
+                self.continuous_update[index], self.slider[index],
+                self.slider_readout[index], self.unit_labels[index],
+                self.thickness_slider[index], self.profile_button[index]
             ]
             self.container.append(ipw.HBox(row))
 
@@ -212,34 +181,95 @@ class PlotWidgets:
                     [self.masks_lab, self.all_masks_button, self.masks_box])
             ]
 
-    def update_buttons(self, owner, event, dummy):
+    def update_buttons(self, owner=None):
         """
         Custom update for 2D grid of toggle buttons.
         """
-        toggle_slider = False
-        if not self.slider[owner.dim].disabled:
-            toggle_slider = True
-            self.slider[owner.dim].disabled = True
-            self.thickness_slider[owner.dim].disabled = True
-            self.profile_button[owner.dim].disabled = True
-            self.continuous_update[owner.dim].disabled = True
+        if owner.button_style == "info":
+            return
+        new_ind = owner.index
+        new_dim = owner.description
 
-        for dim, button in self.buttons.items():
-            if (button.value == owner.value) and (dim != owner.dim):
-                if self.slider[dim].disabled:
-                    button.value = owner.old_value
-                else:
-                    button.value = None
-                button.old_value = button.value
-                if toggle_slider:
-                    self.slider[dim].disabled = False
-                    self.thickness_slider[dim].disabled = False
-                    self.profile_button[dim].disabled = False
-                    self.continuous_update[dim].disabled = False
-        owner.old_value = owner.value
+        self.index_to_dim[new_ind] = new_dim
+        self.index_to_dim[new_dim] = new_ind
 
-        self.interface["update_axes"]()
-        return
+        old_dim = None
+        for dim in self.dim_buttons[new_ind]:
+            if self.dim_buttons[new_ind][dim].button_style == "info":
+                old_dim = self.dim_buttons[new_ind][dim].description
+            self.dim_buttons[new_ind][dim].button_style = ""
+        owner.button_style = "info"
+
+        # Update the slider max and value.
+        self.update_thickness_slider_range({new_ind: new_dim})
+        for index in set(self.dim_buttons.keys()) - set([new_ind]):
+            self.dim_buttons[index][new_dim].disabled = True
+            self.dim_buttons[index][old_dim].disabled = False
+
+        self.unit_labels[new_ind].value = self.interface["get_coord_unit"](
+            new_dim)
+        self.interface["swap_dimensions"](new_ind, old_dim, new_dim)
+
+    def get_index_dim(self, index):
+        """
+        Get the dimension corresponding to the supplied index.
+        """
+        return self.index_to_dim[index]
+
+    def update_slider_range(self, index, thickness, nmax, set_value=True):
+        """
+        When the thickness slider value is changed, we need to update the
+        bounds of the slice position slider so that it does no overrun the data
+        range. In short, the min and max of the position slider are
+        0.5*thickness and N - 0.5*thickness, respectively, where N is the size
+        of the slider dimension.
+        Since we are dealing with integers, when the thickness is an even
+        number, the range covered is shifted by 1 towards the right.
+        """
+        sl_min = (thickness // 2) + (thickness % 2) - 1
+        sl_max = nmax - (thickness // 2)
+        if sl_max < self.slider[index].min:
+            self.slider[index].min = sl_min
+            self.slider[index].max = sl_max
+        else:
+            self.slider[index].max = sl_max
+            self.slider[index].min = sl_min
+        if set_value:
+            self.slider[index].value = (sl_min + sl_max) // 2
+
+    def update_thickness(self, change=None):
+        """
+        When the slice thickness is changed, we update the slider range and
+        update the data in the slice.
+        """
+        self.update_slider_range(change["owner"].index,
+                                 change["new"],
+                                 change["owner"].max - 1,
+                                 set_value=False)
+        self.interface["update_data"](change)
+
+    def update_thickness_slider_range(self, inds_and_dims):
+        """
+        Update the slider max and values. Before we update the value, we need
+        to lock the data update which is linked to the slider.
+        """
+        self.interface["lock_update_data"]()
+        for ind, dim in inds_and_dims.items():
+            self._set_slider_defaults(ind,
+                                      self.interface["get_dim_shape"](dim))
+        self.interface["unlock_update_data"]()
+
+    def _set_slider_defaults(self, index, max_value):
+        """
+        On axes change, set the thickness to 1, its max range to the shape of
+        the dim, and set the position slider to accordingly.
+        """
+        self.thickness_slider[
+            index].max = 1 if self.multid_coord is not None else max_value
+        self.thickness_slider[
+            index].value = 1  # self.thickness_slider[ind].max
+        self.update_slider_range(index, self.thickness_slider[index].value,
+                                 max_value - 1)
 
     def toggle_all_masks(self, change):
         """
@@ -257,111 +287,62 @@ class PlotWidgets:
         Connect the widget interface to the callbacks provided by the
         `PlotController`.
         """
-        self.rescale_button.on_click(callbacks["rescale_to_data"])
-        for dim in self.slider:
-            self.profile_button[dim].on_click(callbacks["toggle_profile_view"])
-            self.slider[dim].observe(callbacks["update_data"], names="value")
-            self.thickness_slider[dim].observe(callbacks["update_data"],
-                                               names="value")
-        self.interface["update_axes"] = callbacks["update_axes"]
+        for index in self.slider:
+            self.profile_button[index].on_click(
+                callbacks["toggle_profile_view"])
+            self.slider[index].observe(callbacks["update_data"], names="value")
+            self.thickness_slider[index].observe(self.update_thickness,
+                                                 names="value")
+        self.interface["update_data"] = callbacks["update_data"]
+        self.interface["get_dim_shape"] = callbacks["get_dim_shape"]
+        self.interface["lock_update_data"] = callbacks["lock_update_data"]
+        self.interface["unlock_update_data"] = callbacks["unlock_update_data"]
+        self.interface["swap_dimensions"] = callbacks["swap_dimensions"]
+        self.interface["get_coord_unit"] = callbacks["get_coord_unit"]
 
         for name in self.mask_checkboxes:
             for m in self.mask_checkboxes[name]:
                 self.mask_checkboxes[name][m].observe(callbacks["toggle_mask"],
                                                       names="value")
 
-    def initialise(self, parameters, multid_coord=None):
+    def initialise(self, dim_to_shape, xlims, coord_units):
         """
         Initialise widget parameters once the `PlotModel`, `PlotView` and
         `PlotController` have been created, since, for instance, slider limits
         depend on the dimensions of the input data, which are not known until
         the `PlotModel` is created.
         """
-        for dim, item in parameters.items():
-            # TODO: for now we prevent a ragged coord from being along a slider
-            # dimension, as it causes conceptual issues with respect to
-            # resampling a displayed image.
-            if dim == multid_coord:
-                if not self.slider[dim].disabled:
-                    raise RuntimeError("A ragged coordinate cannot lie along "
-                                       "a slider dimension, it must be one of "
-                                       "the displayed dimensions.")
-                self.buttons[dim].disabled = True
-            # Dimension labels
-            self.dim_labels[dim].value = item["labels"]
+        for index in self.thickness_slider:
+            dim = self.index_to_dim[index]
+            self._set_slider_defaults(index, dim_to_shape[dim])
+            lims = xlims[dim].values
+            self.update_slider_readout(
+                index, lims[0], lims[1],
+                [0, self.thickness_slider[index].value - 1])
+            self.unit_labels[index].value = coord_units[dim]
 
-            # Dimension slider
-            size = item["slider"]
-            # Caution: we need to update max first because it is set to 100 by
-            # default in ipywidgets, thus preventing a value to be set above
-            # 100.
-            self.slider[dim].max = size - 1
-            self.slider[dim].value = size // 2
+    def get_slider_bounds(self, exclude=None):
+        """
+        Get the current range covered by the thick slice (in integers).
+        """
+        bounds = {}
+        for index, sl in self.slider.items():
+            dim = self.index_to_dim[index]
+            if dim != exclude:
+                pos = sl.value
+                delta = self.thickness_slider[index].value
+                lower = pos - (delta // 2) + ((delta + 1) % 2)
+                upper = pos + (delta // 2) + 1
+                bounds[dim] = [lower, upper]
+        return bounds
 
-            # Thickness slider
-            self.thickness_slider[dim].max = item["thickness_slider"]
-            self.thickness_slider[dim].value = item["thickness_slider"]
-            # Only index slicing is allowed when ragged coords are present
-            if multid_coord is not None:
-                self.thickness_slider[dim].value = 0.
-                self.thickness_slider[dim].layout.display = 'none'
-            self.thickness_slider[dim].step = item["thickness_slider"] * 0.01
-
-            # Slider readouts
-            self.update_slider_readout(*item["slider_readout"])
-
-    def get_slider_value(self, dim):
-        """
-        Return value of the slider corresponding to the requested dimension.
-        """
-        return self.slider[dim].value
-
-    def get_thickness_slider_value(self, dim):
-        """
-        Return value of the thickness slider corresponding to the requested
-        dimension.
-        """
-        return self.thickness_slider[dim].value
-
-    def get_active_slider_values(self):
-        """
-        Return the values of all sliders that are not disabled.
-        """
-        slider_values = {}
-        for dim, sl in self.slider.items():
-            if not sl.disabled:
-                slider_values[dim] = sl.value
-        return slider_values
-
-    def get_non_profile_slider_values(self, profile_dim):
-        """
-        Return the values of all sliders that do not correspond to the profile
-        dimension.
-        """
-        slider_values = {}
-        for dim, sl in self.slider.items():
-            if dim != profile_dim:
-                slider_values[dim] = sl.value
-        return slider_values
-
-    def get_buttons_and_disabled_sliders(self):
-        """
-        Get the values and dimensions of the buttons for dimensions that have
-        active sliders.
-        """
-        buttons_and_dims = {}
-        for dim, button in self.buttons.items():
-            if self.slider[dim].disabled:
-                buttons_and_dims[dim] = button.value
-        return buttons_and_dims
-
-    def clear_profile_buttons(self, profile_dim=None):
+    def clear_profile_buttons(self, exclude=None):
         """
         Reset all profile buttons, when for example a new dimension is
         displayed along one of the figure axes.
         """
-        for dim, but in self.profile_button.items():
-            if dim != profile_dim:
+        for index, but in self.profile_button.items():
+            if index != exclude:
                 but.button_style = ""
 
     def get_masks_info(self):
@@ -377,46 +358,29 @@ class PlotWidgets:
             }
         return mask_info
 
-    def get_slice_bounds(self, dim, left, centre, right):
-        """
-        Get the bounds of the slice for a given dimension, computed from the
-        slider position and the thickness of the slice. Return as floats.
-        """
-        thickness = self.thickness_slider[dim].value
-        if thickness == 0.0:
-            lower = left
-            upper = right
-        else:
-            lower = centre - 0.5 * thickness
-            upper = centre + 0.5 * thickness
-        return lower, upper
-
-    def get_slice_bounds_as_string(self,
-                                   dim,
-                                   ind,
-                                   left,
-                                   centre,
-                                   right,
-                                   multid_coord=None):
+    def get_slice_extent(self,
+                         lower,
+                         upper,
+                         indices,
+                         is_multid=False,
+                         precision=1):
         """
         Get the bounds of the slice for a given dimension as a single string.
         """
-        if dim == multid_coord:
-            return "slice-{}".format(ind)
+        if is_multid:
+            return "i{}:i{}".format(indices[0], indices[1])
         else:
-            lower, upper = self.get_slice_bounds(dim, left, centre, right)
-            return "{}:{}".format(value_to_string(lower),
-                                  value_to_string(upper))
+            return "{}:{}".format(value_to_string(lower, precision=precision),
+                                  value_to_string(upper, precision=precision))
 
     def update_slider_readout(self,
-                              dim,
-                              ind,
-                              left,
-                              centre,
-                              right,
-                              multid_coord=None):
+                              key,
+                              lower,
+                              upper,
+                              indices,
+                              is_multid=False):
         """
         Update the slider readout with new slider bounds.
         """
-        self.slider_readout[dim].value = self.get_slice_bounds_as_string(
-            dim, ind, left, centre, right, multid_coord)
+        self.slider_readout[key].value = self.get_slice_extent(
+            lower, upper, indices, is_multid)

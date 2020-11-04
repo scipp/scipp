@@ -16,7 +16,7 @@ class PlotController3d(PlotController):
     """
     def __init__(self, *args, pixel_size=None, positions=None, **kwargs):
 
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, initial_update=False, **kwargs)
 
         self.positions = positions
         self.pos_axparams = {}
@@ -30,6 +30,10 @@ class PlotController3d(PlotController):
                     "lims": ex["lims"],
                     "label": name_with_unit(1.0 * ex["unit"], name=xyz.upper())
                 }
+
+        # Call axes once to make the initial plot
+        self.update_axes()
+        self.update_log_axes_buttons()
 
     def initialise_model(self):
         """
@@ -121,6 +125,16 @@ class PlotController3d(PlotController):
         """
         Show/hide masks
         """
+        new_values = self.model.get_slice_values(
+            mask_info=self.get_masks_info())
+        self.view.update_data(new_values)
+
+    def toggle_norm(self, change):
+        """
+        When toggling the color normalization, we need to get values from
+        the model to update the colors in 3d plots.
+        """
+        super().toggle_norm(change)
         new_values = self.model.get_slice_values(
             mask_info=self.get_masks_info())
         self.view.update_data(new_values)

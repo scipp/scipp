@@ -91,11 +91,7 @@ class PlotModel1d(PlotModel):
         """
 
         profile_dim = axparams["x"]["dim"]
-
         new_values = {}
-
-        # Remove the current dim since it will be manually sliced below
-        del slices[self.dim]
 
         # Find closest point to cursor
         # TODO: can we optimize this with new buckets?

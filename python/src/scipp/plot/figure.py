@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
+from .toolbar import PlotToolbar
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -18,11 +19,13 @@ class PlotFigure:
                  cax=None,
                  figsize=None,
                  title=None,
-                 padding=None):
+                 padding=None,
+                 ndim=1):
         self.fig = None
         self.ax = ax
         self.cax = cax
         self.own_axes = True
+        self.toolbar = None
         if self.ax is None:
             if figsize is None:
                 figsize = (config.plot.width / config.plot.dpi,
@@ -34,6 +37,10 @@ class PlotFigure:
             if padding is None:
                 padding = config.plot.padding
             self.fig.tight_layout(rect=padding)
+            if self.is_widget():
+                # We create a custom toolbar
+                self.toolbar = PlotToolbar(canvas=self.fig.canvas, ndim=ndim)
+                self.fig.canvas.toolbar_visible = False
         else:
             self.own_axes = False
             self.fig = self.ax.get_figure()
@@ -42,6 +49,13 @@ class PlotFigure:
 
         self.axformatter = {}
         self.axlocator = {}
+
+    def is_widget(self):
+        """
+        Check whether we are using the Matplotlib widget backend or not.
+        "on_widget_constructed" is an attribute specific to `ipywidgets`.
+        """
+        return hasattr(self.fig.canvas, "on_widget_constructed")
 
     def savefig(self, filename=None):
         """
@@ -61,13 +75,12 @@ class PlotFigure:
     def _to_widget(self):
         """
         Convert the Matplotlib figure to a widget. If the ipympl (widget)
-        backend is in use, just return the figure canvas.
+        backend is in use, return the custom toolbar and the figure canvas.
         If not, convert the plot to a png image and place inside an ipywidgets
         Image container.
         """
-        # "on_widget_constructed" is an attribute specific to ipywidgets
-        if hasattr(self.fig.canvas, "on_widget_constructed"):
-            return self.fig.canvas
+        if self.is_widget():
+            return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
         else:
             buf = io.BytesIO()
             self.fig.savefig(buf, format='png')
@@ -75,6 +88,12 @@ class PlotFigure:
             return ipw.Image(value=buf.getvalue(),
                              width=config.plot.width,
                              height=config.plot.height)
+
+    def show(self):
+        """
+        Show the matplotlib figure.
+        """
+        self.fig.show()
 
     def initialise(self, axformatters=None):
         """
@@ -96,6 +115,15 @@ class PlotFigure:
             if axformatters[dim]["custom_locator"]:
                 self.axlocator[dim]["linear"] = ticker.MaxNLocator(
                     integer=True)
+
+    def connect(self, callbacks):
+        """
+        Connect the toolbar to callback from the controller. This includes
+        rescaling the data norm, and change the scale (log or linear) on the
+        axes.
+        """
+        if self.toolbar is not None:
+            self.toolbar.connect(callbacks)
 
     def draw(self):
         """
@@ -126,3 +154,11 @@ class PlotFigure:
             self.fig.canvas.mpl_disconnect(pick_connection)
         if hover_connection is not None:
             self.fig.canvas.mpl_disconnect(hover_connection)
+
+    def update_log_axes_buttons(self, *args, **kwargs):
+        """
+        Update the state (value and color) of toolbar log axes buttons when
+        axes or dimensions are swapped.
+        """
+        if self.toolbar is not None:
+            self.toolbar.update_log_axes_buttons(*args, **kwargs)

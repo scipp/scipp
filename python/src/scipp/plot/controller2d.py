@@ -27,4 +27,5 @@ class PlotController2d(PlotController):
         Connect the view interface to callbacks.
         """
         super().connect_view()
-        self.view.connect({"update_viewport": self.update_viewport})
+        self.view.connect(
+            view_callbacks={"update_viewport": self.update_viewport})

@@ -39,7 +39,7 @@ class PlotPanel1d(PlotPanel):
         col = ipw.ColorPicker(concise=True,
                               description='',
                               value=make_random_color(fmt='hex'),
-                              disabled=False)
+                              layout={'width': "40px"})
         # Make a unique id
         self.counter += 1
         line_id = self.counter

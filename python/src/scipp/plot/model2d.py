@@ -87,6 +87,47 @@ class PlotModel2d(PlotModel):
         new_values = self.update_image(mask_info=mask_info)
         return new_values
 
+    def _select_bins(self, coord, dim, start, end):
+        """
+        Method to speed up the finding of bin ranges
+        """
+        bins = coord.shape[-1]
+        if len(coord.dims) != 1:  # TODO find combined min/max
+            return dim, slice(0, bins - 1)
+        # scipp treats bins as closed on left and open on right: [left, right)
+        first = sc.sum(coord <= start, dim).value - 1
+        last = bins - sc.sum(coord > end, dim).value
+        if first >= last:  # TODO better handling for decreasing
+            return dim, slice(0, bins - 1)
+        first = max(0, first)
+        last = min(bins - 1, last)
+        return dim, slice(first, last + 1)
+
+    def resample_data(self, array, rebin_edges):
+        """
+        Resample a DataArray according to new bin edges.
+        """
+        dslice = array
+        # Select bins to speed up rebinning
+        for dim in rebin_edges:
+            this_slice = self._select_bins(array.coords[dim], dim,
+                                           rebin_edges[dim][dim, 0],
+                                           rebin_edges[dim][dim, -1])
+            dslice = dslice[this_slice]
+
+        # Rebin the data
+        for dim, edges in rebin_edges.items():
+            dslice = sc.rebin(dslice, dim, edges)
+
+        # Divide by pixel width
+        # TODO: can this loop be combined with the one above?
+        for dim, edges in rebin_edges.items():
+            div = edges[dim, 1:] - edges[dim, :-1]
+            div.unit = sc.units.one
+            dslice /= div
+
+        return dslice
+
     def update_image(self, extent=None, mask_info=None):
         """
         Resample 2d images to a fixed resolution to handle very large images.
@@ -209,10 +250,6 @@ class PlotModel2d(PlotModel):
                                                                  iy:iy + 2]
                                            })[dimx, 0][dimy, 0]
 
-        # Remove the current x and y dims since they will have been manually
-        # sliced above
-        del slices[dimx]
-        del slices[dimy]
         # Slice the remaining dims
         profile_slice = self.slice_data(profile_slice, slices)
 
