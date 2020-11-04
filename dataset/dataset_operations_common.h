@@ -117,6 +117,28 @@ DataArray apply_to_data_and_drop_dim(const DataArrayConstView &a, Func func,
                                       std::forward<Args>(args)...);
 }
 
+/// Helper for creating operations that return an object with modified data with
+/// all dimensions collapsed.
+///
+/// Examples are mostly reduction operations such as `sum` (dropping all
+/// dimensions at once). Creates new data
+/// array by applying `func` to data and dropping coords/masks/attrs depending
+/// The exception are multi-dimensional coords that depend on `dim`,
+/// with two cases: (1) If the coord is a coord for `dim`, `func` is applied to
+/// it, (2) if the coords is a coords for a dimension other than `dim`, a
+/// CoordMismatchError is thrown.
+///
+template <class Func>
+DataArray apply_to_data_and_drop_all_dims(const DataArrayConstView &a,
+                                          Func func) {
+  const auto &dimensions = a.data().dims();
+  DataArray out(a);
+  for (scipp::index i = 0; i < dimensions.ndim(); ++i) {
+    out = apply_to_data_and_drop_dim(out, func, dimensions.label(i), a.masks());
+  }
+  return out;
+}
+
 /// Helper for creating operations that return an object with a dropped
 /// dimension or different dimension extent.
 ///
