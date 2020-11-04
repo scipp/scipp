@@ -1,7 +1,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from math import ceil
 import colorsys
 
 import numpy as np
@@ -53,9 +52,6 @@ class VariableDrawer:
         self._target_dims = target_dims
         if self._target_dims is None:
             self._target_dims = self._dims()
-        # special extent value indicating events dimension
-        self._events_flag = -1
-        self._events_box_scale = 0.3
         self._x_stride = 1
         if len(self._dims()) > 3:
             raise RuntimeError("Cannot visualize {}-D data".format(
@@ -103,30 +99,12 @@ class VariableDrawer:
                 e.append(1)
         return [1] * (3 - len(e)) + e
 
-    def _events_extent(self):
-        extent = 0
-        if is_data_array(self._variable):
-            # Events items in a dataset should always have a coord,
-            # but may have not data
-            # Find a events coord to use for determining length
-            for coord in self._variable.coords.values():
-                pass
-        else:
-            data = self._variable.values
-        for vals in data:
-            extent = max(extent, len(vals))
-        max_extent = _cubes_in_full_width / 2 / self._events_box_scale
-        self._x_stride = max(1, ceil(extent / max_extent))
-        return min(extent, max_extent)
-
     def size(self):
         """Return the size (width and height) of the rendered output"""
         width = 2 * self._margin
         height = 3 * self._margin  # double margin on top for title space
         shape = self._extents()
 
-        if shape[-1] == self._events_flag:
-            shape[-1] = self._events_box_scale * self._events_extent()
         width += shape[-1]
         height += shape[-2]
         depth = shape[-3]
@@ -149,25 +127,11 @@ class VariableDrawer:
         svg = ''
 
         lz, ly, lx = self._extents()
-        if lx == self._events_flag:
-            self._events_extent()  # dummy call to init stride
         for z in range(lz):
             for y in reversed(range(ly)):
                 true_lx = lx
                 x_scale = 1
                 events = False
-                if lx == self._events_flag:
-                    if hasattr(data[0], '__len__'):
-                        true_lx = ceil(
-                            len(data[ly - y - 1 + ly * (lz - z - 1)]) /
-                            self._x_stride)
-                        x_scale *= self._events_box_scale
-                    else:  # special case: scalar event weights
-                        true_lx = 1
-                    if true_lx == 0:
-                        true_lx = 1
-                        x_scale *= 0
-                    events = True
                 for x in range(true_lx):
                     # Do not draw hidden boxes
                     if not events:
