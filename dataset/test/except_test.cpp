@@ -76,13 +76,6 @@ TEST(StringFormattingTest, to_string_ConstView) {
   EXPECT_EQ(to_string(a["a"].masks()), to_string(b["a"].masks()));
 }
 
-TEST(StringFormattingTest, to_string_events_Dataset) {
-  Dataset a;
-  a.coords().set(Dim::X,
-                 makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{4}));
-  ASSERT_NO_THROW(to_string(a));
-}
-
 TEST(ValidSliceTest, test_slice_range) {
   Dimensions dims{Dim::X, 3};
   EXPECT_NO_THROW(core::expect::validSlice(dims, Slice(Dim::X, 0)));

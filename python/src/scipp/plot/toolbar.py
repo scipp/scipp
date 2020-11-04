@@ -32,10 +32,10 @@ class PlotToolbar:
         self.add_button(name="rescale_to_data",
                         icon="arrows-v",
                         tooltip="Rescale")
-        if ndim > 1:
-            self.add_button(name="swap_axes",
-                            icon="exchange",
-                            tooltip="Swap axes")
+        if ndim == 2:
+            self.add_button(name="transpose",
+                            icon="retweet",
+                            tooltip="Transpose")
 
         if ndim < 3:
             self.add_togglebutton(name="toggle_xaxis_scale",

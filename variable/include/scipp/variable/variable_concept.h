@@ -48,6 +48,8 @@ public:
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const = 0;
+  virtual VariableConceptHandle
+  makeDefaultFromParent(const VariableConstView &shape) const = 0;
 
   virtual DType dtype() const noexcept = 0;
   const Dimensions &dims() const { return m_dimensions; }

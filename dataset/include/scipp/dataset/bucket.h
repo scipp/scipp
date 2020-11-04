@@ -5,6 +5,7 @@
 #pragma once
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/buckets.h"
 
 namespace scipp::dataset {
 
@@ -21,6 +22,25 @@ SCIPP_DATASET_EXPORT void copy_slices(const DatasetConstView &src,
     const DataArrayConstView &parent, const Dim dim, const scipp::index size);
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset resize_default_init(
     const DatasetConstView &parent, const Dim dim, const scipp::index size);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable from_constituents(Variable indices,
+                                                              const Dim dim,
+                                                              DataArray buffer);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable from_constituents(Variable indices,
+                                                              const Dim dim,
+                                                              Dataset buffer);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+bucket_sizes(const VariableConstView &var);
+[[nodiscard]] SCIPP_DATASET_EXPORT DataArray
+bucket_sizes(const DataArrayConstView &array);
+[[nodiscard]] SCIPP_DATASET_EXPORT Dataset
+bucket_sizes(const DatasetConstView &dataset);
+
+[[nodiscard]] SCIPP_DATASET_EXPORT bool
+is_buckets(const DataArrayConstView &array);
+[[nodiscard]] SCIPP_DATASET_EXPORT bool
+is_buckets(const DatasetConstView &dataset);
 
 } // namespace scipp::dataset
 
@@ -54,12 +74,5 @@ void scale(const DataArrayView &data, const DataArrayConstView &histogram);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
 sum(const DataArrayConstView &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset sum(const DatasetConstView &data);
-
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable
-from_constituents(Variable &&indices, const Dim dim, Variable &&buffer);
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable
-from_constituents(Variable &&indices, const Dim dim, DataArray &&buffer);
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable
-from_constituents(Variable &&indices, const Dim dim, Dataset &&buffer);
 
 } // namespace scipp::dataset::buckets

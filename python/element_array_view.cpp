@@ -19,13 +19,6 @@ template <class T> struct mutable_span_methods {
   static void add(py::class_<scipp::span<T>> &span) {
     span.def("__setitem__", [](scipp::span<T> &self, const scipp::index i,
                                const T value) { self[i] = value; });
-    // This is to support, e.g., `var.values[i] = np.zeros(4)`.
-    if constexpr (is_events_v<T>)
-      span.def("__setitem__",
-               [](scipp::span<T> &self, const scipp::index i,
-                  const std::vector<typename T::value_type> &value) {
-                 self[i].assign(value.begin(), value.end());
-               });
   }
 };
 template <class T> struct mutable_span_methods<const T> {
@@ -60,20 +53,13 @@ void declare_ElementArrayView(py::module &m, const std::string &suffix) {
       .def("__iter__", [](const ElementArrayView<T> &self) {
         return py::make_iterator(self.begin(), self.end());
       });
-  if constexpr (is_events_v<T>)
-    view.def("__setitem__",
-             [](const ElementArrayView<T> &self, const scipp::index i,
-                const std::vector<typename T::value_type> &value) {
-               self[i].assign(value.begin(), value.end());
-             });
-  else
-    view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
-                               [[maybe_unused]] const T value) {
-      if constexpr (is_view_v<decltype(self[i])>)
-        throw std::runtime_error("Setting items of this type is not possible.");
-      else
-        self[i] = value;
-    });
+  view.def("__setitem__", [](ElementArrayView<T> &self, const scipp::index i,
+                             [[maybe_unused]] const T value) {
+    if constexpr (is_view_v<decltype(self[i])>)
+      throw std::runtime_error("Assigning bin contents is not possible.");
+    else
+      self[i] = value;
+  });
 }
 
 void init_element_array_view(py::module &m) {
@@ -90,11 +76,6 @@ void init_element_array_view(py::module &m) {
   declare_span<Dataset>(m, "Dataset");
   declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
   declare_span<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
-  declare_span<event_list<double>>(m, "event_double");
-  declare_span<event_list<float>>(m, "event_float");
-  declare_span<event_list<int64_t>>(m, "event_int64_t");
-  declare_span<event_list<int32_t>>(m, "event_int32_t");
-  declare_span<event_list<scipp::core::time_point>>(m, "time_point");
 
   declare_ElementArrayView<double>(m, "double");
   declare_ElementArrayView<float>(m, "float");
@@ -102,15 +83,9 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<int32_t>(m, "int32");
   declare_ElementArrayView<std::string>(m, "string");
   declare_ElementArrayView<bool>(m, "bool");
-  declare_ElementArrayView<event_list<double>>(m, "event_double");
-  declare_ElementArrayView<event_list<float>>(m, "event_float");
-  declare_ElementArrayView<event_list<int64_t>>(m, "event_int64_t");
-  declare_ElementArrayView<event_list<int32_t>>(m, "event_int32_t");
   declare_ElementArrayView<DataArray>(m, "DataArray");
   declare_ElementArrayView<Dataset>(m, "Dataset");
   declare_ElementArrayView<Eigen::Vector3d>(m, "Eigen_Vector3d");
-  declare_ElementArrayView<event_list<scipp::core::time_point>>(m,
-                                                                "time_point");
   declare_ElementArrayView<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
   declare_ElementArrayView<bucket<Variable>>(m, "bucket_Variable");
   declare_ElementArrayView<bucket<DataArray>>(m, "bucket_DataArray");

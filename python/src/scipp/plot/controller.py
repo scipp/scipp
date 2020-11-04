@@ -203,7 +203,7 @@ class PlotController:
         }
         figure_callbacks = {
             "rescale_to_data": self.rescale_to_data,
-            "swap_axes": self.swap_axes,
+            "transpose": self.transpose,
             "toggle_xaxis_scale": self.toggle_xaxis_scale,
             "toggle_yaxis_scale": self.toggle_yaxis_scale,
             "toggle_norm": self.toggle_norm,
@@ -257,9 +257,9 @@ class PlotController:
                                        vmax=vmax,
                                        mask_info=self.get_masks_info())
 
-    def swap_axes(self, owner=None):
+    def transpose(self, owner=None):
         """
-        Roll the order of the displayed axes.
+        Transpose the displayed axes.
         """
         xyz = self._get_xyz_axes()
         dims = [self.axes[key] for key in xyz]

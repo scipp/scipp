@@ -3,15 +3,14 @@
 #include <gtest/gtest.h>
 #include <vector>
 
-#include "make_events.h"
 #include "test_macros.h"
 
 #include "scipp/core/element/arg_list.h"
 
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/bucket_model.h"
 #include "scipp/variable/buckets.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -50,51 +49,25 @@ TEST_F(TransformUnaryTest, dense_with_variances) {
   EXPECT_EQ(result, var);
 }
 
-TEST_F(TransformUnaryTest, elements_of_events) {
-  auto var = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto vals = var.values<event_list<double>>();
-  vals[0] = {1, 2, 3};
-  vals[1] = {4};
+TEST_F(TransformUnaryTest, elements_of_buckets) {
+  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 4}});
+  for (const auto &events :
+       {makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4}),
+        makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4},
+                             Variances{1.1, 2.2, 3.3, 4.4})}) {
+    auto var = from_constituents(indices, Dim::Event, events);
 
-  const auto result = transform<double>(var, op);
-  transform_in_place<double>(var, op_in_place);
+    const auto result = transform<double>(var, op);
+    transform_in_place<double>(var, op_in_place);
 
-  EXPECT_TRUE(equals(vals[0], {1 * 2.0, 2 * 2.0, 3 * 2.0}));
-  EXPECT_TRUE(equals(vals[1], {4 * 2.0}));
-  EXPECT_EQ(result, var);
-}
-
-TEST_F(TransformUnaryTest, elements_of_events_with_variance) {
-  auto var = makeVariable<event_list<double>>(Dimensions{Dim::Y, 2}, Values{},
-                                              Variances{});
-  auto vals = var.values<event_list<double>>();
-  vals[0] = {1, 2, 3};
-  vals[1] = {4};
-  auto vars = var.variances<event_list<double>>();
-  vars[0] = {1.1, 2.2, 3.3};
-  vars[1] = {4.4};
-
-  const auto result = transform<double>(var, op);
-  transform_in_place<double>(var, op_in_place);
-
-  EXPECT_TRUE(equals(vals[0], {2, 4, 6}));
-  EXPECT_TRUE(equals(vals[1], {8}));
-  EXPECT_TRUE(equals(vars[0], {4.4, 8.8, 13.2}));
-  EXPECT_TRUE(equals(vars[1], {17.6}));
-  EXPECT_EQ(result, var);
-}
-
-TEST_F(TransformUnaryTest, events_values_variances_size_fail) {
-  Dimensions dims(Dim::Y, 2);
-  auto a = makeVariable<event_list<double>>(
-      Dimensions(dims), Values{event_list<double>(2), event_list<double>(1)},
-      Variances{event_list<double>(2), event_list<double>(2)});
-
-  ASSERT_THROW_NODISCARD(transform<double>(a, op), except::SizeError);
-  ASSERT_THROW(transform_in_place<double>(a, op_in_place), except::SizeError);
-  a.variances<event_list<double>>()[1].resize(1);
-  ASSERT_NO_THROW_NODISCARD(transform<double>(a, op));
-  ASSERT_NO_THROW(transform_in_place<double>(a, op_in_place));
+    const auto expected = transform<double>(events, op);
+    EXPECT_EQ(var.values<bucket<Variable>>()[0],
+              expected.slice({Dim::Event, 0, 3}));
+    EXPECT_EQ(var.values<bucket<Variable>>()[1],
+              expected.slice({Dim::Event, 3, 4}));
+    EXPECT_EQ(result, var);
+  }
 }
 
 TEST_F(TransformUnaryTest, in_place_unit_change) {
@@ -269,41 +242,40 @@ TEST_F(TransformBinaryTest, view_with_view) {
 }
 
 TEST_F(TransformBinaryTest, dense_events) {
-  auto events = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto events_ = events.values<event_list<double>>();
-  events_[0] = {1, 2, 3};
-  events_[1] = {4};
-  auto dense = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 0.5});
+  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 4}});
+  const auto table =
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4});
+  auto events = from_constituents(indices, Dim::Event, table);
+  auto dense = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.5, 0.5});
 
   const auto ab = transform<pair_self_t<double>>(events, dense, op);
   const auto ba = transform<pair_self_t<double>>(dense, events, op);
   transform_in_place<pair_self_t<double>>(events, dense, op_in_place);
 
-  EXPECT_TRUE(equals(events_[0], {1.5, 3.0, 4.5}));
-  EXPECT_TRUE(equals(events_[1], {2.0}));
+  const auto expected = transform<double>(events, dense, op);
+  EXPECT_EQ(events.values<bucket<Variable>>()[0],
+            transform<pair_self_t<double>>(
+                dense.slice({Dim::X, 0}), table.slice({Dim::Event, 0, 3}), op));
+  EXPECT_EQ(events.values<bucket<Variable>>()[1],
+            transform<pair_self_t<double>>(
+                dense.slice({Dim::X, 1}), table.slice({Dim::Event, 3, 4}), op));
   EXPECT_EQ(ab, events);
   EXPECT_EQ(ba, events);
 }
 
 TEST_F(TransformBinaryTest, events_size_fail) {
-  Dimensions dims(Dim::Y, 2);
-  auto a = makeVariable<event_list<double>>(
-      Dimensions(dims), Values{event_list<double>(2), event_list<double>(1)});
-  auto b = makeVariable<event_list<double>>(
-      Dimensions(dims), Values{event_list<double>(2), event_list<double>()});
-
+  const auto indicesA = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{3, 4}});
+  const auto indicesB = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 3}});
+  const auto table = makeVariable<double>(Dims{Dim::Event}, Shape{4});
+  auto a = from_constituents(indicesA, Dim::Event, table);
+  auto b = from_constituents(indicesB, Dim::Event, table);
   ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op),
-                         except::SizeError);
+                         except::BucketError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
-               except::SizeError);
-  b.values<event_list<double>>()[1].resize(1);
-  ASSERT_NO_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op));
-  ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place));
-  b.values<event_list<double>>()[1].resize(2);
-  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op),
-                         except::SizeError);
-  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
-               except::SizeError);
+               except::BucketError);
 }
 
 TEST_F(TransformBinaryTest, in_place_unit_change) {
@@ -417,118 +389,19 @@ TEST(TransformTest, combined_uncertainty_propagation) {
   EXPECT_EQ(abb, a_2_step);
 }
 
-TEST(TransformTest, unary_on_event_list) {
-  auto a = makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{2});
-  auto a_ = a.values<event_list<double>>();
-  a_[0] = {1, 4, 9};
-  a_[1] = {4};
-
-  transform_in_place<event_list<double>>(
-      a, overloaded{[](auto &x) { x.clear(); }, [](units::Unit &) {}});
-  EXPECT_TRUE(a_[0].empty());
-  EXPECT_TRUE(a_[1].empty());
-}
-
-TEST(TransformTest, unary_on_event_list_with_variance) {
-  Dimensions dims(Dim::Y, 2);
-  auto a = makeVariable<event_list<double>>(
-      Dimensions(dims), Values{event_list<double>(), event_list<double>()},
-      Variances{event_list<double>(), event_list<double>()});
-  auto vals = a.values<event_list<double>>();
-  vals[0] = {1, 2, 3};
-  vals[1] = {4};
-  auto vars = a.variances<event_list<double>>();
-  vars[0] = {1.1, 2.2, 3.3};
-  vars[1] = {4.4};
-
-  transform_in_place<event_list<double>>(
-      a, overloaded{[](auto &x) { x.clear(); }, [](units::Unit &) {}});
-  EXPECT_TRUE(vals[0].empty());
-  EXPECT_TRUE(vals[1].empty());
-  EXPECT_TRUE(vars[0].empty());
-  EXPECT_TRUE(vars[1].empty());
-}
-
-TEST(TransformTest, unary_on_event_list_with_variance_size_fail) {
-  Dimensions dims(Dim::Y, 2);
-  auto a = makeVariable<event_list<double>>(
-      Dimensions(dims), Values{event_list<double>(), event_list<double>()},
-      Variances{event_list<double>(), event_list<double>()});
-  auto vals = a.values<event_list<double>>();
-  vals[0] = {1, 2, 3};
-  vals[1] = {4};
-  auto vars = a.variances<event_list<double>>();
-  vars[0] = {1.1, 2.2, 3.3};
-  vars[1] = {};
-  const auto expected(a);
-
-  // If an exception occures due to a size mismatch between values and variances
-  // we give a strong exception guarantee, i.e., data is untouched. Note that
-  // there is no such guarantee if an exception occurs in the provided lambda.
-  ASSERT_THROW(
-      transform_in_place<event_list<double>>(
-          a, overloaded{[](auto &x) { x.clear(); }, [](units::Unit &) {}}),
-      except::SizeError);
-  EXPECT_EQ(a, expected);
-}
-
-TEST(TransformTest, binary_on_event_list_with_variance_size_fail) {
-  Dimensions dims(Dim::Y, 2);
-  auto a = makeVariable<event_list<double>>(
-      Dimensions(dims), Values{event_list<double>(), event_list<double>()},
-      Variances{event_list<double>(), event_list<double>()});
-  auto vals = a.values<event_list<double>>();
-  vals[0] = {1, 2, 3};
-  vals[1] = {4};
-  auto vars = a.variances<event_list<double>>();
-  vars[0] = {1.1, 2.2, 3.3};
-  vars[1] = {};
-  const auto expected(a);
-
-  // If an exception occures due to a size mismatch between values and variances
-  // we give a strong exception guarantee, i.e., data is untouched. Note that
-  // there is no such guarantee if an exception occurs in the provided lambda.
-  ASSERT_THROW(transform_in_place<pair_self_t<event_list<double>>>(
-                   a, a,
-                   overloaded{[](auto &x, const auto &) { x.clear(); },
-                              [](units::Unit &, const units::Unit &) {}}),
-               except::SizeError);
-  EXPECT_EQ(a, expected);
-}
-
-TEST(TransformTest, binary_on_event_list_with_variance_accepts_size_mismatch) {
-  Dimensions dims(Dim::Y, 2);
-  auto a = makeVariable<event_list<double>>(
-      Dimensions(dims), Values{event_list<double>(), event_list<double>()},
-      Variances{event_list<double>(), event_list<double>()});
-  const auto expected(a);
-  auto vals = a.values<event_list<double>>();
-  auto vars = a.variances<event_list<double>>();
-  vals[0] = {1, 2, 3};
-  vars[0] = {1.1, 2.2, 3.3};
-  const auto b(a);
-  vals[1] = {4};
-  vars[1] = {4.4};
-
-  // Size mismatch between a and b is allowed for a user-defined operation on
-  // the event list.
-  ASSERT_NO_THROW(transform_in_place<pair_self_t<event_list<double>>>(
-      a, b,
-      overloaded{[](auto &x, const auto &) { x.clear(); },
-                 [](units::Unit &, const units::Unit &) {}}));
-  EXPECT_EQ(a, expected);
-}
-
 class TransformTest_events_binary_values_variances_size_fail
     : public ::testing::Test {
 protected:
-  Dimensions dims{Dim::Y, 2};
-  Variable a = makeVariable<event_list<double>>(
-      Dimensions(dims), Values{event_list<double>(2), event_list<double>(2)},
-      Variances{event_list<double>(2), event_list<double>(2)});
+  Variable indicesA = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 4}});
+  Variable indicesB = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 3}});
+  Variable table =
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{}, Variances{});
+  Variable a = from_constituents(indicesA, Dim::Event, table);
+  Variable b = from_constituents(indicesB, Dim::Event, table);
   Variable val_var = a;
-  Variable val = makeVariable<event_list<double>>(
-      Dimensions(dims), Values{event_list<double>(2), event_list<double>(2)});
+  Variable val = from_constituents(indicesA, Dim::Event, values(table));
   static constexpr auto op = [](const auto i, const auto j) { return i * j; };
   static constexpr auto op_in_place = [](auto &i, const auto j) { i *= j; };
 };
@@ -541,229 +414,87 @@ TEST_F(TransformTest_events_binary_values_variances_size_fail, baseline) {
   ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place));
 }
 
-TEST_F(TransformTest_events_binary_values_variances_size_fail,
-       a_values_size_bad) {
-  a.values<event_list<double>>()[1].resize(1);
+TEST_F(TransformTest_events_binary_values_variances_size_fail, a_size_bad) {
+  a = b;
   ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
-                         except::SizeError);
+                         except::BucketError);
   ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
-                         except::SizeError);
+                         except::BucketError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
-               except::SizeError);
+               except::BucketError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
-               except::SizeError);
+               except::BucketError);
 }
 
-TEST_F(TransformTest_events_binary_values_variances_size_fail,
-       a_variances_size_bad) {
-  a.variances<event_list<double>>()[1].resize(1);
-  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
-                         except::SizeError);
-  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
-                         except::SizeError);
-  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
-               except::SizeError);
-  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
-               except::SizeError);
-}
+class TransformBucketsBinaryTest : public TransformBinaryTest {
+protected:
+  Variable indicesY = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 4}});
+  Variable tableA =
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, units::m,
+                           Values{1, 2, 3, 4}, Variances{5, 6, 7, 8});
+  Variable tableB = makeVariable<double>(Dims{Dim::Event}, Shape{4},
+                                         Values{0.1, 0.2, 0.3, 0.4},
+                                         Variances{0.5, 0.6, 0.7, 0.8});
+  Variable a = from_constituents(indicesY, Dim::Event, tableA);
+  Variable b = from_constituents(indicesY, Dim::Event, tableB);
+};
 
-TEST_F(TransformTest_events_binary_values_variances_size_fail,
-       val_var_values_size_bad) {
-  val_var.values<event_list<double>>()[1].resize(1);
-  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
-                         except::SizeError);
-  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
-               except::SizeError);
-}
-
-TEST_F(TransformTest_events_binary_values_variances_size_fail,
-       val_var_variances_size_bad) {
-  val_var.variances<event_list<double>>()[1].resize(1);
-  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
-                         except::SizeError);
-  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
-               except::SizeError);
-}
-
-TEST_F(TransformTest_events_binary_values_variances_size_fail,
-       val_values_size_bad) {
-  val.values<event_list<double>>()[1].resize(1);
-  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
-                         except::SizeError);
-  ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
-               except::SizeError);
-}
-
-TEST_F(TransformBinaryTest, events_val_var_with_events_val_var) {
-  auto a = make_events_variable_with_variance<double>();
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8}});
-  auto b = make_events_variable_with_variance<double>();
-  set_events_values<double>(b, {{0.1, 0.2, 0.3}, {0.4}});
-  set_events_variances<double>(b, {{0.5, 0.6, 0.7}, {0.8}});
-
+TEST_F(TransformBucketsBinaryTest, events_val_var_with_events_val_var) {
   const auto ab = transform<pair_self_t<double>>(a, b, op);
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
-
-  // We rely on correctness of *dense* operations (Variable multiplcation is
+  // We rely on correctness of *dense* operations (Variable multiplication is
   // also built on transform).
-  auto a0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
-                                 Variances{5, 6, 7});
-  auto b0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0.1, 0.2, 0.3},
-                                 Variances{0.5, 0.6, 0.7});
-  auto a1 =
-      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
-  auto b1 =
-      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{0.4}, Variances{0.8});
-  auto expected0 = a0 * b0;
-  auto expected1 = a1 * b1;
-  EXPECT_TRUE(
-      equals(a.values<event_list<double>>()[0], expected0.values<double>()));
-  EXPECT_TRUE(
-      equals(a.values<event_list<double>>()[1], expected1.values<double>()));
-  EXPECT_TRUE(equals(a.variances<event_list<double>>()[0],
-                     expected0.variances<double>()));
-  EXPECT_TRUE(equals(a.variances<event_list<double>>()[1],
-                     expected1.variances<double>()));
-
+  EXPECT_EQ(a, from_constituents(indicesY, Dim::Event, tableA * tableB));
   EXPECT_EQ(ab, a);
 }
 
-TEST_F(TransformBinaryTest, events_val_var_with_events_val) {
-  auto a = make_events_variable_with_variance<double>();
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8}});
-  auto b = make_events_variable<double>();
-  set_events_values<double>(b, {{0.1, 0.2, 0.3}, {0.4}});
+TEST_F(TransformBucketsBinaryTest, events_val_var_with_events_val) {
+  const auto table = values(tableB);
+  b = from_constituents(indicesY, Dim::Event, table);
+  const auto ab = transform<pair_self_t<double>>(a, b, op);
+  transform_in_place<pair_self_t<double>>(a, b, op_in_place);
+  EXPECT_EQ(a, from_constituents(indicesY, Dim::Event, tableA * table));
+  EXPECT_EQ(ab, a);
+}
+
+TEST_F(TransformBucketsBinaryTest, events_val_var_with_val_var) {
+  b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6},
+                           Variances{1.7, 1.8});
 
   const auto ab = transform<pair_self_t<double>>(a, b, op);
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
-  auto a0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
-                                 Variances{5, 6, 7});
-  auto b0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0.1, 0.2, 0.3});
-  auto a1 =
-      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
-  auto b1 = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{0.4});
-  auto expected0 = a0 * b0;
-  auto expected1 = a1 * b1;
-  EXPECT_TRUE(
-      equals(a.values<event_list<double>>()[0], expected0.values<double>()));
-  EXPECT_TRUE(
-      equals(a.values<event_list<double>>()[1], expected1.values<double>()));
-  EXPECT_TRUE(equals(a.variances<event_list<double>>()[0],
-                     expected0.variances<double>()));
-  EXPECT_TRUE(equals(a.variances<event_list<double>>()[1],
-                     expected1.variances<double>()));
-
+  tableA.slice({Dim::Event, 0, 3}) *= b.slice({Dim::Y, 0});
+  tableA.slice({Dim::Event, 3, 4}) *= b.slice({Dim::Y, 1});
+  EXPECT_EQ(a, from_constituents(indicesY, Dim::Event, tableA));
   EXPECT_EQ(ab, a);
 }
 
-TEST_F(TransformBinaryTest, events_val_var_with_val_var) {
-  auto a = make_events_variable_with_variance<double>();
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8}});
-  auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6},
-                                Variances{1.7, 1.8});
+TEST_F(TransformBucketsBinaryTest, events_val_var_with_val) {
+  b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6});
 
   const auto ab = transform<pair_self_t<double>>(a, b, op);
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
 
-  auto a0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
-                                 Variances{5, 6, 7});
-  auto b0 = makeVariable<double>(Values{1.5}, Variances{1.7});
-  auto a1 =
-      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
-  auto b1 = makeVariable<double>(Values{1.6}, Variances{1.8});
-  auto expected0 = a0 * b0;
-  auto expected1 = a1 * b1;
-  EXPECT_TRUE(
-      equals(a.values<event_list<double>>()[0], expected0.values<double>()));
-  EXPECT_TRUE(
-      equals(a.values<event_list<double>>()[1], expected1.values<double>()));
-  EXPECT_TRUE(equals(a.variances<event_list<double>>()[0],
-                     expected0.variances<double>()));
-  EXPECT_TRUE(equals(a.variances<event_list<double>>()[1],
-                     expected1.variances<double>()));
-
+  tableA.slice({Dim::Event, 0, 3}) *= b.slice({Dim::Y, 0});
+  tableA.slice({Dim::Event, 3, 4}) *= b.slice({Dim::Y, 1});
+  EXPECT_EQ(a, from_constituents(indicesY, Dim::Event, tableA));
   EXPECT_EQ(ab, a);
 }
 
-TEST_F(TransformBinaryTest, events_val_var_with_val) {
-  auto a = make_events_variable_with_variance<double>();
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8}});
-  auto b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6});
-
-  const auto ab = transform<pair_self_t<double>>(a, b, op);
-  transform_in_place<pair_self_t<double>>(a, b, op_in_place);
-
-  auto a0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
-                                 Variances{5, 6, 7});
-  auto b0 = makeVariable<double>(Values{1.5});
-  auto a1 =
-      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
-  auto b1 = makeVariable<double>(Values{1.6});
-  auto expected0 = a0 * b0;
-  auto expected1 = a1 * b1;
-  EXPECT_TRUE(
-      equals(a.values<event_list<double>>()[0], expected0.values<double>()));
-  EXPECT_TRUE(
-      equals(a.values<event_list<double>>()[1], expected1.values<double>()));
-  EXPECT_TRUE(equals(a.variances<event_list<double>>()[0],
-                     expected0.variances<double>()));
-  EXPECT_TRUE(equals(a.variances<event_list<double>>()[1],
-                     expected1.variances<double>()));
-
-  EXPECT_EQ(ab, a);
-}
-
-TEST_F(TransformBinaryTest, broadcast_events_val_var_with_val) {
-  auto a = make_events_variable_with_variance<double>();
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8}});
-  const auto b = makeVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
+TEST_F(TransformBucketsBinaryTest, broadcast_events_val_var_with_val) {
+  b = makeVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
 
   const auto ab = transform<pair_custom_t<std::tuple<double, float>>>(a, b, op);
 
-  auto a0 = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3},
-                                 Variances{5, 6, 7});
-  auto b0 = makeVariable<float>(Values{1.5});
-  auto a1 =
-      makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{4}, Variances{8});
-  auto b1 = makeVariable<float>(Values{1.6});
-  auto expected00 = a0 * b0;
-  auto expected01 = a0 * b1;
-  auto expected10 = a1 * b0;
-  auto expected11 = a1 * b1;
-  const auto vals = ab.values<event_list<double>>();
-  const auto vars = ab.variances<event_list<double>>();
-  EXPECT_TRUE(equals(vals[0], expected00.values<double>()));
-  EXPECT_TRUE(equals(vals[1], expected01.values<double>()));
-  EXPECT_TRUE(equals(vals[2], expected10.values<double>()));
-  EXPECT_TRUE(equals(vals[3], expected11.values<double>()));
-  EXPECT_TRUE(equals(vars[0], expected00.variances<double>()));
-  EXPECT_TRUE(equals(vars[1], expected01.variances<double>()));
-  EXPECT_TRUE(equals(vars[2], expected10.variances<double>()));
-  EXPECT_TRUE(equals(vars[3], expected11.variances<double>()));
-
+  EXPECT_EQ(
+      ab.slice({Dim::Z, 0}),
+      from_constituents(indicesY, Dim::Event, tableA * b.slice({Dim::Z, 0})));
+  EXPECT_EQ(
+      ab.slice({Dim::Z, 1}),
+      from_constituents(indicesY, Dim::Event, tableA * b.slice({Dim::Z, 1})));
   EXPECT_EQ(ab.dims(), Dimensions({Dim::Y, Dim::Z}, {2, 2}));
-}
-
-// Currently transform_in_place supports outputs with fewer dimensions than the
-// other arguments, effectively applying the same operation multiple times to
-// the same output element. This is useful, e.g., when implementing sums or
-// integrations, but may be unexpected. Should we fail and support this as a
-// separate operation instead?
-TEST_F(TransformBinaryTest, fail_dimension_reduction) {
-  auto a = make_events_variable_with_variance<double>();
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8}});
-  const auto b = makeVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
-
-  EXPECT_THROW((transform_in_place<pair_custom_t<std::tuple<double, float>>>(
-                   a, b, op_in_place)),
-               except::NotFoundError);
 }
 
 // It is possible to use transform with functors that call non-built-in
@@ -830,7 +561,7 @@ TEST_F(TransformInPlaceDryRunTest, dimensions_fail) {
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               std::runtime_error);
+               except::NotFoundError);
   EXPECT_EQ(a, original);
 }
 
@@ -841,62 +572,43 @@ TEST_F(TransformInPlaceDryRunTest, variances_fail) {
   const auto original(a);
 
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               std::runtime_error);
+               except::VariancesError);
   EXPECT_EQ(a, original);
 }
 
-TEST_F(TransformInPlaceDryRunTest, events_variance_length_fail) {
-  auto a = make_events_variable_with_variance<double>();
-  a.setUnit(units::m);
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8, 9}});
+class TransformInPlaceBucketsDryRunTest : public TransformInPlaceDryRunTest {
+protected:
+  Variable indicesA = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 4}});
+  Variable indicesB = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 5}});
+  Variable tableA =
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, units::m,
+                           Values{1, 2, 3, 4}, Variances{5, 6, 7, 8});
+  Variable tableB =
+      makeVariable<double>(Dims{Dim::Event}, Shape{5}, units::m,
+                           Values{1, 2, 3, 4, 5}, Variances{5, 6, 7, 8, 9});
+  Variable a = from_constituents(indicesA, Dim::Event, tableA);
+  Variable b = from_constituents(indicesB, Dim::Event, tableB);
+};
+
+TEST_F(TransformInPlaceBucketsDryRunTest, events_length_fail) {
   const auto original(a);
-
-  EXPECT_THROW(dry_run::transform_in_place<double>(a, unary),
-               except::SizeError);
-  EXPECT_EQ(a, original);
-  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, a, binary),
-               except::SizeError);
-  EXPECT_EQ(a, original);
-}
-
-TEST_F(TransformInPlaceDryRunTest, events_length_fail) {
-  auto a = make_events_variable_with_variance<double>();
-  a.setUnit(units::m);
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8}});
-  auto b = make_events_variable_with_variance<double>();
-  b.setUnit(units::m);
-  set_events_values<double>(b, {{1, 2, 3}, {4, 5}});
-  set_events_variances<double>(b, {{5, 6, 7}, {8, 9}});
-  const auto original(a);
-
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               except::SizeError);
+               except::BucketError);
   EXPECT_EQ(a, original);
 }
 
-TEST_F(TransformInPlaceDryRunTest, events_no_variances_length_fail) {
-  auto a = make_events_variable<double>();
-  a.setUnit(units::m);
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  auto b = make_events_variable<double>();
-  b.setUnit(units::m);
-  set_events_values<double>(b, {{1, 2, 3}, {4, 5}});
+TEST_F(TransformInPlaceBucketsDryRunTest, variances_fail) {
+  a = from_constituents(indicesA, Dim::Event, values(tableA));
   const auto original(a);
-
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               except::SizeError);
+               except::VariancesError);
   EXPECT_EQ(a, original);
 }
 
-TEST_F(TransformInPlaceDryRunTest, unchanged_if_success) {
-  auto a = make_events_variable_with_variance<double>();
-  a.setUnit(units::m);
-  set_events_values<double>(a, {{1, 2, 3}, {4}});
-  set_events_variances<double>(a, {{5, 6, 7}, {8}});
+TEST_F(TransformInPlaceBucketsDryRunTest, unchanged_if_success) {
   const auto original(a);
-
   dry_run::transform_in_place<double>(a, unary);
   EXPECT_EQ(a, original);
   dry_run::transform_in_place<pair_self_t<double>>(a, a, binary);
@@ -1088,19 +800,18 @@ TEST(TransformEigenTest, is_eigen_type_test) {
 
 class TransformBucketElementsTest : public ::testing::Test {
 protected:
-  using Model = variable::DataModel<bucket<Variable>>;
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  Variable var{std::make_unique<Model>(indices, Dim::X, buffer)};
+  Variable var = from_constituents(indices, Dim::X, buffer);
 };
 
 TEST_F(TransformBucketElementsTest, single_arg_in_place) {
   transform_in_place<double>(
       var, scipp::overloaded{transform_flags::expect_no_variance_arg<0>,
                              [](auto &x) { x *= x; }});
-  Variable expected{std::make_unique<Model>(indices, Dim::X, buffer * buffer)};
+  Variable expected = from_constituents(indices, Dim::X, buffer * buffer);
   EXPECT_EQ(var, expected);
 }

@@ -46,7 +46,7 @@ template <class T> void bind_buckets(pybind11::module &m) {
         } else {
           throw std::runtime_error("`end` given but not `begin`");
         }
-        return dataset::buckets::from_constituents(
+        return from_constituents(
             makeVariable<std::pair<scipp::index, scipp::index>>(
                 dims, Values(std::move(indices))),
             dim, T(data));

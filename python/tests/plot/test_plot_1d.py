@@ -5,7 +5,7 @@
 
 import numpy as np
 import scipp as sc
-from plot_helper import make_dense_dataset, make_events_dataset
+from plot_helper import make_dense_dataset
 from scipp.plot import plot
 
 # TODO: For now we are just checking that the plot does not throw any errors.
@@ -103,29 +103,6 @@ def test_plot_sliceviewer_with_1d_projection_with_nans():
     # p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('tof')].value = 10
     # p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('x')].value = 10
     # p['tof.x.y.counts'].controller.widgets.slider[sc.Dim('y')].value = 10
-
-
-def test_plot_1d_events_data_with_bool_bins():
-    d = make_events_dataset(ndim=1)
-    plot(d, bins={'tof': True})
-
-
-def test_plot_1d_events_data_with_int_bins():
-    d = make_events_dataset(ndim=1)
-    plot(d, bins={'tof': 50})
-
-
-def test_plot_1d_events_data_with_nparray_bins():
-    d = make_events_dataset(ndim=1)
-    plot(d, bins={'tof': np.linspace(0.0, 105.0, 50)})
-
-
-def test_plot_1d_events_data_with_Variable_bins():
-    d = make_events_dataset(ndim=1)
-    bins = sc.Variable(['tof'],
-                       values=np.linspace(0.0, 105.0, 50),
-                       unit=sc.units.us)
-    plot(d, bins={'tof': bins})
 
 
 def test_plot_variable_1d():

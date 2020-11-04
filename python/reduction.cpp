@@ -13,13 +13,6 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
-template <class T> void bind_flatten(py::module &m) {
-  m.def("flatten",
-        py::overload_cast<const typename T::const_view_type &, const Dim>(
-            &flatten),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
-}
-
 template <class T> void bind_mean(py::module &m) {
   m.def(
       "mean",
@@ -134,10 +127,6 @@ template <class T> void bind_any(py::module &m) {
 }
 
 void init_reduction(py::module &m) {
-  bind_flatten<Variable>(m);
-  bind_flatten<DataArray>(m);
-  bind_flatten<Dataset>(m);
-
   bind_mean<Variable>(m);
   bind_mean<DataArray>(m);
   bind_mean<Dataset>(m);

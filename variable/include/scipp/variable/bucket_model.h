@@ -9,8 +9,10 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/buckets.h"
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 
 namespace scipp::variable {
@@ -46,6 +48,13 @@ public:
   makeDefaultFromParent(const Dimensions &dims) const override {
     return std::make_unique<DataModel>(makeVariable<range_type>(dims), m_dim,
                                        T{m_buffer.slice({m_dim, 0, 0})});
+  }
+
+  VariableConceptHandle
+  makeDefaultFromParent(const VariableConstView &shape) const override {
+    const auto [begin, size] = sizes_to_begin(shape);
+    return std::make_unique<DataModel>(
+        zip(begin, begin), m_dim, resize_default_init(m_buffer, m_dim, size));
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
@@ -129,7 +138,7 @@ bool DataModel<bucket<T>>::equals(const VariableConstView &a,
   if (a.dims().volume() == 0 && a.dims() == b.dims())
     return true;
   // TODO This implementation is slow since it creates a view for every bucket.
-  return equal(a.values<bucket<T>>(), b.values<bucket<T>>());
+  return equals_impl(a.values<bucket<T>>(), b.values<bucket<T>>());
 }
 
 template <class T>

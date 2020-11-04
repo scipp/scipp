@@ -15,7 +15,6 @@ void init_detail(py::module &);
 void init_dtype(py::module &);
 void init_eigen(py::module &);
 void init_element_array_view(py::module &);
-void init_event_list(py::module &);
 void init_groupby(py::module &);
 void init_geometry(py::module &);
 void init_histogram(py::module &);
@@ -47,7 +46,6 @@ void init_core(py::module &m) {
   init_reduction(core);
   init_trigonometry(core);
   init_unary(core);
-  init_event_list(core);
   init_element_array_view(core);
 }
 

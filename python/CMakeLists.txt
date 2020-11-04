@@ -20,7 +20,6 @@ pybind11_add_module(
   operations.cpp
   py_object.cpp
   scipp.cpp
-  event_list.cpp
   reduction.cpp
   trigonometry.cpp
   unary.cpp

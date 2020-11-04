@@ -33,12 +33,7 @@ void expect_ne(const DataArrayConstView &a, const DataArrayConstView &b) {
 
 class DataArray_comparison_operators : public ::testing::Test {
 protected:
-  DataArray_comparison_operators()
-      : default_event_weights(makeVariable<double>(
-            Dims{Dim::Y, Dim::Z}, Shape{3l, 2l}, Values{1, 1, 1, 1, 1, 1},
-            Variances{1, 1, 1, 1, 1, 1})),
-        events_variable(makeVariable<event_list<double>>(Dims{Dim::Y, Dim::Z},
-                                                         Shape{3, 2})) {
+  DataArray_comparison_operators() {
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
@@ -58,8 +53,6 @@ protected:
   }
 
   Dataset dataset;
-  Variable default_event_weights;
-  Variable events_variable;
 };
 
 template <class T> auto make_values(const Dimensions &dims) {
@@ -298,21 +291,4 @@ TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
   b["item"].coords().set(Dim::X, dataset.coords()[Dim::X]);
   for (const auto &a_ : a)
     expect_eq(a_, b[a_.name()]);
-}
-
-TEST_F(DataArray_comparison_operators, with_events_dimension_data) {
-  // a and b same, c different number of events values
-  auto a = Dataset();
-  auto data = makeVariable<event_list<double>>(Dims{}, Shape{});
-  const std::string var_name = "test_var";
-  data.values<event_list<double>>()[0] = {1, 2, 3};
-  a.setData(var_name, data);
-  auto b = Dataset();
-  b.setData(var_name, data);
-  expect_eq(a[var_name], b[var_name]);
-  data.values<event_list<double>>()[0] = {2, 3, 4};
-  auto c = Dataset();
-  c.setData(var_name, data);
-  expect_ne(a[var_name], c[var_name]);
-  expect_ne(b[var_name], c[var_name]);
 }

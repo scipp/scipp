@@ -34,9 +34,7 @@ private:
   }
 
 protected:
-  Dataset_comparison_operators()
-      : events_variable(makeVariable<event_list<double>>(Dims{Dim::Y, Dim::Z},
-                                                         Shape{3, 2})) {
+  Dataset_comparison_operators() {
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
@@ -60,7 +58,6 @@ protected:
   }
 
   Dataset dataset;
-  Variable events_variable;
 };
 
 // Baseline checks: Does dataset comparison pick up arbitrary mismatch of
@@ -179,21 +176,4 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
   b.setData("y", dataset.coords()[Dim::Y]);
   b.setData("x", dataset.coords()[Dim::X]);
   expect_eq(a, b);
-}
-
-TEST_F(Dataset_comparison_operators, with_events_dimension_data) {
-  // a and b same, c different number of events values
-  auto a = make_empty();
-  auto data = makeVariable<event_list<double>>(Dims{}, Shape{});
-  const std::string var_name = "test_var";
-  data.values<event_list<double>>()[0] = {1, 2, 3};
-  a.setData(var_name, data);
-  auto b = make_empty();
-  b.setData(var_name, data);
-  expect_eq(a, b);
-  data.values<event_list<double>>()[0] = {2, 3, 4};
-  auto c = make_empty();
-  c.setData(var_name, data);
-  expect_ne(a, c);
-  expect_ne(b, c);
 }

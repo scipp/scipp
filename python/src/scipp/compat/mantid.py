@@ -13,7 +13,6 @@ import numpy as np
 from .. import detail
 from .._utils import is_data_array
 from .._scipp import core as sc
-from .._scipp.core import contains_events
 
 
 @contextmanager
@@ -610,52 +609,58 @@ def convert_EventWorkspace_to_data_array(ws,
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
     spec_dim, spec_coord = init_spec_axis(ws)
     nHist = ws.getNumberHistograms()
+    _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
 
-    coord = sc.Variable([spec_dim],
-                        shape=[nHist],
+    n_event = ws.getNumberEvents()
+    coord = sc.Variable(dims=['event'],
+                        shape=[n_event],
                         unit=unit,
-                        dtype=sc.dtype.event_list_float64)
-    if load_pulse_times:
-        labs = sc.Variable([spec_dim],
-                           shape=[nHist],
-                           dtype=sc.dtype.event_list_int64)
+                        dtype=sc.dtype.float64)
+    weights = sc.Variable(dims=['event'],
+                          unit=data_unit,
+                          values=np.ones(n_event, dtype=np.float32),
+                          variances=np.ones(n_event, dtype=np.float32))
+    pulse_times = sc.Variable(
+        dims=['event'],
+        shape=[n_event],
+        unit=sc.units.ns,
+        dtype=sc.dtype.int64) if load_pulse_times else None
 
-    # Check for weighted events
     evtp = ws.getSpectrum(0).getEventType()
     contains_weighted_events = ((evtp == EventType.WEIGHTED)
                                 or (evtp == EventType.WEIGHTED_NOTIME))
-    if contains_weighted_events:
-        weights = sc.Variable([spec_dim],
-                              shape=[nHist],
-                              dtype=sc.dtype.event_list_float32,
-                              variances=True)
 
+    begins = sc.Variable([spec_dim], shape=[nHist], dtype=sc.dtype.int64)
+    ends = begins.copy()
+    current = 0
     for i in range(nHist):
         sp = ws.getSpectrum(i)
-        coord[spec_dim, i].values = sp.getTofs()
+        size = sp.getNumberEvents()
+        coord['event', current:current + size].values = sp.getTofs()
         if load_pulse_times:
-            labs[spec_dim, i].values = sp.getPulseTimesAsNumpy()
+            pulse_times['event', current:current +
+                        size].values = sp.getPulseTimesAsNumpy()
         if contains_weighted_events:
-            weights[spec_dim, i].values = sp.getWeights()
-            weights[spec_dim, i].variances = sp.getWeightErrors()
+            weights['event', current:current + size].values = sp.getWeights()
+            weights['event',
+                    current:current + size].variances = sp.getWeightErrors()
+        begins.values[i] = current
+        ends.values[i] = current + size
+        current += size
+
+    proto_events = {'data': weights, 'coords': {dim: coord}}
+    if load_pulse_times:
+        proto_events["coords"]["pulse-time"] = pulse_times
+    events = detail.move_to_data_array(**proto_events)
 
     coords_labs_data = _convert_MatrixWorkspace_info(
         ws, advanced_geometry=advanced_geometry, load_run_logs=load_run_logs)
-    coords_labs_data["coords"][dim] = coord
 
-    if load_pulse_times:
-        coords_labs_data["coords"]["pulse-time"] = labs
-    if contains_weighted_events:
-        coords_labs_data["data"] = weights
-    else:
-        _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
-        coords_labs_data["data"] = sc.Variable(dims=[spec_dim],
-                                               values=np.ones(nHist),
-                                               variances=np.ones(nHist),
-                                               unit=data_unit,
-                                               dtype=sc.dtype.float32)
-    array = detail.move_to_data_array(**coords_labs_data)
-    return array
+    coords_labs_data["data"] = sc.to_buckets(begin=begins,
+                                             end=ends,
+                                             dim='event',
+                                             data=events)
+    return detail.move_to_data_array(**coords_labs_data)
 
 
 def convert_MDHistoWorkspace_to_data_array(md_histo, **ignored):
@@ -958,9 +963,6 @@ def to_mantid(data, dim, instrument_file=None):
         raise RuntimeError(
             "Currently only data arrays can be converted to a Mantid workspace"
         )
-    if data.data is None or contains_events(data):
-        raise RuntimeError(
-            "Currently only histogrammed data can be converted.")
     try:
         import mantid.simpleapi as mantid
     except ImportError:
