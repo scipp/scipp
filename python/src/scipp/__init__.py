@@ -53,3 +53,7 @@ setattr(DataArray, 'bins', property(_bins))
 setattr(DataArrayView, 'bins', property(_bins))
 setattr(Dataset, 'bins', property(_bins))
 setattr(DatasetView, 'bins', property(_bins))
+
+from ._bins import _groupby_bins
+setattr(GroupByDataArray, 'bins', property(_groupby_bins))
+setattr(GroupByDataset, 'bins', property(_groupby_bins))

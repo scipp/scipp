@@ -129,11 +129,26 @@ class Bins:
         raise RuntimeError("Reduction along all dims not supported yet.")
 
 
+class GroupbyBins:
+    """
+    Proxy for operations on bins of a groupby object
+    """
+    def __init__(self, obj):
+        self._obj = obj
+
+    def join(self, dim):
+        return self._obj.concatenate(dim)
+
+
 def _bins(obj):
     if _cpp.is_bins(obj):
         return Bins(obj)
     else:
         return None
+
+
+def _groupby_bins(obj):
+    return GroupbyBins(obj)
 
 
 def bin(x, edges):
