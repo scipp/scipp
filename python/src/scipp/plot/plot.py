@@ -24,11 +24,21 @@ class Plot(dict):
         """
         IPython display representation for Jupyter notebooks.
         """
-        import ipywidgets as widgets
+        return self._to_widget()._ipython_display_()
+
+    def _to_widget(self):
+        """
+        Return plot contents into a single VBocx container
+        """
+        import ipywidgets as ipw
         contents = []
-        for key, val in self.items():
-            contents.append(val._to_widget())
-        return widgets.VBox(contents)._ipython_display_()
+        for item in self.values():
+            contents.append(item._to_widget())
+        return ipw.VBox(contents)
+
+    def show(self):
+        for item in self.values():
+            item.show()
 
     def as_static(self, *args, **kwargs):
         """
@@ -152,9 +162,9 @@ def plot(scipp_obj,
             if ndims == 1 or projection == "1d" or projection == "1D":
                 # Construct a key from the dimensions
                 if axes is not None:
-                    key = str(list(axes.values())[0])
+                    key = list(axes.values())[0]
                 else:
-                    key = str(var.dims[0])
+                    key = var.dims[0]
                 # Add unit to key
                 key = "{}.{}".format(key, str(var.unit))
                 line_count += 1

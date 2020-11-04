@@ -35,7 +35,7 @@ def test_create():
     assert sc.is_equal(d.coords['y'], y)
     assert sc.is_equal(d['xy'].data, xy)
     assert sc.is_equal(d['x'].data, x)
-    assert bool(set(d.dims) - set(['y', 'x']))
+    assert set(d.dims) == set(['y', 'x'])
 
 
 def test_create_from_data_array():

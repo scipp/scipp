@@ -35,6 +35,12 @@ class PlotView:
         """
         return self.figure._to_widget()
 
+    def show(self):
+        """
+        Forward the call to show() to the figure.
+        """
+        self.figure.show()
+
     def savefig(self, *args, **kwargs):
         """
         Forward figure saving to the `figure`.
@@ -47,19 +53,28 @@ class PlotView:
         """
         self.figure.initialise(*args, **kwargs)
 
-    def connect(self, callbacks):
+    def connect(self, view_callbacks=None, figure_callbacks=None):
         """
         Connect the view interface to the callbacks provided by the
         `controller`.
         """
-        for key, func in callbacks.items():
-            self.interface[key] = func
+        if view_callbacks is not None:
+            for key, func in view_callbacks.items():
+                self.interface[key] = func
+        if figure_callbacks is not None:
+            self.figure.connect(figure_callbacks)
 
-    def rescale_to_data(self, vmin=None, vmax=None):
+    def rescale_to_data(self, *args, **kwargs):
         """
         Forward rescaling to the `figure`.
         """
-        self.figure.rescale_to_data(vmin=vmin, vmax=vmax)
+        self.figure.rescale_to_data(*args, **kwargs)
+
+    def toggle_norm(self, *args, **kwargs):
+        """
+        Forward norm change to the `figure`.
+        """
+        self.figure.toggle_norm(*args, **kwargs)
 
     def update_axes(self, *args, **kwargs):
         """
@@ -86,3 +101,9 @@ class PlotView:
                                            self.profile_hover_connection)
             self.profile_pick_connection = None
             self.profile_hover_connection = None
+
+    def update_log_axes_buttons(self, *args, **kwargs):
+        """
+        Forward log buttons update to the `figure`.
+        """
+        self.figure.update_log_axes_buttons(*args, **kwargs)

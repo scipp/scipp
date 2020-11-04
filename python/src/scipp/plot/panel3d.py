@@ -47,7 +47,7 @@ class PlotPanel3d(PlotPanel):
         self.opacity_slider = ipw.FloatRangeSlider(
             min=0.0,
             max=1.0,
-            value=[0.01, 1],
+            value=[0.03, 1],
             step=0.01,
             description="Opacity slider: When no cut surface is active, the "
             "max value of the range slider controls the overall opacity, "
@@ -194,7 +194,6 @@ class PlotPanel3d(PlotPanel):
             self.cut_surface_thickness.disabled = True
             self._update_opacity({"new": self.opacity_slider.value})
         else:
-            # self.points_material.depthTest = False
             self.interface["update_depth_test"](False)
             if change["old"] is None:
                 self.cut_slider.disabled = False

@@ -61,7 +61,7 @@ class SciPlot2d(SciPlot):
                                    name=self.name,
                                    dim_to_shape=self.dim_to_shape,
                                    masks=self.masks,
-                                   button_options=['x', 'y'])
+                                   multid_coord=self.multid_coord)
 
         # The model which takes care of all heavy calculations
         self.model = PlotModel2d(scipp_obj_dict=scipp_obj_dict,
@@ -115,6 +115,3 @@ class SciPlot2d(SciPlot):
             model=self.model,
             view=self.view,
             profile=self.profile)
-
-        # Call update_slice once to make the initial image
-        self.controller.update_axes()

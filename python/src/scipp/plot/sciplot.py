@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 from .tools import parse_params
-from .._scipp import core as sc
 import ipywidgets as ipw
 
 
@@ -58,6 +57,7 @@ class SciPlot:
         self.dim_to_shape = {}
         self.coord_shapes = {}
         self.dim_label_map = {}
+        self.multid_coord = None
 
         self.name = list(scipp_obj_dict.keys())[0]
         self._process_axes_dimensions(scipp_obj_dict[self.name],
@@ -108,10 +108,13 @@ class SciPlot:
 
             # Create a useful map from dim to shape
             self.dim_to_shape[name] = dict(zip(array_dims, array.shape))
+            # TODO: once Dim has been replaced by strings, the str(dim) can
+            # then here be replaced by dim
             self.coord_shapes[name] = {
-                dim: array.coords[dim].shape
-                for dim in array.coords
+                str(dim): coord.shape
+                for dim, coord in array.coords.items()
             }
+
             # Add shapes for dims that have no coord in the original data.
             # They will be replaced by fake coordinates in the model.
             for dim in array_dims:
@@ -154,6 +157,12 @@ class SciPlot:
                 widget_list.append(item._to_widget())
         return ipw.VBox(widget_list)
 
+    def show(self):
+        """
+        Call the show() method of a matplotlib figure.
+        """
+        self.view.show()
+
     def _process_axes_dimensions(self,
                                  array=None,
                                  axes=None,
@@ -173,44 +182,59 @@ class SciPlot:
         # Process axes dimensions
         self.axes = {}
         for i, dim in enumerate(array_dims[::-1]):
-            if i < view_ndims:
-                key = base_axes[i]
+            if positions is not None:
+                if (dim == positions) or (dim
+                                          == array.coords[positions].dims[-1]):
+                    key = "x"
+                else:
+                    key = i - ("x" in self.axes)
             else:
-                key = i - view_ndims
+                if i < view_ndims:
+                    key = base_axes[i]
+                else:
+                    key = i - view_ndims
             self.axes[key] = dim
 
+        # Replace axes with supplied axes dimensions
+        supplied_axes = {}
         if axes is not None:
-            # Axes can be incomplete
-            for key, ax in axes.items():
-                dim = sc.Dim(ax)
-                dim_list = list(self.axes.values())
-                key_list = list(self.axes.keys())
-                if ax in dim_list:
-                    ind = dim_list.index(ax)
-                else:
-                    # Non-dimension coordinate
-                    underlying_dim = array.coords[ax].dims[-1]
-                    self.dim_label_map[underlying_dim] = dim
-                    self.dim_label_map[dim] = underlying_dim
-                    ind = dim_list.index(underlying_dim)
-                self.axes[key_list[ind]] = self.axes[key]
-                self.axes[key] = dim
+            supplied_axes.update(axes)
+        if positions is not None and (positions not in self.axes.values()):
+            supplied_axes.update({"x": positions})
 
-        # Replace positions in axes if positions set
-        if positions is not None:
-            if positions not in self.axes:
-                dim = sc.Dim(positions)
-                underlying_dim = array.coords[positions].dims[-1]
+        for key, dim in supplied_axes.items():
+            dim_list = list(self.axes.values())
+            key_list = list(self.axes.keys())
+            if dim in dim_list:
+                ind = dim_list.index(dim)
+            else:
+                # Non-dimension coordinate
+                underlying_dim = array.coords[dim].dims[-1]
                 self.dim_label_map[underlying_dim] = dim
                 self.dim_label_map[dim] = underlying_dim
-                dim_list = list(self.axes.values())
-                key_list = list(self.axes.keys())
                 ind = dim_list.index(underlying_dim)
-                self.axes[key_list[ind]] = self.axes[key]
-                self.axes[key] = dim
+            self.axes[key_list[ind]] = self.axes[key]
+            self.axes[key] = dim
+
+        self._validate_axes(array)
+
+    def _validate_axes(self, array):
+        """
+        Validation checks on axes.
+        """
+        for dim, coord in array.coords.items():
+            if len(coord.dims) > 1:
+                self.multid_coord = dim
+
+        # Protect against having a multi-dimensional coord along a slider axis
+        for ax, dim in self.axes.items():
+            if isinstance(ax, int) and (dim == self.multid_coord):
+                raise RuntimeError("A ragged coordinate cannot lie along "
+                                   "a slider dimension, it must be one of "
+                                   "the displayed dimensions.")
 
         # Protect against duplicate entries in axes
-        if len(self.axes) != len(set(self.axes)):
+        if len(self.axes.values()) != len(set(self.axes.values())):
             raise RuntimeError("Duplicate entry in axes: {}".format(self.axes))
 
     def savefig(self, filename=None):
