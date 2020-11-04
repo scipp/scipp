@@ -8,7 +8,7 @@ If your use case requires one or several of the items on the following list, usi
 - Handling of physical units.
 - Propagation of uncertainties.
 - Support for histograms, i.e., bin-edge axes, which are by 1 longer than the data extent.
-- Support for unaligned data and non-destructive bucketing.
+- Support for unaligned data and non-destructive binning.
 - Support for event data, a particular form of sparse data with 1-D (or N-D) arrays of random-length lists, with very small list entries.
 - Support for masks stored with data.
 - Written in C++ for better performance (for certain applications), in combination with Python bindings.
@@ -52,7 +52,7 @@ Documentation
    user-guide/slicing
    user-guide/computation
    user-guide/masking
-   user-guide/buckets
+   user-guide/binned-data
    user-guide/groupby
    user-guide/how_to
    user-guide/tips-tricks-and-anti-patterns

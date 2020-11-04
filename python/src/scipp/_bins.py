@@ -5,6 +5,40 @@ from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
+class BinsGroupby:
+    def __init__(self, obj, dim):
+        self._obj = obj
+        self._dim = dim
+
+    def __mul__(self, histogram):
+        copy = self._obj.copy()
+        _cpp.buckets.scale(copy, histogram, self._dim)
+        return copy
+
+    def __truediv__(self, histogram):
+        copy = self._obj.copy()
+        _cpp.buckets.scale(copy, _cpp.reciprocal(histogram), self._dim)
+        return copy
+
+    def __imul__(self, histogram):
+        _cpp.buckets.scale(self._obj, histogram, self._dim)
+
+    def __itruediv__(self, histogram):
+        _cpp.buckets.scale(self._obj, _cpp.reciprocal(histogram), self._dim)
+
+
+class BinsGroupbyProperty:
+    def __init__(self, obj):
+        self._obj = obj
+
+    def __getitem__(self, dim):
+        return BinsGroupby(self._obj, dim)
+
+    def __setitem__(self, dim, item):
+        # Required for inplace arithmetic operators
+        assert item is None
+
+
 class Bins:
     """
     Proxy for operations on bins of a variable
@@ -37,6 +71,11 @@ class Bins:
     def data(self):
         """Internal data buffer holding data of all bins"""
         return _cpp.bins_data(self._data())
+
+    @property
+    def groupby(self):
+        """Proxy property for operations aware of coords within bins"""
+        return BinsGroupbyProperty(self._obj)
 
     def sum(self):
         """Sum of each bin.
