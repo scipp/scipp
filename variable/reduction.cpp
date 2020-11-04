@@ -26,7 +26,7 @@ void nansum_impl(const VariableView &summed, const VariableConstView &var) {
 }
 
 template <typename Op>
-Variable sum_with_dim_impl(const Op op, const VariableConstView &var,
+Variable sum_with_dim_impl(Op op, const VariableConstView &var,
                            const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
@@ -40,7 +40,7 @@ Variable sum_with_dim_impl(const Op op, const VariableConstView &var,
 }
 
 template <typename Op>
-VariableView sum_with_dim_inplace_impl(const Op op,
+VariableView sum_with_dim_inplace_impl(Op op,
                                        const VariableConstView &var,
                                        const Dim dim, const VariableView &out) {
   if (var.dtype() == dtype<bool> && out.dtype() != dtype<int64_t>)
