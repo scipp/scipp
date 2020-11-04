@@ -43,11 +43,8 @@ constexpr auto nan_plus_equals =
                  using std::isnan;
                  if (isnan(a))
                    a = zero;
-                 if (isnan(b)) {
-                   a += zero;
-                   return;
-                 }
-                 a += b;
+                 if (!isnan(b))
+                   a += b;
                }};
 constexpr auto minus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};
