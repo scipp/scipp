@@ -75,6 +75,10 @@ sizes_to_begin(const VariableConstView &sizes) {
   return {begin, size};
 }
 
+/// Construct a bin-variable over a variable.
+///
+/// Each bin is represented by a VariableView. `indices` defines the array of
+/// bins as slices of `buffer` along `dim`.
 Variable from_constituents(Variable indices, const Dim dim, Variable buffer) {
   return {std::make_unique<variable::DataModel<bucket<Variable>>>(
       std::move(indices), dim, std::move(buffer))};
