@@ -43,14 +43,12 @@ class NumpyDataIO():
 class BinDataIO():
     @staticmethod
     def write(group, data):
-        from .._scipp import core as sc
         values = group.create_group('values')
-        begin, end = sc.bins_begin_end(data)
-        VariableIO.write(values.create_group('begin'), var=begin)
-        VariableIO.write(values.create_group('end'), var=end)
+        VariableIO.write(values.create_group('begin'), var=data.bins.begin)
+        VariableIO.write(values.create_group('end'), var=data.bins.end)
         data_group = values.create_group('data')
-        data_group.attrs['dim'] = str(sc.bins_dim(data))
-        HDF5IO.write(data_group, sc.bins_data(data))
+        data_group.attrs['dim'] = str(data.bins.dim)
+        HDF5IO.write(data_group, data.bins.data)
         return values
 
     @staticmethod
