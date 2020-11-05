@@ -59,8 +59,8 @@ def test_variable_2d():
 
 
 def test_variable_binned_variable():
-    begin = sc.Variable(dims=['y'], values=[0, 3])
-    end = sc.Variable(dims=['y'], values=[3, 4])
+    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.dtype.int64)
+    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.dtype.int64)
     binned = sc.bins(begin=begin, end=end, dim='x', data=x)
     check_roundtrip(binned)
 
