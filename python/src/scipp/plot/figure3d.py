@@ -317,9 +317,12 @@ void main() {
         Update opacity of all points when opacity slider is changed.
         Take cut surface into account if present.
         """
-        arr = self.points_geometry.attributes["rgba_color"].array
-        arr[:, 3] = alpha
-        self.points_geometry.attributes["rgba_color"].array = arr
+        color = self.points_geometry.attributes["rgba_color"]
+        # Must work with a copy and the array property setter to ensure
+        # updates are triggered
+        updated = color.array.copy()
+        updated[:, 3] = alpha
+        color.array = updated
 
     def update_depth_test(self, value):
         """
