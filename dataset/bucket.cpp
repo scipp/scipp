@@ -343,12 +343,23 @@ void scale(const DataArrayView &data, const DataArrayConstView &histogram,
     dim = edge_dimension(histogram);
   // Coords along dim are ignored since "binning" is dynamic for buckets.
   expect::coordsAreSuperset(data, histogram.slice({dim, 0}));
-  // buckets::map applies masks along dim
+  // scale applies masks along dim but others are kept
   union_or_in_place(data.masks(), histogram.slice({dim, 0}).masks());
-  // The result of buckets::map is a variable, i.e., we cannot rely on the
-  // multiplication taking care of mask propagation and coord checks, hence the
-  // handling above.
-  data *= map(histogram, data.data(), histogram.dims().inner());
+  const auto mask = irreducible_mask(histogram.masks(), dim);
+  Variable masked;
+  if (mask)
+    masked = histogram.data() * ~mask;
+  const auto &[indices, buffer_dim, buffer] =
+      data.data().constituents<bucket<DataArray>>();
+  // TODO "bug" here: subspan_view creates a new variable, so out unit not set!
+  transform_in_place(subspan_view(buffer.data(), buffer_dim, indices),
+                     subspan_view(VariableConstView(buffer.coords()[dim]),
+                                  buffer_dim, indices),
+                     subspan_view(histogram.coords()[dim], dim),
+                     subspan_view(mask ? masked : histogram.data(), dim),
+                     core::element::event::scale);
+  // TODO Workaround, see comment above
+  buffer.data().setUnit(buffer.unit() * histogram.unit());
 }
 
 Variable sum(const VariableConstView &data) {
