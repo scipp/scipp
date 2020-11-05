@@ -23,6 +23,3 @@ class PlotView3d(PlotView):
 
     def update_depth_test(self, *args, **kwargs):
         self.figure.update_depth_test(*args, **kwargs)
-
-    def update_cut_surface(self, *args, **kwargs):
-        self.figure.update_cut_surface(*args, **kwargs)
