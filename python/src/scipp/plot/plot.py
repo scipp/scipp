@@ -68,7 +68,7 @@ def _ndarray_to_variable(ndarray):
     Convert a numpy ndarray to a Variable.
     Fake dimension labels begin at 'x' and cycle through the alphabet.
     """
-    dims = [f"axis-{i}" for i in reversed(range(len(ndarray.shape)))]
+    dims = [f"axis-{i}" for i in range(len(ndarray.shape))]
     return sc.Variable(dims=dims, values=ndarray)
 
 
