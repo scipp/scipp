@@ -52,6 +52,8 @@ class SciPlot3d(SciPlot):
                  tick_size=None,
                  show_outline=True):
 
+        view_ndims = 3
+
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          cmap=cmap,
@@ -60,10 +62,10 @@ class SciPlot3d(SciPlot):
                          vmax=vmax,
                          masks=masks,
                          positions=positions,
-                         view_ndims=3)
+                         view_ndims=view_ndims)
 
         self.widgets = PlotWidgets(axes=self.axes,
-                                   ndim=self.ndim,
+                                   ndim=view_ndims,
                                    name=self.name,
                                    dim_to_shape=self.dim_to_shape,
                                    masks=self.masks,

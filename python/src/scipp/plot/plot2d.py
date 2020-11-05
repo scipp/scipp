@@ -46,6 +46,8 @@ class SciPlot2d(SciPlot):
                  vmax=None,
                  resolution=None):
 
+        view_ndims = 2
+
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          cmap=cmap,
@@ -53,11 +55,11 @@ class SciPlot2d(SciPlot):
                          vmin=vmin,
                          vmax=vmax,
                          masks=masks,
-                         view_ndims=2)
+                         view_ndims=view_ndims)
 
         # Create control widgets (sliders and buttons)
         self.widgets = PlotWidgets(axes=self.axes,
-                                   ndim=self.ndim,
+                                   ndim=view_ndims,
                                    name=self.name,
                                    dim_to_shape=self.dim_to_shape,
                                    masks=self.masks,

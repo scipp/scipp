@@ -52,6 +52,8 @@ class SciPlot1d(SciPlot):
                  grid=False,
                  title=None):
 
+        view_ndims = 1
+
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          norm=norm,
@@ -59,10 +61,10 @@ class SciPlot1d(SciPlot):
                          vmax=vmax,
                          errorbars=errorbars,
                          masks=masks,
-                         view_ndims=1)
+                         view_ndims=view_ndims)
 
         self.widgets = PlotWidgets(axes=self.axes,
-                                   ndim=self.ndim,
+                                   ndim=view_ndims,
                                    name=self.name,
                                    dim_to_shape=self.dim_to_shape,
                                    masks=self.masks,
