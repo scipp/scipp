@@ -162,3 +162,10 @@ class PlotFigure:
         """
         if self.toolbar is not None:
             self.toolbar.update_log_axes_buttons(*args, **kwargs)
+
+    def update_norm_button(self, *args, **kwargs):
+        """
+        Change state of norm button in toolbar.
+        """
+        if self.toolbar is not None:
+            self.toolbar.update_norm_button(*args, **kwargs)

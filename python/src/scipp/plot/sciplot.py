@@ -163,6 +163,13 @@ class SciPlot:
         """
         self.view.show()
 
+    def render(self, *args, **kwargs):
+        """
+        Perform some initial calls to render the figure once all components
+        have been created.
+        """
+        self.controller.render(*args, **kwargs)
+
     def _process_axes_dimensions(self,
                                  array=None,
                                  axes=None,

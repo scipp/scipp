@@ -402,3 +402,7 @@ void main() {
         """
         if self.toolbar is not None:
             self.toolbar.update_log_axes_buttons(*args, **kwargs)
+
+    def update_norm_button(self, *args, **kwargs):
+        if self.toolbar is not None:
+            self.toolbar.update_norm_button(*args, **kwargs)

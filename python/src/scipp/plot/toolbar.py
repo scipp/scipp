@@ -143,3 +143,10 @@ class PlotToolbar:
             if key in self.members:
                 self.toggle_button_color(self.members[key],
                                          value=scale == "log")
+
+    def update_norm_button(self, norm=None):
+        """
+        Change state of norm button according to supplied norm value.
+        """
+        self.toggle_button_color(self.members["toggle_norm"],
+                                         value=norm == "log")

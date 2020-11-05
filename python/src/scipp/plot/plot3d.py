@@ -111,3 +111,6 @@ class SciPlot3d(SciPlot):
             view=self.view,
             panel=self.panel,
             profile=self.profile)
+
+        # Render the figure once all components have been created.
+        self.render(norm=norm)
