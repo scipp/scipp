@@ -27,14 +27,13 @@ class PlotFigure3d:
                  figsize=None,
                  unit=None,
                  log=None,
-                 vmin=None,
-                 vmax=None,
                  nan_color=None,
                  masks=None,
                  pixel_size=None,
                  tick_size=None,
                  background=None,
-                 show_outline=True):
+                 show_outline=True,
+                 extend=None):
 
         if figsize is None:
             figsize = (config.plot.width, config.plot.height)
@@ -43,12 +42,12 @@ class PlotFigure3d:
         self.toolbar = PlotToolbar(ndim=3)
 
         # Prepare colormaps
-        self.cmap = copy(cm.get_cmap(cmap))
+        self.cmap = cmap
         self.cmap.set_bad(color=nan_color)
         self.scalar_map = cm.ScalarMappable(norm=norm, cmap=self.cmap)
         self.masks_scalar_map = None
         if len(masks) > 0:
-            self.masks_cmap = copy(cm.get_cmap(masks["cmap"]))
+            self.masks_cmap = masks["cmap"]
             self.masks_cmap.set_bad(color=nan_color)
             self.masks_scalar_map = cm.ScalarMappable(norm=norm,
                                                       cmap=self.masks_cmap)
@@ -62,7 +61,7 @@ class PlotFigure3d:
 
         # Create the colorbar image
         self.cbar_image = ipw.Image()
-        self.cbar_fig, self.cbar = self._create_colorbar(figsize)
+        self.cbar_fig, self.cbar = self._create_colorbar(figsize, extend)
 
         # Create the point cloud material with pythreejs
         self.points_material = self._create_points_material()
@@ -290,24 +289,23 @@ void main() {
 
         return ticks_and_labels
 
-    def _create_colorbar(self, figsize):
+    def _create_colorbar(self, figsize, extend):
         """
         Make image from matplotlib colorbar.
         We need to make a dummy imshow so we can later update the limits with
         set_clim, as this method is not available on a ColorbarBase class.
         """
-        a = np.array([[0, 1]])
         height_inches = figsize[1] / config.plot.dpi
 
         cbar_fig, ax = plt.subplots(figsize=(height_inches * 0.2,
                                              height_inches),
                                     dpi=config.plot.dpi)
-        cbar_imshow = ax.imshow(a,
+        cbar_imshow = ax.imshow(np.array([[0, 1]]),
                                 cmap=self.scalar_map.get_cmap(),
                                 norm=self.scalar_map.norm)
         ax.set_visible(False)
         cbar_ax = cbar_fig.add_axes([0.05, 0.02, 0.25, 0.94])
-        cbar = plt.colorbar(cbar_imshow, cax=cbar_ax)
+        cbar = plt.colorbar(cbar_imshow, cax=cbar_ax, extend=extend)
         cbar.set_label(self.unit)
         cbar.ax.yaxis.set_label_coords(-0.9, 0.5)
         return cbar_fig, cbar_imshow

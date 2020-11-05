@@ -47,7 +47,6 @@ class SciPlot3d(SciPlot):
                  color=None,
                  aspect=None,
                  background="#f0f0f0",
-                 nan_color="#d3d3d3",
                  pixel_size=1.0,
                  tick_size=None,
                  show_outline=True):
@@ -83,16 +82,18 @@ class SciPlot3d(SciPlot):
 
         # The view which will display the 3d scene and send pick events back to
         # the controller
-        self.view = PlotView3d(cmap=self.params["values"][self.name]["cmap"],
-                               norm=self.params["values"][self.name]["norm"],
-                               unit=self.params["values"][self.name]["unit"],
-                               masks=self.masks[self.name],
-                               nan_color=nan_color,
-                               pixel_size=pixel_size,
-                               tick_size=tick_size,
-                               background=background,
-                               show_outline=show_outline,
-                               figsize=figsize)
+        self.view = PlotView3d(
+            cmap=self.params["values"][self.name]["cmap"],
+            norm=self.params["values"][self.name]["norm"],
+            unit=self.params["values"][self.name]["unit"],
+            masks=self.masks[self.name],
+            nan_color=self.params["values"][self.name]["nan_color"],
+            pixel_size=pixel_size,
+            tick_size=tick_size,
+            background=background,
+            show_outline=show_outline,
+            figsize=figsize,
+            extend=self.extend_cmap)
 
         # An additional panel view with widgets to control the cut surface
         self.panel = PlotPanel3d(pixel_size=pixel_size)
