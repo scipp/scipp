@@ -92,13 +92,14 @@ class Bins:
         """
         return _call_cpp_func(_cpp.bin_size, self._obj)
 
-    def join(self, other=None, dim=None, out=None):
-        """Join bins element-wise by concatenating bin contents along their
-        internal bin dimension.
+    def concatenate(self, other=None, dim=None, out=None):
+        """Concatenate bins element-wise by concatenating bin contents along
+        their internal bin dimension.
 
-        The bins to join are either obtained element-wise from `self` and
-        `other`, or, if `dim` but not `other` is given, from all bins along
-        the given dimension.
+        This can be used as a binary operation, or a reduction operation: The
+        bins to concatenate are either obtained element-wise from `self`
+        and `other`, or, if `dim` but not `other` is given, from all bins
+        along the given dimension.
 
         :param other: Optional input containing bins.
         :param dim: Optional dimension along which to merge bins. If not given
@@ -110,7 +111,7 @@ class Bins:
         """
         if other is not None and dim is not None:
             raise RuntimeError(
-                "`join` requires either `other` or a `dim`, but not both.")
+                "`concatenate` requires `other` or a `dim`, but not both.")
         if other is not None:
             if out is None:
                 return _call_cpp_func(_cpp.buckets.concatenate, self._obj,
@@ -123,7 +124,7 @@ class Bins:
                                          other)
                 return out
         if out is not None:
-            raise RuntimeError("`out` arg not support for join along dim")
+            raise RuntimeError("`out` arg not support for  along dim")
         if dim is not None:
             return _call_cpp_func(_cpp.buckets.concatenate, self._obj, dim)
         raise RuntimeError("Reduction along all dims not supported yet.")
@@ -136,7 +137,7 @@ class GroupbyBins:
     def __init__(self, obj):
         self._obj = obj
 
-    def join(self, dim):
+    def concatenate(self, dim):
         return self._obj.concatenate(dim)
 
 
