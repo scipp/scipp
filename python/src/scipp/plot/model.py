@@ -83,6 +83,13 @@ class PlotModel:
                 self.data_arrays[name].masks[m] = sc.Variable(
                     dims=mask_dims, values=msk.values, dtype=msk.dtype)
 
+        # Store dim of multi-dimensional coordinate if present
+        self.multid_coord = None
+        for array in self.data_arrays.values():
+            for dim, coord in array.coords.items():
+                if len(coord.dims) > 1:
+                    self.multid_coord = dim
+
         # The main currently displayed data slice
         self.dslice = None
         # Save a copy of the name for simpler access
@@ -219,3 +226,9 @@ class PlotModel:
                 array = array[dim, lower]
 
         return array
+
+    def get_multid_coord(self):
+        """
+        Return the multi-dimensional coordinate.
+        """
+        return self.multid_coord

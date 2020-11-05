@@ -149,4 +149,4 @@ class PlotToolbar:
         Change state of norm button according to supplied norm value.
         """
         self.toggle_button_color(self.members["toggle_norm"],
-                                         value=norm == "log")
+                                 value=norm == "log")

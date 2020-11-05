@@ -223,19 +223,15 @@ class SciPlot:
             self.axes[key_list[ind]] = self.axes[key]
             self.axes[key] = dim
 
-        self._validate_axes(array)
-
-    def _validate_axes(self, array):
+    def validate(self):
         """
-        Validation checks on axes.
+        Validation checks before plotting.
         """
-        for dim, coord in array.coords.items():
-            if len(coord.dims) > 1:
-                self.multid_coord = dim
+        multid_coord = self.model.get_multid_coord()
 
         # Protect against having a multi-dimensional coord along a slider axis
         for ax, dim in self.axes.items():
-            if isinstance(ax, int) and (dim == self.multid_coord):
+            if isinstance(ax, int) and (dim == multid_coord):
                 raise RuntimeError("A ragged coordinate cannot lie along "
                                    "a slider dimension, it must be one of "
                                    "the displayed dimensions.")
