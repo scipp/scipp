@@ -133,6 +133,7 @@ def _dict_to_variable(d):
     """
     Convert a python dict to a scipp Variable.
     """
+    d = dict(d)
     # The Variable constructor does not accept both `shape` and `values`. If
     # `values` is present, remove `shape` from the list. Also remove `dims` in
     # the case of a 0D variable.
@@ -158,6 +159,7 @@ def _dict_to_data_array(d):
     """
     Convert a python dict to a scipp DataArray.
     """
+    d = dict(d)
     if ("data" not in d):
         raise KeyError("To create a DataArray, the supplied dict must contain "
                        "'data'. Got {}.".format(d.keys()))
