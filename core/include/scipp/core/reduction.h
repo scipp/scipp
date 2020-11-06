@@ -18,4 +18,4 @@ typename T::value_type reduce_all_dims(const T &obj, const Op &op) {
     out = op(out, out.dims().inner());
   return out;
 }
-}
+} // namespace scipp::core
