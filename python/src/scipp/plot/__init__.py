@@ -28,8 +28,8 @@ if ipy is not None:
     meta = cfg["Session"]["metadata"]
     if hasattr(meta, "to_dict"):
         meta = meta.to_dict()
-        if "scipp_docs_build" in meta:
-            is_doc_build = meta["scipp_docs_build"]
+    if "scipp_docs_build" in meta:
+        is_doc_build = meta["scipp_docs_build"]
     # If we are in an IPython kernel, try to select widget backend
     if ("IPKernelApp" in ipy.config) and (not is_doc_build) and (mpl
                                                                  is not None):

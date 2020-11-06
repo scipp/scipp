@@ -8,7 +8,6 @@ from .._utils import value_to_string
 import numpy as np
 import ipywidgets as ipw
 from matplotlib import cm, ticker
-# import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm
 import pythreejs as p3
@@ -318,9 +317,12 @@ void main() {
         Update opacity of all points when opacity slider is changed.
         Take cut surface into account if present.
         """
-        arr = self.points_geometry.attributes["rgba_color"].array
-        arr[:, 3] = alpha
-        self.points_geometry.attributes["rgba_color"].array = arr
+        color = self.points_geometry.attributes["rgba_color"]
+        # Must work with a copy and the array property setter to ensure
+        # updates are triggered
+        updated = color.array.copy()
+        updated[:, 3] = alpha
+        color.array = updated
 
     def update_depth_test(self, value):
         """
@@ -402,3 +404,7 @@ void main() {
         """
         if self.toolbar is not None:
             self.toolbar.update_log_axes_buttons(*args, **kwargs)
+
+    def update_norm_button(self, *args, **kwargs):
+        if self.toolbar is not None:
+            self.toolbar.update_norm_button(*args, **kwargs)

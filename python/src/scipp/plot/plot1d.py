@@ -52,6 +52,8 @@ class SciPlot1d(SciPlot):
                  grid=False,
                  title=None):
 
+        view_ndims = 1
+
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          norm=norm,
@@ -59,14 +61,7 @@ class SciPlot1d(SciPlot):
                          vmax=vmax,
                          errorbars=errorbars,
                          masks=masks,
-                         view_ndims=1)
-
-        self.widgets = PlotWidgets(axes=self.axes,
-                                   ndim=self.ndim,
-                                   name=self.name,
-                                   dim_to_shape=self.dim_to_shape,
-                                   masks=self.masks,
-                                   multid_coord=self.multid_coord)
+                         view_ndims=view_ndims)
 
         # The model which takes care of all heavy calculations
         self.model = PlotModel1d(scipp_obj_dict=scipp_obj_dict,
@@ -74,6 +69,14 @@ class SciPlot1d(SciPlot):
                                  name=self.name,
                                  dim_to_shape=self.dim_to_shape,
                                  dim_label_map=self.dim_label_map)
+
+        # Create control widgets (sliders and buttons)
+        self.widgets = PlotWidgets(axes=self.axes,
+                                   ndim=view_ndims,
+                                   name=self.name,
+                                   dim_to_shape=self.dim_to_shape,
+                                   masks=self.masks,
+                                   multid_coord=self.model.get_multid_coord())
 
         # The view which will display the 1d plot and send pick events back to
         # the controller
@@ -124,3 +127,9 @@ class SciPlot1d(SciPlot):
             view=self.view,
             panel=self.panel,
             profile=self.profile)
+
+        # Run validation checks before rendering the plot.
+        self.validate()
+
+        # Render the figure once all components have been created.
+        self.render(norm=norm)

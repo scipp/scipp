@@ -16,7 +16,7 @@ class PlotController3d(PlotController):
     """
     def __init__(self, *args, pixel_size=None, positions=None, **kwargs):
 
-        super().__init__(*args, initial_update=False, **kwargs)
+        super().__init__(*args, **kwargs)
 
         self.positions = positions
         self.pos_axparams = {}
@@ -30,10 +30,6 @@ class PlotController3d(PlotController):
                     "lims": ex["lims"],
                     "label": name_with_unit(1.0 * ex["unit"], name=xyz.upper())
                 }
-
-        # Call axes once to make the initial plot
-        self.update_axes()
-        self.update_log_axes_buttons()
 
     def initialise_model(self):
         """

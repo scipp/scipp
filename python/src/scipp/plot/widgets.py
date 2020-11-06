@@ -50,7 +50,7 @@ class PlotWidgets:
         for ax, dim in axes.items():
             if isinstance(ax, int) and dim != positions:
                 slider_dims[ax] = dim
-        possible_dims = list(axes.values())
+        possible_dims = set(axes.values()) - set([positions])
 
         # Now begin loop to construct sliders
         for index, (ax, dim) in enumerate(slider_dims.items()):
@@ -88,6 +88,11 @@ class PlotWidgets:
                 description="Profile",
                 button_style="",
                 layout={"width": "initial"})
+
+            # TODO: hide the profile button for 3D plots. Renable this once
+            # profile picking is supported on 3D plots
+            if ndim == 3:
+                self.profile_button[index].layout.display = 'none'
 
             # Add one set of buttons per dimension
             self.dim_buttons[index] = {}

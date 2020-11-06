@@ -122,6 +122,33 @@ def test_plot_dict_of_variables_1d():
     plot({'v1': v1, 'v2': v2})
 
 
+def test_plot_ndarray_1d():
+    plot(np.random.random(50))
+
+
+def test_plot_dict_of_ndarrays_1d():
+    plot({'a': np.arange(20), 'b': np.random.random(50)})
+
+
+def test_plot_from_dict_variable_1d():
+    plot({"dims": ['adim'], "values": np.random.random(20)})
+
+
+def test_plot_from_dict_data_array_1d():
+    plot({
+        "data": {
+            "dims": ["adim"],
+            "values": np.random.random(20)
+        },
+        "coords": {
+            "adim": {
+                "dims": ["adim"],
+                "values": np.arange(21)
+            }
+        }
+    })
+
+
 def test_plot_dataset_view():
     d = make_dense_dataset(ndim=2)
     plot(d['x', 0])

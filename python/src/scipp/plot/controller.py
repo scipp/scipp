@@ -36,8 +36,7 @@ class PlotController:
                  model=None,
                  panel=None,
                  profile=None,
-                 view=None,
-                 initial_update=True):
+                 view=None):
 
         self.widgets = widgets
         self.model = model
@@ -127,17 +126,27 @@ class PlotController:
         if self.panel is not None:
             self.connect_panel()
 
-        # Call axes once to make the initial plot
-        if initial_update:
-            self.update_axes()
-            self.update_log_axes_buttons()
+    def render(self, norm=None):
+        """
+        Update axes (and data) to render the figure once all components
+        have been created.
+        """
+        self.update_axes()
+        self.update_log_axes_buttons()
+        self.update_norm_button(norm)
 
     def get_dim_shape(self, dim, name=None):
+        """
+        Get dimension shape.
+        """
         if name is None:
             name = self.name
         return self.dim_to_shape[name][dim]
 
     def get_coord_unit(self, dim, name=None):
+        """
+        Get dimension coordinate unit.
+        """
         if name is None:
             name = self.name
         return self.coord_units[name][dim]
@@ -322,6 +331,12 @@ class PlotController:
         self.view.update_log_axes_buttons(
             {ax: self.scale[self.axes[ax]]
              for ax in self._get_xyz_axes()})
+
+    def update_norm_button(self, *args, **kwargs):
+        """
+        Change state of norm button according to supplied norm value.
+        """
+        self.view.update_norm_button(*args, **kwargs)
 
     def update_axes(self, change=None):
         """
