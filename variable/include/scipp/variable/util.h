@@ -9,9 +9,12 @@
 
 namespace scipp::variable {
 
-SCIPP_VARIABLE_EXPORT Variable linspace(const VariableConstView &start,
-                                        const VariableConstView &stop,
-                                        const Dim dim, const scipp::index num);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+linspace(const VariableConstView &start, const VariableConstView &stop,
+         const Dim dim, const scipp::index num);
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+is_linspace(const VariableConstView &var, const Dim dim);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable values(const VariableConstView &x);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
@@ -20,7 +23,8 @@ variances(const VariableConstView &x);
 enum class SortOrder { Ascending, Descending };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT bool
-is_sorted(const VariableConstView &x, const Dim dim, const SortOrder order);
+is_sorted(const VariableConstView &x, const Dim dim,
+          const SortOrder order = SortOrder::Ascending);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 zip(const VariableConstView &first, const VariableConstView &second);
