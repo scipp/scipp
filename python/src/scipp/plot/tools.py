@@ -5,7 +5,6 @@
 from .. import config
 from .._utils import name_with_unit
 from .._scipp import core as sc
-from matplotlib import cm
 import numpy as np
 from copy import copy
 
@@ -53,6 +52,7 @@ def parse_params(params=None,
     Construct the colorbar settings using default and input values
     """
     from matplotlib.colors import Normalize, LogNorm, LinearSegmentedColormap
+    from matplotlib import cm
 
     parsed = dict(config.plot.params)
     if defaults is not None:
