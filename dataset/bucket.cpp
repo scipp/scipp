@@ -351,6 +351,7 @@ void scale(const DataArrayView &data, const DataArrayConstView &histogram,
     masked = histogram.data() * ~mask;
   const auto &[indices, buffer_dim, buffer] =
       data.data().constituents<bucket<DataArray>>();
+  /*
   // TODO "bug" here: subspan_view creates a new variable, so out unit not set!
   transform_in_place(subspan_view(buffer.data(), buffer_dim, indices),
                      subspan_view(VariableConstView(buffer.coords()[dim]),
@@ -360,6 +361,16 @@ void scale(const DataArrayView &data, const DataArrayConstView &histogram,
                      core::element::event::scale);
   // TODO Workaround, see comment above
   buffer.data().setUnit(buffer.unit() * histogram.unit());
+  */
+
+  // auto tmp = make_non_owning_bins(indices, buffer_dim, buffer.data());
+  // tmp += make_non_owning_bins(indices, buffer_dim, buffer.coords()[dim]);
+  transform_in_place(
+      make_non_owning_bins(indices, buffer_dim, buffer.data()),
+      make_non_owning_bins(indices, buffer_dim, buffer.coords()[dim]),
+      subspan_view(histogram.coords()[dim], dim),
+      subspan_view(mask ? masked : histogram.data(), dim),
+      core::element::event::scale_sorted_edges);
 }
 
 Variable sum(const VariableConstView &data) {

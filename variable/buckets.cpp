@@ -84,4 +84,16 @@ Variable from_constituents(Variable indices, const Dim dim, Variable buffer) {
       std::move(indices), dim, std::move(buffer))};
 }
 
+Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
+                              const VariableView &buffer) {
+  return {std::make_unique<variable::DataModel<bucket<VariableView>>>(
+      indices, dim, buffer)};
+}
+
+Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
+                              const VariableConstView &buffer) {
+  return {std::make_unique<variable::DataModel<bucket<VariableConstView>>>(
+      indices, dim, buffer)};
+}
+
 } // namespace scipp::variable

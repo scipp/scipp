@@ -149,4 +149,38 @@ constexpr auto scale = overloaded{
       }
     }};
 
+constexpr auto get = [](const auto &x, const scipp::index i) {
+  if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+    return ValueAndVariance{x.value[i], x.variance[i]};
+  else
+    return x[i];
+};
+
+namespace scale_sorted_edges_detail {
+template <class Data, class Coord, class Edge, class Weight>
+using args = std::tuple<Data, Coord, span<const Edge>, span<const Weight>>;
+} // namespace scale_sorted_edges_detail
+
+constexpr auto scale_sorted_edges = overloaded{
+    element::arg_list<
+        scale_sorted_edges_detail::args<double, double, double, double>,
+        scale_sorted_edges_detail::args<float, double, double, double>,
+        scale_sorted_edges_detail::args<float, double, double, float>,
+        scale_sorted_edges_detail::args<double, float, float, double>>,
+    transform_flags::expect_in_variance_if_out_variance,
+    transform_flags::expect_no_variance_arg<1>,
+    transform_flags::expect_no_variance_arg<2>,
+    [](units::Unit &data, const units::Unit &x, const units::Unit &edges,
+       const units::Unit &weights) {
+      expect::equals(x, edges);
+      data *= weights;
+    },
+    [](auto &data, const auto coord, const auto &edges, const auto &weights) {
+      auto it = std::upper_bound(edges.begin(), edges.end(), coord);
+      if (it == edges.end() || it == edges.begin())
+        data *= 0.0;
+      else
+        data *= get(weights, --it - edges.begin());
+    }};
+
 } // namespace scipp::core::element::event

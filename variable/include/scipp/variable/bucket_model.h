@@ -23,6 +23,8 @@ namespace scipp::variable {
 /// A bucket in this context is defined as an element of a variable mapping to a
 /// range of data, such as a slice of a DataArray.
 template <class T> class DataModel<bucket<T>> : public VariableConcept {
+  using Indices = std::conditional_t<is_view_v<T>, VariableConstView, Variable>;
+
 public:
   using value_type = bucket<T>;
   using range_type = typename bucket<T>::range_type;
@@ -52,9 +54,13 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const VariableConstView &shape) const override {
-    const auto [begin, size] = sizes_to_begin(shape);
-    return std::make_unique<DataModel>(
-        zip(begin, begin), m_dim, resize_default_init(m_buffer, m_dim, size));
+    if constexpr (is_view_v<T>) {
+      throw std::runtime_error("copy of binned view not supported");
+    } else {
+      const auto [begin, size] = sizes_to_begin(shape);
+      return std::make_unique<DataModel>(
+          zip(begin, begin), m_dim, resize_default_init(m_buffer, m_dim, size));
+    }
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
@@ -77,8 +83,8 @@ public:
   // breaking invariants of variable?
   const T &buffer() const noexcept { return m_buffer; }
   T &buffer() noexcept { return m_buffer; }
-  const Variable &indices() const { return m_indices; }
-  Variable &indices() { return m_indices; }
+  const auto &indices() const { return m_indices; }
+  auto &indices() { return m_indices; }
 
   ElementArrayView<bucket<T>> values(const core::ElementArrayViewParams &base) {
     return {index_values(base), m_dim, m_buffer};
@@ -91,35 +97,46 @@ public:
   scipp::index dtype_size() const override { return sizeof(range_type); }
 
 private:
-  static auto validated_indices(const VariableConstView &indices, const Dim dim,
-                                const T &buffer) {
-    Variable copy(indices);
-    const auto vals =
-        scipp::span(copy.values<range_type>().data(),
-                    copy.values<range_type>().data() + copy.dims().volume());
-    std::sort(vals.begin(), vals.end());
-    if ((!vals.empty() && (vals.begin()->first < 0)) ||
-        (!vals.empty() && ((vals.end() - 1)->second > buffer.dims()[dim])))
-      throw except::SliceError("Bucket indices out of range");
-    if (std::adjacent_find(vals.begin(), vals.end(),
-                           [](const auto a, const auto b) {
-                             return a.second > b.first;
-                           }) != vals.end())
-      throw except::SliceError(
-          "Bucket begin index must be less or equal to its end index.");
-    if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
-          return x.second >= 0 && x.first > x.second;
-        }) != vals.end())
-      throw except::SliceError("Overlapping bucket indices are not allowed.");
-    // Copy to avoid a second memory allocation
-    const auto &i = indices.values<range_type>();
-    std::copy(i.begin(), i.end(), vals.begin());
-    return copy;
+  static auto validated_indices(const VariableConstView &indices,
+                                [[maybe_unused]] const Dim dim,
+                                [[maybe_unused]] const T &buffer) {
+    if constexpr (is_view_v<T>) {
+      // Assume validation happened outside when constructing owning DataModel.
+      return indices;
+    } else {
+      Variable copy(indices);
+      const auto vals =
+          scipp::span(copy.values<range_type>().data(),
+                      copy.values<range_type>().data() + copy.dims().volume());
+      std::sort(vals.begin(), vals.end());
+      if ((!vals.empty() && (vals.begin()->first < 0)) ||
+          (!vals.empty() && ((vals.end() - 1)->second > buffer.dims()[dim])))
+        throw except::SliceError("Bucket indices out of range");
+      if (std::adjacent_find(vals.begin(), vals.end(),
+                             [](const auto a, const auto b) {
+                               return a.second > b.first;
+                             }) != vals.end())
+        throw except::SliceError(
+            "Bucket begin index must be less or equal to its end index.");
+      if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
+            return x.second >= 0 && x.first > x.second;
+          }) != vals.end())
+        throw except::SliceError("Overlapping bucket indices are not allowed.");
+      // Copy to avoid a second memory allocation
+      const auto &i = indices.values<range_type>();
+      std::copy(i.begin(), i.end(), vals.begin());
+      return copy;
+    }
   }
   auto index_values(const core::ElementArrayViewParams &base) const {
-    return cast<range_type>(m_indices).values(base);
+    if constexpr (is_view_v<T>) {
+      // TODO combine slicing from `base` with slicing in m_indices
+      return m_indices.template values<range_type>();
+    } else {
+      return cast<range_type>(m_indices).values(base);
+    }
   }
-  Variable m_indices;
+  Indices m_indices;
   Dim m_dim;
   T m_buffer;
 };
@@ -144,15 +161,20 @@ bool DataModel<bucket<T>>::equals(const VariableConstView &a,
 template <class T>
 void DataModel<bucket<T>>::copy(const VariableConstView &src,
                                 const VariableView &dst) const {
-  const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
-  const auto [begin0, end0] = unzip(indices0);
-  const auto sizes1 = end0 - begin0;
-  auto [begin1, size1] = sizes_to_begin(sizes1);
-  auto indices1 = zip(begin1, begin1 + sizes1);
-  auto buffer1 = resize_default_init(buffer0, dim0, size1);
-  copy_slices(buffer0, buffer1, dim0, indices0, indices1);
-  dst.replace_model(
-      DataModel<bucket<T>>{std::move(indices1), dim0, std::move(buffer1)});
+  if constexpr (is_view_v<T>) {
+    throw std::runtime_error("copy of binned view not supported");
+  } else {
+    const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
+    const auto [begin0, end0] = unzip(indices0);
+    const auto sizes1 = end0 - begin0;
+    auto [begin1, size1] = sizes_to_begin(sizes1);
+    auto indices1 = zip(begin1, begin1 + sizes1);
+    auto buffer1 = resize_default_init(buffer0, dim0, size1);
+    copy_slices(buffer0, buffer1, dim0, indices0, indices1);
+    // TODO should probably use T::value_type to support case of views
+    dst.replace_model(
+        DataModel<bucket<T>>{std::move(indices1), dim0, std::move(buffer1)});
+  }
 }
 
 template <class T>
