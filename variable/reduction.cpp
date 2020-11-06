@@ -7,11 +7,9 @@
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/core/element/comparison.h"
 #include "scipp/core/element/logical.h"
+#include "scipp/core/reduction.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"
-
-#include "operations_common.h"
 
 using namespace scipp::core;
 
@@ -26,8 +24,7 @@ void nansum_impl(const VariableView &summed, const VariableConstView &var) {
 }
 
 template <typename Op>
-Variable sum_with_dim_impl(Op op, const VariableConstView &var,
-                           const Dim dim) {
+Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
   // Bool DType is a bit special in that it cannot contain it's sum.
@@ -40,8 +37,7 @@ Variable sum_with_dim_impl(Op op, const VariableConstView &var,
 }
 
 template <typename Op>
-VariableView sum_with_dim_inplace_impl(Op op,
-                                       const VariableConstView &var,
+VariableView sum_with_dim_inplace_impl(Op op, const VariableConstView &var,
                                        const Dim dim, const VariableView &out) {
   if (var.dtype() == dtype<bool> && out.dtype() != dtype<int64_t>)
     throw except::UnitError("In-place sum of Bool dtype must be stored in an "
