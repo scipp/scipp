@@ -46,6 +46,8 @@ class SciPlot2d(SciPlot):
                  vmax=None,
                  resolution=None):
 
+        view_ndims = 2
+
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          cmap=cmap,
@@ -53,15 +55,7 @@ class SciPlot2d(SciPlot):
                          vmin=vmin,
                          vmax=vmax,
                          masks=masks,
-                         view_ndims=2)
-
-        # Create control widgets (sliders and buttons)
-        self.widgets = PlotWidgets(axes=self.axes,
-                                   ndim=self.ndim,
-                                   name=self.name,
-                                   dim_to_shape=self.dim_to_shape,
-                                   masks=self.masks,
-                                   multid_coord=self.multid_coord)
+                         view_ndims=view_ndims)
 
         # The model which takes care of all heavy calculations
         self.model = PlotModel2d(scipp_obj_dict=scipp_obj_dict,
@@ -70,6 +64,14 @@ class SciPlot2d(SciPlot):
                                  dim_to_shape=self.dim_to_shape,
                                  dim_label_map=self.dim_label_map,
                                  resolution=resolution)
+
+        # Create control widgets (sliders and buttons)
+        self.widgets = PlotWidgets(axes=self.axes,
+                                   ndim=view_ndims,
+                                   name=self.name,
+                                   dim_to_shape=self.dim_to_shape,
+                                   masks=self.masks,
+                                   multid_coord=self.model.get_multid_coord())
 
         # The view which will display the 2d image and send pick events back to
         # the controller
@@ -114,4 +116,11 @@ class SciPlot2d(SciPlot):
             widgets=self.widgets,
             model=self.model,
             view=self.view,
-            profile=self.profile)
+            profile=self.profile,
+            multid_coord=self.model.get_multid_coord())
+
+        # Run validation checks before rendering the plot.
+        self.validate()
+
+        # Render the figure once all components have been created.
+        self.render(norm=norm)

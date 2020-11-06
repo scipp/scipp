@@ -8,7 +8,6 @@ from .._utils import value_to_string
 import numpy as np
 import ipywidgets as ipw
 from matplotlib import cm, ticker
-# import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm
 import pythreejs as p3
@@ -405,3 +404,7 @@ void main() {
         """
         if self.toolbar is not None:
             self.toolbar.update_log_axes_buttons(*args, **kwargs)
+
+    def update_norm_button(self, *args, **kwargs):
+        if self.toolbar is not None:
+            self.toolbar.update_norm_button(*args, **kwargs)

@@ -52,6 +52,8 @@ class SciPlot3d(SciPlot):
                  tick_size=None,
                  show_outline=True):
 
+        view_ndims = 3
+
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          cmap=cmap,
@@ -60,15 +62,7 @@ class SciPlot3d(SciPlot):
                          vmax=vmax,
                          masks=masks,
                          positions=positions,
-                         view_ndims=3)
-
-        self.widgets = PlotWidgets(axes=self.axes,
-                                   ndim=self.ndim,
-                                   name=self.name,
-                                   dim_to_shape=self.dim_to_shape,
-                                   masks=self.masks,
-                                   positions=positions,
-                                   multid_coord=self.multid_coord)
+                         view_ndims=view_ndims)
 
         # The model which takes care of all heavy calculations
         self.model = PlotModel3d(scipp_obj_dict=scipp_obj_dict,
@@ -77,6 +71,15 @@ class SciPlot3d(SciPlot):
                                  dim_to_shape=self.dim_to_shape,
                                  dim_label_map=self.dim_label_map,
                                  positions=positions)
+
+        # Create control widgets (sliders and buttons)
+        self.widgets = PlotWidgets(axes=self.axes,
+                                   ndim=view_ndims,
+                                   name=self.name,
+                                   dim_to_shape=self.dim_to_shape,
+                                   masks=self.masks,
+                                   positions=positions,
+                                   multid_coord=self.model.get_multid_coord())
 
         # The view which will display the 3d scene and send pick events back to
         # the controller
@@ -110,4 +113,11 @@ class SciPlot3d(SciPlot):
             model=self.model,
             view=self.view,
             panel=self.panel,
-            profile=self.profile)
+            profile=self.profile,
+            multid_coord=self.model.get_multid_coord())
+
+        # Run validation checks before rendering the plot.
+        self.validate()
+
+        # Render the figure once all components have been created.
+        self.render(norm=norm)

@@ -107,3 +107,9 @@ class PlotView:
         Forward log buttons update to the `figure`.
         """
         self.figure.update_log_axes_buttons(*args, **kwargs)
+
+    def update_norm_button(self, *args, **kwargs):
+        """
+        Forward norm button update to the `figure`.
+        """
+        self.figure.update_norm_button(*args, **kwargs)

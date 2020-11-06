@@ -57,7 +57,6 @@ class SciPlot:
         self.dim_to_shape = {}
         self.coord_shapes = {}
         self.dim_label_map = {}
-        self.multid_coord = None
 
         self.name = list(scipp_obj_dict.keys())[0]
         self._process_axes_dimensions(scipp_obj_dict[self.name],
@@ -163,6 +162,13 @@ class SciPlot:
         """
         self.view.show()
 
+    def render(self, *args, **kwargs):
+        """
+        Perform some initial calls to render the figure once all components
+        have been created.
+        """
+        self.controller.render(*args, **kwargs)
+
     def _process_axes_dimensions(self,
                                  array=None,
                                  axes=None,
@@ -216,19 +222,14 @@ class SciPlot:
             self.axes[key_list[ind]] = self.axes[key]
             self.axes[key] = dim
 
-        self._validate_axes(array)
-
-    def _validate_axes(self, array):
+    def validate(self):
         """
-        Validation checks on axes.
+        Validation checks before plotting.
         """
-        for dim, coord in array.coords.items():
-            if len(coord.dims) > 1:
-                self.multid_coord = dim
 
         # Protect against having a multi-dimensional coord along a slider axis
         for ax, dim in self.axes.items():
-            if isinstance(ax, int) and (dim == self.multid_coord):
+            if isinstance(ax, int) and (dim == self.model.get_multid_coord()):
                 raise RuntimeError("A ragged coordinate cannot lie along "
                                    "a slider dimension, it must be one of "
                                    "the displayed dimensions.")
