@@ -105,7 +105,7 @@ template <class T> struct Bin {
 
 auto bin(const VariableConstView &var, const VariableConstView &indices,
          const VariableConstView &sizes) {
-  return core::CallDType<double, float, int64_t, int32_t, bool,
+  return core::CallDType<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
                          std::string>::apply<Bin>(var.dtype(), var, indices,
                                                   sizes);
 }
