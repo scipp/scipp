@@ -5,7 +5,9 @@
 from .. import config
 from .._utils import name_with_unit
 from .._scipp import core as sc
+from matplotlib import cm
 import numpy as np
+from copy import copy
 
 
 def get_line_param(name=None, index=None):
@@ -81,6 +83,11 @@ def parse_params(params=None,
     if parsed["color"] is not None:
         parsed["cmap"] = LinearSegmentedColormap.from_list(
             "tmp", [parsed["color"], parsed["color"]])
+    else:
+        parsed["cmap"] = copy(cm.get_cmap(parsed["cmap"]))
+
+    parsed["cmap"].set_under(parsed["under_color"])
+    parsed["cmap"].set_over(parsed["over_color"])
 
     if variable is not None:
         parsed["unit"] = name_with_unit(var=variable, name="")

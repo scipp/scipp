@@ -32,6 +32,9 @@ defaults = {
             "color": None,
             "show": True,
             "cbar": True,
+            "nan_color": "#d3d3d3",
+            "under_color": "#9467bd",
+            "over_color": "#8c564b",
         },
         # The default image height (in pixels)
         "height":

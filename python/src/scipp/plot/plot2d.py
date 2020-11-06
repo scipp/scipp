@@ -84,7 +84,8 @@ class SciPlot2d(SciPlot):
                                title=self.name,
                                cbar=self.params["values"][self.name]["cbar"],
                                unit=self.params["values"][self.name]["unit"],
-                               masks=self.masks[self.name])
+                               masks=self.masks[self.name],
+                               extend=self.extend_cmap)
 
         # Profile view which displays an additional dimension as a 1d plot
         if self.ndim > 2:

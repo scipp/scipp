@@ -24,10 +24,9 @@ class PlotFigure2d(PlotFigure):
                  title=None,
                  cbar=None,
                  unit=None,
-                 vmin=None,
-                 vmax=None,
                  masks=None,
-                 resolution=None):
+                 resolution=None,
+                 extend=None):
 
         super().__init__(ax=ax, cax=cax, figsize=figsize, title=title, ndim=2)
 
@@ -41,7 +40,10 @@ class PlotFigure2d(PlotFigure):
 
         self.cbar = None
         if cbar:
-            self.cbar = plt.colorbar(self.image, ax=self.ax, cax=self.cax)
+            self.cbar = plt.colorbar(self.image,
+                                     ax=self.ax,
+                                     cax=self.cax,
+                                     extend=extend)
             self.cbar.set_label(unit)
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
