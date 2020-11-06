@@ -16,6 +16,14 @@ using scipp::common::reduce_all_dims;
 
 namespace scipp::variable {
 
+// Workaround VS C7526 (undefined inline variable) with dtype<> in template.
+bool is_dtype_bool(const VariableConstView &var) {
+  return var.dtype() == dtype<bool>;
+}
+bool is_dtype_int64(const VariableConstView &var) {
+  return var.dtype() == dtype<int64_t>;
+}
+
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
   accumulate_in_place(summed, var, element::plus_equals);
 }
@@ -30,9 +38,8 @@ Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
   dims.erase(dim);
   // Bool DType is a bit special in that it cannot contain it's sum.
   // Instead the sum is stored in a int64_t Variable
-  Variable summed{var.dtype() == dtype<bool>
-                      ? makeVariable<int64_t>(Dimensions(dims))
-                      : Variable(var, dims)};
+  Variable summed{is_dtype_bool(var) ? makeVariable<int64_t>(Dimensions(dims))
+                                     : Variable(var, dims)};
   op(summed, var);
   return summed;
 }
@@ -40,7 +47,7 @@ Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
 template <typename Op>
 VariableView sum_with_dim_inplace_impl(Op op, const VariableConstView &var,
                                        const Dim dim, const VariableView &out) {
-  if (var.dtype() == dtype<bool> && out.dtype() != dtype<int64_t>)
+  if (is_dtype_bool(var) && !is_dtype_int64(out))
     throw except::UnitError("In-place sum of Bool dtype must be stored in an "
                             "output variable of Int64 dtype.");
 
