@@ -12,7 +12,6 @@ set(INC_FILES
     include/scipp/core/multi_index.h
     include/scipp/core/parallel-fallback.h
     include/scipp/core/parallel-tbb.h
-    include/scipp/core/reduction.h
     include/scipp/core/slice.h
     include/scipp/core/tag_util.h
     include/scipp/core/transform_common.h

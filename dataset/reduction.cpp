@@ -2,21 +2,17 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/core/reduction.h"
-#include "scipp/common/numeric.h"
+#include "scipp/common/reduction.h"
+#include "dataset_operations_common.h"
+#include "scipp/dataset/reduction.h"
 #include "scipp/variable/reduction.h"
 
-#include "scipp/dataset/except.h"
-#include "scipp/dataset/reduction.h"
+using scipp::common::reduce_all_dims;
 
-#include "../variable/operations_common.h"
-#include "dataset_operations_common.h"
-
-using namespace scipp::core;
 namespace scipp::dataset {
 
 DataArray sum(const DataArrayConstView &a) {
-  return reduce_all_dims(a, [&](auto &&... _) { return sum(_...); });
+  return reduce_all_dims(a, [](auto &&... _) { return sum(_...); });
 }
 DataArray sum(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(
@@ -37,7 +33,7 @@ Dataset sum(const DatasetConstView &d) {
 }
 
 DataArray nansum(const DataArrayConstView &a) {
-  return reduce_all_dims(a, [&](auto &&... _) { return nansum(_...); });
+  return reduce_all_dims(a, [](auto &&... _) { return nansum(_...); });
 }
 
 DataArray nansum(const DataArrayConstView &a, const Dim dim) {
