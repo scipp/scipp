@@ -11,6 +11,7 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/buckets.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
@@ -36,14 +37,16 @@ template <class T> auto find_sorting_permutation(const T &key) {
 
 Variable bin_index(const VariableConstView &var,
                    const VariableConstView &edges) {
-  const auto dim = var.dims().inner();
-  auto indices = variable::variableFactory().create(
-      dtype<scipp::index>, var.dims(), units::one, false);
-  variable::transform_in_place(
-      variable::subspan_view(indices, dim), variable::subspan_view(var, dim),
-      variable::subspan_view(edges, edges.dims().inner()),
-      core::element::bin_index);
-  return indices;
+  const auto dim = edges.dims().inner();
+  if (all(is_linspace(edges, dim)).value<bool>()) {
+    return variable::transform(var, subspan_view(edges, dim),
+                               core::element::bin_index_linspace);
+  } else {
+    if (!is_sorted(edges, dim))
+      throw except::BinEdgeError("Bin edges must be sorted.");
+    return variable::transform(var, subspan_view(edges, dim),
+                               core::element::bin_index_sorted_edges);
+  }
 }
 
 auto shrink(const Dimensions &dims) {
