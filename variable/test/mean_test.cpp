@@ -135,3 +135,35 @@ TEST(MeanTest, variances_as_standard_deviation_of_the_mean) {
   variances_as_standard_deviation_of_the_mean(mean_func);
   variances_as_standard_deviation_of_the_mean(nanmean_func);
 }
+
+TEST(MeanTest, nanmean_basic) {
+  const auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2}, units::m,
+                           Values{1.0, 2.0, 3.0, double(NAN)});
+  const auto meanX =
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.0});
+  const auto meanY =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 2.0});
+  EXPECT_EQ(nanmean(var, Dim::X), meanX);
+  EXPECT_EQ(nanmean(var, Dim::Y), meanY);
+}
+
+TEST(MeanTest, nanmean_basic_inplace) {
+  const auto var =
+      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2}, units::m,
+                           Values{1.0, 2.0, 3.0, double(NAN)});
+  auto meanX = makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m);
+  auto meanY = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
+  const auto expectedX =
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.0});
+  const auto expectedY =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 2.0});
+  auto viewX = nanmean(var, Dim::X, meanX);
+  auto viewY = nanmean(var, Dim::Y, meanY);
+  EXPECT_EQ(meanX, expectedX);
+  EXPECT_EQ(viewX, meanX);
+  EXPECT_EQ(viewX.underlying(), meanX);
+  EXPECT_EQ(meanY, expectedY);
+  EXPECT_EQ(viewY, meanY);
+  EXPECT_EQ(viewY.underlying(), meanY);
+}

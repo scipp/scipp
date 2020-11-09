@@ -23,6 +23,9 @@ bool is_dtype_bool(const VariableConstView &var) {
 bool is_dtype_int64(const VariableConstView &var) {
   return var.dtype() == dtype<int64_t>;
 }
+bool is_dtype_int32(const VariableConstView &var) {
+  return var.dtype() == dtype<int32_t>;
+}
 
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
   accumulate_in_place(summed, var, element::plus_equals);
@@ -80,10 +83,42 @@ VariableView nansum(const VariableConstView &var, const Dim dim,
   return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
 }
 
-template <typename SumOp>
-Variable mean_impl_using_op(SumOp sum_op, const VariableConstView &var,
-                            const Dim dim, const VariableConstView &masks_sum) {
-  auto summed = sum_op(var, dim);
+Variable make_scale(const VariableConstView &var, Dim dim,
+                    const VariableConstView &masks_sum) {
+  Variable countvar{var};
+  countvar.setUnit(units::one);
+  countvar *= 0 * units::one;
+  countvar += 1 * units::one;
+  auto count = nansum(countvar, dim); // Extents excluding nans
+  return 1.0 * units::one / (count - masks_sum);
+}
+
+Variable nanmean_impl(const VariableConstView &var, const Dim dim,
+                      const VariableConstView &masks_sum) {
+  auto summed = nanmean(var, dim);
+  auto scale = make_scale(var, dim, masks_sum);
+  if (isInt(var.dtype()))
+    summed = summed * scale;
+  else
+    summed *= scale;
+  return summed;
+}
+
+VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
+                          const VariableConstView &masks_sum,
+                          const VariableView &out) {
+  if (isInt(out.dtype()))
+    throw except::UnitError(
+        "Cannot calculate mean in-place when output dtype is integer");
+
+  nanmean(var, dim, out);
+  out *= make_scale(var, dim, masks_sum);
+  return out;
+}
+
+Variable mean_impl(const VariableConstView &var, const Dim dim,
+                   const VariableConstView &masks_sum) {
+  auto summed = sum(var, dim);
   auto scale = 1.0 * units::one / (var.dims()[dim] * units::one - masks_sum);
   if (isInt(var.dtype()))
     summed = summed * scale;
@@ -92,44 +127,16 @@ Variable mean_impl_using_op(SumOp sum_op, const VariableConstView &var,
   return summed;
 }
 
-template <typename SumOp>
-VariableView mean_impl_using_op(SumOp sum_op, const VariableConstView &var,
-                                const Dim dim,
-                                const VariableConstView &masks_sum,
-                                const VariableView &out) {
+VariableView mean_impl(const VariableConstView &var, const Dim dim,
+                       const VariableConstView &masks_sum,
+                       const VariableView &out) {
   if (isInt(out.dtype()))
     throw except::UnitError(
         "Cannot calculate mean in-place when output dtype is integer");
 
-  sum_op(var, dim, out);
+  sum(var, dim, out);
   out *= 1.0 * units::one / (var.dims()[dim] * units::one - masks_sum);
   return out;
-}
-
-Variable mean_impl(const VariableConstView &var, const Dim dim,
-                   const VariableConstView &masks_sum) {
-  return mean_impl_using_op([](auto &&... args) { return sum(args...); }, var,
-                            dim, masks_sum);
-}
-
-VariableView mean_impl(const VariableConstView &var, const Dim dim,
-                       const VariableConstView &masks_sum,
-                       const VariableView &out) {
-  return mean_impl_using_op([](auto &&... args) { return sum(args...); }, var,
-                            dim, masks_sum, out);
-}
-
-Variable nanmean_impl(const VariableConstView &var, const Dim dim,
-                      const VariableConstView &masks_sum) {
-  return mean_impl_using_op([](auto &&... args) { return nansum(args...); },
-                            var, dim, masks_sum);
-}
-
-VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
-                          const VariableConstView &masks_sum,
-                          const VariableView &out) {
-  return mean_impl_using_op([](auto &&... args) { return nansum(args...); },
-                            var, dim, masks_sum, out);
 }
 
 Variable mean(const VariableConstView &var, const Dim dim) {
