@@ -23,9 +23,6 @@ bool is_dtype_bool(const VariableConstView &var) {
 bool is_dtype_int64(const VariableConstView &var) {
   return var.dtype() == dtype<int64_t>;
 }
-bool is_dtype_int32(const VariableConstView &var) {
-  return var.dtype() == dtype<int32_t>;
-}
 
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
   accumulate_in_place(summed, var, element::plus_equals);
