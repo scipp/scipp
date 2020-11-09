@@ -10,6 +10,7 @@
 #include "scipp/core/element/histogram.h"
 #include "scipp/core/except.h"
 #include "scipp/core/histogram.h"
+#include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/bucket.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
@@ -317,10 +318,7 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
   const Masker masker(function, dim);
-  const auto &[indices, buffer_dim, buffer] =
-      x.constituents<bucket<DataArray>>();
-  const auto coord =
-      make_non_owning_bins(indices, buffer_dim, buffer.coords()[dim]);
+  const auto &coord = bins_view<DataArray>(x).coords()[dim];
   const auto &edges = function.coords()[dim];
   const auto weights = subspan_view(masker.data(), dim);
   if (all(is_linspace(edges, dim)).value<bool>()) {
@@ -343,11 +341,8 @@ void scale(const DataArrayView &array, const DataArrayConstView &histogram,
   // scale applies masks along dim but others are kept
   union_or_in_place(array.masks(), histogram.slice({dim, 0}).masks());
   const Masker masker(histogram, dim);
-  const auto &[indices, buffer_dim, buffer] =
-      array.data().constituents<bucket<DataArray>>();
-  auto data = make_non_owning_bins(indices, buffer_dim, buffer.data());
-  const auto coord =
-      make_non_owning_bins(indices, buffer_dim, buffer.coords()[dim]);
+  auto data = bins_view<DataArray>(array.data()).data();
+  const auto &coord = bins_view<DataArray>(array.data()).coords()[dim];
   const auto &edges = histogram.coords()[dim];
   const auto weights = subspan_view(masker.data(), dim);
   if (all(is_linspace(edges, dim)).value<bool>()) {
