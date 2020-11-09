@@ -208,16 +208,20 @@ DataArray bucketby_impl(const DataArrayConstView &array,
 
 DataArray bucketby(const DataArrayConstView &array,
                    const std::vector<VariableConstView> &edges) {
+  DataArrayConstView maybe_concat(array);
+  DataArray tmp;
   if (array.dtype() == dtype<bucket<DataArray>>) {
     // TODO The need for this check may be an indicator that we should support
     // adding another bucketed dimension via a separate function instead of
     // having this dual-purpose `bucketby`.
     for (const auto &edge : edges)
-      if (array.dims().contains(edge.dims().inner()))
-        throw std::runtime_error(
-            "Recursive buckets cannot be created with bucketby.");
+      if (array.dims().contains(edge.dims().inner())) {
+        // TODO Very inefficient if new edges extract only a small fraction
+        tmp = buckets::concatenate(maybe_concat, edge.dims().inner());
+        maybe_concat = DataArrayView(tmp);
+      }
     const auto &[begin_end, dim, buffer] =
-        array.data().constituents<bucket<DataArray>>();
+        maybe_concat.data().constituents<bucket<DataArray>>();
     auto indices =
         makeVariable<scipp::index>(Dims{dim}, Shape{buffer.dims()[dim]});
     indices -= 1 * units::one;
@@ -231,10 +235,10 @@ DataArray bucketby(const DataArrayConstView &array,
     }
     auto bucketed =
         bucketby_impl(buffer, edges, std::move(indices), dim, begin_end.dims());
-    copy_metadata(array, bucketed);
+    copy_metadata(maybe_concat, bucketed);
     return bucketed;
   } else {
-    return bucketby_impl(array, edges);
+    return bucketby_impl(maybe_concat, edges);
   }
 }
 
