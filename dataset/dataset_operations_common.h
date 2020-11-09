@@ -182,10 +182,18 @@ void copy_metadata(const DataArrayConstView &a, const DataArrayView &b);
                             const MasksConstView &masks);
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const MasksConstView &masks, const VariableView &out);
+[[nodiscard]] Variable sum(const VariableConstView &var,
+                           const MasksConstView &masks);
 [[nodiscard]] Variable sum(const VariableConstView &var, const Dim dim,
                            const MasksConstView &masks);
 VariableView sum(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks, const VariableView &out);
+[[nodiscard]] Variable nansum(const VariableConstView &var,
+                              const MasksConstView &masks);
+[[nodiscard]] Variable nansum(const VariableConstView &var, const Dim dim,
+                              const MasksConstView &masks);
+VariableView nansum(const VariableConstView &var, const Dim dim,
+                    const MasksConstView &masks, const VariableView &out);
 
 template <class T>
 void concatenate_out(const VariableConstView &var, const Dim dim,

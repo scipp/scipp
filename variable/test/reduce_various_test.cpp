@@ -64,3 +64,28 @@ TEST(ReduceTest, all_any_all_dims) {
   EXPECT_EQ(all(any(var)), any(var));
   EXPECT_EQ(any(any(var)), any(var));
 }
+
+TEST(ReduceTest, nansum_all_dims) {
+  const auto x = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                      Values{1.0, 1.0, double(NAN), 1.0});
+  const auto expected = makeVariable<double>(Values{3});
+  EXPECT_EQ(nansum(x), expected);
+}
+
+TEST(ReduceTest, nansum_with_dim) {
+  const auto x = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                      Values{1.0, 2.0, double(NAN), 4.0});
+  const auto expected =
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
+  EXPECT_EQ(nansum(x, Dim::X), expected);
+}
+
+TEST(ReduceTest, nansum_with_dim_out) {
+  auto x = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                Values{1.0, 2.0, double(NAN), 4.0});
+  auto out = makeVariable<double>(Dims{Dim::Y}, Shape{2});
+  const auto expected =
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
+  nansum(x, Dim::X, out);
+  EXPECT_EQ(out, expected);
+}

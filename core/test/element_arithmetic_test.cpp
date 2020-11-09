@@ -75,3 +75,40 @@ template <class... Ts> auto no_int_as_first_arg(const std::tuple<Ts...> &) {
 TEST(ElementArithmeticIntegerDivisionTest, inplace_truediv_not_supported) {
   EXPECT_TRUE(no_int_as_first_arg(decltype(divide_equals)::types{}));
 }
+
+class ElementNanArithmeticTest : public ::testing::Test {
+protected:
+  double x = 1.0;
+  double y = 2.0;
+  double dNaN = std::numeric_limits<double>::quiet_NaN();
+};
+
+TEST_F(ElementNanArithmeticTest, plus_equals) {
+  auto expected = x + y;
+  nan_plus_equals(x, y);
+  EXPECT_EQ(expected, x);
+}
+
+TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_nan) {
+  auto expected = x + 0;
+  nan_plus_equals(x, dNaN);
+  EXPECT_EQ(expected, x);
+}
+TEST_F(ElementNanArithmeticTest, plus_equals_with_lhs_nan) {
+  auto expected = y + 0;
+  auto lhs = dNaN;
+  nan_plus_equals(lhs, y);
+  EXPECT_EQ(expected, lhs);
+}
+TEST_F(ElementNanArithmeticTest, plus_equals_with_both_nan) {
+  auto lhs = dNaN;
+  nan_plus_equals(lhs, dNaN);
+  EXPECT_EQ(0, lhs);
+}
+TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_nan_ValueAndVariance) {
+  ValueAndVariance<double> asNaN{dNaN, 0};
+  ValueAndVariance<double> x{1, 0};
+  auto expected = x + ValueAndVariance<double>{0, 0};
+  nan_plus_equals(x, asNaN);
+  EXPECT_EQ(expected, x);
+}

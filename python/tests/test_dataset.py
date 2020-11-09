@@ -301,6 +301,41 @@ def test_sum_masked():
     assert sc.is_equal(result, d_ref['a'])
 
 
+def test_sum_all():
+    da = sc.DataArray(sc.Variable(['x', 'y'], values=np.ones(10).reshape(5,
+                                                                         2)))
+    ds = sc.Dataset({'a': da})
+    assert sc.is_equal(sc.sum(da).data, sc.Variable(value=10.0))
+    assert sc.is_equal(sc.sum(da), sc.sum(ds)['a'])
+
+
+def test_nansum_masked():
+    d = sc.Dataset({
+        'a':
+        sc.Variable(dims=['x'],
+                    values=np.array([1, 5, np.nan, np.nan, 1],
+                                    dtype=np.float64))
+    })
+    d['a'].masks['m1'] = sc.Variable(dims=['x'],
+                                     values=np.array(
+                                         [False, True, False, True, False]))
+
+    d_ref = sc.Dataset({'a': sc.Variable(np.float64(2))})
+
+    result = sc.nansum(d, 'x')['a']
+    assert sc.is_equal(result, d_ref['a'])
+
+
+def test_nansum_all():
+    da = sc.DataArray(sc.Variable(['x', 'y'], values=np.ones(10).reshape(5,
+                                                                         2)))
+    da.data.values[0, 0] = np.nan
+    ds = sc.Dataset({'a': da})
+    assert np.isnan(sc.sum(da).data.value)  # sanity check
+    assert sc.is_equal(sc.nansum(da).data, sc.Variable(value=9.0))
+    assert sc.is_equal(sc.nansum(da), sc.nansum(ds)['a'])
+
+
 def test_mean_masked():
     d = sc.Dataset(
         {'a': sc.Variable(dims=['x'], values=np.array([1, 5, 4, 5, 1]))})

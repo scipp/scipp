@@ -3,39 +3,51 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/reduction.h"
+#include "scipp/common/reduction.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/core/element/comparison.h"
 #include "scipp/core/element/logical.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"
 
-#include "operations_common.h"
-
 using namespace scipp::core;
+using scipp::common::reduce_all_dims;
 
 namespace scipp::variable {
+
+// Workaround VS C7526 (undefined inline variable) with dtype<> in template.
+bool is_dtype_bool(const VariableConstView &var) {
+  return var.dtype() == dtype<bool>;
+}
+bool is_dtype_int64(const VariableConstView &var) {
+  return var.dtype() == dtype<int64_t>;
+}
 
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
   accumulate_in_place(summed, var, element::plus_equals);
 }
 
-Variable sum(const VariableConstView &var, const Dim dim) {
+void nansum_impl(const VariableView &summed, const VariableConstView &var) {
+  accumulate_in_place(summed, var, element::nan_plus_equals);
+}
+
+template <typename Op>
+Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
   auto dims = var.dims();
   dims.erase(dim);
   // Bool DType is a bit special in that it cannot contain it's sum.
   // Instead the sum is stored in a int64_t Variable
-  Variable summed{var.dtype() == dtype<bool>
-                      ? makeVariable<int64_t>(Dimensions(dims))
-                      : Variable(var, dims)};
-  sum_impl(summed, var);
+  Variable summed{is_dtype_bool(var) ? makeVariable<int64_t>(Dimensions(dims))
+                                     : Variable(var, dims)};
+  op(summed, var);
   return summed;
 }
 
-VariableView sum(const VariableConstView &var, const Dim dim,
-                 const VariableView &out) {
-  if (var.dtype() == dtype<bool> && out.dtype() != dtype<int64_t>)
+template <typename Op>
+VariableView sum_with_dim_inplace_impl(Op op, const VariableConstView &var,
+                                       const Dim dim, const VariableView &out) {
+  if (is_dtype_bool(var) && !is_dtype_int64(out))
     throw except::UnitError("In-place sum of Bool dtype must be stored in an "
                             "output variable of Int64 dtype.");
 
@@ -46,8 +58,26 @@ VariableView sum(const VariableConstView &var, const Dim dim,
         "Output argument dimensions must be equal to input dimensions without "
         "the summing dimension.");
 
-  sum_impl(out, var);
+  op(out, var);
   return out;
+}
+
+Variable sum(const VariableConstView &var, const Dim dim) {
+  return sum_with_dim_impl(sum_impl, var, dim);
+}
+
+Variable nansum(const VariableConstView &var, const Dim dim) {
+  return sum_with_dim_impl(nansum_impl, var, dim);
+}
+
+VariableView sum(const VariableConstView &var, const Dim dim,
+                 const VariableView &out) {
+  return sum_with_dim_inplace_impl(sum_impl, var, dim, out);
+}
+
+VariableView nansum(const VariableConstView &var, const Dim dim,
+                    const VariableView &out) {
+  return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
 }
 
 Variable mean_impl(const VariableConstView &var, const Dim dim,
@@ -159,6 +189,11 @@ Variable nanmin(const VariableConstView &var, const Dim dim) {
 /// Return the sum along all dimensions.
 Variable sum(const VariableConstView &var) {
   return reduce_all_dims(var, [](auto &&... _) { return sum(_...); });
+}
+
+/// Return the sum along all dimensions, nans treated as zero.
+Variable nansum(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return nansum(_...); });
 }
 
 /// Return the maximum along all dimensions.

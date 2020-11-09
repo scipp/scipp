@@ -27,14 +27,4 @@ SCIPP_VARIABLE_EXPORT VariableView mean_impl(const VariableConstView &var,
                                              const VariableConstView &masks_sum,
                                              const VariableView &out);
 
-template <class Op>
-Variable reduce_all_dims(const VariableConstView &var, const Op &op) {
-  if (var.dims().empty())
-    return Variable(var);
-  Variable out = op(var, var.dims().inner());
-  while (!out.dims().empty())
-    out = op(out, out.dims().inner());
-  return out;
-}
-
 } // namespace scipp::variable

@@ -35,6 +35,7 @@ SCIPP_VARIABLE_EXPORT VariableView sum(const VariableConstView &var,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable min(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable min(const VariableConstView &var,
                                                  const Dim dim);
+// Reduction operations ignoring or zeroing nans
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 nanmax(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
@@ -43,5 +44,12 @@ nanmax(const VariableConstView &var, const Dim dim);
 nanmin(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 nanmin(const VariableConstView &var, const Dim dim);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+nansum(const VariableConstView &var);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+nansum(const VariableConstView &var, const Dim dim);
+SCIPP_VARIABLE_EXPORT VariableView nansum(const VariableConstView &var,
+                                          const Dim dim,
+                                          const VariableView &out);
 
 } // namespace scipp::variable
