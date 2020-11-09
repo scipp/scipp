@@ -66,10 +66,10 @@ class StringDataIO():
     def write(group, data):
         import h5py
         dt = h5py.string_dtype(encoding='utf-8')
+        dset = group.create_dataset('values', shape=data.shape, dtype=dt)
         if len(data.shape) == 0:
-            dset = group.create_dataset('values', data=data.value, dtype=dt)
+            dset[()] = data.value
         else:
-            dset = group.create_dataset('values', shape=data.shape, dtype=dt)
             for i in range(len(data.values)):
                 dset[i] = data.values[i]
         return dset
@@ -78,7 +78,7 @@ class StringDataIO():
     def read(group, data):
         values = group['values']
         if len(data.shape) == 0:
-            data.value = str(values[...])
+            data.value = values[()]
         else:
             for i in range(len(data.values)):
                 data.values[i] = values[i]
