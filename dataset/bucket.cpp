@@ -322,26 +322,19 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
     masked = function.data() * ~mask;
   const auto &[indices, buffer_dim, buffer] =
       x.constituents<bucket<DataArray>>();
-  // Note the current inefficiency here: Output buffer is created with full
-  // size, even if `x` is a slice and only subsections of the buffer are needed.
-  auto out = variable::variableFactory().create(
-      function.dtype(), buffer.dims(), units::one, function.hasVariances());
-  auto data = make_non_owning_bins(indices, buffer_dim, VariableView(out));
   const auto coord =
       make_non_owning_bins(indices, buffer_dim, buffer.coords()[dim]);
   const auto &edges = function.coords()[dim];
   const auto weights = subspan_view(mask ? masked : function.data(), dim);
   if (all(is_linspace(edges, dim)).value<bool>()) {
-    transform_in_place(data, coord, subspan_view(edges, dim), weights,
-                       core::element::event::map_in_place_linspace);
+    return variable::transform(coord, subspan_view(edges, dim), weights,
+                               core::element::event::map_linspace);
   } else {
     if (!is_sorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
-    transform_in_place(data, coord, subspan_view(edges, dim), weights,
-                       core::element::event::map_in_place_sorted_edges);
+    return variable::transform(coord, subspan_view(edges, dim), weights,
+                               core::element::event::map_sorted_edges);
   }
-  return Variable{std::make_unique<variable::DataModel<bucket<Variable>>>(
-      indices, buffer_dim, std::move(out))};
 }
 
 void scale(const DataArrayView &array, const DataArrayConstView &histogram,

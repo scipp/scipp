@@ -23,53 +23,47 @@ constexpr auto get = [](const auto &x, const scipp::index i) {
     return x[i];
 };
 
-namespace map_in_place_detail {
+namespace map_detail {
 template <class Coord, class Edge, class Weight>
-using args = std::tuple<Weight, Coord, span<const Edge>, span<const Weight>>;
-} // namespace map_in_place_detail
+using args = std::tuple<Coord, span<const Edge>, span<const Weight>>;
+} // namespace map_detail
 
-constexpr auto map_in_place = overloaded{
-    element::arg_list<map_in_place_detail::args<int64_t, int64_t, double>,
-                      map_in_place_detail::args<int64_t, int64_t, float>,
-                      map_in_place_detail::args<int32_t, int32_t, double>,
-                      map_in_place_detail::args<int32_t, int32_t, float>,
-                      map_in_place_detail::args<int64_t, double, double>,
-                      map_in_place_detail::args<int64_t, double, float>,
-                      map_in_place_detail::args<int32_t, double, double>,
-                      map_in_place_detail::args<int32_t, double, float>,
-                      map_in_place_detail::args<double, double, double>,
-                      map_in_place_detail::args<double, double, float>,
-                      map_in_place_detail::args<float, double, double>,
-                      map_in_place_detail::args<float, float, float>,
-                      map_in_place_detail::args<double, float, float>>,
-    transform_flags::expect_in_variance_if_out_variance,
-    transform_flags::expect_no_variance_arg<1>,
-    transform_flags::expect_no_variance_arg<2>,
-    [](units::Unit &out, const units::Unit &x, const units::Unit &edges,
-       const units::Unit &weights) {
-      expect::equals(x, edges);
-      out = weights;
-    }};
-
-constexpr auto map_in_place_linspace =
-    overloaded{map_in_place, [](auto &out, const auto &coord, const auto &edges,
-                                const auto &weights) {
-                 const auto [offset, nbin, factor] = linear_edge_params(edges);
-                 const auto bin = (coord - offset) * factor;
-                 if (bin < 0.0 || bin >= nbin)
-                   out = 0.0;
-                 else
-                   out = get(weights, bin);
+constexpr auto map =
+    overloaded{element::arg_list<map_detail::args<int64_t, int64_t, double>,
+                                 map_detail::args<int64_t, int64_t, float>,
+                                 map_detail::args<int32_t, int32_t, double>,
+                                 map_detail::args<int32_t, int32_t, float>,
+                                 map_detail::args<int64_t, double, double>,
+                                 map_detail::args<int64_t, double, float>,
+                                 map_detail::args<int32_t, double, double>,
+                                 map_detail::args<int32_t, double, float>,
+                                 map_detail::args<double, double, double>,
+                                 map_detail::args<double, double, float>,
+                                 map_detail::args<float, double, double>,
+                                 map_detail::args<float, float, float>,
+                                 map_detail::args<double, float, float>>,
+               transform_flags::expect_no_variance_arg<0>,
+               transform_flags::expect_no_variance_arg<1>,
+               [](const units::Unit &x, const units::Unit &edges,
+                  const units::Unit &weights) {
+                 expect::equals(x, edges);
+                 return weights;
                }};
 
-constexpr auto map_in_place_sorted_edges =
-    overloaded{map_in_place, [](auto &out, const auto &coord, const auto &edges,
-                                const auto &weights) {
+constexpr auto map_linspace = overloaded{
+    map, [](const auto &coord, const auto &edges, const auto &weights) {
+      const auto [offset, nbin, factor] = linear_edge_params(edges);
+      const auto bin = (coord - offset) * factor;
+      return (bin < 0.0 || bin >= nbin) ? 0.0 : get(weights, bin);
+    }};
+
+constexpr auto map_sorted_edges =
+    overloaded{map,
+               [](const auto &coord, const auto &edges, const auto &weights) {
                  auto it = std::upper_bound(edges.begin(), edges.end(), coord);
-                 if (it == edges.end() || it == edges.begin())
-                   out = 0.0;
-                 else
-                   out = get(weights, --it - edges.begin());
+                 return (it == edges.end() || it == edges.begin())
+                            ? 0.0
+                            : get(weights, --it - edges.begin());
                }};
 
 namespace map_and_mul_detail {
