@@ -177,15 +177,25 @@ TEST(HistogramTest, dense) {
   auto events = make_1d_events_default_weights();
   auto edges1 =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
-  auto edges2 = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 3, 6});
-  auto expected = dataset::histogram(events, edges2);
+  auto edgesY = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 3, 6});
+  auto edgesZ = makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 3, 6});
+  auto expected = dataset::histogram(events, edgesY);
   auto dense = dataset::histogram(events, edges1);
-  EXPECT_THROW(dataset::histogram(dense, edges2), except::BinEdgeError);
+  EXPECT_THROW(dataset::histogram(dense, edgesY), except::BinEdgeError);
+  // dense depends on Y, histogram by Y coord into Y-dependent histogram
+  EXPECT_TRUE(dense.dims().contains(edgesY.dims().inner()));
   dense.coords().erase(Dim::Y);
   dense.coords().set(Dim::Y,
                      makeVariable<double>(Dims{Dim::Y}, Shape{5},
                                           Values{1.5, 2.5, 3.5, 4.5, 5.5}));
-  EXPECT_EQ(dataset::histogram(dense, edges2), expected);
+  EXPECT_EQ(dataset::histogram(dense, edgesY), expected);
+  // dense depends on Y, histogram by Z coord into Z-dependent histogram
+  EXPECT_FALSE(dense.dims().contains(edgesZ.dims().inner()));
+  dense.coords().set(Dim::Z,
+                     makeVariable<double>(Dims{Dim::Y}, Shape{5},
+                                          Values{1.5, 2.5, 3.5, 4.5, 5.5}));
+  expected.rename(Dim::Y, Dim::Z);
+  EXPECT_EQ(dataset::histogram(dense, edgesZ), expected);
 }
 
 TEST(HistogramTest, keeps_scalar_coords) {
