@@ -316,16 +316,13 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
              Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
-  const auto mask = irreducible_mask(function.masks(), dim);
-  Variable masked;
-  if (mask)
-    masked = function.data() * ~mask;
+  const Masker masker(function, dim);
   const auto &[indices, buffer_dim, buffer] =
       x.constituents<bucket<DataArray>>();
   const auto coord =
       make_non_owning_bins(indices, buffer_dim, buffer.coords()[dim]);
   const auto &edges = function.coords()[dim];
-  const auto weights = subspan_view(mask ? masked : function.data(), dim);
+  const auto weights = subspan_view(masker.data(), dim);
   if (all(is_linspace(edges, dim)).value<bool>()) {
     return variable::transform(coord, subspan_view(edges, dim), weights,
                                core::element::event::map_linspace);
@@ -345,17 +342,14 @@ void scale(const DataArrayView &array, const DataArrayConstView &histogram,
   expect::coordsAreSuperset(array, histogram.slice({dim, 0}));
   // scale applies masks along dim but others are kept
   union_or_in_place(array.masks(), histogram.slice({dim, 0}).masks());
-  const auto mask = irreducible_mask(histogram.masks(), dim);
-  Variable masked;
-  if (mask)
-    masked = histogram.data() * ~mask;
+  const Masker masker(histogram, dim);
   const auto &[indices, buffer_dim, buffer] =
       array.data().constituents<bucket<DataArray>>();
   auto data = make_non_owning_bins(indices, buffer_dim, buffer.data());
   const auto coord =
       make_non_owning_bins(indices, buffer_dim, buffer.coords()[dim]);
   const auto &edges = histogram.coords()[dim];
-  const auto weights = subspan_view(mask ? masked : histogram.data(), dim);
+  const auto weights = subspan_view(masker.data(), dim);
   if (all(is_linspace(edges, dim)).value<bool>()) {
     transform_in_place(data, coord, subspan_view(edges, dim), weights,
                        core::element::event::map_and_mul_linspace);

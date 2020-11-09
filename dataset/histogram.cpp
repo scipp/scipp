@@ -38,12 +38,9 @@ DataArray histogram(const DataArrayConstView &events,
         events,
         [](const DataArrayConstView &events_, const Dim dim_,
            const VariableConstView &binEdges_) {
-          const auto mask = irreducible_mask(events_.masks(), dim_);
-          if (mask)
-            // TODO Creating a full copy of event data here is very inefficient
-            return buckets::histogram(events_.data() * ~mask, binEdges_);
-          else
-            return buckets::histogram(events_.data(), binEdges_);
+          const Masker masker(events_, dim_);
+          // TODO Creating a full copy of event data here is very inefficient
+          return buckets::histogram(masker.data(), binEdges_);
         },
         dim, binEdges);
   } else if (!is_histogram(events, dim)) {
@@ -51,10 +48,7 @@ DataArray histogram(const DataArrayConstView &events,
         events,
         [](const DataArrayConstView &events_, const Dim dim_,
            const VariableConstView &binEdges_) {
-          const auto mask = irreducible_mask(events_.masks(), dim_);
-          Variable masked;
-          if (mask)
-            masked = events_.data() * ~mask;
+          const Masker masker(events_, dim_);
           using namespace histogram_dense_detail;
           return transform_subspan<
               std::tuple<args<double, double, double, double>,
@@ -62,8 +56,7 @@ DataArray histogram(const DataArrayConstView &events,
                          args<double, float, double, float>,
                          args<float, float, float, float>>>(
               dtype<double>, dim_, binEdges_.dims()[dim_] - 1,
-              events_.coords()[dim_],
-              mask ? VariableConstView(masked) : events_.data(), binEdges_,
+              events_.coords()[dim_], masker.data(), binEdges_,
               element::histogram);
         },
         dim, binEdges);
