@@ -313,28 +313,35 @@ Variable histogram(const VariableConstView &data,
 }
 
 Variable map(const DataArrayConstView &function, const VariableConstView &x,
-             Dim hist_dim) {
-  if (hist_dim == Dim::Invalid)
-    hist_dim = edge_dimension(function);
-  const auto mask = irreducible_mask(function.masks(), hist_dim);
+             Dim dim) {
+  if (dim == Dim::Invalid)
+    dim = edge_dimension(function);
+  const auto mask = irreducible_mask(function.masks(), dim);
   Variable masked;
   if (mask)
     masked = function.data() * ~mask;
-  const auto &[indices, dim, buffer] = x.constituents<bucket<DataArray>>();
+  const auto &[indices, buffer_dim, buffer] =
+      x.constituents<bucket<DataArray>>();
   // Note the current inefficiency here: Output buffer is created with full
   // size, even if `x` is a slice and only subsections of the buffer are needed.
   auto out = variable::variableFactory().create(
       function.dtype(), buffer.dims(), units::one, function.hasVariances());
-  // TODO "bug" here: subspan_view creates a new variable, so out unit not set!
-  transform_in_place(subspan_view(out, dim, indices),
-                     subspan_view(buffer.coords()[hist_dim], dim, indices),
-                     subspan_view(function.coords()[hist_dim], hist_dim),
-                     subspan_view(mask ? masked : function.data(), hist_dim),
-                     core::element::event::map_in_place);
-  // TODO Workaround, see comment above
-  out.setUnit(function.unit());
+  auto data = make_non_owning_bins(indices, buffer_dim, VariableView(out));
+  const auto coord =
+      make_non_owning_bins(indices, buffer_dim, buffer.coords()[dim]);
+  const auto &edges = function.coords()[dim];
+  const auto weights = subspan_view(mask ? masked : function.data(), dim);
+  if (all(is_linspace(edges, dim)).value<bool>()) {
+    transform_in_place(data, coord, subspan_view(edges, dim), weights,
+                       core::element::event::map_in_place_linspace);
+  } else {
+    if (!is_sorted(edges, dim))
+      throw except::BinEdgeError("Bin edges of histogram must be sorted.");
+    transform_in_place(data, coord, subspan_view(edges, dim), weights,
+                       core::element::event::map_in_place_sorted_edges);
+  }
   return Variable{std::make_unique<variable::DataModel<bucket<Variable>>>(
-      indices, dim, std::move(out))};
+      indices, buffer_dim, std::move(out))};
 }
 
 void scale(const DataArrayView &array, const DataArrayConstView &histogram,
@@ -351,7 +358,6 @@ void scale(const DataArrayView &array, const DataArrayConstView &histogram,
     masked = histogram.data() * ~mask;
   const auto &[indices, buffer_dim, buffer] =
       array.data().constituents<bucket<DataArray>>();
-  // TODO why does constness of observer matter?
   auto data = make_non_owning_bins(indices, buffer_dim, buffer.data());
   const auto coord =
       make_non_owning_bins(indices, buffer_dim, buffer.coords()[dim]);

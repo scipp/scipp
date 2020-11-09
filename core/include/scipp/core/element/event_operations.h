@@ -16,10 +16,16 @@
 
 namespace scipp::core::element::event {
 
+constexpr auto get = [](const auto &x, const scipp::index i) {
+  if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+    return ValueAndVariance{x.value[i], x.variance[i]};
+  else
+    return x[i];
+};
+
 namespace map_in_place_detail {
 template <class Coord, class Edge, class Weight>
-using args = std::tuple<span<Weight>, span<const Coord>, span<const Edge>,
-                        span<const Weight>>;
+using args = std::tuple<Weight, Coord, span<const Edge>, span<const Weight>>;
 } // namespace map_in_place_detail
 
 constexpr auto map_in_place = overloaded{
@@ -43,55 +49,28 @@ constexpr auto map_in_place = overloaded{
        const units::Unit &weights) {
       expect::equals(x, edges);
       out = weights;
-    },
-    [](const auto &out, const auto &coord, const auto &edges,
-       const auto &weights) {
-      using W = std::decay_t<decltype(weights)>;
-      constexpr bool vars = is_ValueAndVariance_v<W>;
-      constexpr auto get = [](const auto &x, const scipp::index i) {
-        if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-          return ValueAndVariance{x.value[i], x.variance[i]};
-        else
-          return x[i];
-      };
-      using w_type = decltype(get(weights, 0));
-      constexpr w_type out_of_bounds(0.0);
-      if (scipp::numeric::is_linspace(edges)) {
-        const auto [offset, nbin, scale] = linear_edge_params(edges);
-        for (scipp::index i = 0; i < scipp::size(coord); ++i) {
-          const auto bin = (coord[i] - offset) * scale;
-          w_type w =
-              bin < 0.0 || bin >= nbin ? out_of_bounds : get(weights, bin);
-          if constexpr (vars) {
-            out.value[i] = w.value;
-            out.variance[i] = w.variance;
-          } else {
-            out[i] = w;
-          }
-        }
-      } else {
-        expect::histogram::sorted_edges(edges);
-        for (scipp::index i = 0; i < scipp::size(coord); ++i) {
-          auto it = std::upper_bound(edges.begin(), edges.end(), coord[i]);
-          w_type w = (it == edges.end() || it == edges.begin())
-                         ? out_of_bounds
-                         : get(weights, --it - edges.begin());
-          if constexpr (vars) {
-            out.value[i] = w.value;
-            out.variance[i] = w.variance;
-          } else {
-            out[i] = w;
-          }
-        }
-      }
     }};
 
-constexpr auto get = [](const auto &x, const scipp::index i) {
-  if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-    return ValueAndVariance{x.value[i], x.variance[i]};
-  else
-    return x[i];
-};
+constexpr auto map_in_place_linspace =
+    overloaded{map_in_place, [](auto &out, const auto &coord, const auto &edges,
+                                const auto &weights) {
+                 const auto [offset, nbin, factor] = linear_edge_params(edges);
+                 const auto bin = (coord - offset) * factor;
+                 if (bin < 0.0 || bin >= nbin)
+                   out = 0.0;
+                 else
+                   out = get(weights, bin);
+               }};
+
+constexpr auto map_in_place_sorted_edges =
+    overloaded{map_in_place, [](auto &out, const auto &coord, const auto &edges,
+                                const auto &weights) {
+                 auto it = std::upper_bound(edges.begin(), edges.end(), coord);
+                 if (it == edges.end() || it == edges.begin())
+                   out = 0.0;
+                 else
+                   out = get(weights, --it - edges.begin());
+               }};
 
 namespace map_and_mul_detail {
 template <class Data, class Coord, class Edge, class Weight>
