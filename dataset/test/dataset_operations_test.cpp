@@ -46,13 +46,22 @@ TEST(DatasetOperationsTest, nansum_all_dims) {
   EXPECT_EQ(dataset::nansum(ds)["a"], dataset::nansum(da));
 }
 
-TEST(DatasetOperationsTest, mean) {
+TEST(DatasetOperationsTest, mean_over_dim) {
   auto ds = make_1_values_and_variances<float>(
       "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
   EXPECT_EQ(dataset::mean(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{2}, Variances{5.0}));
   EXPECT_EQ(dataset::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{1.5}, Variances{6.75}));
+}
+
+TEST(DatasetOperationsTest, mean_all_dims) {
+  DataArray da{makeVariable<double>(Dims{Dim::X, Dim::Y}, Values{1, 2, 3, 4},
+                                    Shape{2, 2})};
+  EXPECT_EQ(dataset::mean(da).data(), makeVariable<double>(Values{2.5}));
+
+  Dataset ds{{{"a", da}}};
+  EXPECT_EQ(dataset::mean(ds)["a"], dataset::mean(da));
 }
 
 template <typename T>
