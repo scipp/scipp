@@ -64,6 +64,17 @@ class SciPlot:
                                       view_ndims=view_ndims,
                                       positions=positions)
 
+        # Set cmap extend state: if we have sliders, then we need to extend.
+        # We also need to extend if vmin or vmax are set.
+        self.extend_cmap = "neither"
+        if (self.ndim > view_ndims) or ((vmin is not None) and
+                                        (vmax is not None)):
+            self.extend_cmap = "both"
+        elif (vmin is not None):
+            self.extend_cmap = "min"
+        elif (vmax is not None):
+            self.extend_cmap = "max"
+
         # Scan the input data and collect information
         self.params = {"values": {}, "masks": {}}
         globs = {
