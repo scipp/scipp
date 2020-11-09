@@ -337,8 +337,10 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
       indices, dim, std::move(out))};
 }
 
-void scale(const DataArrayView &data, const DataArrayConstView &histogram) {
-  const auto dim = edge_dimension(histogram);
+void scale(const DataArrayView &data, const DataArrayConstView &histogram,
+           Dim dim) {
+  if (dim == Dim::Invalid)
+    dim = edge_dimension(histogram);
   // Coords along dim are ignored since "binning" is dynamic for buckets.
   expect::coordsAreSuperset(data, histogram.slice({dim, 0}));
   // buckets::map applies masks along dim

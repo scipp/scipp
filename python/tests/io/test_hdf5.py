@@ -58,6 +58,24 @@ def test_variable_2d():
     check_roundtrip(xy)
 
 
+def test_variable_binned_variable():
+    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.dtype.int64)
+    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.dtype.int64)
+    binned = sc.bins(begin=begin, end=end, dim='x', data=x)
+    check_roundtrip(binned)
+
+
+def test_variable_binned_data_array():
+    binned = sc.bins(dim='x', data=array_1d)
+    check_roundtrip(binned)
+
+
+def test_variable_binned_dataset():
+    d = sc.Dataset({'a': array_1d, 'b': array_1d})
+    binned = sc.bins(dim='x', data=d)
+    check_roundtrip(binned)
+
+
 def test_data_array_1d_no_coords():
     a = sc.DataArray(data=x)
     check_roundtrip(a)

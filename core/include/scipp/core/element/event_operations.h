@@ -32,6 +32,7 @@ constexpr auto map_in_place = overloaded{
                       map_in_place_detail::args<int32_t, double, double>,
                       map_in_place_detail::args<int32_t, double, float>,
                       map_in_place_detail::args<double, double, double>,
+                      map_in_place_detail::args<double, double, float>,
                       map_in_place_detail::args<float, double, double>,
                       map_in_place_detail::args<float, float, float>,
                       map_in_place_detail::args<double, float, float>>,

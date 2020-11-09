@@ -68,7 +68,8 @@ histogram(const VariableConstView &data, const VariableConstView &binEdges);
 map(const DataArrayConstView &function, const VariableConstView &x,
     Dim hist_dim);
 
-void scale(const DataArrayView &data, const DataArrayConstView &histogram);
+void scale(const DataArrayView &data, const DataArrayConstView &histogram,
+           Dim dim = Dim::Invalid);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable sum(const VariableConstView &data);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
