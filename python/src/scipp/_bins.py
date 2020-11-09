@@ -124,7 +124,8 @@ class Bins:
                                          other)
                 return out
         if out is not None:
-            raise RuntimeError("`out` arg not support for  along dim")
+            raise RuntimeError(
+                "`out` arg not supported for concatenate along dim")
         if dim is not None:
             return _call_cpp_func(_cpp.buckets.concatenate, self._obj, dim)
         raise RuntimeError("Reduction along all dims not supported yet.")
