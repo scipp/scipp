@@ -27,6 +27,13 @@ template <typename Op> void basic(Op op) {
   EXPECT_EQ(op(var, Dim::Y), meanY);
 }
 
+template <typename Op> void basic_all_dims(Op op) {
+  const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                        units::m, Values{1.0, 2.0, 3.0, 4.0});
+  const auto meanAll = makeVariable<double>(units::m, Values{2.5});
+  EXPECT_EQ(op(var), meanAll);
+}
+
 template <typename Op> void basic_in_place(Op op) {
   const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                         units::m, Values{1.0, 2.0, 3.0, 4.0});
@@ -94,12 +101,14 @@ auto mean_func =
     overloaded{[](const auto &var, const auto &dim) { return mean(var, dim); },
                [](const auto &var, const auto &dim, auto &out) {
                  return mean(var, dim, out);
-               }};
+               },
+               [](const auto &var) { return mean(var); }};
 auto nanmean_func = overloaded{
     [](const auto &var, const auto &dim) { return nanmean(var, dim); },
     [](const auto &var, const auto &dim, auto &out) {
       return nanmean(var, dim, out);
-    }};
+    },
+    [](const auto &var) { return nanmean(var); }};
 } // namespace
 
 TEST(MeanTest, unknown_dim_fail) {
@@ -107,8 +116,15 @@ TEST(MeanTest, unknown_dim_fail) {
   unknown_dim_fail(nanmean_func);
 }
 
-TEST(MeanTest, basic) { basic(mean_func); }
-TEST(MeanTest, basic_nan) { basic(nanmean_func); }
+TEST(MeanTest, basic) {
+  basic(mean_func);
+  basic(nanmean_func);
+}
+
+TEST(MeanTest, basic_all_dims) {
+  basic_all_dims(mean_func);
+  basic_all_dims(nanmean_func);
+}
 
 TEST(MeanTest, basic_in_place) {
   basic_in_place(mean_func);

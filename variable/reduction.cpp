@@ -136,17 +136,27 @@ VariableView mean_impl(const VariableConstView &var, const Dim dim,
   return out;
 }
 
-Variable mean(const VariableConstView &var, const Dim dim) {
-  return mean_impl(var, dim, makeVariable<int64_t>(Values{0}));
+/// Return the mean along all dimensions.
+Variable mean(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return mean(_...); });
 }
 
-Variable nanmean(const VariableConstView &var, const Dim dim) {
-  return nanmean_impl(var, dim, makeVariable<int64_t>(Values{0}));
+Variable mean(const VariableConstView &var, const Dim dim) {
+  return mean_impl(var, dim, makeVariable<int64_t>(Values{0}));
 }
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
   return mean_impl(var, dim, makeVariable<int64_t>(Values{0}), out);
+}
+
+/// Return the mean along all dimensions. Ignoring NaN values.
+Variable nanmean(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return nanmean(_...); });
+}
+
+Variable nanmean(const VariableConstView &var, const Dim dim) {
+  return nanmean_impl(var, dim, makeVariable<int64_t>(Values{0}));
 }
 
 VariableView nanmean(const VariableConstView &var, const Dim dim,
