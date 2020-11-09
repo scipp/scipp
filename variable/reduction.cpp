@@ -80,9 +80,10 @@ VariableView nansum(const VariableConstView &var, const Dim dim,
   return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
 }
 
-Variable mean_impl(const VariableConstView &var, const Dim dim,
-                   const VariableConstView &masks_sum) {
-  auto summed = sum(var, dim);
+template <typename SumOp>
+Variable mean_impl_using_op(SumOp sum_op, const VariableConstView &var,
+                            const Dim dim, const VariableConstView &masks_sum) {
+  auto summed = sum_op(var, dim);
   auto scale = 1.0 * units::one / (var.dims()[dim] * units::one - masks_sum);
   if (isInt(var.dtype()))
     summed = summed * scale;
@@ -91,25 +92,62 @@ Variable mean_impl(const VariableConstView &var, const Dim dim,
   return summed;
 }
 
-VariableView mean_impl(const VariableConstView &var, const Dim dim,
-                       const VariableConstView &masks_sum,
-                       const VariableView &out) {
+template <typename SumOp>
+VariableView mean_impl_using_op(SumOp sum_op, const VariableConstView &var,
+                                const Dim dim,
+                                const VariableConstView &masks_sum,
+                                const VariableView &out) {
   if (isInt(out.dtype()))
     throw except::UnitError(
         "Cannot calculate mean in-place when output dtype is integer");
 
-  sum(var, dim, out);
+  sum_op(var, dim, out);
   out *= 1.0 * units::one / (var.dims()[dim] * units::one - masks_sum);
   return out;
+}
+
+Variable mean_impl(const VariableConstView &var, const Dim dim,
+                   const VariableConstView &masks_sum) {
+  return mean_impl_using_op([](auto &&... args) { return sum(args...); }, var,
+                            dim, masks_sum);
+}
+
+VariableView mean_impl(const VariableConstView &var, const Dim dim,
+                       const VariableConstView &masks_sum,
+                       const VariableView &out) {
+  return mean_impl_using_op([](auto &&... args) { return sum(args...); }, var,
+                            dim, masks_sum, out);
+}
+
+Variable nanmean_impl(const VariableConstView &var, const Dim dim,
+                      const VariableConstView &masks_sum) {
+  return mean_impl_using_op([](auto &&... args) { return nansum(args...); },
+                            var, dim, masks_sum);
+}
+
+VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
+                          const VariableConstView &masks_sum,
+                          const VariableView &out) {
+  return mean_impl_using_op([](auto &&... args) { return nansum(args...); },
+                            var, dim, masks_sum, out);
 }
 
 Variable mean(const VariableConstView &var, const Dim dim) {
   return mean_impl(var, dim, makeVariable<int64_t>(Values{0}));
 }
 
+Variable nanmean(const VariableConstView &var, const Dim dim) {
+  return nanmean_impl(var, dim, makeVariable<int64_t>(Values{0}));
+}
+
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
   return mean_impl(var, dim, makeVariable<int64_t>(Values{0}), out);
+}
+
+VariableView nanmean(const VariableConstView &var, const Dim dim,
+                     const VariableView &out) {
+  return nanmean_impl(var, dim, makeVariable<int64_t>(Values{0}), out);
 }
 
 template <class Op>

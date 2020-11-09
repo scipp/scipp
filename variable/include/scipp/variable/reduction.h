@@ -13,6 +13,11 @@ namespace scipp::variable {
                                                   const Dim dim);
 SCIPP_VARIABLE_EXPORT VariableView mean(const VariableConstView &var,
                                         const Dim dim, const VariableView &out);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+nanmean(const VariableConstView &var, const Dim dim);
+SCIPP_VARIABLE_EXPORT VariableView nanmean(const VariableConstView &var,
+                                           const Dim dim,
+                                           const VariableView &out);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sum(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sum(const VariableConstView &var,

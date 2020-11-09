@@ -64,4 +64,14 @@ Dataset mean(const DatasetConstView &d, const Dim dim) {
       d, [](auto &&... _) { return mean(_...); }, dim);
 }
 
+DataArray nanmean(const DataArrayConstView &a, const Dim dim) {
+  return apply_to_data_and_drop_dim(
+      a, [](auto &&... _) { return nanmean(_...); }, dim, a.masks());
+}
+
+Dataset nanmean(const DatasetConstView &d, const Dim dim) {
+  return apply_to_items(
+      d, [](auto &&... _) { return nanmean(_...); }, dim);
+}
+
 } // namespace scipp::dataset
