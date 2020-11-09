@@ -51,6 +51,7 @@ def in_memory_nexus_file_with_event_data() -> Iterator[h5py.File]:
     # backing_store=False prevents file being written to
     # disk on flush() or close().
     nexus_file = h5py.File('in_memory_events.nxs',
+                           mode='w',
                            driver="core",
                            backing_store=False)
     try:
