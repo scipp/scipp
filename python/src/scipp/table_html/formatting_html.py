@@ -462,7 +462,7 @@ def dataset_repr(ds):
     obj_type = "scipp.{}".format(type(ds).__name__)
     header_components = [
         f"<div class='xr-obj-type'>{escape(obj_type)}"
-        f"({human_readable_size(sys.getsizeof(ds))})</div>"
+        f" ({human_readable_size(sys.getsizeof(ds))})</div>"
     ]
 
     sections = [dim_section(ds)]
@@ -489,7 +489,7 @@ def variable_repr(var):
 
     header_components = [
         f"<div class='xr-obj-type'>{escape(obj_type)}"
-        f"({human_readable_size(sys.getsizeof(var))})</div>"
+        f" ({human_readable_size(sys.getsizeof(var))})</div>"
     ]
 
     sections = [variable_section(var)]
