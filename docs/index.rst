@@ -125,5 +125,6 @@ Documentation
    :maxdepth: 3
 
    about/about
+   about/roadmap
    about/contributing
    about/release-notes
