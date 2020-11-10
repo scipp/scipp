@@ -84,12 +84,22 @@ Variable from_constituents(Variable indices, const Dim dim, Variable buffer) {
       std::move(indices), dim, std::move(buffer))};
 }
 
+/// Construct non-owning binned variable of a mutable buffer.
+///
+/// This is intented for internal and short-lived variables. The returned
+/// variable stores *views* onto `indices` and `buffer` rather than copying the
+/// data. This is, it does not own any or share ownership of any data.
 Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
                               const VariableView &buffer) {
   return {std::make_unique<variable::DataModel<bucket<VariableView>>>(
       indices, dim, buffer)};
 }
 
+/// Construct non-owning binned variable of a const buffer.
+///
+/// This is intented for internal and short-lived variables. The returned
+/// variable stores *views* onto `indices` and `buffer` rather than copying the
+/// data. This is, it does not own any or share ownership of any data.
 Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
                               const VariableConstView &buffer) {
   return {std::make_unique<variable::DataModel<bucket<VariableConstView>>>(

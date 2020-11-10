@@ -12,15 +12,9 @@ namespace bins_view_detail {
 template <class T, class View> class BinsCommon {
 public:
   BinsCommon(const View &var) : m_var(var) {}
-  auto indices() const {
-    return std::get<0>(m_var.template constituents<bucket<T>>());
-  }
-  auto dim() const {
-    return std::get<1>(m_var.template constituents<bucket<T>>());
-  }
-  auto buffer() const {
-    return std::get<2>(m_var.template constituents<bucket<T>>());
-  }
+  auto indices() const { return std::get<0>(get()); }
+  auto dim() const { return std::get<1>(get()); }
+  auto buffer() const { return std::get<2>(get()); }
 
 protected:
   auto make(const View &view) const {
@@ -28,6 +22,7 @@ protected:
   }
 
 private:
+  auto get() const { return m_var.template constituents<bucket<T>>(); }
   View m_var;
 };
 
@@ -52,6 +47,9 @@ public:
 /// Usage:
 /// auto data = bins_view<DataArray>(var).data();
 /// auto coord = bins_view<DataArray>(var).coords()[dim];
+///
+/// The returned objects are variables referencing data in `var`. They do not
+/// own or share ownership of any data.
 template <class T, class View> auto bins_view(const View &var) {
   return bins_view_detail::Bins<T, View>(var);
 }
