@@ -57,14 +57,13 @@ constexpr auto map_linspace = overloaded{
       return (bin < 0.0 || bin >= nbin) ? 0.0 : get(weights, bin);
     }};
 
-constexpr auto map_sorted_edges =
-    overloaded{map,
-               [](const auto &coord, const auto &edges, const auto &weights) {
-                 auto it = std::upper_bound(edges.begin(), edges.end(), coord);
-                 return (it == edges.end() || it == edges.begin())
-                            ? 0.0
-                            : get(weights, --it - edges.begin());
-               }};
+constexpr auto map_sorted_edges = overloaded{
+    map, [](const auto &coord, const auto &edges, const auto &weights) {
+      auto it = std::upper_bound(edges.begin(), edges.end(), coord);
+      return (it == edges.end() || it == edges.begin())
+                 ? 0.0
+                 : get(weights, --it - edges.begin());
+    }};
 
 namespace map_and_mul_detail {
 template <class Data, class Coord, class Edge, class Weight>
