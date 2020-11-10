@@ -8,7 +8,6 @@ set(INC_FILES
     include/scipp/dataset/counts.h
     include/scipp/dataset/dataset_access.h
     include/scipp/dataset/dataset.h
-    include/scipp/dataset/dataset_index.h
     include/scipp/dataset/dataset_util.h
     include/scipp/dataset/except.h
     include/scipp/dataset/groupby.h
