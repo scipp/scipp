@@ -48,6 +48,10 @@ public:
 } // namespace bins_view_detail
 
 /// Return helper for accessing bin data and coords as non-owning views
+///
+/// Usage:
+/// auto data = bins_view<DataArray>(var).data();
+/// auto coord = bins_view<DataArray>(var).coords()[dim];
 template <class T, class View> auto bins_view(const View &var) {
   return bins_view_detail::Bins<T, View>(var);
 }
