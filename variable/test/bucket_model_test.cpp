@@ -17,8 +17,6 @@ TEST(BucketTest, member_types) {
 
 using Model = DataModel<bucket<Variable>>;
 
-using index_pair = std::pair<scipp::index, scipp::index>;
-
 class BucketModelTest : public ::testing::Test {
 protected:
   Variable indices = makeVariable<index_pair>(

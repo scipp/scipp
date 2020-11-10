@@ -18,17 +18,16 @@ std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
           std::move(model.buffer())};
 }
 
-//template <class T> using indices_t = typename DataModel<T>::indices_type::view_type;
-//template <class T>
-//using indices_const_t = typename DataModel<T>::indices_type::const_view_type;
-
 template <class T>
 std::tuple<VariableConstView, Dim, typename T::const_element_type>
 VariableConstView::constituents() const {
   const auto &model = requireT<const DataModel<T>>(underlying().data());
   auto view = *this;
   if constexpr (is_view_v<typename T::buffer_type>) {
+    // See DataModel<bucket<T>>::index_values
     view = model.indices();
+    view.m_offset += m_offset;
+    view.m_dims = m_dims;
   } else {
     view.m_variable = &model.indices();
   }
@@ -40,8 +39,8 @@ std::tuple<bin_indices_t<T>, Dim, typename T::element_type>
 VariableView::constituents() const {
   auto &model = requireT<DataModel<T>>(m_mutableVariable->data());
   if constexpr (is_view_v<typename T::buffer_type>) {
-    // TODO take into account slicing params of *this
-    return {model.indices(), model.dim(), model.buffer()};
+    auto view = std::get<0>(VariableConstView::constituents<T>());
+    return {view, model.dim(), model.buffer()};
   } else {
     auto view = *this;
     view.m_variable = &model.indices();
@@ -103,7 +102,7 @@ public:
   }
   void set_elem_unit(const VariableView &var,
                      const units::Unit &u) const override {
-    if constexpr(std::is_same_v<T, VariableConstView>)
+    if constexpr (std::is_same_v<T, VariableConstView>)
       throw std::runtime_error("Cannot set unit via const non-owning view");
     else
       return std::get<2>(var.constituents<bucket<T>>()).setUnit(u);

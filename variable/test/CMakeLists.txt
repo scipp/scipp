@@ -16,6 +16,7 @@ add_executable(
   transform_test.cpp
   trigonometry_test.cpp
   util_test.cpp
+  variable_bucket_non_owning_test.cpp
   variable_bucket_test.cpp
   variable_custom_type_test.cpp
   variable_keyword_args_constructor_test.cpp

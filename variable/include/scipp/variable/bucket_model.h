@@ -179,8 +179,8 @@ void DataModel<bucket<T>>::copy(const VariableConstView &src,
   auto buffer1 = resize_default_init(buffer0, dim0, size1);
   copy_slices(buffer0, buffer1, dim0, indices0, indices1);
   if constexpr (is_view_v<T>) {
-    dst.replace_model(DataModel<bucket<typename T::value_type>>{
-        std::move(indices1), dim0, std::move(buffer1)});
+    throw std::runtime_error(
+        "Copying a non-owning binned view is not supported.");
   } else {
     dst.replace_model(
         DataModel<bucket<T>>{std::move(indices1), dim0, std::move(buffer1)});

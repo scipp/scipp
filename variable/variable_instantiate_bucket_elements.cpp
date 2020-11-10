@@ -31,7 +31,11 @@ private:
   }
   VariableView data(const VariableView &var) const override {
     if constexpr (std::is_same_v<T, VariableConstView>)
-      throw std::runtime_error("xxx");
+      // This code is an indication of some shortcomings with the const handling
+      // of variables and views. Essentially we would require better support for
+      // variables with const elements.
+      throw std::runtime_error("Mutable access to data of non-owning binned "
+                               "view of const buffer is not possible.");
     else
       return std::get<2>(var.constituents<bucket<T>>());
   }
