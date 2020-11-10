@@ -54,10 +54,12 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const VariableConstView &shape) const override {
+    const auto [begin, size] = sizes_to_begin(shape);
     if constexpr (is_view_v<T>) {
-      throw std::runtime_error("copy of binned view not supported");
+      // converting, e.g., bucket<VariableView> to bucket<Variable>
+      return std::make_unique<DataModel<bucket<typename T::value_type>>>(
+          zip(begin, begin), m_dim, resize_default_init(m_buffer, m_dim, size));
     } else {
-      const auto [begin, size] = sizes_to_begin(shape);
       return std::make_unique<DataModel>(
           zip(begin, begin), m_dim, resize_default_init(m_buffer, m_dim, size));
     }
@@ -130,8 +132,16 @@ private:
   }
   auto index_values(const core::ElementArrayViewParams &base) const {
     if constexpr (is_view_v<T>) {
-      // TODO combine slicing from `base` with slicing in m_indices
-      return m_indices.template values<range_type>();
+      // m_indices is a VariableConstView and may thus contain slicing
+      const auto params = m_indices.array_params();
+      const auto offset = params.offset() + base.offset();
+      // `base` comes from the variable (view) holding this model, so it
+      // contains slicing applied after the one that may be part of m_indices.
+      // Dimensions are thus given by `base`:
+      const auto dims = base.dims();
+      const auto dataDims = params.dataDims();
+      return cast<range_type>(m_indices.underlying())
+          .values(core::element_array_view(offset, dims, dataDims, {}));
     } else {
       return cast<range_type>(m_indices).values(base);
     }
@@ -161,17 +171,17 @@ bool DataModel<bucket<T>>::equals(const VariableConstView &a,
 template <class T>
 void DataModel<bucket<T>>::copy(const VariableConstView &src,
                                 const VariableView &dst) const {
+  const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
+  const auto [begin0, end0] = unzip(indices0);
+  const auto sizes1 = end0 - begin0;
+  auto [begin1, size1] = sizes_to_begin(sizes1);
+  auto indices1 = zip(begin1, begin1 + sizes1);
+  auto buffer1 = resize_default_init(buffer0, dim0, size1);
+  copy_slices(buffer0, buffer1, dim0, indices0, indices1);
   if constexpr (is_view_v<T>) {
-    throw std::runtime_error("copy of binned view not supported");
+    dst.replace_model(DataModel<bucket<typename T::value_type>>{
+        std::move(indices1), dim0, std::move(buffer1)});
   } else {
-    const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
-    const auto [begin0, end0] = unzip(indices0);
-    const auto sizes1 = end0 - begin0;
-    auto [begin1, size1] = sizes_to_begin(sizes1);
-    auto indices1 = zip(begin1, begin1 + sizes1);
-    auto buffer1 = resize_default_init(buffer0, dim0, size1);
-    copy_slices(buffer0, buffer1, dim0, indices0, indices1);
-    // TODO should probably use T::value_type to support case of views
     dst.replace_model(
         DataModel<bucket<T>>{std::move(indices1), dim0, std::move(buffer1)});
   }

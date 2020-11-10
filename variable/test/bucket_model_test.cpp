@@ -21,15 +21,14 @@ using index_pair = std::pair<scipp::index, scipp::index>;
 
 class BucketModelTest : public ::testing::Test {
 protected:
-  Dimensions dims{Dim::Y, 2};
-  Variable indices =
-      makeVariable<index_pair>(dims, Values{std::pair{0, 2}, std::pair{2, 4}});
+  Variable indices = makeVariable<index_pair>(
+      Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   auto make_indices(
       const std::vector<std::pair<scipp::index, scipp::index>> &is) const {
-    return makeVariable<std::pair<scipp::index, scipp::index>>(dims,
-                                                               Values(is));
+    return makeVariable<std::pair<scipp::index, scipp::index>>(
+        Dims{Dim::Y}, Shape{is.size()}, Values(is));
   }
 };
 

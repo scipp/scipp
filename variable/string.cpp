@@ -68,7 +68,8 @@ auto apply(const DType dtype, Args &&... args) {
   return core::callDType<Callable>(
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
                  scipp::core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
-                 bucket<Variable>>{},
+                 bucket<Variable>, bucket<VariableConstView>,
+                 bucket<VariableView>>{},
       dtype, std::forward<Args>(args)...);
 }
 
