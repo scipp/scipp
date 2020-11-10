@@ -49,6 +49,18 @@ Variable bin_index(const VariableConstView &var,
   }
 }
 
+Variable groups_to_map(const VariableConstView &var, const Dim dim) {
+  return variable::transform(subspan_view(var, dim),
+                             core::element::groups_to_map);
+}
+
+Variable group_index(const VariableConstView &var,
+                     const VariableConstView &groups) {
+  const auto dim = groups.dims().inner();
+  const auto map = groups_to_map(groups, dim);
+  return variable::transform(var, map, core::element::group_index);
+}
+
 auto shrink(const Dimensions &dims) {
   auto shrunk = dims;
   shrunk.resize(dims.inner(), dims[dims.inner()] - 1);
@@ -57,10 +69,7 @@ auto shrink(const Dimensions &dims) {
 
 /// `dims` provides dimensions of pre-existing binning, `edges` define
 /// additional dimensions.
-Variable bin_sizes(const VariableConstView &indices, Dimensions dims,
-                   const std::vector<VariableConstView> &edges) {
-  for (const auto &item : edges)
-    dims = merge(dims, shrink(item.dims()));
+Variable bin_sizes(const VariableConstView &indices, Dimensions dims) {
   Variable sizes = makeVariable<scipp::index>(dims);
   const auto s = sizes.values<scipp::index>().as_span();
   for (const auto i : indices.values<scipp::index>().as_span())
@@ -169,11 +178,17 @@ DataArray bucketby_impl(const DataArrayConstView &array,
                         const std::vector<VariableConstView> &edges,
                         Variable indices = Variable{},
                         Dim bucket_dim = Dim::Invalid,
-                        const Dimensions &dims = Dimensions{}) {
+                        Dimensions dims = Dimensions{}) {
   for (const auto &edge : edges) {
     const auto coord = array.coords()[edge.dims().inner()];
-    const auto inner_indices = bin_index(coord, edge);
-    const auto nbin = edge.dims()[edge.dims().inner()] - 1;
+    // TODO This implicit way of distinguishing edges and non-edges is probably
+    // not the ultimate desired solution.
+    const bool is_edges =
+        (edge.dtype() == dtype<float>) || (edge.dtype() == dtype<double>);
+    const auto inner_indices =
+        is_edges ? bin_index(coord, edge) : group_index(coord, edge);
+    const auto nbin = edge.dims()[edge.dims().inner()] - (is_edges ? 1 : 0);
+    dims = merge(dims, is_edges ? shrink(edge.dims()) : edge.dims());
     if (indices) {
       if (bucket_dim != coord.dims().inner())
         throw except::DimensionError(
@@ -194,9 +209,14 @@ DataArray bucketby_impl(const DataArrayConstView &array,
     }
     bucket_dim = coord.dims().inner();
   }
-  const auto sizes = bin_sizes(indices, dims, edges);
+  const auto sizes = bin_sizes(indices, dims);
   const auto [begin, total_size] = sizes_to_begin(sizes);
   const auto end = begin + sizes;
+  // TODO We probably want to omit the coord used for grouping in the non-edge
+  // case, since it just contains the same value duplicated for every row in the
+  // bin.
+  // Note that we should then also recreate that variable in concatenate, to
+  // ensure that those operations are reversible.
   auto binned = bin(array, indices, sizes);
   std::map<Dim, Variable> coords;
   for (const auto &edge : edges)
@@ -227,8 +247,7 @@ DataArray bucketby(const DataArrayConstView &array,
     indices -= 1 * units::one;
     const auto indices_ = indices.values<scipp::index>().as_span();
     scipp::index current = 0;
-    for (const auto [begin, end] :
-         begin_end.values<std::pair<scipp::index, scipp::index>>().as_span()) {
+    for (const auto [begin, end] : begin_end.values<index_pair>().as_span()) {
       for (scipp::index i = begin; i < end; ++i)
         indices_[i] = current;
       ++current;
