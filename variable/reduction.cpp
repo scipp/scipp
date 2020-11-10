@@ -92,7 +92,7 @@ Variable make_scale(const VariableConstView &var, Dim dim,
 
 Variable nanmean_impl(const VariableConstView &var, const Dim dim,
                       const VariableConstView &masks_sum) {
-  auto summed = nanmean(var, dim);
+  auto summed = nansum(var, dim);
   auto scale = make_scale(var, dim, masks_sum);
   if (isInt(var.dtype()))
     summed = summed * scale;
@@ -108,7 +108,7 @@ VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
     throw except::UnitError(
         "Cannot calculate mean in-place when output dtype is integer");
 
-  nanmean(var, dim, out);
+  nansum(var, dim, out);
   out *= make_scale(var, dim, masks_sum);
   return out;
 }

@@ -55,15 +55,6 @@ TEST(DatasetOperationsTest, mean_over_dim) {
             makeVariable<float>(Values{1.5}, Variances{6.75}));
 }
 
-TEST(DatasetOperationsTest, mean_all_dims) {
-  DataArray da{makeVariable<double>(Dims{Dim::X, Dim::Y}, Values{1, 2, 3, 4},
-                                    Shape{2, 2})};
-  EXPECT_EQ(dataset::mean(da).data(), makeVariable<double>(Values{2.5}));
-
-  Dataset ds{{{"a", da}}};
-  EXPECT_EQ(dataset::mean(ds)["a"], dataset::mean(da));
-}
-
 template <typename T>
 class DatasetShapeChangingOpTest : public ::testing::Test {
 public:

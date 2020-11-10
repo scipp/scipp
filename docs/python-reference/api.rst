@@ -85,6 +85,7 @@ Reduction operations are operations to remove one or more dimension, e.g., by pe
    mean
    min
    nanmax
+   nanmean
    nanmin
    nansum
    sum

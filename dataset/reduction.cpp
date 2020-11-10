@@ -64,14 +64,6 @@ Dataset mean(const DatasetConstView &d, const Dim dim) {
       d, [](auto &&... _) { return mean(_...); }, dim);
 }
 
-DataArray mean(const DataArrayConstView &a) {
-  return reduce_all_dims(a, [](auto &&... _) { return mean(_...); });
-}
-
-Dataset mean(const DatasetConstView &d) {
-  return apply_to_items(d, [](auto &&... _) { return mean(_...); });
-}
-
 DataArray nanmean(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return nanmean(_...); }, dim, a.masks());

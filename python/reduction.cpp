@@ -14,6 +14,11 @@ using namespace scipp::dataset;
 namespace py = pybind11;
 
 template <class T> void bind_mean(py::module &m) {
+  if constexpr (std::is_same_v<Variable, T>) {
+    m.def(
+        "mean", [](const typename T::const_view_type &x) { return mean(x); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  }
   m.def(
       "mean",
       [](const typename T::const_view_type &x, const Dim dim) {
@@ -25,6 +30,29 @@ template <class T> void bind_mean(py::module &m) {
 template <class T> void bind_mean_out(py::module &m) {
   m.def(
       "mean",
+      [](const typename T::const_view_type &x, const Dim dim,
+         typename T::view_type out) { return mean(x, dim, out); },
+      py::arg("x"), py::arg("dim"), py::arg("out"), py::keep_alive<0, 3>(),
+      py::call_guard<py::gil_scoped_release>());
+}
+template <class T> void bind_nanmean(py::module &m) {
+  if constexpr (std::is_same_v<Variable, T>) {
+    m.def(
+        "nanmean",
+        [](const typename T::const_view_type &x) { return nanmean(x); },
+        py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  }
+  m.def(
+      "nanmean",
+      [](const typename T::const_view_type &x, const Dim dim) {
+        return nanmean(x, dim);
+      },
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
+}
+
+template <class T> void bind_nanmean_out(py::module &m) {
+  m.def(
+      "nanmean",
       [](const typename T::const_view_type &x, const Dim dim,
          typename T::view_type out) { return mean(x, dim, out); },
       py::arg("x"), py::arg("dim"), py::arg("out"), py::keep_alive<0, 3>(),
@@ -56,6 +84,7 @@ template <class T> void bind_nansum(py::module &m) {
   m.def(
       "nansum", [](const typename T::const_view_type &x) { return nansum(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>());
+
   m.def(
       "nansum",
       [](const typename T::const_view_type &x, const Dim dim) {
@@ -150,6 +179,11 @@ void init_reduction(py::module &m) {
   bind_mean<DataArray>(m);
   bind_mean<Dataset>(m);
   bind_mean_out<Variable>(m);
+
+  bind_nanmean<Variable>(m);
+  bind_nanmean<DataArray>(m);
+  bind_nanmean<Dataset>(m);
+  bind_nanmean_out<Variable>(m);
 
   bind_sum<Variable>(m);
   bind_sum<DataArray>(m);
