@@ -12,6 +12,9 @@ Features
 * New ``profiler`` plotting functionality where one of the slider dimensions can be displayed as a profile in a subplot (1D and 2D projections only).
 * Sliders have a thickness slider associated with them and can be used to show slices of arbitrary thickness.
 * Can hide/show individual masks on plots.
+* Add binned data support, replacing "event list" dtypes as well as "realign" support.
+* Value-based slicing support.
+* Support for saving scipp objects to HDF5.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
@@ -24,16 +27,20 @@ Breaking changes
 * API for log scale on axes and colors has changed.
   Use ``plot(da, scale={'tof': 'log'})`` to set a log scale on a coordinate axis, and use ``plot(da, norm='log')`` to have a log image colorscale or a log y axis on a 1d plot.
 * ``vmin`` and ``vmax`` now represent absolute values instead of exponents when ``norm='log'``.
-* The `ipympl` matplotlib backend is now required for using inside Jupyter notebooks.
+* The ``ipympl`` matplotlib backend is now required for using inside Jupyter notebooks.
   This has been added as a dependency.
   It is also the only interactive backend that works in JupyterLab.
+* Removed support for ``event_list`` ``dtype``, use binned data instead.
+* Removed support for "realigned" data. This is replaced by the more flexible and generic support for "binned" data.
 
 Contributors
 ~~~~~~~~~~~~
 
+Matthew Andrew,
 Owen Arnold,
 Thibault Chatel,
 Simon Heybrock,
+Matthew D. Jones,
 Daniel Nixon,
 Piotr Rozyczko,
 and Neil Vaytet
