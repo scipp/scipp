@@ -76,7 +76,7 @@ def assert_data_repr_icon_present(tags: List[bs4.element.Tag]):
 
 def assert_common(html, in_dtype, size_of):
     size_suffix = human_readable_size(size_of)
-    assert_obj_type(VARIABLE_OBJECT_TYPE + f'({size_suffix})',
+    assert_obj_type(VARIABLE_OBJECT_TYPE + f' ({size_suffix})',
                     html.find_all(class_=OBJ_TYPE_CSS_CLASS))
     assert_dtype(in_dtype, html.find_all(class_=DTYPE_CSS_CLASS))
     assert_data_repr_icon_present(html.find_all(class_=DATA_ICON_CSS_CLASS))
