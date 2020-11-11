@@ -145,6 +145,24 @@ def _groupby_bins(obj):
     return GroupbyBins(obj)
 
 
+def histogram(x, bins):
+    """Create dense data by histogramming data along all dimension given by
+    edges.
+
+    :return: DataArray with values equal to the sum of values in each given
+             bin.
+    :seealso: :py:func:`scipp.bin` for binning data.
+    """
+    if isinstance(x, _Bins):
+        return _call_cpp_func(_cpp.histogram, x._obj, bins)
+    if _cpp.is_bins(x):
+        raise RuntimeError(
+            "Histogramming binned data not supported. Use the `bins` property "
+            "to histogram the bin *contents*, e.g., sc.histogram(binned.bins, "
+            "...).")
+    return _call_cpp_func(_cpp.histogram, x, bins)
+
+
 def bin(x, edges):
     """Create binned data by binning data along all dimensions given by edges.
 
