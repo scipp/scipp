@@ -23,31 +23,40 @@ def dispatch(scipp_obj_dict,
         raise RuntimeError("Invalid number of dimensions for "
                            "plotting: {}".format(ndim))
 
+    # If the input is binned data, we histogram first
     for key, array in scipp_obj_dict.items():
         if sc.is_bins(array):
             if bins is not None:
-                for dim, binning in bins.items():
-                    coord = array.coords[dim]
-                    if is_variable(binning):
-                        edges = binning
-                    elif isinstance(binning, int):
-                        edges = sc.Variable([dim],
-                                            values=np.linspace(
-                                                coord[dim, 0].value,
-                                                coord[dim, -1].value, binning),
-                                            unit=coord.unit)
-                    elif isinstance(binning, np.ndarray):
-                        edges = sc.Variable([dim],
-                                            values=binning,
-                                            unit=coord.unit)
-                    else:
-                        raise RuntimeError(
-                            "Unknown bins type: {}".format(binning))
-                    array = sc.histogram(array, edges)
+                if is_variable(bins):
+                    array = sc.histogram(array, bins)
+                elif isinstance(bins, dict):
+                    for dim, binning in bins.items():
+                        coord = array.coords[dim]
+                        if is_variable(binning):
+                            edges = binning
+                        elif isinstance(binning, int):
+                            edges = sc.Variable([dim],
+                                                values=np.linspace(
+                                                    sc.nanmin(coord).value,
+                                                    sc.nanmax(coord).value,
+                                                    binning + 1),
+                                                unit=coord.unit)
+                        elif isinstance(binning, np.ndarray):
+                            edges = sc.Variable([dim],
+                                                values=binning,
+                                                unit=coord.unit)
+                        else:
+                            raise RuntimeError(
+                                "Unknown bins type: {}".format(binning))
+                        array = sc.histogram(array, edges)
+                else:
+                    raise RuntimeError(
+                        "bins must be either a Variable or a dict.")
                 scipp_obj_dict[key] = array
             else:
                 scipp_obj_dict[key] = array.bins.sum()
 
+    # Dispatch the input to the different plotting functions
     if projection is None:
         if ndim < 3:
             projection = "{}d".format(ndim)

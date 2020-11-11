@@ -5,43 +5,36 @@
 
 import numpy as np
 import scipp as sc
-from plot_helper import make_dense_dataset
+from plot_helper import make_dense_dataset, make_binned_data_array
 from scipp.plot import plot
 
 
 def test_plot_2d_image():
-    d = make_dense_dataset(ndim=2)
-    plot(d)
+    plot(make_dense_dataset(ndim=2))
 
 
 def test_plot_2d_image_with_log():
-    d = make_dense_dataset(ndim=2)
-    plot(d, norm='log')
+    plot(make_dense_dataset(ndim=2), norm='log')
 
 
 def test_plot_2d_image_with_vmin_vmax():
-    d = make_dense_dataset(ndim=2)
-    plot(d, vmin=0.1, vmax=0.9)
+    plot(make_dense_dataset(ndim=2), vmin=0.1, vmax=0.9)
 
 
 def test_plot_2d_image_with_vmin_vmax_with_log():
-    d = make_dense_dataset(ndim=2)
-    plot(d, vmin=0.1, vmax=0.9, norm='log')
+    plot(make_dense_dataset(ndim=2), vmin=0.1, vmax=0.9, norm='log')
 
 
 def test_plot_2d_image_with_log_scale_x():
-    d = make_dense_dataset(ndim=2)
-    plot(d, scale={'tof': 'log'})
+    plot(make_dense_dataset(ndim=2), scale={'tof': 'log'})
 
 
 def test_plot_2d_image_with_log_scale_y():
-    d = make_dense_dataset(ndim=2)
-    plot(d, scale={'x': 'log'})
+    plot(make_dense_dataset(ndim=2), scale={'x': 'log'})
 
 
 def test_plot_2d_image_with_log_scale_xy():
-    d = make_dense_dataset(ndim=2)
-    plot(d, scale={'tof': 'log', 'x': 'log'})
+    plot(make_dense_dataset(ndim=2), scale={'tof': 'log', 'x': 'log'})
 
 
 def test_plot_2d_image_with_with_nan():
@@ -57,43 +50,36 @@ def test_plot_2d_image_with_with_nan_with_log():
 
 
 def test_plot_2d_image_with_cmap():
-    d = make_dense_dataset(ndim=2)
-    plot(d, cmap='jet')
+    plot(make_dense_dataset(ndim=2), cmap='jet')
 
 
 def test_plot_2d_image_with_xaxis_specified():
-    d = make_dense_dataset(ndim=2)
-    plot(d, axes={'x': 'x'})
+    plot(make_dense_dataset(ndim=2), axes={'x': 'x'})
 
 
 def test_plot_2d_image_with_yaxis_specified():
-    d = make_dense_dataset(ndim=2)
-    plot(d, axes={'y': 'tof'})
+    plot(make_dense_dataset(ndim=2), axes={'y': 'tof'})
 
 
 def test_plot_2d_image_with_labels():
-    d = make_dense_dataset(ndim=2, labels=True)
-    plot(d, axes={'x': 'somelabels'})
+    plot(make_dense_dataset(ndim=2, labels=True), axes={'x': 'somelabels'})
 
 
 def test_plot_2d_image_with_filename():
-    d = make_dense_dataset(ndim=2)
-    plot(d, filename='image.pdf')
+    plot(make_dense_dataset(ndim=2), filename='image.pdf')
 
 
 def test_plot_2d_image_with_bin_edges():
-    d = make_dense_dataset(ndim=2, binedges=True)
-    plot(d)
+    plot(make_dense_dataset(ndim=2, binedges=True))
 
 
 def test_plot_2d_with_masks():
-    d = make_dense_dataset(ndim=2, masks=True)
-    plot(d)
+    plot(make_dense_dataset(ndim=2, masks=True))
 
 
 def test_plot_2d_with_masks_and_labels():
-    d = make_dense_dataset(ndim=2, masks=True, labels=True)
-    plot(d, axes={'x': 'somelabels'})
+    plot(make_dense_dataset(ndim=2, masks=True, labels=True),
+         axes={'x': 'somelabels'})
 
 
 def test_plot_2d_image_with_non_regular_bin_edges():
@@ -203,99 +189,20 @@ def test_plot_2d_with_dimension_of_size_2():
 
 
 def test_plot_2d_ragged_coord():
-    N = 10
-    M = 5
-    x = np.arange(N).astype(np.float64)
-    y = np.arange(M).astype(np.float64)
-    xx, yy = np.meshgrid(x, y)
-    z = np.random.random([M, N])
-    for i in range(M):
-        xx[i] *= (i + 1.0)
-    d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['y', 'x'], values=xx, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
-    d['a'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.counts)
-    plot(d)
+    plot(make_dense_dataset(ndim=2, ragged=True))
 
 
-def test_plot_2d_ragged_coord_x_edges():
-    N = 10
-    M = 5
-    x = np.arange(N + 1).astype(np.float64)
-    y = np.arange(M).astype(np.float64)
-    xx, yy = np.meshgrid(x, y)
-    z = np.random.random([M, N])
-    for i in range(M):
-        xx[i] *= (i + 1.0)
-    d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['y', 'x'], values=xx, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
-    d['a'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.kg)
-    plot(d)
-
-
-def test_plot_2d_ragged_coord_y_edges():
-    N = 10
-    M = 5
-    x = np.arange(N).astype(np.float64)
-    y = np.arange(M + 1).astype(np.float64)
-    xx, yy = np.meshgrid(x, y[:-1])
-    z = np.random.random([M, N])
-    for i in range(M):
-        xx[i] *= (i + 1.0)
-    d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['y', 'x'], values=xx, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
-    d['a'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.counts)
-    plot(d)
-
-
-def test_plot_2d_ragged_coord_x_and_y_edges():
-    N = 10
-    M = 5
-    x = np.arange(N).astype(np.float64)
-    y = np.arange(M).astype(np.float64)
-    xx, yy = np.meshgrid(x, y)
-    z = np.random.random([M, N])
-    for i in range(M):
-        xx[i] *= (i + 1.0)
-    d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['y', 'x'], values=xx, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
-    d['a'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.counts)
-    plot(d)
+def test_plot_2d_ragged_coord_bin_edges():
+    plot(make_dense_dataset(ndim=2, ragged=True, binedges=True))
 
 
 def test_plot_2d_ragged_coord_with_masks():
-    N = 10
-    M = 5
-    x = np.arange(N + 1).astype(np.float64)
-    y = np.arange(M).astype(np.float64)
-    xx, yy = np.meshgrid(x, y)
-    z = np.random.random([M, N])
-    for i in range(M):
-        xx[i] *= (i + 1.0)
-    d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['y', 'x'], values=xx, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
-    d['a'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.counts)
-    d['a'].masks['b'] = sc.Variable(['y', 'x'],
-                                    values=np.where(z < 0.5, True, False),
-                                    dtype=bool)
-    plot(d)
+    plot(make_dense_dataset(ndim=2, ragged=True, masks=True))
 
 
 def test_plot_2d_with_labels_but_no_dimension_coord():
-    N = 50
-    M = 10
-    y = np.arange(M).astype(np.float)
-    z = np.random.random([M, N])
-    d = sc.Dataset()
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
-    d['Signal'] = sc.Variable(['y', 'x'], values=z, unit=sc.units.kg)
-    d.coords['somelabels'] = sc.Variable(['x'],
-                                         values=np.linspace(101., 155., N),
-                                         unit=sc.units.s)
+    d = make_dense_dataset(ndim=2, labels=True)
+    del d.coords['x']
     plot(d, axes={'x': 'somelabels'})
 
 
@@ -307,3 +214,15 @@ def test_plot_2d_with_decreasing_edges():
                          'y': sc.Variable(dims=['y'], values=[1, 2, 3])
                      })
     plot(a)
+
+
+def test_plot_2d_binned_data():
+    plot(make_binned_data_array(ndim=2))
+
+
+def test_plot_2d_binned_data_with_variances():
+    plot(make_binned_data_array(ndim=2, variances=True))
+
+
+def test_plot_2d_binned_data_with_masks():
+    plot(make_binned_data_array(ndim=2, masks=True))

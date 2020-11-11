@@ -14,23 +14,19 @@ from scipp.plot import plot
 
 
 def test_plot_1d():
-    d = make_dense_dataset(ndim=1)
-    plot(d)
+    plot(make_dense_dataset(ndim=1))
 
 
 def test_plot_1d_with_variances():
-    d = make_dense_dataset(ndim=1, variances=True)
-    plot(d)
+    plot(make_dense_dataset(ndim=1, variances=True))
 
 
 def test_plot_1d_bin_edges():
-    d = make_dense_dataset(ndim=1, binedges=True)
-    plot(d)
+    plot(make_dense_dataset(ndim=1, binedges=True))
 
 
 def test_plot_1d_with_labels():
-    d = make_dense_dataset(ndim=1, labels=True)
-    plot(d, axes={"x": "somelabels"})
+    plot(make_dense_dataset(ndim=1, labels=True), axes={"x": "somelabels"})
 
 
 def test_plot_1d_log_axes():
@@ -41,8 +37,7 @@ def test_plot_1d_log_axes():
 
 
 def test_plot_1d_bin_edges_with_variances():
-    d = make_dense_dataset(ndim=1, variances=True, binedges=True)
-    plot(d)
+    plot(make_dense_dataset(ndim=1, variances=True, binedges=True))
 
 
 def test_plot_1d_two_separate_entries():
@@ -73,8 +68,7 @@ def test_plot_1d_two_entries_hide_variances():
 
 
 def test_plot_1d_with_masks():
-    d = make_dense_dataset(ndim=1, masks=True)
-    plot(d)
+    plot(make_dense_dataset(ndim=1, masks=True))
 
 
 def test_plot_collapse():
@@ -83,8 +77,7 @@ def test_plot_collapse():
 
 
 def test_plot_sliceviewer_with_1d_projection():
-    d = make_dense_dataset(ndim=3)
-    plot(d, projection="1d")
+    plot(make_dense_dataset(ndim=3), projection="1d")
 
 
 def test_plot_sliceviewer_with_1d_projection_with_nans():
