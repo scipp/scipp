@@ -2,7 +2,7 @@
 
 #include <random>
 
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 
 using namespace scipp;
 

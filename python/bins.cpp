@@ -4,7 +4,7 @@
 /// @author Simon Hezbrock
 #include "pybind11.h"
 #include "scipp/core/except.h"
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/shape.h"

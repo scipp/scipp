@@ -10,14 +10,14 @@
 #include "scipp/core/tag_util.h"
 
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/except.h"
 

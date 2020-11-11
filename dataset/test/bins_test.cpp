@@ -2,34 +2,33 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/shape.h"
-#include "scipp/variable/bucket_model.h"
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/variable_factory.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
 
 class DataArrayBucketTest : public ::testing::Test {
 protected:
-  using Model = variable::DataModel<bucket<DataArray>>;
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable data =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   DataArray buffer = DataArray(data, {{Dim::X, data + data}});
-  Variable var{std::make_unique<Model>(indices, Dim::X, buffer)};
+  Variable var = make_bins(indices, Dim::X, buffer);
 };
 
 TEST_F(DataArrayBucketTest, concatenate_dim_1d) {
   Variable expected_indices =
       makeVariable<std::pair<scipp::index, scipp::index>>(
           Values{std::pair{0, 4}});
-  Variable expected{std::make_unique<Model>(expected_indices, Dim::X, buffer)};
+  Variable expected = make_bins(expected_indices, Dim::X, buffer);
   EXPECT_EQ(buckets::concatenate(var, Dim::Y), expected);
 }
 
@@ -47,7 +46,6 @@ TEST_F(DataArrayBucketTest, concatenate_dim_1d_masked) {
 }
 
 TEST(DataArrayBucket2dTest, concatenate_dim_2d) {
-  using Model = variable::DataModel<bucket<DataArray>>;
   Variable indicesZY = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::Z, Dim::Y}, Shape{2, 2},
       Values{std::pair{0, 2}, std::pair{2, 3}, std::pair{4, 6},
@@ -55,18 +53,18 @@ TEST(DataArrayBucket2dTest, concatenate_dim_2d) {
   Variable data =
       makeVariable<double>(Dims{Dim::X}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
   DataArray buffer = DataArray(data, {{Dim::X, data + data}});
-  Variable zy{std::make_unique<Model>(indicesZY, Dim::X, buffer)};
+  Variable zy = make_bins(indicesZY, Dim::X, buffer);
 
   // Note that equality ignores data not in any bucket.
   Variable indicesZ = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::Z}, Shape{2}, Values{std::pair{0, 3}, std::pair{4, 6}});
-  Variable z{std::make_unique<Model>(indicesZ, Dim::X, buffer)};
+  Variable z = make_bins(indicesZ, Dim::X, buffer);
 
   Variable indicesY = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 4}, std::pair{4, 5}});
   data = makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{1, 2, 5, 6, 3});
   buffer = DataArray(data, {{Dim::X, data + data}});
-  Variable y{std::make_unique<Model>(indicesY, Dim::X, buffer)};
+  Variable y = make_bins(indicesY, Dim::X, buffer);
 
   EXPECT_EQ(buckets::concatenate(zy, Dim::Y), z);
   EXPECT_EQ(buckets::concatenate(zy, Dim::Z), y);
@@ -85,8 +83,7 @@ TEST_F(DataArrayBucketTest, concatenate) {
   Variable out_x = makeVariable<double>(Dims{Dim::X}, Shape{8},
                                         Values{2, 4, 2, 4, 6, 8, 6, 8});
   DataArray out_buffer = DataArray(out_data, {{Dim::X, out_x}});
-  EXPECT_EQ(result,
-            Variable(std::make_unique<Model>(out_indices, Dim::X, out_buffer)));
+  EXPECT_EQ(result, make_bins(out_indices, Dim::X, out_buffer));
 
   // "in-place" append gives same as concatenate
   buckets::append(var, var * (3.0 * units::one));
@@ -110,8 +107,7 @@ TEST_F(DataArrayBucketTest, concatenate_with_broadcast) {
       Dims{Dim::X}, Shape{16},
       Values{2, 4, 2, 4, 2, 4, 6, 8, 6, 8, 2, 4, 6, 8, 6, 8});
   DataArray out_buffer = DataArray(out_data, {{Dim::X, out_x}});
-  EXPECT_EQ(result,
-            Variable(std::make_unique<Model>(out_indices, Dim::X, out_buffer)));
+  EXPECT_EQ(result, make_bins(out_indices, Dim::X, out_buffer));
 
   // Broadcast not possible for in-place append
   EXPECT_THROW(buckets::append(var, var2), except::DimensionMismatchError);
@@ -121,7 +117,7 @@ TEST_F(DataArrayBucketTest, histogram) {
   Variable weights = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   DataArray events = DataArray(weights, {{Dim::Z, data}});
-  Variable buckets{std::make_unique<Model>(indices, Dim::X, events)};
+  Variable buckets = make_bins(indices, Dim::X, events);
   // `buckets` *does not* depend on the histogramming dimension
   const auto bin_edges =
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
@@ -135,7 +131,7 @@ TEST_F(DataArrayBucketTest, histogram_existing_dim) {
   Variable weights = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   DataArray events = DataArray(weights, {{Dim::Y, data}});
-  Variable buckets{std::make_unique<Model>(indices, Dim::X, events)};
+  Variable buckets = make_bins(indices, Dim::X, events);
   // `buckets` *does* depend on the histogramming dimension
   const auto bin_edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{4}, Values{0, 1, 2, 4});
@@ -163,8 +159,6 @@ TEST_F(DataArrayBucketTest, sum) {
 
 class DataArrayBucketMapTest : public ::testing::Test {
 protected:
-  using ModelVariable = variable::DataModel<bucket<Variable>>;
-  using ModelDataArray = variable::DataModel<bucket<DataArray>>;
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
@@ -173,7 +167,7 @@ protected:
   Variable weights = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   DataArray events = DataArray(weights, {{Dim::Z, data}});
-  Variable buckets{std::make_unique<ModelDataArray>(indices, Dim::X, events)};
+  Variable buckets = make_bins(indices, Dim::X, events);
   // `buckets` *does not* depend on the histogramming dimension
   Variable bin_edges =
       makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
@@ -190,13 +184,11 @@ TEST_F(DataArrayBucketMapTest, map) {
   // 0   1   2   4
   const auto expected_scale = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, units::K, Values{2, 4, 4, 0});
-  EXPECT_EQ(out, Variable(std::make_unique<ModelVariable>(indices, Dim::X,
-                                                          expected_scale)));
+  EXPECT_EQ(out, make_bins(indices, Dim::X, expected_scale));
 
   // Mapping result can be used to scale
   auto scaled = buckets * out;
-  const auto expected = Variable{std::make_unique<ModelDataArray>(
-      indices, Dim::X, events * expected_scale)};
+  const auto expected = make_bins(indices, Dim::X, events * expected_scale);
   EXPECT_EQ(scaled, expected);
 
   // Mapping and scaling also works for slices
@@ -214,13 +206,11 @@ TEST_F(DataArrayBucketMapTest, map_masked) {
   const auto out = buckets::map(histogram, buckets, Dim::Z);
   const auto expected_scale = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, units::K, Values{0, 4, 4, 0});
-  EXPECT_EQ(out, Variable(std::make_unique<ModelVariable>(indices, Dim::X,
-                                                          expected_scale)));
+  EXPECT_EQ(out, make_bins(indices, Dim::X, expected_scale));
 }
 
 class DataArrayBucketScaleTest : public ::testing::Test {
 protected:
-  using Model = variable::DataModel<bucket<DataArray>>;
   auto make_indices() const {
     return makeVariable<std::pair<scipp::index, scipp::index>>(
         Dims{Dim::Y, Dim::X}, Shape{2, 1},
@@ -255,8 +245,7 @@ protected:
 
   auto make_buckets(const DataArray &events,
                     const std::map<Dim, VariableConstView> coords = {}) const {
-    auto array = DataArray(Variable(
-        std::make_unique<Model>(make_indices(), Dim("event"), events)));
+    auto array = DataArray(make_bins(make_indices(), Dim("event"), events));
     for (const auto &[dim, coord] : coords)
       array.coords().set(dim, coord);
     return array;
@@ -340,17 +329,14 @@ protected:
     eventsB.coords()[Dim::X] += 0.01 * units::us;
     eventsB = concatenate(eventsB, eventsA, Dim("event"));
     eventsB.coords()[Dim::X] += 0.02 * units::us;
-    using Model = variable::DataModel<bucket<DataArray>>;
-    a = DataArray(Variable(std::make_unique<Model>(
-        makeVariable<std::pair<scipp::index, scipp::index>>(
-            Dims{Dim::Y, Dim::X}, Shape{2, 1},
-            Values{std::pair{0, 3}, std::pair{3, 7}}),
-        Dim("event"), eventsA)));
-    b = DataArray(Variable(std::make_unique<Model>(
-        makeVariable<std::pair<scipp::index, scipp::index>>(
-            Dims{Dim::Y, Dim::X}, Shape{2, 1},
-            Values{std::pair{0, 5}, std::pair{5, 14}}),
-        Dim("event"), eventsB)));
+    a = DataArray(make_bins(makeVariable<std::pair<scipp::index, scipp::index>>(
+                                Dims{Dim::Y, Dim::X}, Shape{2, 1},
+                                Values{std::pair{0, 3}, std::pair{3, 7}}),
+                            Dim("event"), eventsA));
+    b = DataArray(make_bins(makeVariable<std::pair<scipp::index, scipp::index>>(
+                                Dims{Dim::Y, Dim::X}, Shape{2, 1},
+                                Values{std::pair{0, 5}, std::pair{5, 14}}),
+                            Dim("event"), eventsB));
   }
 
   DataArray eventsA;
@@ -398,7 +384,6 @@ TEST_F(DataArrayBucketPlusMinusTest, minus_equals) {
 
 class DatasetBucketTest : public ::testing::Test {
 protected:
-  using Model = variable::DataModel<bucket<Dataset>>;
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 3}});
@@ -408,8 +393,8 @@ protected:
   Dataset buffer1;
 
   void check() {
-    Variable var0{std::make_unique<Model>(indices, Dim::X, buffer0)};
-    Variable var1{std::make_unique<Model>(indices, Dim::X, buffer1)};
+    Variable var0 = make_bins(indices, Dim::X, buffer0);
+    Variable var1 = make_bins(indices, Dim::X, buffer1);
     const auto result = buckets::concatenate(var0, var1);
     EXPECT_EQ(result.values<bucket<Dataset>>()[0],
               concatenate(buffer0.slice({Dim::X, 0, 2}),
@@ -419,8 +404,8 @@ protected:
                           buffer1.slice({Dim::X, 2, 3}), Dim::X));
   }
   void check_fail() {
-    Variable var0{std::make_unique<Model>(indices, Dim::X, buffer0)};
-    Variable var1{std::make_unique<Model>(indices, Dim::X, buffer1)};
+    Variable var0 = make_bins(indices, Dim::X, buffer0);
+    Variable var1 = make_bins(indices, Dim::X, buffer1);
     EXPECT_ANY_THROW([[maybe_unused]] auto joined =
                          buckets::concatenate(var0, var1));
   }

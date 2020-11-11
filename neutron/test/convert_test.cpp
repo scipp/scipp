@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dimensions.h"
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/counts.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
@@ -16,7 +16,6 @@ using namespace scipp::neutron;
 
 Dataset makeBeamline() {
   Dataset tof;
-
   static const auto source_pos = Eigen::Vector3d{0.0, 0.0, -10.0};
   static const auto sample_pos = Eigen::Vector3d{0.0, 0.0, 0.0};
   tof.setCoord(Dim("source-position"),
@@ -33,7 +32,6 @@ Dataset makeBeamline() {
 
 Dataset makeTofDataset() {
   Dataset tof = makeBeamline();
-
   tof.setCoord(Dim::Tof,
                makeVariable<double>(Dims{Dim::Tof}, Shape{4}, units::us,
                                     Values{4000, 5000, 6100, 7300}));

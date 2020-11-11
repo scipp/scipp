@@ -4,7 +4,7 @@
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/variable/shape.h"

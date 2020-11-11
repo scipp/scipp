@@ -9,7 +9,7 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 
 #include "dataset_test_common.h"
 #include "test_macros.h"

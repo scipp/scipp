@@ -4,7 +4,7 @@ set(TARGET_NAME "scipp-variable")
 set(INC_FILES
     include/scipp/variable/apply.h
     include/scipp/variable/arithmetic.h
-    include/scipp/variable/buckets.h
+    include/scipp/variable/bins.h
     include/scipp/variable/comparison.h
     include/scipp/variable/except.h
     include/scipp/variable/indexed_slice_view.h
@@ -32,7 +32,7 @@ set(INC_FILES
 
 set(SRC_FILES
     arithmetic.cpp
-    buckets.cpp
+    bins.cpp
     comparison.cpp
     except.cpp
     inplace_arithmetic.cpp
@@ -52,7 +52,7 @@ set(SRC_FILES
     variable_factory.cpp
     variable.cpp
     variable_instantiate_basic.cpp
-    variable_instantiate_bucket_elements.cpp
+    variable_instantiate_bin_elements.cpp
     variable_instantiate_map_elements.cpp
     variable_instantiate_view_elements.cpp
 )

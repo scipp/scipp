@@ -5,8 +5,8 @@
 #include "scipp/core/element/arg_list.h"
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/bucket_model.h"
-#include "scipp/variable/buckets.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"

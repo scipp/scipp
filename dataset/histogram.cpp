@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/histogram.h"
 #include "scipp/core/element/histogram.h"
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"

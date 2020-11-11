@@ -3,12 +3,11 @@
 /// @file
 #include <benchmark/benchmark.h>
 
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/shape.h"
-#include "scipp/variable/bucket_model.h"
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
 
 #include "../test/random.h"
@@ -16,7 +15,6 @@
 using namespace scipp;
 
 auto make_buckets(const scipp::index size, const scipp::index count) {
-  using Model = variable::DataModel<bucket<DataArray>>;
   Dimensions dims{Dim::Y, size};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(dims);
   scipp::index current = 0;
@@ -27,8 +25,7 @@ auto make_buckets(const scipp::index size, const scipp::index count) {
   }
   Variable data = makeVariable<double>(Dims{Dim::X}, Shape{count});
   DataArray buffer = DataArray(data, {{Dim::X, data + data}});
-  return Variable{
-      std::make_unique<Model>(std::move(indices), Dim::X, std::move(buffer))};
+  return make_bins(std::move(indices), Dim::X, std::move(buffer));
 }
 
 static void BM_buckets_concatenate(benchmark::State &state) {
