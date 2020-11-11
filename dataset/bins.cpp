@@ -281,16 +281,9 @@ void append(const DataArrayView &a, const DataArrayConstView &b) {
   append(a.data(), b.data());
 }
 
-namespace histogram_detail {
-template <class Out, class Coord, class Weight, class Edge>
-using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
-                        span<const Edge>>;
-}
-
 Variable histogram(const VariableConstView &data,
                    const VariableConstView &binEdges) {
   using namespace scipp::core;
-  using namespace histogram_detail;
   auto hist_dim = binEdges.dims().inner();
   const auto &[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
   if (!buffer.masks().empty())
@@ -306,10 +299,7 @@ Variable histogram(const VariableConstView &data,
     merged = zip(begin.slice({hist_dim, 0}), end.slice({hist_dim, size - 1}));
     spans = VariableConstView(merged);
   }
-  return variable::transform_subspan<std::tuple<
-      args<float, double, float, double>, args<double, double, double, double>,
-      args<double, float, double, double>, args<double, float, double, float>,
-      args<double, double, float, double>>>(
+  return variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
       subspan_view(buffer.coords()[hist_dim], dim, spans),
       subspan_view(buffer.data(), dim, spans), binEdges, element::histogram);

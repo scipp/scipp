@@ -18,12 +18,6 @@ using namespace scipp::variable;
 
 namespace scipp::dataset {
 
-namespace histogram_dense_detail {
-template <class Out, class Coord, class Weight, class Edge>
-using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
-                        span<const Edge>>;
-}
-
 DataArray histogram(const DataArrayConstView &events,
                     const VariableConstView &binEdges) {
   using namespace scipp::core;
@@ -51,12 +45,7 @@ DataArray histogram(const DataArrayConstView &events,
            const VariableConstView &binEdges_) {
           const auto dim_ = binEdges_.dims().inner();
           const Masker masker(events_, dim_);
-          using namespace histogram_dense_detail;
-          return transform_subspan<
-              std::tuple<args<double, double, double, double>,
-                         args<float, double, float, double>,
-                         args<double, float, double, float>,
-                         args<float, float, float, float>>>(
+          return transform_subspan(
               dtype<double>, dim_, binEdges_.dims()[dim_] - 1,
               subspan_view(events_.coords()[dim_], data_dim_),
               subspan_view(masker.data(), data_dim_), binEdges_,

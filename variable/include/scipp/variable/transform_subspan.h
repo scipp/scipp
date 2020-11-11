@@ -27,7 +27,7 @@ static constexpr auto maybe_subspan = [](VariableConstView &var,
 };
 } // namespace transform_subspan_detail
 
-template <class Types, class Op, class... Var>
+template <class... Types, class Op, class... Var>
 [[nodiscard]] Variable transform_subspan_impl(const DType type, const Dim dim,
                                               const scipp::index size, Op op,
                                               Var... var) {
@@ -46,7 +46,8 @@ template <class Types, class Op, class... Var>
 
   const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
 
-  in_place<false>::transform_data(Types{}, op, subspan_view(out, dim), var...);
+  in_place<false>::transform_data(type_tuples<Types...>(op), op,
+                                  subspan_view(out, dim), var...);
   return out;
 }
 
@@ -73,20 +74,21 @@ template <class Types, class Op, class... Var>
 ///    span of values for these arguments.
 /// 5. Use the flag transform_flags::expect_variance_arg<0> to control whether
 ///    the output should have variances or not.
-template <class Types, class Op>
+template <class... Types, class Op>
 [[nodiscard]] Variable transform_subspan(const DType type, const Dim dim,
                                          const scipp::index size,
                                          const VariableConstView &var1,
                                          const VariableConstView &var2, Op op) {
-  return transform_subspan_impl<Types>(type, dim, size, op, var1, var2);
+  return transform_subspan_impl<Types...>(type, dim, size, op, var1, var2);
 }
 
-template <class Types, class Op>
+template <class... Types, class Op>
 [[nodiscard]] Variable
 transform_subspan(const DType type, const Dim dim, const scipp::index size,
                   const VariableConstView &var1, const VariableConstView &var2,
                   const VariableConstView &var3, Op op) {
-  return transform_subspan_impl<Types>(type, dim, size, op, var1, var2, var3);
+  return transform_subspan_impl<Types...>(type, dim, size, op, var1, var2,
+                                          var3);
 }
 
 } // namespace scipp::variable

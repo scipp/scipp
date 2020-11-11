@@ -42,7 +42,18 @@ constexpr auto variance = [](const auto &v, const scipp::index idx) {
 };
 } // namespace
 
+namespace histogram_detail {
+template <class Out, class Coord, class Weight, class Edge>
+using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
+                        span<const Edge>>;
+}
+
 static constexpr auto histogram = overloaded{
+    element::arg_list<histogram_detail::args<float, double, float, double>,
+                      histogram_detail::args<double, double, double, double>,
+                      histogram_detail::args<double, float, double, double>,
+                      histogram_detail::args<double, float, double, float>,
+                      histogram_detail::args<double, double, float, double>>,
     [](const auto &data, const auto &events, const auto &weights,
        const auto &edges) {
       zero(data);
