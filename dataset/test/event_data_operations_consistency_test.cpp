@@ -18,7 +18,7 @@ static auto make_events() {
   auto x = makeVariable<double>(Dims{Dim::Event}, Shape{7}, units::us,
                                 Values{1.1, 2.2, 3.3, 1.1, 2.2, 3.3, 5.5});
   DataArray buf(weights, {{Dim::X, x}});
-  return from_constituents(indices, Dim::Event, buf);
+  return make_bins(indices, Dim::Event, buf);
 }
 
 static auto make_events_array_default_weights() {

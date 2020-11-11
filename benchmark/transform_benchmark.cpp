@@ -177,7 +177,7 @@ static void BM_transform_in_place_events(benchmark::State &state) {
   auto buf = variances ? makeVariable<double>(Dims{Dim::Event}, Shape{size},
                                               Values{}, Variances{})
                        : makeVariable<double>(Dims{Dim::Event}, Shape{size});
-  auto a = from_constituents(indices, Dim::Event, buf);
+  auto a = make_bins(indices, Dim::Event, buf);
 
   // events * dense typically occurs in unit conversion
   auto b = makeVariable<double>(Dims{Dim::Y}, Shape{ny});

@@ -48,10 +48,9 @@ template <class T> void bind_bins(pybind11::module &m) {
         } else {
           throw std::runtime_error("`end` given but not `begin`");
         }
-        return from_constituents(
-            makeVariable<std::pair<scipp::index, scipp::index>>(
-                dims, Values(std::move(indices))),
-            dim, T(data));
+        return make_bins(makeVariable<std::pair<scipp::index, scipp::index>>(
+                             dims, Values(std::move(indices))),
+                         dim, T(data));
       },
       py::arg("begin") = py::none(), py::arg("end") = py::none(),
       py::arg("dim"), py::arg("data")); // do not release GIL since using

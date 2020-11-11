@@ -36,7 +36,7 @@ auto make_1d_events(const scipp::index size, const scipp::index count) {
   // higher performance. It is not clear whether this is just due to improved
   // "re"-allocation performance in the benchmark loop (compared to fresh
   // allocations) or something else.
-  return DataArray(from_constituents(indices, Dim::Event, buf));
+  return DataArray(make_bins(indices, Dim::Event, buf));
 }
 
 template <class T> static void BM_groupby_concatenate(benchmark::State &state) {

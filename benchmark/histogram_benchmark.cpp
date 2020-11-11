@@ -28,7 +28,7 @@ auto make_2d_events(const scipp::index size, const scipp::index count) {
   auto y = makeVariable<double>(Dims{Dim::Event}, Shape{row},
                                 Values(rand(size * count)));
   DataArray buf(weights, {{Dim::Y, y}});
-  return DataArray(from_constituents(indices, Dim::Event, buf));
+  return DataArray(make_bins(indices, Dim::Event, buf));
 }
 
 static void BM_histogram(benchmark::State &state) {

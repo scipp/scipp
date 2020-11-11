@@ -73,7 +73,7 @@ auto make_events_default_weights(const scipp::index size,
   auto tof = makeVariable<double>(Dims{Dim::Event}, Shape{row}, units::us) +
              5000.0 * units::us;
   DataArray buf(weights, {{Dim::Tof, tof}});
-  out.setData("", from_constituents(indices, Dim::Event, buf));
+  out.setData("", make_bins(indices, Dim::Event, buf));
 
   return out;
 }

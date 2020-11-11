@@ -53,7 +53,7 @@ Variable makeTofBucketedEvents() {
   Variable weights =
       makeVariable<double>(Dims{Dim::Event}, Shape{7}, Values{}, Variances{});
   DataArray buffer = DataArray(weights, {{Dim::Tof, tofs}});
-  return from_constituents(std::move(indices), Dim::Event, std::move(buffer));
+  return make_bins(std::move(indices), Dim::Event, std::move(buffer));
 }
 
 Variable makeCountDensityData(const units::Unit &unit) {

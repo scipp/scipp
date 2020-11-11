@@ -119,7 +119,7 @@ Dataset resize_default_init(const DatasetConstView &parent, const Dim dim,
 }
 
 template <class T>
-Variable from_constituents_impl(Variable &&indices, const Dim dim, T &&buffer) {
+Variable make_bins_impl(Variable &&indices, const Dim dim, T &&buffer) {
   return {std::make_unique<variable::DataModel<bucket<T>>>(
       std::move(indices), dim, std::move(buffer))};
 }
@@ -128,16 +128,16 @@ Variable from_constituents_impl(Variable &&indices, const Dim dim, T &&buffer) {
 ///
 /// Each bin is represented by a VariableView. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
-Variable from_constituents(Variable indices, const Dim dim, DataArray buffer) {
-  return from_constituents_impl(std::move(indices), dim, std::move(buffer));
+Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
+  return make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 /// Construct a bin-variable over a dataset.
 ///
 /// Each bin is represented by a VariableView. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
-Variable from_constituents(Variable indices, const Dim dim, Dataset buffer) {
-  return from_constituents_impl(std::move(indices), dim, std::move(buffer));
+Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
+  return make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 namespace {

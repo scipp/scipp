@@ -19,9 +19,9 @@ SCIPP_VARIABLE_EXPORT void copy_slices(const VariableConstView &src,
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::tuple<Variable, scipp::index>
 sizes_to_begin(const VariableConstView &sizes);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable from_constituents(Variable indices,
-                                                               const Dim dim,
-                                                               Variable buffer);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable make_bins(Variable indices,
+                                                       const Dim dim,
+                                                       Variable buffer);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 make_non_owning_bins(const VariableConstView &indices, const Dim dim,

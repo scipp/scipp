@@ -221,7 +221,7 @@ DataArray bucketby_impl(const DataArrayConstView &array,
   std::map<Dim, Variable> coords;
   for (const auto &edge : edges)
     coords[edge.dims().inner()] = copy(edge);
-  return {from_constituents(zip(begin, end), bucket_dim, std::move(binned)),
+  return {make_bins(zip(begin, end), bucket_dim, std::move(binned)),
           std::move(coords)};
 }
 } // namespace

@@ -44,8 +44,8 @@ T convert_generic(T &&d, const Dim from, const Dim to, Op op,
         item.data().template constituents<bucket<DataArray>>();
     if (!buffer.coords().contains(from))
       continue;
-    auto coord = from_constituents(Variable(indices), dim,
-                                   buffer.coords().extract(from));
+    auto coord =
+        make_bins(Variable(indices), dim, buffer.coords().extract(from));
     transform_in_place(coord, arg, op_);
     buffer.coords().set(
         to, std::get<2>(coord.template to_constituents<bucket<Variable>>()));

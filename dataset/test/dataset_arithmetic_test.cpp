@@ -776,8 +776,8 @@ TEST(DatasetInPlaceStrongExceptionGuarantee, events) {
   Variable table =
       makeVariable<double>(Dims{Dim::Event}, Shape{4}, units::m,
                            Values{1, 2, 3, 4}, Variances{5, 6, 7, 8});
-  Variable good = from_constituents(indicesGood, Dim::Event, table);
-  Variable bad = from_constituents(indicesBad, Dim::Event, table);
+  Variable good = make_bins(indicesGood, Dim::Event, table);
+  Variable bad = make_bins(indicesBad, Dim::Event, table);
   DataArray good_array(good, {}, {});
   Dataset good_dataset;
   good_dataset.setData("a", good);
