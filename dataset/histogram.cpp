@@ -46,7 +46,7 @@ DataArray histogram(const DataArrayConstView &events,
           const auto dim_ = binEdges_.dims().inner();
           const Masker masker(events_, dim_);
           return transform_subspan(
-              dtype<double>, dim_, binEdges_.dims()[dim_] - 1,
+              events_.dtype(), dim_, binEdges_.dims()[dim_] - 1,
               subspan_view(events_.coords()[dim_], data_dim_),
               subspan_view(masker.data(), data_dim_), binEdges_,
               element::histogram);
