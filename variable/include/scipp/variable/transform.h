@@ -3,7 +3,7 @@
 /// @file Various transform functions for variables.
 ///
 /// The underlying mechanism of the implementation is as follows:
-/// 1. `visit` (or `visit_impl`) obtains the concrete underlying data type(s).
+/// 1. `visit<...>::apply` obtains the concrete underlying data type(s).
 /// 2. `Transform` is applied to that concrete container, calling
 ///    `do_transform`. `Transform` essentially builds a callable accepting a
 ///    container from a callable accepting an element of the container.
@@ -463,8 +463,7 @@ template <bool dry_run> struct in_place {
                              const Other &... other) {
     using namespace detail;
     try {
-      variable::visit(std::tuple<Ts...>{})
-          .apply(makeTransformInPlace(op), var, other...);
+      visit<Ts...>::apply(makeTransformInPlace(op), var, other...);
     } catch (const std::bad_variant_access &) {
       throw except::TypeError("Cannot apply operation to item dtypes ", var,
                               other...);
@@ -568,7 +567,7 @@ template <class... Ts, class Op, class... Vars>
 Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   using namespace detail;
   try {
-    return visit_impl<Ts...>::apply(Transform{wrap_eigen{op}}, vars...);
+    return visit<Ts...>::apply(Transform{wrap_eigen{op}}, vars...);
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes ", vars...);
   }

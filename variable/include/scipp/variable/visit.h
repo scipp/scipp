@@ -90,7 +90,7 @@ using maybe_duplicate =
 ///
 /// Does not generate code for all possible combinations of alternatives,
 /// instead the tuples Ts provide a list of type combinations to try.
-template <class... Ts> struct visit_impl {
+template <class... Ts> struct visit {
   template <class F, class... V> static decltype(auto) apply(F &&f, V &&... v) {
     using namespace visit_detail;
     // For a single input or if same type required for all inputs, Ts is not a
@@ -99,8 +99,5 @@ template <class... Ts> struct visit_impl {
                                                 std::forward<V>(v)...);
   }
 };
-template <class... Ts> auto visit(const std::tuple<Ts...> &) {
-  return visit_impl<Ts...>{};
-}
 
 } // namespace scipp::variable
