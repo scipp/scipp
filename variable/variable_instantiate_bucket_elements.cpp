@@ -28,7 +28,7 @@ private:
   VariableView data(const VariableView &var) const override {
     return std::get<2>(var.constituents<bucket<Variable>>());
   }
-  core::element_array_view
+  core::ElementArrayViewParams
   array_params(const VariableConstView &var) const override {
     const auto &[indices, dim, buffer] = var.constituents<bucket<Variable>>();
     auto params = var.array_params();

@@ -21,13 +21,14 @@ struct SCIPP_CORE_EXPORT BucketParams {
 };
 
 template <class T>
-class element_array_view_iterator
-    : public boost::iterator_facade<element_array_view_iterator<T>, T,
+class ElementArrayViewParams_iterator
+    : public boost::iterator_facade<ElementArrayViewParams_iterator<T>, T,
                                     boost::random_access_traversal_tag> {
 public:
-  element_array_view_iterator(T *variable, const Dimensions &targetDimensions,
-                              const Dimensions &dimensions,
-                              const scipp::index index)
+  ElementArrayViewParams_iterator(T *variable,
+                                  const Dimensions &targetDimensions,
+                                  const Dimensions &dimensions,
+                                  const scipp::index index)
       : m_variable(variable), m_index(targetDimensions, dimensions) {
     m_index.setIndex(index);
   }
@@ -35,7 +36,7 @@ public:
 private:
   friend class boost::iterator_core_access;
 
-  bool equal(const element_array_view_iterator &other) const {
+  bool equal(const ElementArrayViewParams_iterator &other) const {
     return m_index == other.m_index;
   }
   constexpr void increment() noexcept { m_index.increment(); }
@@ -47,7 +48,7 @@ private:
     else
       m_index.setIndex(m_index.index() + delta);
   }
-  int64_t distance_to(const element_array_view_iterator &other) const {
+  int64_t distance_to(const ElementArrayViewParams_iterator &other) const {
     return static_cast<int64_t>(other.m_index.index()) -
            static_cast<int64_t>(m_index.index());
   }
@@ -57,13 +58,13 @@ private:
 };
 
 /// Base class for ElementArrayView<T> with functionality independent of T.
-class SCIPP_CORE_EXPORT element_array_view {
+class SCIPP_CORE_EXPORT ElementArrayViewParams {
 public:
-  element_array_view(const scipp::index offset, const Dimensions &iterDims,
-                     const Dimensions &dataDims,
-                     const BucketParams &bucketParams);
-  element_array_view(const element_array_view &other,
-                     const Dimensions &iterDims);
+  ElementArrayViewParams(const scipp::index offset, const Dimensions &iterDims,
+                         const Dimensions &dataDims,
+                         const BucketParams &bucketParams);
+  ElementArrayViewParams(const ElementArrayViewParams &other,
+                         const Dimensions &iterDims);
 
   ViewIndex begin_index() const noexcept { return {m_iterDims, m_dataDims}; }
   ViewIndex end_index() const noexcept {
@@ -80,7 +81,7 @@ public:
     return m_bucketParams;
   }
 
-  bool overlaps(const element_array_view &other) const {
+  bool overlaps(const ElementArrayViewParams &other) const {
     // TODO We could be less restrictive here and use a more sophisticated check
     // based on offsets and dimensions, if there is a performance issue due to
     // this current stricter requirement.
@@ -98,28 +99,28 @@ protected:
 /// A view into multi-dimensional data, supporting slicing, index reordering,
 /// and broadcasting.
 template <class T>
-class SCIPP_CORE_EXPORT ElementArrayView : public element_array_view {
+class SCIPP_CORE_EXPORT ElementArrayView : public ElementArrayViewParams {
 public:
   using element_type = T;
   using value_type = std::remove_cv_t<T>;
-  using iterator = element_array_view_iterator<T>;
+  using iterator = ElementArrayViewParams_iterator<T>;
 
   /// Construct an ElementArrayView over given buffer.
   ElementArrayView(T *buffer, const scipp::index offset,
                    const Dimensions &iterDims, const Dimensions &dataDims,
                    const BucketParams &bucketParams = BucketParams{})
-      : element_array_view(offset, iterDims, dataDims, bucketParams),
+      : ElementArrayViewParams(offset, iterDims, dataDims, bucketParams),
         m_buffer(buffer) {}
 
   /// Construct an ElementArrayView over given buffer.
-  ElementArrayView(const element_array_view &base, T *buffer)
-      : element_array_view(base), m_buffer(buffer) {}
+  ElementArrayView(const ElementArrayViewParams &base, T *buffer)
+      : ElementArrayViewParams(base), m_buffer(buffer) {}
 
   /// Construct a ElementArrayView from another ElementArrayView, with different
   /// iteration dimensions.
   template <class Other>
   ElementArrayView(const Other &other, const Dimensions &iterDims)
-      : element_array_view(other, iterDims), m_buffer(other.buffer()) {}
+      : ElementArrayViewParams(other, iterDims), m_buffer(other.buffer()) {}
 
   iterator begin() const {
     return {m_buffer + m_offset, m_iterDims, m_dataDims, 0};
@@ -153,7 +154,7 @@ public:
 
   template <class T2> bool overlaps(const ElementArrayView<T2> &other) const {
     if (buffer() == other.buffer())
-      return element_array_view::overlaps(other);
+      return ElementArrayViewParams::overlaps(other);
     return false;
   }
 

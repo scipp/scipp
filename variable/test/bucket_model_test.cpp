@@ -96,7 +96,7 @@ TEST_F(BucketModelTest, clone) {
 
 TEST_F(BucketModelTest, values) {
   Model model(indices, Dim::X, buffer);
-  core::element_array_view params(0, indices.dims(), indices.dims(), {});
+  core::ElementArrayViewParams params(0, indices.dims(), indices.dims(), {});
   EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 0, 2}));
   EXPECT_EQ(*(model.values(params).begin() + 1), buffer.slice({Dim::X, 2, 4}));
   (*model.values(params).begin()) += 2.0 * units::one;
@@ -105,7 +105,7 @@ TEST_F(BucketModelTest, values) {
 
 TEST_F(BucketModelTest, values_const) {
   const Model model(indices, Dim::X, buffer);
-  core::element_array_view params(0, indices.dims(), indices.dims(), {});
+  core::ElementArrayViewParams params(0, indices.dims(), indices.dims(), {});
   EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 0, 2}));
   EXPECT_EQ(*(model.values(params).begin() + 1), buffer.slice({Dim::X, 2, 4}));
 }
@@ -113,7 +113,7 @@ TEST_F(BucketModelTest, values_const) {
 TEST_F(BucketModelTest, values_non_range) {
   auto i = make_indices({{2, 4}, {0, -1}});
   Model model(i, Dim::X, buffer);
-  core::element_array_view params(0, i.dims(), i.dims(), {});
+  core::ElementArrayViewParams params(0, i.dims(), i.dims(), {});
   EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 2, 4}));
   EXPECT_EQ(*(model.values(params).begin() + 1), buffer.slice({Dim::X, 0}));
 }
@@ -121,7 +121,7 @@ TEST_F(BucketModelTest, values_non_range) {
 TEST_F(BucketModelTest, out_of_order_indices) {
   auto reverse = make_indices({{2, 4}, {0, 2}});
   Model model(reverse, Dim::X, buffer);
-  core::element_array_view params(0, reverse.dims(), reverse.dims(), {});
+  core::ElementArrayViewParams params(0, reverse.dims(), reverse.dims(), {});
   EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 2, 4}));
   EXPECT_EQ(*(model.values(params).begin() + 1), buffer.slice({Dim::X, 0, 2}));
 }
