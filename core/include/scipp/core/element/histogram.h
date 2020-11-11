@@ -49,6 +49,7 @@ using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
 }
 
 static constexpr auto histogram = overloaded{
+    transform_flags::zero_output,
     element::arg_list<histogram_detail::args<float, double, float, double>,
                       histogram_detail::args<double, double, double, double>,
                       histogram_detail::args<double, float, double, double>,
@@ -56,7 +57,6 @@ static constexpr auto histogram = overloaded{
                       histogram_detail::args<double, double, float, double>>,
     [](const auto &data, const auto &events, const auto &weights,
        const auto &edges) {
-      zero(data);
       // Special implementation for linear bins. Gives a 1x to 20x speedup
       // for few and many events per histogram, respectively.
       if (scipp::numeric::is_linspace(edges)) {

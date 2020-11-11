@@ -88,4 +88,9 @@ std::pair<Variable, Variable> unzip(const VariableConstView &var) {
           transform(var, core::element::get<1>)};
 }
 
+/// Fill variable with given values (and variances) and unit.
+void fill(const VariableView &var, const VariableConstView &value) {
+  transform_in_place(var, value, core::element::fill);
+}
+
 } // namespace scipp::variable

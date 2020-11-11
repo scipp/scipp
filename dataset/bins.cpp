@@ -287,21 +287,10 @@ Variable histogram(const VariableConstView &data,
   auto hist_dim = binEdges.dims().inner();
   const auto &[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
   const Masker masker(buffer, dim);
-  VariableConstView spans(indices);
-  Variable merged;
-  if (indices.dims().contains(hist_dim)) {
-    const auto size = indices.dims()[hist_dim];
-    const auto [begin, end] = unzip(indices);
-    // Only contiguous ranges along histogramming dim supported at this point.
-    core::expect::equals(begin.slice({hist_dim, 1, size}),
-                         end.slice({hist_dim, 0, size - 1}));
-    merged = zip(begin.slice({hist_dim, 0}), end.slice({hist_dim, size - 1}));
-    spans = VariableConstView(merged);
-  }
   return variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
-      subspan_view(buffer.coords()[hist_dim], dim, spans),
-      subspan_view(masker.data(), dim, spans), binEdges, element::histogram);
+      subspan_view(buffer.coords()[hist_dim], dim, indices),
+      subspan_view(masker.data(), dim, indices), binEdges, element::histogram);
 }
 
 Variable map(const DataArrayConstView &function, const VariableConstView &x,

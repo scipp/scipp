@@ -22,6 +22,7 @@ struct SCIPP_CORE_EXPORT DType {
 template <class T> inline DType dtype{std::type_index(typeid(T))};
 
 SCIPP_CORE_EXPORT bool isInt(DType tp);
+SCIPP_CORE_EXPORT bool is_span(DType tp);
 
 template <class T> constexpr bool canHaveVariances() noexcept {
   using U = std::remove_const_t<T>;
