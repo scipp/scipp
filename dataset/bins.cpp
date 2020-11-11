@@ -286,8 +286,7 @@ Variable histogram(const VariableConstView &data,
   using namespace scipp::core;
   auto hist_dim = binEdges.dims().inner();
   const auto &[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
-  if (!buffer.masks().empty())
-    throw std::runtime_error("Masked data cannot be histogrammed yet.");
+  const Masker masker(buffer, dim);
   VariableConstView spans(indices);
   Variable merged;
   if (indices.dims().contains(hist_dim)) {
@@ -302,7 +301,7 @@ Variable histogram(const VariableConstView &data,
   return variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
       subspan_view(buffer.coords()[hist_dim], dim, spans),
-      subspan_view(buffer.data(), dim, spans), binEdges, element::histogram);
+      subspan_view(masker.data(), dim, spans), binEdges, element::histogram);
 }
 
 Variable map(const DataArrayConstView &function, const VariableConstView &x,

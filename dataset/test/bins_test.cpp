@@ -127,6 +127,22 @@ TEST_F(DataArrayBucketTest, histogram) {
                                  Variances{0, 1, 2, 0, 0, 3}));
 }
 
+TEST_F(DataArrayBucketTest, histogram_masked) {
+  Variable weights = makeVariable<double>(
+      Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
+  Variable mask = makeVariable<bool>(Dims{Dim::X}, Shape{4},
+                                     Values{false, false, true, false});
+  DataArray events = DataArray(weights, {{Dim::Z, data}}, {{"mask", mask}});
+  Variable buckets = make_bins(indices, Dim::X, events);
+  // `buckets` *does not* depend on the histogramming dimension
+  const auto bin_edges =
+      makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{0, 1, 2, 4});
+  EXPECT_EQ(buckets::histogram(buckets, bin_edges),
+            makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 3},
+                                 Values{0, 1, 2, 0, 0, 0},
+                                 Variances{0, 1, 2, 0, 0, 0}));
+}
+
 TEST_F(DataArrayBucketTest, histogram_existing_dim) {
   Variable weights = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
