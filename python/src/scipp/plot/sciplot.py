@@ -215,6 +215,11 @@ class SciPlot:
         # Replace axes with supplied axes dimensions
         supplied_axes = {}
         if axes is not None:
+            for dim in axes.values():
+                if (dim not in self.axes.values()) and (dim
+                                                        not in array.coords):
+                    raise RuntimeError("Requested dimension was not found in "
+                                       "input data: {}".format(dim))
             supplied_axes.update(axes)
         if positions is not None and (positions not in self.axes.values()):
             supplied_axes.update({"x": positions})

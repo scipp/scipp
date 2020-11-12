@@ -15,38 +15,31 @@ from scipp.plot import plot
 
 
 def test_plot_sliceviewer_2d():
-    d = make_dense_dataset(ndim=3)
-    plot(d)
+    plot(make_dense_dataset(ndim=3))
 
 
 def test_plot_sliceviewer_2d_with_two_sliders():
-    d = make_dense_dataset(ndim=4)
-    plot(d)
+    plot(make_dense_dataset(ndim=4))
 
 
 def test_plot_sliceviewer_2d_with_axes():
-    d = make_dense_dataset(ndim=3)
-    plot(d, axes={'y': 'tof'})
+    plot(make_dense_dataset(ndim=3), axes={'y': 'tof'})
 
 
 def test_plot_sliceviewer_2d_with_axes_redundant():
-    d = make_dense_dataset(ndim=3)
-    plot(d, axes={'y': 'tof', 'x': 'x'})
+    plot(make_dense_dataset(ndim=3), axes={'y': 'tof', 'x': 'x'})
 
 
 def test_plot_sliceviewer_2d_with_two_axes():
-    d = make_dense_dataset(ndim=3)
-    plot(d, axes={'x': 'y', 'y': 'tof'})
+    plot(make_dense_dataset(ndim=3), axes={'x': 'y', 'y': 'tof'})
 
 
 def test_plot_sliceviewer_2d_with_labels():
-    d = make_dense_dataset(ndim=3, labels=True)
-    plot(d, axes={'x': "somelabels"})
+    plot(make_dense_dataset(ndim=3, labels=True), axes={'x': "somelabels"})
 
 
 def test_plot_sliceviewer_2d_with_binedges():
-    d = make_dense_dataset(ndim=3, binedges=True)
-    plot(d)
+    plot(make_dense_dataset(ndim=3, binedges=True))
 
 
 def test_plot_convenience_methods():
@@ -77,32 +70,24 @@ def test_plot_4d_with_masks():
     plot(data)
 
 
-def test_plot_3d_data_with_ragged_bins():
+def test_plot_3d_data_ragged():
     """
     This test has caught MANY bugs and should not be disabled.
     """
-    N = 10
-    M = 8
-    L = 5
-    x = np.arange(N + 1).astype(np.float64)
-    y = np.arange(M).astype(np.float64)
-    z = np.arange(L).astype(np.float64)
-    zz, yy, xx = np.meshgrid(z, y, x, indexing='ij')
-    a = np.random.random([L, M, N])
-    for i in range(M):
-        for j in range(L):
-            xx[j, i, :] *= (i + j + 1.0)
-    d = sc.Dataset()
-    d.coords['x'] = sc.Variable(['z', 'y', 'x'], values=xx, unit=sc.units.m)
-    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
-    d.coords['z'] = sc.Variable(['z'], values=z, unit=sc.units.m)
-    d['a'] = sc.Variable(['z', 'y', 'x'], values=a, unit=sc.units.counts)
+    d = make_dense_dataset(ndim=3, ragged=True)
     plot(d)
-
     # Also check that it raises an error if we try to have ragged coord along
     # slider dim
     with pytest.raises(RuntimeError) as e:
-        plot(d, axes={'x': 'z'})
+        plot(d, axes={'x': 'tof', 'y': 'x'})
     assert str(e.value) == ("A ragged coordinate cannot lie along "
                             "a slider dimension, it must be one of "
                             "the displayed dimensions.")
+
+
+def test_plot_3d_data_ragged_with_edges():
+    plot(make_dense_dataset(ndim=3, ragged=True, binedges=True))
+
+
+def test_plot_3d_data_ragged_with_masks():
+    plot(make_dense_dataset(ndim=3, ragged=True, masks=True))
