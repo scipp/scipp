@@ -135,7 +135,7 @@ public:
 
   void setVariances(Variable v);
 
-  core::element_array_view array_params() const noexcept {
+  core::ElementArrayViewParams array_params() const noexcept {
     return {0, dims(), dims(), {}};
   }
 
@@ -199,6 +199,8 @@ Variable::Variable(const DType &type, Ts &&... args)
 class SCIPP_VARIABLE_EXPORT VariableConstView {
 public:
   using value_type = Variable;
+  using const_view_type = VariableConstView;
+  using view_type = VariableConstView;
 
   VariableConstView() = default;
   VariableConstView(const Variable &variable) : m_variable(&variable) {
@@ -254,7 +256,7 @@ public:
   auto &underlying() const { return *m_variable; }
   bool is_trivial() const noexcept;
 
-  core::element_array_view array_params() const noexcept {
+  core::ElementArrayViewParams array_params() const noexcept {
     return {m_offset, m_dims, m_dataDims, {}};
   }
 
@@ -269,12 +271,20 @@ protected:
   Dimensions m_dataDims; // not always actual, can be pretend, e.g. with reshape
 };
 
+template <class T>
+using bin_indices_t = std::conditional_t<
+    std::is_base_of_v<VariableConstView, typename T::buffer_type>,
+    VariableConstView, VariableView>;
+
 /** Mutable view into (a subset of) a Variable.
  *
  * By inheriting from VariableConstView any code that works for
  * VariableConstView will automatically work also for this mutable variant.*/
 class SCIPP_VARIABLE_EXPORT VariableView : public VariableConstView {
 public:
+  using const_view_type = VariableConstView;
+  using view_type = VariableView;
+
   VariableView() = default;
   VariableView(Variable &variable)
       : VariableConstView(variable), m_mutableVariable(&variable) {}
@@ -329,7 +339,8 @@ public:
   void expectCanSetUnit(const units::Unit &unit) const;
 
   template <class T>
-  std::tuple<VariableView, Dim, typename T::element_type> constituents() const;
+  std::tuple<bin_indices_t<T>, Dim, typename T::element_type>
+  constituents() const;
 
   template <class T> void replace_model(T model) const;
 

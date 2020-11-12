@@ -101,17 +101,17 @@ public:
     return m_variances.has_value();
   }
 
-  auto values(const core::element_array_view &base) const {
+  auto values(const core::ElementArrayViewParams &base) const {
     return ElementArrayView(base, m_values.data());
   }
-  auto values(const core::element_array_view &base) {
+  auto values(const core::ElementArrayViewParams &base) {
     return ElementArrayView(base, m_values.data());
   }
-  auto variances(const core::element_array_view &base) const {
+  auto variances(const core::ElementArrayViewParams &base) const {
     expectHasVariances();
     return ElementArrayView(base, m_variances->data());
   }
-  auto variances(const core::element_array_view &base) {
+  auto variances(const core::ElementArrayViewParams &base) {
     expectHasVariances();
     return ElementArrayView(base, m_variances->data());
   }

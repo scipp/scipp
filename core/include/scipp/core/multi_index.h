@@ -14,8 +14,8 @@ SCIPP_CORE_EXPORT std::array<scipp::index, NDIM_MAX>
 get_strides(const Dimensions &iterDims, const Dimensions &dataDims);
 
 SCIPP_CORE_EXPORT void
-validate_bucket_indices_impl(const element_array_view &param0,
-                             const element_array_view &param1);
+validate_bucket_indices_impl(const ElementArrayViewParams &param0,
+                             const ElementArrayViewParams &param1);
 
 inline auto get_nested_dims() { return Dimensions(); }
 template <class T, class... Ts>
@@ -44,7 +44,7 @@ public:
   }
 
   template <class... Params>
-  MultiIndex(const element_array_view &param, const Params &... params) {
+  MultiIndex(const ElementArrayViewParams &param, const Params &... params) {
     init(param, params...);
   }
 
@@ -218,7 +218,7 @@ public:
 private:
   struct BucketIterator {
     BucketIterator() = default;
-    BucketIterator(const element_array_view &params) {
+    BucketIterator(const ElementArrayViewParams &params) {
       m_indices = params.bucketParams().indices;
       m_size = params.bucketParams() ? params.dataDims().volume() : 0;
     }
@@ -247,7 +247,7 @@ template <class... DataDims>
 MultiIndex(const Dimensions &, DataDims &...)
     -> MultiIndex<sizeof...(DataDims)>;
 template <class... Params>
-MultiIndex(const element_array_view &, const Params &...)
+MultiIndex(const ElementArrayViewParams &, const Params &...)
     -> MultiIndex<sizeof...(Params) + 1>;
 
 } // namespace scipp::core

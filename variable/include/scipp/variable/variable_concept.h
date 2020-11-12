@@ -10,12 +10,8 @@
 #include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
-#include "scipp/core/element_array_view.h"
-
-#include <Eigen/Dense>
 
 #include <memory>
-#include <vector>
 
 namespace scipp::variable {
 

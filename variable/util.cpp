@@ -10,6 +10,7 @@
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 
 using namespace scipp::core;
@@ -41,6 +42,10 @@ Variable linspace(const VariableConstView &start, const VariableConstView &stop,
             range);
   out.slice({dim, num - 1}).assign(stop); // endpoint included
   return out;
+}
+
+Variable is_linspace(const VariableConstView &var, const Dim dim) {
+  return transform(subspan_view(var, dim), core::element::is_linspace);
 }
 
 Variable values(const VariableConstView &x) {

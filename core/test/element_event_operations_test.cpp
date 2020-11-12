@@ -10,19 +10,19 @@
 using namespace scipp;
 using namespace scipp::core;
 
+using element::event::map_linspace;
+using element::event::map_sorted_edges;
+
 TEST(ElementEventMapTest, unit) {
   units::Unit kg(units::kg);
   units::Unit m(units::m);
   units::Unit s(units::s);
-  units::Unit out;
-  element::event::map_in_place(out, m, m, s);
-  EXPECT_EQ(out, s);
-  element::event::map_in_place(out, m, m, kg);
-  EXPECT_EQ(out, kg);
-  EXPECT_THROW(element::event::map_in_place(out, m, s, s), except::UnitError);
-  EXPECT_THROW(element::event::map_in_place(out, s, m, s), except::UnitError);
-  EXPECT_THROW(element::event::map_in_place(out, m, s, kg), except::UnitError);
-  EXPECT_THROW(element::event::map_in_place(out, s, m, kg), except::UnitError);
+  EXPECT_EQ(element::event::map(m, m, s), s);
+  EXPECT_EQ(element::event::map(m, m, kg), kg);
+  EXPECT_THROW(element::event::map(m, s, s), except::UnitError);
+  EXPECT_THROW(element::event::map(s, m, s), except::UnitError);
+  EXPECT_THROW(element::event::map(m, s, kg), except::UnitError);
+  EXPECT_THROW(element::event::map(s, m, kg), except::UnitError);
 }
 
 template <typename T> class ElementEventMapTest : public ::testing::Test {};
@@ -31,59 +31,63 @@ using ElementEventMapTestTypes =
 TYPED_TEST_SUITE(ElementEventMapTest, ElementEventMapTestTypes);
 
 TYPED_TEST(ElementEventMapTest, constant_bin_width) {
-  std::vector<TypeParam> events{0, 1, 2, 3, 4, 5, 3};
-  std::vector<float> out(events.size());
   std::vector<TypeParam> edges{0, 2, 4};
   std::vector<float> weights{2, 4};
-  element::event::map_in_place(scipp::span(out), events, edges, weights);
-  EXPECT_EQ(out, (std::vector<float>{2, 2, 4, 4, 0, 0, 4}));
+  EXPECT_EQ(map_linspace(TypeParam{0}, edges, weights), float{2});
+  EXPECT_EQ(map_linspace(TypeParam{1}, edges, weights), float{2});
+  EXPECT_EQ(map_linspace(TypeParam{2}, edges, weights), float{4});
+  EXPECT_EQ(map_linspace(TypeParam{3}, edges, weights), float{4});
+  EXPECT_EQ(map_linspace(TypeParam{4}, edges, weights), float{0});
+  EXPECT_EQ(map_linspace(TypeParam{5}, edges, weights), float{0});
 }
 
 TYPED_TEST(ElementEventMapTest, variable_bin_width) {
-  std::vector<TypeParam> events{0, 1, 2, 3, 4, 5, 3};
-  std::vector<float> out(events.size());
   std::vector<TypeParam> edges{1, 2, 4};
   std::vector<float> weights{2, 4};
-  element::event::map_in_place(scipp::span(out), events, edges, weights);
-  EXPECT_EQ(out, (std::vector<float>{0, 2, 4, 4, 0, 0, 4}));
-}
-
-TYPED_TEST(ElementEventMapTest, edges_not_sorted) {
-  std::vector<TypeParam> events{0, 1, 2, 3, 4, 5, 3};
-  std::vector<float> out(events.size());
-  std::vector<TypeParam> edges{1, 4, 2};
-  std::vector<float> weights{2, 4};
-  EXPECT_THROW(
-      element::event::map_in_place(scipp::span(out), events, edges, weights),
-      except::BinEdgeError);
+  EXPECT_EQ(map_sorted_edges(TypeParam{0}, edges, weights), float{0});
+  EXPECT_EQ(map_sorted_edges(TypeParam{1}, edges, weights), float{2});
+  EXPECT_EQ(map_sorted_edges(TypeParam{2}, edges, weights), float{4});
+  EXPECT_EQ(map_sorted_edges(TypeParam{3}, edges, weights), float{4});
+  EXPECT_EQ(map_sorted_edges(TypeParam{4}, edges, weights), float{0});
+  EXPECT_EQ(map_sorted_edges(TypeParam{5}, edges, weights), float{0});
 }
 
 TYPED_TEST(ElementEventMapTest, variances_constant_bin_width) {
-  std::vector<TypeParam> events{0, 1, 2, 3, 4, 5, 3};
-  std::vector<float> out_vals(events.size());
-  std::vector<float> out_vars(events.size());
-  ValueAndVariance out{scipp::span(out_vals), scipp::span(out_vars)};
   std::vector<TypeParam> edges{0, 2, 4};
   std::vector<float> values{2, 4};
   std::vector<float> variances{3, 5};
   ValueAndVariance weights{scipp::span<const float>(values),
                            scipp::span<const float>(variances)};
-  element::event::map_in_place(out, events, edges, weights);
-  EXPECT_EQ(out_vals, (std::vector<float>{2, 2, 4, 4, 0, 0, 4}));
-  EXPECT_EQ(out_vars, (std::vector<float>{3, 3, 5, 5, 0, 0, 5}));
+  EXPECT_EQ(map_linspace(TypeParam{0}, edges, weights),
+            ValueAndVariance<float>(2, 3));
+  EXPECT_EQ(map_linspace(TypeParam{1}, edges, weights),
+            ValueAndVariance<float>(2, 3));
+  EXPECT_EQ(map_linspace(TypeParam{2}, edges, weights),
+            ValueAndVariance<float>(4, 5));
+  EXPECT_EQ(map_linspace(TypeParam{3}, edges, weights),
+            ValueAndVariance<float>(4, 5));
+  EXPECT_EQ(map_linspace(TypeParam{4}, edges, weights),
+            ValueAndVariance<float>(0, 0));
+  EXPECT_EQ(map_linspace(TypeParam{5}, edges, weights),
+            ValueAndVariance<float>(0, 0));
 }
 
 TYPED_TEST(ElementEventMapTest, variances_variable_bin_width) {
-  std::vector<TypeParam> events{0, 1, 2, 3, 4, 5, 3};
-  std::vector<float> out_vals(events.size());
-  std::vector<float> out_vars(events.size());
-  ValueAndVariance out{scipp::span(out_vals), scipp::span(out_vars)};
   std::vector<TypeParam> edges{1, 2, 4};
   std::vector<float> values{2, 4};
   std::vector<float> variances{3, 5};
   ValueAndVariance weights{scipp::span<const float>(values),
                            scipp::span<const float>(variances)};
-  element::event::map_in_place(out, events, edges, weights);
-  EXPECT_EQ(out_vals, (std::vector<float>{0, 2, 4, 4, 0, 0, 4}));
-  EXPECT_EQ(out_vars, (std::vector<float>{0, 3, 5, 5, 0, 0, 5}));
+  EXPECT_EQ(map_sorted_edges(TypeParam{0}, edges, weights),
+            ValueAndVariance<float>(0, 0));
+  EXPECT_EQ(map_sorted_edges(TypeParam{1}, edges, weights),
+            ValueAndVariance<float>(2, 3));
+  EXPECT_EQ(map_sorted_edges(TypeParam{2}, edges, weights),
+            ValueAndVariance<float>(4, 5));
+  EXPECT_EQ(map_sorted_edges(TypeParam{3}, edges, weights),
+            ValueAndVariance<float>(4, 5));
+  EXPECT_EQ(map_sorted_edges(TypeParam{4}, edges, weights),
+            ValueAndVariance<float>(0, 0));
+  EXPECT_EQ(map_sorted_edges(TypeParam{5}, edges, weights),
+            ValueAndVariance<float>(0, 0));
 }

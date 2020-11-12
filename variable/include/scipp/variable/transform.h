@@ -3,21 +3,29 @@
 /// @file Various transform functions for variables.
 ///
 /// The underlying mechanism of the implementation is as follows:
-/// 1. `visit` (or `visit_impl`) obtains the concrete underlying data type(s).
-/// 2. `TransformInPlace` is applied to that concrete container, calling
-///    `do_transform`. `TransformInPlace` essentially builds a callable
-///    accepting a container from a callable accepting an element of the
-///    container.
-/// 3. `do_transform` is essentially a fancy std::transform. It provides
-///    automatic handling of data that has variances in addition to values,
-///    calling a different transform implementation for each case
-///    (variants of transform_in_place_impl).
-/// 4. The function implementing the transform calls the overloaded operator for
-///    each element. Previously `TransformEvents` has been added to the overload
-///    set of the operator and this will now correctly treat event data.
-///    Essentially it causes a (single) recursive call to the transform
-///    implementation (transform_in_place_impl). In this second call the
-///    client-provided overload will match.
+/// 1. `visit<...>::apply` obtains the concrete underlying data type(s).
+/// 2. `Transform` is applied to that concrete container, calling
+///    `do_transform`. `Transform` essentially builds a callable accepting a
+///    container from a callable accepting an element of the container.
+/// 3. `do_transform` is essentially a fancy std::transform. It uses recursion
+///    to process optional flags (provided as base classes of the user-provided
+///    operator). It provides automatic handling of data that has variances in
+///    addition to values, calling a different transform implementation for each
+///    case (different instantiations of `transform_elements`).
+/// 4. The `transform_elements` function calls the overloaded operator for
+///    each element. This is also were multi-threading for the majority of
+///    scipp's operations is implemented.
+///
+/// Handling of binned data is mostly hidden in this implementation, reducing
+/// code duplication:
+/// - `variableFactory()` is used for output creation and unit access.
+/// - `variableFactory()` is used in `visit.h` to obtain a direct pointer to the
+///   underlying buffer.
+/// - MultiIndex contains special handling for binned data, i.e., it can iterate
+///   the buffer in a binning-aware way.
+///
+/// The mechanism for in-place transformation is mostly identical to the one
+/// outlined above.
 ///
 /// @author Simon Heybrock
 #pragma once
@@ -48,7 +56,7 @@ template <class T>
 inline constexpr bool has_variances_v = has_variances<T>::value;
 
 /// Helper for the transform implementation to unify iteration of data with and
-/// without variances as well as event_list and dense container.
+/// without variances.
 template <class T>
 static constexpr decltype(auto) value_maybe_variance(T &&range,
                                                      const scipp::index i) {
@@ -120,15 +128,8 @@ template <class Op, class Indices, class Arg, class... Args>
 static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
                                     Args &&... args) {
   const auto i = iter::get<0>(indices);
-  // Two cases are distinguished here:
-  // 1. In the case of event data we create ValuesAndVariances, which hold
-  //    references that can be modified.
-  // 2. For dense data we create ValueAndVariance, which performs an element
-  //    copy, so the result has to be updated after the call to `op`.
-  // Note that in the case of event data we actually have a recursive call to
-  // transform_in_place_impl for the iteration over each individual
-  // event_list. This then falls into case 2 and thus the recursion
-  // terminates with the second level.
+  // For dense data we conditionally create ValueAndVariance, which performs an
+  // element copy, so the result may have to be updated after the call to `op`.
   auto &&arg_ = value_maybe_variance(arg, i);
   call_in_place_impl(std::forward<Op>(op), indices,
                      std::make_index_sequence<sizeof...(Args)>{},
@@ -142,10 +143,6 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
 
 template <class Op, class Out, class... Ts>
 static void transform_elements(Op op, Out &&out, Ts &&... other) {
-  auto run = [&](auto indices, const auto &end) {
-    for (; indices != end; indices.increment())
-      call(op, indices, out, other...);
-  };
   const auto begin =
       core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
   auto run_parallel = [&](const auto &range) {
@@ -153,7 +150,8 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
     indices.set_index(range.begin());
     auto end = begin;
     end.set_index(range.end());
-    run(indices, end);
+    for (; indices != end; indices.increment())
+      call(op, indices, out, other...);
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
                                run_parallel);
@@ -189,12 +187,9 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
         if constexpr (check_all_or_none_variances<Op, decltype(args)...>) {
           throw except::VariancesError(
               "Expected either all or none of inputs to have variances.");
-        } else if constexpr (!std::is_base_of_v<
-                                 core::transform_flags::no_out_variance_t,
-                                 Op> &&
-                             (is_ValuesAndVariances_v<
-                                  std::decay_t<std::decay_t<decltype(args)>>> ||
-                              ...)) {
+        } else if constexpr (
+            !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
+            (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...)) {
           auto out_var = out.variances();
           transform_elements(op, ValuesAndVariances{out_val, out_var},
                              std::forward<decltype(args)>(args)...);
@@ -248,7 +243,6 @@ template <class T> struct as_view {
   auto variances() const {
     return decltype(data.variances())(data.variances(), dims);
   }
-
   T &data;
   const Dimensions &dims;
 };
@@ -279,7 +273,6 @@ template <template <typename...> class C, typename... Ts1, typename... Ts2,
           typename... Ts3>
 struct tuple_cat<C<Ts1...>, C<Ts2...>, Ts3...>
     : public tuple_cat<C<Ts1..., Ts2...>, Ts3...> {};
-template <class... Ts> using tuple_cat_t = typename tuple_cat<Ts...>::type;
 
 template <class Op> struct wrap_eigen : Op {
   const Op &base_op() const noexcept { return *this; }
@@ -470,8 +463,7 @@ template <bool dry_run> struct in_place {
                              const Other &... other) {
     using namespace detail;
     try {
-      variable::visit(std::tuple<Ts...>{})
-          .apply(makeTransformInPlace(op), var, other...);
+      visit<Ts...>::apply(makeTransformInPlace(op), var, other...);
     } catch (const std::bad_variant_access &) {
       throw except::TypeError("Cannot apply operation to item dtypes ", var,
                               other...);
@@ -575,7 +567,7 @@ template <class... Ts, class Op, class... Vars>
 Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
   using namespace detail;
   try {
-    return visit_impl<Ts...>::apply(Transform{wrap_eigen{op}}, vars...);
+    return visit<Ts...>::apply(Transform{wrap_eigen{op}}, vars...);
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes ", vars...);
   }

@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/common/span.h"
 #include "scipp/core/element/arg_list.h"
@@ -82,6 +83,12 @@ constexpr auto is_sorted_nonascending = overloaded{
     is_sorted_common, [](bool &out, const auto &left, const auto &right) {
       out = out && (left >= right);
     }};
+
+constexpr auto is_linspace =
+    overloaded{arg_list<span<const double>, span<const float>>,
+               transform_flags::expect_no_variance_arg<0>,
+               [](const units::Unit &) { return units::one; },
+               [](const auto &range) { return numeric::is_linspace(range); }};
 
 constexpr auto zip = overloaded{
     arg_list<scipp::index>, transform_flags::expect_no_variance_arg<0>,

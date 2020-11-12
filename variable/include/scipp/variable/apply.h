@@ -14,7 +14,7 @@ namespace scipp::variable {
 template <class... Ts, class Op, class Var, class... Vars>
 void apply_in_place(Op op, Var &&var, const Vars &... vars) {
   try {
-    scipp::variable::visit_impl<Ts...>::apply(op, var.data(), vars.data()...);
+    scipp::variable::visit<Ts...>::apply(op, var.data(), vars.data()...);
   } catch (const std::bad_variant_access &) {
     throw except::TypeError("Cannot apply operation to item dtypes: ", var,
                             vars...);

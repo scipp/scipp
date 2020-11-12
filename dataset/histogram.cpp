@@ -38,23 +38,19 @@ DataArray histogram(const DataArrayConstView &events,
         events,
         [](const DataArrayConstView &events_, const Dim dim_,
            const VariableConstView &binEdges_) {
-          const auto mask = irreducible_mask(events_.masks(), dim_);
-          if (mask)
-            // TODO Creating a full copy of event data here is very inefficient
-            return buckets::histogram(events_.data() * ~mask, binEdges_);
-          else
-            return buckets::histogram(events_.data(), binEdges_);
+          const Masker masker(events_, dim_);
+          // TODO Creating a full copy of event data here is very inefficient
+          return buckets::histogram(masker.data(), binEdges_);
         },
         dim, binEdges);
   } else if (!is_histogram(events, dim)) {
+    const auto data_dim = events.dims().inner();
     result = apply_and_drop_dim(
         events,
-        [](const DataArrayConstView &events_, const Dim dim_,
+        [](const DataArrayConstView &events_, const Dim data_dim_,
            const VariableConstView &binEdges_) {
-          const auto mask = irreducible_mask(events_.masks(), dim_);
-          Variable masked;
-          if (mask)
-            masked = events_.data() * ~mask;
+          const auto dim_ = binEdges_.dims().inner();
+          const Masker masker(events_, dim_);
           using namespace histogram_dense_detail;
           return transform_subspan<
               std::tuple<args<double, double, double, double>,
@@ -62,11 +58,11 @@ DataArray histogram(const DataArrayConstView &events,
                          args<double, float, double, float>,
                          args<float, float, float, float>>>(
               dtype<double>, dim_, binEdges_.dims()[dim_] - 1,
-              events_.coords()[dim_],
-              mask ? VariableConstView(masked) : events_.data(), binEdges_,
+              subspan_view(events_.coords()[dim_], data_dim_),
+              subspan_view(masker.data(), data_dim_), binEdges_,
               element::histogram);
         },
-        dim, binEdges);
+        data_dim, binEdges);
   } else {
     throw except::BinEdgeError(
         "Data is already histogrammed. Expected event data or dense point "
