@@ -23,4 +23,12 @@ sizes_to_begin(const VariableConstView &sizes);
                                                                const Dim dim,
                                                                Variable buffer);
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+make_non_owning_bins(const VariableConstView &indices, const Dim dim,
+                     const VariableView &buffer);
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+make_non_owning_bins(const VariableConstView &indices, const Dim dim,
+                     const VariableConstView &buffer);
+
 } // namespace scipp::variable

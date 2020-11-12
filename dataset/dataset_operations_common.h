@@ -7,6 +7,7 @@
 #include <map>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/arithmetic.h"
 
 namespace scipp::dataset {
 
@@ -228,5 +229,25 @@ void concatenate_out(const VariableConstView &var, const Dim dim,
   }
   out_indices.assign(zip(out_begin, out_current));
 }
+
+/// Helper class for applying irreducible masks along dim.
+///
+/// If a mask is applied this class keeps ownership of the masked temporary.
+/// `Masker` should thus be created in the scope where the masked data is
+/// needed. It will be deleted once the masked goes out of scope.
+class Masker {
+public:
+  Masker(const DataArrayConstView &array, const Dim dim) {
+    const auto mask = irreducible_mask(array.masks(), dim);
+    if (mask)
+      m_masked = array.data() * ~mask;
+    m_data = m_masked ? m_masked : array.data();
+  }
+  auto data() const noexcept { return m_data; }
+
+private:
+  Variable m_masked;
+  VariableConstView m_data;
+};
 
 } // namespace scipp::dataset

@@ -91,42 +91,32 @@ static constexpr auto histogram = overloaded{
     transform_flags::expect_variance_arg<2>,
     transform_flags::expect_no_variance_arg<3>};
 
-template <class T>
-using bin_index_arg =
-    std::tuple<span<scipp::index>, span<const T>, span<const T>>;
+template <class T> using bin_index_arg = std::tuple<T, span<const T>>;
 
-static constexpr auto bin_index = overloaded{
-    element::arg_list<bin_index_arg<double>, bin_index_arg<float>>,
-    [](const auto &index, const auto &coord, const auto &edges) {
-      // Special faster implementation for linear bins.
-      if (scipp::numeric::is_linspace(edges)) {
-        const auto [offset, nbin, scale] = core::linear_edge_params(edges);
-        for (scipp::index i = 0; i < scipp::size(coord); ++i) {
-          const auto x = coord[i];
-          const double bin = (x - offset) * scale;
-          if (bin < 0.0 || bin >= nbin)
-            index[i] = -1;
-          else
-            index[i] = bin;
-        }
-      } else {
-        core::expect::histogram::sorted_edges(edges);
-        for (scipp::index i = 0; i < scipp::size(coord); ++i) {
-          const auto x = coord[i];
-          auto it = std::upper_bound(edges.begin(), edges.end(), x);
-          if (it == edges.begin() || it == edges.end())
-            index[i] = -1;
-          else
-            index[i] = --it - edges.begin();
-        }
-      }
-    },
-    [](units::Unit &index, const units::Unit &coord, const units::Unit &edges) {
-      expect::equals(coord, edges);
-      index = units::one;
-    },
-    transform_flags::expect_no_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>,
-    transform_flags::expect_no_variance_arg<2>};
+static constexpr auto bin_index =
+    overloaded{element::arg_list<bin_index_arg<double>, bin_index_arg<float>>,
+               [](const units::Unit &coord, const units::Unit &edges) {
+                 expect::equals(coord, edges);
+                 return units::one;
+               },
+               transform_flags::expect_no_variance_arg<0>,
+               transform_flags::expect_no_variance_arg<1>};
+
+// Special faster implementation for linear bins.
+static constexpr auto bin_index_linspace =
+    overloaded{bin_index, [](const auto &x, const auto &edges) -> scipp::index {
+                 const auto [offset, nbin, scale] =
+                     core::linear_edge_params(edges);
+                 const double bin = (x - offset) * scale;
+                 return (bin < 0.0 || bin >= nbin) ? -1 : bin;
+               }};
+
+static constexpr auto bin_index_sorted_edges =
+    overloaded{bin_index, [](const auto &x, const auto &edges) -> scipp::index {
+                 auto it = std::upper_bound(edges.begin(), edges.end(), x);
+                 return (it == edges.begin() || it == edges.end())
+                            ? -1
+                            : --it - edges.begin();
+               }};
 
 } // namespace scipp::core::element

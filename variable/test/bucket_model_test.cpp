@@ -19,15 +19,14 @@ using Model = DataModel<bucket<Variable>>;
 
 class BucketModelTest : public ::testing::Test {
 protected:
-  Dimensions dims{Dim::Y, 2};
-  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
-      dims, Values{std::pair{0, 2}, std::pair{2, 4}});
+  Variable indices = makeVariable<index_pair>(
+      Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   auto make_indices(
       const std::vector<std::pair<scipp::index, scipp::index>> &is) const {
-    return makeVariable<std::pair<scipp::index, scipp::index>>(dims,
-                                                               Values(is));
+    return makeVariable<std::pair<scipp::index, scipp::index>>(
+        Dims{Dim::Y}, Shape{is.size()}, Values(is));
   }
 };
 
@@ -124,4 +123,20 @@ TEST_F(BucketModelTest, out_of_order_indices) {
   core::ElementArrayViewParams params(0, reverse.dims(), reverse.dims(), {});
   EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 2, 4}));
   EXPECT_EQ(*(model.values(params).begin() + 1), buffer.slice({Dim::X, 0, 2}));
+}
+
+class NonOwningBucketModelTest : public BucketModelTest {};
+
+TEST_F(NonOwningBucketModelTest, buffer_is_view) {
+  DataModel<bucket<VariableView>> model(indices, Dim::X, buffer);
+  core::ElementArrayViewParams params(0, indices.dims(), indices.dims(), {});
+  (*model.values(params).begin()) += 2.0 * units::one;
+  EXPECT_EQ(buffer, makeVariable<double>(buffer.dims(), Values{3, 4, 3, 4}));
+}
+
+TEST_F(NonOwningBucketModelTest, indices_is_view) {
+  DataModel<bucket<VariableView>> model(indices, Dim::X, buffer);
+  EXPECT_EQ(model.indices(), indices);
+  indices.values<index_pair>()[0] = std::pair{1, 2};
+  EXPECT_EQ(model.indices(), indices);
 }
