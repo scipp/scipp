@@ -194,11 +194,11 @@ def plot(*args, **kwargs):
     if _is_inline():
         for key in output:
             output[key].as_static(keep_widgets=is_doc_build)
-    # Turn auto figure display back on.
-    # TODO: we need to consider whether users manually turned auto figure
-    # display off, in which case we would not want to turn it back on here.
+
+    # Turn auto figure display back on if needed.
     if interactive_on:
         plt.ion()
+
     return output
 
 
