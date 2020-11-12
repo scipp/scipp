@@ -135,7 +135,7 @@ public:
 
   void setVariances(Variable v);
 
-  core::element_array_view array_params() const noexcept {
+  core::ElementArrayViewParams array_params() const noexcept {
     return {0, dims(), dims(), {}};
   }
 
@@ -254,7 +254,7 @@ public:
   auto &underlying() const { return *m_variable; }
   bool is_trivial() const noexcept;
 
-  core::element_array_view array_params() const noexcept {
+  core::ElementArrayViewParams array_params() const noexcept {
     return {m_offset, m_dims, m_dataDims, {}};
   }
 

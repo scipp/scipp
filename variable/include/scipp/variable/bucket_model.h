@@ -80,11 +80,11 @@ public:
   const Variable &indices() const { return m_indices; }
   Variable &indices() { return m_indices; }
 
-  ElementArrayView<bucket<T>> values(const core::element_array_view &base) {
+  ElementArrayView<bucket<T>> values(const core::ElementArrayViewParams &base) {
     return {index_values(base), m_dim, m_buffer};
   }
   ElementArrayView<const bucket<T>>
-  values(const core::element_array_view &base) const {
+  values(const core::ElementArrayViewParams &base) const {
     return {index_values(base), m_dim, m_buffer};
   }
 
@@ -116,7 +116,7 @@ private:
     std::copy(i.begin(), i.end(), vals.begin());
     return copy;
   }
-  auto index_values(const core::element_array_view &base) const {
+  auto index_values(const core::ElementArrayViewParams &base) const {
     return cast<range_type>(m_indices).values(base);
   }
   Variable m_indices;

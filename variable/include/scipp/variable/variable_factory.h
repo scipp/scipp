@@ -32,7 +32,7 @@ public:
     throw unreachable();
   }
   virtual VariableView data(const VariableView &) const { throw unreachable(); }
-  virtual core::element_array_view
+  virtual core::ElementArrayViewParams
   array_params(const VariableConstView &) const {
     throw unreachable();
   }

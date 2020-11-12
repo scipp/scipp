@@ -68,7 +68,7 @@ protected:
       const Dimensions &iterDims, const Dimensions &dataDims,
       const std::vector<scipp::index> &expected) {
     BucketParams params{sliceDim, bufferDims, indices.data()};
-    MultiIndex<1> index(element_array_view{0, iterDims, dataDims, params});
+    MultiIndex<1> index(ElementArrayViewParams{0, iterDims, dataDims, params});
     check(index, expected);
   }
   void check_with_buckets(
@@ -81,13 +81,15 @@ protected:
       const std::vector<scipp::index> &expected1) {
     BucketParams params0{sliceDim0, bufferDims0, indices0.data()};
     BucketParams params1{sliceDim1, bufferDims1, indices1.data()};
-    MultiIndex<2> index(element_array_view{0, iterDims, dataDims0, params0},
-                        element_array_view{0, iterDims, dataDims1, params1});
+    MultiIndex<2> index(
+        ElementArrayViewParams{0, iterDims, dataDims0, params0},
+        ElementArrayViewParams{0, iterDims, dataDims1, params1});
     check(index, expected0, expected1);
     // Order of arguments should not matter, in particular this also tests that
     // the dense argument may be the first argument.
-    MultiIndex<2> swapped(element_array_view{0, iterDims, dataDims1, params1},
-                          element_array_view{0, iterDims, dataDims0, params0});
+    MultiIndex<2> swapped(
+        ElementArrayViewParams{0, iterDims, dataDims1, params1},
+        ElementArrayViewParams{0, iterDims, dataDims0, params0});
     check(swapped, expected1, expected0);
   }
 
