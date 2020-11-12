@@ -5,6 +5,7 @@
 #pragma once
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/bins.h"
 
 namespace scipp::dataset {
 
