@@ -84,6 +84,9 @@ class PlotFigure:
         else:
             buf = io.BytesIO()
             self.fig.savefig(buf, format='png')
+            # Here we close the figure to prevent it from showing up again in
+            # cells further down the notebook.
+            plt.close(self.fig)
             buf.seek(0)
             return ipw.Image(value=buf.getvalue(),
                              width=config.plot.width,
