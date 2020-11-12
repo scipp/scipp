@@ -129,7 +129,7 @@ class NonOwningBucketModelTest : public BucketModelTest {};
 
 TEST_F(NonOwningBucketModelTest, buffer_is_view) {
   DataModel<bucket<VariableView>> model(indices, Dim::X, buffer);
-  core::element_array_view params(0, indices.dims(), indices.dims(), {});
+  core::ElementArrayViewParams params(0, indices.dims(), indices.dims(), {});
   (*model.values(params).begin()) += 2.0 * units::one;
   EXPECT_EQ(buffer, makeVariable<double>(buffer.dims(), Values{3, 4, 3, 4}));
 }

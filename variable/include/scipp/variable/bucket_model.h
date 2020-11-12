@@ -141,7 +141,7 @@ private:
       const auto dims = base.dims();
       const auto dataDims = params.dataDims();
       return cast<range_type>(m_indices.underlying())
-          .values(core::element_array_view(offset, dims, dataDims, {}));
+          .values(core::ElementArrayViewParams(offset, dims, dataDims, {}));
     } else {
       return cast<range_type>(m_indices).values(base);
     }
