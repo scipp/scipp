@@ -7,7 +7,7 @@
 
 #include "random.h"
 
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/variable/operations.h"

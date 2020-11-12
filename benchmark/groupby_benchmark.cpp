@@ -5,7 +5,7 @@
 
 #include <benchmark/benchmark.h>
 
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/variable/operations.h"
 

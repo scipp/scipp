@@ -3,7 +3,7 @@
 /// @file
 #include <benchmark/benchmark.h>
 
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/neutron/convert.h"
 #include "scipp/variable/arithmetic.h"
