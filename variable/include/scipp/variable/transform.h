@@ -535,8 +535,8 @@ void transform_in_place(Var &&var, const VariableConstView &var1,
 /// WARNING: In contrast to the transform algorithms, accumulate does not touch
 /// the unit, since it would be hard to track, e.g., in multiplication
 /// operations.
-template <class... TypePairs, class Var, class Op>
-void accumulate_in_place(Var &&var, const VariableConstView &other, Op op) {
+template <class... TypePairs, class Var, class Other, class Op>
+void accumulate_in_place(Var &&var, const Other &other, Op op) {
   scipp::expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,

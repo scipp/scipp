@@ -61,6 +61,13 @@ Variable group_index(const VariableConstView &var,
   return variable::transform(var, map, core::element::group_index);
 }
 
+void bin_index_to_full_index(const VariableView &index,
+                             const Dimensions &dims) {
+  auto sizes = makeVariable<scipp::index>(Dims{Dim::X}, Shape{dims.volume()});
+  variable::accumulate_in_place(subspan_view(sizes, Dim::X), index,
+                                core::element::bin_index_to_full_index);
+}
+
 auto shrink(const Dimensions &dims) {
   auto shrunk = dims;
   shrunk.resize(dims.inner(), dims[dims.inner()] - 1);
@@ -77,6 +84,25 @@ Variable bin_sizes(const VariableConstView &indices, Dimensions dims) {
       ++s[i];
   return sizes;
 }
+
+// Notes on threaded impl:
+//
+// If event is in existing bin, it will stay there. Can use existing bin sizes
+// as view over output, and threading will work
+// Example:
+// - existing pixel binning
+// - now bin TOF
+// - output has (potentially smaller) pixel bins, use subspan_view
+// transform_in_place(subspan_view(out, out_buffer_dim, out_bin_range), data,
+// indices)
+// => threading over pixel dim
+//
+// What about binning flat data? order is completely random?
+// - sc.bins() with dummy indices => fake 1d binning
+//   - maybe use make_non_owning_bins?
+// - transpose bucket end/begin (essentially making new dim an outer dim)
+//   - can we achieve this by specifying reverse dim order, with no extra code?
+// - proceeed as above
 
 template <class T> struct Bin {
   static auto apply(const VariableConstView &var,
@@ -176,9 +202,23 @@ DataArray sortby(const DataArrayConstView &array, const Dim dim) {
 namespace {
 DataArray bucketby_impl(const DataArrayConstView &array,
                         const std::vector<VariableConstView> &edges,
-                        Variable indices = Variable{},
+                        const std::vector<VariableConstView> &groups,
+                        const std::vector<Dim> &, Variable indices = Variable{},
                         Dim bucket_dim = Dim::Invalid,
                         Dimensions dims = Dimensions{}) {
+  for (const auto &group : groups) {
+    const auto coord = array.coords()[group.dims().inner()];
+    update_indices_by_grouping(indices, coord, group);
+  }
+  for (const auto &edge : edges) {
+    const auto coord = array.coords()[edge.dims().inner()];
+    // TODO does this mean we can do ragged only in two steps?
+    // i.e., indices must have same outer dim as edge
+    update_indices_by_binning(indices, coord, edge);
+  }
+  // TODO what now? bin_index_to_full_index?
+  // also giving bin_sizes?
+
   for (const auto &edge : edges) {
     const auto coord = array.coords()[edge.dims().inner()];
     // TODO This implicit way of distinguishing edges and non-edges is probably
@@ -226,11 +266,35 @@ DataArray bucketby_impl(const DataArrayConstView &array,
 }
 } // namespace
 
+// for edges in edges:
+//   indices += (bin_index(coord, edge, stride))
+// multi-threading:
+// - binned view over indices
+// - threads: sizes = count(indices)
+// - compute offset in output based on accumulation of sizes over threads
+// - threads: copy via binned view over indices to output
+//
+// output is always contiguous
+// indices is contiguous
+// input is not
+// => transform with 3 args? ... but how to split then?
+// binned view over output
+
+Variable make_index_range(const Dim dim, const scipp::index size) {
+  auto var = makeVariable<scipp::index>(Dims{dim}, Shape{size});
+  auto vals = var.values<scipp::index>().as_span();
+  std::iota(vals.begin(), vals.end(), 0);
+  return var;
+}
+
 DataArray bucketby(const DataArrayConstView &array,
-                   const std::vector<VariableConstView> &edges) {
+                   const std::vector<VariableConstView> &edges,
+                   const std::vector<VariableConstView> &groups,
+                   const std::vector<Dim> &dim_order) {
   DataArrayConstView maybe_concat(array);
   DataArray tmp;
   if (array.dtype() == dtype<bucket<DataArray>>) {
+    /*
     // TODO The need for this check may be an indicator that we should support
     // adding another bucketed dimension via a separate function instead of
     // having this dual-purpose `bucketby`.
@@ -247,17 +311,43 @@ DataArray bucketby(const DataArrayConstView &array,
     indices -= 1 * units::one;
     const auto indices_ = indices.values<scipp::index>().as_span();
     scipp::index current = 0;
+    // TODO too restrictive, may want to bin a slice
     for (const auto [begin, end] : begin_end.values<index_pair>().as_span()) {
       for (scipp::index i = begin; i < end; ++i)
         indices_[i] = current;
       ++current;
     }
-    auto bucketed =
-        bucketby_impl(buffer, edges, std::move(indices), dim, begin_end.dims());
+    */
+
+    // 1. Build dims if empty
+    // TODO take into account dim_order, including handling grouping without
+    // given groups
+    static_cast<void>(dim_order) Dimensions binning_dims;
+    for (const auto &group : groups)
+      binning_dims.add_inner(group.dims().inner());
+    for (const auto &edge : edges)
+      binning_dims.add_inner(edge.dims().inner());
+
+    // 2. Build input bin index table
+    auto indices = makeVariable<scipp::index>(0);
+    for (const auto dim : array.dims().labels()) {
+      size = array.dims()[dim];
+      indices *= size * units::one;
+      if (binning_dims.contains[dim]) // changed binning, pretend same input bin
+        indices = indices + makeVariable<scipp::index>(Dims{dim}, Shape{size});
+      else
+        indices = indices + make_index_range(dim, size);
+    }
+
+    // 3. Broadcast table to all events in bin
+    indices = broadcast(indices, end - begin);
+
+    auto bucketed = bucketby_impl(buffer, edges, groups, dim_order,
+                                  std::move(indices), dim, begin_end.dims());
     copy_metadata(maybe_concat, bucketed);
     return bucketed;
   } else {
-    return bucketby_impl(maybe_concat, edges);
+    return bucketby_impl(maybe_concat, edges, groups, dim_order);
   }
 }
 

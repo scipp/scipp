@@ -164,4 +164,14 @@ static constexpr auto group_index = overloaded{
       return it == groups.end() ? -1 : it->second;
     }};
 
+static constexpr auto bin_index_to_full_index = overloaded{
+    element::arg_list<std::tuple<scipp::span<scipp::index>, scipp::index>>,
+    transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](auto &size, auto &index) {
+      if (index < 0)
+        return;
+      index += size[index]++;
+    }};
+
 } // namespace scipp::core::element
