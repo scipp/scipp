@@ -2,9 +2,9 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Hezbrock
+#include "scipp/dataset/bins.h"
 #include "pybind11.h"
 #include "scipp/core/except.h"
-#include "scipp/dataset/bins.h"
 #include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/shape.h"
