@@ -57,7 +57,7 @@ ElementArrayViewParams::ElementArrayViewParams(
 }
 
 void ElementArrayViewParams::requireContiguous() const {
-  if (m_iterDims != m_dataDims || m_bucketParams)
+  if (!m_iterDims.isContiguousIn(m_dataDims) || m_bucketParams)
     throw std::runtime_error("Data is not contiguous");
 }
 
