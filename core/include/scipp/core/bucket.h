@@ -27,4 +27,5 @@ template <class T> struct bucket : bucket_base {
 
 namespace scipp {
 using core::bucket;
+template <class T> using bin = core::bucket<T>;
 }

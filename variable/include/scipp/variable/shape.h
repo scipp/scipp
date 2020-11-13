@@ -11,8 +11,6 @@ namespace scipp::variable {
 
 SCIPP_VARIABLE_EXPORT Variable broadcast(const VariableConstView &var,
                                          const Dimensions &dims);
-SCIPP_VARIABLE_EXPORT Variable broadcast(const VariableConstView &var,
-                                         const VariableConstViw &shape);
 SCIPP_VARIABLE_EXPORT Variable concatenate(const VariableConstView &a1,
                                            const VariableConstView &a2,
                                            const Dim dim);

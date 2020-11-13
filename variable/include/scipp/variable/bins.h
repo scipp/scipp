@@ -31,4 +31,18 @@ make_non_owning_bins(const VariableConstView &indices, const Dim dim,
 make_non_owning_bins(const VariableConstView &indices, const Dim dim,
                      const VariableConstView &buffer);
 
+template <class T>
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+make_non_owning_typed_bins(const VariableConstView &binned);
+
+template <class T>
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+make_non_owning_typed_bins(const VariableView &binned);
+
+template <class T>
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+make_non_owning_typed_bins(Variable &binned) {
+  return make_non_owning_typed_bins<T>(VariableView(binned));
+}
+
 } // namespace scipp::variable

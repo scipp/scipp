@@ -13,6 +13,7 @@ add_executable(
   reduce_various_test.cpp
   sort_test.cpp
   subspan_view_test.cpp
+  transform_bins_test.cpp
   transform_test.cpp
   trigonometry_test.cpp
   util_test.cpp

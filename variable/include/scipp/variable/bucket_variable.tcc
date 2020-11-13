@@ -112,6 +112,37 @@ public:
   }
 };
 
+/*
+template <class T> class TypedBinVariableMaker : public AbstractVariableMaker {
+public:
+  bool is_buckets() const override { return false; }
+
+  Variable
+  create(const DType elem_dtype, const Dimensions &dims,
+         const units::Unit &unit, const bool variances,
+         const std::vector<VariableConstView> &parents) const override {
+    throw unreachable();
+  }
+
+  DType elem_dtype(const VariableConstView &var) const override {
+    return dtype<typed_bin<T>>;
+  }
+  units::Unit elem_unit(const VariableConstView &var) const override {
+    return var.unit();
+  }
+  void set_elem_unit(const VariableView &var,
+                     const units::Unit &u) const override {
+    // TODO should this set unit of buffer?
+    if(u != units::one)
+      throw except::UnitError("Bins cannot have units.");
+  }
+  bool hasVariances(const VariableConstView &var) const override {
+    // data within bins may have variances, but bins do not
+    return false;
+  }
+};
+*/
+
 /// Macro for instantiating classes and functions required for support a new
 /// bucket dtype in Variable.
 #define INSTANTIATE_BUCKET_VARIABLE(name, ...)                                 \

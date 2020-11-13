@@ -48,8 +48,12 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
-    return std::make_unique<DataModel>(makeVariable<range_type>(dims), m_dim,
-                                       T{m_buffer.slice({m_dim, 0, 0})});
+    if constexpr (is_typed_bin_v<T>) {
+      throw std::runtime_error("TODO");
+    } else {
+      return std::make_unique<DataModel>(makeVariable<range_type>(dims), m_dim,
+                                         T{m_buffer.slice({m_dim, 0, 0})});
+    }
   }
 
   VariableConceptHandle
@@ -59,6 +63,8 @@ public:
       // converting, e.g., bucket<VariableView> to bucket<Variable>
       return std::make_unique<DataModel<bucket<typename T::value_type>>>(
           zip(begin, begin), m_dim, resize_default_init(m_buffer, m_dim, size));
+    } else if constexpr (is_typed_bin_v<T>) {
+      throw std::runtime_error("TODO");
     } else {
       return std::make_unique<DataModel>(
           zip(begin, begin), m_dim, resize_default_init(m_buffer, m_dim, size));
@@ -102,7 +108,7 @@ private:
   static auto validated_indices(const VariableConstView &indices,
                                 [[maybe_unused]] const Dim dim,
                                 [[maybe_unused]] const T &buffer) {
-    if constexpr (is_view_v<T>) {
+    if constexpr (is_view_v<T> || is_typed_bin_v<T>) {
       // Assume validation happened outside when constructing owning DataModel.
       return indices;
     } else {
@@ -171,17 +177,17 @@ bool DataModel<bucket<T>>::equals(const VariableConstView &a,
 template <class T>
 void DataModel<bucket<T>>::copy(const VariableConstView &src,
                                 const VariableView &dst) const {
-  const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
-  const auto [begin0, end0] = unzip(indices0);
-  const auto sizes1 = end0 - begin0;
-  auto [begin1, size1] = sizes_to_begin(sizes1);
-  auto indices1 = zip(begin1, begin1 + sizes1);
-  auto buffer1 = resize_default_init(buffer0, dim0, size1);
-  copy_slices(buffer0, buffer1, dim0, indices0, indices1);
-  if constexpr (is_view_v<T>) {
+  if constexpr (is_view_v<T> || is_typed_bin_v<T>) {
     throw std::runtime_error(
         "Copying a non-owning binned view is not supported.");
   } else {
+    const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
+    const auto [begin0, end0] = unzip(indices0);
+    const auto sizes1 = end0 - begin0;
+    auto [begin1, size1] = sizes_to_begin(sizes1);
+    auto indices1 = zip(begin1, begin1 + sizes1);
+    auto buffer1 = resize_default_init(buffer0, dim0, size1);
+    copy_slices(buffer0, buffer1, dim0, indices0, indices1);
     dst.replace_model(
         DataModel<bucket<T>>{std::move(indices1), dim0, std::move(buffer1)});
   }

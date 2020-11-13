@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cmath>
+#include <numeric>
 
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
@@ -173,5 +174,52 @@ static constexpr auto bin_index_to_full_index = overloaded{
         return;
       index += size[index]++;
     }};
+
+/*
+// - Each span is covers an *input* bin.
+// - `bin_sizes` Sizes of the output bins
+// - `bins` Start indices of the output bins
+// - `bin_indices` Target output bin index (within input bin)
+template <class T>
+using bin_arg = std::tuple<span<T>, span<scipp::index>, span<const T>,
+                           span<const scipp::index>>;
+static constexpr auto bin = overloaded{
+    element::arg_list<bin_arg<double>, bin_arg<float>, bin_arg<int64_t>,
+                      bin_arg<int32_t>, bin_arg<bool>, bin_arg<Eigen::Vector3d>,
+                      bin_arg<std::string>>,
+    transform_flags::expect_in_variance_if_out_variance,
+    [](units::Unit &binned, const units::Unit &bins, const units::Unit &data,
+       const units::Unit &bin_indices) { binned = data; },
+    [](const auto &binned, const auto &bin_sizes, const auto &data,
+       const auto &bin_indices) {
+      std::vector<scipp::index> bins;
+      bins.reserve(bin_sizes.size());
+      std::exclusive_scan(bin_sizes.begin(), bin_sizes.end(),
+                          std::back_inserter(bins), 0);
+      const auto size = scipp::size(bin_indices);
+      using T = std::decay_t<decltype(data)>;
+      for (scipp::index i = 0; i < size; ++i) {
+        const auto i_bin = bin_indices[i];
+        if (i_bin < 0)
+          continue;
+        if constexpr (is_ValueAndVariance_v<T>) {
+          binned[bins[i_bin]++] = data[i];
+        } else {
+          binned.variance[bins[i_bin]] = data.variance[i];
+          binned.value[bins[i_bin]++] = data.value[i];
+        }
+      }
+    }};
+
+static constexpr auto count_indices =
+    overloaded{element::arg_list<bin<Variable>>,
+               [](const units::Unit &counts, const units::Unit &indices) {},
+               [](const auto &counts, const auto &indices) {
+                 const auto c = counts.values<scipp::index>().as_span();
+                 for (const auto i : indices.values<scipp::index>().as_span())
+                   if (i >= 0)
+                     ++c[i];
+               }};
+*/
 
 } // namespace scipp::core::element

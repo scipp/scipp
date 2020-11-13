@@ -106,4 +106,36 @@ Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
       indices, dim, buffer)};
 }
 
+template <class T> auto make_typed_bin(const VariableConstView &var) {
+  return var.hasVariances() ? typed_bin(var.template values<T>().as_span(),
+                                        var.template variances<T>().as_span())
+                            : typed_bin(var.template values<T>().as_span());
+}
+
+template <class T> auto make_typed_bin(const VariableView &var) {
+  return var.hasVariances() ? typed_bin(var.template values<T>().as_span(),
+                                        var.template variances<T>().as_span())
+                            : typed_bin(var.template values<T>().as_span());
+}
+
+template <class T>
+Variable make_non_owning_typed_bins(const VariableConstView &binned) {
+  const auto &[idx, dim, buf] = binned.constituents<bin<Variable>>();
+  return {std::make_unique<variable::DataModel<bucket<typed_bin<const T>>>>(
+      idx, dim, make_typed_bin<T>(buf))};
+}
+
+template <class T>
+Variable make_non_owning_typed_bins(const VariableView &binned) {
+  const auto &[idx, dim, buf] = binned.constituents<bin<Variable>>();
+  return {std::make_unique<variable::DataModel<bucket<typed_bin<T>>>>(
+      idx, dim, make_typed_bin<T>(buf))};
+}
+
+template Variable
+make_non_owning_typed_bins<double>(const VariableConstView &binned);
+
+template Variable
+make_non_owning_typed_bins<double>(const VariableView &binned);
+
 } // namespace scipp::variable

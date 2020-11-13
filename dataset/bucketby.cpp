@@ -85,6 +85,31 @@ Variable bin_sizes(const VariableConstView &indices, Dimensions dims) {
   return sizes;
 }
 
+/// indices is a binned variable with sub-bin indices, i.e., new bins within
+/// bins
+Variable bin_sizes2(const VariableConstView &sub_bin, const scipp::index nbin) {
+  auto sizes = resize(sub_bin, broadcast(ndim * units::one, sub_bin.dims()));
+  // const auto &[indices, dim, buffer] =
+  // sizes.constituents<bucket<Variable>>();
+  // TODO how can we avoid writing subspan_view
+  // transform_in_place(subspan_view(buffer, dim, indices),
+  // subspan_view(sub_bin));
+  transform_in_place(
+      sizes, sub_bin,
+      core::element::count_indices); // transform bins, not bin element
+
+  // Variable slices = makeVariable<scipp::index_pair>(
+  //    Dims{dim}, Shape{indices.dims.volume() * nbin});
+  // Variable sizes = makeVariable<scipp::index>(
+  //    Dims{dim}, Shape{indices.dims.volume() * nbin});
+
+  // const auto s = sizes.values<scipp::index>().as_span();
+  // for (const auto i : indices.values<scipp::index>().as_span())
+  //  if (i >= 0)
+  //    ++s[i];
+  return sizes;
+}
+
 // Notes on threaded impl:
 //
 // If event is in existing bin, it will stay there. Can use existing bin sizes
@@ -148,11 +173,50 @@ auto bin(const VariableConstView &var, const VariableConstView &indices,
                                                   sizes);
 }
 
+auto bin2(const VariableConstView &in_buffer,
+          const VariableConstView &in_slices, const dim dim,
+          const VariableConstView &indices, const VariableConstView &sizes) {
+  // Size/begin of all sub-bins of an input bin
+  auto [begin, total_size] = sizes_to_begin(buckets::sum(sizes));
+  // Output may be smaller since values outside sub-bins are dropped.
+  // `binned` does not contain sub-bin dims/ranges yet
+  // TODO this only reserves
+  auto binned = resize(data, buckets::sum(sizes));
+  /*
+  auto dims = in_buffer.dims();
+  dims.resize(dim, total_size);
+  auto binned_buffer = variable::variableFactory().create(
+      in_buffer.dtype(), dims, in_buffer.unit(), in_buffer.hasVariances());
+      */
+
+  // if we also use binned_slices, can we "push back"
+  // const auto begin_end = unzip(binned_slices);
+  // Need:
+  // target bin indices *within* input bin (no need for existing bin index!?
+  // how to make subspan view covering multiple dims? reshape first?
+  // use a binned var instead?
+  //
+  // bin_sizes should be var of same dims as (binned) input with (equal sized)
+  // bins containing list of output bin sizes
+  //
+  // indices has same dims as (binned) input, "transform" to different bin
+  // sizes?
+
+  // data should be bins_view
+  transform_in_place(binned, sizes, data, indices, core::element::bin);
+  return std::get<2>(binned.to_constituents<bucket<Variable>>());
+
+  // transform_in_place(subspan_view(binned_buffer, dim, binned_slices),
+  //                   subspan_view(binned_slices, /* all dims not in input */),
+  //                   subspan_view(in_buffer, dim, in_slices),
+  //                   subspan_view(indices, dim, ), core::element::bin);
+}
+
 auto bin(const DataArrayConstView &data, const VariableConstView &indices,
          const VariableConstView &sizes) {
   return dataset::transform(data, [indices, sizes](const auto &var) {
     return var.dims().contains(indices.dims().inner())
-               ? bin(var, indices, sizes)
+               ? bin2(var, indices, sizes)
                : copy(var);
   });
 }
@@ -216,6 +280,8 @@ DataArray bucketby_impl(const DataArrayConstView &array,
     // i.e., indices must have same outer dim as edge
     update_indices_by_binning(indices, coord, edge);
   }
+  // Now `indices` contains the target bucket index for every event.
+  //
   // TODO what now? bin_index_to_full_index?
   // also giving bin_sizes?
 
