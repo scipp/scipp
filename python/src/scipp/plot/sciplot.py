@@ -268,13 +268,13 @@ class SciPlot:
         Convert the plot to a static plot, releasing the memory held (a full
         copy of the data is made on input).
         """
-        # Delete all members of controller
+        # Delete controller members
         self.controller.widgets = None
         self.controller.model = None
         self.controller.panel = None
         self.controller.profile = None
         self.controller.view = None
-        # Delete controller and members of sciplot
+        # Delete sciplot members
         self.controller = None
         self.model = None
         self.profile = None
