@@ -107,4 +107,8 @@ constexpr auto get = overloaded{arg_list<std::pair<scipp::index, scipp::index>>,
                                 [](const auto &x) { return std::get<N>(x); },
                                 [](const units::Unit &u) { return u; }};
 
+constexpr auto fill =
+    overloaded{arg_list<double, float, std::tuple<float, double>>,
+               [](auto &x, const auto &value) { x = value; }};
+
 } // namespace scipp::core::element

@@ -42,10 +42,21 @@ constexpr auto variance = [](const auto &v, const scipp::index idx) {
 };
 } // namespace
 
+namespace histogram_detail {
+template <class Out, class Coord, class Weight, class Edge>
+using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
+                        span<const Edge>>;
+}
+
 static constexpr auto histogram = overloaded{
+    transform_flags::zero_output,
+    element::arg_list<histogram_detail::args<float, double, float, double>,
+                      histogram_detail::args<double, double, double, double>,
+                      histogram_detail::args<double, float, double, double>,
+                      histogram_detail::args<double, float, double, float>,
+                      histogram_detail::args<double, double, float, double>>,
     [](const auto &data, const auto &events, const auto &weights,
        const auto &edges) {
-      zero(data);
       // Special implementation for linear bins. Gives a 1x to 20x speedup
       // for few and many events per histogram, respectively.
       if (scipp::numeric::is_linspace(edges)) {
@@ -118,5 +129,39 @@ static constexpr auto bin_index_sorted_edges =
                             ? -1
                             : --it - edges.begin();
                }};
+
+static constexpr auto groups_to_map = overloaded{
+    element::arg_list<span<const int64_t>, span<const int32_t>,
+                      span<const std::string>>,
+    transform_flags::expect_no_variance_arg<0>,
+    [](const units::Unit &u) { return u; },
+    [](const auto &groups) {
+      std::unordered_map<typename std::decay_t<decltype(groups)>::value_type,
+                         scipp::index>
+          index;
+      scipp::index current = 0;
+      for (const auto &item : groups)
+        index[item] = current++;
+      if (scipp::size(groups) != scipp::size(index))
+        throw std::runtime_error("Duplicate group labels.");
+      return index;
+    }};
+
+template <class T>
+using group_index_arg = std::tuple<T, std::unordered_map<T, scipp::index>>;
+
+static constexpr auto group_index = overloaded{
+    element::arg_list<group_index_arg<int64_t>, group_index_arg<int32_t>,
+                      group_index_arg<std::string>>,
+    [](const units::Unit &coord, const units::Unit &groups) {
+      expect::equals(coord, groups);
+      return units::one;
+    },
+    transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](const auto &x, const auto &groups) -> scipp::index {
+      const auto it = groups.find(x);
+      return it == groups.end() ? -1 : it->second;
+    }};
 
 } // namespace scipp::core::element

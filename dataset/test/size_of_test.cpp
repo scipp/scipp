@@ -2,11 +2,11 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/util.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 
@@ -19,7 +19,7 @@ protected:
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 3}, std::pair{3, 4}});
   Variable buffer = makeVariable<double>(Dims{Dim::X}, Shape{4});
-  Variable var = from_constituents(indices, Dim::X, buffer);
+  Variable var = make_bins(indices, Dim::X, buffer);
 };
 
 class BucketDataArraySizeOfTest : public ::testing::Test {
@@ -29,7 +29,7 @@ protected:
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable data = makeVariable<double>(Dims{Dim::X}, Shape{4});
   DataArray buffer = DataArray(data, {{Dim::X, data + data}});
-  Variable var = from_constituents(indices, Dim::X, buffer);
+  Variable var = make_bins(indices, Dim::X, buffer);
 };
 
 class BucketDatasetSizeOfTest : public ::testing::Test {
@@ -93,7 +93,7 @@ TEST_F(BucketDataArraySizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
 
 TEST_F(BucketDatasetSizeOfTest, size_in_memory_of_bucketed_variable) {
   buffer.coords().set(Dim::X, column);
-  Variable var = from_constituents(indices, Dim::X, buffer);
+  Variable var = make_bins(indices, Dim::X, buffer);
   const auto &[indices_, dim_, buffer_] =
       VariableConstView(var).constituents<bucket<Dataset>>();
   EXPECT_EQ(size_of(var), size_of(buffer_) + size_of(indices_));
@@ -101,7 +101,7 @@ TEST_F(BucketDatasetSizeOfTest, size_in_memory_of_bucketed_variable) {
 
 TEST_F(BucketDatasetSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
   buffer.coords().set(Dim::X, column);
-  Variable var = from_constituents(indices, Dim::X, buffer);
+  Variable var = make_bins(indices, Dim::X, buffer);
   auto slice = var.slice(Slice(Dim::Y, 0, 1));
   const auto &[indices_, dim_, buffer_] = slice.constituents<bucket<Dataset>>();
   EXPECT_EQ(size_of(slice), size_of(buffer_) * 0.5 + size_of(indices_));

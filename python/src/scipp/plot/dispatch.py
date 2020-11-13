@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .._scipp import core as sc
+from .._bins import histogram
 from .._utils import is_variable
 import numpy as np
 
@@ -28,7 +29,7 @@ def dispatch(scipp_obj_dict,
         if sc.is_bins(array):
             if bins is not None:
                 if is_variable(bins):
-                    array = sc.histogram(array, bins)
+                    array = histogram(array.bins, bins)
                 elif isinstance(bins, dict):
                     for dim, binning in bins.items():
                         coord = array.coords[dim]
@@ -48,7 +49,7 @@ def dispatch(scipp_obj_dict,
                         else:
                             raise RuntimeError(
                                 "Unknown bins type: {}".format(binning))
-                        array = sc.histogram(array, edges)
+                        array = histogram(array.bins, edges)
                 else:
                     raise RuntimeError(
                         "bins must be either a Variable or a dict.")

@@ -224,5 +224,9 @@ def test_plot_2d_binned_data_with_variances():
     plot(make_binned_data_array(ndim=2, variances=True))
 
 
+def test_plot_2d_binned_data_with_variances_nbin():
+    plot(make_binned_data_array(ndim=2, variances=True), bins={'tof': 3})
+
+
 def test_plot_2d_binned_data_with_masks():
     plot(make_binned_data_array(ndim=2, masks=True))

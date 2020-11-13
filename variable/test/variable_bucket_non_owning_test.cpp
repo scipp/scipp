@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/string.h"
 
@@ -15,7 +15,6 @@ protected:
   const Variable indices = makeVariable<index_pair>(
       Dims{Dim::Y}, Shape{3},
       Values{index_pair{0, 1}, index_pair{1, 3}, index_pair{3, 4}});
-  // const Variable base = from_constituents(indices, Dim::X, buffer);
   Variable view = make_non_owning_bins(indices, Dim::X, VariableView(buffer));
 };
 

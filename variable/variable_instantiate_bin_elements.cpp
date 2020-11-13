@@ -2,8 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/variable/bins.h"
 #include "scipp/variable/bucket_variable.tcc"
-#include "scipp/variable/buckets.h"
 
 namespace scipp::variable {
 

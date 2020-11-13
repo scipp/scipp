@@ -5,7 +5,7 @@
 #pragma once
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 
 namespace scipp::dataset {
 
@@ -23,12 +23,12 @@ SCIPP_DATASET_EXPORT void copy_slices(const DatasetConstView &src,
 [[nodiscard]] SCIPP_DATASET_EXPORT Dataset resize_default_init(
     const DatasetConstView &parent, const Dim dim, const scipp::index size);
 
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable from_constituents(Variable indices,
-                                                              const Dim dim,
-                                                              DataArray buffer);
-[[nodiscard]] SCIPP_DATASET_EXPORT Variable from_constituents(Variable indices,
-                                                              const Dim dim,
-                                                              Dataset buffer);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable make_bins(Variable indices,
+                                                      const Dim dim,
+                                                      DataArray buffer);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable make_bins(Variable indices,
+                                                      const Dim dim,
+                                                      Dataset buffer);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 bucket_sizes(const VariableConstView &var);

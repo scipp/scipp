@@ -13,7 +13,7 @@
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
 
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/choose.h"
 #include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"

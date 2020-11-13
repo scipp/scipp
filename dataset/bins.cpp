@@ -10,15 +10,10 @@
 #include "scipp/core/element/histogram.h"
 #include "scipp/core/except.h"
 #include "scipp/core/histogram.h"
-#include "scipp/dataset/bins_view.h"
-#include "scipp/dataset/bucket.h"
-#include "scipp/dataset/dataset.h"
-#include "scipp/dataset/histogram.h"
-#include "scipp/dataset/reduction.h"
-#include "scipp/dataset/shape.h"
+
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/bucket_model.h"
-#include "scipp/variable/buckets.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
@@ -26,6 +21,13 @@
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
+
+#include "scipp/dataset/bins.h"
+#include "scipp/dataset/bins_view.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/histogram.h"
+#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
 #include "dataset_operations_common.h"
@@ -119,7 +121,7 @@ Dataset resize_default_init(const DatasetConstView &parent, const Dim dim,
 }
 
 template <class T>
-Variable from_constituents_impl(Variable &&indices, const Dim dim, T &&buffer) {
+Variable make_bins_impl(Variable &&indices, const Dim dim, T &&buffer) {
   return {std::make_unique<variable::DataModel<bucket<T>>>(
       std::move(indices), dim, std::move(buffer))};
 }
@@ -128,16 +130,16 @@ Variable from_constituents_impl(Variable &&indices, const Dim dim, T &&buffer) {
 ///
 /// Each bin is represented by a VariableView. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
-Variable from_constituents(Variable indices, const Dim dim, DataArray buffer) {
-  return from_constituents_impl(std::move(indices), dim, std::move(buffer));
+Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
+  return make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 /// Construct a bin-variable over a dataset.
 ///
 /// Each bin is represented by a VariableView. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
-Variable from_constituents(Variable indices, const Dim dim, Dataset buffer) {
-  return from_constituents_impl(std::move(indices), dim, std::move(buffer));
+Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
+  return make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 namespace {
@@ -279,38 +281,16 @@ void append(const DataArrayView &a, const DataArrayConstView &b) {
   append(a.data(), b.data());
 }
 
-namespace histogram_detail {
-template <class Out, class Coord, class Weight, class Edge>
-using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
-                        span<const Edge>>;
-}
-
 Variable histogram(const VariableConstView &data,
                    const VariableConstView &binEdges) {
   using namespace scipp::core;
-  using namespace histogram_detail;
   auto hist_dim = binEdges.dims().inner();
   const auto &[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
-  if (!buffer.masks().empty())
-    throw std::runtime_error("Masked data cannot be histogrammed yet.");
-  VariableConstView spans(indices);
-  Variable merged;
-  if (indices.dims().contains(hist_dim)) {
-    const auto size = indices.dims()[hist_dim];
-    const auto [begin, end] = unzip(indices);
-    // Only contiguous ranges along histogramming dim supported at this point.
-    core::expect::equals(begin.slice({hist_dim, 1, size}),
-                         end.slice({hist_dim, 0, size - 1}));
-    merged = zip(begin.slice({hist_dim, 0}), end.slice({hist_dim, size - 1}));
-    spans = VariableConstView(merged);
-  }
-  return variable::transform_subspan<std::tuple<
-      args<float, double, float, double>, args<double, double, double, double>,
-      args<double, float, double, double>, args<double, float, double, float>,
-      args<double, double, float, double>>>(
+  const Masker masker(buffer, dim);
+  return variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
-      subspan_view(buffer.coords()[hist_dim], dim, spans),
-      subspan_view(buffer.data(), dim, spans), binEdges, element::histogram);
+      subspan_view(buffer.coords()[hist_dim], dim, indices),
+      subspan_view(masker.data(), dim, indices), binEdges, element::histogram);
 }
 
 Variable map(const DataArrayConstView &function, const VariableConstView &x,

@@ -4,7 +4,7 @@
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/variable/shape.h"
@@ -89,7 +89,7 @@ DataArray make_1d_events_default_weights() {
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{3},
       Values{std::pair{0, 5}, std::pair{5, 10}, std::pair{10, 22}});
-  auto var = from_constituents(indices, Dim::Event, table);
+  auto var = make_bins(indices, Dim::Event, table);
   return DataArray(var, {});
 }
 
@@ -110,7 +110,7 @@ auto make_single_events() {
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Values{std::pair{0, 5}});
   Dataset events;
-  events.setData("events", from_constituents(indices, Dim::Event, table));
+  events.setData("events", make_bins(indices, Dim::Event, table));
   return events;
 }
 
@@ -220,7 +220,7 @@ DataArray make_1d_events() {
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{3},
       Values{std::pair{0, 5}, std::pair{5, 10}, std::pair{10, 22}});
-  auto var = from_constituents(indices, Dim::Event, table);
+  auto var = make_bins(indices, Dim::Event, table);
   return DataArray(var, {});
 }
 
