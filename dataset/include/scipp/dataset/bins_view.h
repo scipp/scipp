@@ -35,11 +35,20 @@ public:
   }
 };
 
+template <class T, class View> class BinsMasks : public BinsCommon<T, View> {
+public:
+  BinsMasks(const BinsCommon<T, View> base) : BinsCommon<T, View>(base) {}
+  auto operator[](const std::string &name) const {
+    return this->make(this->buffer().masks()[name]);
+  }
+};
+
 template <class T, class View> class Bins : public BinsCommon<T, View> {
 public:
   using BinsCommon<T, View>::BinsCommon;
   auto data() const { return this->make(this->buffer().data()); }
   auto coords() const { return BinsCoords<T, View>(*this); }
+  auto masks() const { return BinsMasks<T, View>(*this); }
 };
 } // namespace bins_view_detail
 

@@ -155,7 +155,8 @@ static constexpr auto update_indices_by_binning_linspace =
                  const auto [offset, nbin, scale] =
                      core::linear_edge_params(edges);
                  const double bin = (x - offset) * scale;
-                 index = (bin < 0.0 || bin >= nbin) ? -1 : bin;
+                 index *= scipp::size(edges) - 1;
+                 index += (bin < 0.0 || bin >= nbin) ? -1 : bin;
                }};
 
 static constexpr auto update_indices_by_binning_sorted_edges =
@@ -164,9 +165,10 @@ static constexpr auto update_indices_by_binning_sorted_edges =
                  if (index == -1)
                    return;
                  auto it = std::upper_bound(edges.begin(), edges.end(), x);
-                 index = (it == edges.begin() || it == edges.end())
-                             ? -1
-                             : --it - edges.begin();
+                 index *= scipp::size(edges) - 1;
+                 index += (it == edges.begin() || it == edges.end())
+                              ? -1
+                              : --it - edges.begin();
                }};
 
 static constexpr auto groups_to_map = overloaded{
@@ -220,7 +222,8 @@ static constexpr auto update_indices_by_grouping =
                  if (index == -1)
                    return;
                  const auto it = groups.find(x);
-                 index = it == groups.end() ? -1 : it->second;
+                 index *= scipp::size(groups);
+                 index += it == groups.end() ? -1 : it->second;
                }};
 
 static constexpr auto bin_index_to_full_index = overloaded{
@@ -277,6 +280,7 @@ static constexpr auto count_indices = overloaded{
       expect::equals(counts, units::one);
     },
     [](const auto &counts, const auto &indices) {
+      zero(counts);
       for (const auto i : indices)
         if (i >= 0)
           ++counts[i];

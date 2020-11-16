@@ -221,8 +221,8 @@ auto bin(const VariableConstView &var, const VariableConstView &indices,
 }
 
 template <class Out>
-auto bin2(Out &&out, const Variable &in, const VariableConstView &indices,
-          const VariableConstView &sizes) {
+auto bin2(Out &&out, const Variable &in, const VariableConstView &sizes,
+          const VariableConstView &indices) {
   // Size/begin of all sub-bins of an input bin
   // auto [begin, total_size] = sizes_to_begin(buckets::sum(sizes));
   // Output may be smaller since values outside sub-bins are dropped.
@@ -273,18 +273,32 @@ auto bin(const DataArrayConstView &data, const VariableConstView &indices,
 
 auto bin2(const VariableConstView &data, const VariableConstView &indices,
           const Dimensions &dims) {
-  std::cout << data << '\n';
-  std::cout << indices << '\n';
-  std::cout << dims << '\n';
+  // std::cout << data << '\n';
+  // std::cout << indices << '\n';
+  // std::cout << dims << '\n';
   const auto nbin = dims.volume();
   const auto output_bin_sizes = bin_sizes2(indices, nbin);
   const auto filtered_input_bin_size = buckets::sum(output_bin_sizes);
+  // std::cout << output_bin_sizes << '\n';
+  // std::cout << filtered_input_bin_size << '\n';
   auto binned = resize(data, filtered_input_bin_size);
   buckets::reserve(binned, filtered_input_bin_size);
+  const auto &[ignored_filtered_input_bin_indices, buffer_dim, buffer] =
+      binned.constituents<bucket<DataArray>>();
 
   const auto input_bins = bins_view<DataArray>(data);
   const auto output_bins = bins_view<DataArray>(binned);
   bin2(output_bins.data(), input_bins.data(), output_bin_sizes, indices);
+  for (const auto &[dim, coord] : buffer.coords()) {
+    if (coord.dims().contains(buffer_dim))
+      bin2(output_bins.coords()[dim], input_bins.coords()[dim],
+           output_bin_sizes, indices);
+  }
+  for (const auto &[dim, coord] : buffer.masks()) {
+    if (coord.dims().contains(buffer_dim))
+      bin2(output_bins.masks()[dim], input_bins.masks()[dim], output_bin_sizes,
+           indices);
+  }
 
   const auto output_dims = merge(data.dims(), dims);
   const auto bin_sizes =
@@ -293,11 +307,10 @@ auto bin2(const VariableConstView &data, const VariableConstView &indices,
   // TODO take into account rebin
   const auto [begin, total_size] = sizes_to_begin(bin_sizes);
   const auto end = begin + bin_sizes;
-  auto [ignored_filtered_input_bin_indices, dim, buffer] =
-      binned.to_constituents<bucket<DataArray>>();
-  std::cout << begin << '\n';
-  std::cout << end << '\n';
-  return make_bins(zip(begin, end), dim, std::move(buffer));
+  // std::cout << begin << '\n';
+  // std::cout << end << '\n';
+  return make_bins(zip(begin, end), buffer_dim,
+                   std::get<2>(binned.to_constituents<bucket<DataArray>>()));
 }
 
 Variable permute(const VariableConstView &var, const Dim dim,
