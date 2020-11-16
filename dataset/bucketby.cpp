@@ -276,9 +276,9 @@ auto bin2(const VariableConstView &data, const VariableConstView &indices,
           const Dimensions &dims) {
   const auto &[ignored_input_indices, buffer_dim, in_buffer] =
       data.constituents<bucket<T>>();
-  // std::cout << data << '\n';
-  // std::cout << indices << '\n';
-  // std::cout << dims << '\n';
+  std::cout << data << '\n';
+  std::cout << indices << '\n';
+  std::cout << dims << '\n';
   const auto nbin = dims.volume();
   const auto output_bin_sizes = bin_sizes2(indices, nbin);
   const auto filtered_input_bin_size = buckets::sum(output_bin_sizes);
@@ -313,15 +313,23 @@ auto bin2(const VariableConstView &data, const VariableConstView &indices,
            output_bin_sizes, indices);
   }
 
-  const auto output_dims = merge(data.dims(), dims);
+  auto output_dims = data.dims();
+  for (const auto dim : dims.labels())
+    if (output_dims.contains(dim))
+      output_dims.erase(dim);
+  output_dims = merge(output_dims, dims);
+  std::cout << "output_dims " << output_dims << '\n';
+  std::cout << output_bin_sizes << '\n';
+  // TODO Why does reshape not throw if volume is too small?
   const auto bin_sizes =
       reshape(std::get<2>(output_bin_sizes.constituents<bucket<Variable>>()),
               output_dims);
+  std::cout << bin_sizes << '\n';
   // TODO take into account rebin
   std::tie(begin, total_size) = sizes_to_begin(bin_sizes);
   const auto end = begin + bin_sizes;
-  // std::cout << begin << '\n';
-  // std::cout << end << '\n';
+  std::cout << begin << '\n';
+  std::cout << end << '\n';
   return make_bins(zip(begin, end), buffer_dim, std::move(out_buffer));
 }
 
@@ -418,34 +426,7 @@ DataArray bucketby(const DataArrayConstView &array,
                    const std::vector<VariableConstView> &edges,
                    const std::vector<VariableConstView> &groups,
                    const std::vector<Dim> &dim_order) {
-  // DataArrayConstView maybe_concat(array);
-  // DataArray tmp;
   if (array.dtype() == dtype<bucket<DataArray>>) {
-    /*
-    // TODO The need for this check may be an indicator that we should support
-    // adding another bucketed dimension via a separate function instead of
-    // having this dual-purpose `bucketby`.
-    for (const auto &edge : edges)
-      if (array.dims().contains(edge.dims().inner())) {
-        // TODO Very inefficient if new edges extract only a small fraction
-        tmp = buckets::concatenate(maybe_concat, edge.dims().inner());
-        maybe_concat = DataArrayView(tmp);
-      }
-    const auto &[begin_end, dim, buffer] =
-        maybe_concat.data().constituents<bucket<DataArray>>();
-    auto indices =
-        makeVariable<scipp::index>(Dims{dim}, Shape{buffer.dims()[dim]});
-    indices -= 1 * units::one;
-    const auto indices_ = indices.values<scipp::index>().as_span();
-    scipp::index current = 0;
-    // TODO too restrictive, may want to bin a slice
-    for (const auto [begin, end] : begin_end.values<index_pair>().as_span()) {
-      for (scipp::index i = begin; i < end; ++i)
-        indices_[i] = current;
-      ++current;
-    }
-    */
-
 #if 0
     // 1. Build dims if empty
     // TODO take into account dim_order, including handling grouping without
@@ -484,8 +465,17 @@ DataArray bucketby(const DataArrayConstView &array,
     return bucketed;
   } else {
     const auto dim = array.dims().inner();
-    const auto begin = makeVariable<scipp::index>(Values{0});
-    const auto end = makeVariable<scipp::index>(Values{array.dims()[dim]});
+    // pretend existing binning along outermost binning dim to enable threading
+    // TODO automatic setup with reasoble bin count
+    const Dimensions dims(edges.front().dims().inner(), 3);
+    const auto size = array.dims()[dim];
+    auto begin = makeVariable<scipp::index>(dims);
+    begin.values<scipp::index>()[1] = size / 2;
+    begin.values<scipp::index>()[2] = size;
+    auto end = makeVariable<scipp::index>(dims);
+    end.values<scipp::index>()[0] = size / 2;
+    end.values<scipp::index>()[1] = size;
+    end.values<scipp::index>()[2] = size;
     const auto indices = zip(begin, end);
     const auto tmp = make_non_owning_bins(indices, dim, array);
     return bucketby_impl<DataArrayConstView>(tmp, edges, groups, dim_order);
