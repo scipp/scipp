@@ -1,16 +1,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
-from dataclasses import dataclass
-
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
-@dataclass
 class lookup:
-    func: _cpp.DataArrayView
-    dim: str
+    def __init__(self, func: _cpp.DataArrayView, dim: str):
+        self.func = func
+        self.dim = dim
 
 
 class _Bins:
