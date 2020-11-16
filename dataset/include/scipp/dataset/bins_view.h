@@ -54,5 +54,11 @@ public:
 template <class T, class View> auto bins_view(const View &var) {
   return bins_view_detail::Bins<T, View>(var);
 }
+template <class T> auto bins_view(const Variable &var) {
+  return bins_view<T>(VariableConstView(var));
+}
+template <class T> auto bins_view(Variable &var) {
+  return bins_view<T>(VariableView(var));
+}
 
 } // namespace scipp::dataset

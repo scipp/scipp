@@ -103,7 +103,7 @@ static constexpr auto histogram = overloaded{
     transform_flags::expect_variance_arg<2>,
     transform_flags::expect_no_variance_arg<3>};
 
-template <class T> using bin_index_arg = std::tuple<T, span<const T>>;
+template <class T> using bin_index_arg = std::tuple<T, scipp::span<const T>>;
 
 static constexpr auto bin_index =
     overloaded{element::arg_list<bin_index_arg<double>, bin_index_arg<float>>,
@@ -129,6 +129,44 @@ static constexpr auto bin_index_sorted_edges =
                  return (it == edges.begin() || it == edges.end())
                             ? -1
                             : --it - edges.begin();
+               }};
+
+template <class T>
+using update_indices_by_binning_arg =
+    std::tuple<scipp::index, T, scipp::span<const T>>;
+
+static constexpr auto update_indices_by_binning =
+    overloaded{element::arg_list<update_indices_by_binning_arg<double>,
+                                 update_indices_by_binning_arg<float>>,
+               [](units::Unit &indices, const units::Unit &coord,
+                  const units::Unit &groups) {
+                 expect::equals(coord, groups);
+                 expect::equals(indices, units::one);
+               },
+               transform_flags::expect_no_variance_arg<1>,
+               transform_flags::expect_no_variance_arg<2>};
+
+// Special faster implementation for linear bins.
+static constexpr auto update_indices_by_binning_linspace =
+    overloaded{update_indices_by_binning,
+               [](auto &index, const auto &x, const auto &edges) {
+                 if (index == -1)
+                   return;
+                 const auto [offset, nbin, scale] =
+                     core::linear_edge_params(edges);
+                 const double bin = (x - offset) * scale;
+                 index = (bin < 0.0 || bin >= nbin) ? -1 : bin;
+               }};
+
+static constexpr auto update_indices_by_binning_sorted_edges =
+    overloaded{update_indices_by_binning,
+               [](auto &index, const auto &x, const auto &edges) {
+                 if (index == -1)
+                   return;
+                 auto it = std::upper_bound(edges.begin(), edges.end(), x);
+                 index = (it == edges.begin() || it == edges.end())
+                             ? -1
+                             : --it - edges.begin();
                }};
 
 static constexpr auto groups_to_map = overloaded{
@@ -165,6 +203,26 @@ static constexpr auto group_index = overloaded{
       return it == groups.end() ? -1 : it->second;
     }};
 
+template <class T>
+using update_indices_by_grouping_arg =
+    std::tuple<scipp::index, T, std::unordered_map<T, scipp::index>>;
+
+static constexpr auto update_indices_by_grouping =
+    overloaded{element::arg_list<update_indices_by_grouping_arg<int64_t>,
+                                 update_indices_by_grouping_arg<int32_t>,
+                                 update_indices_by_grouping_arg<std::string>>,
+               [](units::Unit &indices, const units::Unit &coord,
+                  const units::Unit &groups) {
+                 expect::equals(coord, groups);
+                 expect::equals(indices, units::one);
+               },
+               [](auto &index, const auto &x, const auto &groups) {
+                 if (index == -1)
+                   return;
+                 const auto it = groups.find(x);
+                 index = it == groups.end() ? -1 : it->second;
+               }};
+
 static constexpr auto bin_index_to_full_index = overloaded{
     element::arg_list<std::tuple<scipp::span<scipp::index>, scipp::index>>,
     transform_flags::expect_no_variance_arg<0>,
@@ -175,25 +233,25 @@ static constexpr auto bin_index_to_full_index = overloaded{
       index += size[index]++;
     }};
 
-/*
 // - Each span is covers an *input* bin.
 // - `bin_sizes` Sizes of the output bins
 // - `bins` Start indices of the output bins
 // - `bin_indices` Target output bin index (within input bin)
 template <class T>
-using bin_arg = std::tuple<span<T>, span<scipp::index>, span<const T>,
+using bin_arg = std::tuple<span<T>, span<const scipp::index>, span<const T>,
                            span<const scipp::index>>;
 static constexpr auto bin = overloaded{
     element::arg_list<bin_arg<double>, bin_arg<float>, bin_arg<int64_t>,
                       bin_arg<int32_t>, bin_arg<bool>, bin_arg<Eigen::Vector3d>,
                       bin_arg<std::string>>,
     transform_flags::expect_in_variance_if_out_variance,
-    [](units::Unit &binned, const units::Unit &bins, const units::Unit &data,
-       const units::Unit &bin_indices) { binned = data; },
+    [](units::Unit &binned, const units::Unit &, const units::Unit &data,
+       const units::Unit &) { binned = data; },
     [](const auto &binned, const auto &bin_sizes, const auto &data,
        const auto &bin_indices) {
       std::vector<scipp::index> bins;
       bins.reserve(bin_sizes.size());
+      // TODO Should we do this outside, just once?
       std::exclusive_scan(bin_sizes.begin(), bin_sizes.end(),
                           std::back_inserter(bins), 0);
       const auto size = scipp::size(bin_indices);
@@ -203,23 +261,25 @@ static constexpr auto bin = overloaded{
         if (i_bin < 0)
           continue;
         if constexpr (is_ValueAndVariance_v<T>) {
-          binned[bins[i_bin]++] = data[i];
-        } else {
           binned.variance[bins[i_bin]] = data.variance[i];
           binned.value[bins[i_bin]++] = data.value[i];
+        } else {
+          binned[bins[i_bin]++] = data[i];
         }
       }
     }};
 
-static constexpr auto count_indices =
-    overloaded{element::arg_list<bin<Variable>>,
-               [](const units::Unit &counts, const units::Unit &indices) {},
-               [](const auto &counts, const auto &indices) {
-                 const auto c = counts.values<scipp::index>().as_span();
-                 for (const auto i : indices.values<scipp::index>().as_span())
-                   if (i >= 0)
-                     ++c[i];
-               }};
-*/
+static constexpr auto count_indices = overloaded{
+    element::arg_list<
+        std::tuple<scipp::span<scipp::index>, scipp::span<const scipp::index>>>,
+    [](const units::Unit &counts, const units::Unit &indices) {
+      expect::equals(indices, units::one);
+      expect::equals(counts, units::one);
+    },
+    [](const auto &counts, const auto &indices) {
+      for (const auto i : indices)
+        if (i >= 0)
+          ++counts[i];
+    }};
 
 } // namespace scipp::core::element

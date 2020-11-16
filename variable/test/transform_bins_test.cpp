@@ -25,6 +25,7 @@ protected:
 };
 
 TEST_F(TransformBinsTest, sandbox) {
+  /*
   auto view = make_non_owning_typed_bins<double>(var);
   EXPECT_EQ(variableFactory().values<bucket<typed_bin<double>>>(var).size(), 2);
   EXPECT_EQ(variableFactory().values<bucket<typed_bin<double>>>(var)[0].size(),
@@ -41,6 +42,7 @@ TEST_F(TransformBinsTest, sandbox) {
                          for (auto x : bin.values())
                            printf("%lf\n", x);
                        }});
+  */
   // EXPECT_EQ(view[0].values()[0], 1);
   // EXPECT_EQ(view[1].values()[0], 3);
   // EXPECT_EQ(view[1].values()[1], 4);

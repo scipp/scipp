@@ -230,7 +230,28 @@ Variable concatenate_untyped(const VariableConstView &var, const Dim dim,
     return concatenate_typed<Dataset>(var, dim, shape, mask);
 }
 
+template <class T>
+void reserve_impl(const VariableView &var, const VariableConstView &shape) {
+  // TODO this only reserves in the bins, but assumes buffer has enough space
+  const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
+  variable::transform_in_place(
+      indices, shape,
+      overloaded{
+          core::element::arg_list<std::tuple<scipp::index_pair, scipp::index>>,
+          core::keep_unit,
+          [](auto &begin_end, auto &size) { begin_end.second += size; }});
+}
+
 } // namespace
+
+void reserve(const VariableView &var, const VariableConstView &shape) {
+  if (var.dtype() == dtype<bucket<Variable>>)
+    return reserve_impl<Variable>(var, shape);
+  else if (var.dtype() == dtype<bucket<DataArray>>)
+    return reserve_impl<DataArray>(var, shape);
+  else
+    return reserve_impl<Dataset>(var, shape);
+}
 
 Variable concatenate(const VariableConstView &var0,
                      const VariableConstView &var1) {

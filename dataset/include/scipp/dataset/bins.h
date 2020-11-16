@@ -46,6 +46,9 @@ is_buckets(const DatasetConstView &dataset);
 
 namespace scipp::dataset::buckets {
 
+SCIPP_DATASET_EXPORT void reserve(const VariableView &var,
+                                  const VariableConstView &shape);
+
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 concatenate(const VariableConstView &var0, const VariableConstView &var1);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray

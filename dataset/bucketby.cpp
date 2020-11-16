@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <iostream>
 #include <numeric>
 
 #include "scipp/core/element/histogram.h"
@@ -12,12 +13,14 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/except.h"
 
@@ -49,6 +52,23 @@ Variable bin_index(const VariableConstView &var,
   }
 }
 
+void update_indices_by_binning(const VariableView &indices,
+                               const VariableConstView &key,
+                               const VariableConstView &edges) {
+  const auto dim = edges.dims().inner();
+  if (all(is_linspace(edges, dim)).value<bool>()) {
+    variable::transform_in_place(
+        indices, key, subspan_view(edges, dim),
+        core::element::update_indices_by_binning_linspace);
+  } else {
+    if (!is_sorted(edges, dim))
+      throw except::BinEdgeError("Bin edges must be sorted.");
+    variable::transform_in_place(
+        indices, key, subspan_view(edges, dim),
+        core::element::update_indices_by_binning_sorted_edges);
+  }
+}
+
 Variable groups_to_map(const VariableConstView &var, const Dim dim) {
   return variable::transform(subspan_view(var, dim),
                              core::element::groups_to_map);
@@ -59,6 +79,15 @@ Variable group_index(const VariableConstView &var,
   const auto dim = groups.dims().inner();
   const auto map = groups_to_map(groups, dim);
   return variable::transform(var, map, core::element::group_index);
+}
+
+void update_indices_by_grouping(const VariableView &indices,
+                                const VariableConstView &key,
+                                const VariableConstView &groups) {
+  const auto dim = groups.dims().inner();
+  const auto map = groups_to_map(groups, dim);
+  variable::transform_in_place(indices, key, map,
+                               core::element::update_indices_by_grouping);
 }
 
 void bin_index_to_full_index(const VariableView &index,
@@ -85,17 +114,35 @@ Variable bin_sizes(const VariableConstView &indices, Dimensions dims) {
   return sizes;
 }
 
+template <class T> Variable as_subspan_view(T &&binned) {
+  if (binned.dtype() == dtype<bin<Variable>>) {
+    auto &&[indices, dim, buffer] =
+        binned.template constituents<bin<Variable>>();
+    return subspan_view(buffer, dim, indices);
+  } else if (binned.dtype() == dtype<bin<VariableView>>) {
+    auto &&[indices, dim, buffer] =
+        binned.template constituents<bin<VariableView>>();
+    return subspan_view(buffer, dim, indices);
+  } else {
+    auto &&[indices, dim, buffer] =
+        binned.template constituents<bin<VariableConstView>>();
+    return subspan_view(buffer, dim, indices);
+  }
+}
+
 /// indices is a binned variable with sub-bin indices, i.e., new bins within
 /// bins
 Variable bin_sizes2(const VariableConstView &sub_bin, const scipp::index nbin) {
-  auto sizes = resize(sub_bin, broadcast(ndim * units::one, sub_bin.dims()));
+  const auto nbins = broadcast(nbin * units::one, sub_bin.dims());
+  auto sizes = resize(sub_bin, nbins);
+  buckets::reserve(sizes, nbins);
   // const auto &[indices, dim, buffer] =
   // sizes.constituents<bucket<Variable>>();
   // TODO how can we avoid writing subspan_view
   // transform_in_place(subspan_view(buffer, dim, indices),
   // subspan_view(sub_bin));
-  transform_in_place(
-      sizes, sub_bin,
+  variable::transform_in_place(
+      as_subspan_view(sizes), as_subspan_view(sub_bin),
       core::element::count_indices); // transform bins, not bin element
 
   // Variable slices = makeVariable<scipp::index_pair>(
@@ -173,15 +220,16 @@ auto bin(const VariableConstView &var, const VariableConstView &indices,
                                                   sizes);
 }
 
-auto bin2(const VariableConstView &in_buffer,
-          const VariableConstView &in_slices, const dim dim,
-          const VariableConstView &indices, const VariableConstView &sizes) {
+template <class Out>
+auto bin2(Out &&out, const Variable &in, const VariableConstView &indices,
+          const VariableConstView &sizes) {
   // Size/begin of all sub-bins of an input bin
-  auto [begin, total_size] = sizes_to_begin(buckets::sum(sizes));
+  // auto [begin, total_size] = sizes_to_begin(buckets::sum(sizes));
   // Output may be smaller since values outside sub-bins are dropped.
   // `binned` does not contain sub-bin dims/ranges yet
-  // TODO this only reserves
-  auto binned = resize(data, buckets::sum(sizes));
+  // const auto filtered_input_bin_size = buckets::sum(sizes);
+  // auto binned = resize(data, filtered_input_bin_size);
+  // buckets::reserve(binned, filtered_input_bin_size);
   /*
   auto dims = in_buffer.dims();
   dims.resize(dim, total_size);
@@ -203,8 +251,10 @@ auto bin2(const VariableConstView &in_buffer,
   // sizes?
 
   // data should be bins_view
-  transform_in_place(binned, sizes, data, indices, core::element::bin);
-  return std::get<2>(binned.to_constituents<bucket<Variable>>());
+  transform_in_place(as_subspan_view(out), as_subspan_view(sizes),
+                     as_subspan_view(in), as_subspan_view(indices),
+                     core::element::bin);
+  // return std::get<2>(binned.to_constituents<bucket<Variable>>());
 
   // transform_in_place(subspan_view(binned_buffer, dim, binned_slices),
   //                   subspan_view(binned_slices, /* all dims not in input */),
@@ -216,9 +266,38 @@ auto bin(const DataArrayConstView &data, const VariableConstView &indices,
          const VariableConstView &sizes) {
   return dataset::transform(data, [indices, sizes](const auto &var) {
     return var.dims().contains(indices.dims().inner())
-               ? bin2(var, indices, sizes)
+               ? bin(var, indices, sizes)
                : copy(var);
   });
+}
+
+auto bin2(const VariableConstView &data, const VariableConstView &indices,
+          const Dimensions &dims) {
+  std::cout << data << '\n';
+  std::cout << indices << '\n';
+  std::cout << dims << '\n';
+  const auto nbin = dims.volume();
+  const auto output_bin_sizes = bin_sizes2(indices, nbin);
+  const auto filtered_input_bin_size = buckets::sum(output_bin_sizes);
+  auto binned = resize(data, filtered_input_bin_size);
+  buckets::reserve(binned, filtered_input_bin_size);
+
+  const auto input_bins = bins_view<DataArray>(data);
+  const auto output_bins = bins_view<DataArray>(binned);
+  bin2(output_bins.data(), input_bins.data(), output_bin_sizes, indices);
+
+  const auto output_dims = merge(data.dims(), dims);
+  const auto bin_sizes =
+      reshape(std::get<2>(output_bin_sizes.constituents<bucket<Variable>>()),
+              output_dims);
+  // TODO take into account rebin
+  const auto [begin, total_size] = sizes_to_begin(bin_sizes);
+  const auto end = begin + bin_sizes;
+  auto [ignored_filtered_input_bin_indices, dim, buffer] =
+      binned.to_constituents<bucket<DataArray>>();
+  std::cout << begin << '\n';
+  std::cout << end << '\n';
+  return make_bins(zip(begin, end), dim, std::move(buffer));
 }
 
 Variable permute(const VariableConstView &var, const Dim dim,
@@ -264,71 +343,82 @@ DataArray sortby(const DataArrayConstView &array, const Dim dim) {
 }
 
 namespace {
-DataArray bucketby_impl(const DataArrayConstView &array,
+DataArray bucketby_impl(const VariableConstView &var,
                         const std::vector<VariableConstView> &edges,
                         const std::vector<VariableConstView> &groups,
-                        const std::vector<Dim> &, Variable indices = Variable{},
-                        Dim bucket_dim = Dim::Invalid,
-                        Dimensions dims = Dimensions{}) {
+                        const std::vector<Dim> &) {
+  const auto &[begin_end, dim, array] = var.constituents<bucket<DataArray>>();
+  const auto input_bins = bins_view<DataArray>(var);
+  const auto [begin, end] = unzip(begin_end);
+  const auto input_bin_sizes = bucket_sizes(array.data());
+  // zeros_like?
+  auto indices =
+      make_bins(copy(begin_end), dim, makeVariable<scipp::index>(array.dims()));
+  Dimensions dims;
   for (const auto &group : groups) {
-    const auto coord = array.coords()[group.dims().inner()];
+    const auto group_dim = group.dims().inner();
+    const auto coord = input_bins.coords()[group_dim];
     update_indices_by_grouping(indices, coord, group);
+    dims.addInner(group_dim, group.dims()[group_dim]);
   }
   for (const auto &edge : edges) {
-    const auto coord = array.coords()[edge.dims().inner()];
+    const auto edge_dim = edge.dims().inner();
+    const auto coord = input_bins.coords()[edge_dim];
     // TODO does this mean we can do ragged only in two steps?
     // i.e., indices must have same outer dim as edge
     update_indices_by_binning(indices, coord, edge);
+    dims.addInner(edge_dim, edge.dims()[edge_dim] - 1);
   }
   // Now `indices` contains the target bucket index for every event.
   //
   // TODO what now? bin_index_to_full_index?
   // also giving bin_sizes?
 
-  for (const auto &edge : edges) {
-    const auto coord = array.coords()[edge.dims().inner()];
-    // TODO This implicit way of distinguishing edges and non-edges is probably
-    // not the ultimate desired solution.
-    const bool is_edges =
-        (edge.dtype() == dtype<float>) || (edge.dtype() == dtype<double>);
-    const auto inner_indices =
-        is_edges ? bin_index(coord, edge) : group_index(coord, edge);
-    const auto nbin = edge.dims()[edge.dims().inner()] - (is_edges ? 1 : 0);
-    dims = merge(dims, is_edges ? shrink(edge.dims()) : edge.dims());
-    if (indices) {
-      if (bucket_dim != coord.dims().inner())
-        throw except::DimensionError(
-            "Coords of data to be bucketed have inconsistent dimensions " +
-            to_string(bucket_dim) + " and " + to_string(coord.dims().inner()) +
-            ". Data that can be bucketed should generally resemble a table, "
-            "with a coord column for each bucketed dimension.");
-      indices = variable::transform<scipp::index>(
-          indices, inner_indices,
-          overloaded{[](const units::Unit &, const units::Unit &) {
-                       return units::one;
-                     },
-                     [nbin](const auto i0, const auto i1) {
-                       return i0 < 0 || i1 < 0 ? -1 : i0 * nbin + i1;
-                     }});
-    } else {
-      indices = inner_indices;
-    }
-    bucket_dim = coord.dims().inner();
+  /*
+for (const auto &edge : edges) {
+  const auto coord = array.coords()[edge.dims().inner()];
+  // TODO This implicit way of distinguishing edges and non-edges is probably
+  // not the ultimate desired solution.
+  const bool is_edges =
+      (edge.dtype() == dtype<float>) || (edge.dtype() == dtype<double>);
+  const auto inner_indices =
+      is_edges ? bin_index(coord, edge) : group_index(coord, edge);
+  const auto nbin = edge.dims()[edge.dims().inner()] - (is_edges ? 1 : 0);
+  dims = merge(dims, is_edges ? shrink(edge.dims()) : edge.dims());
+  if (indices) {
+    if (bucket_dim != coord.dims().inner())
+      throw except::DimensionError(
+          "Coords of data to be bucketed have inconsistent dimensions " +
+          to_string(bucket_dim) + " and " + to_string(coord.dims().inner()) +
+          ". Data that can be bucketed should generally resemble a table, "
+          "with a coord column for each bucketed dimension.");
+    indices = variable::transform<scipp::index>(
+        indices, inner_indices,
+        overloaded{[](const units::Unit &, const units::Unit &) {
+                     return units::one;
+                   },
+                   [nbin](const auto i0, const auto i1) {
+                     return i0 < 0 || i1 < 0 ? -1 : i0 * nbin + i1;
+                   }});
+  } else {
+    indices = inner_indices;
   }
-  const auto sizes = bin_sizes(indices, dims);
-  const auto [begin, total_size] = sizes_to_begin(sizes);
-  const auto end = begin + sizes;
+  bucket_dim = coord.dims().inner();
+}
+const auto sizes = bin_sizes(indices, dims);
+const auto [begin, total_size] = sizes_to_begin(sizes);
+const auto end = begin + sizes;
+*/
   // TODO We probably want to omit the coord used for grouping in the non-edge
   // case, since it just contains the same value duplicated for every row in the
   // bin.
   // Note that we should then also recreate that variable in concatenate, to
   // ensure that those operations are reversible.
-  auto binned = bin(array, indices, sizes);
+  auto binned = bin2(var, indices, dims);
   std::map<Dim, Variable> coords;
   for (const auto &edge : edges)
     coords[edge.dims().inner()] = copy(edge);
-  return {make_bins(zip(begin, end), bucket_dim, std::move(binned)),
-          std::move(coords)};
+  return {binned, std::move(coords)};
 }
 } // namespace
 
@@ -357,8 +447,8 @@ DataArray bucketby(const DataArrayConstView &array,
                    const std::vector<VariableConstView> &edges,
                    const std::vector<VariableConstView> &groups,
                    const std::vector<Dim> &dim_order) {
-  DataArrayConstView maybe_concat(array);
-  DataArray tmp;
+  // DataArrayConstView maybe_concat(array);
+  // DataArray tmp;
   if (array.dtype() == dtype<bucket<DataArray>>) {
     /*
     // TODO The need for this check may be an indicator that we should support
@@ -385,6 +475,7 @@ DataArray bucketby(const DataArrayConstView &array,
     }
     */
 
+#if 0
     // 1. Build dims if empty
     // TODO take into account dim_order, including handling grouping without
     // given groups
@@ -410,10 +501,23 @@ DataArray bucketby(const DataArrayConstView &array,
 
     auto bucketed = bucketby_impl(buffer, edges, groups, dim_order,
                                   std::move(indices), dim, begin_end.dims());
-    copy_metadata(maybe_concat, bucketed);
+#endif
+    // const auto input_bin_sizes = bucket_sizes(array.data());
+    // auto indices =
+    //    resize(makeVariable<scipp::index>(Values{0}), input_bin_sizes);
+    // buckets::reserve(indices, input_bin_sizes);
+
+    auto bucketed = bucketby_impl(array.data(), edges, groups, dim_order);
+    copy_metadata(array, bucketed);
     return bucketed;
   } else {
-    return bucketby_impl(maybe_concat, edges, groups, dim_order);
+    const auto dim = array.dims().inner();
+    const auto begin = makeVariable<scipp::index>(Values{0});
+    const auto end = makeVariable<scipp::index>(Values{array.dims()[dim]});
+    // TODO use bins_view instead
+    const auto tmp = DataArray(make_bins(zip(begin, end), dim, copy(array)));
+    return bucketby(tmp, edges, groups, dim_order);
+    // return bucketby_impl(maybe_concat, edges, groups, dim_order);
   }
 }
 
