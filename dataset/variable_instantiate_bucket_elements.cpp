@@ -14,6 +14,9 @@ namespace scipp::variable {
 
 INSTANTIATE_BUCKET_VARIABLE(DatasetView, bucket<Dataset>)
 INSTANTIATE_BUCKET_VARIABLE(DataArrayView, bucket<DataArray>)
+INSTANTIATE_BUCKET_VARIABLE(DataArrayView_observer, bucket<DataArrayView>)
+INSTANTIATE_BUCKET_VARIABLE(DataArrayConstView_observer,
+                            bucket<DataArrayConstView>)
 
 } // namespace scipp::variable
 

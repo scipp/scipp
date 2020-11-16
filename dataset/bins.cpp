@@ -142,6 +142,18 @@ Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
   return make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
+Variable make_non_owning_bins(const VariableView &indices, const Dim dim,
+                              const DataArrayView &buffer) {
+  return {std::make_unique<variable::DataModel<bucket<DataArrayView>>>(
+      indices, dim, buffer)};
+}
+
+Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
+                              const DataArrayConstView &buffer) {
+  return {std::make_unique<variable::DataModel<bucket<DataArrayConstView>>>(
+      indices, dim, buffer)};
+}
+
 namespace {
 template <class T> Variable bucket_sizes_impl(const VariableConstView &view) {
   const auto &indices = std::get<0>(view.constituents<bucket<T>>());
