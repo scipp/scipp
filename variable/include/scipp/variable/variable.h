@@ -41,6 +41,11 @@ void expect0D(const Dimensions &dims);
 class VariableConstView;
 class VariableView;
 
+template <class T>
+using bin_indices_t = std::conditional_t<
+    std::is_base_of_v<VariableConstView, typename T::buffer_type>,
+    VariableConstView, VariableView>;
+
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. In addition it has a unit and a set of dimension
 /// labels.
@@ -138,6 +143,12 @@ public:
   core::ElementArrayViewParams array_params() const noexcept {
     return {0, dims(), dims(), {}};
   }
+
+  template <class T>
+  std::tuple<VariableConstView, Dim, typename T::const_element_type>
+  constituents() const;
+  template <class T>
+  std::tuple<bin_indices_t<T>, Dim, typename T::element_type> constituents();
 
   template <class T>
   std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
@@ -270,11 +281,6 @@ protected:
   Dimensions m_dims;
   Dimensions m_dataDims; // not always actual, can be pretend, e.g. with reshape
 };
-
-template <class T>
-using bin_indices_t = std::conditional_t<
-    std::is_base_of_v<VariableConstView, typename T::buffer_type>,
-    VariableConstView, VariableView>;
 
 /** Mutable view into (a subset of) a Variable.
  *
