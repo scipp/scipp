@@ -40,20 +40,6 @@ template <class T> auto find_sorting_permutation(const T &key) {
   return p;
 }
 
-Variable bin_index(const VariableConstView &var,
-                   const VariableConstView &edges) {
-  const auto dim = edges.dims().inner();
-  if (all(is_linspace(edges, dim)).value<bool>()) {
-    return variable::transform(var, subspan_view(edges, dim),
-                               core::element::bin_index_linspace);
-  } else {
-    if (!is_sorted(edges, dim))
-      throw except::BinEdgeError("Bin edges must be sorted.");
-    return variable::transform(var, subspan_view(edges, dim),
-                               core::element::bin_index_sorted_edges);
-  }
-}
-
 void update_indices_by_binning(const VariableView &indices,
                                const VariableConstView &key,
                                const VariableConstView &edges) {
@@ -76,13 +62,6 @@ Variable groups_to_map(const VariableConstView &var, const Dim dim) {
                              core::element::groups_to_map);
 }
 
-Variable group_index(const VariableConstView &var,
-                     const VariableConstView &groups) {
-  const auto dim = groups.dims().inner();
-  const auto map = groups_to_map(groups, dim);
-  return variable::transform(var, map, core::element::group_index);
-}
-
 void update_indices_by_grouping(const VariableView &indices,
                                 const VariableConstView &key,
                                 const VariableConstView &groups) {
@@ -90,30 +69,6 @@ void update_indices_by_grouping(const VariableView &indices,
   const auto map = groups_to_map(groups, dim);
   variable::transform_in_place(indices, key, map,
                                core::element::update_indices_by_grouping);
-}
-
-void bin_index_to_full_index(const VariableView &index,
-                             const Dimensions &dims) {
-  auto sizes = makeVariable<scipp::index>(Dims{Dim::X}, Shape{dims.volume()});
-  variable::accumulate_in_place(subspan_view(sizes, Dim::X), index,
-                                core::element::bin_index_to_full_index);
-}
-
-auto shrink(const Dimensions &dims) {
-  auto shrunk = dims;
-  shrunk.resize(dims.inner(), dims[dims.inner()] - 1);
-  return shrunk;
-}
-
-/// `dims` provides dimensions of pre-existing binning, `edges` define
-/// additional dimensions.
-Variable bin_sizes(const VariableConstView &indices, Dimensions dims) {
-  Variable sizes = makeVariable<scipp::index>(dims);
-  const auto s = sizes.values<scipp::index>().as_span();
-  for (const auto i : indices.values<scipp::index>().as_span())
-    if (i >= 0)
-      ++s[i];
-  return sizes;
 }
 
 template <class T> Variable as_subspan_view(T &&binned) {
@@ -142,24 +97,9 @@ Variable bin_sizes2(const VariableConstView &sub_bin, const scipp::index nbin) {
   const auto nbins = broadcast(nbin * units::one, sub_bin.dims());
   auto sizes = resize(sub_bin, nbins);
   buckets::reserve(sizes, nbins);
-  // const auto &[indices, dim, buffer] =
-  // sizes.constituents<bucket<Variable>>();
-  // TODO how can we avoid writing subspan_view
-  // transform_in_place(subspan_view(buffer, dim, indices),
-  // subspan_view(sub_bin));
   variable::transform_in_place(
       as_subspan_view(sizes), as_subspan_view(sub_bin),
       core::element::count_indices); // transform bins, not bin element
-
-  // Variable slices = makeVariable<scipp::index_pair>(
-  //    Dims{dim}, Shape{indices.dims.volume() * nbin});
-  // Variable sizes = makeVariable<scipp::index>(
-  //    Dims{dim}, Shape{indices.dims.volume() * nbin});
-
-  // const auto s = sizes.values<scipp::index>().as_span();
-  // for (const auto i : indices.values<scipp::index>().as_span())
-  //  if (i >= 0)
-  //    ++s[i];
   return sizes;
 }
 
@@ -182,99 +122,12 @@ Variable bin_sizes2(const VariableConstView &sub_bin, const scipp::index nbin) {
 //   - can we achieve this by specifying reverse dim order, with no extra code?
 // - proceeed as above
 
-template <class T> struct Bin {
-  static auto apply(const VariableConstView &var,
-                    const VariableConstView &indices,
-                    const VariableConstView &sizes) {
-    auto [begin, total_size] = sizes_to_begin(sizes);
-    auto dims = var.dims();
-    // Output may be smaller since values outside bins are dropped.
-    dims.resize(dims.inner(), total_size);
-    auto binned = variable::variableFactory().create(
-        var.dtype(), dims, var.unit(), var.hasVariances());
-    const auto indices_ = indices.values<scipp::index>().as_span();
-    const auto values = var.values<T>().as_span();
-    const auto binned_values = binned.values<T>().as_span();
-    const auto current = begin.values<scipp::index>().as_span();
-    const auto size = scipp::size(values);
-    if (var.hasVariances()) {
-      const auto variances = var.variances<T>().as_span();
-      const auto binned_variances = binned.variances<T>().as_span();
-      for (scipp::index i = 0; i < size; ++i) {
-        const auto i_bin = indices_[i];
-        if (i_bin < 0)
-          continue;
-        binned_variances[current[i_bin]] = variances[i];
-        binned_values[current[i_bin]++] = values[i];
-      }
-    } else {
-      for (scipp::index i = 0; i < size; ++i) {
-        const auto i_bin = indices_[i];
-        if (i_bin < 0)
-          continue;
-        binned_values[current[i_bin]++] = values[i];
-      }
-    }
-    return binned;
-  }
-};
-
-auto bin(const VariableConstView &var, const VariableConstView &indices,
-         const VariableConstView &sizes) {
-  return core::CallDType<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-                         std::string>::apply<Bin>(var.dtype(), var, indices,
-                                                  sizes);
-}
-
 template <class Out>
 auto bin2(Out &&out, const Variable &in, const VariableConstView &sizes,
           const VariableConstView &indices) {
-  // Size/begin of all sub-bins of an input bin
-  // auto [begin, total_size] = sizes_to_begin(buckets::sum(sizes));
-  // Output may be smaller since values outside sub-bins are dropped.
-  // `binned` does not contain sub-bin dims/ranges yet
-  // const auto filtered_input_bin_size = buckets::sum(sizes);
-  // auto binned = resize(data, filtered_input_bin_size);
-  // buckets::reserve(binned, filtered_input_bin_size);
-  /*
-  auto dims = in_buffer.dims();
-  dims.resize(dim, total_size);
-  auto binned_buffer = variable::variableFactory().create(
-      in_buffer.dtype(), dims, in_buffer.unit(), in_buffer.hasVariances());
-      */
-
-  // if we also use binned_slices, can we "push back"
-  // const auto begin_end = unzip(binned_slices);
-  // Need:
-  // target bin indices *within* input bin (no need for existing bin index!?
-  // how to make subspan view covering multiple dims? reshape first?
-  // use a binned var instead?
-  //
-  // bin_sizes should be var of same dims as (binned) input with (equal sized)
-  // bins containing list of output bin sizes
-  //
-  // indices has same dims as (binned) input, "transform" to different bin
-  // sizes?
-
-  // data should be bins_view
   transform_in_place(as_subspan_view(out), as_subspan_view(sizes),
                      as_subspan_view(in), as_subspan_view(indices),
                      core::element::bin);
-  // return std::get<2>(binned.to_constituents<bucket<Variable>>());
-
-  // transform_in_place(subspan_view(binned_buffer, dim, binned_slices),
-  //                   subspan_view(binned_slices, /* all dims not in input */),
-  //                   subspan_view(in_buffer, dim, in_slices),
-  //                   subspan_view(indices, dim, ), core::element::bin);
-}
-
-auto bin(const DataArrayConstView &data, const VariableConstView &indices,
-         const VariableConstView &sizes) {
-  return dataset::transform(data, [indices, sizes](const auto &var) {
-    return var.dims().contains(indices.dims().inner())
-               ? bin(var, indices, sizes)
-               : copy(var);
-  });
 }
 
 void exclusive_scan_bins(const VariableView &var) {
@@ -291,23 +144,8 @@ auto bin2(const VariableConstView &data, const VariableConstView &indices,
 
   const auto &[ignored_input_indices, buffer_dim, in_buffer] =
       data.constituents<bucket<T>>();
-  std::cout << data << '\n';
-  std::cout << indices << '\n';
-  std::cout << dims << '\n';
   const auto nbin = dims.volume();
   auto output_bin_sizes = bin_sizes2(indices, nbin);
-  // cumulative sum gives subbin offset
-  // TODO This is wrong if there are dims that are not rebinned, I think?
-  // const auto &output_bin_sizes_params =
-  //    output_bin_sizes.constituents<bucket<Variable>>();
-  // auto offsets = copy(std::get<2>(output_bin_sizes_params));
-  // const auto offsets_vals = offsets.values<scipp::index>();
-  // should operate on "transpose"
-  // std::exclusive_scan(offsets_vals.begin(), offsets_vals.end(),
-  //                    offsets_vals.begin(), 0);
-  // offsets = make_bins(copy(std::get<0>(output_bin_sizes_params)),
-  //                    std::get<1>(output_bin_sizes_params),
-  //                    std::move(offsets));
   auto offsets = output_bin_sizes;
   std::cout << "output_bin_sizes\n" << output_bin_sizes << '\n';
   Variable filtered_input_bin_size;
@@ -461,50 +299,12 @@ DataArray bucketby_impl(const VariableConstView &var,
 }
 } // namespace
 
-Variable make_index_range(const Dim dim, const scipp::index size) {
-  auto var = makeVariable<scipp::index>(Dims{dim}, Shape{size});
-  auto vals = var.values<scipp::index>().as_span();
-  std::iota(vals.begin(), vals.end(), 0);
-  return var;
-}
-
 DataArray bucketby(const DataArrayConstView &array,
                    const std::vector<VariableConstView> &edges,
                    const std::vector<VariableConstView> &groups,
                    const std::vector<Dim> &dim_order) {
   if (array.dtype() == dtype<bucket<DataArray>>) {
-#if 0
-    // 1. Build dims if empty
-    // TODO take into account dim_order, including handling grouping without
-    // given groups
-    static_cast<void>(dim_order) Dimensions binning_dims;
-    for (const auto &group : groups)
-      binning_dims.add_inner(group.dims().inner());
-    for (const auto &edge : edges)
-      binning_dims.add_inner(edge.dims().inner());
-
-    // 2. Build input bin index table
-    auto indices = makeVariable<scipp::index>(0);
-    for (const auto dim : array.dims().labels()) {
-      size = array.dims()[dim];
-      indices *= size * units::one;
-      if (binning_dims.contains[dim]) // changed binning, pretend same input bin
-        indices = indices + makeVariable<scipp::index>(Dims{dim}, Shape{size});
-      else
-        indices = indices + make_index_range(dim, size);
-    }
-
-    // 3. Broadcast table to all events in bin
-    indices = broadcast(indices, end - begin);
-
-    auto bucketed = bucketby_impl(buffer, edges, groups, dim_order,
-                                  std::move(indices), dim, begin_end.dims());
-#endif
-    // const auto input_bin_sizes = bucket_sizes(array.data());
-    // auto indices =
-    //    resize(makeVariable<scipp::index>(Values{0}), input_bin_sizes);
-    // buckets::reserve(indices, input_bin_sizes);
-
+    // TODO if rebinning, take into account masks (or fail)!
     auto bucketed =
         bucketby_impl<DataArray>(array.data(), edges, groups, dim_order);
     copy_metadata(array, bucketed);
@@ -513,17 +313,21 @@ DataArray bucketby(const DataArrayConstView &array,
     const auto dim = array.dims().inner();
     // pretend existing binning along outermost binning dim to enable threading
     // TODO automatic setup with reasoble bin count
-    const Dimensions dims(edges.front().dims().inner(), 3);
+    const Dimensions dims(edges.front().dims().inner(), 4);
     const auto size = array.dims()[dim];
     auto begin = makeVariable<scipp::index>(dims);
-    begin.values<scipp::index>()[1] = size / 2;
-    begin.values<scipp::index>()[2] = size;
+    begin.values<scipp::index>()[0] = 0 * (size / 4);
+    begin.values<scipp::index>()[1] = 1 * (size / 4);
+    begin.values<scipp::index>()[2] = 2 * (size / 4);
+    begin.values<scipp::index>()[3] = 3 * (size / 4);
     auto end = makeVariable<scipp::index>(dims);
-    end.values<scipp::index>()[0] = size / 2;
-    end.values<scipp::index>()[1] = size;
-    end.values<scipp::index>()[2] = size;
+    end.values<scipp::index>()[0] = 1 * (size / 4);
+    end.values<scipp::index>()[1] = 2 * (size / 4);
+    end.values<scipp::index>()[2] = 3 * (size / 4);
+    end.values<scipp::index>()[3] = size;
     const auto indices = zip(begin, end);
     const auto tmp = make_non_owning_bins(indices, dim, array);
+    // TODO lift metadata to outer if possible
     return bucketby_impl<DataArrayConstView>(tmp, edges, groups, dim_order);
     // return bucketby_impl(maybe_concat, edges, groups, dim_order);
   }

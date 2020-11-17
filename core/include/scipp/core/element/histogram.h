@@ -103,34 +103,6 @@ static constexpr auto histogram = overloaded{
     transform_flags::expect_variance_arg<2>,
     transform_flags::expect_no_variance_arg<3>};
 
-template <class T> using bin_index_arg = std::tuple<T, scipp::span<const T>>;
-
-static constexpr auto bin_index =
-    overloaded{element::arg_list<bin_index_arg<double>, bin_index_arg<float>>,
-               [](const units::Unit &coord, const units::Unit &edges) {
-                 expect::equals(coord, edges);
-                 return units::one;
-               },
-               transform_flags::expect_no_variance_arg<0>,
-               transform_flags::expect_no_variance_arg<1>};
-
-// Special faster implementation for linear bins.
-static constexpr auto bin_index_linspace =
-    overloaded{bin_index, [](const auto &x, const auto &edges) -> scipp::index {
-                 const auto [offset, nbin, scale] =
-                     core::linear_edge_params(edges);
-                 const double bin = (x - offset) * scale;
-                 return (bin < 0.0 || bin >= nbin) ? -1 : bin;
-               }};
-
-static constexpr auto bin_index_sorted_edges =
-    overloaded{bin_index, [](const auto &x, const auto &edges) -> scipp::index {
-                 auto it = std::upper_bound(edges.begin(), edges.end(), x);
-                 return (it == edges.begin() || it == edges.end())
-                            ? -1
-                            : --it - edges.begin();
-               }};
-
 template <class T>
 using update_indices_by_binning_arg =
     std::tuple<scipp::index, T, scipp::span<const T>>;
@@ -189,23 +161,6 @@ static constexpr auto groups_to_map = overloaded{
     }};
 
 template <class T>
-using group_index_arg = std::tuple<T, std::unordered_map<T, scipp::index>>;
-
-static constexpr auto group_index = overloaded{
-    element::arg_list<group_index_arg<int64_t>, group_index_arg<int32_t>,
-                      group_index_arg<std::string>>,
-    [](const units::Unit &coord, const units::Unit &groups) {
-      expect::equals(coord, groups);
-      return units::one;
-    },
-    transform_flags::expect_no_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>,
-    [](const auto &x, const auto &groups) -> scipp::index {
-      const auto it = groups.find(x);
-      return it == groups.end() ? -1 : it->second;
-    }};
-
-template <class T>
 using update_indices_by_grouping_arg =
     std::tuple<scipp::index, T, std::unordered_map<T, scipp::index>>;
 
@@ -226,19 +181,9 @@ static constexpr auto update_indices_by_grouping =
                  index += it == groups.end() ? -1 : it->second;
                }};
 
-static constexpr auto bin_index_to_full_index = overloaded{
-    element::arg_list<std::tuple<scipp::span<scipp::index>, scipp::index>>,
-    transform_flags::expect_no_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>,
-    [](auto &size, auto &index) {
-      if (index < 0)
-        return;
-      index += size[index]++;
-    }};
-
 // - Each span is covers an *input* bin.
 // - `bin_sizes` Sizes of the output bins
-// - `bins` Start indices of the output bins
+// - `offsets` Start indices of the output bins
 // - `bin_indices` Target output bin index (within input bin)
 template <class T>
 using bin_arg = std::tuple<span<T>, span<const scipp::index>, span<const T>,
@@ -250,14 +195,9 @@ static constexpr auto bin = overloaded{
     transform_flags::expect_in_variance_if_out_variance,
     [](units::Unit &binned, const units::Unit &, const units::Unit &data,
        const units::Unit &) { binned = data; },
-    [](const auto &binned, const auto &bin_sizes, const auto &data,
+    [](const auto &binned, const auto &offsets, const auto &data,
        const auto &bin_indices) {
-      // NOTE TODO rename, bin_sizes now useed as bin
-      std::vector<scipp::index> bins(bin_sizes.begin(), bin_sizes.end());
-      // bins.reserve(bin_sizes.size());
-      // TODO Should we do this outside, just once?
-      // std::exclusive_scan(bin_sizes.begin(), bin_sizes.end(),
-      //                    std::back_inserter(bins), 0);
+      std::vector<scipp::index> bins(offsets.begin(), offsets.end());
       const auto size = scipp::size(bin_indices);
       using T = std::decay_t<decltype(data)>;
       for (scipp::index i = 0; i < size; ++i) {

@@ -114,9 +114,22 @@ protected:
       makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
   Variable edges_y =
       makeVariable<double>(Dims{Dim::Y}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  Variable edges_x_coarse =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2, 1, 2});
+  Variable edges_y_coarse =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, -1, 2});
 };
+
+TEST_F(BinTest, rebin_coarse_to_fine_1d) {
+  const auto table = make_table(30);
+  EXPECT_EQ(bucketby(table, {edges_x}),
+            bucketby(bucketby(table, {edges_x_coarse}), {edges_x}));
+}
 
 TEST_F(BinTest, 1d) {
   const auto table = make_table(30);
-  bucketby(table, {edges_x});
+  const auto x = bucketby(table, {edges_x});
+  const auto x_then_y = bucketby(x, {edges_y});
+  const auto xy = bucketby(table, {edges_x, edges_y});
+  EXPECT_EQ(xy, x_then_y);
 }
