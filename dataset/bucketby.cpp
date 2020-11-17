@@ -261,10 +261,10 @@ DataArray sortby(const DataArrayConstView &array, const Dim dim) {
 
 namespace {
 template <class T>
-DataArray bucketby_impl(const VariableConstView &var,
-                        const std::vector<VariableConstView> &edges,
-                        const std::vector<VariableConstView> &groups,
-                        const std::vector<Dim> &) {
+Variable bucketby_impl(const VariableConstView &var,
+                       const std::vector<VariableConstView> &edges,
+                       const std::vector<VariableConstView> &groups,
+                       const std::vector<Dim> &) {
   const auto &[begin_end, dim, array] = var.constituents<bucket<T>>();
   const auto input_bins = bins_view<T>(var);
   const auto [begin, end] = unzip(begin_end);
@@ -286,29 +286,42 @@ DataArray bucketby_impl(const VariableConstView &var,
     update_indices_by_binning(indices, coord, edge);
     dims.addInner(edge_dim, edge.dims()[edge_dim] - 1);
   }
+  return bin2<T>(var, indices, dims);
+}
+
+DataArray add_metadata(Variable &&binned, const DataArrayConstView &array,
+                       const std::vector<VariableConstView> &edges,
+                       const std::vector<VariableConstView> &groups) {
   // TODO We probably want to omit the coord used for grouping in the non-edge
   // case, since it just contains the same value duplicated for every row in the
   // bin.
   // Note that we should then also recreate that variable in concatenate, to
   // ensure that those operations are reversible.
-  auto binned = bin2<T>(var, indices, dims);
+  // TODO lift metadata to outer if possible
   std::map<Dim, Variable> coords;
   for (const auto &edge : edges)
     coords[edge.dims().inner()] = copy(edge);
-  return {binned, std::move(coords)};
+  const auto &[begin_end, dim, buffer] =
+      binned.constituents<bucket<DataArray>>();
+  for (const auto &[dim, coord] : array.aligned_coords())
+    if (!coords.count(dim) && !coord.dims().contains(dim))
+      coords[dim] = copy(coord);
+
+  return {std::move(binned), std::move(coords)};
 }
+
 } // namespace
 
 DataArray bucketby(const DataArrayConstView &array,
                    const std::vector<VariableConstView> &edges,
                    const std::vector<VariableConstView> &groups,
                    const std::vector<Dim> &dim_order) {
+  Variable binned;
   if (array.dtype() == dtype<bucket<DataArray>>) {
     // TODO if rebinning, take into account masks (or fail)!
-    auto bucketed =
-        bucketby_impl<DataArray>(array.data(), edges, groups, dim_order);
-    copy_metadata(array, bucketed);
-    return bucketed;
+    binned = bucketby_impl<DataArray>(array.data(), edges, groups, dim_order);
+    // only copy coord not depending on rebinned dims
+    // copy_metadata(array, bucketed);
   } else {
     const auto dim = array.dims().inner();
     // pretend existing binning along outermost binning dim to enable threading
@@ -327,10 +340,10 @@ DataArray bucketby(const DataArrayConstView &array,
     end.values<scipp::index>()[3] = size;
     const auto indices = zip(begin, end);
     const auto tmp = make_non_owning_bins(indices, dim, array);
-    // TODO lift metadata to outer if possible
-    return bucketby_impl<DataArrayConstView>(tmp, edges, groups, dim_order);
+    binned = bucketby_impl<DataArrayConstView>(tmp, edges, groups, dim_order);
     // return bucketby_impl(maybe_concat, edges, groups, dim_order);
   }
+  return add_metadata(std::move(binned), array, edges, groups);
 }
 
 } // namespace scipp::dataset
