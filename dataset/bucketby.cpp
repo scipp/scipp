@@ -5,6 +5,7 @@
 #include <iostream>
 #include <numeric>
 
+#include "scipp/core/element/cumulative.h"
 #include "scipp/core/element/histogram.h"
 #include "scipp/core/element/permute.h"
 #include "scipp/core/parallel.h"
@@ -12,6 +13,7 @@
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
@@ -275,6 +277,10 @@ auto bin(const DataArrayConstView &data, const VariableConstView &indices,
   });
 }
 
+void exclusive_scan_bins(const VariableView &var) {
+  transform_in_place(as_subspan_view(var), core::element::exclusive_scan);
+}
+
 template <class T>
 auto bin2(const VariableConstView &data, const VariableConstView &indices,
           const Dimensions &dims) {
@@ -290,39 +296,67 @@ auto bin2(const VariableConstView &data, const VariableConstView &indices,
   std::cout << dims << '\n';
   const auto nbin = dims.volume();
   auto output_bin_sizes = bin_sizes2(indices, nbin);
+  // cumulative sum gives subbin offset
+  // TODO This is wrong if there are dims that are not rebinned, I think?
+  // const auto &output_bin_sizes_params =
+  //    output_bin_sizes.constituents<bucket<Variable>>();
+  // auto offsets = copy(std::get<2>(output_bin_sizes_params));
+  // const auto offsets_vals = offsets.values<scipp::index>();
+  // should operate on "transpose"
+  // std::exclusive_scan(offsets_vals.begin(), offsets_vals.end(),
+  //                    offsets_vals.begin(), 0);
+  // offsets = make_bins(copy(std::get<0>(output_bin_sizes_params)),
+  //                    std::get<1>(output_bin_sizes_params),
+  //                    std::move(offsets));
+  auto offsets = output_bin_sizes;
+  std::cout << "output_bin_sizes\n" << output_bin_sizes << '\n';
   Variable filtered_input_bin_size;
   if (rebinned_dims.empty()) {
     filtered_input_bin_size = buckets::sum(output_bin_sizes);
+    exclusive_scan_bins(offsets);
   } else {
     filtered_input_bin_size = front(output_bin_sizes);
-    for (const auto dim : rebinned_dims)
+    for (const auto dim : rebinned_dims) {
       output_bin_sizes = sum(output_bin_sizes, dim);
+      // TODO I don't think we can stack the operation like this
+      exclusive_scan(offsets, dim);
+    }
+    auto output_bin_offsets = output_bin_sizes;
+    exclusive_scan_bins(output_bin_offsets);
+    offsets += output_bin_offsets;
   }
-  std::cout << "output_bin_sizes " << output_bin_sizes << '\n';
-  // std::cout << filtered_input_bin_size << '\n';
+  std::cout << "offsets\n" << offsets << '\n';
+  std::cout << "output_bin_sizes\n" << output_bin_sizes << '\n';
+  std::cout << "filtered_input_bin_size\n" << filtered_input_bin_size << '\n';
   auto [begin, total_size] = sizes_to_begin(filtered_input_bin_size);
+  if (rebinned_dims.empty())
+    offsets += begin;
+  std::cout << "begin\n" << begin << '\n';
   total_size = sum(buckets::sum(output_bin_sizes)).value<scipp::index>();
   std::cout << "total_size " << total_size << '\n';
   auto out_buffer = resize_default_init(in_buffer, buffer_dim, total_size);
+  // all point to global range, offsets handles the rst
+  begin -= begin;
   const auto filtered_input_bin_ranges =
-      zip(begin, begin + buckets::sum(output_bin_sizes));
+      zip(begin, begin + total_size * units::one);
+  // const auto filtered_input_bin_ranges =
+  //    zip(begin, begin + buckets::sum(output_bin_sizes));
   const auto as_bins = [&](const auto &var) {
     return make_non_owning_bins(filtered_input_bin_ranges, buffer_dim, var);
   };
 
   const auto input_bins = bins_view<T>(data);
   // const auto output_bins = bins_view<DataArrayView>(binned);
-  bin2(as_bins(out_buffer.data()), input_bins.data(), output_bin_sizes,
-       indices);
+  bin2(as_bins(out_buffer.data()), input_bins.data(), offsets, indices);
   for (const auto &[dim, coord] : out_buffer.coords()) {
     if (coord.dims().contains(buffer_dim))
-      bin2(as_bins(out_buffer.coords()[dim]), input_bins.coords()[dim],
-           output_bin_sizes, indices);
+      bin2(as_bins(out_buffer.coords()[dim]), input_bins.coords()[dim], offsets,
+           indices);
   }
   for (const auto &[dim, coord] : out_buffer.masks()) {
     if (coord.dims().contains(buffer_dim))
-      bin2(as_bins(out_buffer.masks()[dim]), input_bins.masks()[dim],
-           output_bin_sizes, indices);
+      bin2(as_bins(out_buffer.masks()[dim]), input_bins.masks()[dim], offsets,
+           indices);
   }
 
   auto output_dims = data.dims();

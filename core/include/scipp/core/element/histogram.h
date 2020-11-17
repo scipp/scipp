@@ -252,11 +252,12 @@ static constexpr auto bin = overloaded{
        const units::Unit &) { binned = data; },
     [](const auto &binned, const auto &bin_sizes, const auto &data,
        const auto &bin_indices) {
-      std::vector<scipp::index> bins;
-      bins.reserve(bin_sizes.size());
+      // NOTE TODO rename, bin_sizes now useed as bin
+      std::vector<scipp::index> bins(bin_sizes.begin(), bin_sizes.end());
+      // bins.reserve(bin_sizes.size());
       // TODO Should we do this outside, just once?
-      std::exclusive_scan(bin_sizes.begin(), bin_sizes.end(),
-                          std::back_inserter(bins), 0);
+      // std::exclusive_scan(bin_sizes.begin(), bin_sizes.end(),
+      //                    std::back_inserter(bins), 0);
       const auto size = scipp::size(bin_indices);
       using T = std::decay_t<decltype(data)>;
       for (scipp::index i = 0; i < size; ++i) {

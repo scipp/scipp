@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "random.h"
+
 #include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/string.h"
 
@@ -91,4 +93,30 @@ TEST_F(DataArrayBucketByTest, 2d) {
             sorted_table.slice({Dim::Event, 1, 3}));
 
   EXPECT_EQ(bucketby(bucketby(table, {edges_x}), {edges_y}), bucketed);
+}
+
+class BinTest : public ::testing::Test {
+protected:
+  auto make_table(const scipp::index size) {
+    Random rand;
+    rand.seed(0);
+    const Dimensions dims(Dim::Row, size);
+
+    const auto data =
+        makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
+    const auto x =
+        makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
+    const auto y =
+        makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
+    return DataArray(data, {{Dim::X, x}, {Dim::Y, y}});
+  }
+  Variable edges_x =
+      makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
+  Variable edges_y =
+      makeVariable<double>(Dims{Dim::Y}, Shape{5}, Values{-2, -1, 0, 1, 2});
+};
+
+TEST_F(BinTest, 1d) {
+  const auto table = make_table(30);
+  bucketby(table, {edges_x});
 }
