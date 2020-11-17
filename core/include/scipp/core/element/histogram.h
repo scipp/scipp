@@ -286,4 +286,9 @@ static constexpr auto count_indices = overloaded{
           ++counts[i];
     }};
 
+static constexpr auto front =
+    overloaded{element::arg_list<scipp::span<const scipp::index>>,
+               [](const units::Unit &u) { return u; },
+               [](const auto &range) { return range.front(); }};
+
 } // namespace scipp::core::element

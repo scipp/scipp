@@ -93,4 +93,9 @@ void fill(const VariableView &var, const VariableConstView &value) {
   transform_in_place(var, value, core::element::fill);
 }
 
+/// Fill variable with zeros.
+void fill_zeros(const VariableView &var) {
+  transform_in_place(var, core::element::fill_zeros);
+}
+
 } // namespace scipp::variable

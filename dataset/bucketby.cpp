@@ -130,6 +130,10 @@ template <class T> Variable as_subspan_view(T &&binned) {
   }
 }
 
+Variable front(const VariableConstView &var) {
+  return variable::transform(as_subspan_view(var), core::element::front);
+}
+
 /// indices is a binned variable with sub-bin indices, i.e., new bins within
 /// bins
 Variable bin_sizes2(const VariableConstView &sub_bin, const scipp::index nbin) {
@@ -274,29 +278,37 @@ auto bin(const DataArrayConstView &data, const VariableConstView &indices,
 template <class T>
 auto bin2(const VariableConstView &data, const VariableConstView &indices,
           const Dimensions &dims) {
+  std::vector<Dim> rebinned_dims;
+  for (const auto dim : dims.labels())
+    if (data.dims().contains(dim))
+      rebinned_dims.push_back(dim);
+
   const auto &[ignored_input_indices, buffer_dim, in_buffer] =
       data.constituents<bucket<T>>();
   std::cout << data << '\n';
   std::cout << indices << '\n';
   std::cout << dims << '\n';
   const auto nbin = dims.volume();
-  const auto output_bin_sizes = bin_sizes2(indices, nbin);
-  const auto filtered_input_bin_size = buckets::sum(output_bin_sizes);
-  // std::cout << output_bin_sizes << '\n';
+  auto output_bin_sizes = bin_sizes2(indices, nbin);
+  Variable filtered_input_bin_size;
+  if (rebinned_dims.empty()) {
+    filtered_input_bin_size = buckets::sum(output_bin_sizes);
+  } else {
+    filtered_input_bin_size = front(output_bin_sizes);
+    for (const auto dim : rebinned_dims)
+      output_bin_sizes = sum(output_bin_sizes, dim);
+  }
+  std::cout << "output_bin_sizes " << output_bin_sizes << '\n';
   // std::cout << filtered_input_bin_size << '\n';
   auto [begin, total_size] = sizes_to_begin(filtered_input_bin_size);
+  total_size = sum(buckets::sum(output_bin_sizes)).value<scipp::index>();
+  std::cout << "total_size " << total_size << '\n';
   auto out_buffer = resize_default_init(in_buffer, buffer_dim, total_size);
-  // auto binned = resize(data, filtered_input_bin_size);
-  // buckets::reserve(binned, filtered_input_bin_size);
-  // const auto &[ignored_filtered_input_bin_indices, buffer_dim, buffer] =
-  //    binned.constituents<bucket<DataArray>>();
   const auto filtered_input_bin_ranges =
-      zip(begin, begin + filtered_input_bin_size);
+      zip(begin, begin + buckets::sum(output_bin_sizes));
   const auto as_bins = [&](const auto &var) {
     return make_non_owning_bins(filtered_input_bin_ranges, buffer_dim, var);
   };
-  // auto binned = make_non_owning_bins(
-  //    zip(begin, begin + filtered_input_bin_size), buffer_dim, out_buffer);
 
   const auto input_bins = bins_view<T>(data);
   // const auto output_bins = bins_view<DataArrayView>(binned);

@@ -111,4 +111,8 @@ constexpr auto fill =
     overloaded{arg_list<double, float, std::tuple<float, double>>,
                [](auto &x, const auto &value) { x = value; }};
 
+constexpr auto fill_zeros =
+    overloaded{arg_list<double, float, int64_t, int32_t>, [](units::Unit &) {},
+               [](auto &x) { x = 0; }};
+
 } // namespace scipp::core::element
