@@ -3,6 +3,7 @@ compile_commands.json
 
 build/
 install/
+cmake-build-*
 .clangd/
 .idea/
 .vscode/
