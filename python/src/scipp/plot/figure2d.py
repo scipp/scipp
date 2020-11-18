@@ -124,8 +124,10 @@ class PlotFigure2d(PlotFigure):
         Update axes labels, scales, tick locations and labels, as well as axes
         limits.
         """
-        self.ax.set_xlabel(axparams["x"]["label"] if self.xlabel is None else self.xlabel)
-        self.ax.set_ylabel(axparams["y"]["label"] if self.ylabel is None else self.ylabel)
+        self.ax.set_xlabel(
+            axparams["x"]["label"] if self.xlabel is None else self.xlabel)
+        self.ax.set_ylabel(
+            axparams["y"]["label"] if self.ylabel is None else self.ylabel)
         self.ax.set_xscale(axparams["x"]["scale"])
         self.ax.set_yscale(axparams["y"]["scale"])
 

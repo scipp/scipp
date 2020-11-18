@@ -89,3 +89,8 @@ def test_plot_4d_with_masks_projection_3d():
                                           values=np.where(
                                               a > 0.5, True, False))
     plot(data, projection="3d")
+
+
+def test_plot_customized_axes():
+    d = make_dense_dataset(ndim=1)
+    plot(d["Sample"], xlabel="MyXlabel", ylabel="MyYlabel", zlabel="MyZlabel")

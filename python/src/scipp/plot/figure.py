@@ -54,7 +54,6 @@ class PlotFigure:
         self.xlabel = xlabel
         self.ylabel = ylabel
 
-
     def is_widget(self):
         """
         Check whether we are using the Matplotlib widget backend or not.

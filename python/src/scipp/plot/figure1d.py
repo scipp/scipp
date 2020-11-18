@@ -33,7 +33,10 @@ class PlotFigure1d(PlotFigure):
                  xlabel=None,
                  ylabel=None):
 
-        super().__init__(ax=ax, figsize=figsize, title=title, padding=padding,
+        super().__init__(ax=ax,
+                         figsize=figsize,
+                         title=title,
+                         padding=padding,
                          xlabel=xlabel,
                          ylabel=ylabel)
 
@@ -102,7 +105,8 @@ class PlotFigure1d(PlotFigure):
             self.ax.set_xlim(
                 [xparams["lims"][0] - deltax, xparams["lims"][1] + deltax])
 
-        self.ax.set_xlabel(xparams["label"] if self.xlabel is None else self.xlabel)
+        self.ax.set_xlabel(
+            xparams["label"] if self.xlabel is None else self.xlabel)
 
         self.ax.xaxis.set_major_locator(
             self.axlocator[xparams["dim"]][xparams["scale"]])
@@ -113,7 +117,7 @@ class PlotFigure1d(PlotFigure):
 
             label = None
             if legend_labels and len(name) > 0:
-                label = name # if len(name) > 0 else " "
+                label = name
 
             self.mask_lines[name] = {}
 

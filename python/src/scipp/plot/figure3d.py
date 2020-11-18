@@ -284,7 +284,8 @@ void main() {
                             tick, precision=1),
                                              position=tick_pos.tolist(),
                                              size=self.tick_size))
-            axis_label = axparams[x]["label"] if self.axlabels[x] is None else self.axlabels[x]
+            axis_label = axparams[x][
+                "label"] if self.axlabels[x] is None else self.axlabels[x]
             ticks_and_labels.add(
                 self._make_axis_tick(
                     string=axis_label,
