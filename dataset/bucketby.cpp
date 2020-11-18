@@ -301,12 +301,11 @@ DataArray add_metadata(Variable &&binned, const DataArrayConstView &array,
   std::map<Dim, Variable> coords;
   for (const auto &edge : edges)
     coords[edge.dims().inner()] = copy(edge);
-  const auto &[begin_end, dim, buffer] =
+  const auto &[begin_end, buffer_dim, buffer] =
       binned.constituents<bucket<DataArray>>();
   for (const auto &[dim, coord] : array.aligned_coords())
-    if (!coords.count(dim) && !coord.dims().contains(dim))
+    if (!coords.count(dim) && !coord.dims().contains(buffer_dim))
       coords[dim] = copy(coord);
-
   return {std::move(binned), std::move(coords)};
 }
 
