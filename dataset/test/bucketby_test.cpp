@@ -4,8 +4,10 @@
 
 #include "random.h"
 
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/string.h"
+#include "scipp/variable/arithmetic.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -126,7 +128,16 @@ TEST_F(BinTest, rebin_coarse_to_fine_1d) {
             bucketby(bucketby(table, {edges_x_coarse}), {edges_x}));
 }
 
-TEST_F(BinTest, 1d) {
+TEST_F(BinTest, rebin_fine_to_coarse_1d) {
+  const auto table = make_table(30);
+  // cut off last digits for approximate floating point comparison
+  const auto truncate = 100.0 * units::one;
+  EXPECT_EQ(truncate + buckets::sum(bucketby(table, {edges_x_coarse})),
+            truncate + buckets::sum(bucketby(bucketby(table, {edges_x}),
+                                             {edges_x_coarse})));
+}
+
+TEST_F(BinTest, 2d) {
   const auto table = make_table(30);
   const auto x = bucketby(table, {edges_x});
   const auto x_then_y = bucketby(x, {edges_y});
