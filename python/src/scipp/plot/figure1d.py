@@ -112,8 +112,8 @@ class PlotFigure1d(PlotFigure):
         for name, hist in xparams["hist"].items():
 
             label = None
-            if legend_labels:
-                label = name if len(name) > 0 else " "
+            if legend_labels and len(name) > 0:
+                label = name # if len(name) > 0 else " "
 
             self.mask_lines[name] = {}
 
