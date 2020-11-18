@@ -120,6 +120,13 @@ protected:
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2, 1, 2});
   Variable edges_y_coarse =
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, -1, 2});
+
+  auto expect_near(const DataArrayConstView &a, const DataArrayConstView &b,
+                   const double scale = 100.0) {
+    // cut off last digits for approximate floating point comparison
+    const auto truncate = scale * units::one;
+    EXPECT_EQ(buckets::sum(a) + truncate, buckets::sum(b) + truncate);
+  }
 };
 
 TEST_F(BinTest, rebin_coarse_to_fine_1d) {
@@ -130,11 +137,8 @@ TEST_F(BinTest, rebin_coarse_to_fine_1d) {
 
 TEST_F(BinTest, rebin_fine_to_coarse_1d) {
   const auto table = make_table(30);
-  // cut off last digits for approximate floating point comparison
-  const auto truncate = 100.0 * units::one;
-  EXPECT_EQ(truncate + buckets::sum(bucketby(table, {edges_x_coarse})),
-            truncate + buckets::sum(bucketby(bucketby(table, {edges_x}),
-                                             {edges_x_coarse})));
+  expect_near(bucketby(table, {edges_x_coarse}),
+              bucketby(bucketby(table, {edges_x}), {edges_x_coarse}));
 }
 
 TEST_F(BinTest, 2d) {
@@ -143,4 +147,32 @@ TEST_F(BinTest, 2d) {
   const auto x_then_y = bucketby(x, {edges_y});
   const auto xy = bucketby(table, {edges_x, edges_y});
   EXPECT_EQ(xy, x_then_y);
+}
+
+TEST_F(BinTest, rebin_coarse_to_fine_2d) {
+  const auto table = make_table(30);
+  const auto xy_coarse = bucketby(table, {edges_x_coarse, edges_y_coarse});
+  const auto xy = bucketby(table, {edges_x, edges_y});
+  EXPECT_EQ(bucketby(xy_coarse, {edges_x, edges_y}), xy);
+}
+
+TEST_F(BinTest, rebin_fine_to_coarse_2d) {
+  const auto table = make_table(30);
+  const auto xy_coarse = bucketby(table, {edges_x_coarse, edges_y_coarse});
+  const auto xy = bucketby(table, {edges_x, edges_y});
+  EXPECT_EQ(bucketby(xy, {edges_x_coarse, edges_y_coarse}), xy_coarse);
+}
+
+TEST_F(BinTest, rebin_coarse_to_fine_2d_inner) {
+  const auto table = make_table(30);
+  const auto xy_coarse = bucketby(table, {edges_x, edges_y_coarse});
+  const auto xy = bucketby(table, {edges_x, edges_y});
+  expect_near(bucketby(xy_coarse, {edges_y}), xy);
+}
+
+TEST_F(BinTest, rebin_coarse_to_fine_2d_outer) {
+  const auto table = make_table(30);
+  const auto xy_coarse = bucketby(table, {edges_x_coarse, edges_y});
+  const auto xy = bucketby(table, {edges_x, edges_y});
+  expect_near(bucketby(xy_coarse, {edges_x}), xy);
 }
