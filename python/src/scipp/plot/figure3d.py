@@ -96,11 +96,6 @@ class PlotFigure3d:
                                     width=figsize[0],
                                     height=figsize[1])
 
-        # self.figure = ipw.HBox(
-        #     [self.toolbar._to_widget(), self.renderer, self.cbar_image])
-
-        return
-
     def _ipython_display_(self):
         """
         IPython display representation for Jupyter notebooks.
