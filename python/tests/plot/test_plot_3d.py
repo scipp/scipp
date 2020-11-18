@@ -92,5 +92,9 @@ def test_plot_4d_with_masks_projection_3d():
 
 
 def test_plot_customized_axes():
-    d = make_dense_dataset(ndim=1)
-    plot(d["Sample"], xlabel="MyXlabel", ylabel="MyYlabel", zlabel="MyZlabel")
+    d = make_dense_dataset(ndim=3)
+    plot(d["Sample"],
+         projection="3d",
+         xlabel="MyXlabel",
+         ylabel="MyYlabel",
+         zlabel="MyZlabel")
