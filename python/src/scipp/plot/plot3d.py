@@ -21,7 +21,8 @@ def plot3d(*args, filename=None, **kwargs):
     sp = SciPlot3d(*args, **kwargs)
     if filename is not None:
         sp.savefig(filename)
-    return sp
+    else:
+        return sp
 
 
 class SciPlot3d(SciPlot):
@@ -49,7 +50,10 @@ class SciPlot3d(SciPlot):
                  background="#f0f0f0",
                  pixel_size=1.0,
                  tick_size=None,
-                 show_outline=True):
+                 show_outline=True,
+                 xlabel=None,
+                 ylabel=None,
+                 zlabel=None):
 
         view_ndims = 3
 
@@ -93,7 +97,10 @@ class SciPlot3d(SciPlot):
             background=background,
             show_outline=show_outline,
             figsize=figsize,
-            extend=self.extend_cmap)
+            extend=self.extend_cmap,
+            xlabel=xlabel,
+            ylabel=ylabel,
+            zlabel=zlabel)
 
         # An additional panel view with widgets to control the cut surface
         self.panel = PlotPanel3d(pixel_size=pixel_size)

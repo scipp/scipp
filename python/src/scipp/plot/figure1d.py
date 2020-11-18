@@ -29,9 +29,13 @@ class PlotFigure1d(PlotFigure):
                  figsize=None,
                  picker=False,
                  legend={"show": True},
-                 padding=None):
+                 padding=None,
+                 xlabel=None,
+                 ylabel=None):
 
-        super().__init__(ax=ax, figsize=figsize, title=title, padding=padding)
+        super().__init__(ax=ax, figsize=figsize, title=title, padding=padding,
+                         xlabel=xlabel,
+                         ylabel=ylabel)
 
         # Matplotlib line containers
         self.data_lines = {}
@@ -64,7 +68,9 @@ class PlotFigure1d(PlotFigure):
         xparams = axparams["x"]
 
         if self.own_axes:
+            title = self.ax.get_title()
             self.ax.clear()
+            self.ax.set_title(title)
 
         if self.mpl_line_params is None:
             self.mpl_line_params = {
@@ -85,7 +91,7 @@ class PlotFigure1d(PlotFigure):
 
         self.ax.set_xscale(xparams["scale"])
         self.ax.set_yscale("log" if self.norm == "log" else "linear")
-        self.ax.set_ylabel(self.unit)
+        self.ax.set_ylabel(self.unit if self.ylabel is None else self.ylabel)
 
         if self.grid:
             self.ax.grid()
@@ -96,7 +102,7 @@ class PlotFigure1d(PlotFigure):
             self.ax.set_xlim(
                 [xparams["lims"][0] - deltax, xparams["lims"][1] + deltax])
 
-        self.ax.set_xlabel(xparams["label"])
+        self.ax.set_xlabel(xparams["label"] if self.xlabel is None else self.xlabel)
 
         self.ax.xaxis.set_major_locator(
             self.axlocator[xparams["dim"]][xparams["scale"]])

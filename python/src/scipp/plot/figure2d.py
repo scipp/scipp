@@ -21,14 +21,23 @@ class PlotFigure2d(PlotFigure):
                  aspect=None,
                  cmap=None,
                  norm=None,
-                 title=None,
+                 name=None,
                  cbar=None,
                  unit=None,
                  masks=None,
                  resolution=None,
-                 extend=None):
+                 extend=None,
+                 title=None,
+                 xlabel=None,
+                 ylabel=None):
 
-        super().__init__(ax=ax, cax=cax, figsize=figsize, title=title, ndim=2)
+        super().__init__(ax=ax,
+                         cax=cax,
+                         figsize=figsize,
+                         title=name if title is None else title,
+                         ndim=2,
+                         xlabel=xlabel,
+                         ylabel=ylabel)
 
         if aspect is None:
             aspect = config.plot.aspect
@@ -115,8 +124,8 @@ class PlotFigure2d(PlotFigure):
         Update axes labels, scales, tick locations and labels, as well as axes
         limits.
         """
-        self.ax.set_xlabel(axparams["x"]["label"])
-        self.ax.set_ylabel(axparams["y"]["label"])
+        self.ax.set_xlabel(axparams["x"]["label"] if self.xlabel is None else self.xlabel)
+        self.ax.set_ylabel(axparams["y"]["label"] if self.ylabel is None else self.ylabel)
         self.ax.set_xscale(axparams["x"]["scale"])
         self.ax.set_yscale(axparams["y"]["scale"])
 

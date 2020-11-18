@@ -20,7 +20,9 @@ class PlotFigure:
                  figsize=None,
                  title=None,
                  padding=None,
-                 ndim=1):
+                 ndim=1,
+                 xlabel=None,
+                 ylabel=None):
         self.fig = None
         self.ax = ax
         self.cax = cax
@@ -49,6 +51,9 @@ class PlotFigure:
 
         self.axformatter = {}
         self.axlocator = {}
+        self.xlabel = xlabel
+        self.ylabel = ylabel
+
 
     def is_widget(self):
         """

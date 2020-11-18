@@ -33,7 +33,10 @@ class PlotFigure3d:
                  tick_size=None,
                  background=None,
                  show_outline=True,
-                 extend=None):
+                 extend=None,
+                 xlabel=None,
+                 ylabel=None,
+                 zlabel=None):
 
         if figsize is None:
             figsize = (config.plot.width, config.plot.height)
@@ -52,7 +55,7 @@ class PlotFigure3d:
             self.masks_scalar_map = cm.ScalarMappable(norm=norm,
                                                       cmap=self.masks_cmap)
 
-        self.axlabels = {"x": "", "y": "", "z": ""}
+        self.axlabels = {"x": xlabel, "y": ylabel, "z": zlabel}
         self.positions = None
         self.pixel_size = pixel_size
         self.tick_size = tick_size
@@ -93,8 +96,8 @@ class PlotFigure3d:
                                     width=figsize[0],
                                     height=figsize[1])
 
-        self.figure = ipw.HBox(
-            [self.toolbar._to_widget(), self.renderer, self.cbar_image])
+        # self.figure = ipw.HBox(
+        #     [self.toolbar._to_widget(), self.renderer, self.cbar_image])
 
         return
 
@@ -108,7 +111,8 @@ class PlotFigure3d:
         """
         Return the renderer and the colorbar into a widget box.
         """
-        return self.figure
+        return ipw.HBox(
+            [self.toolbar._to_widget(), self.renderer, self.cbar_image])
 
     def savefig(self, filename=None):
         """
@@ -280,12 +284,13 @@ void main() {
                             tick, precision=1),
                                              position=tick_pos.tolist(),
                                              size=self.tick_size))
+            axis_label = axparams[x]["label"] if self.axlabels[x] is None else self.axlabels[x]
             ticks_and_labels.add(
                 self._make_axis_tick(
-                    string=axparams[x]["label"],
+                    string=axis_label,
                     position=(iden[axis] * 0.5 * np.sum(axparams[x]["lims"]) +
                               offsets[x]).tolist(),
-                    size=self.tick_size * 0.3 * len(axparams[x]["label"])))
+                    size=self.tick_size * 0.3 * len(axis_label)))
 
         return ticks_and_labels
 
