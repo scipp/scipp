@@ -10,22 +10,7 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
-  /*
-  if (var.dims().contains(dims))
-    return Variable{var};
-  auto newDims = var.dims();
-  const auto labels = dims.labels();
-  for (auto it = labels.end(); it != labels.begin();) {
-    --it;
-    const auto label = *it;
-    if (newDims.contains(label))
-      core::expect::dimensionMatches(newDims, label, dims[label]);
-    else
-      newDims.add(label, dims[label]);
-  }
-  */
   Variable result(var, dims);
-  // result.setDims(newDims);
   result.data().copy(var, result);
   return result;
 }
