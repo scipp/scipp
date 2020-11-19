@@ -87,10 +87,6 @@ template <class T> Variable as_subspan_view(T &&binned) {
   }
 }
 
-Variable front(const VariableConstView &var) {
-  return variable::transform(as_subspan_view(var), core::element::front);
-}
-
 /// indices is a binned variable with sub-bin indices, i.e., new bins within
 /// bins
 Variable bin_sizes2(const VariableConstView &sub_bin, const scipp::index nbin) {
@@ -102,25 +98,6 @@ Variable bin_sizes2(const VariableConstView &sub_bin, const scipp::index nbin) {
       core::element::count_indices); // transform bins, not bin element
   return sizes;
 }
-
-// Notes on threaded impl:
-//
-// If event is in existing bin, it will stay there. Can use existing bin sizes
-// as view over output, and threading will work
-// Example:
-// - existing pixel binning
-// - now bin TOF
-// - output has (potentially smaller) pixel bins, use subspan_view
-// transform_in_place(subspan_view(out, out_buffer_dim, out_bin_range), data,
-// indices)
-// => threading over pixel dim
-//
-// What about binning flat data? order is completely random?
-// - sc.bins() with dummy indices => fake 1d binning
-//   - maybe use make_non_owning_bins?
-// - transpose bucket end/begin (essentially making new dim an outer dim)
-//   - can we achieve this by specifying reverse dim order, with no extra code?
-// - proceeed as above
 
 template <class Out>
 auto bin2(Out &&out, const Variable &in, const VariableConstView &sizes,
@@ -173,11 +150,6 @@ auto bin2(const VariableConstView &data, const VariableConstView &indices,
   // total_size = sum(buckets::sum(output_bin_sizes)).value<scipp::index>();
   std::cout << "total_size " << total_size << '\n';
   auto out_buffer = resize_default_init(in_buffer, buffer_dim, total_size);
-  // all point to global range, offsets handles the rst
-  // NO! only within rebinned bins
-  // begin -= begin;
-  // const auto filtered_input_bin_ranges =
-  //    zip(begin, begin + total_size * units::one);
   const auto filtered_input_bin_ranges =
       zip(begin, begin + buckets::sum(output_bin_sizes));
   const auto as_bins = [&](const auto &var) {
@@ -205,7 +177,6 @@ auto bin2(const VariableConstView &data, const VariableConstView &indices,
     else
       output_dims.addInner(dim, dims[dim]);
   }
-  // output_dims = merge(output_dims, dims);
   std::cout << "output_dims " << output_dims << '\n';
   std::cout << output_bin_sizes << '\n';
   // TODO Why does reshape not throw if volume is too small?
@@ -213,7 +184,6 @@ auto bin2(const VariableConstView &data, const VariableConstView &indices,
       reshape(std::get<2>(output_bin_sizes.constituents<bucket<Variable>>()),
               output_dims);
   std::cout << bin_sizes << '\n';
-  // TODO take into account rebin
   std::tie(begin, total_size) = sizes_to_begin(bin_sizes);
   const auto end = begin + bin_sizes;
   std::cout << begin << '\n';
@@ -349,6 +319,12 @@ auto ordered_groups_or_edges(const DataArrayConstView &array,
   return ordered;
 }
 
+auto make_range(const scipp::index begin, const scipp::index end,
+                const scipp::index stride, const Dim dim) {
+  return exclusive_scan(
+      broadcast(stride * units::one, {dim, (end - begin) / stride}), dim);
+}
+
 } // namespace
 
 DataArray bucketby(const DataArrayConstView &array,
@@ -356,30 +332,22 @@ DataArray bucketby(const DataArrayConstView &array,
                    const std::vector<VariableConstView> &groups,
                    const std::vector<Dim> &dim_order) {
   Variable binned;
+  const auto ordered = ordered_groups_or_edges(array, edges, groups, dim_order);
   if (array.dtype() == dtype<bucket<DataArray>>) {
     // TODO if rebinning, take into account masks (or fail)!
-    binned = bucketby_impl<DataArray>(
-        array.data(), ordered_groups_or_edges(array, edges, groups, dim_order));
+    binned = bucketby_impl<DataArray>(array.data(), ordered);
   } else {
-    const auto dim = array.dims().inner();
-    // pretend existing binning along outermost binning dim to enable threading
+    // Pretend existing binning along outermost binning dim to enable threading
     // TODO automatic setup with reasoble bin count
-    const Dimensions dims(edges.front().dims().inner(), 4);
+    const auto dim = array.dims().inner();
     const auto size = array.dims()[dim];
-    auto begin = makeVariable<scipp::index>(dims);
-    begin.values<scipp::index>()[0] = 0 * (size / 4);
-    begin.values<scipp::index>()[1] = 1 * (size / 4);
-    begin.values<scipp::index>()[2] = 2 * (size / 4);
-    begin.values<scipp::index>()[3] = 3 * (size / 4);
-    auto end = makeVariable<scipp::index>(dims);
-    end.values<scipp::index>()[0] = 1 * (size / 4);
-    end.values<scipp::index>()[1] = 2 * (size / 4);
-    end.values<scipp::index>()[2] = 3 * (size / 4);
-    end.values<scipp::index>()[3] = size;
+    const auto stride = std::max(scipp::index(1), size / 12);
+    auto begin = make_range(0, size, stride, edges.front().dims().inner());
+    auto end = begin + stride * units::one;
+    end.values<scipp::index>().as_span().back() = size;
     const auto indices = zip(begin, end);
     const auto tmp = make_non_owning_bins(indices, dim, array);
-    binned = bucketby_impl<DataArrayConstView>(
-        tmp, ordered_groups_or_edges(array, edges, groups, dim_order));
+    binned = bucketby_impl<DataArrayConstView>(tmp, ordered);
   }
   return add_metadata(std::move(binned), array, edges, groups);
 }
