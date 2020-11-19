@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <iostream>
 #include <numeric>
 
 #include "scipp/core/element/cumulative.h"
@@ -121,7 +120,6 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   auto output_bin_sizes = bin_sizes(indices, nbin);
   auto offsets = output_bin_sizes;
   fill_zeros(offsets);
-  std::cout << "output_bin_sizes\n" << output_bin_sizes << '\n';
   for (const auto dim : data.dims().labels())
     if (dims.contains(dim)) {
       offsets += exclusive_scan(output_bin_sizes, dim);
@@ -129,17 +127,11 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
     }
   offsets += exclusive_scan_bins(output_bin_sizes);
   Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
-  std::cout << "offsets\n" << offsets << '\n';
-  std::cout << "output_bin_sizes\n" << output_bin_sizes << '\n';
-  std::cout << "filtered_input_bin_size\n" << filtered_input_bin_size << '\n';
-  // TODO need to broadcast if rebinning
   auto [begin, total_size] = sizes_to_begin(filtered_input_bin_size);
-  begin = broadcast(begin, data.dims());
-  std::cout << "begin\n" << begin << '\n';
-  std::cout << "total_size " << total_size << '\n';
+  begin = broadcast(begin, data.dims()); // required for some cases of rebinning
   auto out_buffer = resize_default_init(in_buffer, buffer_dim, total_size);
   const auto filtered_input_bin_ranges =
-      zip(begin, begin + buckets::sum(output_bin_sizes));
+      zip(begin, begin + filtered_input_bin_size);
   const auto as_bins = [&](const auto &var) {
     return make_non_owning_bins(filtered_input_bin_ranges, buffer_dim, var);
   };
@@ -164,17 +156,12 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
     else
       output_dims.addInner(dim, dims[dim]);
   }
-  std::cout << "output_dims " << output_dims << '\n';
-  std::cout << output_bin_sizes << '\n';
   // TODO Why does reshape not throw if volume is too small?
   const auto bin_sizes =
       reshape(std::get<2>(output_bin_sizes.constituents<bucket<Variable>>()),
               output_dims);
-  std::cout << bin_sizes << '\n';
   std::tie(begin, total_size) = sizes_to_begin(bin_sizes);
   const auto end = begin + bin_sizes;
-  std::cout << begin << '\n';
-  std::cout << end << '\n';
   return make_bins(zip(begin, end), buffer_dim, std::move(out_buffer));
 }
 
