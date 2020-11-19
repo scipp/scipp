@@ -24,34 +24,9 @@ TEST(ElementAbsTest, value_and_variance) {
   EXPECT_EQ(element::abs(x), abs(x));
 }
 
-TEST(ElementAbsOutArgTest, unit) {
-  units::Unit m(units::m);
-  units::Unit out(units::one);
-  element::abs_out_arg(out, m);
-  EXPECT_EQ(out, units::abs(m));
-}
-
-TEST(ElementAbsOutArgTest, value_double) {
-  double out;
-  element::abs_out_arg(out, -1.23);
-  EXPECT_EQ(out, std::abs(-1.23));
-}
-
-TEST(ElementAbsOutArgTest, value_float) {
-  float out;
-  element::abs_out_arg(out, -1.23456789f);
-  EXPECT_EQ(out, std::abs(-1.23456789f));
-}
-
-TEST(ElementAbsOutArgTest, value_and_variance) {
-  const ValueAndVariance x(-2.0, 1.0);
-  ValueAndVariance out(x);
-  element::abs_out_arg(out, x);
-  EXPECT_EQ(out, abs(x));
-}
-
-TEST(ElementAbsOutArgTest, supported_types) {
-  auto supported = decltype(element::abs_out_arg)::types{};
+TEST(ElementAbsTest, supported_types) {
+  auto supported = decltype(element::abs)::types{};
+  static_assert(std::tuple_size_v<decltype(supported)> == 2);
   std::get<double>(supported);
   std::get<float>(supported);
 }
