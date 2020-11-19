@@ -121,11 +121,10 @@ protected:
   Variable edges_y_coarse =
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, -1, 2});
 
-  auto expect_near(const DataArrayConstView &a, const DataArrayConstView &b,
-                   const double scale = 100.0) {
-    // cut off last digits for approximate floating point comparison
-    const auto truncate = scale * units::one;
-    EXPECT_EQ(buckets::sum(a) + truncate, buckets::sum(b) + truncate);
+  void expect_near(const DataArrayConstView &a, const DataArrayConstView &b) {
+    // "round" last digits for approximate floating point comparison
+    const auto rounding = 4.0 * units::one * buckets::sum(a);
+    EXPECT_EQ(buckets::sum(a) + rounding, buckets::sum(b) + rounding);
   }
 };
 
@@ -160,7 +159,7 @@ TEST_F(BinTest, rebin_fine_to_coarse_2d) {
   const auto table = make_table(30);
   const auto xy_coarse = bucketby(table, {edges_x_coarse, edges_y_coarse});
   const auto xy = bucketby(table, {edges_x, edges_y});
-  expect_near(bucketby(xy, {edges_x_coarse, edges_y_coarse}), xy_coarse, 200.0);
+  expect_near(bucketby(xy, {edges_x_coarse, edges_y_coarse}), xy_coarse);
 }
 
 TEST_F(BinTest, rebin_coarse_to_fine_2d_inner) {
