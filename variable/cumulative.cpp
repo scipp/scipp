@@ -16,7 +16,7 @@ Variable exclusive_scan(const VariableConstView &var, const Dim dim) {
   Variable cumulative(var.slice({dim, 0}));
   fill_zeros(cumulative);
   Variable out(var);
-  accumulate_in_place(cumulative, out, core::element::exclusive_scan2);
+  accumulate_in_place(cumulative, out, core::element::exclusive_scan);
   return out;
 }
 
