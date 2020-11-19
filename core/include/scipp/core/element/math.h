@@ -24,21 +24,16 @@ constexpr auto norm = overloaded{arg_list<Eigen::Vector3d>,
                                  [](const auto &x) { return x.norm(); },
                                  [](const units::Unit &x) { return x; }};
 
-constexpr auto sqrt = [](const auto x) noexcept {
-  using std::sqrt;
-  return sqrt(x);
-};
+constexpr auto sqrt =
+    overloaded{arg_list<double, float>, [](const auto x) noexcept {
+                 using std::sqrt;
+                 return sqrt(x);
+               }};
 
 constexpr auto dot = overloaded{
     arg_list<Eigen::Vector3d>,
     [](const auto &a, const auto &b) { return a.dot(b); },
     [](const units::Unit &a, const units::Unit &b) { return a * b; }};
-
-constexpr auto sqrt_out_arg =
-    overloaded{arg_list<double, float>, [](auto &x, const auto y) {
-                 using std::sqrt;
-                 x = sqrt(y);
-               }};
 
 constexpr auto reciprocal = overloaded{
     arg_list<double, float>,

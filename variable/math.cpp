@@ -43,7 +43,7 @@ Variable sqrt(Variable &&var) {
 }
 
 VariableView sqrt(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, element::sqrt_out_arg);
+  transform_in_place(out, var, element::assign_op{element::sqrt});
   return out;
 }
 

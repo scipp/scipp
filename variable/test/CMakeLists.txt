@@ -22,7 +22,7 @@ add_executable(
   variable_keyword_args_constructor_test.cpp
   variable_scalar_accessors_test.cpp
   variable_test.cpp
-)
+  variable_math_test.cpp)
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(
   ${TARGET_NAME}
