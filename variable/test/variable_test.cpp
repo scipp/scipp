@@ -499,34 +499,6 @@ TEST_F(VariableTest_3d, slice_range) {
                                  Variances(vars_z13.begin(), vars_z13.end())));
 }
 
-TEST(Variable, broadcast) {
-  auto reference =
-      makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{3, 2, 2},
-                           Values{1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4},
-                           Variances{5, 6, 7, 8, 5, 6, 7, 8, 5, 6, 7, 8});
-  auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                  Values{1, 2, 3, 4}, Variances{5, 6, 7, 8});
-
-  // No change if dimensions exist.
-  EXPECT_EQ(broadcast(var, {Dim::X, 2}), var);
-  EXPECT_EQ(broadcast(var, {Dim::Y, 2}), var);
-  EXPECT_EQ(broadcast(var, {{Dim::Y, 2}, {Dim::X, 2}}), var);
-
-  // No transpose done, should this fail? Failing is not really necessary since
-  // we have labeled dimensions.
-  EXPECT_EQ(broadcast(var, {{Dim::X, 2}, {Dim::Y, 2}}), var);
-
-  EXPECT_EQ(broadcast(var, {Dim::Z, 3}), reference);
-}
-
-TEST(Variable, broadcast_fail) {
-  auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                  Values{1, 2, 3, 4});
-  EXPECT_THROW_MSG(broadcast(var, {Dim::X, 3}), except::DimensionLengthError,
-                   "Expected dimension to be in {{y, 2}, {x, 2}}, "
-                   "got x with mismatching length 3.");
-}
-
 TEST(VariableView, full_const_view) {
   const auto var =
       makeVariable<double>(Dimensions{Dim::X, 3}, Values{}, Variances{});

@@ -9,7 +9,7 @@
 
 namespace scipp::variable {
 
-SCIPP_VARIABLE_EXPORT
-void exclusive_scan(const VariableView &var, const Dim dim);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+exclusive_scan(const VariableConstView &var, const Dim dim);
 
 } // namespace scipp::variable

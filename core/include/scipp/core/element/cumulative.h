@@ -20,4 +20,10 @@ constexpr auto exclusive_scan = overloaded{
     transform_flags::expect_no_variance_arg<0>, [](units::Unit &) {},
     [](auto &x) { std::exclusive_scan(x.begin(), x.end(), x.begin(), 0); }};
 
+constexpr auto exclusive_scan2 =
+    overloaded{arg_list<int64_t, int32_t>, [](auto &sum, auto &x) {
+                 sum += x;
+                 x = sum - x;
+               }};
+
 } // namespace scipp::core::element

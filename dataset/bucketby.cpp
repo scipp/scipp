@@ -130,16 +130,18 @@ auto bin2(Out &&out, const Variable &in, const VariableConstView &sizes,
                      core::element::bin);
 }
 
-void exclusive_scan_bins(const VariableView &var) {
-  transform_in_place(as_subspan_view(var), core::element::exclusive_scan);
+Variable exclusive_scan_bins(const VariableView &var) {
+  Variable out(var);
+  transform_in_place(as_subspan_view(out), core::element::exclusive_scan);
+  return out;
 }
 
 template <class T>
 auto bin2(const VariableConstView &data, const VariableConstView &indices,
           const Dimensions &dims) {
   std::vector<Dim> rebinned_dims;
-  for (const auto dim : dims.labels())
-    if (data.dims().contains(dim))
+  for (const auto dim : data.dims().labels())
+    if (dims.contains(dim))
       rebinned_dims.push_back(dim);
 
   const auto &[ignored_input_indices, buffer_dim, in_buffer] =
@@ -148,37 +150,36 @@ auto bin2(const VariableConstView &data, const VariableConstView &indices,
   auto output_bin_sizes = bin_sizes2(indices, nbin);
   auto offsets = output_bin_sizes;
   std::cout << "output_bin_sizes\n" << output_bin_sizes << '\n';
-  Variable filtered_input_bin_size;
   if (rebinned_dims.empty()) {
-    filtered_input_bin_size = buckets::sum(output_bin_sizes);
-    exclusive_scan_bins(offsets);
+    offsets = exclusive_scan_bins(offsets);
   } else {
-    filtered_input_bin_size = front(output_bin_sizes);
+    fill_zeros(offsets);
     for (const auto dim : rebinned_dims) {
+      offsets += exclusive_scan(output_bin_sizes, dim);
       output_bin_sizes = sum(output_bin_sizes, dim);
-      // TODO I don't think we can stack the operation like this
-      exclusive_scan(offsets, dim);
     }
-    auto output_bin_offsets = output_bin_sizes;
-    exclusive_scan_bins(output_bin_offsets);
-    offsets += output_bin_offsets;
+    offsets += exclusive_scan_bins(output_bin_sizes);
   }
+  Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
   std::cout << "offsets\n" << offsets << '\n';
   std::cout << "output_bin_sizes\n" << output_bin_sizes << '\n';
   std::cout << "filtered_input_bin_size\n" << filtered_input_bin_size << '\n';
+  // TODO need to broadcast if rebinning
   auto [begin, total_size] = sizes_to_begin(filtered_input_bin_size);
-  if (rebinned_dims.empty())
-    offsets += begin;
+  begin = broadcast(begin, data.dims());
+  // if (rebinned_dims.empty())
+  //  offsets += begin;
   std::cout << "begin\n" << begin << '\n';
-  total_size = sum(buckets::sum(output_bin_sizes)).value<scipp::index>();
+  // total_size = sum(buckets::sum(output_bin_sizes)).value<scipp::index>();
   std::cout << "total_size " << total_size << '\n';
   auto out_buffer = resize_default_init(in_buffer, buffer_dim, total_size);
   // all point to global range, offsets handles the rst
-  begin -= begin;
-  const auto filtered_input_bin_ranges =
-      zip(begin, begin + total_size * units::one);
+  // NO! only within rebinned bins
+  // begin -= begin;
   // const auto filtered_input_bin_ranges =
-  //    zip(begin, begin + buckets::sum(output_bin_sizes));
+  //    zip(begin, begin + total_size * units::one);
+  const auto filtered_input_bin_ranges =
+      zip(begin, begin + buckets::sum(output_bin_sizes));
   const auto as_bins = [&](const auto &var) {
     return make_non_owning_bins(filtered_input_bin_ranges, buffer_dim, var);
   };
@@ -198,10 +199,13 @@ auto bin2(const VariableConstView &data, const VariableConstView &indices,
   }
 
   auto output_dims = data.dims();
-  for (const auto dim : dims.labels())
+  for (const auto dim : dims.labels()) {
     if (output_dims.contains(dim))
-      output_dims.erase(dim);
-  output_dims = merge(output_dims, dims);
+      output_dims.resize(dim, dims[dim]);
+    else
+      output_dims.addInner(dim, dims[dim]);
+  }
+  // output_dims = merge(output_dims, dims);
   std::cout << "output_dims " << output_dims << '\n';
   std::cout << output_bin_sizes << '\n';
   // TODO Why does reshape not throw if volume is too small?
@@ -260,11 +264,11 @@ DataArray sortby(const DataArrayConstView &array, const Dim dim) {
 }
 
 namespace {
+enum class AxisType { Group, Edge };
 template <class T>
-Variable bucketby_impl(const VariableConstView &var,
-                       const std::vector<VariableConstView> &edges,
-                       const std::vector<VariableConstView> &groups,
-                       const std::vector<Dim> &) {
+Variable bucketby_impl(
+    const VariableConstView &var,
+    const std::vector<std::pair<AxisType, VariableConstView>> &coords) {
   const auto &[begin_end, dim, array] = var.constituents<bucket<T>>();
   const auto input_bins = bins_view<T>(var);
   const auto [begin, end] = unzip(begin_end);
@@ -272,19 +276,16 @@ Variable bucketby_impl(const VariableConstView &var,
   auto indices =
       make_bins(copy(begin_end), dim, makeVariable<scipp::index>(array.dims()));
   Dimensions dims;
-  for (const auto &group : groups) {
-    const auto group_dim = group.dims().inner();
-    const auto coord = input_bins.coords()[group_dim];
-    update_indices_by_grouping(indices, coord, group);
-    dims.addInner(group_dim, group.dims()[group_dim]);
-  }
-  for (const auto &edge : edges) {
-    const auto edge_dim = edge.dims().inner();
-    const auto coord = input_bins.coords()[edge_dim];
-    // TODO does this mean we can do ragged only in two steps?
-    // i.e., indices must have same outer dim as edge
-    update_indices_by_binning(indices, coord, edge);
-    dims.addInner(edge_dim, edge.dims()[edge_dim] - 1);
+  for (const auto &[type, coord] : coords) {
+    const auto coord_dim = coord.dims().inner();
+    const auto labels = input_bins.coords()[coord_dim];
+    if (type == AxisType::Group) {
+      update_indices_by_grouping(indices, labels, coord);
+      dims.addInner(coord_dim, coord.dims()[coord_dim]);
+    } else {
+      update_indices_by_binning(indices, labels, coord);
+      dims.addInner(coord_dim, coord.dims()[coord_dim] - 1);
+    }
   }
   return bin2<T>(var, indices, dims);
 }
@@ -309,6 +310,45 @@ DataArray add_metadata(Variable &&binned, const DataArrayConstView &array,
   return {std::move(binned), std::move(coords)};
 }
 
+// Order is defined as:
+// 1. Any rebinned dim and dims inside the first rebinned dim, in the order of
+// appearance in array.
+// 2. All new grouped dims.
+// 3. All new binned dims.
+auto ordered_groups_or_edges(const DataArrayConstView &array,
+                             const std::vector<VariableConstView> &edges,
+                             const std::vector<VariableConstView> &groups,
+                             const std::vector<Dim> &dim_order) {
+  constexpr auto get_dims = [](const auto &coords) {
+    Dimensions dims;
+    for (const auto &coord : coords)
+      dims.addInner(coord.dims().inner(), 1);
+    return dims;
+  };
+  auto edges_dims = get_dims(edges);
+  auto groups_dims = get_dims(groups);
+  std::vector<std::pair<AxisType, VariableConstView>> ordered;
+  bool rebin = false;
+  const auto dims = array.dims();
+  for (const auto dim : dims.labels()) {
+    if (edges_dims.contains(dim) || groups_dims.contains(dim))
+      rebin = true;
+    if (groups_dims.contains(dim))
+      ordered.emplace_back(AxisType::Group, groups[groups_dims.index(dim)]);
+    else if (edges_dims.contains(dim))
+      ordered.emplace_back(AxisType::Edge, edges[edges_dims.index(dim)]);
+    else if (rebin)
+      ordered.emplace_back(AxisType::Edge, array.coords()[dim]);
+  }
+  for (const auto &group : groups)
+    if (!dims.contains(group.dims().inner()))
+      ordered.emplace_back(AxisType::Group, group);
+  for (const auto &edge : edges)
+    if (!dims.contains(edge.dims().inner()))
+      ordered.emplace_back(AxisType::Edge, edge);
+  return ordered;
+}
+
 } // namespace
 
 DataArray bucketby(const DataArrayConstView &array,
@@ -318,9 +358,8 @@ DataArray bucketby(const DataArrayConstView &array,
   Variable binned;
   if (array.dtype() == dtype<bucket<DataArray>>) {
     // TODO if rebinning, take into account masks (or fail)!
-    binned = bucketby_impl<DataArray>(array.data(), edges, groups, dim_order);
-    // only copy coord not depending on rebinned dims
-    // copy_metadata(array, bucketed);
+    binned = bucketby_impl<DataArray>(
+        array.data(), ordered_groups_or_edges(array, edges, groups, dim_order));
   } else {
     const auto dim = array.dims().inner();
     // pretend existing binning along outermost binning dim to enable threading
@@ -339,8 +378,8 @@ DataArray bucketby(const DataArrayConstView &array,
     end.values<scipp::index>()[3] = size;
     const auto indices = zip(begin, end);
     const auto tmp = make_non_owning_bins(indices, dim, array);
-    binned = bucketby_impl<DataArrayConstView>(tmp, edges, groups, dim_order);
-    // return bucketby_impl(maybe_concat, edges, groups, dim_order);
+    binned = bucketby_impl<DataArrayConstView>(
+        tmp, ordered_groups_or_edges(array, edges, groups, dim_order));
   }
   return add_metadata(std::move(binned), array, edges, groups);
 }

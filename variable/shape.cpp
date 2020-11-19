@@ -10,6 +10,7 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
+  /*
   if (var.dims().contains(dims))
     return Variable{var};
   auto newDims = var.dims();
@@ -22,8 +23,9 @@ Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
     else
       newDims.add(label, dims[label]);
   }
-  Variable result(var);
-  result.setDims(newDims);
+  */
+  Variable result(var, dims);
+  // result.setDims(newDims);
   result.data().copy(var, result);
   return result;
 }

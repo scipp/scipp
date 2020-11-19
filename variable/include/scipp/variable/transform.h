@@ -460,7 +460,7 @@ template <bool dry_run> struct in_place {
 
   template <class... Ts, class Op, class Var, class... Other>
   static void transform_data(std::tuple<Ts...> &&, Op op, Var &&var,
-                             const Other &... other) {
+                             Other &&... other) {
     using namespace detail;
     try {
       visit<Ts...>::apply(makeTransformInPlace(op), var, other...);
@@ -536,7 +536,7 @@ void transform_in_place(Var &&var, const VariableConstView &var1,
 /// the unit, since it would be hard to track, e.g., in multiplication
 /// operations.
 template <class... TypePairs, class Var, class Other, class Op>
-void accumulate_in_place(Var &&var, const Other &other, Op op) {
+void accumulate_in_place(Var &&var, Other &&other, Op op) {
   scipp::expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,

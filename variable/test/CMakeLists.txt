@@ -11,6 +11,7 @@ add_executable(
   rebin_test.cpp
   reduce_logical_test.cpp
   reduce_various_test.cpp
+  shape_test.cpp
   sort_test.cpp
   subspan_view_test.cpp
   transform_test.cpp

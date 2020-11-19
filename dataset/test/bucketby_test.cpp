@@ -160,13 +160,13 @@ TEST_F(BinTest, rebin_fine_to_coarse_2d) {
   const auto table = make_table(30);
   const auto xy_coarse = bucketby(table, {edges_x_coarse, edges_y_coarse});
   const auto xy = bucketby(table, {edges_x, edges_y});
-  EXPECT_EQ(bucketby(xy, {edges_x_coarse, edges_y_coarse}), xy_coarse);
+  expect_near(bucketby(xy, {edges_x_coarse, edges_y_coarse}), xy_coarse, 200.0);
 }
 
 TEST_F(BinTest, rebin_coarse_to_fine_2d_inner) {
   const auto table = make_table(30);
-  const auto xy_coarse = bucketby(table, {edges_x, edges_y_coarse});
-  const auto xy = bucketby(table, {edges_x, edges_y});
+  const auto xy_coarse = bucketby(table, {edges_x_coarse, edges_y_coarse});
+  const auto xy = bucketby(table, {edges_x_coarse, edges_y});
   expect_near(bucketby(xy_coarse, {edges_y}), xy);
 }
 

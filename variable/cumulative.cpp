@@ -4,25 +4,20 @@
 /// @author Simon Heybrock
 #include "scipp/variable/cumulative.h"
 #include "scipp/core/element/cumulative.h"
-#include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 
-using namespace scipp::core;
+using namespace scipp;
 
 namespace scipp::variable {
 
-/// In-place std::exclusive_scan along dim.
-void exclusive_scan(const VariableView &var, const Dim dim) {
-  // transform_in_place(subspan_view(var, dim), core::element::exclusive_scan);
-  Variable sum(var.slice({dim, 0}));
-  fill_zeros(var.slice({dim, 0}));
-  for (scipp::index i = 1; i < var.dims()[dim]; ++i) {
-    const auto &current = var.slice({dim, i});
-    sum += current;
-    current *= makeVariable<int32_t>(Values{-1});
-    current += sum;
-  }
+/// Return std::exclusive_scan along dim.
+Variable exclusive_scan(const VariableConstView &var, const Dim dim) {
+  Variable cumulative(var.slice({dim, 0}));
+  fill_zeros(cumulative);
+  Variable out(var);
+  accumulate_in_place(cumulative, out, core::element::exclusive_scan2);
+  return out;
 }
 
 } // namespace scipp::variable
