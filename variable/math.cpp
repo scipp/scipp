@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element/math.h"
+#include "scipp/core/element/util.h"
 #include "scipp/variable/math.h"
 #include "scipp/variable/transform.h"
 
@@ -20,7 +21,7 @@ Variable abs(Variable &&var) {
 }
 
 VariableView abs(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, element::abs_out_arg);
+  transform_in_place(out, var, element::assign_op{element::abs});
   return out;
 }
 
