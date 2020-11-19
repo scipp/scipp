@@ -103,9 +103,6 @@ static constexpr auto call_impl(Op &&op, const Indices &indices,
 template <class Op, class Indices, class Out, class... Args>
 static constexpr void call(Op &&op, const Indices &indices, Out &&out,
                            Args &&... args) {
-  // TODO problem here and elsewhere:
-  // for typed bin access we do *not* want to operate with raw underlying array,
-  // rather transform should use the ElementArrayView::operator[] (or begin/end)
   const auto i = iter::get<0>(indices);
   auto &&out_ = value_maybe_variance(out, i);
   out_ = call_impl(std::forward<Op>(op), indices,

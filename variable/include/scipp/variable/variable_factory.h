@@ -70,10 +70,6 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
 
 SCIPP_VARIABLE_EXPORT bool is_buckets(const VariableConstView &var);
 
-template <class T> struct is_typed_bins : std::false_type {};
-template <class T>
-struct is_typed_bins<bucket<typed_bin<T>>> : std::true_type {};
-
 /// Dynamic factory for variables.
 ///
 /// The factory can be used for creating variables with a dtype that is not
@@ -109,16 +105,12 @@ public:
   void set_elem_unit(const VariableView &var, const units::Unit &u) const;
   bool hasVariances(const VariableConstView &var) const;
   template <class T, class Var> auto values(Var &&var) const {
-    if constexpr (is_typed_bins<T>::value)
+    if (!is_buckets(var))
       return var.template values<T>();
-    else {
-      if (!is_buckets(var))
-        return var.template values<T>();
-      const auto &maker = *m_makers.at(var.dtype());
-      auto &&data = maker.data(view(var));
-      return ElementArrayView(maker.array_params(var),
-                              data.template values<T>().data());
-    }
+    const auto &maker = *m_makers.at(var.dtype());
+    auto &&data = maker.data(view(var));
+    return ElementArrayView(maker.array_params(var),
+                            data.template values<T>().data());
   }
   template <class T, class Var> auto variances(Var &&var) const {
     if (!is_buckets(var))

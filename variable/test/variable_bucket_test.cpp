@@ -126,34 +126,3 @@ TEST_F(VariableBucketTest, to_constituents) {
   EXPECT_EQ(dim1, Dim::X);
   EXPECT_EQ(buf1, buffer);
 }
-
-TEST_F(VariableBucketTest, typed_bin_const_variable) {
-  const auto view =
-      variable::make_non_owning_typed_bins<double>(VariableConstView(var));
-  EXPECT_FALSE(view.hasVariances());
-  auto bins = view.values<bucket<typed_bin<const double>>>();
-  EXPECT_EQ(bins.size(), 2);
-  EXPECT_FALSE(bins[0].variances());
-  EXPECT_EQ(bins[0].size(), 2);
-  EXPECT_EQ(bins[0].values()[0], 1.0);
-  EXPECT_EQ(bins[0].values()[1], 2.0);
-  EXPECT_FALSE(bins[1].variances());
-  EXPECT_EQ(bins[1].size(), 2);
-  EXPECT_EQ(bins[1].values()[0], 3.0);
-  EXPECT_EQ(bins[1].values()[1], 4.0);
-}
-
-TEST_F(VariableBucketTest, typed_bin_variable) {
-  const auto view = variable::make_non_owning_typed_bins<double>(var);
-  EXPECT_FALSE(view.hasVariances());
-  auto bins = view.values<bucket<typed_bin<double>>>();
-  EXPECT_EQ(bins.size(), 2);
-  EXPECT_FALSE(bins[0].variances());
-  EXPECT_EQ(bins[0].size(), 2);
-  EXPECT_EQ(bins[0].values()[0], 1.0);
-  EXPECT_EQ(bins[0].values()[1], 2.0);
-  EXPECT_FALSE(bins[1].variances());
-  EXPECT_EQ(bins[1].size(), 2);
-  EXPECT_EQ(bins[1].values()[0], 3.0);
-  EXPECT_EQ(bins[1].values()[1], 4.0);
-}

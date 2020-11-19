@@ -12,10 +12,6 @@ INSTANTIATE_BUCKET_VARIABLE(VariableView, bucket<Variable>)
 INSTANTIATE_BUCKET_VARIABLE(VariableView_observer, bucket<VariableView>)
 INSTANTIATE_BUCKET_VARIABLE(VariableConstView_observer,
                             bucket<VariableConstView>)
-INSTANTIATE_BUCKET_VARIABLE(VariableView_observer_double,
-                            bucket<typed_bin<double>>)
-INSTANTIATE_BUCKET_VARIABLE(VariableView_observer_const_double,
-                            bucket<typed_bin<const double>>)
 
 template <class T>
 class BucketVariableMakerVariable : public BucketVariableMaker<T> {
