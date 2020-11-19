@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 
 #include "scipp/core/element/util.h"
+#include "scipp/core/element/math.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 
@@ -118,4 +119,15 @@ TEST(ElementUtilTest, get) {
   EXPECT_EQ(core::element::get<0>(units::s), units::s);
   EXPECT_EQ(core::element::get<1>(units::m), units::m);
   EXPECT_EQ(core::element::get<1>(units::s), units::s);
+}
+
+TEST(ElementUtilTest, assign_op) {
+  auto aop = assign_op{scipp::core::element::abs};
+  static_assert(std::is_same_v<decltype(aop)::types,
+                               decltype(scipp::core::element::abs)::types>);
+  for (auto x : {54.2415698, -1.412, 0.0, 2.0}) {
+    double y;
+    aop(y, x);
+    EXPECT_EQ(y, scipp::core::element::abs(x));
+  }
 }
