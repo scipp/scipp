@@ -107,8 +107,8 @@ TEST_F(ElementNanArithmeticTest, plus_equals_with_both_nan) {
 }
 TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_nan_ValueAndVariance) {
   ValueAndVariance<double> asNaN{dNaN, 0};
-  ValueAndVariance<double> x{1, 0};
-  auto expected = x + ValueAndVariance<double>{0, 0};
-  nan_plus_equals(x, asNaN);
-  EXPECT_EQ(expected, x);
+  ValueAndVariance<double> z{1, 0};
+  auto expected = z + ValueAndVariance<double>{0, 0};
+  nan_plus_equals(z, asNaN);
+  EXPECT_EQ(expected, z);
 }
