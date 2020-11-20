@@ -113,9 +113,8 @@ Variable bin_sizes(const VariableConstView &sub_bin, const scipp::index nbin) {
 template <class Out>
 auto bin(Out &&out, const Variable &in, const VariableConstView &sizes,
          const VariableConstView &indices) {
-  transform_in_place(as_subspan_view(out), as_subspan_view(sizes),
-                     as_subspan_view(in), as_subspan_view(indices),
-                     core::element::bin);
+  transform_in_place(out, as_subspan_view(sizes), as_subspan_view(in),
+                     as_subspan_view(indices), core::element::bin);
 }
 
 Variable exclusive_scan_bins(const VariableView &var) {
@@ -127,8 +126,6 @@ Variable exclusive_scan_bins(const VariableView &var) {
 template <class T>
 auto bin(const VariableConstView &data, const VariableConstView &indices,
          const Dimensions &dims) {
-  const auto &[ignored_input_indices, buffer_dim, in_buffer] =
-      data.constituents<bucket<T>>();
   const auto nbin = dims.volume();
   auto output_bin_sizes = bin_sizes(indices, nbin);
   auto offsets = output_bin_sizes;
@@ -142,25 +139,19 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
   auto [begin, total_size] = sizes_to_begin(filtered_input_bin_size);
   begin = broadcast(begin, data.dims()); // required for some cases of rebinning
-  auto out_buffer = resize_default_init(in_buffer, buffer_dim, total_size);
   const auto filtered_input_bin_ranges =
       zip(begin, begin + filtered_input_bin_size);
-  const auto as_bins = [&](const auto &var) {
-    return make_non_owning_bins(filtered_input_bin_ranges, buffer_dim, var);
-  };
-
   const auto input_bins = bins_view<T>(data);
-  bin(as_bins(out_buffer.data()), input_bins.data(), offsets, indices);
-  for (const auto &[dim, coord] : out_buffer.coords()) {
-    if (coord.dims().contains(buffer_dim))
-      bin(as_bins(out_buffer.coords()[dim]), input_bins.coords()[dim], offsets,
-          indices);
-  }
-  for (const auto &[dim, coord] : out_buffer.masks()) {
-    if (coord.dims().contains(buffer_dim))
-      bin(as_bins(out_buffer.masks()[dim]), input_bins.masks()[dim], offsets,
-          indices);
-  }
+  auto out_buffer = dataset::transform(input_bins, [&](auto &&var) {
+    if (!is_buckets(var))
+      return std::move(var);
+    const auto &[input_indices, buffer_dim, in_buffer] =
+        var.template constituents<core::bin<VariableConstView>>();
+    auto out = resize_default_init(in_buffer, buffer_dim, total_size);
+    bin(subspan_view(out, buffer_dim, filtered_input_bin_ranges), var, offsets,
+        indices);
+    return out;
+  });
 
   auto output_dims = data.dims();
   for (const auto dim : dims.labels()) {
@@ -175,7 +166,8 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
               output_dims);
   std::tie(begin, total_size) = sizes_to_begin(bin_sizes);
   const auto end = begin + bin_sizes;
-  return make_bins(zip(begin, end), buffer_dim, std::move(out_buffer));
+  const auto dim = out_buffer.dims().inner();
+  return make_bins(zip(begin, end), dim, std::move(out_buffer));
 }
 
 Variable permute(const VariableConstView &var, const Dim dim,

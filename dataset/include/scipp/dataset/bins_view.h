@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <boost/iterator/transform_iterator.hpp>
+
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/bins.h"
 
@@ -27,28 +29,50 @@ private:
   View m_var;
 };
 
-template <class T, class View> class BinsCoords : public BinsCommon<T, View> {
-public:
-  BinsCoords(const BinsCommon<T, View> base) : BinsCommon<T, View>(base) {}
-  auto operator[](const Dim dim) const {
-    return this->make(this->buffer().coords()[dim]);
-  }
-};
+template <class T, class View, class MapView>
+class BinsMapView : public BinsCommon<T, View> {
+  struct make_item {
+    const BinsMapView *view;
+    template <class Item> auto operator()(const Item &item) const {
+      if (item.second.dims().contains(view->dim()))
+        return std::pair(item.first, view->make(item.second));
+      else
+        return std::pair(item.first, copy(item.second));
+    }
+  };
 
-template <class T, class View> class BinsMasks : public BinsCommon<T, View> {
 public:
-  BinsMasks(const BinsCommon<T, View> base) : BinsCommon<T, View>(base) {}
-  auto operator[](const std::string &name) const {
-    return this->make(this->buffer().masks()[name]);
+  using key_type = typename MapView::key_type;
+  using mapped_type = typename MapView::mapped_type;
+  BinsMapView(const BinsCommon<T, View> base, MapView mapView)
+      : BinsCommon<T, View>(base), m_mapView(std::move(mapView)) {}
+  auto operator[](const key_type &key) const {
+    return this->make(m_mapView[key]);
   }
+  auto begin() const noexcept {
+    return boost::make_transform_iterator(m_mapView.begin(), make_item{this});
+  }
+  auto end() const noexcept {
+    return boost::make_transform_iterator(m_mapView.end(), make_item{this});
+  }
+
+private:
+  MapView m_mapView;
 };
 
 template <class T, class View> class Bins : public BinsCommon<T, View> {
 public:
   using BinsCommon<T, View>::BinsCommon;
   auto data() const { return this->make(this->buffer().data()); }
-  auto coords() const { return BinsCoords<T, View>(*this); }
-  auto masks() const { return BinsMasks<T, View>(*this); }
+  auto coords() const { return BinsMapView(*this, this->buffer().coords()); }
+  auto aligned_coords() const {
+    return BinsMapView(*this, this->buffer().aligned_coords());
+  }
+  auto unaligned_coords() const {
+    return BinsMapView(*this, this->buffer().unaligned_coords());
+  }
+  auto masks() const { return BinsMapView(*this, this->buffer().masks()); }
+  auto &name() const { return this->buffer().name(); }
 };
 } // namespace bins_view_detail
 
