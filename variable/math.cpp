@@ -58,7 +58,7 @@ Variable reciprocal(Variable &&var) {
 }
 
 VariableView reciprocal(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, element::reciprocal_out_arg);
+  transform_in_place(out, var, element::assign_op{element::reciprocal});
   return out;
 }
 
