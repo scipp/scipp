@@ -20,7 +20,8 @@ def plot2d(*args, filename=None, **kwargs):
     sp = SciPlot2d(*args, **kwargs)
     if filename is not None:
         sp.savefig(filename)
-    return sp
+    else:
+        return sp
 
 
 class SciPlot2d(SciPlot):
@@ -44,7 +45,10 @@ class SciPlot2d(SciPlot):
                  scale=None,
                  vmin=None,
                  vmax=None,
-                 resolution=None):
+                 resolution=None,
+                 title=None,
+                 xlabel=None,
+                 ylabel=None):
 
         view_ndims = 2
 
@@ -81,11 +85,14 @@ class SciPlot2d(SciPlot):
                                aspect=aspect,
                                cmap=self.params["values"][self.name]["cmap"],
                                norm=self.params["values"][self.name]["norm"],
-                               title=self.name,
+                               name=self.name,
                                cbar=self.params["values"][self.name]["cbar"],
                                unit=self.params["values"][self.name]["unit"],
                                masks=self.masks[self.name],
-                               extend=self.extend_cmap)
+                               extend=self.extend_cmap,
+                               title=title,
+                               xlabel=xlabel,
+                               ylabel=ylabel)
 
         # Profile view which displays an additional dimension as a 1d plot
         if self.ndim > 2:

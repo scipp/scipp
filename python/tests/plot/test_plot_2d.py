@@ -230,3 +230,15 @@ def test_plot_2d_binned_data_with_variances_nbin():
 
 def test_plot_2d_binned_data_with_masks():
     plot(make_binned_data_array(ndim=2, masks=True))
+
+
+def test_plot_customized_mpl_axes():
+    d = make_dense_dataset(ndim=2)
+    plot(d["Sample"], title="MyTitle", xlabel="MyXlabel", ylabel="MyYlabel")
+
+
+def test_plot_access_ax_and_fig():
+    d = make_dense_dataset(ndim=2)
+    out = plot(d["Sample"], title="MyTitle")
+    out["Sample"].ax.set_xlabel("MyXlabel")
+    out["Sample"].fig.set_dpi(120.)

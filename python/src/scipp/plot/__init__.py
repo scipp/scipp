@@ -193,7 +193,8 @@ def plot(*args, **kwargs):
     output = _plot(*args, **kwargs)
     if _is_inline():
         for key in output:
-            output[key].as_static(keep_widgets=is_doc_build)
+            if output[key] is not None:
+                output[key].as_static(keep_widgets=is_doc_build)
 
     # Turn auto figure display back on if needed.
     if interactive_on:
