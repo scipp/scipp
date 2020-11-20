@@ -171,7 +171,11 @@ TEST_F(BinTest, rebin_coarse_to_fine_2d_inner) {
 
 TEST_F(BinTest, rebin_coarse_to_fine_2d_outer) {
   const auto table = make_table(30);
-  const auto xy_coarse = bin(table, {edges_x_coarse, edges_y});
-  const auto xy = bin(table, {edges_x, edges_y});
+  auto xy_coarse = bin(table, {edges_x_coarse, edges_y});
+  auto xy = bin(table, {edges_x, edges_y});
+  expect_near(bin(xy_coarse, {edges_x}), xy);
+  // Y is inside X and needs to be handled by `bin`, but coord is not required.
+  xy_coarse.coords().erase(Dim::Y);
+  xy.coords().erase(Dim::Y);
   expect_near(bin(xy_coarse, {edges_x}), xy);
 }

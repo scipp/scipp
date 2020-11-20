@@ -181,6 +181,16 @@ static constexpr auto update_indices_by_grouping =
                  index += it == groups.end() ? -1 : it->second;
                }};
 
+static constexpr auto update_indices_from_existing =
+    overloaded{element::arg_list<scipp::index>,
+               [](units::Unit &, const units::Unit &, const units::Unit &) {},
+               [](auto &index, const auto bin_index, const auto nbin) {
+                 if (index == -1)
+                   return;
+                 index *= nbin;
+                 index += bin_index;
+               }};
+
 // - Each span is covers an *input* bin.
 // - `bin_sizes` Sizes of the output bins
 // - `offsets` Start indices of the output bins

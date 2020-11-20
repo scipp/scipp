@@ -30,6 +30,12 @@ namespace scipp::dataset {
 
 namespace {
 
+auto make_range(const scipp::index begin, const scipp::index end,
+                const scipp::index stride, const Dim dim) {
+  return exclusive_scan(
+      broadcast(stride * units::one, {dim, (end - begin) / stride}), dim);
+}
+
 template <class T> auto find_sorting_permutation(const T &key) {
   element_array<scipp::index> p(key.size(), core::default_init_elements);
   std::iota(p.begin(), p.end(), 0);
@@ -69,18 +75,25 @@ void update_indices_by_grouping(const VariableView &indices,
                                core::element::update_indices_by_grouping);
 }
 
+void update_indices_from_existing(const VariableView &indices, const Dim dim) {
+  const scipp::index nbin = indices.dims()[dim];
+  const auto index = make_range(0, nbin, 1, dim);
+  variable::transform_in_place(indices, index, nbin * units::one,
+                               core::element::update_indices_from_existing);
+}
+
 template <class T> Variable as_subspan_view(T &&binned) {
-  if (binned.dtype() == dtype<scipp::bin<Variable>>) {
+  if (binned.dtype() == dtype<core::bin<Variable>>) {
     auto &&[indices, dim, buffer] =
-        binned.template constituents<scipp::bin<Variable>>();
+        binned.template constituents<core::bin<Variable>>();
     return subspan_view(buffer, dim, indices);
-  } else if (binned.dtype() == dtype<scipp::bin<VariableView>>) {
+  } else if (binned.dtype() == dtype<core::bin<VariableView>>) {
     auto &&[indices, dim, buffer] =
-        binned.template constituents<scipp::bin<VariableView>>();
+        binned.template constituents<core::bin<VariableView>>();
     return subspan_view(buffer, dim, indices);
   } else {
     auto &&[indices, dim, buffer] =
-        binned.template constituents<scipp::bin<VariableConstView>>();
+        binned.template constituents<core::bin<VariableConstView>>();
     return subspan_view(buffer, dim, indices);
   }
 }
@@ -208,25 +221,27 @@ DataArray sortby(const DataArrayConstView &array, const Dim dim) {
 }
 
 namespace {
-enum class AxisType { Group, Edge };
+enum class AxisAction { Group, Bin, Existing };
 template <class T>
 Variable
 bin_impl(const VariableConstView &var,
-         const std::vector<std::pair<AxisType, VariableConstView>> &coords) {
-  const auto &[begin_end, dim, array] = var.constituents<scipp::bin<T>>();
+         const std::vector<std::tuple<AxisAction, Dim, VariableConstView>>
+             &actions) {
+  const auto &[begin_end, buffer_dim, array] = var.constituents<core::bin<T>>();
   const auto input_bins = bins_view<T>(var);
-  auto indices =
-      make_bins(copy(begin_end), dim, makeVariable<scipp::index>(array.dims()));
+  auto indices = make_bins(copy(begin_end), buffer_dim,
+                           makeVariable<scipp::index>(array.dims()));
   Dimensions dims;
-  for (const auto &[type, coord] : coords) {
-    const auto coord_dim = coord.dims().inner();
-    const auto labels = input_bins.coords()[coord_dim];
-    if (type == AxisType::Group) {
-      update_indices_by_grouping(indices, labels, coord);
-      dims.addInner(coord_dim, coord.dims()[coord_dim]);
+  for (const auto &[type, dim, coord] : actions) {
+    if (type == AxisAction::Group) {
+      update_indices_by_grouping(indices, input_bins.coords()[dim], coord);
+      dims.addInner(dim, coord.dims()[dim]);
+    } else if (type == AxisAction::Bin) {
+      update_indices_by_binning(indices, input_bins.coords()[dim], coord);
+      dims.addInner(dim, coord.dims()[dim] - 1);
     } else {
-      update_indices_by_binning(indices, labels, coord);
-      dims.addInner(coord_dim, coord.dims()[coord_dim] - 1);
+      update_indices_from_existing(indices, dim);
+      dims.addInner(dim, var.dims()[dim]);
     }
   }
   return bin<T>(var, indices, dims);
@@ -245,7 +260,7 @@ DataArray add_metadata(Variable &&binned, const DataArrayConstView &array,
   for (const auto &edge : edges)
     coords[edge.dims().inner()] = copy(edge);
   const auto &[begin_end, buffer_dim, buffer] =
-      binned.constituents<scipp::bin<DataArray>>();
+      binned.constituents<core::bin<DataArray>>();
   for (const auto &[dim, coord] : array.aligned_coords())
     if (!coords.count(dim) && !coord.dims().contains(buffer_dim))
       coords[dim] = copy(coord);
@@ -257,10 +272,10 @@ DataArray add_metadata(Variable &&binned, const DataArrayConstView &array,
 // appearance in array.
 // 2. All new grouped dims.
 // 3. All new binned dims.
-auto ordered_groups_or_edges(const DataArrayConstView &array,
-                             const std::vector<VariableConstView> &edges,
-                             const std::vector<VariableConstView> &groups,
-                             const std::vector<Dim> &dim_order) {
+auto axis_actions(const VariableConstView &var,
+                  const std::vector<VariableConstView> &edges,
+                  const std::vector<VariableConstView> &groups,
+                  const std::vector<Dim> &dim_order) {
   constexpr auto get_dims = [](const auto &coords) {
     Dimensions dims;
     for (const auto &coord : coords)
@@ -269,32 +284,26 @@ auto ordered_groups_or_edges(const DataArrayConstView &array,
   };
   auto edges_dims = get_dims(edges);
   auto groups_dims = get_dims(groups);
-  std::vector<std::pair<AxisType, VariableConstView>> ordered;
+  std::vector<std::tuple<AxisAction, Dim, VariableConstView>> axes;
   bool rebin = false;
-  const auto dims = array.dims();
+  const auto dims = var.dims();
   for (const auto dim : dims.labels()) {
     if (edges_dims.contains(dim) || groups_dims.contains(dim))
       rebin = true;
     if (groups_dims.contains(dim))
-      ordered.emplace_back(AxisType::Group, groups[groups_dims.index(dim)]);
+      axes.emplace_back(AxisAction::Group, dim, groups[groups_dims.index(dim)]);
     else if (edges_dims.contains(dim))
-      ordered.emplace_back(AxisType::Edge, edges[edges_dims.index(dim)]);
+      axes.emplace_back(AxisAction::Bin, dim, edges[edges_dims.index(dim)]);
     else if (rebin)
-      ordered.emplace_back(AxisType::Edge, array.coords()[dim]);
+      axes.emplace_back(AxisAction::Existing, dim, VariableConstView{});
   }
   for (const auto &group : groups)
     if (!dims.contains(group.dims().inner()))
-      ordered.emplace_back(AxisType::Group, group);
+      axes.emplace_back(AxisAction::Group, group.dims().inner(), group);
   for (const auto &edge : edges)
     if (!dims.contains(edge.dims().inner()))
-      ordered.emplace_back(AxisType::Edge, edge);
-  return ordered;
-}
-
-auto make_range(const scipp::index begin, const scipp::index end,
-                const scipp::index stride, const Dim dim) {
-  return exclusive_scan(
-      broadcast(stride * units::one, {dim, (end - begin) / stride}), dim);
+      axes.emplace_back(AxisAction::Bin, edge.dims().inner(), edge);
+  return axes;
 }
 
 } // namespace
@@ -304,10 +313,10 @@ DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &groups,
               const std::vector<Dim> &dim_order) {
   Variable binned;
-  const auto ordered = ordered_groups_or_edges(array, edges, groups, dim_order);
-  if (array.dtype() == dtype<scipp::bin<DataArray>>) {
+  const auto actions = axis_actions(array.data(), edges, groups, dim_order);
+  if (array.dtype() == dtype<core::bin<DataArray>>) {
     // TODO if rebinning, take into account masks (or fail)!
-    binned = bin_impl<DataArray>(array.data(), ordered);
+    binned = bin_impl<DataArray>(array.data(), actions);
   } else {
     // Pretend existing binning along outermost binning dim to enable threading
     // TODO automatic setup with reasoble bin count
@@ -319,7 +328,7 @@ DataArray bin(const DataArrayConstView &array,
     end.values<scipp::index>().as_span().back() = size;
     const auto indices = zip(begin, end);
     const auto tmp = make_non_owning_bins(indices, dim, array);
-    binned = bin_impl<DataArrayConstView>(tmp, ordered);
+    binned = bin_impl<DataArrayConstView>(tmp, actions);
   }
   return add_metadata(std::move(binned), array, edges, groups);
 }
