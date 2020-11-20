@@ -188,6 +188,5 @@ void init_buckets(py::module &m) {
       "sum", [](const DatasetConstView &x) { return dataset::buckets::sum(x); },
       py::call_guard<py::gil_scoped_release>());
 
-  m.def("bucketby", dataset::bucketby,
-        py::call_guard<py::gil_scoped_release>());
+  m.def("bin", dataset::bin, py::call_guard<py::gil_scoped_release>());
 }

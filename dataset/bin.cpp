@@ -19,9 +19,9 @@
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 
+#include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/bins_view.h"
-#include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/except.h"
 
 #include "dataset_operations_common.h"
@@ -299,10 +299,10 @@ auto make_range(const scipp::index begin, const scipp::index end,
 
 } // namespace
 
-DataArray bucketby(const DataArrayConstView &array,
-                   const std::vector<VariableConstView> &edges,
-                   const std::vector<VariableConstView> &groups,
-                   const std::vector<Dim> &dim_order) {
+DataArray bin(const DataArrayConstView &array,
+              const std::vector<VariableConstView> &edges,
+              const std::vector<VariableConstView> &groups,
+              const std::vector<Dim> &dim_order) {
   Variable binned;
   const auto ordered = ordered_groups_or_edges(array, edges, groups, dim_order);
   if (array.dtype() == dtype<scipp::bin<DataArray>>) {
