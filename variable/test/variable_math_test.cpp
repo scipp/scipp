@@ -2,6 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <scipp/variable/math.h>
 
+#include <tuple>
+
 #include <gtest/gtest.h>
 
 #include "test_macros.h"
@@ -13,8 +15,7 @@ using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::variable;
 
-template <typename T>
-class VariableMathTest : public ::testing::Test {};
+template <typename T> class VariableMathTest : public ::testing::Test {};
 using FloatTypes = ::testing::Types<double, float>;
 TYPED_TEST_SUITE(VariableMathTest, FloatTypes);
 
@@ -70,11 +71,16 @@ TEST(Variable, norm_of_vector) {
   EXPECT_EQ(norm(var), reference);
 }
 
-TEST(Variable, sqrt) {
-  const auto f64 = makeVariable<double>(Values{1.23});
-  EXPECT_EQ(sqrt(f64), makeVariable<double>(Values{element::sqrt(1.23)}));
-  const auto f32 = makeVariable<float>(Values{1.23456789});
-  EXPECT_EQ(sqrt(f32), makeVariable<float>(Values{element::sqrt(1.23456789f)}));
+TYPED_TEST(VariableMathTest, sqrt) {
+  for (TypeParam x : {0.0, 1.23, 1.23456789, 3.45}) {
+    for (auto [uin, uout] :
+         {std::tuple{units::dimensionless, units::dimensionless},
+          std::tuple{units::m * units::m, units::m}}) {
+      const auto v = makeVariable<TypeParam>(Values{x}, uin);
+      const auto ref = element::sqrt(x);
+      EXPECT_EQ(sqrt(v), makeVariable<TypeParam>(Values{ref}, uout));
+    }
+  }
 }
 
 TEST(Variable, sqrt_move) {
