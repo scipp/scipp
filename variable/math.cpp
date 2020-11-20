@@ -66,6 +66,11 @@ Variable exp(const VariableConstView &var) {
   return transform(var, element::exp);
 }
 
+VariableView exp(const VariableConstView &var, const VariableView &out) {
+  transform_in_place(out, var, element::assign_op{element::exp});
+  return out;
+}
+
 Variable log(const VariableConstView &var) {
   return transform(var, element::log);
 }
