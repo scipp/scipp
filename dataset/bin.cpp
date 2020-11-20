@@ -110,13 +110,6 @@ Variable bin_sizes(const VariableConstView &sub_bin, const scipp::index nbin) {
   return sizes;
 }
 
-template <class Out>
-auto bin(Out &&out, const Variable &in, const VariableConstView &sizes,
-         const VariableConstView &indices) {
-  transform_in_place(out, as_subspan_view(sizes), as_subspan_view(in),
-                     as_subspan_view(indices), core::element::bin);
-}
-
 Variable exclusive_scan_bins(const VariableView &var) {
   Variable out(var);
   transform_in_place(as_subspan_view(out), core::element::exclusive_scan_bins);
@@ -126,6 +119,9 @@ Variable exclusive_scan_bins(const VariableView &var) {
 template <class T>
 auto bin(const VariableConstView &data, const VariableConstView &indices,
          const Dimensions &dims) {
+  // Setup offsets within output bins, for every input bin. If rebinning occurs
+  // along a dimension each output bin sees contributions from all input bins
+  // along that dim.
   const auto nbin = dims.volume();
   auto output_bin_sizes = bin_sizes(indices, nbin);
   auto offsets = output_bin_sizes;
@@ -141,33 +137,30 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   begin = broadcast(begin, data.dims()); // required for some cases of rebinning
   const auto filtered_input_bin_ranges =
       zip(begin, begin + filtered_input_bin_size);
-  const auto input_bins = bins_view<T>(data);
-  auto out_buffer = dataset::transform(input_bins, [&](auto &&var) {
+
+  // Perform actual binning step for data, all coords, all masks, ...
+  auto out_buffer = dataset::transform(bins_view<T>(data), [&](auto &&var) {
     if (!is_buckets(var))
       return std::move(var);
     const auto &[input_indices, buffer_dim, in_buffer] =
         var.template constituents<core::bin<VariableConstView>>();
     auto out = resize_default_init(in_buffer, buffer_dim, total_size);
-    bin(subspan_view(out, buffer_dim, filtered_input_bin_ranges), var, offsets,
-        indices);
+    transform_in_place(subspan_view(out, buffer_dim, filtered_input_bin_ranges),
+                       as_subspan_view(std::as_const(offsets)),
+                       as_subspan_view(var), as_subspan_view(indices),
+                       core::element::bin);
     return out;
   });
 
-  auto output_dims = data.dims();
-  for (const auto dim : dims.labels()) {
-    if (output_dims.contains(dim))
-      output_dims.resize(dim, dims[dim]);
-    else
-      output_dims.addInner(dim, dims[dim]);
-  }
-  // TODO Why does reshape not throw if volume is too small?
+  // Up until here the output was viewed with same bin index ranges as input.
+  // Now switch to desired final bin indices.
+  auto output_dims = merge(output_bin_sizes.dims(), dims);
   const auto bin_sizes =
-      reshape(std::get<2>(output_bin_sizes.constituents<bucket<Variable>>()),
+      reshape(std::get<2>(output_bin_sizes.constituents<core::bin<Variable>>()),
               output_dims);
   std::tie(begin, total_size) = sizes_to_begin(bin_sizes);
-  const auto end = begin + bin_sizes;
   const auto dim = out_buffer.dims().inner();
-  return make_bins(zip(begin, end), dim, std::move(out_buffer));
+  return make_bins(zip(begin, begin + bin_sizes), dim, std::move(out_buffer));
 }
 
 Variable permute(const VariableConstView &var, const Dim dim,
@@ -276,6 +269,9 @@ auto axis_actions(const VariableConstView &var,
   auto edges_dims = get_dims(edges);
   auto groups_dims = get_dims(groups);
   std::vector<std::tuple<AxisAction, Dim, VariableConstView>> axes;
+  // If we rebin a dimension that is not the inner dimension of the input, we
+  // also need to handle bin contents from all dimensions inside the rebinned
+  // one, even if the grouping/binning along this dimension is unchanged.
   bool rebin = false;
   const auto dims = var.dims();
   for (const auto dim : dims.labels()) {
@@ -309,10 +305,10 @@ DataArray bin(const DataArrayConstView &array,
     binned = bin_impl<DataArray>(array.data(), actions);
   } else {
     // Pretend existing binning along outermost binning dim to enable threading
-    // TODO automatic setup with reasoble bin count
     const auto dim = array.dims().inner();
     const auto size = array.dims()[dim];
-    const auto stride = std::max(scipp::index(1), size / 12);
+    // TODO automatic setup with reasonable bin count
+    const auto stride = std::max(scipp::index(1), size / 24);
     auto begin = make_range(0, size, stride, edges.front().dims().inner());
     auto end = begin + stride * units::one;
     end.values<scipp::index>().as_span().back() = size;
