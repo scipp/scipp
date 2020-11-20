@@ -148,3 +148,10 @@ TEST(ElementUtilTest, assign_op_unit) {
 
   EXPECT_THROW(aop(res, units::kg), except::UnitError);
 }
+
+TEST(ElementUtiltest, assign_op_value_and_variance) {
+  const ValueAndVariance x(2.0, 1.0);
+  ValueAndVariance out(x);
+  assign_op{core::element::sqrt}(out, x);
+  EXPECT_EQ(out, core::element::sqrt(x));
+}
