@@ -181,3 +181,31 @@ TEST(Variable, exp_bad_unit) {
       static_cast<void>(exp(makeVariable<double>(Values{0.0}, units::s))),
       except::UnitError);
 }
+
+TYPED_TEST(VariableMathTest, log) {
+  for (TypeParam x : {0.1, 1.23, 3.45}) {
+    const auto v = makeVariable<TypeParam>(Values{x});
+    const auto ref = element::log(x);
+    EXPECT_EQ(log(v), makeVariable<TypeParam>(Values{ref}));
+  }
+}
+
+TEST(Variable, log_out_arg) {
+  Dims dims{Dim::X};
+  Shape shape{2};
+  const auto x = makeVariable<double>(dims, shape, Values{1.23, 3.21});
+  auto out = makeVariable<double>(dims, shape, Values{0.0, 0.0});
+  const auto view = log(x, out);
+
+  EXPECT_EQ(
+      out, makeVariable<double>(dims, shape,
+                                Values{element::log(1.23), element::log(3.21)}));
+  EXPECT_EQ(view, out);
+  EXPECT_EQ(view.underlying(), out);
+}
+
+TEST(Variable, log_bad_unit) {
+  EXPECT_THROW(
+      static_cast<void>(log(makeVariable<double>(Values{1.0}, units::s))),
+      except::UnitError);
+}
