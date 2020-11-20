@@ -306,12 +306,12 @@ DataArray bin(const DataArrayConstView &array,
   } else {
     // Pretend existing binning along outermost binning dim to enable threading
     const auto dim = array.dims().inner();
-    const auto size = array.dims()[dim];
+    const auto size = std::max(scipp::index(1), array.dims()[dim]);
     // TODO automatic setup with reasonable bin count
     const auto stride = std::max(scipp::index(1), size / 24);
     auto begin = make_range(0, size, stride, edges.front().dims().inner());
     auto end = begin + stride * units::one;
-    end.values<scipp::index>().as_span().back() = size;
+    end.values<scipp::index>().as_span().back() = array.dims()[dim];
     const auto indices = zip(begin, end);
     const auto tmp = make_non_owning_bins(indices, dim, array);
     binned = bin_impl<DataArrayConstView>(tmp, actions);

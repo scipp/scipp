@@ -13,6 +13,8 @@ namespace scipp::variable {
 
 /// Return std::exclusive_scan along dim.
 Variable exclusive_scan(const VariableConstView &var, const Dim dim) {
+  if (var.dims()[dim] == 0)
+    return Variable{var};
   Variable cumulative(var.slice({dim, 0}));
   fill_zeros(cumulative);
   Variable out(var);

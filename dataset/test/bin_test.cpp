@@ -97,21 +97,23 @@ TEST_F(DataArrayBinTest, 2d) {
   EXPECT_EQ(bin(bin(table, {edges_x}), {edges_y}), bucketed);
 }
 
-class BinTest : public ::testing::Test {
-protected:
-  auto make_table(const scipp::index size) {
-    Random rand;
-    rand.seed(0);
-    const Dimensions dims(Dim::Row, size);
+namespace {
+auto make_table(const scipp::index size) {
+  Random rand;
+  rand.seed(0);
+  const Dimensions dims(Dim::Row, size);
+  const auto data =
+      makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
+  const auto x =
+      makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
+  const auto y =
+      makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
+  return DataArray(data, {{Dim::X, x}, {Dim::Y, y}});
+}
+} // namespace
 
-    const auto data =
-        makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
-    const auto x =
-        makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
-    const auto y =
-        makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
-    return DataArray(data, {{Dim::X, x}, {Dim::Y, y}});
-  }
+class BinTest : public ::testing::TestWithParam<DataArray> {
+protected:
   Variable edges_x =
       makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
   Variable edges_y =
@@ -123,54 +125,59 @@ protected:
 
   void expect_near(const DataArrayConstView &a, const DataArrayConstView &b) {
     // "round" last digits for approximate floating point comparison
-    const auto rounding = 4.0 * units::one * buckets::sum(a);
+    const auto rounding = 20.0 * units::one * buckets::sum(a);
     EXPECT_EQ(buckets::sum(a) + rounding, buckets::sum(b) + rounding);
   }
 };
 
-TEST_F(BinTest, rebin_coarse_to_fine_1d) {
-  const auto table = make_table(30);
+INSTANTIATE_TEST_SUITE_P(InputSize, BinTest,
+                         testing::Values(make_table(0), make_table(1),
+                                         make_table(7), make_table(27),
+                                         make_table(1233)));
+
+TEST_P(BinTest, rebin_coarse_to_fine_1d) {
+  const auto table = GetParam();
   EXPECT_EQ(bin(table, {edges_x}),
             bin(bin(table, {edges_x_coarse}), {edges_x}));
 }
 
-TEST_F(BinTest, rebin_fine_to_coarse_1d) {
-  const auto table = make_table(30);
+TEST_P(BinTest, rebin_fine_to_coarse_1d) {
+  const auto table = GetParam();
   expect_near(bin(table, {edges_x_coarse}),
               bin(bin(table, {edges_x}), {edges_x_coarse}));
 }
 
-TEST_F(BinTest, 2d) {
-  const auto table = make_table(30);
+TEST_P(BinTest, 2d) {
+  const auto table = GetParam();
   const auto x = bin(table, {edges_x});
   const auto x_then_y = bin(x, {edges_y});
   const auto xy = bin(table, {edges_x, edges_y});
   EXPECT_EQ(xy, x_then_y);
 }
 
-TEST_F(BinTest, rebin_coarse_to_fine_2d) {
-  const auto table = make_table(30);
+TEST_P(BinTest, rebin_coarse_to_fine_2d) {
+  const auto table = GetParam();
   const auto xy_coarse = bin(table, {edges_x_coarse, edges_y_coarse});
   const auto xy = bin(table, {edges_x, edges_y});
   EXPECT_EQ(bin(xy_coarse, {edges_x, edges_y}), xy);
 }
 
-TEST_F(BinTest, rebin_fine_to_coarse_2d) {
-  const auto table = make_table(30);
+TEST_P(BinTest, rebin_fine_to_coarse_2d) {
+  const auto table = GetParam();
   const auto xy_coarse = bin(table, {edges_x_coarse, edges_y_coarse});
   const auto xy = bin(table, {edges_x, edges_y});
   expect_near(bin(xy, {edges_x_coarse, edges_y_coarse}), xy_coarse);
 }
 
-TEST_F(BinTest, rebin_coarse_to_fine_2d_inner) {
-  const auto table = make_table(30);
+TEST_P(BinTest, rebin_coarse_to_fine_2d_inner) {
+  const auto table = GetParam();
   const auto xy_coarse = bin(table, {edges_x_coarse, edges_y_coarse});
   const auto xy = bin(table, {edges_x_coarse, edges_y});
   expect_near(bin(xy_coarse, {edges_y}), xy);
 }
 
-TEST_F(BinTest, rebin_coarse_to_fine_2d_outer) {
-  const auto table = make_table(30);
+TEST_P(BinTest, rebin_coarse_to_fine_2d_outer) {
+  const auto table = GetParam();
   auto xy_coarse = bin(table, {edges_x_coarse, edges_y});
   auto xy = bin(table, {edges_x, edges_y});
   expect_near(bin(xy_coarse, {edges_x}), xy);
