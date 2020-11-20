@@ -161,7 +161,7 @@ def histogram(x, bins):
     return _call_cpp_func(_cpp.histogram, x, bins)
 
 
-def bin(x, edges):
+def bin(x, edges=[], groups=[]):
     """Create binned data by binning data along all dimensions given by edges.
 
     This does not histogram the data, each output bin will contain a "list" of
@@ -173,13 +173,13 @@ def bin(x, edges):
               explicitly given index ranges.
     """
     if isinstance(x, _Bins):
-        return _call_cpp_func(_cpp.bin, x._obj, edges, [], [])
+        return _call_cpp_func(_cpp.bin, x._obj, edges, groups)
     if _cpp.is_bins(x):
         raise RuntimeError(
             "Recursive binning not supported. Use the `bins` property to "
             "subdivide bins in along additional dimensions, e.g., "
             "sc.bin(binned.bins, ...).")
-    return _call_cpp_func(_cpp.bin, x, edges, [], [])
+    return _call_cpp_func(_cpp.bin, x, edges, groups)
 
 
 def bins(*args, **kwargs):

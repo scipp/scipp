@@ -4,8 +4,8 @@
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/core/element/bin.h"
 #include "scipp/core/element/cumulative.h"
-#include "scipp/core/element/histogram.h"
 #include "scipp/core/element/permute.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
@@ -274,8 +274,7 @@ DataArray add_metadata(Variable &&binned, const DataArrayConstView &array,
 // 3. All new binned dims.
 auto axis_actions(const VariableConstView &var,
                   const std::vector<VariableConstView> &edges,
-                  const std::vector<VariableConstView> &groups,
-                  const std::vector<Dim> &dim_order) {
+                  const std::vector<VariableConstView> &groups) {
   constexpr auto get_dims = [](const auto &coords) {
     Dimensions dims;
     for (const auto &coord : coords)
@@ -310,10 +309,9 @@ auto axis_actions(const VariableConstView &var,
 
 DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &edges,
-              const std::vector<VariableConstView> &groups,
-              const std::vector<Dim> &dim_order) {
+              const std::vector<VariableConstView> &groups) {
   Variable binned;
-  const auto actions = axis_actions(array.data(), edges, groups, dim_order);
+  const auto actions = axis_actions(array.data(), edges, groups);
   if (array.dtype() == dtype<core::bin<DataArray>>) {
     // TODO if rebinning, take into account masks (or fail)!
     binned = bin_impl<DataArray>(array.data(), actions);

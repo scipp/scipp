@@ -5,7 +5,7 @@
 #include "scipp/dataset/bins.h"
 #include "pybind11.h"
 #include "scipp/core/except.h"
-#include "scipp/dataset/bucketby.h"
+#include "scipp/dataset/bin.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
