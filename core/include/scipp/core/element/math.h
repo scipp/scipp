@@ -55,7 +55,7 @@ constexpr auto log = overloaded{
     }};
 
 constexpr auto log10 = overloaded{
-    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
+    arg_list<double, float>,
     dimensionless_unit_check_return, [](const auto &x) {
       using std::log10;
       return log10(x);
