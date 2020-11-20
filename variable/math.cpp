@@ -75,6 +75,11 @@ Variable log(const VariableConstView &var) {
   return transform(var, element::log);
 }
 
+VariableView log(const VariableConstView &var, const VariableView &out) {
+  transform_in_place(out, var, element::assign_op{element::log});
+  return out;
+}
+
 Variable log10(const VariableConstView &var) {
   return transform(var, element::log10);
 }
