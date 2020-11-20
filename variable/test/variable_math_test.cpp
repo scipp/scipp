@@ -13,11 +13,19 @@ using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::variable;
 
-TEST(Variable, abs) {
-  const auto f64 = makeVariable<double>(Values{-1.23});
-  EXPECT_EQ(abs(f64), makeVariable<double>(Values{element::abs(-1.23)}));
-  const auto f32 = makeVariable<float>(Values{-1.23456789});
-  EXPECT_EQ(abs(f32), makeVariable<float>(Values{element::abs(-1.23456789f)}));
+template <typename T>
+class VariableMathTest : public ::testing::Test {};
+using FloatTypes = ::testing::Types<double, float>;
+TYPED_TEST_SUITE(VariableMathTest, FloatTypes);
+
+TYPED_TEST(VariableMathTest, abs) {
+  for (TypeParam x : {0.0, -1.23, 3.45, -1.23456789}) {
+    for (auto u : {units::dimensionless, units::m}) {
+      const auto v = makeVariable<TypeParam>(Values{x}, u);
+      const auto ref = element::abs(x);
+      EXPECT_EQ(abs(v), makeVariable<TypeParam>(Values{ref}, u));
+    }
+  }
 }
 
 TEST(Variable, abs_move) {
@@ -29,6 +37,17 @@ TEST(Variable, abs_move) {
 }
 
 TEST(Variable, abs_out_arg) {
+  const auto x = makeVariable<double>(Values{-1.23}, units::m);
+  auto out = makeVariable<double>(Values{0.0}, units::dimensionless);
+  const auto view = abs(x, out);
+
+  EXPECT_EQ(x, makeVariable<double>(Values{-1.23}, units::m));
+  EXPECT_EQ(view, out);
+  EXPECT_EQ(view, makeVariable<double>(Values{1.23}, units::m));
+  EXPECT_EQ(view.underlying(), out);
+}
+
+TEST(Variable, abs_out_arg_self) {
   auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{-1.23, 0.0});
   auto out = x.slice({Dim::X, 1});
   auto view = abs(x.slice({Dim::X, 0}), out);
