@@ -32,4 +32,4 @@ constexpr auto exclusive_scan_bins =
                  }
                }};
 
-      } // namespace scipp::core::element
+} // namespace scipp::core::element
