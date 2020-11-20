@@ -84,4 +84,9 @@ Variable log10(const VariableConstView &var) {
   return transform(var, element::log10);
 }
 
+VariableView log10(const VariableConstView &var, const VariableView &out) {
+  transform_in_place(out, var, element::assign_op{element::log10});
+  return out;
+}
+
 } // namespace scipp::variable
