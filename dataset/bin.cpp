@@ -245,6 +245,8 @@ DataArray add_metadata(Variable &&binned, const DataArrayConstView &array,
   std::map<Dim, Variable> coords;
   for (const auto &edge : edges)
     coords[edge.dims().inner()] = copy(edge);
+  for (const auto &group : groups)
+    coords[group.dims().inner()] = copy(group);
   const auto &[begin_end, buffer_dim, buffer] =
       binned.constituents<core::bin<DataArray>>();
   for (const auto &[dim, coord] : array.aligned_coords())
@@ -310,7 +312,9 @@ DataArray bin(const DataArrayConstView &array,
     const auto size = std::max(scipp::index(1), array.dims()[dim]);
     // TODO automatic setup with reasonable bin count
     const auto stride = std::max(scipp::index(1), size / 24);
-    auto begin = make_range(0, size, stride, edges.front().dims().inner());
+    auto begin = make_range(0, size, stride,
+                            groups.empty() ? edges.front().dims().inner()
+                                           : groups.front().dims().inner());
     auto end = begin + stride * units::one;
     end.values<scipp::index>().as_span().back() = array.dims()[dim];
     const auto indices = zip(begin, end);

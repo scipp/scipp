@@ -8,6 +8,7 @@
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/misc_operations.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -108,12 +109,17 @@ auto make_table(const scipp::index size) {
       makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
   const auto y =
       makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
-  return DataArray(data, {{Dim::X, x}, {Dim::Y, y}});
+  const auto group = astype(
+      makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume()))),
+      dtype<int64_t>);
+  return DataArray(data, {{Dim::X, x}, {Dim::Y, y}, {Dim("group"), group}});
 }
 } // namespace
 
 class BinTest : public ::testing::TestWithParam<DataArray> {
 protected:
+  Variable groups = makeVariable<int64_t>(Dims{Dim("group")}, Shape{5},
+                                          Values{-2, -1, 0, 1, 2});
   Variable edges_x =
       makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
   Variable edges_y =
@@ -134,6 +140,12 @@ INSTANTIATE_TEST_SUITE_P(InputSize, BinTest,
                          testing::Values(make_table(0), make_table(1),
                                          make_table(7), make_table(27),
                                          make_table(1233)));
+
+TEST_P(BinTest, group) {
+  const auto table = GetParam();
+  const auto binned = bin(table, {}, {groups});
+  EXPECT_EQ(binned.dims(), groups.dims());
+}
 
 TEST_P(BinTest, rebin_coarse_to_fine_1d) {
   const auto table = GetParam();
@@ -185,4 +197,11 @@ TEST_P(BinTest, rebin_coarse_to_fine_2d_outer) {
   xy_coarse.coords().erase(Dim::Y);
   xy.coords().erase(Dim::Y);
   expect_near(bin(xy_coarse, {edges_x}), xy);
+}
+
+TEST_P(BinTest, group_and_bin) {
+  const auto table = GetParam();
+  const auto x_group = bin(table, {edges_x}, {groups});
+  const auto group = bin(table, {}, {groups});
+  EXPECT_EQ(bin(group, {edges_x}, {}), x_group);
 }
