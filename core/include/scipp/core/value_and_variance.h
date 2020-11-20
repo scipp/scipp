@@ -84,6 +84,11 @@ template <typename T> constexpr auto exp(const ValueAndVariance<T> a) noexcept {
   return ValueAndVariance(val, val * val * a.variance);
 }
 
+template <typename T> constexpr auto log(const ValueAndVariance<T> a) noexcept {
+  using std::log;
+  return ValueAndVariance(log(a.value), a.variance / (a.value * a.value));
+}
+
 template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
   using std::isnan;
   return isnan(a.value);
