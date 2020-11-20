@@ -15,7 +15,7 @@
 namespace scipp::core::element {
 
 constexpr auto abs =
-    overloaded{arg_list<double, float>, [](const auto x) noexcept {
+    overloaded{arg_list<double, float>, [](const auto x) {
                  using std::abs;
                  return abs(x);
                }};
@@ -25,7 +25,7 @@ constexpr auto norm = overloaded{arg_list<Eigen::Vector3d>,
                                  [](const units::Unit &x) { return x; }};
 
 constexpr auto sqrt =
-    overloaded{arg_list<double, float>, [](const auto x) noexcept {
+    overloaded{arg_list<double, float>, [](const auto x) {
                  using std::sqrt;
                  return sqrt(x);
                }};
