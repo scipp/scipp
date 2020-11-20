@@ -41,7 +41,7 @@ constexpr auto reciprocal = overloaded{
     [](const units::Unit &unit) { return units::one / unit; }};
 
 constexpr auto exp = overloaded{
-    arg_list<double, float>, transform_flags::expect_no_variance_arg<0>,
+    arg_list<double, float>,
     dimensionless_unit_check_return, [](const auto &x) {
       using std::exp;
       return exp(x);

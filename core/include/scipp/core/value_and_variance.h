@@ -78,6 +78,12 @@ template <class T> constexpr auto abs(const ValueAndVariance<T> a) noexcept {
   return ValueAndVariance{abs(a.value), a.variance};
 }
 
+template <typename T> constexpr auto exp(const ValueAndVariance<T> a) noexcept {
+  using std::exp;
+  const auto val = exp(a.value);
+  return ValueAndVariance(val, val * val * a.variance);
+}
+
 template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
   using std::isnan;
   return isnan(a.value);
