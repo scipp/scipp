@@ -32,6 +32,13 @@ TEST(ValueAndVarianceTest, unary_abs) {
   EXPECT_EQ(1.0, b.variance);
 }
 
+TEST(ValueAndVarianceTest, unary_exp) {
+  const ValueAndVariance a{2.0, 1.0};
+  const auto b = exp(a);
+  EXPECT_EQ(b.value, std::exp(a.value));
+  EXPECT_EQ(b.variance, b.value*b.value*a.variance);
+}
+
 TEST(ValueAndVarianceTest, binary_plus) {
   const ValueAndVariance lhs{5.0, 1.0};
   const ValueAndVariance rhs{8.0, 2.0};
