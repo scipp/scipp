@@ -42,7 +42,7 @@ class PlotModel1d(PlotModel):
             new_values[name] = {"values": {}, "variances": {}, "masks": {}}
 
             self.dslice = self.slice_data(array, slices)
-            ydata = self.dslice.values
+            ydata = self.dslice.data.values
             xcenters = to_bin_centers(self.dslice.coords[self.dim],
                                       self.dim).values
 
@@ -54,11 +54,11 @@ class PlotModel1d(PlotModel):
             else:
                 new_values[name]["values"]["x"] = xcenters
                 new_values[name]["values"]["y"] = ydata
-            if self.dslice.variances is not None:
+            if self.dslice.data.variances is not None:
                 new_values[name]["variances"]["x"] = xcenters
                 new_values[name]["variances"]["y"] = ydata
                 new_values[name]["variances"]["e"] = vars_to_err(
-                    self.dslice.variances)
+                    self.dslice.data.variances)
 
             if len(mask_info[name]) > 0:
                 base_mask = sc.Variable(dims=self.dslice.dims,

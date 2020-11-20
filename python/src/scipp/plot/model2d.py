@@ -61,11 +61,11 @@ class PlotModel2d(PlotModel):
         entries in the dict of data arrays.
         Then perform dynamic image resampling based on current viewport.
         """
-        data_slice = self.slice_data(self.data_arrays[self.name], slices)
+        self.vslice = self.slice_data(self.data_arrays[self.name], slices)
         # Update pixel widths used for scaling before rebin step
         for xy, dim in self.button_dims.items():
-            self.xywidth[xy] = (data_slice.coords[dim][dim, 1:] -
-                                data_slice.coords[dim][dim, :-1])
+            self.xywidth[xy] = (self.vslice.coords[dim][dim, 1:] -
+                                self.vslice.coords[dim][dim, :-1])
             self.xywidth[xy].unit = sc.units.one
 
         # Scale by bin width and then rebin in both directions
@@ -80,8 +80,9 @@ class PlotModel2d(PlotModel):
         #      the rebin step during image resampling, since non-contiguous
         #      data is not accepted by rebin (this happens when an outer dim is
         #      sliced when the slice thickness is zero).
-        self.vslice = data_slice * self.xywidth["x"]
-        self.vslice *= self.xywidth["y"]
+        # self.vslice = data_slice
+        self.vslice.data *= self.xywidth["x"]
+        self.vslice.data *= self.xywidth["y"]
 
         # Update image with resampling
         new_values = self.update_image(mask_info=mask_info)
@@ -108,23 +109,28 @@ class PlotModel2d(PlotModel):
         Resample a DataArray according to new bin edges.
         """
         dslice = array
+        # print(dslice)
         # Select bins to speed up rebinning
         for dim in rebin_edges:
             this_slice = self._select_bins(array.coords[dim], dim,
                                            rebin_edges[dim][dim, 0],
                                            rebin_edges[dim][dim, -1])
+            # print(dim, dslice.coords, this_slice)
             dslice = dslice[this_slice]
 
         # Rebin the data
         for dim, edges in rebin_edges.items():
-            dslice = sc.rebin(dslice, dim, edges)
+            # print(dslice.data)
+            # print(dslice.coords)
+            # print(dim)
+            dslice.data = sc.rebin(dslice.data, dim, dslice.coords[dim], edges)
 
         # Divide by pixel width
         # TODO: can this loop be combined with the one above?
         for dim, edges in rebin_edges.items():
             div = edges[dim, 1:] - edges[dim, :-1]
             div.unit = sc.units.one
-            dslice /= div
+            dslice.data /= div
 
         return dslice
 
@@ -157,10 +163,10 @@ class PlotModel2d(PlotModel):
                                        self.button_dims.values()),
                                                     values=np.ones(shape),
                                                     variances=np.zeros(shape),
-                                                    dtype=self.vslice.dtype,
+                                                    dtype=self.vslice.data.dtype,
                                                     unit=sc.units.one))
 
-        self.dslice *= resampled_image
+        self.dslice *= resampled_image.data
 
         # Update the matplotlib image data
         new_values = {

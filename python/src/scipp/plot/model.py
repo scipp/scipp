@@ -2,6 +2,7 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .helpers import PlotArray
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord
 from .._utils import value_to_string
 from .._scipp import core as sc
@@ -48,12 +49,14 @@ class PlotModel:
             # Create a DataArray with units of counts, and bin-edge
             # coordinates, because it is to be passed to rebin during the
             # resampling stage.
-            self.data_arrays[name] = sc.DataArray(
-                data=sc.Variable(dims=list(dim_to_shape[name].keys()),
-                                 unit=sc.units.counts,
-                                 values=array.values,
-                                 variances=array.variances,
-                                 dtype=sc.dtype.float64))
+            # self.data_arrays[name] = sc.DataArray(
+            #     data=sc.Variable(dims=list(dim_to_shape[name].keys()),
+            #                      unit=sc.units.counts,
+            #                      values=array.values,
+            #                      variances=array.variances,
+            #                      dtype=sc.dtype.float64))
+            # self.data_arrays[name] = PlotArray(data=array.data)
+            coord_list = {}
 
             # Iterate through axes and collect coordinates
             for dim in axes_dims:
@@ -69,10 +72,13 @@ class PlotModel:
                             d] == coord.shape[i] - 1
 
                 if is_histogram:
-                    self.data_arrays[name].coords[dim] = coord
+                    coord_list[dim] = coord
                 else:
-                    self.data_arrays[name].coords[dim] = to_bin_edges(
+                    coord_list[dim] = to_bin_edges(
                         coord, dim)
+
+            self.data_arrays[name] = PlotArray(data=array.data,
+                coords=coord_list)
 
             # Include masks
             for m, msk in array.masks.items():
@@ -218,8 +224,8 @@ class PlotModel:
             # TODO: Could this be optimized for performance?
             if (upper - lower) > 1:
                 array = array[dim, lower:upper]
-                array = sc.rebin(
-                    array, dim,
+                array.data = sc.rebin(
+                    array.data, dim, array.coords[dim],
                     sc.concatenate(array.coords[dim][dim, 0],
                                    array.coords[dim][dim, -1], dim))[dim, 0]
             else:
