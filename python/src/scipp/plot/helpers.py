@@ -52,16 +52,25 @@ class PlotArrayView:
     def __init__(self, plot_array, slice_obj):
         # Add data slice
         self.data = plot_array.data[slice_obj]
-        # Add all coords except the slice dim coord
-        self.coords = {key: plot_array.coords[key] for key in set(plot_array.coords.keys()) - set([slice_obj[0]])}
-        # Add the slice dim coord, with range + 1 in case of bin edges
+        # # Add all coords except the slice dim coord
+        # self.coords = {key: plot_array.coords[key] for key in set(plot_array.coords.keys()) - set([slice_obj[0]])}
         sl = list(slice_obj)
         if plot_array.isedges[slice_obj[0]]:
             if isinstance(slice_obj[1], int):
                 sl[1] = slice(slice_obj[1], slice_obj[1] + 1)
             else:
                 sl[1] = slice(slice_obj[1].start, slice_obj[1].stop + 1)
-        self.coords[slice_obj[0]] = plot_array.coords[slice_obj[0]][tuple(sl)]
+        sl = tuple(sl)
+        # Add all coords except the slice dim coord
+        self.coords = {}
+        # for key in set(plot_array.coords.keys()) - set([slice_obj[0]]):
+        for key in plot_array.coords.keys():
+            if key in plot_array.coords[key].dims:
+                self.coords[key] = plot_array.coords[slice_obj[0]][sl]
+            else:
+                self.coords[key] = plot_array.coords[key]
+        # # Add the slice dim coord, with range + 1 in case of bin edges
+        # self.coords[slice_obj[0]] = plot_array.coords[slice_obj[0]][sl]
         # Slice the masks
         self.masks = {key: plot_array.masks[key][slice_obj] for key in plot_array.masks}
         # Copy edges info

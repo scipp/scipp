@@ -65,7 +65,7 @@ class PlotModel:
 
                 self.axformatter[name][dim] = formatter
 
-                is_histogram = None
+                is_histogram = False
                 for i, d in enumerate(coord.dims):
                     if d == dim:
                         is_histogram = dim_to_shape[name][

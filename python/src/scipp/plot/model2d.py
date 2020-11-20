@@ -18,7 +18,7 @@ class PlotModel2d(PlotModel):
 
         super().__init__(*args, **kwargs)
 
-        self.button_dims = {}
+        self.displayed_dims = {}
         self.xyrebin = {}
         self.xywidth = {}
         self.image_pixel_size = {}
@@ -42,7 +42,7 @@ class PlotModel2d(PlotModel):
         """
         for xy in "yx":
             # Useful maps
-            self.button_dims[xy] = axparams[xy]["dim"]
+            self.displayed_dims[xy] = axparams[xy]["dim"]
 
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
@@ -63,7 +63,7 @@ class PlotModel2d(PlotModel):
         """
         self.vslice = self.slice_data(self.data_arrays[self.name], slices)
         # Update pixel widths used for scaling before rebin step
-        for xy, dim in self.button_dims.items():
+        for xy, dim in self.displayed_dims.items():
             self.xywidth[xy] = (self.vslice.coords[dim][dim, 1:] -
                                 self.vslice.coords[dim][dim, :-1])
             self.xywidth[xy].unit = sc.units.one
@@ -79,9 +79,11 @@ class PlotModel2d(PlotModel):
         #   2. self.vslice needs to be a DataArray and not a DataArrayView for
         #      the rebin step during image resampling, since non-contiguous
         #      data is not accepted by rebin (this happens when an outer dim is
-        #      sliced when the slice thickness is zero).
+        #      sliced and the slice thickness is zero).
         # self.vslice = data_slice
-        self.vslice.data *= self.xywidth["x"]
+        # print(self.vslice.data)
+        # print(self.xywidth["x"])
+        self.vslice.data = self.vslice.data * self.xywidth["x"]
         self.vslice.data *= self.xywidth["y"]
 
         # Update image with resampling
@@ -141,7 +143,7 @@ class PlotModel2d(PlotModel):
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
         xy = "yx"
-        if len(self.vslice.coords[self.button_dims["x"]].dims) > 1:
+        if len(self.vslice.coords[self.displayed_dims["x"]].dims) > 1:
             xy = "xy"
 
         dimy = self.xyrebin[xy[0]].dims[0]
@@ -154,18 +156,20 @@ class PlotModel2d(PlotModel):
 
         # Use Scipp's automatic transpose to match the image x/y axes
         # TODO: once transpose is available for DataArrays,
-        # use sc.transpose(dslice, self.button_dims) instead.
+        # use sc.transpose(dslice, self.displayed_dims) instead.
         shape = [
             self.xyrebin["y"].shape[0] - 1, self.xyrebin["x"].shape[0] - 1
         ]
         self.dslice = sc.DataArray(coords=rebin_edges,
                                    data=sc.Variable(dims=list(
-                                       self.button_dims.values()),
+                                       self.displayed_dims.values()),
                                                     values=np.ones(shape),
                                                     variances=np.zeros(shape),
                                                     dtype=self.vslice.data.dtype,
                                                     unit=sc.units.one))
 
+        print(self.dslice)
+        print(resampled_image.data)
         self.dslice *= resampled_image.data
 
         # Update the matplotlib image data
@@ -209,7 +213,7 @@ class PlotModel2d(PlotModel):
         if self.vslice is None:
             return None
 
-        for xy, dim in self.button_dims.items():
+        for xy, dim in self.displayed_dims.items():
             # Create coordinate axes for resampled image array
             self.xyrebin[xy] = sc.Variable(
                 dims=[dim],

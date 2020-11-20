@@ -19,7 +19,7 @@ class PlotModel3d(PlotModel):
 
         super().__init__(*args, scipp_obj_dict=scipp_obj_dict, **kwargs)
 
-        self.button_dims = {}
+        self.displayed_dims = {}
         self.positions = positions
         self.pos_array = None
         self.pos_coord = None
@@ -49,7 +49,7 @@ class PlotModel3d(PlotModel):
         if self.positions is None:
 
             for xyz in "zyx":
-                self.button_dims[xyz] = axparams[xyz]["dim"]
+                self.displayed_dims[xyz] = axparams[xyz]["dim"]
 
             z, y, x = np.meshgrid(
                 to_bin_centers(
@@ -101,24 +101,24 @@ class PlotModel3d(PlotModel):
         # Use automatic broadcast if positions are not used
         if self.positions is None:
             shape = [
-                data_slice.coords[self.button_dims["z"]].shape[0] - 1,
-                data_slice.coords[self.button_dims["y"]].shape[0] - 1,
-                data_slice.coords[self.button_dims["x"]].shape[0] - 1
+                data_slice.coords[self.displayed_dims["z"]].shape[0] - 1,
+                data_slice.coords[self.displayed_dims["y"]].shape[0] - 1,
+                data_slice.coords[self.displayed_dims["x"]].shape[0] - 1
             ]
 
             self.dslice = sc.DataArray(coords={
-                self.button_dims["z"]:
-                data_slice.coords[self.button_dims["z"]],
-                self.button_dims["y"]:
-                data_slice.coords[self.button_dims["y"]],
-                self.button_dims["x"]:
-                data_slice.coords[self.button_dims["x"]]
+                self.displayed_dims["z"]:
+                data_slice.coords[self.displayed_dims["z"]],
+                self.displayed_dims["y"]:
+                data_slice.coords[self.displayed_dims["y"]],
+                self.displayed_dims["x"]:
+                data_slice.coords[self.displayed_dims["x"]]
             },
                                        data=sc.Variable(
                                            dims=[
-                                               self.button_dims["z"],
-                                               self.button_dims["y"],
-                                               self.button_dims["x"]
+                                               self.displayed_dims["z"],
+                                               self.displayed_dims["y"],
+                                               self.displayed_dims["x"]
                                            ],
                                            values=np.ones(shape),
                                            variances=np.zeros(shape),
