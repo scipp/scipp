@@ -131,7 +131,7 @@ TEST(Variable, reciprocal_move) {
   EXPECT_EQ(out.values<double>().data(), ptr);
 }
 
-TEST(Variable, resiprocal_out_arg_full_in_place) {
+TEST(Variable, reciprocal_out_arg_full_in_place) {
   auto var =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 4, 9});
   auto view = reciprocal(var, var);
