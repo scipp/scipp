@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "dtype.h"
 #include "pybind11.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
@@ -35,7 +36,9 @@ template <class T, class... Ignored>
 void bind_astype(py::class_<T, Ignored...> &c) {
   c.def(
       "astype",
-      [](const T &self, const DType type) { return astype(self, type); },
+      [](const T &self, const py::object &type) {
+        return astype(self, scipp_dtype(type));
+      },
       py::call_guard<py::gil_scoped_release>(),
       R"(
         Converts a Variable or DataArray to a different type.

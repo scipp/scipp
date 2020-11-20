@@ -50,8 +50,8 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   if (type.is_none())
     return dtype<void>;
   try {
-    return type.cast<DType>();
-  } catch (const py::cast_error &) {
     return scipp_dtype(py::dtype::from_args(type));
+  } catch (const std::runtime_error &) {
+    return type.cast<DType>();
   }
 }

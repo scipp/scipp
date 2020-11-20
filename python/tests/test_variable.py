@@ -172,6 +172,14 @@ def test_astype_bad_conversion():
         var.astype(sc.dtype.string)
 
 
+def test_astype_numpy_dtypes():
+    var = sc.Variable(dims=['x'], values=np.arange(3.0, dtype=np.float32))
+    assert var.dtype == sc.dtype.float32
+
+    as_new_dtype = var.astype(np.float64)
+    assert as_new_dtype.dtype == sc.dtype.float64
+
+
 def test_operation_with_scalar_quantity():
     reference = sc.Variable(dims=['x'], values=np.arange(4.0) * 1.5)
     reference.unit = sc.units.kg
