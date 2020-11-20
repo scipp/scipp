@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 
 #include "scipp/core/element/util.h"
+#include "scipp/common/except.h"
 #include "scipp/core/element/math.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
@@ -121,13 +122,29 @@ TEST(ElementUtilTest, get) {
   EXPECT_EQ(core::element::get<1>(units::s), units::s);
 }
 
-TEST(ElementUtilTest, assign_op) {
-  auto aop = assign_op{scipp::core::element::abs};
-  static_assert(std::is_same_v<decltype(aop)::types,
-                               decltype(scipp::core::element::abs)::types>);
+TEST(ElementUtilTest, assign_op_types) {
+  auto aop_abs = assign_op{core::element::abs};
+  static_assert(std::is_same_v<decltype(aop_abs)::types,
+                               decltype(core::element::abs)::types>);
+  auto aop_sqrt = assign_op{core::element::abs};
+  static_assert(std::is_same_v<decltype(aop_sqrt)::types,
+                               decltype(core::element::sqrt)::types>);
+}
+
+TEST(ElementUtilTest, assign_op_value) {
+  auto aop = assign_op{core::element::abs};
   for (auto x : {54.2415698, -1.412, 0.0, 2.0}) {
     double y;
     aop(y, x);
-    EXPECT_EQ(y, scipp::core::element::abs(x));
+    EXPECT_EQ(y, core::element::abs(x));
   }
+}
+
+TEST(ElementUtilTest, assign_op_unit) {
+  auto aop = assign_op{core::element::sqrt};
+  units::Unit res;
+  aop(res, units::m*units::m);
+  EXPECT_EQ(res, units::m);
+
+  EXPECT_THROW(aop(res, units::kg), except::UnitError);
 }
