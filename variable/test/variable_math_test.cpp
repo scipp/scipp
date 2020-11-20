@@ -153,3 +153,31 @@ TEST(Variable, reciprocal_out_arg_partial) {
   EXPECT_EQ(view, out);
   EXPECT_EQ(view.underlying(), out);
 }
+
+TYPED_TEST(VariableMathTest, exp) {
+  for (TypeParam x : {0.0, -1.23, 3.45, -1.23456789}) {
+    const auto v = makeVariable<TypeParam>(Values{x});
+    const auto ref = element::exp(x);
+    EXPECT_EQ(exp(v), makeVariable<TypeParam>(Values{ref}));
+  }
+}
+
+TEST(Variable, exp_out_arg) {
+  Dims dims{Dim::X};
+  Shape shape{2};
+  const auto x = makeVariable<double>(dims, shape, Values{1.23, 0.0});
+  auto out = makeVariable<double>(dims, shape, Values{0.0, 0.0});
+  const auto view = exp(x, out);
+
+  EXPECT_EQ(
+      out, makeVariable<double>(dims, shape,
+                                Values{element::exp(1.23), element::exp(0.0)}));
+  EXPECT_EQ(view, out);
+  EXPECT_EQ(view.underlying(), out);
+}
+
+TEST(Variable, exp_bad_unit) {
+  EXPECT_THROW(
+      static_cast<void>(exp(makeVariable<double>(Values{0.0}, units::s))),
+      except::UnitError);
+}
