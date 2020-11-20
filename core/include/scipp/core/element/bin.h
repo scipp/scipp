@@ -104,7 +104,6 @@ static constexpr auto update_indices_from_existing =
                }};
 
 // - Each span is covers an *input* bin.
-// - `bin_sizes` Sizes of the output bins
 // - `offsets` Start indices of the output bins
 // - `bin_indices` Target output bin index (within input bin)
 template <class T>
