@@ -125,7 +125,7 @@ protected:
 
   void expect_near(const DataArrayConstView &a, const DataArrayConstView &b) {
     // "round" last digits for approximate floating point comparison
-    const auto rounding = 20.0 * units::one * buckets::sum(a);
+    const auto rounding = 100.0 * units::one * buckets::sum(a);
     EXPECT_EQ(buckets::sum(a) + rounding, buckets::sum(b) + rounding);
   }
 };
