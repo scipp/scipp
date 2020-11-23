@@ -111,12 +111,4 @@ constexpr auto fill =
     overloaded{arg_list<double, float, std::tuple<float, double>>,
                [](auto &x, const auto &value) { x = value; }};
 
-template <typename Op> struct assign_op : Op {
-  template <typename Out, typename... In>
-  void operator()(Out &out, In &&... in) {
-    out = Op::operator()(std::forward<In>(in)...);
-  }
-};
-template <typename Op> assign_op(Op) -> assign_op<Op>;
-
 } // namespace scipp::core::element

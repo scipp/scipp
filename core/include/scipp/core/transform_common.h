@@ -62,6 +62,14 @@ static constexpr auto dimensionless_unit_check_return =
                  return units::one;
                }};
 
+template <typename Op> struct assign_op : Op {
+  template <typename Out, typename... In>
+  void operator()(Out &out, In &&... in) {
+    out = Op::operator()(std::forward<In>(in)...);
+  }
+};
+template <typename Op> assign_op(Op) -> assign_op<Op>;
+
 /// Flags for transform, added as overloads to the operator. These are never
 /// actually called since flag presence is checked via the base class of the
 /// operator.
