@@ -28,19 +28,6 @@ protected:
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 2, 4});
 };
 
-TEST_F(DataArrayBinTest, sort_1d) {
-  Variable sorted_data = makeVariable<double>(
-      Dims{Dim::Event}, Shape{4}, Values{4, 2, 1, 3}, Variances{4, 3, 1, 2});
-  Variable sorted_x =
-      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4});
-  Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{4},
-                                            Values{false, false, true, false});
-  DataArray sorted_table =
-      DataArray(sorted_data, {{Dim::X, sorted_x}, {Dim("scalar"), scalar}},
-                {{"mask", sorted_mask}});
-  EXPECT_EQ(sortby(table, Dim::X), sorted_table);
-}
-
 TEST_F(DataArrayBinTest, 1d) {
   Variable sorted_data = makeVariable<double>(
       Dims{Dim::Event}, Shape{3}, Values{4, 1, 2}, Variances{4, 1, 3});

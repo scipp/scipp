@@ -6,7 +6,6 @@
 
 #include "scipp/core/element/bin.h"
 #include "scipp/core/element/cumulative.h"
-#include "scipp/core/element/permute.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 
@@ -34,14 +33,6 @@ auto make_range(const scipp::index begin, const scipp::index end,
                 const scipp::index stride, const Dim dim) {
   return cumsum(broadcast(stride * units::one, {dim, (end - begin) / stride}),
                 dim, false);
-}
-
-template <class T> auto find_sorting_permutation(const T &key) {
-  element_array<scipp::index> p(key.size(), core::default_init_elements);
-  std::iota(p.begin(), p.end(), 0);
-  core::parallel::parallel_sort(
-      p.begin(), p.end(), [&](auto i, auto j) { return key[i] < key[j]; });
-  return p;
 }
 
 void update_indices_by_binning(const VariableView &indices,
@@ -158,49 +149,6 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   return make_bins(zip(end - bin_sizes, end), dim, std::move(out_buffer));
 }
 
-Variable permute(const VariableConstView &var, const Dim dim,
-                 const VariableConstView &permutation) {
-  return variable::transform(subspan_view(var, dim), permutation,
-                             core::element::permute);
-}
-
-template <class T> struct MakePermutation {
-  static auto apply(const VariableConstView &key) {
-    expect::isKey(key);
-    // Using span over data since random access via ElementArrayView is slow.
-    return makeVariable<scipp::index>(
-        key.dims(),
-        Values(find_sorting_permutation(key.values<T>().as_span())));
-  }
-};
-
-auto permute(const DataArrayConstView &data, const Dim dim,
-             const VariableConstView &permutation) {
-  return dataset::transform(data, [dim, permutation](const auto &var) {
-    return var.dims().contains(dim) ? permute(var, dim, permutation)
-                                    : copy(var);
-  });
-}
-} // namespace
-
-template <class T>
-auto call_sortby(const T &array, const VariableConstView &key) {
-  return permute(
-      array, key.dims().inner(),
-      core::CallDType<double, float, int64_t, int32_t, bool,
-                      std::string>::apply<MakePermutation>(key.dtype(), key));
-}
-
-template <class... T>
-DataArray sortby_impl(const DataArrayConstView &array, const T &... dims) {
-  return call_sortby(array, array.coords()[dims]...);
-}
-
-DataArray sortby(const DataArrayConstView &array, const Dim dim) {
-  return sortby_impl(array, dim);
-}
-
-namespace {
 enum class AxisAction { Group, Bin, Existing };
 template <class T>
 Variable
