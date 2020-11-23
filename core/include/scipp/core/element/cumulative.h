@@ -22,7 +22,8 @@ constexpr auto exclusive_scan = overloaded{
     }};
 
 constexpr auto inclusive_scan = overloaded{
-    arg_list<int64_t, int32_t>, transform_flags::expect_no_variance_arg<0>,
+    arg_list<double, float, int64_t, int32_t>,
+    transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>, [](auto &sum, auto &x) {
       sum += x;
       x = sum;
