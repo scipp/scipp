@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 
-#include "scipp/core/transform_common.h"
 #include "scipp/core/element/math.h"
+#include "scipp/core/transform_common.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 
@@ -35,7 +35,7 @@ TEST(TransformCommonTest, assign_op_value) {
 TEST(TransformCommonTest, assign_op_unit) {
   auto aop = assign_op{core::element::sqrt};
   units::Unit res;
-  aop(res, units::m*units::m);
+  aop(res, units::m * units::m);
   EXPECT_EQ(res, units::m);
 
   EXPECT_THROW(aop(res, units::kg), except::UnitError);
