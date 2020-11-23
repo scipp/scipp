@@ -9,10 +9,13 @@
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-exclusive_scan(const VariableConstView &var, const Dim dim);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable cumsum(
+    const VariableConstView &var, const Dim dim, const bool inclusive = true);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-exclusive_scan_bins(const VariableConstView &var);
+cumsum(const VariableConstView &var, const bool inclusive = true);
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+cumsum_bins(const VariableConstView &var, const bool inclusive = true);
 
 } // namespace scipp::variable

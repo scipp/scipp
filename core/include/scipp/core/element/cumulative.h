@@ -15,4 +15,10 @@ constexpr auto exclusive_scan =
                  x = sum - x;
                }};
 
+constexpr auto inclusive_scan =
+    overloaded{arg_list<int64_t, int32_t>, [](auto &sum, auto &x) {
+                 sum += x;
+                 x = sum;
+               }};
+
 } // namespace scipp::core::element

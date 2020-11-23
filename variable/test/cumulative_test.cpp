@@ -8,22 +8,35 @@
 
 using namespace scipp;
 
-TEST(CumulativeTest, exclusive_scan) {
+TEST(CumulativeTest, cumsum) {
   const auto var = makeVariable<int64_t>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                          Values{1, 2, 3, 4, 5, 6});
-  EXPECT_EQ(exclusive_scan(var, Dim::X),
+  // inclusive (default)
+  EXPECT_EQ(cumsum(var, Dim::X),
+            makeVariable<int64_t>(var.dims(), Values{1, 2, 3, 5, 7, 9}));
+  EXPECT_EQ(cumsum(var, Dim::Y),
+            makeVariable<int64_t>(var.dims(), Values{1, 3, 6, 4, 9, 15}));
+  EXPECT_EQ(cumsum(var),
+            makeVariable<int64_t>(var.dims(), Values{1, 3, 6, 10, 15, 21}));
+  // exclusive
+  EXPECT_EQ(cumsum(var, Dim::X, false),
             makeVariable<int64_t>(var.dims(), Values{0, 0, 0, 1, 2, 3}));
-  EXPECT_EQ(exclusive_scan(var, Dim::Y),
+  EXPECT_EQ(cumsum(var, Dim::Y, false),
             makeVariable<int64_t>(var.dims(), Values{0, 1, 3, 0, 4, 9}));
+  EXPECT_EQ(cumsum(var, false),
+            makeVariable<int64_t>(var.dims(), Values{0, 1, 3, 6, 10, 15}));
 }
 
-TEST(CumulativeTest, exclusive_scan_bins) {
+TEST(CumulativeTest, cumsum_bins) {
   const auto indices =
       makeVariable<scipp::index_pair>(Values{scipp::index_pair{0, 3}});
   const auto buffer =
       makeVariable<int64_t>(Dims{Dim::Row}, Shape{3}, Values{1, 2, 3});
   const auto var = make_bins(indices, Dim::Row, buffer);
-  EXPECT_EQ(exclusive_scan_bins(var),
+  EXPECT_EQ(cumsum_bins(var),
+            make_bins(indices, Dim::Row,
+                      makeVariable<int64_t>(buffer.dims(), Values{1, 3, 6})));
+  EXPECT_EQ(cumsum_bins(var, false),
             make_bins(indices, Dim::Row,
                       makeVariable<int64_t>(buffer.dims(), Values{0, 1, 3})));
 }
