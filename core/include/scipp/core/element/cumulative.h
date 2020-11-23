@@ -10,7 +10,7 @@
 
 namespace scipp::core::element {
 
-// Cannot support variances sincetransform copies vale and variance into
+// Cannot support variances since transform copies value and variance into
 // ValueAndVariance before calling the functor. Only the *first* arg in an
 // in-place transform is copied back to the input.
 constexpr auto exclusive_scan = overloaded{
