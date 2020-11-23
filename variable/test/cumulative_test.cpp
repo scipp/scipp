@@ -19,11 +19,11 @@ TEST(CumulativeTest, cumsum) {
   EXPECT_EQ(cumsum(var),
             makeVariable<int64_t>(var.dims(), Values{1, 3, 6, 10, 15, 21}));
   // exclusive
-  EXPECT_EQ(cumsum(var, Dim::X, false),
+  EXPECT_EQ(cumsum(var, Dim::X, CumSumMode::Exclusive),
             makeVariable<int64_t>(var.dims(), Values{0, 0, 0, 1, 2, 3}));
-  EXPECT_EQ(cumsum(var, Dim::Y, false),
+  EXPECT_EQ(cumsum(var, Dim::Y, CumSumMode::Exclusive),
             makeVariable<int64_t>(var.dims(), Values{0, 1, 3, 0, 4, 9}));
-  EXPECT_EQ(cumsum(var, false),
+  EXPECT_EQ(cumsum(var, CumSumMode::Exclusive),
             makeVariable<int64_t>(var.dims(), Values{0, 1, 3, 6, 10, 15}));
 }
 
@@ -36,7 +36,7 @@ TEST(CumulativeTest, cumsum_bins) {
   EXPECT_EQ(cumsum_bins(var),
             make_bins(indices, Dim::Row,
                       makeVariable<int64_t>(buffer.dims(), Values{1, 3, 6})));
-  EXPECT_EQ(cumsum_bins(var, false),
+  EXPECT_EQ(cumsum_bins(var, CumSumMode::Exclusive),
             make_bins(indices, Dim::Row,
                       makeVariable<int64_t>(buffer.dims(), Values{0, 1, 3})));
 }

@@ -9,13 +9,22 @@
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable cumsum(
-    const VariableConstView &var, const Dim dim, const bool inclusive = true);
+enum class CumSumMode { Exclusive, Inclusive };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-cumsum(const VariableConstView &var, const bool inclusive = true);
+cumsum(const VariableConstView &var, const Dim dim,
+       const CumSumMode mode = CumSumMode::Inclusive);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-cumsum_bins(const VariableConstView &var, const bool inclusive = true);
+cumsum(const VariableConstView &var,
+       const CumSumMode mode = CumSumMode::Inclusive);
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+cumsum_bins(const VariableConstView &var,
+            const CumSumMode mode = CumSumMode::Inclusive);
 
 } // namespace scipp::variable
+
+namespace scipp {
+using variable::CumSumMode;
+}

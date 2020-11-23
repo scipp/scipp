@@ -32,7 +32,7 @@ namespace {
 auto make_range(const scipp::index begin, const scipp::index end,
                 const scipp::index stride, const Dim dim) {
   return cumsum(broadcast(stride * units::one, {dim, (end - begin) / stride}),
-                dim, false);
+                dim, CumSumMode::Exclusive);
 }
 
 void update_indices_by_binning(const VariableView &indices,
@@ -113,10 +113,10 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   fill_zeros(offsets);
   for (const auto dim : data.dims().labels())
     if (dims.contains(dim)) {
-      offsets += cumsum(output_bin_sizes, dim, false);
+      offsets += cumsum(output_bin_sizes, dim, CumSumMode::Exclusive);
       output_bin_sizes = sum(output_bin_sizes, dim);
     }
-  offsets += cumsum_bins(output_bin_sizes, false);
+  offsets += cumsum_bins(output_bin_sizes, CumSumMode::Exclusive);
   Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
   auto end = cumsum(filtered_input_bin_size);
   const auto total_size = end.values<scipp::index>().as_span().back();
