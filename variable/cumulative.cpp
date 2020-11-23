@@ -22,4 +22,12 @@ Variable exclusive_scan(const VariableConstView &var, const Dim dim) {
   return out;
 }
 
+Variable exclusive_scan_bins(const VariableConstView &var) {
+  Variable out(var);
+  auto cumulative = Variable(variable::variableFactory().elem_dtype(var),
+                             var.dims(), var.unit());
+  accumulate_in_place(cumulative, out, core::element::exclusive_scan);
+  return out;
+}
+
 } // namespace scipp::variable

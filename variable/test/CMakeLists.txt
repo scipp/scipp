@@ -6,6 +6,7 @@ add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
   bucket_model_test.cpp
   comparison_test.cpp
+  cumulative_test.cpp
   indexed_slice_view_test.cpp
   operations_test.cpp
   rebin_test.cpp

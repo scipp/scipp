@@ -110,12 +110,6 @@ Variable bin_sizes(const VariableConstView &sub_bin, const scipp::index nbin) {
   return sizes;
 }
 
-Variable exclusive_scan_bins(const VariableView &var) {
-  Variable out(var);
-  transform_in_place(as_subspan_view(out), core::element::exclusive_scan_bins);
-  return out;
-}
-
 template <class T>
 auto bin(const VariableConstView &data, const VariableConstView &indices,
          const Dimensions &dims) {
