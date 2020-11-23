@@ -26,7 +26,6 @@ TEST(ElementAbsTest, value_and_variance) {
 
 TEST(ElementAbsTest, supported_types) {
   auto supported = decltype(element::abs)::types{};
-  static_assert(std::tuple_size_v<decltype(supported)> == 2);
   std::get<double>(supported);
   std::get<float>(supported);
 }
@@ -64,7 +63,6 @@ TEST(ElementSqrtTest, value_and_variance) {
 
 TEST(ElementSqrtTest, supported_types) {
   auto supported = decltype(element::sqrt)::types{};
-  static_assert(std::tuple_size_v<decltype(supported)> == 2);
   std::get<double>(supported);
   std::get<float>(supported);
 }
