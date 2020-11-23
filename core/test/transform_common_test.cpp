@@ -14,17 +14,17 @@
 using namespace scipp;
 using namespace scipp::core;
 
-TEST(TransformCommonTest, assign_op_types) {
-  auto aop_abs = assign_op{core::element::abs};
+TEST(TransformCommonTest, assign_unary_types) {
+  auto aop_abs = assign_unary{core::element::abs};
   static_assert(std::is_same_v<decltype(aop_abs)::types,
                                decltype(core::element::abs)::types>);
-  auto aop_sqrt = assign_op{core::element::abs};
+  auto aop_sqrt = assign_unary{core::element::abs};
   static_assert(std::is_same_v<decltype(aop_sqrt)::types,
                                decltype(core::element::sqrt)::types>);
 }
 
-TEST(TransformCommonTest, assign_op_value) {
-  auto aop = assign_op{core::element::abs};
+TEST(TransformCommonTest, assign_unary_value) {
+  auto aop = assign_unary{core::element::abs};
   for (auto x : {54.2415698, -1.412, 0.0, 2.0}) {
     double y;
     aop(y, x);
@@ -32,8 +32,8 @@ TEST(TransformCommonTest, assign_op_value) {
   }
 }
 
-TEST(TransformCommonTest, assign_op_unit) {
-  auto aop = assign_op{core::element::sqrt};
+TEST(TransformCommonTest, assign_unary_unit) {
+  auto aop = assign_unary{core::element::sqrt};
   units::Unit res;
   aop(res, units::m * units::m);
   EXPECT_EQ(res, units::m);
@@ -41,9 +41,9 @@ TEST(TransformCommonTest, assign_op_unit) {
   EXPECT_THROW(aop(res, units::kg), except::UnitError);
 }
 
-TEST(TransformCommontest, assign_op_value_and_variance) {
+TEST(TransformCommontest, assign_unary_value_and_variance) {
   const ValueAndVariance x(2.0, 1.0);
   ValueAndVariance out(x);
-  assign_op{core::element::sqrt}(out, x);
+  assign_unary{core::element::sqrt}(out, x);
   EXPECT_EQ(out, core::element::sqrt(x));
 }
