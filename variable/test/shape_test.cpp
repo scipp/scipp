@@ -25,5 +25,5 @@ TEST(ShapeTest, broadcast) {
 TEST(ShapeTest, broadcast_fail) {
   auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                   Values{1, 2, 3, 4});
-  EXPECT_ANY_THROW(broadcast(var, {Dim::X, 3}));
+  EXPECT_THROW(broadcast(var, {Dim::X, 3}), except::NotFoundError);
 }
