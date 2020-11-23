@@ -32,8 +32,8 @@ namespace {
 
 auto make_range(const scipp::index begin, const scipp::index end,
                 const scipp::index stride, const Dim dim) {
-  return exclusive_scan(
-      broadcast(stride * units::one, {dim, (end - begin) / stride}), dim);
+  return cumsum(broadcast(stride * units::one, {dim, (end - begin) / stride}),
+                dim, false);
 }
 
 template <class T> auto find_sorting_permutation(const T &key) {
@@ -122,24 +122,25 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   fill_zeros(offsets);
   for (const auto dim : data.dims().labels())
     if (dims.contains(dim)) {
-      offsets += exclusive_scan(output_bin_sizes, dim);
+      offsets += cumsum(output_bin_sizes, dim, false);
       output_bin_sizes = sum(output_bin_sizes, dim);
     }
-  offsets += exclusive_scan_bins(output_bin_sizes);
+  offsets += cumsum_bins(output_bin_sizes, false);
   Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
-  auto [begin, total_size] = sizes_to_begin(filtered_input_bin_size);
-  begin = broadcast(begin, data.dims()); // required for some cases of rebinning
+  auto end = cumsum(filtered_input_bin_size);
+  const auto total_size = end.values<scipp::index>().as_span().back();
+  end = broadcast(end, data.dims()); // required for some cases of rebinning
   const auto filtered_input_bin_ranges =
-      zip(begin, begin + filtered_input_bin_size);
+      zip(end - filtered_input_bin_size, end);
 
   // Perform actual binning step for data, all coords, all masks, ...
   auto out_buffer =
-      dataset::transform(bins_view<T>(data), [&, N = total_size](auto &&var) {
+      dataset::transform(bins_view<T>(data), [&](auto &&var) {
         if (!is_buckets(var))
           return std::move(var);
         const auto &[input_indices, buffer_dim, in_buffer] =
             var.template constituents<core::bin<VariableConstView>>();
-        auto out = resize_default_init(in_buffer, buffer_dim, N);
+        auto out = resize_default_init(in_buffer, buffer_dim, total_size);
         transform_in_place(
             subspan_view(out, buffer_dim, filtered_input_bin_ranges),
             as_subspan_view(std::as_const(offsets)), as_subspan_view(var),
@@ -153,9 +154,9 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   const auto bin_sizes =
       reshape(std::get<2>(output_bin_sizes.constituents<core::bin<Variable>>()),
               output_dims);
-  std::tie(begin, total_size) = sizes_to_begin(bin_sizes);
+  end = cumsum(bin_sizes);
   const auto dim = out_buffer.dims().inner();
-  return make_bins(zip(begin, begin + bin_sizes), dim, std::move(out_buffer));
+  return make_bins(zip(end - bin_sizes, end), dim, std::move(out_buffer));
 }
 
 Variable permute(const VariableConstView &var, const Dim dim,

@@ -14,6 +14,7 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
@@ -206,9 +207,10 @@ auto combine(const VariableConstView &var0, const VariableConstView &var1) {
   const auto sizes0 = end0 - begin0;
   const auto sizes1 = end1 - begin1;
   const auto sizes = sizes0 + sizes1;
-  const auto [begin, size] = sizes_to_begin(sizes);
-  const auto end = begin + sizes;
-  auto buffer = resize_default_init(buffer0, dim, size);
+  const auto end = cumsum(sizes);
+  const auto begin = end - sizes;
+  auto buffer = resize_default_init(
+      buffer0, dim, end.template values<scipp::index>().as_span().back());
   copy_slices(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
   copy_slices(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
   return variable::DataModel<bucket<T>>{zip(begin, end), dim,
