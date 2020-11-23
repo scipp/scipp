@@ -357,17 +357,15 @@ class TestMantidConversion(unittest.TestCase):
         from mantid.simpleapi import mtd
         mtd.clear()
 
-        ds = sc.Dataset()
-
-        sc.compat.mantid.load_component_info(
-            ds, MantidDataHelper.find_file("iris26176_graphite002_sqw.nxs"))
+        ds = sc.compat.mantid.load_component_info(
+            MantidDataHelper.find_file("iris26176_graphite002_sqw.nxs"))
 
         # check that no workspaces have been leaked in the ADS
         assert len(mtd) == 0, f"Workspaces present: {mtd.getObjectNames()}"
 
-        self.assertTrue("source-position" in ds.coords)
-        self.assertTrue("sample-position" in ds.coords)
-        self.assertTrue("position" in ds.coords)
+        self.assertTrue("source-position" in ds)
+        self.assertTrue("sample-position" in ds)
+        self.assertTrue("position" in ds)
 
     def test_to_workspace_2d_no_error(self):
         from mantid.simpleapi import mtd

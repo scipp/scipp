@@ -896,7 +896,7 @@ def load(filename="",
                            advanced_geometry=advanced_geometry)
 
 
-def load_component_info(ds, file, advanced_geometry=False):
+def load_component_info(file, advanced_geometry=False):
     """
     Adds the component info coord into the dataset. The following are added:
 
@@ -917,18 +917,20 @@ def load_component_info(ds, file, advanced_geometry=False):
                                    the cartesian average of the grouped
                                    detector positions.
     """
+    ds = sc.Dataset()
     with run_mantid_alg('Load', file) as ws:
         source_pos, sample_pos = make_component_info(ws)
 
-        ds.coords["source-position"] = source_pos
-        ds.coords["sample-position"] = sample_pos
+        ds["source-position"] = source_pos
+        ds["sample-position"] = sample_pos
         pos, rot, shp = get_detector_properties(
             ws, source_pos, sample_pos, advanced_geometry=advanced_geometry)
-        ds.coords["position"] = pos
+        ds["position"] = pos
         if rot is not None:
-            ds.unaligned_coords["rotation"] = rot
+            ds["rotation"] = rot
         if shp is not None:
-            ds.unaligned_coords["shape"] = shp
+            ds["shape"] = shp
+        return ds
 
 
 def validate_dim_and_get_mantid_string(unit_dim):
