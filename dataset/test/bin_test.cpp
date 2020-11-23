@@ -85,20 +85,34 @@ TEST_F(DataArrayBinTest, 2d) {
   EXPECT_EQ(bin(bin(table, {edges_x}), {edges_y}), bucketed);
 }
 
+TEST(BinGroupTest, 1d) {
+  const Dimensions dims(Dim::Row, 5);
+  const auto data = makeVariable<double>(dims, Values{1, 2, 3, 4, 5});
+  const auto label =
+      makeVariable<std::string>(dims, Values{"a", "b", "c", "b", "a"});
+  const auto table = DataArray(data, {{Dim("label"), label}});
+  Variable groups =
+      makeVariable<std::string>(Dims{Dim("label")}, Shape{2}, Values{"a", "c"});
+  const auto binned = bin(table, {}, {groups});
+  EXPECT_EQ(binned.dims(), groups.dims());
+  EXPECT_EQ(binned.values<core::bin<DataArray>>()[1],
+            table.slice({Dim::Row, 2, 3}));
+  EXPECT_EQ(binned.values<core::bin<DataArray>>()[0].slice({Dim::Row, 0}),
+            table.slice({Dim::Row, 0}));
+  EXPECT_EQ(binned.values<core::bin<DataArray>>()[0].slice({Dim::Row, 1}),
+            table.slice({Dim::Row, 4}));
+}
+
 namespace {
 auto make_table(const scipp::index size) {
   Random rand;
   rand.seed(0);
   const Dimensions dims(Dim::Row, size);
-  const auto data =
-      makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
-  const auto x =
-      makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
-  const auto y =
-      makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
+  const auto data = makeVariable<double>(dims, Values(rand(dims.volume())));
+  const auto x = makeVariable<double>(dims, Values(rand(dims.volume())));
+  const auto y = makeVariable<double>(dims, Values(rand(dims.volume())));
   const auto group = astype(
-      makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume()))),
-      dtype<int64_t>);
+      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
   return DataArray(data, {{Dim::X, x}, {Dim::Y, y}, {Dim("group"), group}});
 }
 } // namespace
