@@ -9,6 +9,7 @@
 #include "test_macros.h"
 
 #include "scipp/core/element/math.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -22,9 +23,9 @@ TYPED_TEST_SUITE(VariableMathTest, FloatTypes);
 TYPED_TEST(VariableMathTest, abs) {
   for (TypeParam x : {0.0, -1.23, 3.45, -1.23456789}) {
     for (auto u : {units::dimensionless, units::m}) {
-      const auto v = makeVariable<TypeParam>(Values{x}, u);
+      const auto v = x * u;
       const auto ref = element::abs(x);
-      EXPECT_EQ(abs(v), makeVariable<TypeParam>(Values{ref}, u));
+      EXPECT_EQ(abs(v), ref * u);
     }
   }
 }
@@ -38,13 +39,13 @@ TEST(Variable, abs_move) {
 }
 
 TEST(Variable, abs_out_arg) {
-  const auto x = makeVariable<double>(Values{-1.23}, units::m);
-  auto out = makeVariable<double>(Values{0.0}, units::dimensionless);
+  const auto x = -1.23 * units::m;
+  auto out = 0.0 * units::dimensionless;
   const auto view = abs(x, out);
 
-  EXPECT_EQ(x, makeVariable<double>(Values{-1.23}, units::m));
+  EXPECT_EQ(x, -1.23 * units::m);
   EXPECT_EQ(view, out);
-  EXPECT_EQ(view, makeVariable<double>(Values{1.23}, units::m));
+  EXPECT_EQ(view, 1.23 * units::m);
   EXPECT_EQ(view.underlying(), out);
 }
 
@@ -76,9 +77,9 @@ TYPED_TEST(VariableMathTest, sqrt) {
     for (auto [uin, uout] :
          {std::tuple{units::dimensionless, units::dimensionless},
           std::tuple{units::m * units::m, units::m}}) {
-      const auto v = makeVariable<TypeParam>(Values{x}, uin);
+      const auto v = x * uin;
       const auto ref = element::sqrt(x);
-      EXPECT_EQ(sqrt(v), makeVariable<TypeParam>(Values{ref}, uout));
+      EXPECT_EQ(sqrt(v), ref * uout);
     }
   }
 }
@@ -178,7 +179,7 @@ TEST(Variable, exp_out_arg) {
 
 TEST(Variable, exp_bad_unit) {
   EXPECT_THROW(
-      static_cast<void>(exp(makeVariable<double>(Values{0.0}, units::s))),
+      static_cast<void>(exp(0.0 * units::s)),
       except::UnitError);
 }
 
@@ -206,7 +207,7 @@ TEST(Variable, log_out_arg) {
 
 TEST(Variable, log_bad_unit) {
   EXPECT_THROW(
-      static_cast<void>(log(makeVariable<double>(Values{1.0}, units::s))),
+      static_cast<void>(log(1.0 * units::s)),
       except::UnitError);
 }
 
@@ -234,6 +235,6 @@ TEST(Variable, log10_out_arg) {
 
 TEST(Variable, log10_bad_unit) {
   EXPECT_THROW(
-      static_cast<void>(log10(makeVariable<double>(Values{1.0}, units::s))),
+      static_cast<void>(log10(1.0 * units::s)),
       except::UnitError);
 }
