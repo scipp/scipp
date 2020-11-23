@@ -36,13 +36,13 @@ TEST_F(DataArrayBinTest, 1d) {
   Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{3},
                                             Values{false, true, false});
   DataArray sorted_table =
-      DataArray(sorted_data, {{Dim::X, sorted_x}, {Dim("scalar"), scalar}},
-                {{"mask", sorted_mask}});
+      DataArray(sorted_data, {{Dim::X, sorted_x}}, {{"mask", sorted_mask}});
 
   const auto bucketed = bin(table, {edges_x});
 
   EXPECT_EQ(bucketed.dims(), Dimensions(Dim::X, 2));
   EXPECT_EQ(bucketed.coords()[Dim::X], edges_x);
+  EXPECT_EQ(bucketed.coords()[Dim("scalar")], scalar);
   EXPECT_EQ(bucketed.values<bucket<DataArray>>()[0],
             sorted_table.slice({Dim::Event, 0, 1}));
   EXPECT_EQ(bucketed.values<bucket<DataArray>>()[1],
@@ -64,16 +64,16 @@ TEST_F(DataArrayBinTest, 2d) {
       makeVariable<double>(Dims{Dim::Event}, Shape{3}, Values{2, 1, 2});
   Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{3},
                                             Values{false, true, false});
-  DataArray sorted_table = DataArray(
-      sorted_data,
-      {{Dim::X, sorted_x}, {Dim::Y, sorted_y}, {Dim("scalar"), scalar}},
-      {{"mask", sorted_mask}});
+  DataArray sorted_table =
+      DataArray(sorted_data, {{Dim::X, sorted_x}, {Dim::Y, sorted_y}},
+                {{"mask", sorted_mask}});
 
   const auto bucketed = bin(table, {edges_x, edges_y});
 
   EXPECT_EQ(bucketed.dims(), Dimensions({Dim::X, Dim::Y}, {2, 2}));
   EXPECT_EQ(bucketed.coords()[Dim::X], edges_x);
   EXPECT_EQ(bucketed.coords()[Dim::Y], edges_y);
+  EXPECT_EQ(bucketed.coords()[Dim("scalar")], scalar);
   const auto empty_bucket = sorted_table.slice({Dim::Event, 0, 0});
   EXPECT_EQ(bucketed.values<bucket<DataArray>>()[0], empty_bucket);
   EXPECT_EQ(bucketed.values<bucket<DataArray>>()[1],

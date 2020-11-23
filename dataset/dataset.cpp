@@ -482,7 +482,7 @@ make_coords(const T &view, const CoordCategory category,
 
 /// Return a const view to all coordinates of the data view.
 CoordsConstView DataArrayConstView::coords() const noexcept {
-  return make_coords(*this, CoordCategory::All);
+  return make_coords(*this, CoordCategory::All, m_isItem);
 }
 
 /// Return a view to all coordinates of the data view.
@@ -506,12 +506,12 @@ CoordsView DataArray::coords() {
 
 /// Return a const view to all aligned coordinates of the data view.
 CoordsConstView DataArrayConstView::aligned_coords() const noexcept {
-  return make_coords(*this, CoordCategory::Aligned);
+  return make_coords(*this, CoordCategory::Aligned, m_isItem);
 }
 
 /// Return a view to all aligned coordinates of the data view.
 CoordsView DataArrayView::aligned_coords() const noexcept {
-  return make_coords(*this, CoordCategory::Aligned);
+  return make_coords(*this, CoordCategory::Aligned, m_isItem);
 }
 
 /// Return a const view to all aligned coordinates of the data array.

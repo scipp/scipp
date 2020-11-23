@@ -141,20 +141,17 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
   auto output_dims = merge(output_bin_sizes.dims(), dims);
-  const auto bin_sizes =
+  auto bin_sizes =
       reshape(std::get<2>(output_bin_sizes.constituents<core::bin<Variable>>()),
               output_dims);
-  end = cumsum(bin_sizes);
-  const auto dim = out_buffer.dims().inner();
-  return make_bins(zip(end - bin_sizes, end), dim, std::move(out_buffer));
+  return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
 }
 
 enum class AxisAction { Group, Bin, Existing };
 template <class T>
-Variable
-bin_impl(const VariableConstView &var,
-         const std::vector<std::tuple<AxisAction, Dim, VariableConstView>>
-             &actions) {
+auto bin_impl(const VariableConstView &var,
+              const std::vector<std::tuple<AxisAction, Dim, VariableConstView>>
+                  &actions) {
   const auto &[begin_end, buffer_dim, array] = var.constituents<core::bin<T>>();
   const auto input_bins = bins_view<T>(var);
   auto indices = make_bins(copy(begin_end), buffer_dim,
@@ -175,26 +172,55 @@ bin_impl(const VariableConstView &var,
   return bin<T>(var, indices, dims);
 }
 
-DataArray add_metadata(Variable &&binned, const DataArrayConstView &array,
+constexpr static auto get_aligned_coords = [](auto &a) {
+  return a.aligned_coords();
+};
+constexpr static auto get_unaligned_coords = [](auto &a) {
+  return a.unaligned_coords();
+};
+constexpr static auto get_masks = [](auto &a) { return a.masks(); };
+
+template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
+  const auto dim = array.dims().inner();
+  std::vector<typename decltype(meta(array))::key_type> to_extract;
+  std::map<typename decltype(meta(array))::key_type, Variable> extracted;
+  const auto view = meta(array);
+  // WARNING: Do not use `view` while extracting, `extract` invalidates it!
+  std::copy_if(
+      view.keys_begin(), view.keys_end(), std::back_inserter(to_extract),
+      [&](const auto &key) { return !view[key].dims().contains(dim); });
+  std::transform(to_extract.begin(), to_extract.end(),
+                 std::inserter(extracted, extracted.end()),
+                 [&](const auto &key) {
+                   return std::pair(key, meta(array).extract(key));
+                 });
+  return extracted;
+}
+
+DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
+                       const DataArrayConstView &array,
                        const std::vector<VariableConstView> &edges,
                        const std::vector<VariableConstView> &groups) {
+  auto &[buffer, bin_sizes] = proto;
+  const auto end = cumsum(bin_sizes);
+  const auto buffer_dim = buffer.dims().inner();
   // TODO We probably want to omit the coord used for grouping in the non-edge
   // case, since it just contains the same value duplicated for every row in the
   // bin.
   // Note that we should then also recreate that variable in concatenate, to
   // ensure that those operations are reversible.
-  // TODO lift metadata to outer if possible
-  std::map<Dim, Variable> coords;
+  auto coords = extract_unbinned(buffer, get_aligned_coords);
   for (const auto &edge : edges)
     coords[edge.dims().inner()] = copy(edge);
   for (const auto &group : groups)
     coords[group.dims().inner()] = copy(group);
-  const auto &[begin_end, buffer_dim, buffer] =
-      binned.constituents<core::bin<DataArray>>();
   for (const auto &[dim, coord] : array.aligned_coords())
     if (!coords.count(dim) && !coord.dims().contains(buffer_dim))
       coords[dim] = copy(coord);
-  return {std::move(binned), std::move(coords)};
+  auto masks = extract_unbinned(buffer, get_masks);
+  auto unaligned_coords = extract_unbinned(buffer, get_unaligned_coords);
+  return {make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer)),
+          std::move(coords), std::move(masks), std::move(unaligned_coords)};
 }
 
 // Order is defined as:
@@ -243,11 +269,11 @@ auto axis_actions(const VariableConstView &var,
 DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &edges,
               const std::vector<VariableConstView> &groups) {
-  Variable binned;
+  std::tuple<DataArray, Variable> proto;
   const auto actions = axis_actions(array.data(), edges, groups);
   if (array.dtype() == dtype<core::bin<DataArray>>) {
     // TODO if rebinning, take into account masks (or fail)!
-    binned = bin_impl<DataArray>(array.data(), actions);
+    proto = bin_impl<DataArray>(array.data(), actions);
   } else {
     // Pretend existing binning along outermost binning dim to enable threading
     const auto dim = array.dims().inner();
@@ -261,9 +287,9 @@ DataArray bin(const DataArrayConstView &array,
     end.values<scipp::index>().as_span().back() = array.dims()[dim];
     const auto indices = zip(begin, end);
     const auto tmp = make_non_owning_bins(indices, dim, array);
-    binned = bin_impl<DataArrayConstView>(tmp, actions);
+    proto = bin_impl<DataArrayConstView>(tmp, actions);
   }
-  return add_metadata(std::move(binned), array, edges, groups);
+  return add_metadata(std::move(proto), array, edges, groups);
 }
 
 } // namespace scipp::dataset
