@@ -8,6 +8,7 @@ pybind11_add_module(
   choose.cpp
   comparison.cpp
   counts.cpp
+  cumulative.cpp
   dataset.cpp
   detail.cpp
   docstring.cpp

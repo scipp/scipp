@@ -63,18 +63,6 @@ Variable resize_default_init(const VariableConstView &var, const Dim dim,
                                             var.hasVariances());
 }
 
-std::tuple<Variable, scipp::index>
-sizes_to_begin(const VariableConstView &sizes) {
-  Variable begin(sizes);
-  scipp::index size = 0;
-  for (auto &i : begin.values<scipp::index>()) {
-    const auto old_size = size;
-    size += i;
-    i = old_size;
-  }
-  return {begin, size};
-}
-
 /// Construct a bin-variable over a variable.
 ///
 /// Each bin is represented by a VariableView. `indices` defines the array of

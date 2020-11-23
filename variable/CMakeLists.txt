@@ -34,6 +34,7 @@ set(SRC_FILES
     arithmetic.cpp
     bins.cpp
     comparison.cpp
+    cumulative.cpp
     except.cpp
     inplace_arithmetic.cpp
     logical.cpp

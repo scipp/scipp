@@ -20,6 +20,18 @@ std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
 
 template <class T>
 std::tuple<VariableConstView, Dim, typename T::const_element_type>
+Variable::constituents() const {
+  return VariableConstView(*this).constituents<T>();
+}
+
+template <class T>
+std::tuple<bin_indices_t<T>, Dim, typename T::element_type>
+Variable::constituents() {
+  return VariableView(*this).constituents<T>();
+}
+
+template <class T>
+std::tuple<VariableConstView, Dim, typename T::const_element_type>
 VariableConstView::constituents() const {
   const auto &model = requireT<const DataModel<T>>(underlying().data());
   auto view = *this;
@@ -116,6 +128,12 @@ public:
 /// bucket dtype in Variable.
 #define INSTANTIATE_BUCKET_VARIABLE(name, ...)                                 \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
+  template std::tuple<VariableConstView, Dim,                                  \
+                      typename __VA_ARGS__::const_element_type>                \
+  Variable::constituents<__VA_ARGS__>() const;                                 \
+  template std::tuple<bin_indices_t<__VA_ARGS__>, Dim,                         \
+                      typename __VA_ARGS__::element_type>                      \
+  Variable::constituents<__VA_ARGS__>();                                       \
   template std::tuple<Variable, Dim, typename __VA_ARGS__::buffer_type>        \
   Variable::to_constituents<__VA_ARGS__>();                                    \
   template std::tuple<bin_indices_t<__VA_ARGS__>, Dim,                         \

@@ -14,6 +14,7 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
@@ -142,6 +143,18 @@ Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
   return make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
+Variable make_non_owning_bins(const VariableView &indices, const Dim dim,
+                              const DataArrayView &buffer) {
+  return {std::make_unique<variable::DataModel<bucket<DataArrayView>>>(
+      indices, dim, buffer)};
+}
+
+Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
+                              const DataArrayConstView &buffer) {
+  return {std::make_unique<variable::DataModel<bucket<DataArrayConstView>>>(
+      indices, dim, buffer)};
+}
+
 namespace {
 template <class T> Variable bucket_sizes_impl(const VariableConstView &view) {
   const auto &indices = std::get<0>(view.constituents<bucket<T>>());
@@ -194,9 +207,10 @@ auto combine(const VariableConstView &var0, const VariableConstView &var1) {
   const auto sizes0 = end0 - begin0;
   const auto sizes1 = end1 - begin1;
   const auto sizes = sizes0 + sizes1;
-  const auto [begin, size] = sizes_to_begin(sizes);
-  const auto end = begin + sizes;
-  auto buffer = resize_default_init(buffer0, dim, size);
+  const auto end = cumsum(sizes);
+  const auto begin = end - sizes;
+  auto buffer = resize_default_init(
+      buffer0, dim, end.template values<scipp::index>().as_span().back());
   copy_slices(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
   copy_slices(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
   return variable::DataModel<bucket<T>>{zip(begin, end), dim,
@@ -230,7 +244,28 @@ Variable concatenate_untyped(const VariableConstView &var, const Dim dim,
     return concatenate_typed<Dataset>(var, dim, shape, mask);
 }
 
+template <class T>
+void reserve_impl(const VariableView &var, const VariableConstView &shape) {
+  // TODO this only reserves in the bins, but assumes buffer has enough space
+  const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
+  variable::transform_in_place(
+      indices, shape,
+      overloaded{
+          core::element::arg_list<std::tuple<scipp::index_pair, scipp::index>>,
+          core::keep_unit,
+          [](auto &begin_end, auto &size) { begin_end.second += size; }});
+}
+
 } // namespace
+
+void reserve(const VariableView &var, const VariableConstView &shape) {
+  if (var.dtype() == dtype<bucket<Variable>>)
+    return reserve_impl<Variable>(var, shape);
+  else if (var.dtype() == dtype<bucket<DataArray>>)
+    return reserve_impl<DataArray>(var, shape);
+  else
+    return reserve_impl<Dataset>(var, shape);
+}
 
 Variable concatenate(const VariableConstView &var0,
                      const VariableConstView &var1) {

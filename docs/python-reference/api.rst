@@ -81,6 +81,7 @@ Reduction operations are operations to remove one or more dimension, e.g., by pe
 
    all
    any
+   cumsum
    max
    mean
    min

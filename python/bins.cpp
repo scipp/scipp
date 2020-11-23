@@ -5,7 +5,7 @@
 #include "scipp/dataset/bins.h"
 #include "pybind11.h"
 #include "scipp/core/except.h"
-#include "scipp/dataset/bucketby.h"
+#include "scipp/dataset/bin.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
@@ -188,6 +188,5 @@ void init_buckets(py::module &m) {
       "sum", [](const DatasetConstView &x) { return dataset::buckets::sum(x); },
       py::call_guard<py::gil_scoped_release>());
 
-  m.def("bucketby", dataset::bucketby,
-        py::call_guard<py::gil_scoped_release>());
+  m.def("bin", dataset::bin, py::call_guard<py::gil_scoped_release>());
 }
