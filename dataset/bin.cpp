@@ -134,19 +134,18 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
       zip(end - filtered_input_bin_size, end);
 
   // Perform actual binning step for data, all coords, all masks, ...
-  auto out_buffer =
-      dataset::transform(bins_view<T>(data), [&](auto &&var) {
-        if (!is_buckets(var))
-          return std::move(var);
-        const auto &[input_indices, buffer_dim, in_buffer] =
-            var.template constituents<core::bin<VariableConstView>>();
-        auto out = resize_default_init(in_buffer, buffer_dim, total_size);
-        transform_in_place(
-            subspan_view(out, buffer_dim, filtered_input_bin_ranges),
-            as_subspan_view(std::as_const(offsets)), as_subspan_view(var),
-            as_subspan_view(indices), core::element::bin);
-        return out;
-      });
+  auto out_buffer = dataset::transform(bins_view<T>(data), [&](auto &&var) {
+    if (!is_buckets(var))
+      return std::move(var);
+    const auto &[input_indices, buffer_dim, in_buffer] =
+        var.template constituents<core::bin<VariableConstView>>();
+    auto out = resize_default_init(in_buffer, buffer_dim, total_size);
+    transform_in_place(subspan_view(out, buffer_dim, filtered_input_bin_ranges),
+                       as_subspan_view(std::as_const(offsets)),
+                       as_subspan_view(var), as_subspan_view(indices),
+                       core::element::bin);
+    return out;
+  });
 
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
