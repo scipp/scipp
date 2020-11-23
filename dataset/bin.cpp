@@ -264,6 +264,23 @@ auto axis_actions(const VariableConstView &var,
   return axes;
 }
 
+auto hide_masked(
+    const DataArrayConstView &array,
+    const std::vector<std::tuple<AxisAction, Dim, VariableConstView>>
+        &actions) {
+  const auto &[begin_end, buffer_dim, buffer] =
+      array.data().constituents<core::bin<DataArray>>();
+  auto [begin, end] = unzip(begin_end);
+  for (const auto &[type, dim, coord] : actions) {
+    auto mask = irreducible_mask(array.masks(), dim);
+    if (mask) {
+      begin *= ~mask;
+      end *= ~mask;
+    }
+  }
+  return make_non_owning_bins(zip(begin, end), buffer_dim, buffer);
+}
+
 } // namespace
 
 DataArray bin(const DataArrayConstView &array,
@@ -272,8 +289,7 @@ DataArray bin(const DataArrayConstView &array,
   std::tuple<DataArray, Variable> proto;
   const auto actions = axis_actions(array.data(), edges, groups);
   if (array.dtype() == dtype<core::bin<DataArray>>) {
-    // TODO if rebinning, take into account masks (or fail)!
-    proto = bin_impl<DataArray>(array.data(), actions);
+    proto = bin_impl<DataArrayConstView>(hide_masked(array, actions), actions);
   } else {
     // Pretend existing binning along outermost binning dim to enable threading
     const auto dim = array.dims().inner();

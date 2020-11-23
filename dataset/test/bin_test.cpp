@@ -6,6 +6,7 @@
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/histogram.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/misc_operations.h"
@@ -108,7 +109,8 @@ auto make_table(const scipp::index size) {
   Random rand;
   rand.seed(0);
   const Dimensions dims(Dim::Row, size);
-  const auto data = makeVariable<double>(dims, Values(rand(dims.volume())));
+  const auto data = makeVariable<double>(dims, Values(rand(dims.volume())),
+                                         Variances(rand(dims.volume())));
   const auto x = makeVariable<double>(dims, Values(rand(dims.volume())));
   const auto y = makeVariable<double>(dims, Values(rand(dims.volume())));
   const auto group = astype(
@@ -205,4 +207,16 @@ TEST_P(BinTest, group_and_bin) {
   const auto x_group = bin(table, {edges_x}, {groups});
   const auto group = bin(table, {}, {groups});
   EXPECT_EQ(bin(group, {edges_x}, {}), x_group);
+}
+
+TEST_P(BinTest, rebin_masked) {
+  const auto table = GetParam();
+  auto binned = bin(table, {edges_x_coarse});
+  binned.masks().set("x-mask", makeVariable<bool>(Dims{Dim::X}, Shape{2},
+                                                  Values{false, true}));
+  if (table.dims().volume() > 0) {
+    EXPECT_NE(bin(binned, {edges_x}), bin(table, {edges_x}));
+    EXPECT_NE(buckets::sum(bin(binned, {edges_x})), histogram(table, edges_x));
+  }
+  EXPECT_EQ(buckets::sum(bin(binned, {edges_x})), histogram(binned, edges_x));
 }
