@@ -36,7 +36,7 @@ auto get_1d_coord(const CoordsConstView &coords, const Dim dim) {
   const auto &coord = coords[dim];
   if (coord.dims().ndim() != 1)
     throw except::DimensionError(
-        "Multi-dimensional coordinates cannot be used for value-base slicing.");
+        "Multi-dimensional coordinates cannot be used for value-based slicing");
   return coord;
 }
 
