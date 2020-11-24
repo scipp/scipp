@@ -218,7 +218,13 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
     if (!coords.count(dim) && !coord.dims().contains(buffer_dim))
       coords[dim] = copy(coord);
   auto masks = extract_unbinned(buffer, get_masks);
+  for (const auto &[name, mask] : array.masks())
+    if (bin_sizes.dims().contains(mask.dims()))
+      masks[name] = copy(mask);
   auto unaligned_coords = extract_unbinned(buffer, get_unaligned_coords);
+  for (const auto &[dim, coord] : array.unaligned_coords())
+    if (bin_sizes.dims().contains(coord.dims()))
+      unaligned_coords[dim] = copy(coord);
   return {make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer)),
           std::move(coords), std::move(masks), std::move(unaligned_coords)};
 }
