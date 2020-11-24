@@ -18,7 +18,8 @@ def _dtype_lut():
     # variable-length strings.
     dtypes = [
         d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.DataArray,
-        d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView
+        d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView,
+        d.vector_3_float64
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
@@ -38,6 +39,24 @@ class NumpyDataIO():
         group['values'].read_direct(data.values)
         if 'variances' in group:
             group['variances'].read_direct(data.variances)
+
+
+class EigenDataIO():
+    @staticmethod
+    def write(group, data):
+        import numpy as np
+        dset = group.create_dataset('values', data=np.asarray(data.values))
+        return dset
+
+    @staticmethod
+    def read(group, data):
+        import numpy as np
+        if len(data.shape) == 0:
+            data.value = group['values']
+        else:
+            # Wrapping in np.asarray is important, otherwise we appear to be
+            # using a different, much slower code path in the setter
+            data.values = np.asarray(group['values'])
 
 
 class BinDataIO():
@@ -132,6 +151,8 @@ def _data_handler_lut():
         handler[str(dtype)] = ScippDataIO
     for dtype in [d.string]:
         handler[str(dtype)] = StringDataIO
+    for dtype in [d.vector_3_float64]:
+        handler[str(dtype)] = EigenDataIO
     return handler
 
 
@@ -201,7 +222,9 @@ class DataArrayIO:
             for name in view:
                 g = VariableIO.write(group=subgroup.create_group(str(name)),
                                      var=view[name])
-                if view_name == 'coords':
+                if g is None:
+                    del subgroup[str(name)]
+                elif view_name == 'coords':
                     g.attrs['aligned'] = name in aligned
 
     @staticmethod
