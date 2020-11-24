@@ -45,7 +45,7 @@ class EigenDataIO():
     @staticmethod
     def write(group, data):
         import numpy as np
-        dset = group.create_dataset('values', data=np.array(data.values))
+        dset = group.create_dataset('values', data=np.asarray(data.values))
         return dset
 
     @staticmethod
@@ -54,9 +54,9 @@ class EigenDataIO():
         if len(data.shape) == 0:
             data.value = group['values']
         else:
-            # Wrapping in np.array is important, otherwise we appear to be
+            # Wrapping in np.asarray is important, otherwise we appear to be
             # using a different, much slower code path in the setter
-            data.values = np.array(group['values'])
+            data.values = np.asarray(group['values'])
 
 
 class BinDataIO():
