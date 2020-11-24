@@ -38,6 +38,36 @@ def test_create_with_dtype():
     assert var.dtype == sc.dtype.float32
 
 
+def test_construct_0d_datetime():
+    dt = np.datetime64('now','ns')
+    var = sc.Variable(dtype=sc.dtype.datetime64, unit=sc.units.ns)
+    var.value = dt
+    assert var.dtype == sc.dtype.datetime64
+    assert var.unit == sc.units.ns
+    assert var.value == dt
+    # dtype-less initialization
+    var2 = sc.Variable(unit=sc.units.ns, value=dt)
+    assert var.value == dt
+
+
+def test_construct_datetime():
+    dt = np.datetime64('now','ns')
+    var = sc.Variable(values=[dt, dt], dims=['x'], unit=sc.units.ns)
+    assert var.dtype == sc.dtype.datetime64
+    assert var.unit == sc.units.ns
+    assert var.values == [str(dt), str(dt)]
+
+
+def test_mismatched_datetime():
+    dt = np.datetime64('now','ns')
+    var = sc.Variable(value=dt, unit=sc.units.s)
+    with pytest.raises(RuntimeError):
+        var = sc.Variable(value=dt, unit=sc.units.s)
+    dt = np.datetime64('now','s')
+    with pytest.raises(RuntimeError):
+        var = sc.Variable(value=dt, unit=sc.units.ns)
+
+
 def test_create_with_numpy_dtype():
     var = sc.Variable(dims=['x'], shape=[2], dtype=np.dtype(np.float32))
     assert var.dtype == sc.dtype.float32

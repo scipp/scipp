@@ -64,9 +64,15 @@ template <class T> struct MakePyBufferInfoT {
 };
 
 inline py::buffer_info make_py_buffer_info(VariableView &view) {
+<<<<<<< HEAD
   return core::CallDType<
       double, float, int64_t, int32_t, bool,
       scipp::core::time_point>::apply<MakePyBufferInfoT>(view.dtype(), view);
+=======
+  return core::CallDType<double, float, int64_t, int32_t,
+                         scipp::core::time_point,
+                         bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
+>>>>>>> 8f5636bc... Updates with recent attempts to enable python bindings for slices.
 }
 
 template <class... Ts> class as_ElementArrayViewImpl;
@@ -234,9 +240,13 @@ template <class... Ts> class as_ElementArrayViewImpl {
     if (type == dtype<bool>)
       return DataAccessHelper::as_py_array_t_impl<Getter, bool>(obj, view);
     if (type == dtype<scipp::core::time_point>)
+<<<<<<< HEAD
       return DataAccessHelper::as_py_array_t_impl<Getter,
                                                   scipp::core::time_point>(
           obj, view);
+=======
+      return DataAccessHelper::as_py_array_t_impl<Getter, scipp::core::time_point>(obj, view);
+>>>>>>> 8f5636bc... Updates with recent attempts to enable python bindings for slices.
     return std::visit(
         [&view, &obj](const auto &data) {
           const auto &dims = view.dims();

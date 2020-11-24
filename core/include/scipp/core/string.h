@@ -73,9 +73,15 @@ element_to_string(const T &item,
   else if constexpr (std::is_same_v<T, bool>)
     return core::to_string(item) + ", ";
 
+<<<<<<< HEAD
   else if constexpr (std::is_same_v<T, scipp::core::time_point>) {
     return {'"' + core::to_string(to_iso_date(item, unit)) + '"' + ", "};
   } else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+=======
+  else if constexpr (std::is_same_v<T, scipp::core::time_point>)
+    return {'"' + core::to_string(to_iso_date(item, unit)) + '"' + ", "};
+  else if constexpr (std::is_same_v<T, Eigen::Vector3d>)
+>>>>>>> 8f5636bc... Updates with recent attempts to enable python bindings for slices.
     return {"(" + to_string(item[0]) + ", " + to_string(item[1]) + ", " +
             to_string(item[2]) + "), "};
   else if constexpr (std::is_same_v<T, Eigen::Matrix3d>)
@@ -83,7 +89,7 @@ element_to_string(const T &item,
             element_to_string(Eigen::Vector3d(item.row(1))) + ", " +
             element_to_string(Eigen::Vector3d(item.row(2))) + "), "};
   else if constexpr (is_events_v<T>)
-    return array_to_string(item) + ", ";
+    return array_to_string(item, unit) + ", ";
   else
     return to_string(item) + ", ";
 }

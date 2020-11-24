@@ -140,7 +140,7 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
   }
 
   return core::CallDType<double, float, int64_t, int32_t,
-                         bool>::apply<MakeVariable>(dtypeTag, labels, values,
+                         bool, scipp::core::time_point>::apply<MakeVariable>(dtypeTag, labels, values,
                                                     variances, unit);
 }
 

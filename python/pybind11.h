@@ -9,6 +9,7 @@
 // errors/warning. This header provides all pybind11 includes that we are using.
 #include <pybind11/eigen.h>
 #include <pybind11/numpy.h>
+#include <pybind11/chrono.h>
 #include <pybind11/operators.h>
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>

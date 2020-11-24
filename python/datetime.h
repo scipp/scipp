@@ -13,18 +13,34 @@
 #include <datetime.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/chrono.h>
 
 #include "scipp/core/dtype.h"
+#include "scipp/core/time_point.h"
 
 namespace py = pybind11;
 
 // type caster: scipp::core::time_point <-> NumPy-datetime64
 namespace pybind11 {
+
+template <> struct format_descriptor<scipp::core::time_point>{
+    static constexpr const char value[2] = { 'M', '\0' };
+    static std::string format() {
+        return std::string(value);
+    }
+ };
+
 namespace detail {
-template <> struct type_caster<scipp::core::time_point> {
+
+   template <> struct is_fmt_numeric<scipp::core::time_point>{
+         static constexpr bool value = true;
+         static constexpr int index = 15; // NPI_DATETIME
+    };
+
+template <> struct type_caster<scipp::core::time_point>: public type_caster_base<scipp::core::time_point> {
+
 public:
   PYBIND11_TYPE_CASTER(scipp::core::time_point, _("numpy.datetime64"));
-
   // Conversion part 1 (Python -> C++)
   bool load(py::handle src, bool convert) {
     if (!convert)
@@ -34,8 +50,13 @@ public:
       return false;
     // Get timestamp (ns precision) from the numpy object
     int64_t timestamp = src.attr("astype")("int").cast<int64_t>();
+<<<<<<< HEAD
     value = scipp::core::time_point(timestamp);
 
+=======
+    scipp::core::time_point ts_obj(timestamp);
+    value = ts_obj;
+>>>>>>> 8f5636bc... Updates with recent attempts to enable python bindings for slices.
     return true;
   }
 
@@ -46,9 +67,14 @@ public:
     auto unit = var_h.attr("unit").cast<py::str>();
     py::object np = py::module::import("numpy");
     py::object nd64 = np.attr("datetime64")(epoch, unit);
+<<<<<<< HEAD
 
+=======
+>>>>>>> 8f5636bc... Updates with recent attempts to enable python bindings for slices.
     return nd64.release();
   }
 };
+
 } // namespace detail
 } // namespace pybind11
+

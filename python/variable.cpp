@@ -10,6 +10,7 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/core/tag_util.h"
+#include "scipp/core/time_point.h"
 
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
@@ -84,8 +85,12 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
                 b.cast<Eigen::Matrix3d>(),
                 v ? std::optional(v->cast<Eigen::Matrix3d>()) : std::nullopt,
                 unit);
+<<<<<<< HEAD
           } else if ((info.ndim == 1) &&
                      (unit == units::ns || unit == units::s)) {
+=======
+          } else if ((info.ndim == 1) && (unit == units::ns || unit == units::s)){
+>>>>>>> 8f5636bc... Updates with recent attempts to enable python bindings for slices.
             return do_init_0D<scipp::core::time_point>(
                 b.cast<scipp::core::time_point>(),
                 v ? std::optional(v->cast<scipp::core::time_point>())
