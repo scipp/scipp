@@ -34,4 +34,6 @@ unzip(const VariableConstView &var);
 SCIPP_VARIABLE_EXPORT void fill(const VariableView &var,
                                 const VariableConstView &value);
 
+SCIPP_VARIABLE_EXPORT void fill_zeros(const VariableView &var);
+
 } // namespace scipp::variable

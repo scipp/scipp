@@ -191,3 +191,15 @@ def test_plot_string_axis_labels_1d_short():
                               values=np.random.random(N),
                               unit=sc.units.counts)
     plot(d)
+
+
+def test_plot_customized_mpl_axes():
+    d = make_dense_dataset(ndim=1)
+    plot(d["Sample"], title="MyTitle", xlabel="MyXlabel", ylabel="MyYlabel")
+
+
+def test_plot_access_ax_and_fig():
+    d = make_dense_dataset(ndim=1)
+    out = plot(d["Sample"], title="MyTitle")
+    out['tof.counts'].ax.set_xlabel("MyXlabel")
+    out['tof.counts'].fig.set_dpi(120.)

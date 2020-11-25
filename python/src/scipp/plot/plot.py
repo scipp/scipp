@@ -35,7 +35,8 @@ class Plot(dict):
         import ipywidgets as ipw
         contents = []
         for item in self.values():
-            contents.append(item._to_widget())
+            if item is not None:
+                contents.append(item._to_widget())
         return ipw.VBox(contents)
 
     def show(self):

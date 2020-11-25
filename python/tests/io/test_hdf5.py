@@ -7,11 +7,15 @@ import numpy as np
 import tempfile
 
 
-def check_roundtrip(obj):
+def roundtrip(obj):
     with tempfile.TemporaryDirectory() as path:
         name = f'{path}/test.hdf5'
         obj.to_hdf5(filename=name)
-        assert sc.is_equal(sc.io.open_hdf5(filename=name), obj)
+        return sc.io.open_hdf5(filename=name)
+
+
+def check_roundtrip(obj):
+    assert sc.is_equal(roundtrip(obj), obj)
 
 
 x = sc.Variable(dims=['x'], values=np.arange(4.0), unit=sc.units.m)
@@ -20,6 +24,9 @@ xy = sc.Variable(dims=['y', 'x'],
                  values=np.random.rand(6, 4),
                  variances=np.random.rand(6, 4),
                  unit=sc.units.kg)
+eigen_1d = sc.Variable(dims=['x'],
+                       dtype=sc.dtype.vector_3_float64,
+                       values=np.random.rand(4, 3))
 
 array_1d = sc.DataArray(data=x,
                         coords={
@@ -56,6 +63,11 @@ def test_variable_1d():
 
 def test_variable_2d():
     check_roundtrip(xy)
+
+
+def test_variable_eigen():
+    check_roundtrip(eigen_1d)
+    check_roundtrip(eigen_1d['x', 0])
 
 
 def test_variable_binned_variable():
@@ -116,6 +128,19 @@ def test_data_array_dtype_string():
     a = sc.DataArray(data=sc.Variable(dims=['x'], values=['abc', 'def']))
     check_roundtrip(a)
     check_roundtrip(a['x', 0])
+
+
+def test_data_array_unsupported_PyObject_coord():
+    obj = sc.Variable(value=dict())
+    a = sc.DataArray(data=x, coords={'obj': obj})
+    b = roundtrip(a)
+    assert not sc.is_equal(a, b)
+    del a.coords['obj']
+    assert sc.is_equal(a, b)
+    a.unaligned_coords['obj'] = obj
+    assert not sc.is_equal(a, b)
+    del a.unaligned_coords['obj']
+    assert sc.is_equal(a, b)
 
 
 def test_dataset():

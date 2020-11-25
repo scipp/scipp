@@ -10,6 +10,7 @@ void init_buckets(py::module &);
 void init_choose(py::module &);
 void init_comparison(py::module &);
 void init_counts(py::module &);
+void init_cumulative(py::module &);
 void init_dataset(py::module &);
 void init_detail(py::module &);
 void init_dtype(py::module &);
@@ -36,6 +37,7 @@ void init_core(py::module &m) {
   init_buckets(core);
   init_choose(core);
   init_counts(core);
+  init_cumulative(core);
   init_dataset(core);
   init_groupby(core);
   init_comparison(core);

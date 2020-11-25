@@ -49,6 +49,10 @@ class SciPlot:
         self.view = None
         self.widgets = None
 
+        # Shortcut access to the underlying figure for easier modification
+        self.fig = None
+        self.ax = None
+
         # Get first item in dict and process dimensions.
         # Dimensions should be the same for all dict items.
         self.axes = None
@@ -179,6 +183,10 @@ class SciPlot:
         have been created.
         """
         self.controller.render(*args, **kwargs)
+        if hasattr(self.view.figure, "fig"):
+            self.fig = self.view.figure.fig
+        if hasattr(self.view.figure, "ax"):
+            self.ax = self.view.figure.ax
 
     def _process_axes_dimensions(self,
                                  array=None,

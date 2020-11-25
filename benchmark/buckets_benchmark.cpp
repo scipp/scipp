@@ -3,8 +3,8 @@
 /// @file
 #include <benchmark/benchmark.h>
 
+#include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
-#include "scipp/dataset/bucketby.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bins.h"
@@ -68,7 +68,7 @@ static void BM_bucketby(benchmark::State &state) {
       makeVariable<double>(Dims{Dim::Y}, Shape{5}, Values{-2, -1, 0, 1, 2});
 
   for (auto _ : state) {
-    auto a = dataset::bucketby(table, {edges_x, edges_y});
+    auto a = dataset::bin(table, {edges_x, edges_y});
   }
   state.SetItemsProcessed(state.iterations() * nEvent);
   state.counters["events"] = nEvent;

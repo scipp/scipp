@@ -23,8 +23,10 @@ template <class T> struct bucket : bucket_base {
   using const_element_type = typename T::const_view_type;
 };
 
+template <class T> using bin = bucket<T>;
+
 } // namespace scipp::core
 
 namespace scipp {
 using core::bucket;
-}
+} // namespace scipp
