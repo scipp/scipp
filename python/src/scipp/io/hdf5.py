@@ -212,20 +212,17 @@ class DataArrayIO:
         if data.data is None:
             raise RuntimeError("Cannot write object with invalid data.")
         VariableIO.write(group.create_group('data'), var=data.data)
-        views = [data.cometa, data.masks]
-        aligned = data.coords.keys()
+        views = [data.coords, data.masks, data.attrs]
         # Note that we write aligned and unaligned coords into the same group.
         # Distinction is via an attribute, which is more natural than having
         # 2 separate groups.
-        for view_name, view in zip(['coords', 'masks'], views):
+        for view_name, view in zip(['coords', 'masks', 'attrs'], views):
             subgroup = group.create_group(view_name)
             for name in view:
                 g = VariableIO.write(group=subgroup.create_group(str(name)),
                                      var=view[name])
                 if g is None:
                     del subgroup[str(name)]
-                elif view_name == 'coords':
-                    g.attrs['aligned'] = name in aligned
 
     @staticmethod
     def read(group):
@@ -234,15 +231,11 @@ class DataArrayIO:
         contents = dict()
         contents['name'] = group.attrs['name']
         contents['data'] = VariableIO.read(group['data'])
-        contents['attrs'] = dict()
-        for category in ['coords', 'masks']:
+        for category in ['coords', 'masks', 'attrs']:
             contents[category] = dict()
             for name in group[category]:
                 g = group[category][name]
-                c = category
-                if category == 'coords' and not g.attrs.get('aligned', True):
-                    c = 'attrs'
-                contents[c][name] = VariableIO.read(g)
+                contents[category][name] = VariableIO.read(g)
         return sc.DataArray(**contents)
 
 
