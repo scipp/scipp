@@ -9,7 +9,9 @@
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/misc_operations.h"
+#include "scipp/variable/reduction.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -133,10 +135,13 @@ protected:
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, -1, 2});
 
   void expect_near(const DataArrayConstView &a, const DataArrayConstView &b) {
-    // "round" last digits for approximate floating point comparison
-    // Use variable do avoid affecting coords in assertion below
-    const Variable rounding = 400.0 * units::one * buckets::sum(a).data();
-    EXPECT_EQ(buckets::sum(a) + rounding, buckets::sum(b) + rounding);
+    const auto tolerance = max(buckets::sum(a.data())) * (1e-15 * units::one);
+    EXPECT_TRUE(all(is_approx(buckets::sum(a.data()), buckets::sum(b.data()),
+                              tolerance))
+                    .value<bool>());
+    EXPECT_EQ(a.masks(), b.masks());
+    EXPECT_EQ(a.aligned_coords(), b.aligned_coords());
+    EXPECT_EQ(a.unaligned_coords(), b.unaligned_coords());
   }
 };
 

@@ -2,9 +2,8 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Piotr Rozyczko
-#include <cmath>
-
 #include "scipp/core/element/comparison.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
