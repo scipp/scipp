@@ -36,12 +36,12 @@ constexpr auto isfinite =
                },
                [](const units::Unit &) { return units::dimensionless; }};
 
- constexpr auto isposinf =
+constexpr auto isposinf =
     overloaded{arg_list<double, float>,
                [](const auto x) { return std::isinf(x) && !std::signbit(x); },
                [](const units::Unit &) { return units::dimensionless; }};
 
- constexpr auto isneginf =
+constexpr auto isneginf =
     overloaded{arg_list<double, float>,
                [](const auto x) { return std::isinf(x) && std::signbit(x); },
                [](const units::Unit &) { return units::dimensionless; }};

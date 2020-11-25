@@ -88,11 +88,10 @@ TEST(ElementIssignedinfTest, unit) {
   }
 }
 
-
 TYPED_TEST(ElementIssignedinfTest, value) {
   for (const auto x :
-      {static_cast<TypeParam>(1.0) / static_cast<TypeParam>(0.0),
-       std::numeric_limits<TypeParam>::infinity()}) {
+       {static_cast<TypeParam>(1.0) / static_cast<TypeParam>(0.0),
+        std::numeric_limits<TypeParam>::infinity()}) {
     EXPECT_TRUE(element::isposinf(x));
     EXPECT_FALSE(element::isneginf(x));
     EXPECT_TRUE(element::isneginf(-x));
