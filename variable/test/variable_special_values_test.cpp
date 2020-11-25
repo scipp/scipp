@@ -4,6 +4,8 @@
 #include "fix_typed_test_suite_warnings.h"
 #include "test_macros.h"
 
+#include "scipp/core/element/special_values.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/variable.h"
 
@@ -11,7 +13,31 @@ using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::variable;
 
-TEST(VariableTest, nan_to_num_throws_when_input_and_replace_types_differ) {
+template <typename T> constexpr auto values_for_special_value_tests() {
+  return std::vector{static_cast<T>(0.0),
+                     static_cast<T>(-1.23),
+                     static_cast<T>(3e4),
+                     std::numeric_limits<T>::quiet_NaN(),
+                     std::numeric_limits<T>::signaling_NaN(),
+                     std::numeric_limits<T>::infinity(),
+                     -std::numeric_limits<T>::infinity()};
+}
+
+template <typename T> class VariableSpecialValueTest : public ::testing::Test {};
+using FloatTypes = ::testing::Types<double, float>;
+TYPED_TEST_SUITE(VariableSpecialValueTest, FloatTypes);
+
+TYPED_TEST(VariableSpecialValueTest, isnan) {
+  for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
+    for (auto u : {units::dimensionless, units::m}) {
+      const auto res = isnan(x * u);
+      EXPECT_EQ(res.template value<bool>(), element::isnan(x));
+      EXPECT_EQ(res.unit(), units::dimensionless);
+    }
+  }
+}
+
+TEST(VariableSpecialValueTest, nan_to_num_throws_when_input_and_replace_types_differ) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
   // Replacement type not same as input
@@ -20,7 +46,7 @@ TEST(VariableTest, nan_to_num_throws_when_input_and_replace_types_differ) {
                except::TypeError);
 }
 
-TEST(VariableTest, nan_to_num) {
+TEST(VariableSpecialValueTest, nan_to_num) {
   auto a = makeVariable<double>(
       Dims{Dim::X}, Shape{4},
       Values{1.0, double(NAN), double(INFINITY), double(-INFINITY)});
@@ -33,7 +59,7 @@ TEST(VariableTest, nan_to_num) {
   EXPECT_EQ(b, expected);
 }
 
-TEST(VariableTest, positive_inf_to_num) {
+TEST(VariableSpecialValueTest, positive_inf_to_num) {
   auto a = makeVariable<double>(
       Dims{Dim::X}, Shape{3}, Values{1.0, double(INFINITY), double(-INFINITY)});
   auto replacement_value = makeVariable<double>(Values{-1});
@@ -44,7 +70,7 @@ TEST(VariableTest, positive_inf_to_num) {
   EXPECT_EQ(b, expected);
 }
 
-TEST(VariableTest, negative_inf_to_num) {
+TEST(VariableSpecialValueTest, negative_inf_to_num) {
   auto a = makeVariable<double>(
       Dims{Dim::X}, Shape{3}, Values{1.0, double(INFINITY), double(-INFINITY)});
   auto replacement_value = makeVariable<double>(Values{-1});
@@ -55,7 +81,7 @@ TEST(VariableTest, negative_inf_to_num) {
   EXPECT_EQ(b, expected);
 }
 
-TEST(VariableTest,
+TEST(VariableSpecialValueTest,
      nan_to_num_with_variance_throws_if_replacement_has_no_variance) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
                                 Values{1.0, double(NAN)}, Variances{0.1, 0.2});
@@ -65,7 +91,7 @@ TEST(VariableTest,
                except::VariancesError);
 }
 
-TEST(VariableTest, nan_to_num_with_variance_and_variance_on_replacement) {
+TEST(VariableSpecialValueTest, nan_to_num_with_variance_and_variance_on_replacement) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
                                 Values{1.0, double(NAN)}, Variances{0.1, 0.2});
 
@@ -77,7 +103,7 @@ TEST(VariableTest, nan_to_num_with_variance_and_variance_on_replacement) {
   EXPECT_EQ(b, expected);
 }
 
-TEST(VariableTest,
+TEST(VariableSpecialValueTest,
      nan_to_num_inplace_throws_when_input_and_replace_types_differ) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
@@ -86,7 +112,7 @@ TEST(VariableTest,
   EXPECT_THROW(nan_to_num(a, replacement_value, a), except::TypeError);
 }
 
-TEST(VariableTest,
+TEST(VariableSpecialValueTest,
      nan_to_num_inplace_throws_when_input_and_output_types_differ) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
@@ -96,7 +122,7 @@ TEST(VariableTest,
   EXPECT_THROW(nan_to_num(a, replacement_value, out), except::TypeError);
 }
 
-TEST(VariableTest, nan_to_num_inplace) {
+TEST(VariableSpecialValueTest, nan_to_num_inplace) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
   const auto replacement_value = makeVariable<double>(Values{-1});
@@ -107,7 +133,7 @@ TEST(VariableTest, nan_to_num_inplace) {
   EXPECT_EQ(a, expected);
 }
 
-TEST(VariableTest,
+TEST(VariableSpecialValueTest,
      nan_to_num_inplace_with_variance_throws_if_replacement_has_no_variance) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{3},
                                 Values{1.0, double(NAN), 3.0},
@@ -116,7 +142,7 @@ TEST(VariableTest,
   EXPECT_THROW(nan_to_num(a, replacement_value, a), except::VariancesError);
 }
 
-TEST(VariableTest, nan_to_num_inplace_out_has_no_variances) {
+TEST(VariableSpecialValueTest, nan_to_num_inplace_out_has_no_variances) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
   const auto replacement_value = makeVariable<double>(Values{-1});
@@ -127,7 +153,7 @@ TEST(VariableTest, nan_to_num_inplace_out_has_no_variances) {
   EXPECT_THROW(nan_to_num(a, replacement_value, out), except::VariancesError);
 }
 
-TEST(VariableTest,
+TEST(VariableSpecialValueTest,
      nan_to_num_inplace_with_variance_and_variance_on_replacement) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
                                 Values{1.0, double(NAN)}, Variances{0.1, 0.2});
