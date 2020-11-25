@@ -134,7 +134,8 @@ protected:
 
   void expect_near(const DataArrayConstView &a, const DataArrayConstView &b) {
     // "round" last digits for approximate floating point comparison
-    const auto rounding = 400.0 * units::one * buckets::sum(a);
+    // Use variable do avoid affecting coords in assertion below
+    const Variable rounding = 400.0 * units::one * buckets::sum(a).data();
     EXPECT_EQ(buckets::sum(a) + rounding, buckets::sum(b) + rounding);
   }
 };
@@ -232,4 +233,23 @@ TEST_P(BinTest, unrelated_masks_preserved) {
   binned.masks().set("scalar-mask", mask);
   expected.masks().set("scalar-mask", mask);
   EXPECT_EQ(bin(binned, {edges_x}), expected);
+}
+
+TEST_P(BinTest, rebinned_meta_data_dropped) {
+  const auto table = GetParam();
+  // Same *length* but different edge *position*
+  Variable edges_x_coarse2 =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2, 0, 2});
+  Variable edges_y_coarse2 =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, 0, 2});
+  auto xy1 = bin(table, {edges_x_coarse, edges_y_coarse});
+  auto xy2 = bin(table, {edges_x_coarse2, edges_y_coarse2});
+  expect_near(bin(xy1, {edges_x_coarse2, edges_y_coarse2}), xy2);
+  const auto mask_x =
+      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, false});
+  xy1.masks().set("x", mask_x);
+  xy1.aligned_coords().set(Dim("aux1"), mask_x);
+  xy1.aligned_coords().set(Dim("aux1-edge"), edges_x_coarse);
+  xy1.unaligned_coords().set(Dim("aux2"), mask_x);
+  expect_near(bin(xy1, {edges_x_coarse2, edges_y_coarse2}), xy2);
 }

@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <numeric>
+#include <set>
 
 #include "scipp/core/element/bin.h"
 #include "scipp/core/element/cumulative.h"
@@ -197,6 +198,14 @@ template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
   return extracted;
 }
 
+/// Combine meta data from buffer and input data array and create final output
+/// data array with binned data.
+/// - Meta data that does not depend on the buffer dim is lifted to the output
+///   array.
+/// - Any meta data depending on rebinned dimensions is dropped since it becoms
+///   meaningless. Note that rebinned masks have been applied before the binning
+///   step.
+/// - If rebinning, existing meta data along unchanged dimensions is preserved.
 DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
                        const DataArrayConstView &array,
                        const std::vector<VariableConstView> &edges,
@@ -209,21 +218,29 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
   // bin.
   // Note that we should then also recreate that variable in concatenate, to
   // ensure that those operations are reversible.
+  std::set<Dim> dims;
+  const auto rebinned = [&](const auto &var) {
+    for (const auto &dim : var.dims().labels())
+      if (dims.count(dim) || var.dims().contains(buffer_dim))
+        return true;
+    return false;
+  };
   auto coords = extract_unbinned(buffer, get_aligned_coords);
-  for (const auto &edge : edges)
-    coords[edge.dims().inner()] = copy(edge);
-  for (const auto &group : groups)
-    coords[group.dims().inner()] = copy(group);
+  for (const auto &c : {edges, groups})
+    for (const auto &coord : c) {
+      dims.emplace(coord.dims().inner());
+      coords[coord.dims().inner()] = copy(coord);
+    }
   for (const auto &[dim, coord] : array.aligned_coords())
-    if (!coords.count(dim) && !coord.dims().contains(buffer_dim))
+    if (!rebinned(coord))
       coords[dim] = copy(coord);
   auto masks = extract_unbinned(buffer, get_masks);
   for (const auto &[name, mask] : array.masks())
-    if (bin_sizes.dims().contains(mask.dims()))
+    if (!rebinned(mask))
       masks[name] = copy(mask);
   auto unaligned_coords = extract_unbinned(buffer, get_unaligned_coords);
   for (const auto &[dim, coord] : array.unaligned_coords())
-    if (bin_sizes.dims().contains(coord.dims()))
+    if (!rebinned(coord))
       unaligned_coords[dim] = copy(coord);
   return {make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer)),
           std::move(coords), std::move(masks), std::move(unaligned_coords)};
