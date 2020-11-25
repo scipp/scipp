@@ -8,6 +8,10 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
+Variable isnan(const VariableConstView &var) {
+  return transform(var, element::isnan);
+}
+
 VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {

@@ -7,6 +7,8 @@
 
 namespace scipp::variable {
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable isnan(const VariableConstView &var);
+
 SCIPP_VARIABLE_EXPORT VariableView
 nan_to_num(const VariableConstView &var, const VariableConstView &replacement,
            const VariableView &out);
