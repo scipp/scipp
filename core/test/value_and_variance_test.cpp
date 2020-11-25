@@ -32,6 +32,28 @@ TEST(ValueAndVarianceTest, unary_abs) {
   EXPECT_EQ(1.0, b.variance);
 }
 
+TEST(ValueAndVarianceTest, unary_exp) {
+  const ValueAndVariance a{2.0, 1.0};
+  const auto b = exp(a);
+  EXPECT_EQ(b.value, std::exp(a.value));
+  EXPECT_EQ(b.variance, b.value * b.value * a.variance);
+}
+
+TEST(ValueAndVarianceTest, unary_log) {
+  const ValueAndVariance a{2.0, 1.0};
+  const auto b = log(a);
+  EXPECT_EQ(b.value, std::log(a.value));
+  EXPECT_EQ(b.variance, a.variance / a.value / a.value);
+}
+
+TEST(ValueAndVarianceTest, unary_log10) {
+  const ValueAndVariance a{2.0, 1.0};
+  const auto b = log10(a);
+  EXPECT_EQ(b.value, std::log10(a.value));
+  EXPECT_EQ(b.variance,
+            a.variance / a.value / a.value / std::log(10.0) / std::log(10.0));
+}
+
 TEST(ValueAndVarianceTest, binary_plus) {
   const ValueAndVariance lhs{5.0, 1.0};
   const ValueAndVariance rhs{8.0, 2.0};

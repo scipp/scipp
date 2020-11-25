@@ -29,8 +29,14 @@ SCIPP_VARIABLE_EXPORT VariableView reciprocal(const VariableConstView &var,
                                               const VariableView &out);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable exp(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT VariableView exp(const VariableConstView &var,
+                                       const VariableView &out);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable log(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT VariableView log(const VariableConstView &var,
+                                       const VariableView &out);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 log10(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT VariableView log10(const VariableConstView &var,
+                                         const VariableView &out);
 
 } // namespace scipp::variable

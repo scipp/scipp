@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element/math.h"
+#include "scipp/core/transform_common.h"
 #include "scipp/variable/math.h"
 #include "scipp/variable/transform.h"
 
@@ -20,7 +21,7 @@ Variable abs(Variable &&var) {
 }
 
 VariableView abs(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, element::abs_out_arg);
+  transform_in_place(out, var, assign_unary{element::abs});
   return out;
 }
 
@@ -42,7 +43,7 @@ Variable sqrt(Variable &&var) {
 }
 
 VariableView sqrt(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, element::sqrt_out_arg);
+  transform_in_place(out, var, assign_unary{element::sqrt});
   return out;
 }
 
@@ -57,7 +58,7 @@ Variable reciprocal(Variable &&var) {
 }
 
 VariableView reciprocal(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, element::reciprocal_out_arg);
+  transform_in_place(out, var, assign_unary{element::reciprocal});
   return out;
 }
 
@@ -65,12 +66,27 @@ Variable exp(const VariableConstView &var) {
   return transform(var, element::exp);
 }
 
+VariableView exp(const VariableConstView &var, const VariableView &out) {
+  transform_in_place(out, var, assign_unary{element::exp});
+  return out;
+}
+
 Variable log(const VariableConstView &var) {
   return transform(var, element::log);
 }
 
+VariableView log(const VariableConstView &var, const VariableView &out) {
+  transform_in_place(out, var, assign_unary{element::log});
+  return out;
+}
+
 Variable log10(const VariableConstView &var) {
   return transform(var, element::log10);
+}
+
+VariableView log10(const VariableConstView &var, const VariableView &out) {
+  transform_in_place(out, var, assign_unary{element::log10});
+  return out;
 }
 
 } // namespace scipp::variable

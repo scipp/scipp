@@ -66,6 +66,14 @@ static constexpr auto dimensionless_unit_check_return =
                  return units::one;
                }};
 
+template <typename Op> struct assign_unary : Op {
+  template <typename Out, typename... In>
+  void operator()(Out &out, In &&... in) {
+    out = Op::operator()(std::forward<In>(in)...);
+  }
+};
+template <typename Op> assign_unary(Op) -> assign_unary<Op>;
+
 /// Flags for transform, added as overloads to the operator. These are never
 /// actually called since flag presence is checked via the base class of the
 /// operator.
