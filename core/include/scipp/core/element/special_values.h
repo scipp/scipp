@@ -12,9 +12,13 @@
 
 namespace scipp::core::element {
 
-constexpr auto isnan = overloaded{
-    arg_list<double, float>, [](const auto x) { return std::isnan(x); },
-    [](const units::Unit &) { return units::dimensionless; }};
+constexpr auto isnan =
+    overloaded{arg_list<double, float>,
+               [](const auto x) {
+                 using std::isnan;
+                 return isnan(x);
+               },
+               [](const units::Unit &) { return units::dimensionless; }};
 
 constexpr auto replace_special = overloaded{
     arg_list<double, float>, transform_flags::expect_all_or_none_have_variance,
