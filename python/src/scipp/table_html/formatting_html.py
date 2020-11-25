@@ -437,7 +437,7 @@ data_section = partial(
 
 attr_section = partial(
     _mapping_section,
-    name="Coords (unaligned)",
+    name="Attributes",
     details_func=summarize_attrs,
     max_items_collapse=10,
 )
@@ -468,10 +468,7 @@ def dataset_repr(ds):
     sections = [dim_section(ds)]
 
     if len(ds.coords) > 0:
-        if is_dataset(ds):
-            sections.append(coord_section(ds.coords, ds))
-        else:
-            sections.append(coord_section(ds.aligned_coords, ds))
+        sections.append(coord_section(ds.coords, ds))
 
     sections.append(data_section(ds if hasattr(ds, '__len__') else {'': ds}))
 
