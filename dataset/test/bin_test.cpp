@@ -135,7 +135,7 @@ protected:
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, -1, 2});
 
   void expect_near(const DataArrayConstView &a, const DataArrayConstView &b) {
-    const auto tolerance = max(buckets::sum(a.data())) * (1e-15 * units::one);
+    const auto tolerance = max(buckets::sum(a.data())) * (1e-14 * units::one);
     EXPECT_TRUE(all(is_approx(buckets::sum(a.data()), buckets::sum(b.data()),
                               tolerance))
                     .value<bool>());
