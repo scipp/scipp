@@ -36,6 +36,16 @@ constexpr auto isfinite =
                },
                [](const units::Unit &) { return units::dimensionless; }};
 
+ constexpr auto isposinf =
+    overloaded{arg_list<double, float>,
+               [](const auto x) { return std::isinf(x) && !std::signbit(x); },
+               [](const units::Unit &) { return units::dimensionless; }};
+
+ constexpr auto isneginf =
+    overloaded{arg_list<double, float>,
+               [](const auto x) { return std::isinf(x) && std::signbit(x); },
+               [](const units::Unit &) { return units::dimensionless; }};
+
 constexpr auto replace_special = overloaded{
     arg_list<double, float>, transform_flags::expect_all_or_none_have_variance,
     [](const units::Unit &x, const units::Unit &repl) {
