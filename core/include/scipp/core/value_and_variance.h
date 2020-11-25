@@ -89,7 +89,8 @@ template <typename T> constexpr auto log(const ValueAndVariance<T> a) noexcept {
   return ValueAndVariance(log(a.value), a.variance / (a.value * a.value));
 }
 
-template <typename T> constexpr auto log10(const ValueAndVariance<T> a) noexcept {
+template <typename T>
+constexpr auto log10(const ValueAndVariance<T> a) noexcept {
   using std::log10;
   const auto x = a.value * std::log(static_cast<T>(10.0L));
   return ValueAndVariance(log10(a.value), a.variance / (x * x));
