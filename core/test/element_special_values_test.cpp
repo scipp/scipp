@@ -78,6 +78,34 @@ TYPED_TEST(ElementIsfiniteTest, value) {
   }
 }
 
+template <typename T> class ElementIssignedinfTest : public ::testing::Test {};
+TYPED_TEST_SUITE(ElementIssignedinfTest, ElementSpecialValuesTestTypes);
+
+TEST(ElementIssignedinfTest, unit) {
+  for (const auto &u : {units::dimensionless, units::m, units::meV}) {
+    EXPECT_EQ(element::isposinf(u), units::dimensionless);
+    EXPECT_EQ(element::isneginf(u), units::dimensionless);
+  }
+}
+
+
+TYPED_TEST(ElementIssignedinfTest, value) {
+  for (const auto x :
+      {static_cast<TypeParam>(1.0) / static_cast<TypeParam>(0.0),
+       std::numeric_limits<TypeParam>::infinity()}) {
+    EXPECT_TRUE(element::isposinf(x));
+    EXPECT_FALSE(element::isneginf(x));
+    EXPECT_TRUE(element::isneginf(-x));
+    EXPECT_FALSE(element::isposinf(-x));
+  }
+  for (const auto x : {static_cast<TypeParam>(0.0), static_cast<TypeParam>(1.0),
+                       std::numeric_limits<TypeParam>::quiet_NaN(),
+                       std::numeric_limits<TypeParam>::signaling_NaN()}) {
+    EXPECT_FALSE(element::isposinf(x));
+    EXPECT_FALSE(element::isneginf(x));
+  }
+}
+
 template <typename T> class ElementNanToNumTest : public ::testing::Test {};
 TYPED_TEST_SUITE(ElementNanToNumTest, ElementSpecialValuesTestTypes);
 
