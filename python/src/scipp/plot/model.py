@@ -220,6 +220,9 @@ class PlotModel:
         Slice the data array according to the dimensions and extents listed
         in slices.
         """
+        # print("Before slicing", array.data.shape)
+        # for key in array.coords:
+        #     print(key, array.coords[key].shape, array.isedges[key])
         for dim, [lower, upper] in slices.items():
             # TODO: Could this be optimized for performance?
             if (upper - lower) > 1:
@@ -230,6 +233,11 @@ class PlotModel:
                                    array.coords[dim][dim, -1], dim))[dim, 0]
             else:
                 array = array[dim, lower]
+                # print("in here")
+            # array.coords[dim] = array.coords[dim][dim, 0]
+        # print("After slicing", array.data)
+        # for key in array.coords:
+        #     print(key, array.coords[key].shape)
 
         return array
 

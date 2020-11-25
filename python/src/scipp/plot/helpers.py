@@ -52,25 +52,19 @@ class PlotArrayView:
     def __init__(self, plot_array, slice_obj):
         # Add data slice
         self.data = plot_array.data[slice_obj]
-        # # Add all coords except the slice dim coord
-        # self.coords = {key: plot_array.coords[key] for key in set(plot_array.coords.keys()) - set([slice_obj[0]])}
-        sl = list(slice_obj)
-        if plot_array.isedges[slice_obj[0]]:
-            if isinstance(slice_obj[1], int):
-                sl[1] = slice(slice_obj[1], slice_obj[1] + 1)
-            else:
-                sl[1] = slice(slice_obj[1].start, slice_obj[1].stop + 1)
-        sl = tuple(sl)
         # Add all coords except the slice dim coord
         self.coords = {}
-        # for key in set(plot_array.coords.keys()) - set([slice_obj[0]]):
         for key in plot_array.coords.keys():
-            if key in plot_array.coords[key].dims:
-                self.coords[key] = plot_array.coords[slice_obj[0]][sl]
+            if slice_obj[0] in plot_array.coords[key].dims:
+                sl = list(slice_obj)
+                if plot_array.isedges[key][slice_obj[0]]:
+                    if isinstance(slice_obj[1], int):
+                        sl[1] = slice(slice_obj[1], slice_obj[1] + 2)
+                    else:
+                        sl[1] = slice(slice_obj[1].start, slice_obj[1].stop + 1)
+                self.coords[key] = plot_array.coords[key][tuple(sl)]
             else:
                 self.coords[key] = plot_array.coords[key]
-        # # Add the slice dim coord, with range + 1 in case of bin edges
-        # self.coords[slice_obj[0]] = plot_array.coords[slice_obj[0]][sl]
         # Slice the masks
         self.masks = {key: plot_array.masks[key][slice_obj] for key in plot_array.masks}
         # Copy edges info
@@ -78,6 +72,7 @@ class PlotArrayView:
 
     def __getitem__(self, slice_obj):
         return PlotArrayView(self, slice_obj)
+
 
 
 class PlotArray:
@@ -93,12 +88,14 @@ class PlotArray:
         self.isedges = {}
         dim_to_shape = dict(zip(data.dims, data.shape))
         if coords is not None:
-            for key in coords:
-                ks = str(key)
-                self.coords[ks] = coords[key]
-                self.isedges[ks] = coords[key].shape[-1] == dim_to_shape[coords[key].dims[-1]] + 1
+            for dim, coord in coords.items():
+                key = str(dim)
+                self.coords[key] = coord
+                self.isedges[key] = {}
+                for i, dim_ in enumerate(coord.dims):
+                    self.isedges[key][dim_] = coord.shape[i] == dim_to_shape[dim_] + 1
         if masks is not None:
-            self.masks.update({key: masks[key] for key in masks})
+            self.masks.update({m: masks[m] for m in masks})
 
     def __getitem__(self, slice_obj):
         return PlotArrayView(self, slice_obj)

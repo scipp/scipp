@@ -81,10 +81,31 @@ class PlotModel2d(PlotModel):
         #      data is not accepted by rebin (this happens when an outer dim is
         #      sliced and the slice thickness is zero).
         # self.vslice = data_slice
+        # print("In update_data")
         # print(self.vslice.data)
+        # print(self.vslice.coords)
+        # print(self.vslice.coords['x'].shape)
+        # print(self.vslice.coords['y'].shape)
         # print(self.xywidth["x"])
-        self.vslice.data = self.vslice.data * self.xywidth["x"]
-        self.vslice.data *= self.xywidth["y"]
+
+
+        # Scale by bin width and then rebin in both directions
+        # Note that this has to be written as 2 operations to avoid
+        # creation of large 2D temporary from broadcast.
+        #
+        # Note that we only normalize for non-counts data, as rebin already
+        # performs the correct resampling for counts.
+        # Also note that when normalizing, we perform a copy of the data in
+        # the first operation to avoid multiplying the original data in-place.
+        #
+        # TODO: this can be avoided once we have a generic resample operation
+        # that can compute the mean in each new bin and handle any unit.
+        if self.vslice.data.unit != sc.units.counts:
+            self.vslice.data = self.vslice.data * self.xywidth["x"]
+            self.vslice.data *= self.xywidth["y"]
+            self.vslice.data.unit = sc.units.one
+
+        # print("update_data 2:", self.vslice.data)
 
         # Update image with resampling
         new_values = self.update_image(mask_info=mask_info)
@@ -111,7 +132,8 @@ class PlotModel2d(PlotModel):
         Resample a DataArray according to new bin edges.
         """
         dslice = array
-        # print(dslice)
+        # print(dslice.data)
+        # print(dslice.coords)
         # Select bins to speed up rebinning
         for dim in rebin_edges:
             this_slice = self._select_bins(array.coords[dim], dim,
@@ -119,6 +141,8 @@ class PlotModel2d(PlotModel):
                                            rebin_edges[dim][dim, -1])
             # print(dim, dslice.coords, this_slice)
             dslice = dslice[this_slice]
+        #     print("after slicing", dslice.data, dslice.coords)
+        # print("===================")
 
         # Rebin the data
         for dim, edges in rebin_edges.items():
@@ -127,12 +151,13 @@ class PlotModel2d(PlotModel):
             # print(dim)
             dslice.data = sc.rebin(dslice.data, dim, dslice.coords[dim], edges)
 
-        # Divide by pixel width
-        # TODO: can this loop be combined with the one above?
-        for dim, edges in rebin_edges.items():
-            div = edges[dim, 1:] - edges[dim, :-1]
-            div.unit = sc.units.one
-            dslice.data /= div
+        # Divide by pixel width if we have normalized in update_data() in the
+        # case of non-counts data.
+        if dslice.data.unit != sc.units.counts:
+            for dim, edges in rebin_edges.items():
+                div = edges[dim, 1:] - edges[dim, :-1]
+                div.unit = sc.units.one
+                dslice.data /= div
 
         return dslice
 
@@ -168,8 +193,8 @@ class PlotModel2d(PlotModel):
                                                     dtype=self.vslice.data.dtype,
                                                     unit=sc.units.one))
 
-        print(self.dslice)
-        print(resampled_image.data)
+        # print(self.dslice)
+        # print(resampled_image.data)
         self.dslice *= resampled_image.data
 
         # Update the matplotlib image data
@@ -265,8 +290,8 @@ class PlotModel2d(PlotModel):
 
         new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
 
-        dim = profile_slice.dims[0]
-        ydata = profile_slice.values
+        dim = profile_slice.data.dims[0]
+        ydata = profile_slice.data.values
         xcenters = to_bin_centers(profile_slice.coords[dim], dim).values
 
         if axparams["x"]["hist"][self.name]:
@@ -277,16 +302,16 @@ class PlotModel2d(PlotModel):
         else:
             new_values[self.name]["values"]["x"] = xcenters
             new_values[self.name]["values"]["y"] = ydata
-        if profile_slice.variances is not None:
+        if profile_slice.data.variances is not None:
             new_values[self.name]["variances"]["x"] = xcenters
             new_values[self.name]["variances"]["y"] = ydata
             new_values[self.name]["variances"]["e"] = vars_to_err(
-                profile_slice.variances)
+                profile_slice.data.variances)
 
         # Handle masks
         if len(mask_info[self.name]) > 0:
-            base_mask = sc.Variable(dims=profile_slice.dims,
-                                    values=np.ones(profile_slice.shape,
+            base_mask = sc.Variable(dims=profile_slice.data.dims,
+                                    values=np.ones(profile_slice.data.shape,
                                                    dtype=np.int32))
             for m in mask_info[self.name]:
                 if m in profile_slice.masks:

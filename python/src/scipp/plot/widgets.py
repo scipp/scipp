@@ -206,7 +206,10 @@ class PlotWidgets:
         owner.button_style = "info"
 
         # Update the slider max and value.
-        self.update_thickness_slider_range({new_ind: new_dim})
+        # Note that updating the slider readout has to be done by the
+        # controller in "swap_dimensions" because the widgets don't have access
+        # to the model which holds the coordinate values.
+        self.update_thickness_slider_range(new_ind, new_dim)
         for index in set(self.dim_buttons.keys()) - set([new_ind]):
             self.dim_buttons[index][new_dim].disabled = True
             self.dim_buttons[index][old_dim].disabled = False
@@ -240,7 +243,8 @@ class PlotWidgets:
             self.slider[index].max = sl_max
             self.slider[index].min = sl_min
         if set_value:
-            self.slider[index].value = (sl_min + sl_max) // 2
+            # self.slider[index].value = (sl_min + sl_max) // 2
+            self.slider[index].value = sl_min
 
     def update_thickness(self, change=None):
         """
@@ -253,15 +257,14 @@ class PlotWidgets:
                                  set_value=False)
         self.interface["update_data"](change)
 
-    def update_thickness_slider_range(self, inds_and_dims):
+    def update_thickness_slider_range(self, ind, dim):
         """
         Update the slider max and values. Before we update the value, we need
         to lock the data update which is linked to the slider.
         """
         self.interface["lock_update_data"]()
-        for ind, dim in inds_and_dims.items():
-            self._set_slider_defaults(ind,
-                                      self.interface["get_dim_shape"](dim))
+        # for ind, dim in inds_and_dims.items():
+        self._set_slider_defaults(ind, self.interface["get_dim_shape"](dim))
         self.interface["unlock_update_data"]()
 
     def _set_slider_defaults(self, index, max_value):
@@ -272,7 +275,7 @@ class PlotWidgets:
         self.thickness_slider[
             index].max = 1 if self.multid_coord is not None else max_value
         self.thickness_slider[
-            index].value = 1  # self.thickness_slider[ind].max
+            index].value = 1
         self.update_slider_range(index, self.thickness_slider[index].value,
                                  max_value - 1)
 
@@ -310,7 +313,7 @@ class PlotWidgets:
                 self.mask_checkboxes[name][m].observe(callbacks["toggle_mask"],
                                                       names="value")
 
-    def initialise(self, dim_to_shape, xlims, coord_units):
+    def initialise(self, dim_to_shape, ranges, coord_units):
         """
         Initialise widget parameters once the `PlotModel`, `PlotView` and
         `PlotController` have been created, since, for instance, slider limits
@@ -320,10 +323,11 @@ class PlotWidgets:
         for index in self.thickness_slider:
             dim = self.index_to_dim[index]
             self._set_slider_defaults(index, dim_to_shape[dim])
-            lims = xlims[dim].values
+            lims = ranges[dim]
+            val = self.slider[index].value
             self.update_slider_readout(
                 index, lims[0], lims[1],
-                [0, self.thickness_slider[index].value - 1])
+                [val, val + 1])
             self.unit_labels[index].value = coord_units[dim]
 
     def get_slider_bounds(self, exclude=None):

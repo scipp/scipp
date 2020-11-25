@@ -156,7 +156,11 @@ class PlotController:
         Initialise widget parameters once the `PlotModel`, `PlotView` and
         `PlotController` have been created.
         """
-        self.widgets.initialise(dim_to_shape, self.xlims[self.name],
+        ranges = {}
+        for dim in self.widgets.get_slider_bounds():
+            ranges[dim] = self.model.get_slice_coord_bounds(
+                self.name, dim, [0, 1])
+        self.widgets.initialise(dim_to_shape, ranges,
                                 self.coord_units[self.name])
 
     def initialise_view(self):
@@ -235,7 +239,7 @@ class PlotController:
     def lock_update_data(self):
         """
         When the thickness slider is changed, the range, and possibly the
-        value, of the position slider are changed. We therfore temporary lock
+        value, of the position slider are changed. We therefore temporary lock
         data updates until all slider ranges and values have been updated
         before manually updating the displayed data slice.
         """
@@ -321,6 +325,14 @@ class PlotController:
         self.axes[index] = new_dim
         self.update_axes()
         self.update_log_axes_buttons()
+        # Update the slider readout here because the widgets do not have access
+        # to the model, which holds the coordinates.
+        # ranges = {}
+        lower, upper = self.model.get_slice_coord_bounds(
+                self.name, new_dim, [0, 1])
+        self.widgets.update_slider_readout(index, lower,
+                                               upper, [0, 1],
+                                               new_dim == self.multid_coord)
 
     def update_log_axes_buttons(self):
         """
