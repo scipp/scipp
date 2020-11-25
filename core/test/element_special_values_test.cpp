@@ -57,6 +57,27 @@ TYPED_TEST(ElementIsinfTest, value) {
   }
 }
 
+template <typename T> class ElementIsfiniteTest : public ::testing::Test {};
+TYPED_TEST_SUITE(ElementIsfiniteTest, ElementSpecialValuesTestTypes);
+
+TEST(ElementIsfiniteTest, unit) {
+  for (const auto &u : {units::dimensionless, units::m, units::meV}) {
+    EXPECT_EQ(element::isfinite(u), units::dimensionless);
+  }
+}
+
+TYPED_TEST(ElementIsfiniteTest, value) {
+  for (const auto x : {static_cast<TypeParam>(0.0), static_cast<TypeParam>(3.4),
+                       static_cast<TypeParam>(-1.0e3)}) {
+    EXPECT_TRUE(element::isfinite(x));
+  }
+  for (const auto x : {std::numeric_limits<TypeParam>::infinity(),
+                       std::numeric_limits<TypeParam>::quiet_NaN(),
+                       std::numeric_limits<TypeParam>::signaling_NaN()}) {
+    EXPECT_FALSE(element::isfinite(x));
+  }
+}
+
 template <typename T> class ElementNanToNumTest : public ::testing::Test {};
 TYPED_TEST_SUITE(ElementNanToNumTest, ElementSpecialValuesTestTypes);
 
