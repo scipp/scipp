@@ -32,8 +32,8 @@ template <class... Ts> struct pair_product {
 };
 
 template <class... Ts>
-using pair_product_t = decltype(std::tuple_cat(
-    typename pair_product<Ts...>::template type<Ts>{}...));
+using pair_product_t = decltype(
+    std::tuple_cat(typename pair_product<Ts...>::template type<Ts>{}...));
 
 using arithmetic_type_pairs = pair_product_t<float, double, int32_t, int64_t>;
 
@@ -41,9 +41,9 @@ using arithmetic_type_pairs_with_bool =
     decltype(std::tuple_cat(std::declval<arithmetic_type_pairs>(),
                             std::declval<pair_numerical_with_t<bool>>()));
 
-using arithmetic_and_matrix_type_pairs = decltype(std::tuple_cat(
-    std::declval<arithmetic_type_pairs>(),
-    std::tuple<std::tuple<Eigen::Vector3d, Eigen::Vector3d>>()));
+using arithmetic_and_matrix_type_pairs = decltype(
+    std::tuple_cat(std::declval<arithmetic_type_pairs>(),
+                   std::tuple<std::tuple<Eigen::Vector3d, Eigen::Vector3d>>()));
 
 static constexpr auto dimensionless_unit_check =
     [](units::Unit &varUnit, const units::Unit &otherUnit) {
@@ -64,7 +64,7 @@ static constexpr auto dimensionless_unit_check_return =
 
 template <typename Op> struct assign_unary : Op {
   template <typename Out, typename... In>
-  void operator()(Out &out, In &&...in) {
+  void operator()(Out &out, In &&... in) {
     out = Op::operator()(std::forward<In>(in)...);
   }
 };
