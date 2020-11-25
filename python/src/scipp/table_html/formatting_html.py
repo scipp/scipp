@@ -237,9 +237,9 @@ def _make_inline_attributes(var, has_attrs):
             attrs_sections.append(mask_section(var.masks))
             disabled = ""
 
-    if has_attrs and hasattr(var, "unaligned_coords"):
-        if len(var.unaligned_coords) > 0:
-            attrs_sections.append(attr_section(var.unaligned_coords))
+    if has_attrs and hasattr(var, "attrs"):
+        if len(var.attrs) > 0:
+            attrs_sections.append(attr_section(var.attrs))
             disabled = ""
 
     if len(attrs_sections) > 0:
@@ -478,8 +478,8 @@ def dataset_repr(ds):
     if not is_dataset(ds):
         if len(ds.masks) > 0:
             sections.append(mask_section(ds.masks, ds))
-        if len(ds.unaligned_coords) > 0:
-            sections.append(attr_section(ds.unaligned_coords))
+        if len(ds.attrs) > 0:
+            sections.append(attr_section(ds.attrs))
 
     return _obj_repr(header_components, sections)
 

@@ -212,8 +212,8 @@ class DataArrayIO:
         if data.data is None:
             raise RuntimeError("Cannot write object with invalid data.")
         VariableIO.write(group.create_group('data'), var=data.data)
-        views = [data.coords, data.masks]
-        aligned = data.aligned_coords.keys()
+        views = [data.cometa, data.masks]
+        aligned = data.coords.keys()
         # Note that we write aligned and unaligned coords into the same group.
         # Distinction is via an attribute, which is more natural than having
         # 2 separate groups.
@@ -234,14 +234,14 @@ class DataArrayIO:
         contents = dict()
         contents['name'] = group.attrs['name']
         contents['data'] = VariableIO.read(group['data'])
-        contents['unaligned_coords'] = dict()
+        contents['attrs'] = dict()
         for category in ['coords', 'masks']:
             contents[category] = dict()
             for name in group[category]:
                 g = group[category][name]
                 c = category
                 if category == 'coords' and not g.attrs.get('aligned', True):
-                    c = 'unaligned_coords'
+                    c = 'attrs'
                 contents[c][name] = VariableIO.read(g)
         return sc.DataArray(**contents)
 

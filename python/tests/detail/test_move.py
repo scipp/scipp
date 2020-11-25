@@ -39,18 +39,19 @@ def test_moving_variable_into_data_array_proxies():
     a = sc.DataArray(data=sc.Variable(['x'], values=np.random.random(1000)))
     a.coords['x'] = sc.detail.move(sc.Variable(['x'],
                                                values=np.arange(1000.0)))
-    a.unaligned_coords["b"] = sc.detail.move(
+    a.attrs["b"] = sc.detail.move(
         sc.Variable(['x'], values=np.random.random(1000)))
     a.masks["c"] = sc.detail.move(
         sc.Variable(['x'], values=np.random.random(1000)))
 
     assert a.dims == ['x']
     assert a.shape == [1000]
-    assert len(a.coords) == 2
-    assert len(a.unaligned_coords) == 1
+    assert len(a.meta) == 2
+    assert len(a.coords) == 1
+    assert len(a.attrs) == 1
     assert len(a.masks) == 1
     assert 'x' in a.coords
-    assert "b" in a.unaligned_coords
+    assert "b" in a.attrs
     assert "c" in a.masks
 
 

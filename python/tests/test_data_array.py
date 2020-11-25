@@ -17,7 +17,7 @@ def make_dataarray(dim1='x', dim2='y', seed=None):
             dim2: sc.Variable([dim2], values=np.arange(3.0), unit=sc.units.m),
             'aux': sc.Variable([dim2], values=np.random.rand(3))
         },
-        unaligned_coords={'meta': sc.Variable([dim2], values=np.arange(3))})
+        attrs={'meta': sc.Variable([dim2], values=np.arange(3))})
 
 
 def test_slice_init():
@@ -37,11 +37,11 @@ def test_init():
             'x': sc.Variable(['x'], values=np.arange(3), unit=sc.units.m),
             'lib1': sc.Variable(['x'], values=np.random.rand(3))
         },
-        unaligned_coords={'met1': sc.Variable(['x'], values=np.arange(3))},
+        attrs={'met1': sc.Variable(['x'], values=np.arange(3))},
         masks={'mask1': sc.Variable(['x'], values=np.ones(3, dtype=np.bool))})
-    assert len(d.coords) == 3
-    assert len(d.aligned_coords) == 2
-    assert len(d.unaligned_coords) == 1
+    assert len(d.meta) == 3
+    assert len(d.coords) == 2
+    assert len(d.attrs) == 1
     assert len(d.masks) == 1
 
 
@@ -54,18 +54,18 @@ def test_init_from_variable_views():
     var = sc.Variable(['x'], values=np.arange(5))
     a = sc.DataArray(data=var,
                      coords={'x': var},
-                     unaligned_coords={'meta': var},
+                     attrs={'meta': var},
                      masks={'mask1': sc.less(var, sc.Variable(value=3))})
     b = sc.DataArray(data=a.data,
                      coords={'x': a.coords['x']},
-                     unaligned_coords={'meta': a.unaligned_coords['meta']},
+                     attrs={'meta': a.attrs['meta']},
                      masks={'mask1': a.masks['mask1']})
     assert sc.is_equal(a, b)
 
     # Ensure mix of Variables and Variable views work
     c = sc.DataArray(data=a.data,
                      coords={'x': var},
-                     unaligned_coords={'meta': a.unaligned_coords['meta']},
+                     attrs={'meta': a.attrs['meta']},
                      masks={'mask1': a.masks['mask1']})
 
     assert sc.is_equal(a, c)
@@ -73,14 +73,14 @@ def test_init_from_variable_views():
 
 def test_coords():
     da = make_dataarray()
-    assert len(dict(da.coords)) == 4
-    assert len(dict(da.aligned_coords)) == 3
-    assert len(dict(da.unaligned_coords)) == 1
+    assert len(dict(da.meta)) == 4
+    assert len(dict(da.coords)) == 3
+    assert len(dict(da.attrs)) == 1
     assert 'x' in da.coords
     assert 'y' in da.coords
     assert 'aux' in da.coords
-    assert 'meta' in da.coords
-    assert 'meta' in da.unaligned_coords
+    assert 'meta' in da.meta
+    assert 'meta' in da.attrs
 
 
 def test_masks():
@@ -90,13 +90,6 @@ def test_masks():
                                                     dtype=np.bool))
     assert len(dict(da.masks)) == 1
     assert 'mask1' in da.masks
-
-
-def test_labels():
-    da = make_dataarray()
-    # Deprecated at point of use
-    with pytest.raises(RuntimeError):
-        da.labels
 
 
 def test_name():
