@@ -34,6 +34,29 @@ TYPED_TEST(ElementIsnanTest, value) {
   }
 }
 
+template <typename T> class ElementIsinfTest : public ::testing::Test {};
+TYPED_TEST_SUITE(ElementIsinfTest, ElementSpecialValuesTestTypes);
+
+TEST(ElementIsinfTest, unit) {
+  for (const auto &u : {units::dimensionless, units::m, units::meV}) {
+    EXPECT_EQ(element::isinf(u), units::dimensionless);
+  }
+}
+
+TYPED_TEST(ElementIsinfTest, value) {
+  for (const auto x :
+       {static_cast<TypeParam>(1.0) / static_cast<TypeParam>(0.0),
+        std::numeric_limits<TypeParam>::infinity(),
+        -std::numeric_limits<TypeParam>::infinity()}) {
+    EXPECT_TRUE(element::isinf(x));
+  }
+  for (const auto x : {static_cast<TypeParam>(0.0), static_cast<TypeParam>(1.0),
+                       std::numeric_limits<TypeParam>::quiet_NaN(),
+                       std::numeric_limits<TypeParam>::signaling_NaN()}) {
+    EXPECT_FALSE(element::isinf(x));
+  }
+}
+
 template <typename T> class ElementNanToNumTest : public ::testing::Test {};
 TYPED_TEST_SUITE(ElementNanToNumTest, ElementSpecialValuesTestTypes);
 
