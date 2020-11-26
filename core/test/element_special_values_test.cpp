@@ -89,10 +89,10 @@ TEST(ElementIssignedinfTest, unit) {
 TYPED_TEST(ElementIssignedinfTest, value) {
   {
     const auto inf = std::numeric_limits<TypeParam>::infinity();
-    EXPECT_TRUE(element::isposinf(x));
-    EXPECT_FALSE(element::isneginf(x));
-    EXPECT_TRUE(element::isneginf(-x));
-    EXPECT_FALSE(element::isposinf(-x));
+    EXPECT_TRUE(element::isposinf(inf));
+    EXPECT_FALSE(element::isneginf(inf));
+    EXPECT_TRUE(element::isneginf(-inf));
+    EXPECT_FALSE(element::isposinf(-inf));
   }
   for (const auto x : {static_cast<TypeParam>(0.0), static_cast<TypeParam>(1.0),
                        std::numeric_limits<TypeParam>::quiet_NaN(),
