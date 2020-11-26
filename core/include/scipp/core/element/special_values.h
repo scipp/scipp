@@ -36,9 +36,19 @@ constexpr auto isfinite =
                },
                [](const units::Unit &) { return units::dimensionless; }};
 
+namespace detail {
+template <typename T>
+auto isposinf(T x) -> std::enable_if_t<std::is_floating_point_v<T>, bool> {
+  return std::isinf(x) && !std::signbit(x);
+}
+} // namespace detail
+
 constexpr auto isposinf =
     overloaded{arg_list<double, float>,
-               [](const auto x) { return std::isinf(x) && !std::signbit(x); },
+               [](const auto x) {
+                 using detail::isposinf;
+                 return isposinf(x);
+               },
                [](const units::Unit &) { return units::dimensionless; }};
 
 constexpr auto isneginf =
