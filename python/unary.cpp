@@ -62,6 +62,12 @@ template <typename T> void bind_isnan(py::module &m) {
       py::arg("x"), py::call_guard<py::gil_scoped_release>());
 }
 
+template <typename T> void bind_isinf(py::module &m) {
+  m.def(
+      "isinf", [](const typename T::const_view_type &x) { return isinf(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+}
+
 template <typename T> void bind_nan_to_num(py::module &m) {
   m.def(
       "nan_to_num",
@@ -128,6 +134,7 @@ void init_unary(py::module &m) {
   bind_norm<Variable>(m);
   bind_reciprocal<Variable>(m);
   bind_isnan<Variable>(m);
+  bind_isinf<Variable>(m);
   bind_nan_to_num<Variable>(m);
   bind_exp<Variable>(m);
   bind_log<Variable>(m);

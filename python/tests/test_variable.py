@@ -865,6 +865,10 @@ def test_isnan():
     assert_export(sc.isnan, sc.Variable())
 
 
+def test_isinf():
+    assert_export(sc.isinf, sc.Variable())
+
+
 def test_nan_to_num():
     a = sc.Variable(dims=['x'], values=np.array([1, np.nan]))
     replace = sc.Variable(value=0.0)
