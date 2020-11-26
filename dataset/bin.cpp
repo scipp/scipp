@@ -198,7 +198,7 @@ template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
 /// data array with binned data.
 /// - Meta data that does not depend on the buffer dim is lifted to the output
 ///   array.
-/// - Any meta data depending on rebinned dimensions is dropped since it becoms
+/// - Any meta data depending on rebinned dimensions is dropped since it becomes
 ///   meaningless. Note that rebinned masks have been applied before the binning
 ///   step.
 /// - If rebinning, existing meta data along unchanged dimensions is preserved.
