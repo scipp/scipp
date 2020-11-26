@@ -42,13 +42,12 @@ TEST(DataArrayTest, erase_coord) {
   const auto var = makeVariable<double>(Values{1});
   DataArray a(var);
   a.coords().set(Dim::X, var);
-  EXPECT_THROW(a.unaligned_coords().erase(Dim::X), except::NotFoundError);
+  EXPECT_THROW(a.attrs().erase(Dim::X), except::NotFoundError);
   EXPECT_NO_THROW(a.coords().erase(Dim::X));
-  a.unaligned_coords().set(Dim::X, var);
-  EXPECT_NO_THROW(a.unaligned_coords().erase(Dim::X));
-  a.unaligned_coords().set(Dim::X, var);
-  // coords() includes unaligned, so those can also be erased
-  EXPECT_NO_THROW(a.coords().erase(Dim::X));
+  a.attrs().set(Dim::X, var);
+  EXPECT_NO_THROW(a.attrs().erase(Dim::X));
+  a.attrs().set(Dim::X, var);
+  EXPECT_THROW(a.coords().erase(Dim::X), except::NotFoundError);
 }
 
 TEST(DataArrayTest, sum_dataset_columns_via_DataArray) {

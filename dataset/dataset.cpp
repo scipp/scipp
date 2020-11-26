@@ -503,37 +503,28 @@ CoordsView DataArray::meta() {
   return make_coords(get(), CoordCategory::All, false);
 }
 
-/// Return a const view to all coordinates of the data view.
-CoordsConstView DataArrayConstView::coords() const noexcept {
-  return aligned_coords();
+CoordsConstView DataArrayConstView::aligned_coords() const noexcept {
+  return coords();
 }
-
-/// Return a view to all coordinates of the data view.
-CoordsView DataArrayView::coords() const noexcept { return aligned_coords(); }
-
-/// Return a const view to all coordinates of the data array.
-CoordsConstView DataArray::coords() const { return aligned_coords(); }
-
-/// Return a view to all coordinates of the data array.
-CoordsView DataArray::coords() { return aligned_coords(); }
+CoordsView DataArrayView::aligned_coords() const noexcept { return coords(); }
+CoordsConstView DataArray::aligned_coords() const { return coords(); }
+CoordsView DataArray::aligned_coords() { return coords(); }
 
 /// Return a const view to all aligned coordinates of the data view.
-CoordsConstView DataArrayConstView::aligned_coords() const noexcept {
+CoordsConstView DataArrayConstView::coords() const noexcept {
   return make_coords(*this, CoordCategory::Aligned, m_isItem);
 }
 
 /// Return a view to all aligned coordinates of the data view.
-CoordsView DataArrayView::aligned_coords() const noexcept {
+CoordsView DataArrayView::coords() const noexcept {
   return make_coords(*this, CoordCategory::Aligned, m_isItem);
 }
 
 /// Return a const view to all aligned coordinates of the data array.
-CoordsConstView DataArray::aligned_coords() const {
-  return get().aligned_coords();
-}
+CoordsConstView DataArray::coords() const { return get().coords(); }
 
 /// Return a view to all aligned coordinates of the data array.
-CoordsView DataArray::aligned_coords() { return m_holder.coords(); }
+CoordsView DataArray::coords() { return m_holder.coords(); }
 
 CoordsConstView DataArrayConstView::unaligned_coords() const noexcept {
   return attrs();

@@ -49,10 +49,10 @@ void copy_slices(const DataArrayConstView &src, const DataArrayView &dst,
                  const Dim dim, const VariableConstView &srcIndices,
                  const VariableConstView &dstIndices) {
   copy_slices(src.data(), dst.data(), dim, srcIndices, dstIndices);
-  core::expect::sizeMatches(src.coords(), dst.coords());
+  core::expect::sizeMatches(src.meta(), dst.meta());
   core::expect::sizeMatches(src.masks(), dst.masks());
-  for (const auto &[name, coord] : src.coords())
-    copy_or_match(coord, dst.coords()[name], dim, srcIndices, dstIndices);
+  for (const auto &[name, coord] : src.meta())
+    copy_or_match(coord, dst.meta()[name], dim, srcIndices, dstIndices);
   for (const auto &[name, mask] : src.masks())
     copy_or_match(mask, dst.masks()[name], dim, srcIndices, dstIndices);
 }
@@ -66,13 +66,13 @@ void copy_slices(const DatasetConstView &src, const DatasetView &dst,
   core::expect::sizeMatches(src, dst);
   for (const auto &item : src) {
     const auto &dst_ = dst[item.name()];
-    core::expect::sizeMatches(item.unaligned_coords(), dst_.unaligned_coords());
+    core::expect::sizeMatches(item.attrs(), dst_.attrs());
     core::expect::sizeMatches(item.masks(), dst_.masks());
     copy_or_match(item.data(), dst_.data(), dim, srcIndices, dstIndices);
     for (const auto &[name, var] : item.masks())
       copy_or_match(var, dst_.masks()[name], dim, srcIndices, dstIndices);
-    for (const auto &[name, var] : item.unaligned_coords())
-      copy_or_match(var, dst_.coords()[name], dim, srcIndices, dstIndices);
+    for (const auto &[name, var] : item.attrs())
+      copy_or_match(var, dst_.attrs()[name], dim, srcIndices, dstIndices);
   }
 }
 
@@ -97,12 +97,12 @@ constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
 DataArray resize_default_init(const DataArrayConstView &parent, const Dim dim,
                               const scipp::index size) {
   DataArray buffer(copy_or_resize(parent.data(), dim, size));
-  for (const auto &[name, var] : parent.aligned_coords())
-    buffer.aligned_coords().set(name, copy_or_resize(var, dim, size));
+  for (const auto &[name, var] : parent.coords())
+    buffer.coords().set(name, copy_or_resize(var, dim, size));
   for (const auto &[name, var] : parent.masks())
     buffer.masks().set(name, copy_or_resize(var, dim, size));
-  for (const auto &[name, var] : parent.unaligned_coords())
-    buffer.unaligned_coords().set(name, copy_or_resize(var, dim, size));
+  for (const auto &[name, var] : parent.attrs())
+    buffer.attrs().set(name, copy_or_resize(var, dim, size));
   return buffer;
 }
 
@@ -115,8 +115,8 @@ Dataset resize_default_init(const DatasetConstView &parent, const Dim dim,
     buffer.setData(item.name(), copy_or_resize(item.data(), dim, size));
     for (const auto &[name, var] : item.masks())
       buffer[item.name()].masks().set(name, copy_or_resize(var, dim, size));
-    for (const auto &[name, var] : item.unaligned_coords())
-      buffer[item.name()].coords().set(name, copy_or_resize(var, dim, size));
+    for (const auto &[name, var] : item.attrs())
+      buffer[item.name()].attrs().set(name, copy_or_resize(var, dim, size));
   }
   return buffer;
 }
@@ -175,8 +175,8 @@ Variable bucket_sizes(const VariableConstView &var) {
 }
 
 DataArray bucket_sizes(const DataArrayConstView &array) {
-  return {bucket_sizes(array.data()), array.aligned_coords(), array.masks(),
-          array.unaligned_coords()};
+  return {bucket_sizes(array.data()), array.coords(), array.masks(),
+          array.attrs()};
 }
 
 Dataset bucket_sizes(const DatasetConstView &dataset) {
@@ -280,9 +280,8 @@ Variable concatenate(const VariableConstView &var0,
 DataArray concatenate(const DataArrayConstView &a,
                       const DataArrayConstView &b) {
   return {buckets::concatenate(a.data(), b.data()),
-          union_(a.aligned_coords(), b.aligned_coords()),
-          union_or(a.masks(), b.masks()),
-          intersection(a.unaligned_coords(), b.unaligned_coords())};
+          union_(a.coords(), b.coords()), union_or(a.masks(), b.masks()),
+          intersection(a.attrs(), b.attrs())};
 }
 
 /// Reduce a dimension by concatenating all elements along the dimension.
@@ -324,7 +323,7 @@ Variable histogram(const VariableConstView &data,
   const Masker masker(buffer, dim);
   return variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
-      subspan_view(buffer.coords()[hist_dim], dim, indices),
+      subspan_view(buffer.meta()[hist_dim], dim, indices),
       subspan_view(masker.data(), dim, indices), binEdges, element::histogram);
 }
 
@@ -333,8 +332,8 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
   if (dim == Dim::Invalid)
     dim = edge_dimension(function);
   const Masker masker(function, dim);
-  const auto &coord = bins_view<DataArray>(x).coords()[dim];
-  const auto &edges = function.coords()[dim];
+  const auto &coord = bins_view<DataArray>(x).meta()[dim];
+  const auto &edges = function.meta()[dim];
   const auto weights = subspan_view(masker.data(), dim);
   if (all(is_linspace(edges, dim)).value<bool>()) {
     return variable::transform(coord, subspan_view(edges, dim), weights,
@@ -357,8 +356,8 @@ void scale(const DataArrayView &array, const DataArrayConstView &histogram,
   union_or_in_place(array.masks(), histogram.slice({dim, 0}).masks());
   const Masker masker(histogram, dim);
   auto data = bins_view<DataArray>(array.data()).data();
-  const auto &coord = bins_view<DataArray>(array.data()).coords()[dim];
-  const auto &edges = histogram.coords()[dim];
+  const auto &coord = bins_view<DataArray>(array.data()).meta()[dim];
+  const auto &edges = histogram.meta()[dim];
   const auto weights = subspan_view(masker.data(), dim);
   if (all(is_linspace(edges, dim)).value<bool>()) {
     transform_in_place(data, coord, subspan_view(edges, dim), weights,
@@ -385,8 +384,7 @@ Variable sum(const VariableConstView &data) {
 }
 
 DataArray sum(const DataArrayConstView &data) {
-  return {buckets::sum(data.data()), data.aligned_coords(), data.masks(),
-          data.unaligned_coords()};
+  return {buckets::sum(data.data()), data.coords(), data.masks(), data.attrs()};
 }
 
 Dataset sum(const DatasetConstView &d) {

@@ -380,8 +380,8 @@ TEST_F(GroupbyWithBinsTest, single_bin) {
   // Non-range slice drops Dim::Z, so the result must be equal to a global `sum`
   // or `mean` with the corresponding coord (the edges) attr added.
   const auto add_bins = [&bins](auto data) {
-    data["a"].coords().set(Dim("z"), bins);
-    data["b"].coords().set(Dim("z"), bins);
+    data["a"].attrs().set(Dim("z"), bins);
+    data["b"].attrs().set(Dim("z"), bins);
     return data;
   };
   EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}), add_bins(sum(d, Dim::X)));
@@ -394,15 +394,15 @@ TEST_F(GroupbyWithBinsTest, two_bin) {
   const auto groups = groupby(d, Dim("labels2"), bins);
 
   const auto add_bins = [&bins](auto data, const scipp::index bin) {
-    data["a"].coords().set(Dim("z"), bins.slice({Dim::Z, bin, bin + 2}));
-    data["b"].coords().set(Dim("z"), bins.slice({Dim::Z, bin, bin + 2}));
+    data["a"].attrs().set(Dim("z"), bins.slice({Dim::Z, bin, bin + 2}));
+    data["b"].attrs().set(Dim("z"), bins.slice({Dim::Z, bin, bin + 2}));
     return data;
   };
 
   auto group0 =
       concatenate(d.slice({Dim::X, 0, 2}), d.slice({Dim::X, 4, 5}), Dim::X);
   // concatenate does currently not preserve attributes
-  group0.setCoord("a", Dim("scalar"), d["a"].coords()[Dim("scalar")]);
+  group0.setCoord("a", Dim("scalar"), d["a"].attrs()[Dim("scalar")]);
   EXPECT_EQ(groups.sum(Dim::X).slice({Dim::Z, 0}),
             add_bins(sum(group0, Dim::X), 0));
   EXPECT_EQ(groups.mean(Dim::X).slice({Dim::Z, 0}),

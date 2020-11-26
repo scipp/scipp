@@ -40,7 +40,7 @@ TEST_F(DataArrayBucketTest, concatenate_dim_1d_masked) {
   DataArray a(var, {{Dim::Y, y}, {Dim("scalar"), scalar}},
               {{"mask", mask}, {"scalar", scalar_mask}});
   auto expected = copy(a.slice({Dim::Y, 1}));
-  expected.coords().erase(Dim::Y);
+  expected.attrs().erase(Dim::Y);
   expected.masks().erase("mask");
   EXPECT_EQ(buckets::concatenate(a, Dim::Y), expected);
 }
@@ -443,9 +443,9 @@ TEST_F(DatasetBucketTest, concatenate) {
   check_fail();
   buffer1["a"].masks().set("mask", column);
   check();
-  buffer0["b"].coords().set(Dim("attr"), column);
+  buffer0["b"].attrs().set(Dim("attr"), column);
   check_fail();
-  buffer1["b"].coords().set(Dim("attr"), column);
+  buffer1["b"].attrs().set(Dim("attr"), column);
   check();
   buffer0.coords().set(Dim("scalar"), 1.0 * units::m);
   check_fail();

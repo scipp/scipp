@@ -82,7 +82,7 @@ DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
   auto out = DataArray(concatenate(a.data(), b.data(), dim), {},
                        concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
   for (auto &&[d, coord] :
-       concat(a.coords(), b.coords(), dim, a.dims(), b.dims())) {
+       concat(a.meta(), b.meta(), dim, a.dims(), b.dims())) {
     if (d == dim || a.aligned_coords().contains(d) ||
         b.aligned_coords().contains(d))
       out.coords().set(d, std::move(coord));
