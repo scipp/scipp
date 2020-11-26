@@ -37,6 +37,16 @@ TYPED_TEST(VariableSpecialValueTest, isnan) {
   }
 }
 
+TYPED_TEST(VariableSpecialValueTest, isinf) {
+  for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
+    for (auto u : {units::dimensionless, units::m}) {
+      const auto res = isinf(x * u);
+      EXPECT_EQ(res.template value<bool>(), element::isinf(x));
+      EXPECT_EQ(res.unit(), units::dimensionless);
+    }
+  }
+}
+
 TEST(VariableSpecialValueTest, nan_to_num_throws_when_input_and_replace_types_differ) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});

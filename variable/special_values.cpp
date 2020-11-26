@@ -12,6 +12,10 @@ Variable isnan(const VariableConstView &var) {
   return transform(var, element::isnan);
 }
 
+Variable isinf(const VariableConstView &var) {
+  return transform(var, element::isinf);
+}
+
 VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {
