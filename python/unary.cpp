@@ -70,19 +70,22 @@ template <typename T> void bind_isinf(py::module &m) {
 
 template <typename T> void bind_isfinite(py::module &m) {
   m.def(
-      "isfinite", [](const typename T::const_view_type &x) { return isfinite(x); },
+      "isfinite",
+      [](const typename T::const_view_type &x) { return isfinite(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_isposinf(py::module &m) {
   m.def(
-      "isposinf", [](const typename T::const_view_type &x) { return isposinf(x); },
+      "isposinf",
+      [](const typename T::const_view_type &x) { return isposinf(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_isneginf(py::module &m) {
   m.def(
-      "isneginf", [](const typename T::const_view_type &x) { return isneginf(x); },
+      "isneginf",
+      [](const typename T::const_view_type &x) { return isneginf(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>());
 }
 
