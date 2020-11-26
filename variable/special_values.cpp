@@ -16,6 +16,10 @@ Variable isinf(const VariableConstView &var) {
   return transform(var, element::isinf);
 }
 
+Variable isfinite(const VariableConstView &var) {
+  return transform(var, element::isfinite);
+}
+
 VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {
