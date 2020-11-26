@@ -861,6 +861,10 @@ def test_variable_data_array_binary_ops():
     assert sc.is_equal(a / var, var / a)
 
 
+def test_isnan():
+    assert_export(sc.isnan, sc.Variable())
+
+
 def test_nan_to_num():
     a = sc.Variable(dims=['x'], values=np.array([1, np.nan]))
     replace = sc.Variable(value=0.0)
