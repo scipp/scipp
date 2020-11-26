@@ -32,7 +32,7 @@ constexpr auto isfinite =
     overloaded{arg_list<double, float>,
                [](const auto x) {
                  using std::isfinite;
-                 return std::isfinite(x);
+                 return isfinite(x);
                },
                [](const units::Unit &) { return units::dimensionless; }};
 
