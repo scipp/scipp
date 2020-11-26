@@ -23,7 +23,8 @@ template <typename T> constexpr auto values_for_special_value_tests() {
                      -std::numeric_limits<T>::infinity()};
 }
 
-template <typename T> class VariableSpecialValueTest : public ::testing::Test {};
+template <typename T>
+class VariableSpecialValueTest : public ::testing::Test {};
 using FloatTypes = ::testing::Types<double, float>;
 TYPED_TEST_SUITE(VariableSpecialValueTest, FloatTypes);
 
@@ -77,7 +78,8 @@ TYPED_TEST(VariableSpecialValueTest, isneginf) {
   }
 }
 
-TEST(VariableSpecialValueTest, nan_to_num_throws_when_input_and_replace_types_differ) {
+TEST(VariableSpecialValueTest,
+     nan_to_num_throws_when_input_and_replace_types_differ) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, double(NAN)});
   // Replacement type not same as input
@@ -131,7 +133,8 @@ TEST(VariableSpecialValueTest,
                except::VariancesError);
 }
 
-TEST(VariableSpecialValueTest, nan_to_num_with_variance_and_variance_on_replacement) {
+TEST(VariableSpecialValueTest,
+     nan_to_num_with_variance_and_variance_on_replacement) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{2},
                                 Values{1.0, double(NAN)}, Variances{0.1, 0.2});
 

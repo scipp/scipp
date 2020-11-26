@@ -44,9 +44,8 @@ TEST(ElementIsinfTest, unit) {
 }
 
 TYPED_TEST(ElementIsinfTest, value) {
-  for (const auto x :
-       {std::numeric_limits<TypeParam>::infinity(),
-        -std::numeric_limits<TypeParam>::infinity()}) {
+  for (const auto x : {std::numeric_limits<TypeParam>::infinity(),
+                       -std::numeric_limits<TypeParam>::infinity()}) {
     EXPECT_TRUE(element::isinf(x));
   }
   for (const auto x : {static_cast<TypeParam>(0.0), static_cast<TypeParam>(1.0),
