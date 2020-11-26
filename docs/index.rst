@@ -87,13 +87,6 @@ Documentation
    user-guide/tips-tricks-and-anti-patterns
 
 .. toctree::
-   :caption: Event data
-   :maxdepth: 3
-
-   event-data/overview
-   event-data/filtering
-
-.. toctree::
    :caption: Visualization
    :maxdepth: 3
 
