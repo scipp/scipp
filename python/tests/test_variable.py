@@ -877,6 +877,10 @@ def test_isposinf():
     assert_export(sc.isposinf, sc.Variable())
 
 
+def test_isneginf():
+    assert_export(sc.isneginf, sc.Variable())
+
+
 def test_nan_to_num():
     a = sc.Variable(dims=['x'], values=np.array([1, np.nan]))
     replace = sc.Variable(value=0.0)

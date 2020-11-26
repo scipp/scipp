@@ -80,6 +80,11 @@ template <typename T> void bind_isposinf(py::module &m) {
       py::arg("x"), py::call_guard<py::gil_scoped_release>());
 }
 
+template <typename T> void bind_isneginf(py::module &m) {
+  m.def(
+      "isneginf", [](const typename T::const_view_type &x) { return isneginf(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+}
 
 template <typename T> void bind_nan_to_num(py::module &m) {
   m.def(
@@ -150,6 +155,7 @@ void init_unary(py::module &m) {
   bind_isinf<Variable>(m);
   bind_isfinite<Variable>(m);
   bind_isposinf<Variable>(m);
+  bind_isneginf<Variable>(m);
   bind_nan_to_num<Variable>(m);
   bind_exp<Variable>(m);
   bind_log<Variable>(m);
