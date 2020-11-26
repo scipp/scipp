@@ -470,6 +470,7 @@ make_coords(const T &view, const CoordCategory category,
   }
   if constexpr (std::is_same_v<T, DataArrayView>) {
     const bool aligned_of_item = is_item && aligned;
+    // insert/erase disabled for `meta`
     const bool combined = category == CoordCategory::All;
     return CoordsView(
         // Coord insert/erase disabled if:
@@ -479,7 +480,6 @@ make_coords(const T &view, const CoordCategory category,
         // - (aligned) coords of a dataset item:
         //   del ds['a'].coords['x'] # fails
         //   del ds.coords['x'] # ok
-        // Note that del array.coords['x'] works even if 'x' is unaligned
         CoordAccess{(view.slices().empty() && !aligned_of_item && !combined)
                         ? &view.get_dataset()
                         : nullptr,

@@ -119,9 +119,9 @@ def dataset_for_repr_test():
     d = sc.Dataset()
     d['z1'] = sc.Variable(['x'], values=[1.0])
     d['a1'] = sc.Variable(['x'], values=[1.0])
-    d['z1'].coords['attr1'] = sc.Variable(1.0)
-    d['z1'].coords['attr2'] = sc.Variable(1.0)
-    d['z1'].coords['attr0'] = sc.Variable(1.0)
+    d['z1'].attrs['attr1'] = sc.Variable(1.0)
+    d['z1'].attrs['attr2'] = sc.Variable(1.0)
+    d['z1'].attrs['attr0'] = sc.Variable(1.0)
     d['z1'].masks['zz_mask'] = sc.Variable(dims=['x'], values=np.array([True]))
     d['z1'].masks['aa_mask'] = sc.Variable(dims=['x'], values=np.array([True]))
     return d
