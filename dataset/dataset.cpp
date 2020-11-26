@@ -63,6 +63,11 @@ CoordsView Dataset::coords() noexcept {
   return CoordsView(CoordAccess(this), makeViewItems(dimensions(), m_coords));
 }
 
+/// Alias for coords().
+CoordsConstView Dataset::meta() const noexcept { return coords(); }
+/// Alias for coords().
+CoordsView Dataset::meta() noexcept { return coords(); }
+
 bool Dataset::contains(const std::string &name) const noexcept {
   return m_data.count(name) == 1;
 }
@@ -648,6 +653,11 @@ CoordsView DatasetView::coords() const noexcept {
   return CoordsView(CoordAccess(slices().empty() ? m_mutableDataset : nullptr),
                     std::move(items), slices());
 }
+
+/// Alias for coords().
+CoordsConstView DatasetConstView::meta() const noexcept { return coords(); }
+/// Alias for coords().
+CoordsView DatasetView::meta() const noexcept { return coords(); }
 
 bool DatasetConstView::contains(const std::string &name) const noexcept {
   return find(name) != end();

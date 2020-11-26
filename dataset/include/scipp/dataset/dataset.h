@@ -259,6 +259,9 @@ public:
   CoordsConstView coords() const noexcept;
   CoordsView coords() noexcept;
 
+  CoordsConstView meta() const noexcept;
+  CoordsView meta() noexcept;
+
   bool contains(const std::string &name) const noexcept;
 
   void erase(const std::string &name);
@@ -451,6 +454,7 @@ public:
   [[nodiscard]] bool empty() const noexcept { return m_items.empty(); }
 
   CoordsConstView coords() const noexcept;
+  CoordsConstView meta() const noexcept;
 
   bool contains(const std::string &name) const noexcept;
 
@@ -524,6 +528,7 @@ public:
   DatasetView(Dataset &dataset);
 
   CoordsView coords() const noexcept;
+  CoordsView meta() const noexcept;
 
   const DataArrayView &operator[](const std::string &name) const;
 

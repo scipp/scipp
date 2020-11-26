@@ -18,21 +18,21 @@ namespace scipp::neutron {
 namespace beamline_impl {
 
 template <class T> static auto position(const T &d) {
-  return d.coords()[Dim::Position];
+  return d.meta()[Dim::Position];
 }
 
 template <class T> static auto source_position(const T &d) {
-  return d.coords()[Dim("source-position")];
+  return d.meta()[Dim("source-position")];
 }
 
 template <class T> static auto sample_position(const T &d) {
-  return d.coords()[Dim("sample-position")];
+  return d.meta()[Dim("sample-position")];
 }
 
 template <class T> static Variable flight_path_length(const T &d) {
   // If there is no sample this returns the straight distance from the source,
   // as required, e.g., for monitors.
-  if (d.coords().contains(Dim("sample-position")))
+  if (d.meta().contains(Dim("sample-position")))
     return l1(d) + l2(d);
   else
     return norm(position(d) - source_position(d));
