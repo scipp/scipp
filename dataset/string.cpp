@@ -60,9 +60,9 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
     for (const auto &[key, var] : sorted(data.masks()))
       s << tab << tab << format_variable(key, var, datasetDims);
   }
-  if (!data.unaligned_coords().empty()) {
+  if (!data.attrs().empty()) {
     s << tab << "Coordinates (unaligned):\n";
-    for (const auto &[key, var] : sorted(data.unaligned_coords()))
+    for (const auto &[key, var] : sorted(data.attrs()))
       s << tab << tab << format_variable(key, var, datasetDims);
   }
   return s.str();
@@ -81,7 +81,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
     CoordsConstView map;
     if constexpr (std::is_same_v<D, DataArray> ||
                   std::is_same_v<D, DataArrayConstView>)
-      map = dataset.aligned_coords();
+      map = dataset.coords();
     else
       map = dataset.coords();
     for (const auto &[name, var] : sorted(map))

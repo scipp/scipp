@@ -84,7 +84,7 @@ defaults = {
         "coords": "#dde9af",
         "data": "#ffe680",
         "labels": "#afdde9",
-        "unaligned_coords": "#ff8080",
+        "attrs": "#ff8080",
         "masks": "#cccccc",
         "hover": "#d6eaf8",
     },

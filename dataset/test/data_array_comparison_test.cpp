@@ -285,10 +285,10 @@ TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
   const auto var = makeVariable<double>(Values{1.0});
   a.setData("item", var);
   b.setData("item", var);
-  a["item"].coords().set(Dim::X, dataset.coords()[Dim::X]);
-  a["item"].coords().set(Dim::Y, dataset.coords()[Dim::Y]);
-  b["item"].coords().set(Dim::Y, dataset.coords()[Dim::Y]);
-  b["item"].coords().set(Dim::X, dataset.coords()[Dim::X]);
+  a["item"].attrs().set(Dim::X, dataset.coords()[Dim::X]);
+  a["item"].attrs().set(Dim::Y, dataset.coords()[Dim::Y]);
+  b["item"].attrs().set(Dim::Y, dataset.coords()[Dim::Y]);
+  b["item"].attrs().set(Dim::X, dataset.coords()[Dim::X]);
   for (const auto &a_ : a)
     expect_eq(a_, b[a_.name()]);
 }

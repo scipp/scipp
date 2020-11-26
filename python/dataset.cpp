@@ -93,7 +93,7 @@ void bind_mutable_view(py::module &m, const std::string &name) {
 }
 
 template <class T, class... Ignored>
-void bind_coord_properties(py::class_<T, Ignored...> &c) {
+void bind_dataset_coord_properties(py::class_<T, Ignored...> &c) {
   // For some reason the return value policy and/or keep-alive policy do not
   // work unless we wrap things in py::cpp_function.
   c.def_property_readonly(
@@ -102,13 +102,14 @@ void bind_coord_properties(py::class_<T, Ignored...> &c) {
                        py::return_value_policy::move, py::keep_alive<0, 1>()),
       R"(
       Dict of coordinates.)");
-  c.def_property_readonly(
-      "labels",
-      []([[maybe_unused]] T &self) {
-        throw std::runtime_error(
-            "Property `labels` is deprecated. Use `coords` instead.");
-      },
-      R"(Decprecated, alias for `coords`.)");
+  // Metadata for dataset is same as `coords` since dataset cannot have attrs
+  // (unaligned coords).
+  c.def_property_readonly("meta",
+                          py::cpp_function([](T &self) { return self.meta(); },
+                                           py::return_value_policy::move,
+                                           py::keep_alive<0, 1>()),
+                          R"(
+      Dict of coordinates.)");
 }
 
 template <class T, class... Ignored>
@@ -175,17 +176,23 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
       [](T &self, const VariableConstView &data) { self.data().assign(data); },
       R"(Underlying data item.)");
   c.def_property_readonly(
-      "aligned_coords",
-      py::cpp_function([](T &self) { return self.aligned_coords(); },
+      "coords",
+      py::cpp_function([](T &self) { return self.coords(); },
                        py::return_value_policy::move, py::keep_alive<0, 1>()),
       R"(
       Dict of aligned coords.)");
-  c.def_property_readonly(
-      "unaligned_coords",
-      py::cpp_function([](T &self) { return self.unaligned_coords(); },
-                       py::return_value_policy::move, py::keep_alive<0, 1>()),
-      R"(
-      Dict of unaligned coords.)");
+  c.def_property_readonly("meta",
+                          py::cpp_function([](T &self) { return self.meta(); },
+                                           py::return_value_policy::move,
+                                           py::keep_alive<0, 1>()),
+                          R"(
+      Dict of coords and attrs.)");
+  c.def_property_readonly("attrs",
+                          py::cpp_function([](T &self) { return self.attrs(); },
+                                           py::return_value_policy::move,
+                                           py::keep_alive<0, 1>()),
+                          R"(
+      Dict of attrs.)");
   c.def_property_readonly("masks",
                           py::cpp_function([](T &self) { return self.masks(); },
                                            py::return_value_policy::move,
@@ -193,7 +200,6 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
                           R"(
       Dict of masks.)");
   bind_common_operators(c);
-  bind_coord_properties(c);
   bind_data_properties(c);
   bind_slice_methods(c);
   bind_in_place_binary<DataArrayView>(c);
@@ -258,7 +264,7 @@ void init_dataset(py::module &m) {
            py::arg("data") = Variable{},
            py::arg("coords") = std::map<Dim, VariableConstView>{},
            py::arg("masks") = std::map<std::string, VariableConstView>{},
-           py::arg("unaligned_coords") = std::map<Dim, VariableConstView>{},
+           py::arg("attrs") = std::map<Dim, VariableConstView>{},
            py::arg("name") = std::string{})
       .def("__sizeof__", [](const DataArrayConstView &array) {
         return size_of(array, true);
@@ -327,8 +333,8 @@ void init_dataset(py::module &m) {
   bind_dataset_view_methods(dataset);
   bind_dataset_view_methods(datasetView);
 
-  bind_coord_properties(dataset);
-  bind_coord_properties(datasetView);
+  bind_dataset_coord_properties(dataset);
+  bind_dataset_coord_properties(datasetView);
 
   bind_slice_methods(dataset);
   bind_slice_methods(datasetView);

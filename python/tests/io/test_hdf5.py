@@ -37,7 +37,7 @@ array_1d = sc.DataArray(data=x,
                             'mask1': sc.less(x, 1.5 * sc.units.m),
                             'mask2': sc.less(x, 2.5 * sc.units.m)
                         },
-                        unaligned_coords={
+                        attrs={
                             'attr1': x,
                             'attr2': 1.2 * sc.units.K
                         })
@@ -51,7 +51,7 @@ array_2d = sc.DataArray(data=xy,
                             'mask1': sc.less(x, 1.5 * sc.units.m),
                             'mask2': sc.less(xy, 0.5 * sc.units.kg)
                         },
-                        unaligned_coords={
+                        attrs={
                             'attr1': xy,
                             'attr2': 1.2 * sc.units.K
                         })
@@ -137,9 +137,9 @@ def test_data_array_unsupported_PyObject_coord():
     assert not sc.is_equal(a, b)
     del a.coords['obj']
     assert sc.is_equal(a, b)
-    a.unaligned_coords['obj'] = obj
+    a.attrs['obj'] = obj
     assert not sc.is_equal(a, b)
-    del a.unaligned_coords['obj']
+    del a.attrs['obj']
     assert sc.is_equal(a, b)
 
 

@@ -64,13 +64,9 @@ template <class T, class View> class Bins : public BinsCommon<T, View> {
 public:
   using BinsCommon<T, View>::BinsCommon;
   auto data() const { return this->make(this->buffer().data()); }
+  auto meta() const { return BinsMapView(*this, this->buffer().meta()); }
   auto coords() const { return BinsMapView(*this, this->buffer().coords()); }
-  auto aligned_coords() const {
-    return BinsMapView(*this, this->buffer().aligned_coords());
-  }
-  auto unaligned_coords() const {
-    return BinsMapView(*this, this->buffer().unaligned_coords());
-  }
+  auto attrs() const { return BinsMapView(*this, this->buffer().attrs()); }
   auto masks() const { return BinsMapView(*this, this->buffer().masks()); }
   auto &name() const { return this->buffer().name(); }
 };

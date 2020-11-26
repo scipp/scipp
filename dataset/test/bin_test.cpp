@@ -140,8 +140,8 @@ protected:
                               tolerance))
                     .value<bool>());
     EXPECT_EQ(a.masks(), b.masks());
-    EXPECT_EQ(a.aligned_coords(), b.aligned_coords());
-    EXPECT_EQ(a.unaligned_coords(), b.unaligned_coords());
+    EXPECT_EQ(a.coords(), b.coords());
+    EXPECT_EQ(a.attrs(), b.attrs());
   }
 };
 
@@ -253,8 +253,8 @@ TEST_P(BinTest, rebinned_meta_data_dropped) {
   const auto mask_x =
       makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, false});
   xy1.masks().set("x", mask_x);
-  xy1.aligned_coords().set(Dim("aux1"), mask_x);
-  xy1.aligned_coords().set(Dim("aux1-edge"), edges_x_coarse);
-  xy1.unaligned_coords().set(Dim("aux2"), mask_x);
+  xy1.coords().set(Dim("aux1"), mask_x);
+  xy1.coords().set(Dim("aux1-edge"), edges_x_coarse);
+  xy1.attrs().set(Dim("aux2"), mask_x);
   expect_near(bin(xy1, {edges_x_coarse2, edges_y_coarse2}), xy2);
 }

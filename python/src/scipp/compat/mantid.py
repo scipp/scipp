@@ -481,7 +481,7 @@ def _convert_MatrixWorkspace_info(ws,
             spec_dim: spec_coord
         },
         "masks": {},
-        "unaligned_coords": {
+        "attrs": {
             "sample":
             make_sample(ws),
             "instrument-name":
@@ -492,7 +492,7 @@ def _convert_MatrixWorkspace_info(ws,
 
     if load_run_logs:
         for run_log_name, run_log_variable in make_variables_from_run_logs(ws):
-            info["unaligned_coords"][run_log_name] = run_log_variable
+            info["attrs"][run_log_name] = run_log_variable
 
     if advanced_geometry:
         info["coords"]["detector-info"] = make_detector_info(ws)
@@ -502,7 +502,7 @@ def _convert_MatrixWorkspace_info(ws,
 
     if rot is not None and shp is not None and not np.all(np.isnan(
             pos.values)):
-        info["unaligned_coords"].update({"rotation": rot, "shape": shp})
+        info["attrs"].update({"rotation": rot, "shape": shp})
 
     if source_pos is not None:
         info["coords"]["source-position"] = source_pos
@@ -545,7 +545,7 @@ def convert_monitors_ws(ws, converter, **ignored):
         del single_monitor.coords['sample-position']
         if 'detector-info' in single_monitor.coords:
             del single_monitor.coords['detector-info']
-        del single_monitor.unaligned_coords['sample']
+        del single_monitor.attrs['sample']
         monitors.append((comp_info.name(det_index), single_monitor))
     return monitors
 
@@ -695,7 +695,7 @@ def convert_MDHistoWorkspace_to_data_array(md_histo, **ignored):
     nevents = sc.Variable(dims=dims_used, values=md_histo.getNumEventsArray())
     return detail.move_to_data_array(coords=coords,
                                      data=data,
-                                     unaligned_coords={'nevents': nevents})
+                                     attrs={'nevents': nevents})
 
 
 def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
@@ -811,8 +811,7 @@ def from_mantid(workspace, **kwargs):
 
         monitors = convert_monitors_ws(monitor_ws, converter, **kwargs)
         for name, monitor in monitors:
-            scipp_obj.unaligned_coords[name] = detail.move(
-                sc.Variable(value=monitor))
+            scipp_obj.attrs[name] = detail.move(sc.Variable(value=monitor))
     for ws in workspaces_to_delete:
         mantid.DeleteWorkspace(ws)
 
@@ -926,9 +925,9 @@ def load_component_info(ds, file, advanced_geometry=False):
             ws, source_pos, sample_pos, advanced_geometry=advanced_geometry)
         ds.coords["position"] = pos
         if rot is not None:
-            ds.unaligned_coords["rotation"] = rot
+            ds.attrs["rotation"] = rot
         if shp is not None:
-            ds.unaligned_coords["shape"] = shp
+            ds.attrs["shape"] = shp
 
 
 def validate_dim_and_get_mantid_string(unit_dim):

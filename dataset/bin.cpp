@@ -173,12 +173,8 @@ auto bin_impl(const VariableConstView &var,
   return bin<T>(var, indices, dims);
 }
 
-constexpr static auto get_aligned_coords = [](auto &a) {
-  return a.aligned_coords();
-};
-constexpr static auto get_unaligned_coords = [](auto &a) {
-  return a.unaligned_coords();
-};
+constexpr static auto get_coords = [](auto &a) { return a.coords(); };
+constexpr static auto get_attrs = [](auto &a) { return a.attrs(); };
 constexpr static auto get_masks = [](auto &a) { return a.masks(); };
 
 template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
@@ -225,25 +221,25 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
         return true;
     return false;
   };
-  auto coords = extract_unbinned(buffer, get_aligned_coords);
+  auto coords = extract_unbinned(buffer, get_coords);
   for (const auto &c : {edges, groups})
     for (const auto &coord : c) {
       dims.emplace(coord.dims().inner());
       coords[coord.dims().inner()] = copy(coord);
     }
-  for (const auto &[dim, coord] : array.aligned_coords())
+  for (const auto &[dim, coord] : array.coords())
     if (!rebinned(coord))
       coords[dim] = copy(coord);
   auto masks = extract_unbinned(buffer, get_masks);
   for (const auto &[name, mask] : array.masks())
     if (!rebinned(mask))
       masks[name] = copy(mask);
-  auto unaligned_coords = extract_unbinned(buffer, get_unaligned_coords);
-  for (const auto &[dim, coord] : array.unaligned_coords())
+  auto attrs = extract_unbinned(buffer, get_attrs);
+  for (const auto &[dim, coord] : array.attrs())
     if (!rebinned(coord))
-      unaligned_coords[dim] = copy(coord);
+      attrs[dim] = copy(coord);
   return {make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer)),
-          std::move(coords), std::move(masks), std::move(unaligned_coords)};
+          std::move(coords), std::move(masks), std::move(attrs)};
 }
 
 // Order is defined as:
