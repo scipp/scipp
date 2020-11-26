@@ -40,7 +40,7 @@ private:
     // in any bucket).
     auto buffer = DataArray(
         variable::variableFactory().create(type, dims, unit, variances),
-        source.aligned_coords(), source.masks(), source.unaligned_coords());
+        source.coords(), source.masks(), source.attrs());
     return Variable{std::make_unique<variable::DataModel<bucket<DataArray>>>(
         indices, dim, std::move(buffer))};
   }

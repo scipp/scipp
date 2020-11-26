@@ -83,11 +83,10 @@ DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
                        concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
   for (auto &&[d, coord] :
        concat(a.meta(), b.meta(), dim, a.dims(), b.dims())) {
-    if (d == dim || a.aligned_coords().contains(d) ||
-        b.aligned_coords().contains(d))
+    if (d == dim || a.coords().contains(d) || b.coords().contains(d))
       out.coords().set(d, std::move(coord));
     else
-      out.unaligned_coords().set(d, std::move(coord));
+      out.attrs().set(d, std::move(coord));
   }
   return out;
 }

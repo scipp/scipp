@@ -92,13 +92,12 @@ DataArray Dataset::extract(const std::string &name) {
   const auto &view = operator[](name);
   const auto &item = m_data.find(name);
 
-  auto coords = copy_map(view.aligned_coords());
+  auto coords = copy_map(view.coords());
   auto masks = std::move(item->second.masks);
-  auto unaligned_coords = std::move(item->second.coords);
+  auto attrs = std::move(item->second.coords);
 
-  auto extracted =
-      DataArray(std::move(item->second.data), std::move(coords),
-                std::move(masks), std::move(unaligned_coords), name);
+  auto extracted = DataArray(std::move(item->second.data), std::move(coords),
+                             std::move(masks), std::move(attrs), name);
   erase(name);
   return extracted;
 }
@@ -508,13 +507,6 @@ CoordsView DataArray::meta() {
   return make_coords(get(), CoordCategory::All, false);
 }
 
-CoordsConstView DataArrayConstView::aligned_coords() const noexcept {
-  return coords();
-}
-CoordsView DataArrayView::aligned_coords() const noexcept { return coords(); }
-CoordsConstView DataArray::aligned_coords() const { return coords(); }
-CoordsView DataArray::aligned_coords() { return coords(); }
-
 /// Return a const view to all aligned coordinates of the data view.
 CoordsConstView DataArrayConstView::coords() const noexcept {
   return make_coords(*this, CoordCategory::Aligned, m_isItem);
@@ -530,13 +522,6 @@ CoordsConstView DataArray::coords() const { return get().coords(); }
 
 /// Return a view to all aligned coordinates of the data array.
 CoordsView DataArray::coords() { return m_holder.coords(); }
-
-CoordsConstView DataArrayConstView::unaligned_coords() const noexcept {
-  return attrs();
-}
-CoordsView DataArrayView::unaligned_coords() const noexcept { return attrs(); }
-CoordsConstView DataArray::unaligned_coords() const { return attrs(); }
-CoordsView DataArray::unaligned_coords() { return attrs(); }
 
 /// Return a const view to all unaligned coordinates of the data view.
 CoordsConstView DataArrayConstView::attrs() const noexcept {
@@ -844,9 +829,9 @@ void union_or_in_place(const MasksView &currentMasks,
 }
 
 void copy_metadata(const DataArrayConstView &a, const DataArrayView &b) {
-  copy_items(a.aligned_coords(), b.aligned_coords());
+  copy_items(a.coords(), b.coords());
   copy_items(a.masks(), b.masks());
-  copy_items(a.unaligned_coords(), b.unaligned_coords());
+  copy_items(a.attrs(), b.attrs());
 }
 
 } // namespace scipp::dataset

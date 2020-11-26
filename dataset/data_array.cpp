@@ -11,11 +11,10 @@ namespace scipp::dataset {
 
 DataArray::DataArray(const DataArrayConstView &view,
                      const AttrPolicy attrPolicy)
-    : DataArray(Variable(view.data()), copy_map(view.aligned_coords()),
+    : DataArray(Variable(view.data()), copy_map(view.coords()),
                 copy_map(view.masks()),
-                attrPolicy == AttrPolicy::Keep
-                    ? copy_map(view.unaligned_coords())
-                    : std::map<Dim, Variable>{},
+                attrPolicy == AttrPolicy::Keep ? copy_map(view.attrs())
+                                               : std::map<Dim, Variable>{},
                 view.name()) {}
 
 DataArray::operator DataArrayConstView() const { return get(); }
@@ -62,8 +61,8 @@ bool operator!=(const DataArrayConstView &a, const DataArrayConstView &b) {
 }
 
 DataArray astype(const DataArrayConstView &var, const DType type) {
-  return DataArray(astype(var.data(), type), var.aligned_coords(), var.masks(),
-                   var.unaligned_coords());
+  return DataArray(astype(var.data(), type), var.coords(), var.masks(),
+                   var.attrs());
 }
 
 } // namespace scipp::dataset

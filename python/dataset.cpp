@@ -104,11 +104,11 @@ void bind_dataset_coord_properties(py::class_<T, Ignored...> &c) {
       Dict of coordinates.)");
   // Metadata for dataset is same as `coords` since dataset cannot have attrs
   // (unaligned coords).
-  c.def_property_readonly(
-      "meta",
-      py::cpp_function([](T &self) { return self.coords(); },
-                       py::return_value_policy::move, py::keep_alive<0, 1>()),
-      R"(
+  c.def_property_readonly("meta",
+                          py::cpp_function([](T &self) { return self.meta(); },
+                                           py::return_value_policy::move,
+                                           py::keep_alive<0, 1>()),
+                          R"(
       Dict of coordinates.)");
 }
 
@@ -177,21 +177,21 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
       R"(Underlying data item.)");
   c.def_property_readonly(
       "coords",
-      py::cpp_function([](T &self) { return self.aligned_coords(); },
-                       py::return_value_policy::move, py::keep_alive<0, 1>()),
-      R"(
-      Dict of aligned coords.)");
-  c.def_property_readonly(
-      "meta",
       py::cpp_function([](T &self) { return self.coords(); },
                        py::return_value_policy::move, py::keep_alive<0, 1>()),
       R"(
+      Dict of aligned coords.)");
+  c.def_property_readonly("meta",
+                          py::cpp_function([](T &self) { return self.meta(); },
+                                           py::return_value_policy::move,
+                                           py::keep_alive<0, 1>()),
+                          R"(
       Dict of coords and attrs.)");
-  c.def_property_readonly(
-      "attrs",
-      py::cpp_function([](T &self) { return self.unaligned_coords(); },
-                       py::return_value_policy::move, py::keep_alive<0, 1>()),
-      R"(
+  c.def_property_readonly("attrs",
+                          py::cpp_function([](T &self) { return self.attrs(); },
+                                           py::return_value_policy::move,
+                                           py::keep_alive<0, 1>()),
+                          R"(
       Dict of attrs.)");
   c.def_property_readonly("masks",
                           py::cpp_function([](T &self) { return self.masks(); },

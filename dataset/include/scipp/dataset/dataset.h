@@ -72,8 +72,6 @@ public:
 
   CoordsConstView meta() const noexcept;
   CoordsConstView coords() const noexcept;
-  CoordsConstView aligned_coords() const noexcept;
-  CoordsConstView unaligned_coords() const noexcept;
   CoordsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
@@ -146,8 +144,6 @@ public:
 
   CoordsView meta() const noexcept;
   CoordsView coords() const noexcept;
-  CoordsView aligned_coords() const noexcept;
-  CoordsView unaligned_coords() const noexcept;
   CoordsView attrs() const noexcept;
   MasksView masks() const noexcept;
 
@@ -600,12 +596,11 @@ public:
                      const AttrPolicy attrPolicy = AttrPolicy::Keep);
 
   template <class Data, class CoordMap = std::map<Dim, Variable>,
-            class MasksMap = std::map<std::string, Variable>,
-            class UnalignedCoordMap = std::map<Dim, Variable>,
+            class MaskMap = std::map<std::string, Variable>,
+            class AttrMap = std::map<Dim, Variable>,
             typename = std::enable_if_t<std::is_same_v<Data, Variable>>>
-  DataArray(Data data, CoordMap coords = {}, MasksMap masks = {},
-            UnalignedCoordMap unaligned_coords = {},
-            const std::string &name = "") {
+  DataArray(Data data, CoordMap coords = {}, MaskMap masks = {},
+            AttrMap attrs = {}, const std::string &name = "") {
     if (!data)
       throw std::runtime_error(
           "DataArray cannot be created with invalid content.");
@@ -617,7 +612,7 @@ public:
     for (auto &&[mask_name, m] : masks)
       m_holder.setMask(name, std::string(mask_name), std::move(m));
 
-    for (auto &&[dim, a] : unaligned_coords)
+    for (auto &&[dim, a] : attrs)
       m_holder.setCoord(name, dim, std::move(a));
   }
 
@@ -633,12 +628,6 @@ public:
 
   CoordsConstView coords() const;
   CoordsView coords();
-
-  CoordsConstView aligned_coords() const;
-  CoordsView aligned_coords();
-
-  CoordsConstView unaligned_coords() const;
-  CoordsView unaligned_coords();
 
   CoordsConstView attrs() const;
   CoordsView attrs();
