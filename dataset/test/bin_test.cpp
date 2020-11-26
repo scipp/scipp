@@ -6,9 +6,12 @@
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/histogram.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/misc_operations.h"
+#include "scipp/variable/reduction.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -108,7 +111,8 @@ auto make_table(const scipp::index size) {
   Random rand;
   rand.seed(0);
   const Dimensions dims(Dim::Row, size);
-  const auto data = makeVariable<double>(dims, Values(rand(dims.volume())));
+  const auto data = makeVariable<double>(dims, Values(rand(dims.volume())),
+                                         Variances(rand(dims.volume())));
   const auto x = makeVariable<double>(dims, Values(rand(dims.volume())));
   const auto y = makeVariable<double>(dims, Values(rand(dims.volume())));
   const auto group = astype(
@@ -131,9 +135,13 @@ protected:
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, -1, 2});
 
   void expect_near(const DataArrayConstView &a, const DataArrayConstView &b) {
-    // "round" last digits for approximate floating point comparison
-    const auto rounding = 100.0 * units::one * buckets::sum(a);
-    EXPECT_EQ(buckets::sum(a) + rounding, buckets::sum(b) + rounding);
+    const auto tolerance = max(buckets::sum(a.data())) * (1e-14 * units::one);
+    EXPECT_TRUE(all(is_approx(buckets::sum(a.data()), buckets::sum(b.data()),
+                              tolerance))
+                    .value<bool>());
+    EXPECT_EQ(a.masks(), b.masks());
+    EXPECT_EQ(a.aligned_coords(), b.aligned_coords());
+    EXPECT_EQ(a.unaligned_coords(), b.unaligned_coords());
   }
 };
 
@@ -205,4 +213,48 @@ TEST_P(BinTest, group_and_bin) {
   const auto x_group = bin(table, {edges_x}, {groups});
   const auto group = bin(table, {}, {groups});
   EXPECT_EQ(bin(group, {edges_x}, {}), x_group);
+}
+
+TEST_P(BinTest, rebin_masked) {
+  const auto table = GetParam();
+  auto binned = bin(table, {edges_x_coarse});
+  binned.masks().set("x-mask", makeVariable<bool>(Dims{Dim::X}, Shape{2},
+                                                  Values{false, true}));
+  EXPECT_EQ(buckets::sum(bin(binned, {edges_x})), histogram(binned, edges_x));
+  if (table.dims().volume() > 0) {
+    EXPECT_NE(bin(binned, {edges_x}), bin(table, {edges_x}));
+    EXPECT_NE(buckets::sum(bin(binned, {edges_x})), histogram(table, edges_x));
+    binned.masks().erase("x-mask");
+    EXPECT_EQ(bin(binned, {edges_x}), bin(table, {edges_x}));
+    EXPECT_EQ(buckets::sum(bin(binned, {edges_x})), histogram(table, edges_x));
+  }
+}
+
+TEST_P(BinTest, unrelated_masks_preserved) {
+  const auto table = GetParam();
+  auto binned = bin(table, {edges_x_coarse});
+  auto expected = bin(table, {edges_x});
+  const auto mask = makeVariable<bool>(Values{true});
+  binned.masks().set("scalar-mask", mask);
+  expected.masks().set("scalar-mask", mask);
+  EXPECT_EQ(bin(binned, {edges_x}), expected);
+}
+
+TEST_P(BinTest, rebinned_meta_data_dropped) {
+  const auto table = GetParam();
+  // Same *length* but different edge *position*
+  Variable edges_x_coarse2 =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{-2, 0, 2});
+  Variable edges_y_coarse2 =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{-2, 0, 2});
+  auto xy1 = bin(table, {edges_x_coarse, edges_y_coarse});
+  auto xy2 = bin(table, {edges_x_coarse2, edges_y_coarse2});
+  expect_near(bin(xy1, {edges_x_coarse2, edges_y_coarse2}), xy2);
+  const auto mask_x =
+      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, false});
+  xy1.masks().set("x", mask_x);
+  xy1.aligned_coords().set(Dim("aux1"), mask_x);
+  xy1.aligned_coords().set(Dim("aux1-edge"), edges_x_coarse);
+  xy1.unaligned_coords().set(Dim("aux2"), mask_x);
+  expect_near(bin(xy1, {edges_x_coarse2, edges_y_coarse2}), xy2);
 }
