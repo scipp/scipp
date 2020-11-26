@@ -869,6 +869,10 @@ def test_isinf():
     assert_export(sc.isinf, sc.Variable())
 
 
+def test_isfinite():
+    assert_export(sc.isfinite, sc.Variable())
+
+
 def test_nan_to_num():
     a = sc.Variable(dims=['x'], values=np.array([1, np.nan]))
     replace = sc.Variable(value=0.0)
