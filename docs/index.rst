@@ -82,6 +82,7 @@ Documentation
    user-guide/masking
    user-guide/binned-data
    user-guide/groupby
+   user-guide/reading-and-writing-files
    user-guide/how_to
    user-guide/tips-tricks-and-anti-patterns
 
