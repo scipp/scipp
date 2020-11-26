@@ -11,6 +11,7 @@ namespace scipp::variable {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable isinf(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable isfinite(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable isposinf(const VariableConstView &var);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable isneginf(const VariableConstView &var);
 
 SCIPP_VARIABLE_EXPORT VariableView
 nan_to_num(const VariableConstView &var, const VariableConstView &replacement,

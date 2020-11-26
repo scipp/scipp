@@ -24,6 +24,10 @@ Variable isposinf(const VariableConstView &var) {
   return transform(var, element::isposinf);
 }
 
+Variable isneginf(const VariableConstView &var) {
+  return transform(var, element::isneginf);
+}
+
 VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {
