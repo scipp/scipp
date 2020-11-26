@@ -116,6 +116,11 @@ template <class T> constexpr auto isposinf(const ValueAndVariance<T> a) noexcept
   return isinf(a.value) && !signbit(a.value);
 }
 
+template <class T> constexpr auto isneginf(const ValueAndVariance<T> a) noexcept {
+  using std::isinf, std::signbit;
+  return isinf(a.value) && signbit(a.value);
+}
+
 template <class T1, class T2>
 constexpr auto operator+(const ValueAndVariance<T1> a,
                          const ValueAndVariance<T2> b) noexcept {
