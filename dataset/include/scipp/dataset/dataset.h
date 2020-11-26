@@ -54,6 +54,8 @@ make_coords(const T &view, const CoordCategory category,
 class SCIPP_DATASET_EXPORT DataArrayConstView {
 public:
   using value_type = DataArray;
+  using const_view_type = DataArrayConstView;
+  using view_type = DataArrayConstView;
   DataArrayConstView() = default;
   DataArrayConstView(const Dataset &dataset,
                      const detail::dataset_item_map::value_type &data,
@@ -133,6 +135,8 @@ class Dataset;
 /// View for a data item and related coordinates of Dataset.
 class SCIPP_DATASET_EXPORT DataArrayView : public DataArrayConstView {
 public:
+  using const_view_type = DataArrayConstView;
+  using view_type = DataArrayView;
   DataArrayView() = default;
   DataArrayView(Dataset &dataset, detail::dataset_item_map::value_type &data,
                 const detail::slice_list &slices = {},

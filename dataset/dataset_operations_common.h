@@ -169,8 +169,7 @@ template <class T, class Func> auto transform_map(const T &map, Func func) {
   return out;
 }
 
-template <class Func>
-DataArray transform(const DataArrayConstView &a, Func func) {
+template <class T, class Func> DataArray transform(const T &a, Func func) {
   return DataArray(func(a.data()), transform_map(a.aligned_coords(), func),
                    transform_map(a.masks(), func),
                    transform_map(a.unaligned_coords(), func), a.name());

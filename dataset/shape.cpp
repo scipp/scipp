@@ -59,13 +59,16 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
         // matches new data shape.
         out.emplace(
             key,
-            concatenate(broadcast(a_, dimsA.count(dim)
-                                          ? Dimensions(dim, dimsA.at(dim))
-                                          : Dimensions()),
-                        broadcast(b[key], dimsB.count(dim)
-                                              ? Dimensions(dim, dimsB.at(dim))
-                                              : Dimensions()),
-                        dim));
+            concatenate(
+                broadcast(a_, merge(dimsA.count(dim)
+                                        ? Dimensions(dim, dimsA.at(dim))
+                                        : Dimensions(),
+                                    a_.dims())),
+                broadcast(b[key], merge(dimsB.count(dim)
+                                            ? Dimensions(dim, dimsB.at(dim))
+                                            : Dimensions(),
+                                        b[key].dims())),
+                dim));
       else
         out.emplace(key, same(a_, b[key]));
     }

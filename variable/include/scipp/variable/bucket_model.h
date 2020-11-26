@@ -9,7 +9,7 @@
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/bins.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/data_model.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/reduction.h"
@@ -54,7 +54,9 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const VariableConstView &shape) const override {
-    const auto [begin, size] = sizes_to_begin(shape);
+    const auto end = cumsum(shape);
+    const auto begin = end - shape;
+    const auto size = end.values<scipp::index>().as_span().back();
     if constexpr (is_view_v<T>) {
       // converting, e.g., bucket<VariableView> to bucket<Variable>
       return std::make_unique<DataModel<bucket<typename T::value_type>>>(
@@ -174,8 +176,9 @@ void DataModel<bucket<T>>::copy(const VariableConstView &src,
   const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
   const auto [begin0, end0] = unzip(indices0);
   const auto sizes1 = end0 - begin0;
-  auto [begin1, size1] = sizes_to_begin(sizes1);
-  auto indices1 = zip(begin1, begin1 + sizes1);
+  const auto end1 = cumsum(sizes1);
+  const auto size1 = end1.template values<scipp::index>().as_span().back();
+  auto indices1 = zip(end1 - sizes1, end1);
   auto buffer1 = resize_default_init(buffer0, dim0, size1);
   copy_slices(buffer0, buffer1, dim0, indices0, indices1);
   if constexpr (is_view_v<T>) {

@@ -33,7 +33,7 @@ T convert_generic(T &&d, const Dim from, const Dim to, Op op,
   if (d.coords().contains(from)) {
     const auto coord = d.coords()[from];
     if (!coord.dims().contains(arg.dims()))
-      d.coords().set(from, broadcast(coord, arg.dims()));
+      d.coords().set(from, broadcast(coord, merge(arg.dims(), coord.dims())));
     transform_in_place(d.coords()[from], arg, op_);
   }
   // 2. Transform coordinates in bucket variables

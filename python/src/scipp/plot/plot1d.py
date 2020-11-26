@@ -24,7 +24,8 @@ def plot1d(*args, filename=None, **kwargs):
     sp = SciPlot1d(*args, **kwargs)
     if filename is not None:
         sp.savefig(filename)
-    return sp
+    else:
+        return sp
 
 
 class SciPlot1d(SciPlot):
@@ -50,7 +51,9 @@ class SciPlot1d(SciPlot):
                  vmax=None,
                  scale=None,
                  grid=False,
-                 title=None):
+                 title=None,
+                 xlabel=None,
+                 ylabel=None):
 
         view_ndims = 1
 
@@ -89,7 +92,9 @@ class SciPlot1d(SciPlot):
                                masks=self.masks,
                                mpl_line_params=mpl_line_params,
                                picker=True,
-                               grid=grid)
+                               grid=grid,
+                               xlabel=xlabel,
+                               ylabel=ylabel)
 
         # Profile view which displays an additional dimension as a 1d plot
         if self.ndim > 1:

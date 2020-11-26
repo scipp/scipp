@@ -10,6 +10,7 @@
 #include "scipp/core/element/logical.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 
 using namespace scipp::core;
 using scipp::common::reduce_all_dims;
@@ -39,7 +40,8 @@ Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
   // Bool DType is a bit special in that it cannot contain it's sum.
   // Instead the sum is stored in a int64_t Variable
   Variable summed{is_dtype_bool(var) ? makeVariable<int64_t>(Dimensions(dims))
-                                     : Variable(var, dims)};
+                                     : copy(var.slice({dim, 0}))};
+  fill_zeros(summed);
   op(summed, var);
   return summed;
 }
