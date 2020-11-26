@@ -70,9 +70,11 @@ public:
   DType dtype() const;
   units::Unit unit() const;
 
+  CoordsConstView meta() const noexcept;
   CoordsConstView coords() const noexcept;
   CoordsConstView aligned_coords() const noexcept;
   CoordsConstView unaligned_coords() const noexcept;
+  CoordsConstView attrs() const noexcept;
   MasksConstView masks() const noexcept;
 
   /// Return true if the view contains data variances.
@@ -142,9 +144,11 @@ public:
                 const detail::slice_list &slices = {},
                 VariableView &&view = VariableView{});
 
+  CoordsView meta() const noexcept;
   CoordsView coords() const noexcept;
   CoordsView aligned_coords() const noexcept;
   CoordsView unaligned_coords() const noexcept;
+  CoordsView attrs() const noexcept;
   MasksView masks() const noexcept;
 
   void setUnit(const units::Unit unit) const;
@@ -619,6 +623,9 @@ public:
   const std::string &name() const { return m_holder.begin()->name(); }
   void setName(const std::string &name);
 
+  CoordsConstView meta() const;
+  CoordsView meta();
+
   CoordsConstView coords() const;
   CoordsView coords();
 
@@ -627,6 +634,9 @@ public:
 
   CoordsConstView unaligned_coords() const;
   CoordsView unaligned_coords();
+
+  CoordsConstView attrs() const;
+  CoordsView attrs();
 
   MasksConstView masks() const;
   MasksView masks();

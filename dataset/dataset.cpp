@@ -457,13 +457,16 @@ make_coords(const T &view, const CoordCategory category,
   // coords of the dataset *excluding* those that exceed the item dims.
   auto items = makeViewItems(view.parentDims(), view.get_dataset().m_coords);
   maybe_drop_aligned_or_unaligned(items, view.slices(), category);
+  const bool aligned = !(category & CoordCategory::Unaligned);
   if (category & CoordCategory::Unaligned) {
     // Unaligned coords: Need to include everything, in particular to preserve
     // bin edges after non-range slice.
     const auto tmp = makeViewItems(view.get_data().coords);
     items.insert(tmp.begin(), tmp.end());
   }
-  if constexpr (std::is_same_v<T, DataArrayView>)
+  if constexpr (std::is_same_v<T, DataArrayView>) {
+    const bool aligned_of_item = is_item && aligned;
+    const bool combined = category == CoordCategory::All;
     return CoordsView(
         // Coord insert/erase disabled if:
         // - coords of a slice:
@@ -473,36 +476,46 @@ make_coords(const T &view, const CoordCategory category,
         //   del ds['a'].coords['x'] # fails
         //   del ds.coords['x'] # ok
         // Note that del array.coords['x'] works even if 'x' is unaligned
-        CoordAccess{view.slices().empty() ? &view.get_dataset() : nullptr,
+        CoordAccess{(view.slices().empty() && !aligned_of_item && !combined)
+                        ? &view.get_dataset()
+                        : nullptr,
                     &view.name(), is_item},
         std::move(items), view.slices());
-  else
+  } else
     return CoordsConstView(std::move(items), view.slices());
 }
 
 /// Return a const view to all coordinates of the data view.
-CoordsConstView DataArrayConstView::coords() const noexcept {
+CoordsConstView DataArrayConstView::meta() const noexcept {
   return make_coords(*this, CoordCategory::All, m_isItem);
 }
 
 /// Return a view to all coordinates of the data view.
-CoordsView DataArrayView::coords() const noexcept {
-  // Typically view of item of dataset, therefore:
-  // ds['a'].coords['x'] = x # inserts unaligned coord
-  // Views created from DataArray set m_isItem = false, so aligned coords can be
-  // inserted.
+CoordsView DataArrayView::meta() const noexcept {
   return make_coords(*this, CoordCategory::All, m_isItem);
 }
 
 /// Return a const view to all coordinates of the data array.
-CoordsConstView DataArray::coords() const { return get().coords(); }
+CoordsConstView DataArray::meta() const { return get().meta(); }
 
 /// Return a view to all coordinates of the data array.
-CoordsView DataArray::coords() {
-  // Note difference to DataArrayView::coords():
-  // array.coords['x'] = x # inserts aligned coord
+CoordsView DataArray::meta() {
   return make_coords(get(), CoordCategory::All, false);
 }
+
+/// Return a const view to all coordinates of the data view.
+CoordsConstView DataArrayConstView::coords() const noexcept {
+  return aligned_coords();
+}
+
+/// Return a view to all coordinates of the data view.
+CoordsView DataArrayView::coords() const noexcept { return aligned_coords(); }
+
+/// Return a const view to all coordinates of the data array.
+CoordsConstView DataArray::coords() const { return aligned_coords(); }
+
+/// Return a view to all coordinates of the data array.
+CoordsView DataArray::coords() { return aligned_coords(); }
 
 /// Return a const view to all aligned coordinates of the data view.
 CoordsConstView DataArrayConstView::aligned_coords() const noexcept {
@@ -522,23 +535,28 @@ CoordsConstView DataArray::aligned_coords() const {
 /// Return a view to all aligned coordinates of the data array.
 CoordsView DataArray::aligned_coords() { return m_holder.coords(); }
 
-/// Return a const view to all unaligned coordinates of the data view.
 CoordsConstView DataArrayConstView::unaligned_coords() const noexcept {
+  return attrs();
+}
+CoordsView DataArrayView::unaligned_coords() const noexcept { return attrs(); }
+CoordsConstView DataArray::unaligned_coords() const { return attrs(); }
+CoordsView DataArray::unaligned_coords() { return attrs(); }
+
+/// Return a const view to all unaligned coordinates of the data view.
+CoordsConstView DataArrayConstView::attrs() const noexcept {
   return make_coords(*this, CoordCategory::Unaligned);
 }
-//
+
 /// Return a view to all unaligned coordinates of the data view.
-CoordsView DataArrayView::unaligned_coords() const noexcept {
+CoordsView DataArrayView::attrs() const noexcept {
   return make_coords(*this, CoordCategory::Unaligned);
 }
 
 /// Return a const view to all unaligned coordinates of the data array.
-CoordsConstView DataArray::unaligned_coords() const {
-  return get().unaligned_coords();
-}
+CoordsConstView DataArray::attrs() const { return get().attrs(); }
 
 /// Return a view to all unaligned coordinates of the data array.
-CoordsView DataArray::unaligned_coords() { return get().unaligned_coords(); }
+CoordsView DataArray::attrs() { return get().attrs(); }
 
 /// Return a const view to all masks of the data view.
 MasksConstView DataArrayConstView::masks() const noexcept {

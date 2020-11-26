@@ -52,6 +52,8 @@ bool operator==(const DataArrayConstView &a, const DataArrayConstView &b) {
     return false;
   if (a.masks() != b.masks())
     return false;
+  if (a.attrs() != b.attrs())
+    return false;
   return a.data() == b.data();
 }
 
