@@ -18,7 +18,7 @@ dependencies:
   - ipympl
   - ipywidgets
   - mantid-framework
-  - matplotlib
+  - matplotlib=3.2.2
   - numpy >=1.15.3
   - python
   - python-configuration
