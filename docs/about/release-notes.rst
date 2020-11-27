@@ -32,6 +32,7 @@ Breaking changes
   It is also the only interactive backend that works in JupyterLab.
 * Removed support for ``event_list`` ``dtype``, use binned data instead.
 * Removed support for "realigned" data. This is replaced by the more flexible and generic support for "binned" data.
+* Experimental support for saving and loading scipp data structures to HDF5.
 
 Contributors
 ~~~~~~~~~~~~
@@ -43,7 +44,8 @@ Simon Heybrock,
 Matthew D. Jones,
 Daniel Nixon,
 Piotr Rozyczko,
-and Neil Vaytet
+Neil Vaytet,
+and Jan-Lukas Wynen,
 
 v0.4 (July 2020)
 ----------------

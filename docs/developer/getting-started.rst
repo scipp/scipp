@@ -94,6 +94,7 @@ Additional build options
 
 1. ``-DDYNAMIC_LIB`` forces the shared libraries building, that also decreases link time.
 2. ``-DENABLE_THREAD_LIMIT`` limits the maximum number of threads that TBB can use. This defaults to the maximum number of cores identified on your build system. You may then optionally apply an artificial limit via ``-DTHREAD_LIMIT``.
+3. ``-DDISABLE_MULTI_THREADING`` disable multi-threading. By default, multi-threading is enabled if TBB was found. If this option is set to ``ON``, it overrides that.
 
 Running the unit tests
 ~~~~~~~~~~~~~~~~~~~~~~
