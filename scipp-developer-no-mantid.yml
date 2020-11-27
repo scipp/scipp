@@ -17,7 +17,7 @@ dependencies:
   - appdirs
   - ipympl
   - ipywidgets
-  - matplotlib=3.2.2
+  - matplotlib=3.2.2 # version 3.3.3 causes issues with nodejs in JupyterLab
   - numpy >=1.15.3
   - python
   - python-configuration
