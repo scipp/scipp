@@ -8,15 +8,10 @@ import warnings
 
 is_doc_build = False
 
-# Note: due to some strange behaviour when importing matplotlib and pyplot in
-# different order, we need to import matplotlib and pyplot before everything
-# else.
 try:
     import matplotlib as mpl
-    import matplotlib.pyplot as plt
 except ImportError:
     mpl = None
-    plt = None
 
 try:
     from IPython import get_ipython
@@ -51,6 +46,14 @@ if ipy is not None:
                 "interactive plots in Jupyter, was not found. "
                 "Falling back to a static backend. Use "
                 "conda install -c conda-forge ipympl to install ipympl.")
+
+# Note: due to some strange behaviour when importing matplotlib and pyplot in
+# different order, we need to import pyplot after switching to the ipympl
+# backend (see https://github.com/matplotlib/matplotlib/issues/19032).
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
 
 if is_doc_build and plt is not None:
     plt.rcParams.update({'figure.max_open_warning': 0})
