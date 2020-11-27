@@ -63,7 +63,11 @@ include(pybind11)
 include(GoogleBenchmark)
 include(GenerateExportHeader)
 find_package(Boost 1.67 REQUIRED)
-find_package(TBB CONFIG)
+
+option(DISABLE_MULTI_THREADING "Disable multi threading" OFF)
+if(NOT DISABLE_MULTI_THREADING)
+  find_package(TBB CONFIG)
+endif()
 if(TBB_FOUND)
   set(ENABLE_THREAD_LIMIT
       OFF
