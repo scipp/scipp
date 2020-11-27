@@ -31,9 +31,7 @@ TYPED_TEST_SUITE(VariableSpecialValueTest, FloatTypes);
 TYPED_TEST(VariableSpecialValueTest, isnan) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
     for (auto u : {units::dimensionless, units::m}) {
-      const auto res = isnan(x * u);
-      EXPECT_EQ(res.template value<bool>(), element::isnan(x));
-      EXPECT_EQ(res.unit(), units::dimensionless);
+      EXPECT_EQ(isnan(x * u), element::isnan(x) * units::dimensionless);
     }
   }
 }
@@ -41,9 +39,7 @@ TYPED_TEST(VariableSpecialValueTest, isnan) {
 TYPED_TEST(VariableSpecialValueTest, isinf) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
     for (auto u : {units::dimensionless, units::m}) {
-      const auto res = isinf(x * u);
-      EXPECT_EQ(res.template value<bool>(), element::isinf(x));
-      EXPECT_EQ(res.unit(), units::dimensionless);
+      EXPECT_EQ(isinf(x * u), element::isinf(x) * units::dimensionless);
     }
   }
 }
@@ -51,9 +47,7 @@ TYPED_TEST(VariableSpecialValueTest, isinf) {
 TYPED_TEST(VariableSpecialValueTest, isfinite) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
     for (auto u : {units::dimensionless, units::m}) {
-      const auto res = isfinite(x * u);
-      EXPECT_EQ(res.template value<bool>(), element::isfinite(x));
-      EXPECT_EQ(res.unit(), units::dimensionless);
+      EXPECT_EQ(isfinite(x * u), element::isfinite(x) * units::dimensionless);
     }
   }
 }
@@ -61,9 +55,7 @@ TYPED_TEST(VariableSpecialValueTest, isfinite) {
 TYPED_TEST(VariableSpecialValueTest, isposinf) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
     for (auto u : {units::dimensionless, units::m}) {
-      const auto res = isposinf(x * u);
-      EXPECT_EQ(res.template value<bool>(), element::isposinf(x));
-      EXPECT_EQ(res.unit(), units::dimensionless);
+      EXPECT_EQ(isposinf(x * u), element::isposinf(x) * units::dimensionless);
     }
   }
 }
@@ -71,9 +63,7 @@ TYPED_TEST(VariableSpecialValueTest, isposinf) {
 TYPED_TEST(VariableSpecialValueTest, isneginf) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
     for (auto u : {units::dimensionless, units::m}) {
-      const auto res = isneginf(x * u);
-      EXPECT_EQ(res.template value<bool>(), element::isneginf(x));
-      EXPECT_EQ(res.unit(), units::dimensionless);
+      EXPECT_EQ(isneginf(x * u), element::isneginf(x) * units::dimensionless);
     }
   }
 }
