@@ -66,7 +66,8 @@ find_package(Boost 1.67 REQUIRED)
 find_package(TBB CONFIG)
 if(TBB_FOUND)
   option(ENABLE_THREAD_LIMIT
-          "Limit the number TBB threads. Limit number set via THREAD_LIMIT" OFF)
+         "Limit the number TBB threads. Limit number set via THREAD_LIMIT" OFF
+  )
   if(ENABLE_THREAD_LIMIT)
     include(ProcessorCount)
     processorcount(N)
