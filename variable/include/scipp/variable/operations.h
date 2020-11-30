@@ -10,4 +10,5 @@
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
+#include "scipp/variable/special_values.h"
 #include "scipp/variable/trigonometry.h"

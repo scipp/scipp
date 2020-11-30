@@ -100,9 +100,28 @@ template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
   using std::isnan;
   return isnan(a.value);
 }
+
 template <class T> constexpr auto isinf(const ValueAndVariance<T> a) noexcept {
   using std::isinf;
   return isinf(a.value);
+}
+
+template <class T>
+constexpr auto isfinite(const ValueAndVariance<T> a) noexcept {
+  using std::isfinite;
+  return isfinite(a.value);
+}
+
+template <class T>
+constexpr auto isposinf(const ValueAndVariance<T> a) noexcept {
+  using std::isinf, std::signbit;
+  return isinf(a.value) && !signbit(a.value);
+}
+
+template <class T>
+constexpr auto isneginf(const ValueAndVariance<T> a) noexcept {
+  using std::isinf, std::signbit;
+  return isinf(a.value) && signbit(a.value);
 }
 
 template <class T1, class T2>

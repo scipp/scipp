@@ -56,6 +56,39 @@ template <typename T> void bind_reciprocal(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
+template <typename T> void bind_isnan(py::module &m) {
+  m.def(
+      "isnan", [](const typename T::const_view_type &x) { return isnan(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+}
+
+template <typename T> void bind_isinf(py::module &m) {
+  m.def(
+      "isinf", [](const typename T::const_view_type &x) { return isinf(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+}
+
+template <typename T> void bind_isfinite(py::module &m) {
+  m.def(
+      "isfinite",
+      [](const typename T::const_view_type &x) { return isfinite(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+}
+
+template <typename T> void bind_isposinf(py::module &m) {
+  m.def(
+      "isposinf",
+      [](const typename T::const_view_type &x) { return isposinf(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+}
+
+template <typename T> void bind_isneginf(py::module &m) {
+  m.def(
+      "isneginf",
+      [](const typename T::const_view_type &x) { return isneginf(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+}
+
 template <typename T> void bind_nan_to_num(py::module &m) {
   m.def(
       "nan_to_num",
@@ -121,6 +154,11 @@ void init_unary(py::module &m) {
   bind_sqrt<Variable>(m);
   bind_norm<Variable>(m);
   bind_reciprocal<Variable>(m);
+  bind_isnan<Variable>(m);
+  bind_isinf<Variable>(m);
+  bind_isfinite<Variable>(m);
+  bind_isposinf<Variable>(m);
+  bind_isneginf<Variable>(m);
   bind_nan_to_num<Variable>(m);
   bind_exp<Variable>(m);
   bind_log<Variable>(m);

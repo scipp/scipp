@@ -12,6 +12,58 @@
 
 namespace scipp::core::element {
 
+constexpr auto isnan =
+    overloaded{arg_list<double, float>,
+               [](const auto x) {
+                 using std::isnan;
+                 return isnan(x);
+               },
+               [](const units::Unit &) { return units::dimensionless; }};
+
+constexpr auto isinf =
+    overloaded{arg_list<double, float>,
+               [](const auto x) {
+                 using std::isinf;
+                 return isinf(x);
+               },
+               [](const units::Unit &) { return units::dimensionless; }};
+
+constexpr auto isfinite =
+    overloaded{arg_list<double, float>,
+               [](const auto x) {
+                 using std::isfinite;
+                 return isfinite(x);
+               },
+               [](const units::Unit &) { return units::dimensionless; }};
+
+namespace detail {
+template <typename T>
+auto isposinf(T x) -> std::enable_if_t<std::is_floating_point_v<T>, bool> {
+  return std::isinf(x) && !std::signbit(x);
+}
+
+template <typename T>
+auto isneginf(T x) -> std::enable_if_t<std::is_floating_point_v<T>, bool> {
+  return std::isinf(x) && std::signbit(x);
+}
+} // namespace detail
+
+constexpr auto isposinf =
+    overloaded{arg_list<double, float>,
+               [](const auto x) {
+                 using detail::isposinf;
+                 return isposinf(x);
+               },
+               [](const units::Unit &) { return units::dimensionless; }};
+
+constexpr auto isneginf =
+    overloaded{arg_list<double, float>,
+               [](const auto x) {
+                 using detail::isneginf;
+                 return isneginf(x);
+               },
+               [](const units::Unit &) { return units::dimensionless; }};
+
 constexpr auto replace_special = overloaded{
     arg_list<double, float>, transform_flags::expect_all_or_none_have_variance,
     [](const units::Unit &x, const units::Unit &repl) {

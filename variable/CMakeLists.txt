@@ -16,6 +16,7 @@ set(INC_FILES
     include/scipp/variable/reduction.h
     include/scipp/variable/shape.h
     include/scipp/variable/sort.h
+    include/scipp/variable/special_values.h
     include/scipp/variable/string.h
     include/scipp/variable/subspan_view.h
     include/scipp/variable/transform.h
@@ -44,6 +45,7 @@ set(SRC_FILES
     reduction.cpp
     shape.cpp
     sort.cpp
+    special_values.cpp
     string.cpp
     subspan_view.cpp
     trigonometry.cpp
