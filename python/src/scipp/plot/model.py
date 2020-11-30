@@ -114,65 +114,102 @@ class PlotModel:
 
         coord = None
 
-        if dim in data_array.coords:
+        if dim not in data_array.coords:
+            return make_fake_coord(dim, dim_to_shape[dim] + 1), formatter
 
-            underlying_dim = data_array.coords[dim].dims[-1]
-            tp = data_array.coords[dim].dtype
+        # underlying_dim = None
 
-            if tp == sc.dtype.vector_3_float64:
-                coord = make_fake_coord(dim,
-                                        dim_to_shape[dim] + 1,
-                                        unit=data_array.coords[dim].unit)
-                form = lambda val, pos: "(" + ",".join([  # noqa: E731
-                    value_to_string(item, precision=2)
-                    for item in data_array.coords[dim].values[int(val)]
-                ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim]
-                             ) else ""
-                formatter.update({
-                    "linear": form,
-                    "log": form,
-                    "custom_locator": True
-                })
+        # if dim in data_array.coords[dim].dims:
+        #     underlying_dim = dim
+        # else:
 
-            elif tp == sc.dtype.string:
-                coord = make_fake_coord(dim,
-                                        dim_to_shape[dim] + 1,
-                                        unit=data_array.coords[dim].unit)
-                form = lambda val, pos: data_array.coords[  # noqa: E731
-                    dim].values[int(val)] if (int(val) >= 0 and int(val) <
-                                              dim_to_shape[dim]) else ""
-                formatter.update({
-                    "linear": form,
-                    "log": form,
-                    "custom_locator": True
-                })
+        # We assume here that the underlying dimension is always the inner
+        # dimension.
+        print(dim_label_map)
+        underlying_dim = data_array.coords[dim].dims[-1]
 
-            elif dim != underlying_dim:
-                # non-dimension coordinate
-                if underlying_dim in data_array.coords:
-                    coord = data_array.coords[underlying_dim]
-                    coord = sc.Variable([dim],
-                                        values=coord.values,
-                                        variances=coord.variances,
-                                        unit=coord.unit,
-                                        dtype=sc.dtype.float64)
-                    coord_values = coord.values
-                else:
-                    coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
-                    coord_values = coord.values
-                    if data_array.coords[dim].shape[-1] == dim_to_shape[dim]:
-                        coord_values = to_bin_centers(coord, dim).values
-                form = lambda val, pos: value_to_string(  # noqa: E731
-                    data_array.coords[dim].values[np.abs(coord_values - val).
-                                                  argmin()])
-                formatter.update({"linear": form, "log": form})
+        #     # Eliminate dimensions of other coordinates to find the underlying
+        #     # dim
+        #     dims = data_array.coords[dim].dims
+        #     dim_set = set(dims)
+        #     key_set = {str(key) for key in data_array.coords.keys()}
+        #     print(set([dim]))
+        #     # print(set(data_array.coords.keys()) - set([dim]))
+        #     for key in key_set - set([dim]):
+        #         print("GGGGGGGGG", key)
+        #         if data_array.coords[key].dims == dims:
+        #             underlying_dim = str(key)
+        #             break
+        #         else:
+        #             dim_set -= set([str(key)])
+        #     print("=================")
+        #     print(dim_set, underlying_dim)
+        #     print("=================")
+        #     if underlying_dim is None:
+        #         # This is the case where we are left with more than one
+        #         # possible underlying dimension, so we just pick one at random.
+        #         underlying_dim = dim_set.pop()
 
+
+        # print(underlying_dim)
+
+        tp = data_array.coords[dim].dtype
+
+        if tp == sc.dtype.vector_3_float64:
+            coord = make_fake_coord(dim,
+                                    dim_to_shape[dim] + 1,
+                                    unit=data_array.coords[dim].unit)
+            form = lambda val, pos: "(" + ",".join([  # noqa: E731
+                value_to_string(item, precision=2)
+                for item in data_array.coords[dim].values[int(val)]
+            ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim]
+                         ) else ""
+            formatter.update({
+                "linear": form,
+                "log": form,
+                "custom_locator": True
+            })
+
+        elif tp == sc.dtype.string:
+            coord = make_fake_coord(dim,
+                                    dim_to_shape[dim] + 1,
+                                    unit=data_array.coords[dim].unit)
+            form = lambda val, pos: data_array.coords[  # noqa: E731
+                dim].values[int(val)] if (int(val) >= 0 and int(val) <
+                                          dim_to_shape[dim]) else ""
+            formatter.update({
+                "linear": form,
+                "log": form,
+                "custom_locator": True
+            })
+
+        # elif dim != underlying_dim:
+        elif dim in dim_label_map:
+            # non-dimension coordinate
+            if underlying_dim in data_array.coords:
+                coord = data_array.coords[underlying_dim]
+                # coord = sc.Variable([dim],
+                #                     values=coord.values,
+                #                     variances=coord.variances,
+                #                     unit=coord.unit,
+                #                     dtype=sc.dtype.float64)
+                coord_values = coord.values
             else:
-                coord = data_array.coords[dim].astype(sc.dtype.float64)
+                coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+                coord_values = coord.values
+                if data_array.coords[dim].shape[-1] == dim_to_shape[dim]:
+                    coord_values = to_bin_centers(coord, dim).values
+            form = lambda val, pos: value_to_string(  # noqa: E731
+                data_array.coords[dim].values[np.abs(coord_values - val).
+                                              argmin()])
+            formatter.update({"linear": form, "log": form})
 
         else:
-            # dim not found in data_array.coords
-            coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+            coord = data_array.coords[dim] # .astype(sc.dtype.float64)
+
+        # else:
+        #     # dim not found in data_array.coords
+        #     coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
 
         return coord, formatter
 

@@ -244,7 +244,9 @@ class SciPlot:
                 self.dim_label_map[dim] = underlying_dim
                 ind = dim_list.index(underlying_dim)
             self.axes[key_list[ind]] = self.axes[key]
-            self.axes[key] = dim
+            self.axes[key] = underlying_dim # dim
+
+        print(self.axes)
 
     def validate(self):
         """
