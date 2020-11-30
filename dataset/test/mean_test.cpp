@@ -96,5 +96,22 @@ TEST(MeanTest, masked_data_array_two_masks) {
 
 TEST(MeanTest, masked_data_array_md_masks) {
   test_masked_data_array_nd_mask(mean_func);
-  // test_masked_data_array_nd_mask(nanmean_func);
+  test_masked_data_array_nd_mask(nanmean_func);
+}
+
+TEST(MeanTest, nanmean_masked_data_with_nans) {
+  // Two Nans
+  const auto var =
+      makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}}, units::m,
+                           Values{double(NAN), double(NAN), 3.0, 4.0});
+  // Two masked element
+  const auto mask = makeVariable<bool>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
+                                       Values{false, true, true, false});
+  DataArray a(var);
+  a.masks().set("mask", mask);
+  // First element NaN, second NaN AND masked, third masked, forth non-masked
+  // finite number
+  const auto mean = makeVariable<double>(units::m, Shape{1},
+                                         Values{(0.0 + 0.0 + 0.0 + 4.0) / 1});
+  EXPECT_EQ(nanmean(a).data(), mean);
 }
