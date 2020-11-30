@@ -78,13 +78,50 @@ template <class T> constexpr auto abs(const ValueAndVariance<T> a) noexcept {
   return ValueAndVariance{abs(a.value), a.variance};
 }
 
+template <typename T> constexpr auto exp(const ValueAndVariance<T> a) noexcept {
+  using std::exp;
+  const auto val = exp(a.value);
+  return ValueAndVariance(val, val * val * a.variance);
+}
+
+template <typename T> constexpr auto log(const ValueAndVariance<T> a) noexcept {
+  using std::log;
+  return ValueAndVariance(log(a.value), a.variance / (a.value * a.value));
+}
+
+template <typename T>
+constexpr auto log10(const ValueAndVariance<T> a) noexcept {
+  using std::log10;
+  const auto x = a.value * std::log(static_cast<T>(10.0L));
+  return ValueAndVariance(log10(a.value), a.variance / (x * x));
+}
+
 template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
   using std::isnan;
   return isnan(a.value);
 }
+
 template <class T> constexpr auto isinf(const ValueAndVariance<T> a) noexcept {
   using std::isinf;
   return isinf(a.value);
+}
+
+template <class T>
+constexpr auto isfinite(const ValueAndVariance<T> a) noexcept {
+  using std::isfinite;
+  return isfinite(a.value);
+}
+
+template <class T>
+constexpr auto isposinf(const ValueAndVariance<T> a) noexcept {
+  using std::isinf, std::signbit;
+  return isinf(a.value) && !signbit(a.value);
+}
+
+template <class T>
+constexpr auto isneginf(const ValueAndVariance<T> a) noexcept {
+  using std::isinf, std::signbit;
+  return isinf(a.value) && signbit(a.value);
 }
 
 template <class T1, class T2>

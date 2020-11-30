@@ -157,7 +157,7 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
   ASSERT_EQ(data.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
   EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
   EXPECT_EQ(data.unit(), units::counts);
-  ASSERT_EQ(dspacing["counts"].coords()[Dim("position")],
+  ASSERT_EQ(dspacing["counts"].attrs()[Dim("position")],
             tof.coords()[Dim("position")]);
 
   ASSERT_FALSE(dspacing.coords().contains(Dim("position")));

@@ -33,7 +33,7 @@ T convert_generic(T &&d, const Dim from, const Dim to, Op op,
   if (d.coords().contains(from)) {
     const auto coord = d.coords()[from];
     if (!coord.dims().contains(arg.dims()))
-      d.coords().set(from, broadcast(coord, arg.dims()));
+      d.coords().set(from, broadcast(coord, merge(arg.dims(), coord.dims())));
     transform_in_place(d.coords()[from], arg, op_);
   }
   // 2. Transform coordinates in bucket variables
@@ -146,12 +146,12 @@ template <class T> T coords_to_attrs(T &&x, const Dim from, const Dim to) {
         return;
       x.coords().erase(field);
       for (const auto &item : iter(x))
-        item.coords().set(field, coord);
+        item.attrs().set(field, coord);
     } else {
-      if (!x.aligned_coords().contains(field))
+      if (!x.coords().contains(field))
         return;
-      x.aligned_coords().erase(field);
-      x.unaligned_coords().set(field, coord);
+      x.coords().erase(field);
+      x.attrs().set(field, coord);
     }
   };
   // Will be replaced by explicit flag
@@ -169,18 +169,18 @@ template <class T> T coords_to_attrs(T &&x, const Dim from, const Dim to) {
 template <class T> T attrs_to_coords(T &&x, const Dim from, const Dim to) {
   const auto to_coord = [&](const Dim field) {
     auto &&range = iter(x);
-    if (!range.begin()->unaligned_coords().contains(field))
+    if (!range.begin()->attrs().contains(field))
       return;
-    Variable coord(range.begin()->coords()[field]);
+    Variable attr(range.begin()->attrs()[field]);
     if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
       for (const auto &item : range) {
-        core::expect::equals(item.coords()[field], coord);
-        item.unaligned_coords().erase(field);
+        core::expect::equals(item.attrs()[field], attr);
+        item.attrs().erase(field);
       }
-      x.coords().set(field, coord);
+      x.coords().set(field, attr);
     } else {
-      x.unaligned_coords().erase(field);
-      x.coords().set(field, coord);
+      x.attrs().erase(field);
+      x.coords().set(field, attr);
     }
   };
   // Will be replaced by explicit flag

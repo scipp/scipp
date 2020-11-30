@@ -16,8 +16,6 @@ SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &events,
                                          const VariableConstView &binEdges);
 SCIPP_DATASET_EXPORT Dataset histogram(const DatasetConstView &dataset,
                                        const VariableConstView &bins);
-SCIPP_DATASET_EXPORT DataArray histogram(const DataArrayConstView &realigned);
-SCIPP_DATASET_EXPORT Dataset histogram(const DatasetConstView &realigned);
 
 SCIPP_DATASET_EXPORT std::set<Dim> edge_dimensions(const DataArrayConstView &a);
 SCIPP_DATASET_EXPORT Dim edge_dimension(const DataArrayConstView &a);

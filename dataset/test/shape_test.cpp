@@ -11,7 +11,7 @@ TEST(ResizeTest, data_array_1d) {
   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 2});
   DataArray a(var);
   a.coords().set(Dim::X, var);
-  a.unaligned_coords().set(Dim::Y, var);
+  a.attrs().set(Dim::Y, var);
   a.masks().set("mask", var);
   DataArray expected(makeVariable<double>(Dims{Dim::X}, Shape{3}));
   EXPECT_EQ(resize(a, Dim::X, 3), expected);
@@ -25,14 +25,14 @@ TEST(ResizeTest, data_array_2d) {
   DataArray a(var);
   a.coords().set(Dim::X, x);
   a.coords().set(Dim::Y, y);
-  a.unaligned_coords().set(Dim("unaligned-x"), x);
-  a.unaligned_coords().set(Dim("unaligned-y"), y);
+  a.attrs().set(Dim("unaligned-x"), x);
+  a.attrs().set(Dim("unaligned-y"), y);
   a.masks().set("mask-x", x);
   a.masks().set("mask-y", y);
 
   DataArray expected(makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 2}));
   expected.coords().set(Dim::X, x);
-  expected.unaligned_coords().set(Dim("unaligned-x"), x);
+  expected.attrs().set(Dim("unaligned-x"), x);
   expected.masks().set("mask-x", x);
 
   EXPECT_EQ(resize(a, Dim::Y, 1), expected);

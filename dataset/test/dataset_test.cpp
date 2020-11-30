@@ -10,6 +10,7 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/variable/operations.h"
 
@@ -175,22 +176,22 @@ TEST(DatasetTest, setData_clears_attributes) {
   const auto var = makeVariable<double>(Values{1});
   Dataset d;
   d.setData("x", var);
-  d["x"].coords().set(Dim("attr"), var);
+  d["x"].attrs().set(Dim("attr"), var);
 
-  EXPECT_TRUE(d["x"].coords().contains(Dim("attr")));
+  EXPECT_TRUE(d["x"].attrs().contains(Dim("attr")));
   d.setData("x", var);
-  EXPECT_FALSE(d["x"].coords().contains(Dim("attr")));
+  EXPECT_FALSE(d["x"].attrs().contains(Dim("attr")));
 }
 
 TEST(DatasetTest, setData_keep_attributes) {
   const auto var = makeVariable<double>(Values{1});
   Dataset d;
   d.setData("x", var);
-  d["x"].coords().set(Dim("attr"), var);
+  d["x"].attrs().set(Dim("attr"), var);
 
-  EXPECT_TRUE(d["x"].coords().contains(Dim("attr")));
+  EXPECT_TRUE(d["x"].attrs().contains(Dim("attr")));
   d.setData("x", var, AttrPolicy::Keep);
-  EXPECT_TRUE(d["x"].coords().contains(Dim("attr")));
+  EXPECT_TRUE(d["x"].attrs().contains(Dim("attr")));
 }
 
 TEST(DatasetTest, setData_with_mismatched_dims) {
@@ -374,7 +375,7 @@ TEST(DatasetTest, erase_item_coord_cannot_erase_coord) {
   Dataset ds(ref);
   auto coord = Variable(ds.coords()[Dim::X]);
   ASSERT_TRUE(ds.contains("data_x"));
-  EXPECT_THROW(ds["data_x"].coords().erase(Dim::X), except::NotFoundError);
+  EXPECT_THROW(ds["data_x"].coords().erase(Dim::X), except::DatasetError);
 }
 
 TEST(DatasetTest, extract_labels) {
@@ -397,10 +398,10 @@ TEST(DatasetTest, set_erase_item_attr) {
   DatasetFactory3D factory;
   auto ds = factory.make();
   const auto attr = makeVariable<double>(Values{1.0});
-  ds["data_x"].coords().set(Dim("item-attr"), attr);
-  EXPECT_TRUE(ds["data_x"].coords().contains(Dim("item-attr")));
-  ds["data_x"].coords().erase(Dim("item-attr"));
-  EXPECT_FALSE(ds["data_x"].coords().contains(Dim("item-attr")));
+  ds["data_x"].attrs().set(Dim("item-attr"), attr);
+  EXPECT_TRUE(ds["data_x"].attrs().contains(Dim("item-attr")));
+  ds["data_x"].attrs().erase(Dim("item-attr"));
+  EXPECT_FALSE(ds["data_x"].attrs().contains(Dim("item-attr")));
 }
 
 TEST(DatasetTest, set_erase_item_mask) {

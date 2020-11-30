@@ -212,10 +212,10 @@ class TableViewer:
                 tag_keys = [scipp_obj.coords, iterlist]
             else:
                 iterlist = {scipp_obj.name: scipp_obj}
-                tag_names = ['coords', 'unaligned_coords', 'masks', 'data']
+                tag_names = ['coords', 'attrs', 'masks', 'data']
                 tag_keys = [
-                    scipp_obj.aligned_coords, scipp_obj.unaligned_coords,
-                    scipp_obj.masks, iterlist
+                    scipp_obj.coords, scipp_obj.attrs, scipp_obj.masks,
+                    iterlist
                 ]
             self.headers = len(tag_names)
             for tag, cat in zip(tag_names, tag_keys):
@@ -328,7 +328,7 @@ class TableViewer:
         return
 
     def make_dict(self):
-        return {"coords": {}, "data": {}, "masks": {}, "unaligned_coords": {}}
+        return {"coords": {}, "data": {}, "masks": {}, "attrs": {}}
 
     def make_hbox(self, group, key, size):
         hbox = self.tables[group][key]

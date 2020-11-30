@@ -30,6 +30,12 @@ SCIPP_DATASET_EXPORT void copy_slices(const DatasetConstView &src,
                                                       const Dim dim,
                                                       Dataset buffer);
 
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable make_non_owning_bins(
+    const VariableView &indices, const Dim dim, const DataArrayView &buffer);
+[[nodiscard]] SCIPP_DATASET_EXPORT Variable
+make_non_owning_bins(const VariableConstView &indices, const Dim dim,
+                     const DataArrayConstView &buffer);
+
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 bucket_sizes(const VariableConstView &var);
 [[nodiscard]] SCIPP_DATASET_EXPORT DataArray
@@ -45,6 +51,9 @@ is_buckets(const DatasetConstView &dataset);
 } // namespace scipp::dataset
 
 namespace scipp::dataset::buckets {
+
+SCIPP_DATASET_EXPORT void reserve(const VariableView &var,
+                                  const VariableConstView &shape);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT Variable
 concatenate(const VariableConstView &var0, const VariableConstView &var1);

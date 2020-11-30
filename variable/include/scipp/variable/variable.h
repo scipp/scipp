@@ -41,6 +41,20 @@ void expect0D(const Dimensions &dims);
 class VariableConstView;
 class VariableView;
 
+} // namespace scipp::variable
+
+namespace scipp {
+template <class T> struct is_view : std::false_type {};
+template <class T> inline constexpr bool is_view_v = is_view<T>::value;
+template <> struct is_view<variable::VariableConstView> : std::true_type {};
+template <> struct is_view<variable::VariableView> : std::true_type {};
+} // namespace scipp
+
+namespace scipp::variable {
+template <class T>
+using bin_indices_t = std::conditional_t<is_view_v<typename T::buffer_type>,
+                                         VariableConstView, VariableView>;
+
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. In addition it has a unit and a set of dimension
 /// labels.
@@ -138,6 +152,12 @@ public:
   core::ElementArrayViewParams array_params() const noexcept {
     return {0, dims(), dims(), {}};
   }
+
+  template <class T>
+  std::tuple<VariableConstView, Dim, typename T::const_element_type>
+  constituents() const;
+  template <class T>
+  std::tuple<bin_indices_t<T>, Dim, typename T::element_type> constituents();
 
   template <class T>
   std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
@@ -271,11 +291,6 @@ protected:
   Dimensions m_dataDims; // not always actual, can be pretend, e.g. with reshape
 };
 
-template <class T>
-using bin_indices_t = std::conditional_t<
-    std::is_base_of_v<VariableConstView, typename T::buffer_type>,
-    VariableConstView, VariableView>;
-
 /** Mutable view into (a subset of) a Variable.
  *
  * By inheriting from VariableConstView any code that works for
@@ -370,8 +385,4 @@ using variable::Variable;
 using variable::VariableConstView;
 using variable::VariableView;
 using variable::Variances;
-template <class T> struct is_view : std::false_type {};
-template <class T> inline constexpr bool is_view_v = is_view<T>::value;
-template <> struct is_view<VariableConstView> : std::true_type {};
-template <> struct is_view<VariableView> : std::true_type {};
 } // namespace scipp

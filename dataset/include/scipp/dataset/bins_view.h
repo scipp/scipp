@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <boost/iterator/transform_iterator.hpp>
+
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/bins.h"
 
@@ -27,19 +29,46 @@ private:
   View m_var;
 };
 
-template <class T, class View> class BinsCoords : public BinsCommon<T, View> {
+template <class T, class View, class MapView>
+class BinsMapView : public BinsCommon<T, View> {
+  struct make_item {
+    const BinsMapView *view;
+    template <class Item> auto operator()(const Item &item) const {
+      if (item.second.dims().contains(view->dim()))
+        return std::pair(item.first, view->make(item.second));
+      else
+        return std::pair(item.first, copy(item.second));
+    }
+  };
+
 public:
-  BinsCoords(const BinsCommon<T, View> base) : BinsCommon<T, View>(base) {}
-  auto operator[](const Dim dim) const {
-    return this->make(this->buffer().coords()[dim]);
+  using key_type = typename MapView::key_type;
+  using mapped_type = typename MapView::mapped_type;
+  BinsMapView(const BinsCommon<T, View> base, MapView mapView)
+      : BinsCommon<T, View>(base), m_mapView(std::move(mapView)) {}
+  auto operator[](const key_type &key) const {
+    return this->make(m_mapView[key]);
   }
+  auto begin() const noexcept {
+    return boost::make_transform_iterator(m_mapView.begin(), make_item{this});
+  }
+  auto end() const noexcept {
+    return boost::make_transform_iterator(m_mapView.end(), make_item{this});
+  }
+
+private:
+  MapView m_mapView;
 };
 
 template <class T, class View> class Bins : public BinsCommon<T, View> {
 public:
   using BinsCommon<T, View>::BinsCommon;
   auto data() const { return this->make(this->buffer().data()); }
-  auto coords() const { return BinsCoords<T, View>(*this); }
+  auto meta() const { return BinsMapView(*this, this->buffer().meta()); }
+  auto coords() const { return BinsMapView(*this, this->buffer().coords()); }
+  auto attrs() const { return BinsMapView(*this, this->buffer().attrs()); }
+  auto masks() const { return BinsMapView(*this, this->buffer().masks()); }
+  auto &name() const { return this->buffer().name(); }
 };
 } // namespace bins_view_detail
 
@@ -53,6 +82,12 @@ public:
 /// own or share ownership of any data.
 template <class T, class View> auto bins_view(const View &var) {
   return bins_view_detail::Bins<T, View>(var);
+}
+template <class T> auto bins_view(const Variable &var) {
+  return bins_view<T>(VariableConstView(var));
+}
+template <class T> auto bins_view(Variable &var) {
+  return bins_view<T>(VariableView(var));
 }
 
 } // namespace scipp::dataset

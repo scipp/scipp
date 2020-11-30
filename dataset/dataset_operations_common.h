@@ -81,10 +81,10 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
       }
   };
   std::map<Dim, Variable> coords;
-  coord_apply_or_copy_dim(coords, a.aligned_coords(), true);
+  coord_apply_or_copy_dim(coords, a.coords(), true);
 
-  std::map<Dim, Variable> unaligned_coords;
-  coord_apply_or_copy_dim(unaligned_coords, a.unaligned_coords(), false);
+  std::map<Dim, Variable> attrs;
+  coord_apply_or_copy_dim(attrs, a.attrs(), false);
 
   std::map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())
@@ -93,11 +93,11 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
 
   if constexpr (ApplyToData) {
     return DataArray(func(a.data(), dim, args...), std::move(coords),
-                     std::move(masks), std::move(unaligned_coords), a.name());
+                     std::move(masks), std::move(attrs), a.name());
   } else {
     return DataArray(func(a, dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(masks),
-                     std::move(unaligned_coords), a.name());
+                     std::move(coords), std::move(masks), std::move(attrs),
+                     a.name());
   }
 }
 
@@ -169,11 +169,10 @@ template <class T, class Func> auto transform_map(const T &map, Func func) {
   return out;
 }
 
-template <class Func>
-DataArray transform(const DataArrayConstView &a, Func func) {
-  return DataArray(func(a.data()), transform_map(a.aligned_coords(), func),
+template <class T, class Func> DataArray transform(const T &a, Func func) {
+  return DataArray(func(a.data()), transform_map(a.coords(), func),
                    transform_map(a.masks(), func),
-                   transform_map(a.unaligned_coords(), func), a.name());
+                   transform_map(a.attrs(), func), a.name());
 }
 
 void copy_metadata(const DataArrayConstView &a, const DataArrayView &b);

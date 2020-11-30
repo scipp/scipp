@@ -237,9 +237,9 @@ def _make_inline_attributes(var, has_attrs):
             attrs_sections.append(mask_section(var.masks))
             disabled = ""
 
-    if has_attrs and hasattr(var, "unaligned_coords"):
-        if len(var.unaligned_coords) > 0:
-            attrs_sections.append(attr_section(var.unaligned_coords))
+    if has_attrs and hasattr(var, "attrs"):
+        if len(var.attrs) > 0:
+            attrs_sections.append(attr_section(var.attrs))
             disabled = ""
 
     if len(attrs_sections) > 0:
@@ -437,7 +437,7 @@ data_section = partial(
 
 attr_section = partial(
     _mapping_section,
-    name="Coords (unaligned)",
+    name="Attributes",
     details_func=summarize_attrs,
     max_items_collapse=10,
 )
@@ -468,18 +468,15 @@ def dataset_repr(ds):
     sections = [dim_section(ds)]
 
     if len(ds.coords) > 0:
-        if is_dataset(ds):
-            sections.append(coord_section(ds.coords, ds))
-        else:
-            sections.append(coord_section(ds.aligned_coords, ds))
+        sections.append(coord_section(ds.coords, ds))
 
     sections.append(data_section(ds if hasattr(ds, '__len__') else {'': ds}))
 
     if not is_dataset(ds):
         if len(ds.masks) > 0:
             sections.append(mask_section(ds.masks, ds))
-        if len(ds.unaligned_coords) > 0:
-            sections.append(attr_section(ds.unaligned_coords))
+        if len(ds.attrs) > 0:
+            sections.append(attr_section(ds.attrs))
 
     return _obj_repr(header_components, sections)
 

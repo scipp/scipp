@@ -36,11 +36,9 @@ General
    exp
    filter
    histogram
-   is_sorted
    log
    log10
    merge
-   nan_to_num
    norm
    rebin
    reciprocal
@@ -71,6 +69,22 @@ Comparison operators compare element-wise and *ignore variances*.
    is_linspace
    is_sorted
 
+`inf` and `nan` handling
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Special-value (`inf` and `nan`) checks.
+`inf` and `nan` in the *variances is ignored*.
+
+.. autosummary::
+   :toctree: ../generated
+
+   isnan
+   isinf
+   isfinite
+   isposinf
+   isneginf
+   nan_to_num
+
 Reduction
 ~~~~~~~~~
 
@@ -81,6 +95,7 @@ Reduction operations are operations to remove one or more dimension, e.g., by pe
 
    all
    any
+   cumsum
    max
    mean
    min

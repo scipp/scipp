@@ -14,6 +14,9 @@ namespace scipp::variable {
 
 INSTANTIATE_BUCKET_VARIABLE(DatasetView, bucket<Dataset>)
 INSTANTIATE_BUCKET_VARIABLE(DataArrayView, bucket<DataArray>)
+INSTANTIATE_BUCKET_VARIABLE(DataArrayView_observer, bucket<DataArrayView>)
+INSTANTIATE_BUCKET_VARIABLE(DataArrayConstView_observer,
+                            bucket<DataArrayConstView>)
 
 } // namespace scipp::variable
 
@@ -37,7 +40,7 @@ private:
     // in any bucket).
     auto buffer = DataArray(
         variable::variableFactory().create(type, dims, unit, variances),
-        source.aligned_coords(), source.masks(), source.unaligned_coords());
+        source.coords(), source.masks(), source.attrs());
     return Variable{std::make_unique<variable::DataModel<bucket<DataArray>>>(
         indices, dim, std::move(buffer))};
   }
@@ -89,6 +92,12 @@ auto register_dataset_types(
      variable::formatterRegistry().emplace(
          dtype<bucket<DataArray>>,
          std::make_unique<variable::Formatter<bucket<DataArray>>>()),
+     variable::formatterRegistry().emplace(
+         dtype<bucket<DataArrayView>>,
+         std::make_unique<variable::Formatter<bucket<DataArrayView>>>()),
+     variable::formatterRegistry().emplace(
+         dtype<bucket<DataArrayConstView>>,
+         std::make_unique<variable::Formatter<bucket<DataArrayConstView>>>()),
      0));
 auto register_variable_maker_bucket_DataArray((
     variable::variableFactory().emplace(

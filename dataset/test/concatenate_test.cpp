@@ -47,7 +47,7 @@ TEST_F(Concatenate1DTest, simple_1d) {
   EXPECT_EQ(d["data_1"].data(),
             makeVariable<int>(Dims{Dim::X}, Shape{6},
                               Values{11, 12, 13, 14, 15, 16}));
-  EXPECT_EQ(d["data_1"].coords()[Dim("label_1")],
+  EXPECT_EQ(d["data_1"].attrs()[Dim("label_1")],
             makeVariable<int>(Dims{Dim::X}, Shape{6},
                               Values{21, 22, 23, 24, 25, 26}));
   EXPECT_EQ(d["data_1"].masks()["mask_1"],
