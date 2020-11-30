@@ -6,7 +6,9 @@
 
 #include "scipp/core/element/util.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/math.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
 
 #include "../variable/operations_common.h"
@@ -89,6 +91,13 @@ VariableView nanmean(const VariableConstView &var, const Dim dim,
     return nanmean_impl(maskedVar, dim, masks_sum, out);
   }
   return nanmean(var, dim, out);
+}
+
+Variable nanmean(const VariableConstView &var, const MasksConstView &masks) {
+  auto mask_union = masks_merge_if_contained(masks, var.dims());
+  auto applied_mask = scipp::variable::transform(
+      ~isnan(var), mask_union, scipp::core::element::convertMaskedToZero);
+  return nansum(var) / sum(applied_mask);
 }
 
 /// Returns the union of all masks with irreducible dimension `dim`.
