@@ -14,11 +14,9 @@ using namespace scipp::dataset;
 namespace py = pybind11;
 
 template <class T> void bind_mean(py::module &m) {
-  if constexpr (std::is_same_v<Variable, T>) {
-    m.def(
-        "mean", [](const typename T::const_view_type &x) { return mean(x); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>());
-  }
+  m.def(
+      "mean", [](const typename T::const_view_type &x) { return mean(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
   m.def(
       "mean",
       [](const typename T::const_view_type &x, const Dim dim) {
@@ -36,12 +34,10 @@ template <class T> void bind_mean_out(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 template <class T> void bind_nanmean(py::module &m) {
-  if constexpr (std::is_same_v<Variable, T>) {
-    m.def(
-        "nanmean",
-        [](const typename T::const_view_type &x) { return nanmean(x); },
-        py::arg("x"), py::call_guard<py::gil_scoped_release>());
-  }
+  m.def(
+      "nanmean",
+      [](const typename T::const_view_type &x) { return nanmean(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
   m.def(
       "nanmean",
       [](const typename T::const_view_type &x, const Dim dim) {
