@@ -36,6 +36,30 @@ TEST(SortTest, variable_2d) {
   EXPECT_EQ(sort(var, keyY), expectedY);
 }
 
+TEST(SortTest, data_array_1d) {
+  Variable data = makeVariable<double>(
+      Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 3, 2, 4});
+  Variable x =
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{3, 2, 4, 1});
+  Variable mask = makeVariable<bool>(Dims{Dim::Event}, Shape{4},
+                                     Values{true, false, false, false});
+  Variable scalar = makeVariable<double>(Values{1.1});
+  DataArray table =
+      DataArray(data, {{Dim::X, x}, {Dim("scalar"), scalar}}, {{"mask", mask}});
+  Variable edges_x =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 2, 4});
+  Variable sorted_data = makeVariable<double>(
+      Dims{Dim::Event}, Shape{4}, Values{4, 2, 1, 3}, Variances{4, 3, 1, 2});
+  Variable sorted_x =
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4});
+  Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{4},
+                                            Values{false, false, true, false});
+  DataArray sorted_table =
+      DataArray(sorted_data, {{Dim::X, sorted_x}, {Dim("scalar"), scalar}},
+                {{"mask", sorted_mask}});
+  EXPECT_EQ(sort(table, Dim::X), sorted_table);
+}
+
 TEST(SortTest, dataset_1d) {
   Dataset d;
   d.setData("a", makeVariable<float>(Dims{Dim::X}, Shape{3}, units::m,

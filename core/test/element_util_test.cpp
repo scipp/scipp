@@ -119,3 +119,32 @@ TEST(ElementUtilTest, get) {
   EXPECT_EQ(core::element::get<1>(units::m), units::m);
   EXPECT_EQ(core::element::get<1>(units::s), units::s);
 }
+
+TEST(ElementUtilTest, fill) {
+  double f64;
+  float f32;
+  ValueAndVariance x{1.0, 2.0};
+  units::Unit u;
+  fill(f64, 4.5);
+  EXPECT_EQ(f64, 4.5);
+  fill(f32, 4.5);
+  EXPECT_EQ(f32, 4.5);
+  fill(x, 4.5);
+  EXPECT_EQ(x, (ValueAndVariance{4.5, 0.0}));
+  fill(x, ValueAndVariance{1.2, 3.4});
+  EXPECT_EQ(x, (ValueAndVariance{1.2, 3.4}));
+  fill(u, units::m);
+  EXPECT_EQ(u, units::m);
+}
+
+TEST(ElementUtilTest, fill_zeros) {
+  double x = 1.2;
+  ValueAndVariance y{1.0, 2.0};
+  units::Unit u = units::m;
+  fill_zeros(x);
+  EXPECT_EQ(x, 0.0);
+  fill_zeros(y);
+  EXPECT_EQ(y, (ValueAndVariance{0.0, 0.0}));
+  fill_zeros(u);
+  EXPECT_EQ(u, units::m); // unchanged
+}

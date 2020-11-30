@@ -47,6 +47,9 @@ if ipy is not None:
                 "Falling back to a static backend. Use "
                 "conda install -c conda-forge ipympl to install ipympl.")
 
+# Note: due to some strange behaviour when importing matplotlib and pyplot in
+# different order, we need to import pyplot after switching to the ipympl
+# backend (see https://github.com/matplotlib/matplotlib/issues/19032).
 try:
     import matplotlib.pyplot as plt
 except ImportError:
@@ -56,11 +59,11 @@ if is_doc_build and plt is not None:
     plt.rcParams.update({'figure.max_open_warning': 0})
 
 
-def _is_interactive():
+def _is_inline():
     """
     Determine if we are using a static or interactive backend
     """
-    return not mpl.get_backend().lower().endswith('inline')
+    return mpl.get_backend().lower().endswith('inline')
 
 
 def plot(*args, **kwargs):
@@ -185,15 +188,21 @@ def plot(*args, **kwargs):
 
     # Switch auto figure display off for better control over when figures are
     # displayed.
-    plt.ioff()
+    interactive_on = False
+    if plt.isinteractive():
+        plt.ioff()
+        interactive_on = True
+
     output = _plot(*args, **kwargs)
-    if not _is_interactive():
+    if _is_inline():
         for key in output:
-            output[key].as_static(keep_widgets=is_doc_build)
-    # Turn auto figure display back on.
-    # TODO: we need to consider whether users manually turned auto figure
-    # display off, in which case we would not want to turn it back on here.
-    plt.ion()
+            if output[key] is not None:
+                output[key].as_static(keep_widgets=is_doc_build)
+
+    # Turn auto figure display back on if needed.
+    if interactive_on:
+        plt.ion()
+
     return output
 
 

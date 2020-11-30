@@ -80,11 +80,11 @@ def _data_array_to_dict(da):
     """
     Convert a scipp DataArray to a python dict.
     """
-    out = {"aligned_coords": {}, "masks": {}, "unaligned_coords": {}}
+    out = {"coords": {}, "masks": {}, "attrs": {}}
     for key in out.keys():
         for name, item in getattr(da, key).items():
             out[key][str(name)] = _variable_to_dict(item)
-    out['coords'] = out.pop('aligned_coords')
+    out['coords'] = out.pop('coords')
     out["data"] = _variable_to_dict(da.data)
     out["name"] = da.name
     return out
@@ -163,7 +163,7 @@ def _dict_to_data_array(d):
     if ("data" not in d):
         raise KeyError("To create a DataArray, the supplied dict must contain "
                        "'data'. Got {}.".format(d.keys()))
-    out = {"coords": {}, "masks": {}, "unaligned_coords": {}}
+    out = {"coords": {}, "masks": {}, "attrs": {}}
     for key in out.keys():
         if key in d:
             for name, item in d[key].items():

@@ -4,10 +4,11 @@ pybind11_add_module(
   _scipp
   SHARED
   SYSTEM
-  buckets.cpp
+  bins.cpp
   choose.cpp
   comparison.cpp
   counts.cpp
+  cumulative.cpp
   dataset.cpp
   detail.cpp
   docstring.cpp

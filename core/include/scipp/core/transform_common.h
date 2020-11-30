@@ -45,6 +45,10 @@ using arithmetic_and_matrix_type_pairs = decltype(
     std::tuple_cat(std::declval<arithmetic_type_pairs>(),
                    std::tuple<std::tuple<Eigen::Vector3d, Eigen::Vector3d>>()));
 
+static constexpr auto keep_unit =
+    overloaded{[](const units::Unit &) {},
+               [](const units::Unit &, const units::Unit &) {}};
+
 static constexpr auto dimensionless_unit_check =
     [](units::Unit &varUnit, const units::Unit &otherUnit) {
       expect::equals(varUnit, units::dimensionless);
@@ -61,6 +65,14 @@ static constexpr auto dimensionless_unit_check_return =
                  expect::equals(b, units::one);
                  return units::one;
                }};
+
+template <typename Op> struct assign_unary : Op {
+  template <typename Out, typename... In>
+  void operator()(Out &out, In &&... in) {
+    out = Op::operator()(std::forward<In>(in)...);
+  }
+};
+template <typename Op> assign_unary(Op) -> assign_unary<Op>;
 
 /// Flags for transform, added as overloads to the operator. These are never
 /// actually called since flag presence is checked via the base class of the
@@ -91,6 +103,10 @@ using expect_in_variance_if_out_variance_t =
 static constexpr auto expect_all_or_none_have_variance = []() {};
 using expect_all_or_none_have_variance_t =
     decltype(expect_all_or_none_have_variance);
+
+/// Initialize output with zeros. Used only by transform_subspan.
+static constexpr auto zero_output = []() {};
+using zero_output_t = decltype(zero_output);
 
 } // namespace transform_flags
 

@@ -245,7 +245,7 @@ TEST_P(Dataset3DTest_slice_x, slice) {
   for (const auto &name :
        {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
     for (const auto &attr : {"x", "labels_x"})
-      expected[name].coords().set(
+      expected[name].attrs().set(
           Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::X, pos}));
   EXPECT_EQ(dataset.slice({Dim::X, pos}), expected);
 }
@@ -258,11 +258,11 @@ TEST_P(Dataset3DTest_slice_x, slice_bin_edges) {
   // Non-range slice converts aligned coord to unaligned coord
   for (const auto &name :
        {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"}) {
-    expected[name].coords().set(
+    expected[name].attrs().set(
         Dim("labels_x"),
         datasetWithEdges.coords()[Dim("labels_x")].slice({Dim::X, pos}));
-    expected[name].coords().set(Dim::X, datasetWithEdges.coords()[Dim::X].slice(
-                                            {Dim::X, pos, pos + 2}));
+    expected[name].attrs().set(Dim::X, datasetWithEdges.coords()[Dim::X].slice(
+                                           {Dim::X, pos, pos + 2}));
   }
   EXPECT_EQ(datasetWithEdges.slice({Dim::X, pos}), expected);
 }
@@ -280,7 +280,7 @@ TEST_P(Dataset3DTest_slice_y, slice) {
   reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Y, pos}));
   for (const auto &name : {"data_xy", "data_zyx", "data_xyz"}) {
     for (const auto &attr : {"y", "labels_xy"})
-      reference[name].coords().set(
+      reference[name].attrs().set(
           Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Y, pos}));
   }
 
@@ -299,7 +299,7 @@ TEST_P(Dataset3DTest_slice_z, slice) {
   reference.setData("data_xyz", dataset["data_xyz"].slice({Dim::Z, pos}));
   for (const auto &name : {"data_zyx", "data_xyz"}) {
     for (const auto &attr : {"z", "labels_z"})
-      reference[name].coords().set(
+      reference[name].attrs().set(
           Dim(attr), dataset.coords()[Dim(attr)].slice({Dim::Z, pos}));
   }
 
@@ -649,17 +649,14 @@ protected:
 };
 
 template <class T> void test_coord_aligned_to_unaligned_mapping(T &o) {
-  EXPECT_FALSE(o.unaligned_coords().contains(Dim::X));
-  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).unaligned_coords().contains(Dim::X));
-  EXPECT_TRUE(o.slice({Dim::X, 2}).unaligned_coords().contains(Dim::X));
-  EXPECT_EQ(o.slice({Dim::X, 2}).unaligned_coords()[Dim::X], 3.0 * units::one);
-  EXPECT_TRUE(o.slice({Dim::X, 2, 3})
-                  .slice({Dim::X, 0})
-                  .unaligned_coords()
-                  .contains(Dim::X));
-  EXPECT_EQ(
-      o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).unaligned_coords()[Dim::X],
-      3.0 * units::one);
+  EXPECT_FALSE(o.attrs().contains(Dim::X));
+  EXPECT_FALSE(o.slice({Dim::X, 2, 3}).attrs().contains(Dim::X));
+  EXPECT_TRUE(o.slice({Dim::X, 2}).attrs().contains(Dim::X));
+  EXPECT_EQ(o.slice({Dim::X, 2}).attrs()[Dim::X], 3.0 * units::one);
+  EXPECT_TRUE(
+      o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).attrs().contains(Dim::X));
+  EXPECT_EQ(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0}).attrs()[Dim::X],
+            3.0 * units::one);
 }
 
 template <class T> void test_dataset_coord_aligned_to_unaligned_mapping(T &o) {
@@ -668,16 +665,11 @@ template <class T> void test_dataset_coord_aligned_to_unaligned_mapping(T &o) {
   // No mapping to "unaligned coords" of *dataset* (does not exist)
   EXPECT_FALSE(o.slice({Dim::X, 2}).coords().contains(Dim::X));
   // Mapped "aligned" coord of dataset to unaligned coord (of item)
-  EXPECT_TRUE(o.slice({Dim::X, 2})["a"].unaligned_coords().contains(Dim::X));
-  EXPECT_EQ(o.slice({Dim::X, 2})["a"].unaligned_coords()[Dim::X],
-            3.0 * units::one);
-  EXPECT_TRUE(o.slice({Dim::X, 2, 3})
-                  .slice({Dim::X, 0})["a"]
-                  .unaligned_coords()
-                  .contains(Dim::X));
-  EXPECT_EQ(o.slice({Dim::X, 2, 3})
-                .slice({Dim::X, 0})["a"]
-                .unaligned_coords()[Dim::X],
+  EXPECT_TRUE(o.slice({Dim::X, 2})["a"].attrs().contains(Dim::X));
+  EXPECT_EQ(o.slice({Dim::X, 2})["a"].attrs()[Dim::X], 3.0 * units::one);
+  EXPECT_TRUE(
+      o.slice({Dim::X, 2, 3}).slice({Dim::X, 0})["a"].attrs().contains(Dim::X));
+  EXPECT_EQ(o.slice({Dim::X, 2, 3}).slice({Dim::X, 0})["a"].attrs()[Dim::X],
             3.0 * units::one);
 }
 

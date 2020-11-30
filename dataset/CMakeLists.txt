@@ -2,13 +2,12 @@
 # contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-dataset")
 set(INC_FILES
-    include/scipp/dataset/bucketby.h
-    include/scipp/dataset/bucket.h
+    include/scipp/dataset/bin.h
+    include/scipp/dataset/bins.h
     include/scipp/dataset/choose.h
     include/scipp/dataset/counts.h
     include/scipp/dataset/dataset_access.h
     include/scipp/dataset/dataset.h
-    include/scipp/dataset/dataset_index.h
     include/scipp/dataset/dataset_util.h
     include/scipp/dataset/except.h
     include/scipp/dataset/groupby.h
@@ -27,8 +26,8 @@ set(INC_FILES
 
 set(SRC_FILES
     arithmetic.cpp
-    bucketby.cpp
-    bucket.cpp
+    bin.cpp
+    bins.cpp
     counts.cpp
     data_array.cpp
     dataset_access.cpp

@@ -10,14 +10,11 @@
 #include "scipp/core/element/histogram.h"
 #include "scipp/core/except.h"
 #include "scipp/core/histogram.h"
-#include "scipp/dataset/bucket.h"
-#include "scipp/dataset/dataset.h"
-#include "scipp/dataset/histogram.h"
-#include "scipp/dataset/reduction.h"
-#include "scipp/dataset/shape.h"
+
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/bucket_model.h"
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
@@ -25,6 +22,13 @@
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
+
+#include "scipp/dataset/bins.h"
+#include "scipp/dataset/bins_view.h"
+#include "scipp/dataset/dataset.h"
+#include "scipp/dataset/histogram.h"
+#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
 #include "dataset_operations_common.h"
@@ -45,10 +49,10 @@ void copy_slices(const DataArrayConstView &src, const DataArrayView &dst,
                  const Dim dim, const VariableConstView &srcIndices,
                  const VariableConstView &dstIndices) {
   copy_slices(src.data(), dst.data(), dim, srcIndices, dstIndices);
-  core::expect::sizeMatches(src.coords(), dst.coords());
+  core::expect::sizeMatches(src.meta(), dst.meta());
   core::expect::sizeMatches(src.masks(), dst.masks());
-  for (const auto &[name, coord] : src.coords())
-    copy_or_match(coord, dst.coords()[name], dim, srcIndices, dstIndices);
+  for (const auto &[name, coord] : src.meta())
+    copy_or_match(coord, dst.meta()[name], dim, srcIndices, dstIndices);
   for (const auto &[name, mask] : src.masks())
     copy_or_match(mask, dst.masks()[name], dim, srcIndices, dstIndices);
 }
@@ -62,13 +66,13 @@ void copy_slices(const DatasetConstView &src, const DatasetView &dst,
   core::expect::sizeMatches(src, dst);
   for (const auto &item : src) {
     const auto &dst_ = dst[item.name()];
-    core::expect::sizeMatches(item.unaligned_coords(), dst_.unaligned_coords());
+    core::expect::sizeMatches(item.attrs(), dst_.attrs());
     core::expect::sizeMatches(item.masks(), dst_.masks());
     copy_or_match(item.data(), dst_.data(), dim, srcIndices, dstIndices);
     for (const auto &[name, var] : item.masks())
       copy_or_match(var, dst_.masks()[name], dim, srcIndices, dstIndices);
-    for (const auto &[name, var] : item.unaligned_coords())
-      copy_or_match(var, dst_.coords()[name], dim, srcIndices, dstIndices);
+    for (const auto &[name, var] : item.attrs())
+      copy_or_match(var, dst_.attrs()[name], dim, srcIndices, dstIndices);
   }
 }
 
@@ -93,12 +97,12 @@ constexpr auto copy_or_resize = [](const auto &var, const Dim dim,
 DataArray resize_default_init(const DataArrayConstView &parent, const Dim dim,
                               const scipp::index size) {
   DataArray buffer(copy_or_resize(parent.data(), dim, size));
-  for (const auto &[name, var] : parent.aligned_coords())
-    buffer.aligned_coords().set(name, copy_or_resize(var, dim, size));
+  for (const auto &[name, var] : parent.coords())
+    buffer.coords().set(name, copy_or_resize(var, dim, size));
   for (const auto &[name, var] : parent.masks())
     buffer.masks().set(name, copy_or_resize(var, dim, size));
-  for (const auto &[name, var] : parent.unaligned_coords())
-    buffer.unaligned_coords().set(name, copy_or_resize(var, dim, size));
+  for (const auto &[name, var] : parent.attrs())
+    buffer.attrs().set(name, copy_or_resize(var, dim, size));
   return buffer;
 }
 
@@ -111,14 +115,14 @@ Dataset resize_default_init(const DatasetConstView &parent, const Dim dim,
     buffer.setData(item.name(), copy_or_resize(item.data(), dim, size));
     for (const auto &[name, var] : item.masks())
       buffer[item.name()].masks().set(name, copy_or_resize(var, dim, size));
-    for (const auto &[name, var] : item.unaligned_coords())
-      buffer[item.name()].coords().set(name, copy_or_resize(var, dim, size));
+    for (const auto &[name, var] : item.attrs())
+      buffer[item.name()].attrs().set(name, copy_or_resize(var, dim, size));
   }
   return buffer;
 }
 
 template <class T>
-Variable from_constituents_impl(Variable &&indices, const Dim dim, T &&buffer) {
+Variable make_bins_impl(Variable &&indices, const Dim dim, T &&buffer) {
   return {std::make_unique<variable::DataModel<bucket<T>>>(
       std::move(indices), dim, std::move(buffer))};
 }
@@ -127,16 +131,28 @@ Variable from_constituents_impl(Variable &&indices, const Dim dim, T &&buffer) {
 ///
 /// Each bin is represented by a VariableView. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
-Variable from_constituents(Variable indices, const Dim dim, DataArray buffer) {
-  return from_constituents_impl(std::move(indices), dim, std::move(buffer));
+Variable make_bins(Variable indices, const Dim dim, DataArray buffer) {
+  return make_bins_impl(std::move(indices), dim, std::move(buffer));
 }
 
 /// Construct a bin-variable over a dataset.
 ///
 /// Each bin is represented by a VariableView. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
-Variable from_constituents(Variable indices, const Dim dim, Dataset buffer) {
-  return from_constituents_impl(std::move(indices), dim, std::move(buffer));
+Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
+  return make_bins_impl(std::move(indices), dim, std::move(buffer));
+}
+
+Variable make_non_owning_bins(const VariableView &indices, const Dim dim,
+                              const DataArrayView &buffer) {
+  return {std::make_unique<variable::DataModel<bucket<DataArrayView>>>(
+      indices, dim, buffer)};
+}
+
+Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
+                              const DataArrayConstView &buffer) {
+  return {std::make_unique<variable::DataModel<bucket<DataArrayConstView>>>(
+      indices, dim, buffer)};
 }
 
 namespace {
@@ -159,8 +175,8 @@ Variable bucket_sizes(const VariableConstView &var) {
 }
 
 DataArray bucket_sizes(const DataArrayConstView &array) {
-  return {bucket_sizes(array.data()), array.aligned_coords(), array.masks(),
-          array.unaligned_coords()};
+  return {bucket_sizes(array.data()), array.coords(), array.masks(),
+          array.attrs()};
 }
 
 Dataset bucket_sizes(const DatasetConstView &dataset) {
@@ -191,9 +207,10 @@ auto combine(const VariableConstView &var0, const VariableConstView &var1) {
   const auto sizes0 = end0 - begin0;
   const auto sizes1 = end1 - begin1;
   const auto sizes = sizes0 + sizes1;
-  const auto [begin, size] = sizes_to_begin(sizes);
-  const auto end = begin + sizes;
-  auto buffer = resize_default_init(buffer0, dim, size);
+  const auto end = cumsum(sizes);
+  const auto begin = end - sizes;
+  auto buffer = resize_default_init(
+      buffer0, dim, end.template values<scipp::index>().as_span().back());
   copy_slices(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
   copy_slices(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
   return variable::DataModel<bucket<T>>{zip(begin, end), dim,
@@ -227,7 +244,28 @@ Variable concatenate_untyped(const VariableConstView &var, const Dim dim,
     return concatenate_typed<Dataset>(var, dim, shape, mask);
 }
 
+template <class T>
+void reserve_impl(const VariableView &var, const VariableConstView &shape) {
+  // TODO this only reserves in the bins, but assumes buffer has enough space
+  const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
+  variable::transform_in_place(
+      indices, shape,
+      overloaded{
+          core::element::arg_list<std::tuple<scipp::index_pair, scipp::index>>,
+          core::keep_unit,
+          [](auto &begin_end, auto &size) { begin_end.second += size; }});
+}
+
 } // namespace
+
+void reserve(const VariableView &var, const VariableConstView &shape) {
+  if (var.dtype() == dtype<bucket<Variable>>)
+    return reserve_impl<Variable>(var, shape);
+  else if (var.dtype() == dtype<bucket<DataArray>>)
+    return reserve_impl<DataArray>(var, shape);
+  else
+    return reserve_impl<Dataset>(var, shape);
+}
 
 Variable concatenate(const VariableConstView &var0,
                      const VariableConstView &var1) {
@@ -242,9 +280,8 @@ Variable concatenate(const VariableConstView &var0,
 DataArray concatenate(const DataArrayConstView &a,
                       const DataArrayConstView &b) {
   return {buckets::concatenate(a.data(), b.data()),
-          union_(a.aligned_coords(), b.aligned_coords()),
-          union_or(a.masks(), b.masks()),
-          intersection(a.unaligned_coords(), b.unaligned_coords())};
+          union_(a.coords(), b.coords()), union_or(a.masks(), b.masks()),
+          intersection(a.attrs(), b.attrs())};
 }
 
 /// Reduce a dimension by concatenating all elements along the dimension.
@@ -278,77 +315,59 @@ void append(const DataArrayView &a, const DataArrayConstView &b) {
   append(a.data(), b.data());
 }
 
-namespace histogram_detail {
-template <class Out, class Coord, class Weight, class Edge>
-using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
-                        span<const Edge>>;
-}
-
 Variable histogram(const VariableConstView &data,
                    const VariableConstView &binEdges) {
   using namespace scipp::core;
-  using namespace histogram_detail;
   auto hist_dim = binEdges.dims().inner();
   const auto &[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
-  if (!buffer.masks().empty())
-    throw std::runtime_error("Masked data cannot be histogrammed yet.");
-  VariableConstView spans(indices);
-  Variable merged;
-  if (indices.dims().contains(hist_dim)) {
-    const auto size = indices.dims()[hist_dim];
-    const auto [begin, end] = unzip(indices);
-    // Only contiguous ranges along histogramming dim supported at this point.
-    core::expect::equals(begin.slice({hist_dim, 1, size}),
-                         end.slice({hist_dim, 0, size - 1}));
-    merged = zip(begin.slice({hist_dim, 0}), end.slice({hist_dim, size - 1}));
-    spans = VariableConstView(merged);
-  }
-  return variable::transform_subspan<std::tuple<
-      args<float, double, float, double>, args<double, double, double, double>,
-      args<double, float, double, double>, args<double, float, double, float>,
-      args<double, double, float, double>>>(
+  const Masker masker(buffer, dim);
+  return variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
-      subspan_view(buffer.coords()[hist_dim], dim, spans),
-      subspan_view(buffer.data(), dim, spans), binEdges, element::histogram);
+      subspan_view(buffer.meta()[hist_dim], dim, indices),
+      subspan_view(masker.data(), dim, indices), binEdges, element::histogram);
 }
 
 Variable map(const DataArrayConstView &function, const VariableConstView &x,
-             Dim hist_dim) {
-  if (hist_dim == Dim::Invalid)
-    hist_dim = edge_dimension(function);
-  const auto mask = irreducible_mask(function.masks(), hist_dim);
-  Variable masked;
-  if (mask)
-    masked = function.data() * ~mask;
-  const auto &[indices, dim, buffer] = x.constituents<bucket<DataArray>>();
-  // Note the current inefficiency here: Output buffer is created with full
-  // size, even if `x` is a slice and only subsections of the buffer are needed.
-  auto out = variable::variableFactory().create(
-      function.dtype(), buffer.dims(), units::one, function.hasVariances());
-  // TODO "bug" here: subspan_view creates a new variable, so out unit not set!
-  transform_in_place(subspan_view(out, dim, indices),
-                     subspan_view(buffer.coords()[hist_dim], dim, indices),
-                     subspan_view(function.coords()[hist_dim], hist_dim),
-                     subspan_view(mask ? masked : function.data(), hist_dim),
-                     core::element::event::map_in_place);
-  // TODO Workaround, see comment above
-  out.setUnit(function.unit());
-  return Variable{std::make_unique<variable::DataModel<bucket<Variable>>>(
-      indices, dim, std::move(out))};
+             Dim dim) {
+  if (dim == Dim::Invalid)
+    dim = edge_dimension(function);
+  const Masker masker(function, dim);
+  const auto &coord = bins_view<DataArray>(x).meta()[dim];
+  const auto &edges = function.meta()[dim];
+  const auto weights = subspan_view(masker.data(), dim);
+  if (all(is_linspace(edges, dim)).value<bool>()) {
+    return variable::transform(coord, subspan_view(edges, dim), weights,
+                               core::element::event::map_linspace);
+  } else {
+    if (!is_sorted(edges, dim))
+      throw except::BinEdgeError("Bin edges of histogram must be sorted.");
+    return variable::transform(coord, subspan_view(edges, dim), weights,
+                               core::element::event::map_sorted_edges);
+  }
 }
 
-void scale(const DataArrayView &data, const DataArrayConstView &histogram,
+void scale(const DataArrayView &array, const DataArrayConstView &histogram,
            Dim dim) {
   if (dim == Dim::Invalid)
     dim = edge_dimension(histogram);
   // Coords along dim are ignored since "binning" is dynamic for buckets.
-  expect::coordsAreSuperset(data, histogram.slice({dim, 0}));
-  // buckets::map applies masks along dim
-  union_or_in_place(data.masks(), histogram.slice({dim, 0}).masks());
-  // The result of buckets::map is a variable, i.e., we cannot rely on the
-  // multiplication taking care of mask propagation and coord checks, hence the
-  // handling above.
-  data *= map(histogram, data.data(), histogram.dims().inner());
+  expect::coordsAreSuperset(array, histogram.slice({dim, 0}));
+  // scale applies masks along dim but others are kept
+  union_or_in_place(array.masks(), histogram.slice({dim, 0}).masks());
+  const Masker masker(histogram, dim);
+  auto data = bins_view<DataArray>(array.data()).data();
+  const auto &coord = bins_view<DataArray>(array.data()).meta()[dim];
+  const auto &edges = histogram.meta()[dim];
+  const auto weights = subspan_view(masker.data(), dim);
+  if (all(is_linspace(edges, dim)).value<bool>()) {
+    transform_in_place(data, coord, subspan_view(edges, dim), weights,
+                       core::element::event::map_and_mul_linspace);
+  } else {
+    if (!is_sorted(edges, dim))
+      throw except::BinEdgeError("Bin edges of histogram must be sorted.");
+    transform_in_place(data, coord, subspan_view(edges, dim), weights,
+                       core::element::event::map_and_mul_sorted_edges);
+  }
 }
 
 Variable sum(const VariableConstView &data) {
@@ -365,8 +384,7 @@ Variable sum(const VariableConstView &data) {
 }
 
 DataArray sum(const DataArrayConstView &data) {
-  return {buckets::sum(data.data()), data.aligned_coords(), data.masks(),
-          data.unaligned_coords()};
+  return {buckets::sum(data.data()), data.coords(), data.masks(), data.attrs()};
 }
 
 Dataset sum(const DatasetConstView &d) {

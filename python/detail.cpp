@@ -51,7 +51,7 @@ void init_detail(py::module &m) {
       py::arg("data") = Variable{},
       py::arg("coords") = std::map<Dim, Variable>{},
       py::arg("masks") = std::map<std::string, Variable>{},
-      py::arg("unaligned_coords") = std::map<Dim, Variable>{},
+      py::arg("attrs") = std::map<Dim, Variable>{},
       py::arg("name") = std::string{},
       R"(This functions moves the contents of all the input Variables (data,
       coordinates, masks and attributes) to a new DataArray without

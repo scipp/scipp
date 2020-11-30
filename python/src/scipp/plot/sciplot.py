@@ -49,6 +49,10 @@ class SciPlot:
         self.view = None
         self.widgets = None
 
+        # Shortcut access to the underlying figure for easier modification
+        self.fig = None
+        self.ax = None
+
         # Get first item in dict and process dimensions.
         # Dimensions should be the same for all dict items.
         self.axes = None
@@ -179,6 +183,10 @@ class SciPlot:
         have been created.
         """
         self.controller.render(*args, **kwargs)
+        if hasattr(self.view.figure, "fig"):
+            self.fig = self.view.figure.fig
+        if hasattr(self.view.figure, "ax"):
+            self.ax = self.view.figure.ax
 
     def _process_axes_dimensions(self,
                                  array=None,
@@ -215,6 +223,11 @@ class SciPlot:
         # Replace axes with supplied axes dimensions
         supplied_axes = {}
         if axes is not None:
+            for dim in axes.values():
+                if (dim not in self.axes.values()) and (dim
+                                                        not in array.coords):
+                    raise RuntimeError("Requested dimension was not found in "
+                                       "input data: {}".format(dim))
             supplied_axes.update(axes)
         if positions is not None and (positions not in self.axes.values()):
             supplied_axes.update({"x": positions})
@@ -263,13 +276,13 @@ class SciPlot:
         Convert the plot to a static plot, releasing the memory held (a full
         copy of the data is made on input).
         """
-        # Delete all members of controller
+        # Delete controller members
         self.controller.widgets = None
         self.controller.model = None
         self.controller.panel = None
         self.controller.profile = None
         self.controller.view = None
-        # Delete controller and members of sciplot
+        # Delete sciplot members
         self.controller = None
         self.model = None
         self.profile = None

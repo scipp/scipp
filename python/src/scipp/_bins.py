@@ -5,41 +5,13 @@ from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
-class BinsGroupby:
-    def __init__(self, obj, dim):
-        self._obj = obj
-        self._dim = dim
-
-    def __mul__(self, histogram):
-        copy = self._obj.copy()
-        _cpp.buckets.scale(copy, histogram, self._dim)
-        return copy
-
-    def __truediv__(self, histogram):
-        copy = self._obj.copy()
-        _cpp.buckets.scale(copy, _cpp.reciprocal(histogram), self._dim)
-        return copy
-
-    def __imul__(self, histogram):
-        _cpp.buckets.scale(self._obj, histogram, self._dim)
-
-    def __itruediv__(self, histogram):
-        _cpp.buckets.scale(self._obj, _cpp.reciprocal(histogram), self._dim)
+class lookup:
+    def __init__(self, func: _cpp.DataArrayView, dim: str):
+        self.func = func
+        self.dim = dim
 
 
-class BinsGroupbyProperty:
-    def __init__(self, obj):
-        self._obj = obj
-
-    def __getitem__(self, dim):
-        return BinsGroupby(self._obj, dim)
-
-    def __setitem__(self, dim, item):
-        # Required for inplace arithmetic operators
-        assert item is None
-
-
-class Bins:
+class _Bins:
     """
     Proxy for operations on bins of a variable
     """
@@ -51,6 +23,24 @@ class Bins:
             return self._obj.data
         except AttributeError:
             return self._obj
+
+    def __mul__(self, lut: lookup):
+        copy = self._obj.copy()
+        _cpp.buckets.scale(copy, lut.func, lut.dim)
+        return copy
+
+    def __truediv__(self, lut: lookup):
+        copy = self._obj.copy()
+        _cpp.buckets.scale(copy, _cpp.reciprocal(lut.func), lut.dim)
+        return copy
+
+    def __imul__(self, lut: lookup):
+        _cpp.buckets.scale(self._obj, lut.func, lut.dim)
+        return self
+
+    def __itruediv__(self, lut: lookup):
+        _cpp.buckets.scale(self._obj, _cpp.reciprocal(lut.func), lut.dim)
+        return self
 
     @property
     def begin(self):
@@ -71,11 +61,6 @@ class Bins:
     def data(self):
         """Internal data buffer holding data of all bins"""
         return _cpp.bins_data(self._data())
-
-    @property
-    def groupby(self):
-        """Proxy property for operations aware of coords within bins"""
-        return BinsGroupbyProperty(self._obj)
 
     def sum(self):
         """Sum of each bin.
@@ -144,16 +129,39 @@ class GroupbyBins:
 
 def _bins(obj):
     if _cpp.is_bins(obj):
-        return Bins(obj)
+        return _Bins(obj)
     else:
         return None
+
+
+def _set_bins(obj, bins: _Bins):
+    # Should only be used by __iadd__ and friends
+    assert obj is bins._obj
 
 
 def _groupby_bins(obj):
     return GroupbyBins(obj)
 
 
-def bin(x, edges):
+def histogram(x, bins):
+    """Create dense data by histogramming data along all dimension given by
+    edges.
+
+    :return: DataArray with values equal to the sum of values in each given
+             bin.
+    :seealso: :py:func:`scipp.bin` for binning data.
+    """
+    if isinstance(x, _Bins):
+        return _call_cpp_func(_cpp.histogram, x._obj, bins)
+    if _cpp.is_bins(x):
+        raise RuntimeError(
+            "Histogramming binned data not supported. Use the `bins` property "
+            "to histogram the bin *contents*, e.g., sc.histogram(binned.bins, "
+            "...).")
+    return _call_cpp_func(_cpp.histogram, x, bins)
+
+
+def bin(x, edges=[], groups=[]):
     """Create binned data by binning data along all dimensions given by edges.
 
     This does not histogram the data, each output bin will contain a "list" of
@@ -164,7 +172,14 @@ def bin(x, edges):
               :py:func:`scipp.bins` for creating binned data based on
               explicitly given index ranges.
     """
-    return _call_cpp_func(_cpp.bucketby, x, edges)
+    if isinstance(x, _Bins):
+        return _call_cpp_func(_cpp.bin, x._obj, edges, groups)
+    if _cpp.is_bins(x):
+        raise RuntimeError(
+            "Recursive binning not supported. Use the `bins` property to "
+            "subdivide bins in along additional dimensions, e.g., "
+            "sc.bin(binned.bins, ...).")
+    return _call_cpp_func(_cpp.bin, x, edges, groups)
 
 
 def bins(*args, **kwargs):

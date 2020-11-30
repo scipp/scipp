@@ -7,6 +7,7 @@
 #include <map>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/variable/arithmetic.h"
 
 namespace scipp::dataset {
 
@@ -80,10 +81,10 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
       }
   };
   std::map<Dim, Variable> coords;
-  coord_apply_or_copy_dim(coords, a.aligned_coords(), true);
+  coord_apply_or_copy_dim(coords, a.coords(), true);
 
-  std::map<Dim, Variable> unaligned_coords;
-  coord_apply_or_copy_dim(unaligned_coords, a.unaligned_coords(), false);
+  std::map<Dim, Variable> attrs;
+  coord_apply_or_copy_dim(attrs, a.attrs(), false);
 
   std::map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())
@@ -92,11 +93,11 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
 
   if constexpr (ApplyToData) {
     return DataArray(func(a.data(), dim, args...), std::move(coords),
-                     std::move(masks), std::move(unaligned_coords), a.name());
+                     std::move(masks), std::move(attrs), a.name());
   } else {
     return DataArray(func(a, dim, std::forward<Args>(args)...),
-                     std::move(coords), std::move(masks),
-                     std::move(unaligned_coords), a.name());
+                     std::move(coords), std::move(masks), std::move(attrs),
+                     a.name());
   }
 }
 
@@ -168,11 +169,10 @@ template <class T, class Func> auto transform_map(const T &map, Func func) {
   return out;
 }
 
-template <class Func>
-DataArray transform(const DataArrayConstView &a, Func func) {
-  return DataArray(func(a.data()), transform_map(a.aligned_coords(), func),
+template <class T, class Func> DataArray transform(const T &a, Func func) {
+  return DataArray(func(a.data()), transform_map(a.coords(), func),
                    transform_map(a.masks(), func),
-                   transform_map(a.unaligned_coords(), func), a.name());
+                   transform_map(a.attrs(), func), a.name());
 }
 
 void copy_metadata(const DataArrayConstView &a, const DataArrayView &b);
@@ -232,5 +232,25 @@ void concatenate_out(const VariableConstView &var, const Dim dim,
   }
   out_indices.assign(zip(out_begin, out_current));
 }
+
+/// Helper class for applying irreducible masks along dim.
+///
+/// If a mask is applied this class keeps ownership of the masked temporary.
+/// `Masker` should thus be created in the scope where the masked data is
+/// needed. It will be deleted once the masked goes out of scope.
+class Masker {
+public:
+  Masker(const DataArrayConstView &array, const Dim dim) {
+    const auto mask = irreducible_mask(array.masks(), dim);
+    if (mask)
+      m_masked = array.data() * ~mask;
+    m_data = m_masked ? m_masked : array.data();
+  }
+  auto data() const noexcept { return m_data; }
+
+private:
+  Variable m_masked;
+  VariableConstView m_data;
+};
 
 } // namespace scipp::dataset

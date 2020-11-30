@@ -10,23 +10,21 @@ from scipp.plot import plot
 
 
 def test_plot_projection_3d():
-    d = make_dense_dataset(ndim=3)
-    plot(d, projection="3d")
+    plot(make_dense_dataset(ndim=3), projection="3d")
 
 
 def test_plot_projection_3d_with_labels():
-    d = make_dense_dataset(ndim=3, labels=True)
-    plot(d, projection="3d", axes={'x': "somelabels"})
+    plot(make_dense_dataset(ndim=3, labels=True),
+         projection="3d",
+         axes={'x': "somelabels"})
 
 
 def test_plot_projection_3d_with_bin_edges():
-    d = make_dense_dataset(ndim=3, binedges=True)
-    plot(d, projection="3d")
+    plot(make_dense_dataset(ndim=3, binedges=True), projection="3d")
 
 
 def test_plot_projection_3d_with_masks():
-    d = make_dense_dataset(ndim=3, masks=True)
-    plot(d, projection="3d")
+    plot(make_dense_dataset(ndim=3, masks=True), projection="3d")
 
 
 def test_plot_projection_3d_with_vectors():
@@ -91,3 +89,12 @@ def test_plot_4d_with_masks_projection_3d():
                                           values=np.where(
                                               a > 0.5, True, False))
     plot(data, projection="3d")
+
+
+def test_plot_customized_axes():
+    d = make_dense_dataset(ndim=3)
+    plot(d["Sample"],
+         projection="3d",
+         xlabel="MyXlabel",
+         ylabel="MyYlabel",
+         zlabel="MyZlabel")

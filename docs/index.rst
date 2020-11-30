@@ -1,20 +1,48 @@
+|data-structures| |plotting| |masking|
+|binning| |slicing| |scipp-neutron|
+
+.. |data-structures| image:: _static/title-repr-html.png
+   :width: 33%
+   :target: user-guide/data-structures.html
+
+.. |binning| image:: _static/title-binning.png
+   :width: 33%
+   :target: user-guide/binning.html
+
+.. |masking| image:: _static/title-masking.png
+   :width: 33%
+   :target: user-guide/masking.html
+
+.. |plotting| image:: _static/title-plotting.png
+   :width: 33%
+   :target: visualization/plotting-overview.html
+
+.. |scipp-neutron| image:: _static/title-instrument-view.png
+   :width: 33%
+   :target: scipp-neutron/instrument-view.html
+
+.. |slicing| image:: _static/title-show.png
+   :width: 33%
+   :target: user-guide/slicing.html
+
 scipp - Multi-dimensional data arrays with labeled dimensions
 =============================================================
 
 **scipp** is heavily inspired by `xarray <https://xarray.pydata.org>`_.
+It enriches raw NumPy-like multi-dimensional arrays of data by adding named dimensions and associated coordinates.
+Multiple arrays can be combined into datasets.
 While for many applications xarray is certainly more suitable (and definitely much more matured) than scipp, there is a number of features missing in other situations.
 If your use case requires one or several of the items on the following list, using scipp may be worth considering:
 
-- Handling of physical units.
-- Propagation of uncertainties.
-- Support for histograms, i.e., bin-edge axes, which are by 1 longer than the data extent.
-- Support for unaligned data and non-destructive binning.
-- Support for event data, a particular form of sparse data with 1-D (or N-D) arrays of random-length lists, with very small list entries.
-- Support for masks stored with data.
+- **Physical units** are stored with each data or coord array and are handled in arithmetic operations.
+- **Propagation of uncertainties**.
+- Support for **histograms**, i.e., **bin-edge axes**, which are by 1 longer than the data extent.
+- Support for scattered data and **non-destructive binning**.
+  This includes first and foremost **event data**, a particular form of sparse data with arrays of random-length lists, with very small list entries.
+- Support for **masks stored with data**.
 - Written in C++ for better performance (for certain applications), in combination with Python bindings.
 
-Generic functionality of scipp is provided in the core module **scipp**.
-Physical units, which are also considered core functionality, are part of the **scipp.units** module.
+Generic functionality of scipp is provided in the **scipp** Python module.
 In addition, more specific functionality is made available in other modules.
 Currently the only example for this is **scipp.neutron** for handling data from neutron-scattering experiments.
 
@@ -54,15 +82,9 @@ Documentation
    user-guide/masking
    user-guide/binned-data
    user-guide/groupby
+   user-guide/reading-and-writing-files
    user-guide/how_to
    user-guide/tips-tricks-and-anti-patterns
-
-.. toctree::
-   :caption: Event data
-   :maxdepth: 3
-
-   event-data/overview
-   event-data/filtering
 
 .. toctree::
    :caption: Visualization
@@ -125,5 +147,6 @@ Documentation
    :maxdepth: 3
 
    about/about
+   about/roadmap
    about/contributing
    about/release-notes

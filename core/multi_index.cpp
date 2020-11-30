@@ -21,8 +21,8 @@ std::array<scipp::index, NDIM_MAX> get_strides(const Dimensions &iterDims,
   return strides;
 }
 
-void validate_bucket_indices_impl(const element_array_view &param0,
-                                  const element_array_view &param1) {
+void validate_bucket_indices_impl(const ElementArrayViewParams &param0,
+                                  const ElementArrayViewParams &param1) {
   const auto iterDims = param0.dims();
   auto index = MultiIndex(iterDims, param0.dataDims(), param1.dataDims());
   const auto indices0 = param0.bucketParams().indices;

@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/common/span.h"
 #include "scipp/core/element/arg_list.h"
@@ -83,6 +84,12 @@ constexpr auto is_sorted_nonascending = overloaded{
       out = out && (left >= right);
     }};
 
+constexpr auto is_linspace =
+    overloaded{arg_list<span<const double>, span<const float>>,
+               transform_flags::expect_no_variance_arg<0>,
+               [](const units::Unit &) { return units::one; },
+               [](const auto &range) { return numeric::is_linspace(range); }};
+
 constexpr auto zip = overloaded{
     arg_list<scipp::index>, transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
@@ -99,5 +106,13 @@ constexpr auto get = overloaded{arg_list<std::pair<scipp::index, scipp::index>>,
                                 transform_flags::expect_no_variance_arg<0>,
                                 [](const auto &x) { return std::get<N>(x); },
                                 [](const units::Unit &u) { return u; }};
+
+constexpr auto fill =
+    overloaded{arg_list<double, float, std::tuple<float, double>>,
+               [](auto &x, const auto &value) { x = value; }};
+
+constexpr auto fill_zeros =
+    overloaded{arg_list<double, float, int64_t, int32_t>, [](units::Unit &) {},
+               [](auto &x) { x = 0; }};
 
 } // namespace scipp::core::element

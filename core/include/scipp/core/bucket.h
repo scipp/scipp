@@ -8,10 +8,14 @@
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
 
+namespace scipp {
+using index_pair = std::pair<scipp::index, scipp::index>;
+}
+
 namespace scipp::core {
 
 struct bucket_base {
-  using range_type = std::pair<scipp::index, scipp::index>;
+  using range_type = index_pair;
 };
 template <class T> struct bucket : bucket_base {
   using buffer_type = T;
@@ -19,8 +23,10 @@ template <class T> struct bucket : bucket_base {
   using const_element_type = typename T::const_view_type;
 };
 
+template <class T> using bin = bucket<T>;
+
 } // namespace scipp::core
 
 namespace scipp {
 using core::bucket;
-}
+} // namespace scipp

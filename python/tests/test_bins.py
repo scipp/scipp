@@ -45,6 +45,19 @@ def test_bins():
     assert sc.is_equal(var['y', 1].value, data['x', 2:4])
 
 
+def test_bins_arithmetic():
+    var = sc.Variable(dims=['event'], values=[1.0, 2.0, 3.0, 4.0])
+    table = sc.DataArray(var, {'x': var})
+    binned = sc.bin(table, [sc.Variable(dims=['x'], values=[1.0, 5.0])])
+    hist = sc.DataArray(
+        data=sc.Variable(dims=['x'], values=[1.0, 2.0]),
+        coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])})
+    binned.bins *= sc.lookup(func=hist, dim='x')
+    assert sc.is_equal(
+        binned.bins.data.data,
+        sc.Variable(dims=['event'], values=[1.0, 2.0, 6.0, 8.0]))
+
+
 def test_load_events_bins():
     with in_memory_nexus_file_with_event_data() as nexus_file:
         event_data_groups = find_by_nx_class("NXevent_data", nexus_file)

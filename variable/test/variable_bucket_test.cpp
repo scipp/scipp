@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
 
 using namespace scipp;
@@ -14,7 +14,7 @@ protected:
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  Variable var = from_constituents(indices, Dim::X, buffer);
+  Variable var = make_bins(indices, Dim::X, buffer);
 };
 
 TEST_F(VariableBucketTest, comparison) {
@@ -75,13 +75,13 @@ TEST_F(VariableBucketTest, construct_from_view) {
 }
 
 TEST_F(VariableBucketTest, unary_operation) {
-  const auto expected = from_constituents(indices, Dim::X, sqrt(buffer));
+  const auto expected = make_bins(indices, Dim::X, sqrt(buffer));
   EXPECT_EQ(sqrt(var), expected);
   EXPECT_EQ(sqrt(var.slice({Dim::Y, 1})), expected.slice({Dim::Y, 1}));
 }
 
 TEST_F(VariableBucketTest, binary_operation) {
-  const auto expected = from_constituents(indices, Dim::X, buffer + buffer);
+  const auto expected = make_bins(indices, Dim::X, buffer + buffer);
   EXPECT_EQ(var + var, expected);
   EXPECT_EQ(var.slice({Dim::Y, 1}) + var.slice({Dim::Y, 1}),
             expected.slice({Dim::Y, 1}));
@@ -91,7 +91,7 @@ TEST_F(VariableBucketTest, binary_operation_with_dense) {
   Variable dense = makeVariable<double>(var.dims(), Values{0.1, 0.2});
   Variable expected_buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1.1, 2.1, 3.2, 4.2});
-  const auto expected = from_constituents(indices, Dim::X, expected_buffer);
+  const auto expected = make_bins(indices, Dim::X, expected_buffer);
   EXPECT_EQ(var + dense, expected);
   EXPECT_EQ(var.slice({Dim::Y, 1}) + dense.slice({Dim::Y, 1}),
             expected.slice({Dim::Y, 1}));
@@ -107,8 +107,7 @@ TEST_F(VariableBucketTest, binary_operation_with_dense_broadcast) {
           Dims{Dim::Y, Dim::Z}, Shape{2, 2},
           Values{std::pair{0, 2}, std::pair{2, 4}, std::pair{4, 6},
                  std::pair{6, 8}});
-  const auto expected =
-      from_constituents(expected_indices, Dim::X, expected_buffer);
+  const auto expected = make_bins(expected_indices, Dim::X, expected_buffer);
   EXPECT_EQ(var + dense, expected);
   EXPECT_EQ(var.slice({Dim::Y, 1}) + dense, expected.slice({Dim::Y, 1}));
   EXPECT_EQ(dense + var, transpose(expected));

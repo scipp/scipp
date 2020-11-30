@@ -191,8 +191,7 @@ def test_slice():
         coords={'x': sc.Variable(dims=['x'], values=np.arange(10.0))})
     expected = sc.Dataset({
         'a':
-        sc.DataArray(1.0 * sc.units.one,
-                     unaligned_coords={'x': 1.0 * sc.units.one})
+        sc.DataArray(1.0 * sc.units.one, attrs={'x': 1.0 * sc.units.one})
     })
 
     assert sc.is_equal(d['x', 1], expected)
@@ -224,10 +223,10 @@ def test_chained_slicing():
     expected['a'] = sc.Variable(dims=['y'],
                                 values=np.arange(501.0, 600.0, 10.0))
     expected['b'] = sc.Variable(1.5)
-    expected['a'].unaligned_coords['x'] = x['x', 1:3]
-    expected['b'].unaligned_coords['x'] = x['x', 1:3]
-    expected['a'].unaligned_coords['z'] = z['z', 5:7]
-    expected['b'].unaligned_coords['z'] = z['z', 5:7]
+    expected['a'].attrs['x'] = x['x', 1:3]
+    expected['b'].attrs['x'] = x['x', 1:3]
+    expected['a'].attrs['z'] = z['z', 5:7]
+    expected['b'].attrs['z'] = z['z', 5:7]
 
     assert sc.is_equal(d['x', 1]['z', 5], expected)
 

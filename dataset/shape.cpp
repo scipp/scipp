@@ -59,13 +59,16 @@ auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
         // matches new data shape.
         out.emplace(
             key,
-            concatenate(broadcast(a_, dimsA.count(dim)
-                                          ? Dimensions(dim, dimsA.at(dim))
-                                          : Dimensions()),
-                        broadcast(b[key], dimsB.count(dim)
-                                              ? Dimensions(dim, dimsB.at(dim))
-                                              : Dimensions()),
-                        dim));
+            concatenate(
+                broadcast(a_, merge(dimsA.count(dim)
+                                        ? Dimensions(dim, dimsA.at(dim))
+                                        : Dimensions(),
+                                    a_.dims())),
+                broadcast(b[key], merge(dimsB.count(dim)
+                                            ? Dimensions(dim, dimsB.at(dim))
+                                            : Dimensions(),
+                                        b[key].dims())),
+                dim));
       else
         out.emplace(key, same(a_, b[key]));
     }
@@ -79,12 +82,11 @@ DataArray concatenate(const DataArrayConstView &a, const DataArrayConstView &b,
   auto out = DataArray(concatenate(a.data(), b.data(), dim), {},
                        concat(a.masks(), b.masks(), dim, a.dims(), b.dims()));
   for (auto &&[d, coord] :
-       concat(a.coords(), b.coords(), dim, a.dims(), b.dims())) {
-    if (d == dim || a.aligned_coords().contains(d) ||
-        b.aligned_coords().contains(d))
+       concat(a.meta(), b.meta(), dim, a.dims(), b.dims())) {
+    if (d == dim || a.coords().contains(d) || b.coords().contains(d))
       out.coords().set(d, std::move(coord));
     else
-      out.unaligned_coords().set(d, std::move(coord));
+      out.attrs().set(d, std::move(coord));
   }
   return out;
 }

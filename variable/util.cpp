@@ -10,6 +10,7 @@
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 
 using namespace scipp::core;
@@ -41,6 +42,10 @@ Variable linspace(const VariableConstView &start, const VariableConstView &stop,
             range);
   out.slice({dim, num - 1}).assign(stop); // endpoint included
   return out;
+}
+
+Variable is_linspace(const VariableConstView &var, const Dim dim) {
+  return transform(subspan_view(var, dim), core::element::is_linspace);
 }
 
 Variable values(const VariableConstView &x) {
@@ -81,6 +86,16 @@ Variable zip(const VariableConstView &first, const VariableConstView &second) {
 std::pair<Variable, Variable> unzip(const VariableConstView &var) {
   return {transform(var, core::element::get<0>),
           transform(var, core::element::get<1>)};
+}
+
+/// Fill variable with given values (and variances) and unit.
+void fill(const VariableView &var, const VariableConstView &value) {
+  transform_in_place(var, value, core::element::fill);
+}
+
+/// Fill variable with zeros.
+void fill_zeros(const VariableView &var) {
+  transform_in_place(var, core::element::fill_zeros);
 }
 
 } // namespace scipp::variable

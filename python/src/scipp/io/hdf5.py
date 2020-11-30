@@ -18,7 +18,8 @@ def _dtype_lut():
     # variable-length strings.
     dtypes = [
         d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.DataArray,
-        d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView
+        d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView,
+        d.vector_3_float64
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
@@ -38,6 +39,24 @@ class NumpyDataIO():
         group['values'].read_direct(data.values)
         if 'variances' in group:
             group['variances'].read_direct(data.variances)
+
+
+class EigenDataIO():
+    @staticmethod
+    def write(group, data):
+        import numpy as np
+        dset = group.create_dataset('values', data=np.asarray(data.values))
+        return dset
+
+    @staticmethod
+    def read(group, data):
+        import numpy as np
+        if len(data.shape) == 0:
+            data.value = group['values']
+        else:
+            # Wrapping in np.asarray is important, otherwise we appear to be
+            # using a different, much slower code path in the setter
+            data.values = np.asarray(group['values'])
 
 
 class BinDataIO():
@@ -132,6 +151,8 @@ def _data_handler_lut():
         handler[str(dtype)] = ScippDataIO
     for dtype in [d.string]:
         handler[str(dtype)] = StringDataIO
+    for dtype in [d.vector_3_float64]:
+        handler[str(dtype)] = EigenDataIO
     return handler
 
 
@@ -191,18 +212,17 @@ class DataArrayIO:
         if data.data is None:
             raise RuntimeError("Cannot write object with invalid data.")
         VariableIO.write(group.create_group('data'), var=data.data)
-        views = [data.coords, data.masks]
-        aligned = data.aligned_coords.keys()
+        views = [data.coords, data.masks, data.attrs]
         # Note that we write aligned and unaligned coords into the same group.
         # Distinction is via an attribute, which is more natural than having
         # 2 separate groups.
-        for view_name, view in zip(['coords', 'masks'], views):
+        for view_name, view in zip(['coords', 'masks', 'attrs'], views):
             subgroup = group.create_group(view_name)
             for name in view:
                 g = VariableIO.write(group=subgroup.create_group(str(name)),
                                      var=view[name])
-                if view_name == 'coords':
-                    g.attrs['aligned'] = name in aligned
+                if g is None:
+                    del subgroup[str(name)]
 
     @staticmethod
     def read(group):
@@ -211,15 +231,11 @@ class DataArrayIO:
         contents = dict()
         contents['name'] = group.attrs['name']
         contents['data'] = VariableIO.read(group['data'])
-        contents['unaligned_coords'] = dict()
-        for category in ['coords', 'masks']:
+        for category in ['coords', 'masks', 'attrs']:
             contents[category] = dict()
             for name in group[category]:
                 g = group[category][name]
-                c = category
-                if category == 'coords' and not g.attrs.get('aligned', True):
-                    c = 'unaligned_coords'
-                contents[c][name] = VariableIO.read(g)
+                contents[category][name] = VariableIO.read(g)
         return sc.DataArray(**contents)
 
 

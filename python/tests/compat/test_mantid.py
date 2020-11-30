@@ -68,7 +68,7 @@ class TestMantidConversion(unittest.TestCase):
         target_tof = binned_mantid.coords['tof']
         d = mantidcompat.convert_EventWorkspace_to_data_array(
             eventWS, load_pulse_times=False)
-        binned = sc.histogram(d, target_tof)
+        binned = sc.histogram(d.bins, target_tof)
 
         delta = sc.sum(binned_mantid - binned, 'spectrum')
         delta = sc.sum(delta, 'tof')
@@ -122,7 +122,7 @@ class TestMantidConversion(unittest.TestCase):
 
         da = mantidcompat.convert_EventWorkspace_to_data_array(
             eventWS, load_pulse_times=False)
-        da = sc.histogram(da, target_tof)
+        da = sc.histogram(da.bins, target_tof)
         d = sc.Dataset(da)
         converted = sc.neutron.convert(d, 'tof', 'wavelength')
 
@@ -234,7 +234,7 @@ class TestMantidConversion(unittest.TestCase):
         ds = mantidcompat.load(filename,
                                mantid_args={"LoadMonitors": "Separate"})
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
-        attrs = [str(key) for key in ds.unaligned_coords.keys()]
+        attrs = [str(key) for key in ds.attrs.keys()]
         expected_monitor_attrs = set(
             ["monitor1", "monitor2", "monitor3", "monitor4", "monitor5"])
         assert expected_monitor_attrs.issubset(attrs)
@@ -251,7 +251,7 @@ class TestMantidConversion(unittest.TestCase):
         ds = mantidcompat.load(filename,
                                mantid_args={"LoadMonitors": "Include"})
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
-        attrs = [str(key) for key in ds.unaligned_coords.keys()]
+        attrs = [str(key) for key in ds.attrs.keys()]
         expected_monitor_attrs = set(
             ["monitor1", "monitor2", "monitor3", "monitor4", "monitor5"])
         assert expected_monitor_attrs.issubset(attrs)
@@ -266,7 +266,7 @@ class TestMantidConversion(unittest.TestCase):
         filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
         ds = mantidcompat.load(filename, mantid_args={"LoadMonitors": True})
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
-        attrs = [str(key) for key in ds.unaligned_coords.keys()]
+        attrs = [str(key) for key in ds.attrs.keys()]
         expected_monitor_attrs = set(["monitor2", "monitor3"])
         assert expected_monitor_attrs.issubset(attrs)
         for monitor_name in expected_monitor_attrs:
@@ -327,7 +327,7 @@ class TestMantidConversion(unittest.TestCase):
         # All events in central 'peak'
         self.assertEqual(100000, max_1d[max_index])
 
-        self.assertTrue('nevents' in histo_data_array.unaligned_coords)
+        self.assertTrue('nevents' in histo_data_array.attrs)
 
     def test_mdhisto_workspace_many_dims(self):
         from mantid.simpleapi import (CreateMDWorkspace, FakeMDEventData,
@@ -435,7 +435,7 @@ class TestMantidConversion(unittest.TestCase):
         assert 'cost-function' in params.coords
         assert 'chi^2/d.o.f.' in params.coords
 
-    def test_convert_array_run_log_to_unaligned_coords(self):
+    def test_convert_array_run_log_to_attrs(self):
         # Given a Mantid workspace with a run log
         import mantid.simpleapi as mantid
         target = mantid.CloneWorkspace(self.base_event_ws)
@@ -450,18 +450,17 @@ class TestMantidConversion(unittest.TestCase):
         # Then the data array contains the run log as an unaligned coord
         self.assertTrue(
             np.allclose(target.run()[log_name].value,
-                        d.unaligned_coords[log_name].values.data.values),
+                        d.attrs[log_name].values.data.values),
             "Expected values in the unaligned coord to match "
             "the original run log from the Mantid workspace")
-        self.assertEqual(d.unaligned_coords[log_name].values.unit, sc.units.K)
+        self.assertEqual(d.attrs[log_name].values.unit, sc.units.K)
         self.assertTrue(
-            np.array_equal(
-                target.run()[log_name].times.astype(np.int64),
-                d.unaligned_coords[log_name].values.coords["time"].values),
+            np.array_equal(target.run()[log_name].times.astype(np.int64),
+                           d.attrs[log_name].values.coords["time"].values),
             "Expected times in the unaligned coord to match "
             "the original run log from the Mantid workspace")
 
-    def test_convert_scalar_run_log_to_unaligned_coords(self):
+    def test_convert_scalar_run_log_to_attrs(self):
         # Given a Mantid workspace with a run log
         import mantid.simpleapi as mantid
         target = mantid.CloneWorkspace(self.base_event_ws)
@@ -475,7 +474,7 @@ class TestMantidConversion(unittest.TestCase):
 
         # Then the data array contains the run log as an unaligned coord
         self.assertEqual(
-            target.run()[log_name].value, d.unaligned_coords[log_name].value,
+            target.run()[log_name].value, d.attrs[log_name].value,
             "Expected value of the unaligned coord to match "
             "the original run log from the Mantid workspace")
 
@@ -515,10 +514,10 @@ class TestMantidConversion(unittest.TestCase):
         import mantid.simpleapi as mantid
         target = mantid.CloneWorkspace(self.base_event_ws)
         d = mantidcompat.convert_EventWorkspace_to_data_array(target, False)
-        d.unaligned_coords["sample"].value.setThickness(3)
+        d.attrs["sample"].value.setThickness(3)
         # before
         self.assertNotEqual(3, target.sample().getThickness())
-        target.setSample(d.unaligned_coords["sample"].value)
+        target.setSample(d.attrs["sample"].value)
         # after
         self.assertEqual(3, target.sample().getThickness())
 

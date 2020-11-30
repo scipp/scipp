@@ -41,7 +41,7 @@ public:
 
   template <class T2> bool overlaps(const bucket_array_view<T2> &other) const {
     if (buffer() == other.buffer())
-      return element_array_view::overlaps(other);
+      return ElementArrayViewParams::overlaps(other);
     return false;
   }
 

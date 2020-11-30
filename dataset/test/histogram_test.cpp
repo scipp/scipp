@@ -4,7 +4,7 @@
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/variable/shape.h"
@@ -89,7 +89,7 @@ DataArray make_1d_events_default_weights() {
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{3},
       Values{std::pair{0, 5}, std::pair{5, 10}, std::pair{10, 22}});
-  auto var = from_constituents(indices, Dim::Event, table);
+  auto var = make_bins(indices, Dim::Event, table);
   return DataArray(var, {});
 }
 
@@ -110,7 +110,7 @@ auto make_single_events() {
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Values{std::pair{0, 5}});
   Dataset events;
-  events.setData("events", from_constituents(indices, Dim::Event, table));
+  events.setData("events", make_bins(indices, Dim::Event, table));
   return events;
 }
 
@@ -177,15 +177,25 @@ TEST(HistogramTest, dense) {
   auto events = make_1d_events_default_weights();
   auto edges1 =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
-  auto edges2 = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 3, 6});
-  auto expected = dataset::histogram(events, edges2);
+  auto edgesY = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 3, 6});
+  auto edgesZ = makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 3, 6});
+  auto expected = dataset::histogram(events, edgesY);
   auto dense = dataset::histogram(events, edges1);
-  EXPECT_THROW(dataset::histogram(dense, edges2), except::BinEdgeError);
+  EXPECT_THROW(dataset::histogram(dense, edgesY), except::BinEdgeError);
+  // dense depends on Y, histogram by Y coord into Y-dependent histogram
+  EXPECT_TRUE(dense.dims().contains(edgesY.dims().inner()));
   dense.coords().erase(Dim::Y);
   dense.coords().set(Dim::Y,
                      makeVariable<double>(Dims{Dim::Y}, Shape{5},
                                           Values{1.5, 2.5, 3.5, 4.5, 5.5}));
-  EXPECT_EQ(dataset::histogram(dense, edges2), expected);
+  EXPECT_EQ(dataset::histogram(dense, edgesY), expected);
+  // dense depends on Y, histogram by Z coord into Z-dependent histogram
+  EXPECT_FALSE(dense.dims().contains(edgesZ.dims().inner()));
+  dense.coords().set(Dim::Z,
+                     makeVariable<double>(Dims{Dim::Y}, Shape{5},
+                                          Values{1.5, 2.5, 3.5, 4.5, 5.5}));
+  expected.rename(Dim::Y, Dim::Z);
+  EXPECT_EQ(dataset::histogram(dense, edgesZ), expected);
 }
 
 TEST(HistogramTest, keeps_scalar_coords) {
@@ -210,7 +220,7 @@ DataArray make_1d_events() {
   const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{3},
       Values{std::pair{0, 5}, std::pair{5, 10}, std::pair{10, 22}});
-  auto var = from_constituents(indices, Dim::Event, table);
+  auto var = make_bins(indices, Dim::Event, table);
   return DataArray(var, {});
 }
 

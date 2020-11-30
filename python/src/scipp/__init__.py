@@ -26,6 +26,7 @@ from .compat.dict import to_dict, from_dict
 # Wrappers for free functions from _scipp.core
 from ._bins import *
 from ._comparison import *
+from ._cumulative import *
 from ._math import *
 from ._reduction import *
 from ._trigonometry import *
@@ -45,13 +46,13 @@ setattr(DataArrayView, 'to_hdf5', _to_hdf5)
 setattr(Dataset, 'to_hdf5', _to_hdf5)
 setattr(DatasetView, 'to_hdf5', _to_hdf5)
 
-from ._bins import _bins
-setattr(Variable, 'bins', property(_bins))
-setattr(VariableView, 'bins', property(_bins))
-setattr(DataArray, 'bins', property(_bins))
-setattr(DataArrayView, 'bins', property(_bins))
-setattr(Dataset, 'bins', property(_bins))
-setattr(DatasetView, 'bins', property(_bins))
+from ._bins import _bins, _set_bins
+setattr(Variable, 'bins', property(_bins, _set_bins))
+setattr(VariableView, 'bins', property(_bins, _set_bins))
+setattr(DataArray, 'bins', property(_bins, _set_bins))
+setattr(DataArrayView, 'bins', property(_bins, _set_bins))
+setattr(Dataset, 'bins', property(_bins, _set_bins))
+setattr(DatasetView, 'bins', property(_bins, _set_bins))
 
 from ._bins import _groupby_bins
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))

@@ -14,26 +14,51 @@ std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
   Variable tmp;
   std::swap(*this, tmp);
   auto &model = requireT<DataModel<T>>(tmp.data());
-  return {std::move(model.indices()), model.dim(), std::move(model.buffer())};
+  return {Variable(std::move(model.indices())), model.dim(),
+          std::move(model.buffer())};
+}
+
+template <class T>
+std::tuple<VariableConstView, Dim, typename T::const_element_type>
+Variable::constituents() const {
+  return VariableConstView(*this).constituents<T>();
+}
+
+template <class T>
+std::tuple<bin_indices_t<T>, Dim, typename T::element_type>
+Variable::constituents() {
+  return VariableView(*this).constituents<T>();
 }
 
 template <class T>
 std::tuple<VariableConstView, Dim, typename T::const_element_type>
 VariableConstView::constituents() const {
-  auto view = *this;
   const auto &model = requireT<const DataModel<T>>(underlying().data());
-  view.m_variable = &model.indices();
+  auto view = *this;
+  if constexpr (is_view_v<typename T::buffer_type>) {
+    // See DataModel<bucket<T>>::index_values
+    view = model.indices();
+    view.m_offset += m_offset;
+    view.m_dims = m_dims;
+  } else {
+    view.m_variable = &model.indices();
+  }
   return {view, model.dim(), model.buffer()};
 }
 
 template <class T>
-std::tuple<VariableView, Dim, typename T::element_type>
+std::tuple<bin_indices_t<T>, Dim, typename T::element_type>
 VariableView::constituents() const {
-  auto view = *this;
   auto &model = requireT<DataModel<T>>(m_mutableVariable->data());
-  view.m_variable = &model.indices();
-  view.m_mutableVariable = &model.indices();
-  return {view, model.dim(), model.buffer()};
+  if constexpr (is_view_v<typename T::buffer_type>) {
+    auto view = std::get<0>(VariableConstView::constituents<T>());
+    return {view, model.dim(), model.buffer()};
+  } else {
+    auto view = *this;
+    view.m_variable = &model.indices();
+    view.m_mutableVariable = &model.indices();
+    return {view, model.dim(), model.buffer()};
+  }
 }
 
 namespace {
@@ -89,7 +114,10 @@ public:
   }
   void set_elem_unit(const VariableView &var,
                      const units::Unit &u) const override {
-    return std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
+    if constexpr (std::is_same_v<T, VariableConstView>)
+      throw std::runtime_error("Cannot set unit via const non-owning view");
+    else
+      return std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
   }
   bool hasVariances(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).hasVariances();
@@ -100,9 +128,16 @@ public:
 /// bucket dtype in Variable.
 #define INSTANTIATE_BUCKET_VARIABLE(name, ...)                                 \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
+  template std::tuple<VariableConstView, Dim,                                  \
+                      typename __VA_ARGS__::const_element_type>                \
+  Variable::constituents<__VA_ARGS__>() const;                                 \
+  template std::tuple<bin_indices_t<__VA_ARGS__>, Dim,                         \
+                      typename __VA_ARGS__::element_type>                      \
+  Variable::constituents<__VA_ARGS__>();                                       \
   template std::tuple<Variable, Dim, typename __VA_ARGS__::buffer_type>        \
   Variable::to_constituents<__VA_ARGS__>();                                    \
-  template std::tuple<VariableView, Dim, typename __VA_ARGS__::element_type>   \
+  template std::tuple<bin_indices_t<__VA_ARGS__>, Dim,                         \
+                      typename __VA_ARGS__::element_type>                      \
   VariableView::constituents<__VA_ARGS__>() const;                             \
   template std::tuple<VariableConstView, Dim,                                  \
                       typename __VA_ARGS__::const_element_type>                \

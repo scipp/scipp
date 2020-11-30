@@ -6,7 +6,7 @@
 #include "test_macros.h"
 
 #include "scipp/core/except.h"
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable.h"
@@ -226,7 +226,7 @@ TEST_F(Variable_comparison_operators, dense_events) {
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   auto buf = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  auto events = from_constituents(indices, Dim::X, buf);
+  auto events = make_bins(indices, Dim::X, buf);
   auto dense = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2l, 0l});
   expect_ne(dense, events);
 }
@@ -240,11 +240,11 @@ TEST_F(Variable_comparison_operators, events) {
   auto buf = makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
   auto buf_with_vars = makeVariable<double>(Dims{Dim::X}, Shape{4},
                                             Values{1, 2, 3, 4}, Variances{});
-  auto a = from_constituents(indices, Dim::X, buf);
-  auto b = from_constituents(indices, Dim::X, buf);
-  auto c = from_constituents(indices, Dim::X, buf * (2.0 * units::one));
-  auto d = from_constituents(indices2, Dim::X, buf);
-  auto a_with_vars = from_constituents(indices, Dim::X, buf_with_vars);
+  auto a = make_bins(indices, Dim::X, buf);
+  auto b = make_bins(indices, Dim::X, buf);
+  auto c = make_bins(indices, Dim::X, buf * (2.0 * units::one));
+  auto d = make_bins(indices2, Dim::X, buf);
+  auto a_with_vars = make_bins(indices, Dim::X, buf_with_vars);
 
   expect_eq(a, a);
   expect_eq(a, b);
@@ -497,34 +497,6 @@ TEST_F(VariableTest_3d, slice_range) {
             makeVariable<double>(Dimensions(dims_z2), units::m,
                                  Values(vals_z13.begin(), vals_z13.end()),
                                  Variances(vars_z13.begin(), vars_z13.end())));
-}
-
-TEST(Variable, broadcast) {
-  auto reference =
-      makeVariable<double>(Dims{Dim::Z, Dim::Y, Dim::X}, Shape{3, 2, 2},
-                           Values{1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4},
-                           Variances{5, 6, 7, 8, 5, 6, 7, 8, 5, 6, 7, 8});
-  auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                  Values{1, 2, 3, 4}, Variances{5, 6, 7, 8});
-
-  // No change if dimensions exist.
-  EXPECT_EQ(broadcast(var, {Dim::X, 2}), var);
-  EXPECT_EQ(broadcast(var, {Dim::Y, 2}), var);
-  EXPECT_EQ(broadcast(var, {{Dim::Y, 2}, {Dim::X, 2}}), var);
-
-  // No transpose done, should this fail? Failing is not really necessary since
-  // we have labeled dimensions.
-  EXPECT_EQ(broadcast(var, {{Dim::X, 2}, {Dim::Y, 2}}), var);
-
-  EXPECT_EQ(broadcast(var, {Dim::Z, 3}), reference);
-}
-
-TEST(Variable, broadcast_fail) {
-  auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                  Values{1, 2, 3, 4});
-  EXPECT_THROW_MSG(broadcast(var, {Dim::X, 3}), except::DimensionLengthError,
-                   "Expected dimension to be in {{y, 2}, {x, 2}}, "
-                   "got x with mismatching length 3.");
 }
 
 TEST(VariableView, full_const_view) {

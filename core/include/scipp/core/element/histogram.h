@@ -5,11 +5,11 @@
 #pragma once
 
 #include <cmath>
+#include <numeric>
 
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
-#include "scipp/core/element/util.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/transform_common.h"
 
@@ -42,10 +42,21 @@ constexpr auto variance = [](const auto &v, const scipp::index idx) {
 };
 } // namespace
 
+namespace histogram_detail {
+template <class Out, class Coord, class Weight, class Edge>
+using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
+                        span<const Edge>>;
+}
+
 static constexpr auto histogram = overloaded{
+    transform_flags::zero_output,
+    element::arg_list<histogram_detail::args<float, double, float, double>,
+                      histogram_detail::args<double, double, double, double>,
+                      histogram_detail::args<double, float, double, double>,
+                      histogram_detail::args<double, float, double, float>,
+                      histogram_detail::args<double, double, float, double>>,
     [](const auto &data, const auto &events, const auto &weights,
        const auto &edges) {
-      zero(data);
       // Special implementation for linear bins. Gives a 1x to 20x speedup
       // for few and many events per histogram, respectively.
       if (scipp::numeric::is_linspace(edges)) {
@@ -90,43 +101,5 @@ static constexpr auto histogram = overloaded{
     transform_flags::expect_no_variance_arg<1>,
     transform_flags::expect_variance_arg<2>,
     transform_flags::expect_no_variance_arg<3>};
-
-template <class T>
-using bin_index_arg =
-    std::tuple<span<scipp::index>, span<const T>, span<const T>>;
-
-static constexpr auto bin_index = overloaded{
-    element::arg_list<bin_index_arg<double>, bin_index_arg<float>>,
-    [](const auto &index, const auto &coord, const auto &edges) {
-      // Special faster implementation for linear bins.
-      if (scipp::numeric::is_linspace(edges)) {
-        const auto [offset, nbin, scale] = core::linear_edge_params(edges);
-        for (scipp::index i = 0; i < scipp::size(coord); ++i) {
-          const auto x = coord[i];
-          const double bin = (x - offset) * scale;
-          if (bin < 0.0 || bin >= nbin)
-            index[i] = -1;
-          else
-            index[i] = bin;
-        }
-      } else {
-        core::expect::histogram::sorted_edges(edges);
-        for (scipp::index i = 0; i < scipp::size(coord); ++i) {
-          const auto x = coord[i];
-          auto it = std::upper_bound(edges.begin(), edges.end(), x);
-          if (it == edges.begin() || it == edges.end())
-            index[i] = -1;
-          else
-            index[i] = --it - edges.begin();
-        }
-      }
-    },
-    [](units::Unit &index, const units::Unit &coord, const units::Unit &edges) {
-      expect::equals(coord, edges);
-      index = units::one;
-    },
-    transform_flags::expect_no_variance_arg<0>,
-    transform_flags::expect_no_variance_arg<1>,
-    transform_flags::expect_no_variance_arg<2>};
 
 } // namespace scipp::core::element

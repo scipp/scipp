@@ -2,7 +2,7 @@
 
 #include <random>
 
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 
 using namespace scipp;
 
@@ -25,7 +25,7 @@ template <typename T> struct GenerateEvents {
     }
     Variable buffer = makeVariable<T>(Dims{Dim::Event}, Shape{size});
 
-    return std::make_tuple(from_constituents(indices, Dim::Event, buffer),
+    return std::make_tuple(make_bins(indices, Dim::Event, buffer),
                            sizeof(T) * size);
   }
 };

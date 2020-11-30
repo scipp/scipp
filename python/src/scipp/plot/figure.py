@@ -20,7 +20,9 @@ class PlotFigure:
                  figsize=None,
                  title=None,
                  padding=None,
-                 ndim=1):
+                 ndim=1,
+                 xlabel=None,
+                 ylabel=None):
         self.fig = None
         self.ax = ax
         self.cax = cax
@@ -49,6 +51,8 @@ class PlotFigure:
 
         self.axformatter = {}
         self.axlocator = {}
+        self.xlabel = xlabel
+        self.ylabel = ylabel
 
     def is_widget(self):
         """
@@ -84,6 +88,9 @@ class PlotFigure:
         else:
             buf = io.BytesIO()
             self.fig.savefig(buf, format='png')
+            # Here we close the figure to prevent it from showing up again in
+            # cells further down the notebook.
+            plt.close(self.fig)
             buf.seek(0)
             return ipw.Image(value=buf.getvalue(),
                              width=config.plot.width,

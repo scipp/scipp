@@ -2,10 +2,10 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Hezbrock
+#include "scipp/dataset/bins.h"
 #include "pybind11.h"
 #include "scipp/core/except.h"
-#include "scipp/dataset/bucket.h"
-#include "scipp/dataset/bucketby.h"
+#include "scipp/dataset/bin.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
@@ -48,10 +48,9 @@ template <class T> void bind_bins(pybind11::module &m) {
         } else {
           throw std::runtime_error("`end` given but not `begin`");
         }
-        return from_constituents(
-            makeVariable<std::pair<scipp::index, scipp::index>>(
-                dims, Values(std::move(indices))),
-            dim, T(data));
+        return make_bins(makeVariable<std::pair<scipp::index, scipp::index>>(
+                             dims, Values(std::move(indices))),
+                         dim, T(data));
       },
       py::arg("begin") = py::none(), py::arg("end") = py::none(),
       py::arg("dim"), py::arg("data")); // do not release GIL since using
@@ -189,6 +188,5 @@ void init_buckets(py::module &m) {
       "sum", [](const DatasetConstView &x) { return dataset::buckets::sum(x); },
       py::call_guard<py::gil_scoped_release>());
 
-  m.def("bucketby", dataset::bucketby,
-        py::call_guard<py::gil_scoped_release>());
+  m.def("bin", dataset::bin, py::call_guard<py::gil_scoped_release>());
 }

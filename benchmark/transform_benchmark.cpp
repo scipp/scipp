@@ -6,8 +6,7 @@
 
 #include <random>
 
-#include "scipp/variable/bucket_model.h"
-#include "scipp/variable/buckets.h"
+#include "scipp/variable/bins.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
@@ -177,7 +176,7 @@ static void BM_transform_in_place_events(benchmark::State &state) {
   auto buf = variances ? makeVariable<double>(Dims{Dim::Event}, Shape{size},
                                               Values{}, Variances{})
                        : makeVariable<double>(Dims{Dim::Event}, Shape{size});
-  auto a = from_constituents(indices, Dim::Event, buf);
+  auto a = make_bins(indices, Dim::Event, buf);
 
   // events * dense typically occurs in unit conversion
   auto b = makeVariable<double>(Dims{Dim::Y}, Shape{ny});
@@ -215,8 +214,7 @@ static void BM_transform_buckets_inplace_unary(benchmark::State &state) {
     n_element += size;
   }
   Variable buffer = makeVariable<double>(Dims{Dim::X}, Shape{n_element});
-  Variable var{std::make_unique<variable::DataModel<bucket<Variable>>>(
-      indices, Dim::X, buffer)};
+  Variable var = make_bins(indices, Dim::X, buffer);
 
   for (auto _ : state) {
     transform_in_place<double>(var, [](auto &x) { x += x; });

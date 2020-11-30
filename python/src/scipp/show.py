@@ -369,7 +369,8 @@ class DatasetDrawer:
 
         ds = self._dataset
         if is_data_array(ds):
-            categories = zip(['coords', 'masks'], [ds.coords, ds.masks])
+            categories = zip(['coords', 'masks', 'attrs'],
+                             [ds.coords, ds.masks, ds.attrs])
         else:
             categories = zip(['coords'], [ds.coords])
         for what, items in categories:

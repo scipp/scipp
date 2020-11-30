@@ -4,7 +4,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/dimensions.h"
-#include "scipp/dataset/bucket.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/counts.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
@@ -16,7 +16,6 @@ using namespace scipp::neutron;
 
 Dataset makeBeamline() {
   Dataset tof;
-
   static const auto source_pos = Eigen::Vector3d{0.0, 0.0, -10.0};
   static const auto sample_pos = Eigen::Vector3d{0.0, 0.0, 0.0};
   tof.setCoord(Dim("source-position"),
@@ -33,7 +32,6 @@ Dataset makeBeamline() {
 
 Dataset makeTofDataset() {
   Dataset tof = makeBeamline();
-
   tof.setCoord(Dim::Tof,
                makeVariable<double>(Dims{Dim::Tof}, Shape{4}, units::us,
                                     Values{4000, 5000, 6100, 7300}));
@@ -53,7 +51,7 @@ Variable makeTofBucketedEvents() {
   Variable weights =
       makeVariable<double>(Dims{Dim::Event}, Shape{7}, Values{}, Variances{});
   DataArray buffer = DataArray(weights, {{Dim::Tof, tofs}});
-  return from_constituents(std::move(indices), Dim::Event, std::move(buffer));
+  return make_bins(std::move(indices), Dim::Event, std::move(buffer));
 }
 
 Variable makeCountDensityData(const units::Unit &unit) {
@@ -159,7 +157,7 @@ TEST_P(ConvertTest, Tof_to_DSpacing) {
   ASSERT_EQ(data.dims(), Dimensions({{Dim::Spectrum, 2}, {Dim::DSpacing, 3}}));
   EXPECT_TRUE(equals(data.values<double>(), {1, 2, 3, 4, 5, 6}));
   EXPECT_EQ(data.unit(), units::counts);
-  ASSERT_EQ(dspacing["counts"].coords()[Dim("position")],
+  ASSERT_EQ(dspacing["counts"].attrs()[Dim("position")],
             tof.coords()[Dim("position")]);
 
   ASSERT_FALSE(dspacing.coords().contains(Dim("position")));

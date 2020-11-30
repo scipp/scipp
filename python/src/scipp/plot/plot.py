@@ -35,7 +35,8 @@ class Plot(dict):
         import ipywidgets as ipw
         contents = []
         for item in self.values():
-            contents.append(item._to_widget())
+            if item is not None:
+                contents.append(item._to_widget())
         return ipw.VBox(contents)
 
     def show(self):
@@ -164,7 +165,7 @@ def plot(scipp_obj,
     for name, var in sorted(inventory.items()):
         ndims = len(var.dims)
         if ndims > 0:
-            if ndims == 1 or projection == "1d" or projection == "1D":
+            if ndims == 1:
                 # Construct a key from the dimensions
                 if axes is not None:
                     key = list(axes.values())[0]
@@ -172,9 +173,10 @@ def plot(scipp_obj,
                     key = var.dims[0]
                 # Add unit to key
                 key = "{}.{}".format(key, str(var.unit))
-                line_count += 1
             else:
                 key = name
+            if ndims == 1 or projection == "1d" or projection == "1D":
+                line_count += 1
 
             mpl_line_params = {}
             for n, p in line_params.items():

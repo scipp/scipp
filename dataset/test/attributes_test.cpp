@@ -25,50 +25,50 @@ protected:
 TEST_F(AttributesTest, dataset_item_attrs) {
   Dataset d;
   d.setData("a", varX);
-  d["a"].coords().set(Dim("scalar"), scalar);
-  d["a"].coords().set(Dim("x"), varX);
+  d["a"].attrs().set(Dim("scalar"), scalar);
+  d["a"].attrs().set(Dim("x"), varX);
   d.coords().set(Dim("dataset_attr"), scalar);
 
   ASSERT_FALSE(d.coords().contains(Dim("scalar")));
   ASSERT_FALSE(d.coords().contains(Dim("x")));
 
-  ASSERT_EQ(d["a"].unaligned_coords().size(), 2);
-  ASSERT_TRUE(d["a"].unaligned_coords().contains(Dim("scalar")));
-  ASSERT_TRUE(d["a"].unaligned_coords().contains(Dim("x")));
-  ASSERT_TRUE(d["a"].aligned_coords().contains(Dim("dataset_attr")));
-  ASSERT_FALSE(d["a"].unaligned_coords().contains(Dim("dataset_attr")));
+  ASSERT_EQ(d["a"].attrs().size(), 2);
+  ASSERT_TRUE(d["a"].attrs().contains(Dim("scalar")));
+  ASSERT_TRUE(d["a"].attrs().contains(Dim("x")));
+  ASSERT_TRUE(d["a"].coords().contains(Dim("dataset_attr")));
+  ASSERT_FALSE(d["a"].attrs().contains(Dim("dataset_attr")));
 
-  d["a"].coords().erase(Dim("scalar"));
-  d["a"].coords().erase(Dim("x"));
-  ASSERT_EQ(d["a"].unaligned_coords().size(), 0);
+  d["a"].attrs().erase(Dim("scalar"));
+  d["a"].attrs().erase(Dim("x"));
+  ASSERT_EQ(d["a"].attrs().size(), 0);
 }
 
 TEST_F(AttributesTest, slice_dataset_item_attrs) {
   Dataset d;
   d.setData("a", varZX);
-  d["a"].coords().set(Dim("scalar"), scalar);
-  d["a"].coords().set(Dim("x"), varX);
+  d["a"].attrs().set(Dim("scalar"), scalar);
+  d["a"].attrs().set(Dim("x"), varX);
 
   // Same behavior as coord slicing:
   // - Lower-dimensional attrs are not hidden by slicing.
   // - Non-range slice hides attribute.
   // The alternative would be to handle attributes like data, but at least for
   // now coord-like handling appears to make more sense.
-  ASSERT_TRUE(d["a"].slice({Dim::X, 0}).coords().contains(Dim("scalar")));
-  ASSERT_FALSE(d["a"].slice({Dim::X, 0}).aligned_coords().contains(Dim("x")));
-  ASSERT_TRUE(d["a"].slice({Dim::X, 0}).coords().contains(Dim("x")));
-  ASSERT_TRUE(d["a"].slice({Dim::X, 0, 1}).coords().contains(Dim("scalar")));
-  ASSERT_TRUE(d["a"].slice({Dim::X, 0, 1}).coords().contains(Dim("x")));
-  ASSERT_TRUE(d["a"].slice({Dim::Y, 0}).coords().contains(Dim("scalar")));
-  ASSERT_TRUE(d["a"].slice({Dim::Y, 0}).coords().contains(Dim("x")));
-  ASSERT_TRUE(d["a"].slice({Dim::Y, 0, 1}).coords().contains(Dim("scalar")));
-  ASSERT_TRUE(d["a"].slice({Dim::Y, 0, 1}).coords().contains(Dim("x")));
+  ASSERT_TRUE(d["a"].slice({Dim::X, 0}).meta().contains(Dim("scalar")));
+  ASSERT_FALSE(d["a"].slice({Dim::X, 0}).coords().contains(Dim("x")));
+  ASSERT_TRUE(d["a"].slice({Dim::X, 0}).attrs().contains(Dim("x")));
+  ASSERT_TRUE(d["a"].slice({Dim::X, 0, 1}).attrs().contains(Dim("scalar")));
+  ASSERT_TRUE(d["a"].slice({Dim::X, 0, 1}).attrs().contains(Dim("x")));
+  ASSERT_TRUE(d["a"].slice({Dim::Y, 0}).attrs().contains(Dim("scalar")));
+  ASSERT_TRUE(d["a"].slice({Dim::Y, 0}).attrs().contains(Dim("x")));
+  ASSERT_TRUE(d["a"].slice({Dim::Y, 0, 1}).attrs().contains(Dim("scalar")));
+  ASSERT_TRUE(d["a"].slice({Dim::Y, 0, 1}).attrs().contains(Dim("x")));
 }
 
 TEST_F(AttributesTest, binary_ops_matching_attrs_preserved) {
   Dataset d;
   d.setData("a", varX);
-  d["a"].coords().set(Dim("a_attr"), scalar);
+  d["a"].attrs().set(Dim("a_attr"), scalar);
 
   for (const auto &result : {d + d, d - d, d * d, d / d}) {
     EXPECT_EQ(result["a"].coords(), d["a"].coords());
@@ -78,11 +78,11 @@ TEST_F(AttributesTest, binary_ops_matching_attrs_preserved) {
 TEST_F(AttributesTest, binary_ops_mismatching_attrs_dropped) {
   Dataset d1;
   d1.setData("a", varX);
-  d1["a"].coords().set(Dim("a_attr"), scalar);
+  d1["a"].attrs().set(Dim("a_attr"), scalar);
   Dataset d2;
   d2.setData("a", varX);
-  d2["a"].coords().set(Dim("a_attr"), scalar + scalar); // mismatching content
-  d2["a"].coords().set(Dim("a_attr2"), scalar);         // mismatching name
+  d2["a"].attrs().set(Dim("a_attr"), scalar + scalar); // mismatching content
+  d2["a"].attrs().set(Dim("a_attr2"), scalar);         // mismatching name
 
   for (const auto &result : {d1 + d2, d1 - d2, d1 * d2, d1 / d2}) {
     EXPECT_TRUE(result["a"].coords().empty());
@@ -92,18 +92,18 @@ TEST_F(AttributesTest, binary_ops_mismatching_attrs_dropped) {
 TEST_F(AttributesTest, binary_ops_in_place) {
   Dataset d1;
   d1.setData("a", varX);
-  d1["a"].coords().set(Dim("a_attr"), scalar);
+  d1["a"].attrs().set(Dim("a_attr"), scalar);
 
   Dataset d2;
   d2.setData("a", varX);
-  d2["a"].coords().set(Dim("a_attr"), varX);
-  d2["a"].coords().set(Dim("a_attr2"), varX);
+  d2["a"].attrs().set(Dim("a_attr"), varX);
+  d2["a"].attrs().set(Dim("a_attr2"), varX);
 
   auto result(d1);
 
   auto check_preserved_only_lhs_attrs = [&]() {
-    ASSERT_EQ(result["a"].coords().size(), 1);
-    EXPECT_EQ(result["a"].coords()[Dim("a_attr")], scalar);
+    ASSERT_EQ(result["a"].attrs().size(), 1);
+    EXPECT_EQ(result["a"].attrs()[Dim("a_attr")], scalar);
   };
 
   result += d2;
@@ -122,15 +122,15 @@ TEST_F(AttributesTest, reduction_ops) {
              makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 1, 2}));
   d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
                                       Values{10, 20}));
-  d["a"].coords().set(Dim("a_attr"), scalar);
-  d["a"].coords().set(Dim("a_attr_x"), varX);
+  d["a"].attrs().set(Dim("a_attr"), scalar);
+  d["a"].attrs().set(Dim("a_attr_x"), varX);
 
   for (const auto &result :
        {sum(d, Dim::X), mean(d, Dim::X), resize(d, Dim::X, 4),
         rebin(d, Dim::X,
               makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 2}))}) {
-    ASSERT_TRUE(result["a"].coords().contains(Dim("a_attr")));
-    ASSERT_FALSE(result["a"].coords().contains(Dim("a_attr_x")));
-    EXPECT_EQ(result["a"].coords()[Dim("a_attr")], scalar);
+    ASSERT_TRUE(result["a"].attrs().contains(Dim("a_attr")));
+    ASSERT_FALSE(result["a"].attrs().contains(Dim("a_attr_x")));
+    EXPECT_EQ(result["a"].attrs()[Dim("a_attr")], scalar);
   }
 }

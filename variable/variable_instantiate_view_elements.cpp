@@ -24,5 +24,7 @@ INSTANTIATE_VARIABLE(span_const_time_point, span<const core::time_point>)
 INSTANTIATE_VARIABLE(span_time_point, span<core::time_point>)
 INSTANTIATE_VARIABLE(span_const_string, span<const std::string>)
 INSTANTIATE_VARIABLE(span_string, span<std::string>)
+INSTANTIATE_VARIABLE(span_const_vector_3_float64, span<const Eigen::Vector3d>)
+INSTANTIATE_VARIABLE(span_vector_3_float64, span<Eigen::Vector3d>)
 
 } // namespace scipp::variable

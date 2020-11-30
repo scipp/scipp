@@ -6,21 +6,26 @@ add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
   bucket_model_test.cpp
   comparison_test.cpp
+  cumulative_test.cpp
   indexed_slice_view_test.cpp
   mean_test.cpp
   operations_test.cpp
   rebin_test.cpp
   reduce_logical_test.cpp
   reduce_various_test.cpp
+  shape_test.cpp
   sort_test.cpp
   subspan_view_test.cpp
   transform_test.cpp
   trigonometry_test.cpp
   util_test.cpp
+  variable_bucket_non_owning_test.cpp
   variable_bucket_test.cpp
   variable_custom_type_test.cpp
   variable_keyword_args_constructor_test.cpp
+  variable_math_test.cpp
   variable_scalar_accessors_test.cpp
+  variable_special_values_test.cpp
   variable_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
