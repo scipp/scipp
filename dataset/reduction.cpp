@@ -5,11 +5,7 @@
 #include "scipp/common/reduction.h"
 #include "dataset_operations_common.h"
 #include "scipp/core/element/util.h"
-#include "scipp/dataset/map_view.h"
 #include "scipp/dataset/reduction.h"
-#include "scipp/variable/reduction.h"
-#include "scipp/variable/special_values.h"
-#include "scipp/variable/transform.h"
 
 using scipp::common::reduce_all_dims;
 
@@ -64,11 +60,7 @@ DataArray mean(const DataArrayConstView &a, const Dim dim) {
 }
 
 DataArray mean(const DataArrayConstView &a) {
-  auto mask_union = masks_merge_if_contained(a.masks(), a.dims());
-  auto applied_mask =
-      scipp::variable::transform(isfinite(a.data()), mask_union,
-                                 scipp::core::element::convertMaskedToZero);
-  return sum(a) / variable::sum(applied_mask);
+  return sum(a) / scale_divisor(a.data(), a.masks());
 }
 
 Dataset mean(const DatasetConstView &d, const Dim dim) {
@@ -86,11 +78,7 @@ DataArray nanmean(const DataArrayConstView &a, const Dim dim) {
 }
 
 DataArray nanmean(const DataArrayConstView &a) {
-  auto mask_union = masks_merge_if_contained(a.masks(), a.dims());
-  auto data = isnan(a.data());
-  auto applied_mask = scipp::variable::transform(
-      ~isnan(a.data()), mask_union, scipp::core::element::convertMaskedToZero);
-  return nansum(a) / variable::sum(applied_mask);
+  return nansum(a) / scale_divisor(a.data(), a.masks());
 }
 
 Dataset nanmean(const DatasetConstView &d, const Dim dim) {

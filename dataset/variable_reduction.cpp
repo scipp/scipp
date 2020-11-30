@@ -6,7 +6,6 @@
 
 #include "scipp/core/element/util.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/math.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
@@ -123,6 +122,16 @@ Variable masks_merge_if_contained(const MasksConstView &masks,
       mask_union = mask_union | mask.second;
   }
   return mask_union;
+}
+
+/// Count element contributions from input var, discounts masked and NaN
+/// elements
+Variable scale_divisor(const VariableConstView &var,
+                       const MasksConstView &masks) {
+  auto mask_union = masks_merge_if_contained(masks, var.dims());
+  auto applied_mask = transform(~isnan(var), mask_union,
+                                scipp::core::element::convertMaskedToZero);
+  return sum(applied_mask);
 }
 
 } // namespace scipp::dataset

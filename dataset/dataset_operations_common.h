@@ -199,6 +199,9 @@ VariableView sum(const VariableConstView &var, const Dim dim,
 VariableView nansum(const VariableConstView &var, const Dim dim,
                     const MasksConstView &masks, const VariableView &out);
 
+Variable scale_divisor(const VariableConstView &var,
+                       const MasksConstView &dims);
+
 template <class T>
 void concatenate_out(const VariableConstView &var, const Dim dim,
                      const VariableConstView &inverse_mask,
