@@ -8,3 +8,4 @@ Binned Data
    binned-data/binned-data
    binned-data/computation
    binned-data/filtering
+   binned-data/histogramming-grouping-and-binning

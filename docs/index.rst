@@ -7,7 +7,7 @@
 
 .. |binning| image:: _static/title-binning.png
    :width: 33%
-   :target: user-guide/binning.html
+   :target: user-guide/binned-data/binned-data.html
 
 .. |masking| image:: _static/title-masking.png
    :width: 33%
