@@ -247,7 +247,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
 // appearance in array.
 // 2. All new grouped dims.
 // 3. All new binned dims.
-auto axis_actions(const VariableConstView &var,
+auto axis_actions(const DataArrayConstView &array,
                   const std::vector<VariableConstView> &edges,
                   const std::vector<VariableConstView> &groups) {
   constexpr auto get_dims = [](const auto &coords) {
@@ -263,7 +263,7 @@ auto axis_actions(const VariableConstView &var,
   // also need to handle bin contents from all dimensions inside the rebinned
   // one, even if the grouping/binning along this dimension is unchanged.
   bool rebin = false;
-  const auto dims = var.dims();
+  const auto dims = array.dims();
   for (const auto dim : dims.labels()) {
     if (edges_dims.contains(dim) || groups_dims.contains(dim))
       rebin = true;
@@ -271,8 +271,16 @@ auto axis_actions(const VariableConstView &var,
       axes.emplace_back(AxisAction::Group, dim, groups[groups_dims.index(dim)]);
     else if (edges_dims.contains(dim))
       axes.emplace_back(AxisAction::Bin, dim, edges[edges_dims.index(dim)]);
-    else if (rebin)
+    else if (rebin) {
+      if (array.coords().contains(dim) &&
+          array.coords()[dim].dims().ndim() != 1)
+        throw except::DimensionError(
+            "2-D coordinate " + to_string(array.coords()[dim]) +
+            " conflicting with (re)bin of outer dimension. Try specifying new "
+            "aligned (1-D) edges for dimension '" +
+            to_string(dim) + "'.");
       axes.emplace_back(AxisAction::Existing, dim, VariableConstView{});
+    }
   }
   for (const auto &group : groups)
     if (!dims.contains(group.dims().inner()))
@@ -306,7 +314,7 @@ DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &edges,
               const std::vector<VariableConstView> &groups) {
   std::tuple<DataArray, Variable> proto;
-  const auto actions = axis_actions(array.data(), edges, groups);
+  const auto actions = axis_actions(array, edges, groups);
   if (array.dtype() == dtype<core::bin<DataArray>>) {
     proto = bin_impl<DataArrayConstView>(hide_masked(array, actions), actions);
   } else {
