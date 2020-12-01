@@ -13,6 +13,7 @@
 #include "scipp/variable/operations.h"
 #include "scipp/variable/util.h"
 
+#include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/choose.h"
 #include "scipp/dataset/dataset_util.h"
@@ -156,7 +157,34 @@ struct wrap {
 ///
 /// This only supports bucketed data.
 template <class T> T GroupBy<T>::concatenate(const Dim reductionDim) const {
-  return reduce(groupby_detail::concatenate, reductionDim);
+  // can we forward to bin, if we first build indices from outer (non-bin)
+  // coord?
+  // basically this is grouping based on bin coord rather than event coord
+  // actually need to do this before apply step, in split!
+  if constexpr (std::is_same_v<T, DataArray>) {
+    std::vector<Variable> edges;
+    bool rebin = false;
+    const auto dims = m_data.dims();
+    for (const auto &d : dims.labels()) {
+      if (rebin && m_data.coords().contains(d)) {
+        const auto coord = m_data.coords()[d];
+        if (coord.dims().ndim() != 1)
+          edges.emplace_back(variable::concatenate(variable::min(coord),
+                                                   variable::max(coord), d));
+      }
+      if (d == reductionDim)
+        rebin = true;
+    }
+    if (key().dims().volume() == groups().size())
+      return bin(m_data, {edges.begin(), edges.end()}, {key()}, {reductionDim});
+    else {
+      std::vector<VariableConstView> coords{edges.begin(), edges.end()};
+      coords.emplace_back(key());
+      return bin(m_data, coords, {}, {reductionDim});
+    }
+  } else {
+    return reduce(groupby_detail::concatenate, reductionDim);
+  }
 }
 
 /// Reduce each group using `sum` and return combined data.

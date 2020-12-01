@@ -172,14 +172,15 @@ def bin(x, edges=[], groups=[]):
               :py:func:`scipp.bins` for creating binned data based on
               explicitly given index ranges.
     """
+    erase = []
     if isinstance(x, _Bins):
-        return _call_cpp_func(_cpp.bin, x._obj, edges, groups)
+        return _call_cpp_func(_cpp.bin, x._obj, edges, groups, erase)
     if _cpp.is_bins(x):
         raise RuntimeError(
             "Recursive binning not supported. Use the `bins` property to "
             "subdivide bins in along additional dimensions, e.g., "
             "sc.bin(binned.bins, ...).")
-    return _call_cpp_func(_cpp.bin, x, edges, groups)
+    return _call_cpp_func(_cpp.bin, x, edges, groups, erase)
 
 
 def bins(*args, **kwargs):

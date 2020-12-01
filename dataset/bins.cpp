@@ -23,6 +23,7 @@
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
+#include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/dataset.h"
@@ -295,9 +296,19 @@ Variable concatenate(const VariableConstView &var, const Dim dim) {
 ///
 /// This is the analogue to summing non-bucket data.
 DataArray concatenate(const DataArrayConstView &array, const Dim dim) {
-  return apply_to_data_and_drop_dim(array, concatenate_untyped, dim,
-                                    sum(bucket_sizes(array), dim).data(),
-                                    irreducible_mask(array.masks(), dim));
+  std::vector<Variable> edges;
+  bool rebin = false;
+  const auto dims = array.dims();
+  for (const auto &d : dims.labels()) {
+    if (rebin && array.coords().contains(d)) {
+      const auto coord = array.coords()[d];
+      if (coord.dims().ndim() != 1)
+        edges.emplace_back(concatenate(min(coord), max(coord), d));
+    }
+    if (d == dim)
+      rebin = true;
+  }
+  return bin(array, {edges.begin(), edges.end()}, {}, {dim});
 }
 
 void append(const VariableView &var0, const VariableConstView &var1) {

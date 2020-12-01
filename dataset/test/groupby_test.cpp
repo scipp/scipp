@@ -467,8 +467,8 @@ struct GroupbyBucketsTest : public ::testing::Test {
   DataArray a{
       make_events_in(),
       {{Dim("0-d"), makeVariable<double>(Values{1.2})},
-       {Dim("labels"), makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::m,
-                                            Values{1, 1, 3})},
+       {Dim("labels"), makeVariable<int64_t>(Dims{Dim::Y}, Shape{3}, units::m,
+                                             Values{1, 1, 3})},
        {Dim("dense"), makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
                                            Values{1, 2, 3, 4, 5})}},
       {},
@@ -477,8 +477,8 @@ struct GroupbyBucketsTest : public ::testing::Test {
   DataArray expected{
       make_events_out(),
       {{Dim("0-d"), makeVariable<double>(Values{1.2})},
-       {Dim("labels"), makeVariable<double>(Dims{Dim("labels")}, Shape{2},
-                                            units::m, Values{1, 3})},
+       {Dim("labels"), makeVariable<int64_t>(Dims{Dim("labels")}, Shape{2},
+                                             units::m, Values{1, 3})},
        {Dim("dense"), makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
                                            Values{1, 2, 3, 4, 5})}},
       {},
