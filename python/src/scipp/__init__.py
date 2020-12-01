@@ -27,9 +27,12 @@ from .compat.dict import to_dict, from_dict
 from ._bins import *
 from ._comparison import *
 from ._cumulative import *
+from ._dataset import *
 from ._math import *
 from ._reduction import *
+from ._shape import *
 from ._trigonometry import *
+
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(VariableConstView, '_repr_html_', make_html)
