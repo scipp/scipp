@@ -28,6 +28,7 @@ from ._bins import *
 from ._comparison import *
 from ._cumulative import *
 from ._dataset import *
+from ._groupby import *
 from ._math import *
 from ._reduction import *
 from ._shape import *

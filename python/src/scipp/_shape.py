@@ -10,6 +10,7 @@ def concatenate(x, y, dim):
     """Concatenate input data array along the given dimension.
 
     Concatenation can happen in two ways:
+
     - Along an existing dimension, yielding a new dimension extent
       given by the sum of the input's extents.
     - Along a new dimension that is not contained in either of the inputs,
@@ -22,7 +23,10 @@ def concatenate(x, y, dim):
 
     :param x: Left hand side input.
     :param y: Right hand side input.
-    :param dim (Dim): Dimension along which to concatenate.
+    :param dim: Dimension along which to concatenate.
+    :type x: Dataset, DataArray or Variable
+    :type y: Dataset, DataArray or Variable
+    :type dim: str
     :raises: If the dtype or unit does not match, or if the
              dimensions and shapes are incompatible.
     :return: The absolute values of the input.
@@ -33,9 +37,12 @@ def concatenate(x, y, dim):
 def reshape(x, dims, shape):
     """Reshape a variable.
 
-    :param x (Variable): Variable to reshape.
-    :param dims (list): List of new dimensions.
-    :param shape (list): New extents in each dimension.
+    :param x: Variable to reshape.
+    :param dims: List of new dimensions.
+    :param shape: New extents in each dimension.
+    :type x: Variable
+    :type dims: list[str]
+    :type shape: list[int]
     :raises: If the volume of the old shape is not equal to the
              volume of the new shape.
     :return: New variable with requested dimension labels and shape.
@@ -46,9 +53,11 @@ def reshape(x, dims, shape):
 def transpose(x, dims: Sequence[str]):
     """Transpose dimensions of a variable.
 
-    :param x (Variable): Variable to transpose.
-    :param dims (list[str]): List of dimensions in desired order. If default,
+    :param x: Variable to transpose.
+    :param dims: List of dimensions in desired order. If default,
                         reverses existing order.
+    :type x: Variable
+    :type dims: list[str]
     :raises: If the dtype or unit does not match, or if the
              dimensions and shapes are incompatible.
     :return: The absolute values of the input.

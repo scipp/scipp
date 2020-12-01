@@ -8,8 +8,11 @@ def rebin(x, dim, bins):
     """Rebin a dimension of a data array.
 
     :param x: Data to rebin.
-    :param dim (str): Dimension to rebin over.
-    :param bins (Variable): New bin edges.
+    :param dim: Dimension to rebin over.
+    :param bins: New bin edges.
+    :type x: Dataset or DataArray
+    :type dim: str
+    :type bins: Variable
     :raises: If data cannot be rebinned, e.g., if the unit is not
              counts, or the existing coordinate is not a bin-edge
              coordinate.
