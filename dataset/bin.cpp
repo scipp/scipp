@@ -278,7 +278,7 @@ auto axis_actions(const DataArrayConstView &array,
             "2-D coordinate " + to_string(array.coords()[dim]) +
             " conflicting with (re)bin of outer dimension. Try specifying new "
             "aligned (1-D) edges for dimension '" +
-            to_string(dim) + "'.");
+            to_string(dim) + "' with the `edges` option of `bin`.");
       axes.emplace_back(AxisAction::Existing, dim, VariableConstView{});
     }
   }
