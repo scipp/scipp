@@ -6,6 +6,7 @@
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
@@ -174,6 +175,28 @@ TEST_P(BinTest, 2d) {
   const auto x_then_y = bin(x, {edges_y});
   const auto xy = bin(table, {edges_x, edges_y});
   EXPECT_EQ(xy, x_then_y);
+}
+
+TEST_P(BinTest, rebin_2d_with_2d_coord) {
+  auto table = GetParam();
+  auto xy = bin(table, {edges_x_coarse, edges_y_coarse});
+  Variable edges_y_2d = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                                             Values{-2, 1, 2, -1, 0, 3});
+  xy.coords().set(Dim::Y, edges_y_2d);
+  auto bins_y = bins_view<DataArray>(xy.data()).coords()[Dim::Y];
+  bins_y += 0.5 * units::one;
+  EXPECT_THROW(bin(xy, {edges_x_coarse}), except::DimensionError);
+  if (table.dims().volume() > 0) {
+    EXPECT_NE(bin(xy, {edges_x_coarse, edges_y_coarse}),
+              bin(table, {edges_x_coarse, edges_y_coarse}));
+    EXPECT_NE(bin(xy, {edges_x, edges_y_coarse}),
+              bin(table, {edges_x, edges_y_coarse}));
+  }
+  table.coords()[Dim::Y] += 0.5 * units::one;
+  expect_near(bin(xy, {edges_x_coarse, edges_y_coarse}),
+              bin(table, {edges_x_coarse, edges_y_coarse}));
+  expect_near(bin(xy, {edges_x, edges_y_coarse}),
+              bin(table, {edges_x, edges_y_coarse}));
 }
 
 TEST_P(BinTest, rebin_coarse_to_fine_2d) {

@@ -26,7 +26,9 @@ Dimensions::Dimensions(const std::vector<Dim> &labels,
   if (labels.size() != shape.size())
     throw except::DimensionError(
         "Constructing Dimensions: Number of dimensions "
-        "labels does not match shape.");
+        "labels (" +
+        std::to_string(labels.size()) + ") does not match shape size (" +
+        std::to_string(shape.size()) + ").");
   for (scipp::index i = 0; i < scipp::size(shape); ++i)
     addInner(labels[i], shape[i]);
 }
