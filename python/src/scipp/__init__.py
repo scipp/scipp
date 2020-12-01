@@ -25,6 +25,7 @@ from .compat.dict import to_dict, from_dict
 
 # Wrappers for free functions from _scipp.core
 from ._bins import *
+from ._counts import *
 from ._comparison import *
 from ._cumulative import *
 from ._dataset import *
