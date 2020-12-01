@@ -68,25 +68,6 @@ void update_indices_by_grouping(const VariableView &indices,
                                core::element::update_indices_by_grouping);
 }
 
-// actually we need target coord as well as group indices, since there may be
-// empty groups in groupby
-// should this always come first? so we do not need scale?
-// set_initial_bin_indices as better name?
-void update_indices_by_grouping_bins(const VariableView &indices,
-                                     const VariableConstView &groups) {
-  // const auto dim = groups.dims().inner();
-  // const auto map = groups_to_map(groups, dim);
-  // indices *= map.size() * units::one;
-  std::cout << indices << groups;
-  indices += groups;
-  // min(indices, -1 * units::one, indices);
-}
-
-void update_indices_by_erasing(const VariableView &, const Dim) {
-  // All input bins mapped to same output bin => "add" 0 everywhere
-  return;
-}
-
 void update_indices_from_existing(const VariableView &indices, const Dim dim) {
   const scipp::index nbin = indices.dims()[dim];
   const auto index = make_range(0, nbin, 1, dim);
@@ -168,80 +149,6 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
 }
 
-enum class AxisAction { Group, Bin, Existing };
-
-class TargetBinBuilder {
-public:
-  /*
-  TargetBinBuilder(const DataArrayConstView &array)
-      : m_coords(make_coords(array)) {
-    if constexpr (BinBased) {
-      m_indices = makeVariable<scipp::index>(array.dims());
-    } else {
-      const auto &[begin_end, buffer_dim, buffer] =
-          array.data().constituents<core::bin<DataArray>>();
-      m_buffer = makeVariable<scipp::index>(buffer.dims());
-      m_indices =
-          make_non_owning_bins(begin_end, buffer_dim, VariableView(m_buffer));
-    }
-  }
-  */
-
-  const Dimensions &dims() const noexcept { return m_dims; }
-
-  template <class Coords>
-  void build(const VariableView &indices, Coords &&coords) const {
-    for (const auto &[action, dim, key] : m_actions) {
-      if (action == AxisAction::Group)
-        update_indices_by_grouping(indices, coords[dim], key);
-      else if (action == AxisAction::Bin)
-        update_indices_by_binning(indices, coords[dim], key);
-      else if (action == AxisAction::Existing)
-        update_indices_from_existing(indices, dim);
-    }
-  }
-
-  void group(const VariableConstView &groups) {
-    const auto dim = groups.dims().inner();
-    m_dims.addInner(dim, groups.dims()[dim]);
-    m_actions.emplace_back(AxisAction::Group, dim, groups);
-    // update_indices_by_grouping(m_indices, m_coords[dim], groups);
-  }
-
-  void bin(const VariableConstView &edges) {
-    const auto dim = edges.dims().inner();
-    m_dims.addInner(dim, edges.dims()[dim] - 1);
-    m_actions.emplace_back(AxisAction::Bin, dim, edges);
-    // update_indices_by_binning(m_indices, m_coords[dim], edges);
-  }
-
-  void existing(const Dim dim, const scipp::index size) {
-    m_dims.addInner(dim, size);
-    m_actions.emplace_back(AxisAction::Existing, dim, VariableConstView{});
-    // update_indices_from_existing(m_indices, dim);
-  }
-
-  // All input bins mapped to same output bin => "add" 0 everywhere
-  void erase(const Dim dim) { m_dims.addInner(dim, 1); }
-
-private:
-  /*
-  auto make_coords(const DataArrayConstView &array) {
-    if constexpr (BinBased) {
-      return array.coords();
-    } else {
-      return bins_view<DataArray>(array.data()).coords();
-    }
-  }
-  decltype(std::declval<TargetBinBuilder>().make_coords(
-      DataArrayConstView{})) m_coords;
-      */
-  Dimensions m_dims;
-  std::vector<std::tuple<AxisAction, Dim, VariableConstView>> m_actions;
-  // Variable m_indices;
-  // Variable m_buffer;
-};
-
 constexpr static auto get_coords = [](auto &a) { return a.coords(); };
 constexpr static auto get_attrs = [](auto &a) { return a.attrs(); };
 constexpr static auto get_masks = [](auto &a) { return a.masks(); };
@@ -313,41 +220,48 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
           std::move(coords), std::move(masks), std::move(attrs)};
 }
 
-/*
-class AxisActions {
+class TargetBinBuilder {
+  enum class AxisAction { Group, Bin, Existing };
+
 public:
-  AxisActions(const DataArrayConstView &array,
-              const std::vector<VariableConstView> &edges,
-              const std::vector<VariableConstView> &groups,
-              const std::vector<Dim> &erase) {
-    // can use non-binned indices if not binned => make_non_owning_bins also for
-    // indices, not just data before binning step
-    // 3 cases:
-    // - bin table => normal coords
-    // - bin binned => event coords
-    // - groupby => bin coords, but also rebin event coords
-    // no...erase and join is bin-based!?
-    //   - indices must be event-based, but generated as bin-based
-    //   => start by making outer indices
+  const Dimensions &dims() const noexcept { return m_dims; }
+
+  template <class Coords>
+  void build(const VariableView &indices, Coords &&coords) const {
+    for (const auto &[action, dim, key] : m_actions) {
+      if (action == AxisAction::Group)
+        update_indices_by_grouping(indices, coords[dim], key);
+      else if (action == AxisAction::Bin)
+        update_indices_by_binning(indices, coords[dim], key);
+      else if (action == AxisAction::Existing)
+        update_indices_from_existing(indices, dim);
+    }
   }
 
-  void group(const VariableConstView &key) {}
-  void erase(const Dim &dim, const bool join) {
-    // also setup rebin here, or check 2-D coord
+  void group(const VariableConstView &groups) {
+    const auto dim = groups.dims().inner();
+    m_dims.addInner(dim, groups.dims()[dim]);
+    m_actions.emplace_back(AxisAction::Group, dim, groups);
   }
 
-  void groupby_concatenate(const VariableConstView &groups,
-                           const Dim reductionDim) {
-    // always erase dim if outer? no!
+  void bin(const VariableConstView &edges) {
+    const auto dim = edges.dims().inner();
+    m_dims.addInner(dim, edges.dims()[dim] - 1);
+    m_actions.emplace_back(AxisAction::Bin, dim, edges);
   }
 
-  const Dimensions &dims() const { return m_dims; }
+  void existing(const Dim dim, const scipp::index size) {
+    m_dims.addInner(dim, size);
+    m_actions.emplace_back(AxisAction::Existing, dim, VariableConstView{});
+  }
+
+  // All input bins mapped to same output bin => "add" 0 everywhere
+  void erase(const Dim dim) { m_dims.addInner(dim, 1); }
 
 private:
   Dimensions m_dims;
-  Variable m_indices;
+  std::vector<std::tuple<AxisAction, Dim, VariableConstView>> m_actions;
 };
-*/
 
 // Order is defined as:
 // 1. Any rebinned dim and dims inside the first rebinned dim, in the order of
@@ -428,7 +342,6 @@ DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &groups,
               const std::vector<Dim> &erase) {
   std::tuple<DataArray, Variable> proto;
-  // auto actions = axis_actions(array, edges, groups, erase, keep_alive);
   if (array.dtype() == dtype<core::bin<DataArray>>) {
     auto builder = axis_actions<false>(array, edges, groups, erase);
     const auto masked = hide_masked(array, builder.dims());
