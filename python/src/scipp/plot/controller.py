@@ -288,7 +288,7 @@ class PlotController:
         """
         dim = self.axes["x"]
         self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes()
+        self.update_axes(normalize=False)
 
     def toggle_yaxis_scale(self, owner):
         """
@@ -296,7 +296,7 @@ class PlotController:
         """
         dim = self.axes["y"]
         self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes()
+        self.update_axes(normalize=False)
 
     def toggle_zaxis_scale(self, owner):
         """
@@ -304,7 +304,7 @@ class PlotController:
         """
         dim = self.axes["z"]
         self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes()
+        self.update_axes(normalize=False)
 
     def toggle_norm(self, owner):
         """
@@ -350,7 +350,7 @@ class PlotController:
         """
         self.view.update_norm_button(*args, **kwargs)
 
-    def update_axes(self, change=None):
+    def update_axes(self, change=None, normalize=True):
         """
         This function is called when a dimension that is displayed along a
         given axis is changed. This happens for instance when we want to
@@ -371,7 +371,8 @@ class PlotController:
         if self.profile is not None:
             self.toggle_profile_view()
         self.update_data()
-        self.rescale_to_data()
+        if normalize:
+            self.rescale_to_data()
 
     def update_data(self, change=None):
         """

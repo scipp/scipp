@@ -80,6 +80,7 @@ class SciPlot3d(SciPlot):
                                    ndim=view_ndims,
                                    name=self.name,
                                    dim_to_shape=self.dim_to_shape,
+                                   dim_label_map=self.dim_label_map,
                                    masks=self.masks,
                                    positions=positions,
                                    multid_coord=self.model.get_multid_coord())

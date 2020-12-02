@@ -17,6 +17,7 @@ class PlotWidgets:
                  ndim=None,
                  name=None,
                  dim_to_shape=None,
+                 dim_label_map=None,
                  positions=None,
                  masks=None,
                  multid_coord=None):
@@ -98,7 +99,7 @@ class PlotWidgets:
             self.dim_buttons[index] = {}
             for dim_ in possible_dims:
                 self.dim_buttons[index][dim_] = ipw.Button(
-                    description=dim_,
+                    description=dim_label_map[dim_] if dim_ in dim_label_map else dim_,
                     button_style='info' if dim == dim_ else '',
                     disabled=((dim != dim_) and (dim_ in slider_dims.values())
                               or (dim_ == self.multid_coord)),
@@ -106,6 +107,7 @@ class PlotWidgets:
                 # Add observer to buttons
                 self.dim_buttons[index][dim_].on_click(self.update_buttons)
                 setattr(self.dim_buttons[index][dim_], "index", index)
+                setattr(self.dim_buttons[index][dim_], "dim", dim_)
 
             self.index_to_dim[index] = dim
             self.index_to_dim[dim] = index
@@ -193,7 +195,7 @@ class PlotWidgets:
         if owner.button_style == "info":
             return
         new_ind = owner.index
-        new_dim = owner.description
+        new_dim = owner.dim
 
         self.index_to_dim[new_ind] = new_dim
         self.index_to_dim[new_dim] = new_ind
@@ -201,7 +203,7 @@ class PlotWidgets:
         old_dim = None
         for dim in self.dim_buttons[new_ind]:
             if self.dim_buttons[new_ind][dim].button_style == "info":
-                old_dim = self.dim_buttons[new_ind][dim].description
+                old_dim = self.dim_buttons[new_ind][dim].dim
             self.dim_buttons[new_ind][dim].button_style = ""
         owner.button_style = "info"
 
