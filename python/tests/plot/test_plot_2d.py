@@ -21,6 +21,10 @@ def test_plot_2d_image_with_vmin_vmax():
     plot(make_dense_dataset(ndim=2), vmin=0.1, vmax=0.9)
 
 
+def test_plot_2d_image_with_unit():
+    plot(make_dense_dataset(ndim=2, unit=sc.units.kg))
+
+
 def test_plot_2d_image_with_vmin_vmax_with_log():
     plot(make_dense_dataset(ndim=2), vmin=0.1, vmax=0.9, norm='log')
 

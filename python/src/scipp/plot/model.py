@@ -64,7 +64,7 @@ class PlotModel:
             for dim in axes_dims:
                 coord, formatter, label, unit = self._axis_coord_and_formatter(
                     dim, array, dim_to_shape[name], dim_label_map)
-                print(coord, formatter, label, unit)
+                # print(coord, formatter, label, unit)
 
                 self.axformatter[name][dim] = formatter
                 self.coord_info[name][dim] = {"label": label, "unit": unit}
@@ -130,7 +130,7 @@ class PlotModel:
 
         # We assume here that the underlying dimension is always the inner
         # dimension.
-        print(dim_label_map)
+        # print(dim_label_map)
         # underlying_dim = data_array.coords[dim].dims[-1]
 
         #     # Eliminate dimensions of other coordinates to find the underlying
@@ -208,9 +208,9 @@ class PlotModel:
             form = lambda val, pos: value_to_string(  # noqa: E731
                 data_array.coords[dim_label_map[dim]].values[np.abs(coord_values - val).
                                               argmin()])
-            print(dim_label_map)
-            print(dim)
-            print(dim_label_map[dim])
+            # print(dim_label_map)
+            # print(dim)
+            # print(dim_label_map[dim])
             formatter.update({"linear": form, "log": form})
             coord_info["label"] = name_with_unit(var=data_array.coords[dim_label_map[dim]], name=dim_label_map[dim])
             coord_info["unit"] = name_with_unit(var=data_array.coords[dim_label_map[dim]], name="")

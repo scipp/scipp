@@ -25,7 +25,7 @@ class PlotToolbar:
             self.members["mpl_toolbar"] = canvas.toolbar
             canvas.toolbar_visible = False
         else:
-            self.add_button(name="menu", icon="bars", tooltip="Menu")
+            # self.add_button(name="menu", icon="bars", tooltip="Menu")
             self.add_button(name="home",
                             icon="home",
                             tooltip="Reset original view")

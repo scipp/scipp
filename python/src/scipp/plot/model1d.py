@@ -61,8 +61,8 @@ class PlotModel1d(PlotModel):
                     self.dslice.data.variances)
 
             if len(mask_info[name]) > 0:
-                base_mask = sc.Variable(dims=self.dslice.dims,
-                                        values=np.ones(self.dslice.shape,
+                base_mask = sc.Variable(dims=self.dslice.data.dims,
+                                        values=np.ones(self.dslice.data.shape,
                                                        dtype=np.int32))
                 for m in mask_info[name]:
                     # Use automatic broadcast to broadcast 0D masks
