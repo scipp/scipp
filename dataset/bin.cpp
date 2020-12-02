@@ -354,37 +354,13 @@ auto hide_masked(const DataArrayConstView &array, const Dimensions &dims) {
   return make_non_owning_bins(zip(begin, end), buffer_dim, buffer);
 }
 
-} // namespace
-
-template <class T>
-Variable concat_bins(const VariableConstView &var, const Dim dim) {
-  TargetBinBuilder builder;
-  builder.erase(dim);
-  const auto &[begin_end, buffer_dim, buffer] =
-      var.constituents<core::bin<T>>();
-  // In principle all events in an input bin map to the same output, but right
-  // now bin<> cannot handle this and requires target bin indices for every bin
-  // element.
-  auto target_bins_buffer = makeVariable<scipp::index>(buffer.dims());
-  auto target_bins = make_non_owning_bins(begin_end, buffer_dim,
-                                          VariableView(target_bins_buffer));
-  builder.build(target_bins, std::map<Dim, Variable>{});
-  auto [out_buffer, bin_sizes] =
-      bin<DataArray>(var, target_bins, builder.dims());
-  squeeze(bin_sizes, {dim});
-  const auto end = cumsum(bin_sizes);
-  return make_bins(zip(end - bin_sizes, end), buffer_dim,
-                   std::move(out_buffer));
-}
-template Variable concat_bins<Variable>(const VariableConstView &, const Dim);
-template Variable concat_bins<DataArray>(const VariableConstView &, const Dim);
-
-namespace {
-class TargetBins {
+template <class T> class TargetBins {
 public:
   TargetBins(const VariableConstView &var) {
-    const auto &[begin_end, dim, buffer] =
-        var.constituents<core::bin<DataArrayConstView>>();
+    // In some cases all events in an input bin map to the same output, but
+    // right now bin<> cannot handle this and requires target bin indices for
+    // every bin element.
+    const auto &[begin_end, dim, buffer] = var.constituents<core::bin<T>>();
     m_target_bins_buffer = makeVariable<scipp::index>(buffer.dims());
     m_target_bins = make_non_owning_bins(begin_end, dim,
                                          VariableView(m_target_bins_buffer));
@@ -395,8 +371,34 @@ private:
   Variable m_target_bins_buffer;
   Variable m_target_bins;
 };
+
 } // namespace
 
+/// Reduce a dimension by concatenating bin contents of all bins along a
+/// dimension.
+///
+/// This is used to implement `concatenate(var, dim)`.
+template <class T>
+Variable concat_bins(const VariableConstView &var, const Dim dim) {
+  TargetBinBuilder builder;
+  builder.erase(dim);
+  TargetBins<T> target_bins(var);
+  builder.build(*target_bins, std::map<Dim, Variable>{});
+  auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder.dims());
+  squeeze(bin_sizes, {dim});
+  const auto end = cumsum(bin_sizes);
+  const auto buffer_dim = buffer.dims().inner();
+  return make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer));
+}
+template Variable concat_bins<Variable>(const VariableConstView &, const Dim);
+template Variable concat_bins<DataArray>(const VariableConstView &, const Dim);
+
+/// Implementation of groupby.bins.concatenate
+///
+/// If `array` has unaligned, i.e., not 1-D, coords conflicting with the
+/// reduction dimension, any binning along the dimensions of the conflicting
+/// coords is removed. It is replaced by a single bin along that dimension, with
+/// bin edges given my min and max of the old coord.
 DataArray groupby_concat_bins(const DataArrayConstView &array,
                               const VariableConstView &edges,
                               const VariableConstView &groups,
@@ -415,7 +417,7 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
       builder.join(dim, array.coords()[dim]);
 
   const auto masked = hide_masked(array, builder.dims());
-  TargetBins target_bins(masked);
+  TargetBins<DataArrayConstView> target_bins(masked);
   builder.build(*target_bins, array.coords());
   return add_metadata(
       bin<DataArrayConstView>(masked, *target_bins, builder.dims()), array,
@@ -429,7 +431,7 @@ DataArray bin(const DataArrayConstView &array,
   auto builder = axis_actions(array, edges, groups);
   if (array.dtype() == dtype<core::bin<DataArray>>) {
     const auto masked = hide_masked(array, builder.dims());
-    TargetBins target_bins(masked);
+    TargetBins<DataArrayConstView> target_bins(masked);
     builder.build(*target_bins, bins_view<DataArrayConstView>(masked).coords());
     proto = bin<DataArrayConstView>(masked, *target_bins, builder.dims());
   } else {
