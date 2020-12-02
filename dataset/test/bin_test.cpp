@@ -281,9 +281,3 @@ TEST_P(BinTest, rebinned_meta_data_dropped) {
   xy1.attrs().set(Dim("aux2"), mask_x);
   expect_near(bin(xy1, {edges_x_coarse2, edges_y_coarse2}), xy2);
 }
-
-TEST_P(BinTest, erase) {
-  const auto table = GetParam();
-  const auto x = bin(table, {edges_x});
-  // EXPECT_EQ(bin(x, {}, {}, {Dim::X}), x);
-}

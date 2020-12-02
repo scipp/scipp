@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "scipp/variable/variable.h"
+#include "scipp/dataset/dataset.h"
 
 namespace scipp::dataset {
 

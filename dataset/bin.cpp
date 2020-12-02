@@ -2,7 +2,6 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <iostream>
 #include <numeric>
 #include <set>
 
@@ -320,15 +319,13 @@ auto axis_actions(const DataArrayConstView &array,
       builder.bin(edges[edges_dims.index(dim)]);
     } else if (rebin) {
       if (array.coords().contains(dim) &&
-          array.coords()[dim].dims().ndim() != 1) {
+          array.coords()[dim].dims().ndim() != 1)
         throw except::DimensionError(
             "2-D coordinate " + to_string(array.coords()[dim]) +
-            " conflicting with (re)bin of outer dimension. Try specifying "
-            "new aligned (1-D) edges for dimension '" +
+            " conflicting with (re)bin of outer dimension. Try specifying new "
+            "aligned (1-D) edges for dimension '" +
             to_string(dim) + "' with the `edges` option of `bin`.");
-      } else {
-        builder.existing(dim, array.dims()[dim]);
-      }
+      builder.existing(dim, array.dims()[dim]);
     }
   }
   for (const auto &group : groups)
