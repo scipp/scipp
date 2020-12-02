@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .tools import check_log_limits
-from .._utils import name_with_unit, value_to_string
+from .._utils import value_to_string
 from .._scipp import core as sc
 import numpy as np
 
@@ -83,7 +83,7 @@ class PlotController:
             # Iterate through axes and collect dimensions
             for dim in self.axes.values():
 
-                coord = self.model.get_data_coord(name, dim)
+                coord, label, unit = self.model.get_data_coord(name, dim)
 
                 # To allow for 2D coordinates, the histograms are
                 # stored as dicts, with one key per dimension of the coordinate
@@ -111,8 +111,8 @@ class PlotController:
                                                    values=self.xlims[key][dim],
                                                    unit=coord.unit)
 
-                self.coord_labels[key][dim] = name_with_unit(var=coord)
-                self.coord_units[key][dim] = name_with_unit(var=coord, name="")
+                self.coord_labels[key][dim] = label
+                self.coord_units[key][dim] = unit
 
         self.initialise_widgets(dim_to_shape[self.name])
         self.initialise_view()

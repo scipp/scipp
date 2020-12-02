@@ -4,7 +4,7 @@
 
 from .helpers import PlotArray
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord
-from .._utils import value_to_string
+from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
 
@@ -35,6 +35,7 @@ class PlotModel:
 
         # The main container of DataArrays
         self.data_arrays = {}
+        self.coord_info = {}
 
         self.axformatter = {}
 
@@ -45,6 +46,7 @@ class PlotModel:
 
             # Store axis tick formatters
             self.axformatter[name] = {}
+            self.coord_info[name] = {}
 
             # Create a DataArray with units of counts, and bin-edge
             # coordinates, because it is to be passed to rebin during the
@@ -60,10 +62,12 @@ class PlotModel:
 
             # Iterate through axes and collect coordinates
             for dim in axes_dims:
-                coord, formatter = self._axis_coord_and_formatter(
+                coord, formatter, label, unit = self._axis_coord_and_formatter(
                     dim, array, dim_to_shape[name], dim_label_map)
+                print(coord, formatter, label, unit)
 
                 self.axformatter[name][dim] = formatter
+                self.coord_info[name][dim] = {"label": label, "unit": unit}
 
                 is_histogram = False
                 for i, d in enumerate(coord.dims):
@@ -115,7 +119,8 @@ class PlotModel:
         coord = None
 
         if dim not in data_array.coords:
-            return make_fake_coord(dim, dim_to_shape[dim] + 1), formatter
+            coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+            return coord, formatter, name_with_unit(var=coord), name_with_unit(var=coord, name="")
 
         # underlying_dim = None
 
@@ -126,7 +131,7 @@ class PlotModel:
         # We assume here that the underlying dimension is always the inner
         # dimension.
         print(dim_label_map)
-        underlying_dim = data_array.coords[dim].dims[-1]
+        # underlying_dim = data_array.coords[dim].dims[-1]
 
         #     # Eliminate dimensions of other coordinates to find the underlying
         #     # dim
@@ -154,6 +159,7 @@ class PlotModel:
         # print(underlying_dim)
 
         tp = data_array.coords[dim].dtype
+        coord_info = {}
 
         if tp == sc.dtype.vector_3_float64:
             coord = make_fake_coord(dim,
@@ -186,8 +192,8 @@ class PlotModel:
         # elif dim != underlying_dim:
         elif dim in dim_label_map:
             # non-dimension coordinate
-            if underlying_dim in data_array.coords:
-                coord = data_array.coords[underlying_dim]
+            if dim in data_array.coords:
+                coord = data_array.coords[dim]
                 # coord = sc.Variable([dim],
                 #                     values=coord.values,
                 #                     variances=coord.variances,
@@ -200,18 +206,26 @@ class PlotModel:
                 if data_array.coords[dim].shape[-1] == dim_to_shape[dim]:
                     coord_values = to_bin_centers(coord, dim).values
             form = lambda val, pos: value_to_string(  # noqa: E731
-                data_array.coords[dim].values[np.abs(coord_values - val).
+                data_array.coords[dim_label_map[dim]].values[np.abs(coord_values - val).
                                               argmin()])
+            print(dim_label_map)
+            print(dim)
+            print(dim_label_map[dim])
             formatter.update({"linear": form, "log": form})
+            coord_info["label"] = name_with_unit(var=data_array.coords[dim_label_map[dim]], name=dim_label_map[dim])
+            coord_info["unit"] = name_with_unit(var=data_array.coords[dim_label_map[dim]], name="")
 
         else:
             coord = data_array.coords[dim] # .astype(sc.dtype.float64)
 
+        if len(coord_info) == 0:
+            coord_info["label"] = name_with_unit(var=coord)
+            coord_info["unit"] = name_with_unit(var=coord, name="")
         # else:
         #     # dim not found in data_array.coords
         #     coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
 
-        return coord, formatter
+        return coord, formatter, coord_info["label"], coord_info["unit"]
 
     def get_axformatter(self, name, dim):
         """
@@ -239,7 +253,7 @@ class PlotModel:
         """
         Get a coordinate along a requested dimension.
         """
-        return self.data_arrays[name].coords[dim]
+        return self.data_arrays[name].coords[dim], self.coord_info[name][dim]["label"], self.coord_info[name][dim]["unit"]
 
     def rescale_to_data(self):
         """
