@@ -296,19 +296,7 @@ Variable concatenate(const VariableConstView &var, const Dim dim) {
 ///
 /// This is the analogue to summing non-bucket data.
 DataArray concatenate(const DataArrayConstView &array, const Dim dim) {
-  std::vector<Variable> edges;
-  bool rebin = false;
-  const auto dims = array.dims();
-  for (const auto &d : dims.labels()) {
-    if (rebin && array.coords().contains(d)) {
-      const auto coord = array.coords()[d];
-      if (coord.dims().ndim() != 1)
-        edges.emplace_back(concatenate(min(coord), max(coord), d));
-    }
-    if (d == dim)
-      rebin = true;
-  }
-  return bin(array, {edges.begin(), edges.end()}, {}, {dim});
+  return bin(array, {}, {}, {dim});
 }
 
 void append(const VariableView &var0, const VariableConstView &var1) {

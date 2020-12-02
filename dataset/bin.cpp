@@ -221,7 +221,7 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
 }
 
 class TargetBinBuilder {
-  enum class AxisAction { Group, Bin, Existing };
+  enum class AxisAction { Group, Bin, Existing, Join };
 
 public:
   const Dimensions &dims() const noexcept { return m_dims; }
@@ -235,18 +235,35 @@ public:
         update_indices_by_binning(indices, coords[dim], key);
       else if (action == AxisAction::Existing)
         update_indices_from_existing(indices, dim);
+      else if (action == AxisAction::Join) {
+        ; // target bin 0 for all
+      }
     }
+  }
+
+  auto edges() const noexcept {
+    std::vector<VariableConstView> vars;
+    for (const auto &[action, dim, key] : m_actions)
+      if (action == AxisAction::Bin || action == AxisAction::Join)
+        vars.emplace_back(key);
+    return vars;
   }
 
   void group(const VariableConstView &groups) {
     const auto dim = groups.dims().inner();
-    m_dims.addInner(dim, groups.dims()[dim]);
+    if (m_joined.empty())
+      m_dims.addInner(dim, groups.dims()[dim]);
+    else
+      m_dims.add(dim, groups.dims()[dim]);
     m_actions.emplace_back(AxisAction::Group, dim, groups);
   }
 
   void bin(const VariableConstView &edges) {
     const auto dim = edges.dims().inner();
-    m_dims.addInner(dim, edges.dims()[dim] - 1);
+    if (m_joined.empty())
+      m_dims.addInner(dim, edges.dims()[dim] - 1);
+    else
+      m_dims.add(dim, edges.dims()[dim] - 1);
     m_actions.emplace_back(AxisAction::Bin, dim, edges);
   }
 
@@ -255,12 +272,19 @@ public:
     m_actions.emplace_back(AxisAction::Existing, dim, VariableConstView{});
   }
 
+  void join(const Dim dim, const VariableConstView &coord) {
+    m_dims.addInner(dim, 1);
+    m_joined.emplace_back(concatenate(min(coord), max(coord), dim));
+    m_actions.emplace_back(AxisAction::Join, dim, m_joined.back());
+  }
+
   // All input bins mapped to same output bin => "add" 0 everywhere
   void erase(const Dim dim) { m_dims.addInner(dim, 1); }
 
 private:
   Dimensions m_dims;
   std::vector<std::tuple<AxisAction, Dim, VariableConstView>> m_actions;
+  std::vector<Variable> m_joined;
 };
 
 // Order is defined as:
@@ -268,7 +292,6 @@ private:
 // appearance in array.
 // 2. All new grouped dims.
 // 3. All new binned dims.
-template <bool BinBased>
 auto axis_actions(const DataArrayConstView &array,
                   const std::vector<VariableConstView> &edges,
                   const std::vector<VariableConstView> &groups,
@@ -287,6 +310,7 @@ auto axis_actions(const DataArrayConstView &array,
   // also need to handle bin contents from all dimensions inside the rebinned
   // one, even if the grouping/binning along this dimension is unchanged.
   bool rebin = false;
+  bool erased = false;
   const auto dims = array.dims();
   for (const auto dim : dims.labels()) {
     if (edges_dims.contains(dim) || groups_dims.contains(dim) ||
@@ -298,15 +322,17 @@ auto axis_actions(const DataArrayConstView &array,
       builder.bin(edges[edges_dims.index(dim)]);
     } else if (erase_dims.count(dim)) {
       builder.erase(dim);
+      erased = true;
     } else if (rebin) {
       if (array.coords().contains(dim) &&
           array.coords()[dim].dims().ndim() != 1) {
-        throw except::DimensionError(
-            "2-D coordinate " + to_string(array.coords()[dim]) +
-            " conflicting with (re)bin of outer dimension. Try specifying "
-            "new "
-            "aligned (1-D) edges for dimension '" +
-            to_string(dim) + "' with the `edges` option of `bin`.");
+        if (!erased)
+          throw except::DimensionError(
+              "2-D coordinate " + to_string(array.coords()[dim]) +
+              " conflicting with (re)bin of outer dimension. Try specifying "
+              "new aligned (1-D) edges for dimension '" +
+              to_string(dim) + "' with the `edges` option of `bin`.");
+        builder.join(dim, array.coords()[dim]);
       } else {
         builder.existing(dim, array.dims()[dim]);
       }
@@ -342,15 +368,19 @@ DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &groups,
               const std::vector<Dim> &erase) {
   std::tuple<DataArray, Variable> proto;
+  auto builder = axis_actions(array, edges, groups, erase);
   if (array.dtype() == dtype<core::bin<DataArray>>) {
-    auto builder = axis_actions<false>(array, edges, groups, erase);
     const auto masked = hide_masked(array, builder.dims());
     const auto &[begin_end, buffer_dim, buffer] =
         masked.constituents<core::bin<DataArrayConstView>>();
     auto target_bins_buffer = makeVariable<scipp::index>(buffer.dims());
     auto target_bins = make_non_owning_bins(begin_end, buffer_dim,
                                             VariableView(target_bins_buffer));
-    builder.build(target_bins, bins_view<DataArrayConstView>(masked).coords());
+    if (erase.empty())
+      builder.build(target_bins,
+                    bins_view<DataArrayConstView>(masked).coords());
+    else
+      builder.build(target_bins, array.coords());
     proto = bin<DataArrayConstView>(masked, target_bins, builder.dims());
   } else {
     // Pretend existing binning along outermost binning dim to enable threading
@@ -365,14 +395,13 @@ DataArray bin(const DataArrayConstView &array,
     end.values<scipp::index>().as_span().back() = array.dims()[dim];
     const auto indices = zip(begin, end);
     const auto tmp = make_non_owning_bins(indices, dim, array);
-    auto builder = axis_actions<true>(array, edges, groups, erase);
     auto target_bins_buffer = makeVariable<scipp::index>(array.dims());
     builder.build(target_bins_buffer, array.coords());
     const auto target_bins = make_non_owning_bins(
         indices, dim, VariableConstView(target_bins_buffer));
     proto = bin<DataArrayConstView>(tmp, target_bins, builder.dims());
   }
-  return add_metadata(std::move(proto), array, edges, groups, erase);
+  return add_metadata(std::move(proto), array, builder.edges(), groups, erase);
 }
 
 } // namespace scipp::dataset
