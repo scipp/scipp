@@ -23,6 +23,7 @@
 #include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
+#include "bin_common.h"
 #include "dataset_operations_common.h"
 
 using namespace scipp::variable;
@@ -145,9 +146,9 @@ struct wrap {
 template <class T> T GroupBy<T>::concatenate(const Dim reductionDim) const {
   const auto concat = [&](const auto &data) {
     if (key().dims().volume() == scipp::size(groups()))
-      return bin(data, {}, {key()}, {reductionDim});
+      return groupby_concat_bins(data, {}, key(), reductionDim);
     else
-      return bin(data, {key()}, {}, {reductionDim});
+      return groupby_concat_bins(data, key(), {}, reductionDim);
   };
   if constexpr (std::is_same_v<T, DataArray>) {
     return concat(m_data);

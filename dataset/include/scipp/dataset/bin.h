@@ -11,7 +11,6 @@ namespace scipp::dataset {
 SCIPP_DATASET_EXPORT DataArray
 bin(const DataArrayConstView &array,
     const std::vector<VariableConstView> &edges,
-    const std::vector<VariableConstView> &groups = {},
-    const std::vector<Dim> &erase = {});
+    const std::vector<VariableConstView> &groups = {});
 
 } // namespace scipp::dataset

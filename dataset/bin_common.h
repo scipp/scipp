@@ -9,6 +9,11 @@
 namespace scipp::dataset {
 
 template <class T>
-Variable concat_bins(const VariableConstView &var, const Dim erase);
+Variable concat_bins(const VariableConstView &var, const Dim dim);
+
+DataArray groupby_concat_bins(const DataArrayConstView &array,
+                              const VariableConstView &edges,
+                              const VariableConstView &groups,
+                              const Dim reductionDim);
 
 } // namespace scipp::dataset

@@ -280,7 +280,7 @@ Variable concatenate(const VariableConstView &var, const Dim dim) {
 ///
 /// This is the analogue to summing non-bucket data.
 DataArray concatenate(const DataArrayConstView &array, const Dim dim) {
-  return bin(array, {}, {}, {dim});
+  return groupby_concat_bins(array, {}, {}, {dim});
 }
 
 void append(const VariableView &var0, const VariableConstView &var1) {
