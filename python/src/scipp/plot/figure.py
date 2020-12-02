@@ -176,3 +176,15 @@ class PlotFigure:
         """
         if self.toolbar is not None:
             self.toolbar.update_norm_button(*args, **kwargs)
+
+    def home_view(self, *args, **kwargs):
+        self.toolbar.home_view(*args, **kwargs)
+
+    def pan_view(self, *args, **kwargs):
+        self.toolbar.pan_view(*args, **kwargs)
+
+    def zoom_view(self, *args, **kwargs):
+        self.toolbar.zoom_view(*args, **kwargs)
+
+    def save_view(self, *args, **kwargs):
+        self.toolbar.save_view(*args, **kwargs)

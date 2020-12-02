@@ -220,6 +220,10 @@ class PlotController:
             "toggle_xaxis_scale": self.toggle_xaxis_scale,
             "toggle_yaxis_scale": self.toggle_yaxis_scale,
             "toggle_norm": self.toggle_norm,
+            "home_view": self.home_view,
+            "pan_view": self.pan_view,
+            "zoom_view": self.zoom_view,
+            "save_view": self.save_view
         }
         self.view.connect(view_callbacks=view_callbacks,
                           figure_callbacks=figure_callbacks)
@@ -250,6 +254,18 @@ class PlotController:
         Release the data update lock.
         """
         self.update_data_lock = False
+
+    def home_view(self, button=None):
+        self.view.home_view()
+
+    def pan_view(self, button=None):
+        self.view.pan_view()
+
+    def zoom_view(self, button=None):
+        self.view.zoom_view()
+
+    def save_view(self, button=None):
+        self.view.save_view()
 
     def rescale_to_data(self, button=None):
         """

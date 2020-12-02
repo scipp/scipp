@@ -14,21 +14,41 @@ class PlotToolbar:
         # Prepare containers
         self.container = ipw.VBox()
         self.members = {}
+        self.mpl_toolbar = None
+
+
+        # canvas.toolbar if canvas is not None else None
 
         # Construct  toolbar
         if canvas is not None:
-            old_tools = canvas.toolbar.toolitems
-            new_tools = [
-                old_tools[0], old_tools[3], old_tools[4], old_tools[5]
-            ]
-            canvas.toolbar.toolitems = new_tools
-            self.members["mpl_toolbar"] = canvas.toolbar
+            # old_tools = canvas.toolbar.toolitems
+            # new_tools = [
+            #     old_tools[0], old_tools[3], old_tools[4], old_tools[5]
+            # ]
+            # canvas.toolbar.toolitems = new_tools
+            # self.members["mpl_toolbar"] = canvas.toolbar
             canvas.toolbar_visible = False
-        else:
+            self.mpl_toolbar = canvas.toolbar
+        # else:
             # self.add_button(name="menu", icon="bars", tooltip="Menu")
-            self.add_button(name="home",
-                            icon="home",
-                            tooltip="Reset original view")
+
+        self.add_button(name="home_view",
+                        icon="home",
+                        tooltip="Reset original view")
+
+        if ndim < 3:
+            self.add_togglebutton(name="pan_view",
+                            icon="arrows",
+                            tooltip="Pan")
+
+            self.add_togglebutton(name="zoom_view",
+                            icon="square-o",
+                            tooltip="Zoom")
+
+            self.add_button(name="save_view",
+                            icon="save",
+                            tooltip="Save")
+
         self.add_button(name="rescale_to_data",
                         icon="arrows-v",
                         tooltip="Rescale")
@@ -150,3 +170,20 @@ class PlotToolbar:
         """
         self.toggle_button_color(self.members["toggle_norm"],
                                  value=norm == "log")
+
+    def home_view(self):
+        self.mpl_toolbar.home()
+
+    def pan_view(self):
+        self.mpl_toolbar.pan()
+
+    def zoom_view(self):
+        self.mpl_toolbar.zoom()
+
+    def save_view(self):
+        self.mpl_toolbar.save_figure()
+
+    def rescale_on_zoom(self):
+        if self.members["zoom_view"].value:
+            # Simulate a click on the rescale_to_data button
+            self.members["rescale_to_data"].click()

@@ -90,6 +90,10 @@ class PlotView2d(PlotView):
             self.current_lims = xylims
             self.interface["update_viewport"](xylims)
 
+        # If we are zooming, rescale to data?
+        self.figure.rescale_on_zoom()
+
+
     def update_axes(self, axparams):
         """
         Update the current and global axes limits, before updating the figure
