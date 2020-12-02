@@ -101,20 +101,6 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
 }
 
 namespace groupby_detail {
-static constexpr auto concatenate =
-    [](const DataArrayView &out, const auto &data_container,
-       const GroupByGrouping::group &group, const Dim reduction_dim,
-       const Variable &mask) {
-      for (const auto &slice : group) {
-        const auto data_slice = data_container.slice(slice);
-        if (mask)
-          concatenate_out<DataArray>(data_slice.data(), reduction_dim,
-                                     mask.slice(slice), out.data());
-        else
-          concatenate_out<DataArray>(data_slice.data(), reduction_dim, {},
-                                     out.data());
-      }
-    };
 
 static constexpr auto sum =
     [](const DataArrayView &out, const auto &data_container,
@@ -155,15 +141,18 @@ struct wrap {
 
 /// Reduce each group by concatenating elements and return combined data.
 ///
-/// This only supports bucketed data.
+/// This only supports binned data.
 template <class T> T GroupBy<T>::concatenate(const Dim reductionDim) const {
-  if constexpr (std::is_same_v<T, DataArray>) {
+  const auto concat = [&](const auto &data) {
     if (key().dims().volume() == scipp::size(groups()))
-      return bin(m_data, {}, {key()}, {reductionDim});
+      return bin(data, {}, {key()}, {reductionDim});
     else
-      return bin(m_data, {key()}, {}, {reductionDim});
+      return bin(data, {key()}, {}, {reductionDim});
+  };
+  if constexpr (std::is_same_v<T, DataArray>) {
+    return concat(m_data);
   } else {
-    return reduce(groupby_detail::concatenate, reductionDim);
+    return apply_to_items(m_data, [&](auto &&... _) { return concat(_...); });
   }
 }
 

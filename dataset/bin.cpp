@@ -363,6 +363,30 @@ auto hide_masked(const DataArrayConstView &array, const Dimensions &dims) {
 
 } // namespace
 
+template <class T>
+Variable concat_bins(const VariableConstView &var, const Dim erase) {
+  TargetBinBuilder builder;
+  builder.erase(erase);
+  const auto &[begin_end, buffer_dim, buffer] =
+      var.constituents<core::bin<T>>();
+  // In principle all events in an input bin map to the same output, but right
+  // now bin<> cannot handle this and requires target bin indices for every bin
+  // element.
+  auto target_bins_buffer = makeVariable<scipp::index>(buffer.dims());
+  auto target_bins = make_non_owning_bins(begin_end, buffer_dim,
+                                          VariableView(target_bins_buffer));
+  builder.build(target_bins, std::map<Dim, Variable>{});
+  auto [out_buffer, bin_sizes] =
+      bin<DataArray>(var, target_bins, builder.dims());
+  squeeze(bin_sizes, {erase});
+  const auto end = cumsum(bin_sizes);
+  return make_bins(zip(end - bin_sizes, end), buffer_dim,
+                   std::move(out_buffer));
+}
+
+template Variable concat_bins<Variable>(const VariableConstView &, const Dim);
+template Variable concat_bins<DataArray>(const VariableConstView &, const Dim);
+
 DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &edges,
               const std::vector<VariableConstView> &groups,
