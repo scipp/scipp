@@ -20,7 +20,7 @@ is_linspace(const VariableConstView &var, const Dim dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 variances(const VariableConstView &x);
 
-enum class SortOrder { Ascending, Descending };
+enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT bool
 is_sorted(const VariableConstView &x, const Dim dim,

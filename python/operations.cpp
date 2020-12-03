@@ -17,6 +17,15 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
+auto get_sort_order(const std::string &order) {
+  if (order == "ascending")
+    return variable::SortOrder::Ascending;
+  else if (order == "descending")
+    return variable::SortOrder::Descending;
+  else
+    throw std::runtime_error("Sort order must be 'ascending' or 'descending'");
+}
+
 template <typename T> void bind_dot(py::module &m) {
   auto doc = Docstring()
                  .description("Element-wise dot product.")
@@ -34,52 +43,26 @@ template <typename T> void bind_dot(py::module &m) {
 }
 
 template <typename T> void bind_sort(py::module &m) {
-  auto doc =
-      Docstring()
-          .description("Sort variable along a dimension by a sort key.")
-          .raises("If the key is invalid, e.g., if it has not exactly one "
-                  "dimension, or if its dtype is not sortable.")
-          .returns("The sorted equivalent of the input.")
-          .rtype<T>()
-          .template param<T>("x", "Data to be sorted")
-          .template param<T>("key", "Sort key.");
   m.def(
       "sort",
       [](const typename T::const_view_type &x,
-         const typename Variable::const_view_type &key) {
-        return sort(x, key);
+         const typename Variable::const_view_type &key,
+         const std::string &order) {
+        return sort(x, key, get_sort_order(order));
       },
-      py::arg("x"), py::arg("key"), py::call_guard<py::gil_scoped_release>(),
-      doc.c_str());
+      py::arg("x"), py::arg("key"), py::arg("order"),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_sort_dim(py::module &m) {
-  auto doc =
-      Docstring()
-          .description("Sort data array along a dimension by the coordinate "
-                       "values for that dimension.")
-          .raises(
-              "If the key is invalid, e.g., if the dimension does not exist.")
-          .returns("The sorted equivalent of the input.")
-          .rtype<T>()
-          .template param<T>("x", "Data to be sorted")
-          .param("dim", "Dimension to sort along.", "Dim");
   m.def(
       "sort",
-      [](const typename T::const_view_type &x, const Dim &dim) {
-        return sort(x, dim);
+      [](const typename T::const_view_type &x, const Dim &dim,
+         const std::string &order) {
+        return sort(x, dim, get_sort_order(order));
       },
-      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>(),
-      doc.c_str());
-}
-
-auto get_sort_order(const std::string &order) {
-  if (order == "ascending")
-    return variable::SortOrder::Ascending;
-  else if (order == "descending")
-    return variable::SortOrder::Descending;
-  else
-    throw std::runtime_error("Sort order must be 'ascending' or 'descending'");
+      py::arg("x"), py::arg("key"), py::arg("order"),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 void bind_is_sorted(py::module &m) {
@@ -109,26 +92,14 @@ void bind_is_sorted(py::module &m) {
 }
 
 template <typename T> void bind_sort_variable(py::module &m) {
-  auto doc = Docstring()
-                 .description("Sort a Variable according to its values along "
-                              "the inner dimension.")
-                 .raises("If the key is not the inner dimension.")
-                 .returns("The sorted equivalent of the input.")
-                 .rtype<T>()
-                 .template param<T>("x", "Data to be sorted")
-                 .param("dim", "Dimension to sort along.", "Dim")
-                 .param("order",
-                        "Sorted order. Valid options are 'ascending' and "
-                        "'descending'. Default is 'ascending'.",
-                        "str");
   m.def(
       "sort",
       [](const typename T::const_view_type &x, const Dim dim,
          const std::string &order) {
         return sort(x, dim, get_sort_order(order));
       },
-      py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
-      py::call_guard<py::gil_scoped_release>(), doc.c_str());
+      py::arg("x"), py::arg("key"), py::arg("order") = "ascending",
+      py::call_guard<py::gil_scoped_release>());
 }
 
 void init_operations(py::module &m) {
