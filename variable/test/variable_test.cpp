@@ -804,7 +804,13 @@ TEST(VariableTest, rename) {
                                   Variances{7, 8, 9, 10, 11, 12});
   const Variable expected(reshape(var, {{Dim::X, 2}, {Dim::Z, 3}}));
 
+  VariableConstView view(var);
+  view.rename(Dim::Y, Dim::Z);
+  ASSERT_EQ(view, expected);
+  ASSERT_NE(var, expected);
+
   var.rename(Dim::Y, Dim::Z);
+  ASSERT_EQ(view, expected);
   ASSERT_EQ(var, expected);
 }
 
