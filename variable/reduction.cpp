@@ -101,7 +101,7 @@ VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
                           const VariableView &out) {
   if (isInt(out.dtype()))
     throw except::UnitError(
-        "Cannot calculate mean in-place when output dtype is integer");
+        "Cannot calculate nanmean in-place when output dtype is integer");
 
   nansum(var, dim, out);
   auto scale = reciprocal(astype(count, core::dtype<double>));

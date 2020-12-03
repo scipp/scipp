@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/dataset/map_view.h"
 
+#include "../variable/operations_common.h"
 #include "scipp/core/element/util.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/reduction.h"
@@ -85,10 +86,10 @@ Variable nanmean(const VariableConstView &var, const Dim dim,
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     if (isInt(var.dtype())) {
       const auto count = sum(~mask_union, dim);
-      return nansum(applyMask(var, mask_union), dim) / count;
+      return nanmean_impl(applyMask(var, mask_union), dim, count);
     } else {
       const auto count = sum(applyMask(isfinite(var), mask_union), dim);
-      return nansum(applyMask(var, mask_union), dim) / count;
+      return nanmean_impl(applyMask(var, mask_union), dim, count);
     }
   }
   return nanmean(var, dim);
@@ -99,9 +100,10 @@ VariableView nanmean(const VariableConstView &var, const Dim dim,
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     nansum(applyMask(var, mask_union), dim, out);
     if (isInt(var.dtype())) {
-      out /= sum(mask_union, dim);
+      nanmean_impl(applyMask(var, mask_union), dim, sum(mask_union, dim), out);
     } else {
-      out /= sum(applyMask(isfinite(var), mask_union), dim);
+      nanmean_impl(applyMask(var, mask_union), dim,
+                   sum(applyMask(isfinite(var), mask_union), dim), out);
     }
     return out;
   }
@@ -111,9 +113,9 @@ VariableView nanmean(const VariableConstView &var, const Dim dim,
 Variable nanmean(const VariableConstView &var, const MasksConstView &masks) {
   auto mask_union = masks_merge_if_contained(masks, var.dims());
   if (isInt(var.dtype()))
-    return nansum(var) / applyMask(isfinite(var), mask_union);
+    return nansum(var) / sum(applyMask(isfinite(var), mask_union));
   else
-    return nansum(var) / mask_union;
+    return nansum(var) / sum(mask_union);
   ;
 }
 
