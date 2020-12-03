@@ -9,6 +9,9 @@
 #include "scipp/core/element/comparison.h"
 #include "scipp/core/element/logical.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/math.h"
+#include "scipp/variable/misc_operations.h"
+#include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 
@@ -82,20 +85,10 @@ VariableView nansum(const VariableConstView &var, const Dim dim,
   return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
 }
 
-Variable make_scale(const VariableConstView &var, Dim dim,
-                    const VariableConstView &masks_sum) {
-  Variable countvar{var};
-  countvar.setUnit(units::one);
-  countvar *= 0 * units::one;
-  countvar += 1 * units::one;
-  auto count = nansum(countvar, dim); // Extents excluding nans
-  return 1.0 * units::one / (count - masks_sum);
-}
-
 Variable nanmean_impl(const VariableConstView &var, const Dim dim,
-                      const VariableConstView &masks_sum) {
+                      const VariableConstView &count) {
   auto summed = nansum(var, dim);
-  auto scale = make_scale(var, dim, masks_sum);
+  auto scale = reciprocal(astype(count, core::dtype<double>));
   if (isInt(var.dtype()))
     summed = summed * scale;
   else
@@ -104,21 +97,22 @@ Variable nanmean_impl(const VariableConstView &var, const Dim dim,
 }
 
 VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
-                          const VariableConstView &masks_sum,
+                          const VariableConstView &count,
                           const VariableView &out) {
   if (isInt(out.dtype()))
     throw except::UnitError(
         "Cannot calculate mean in-place when output dtype is integer");
 
   nansum(var, dim, out);
-  out *= make_scale(var, dim, masks_sum);
+  auto scale = reciprocal(astype(count, core::dtype<double>));
+  out *= scale;
   return out;
 }
 
 Variable mean_impl(const VariableConstView &var, const Dim dim,
-                   const VariableConstView &masks_sum) {
+                   const VariableConstView &count) {
   auto summed = sum(var, dim);
-  auto scale = 1.0 * units::one / (var.dims()[dim] * units::one - masks_sum);
+  auto scale = reciprocal(astype(count, core::dtype<double>));
   if (isInt(var.dtype()))
     summed = summed * scale;
   else
@@ -127,14 +121,14 @@ Variable mean_impl(const VariableConstView &var, const Dim dim,
 }
 
 VariableView mean_impl(const VariableConstView &var, const Dim dim,
-                       const VariableConstView &masks_sum,
+                       const VariableConstView &count,
                        const VariableView &out) {
   if (isInt(out.dtype()))
     throw except::UnitError(
         "Cannot calculate mean in-place when output dtype is integer");
 
   sum(var, dim, out);
-  out *= 1.0 * units::one / (var.dims()[dim] * units::one - masks_sum);
+  out *= reciprocal(astype(count, core::dtype<double>));
   return out;
 }
 
@@ -144,12 +138,15 @@ Variable mean(const VariableConstView &var) {
 }
 
 Variable mean(const VariableConstView &var, const Dim dim) {
-  return mean_impl(var, dim, makeVariable<int64_t>(Values{0}));
+  return mean_impl(
+      var, dim, sum(isfinite(values(astype(var, core::dtype<double>))), dim));
 }
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
-  return mean_impl(var, dim, makeVariable<int64_t>(Values{0}), out);
+  return mean_impl(var, dim,
+                   sum(isfinite(values(astype(var, core::dtype<double>))), dim),
+                   out);
 }
 
 /// Return the mean along all dimensions. Ignoring NaN values.
@@ -158,12 +155,15 @@ Variable nanmean(const VariableConstView &var) {
 }
 
 Variable nanmean(const VariableConstView &var, const Dim dim) {
-  return nanmean_impl(var, dim, makeVariable<int64_t>(Values{0}));
+  return nanmean_impl(
+      var, dim, sum(isfinite(values(astype(var, core::dtype<double>))), dim));
 }
 
 VariableView nanmean(const VariableConstView &var, const Dim dim,
                      const VariableView &out) {
-  return nanmean_impl(var, dim, makeVariable<int64_t>(Values{0}), out);
+  return nanmean_impl(
+      var, dim, sum(isfinite(values(astype(var, core::dtype<double>))), dim),
+      out);
 }
 
 template <class Op>

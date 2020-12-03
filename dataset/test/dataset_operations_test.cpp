@@ -71,9 +71,7 @@ TEST(DatasetOperationsTest, nanmean_over_dim) {
       {12.0, 15.0, 18.0});
   EXPECT_EQ(nanmean(ds, Dim::X)["a"].data(),
             makeVariable<double>(Values{1.5}, Variances{6.75}));
-  EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"
-                                                      ""]
-                .data(),
+  EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<double>(Values{1.5}, Variances{6.75}));
 }
 
@@ -144,8 +142,7 @@ TEST(DatasetOperationsTest, mean_two_dims) {
                                            false, true, false, false, true}));
 
   const Dataset result = mean(ds, Dim::X);
-
-  ASSERT_EQ(result["data_xy"].data(),
+  EXPECT_EQ(result["data_xy"].data(),
             makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{6, 8}));
 }
 
