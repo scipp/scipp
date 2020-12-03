@@ -175,9 +175,15 @@ class PlotToolbar:
         self.mpl_toolbar.home()
 
     def pan_view(self):
+        # In case the zoom button is selected, we need to de-select it
+        if self.members["zoom_view"].value:
+            self.toggle_button_color(self.members["zoom_view"])
         self.mpl_toolbar.pan()
 
     def zoom_view(self):
+        # In case the pan button is selected, we need to de-select it
+        if self.members["pan_view"].value:
+            self.toggle_button_color(self.members["pan_view"])
         self.mpl_toolbar.zoom()
 
     def save_view(self):
