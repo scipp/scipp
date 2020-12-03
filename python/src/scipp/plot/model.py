@@ -47,24 +47,12 @@ class PlotModel:
             # Store axis tick formatters
             self.axformatter[name] = {}
             self.coord_info[name] = {}
-
-            # Create a DataArray with units of counts, and bin-edge
-            # coordinates, because it is to be passed to rebin during the
-            # resampling stage.
-            # self.data_arrays[name] = sc.DataArray(
-            #     data=sc.Variable(dims=list(dim_to_shape[name].keys()),
-            #                      unit=sc.units.counts,
-            #                      values=array.values,
-            #                      variances=array.variances,
-            #                      dtype=sc.dtype.float64))
-            # self.data_arrays[name] = PlotArray(data=array.data)
             coord_list = {}
 
             # Iterate through axes and collect coordinates
             for dim in axes_dims:
                 coord, formatter, label, unit = self._axis_coord_and_formatter(
                     dim, array, dim_to_shape[name], dim_label_map)
-                # print(coord, formatter, label, unit)
 
                 self.axformatter[name][dim] = formatter
                 self.coord_info[name][dim] = {"label": label, "unit": unit}
@@ -81,17 +69,13 @@ class PlotModel:
                     coord_list[dim] = to_bin_edges(
                         coord, dim)
 
+            # Create a PlotArray helper object that supports slicing where new
+            # bin-edge coordinates can be attached to the data
             self.data_arrays[name] = PlotArray(data=array.data,
                 coords=coord_list)
 
             # Include masks
             for m in array.masks:
-                # mask_dims = msk.dims
-                # for dim in mask_dims:
-                #     if dim not in axes_dims:
-                #         mask_dims[mask_dims.index(dim)] = dim_label_map[dim]
-                # self.data_arrays[name].masks[m] = sc.Variable(
-                #     dims=mask_dims, values=msk.values, dtype=msk.dtype)
                 self.data_arrays[name].masks[m] = array.masks[m]
 
         # Store dim of multi-dimensional coordinate if present
@@ -122,42 +106,6 @@ class PlotModel:
         if dim not in data_array.coords:
             coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
             return coord, formatter, name_with_unit(var=coord), name_with_unit(var=coord, name="")
-
-        # underlying_dim = None
-
-        # if dim in data_array.coords[dim].dims:
-        #     underlying_dim = dim
-        # else:
-
-        # We assume here that the underlying dimension is always the inner
-        # dimension.
-        # print(dim_label_map)
-        # underlying_dim = data_array.coords[dim].dims[-1]
-
-        #     # Eliminate dimensions of other coordinates to find the underlying
-        #     # dim
-        #     dims = data_array.coords[dim].dims
-        #     dim_set = set(dims)
-        #     key_set = {str(key) for key in data_array.coords.keys()}
-        #     print(set([dim]))
-        #     # print(set(data_array.coords.keys()) - set([dim]))
-        #     for key in key_set - set([dim]):
-        #         print("GGGGGGGGG", key)
-        #         if data_array.coords[key].dims == dims:
-        #             underlying_dim = str(key)
-        #             break
-        #         else:
-        #             dim_set -= set([str(key)])
-        #     print("=================")
-        #     print(dim_set, underlying_dim)
-        #     print("=================")
-        #     if underlying_dim is None:
-        #         # This is the case where we are left with more than one
-        #         # possible underlying dimension, so we just pick one at random.
-        #         underlying_dim = dim_set.pop()
-
-
-        # print(underlying_dim)
 
         tp = data_array.coords[dim].dtype
         coord_info = {}
@@ -190,16 +138,10 @@ class PlotModel:
                 "custom_locator": True
             })
 
-        # elif dim != underlying_dim:
         elif dim in dim_label_map:
             # non-dimension coordinate
             if dim in data_array.coords:
                 coord = data_array.coords[dim]
-                # coord = sc.Variable([dim],
-                #                     values=coord.values,
-                #                     variances=coord.variances,
-                #                     unit=coord.unit,
-                #                     dtype=sc.dtype.float64)
                 coord_values = coord.values
             else:
                 coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
@@ -209,9 +151,6 @@ class PlotModel:
             form = lambda val, pos: value_to_string(  # noqa: E731
                 data_array.coords[dim_label_map[dim]].values[np.abs(coord_values - val).
                                               argmin()])
-            # print(dim_label_map)
-            # print(dim)
-            # print(dim_label_map[dim])
             formatter.update({"linear": form, "log": form})
             coord_info["label"] = name_with_unit(var=data_array.coords[dim_label_map[dim]], name=dim_label_map[dim])
             coord_info["unit"] = name_with_unit(var=data_array.coords[dim_label_map[dim]], name="")
@@ -222,9 +161,6 @@ class PlotModel:
         if len(coord_info) == 0:
             coord_info["label"] = name_with_unit(var=coord)
             coord_info["unit"] = name_with_unit(var=coord, name="")
-        # else:
-        #     # dim not found in data_array.coords
-        #     coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
 
         return coord, formatter, coord_info["label"], coord_info["unit"]
 
@@ -272,9 +208,6 @@ class PlotModel:
         Slice the data array according to the dimensions and extents listed
         in slices.
         """
-        # print("Before slicing", array.data.shape)
-        # for key in array.coords:
-        #     print(key, array.coords[key].shape, array.isedges[key])
         for dim, [lower, upper] in slices.items():
             # TODO: Could this be optimized for performance?
             if (upper - lower) > 1:
@@ -285,12 +218,6 @@ class PlotModel:
                                    array.coords[dim][dim, -1], dim))[dim, 0]
             else:
                 array = array[dim, lower]
-                # print("in here")
-            # array.coords[dim] = array.coords[dim][dim, 0]
-        # print("After slicing", array.data)
-        # for key in array.coords:
-        #     print(key, array.coords[key].shape)
-
         return array
 
     def get_multid_coord(self):

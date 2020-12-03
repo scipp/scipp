@@ -135,7 +135,6 @@ class PlotFigure2d(PlotFigure):
         if new_values["extent"] is not None:
             self.image.set_extent(new_values["extent"])
         for m in self.mask_image:
-            # print(m, new_values["masks"][m])
             if new_values["masks"][m] is not None:
                 self.mask_image[m].set_data(new_values["masks"][m])
             else:

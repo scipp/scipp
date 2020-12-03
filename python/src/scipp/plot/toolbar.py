@@ -11,26 +11,18 @@ class PlotToolbar:
     normalization, and with back/forward buttons removed.
     """
     def __init__(self, canvas=None, ndim=1):
+
         # Prepare containers
         self.container = ipw.VBox()
         self.members = {}
+
+        # Keep a reference to the matplotlib toolbar so we can call the zoom
+        # and pan methods
         self.mpl_toolbar = None
 
-
-        # canvas.toolbar if canvas is not None else None
-
-        # Construct  toolbar
         if canvas is not None:
-            # old_tools = canvas.toolbar.toolitems
-            # new_tools = [
-            #     old_tools[0], old_tools[3], old_tools[4], old_tools[5]
-            # ]
-            # canvas.toolbar.toolitems = new_tools
-            # self.members["mpl_toolbar"] = canvas.toolbar
             canvas.toolbar_visible = False
             self.mpl_toolbar = canvas.toolbar
-        # else:
-            # self.add_button(name="menu", icon="bars", tooltip="Menu")
 
         self.add_button(name="home_view",
                         icon="home",

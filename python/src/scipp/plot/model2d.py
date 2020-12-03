@@ -70,27 +70,6 @@ class PlotModel2d(PlotModel):
 
         # Scale by bin width and then rebin in both directions
         # Note that this has to be written as 2 operations to avoid
-        # creation of large 2D temporary from broadcast
-        #
-        # In addition, in the first operation we make a copy to avoid two
-        # things:
-        #   1. in the case of no dimensions being sliced, we prevent
-        #      multiplying into the original data
-        #   2. self.vslice needs to be a DataArray and not a DataArrayView for
-        #      the rebin step during image resampling, since non-contiguous
-        #      data is not accepted by rebin (this happens when an outer dim is
-        #      sliced and the slice thickness is zero).
-        # self.vslice = data_slice
-        # print("In update_data")
-        # print(self.vslice.data)
-        # print(self.vslice.coords)
-        # print(self.vslice.coords['x'].shape)
-        # print(self.vslice.coords['y'].shape)
-        # print(self.xywidth["x"])
-
-
-        # Scale by bin width and then rebin in both directions
-        # Note that this has to be written as 2 operations to avoid
         # creation of large 2D temporary from broadcast.
         #
         # Note that we only normalize for non-counts data, as rebin already
@@ -104,8 +83,6 @@ class PlotModel2d(PlotModel):
             self.vslice.data = self.vslice.data * self.xywidth["x"]
             self.vslice.data *= self.xywidth["y"]
             self.vslice.data.unit = sc.units.one
-
-        # print("update_data 2:", self.vslice.data)
 
         # Update image with resampling
         new_values = self.update_image(mask_info=mask_info)
@@ -132,23 +109,15 @@ class PlotModel2d(PlotModel):
         Resample a DataArray according to new bin edges.
         """
         dslice = array
-        # print(dslice.data)
-        # print(dslice.coords)
         # Select bins to speed up rebinning
         for dim in rebin_edges:
             this_slice = self._select_bins(array.coords[dim], dim,
                                            rebin_edges[dim][dim, 0],
                                            rebin_edges[dim][dim, -1])
-            # print(dim, dslice.coords, this_slice)
             dslice = dslice[this_slice]
-        #     print("after slicing", dslice.data, dslice.coords)
-        # print("===================")
 
         # Rebin the data
         for dim, edges in rebin_edges.items():
-            # print(dslice.data)
-            # print(dslice.coords)
-            # print(dim)
             dslice.data = sc.rebin(dslice.data, dim, dslice.coords[dim], edges)
             for m in dslice.masks:
                 if dim in dslice.masks[m].dims:
