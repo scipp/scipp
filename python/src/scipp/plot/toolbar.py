@@ -45,10 +45,6 @@ class PlotToolbar:
                             icon="square-o",
                             tooltip="Zoom")
 
-            self.add_button(name="save_view",
-                            icon="save",
-                            tooltip="Save")
-
         self.add_button(name="rescale_to_data",
                         icon="arrows-v",
                         tooltip="Rescale")
@@ -75,6 +71,12 @@ class PlotToolbar:
             self.add_togglebutton(name="toggle_norm",
                                   description="log",
                                   tooltip="Log(data)")
+
+        if ndim < 3:
+            self.add_button(name="save_view",
+                            icon="save",
+                            tooltip="Save")
+
 
         self._update_container()
 

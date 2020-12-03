@@ -256,7 +256,7 @@ class PlotController:
         self.update_data_lock = False
 
     def home_view(self, button=None):
-        self.view.home_view()
+        self.update_axes()
 
     def pan_view(self, button=None):
         self.view.pan_view()
@@ -366,7 +366,8 @@ class PlotController:
         """
         self.view.update_norm_button(*args, **kwargs)
 
-    def update_axes(self, change=None, normalize=True):
+    # def update_axes(self, change=None, normalize=True):
+    def update_axes(self, normalize=True):
         """
         This function is called when a dimension that is displayed along a
         given axis is changed. This happens for instance when we want to

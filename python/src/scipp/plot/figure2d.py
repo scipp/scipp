@@ -95,30 +95,6 @@ class PlotFigure2d(PlotFigure):
             im.set_visible(visible)
         self.draw()
 
-    def reset_home_button(self, axparams):
-        """
-        Some annoying house-keeping when using X/Y buttons: we need to update
-        the deeply embedded limits set by the Home button in the matplotlib
-        toolbar. The home button actually brings the first element in the
-        navigation stack to the top, so we need to modify the first element
-        in the navigation stack in-place.
-        """
-        if self.fig is not None:
-            if self.fig.canvas.toolbar is not None:
-                if len(self.fig.canvas.toolbar._nav_stack._elements) > 0:
-                    # Get the first key in the navigation stack
-                    key = list(self.fig.canvas.toolbar._nav_stack._elements[0].
-                               keys())[0]
-                    # Construct a new tuple for replacement
-                    alist = []
-                    for x in self.fig.canvas.toolbar._nav_stack._elements[0][
-                            key]:
-                        alist.append(x)
-                    alist[0] = (*axparams["x"]["lims"], *axparams["y"]["lims"])
-                    # Insert the new tuple
-                    self.fig.canvas.toolbar._nav_stack._elements[0][
-                        key] = tuple(alist)
-
     def update_axes(self, axparams=None):
         """
         Update axes labels, scales, tick locations and labels, as well as axes
@@ -148,8 +124,6 @@ class PlotFigure2d(PlotFigure):
                 im.set_extent(extent_array)
             self.ax.set_xlim(axparams["x"]["lims"])
             self.ax.set_ylim(axparams["y"]["lims"])
-
-        self.reset_home_button(axparams)
 
     def update_data(self, new_values, info=None):
         """
