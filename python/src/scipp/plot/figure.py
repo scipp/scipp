@@ -178,13 +178,13 @@ class PlotFigure:
             self.toolbar.update_norm_button(*args, **kwargs)
 
     def home_view(self, *args, **kwargs):
-        self.toolbar.home_view(*args, **kwargs)
+        self.toolbar.home_view()
 
     def pan_view(self, *args, **kwargs):
-        self.toolbar.pan_view(*args, **kwargs)
+        self.toolbar.pan_view()
 
     def zoom_view(self, *args, **kwargs):
-        self.toolbar.zoom_view(*args, **kwargs)
+        self.toolbar.zoom_view()
 
     def save_view(self, *args, **kwargs):
-        self.toolbar.save_view(*args, **kwargs)
+        self.toolbar.save_view()
