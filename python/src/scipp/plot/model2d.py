@@ -150,6 +150,9 @@ class PlotModel2d(PlotModel):
             # print(dslice.coords)
             # print(dim)
             dslice.data = sc.rebin(dslice.data, dim, dslice.coords[dim], edges)
+            for m in dslice.masks:
+                if dim in dslice.masks[m].dims:
+                    dslice.masks[m] = sc.rebin(dslice.masks[m], dim, dslice.coords[dim], edges)
 
         # Divide by pixel width if we have normalized in update_data() in the
         # case of non-counts data.
@@ -196,6 +199,8 @@ class PlotModel2d(PlotModel):
         # print(self.dslice)
         # print(resampled_image.data)
         self.dslice *= resampled_image.data
+        for m in resampled_image.masks:
+            self.dslice.masks[m] = resampled_image.masks[m]
 
         # Update the matplotlib image data
         new_values = {

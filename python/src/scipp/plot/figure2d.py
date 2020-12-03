@@ -60,9 +60,10 @@ class PlotFigure2d(PlotFigure):
         for m in masks["names"]:
             self.mask_image[m] = self.make_default_imshow(cmap=masks["cmap"],
                                                           norm=norm,
-                                                          aspect=aspect)
+                                                          aspect=aspect,
+                                                          zorder=2)
 
-    def make_default_imshow(self, cmap, norm, aspect=None, picker=None):
+    def make_default_imshow(self, cmap, norm, aspect=None, picker=None, zorder=1):
         """
         Make a base `imshow` object whose contents and extents will be later
         updated to display a 2d data array.
@@ -75,7 +76,8 @@ class PlotFigure2d(PlotFigure):
                               aspect=aspect,
                               interpolation="nearest",
                               cmap=cmap,
-                              picker=picker)
+                              picker=picker,
+                              zorder=zorder)
 
     def rescale_to_data(self, vmin, vmax):
         """
@@ -133,6 +135,7 @@ class PlotFigure2d(PlotFigure):
         if new_values["extent"] is not None:
             self.image.set_extent(new_values["extent"])
         for m in self.mask_image:
+            print(m, new_values["masks"][m])
             if new_values["masks"][m] is not None:
                 self.mask_image[m].set_data(new_values["masks"][m])
             else:

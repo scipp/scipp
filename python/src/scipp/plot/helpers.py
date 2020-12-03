@@ -66,7 +66,14 @@ class PlotArrayView:
             else:
                 self.coords[key] = plot_array.coords[key]
         # Slice the masks
-        self.masks = {key: plot_array.masks[key][slice_obj] for key in plot_array.masks}
+        self.masks = {}
+        for m in plot_array.masks:
+            msk = plot_array.masks[m]
+            if slice_obj[0] in msk.dims:
+                msk = msk[slice_obj]
+            self.masks[m] = msk
+
+        # self.masks = {key: plot_array.masks[key][slice_obj] for key in plot_array.masks if slice_obj[0] in plot_array.masks[key].dims}
         # Copy edges info
         self.isedges = plot_array.isedges
 

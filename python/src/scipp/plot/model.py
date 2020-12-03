@@ -85,13 +85,14 @@ class PlotModel:
                 coords=coord_list)
 
             # Include masks
-            for m, msk in array.masks.items():
-                mask_dims = msk.dims
-                for dim in mask_dims:
-                    if dim not in axes_dims:
-                        mask_dims[mask_dims.index(dim)] = dim_label_map[dim]
-                self.data_arrays[name].masks[m] = sc.Variable(
-                    dims=mask_dims, values=msk.values, dtype=msk.dtype)
+            for m in array.masks:
+                # mask_dims = msk.dims
+                # for dim in mask_dims:
+                #     if dim not in axes_dims:
+                #         mask_dims[mask_dims.index(dim)] = dim_label_map[dim]
+                # self.data_arrays[name].masks[m] = sc.Variable(
+                #     dims=mask_dims, values=msk.values, dtype=msk.dtype)
+                self.data_arrays[name].masks[m] = array.masks[m]
 
         # Store dim of multi-dimensional coordinate if present
         self.multid_coord = None
