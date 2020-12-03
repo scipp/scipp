@@ -128,7 +128,7 @@ class PlotFigure3d:
         """
         Connect the toolbar Home button to reset the camera position.
         """
-        callbacks.update({"home": self.reset_camera})
+        callbacks.update({"home_view": self.reset_camera})
         self.toolbar.connect(callbacks)
 
     def update_axes(self, axparams):

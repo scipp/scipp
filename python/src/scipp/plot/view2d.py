@@ -160,7 +160,8 @@ class PlotView2d(PlotView):
         if self.profile_scatter is None:
             self.profile_scatter = self.figure.ax.scatter([xdata], [ydata],
                                                           c=[col],
-                                                          picker=5)
+                                                          picker=5,
+                                                          zorder=10)
         else:
             new_offsets = np.concatenate(
                 (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)
