@@ -24,8 +24,8 @@ def concatenate(x, y, dim):
     :param x: Left hand side input.
     :param y: Right hand side input.
     :param dim: Dimension along which to concatenate.
-    :type x: Dataset, DataArray or Variable
-    :type y: Dataset, DataArray or Variable
+    :type x: Dataset, DataArray or Variable. Must be same type as y
+    :type y: Dataset, DataArray or Variable. Must be same type as x
     :type dim: str
     :raises: If the dtype or unit does not match, or if the
              dimensions and shapes are incompatible.

@@ -35,7 +35,6 @@ from ._reduction import *
 from ._shape import *
 from ._trigonometry import *
 
-
 setattr(Variable, '_repr_html_', make_html)
 setattr(VariableConstView, '_repr_html_', make_html)
 setattr(DataArray, '_repr_html_', make_html)
