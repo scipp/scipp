@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/reduction.h"
@@ -463,39 +464,47 @@ auto make_events_out(bool mask = false) {
   return make_bins(indices, Dim::Event, table);
 }
 
-struct GroupbyBucketsTest : public ::testing::Test {
+struct GroupbyBinnedTest : public ::testing::Test {
   DataArray a{
       make_events_in(),
       {{Dim("0-d"), makeVariable<double>(Values{1.2})},
-       {Dim("labels"), makeVariable<double>(Dims{Dim::Y}, Shape{3}, units::m,
-                                            Values{1, 1, 3})},
-       {Dim("dense"), makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
-                                           Values{1, 2, 3, 4, 5})}},
+       {Dim("labels"), makeVariable<int64_t>(Dims{Dim::Y}, Shape{3}, units::m,
+                                             Values{1, 1, 3})}},
       {},
       {{Dim("scalar_attr"), makeVariable<double>(Values{1.2})}}};
 
   DataArray expected{
       make_events_out(),
       {{Dim("0-d"), makeVariable<double>(Values{1.2})},
-       {Dim("labels"), makeVariable<double>(Dims{Dim("labels")}, Shape{2},
-                                            units::m, Values{1, 3})},
-       {Dim("dense"), makeVariable<double>(Dims{Dim::X}, Shape{5}, units::m,
-                                           Values{1, 2, 3, 4, 5})}},
+       {Dim("labels"), makeVariable<int64_t>(Dims{Dim("labels")}, Shape{2},
+                                             units::m, Values{1, 3})}},
       {},
       {{Dim("scalar_attr"), makeVariable<double>(Values{1.2})}}};
 };
 
-TEST_F(GroupbyBucketsTest, concatenate_data_array) {
+TEST_F(GroupbyBinnedTest, concatenate_data_array) {
   EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
 }
 
-TEST_F(GroupbyBucketsTest, concatenate_dataset) {
+TEST_F(GroupbyBinnedTest, concatenate_data_array_conflicting_2d_coord) {
+  a = bin(a, {makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 3, 8})});
+  a.coords().set(
+      Dim::X, makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3}, units::m,
+                                   Values{1, 3, 8, 1, 3, 9, 1, 3, 10}));
+  auto grouped = groupby(a, Dim("labels")).concatenate(Dim::Y);
+  EXPECT_EQ(
+      grouped.coords().extract(Dim::X),
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 10}));
+  EXPECT_EQ(grouped.slice({Dim::X, 0}), expected);
+}
+
+TEST_F(GroupbyBinnedTest, concatenate_dataset) {
   const Dataset d{{{"a", a}, {"b", a}}};
   const Dataset expected_d{{{"a", expected}, {"b", expected}}};
   EXPECT_EQ(groupby(d, Dim("labels")).concatenate(Dim::Y), expected_d);
 }
 
-struct GroupbyBucketsMaskTest : public ::testing::Test {
+struct GroupbyBinnedMaskTest : public ::testing::Test {
   const DataArray a{
       make_events_in(),
       {{Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3})},
@@ -510,7 +519,7 @@ struct GroupbyBucketsMaskTest : public ::testing::Test {
                                             units::m, Values{1, 3})}}};
 };
 
-TEST_F(GroupbyBucketsMaskTest, concatenate) {
+TEST_F(GroupbyBinnedMaskTest, concatenate) {
   EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
 }
 

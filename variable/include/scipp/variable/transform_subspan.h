@@ -7,7 +7,6 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
@@ -21,13 +20,7 @@ static constexpr auto erase = [](Dimensions dims, const Dim dim) {
 static constexpr auto maybe_subspan = [](VariableConstView &var,
                                          const Dim dim) {
   auto ret = std::make_unique<Variable>();
-  // There is a special case handled here when the client passes a `var`
-  // containing spans: We do not create span<span<T>>. The effect of this is
-  // that such a `var` may depend on `dim`. This implies that the transform will
-  // actually perform an accumulation, since the out arg is passed as a subpsna
-  // over `dim`, i.e., does not depend on `dim`. Make sure to request zero init
-  // of the output in that case, and do not init data in `op`.
-  if (var.dims().contains(dim) && !core::is_span(var.dtype())) {
+  if (var.dims().contains(dim)) {
     *ret = subspan_view(var, dim);
     var = *ret;
   }
@@ -51,8 +44,6 @@ template <class... Types, class Op, class... Var>
        (var.hasVariances() || ...));
   Variable out =
       variableFactory().create(type, dims, op(var.unit()...), variance);
-  if constexpr (std::is_base_of_v<core::transform_flags::zero_output_t, Op>)
-    fill(out, 0.0 * op(var.unit()...));
 
   const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
 

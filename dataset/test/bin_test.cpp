@@ -6,6 +6,7 @@
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
+#include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
@@ -117,7 +118,12 @@ auto make_table(const scipp::index size) {
   const auto y = makeVariable<double>(dims, Values(rand(dims.volume())));
   const auto group = astype(
       makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
-  return DataArray(data, {{Dim::X, x}, {Dim::Y, y}, {Dim("group"), group}});
+  const auto group2 = astype(
+      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
+  return DataArray(data, {{Dim::X, x},
+                          {Dim::Y, y},
+                          {Dim("group"), group},
+                          {Dim("group2"), group2}});
 }
 } // namespace
 
@@ -125,6 +131,8 @@ class BinTest : public ::testing::TestWithParam<DataArray> {
 protected:
   Variable groups = makeVariable<int64_t>(Dims{Dim("group")}, Shape{5},
                                           Values{-2, -1, 0, 1, 2});
+  Variable groups2 = makeVariable<int64_t>(Dims{Dim("group2")}, Shape{5},
+                                           Values{-2, -1, 0, 1, 2});
   Variable edges_x =
       makeVariable<double>(Dims{Dim::X}, Shape{5}, Values{-2, -1, 0, 1, 2});
   Variable edges_y =
@@ -174,6 +182,56 @@ TEST_P(BinTest, 2d) {
   const auto x_then_y = bin(x, {edges_y});
   const auto xy = bin(table, {edges_x, edges_y});
   EXPECT_EQ(xy, x_then_y);
+}
+
+TEST_P(BinTest, 2d_drop_out_of_range_linspace) {
+  const auto edges_x_drop = edges_x.slice({Dim::X, 1, 4});
+  const auto edges_y_drop = edges_y.slice({Dim::Y, 1, 4});
+  const auto table = GetParam();
+  const auto x_then_y = bin(bin(table, {edges_x_drop}), {edges_y_drop});
+  const auto xy = bin(table, {edges_x_drop, edges_y_drop});
+  EXPECT_EQ(xy, x_then_y);
+}
+
+TEST_P(BinTest, 2d_drop_out_of_range) {
+  auto edges_x_drop = edges_x.slice({Dim::X, 1, 4});
+  edges_x_drop.values<double>()[0] += 0.001;
+  auto edges_y_drop = edges_y.slice({Dim::Y, 1, 4});
+  edges_y_drop.values<double>()[0] += 0.001;
+  const auto table = GetParam();
+  const auto x_then_y = bin(bin(table, {edges_x_drop}), {edges_y_drop});
+  const auto xy = bin(table, {edges_x_drop, edges_y_drop});
+  EXPECT_EQ(xy, x_then_y);
+}
+
+TEST_P(BinTest, 2d_drop_out_of_group) {
+  auto groups1_drop = groups.slice({Dim("group"), 1, 4});
+  auto groups2_drop = groups2.slice({Dim("group2"), 1, 3});
+  const auto table = GetParam();
+  EXPECT_EQ(bin(bin(table, {}, {groups1_drop}), {}, {groups2_drop}),
+            bin(table, {}, {groups1_drop, groups2_drop}));
+}
+
+TEST_P(BinTest, rebin_2d_with_2d_coord) {
+  auto table = GetParam();
+  auto xy = bin(table, {edges_x_coarse, edges_y_coarse});
+  Variable edges_y_2d = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+                                             Values{-2, 1, 2, -1, 0, 3});
+  xy.coords().set(Dim::Y, edges_y_2d);
+  auto bins_y = bins_view<DataArray>(xy.data()).coords()[Dim::Y];
+  bins_y += 0.5 * units::one;
+  EXPECT_THROW(bin(xy, {edges_x_coarse}), except::DimensionError);
+  if (table.dims().volume() > 0) {
+    EXPECT_NE(bin(xy, {edges_x_coarse, edges_y_coarse}),
+              bin(table, {edges_x_coarse, edges_y_coarse}));
+    EXPECT_NE(bin(xy, {edges_x, edges_y_coarse}),
+              bin(table, {edges_x, edges_y_coarse}));
+  }
+  table.coords()[Dim::Y] += 0.5 * units::one;
+  expect_near(bin(xy, {edges_x_coarse, edges_y_coarse}),
+              bin(table, {edges_x_coarse, edges_y_coarse}));
+  expect_near(bin(xy, {edges_x, edges_y_coarse}),
+              bin(table, {edges_x, edges_y_coarse}));
 }
 
 TEST_P(BinTest, rebin_coarse_to_fine_2d) {

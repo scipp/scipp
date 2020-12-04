@@ -182,6 +182,14 @@ void Variable::rename(const Dim from, const Dim to) {
     data().m_dimensions.relabel(dims().index(from), to);
 }
 
+/// Rename dims of a view. Does NOT rename dims of the underlying variable.
+void VariableConstView::rename(const Dim from, const Dim to) {
+  if (dims().contains(from)) {
+    m_dims.relabel(m_dims.index(from), to);
+    m_dataDims.relabel(m_dataDims.index(from), to);
+  }
+}
+
 void Variable::setVariances(Variable v) {
   if (v)
     core::expect::equals(unit(), v.unit());

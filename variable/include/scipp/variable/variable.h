@@ -276,6 +276,8 @@ public:
   auto &underlying() const { return *m_variable; }
   bool is_trivial() const noexcept;
 
+  void rename(const Dim from, const Dim to);
+
   core::ElementArrayViewParams array_params() const noexcept {
     return {m_offset, m_dims, m_dataDims, {}};
   }
