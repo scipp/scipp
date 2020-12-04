@@ -298,29 +298,29 @@ class PlotController:
         self.update_axes()
         self.update_log_axes_buttons()
 
-    def toggle_xaxis_scale(self, owner):
+    def toggle_xaxis_scale(self, owner, normalize=False):
         """
         Toggle x-axis scale from toolbar button signal.
         """
         dim = self.axes["x"]
         self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes(normalize=False)
+        self.update_axes(normalize=normalize)
 
-    def toggle_yaxis_scale(self, owner):
+    def toggle_yaxis_scale(self, owner, normalize=False):
         """
         Toggle y-axis scale from toolbar button signal.
         """
         dim = self.axes["y"]
         self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes(normalize=False)
+        self.update_axes(normalize=normalize)
 
-    def toggle_zaxis_scale(self, owner):
+    def toggle_zaxis_scale(self, owner, normalize=False):
         """
         Toggle z-axis scale from toolbar button signal.
         """
         dim = self.axes["z"]
         self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes(normalize=False)
+        self.update_axes(normalize=normalize)
 
     def toggle_norm(self, owner):
         """
@@ -366,8 +366,8 @@ class PlotController:
         """
         self.view.update_norm_button(*args, **kwargs)
 
-    # def update_axes(self, change=None, normalize=True):
-    def update_axes(self, normalize=True):
+    def update_axes(self, change=None, normalize=True):
+    # def update_axes(self, normalize=True):
         """
         This function is called when a dimension that is displayed along a
         given axis is changed. This happens for instance when we want to
