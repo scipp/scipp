@@ -20,8 +20,11 @@ def scalar(value: Any, variance: Any = None, unit: Unit = units.one):
     return _cpp.Variable(value=value, variance=variance, unit=unit)
 
 
-def zeros(*, dims: Sequence[str], shape: Sequence[int],
-          unit: Unit = units.one, dtype: dtype = dtype.float64,
+def zeros(*,
+          dims: Sequence[str],
+          shape: Sequence[int],
+          unit: Unit = units.one,
+          dtype: dtype = dtype.float64,
           variances: bool = False):
     """Constructs a default initialised :class:`Variable` with given dimension
     labels and shape. Only keyword arguments accepted.
@@ -38,12 +41,19 @@ def zeros(*, dims: Sequence[str], shape: Sequence[int],
     :type variance: bool
     :type dtype: dtype
     """
-    return _cpp.Variable(dims=dims, shape=shape, unit=unit,
-                         dtype=dtype, variances=variances)
+    return _cpp.Variable(dims=dims,
+                         shape=shape,
+                         unit=unit,
+                         dtype=dtype,
+                         variances=variances)
 
 
-def array(*, dims: Sequence[str], values, variances=None,
-          unit: Unit = units.one, dtype: dtype = None):
+def array(*,
+          dims: Sequence[str],
+          values,
+          variances=None,
+          unit: Unit = units.one,
+          dtype: dtype = None):
     """Constructs a :class:`Variable` with given dimensions, containing given
     values. Dimension and value shape must match.
     Only keyword arguments accepted.
@@ -61,5 +71,8 @@ def array(*, dims: Sequence[str], values, variances=None,
     :type unit: Unit
     :type dtype: dtype
     """
-    return _cpp.Variable(dims=dims, values=values, variances=variances,
-                         unit=unit, dtype=dtype)
+    return _cpp.Variable(dims=dims,
+                         values=values,
+                         variances=variances,
+                         unit=unit,
+                         dtype=dtype)
