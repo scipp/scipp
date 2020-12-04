@@ -98,9 +98,9 @@ template <class T> Variable as_subspan_view(T &&binned) {
 Variable bin_sizes(const VariableConstView &sub_bin, const scipp::index nbin) {
   const auto end = cumsum(broadcast(nbin * units::one, sub_bin.dims()));
   const auto dim = variable::variableFactory().elem_dim(sub_bin);
-  auto sizes = make_bins(zip(end - nbin * units::one, end), dim,
-                         makeVariable<scipp::index>(
-                             Dims{dim}, Shape{sub_bin.dims().volume() * nbin}));
+  auto sizes = make_bins(
+      zip(end - nbin * units::one, end), dim,
+      makeVariable<scipp::index>(Dims{dim}, Shape{end.dims().volume() * nbin}));
   variable::transform_in_place(
       as_subspan_view(sizes), as_subspan_view(sub_bin),
       core::element::count_indices); // transform bins, not bin element
@@ -125,9 +125,7 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   offsets += cumsum_bins(output_bin_sizes, CumSumMode::Exclusive);
   Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
   auto end = cumsum(filtered_input_bin_size);
-  const auto total_size = end.dtype() == dtype<int64_t>
-                              ? end.values<int64_t>().as_span().back()
-                              : end.values<int32_t>().as_span().back();
+  const auto total_size = end.values<scipp::index>().as_span().back();
   end = broadcast(end, data.dims()); // required for some cases of rebinning
   const auto filtered_input_bin_ranges =
       zip(end - filtered_input_bin_size, end);
