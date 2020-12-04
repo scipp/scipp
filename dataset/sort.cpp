@@ -11,7 +11,6 @@
 #include "scipp/variable/indexed_slice_view.h"
 
 using scipp::variable::IndexedSliceView;
-using scipp::variable::SortOrder;
 
 namespace scipp::dataset {
 template <class T> struct MakePermutation {
