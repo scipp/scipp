@@ -42,7 +42,7 @@ def zeros(*, dims: Sequence[str], shape: Sequence[int],
 
 
 def array(*, dims: Sequence[str], values, variances=None,
-          unit: Unit = units.one, dtype: dtype = dtype.float64):
+          unit: Unit = units.one, dtype: dtype = None):
     """Constructs a :class:`Variable` with given dimensions containing given
     values. Dimensions and value shape must match.
 
