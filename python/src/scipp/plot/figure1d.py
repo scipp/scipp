@@ -337,3 +337,4 @@ class PlotFigure1d(PlotFigure):
         """
         self.norm = norm
         self.ax.set_yscale("log" if self.norm == "log" else "linear")
+        self.draw()

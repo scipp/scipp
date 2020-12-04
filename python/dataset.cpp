@@ -216,18 +216,7 @@ template <class T> void bind_rebin(py::module &m) {
         py::overload_cast<const typename T::const_view_type &, const Dim,
                           const VariableConstView &>(&rebin),
         py::arg("x"), py::arg("dim"), py::arg("bins"),
-        py::call_guard<py::gil_scoped_release>(),
-        Docstring()
-            .description("Rebin a dimension of a data array.")
-            .raises("If data cannot be rebinned, e.g., if the unit is not "
-                    "counts, or the existing coordinate is not a bin-edge "
-                    "coordinate.")
-            .returns("Data rebinned according to the new coordinate.")
-            .rtype<T>()
-            .template param<T>("x", "Data to rebin.")
-            .param("dim", "Dimension to rebin over.", "Dim")
-            .param("bins", "New bin edges.", "Variable")
-            .c_str());
+        py::call_guard<py::gil_scoped_release>());
 }
 
 void init_dataset(py::module &m) {

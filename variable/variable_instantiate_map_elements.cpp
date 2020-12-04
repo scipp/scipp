@@ -11,10 +11,16 @@
 namespace scipp::variable {
 
 // Used internally in implementation of grouping and binning
+INSTANTIATE_VARIABLE(unordered_map_double_to_index,
+                     std::unordered_map<double, scipp::index>)
+INSTANTIATE_VARIABLE(unordered_map_float_to_index,
+                     std::unordered_map<float, scipp::index>)
 INSTANTIATE_VARIABLE(unordered_map_float64_to_index,
                      std::unordered_map<int64_t, scipp::index>)
 INSTANTIATE_VARIABLE(unordered_map_float32_to_index,
                      std::unordered_map<int32_t, scipp::index>)
+INSTANTIATE_VARIABLE(unordered_map_bool_to_index,
+                     std::unordered_map<bool, scipp::index>)
 INSTANTIATE_VARIABLE(unordered_map_string_to_index,
                      std::unordered_map<std::string, scipp::index>)
 

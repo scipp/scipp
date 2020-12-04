@@ -151,6 +151,7 @@ class PlotFigure2d(PlotFigure):
         self.image.set_norm(new_norm)
         for m in self.mask_image:
             self.mask_image[m].set_norm(new_norm)
+        self.draw()
 
     def rescale_on_zoom(self, *args, **kwargs):
         self.toolbar.rescale_on_zoom(*args, **kwargs)

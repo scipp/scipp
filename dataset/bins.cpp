@@ -23,6 +23,7 @@
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
+#include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/dataset.h"
@@ -31,6 +32,7 @@
 #include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
+#include "bin_common.h"
 #include "dataset_operations_common.h"
 
 namespace scipp::dataset {
@@ -225,26 +227,6 @@ auto concatenate_impl(const VariableConstView &var0,
 }
 
 template <class T>
-auto concatenate_typed(const VariableConstView &var, const Dim dim,
-                       const VariableConstView &shape,
-                       const VariableConstView &mask) {
-  auto out = resize(var, shape);
-  concatenate_out<T>(var, dim, mask ? ~mask : mask, out);
-  return out;
-}
-
-Variable concatenate_untyped(const VariableConstView &var, const Dim dim,
-                             const VariableConstView &shape,
-                             const VariableConstView &mask = {}) {
-  if (var.dtype() == dtype<bucket<Variable>>)
-    return concatenate_typed<Variable>(var, dim, shape, mask);
-  else if (var.dtype() == dtype<bucket<DataArray>>)
-    return concatenate_typed<DataArray>(var, dim, shape, mask);
-  else
-    return concatenate_typed<Dataset>(var, dim, shape, mask);
-}
-
-template <class T>
 void reserve_impl(const VariableView &var, const VariableConstView &shape) {
   // TODO this only reserves in the bins, but assumes buffer has enough space
   const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
@@ -288,16 +270,17 @@ DataArray concatenate(const DataArrayConstView &a,
 ///
 /// This is the analogue to summing non-bucket data.
 Variable concatenate(const VariableConstView &var, const Dim dim) {
-  return concatenate_untyped(var, dim, sum(bucket_sizes(var), dim));
+  if (var.dtype() == dtype<bucket<Variable>>)
+    return concat_bins<Variable>(var, dim);
+  else
+    return concat_bins<DataArray>(var, dim);
 }
 
 /// Reduce a dimension by concatenating all elements along the dimension.
 ///
 /// This is the analogue to summing non-bucket data.
 DataArray concatenate(const DataArrayConstView &array, const Dim dim) {
-  return apply_to_data_and_drop_dim(array, concatenate_untyped, dim,
-                                    sum(bucket_sizes(array), dim).data(),
-                                    irreducible_mask(array.masks(), dim));
+  return groupby_concat_bins(array, {}, {}, {dim});
 }
 
 void append(const VariableView &var0, const VariableConstView &var1) {

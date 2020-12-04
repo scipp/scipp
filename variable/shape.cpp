@@ -152,4 +152,15 @@ VariableView transpose(const VariableView &view, const std::vector<Dim> &dims) {
   return view.transpose(dims);
 }
 
+void squeeze(Variable &var, const std::vector<Dim> &dims) {
+  auto squeezed = var.dims();
+  for (const auto dim : dims) {
+    if (squeezed[dim] != 1)
+      throw except::DimensionError("Cannot squeeze '" + to_string(dim) +
+                                   "' since it is not of length 1.");
+    squeezed.erase(dim);
+  }
+  var.setDims(squeezed);
+}
+
 } // namespace scipp::variable
