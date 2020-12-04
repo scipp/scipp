@@ -48,6 +48,7 @@ def nanmean(x, dim=None, out=None):
     """Element-wise mean over the specified dimension, if variances are
     present, the new variance is computed as standard-deviation of the mean.
     NaNs are ignored.
+    This function only supports variables of floating point types as input.
 
     If the input has variances, the variances stored in the ouput are based on
     the "standard deviation of the mean", i.e.,
