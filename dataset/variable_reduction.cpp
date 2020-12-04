@@ -90,7 +90,7 @@ Variable mean(const VariableConstView &var, const MasksConstView &masks) {
                                  mask_union));
   else
     return sum(applyMask(var, mask_union)) /
-           sum(applyMask(isfinite(var), mask_union));
+           sum(applyMask(isfinite(values(var)), mask_union));
 }
 
 Variable nanmean(const VariableConstView &var, const Dim dim,
