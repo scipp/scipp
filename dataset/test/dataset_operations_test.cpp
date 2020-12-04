@@ -46,50 +46,6 @@ TEST(DatasetOperationsTest, nansum_all_dims) {
   EXPECT_EQ(nansum(ds)["a"], nansum(da));
 }
 
-TEST(DatasetOperationsTest, mean_over_dim) {
-  auto ds = make_1_values_and_variances<float>(
-      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(mean(ds, Dim::X)["a"].data(),
-            makeVariable<float>(Values{2}, Variances{5.0}));
-  EXPECT_EQ(mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(Values{1.5}, Variances{6.75}));
-}
-
-TEST(DatasetOperationsTest, mean_all_dims) {
-  DataArray da{makeVariable<double>(Dims{Dim::X, Dim::Y}, Values{1, 2, 3, 4},
-                                    Shape{2, 2})};
-
-  EXPECT_EQ(mean(da).data(), makeVariable<double>(Values{2.5}));
-
-  Dataset ds{{{"a", da}}};
-  EXPECT_EQ(mean(ds)["a"], mean(da));
-
-  // Int inputs should produce double outputs. i.e. operations should be
-  // identical.
-  EXPECT_EQ(mean(ds)["a"], mean(astype(da, dtype<int>)));
-}
-
-TEST(DatasetOperationsTest, nanmean_over_dim) {
-  auto ds = make_1_values_and_variances<double>(
-      "a", {Dim::X, 3}, units::dimensionless, {1.0, 2.0, double(NAN)},
-      {12.0, 15.0, 18.0});
-  EXPECT_EQ(nanmean(ds, Dim::X)["a"].data(),
-            makeVariable<double>(Values{1.5}, Variances{6.75}));
-  EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<double>(Values{1.5}, Variances{6.75}));
-}
-
-TEST(DatasetOperationsTest, nanmean_all_dims) {
-  DataArray da{makeVariable<double>(
-      Dims{Dim::X, Dim::Y}, Values{1.0, 2.0, 3.0, double(NAN)}, Shape{2, 2})};
-  EXPECT_EQ(nanmean(da).data(), makeVariable<double>(Values{2.0}));
-
-  Dataset ds{{{"a", da}}};
-  EXPECT_EQ(nanmean(ds)["a"], nanmean(da));
-
-  EXPECT_THROW(nanmean(astype(da, dtype<int64_t>)), except::TypeError);
-}
-
 template <typename T>
 class DatasetShapeChangingOpTest : public ::testing::Test {
 public:
