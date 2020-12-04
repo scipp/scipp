@@ -17,6 +17,16 @@ Classes
    GroupByDataArray
    GroupByDataset
 
+Class factories
+===============
+
+.. autosummary::
+   :toctree: ../generated
+
+   array
+   scalar
+   zeros
+
 Free functions
 ==============
 
