@@ -11,8 +11,8 @@ def scalar(value: Any, variance: Any = None, unit: Unit = units.one):
     variance.
 
     :param value: Initial value.
-    :param variance: Initial variance
-    :param unit: Unit.
+    :param variance: Optional, initial variance, Default=None
+    :param unit: Optional, unit. Default=dimensionless
     :type value: Any
     :type variance: Same type as value
     :type unit: Unit
@@ -24,13 +24,14 @@ def zeros(*, dims: Sequence[str], shape: Sequence[int],
           unit: Unit = units.one, dtype: dtype = dtype.float64,
           variances: bool = False):
     """Constructs a default initialised :class:`Variable` with given dimension
-    labels and shape.
+    labels and shape. Only keyword arguments accepted.
 
     :param dims: Dimension labels.
     :param shape: Dimension sizes.
-    :param unit: Unit of contents.
-    :param dtype: Type of underlying data.
-    :param variance: Boolean flag, if True include variances.
+    :param unit: Optional, unit of contents. Default=dimensionless
+    :param dtype: Optional, type of underlying data. Default=float64
+    :param variance: Optional, boolean flag, if True include variances.
+      Default=False
     :type dims: list[str]
     :type shape: list[int]
     :type unit: Unit
@@ -43,14 +44,17 @@ def zeros(*, dims: Sequence[str], shape: Sequence[int],
 
 def array(*, dims: Sequence[str], values, variances=None,
           unit: Unit = units.one, dtype: dtype = None):
-    """Constructs a :class:`Variable` with given dimensions containing given
-    values. Dimensions and value shape must match.
+    """Constructs a :class:`Variable` with given dimensions, containing given
+    values. Dimension and value shape must match.
+    Only keyword arguments accepted.
 
-    :param dims: Dimensions labels.
+    :param dims: Dimension labels.
     :param values: Initial values.
-    :param variances: Initial variances, must be same shape and size as values.
-    :param unit: Data unit.
-    :param dtype: Type of underlying data.
+    :param variances: Optional, initial variances, must be same shape
+      and size as values. Default=None
+    :param unit: Optional, data unit. Default=dimensionless
+    :param dtype: Optional, type of underlying data. Default=None,
+      in which case type is inferred from value input.
     :type dims: list[str]
     :type values: numpy.ndarray, list
     :type variances: numpy.ndarray, list
