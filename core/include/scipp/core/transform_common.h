@@ -104,10 +104,6 @@ static constexpr auto expect_all_or_none_have_variance = []() {};
 using expect_all_or_none_have_variance_t =
     decltype(expect_all_or_none_have_variance);
 
-/// Initialize output with zeros. Used only by transform_subspan.
-static constexpr auto zero_output = []() {};
-using zero_output_t = decltype(zero_output);
-
 } // namespace transform_flags
 
 } // namespace scipp::core
