@@ -7,7 +7,8 @@
 
 namespace scipp::variable {
 
-INSTANTIATE_VARIABLE(pair_int64, std::pair<scipp::index, scipp::index>)
+INSTANTIATE_VARIABLE(pair_int64, std::pair<int64_t, int64_t>)
+INSTANTIATE_VARIABLE(pair_int32, std::pair<int32_t, int32_t>)
 INSTANTIATE_BUCKET_VARIABLE(VariableView, bucket<Variable>)
 INSTANTIATE_BUCKET_VARIABLE(VariableView_observer, bucket<VariableView>)
 INSTANTIATE_BUCKET_VARIABLE(VariableConstView_observer,

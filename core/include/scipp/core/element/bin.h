@@ -15,13 +15,15 @@
 
 namespace scipp::core::element {
 
-template <class T>
+template <class Index, class T>
 using update_indices_by_binning_arg =
-    std::tuple<scipp::index, T, scipp::span<const T>>;
+    std::tuple<Index, T, scipp::span<const T>>;
 
 static constexpr auto update_indices_by_binning =
-    overloaded{element::arg_list<update_indices_by_binning_arg<double>,
-                                 update_indices_by_binning_arg<float>>,
+    overloaded{element::arg_list<update_indices_by_binning_arg<int64_t, double>,
+                                 update_indices_by_binning_arg<int64_t, float>,
+                                 update_indices_by_binning_arg<int32_t, double>,
+                                 update_indices_by_binning_arg<int32_t, float>>,
                [](units::Unit &indices, const units::Unit &coord,
                   const units::Unit &groups) {
                  expect::equals(coord, groups);
@@ -55,6 +57,7 @@ static constexpr auto update_indices_by_binning_sorted_edges =
                              : (index + --it - edges.begin());
                }};
 
+template <class Index>
 static constexpr auto groups_to_map = overloaded{
     element::arg_list<span<const double>, span<const float>,
                       span<const int64_t>, span<const int32_t>,
@@ -63,7 +66,7 @@ static constexpr auto groups_to_map = overloaded{
     [](const units::Unit &u) { return u; },
     [](const auto &groups) {
       std::unordered_map<typename std::decay_t<decltype(groups)>::value_type,
-                         scipp::index>
+                         Index>
           index;
       scipp::index current = 0;
       for (const auto &item : groups)
@@ -73,50 +76,62 @@ static constexpr auto groups_to_map = overloaded{
       return index;
     }};
 
-template <class T>
+template <class Index, class T>
 using update_indices_by_grouping_arg =
-    std::tuple<scipp::index, T, std::unordered_map<T, scipp::index>>;
+    std::tuple<Index, T, std::unordered_map<T, Index>>;
 
-static constexpr auto update_indices_by_grouping =
-    overloaded{element::arg_list<update_indices_by_grouping_arg<double>,
-                                 update_indices_by_grouping_arg<float>,
-                                 update_indices_by_grouping_arg<int64_t>,
-                                 update_indices_by_grouping_arg<int32_t>,
-                                 update_indices_by_grouping_arg<bool>,
-                                 update_indices_by_grouping_arg<std::string>>,
-               [](units::Unit &indices, const units::Unit &coord,
-                  const units::Unit &groups) {
-                 expect::equals(coord, groups);
-                 expect::equals(indices, units::one);
-               },
-               [](auto &index, const auto &x, const auto &groups) {
-                 if (index == -1)
-                   return;
-                 const auto it = groups.find(x);
-                 index *= scipp::size(groups);
-                 index = (it == groups.end()) ? -1 : (index + it->second);
-               }};
+static constexpr auto update_indices_by_grouping = overloaded{
+    element::arg_list<update_indices_by_grouping_arg<int64_t, double>,
+                      update_indices_by_grouping_arg<int32_t, double>,
+                      update_indices_by_grouping_arg<int64_t, float>,
+                      update_indices_by_grouping_arg<int32_t, float>,
+                      update_indices_by_grouping_arg<int64_t, int64_t>,
+                      update_indices_by_grouping_arg<int32_t, int64_t>,
+                      update_indices_by_grouping_arg<int64_t, int32_t>,
+                      update_indices_by_grouping_arg<int32_t, int32_t>,
+                      update_indices_by_grouping_arg<int64_t, bool>,
+                      update_indices_by_grouping_arg<int32_t, bool>,
+                      update_indices_by_grouping_arg<int64_t, std::string>,
+                      update_indices_by_grouping_arg<int32_t, std::string>>,
+    [](units::Unit &indices, const units::Unit &coord,
+       const units::Unit &groups) {
+      expect::equals(coord, groups);
+      expect::equals(indices, units::one);
+    },
+    [](auto &index, const auto &x, const auto &groups) {
+      if (index == -1)
+        return;
+      const auto it = groups.find(x);
+      index *= scipp::size(groups);
+      index = (it == groups.end()) ? -1 : (index + it->second);
+    }};
 
-static constexpr auto update_indices_from_existing =
-    overloaded{element::arg_list<scipp::index>,
-               [](units::Unit &, const units::Unit &, const units::Unit &) {},
-               [](auto &index, const auto bin_index, const auto nbin) {
-                 if (index == -1)
-                   return;
-                 index *= nbin;
-                 index += bin_index;
-               }};
+static constexpr auto update_indices_from_existing = overloaded{
+    element::arg_list<std::tuple<int64_t, scipp::index, scipp::index>,
+                      std::tuple<int32_t, scipp::index, scipp::index>>,
+    [](units::Unit &, const units::Unit &, const units::Unit &) {},
+    [](auto &index, const auto bin_index, const auto nbin) {
+      if (index == -1)
+        return;
+      index *= nbin;
+      index += bin_index;
+    }};
 
 // - Each span covers an *input* bin.
 // - `offsets` Start indices of the output bins
 // - `bin_indices` Target output bin index (within input bin)
-template <class T>
-using bin_arg = std::tuple<span<T>, span<const scipp::index>, span<const T>,
-                           span<const scipp::index>>;
+template <class T, class Index>
+using bin_arg =
+    std::tuple<span<T>, span<const Index>, span<const T>, span<const Index>>;
 static constexpr auto bin = overloaded{
-    element::arg_list<bin_arg<double>, bin_arg<float>, bin_arg<int64_t>,
-                      bin_arg<int32_t>, bin_arg<bool>, bin_arg<Eigen::Vector3d>,
-                      bin_arg<std::string>>,
+    element::arg_list<
+        bin_arg<double, int64_t>, bin_arg<double, int32_t>,
+        bin_arg<float, int64_t>, bin_arg<float, int32_t>,
+        bin_arg<int64_t, int64_t>, bin_arg<int64_t, int32_t>,
+        bin_arg<int32_t, int64_t>, bin_arg<int32_t, int32_t>,
+        bin_arg<bool, int64_t>, bin_arg<bool, int32_t>,
+        bin_arg<Eigen::Vector3d, int64_t>, bin_arg<Eigen::Vector3d, int32_t>,
+        bin_arg<std::string, int64_t>, bin_arg<std::string, int32_t>>,
     transform_flags::expect_in_variance_if_out_variance,
     [](units::Unit &binned, const units::Unit &, const units::Unit &data,
        const units::Unit &) { binned = data; },
@@ -140,7 +155,8 @@ static constexpr auto bin = overloaded{
 
 static constexpr auto count_indices = overloaded{
     element::arg_list<
-        std::tuple<scipp::span<scipp::index>, scipp::span<const scipp::index>>>,
+        std::tuple<scipp::span<int64_t>, scipp::span<const int64_t>>,
+        std::tuple<scipp::span<int32_t>, scipp::span<const int32_t>>>,
     [](const units::Unit &counts, const units::Unit &indices) {
       expect::equals(indices, units::one);
       expect::equals(counts, units::one);
