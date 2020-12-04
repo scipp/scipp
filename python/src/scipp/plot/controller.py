@@ -592,6 +592,7 @@ class PlotController:
                                                ydata=ydata,
                                                slices=slices,
                                                axparams=self.profile_axparams,
+                                               profile_dim=self.profile_dim,
                                                mask_info=self.get_masks_info())
         # Send new values to the profile view
         self.profile.update_data(new_values, info=info)

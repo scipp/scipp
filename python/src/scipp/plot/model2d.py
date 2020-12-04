@@ -239,6 +239,7 @@ class PlotModel2d(PlotModel):
                        ydata=None,
                        slices=None,
                        axparams=None,
+                       profile_dim=None,
                        mask_info=None):
         """
         Slice down all dimensions apart from the profile dimension, and send
@@ -283,14 +284,14 @@ class PlotModel2d(PlotModel):
         new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
         os.write(1, "update_profile 6\n".encode())
 
-        dim = profile_slice.data.dims[0]
+        # dim = profile_slice.data.dims[0]
         ydata = profile_slice.data.values
-        xcenters = to_bin_centers(profile_slice.coords[dim], dim).values
+        xcenters = to_bin_centers(profile_slice.coords[profile_dim], profile_dim).values
 
         os.write(1, "update_profile 7\n".encode())
         if axparams["x"]["hist"][self.name]:
             new_values[
-                self.name]["values"]["x"] = profile_slice.coords[dim].values
+                self.name]["values"]["x"] = profile_slice.coords[profile_dim].values
             new_values[self.name]["values"]["y"] = np.concatenate(
                 (ydata[0:1], ydata))
         else:

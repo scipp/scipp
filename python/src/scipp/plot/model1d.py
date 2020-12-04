@@ -6,6 +6,7 @@ from .model import PlotModel
 from .tools import to_bin_centers, vars_to_err, mask_to_float
 from .._scipp import core as sc
 import numpy as np
+import os
 
 
 class PlotModel1d(PlotModel):
@@ -84,13 +85,15 @@ class PlotModel1d(PlotModel):
                        ydata=None,
                        slices=None,
                        axparams=None,
+                       profile_dim=None,
                        mask_info=None):
         """
         Slice down all dimensions apart from the profile dimension, and send
         the data values, variances and masks back to the `PlotController`.
         """
 
-        profile_dim = axparams["x"]["dim"]
+        # profile_dim = axparams["x"]["dim"]
+        os.write(1, "update_profile 1\n".encode())
         new_values = {}
 
         # Find closest point to cursor
@@ -98,22 +101,34 @@ class PlotModel1d(PlotModel):
         distance_to_cursor = np.abs(
             self.data_arrays[self.name].coords[self.dim].values - xdata)
         ind = np.argmin(distance_to_cursor)
+        os.write(1, "update_profile 2\n".encode())
 
         xcenters = to_bin_centers(
             self.data_arrays[self.name].coords[profile_dim],
             profile_dim).values
+        os.write(1, "update_profile 3\n".encode())
 
         for name, profile_slice in self.data_arrays.items():
+            os.write(1, "update_profile 4\n".encode())
 
             new_values[name] = {"values": {}, "variances": {}, "masks": {}}
+            os.write(1, "update_profile 5\n".encode())
 
             # Slice all dims apart from profile dim and currently displayed dim
             profile_slice = self.slice_data(profile_slice, slices)
+            os.write(1, "update_profile 6\n".encode())
 
             # Now slice the currently displayed dim
+            os.write(1, str(profile_slice.data).encode())
+            os.write(1, str(profile_slice.data.shape).encode())
+            os.write(1, str(profile_slice.data.dims).encode())
+            os.write(1, str(self.dim).encode())
+            os.write(1, str(type(self.dim)).encode())
+            os.write(1, str(ind).encode())
             profile_slice = profile_slice[self.dim, ind]
+            os.write(1, "update_profile 7\n".encode())
 
-            ydata = profile_slice.values
+            ydata = profile_slice.data.values
             if axparams["x"]["hist"][name]:
                 new_values[name]["values"]["x"] = profile_slice.coords[
                     profile_dim].values
@@ -122,15 +137,16 @@ class PlotModel1d(PlotModel):
             else:
                 new_values[name]["values"]["x"] = xcenters
                 new_values[name]["values"]["y"] = ydata
-            if profile_slice.variances is not None:
+            if profile_slice.data.variances is not None:
                 new_values[name]["variances"]["x"] = xcenters
                 new_values[name]["variances"]["y"] = ydata
                 new_values[name]["variances"]["e"] = vars_to_err(
-                    profile_slice.variances)
+                    profile_slice.data.variances)
+            os.write(1, "update_profile 8\n".encode())
 
             if len(mask_info[name]) > 0:
-                base_mask = sc.Variable(dims=profile_slice.dims,
-                                        values=np.ones(profile_slice.shape,
+                base_mask = sc.Variable(dims=profile_slice.data.dims,
+                                        values=np.ones(profile_slice.data.shape,
                                                        dtype=np.int32))
                 for m in mask_info[name]:
                     # Use automatic broadcast to broadcast 0D masks
