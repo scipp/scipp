@@ -4,7 +4,6 @@
 #include "test_macros.h"
 #include <gtest/gtest.h>
 #include <scipp/common/overloaded.h>
-#include "scipp/dataset/string.h"
 
 namespace {
 using namespace scipp;
@@ -21,7 +20,6 @@ template <typename Op> void test_masked_data_array_1_mask(Op op) {
       makeVariable<double>(Dimensions{Dim::Y, 2}, units::m, Values{1.0, 3.0});
   const auto meanY =
       makeVariable<double>(Dimensions{Dim::X, 2}, units::m, Values{2.0, 3.0});
-  std::cout << to_string(op(a, Dim::X).data()) << std::endl;
   EXPECT_EQ(op(a, Dim::X).data(), meanX);
   EXPECT_EQ(op(a, Dim::Y).data(), meanY);
   EXPECT_FALSE(op(a, Dim::X).masks().contains("mask"));

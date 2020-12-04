@@ -63,6 +63,10 @@ TEST(DatasetOperationsTest, mean_all_dims) {
 
   Dataset ds{{{"a", da}}};
   EXPECT_EQ(mean(ds)["a"], mean(da));
+
+  // Int inputs should produce double outputs. i.e. operations should be
+  // identical.
+  EXPECT_EQ(mean(ds)["a"], mean(astype(da, dtype<int>)));
 }
 
 TEST(DatasetOperationsTest, nanmean_over_dim) {
@@ -82,6 +86,8 @@ TEST(DatasetOperationsTest, nanmean_all_dims) {
 
   Dataset ds{{{"a", da}}};
   EXPECT_EQ(nanmean(ds)["a"], nanmean(da));
+
+  EXPECT_THROW(nanmean(astype(da, dtype<int64_t>)), except::TypeError);
 }
 
 template <typename T>

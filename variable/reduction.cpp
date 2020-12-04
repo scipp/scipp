@@ -89,10 +89,7 @@ Variable nanmean_impl(const VariableConstView &var, const Dim dim,
                       const VariableConstView &count) {
   auto summed = nansum(var, dim);
   auto scale = reciprocal(astype(count, core::dtype<double>));
-  if (isInt(var.dtype()))
-    summed = summed * scale;
-  else
-    summed *= scale;
+  summed *= scale;
   return summed;
 }
 
@@ -144,26 +141,30 @@ Variable mean(const VariableConstView &var, const Dim dim) {
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
-  return mean_impl(var, dim,
-                   sum(isfinite(values(astype(var, core::dtype<double>))), dim),
-                   out);
+  return mean_impl(var, dim, sum(isfinite(values(var)), dim), out);
+}
+
+void validate_nanmean(const VariableConstView &var) {
+  if (isInt(var.dtype()))
+    throw except::TypeError(
+        "nanmean on integer input variables is not supported. Use mean");
 }
 
 /// Return the mean along all dimensions. Ignoring NaN values.
 Variable nanmean(const VariableConstView &var) {
+  validate_nanmean(var);
   return reduce_all_dims(var, [](auto &&... _) { return nanmean(_...); });
 }
 
 Variable nanmean(const VariableConstView &var, const Dim dim) {
-  return nanmean_impl(
-      var, dim, sum(isfinite(values(astype(var, core::dtype<double>))), dim));
+  validate_nanmean(var);
+  return nanmean_impl(var, dim, sum(isfinite(values(var)), dim));
 }
 
 VariableView nanmean(const VariableConstView &var, const Dim dim,
                      const VariableView &out) {
-  return nanmean_impl(
-      var, dim, sum(isfinite(values(astype(var, core::dtype<double>))), dim),
-      out);
+  validate_nanmean(var);
+  return nanmean_impl(var, dim, sum(isfinite(values(var)), dim), out);
 }
 
 template <class Op>

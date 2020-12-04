@@ -183,3 +183,11 @@ TEST(MeanTest, nanmean_basic_inplace) {
   EXPECT_EQ(viewY, meanY);
   EXPECT_EQ(viewY.underlying(), meanY);
 }
+
+TEST(MeanTest, nanmean_with_ints_throws) {
+  auto var = makeVariable<int>(Values{1});
+  EXPECT_THROW([[maybe_unused]] auto out = nanmean(var), except::TypeError);
+  EXPECT_THROW([[maybe_unused]] auto out = nanmean(var, Dim::X),
+               except::TypeError);
+  EXPECT_THROW(nanmean(var, Dim::X, var), except::TypeError);
+}
