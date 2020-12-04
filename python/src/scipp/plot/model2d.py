@@ -8,6 +8,7 @@ from .model import PlotModel
 from .tools import to_bin_centers, mask_to_float, vars_to_err
 from .._scipp import core as sc
 import numpy as np
+import os
 
 
 class PlotModel2d(PlotModel):
@@ -118,11 +119,16 @@ class PlotModel2d(PlotModel):
 
         # Rebin the data
         for dim, edges in rebin_edges.items():
+            print(dslice.data)
             dslice.data = sc.rebin(dslice.data, dim, dslice.coords[dim], edges)
             for m in dslice.masks:
                 if dim in dslice.masks[m].dims:
                     dslice.masks[m] = sc.rebin(dslice.masks[m], dim,
                                                dslice.coords[dim], edges)
+
+        # # Slice away the remaining dims because we use slices of range 1 and not 0 in slice_data()
+        # for dim in set(dslice.data.dims) - set(list(rebin_edges.keys())):
+        #     dslice = dslice[dim, 0]
 
         # Divide by pixel width if we have normalized in update_data() in the
         # case of non-counts data.
@@ -151,6 +157,10 @@ class PlotModel2d(PlotModel):
 
         resampled_image = self.resample_data(self.vslice,
                                              rebin_edges=rebin_edges)
+
+        # Slice away the remaining dims because we use slices of range 1 and not 0 in slice_data()
+        for dim in set(resampled_image.data.dims) - set(list(rebin_edges.keys())):
+            resampled_image = resampled_image[dim, 0]
 
         # Use Scipp's automatic transpose to match the image x/y axes
         # TODO: once transpose is available for DataArrays,
@@ -237,15 +247,18 @@ class PlotModel2d(PlotModel):
         TODO: remove duplicate code between this and update_profile in model1d.
         """
 
+        os.write(1, "update_profile 1\n".encode())
         # Find indices of pixel where cursor lies
         dimx = self.xyrebin["x"].dims[0]
         dimy = self.xyrebin["y"].dims[0]
+        os.write(1, "update_profile 2\n".encode())
         # Note that xdata and ydata already have the left edge subtracted from
         # them
         ix = int(xdata /
                  (self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]))
         iy = int(ydata /
                  (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
+        os.write(1, "update_profile 3\n".encode())
 
         # In the 2D case, we first resample to pixel resolution, to avoid
         # having to potentially resample a very large array in the following
@@ -259,16 +272,22 @@ class PlotModel2d(PlotModel):
                                                self.xyrebin["y"][dimy,
                                                                  iy:iy + 2]
                                            })[dimx, 0][dimy, 0]
+        os.write(1, "update_profile 4\n".encode())
 
         # Slice the remaining dims
+        os.write(1, str(profile_slice.data).encode())
+        os.write(1, str(slices).encode())
         profile_slice = self.slice_data(profile_slice, slices)
+        os.write(1, "update_profile 5\n".encode())
 
         new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
+        os.write(1, "update_profile 6\n".encode())
 
         dim = profile_slice.data.dims[0]
         ydata = profile_slice.data.values
         xcenters = to_bin_centers(profile_slice.coords[dim], dim).values
 
+        os.write(1, "update_profile 7\n".encode())
         if axparams["x"]["hist"][self.name]:
             new_values[
                 self.name]["values"]["x"] = profile_slice.coords[dim].values

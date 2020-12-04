@@ -160,6 +160,9 @@ class PlotModel:
 
         else:
             coord = data_array.coords[dim]  # .astype(sc.dtype.float64)
+            if (coord.dtype != sc.dtype.float32) and (coord.dtype != sc.dtype.float64):
+                coord = coord.astype(sc.dtype.float64)
+
 
         if len(coord_info) == 0:
             coord_info["label"] = name_with_unit(var=coord)
@@ -219,9 +222,9 @@ class PlotModel:
                 array.data = sc.rebin(
                     array.data, dim, array.coords[dim],
                     sc.concatenate(array.coords[dim][dim, 0],
-                                   array.coords[dim][dim, -1], dim))[dim, 0]
+                                   array.coords[dim][dim, -1], dim)) # [dim, 0]
             else:
-                array = array[dim, lower]
+                array = array[dim, lower:lower+1]
         return array
 
     def get_multid_coord(self):

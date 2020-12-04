@@ -74,7 +74,6 @@ class PlotArrayView:
                 msk = msk[slice_obj]
             self.masks[m] = msk
 
-        # self.masks = {key: plot_array.masks[key][slice_obj] for key in plot_array.masks if slice_obj[0] in plot_array.masks[key].dims}
         # Copy edges info
         self.isedges = plot_array.isedges
 

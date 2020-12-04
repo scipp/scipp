@@ -159,4 +159,5 @@ class PlotFigure2d(PlotFigure):
         self.draw()
 
     def rescale_on_zoom(self, *args, **kwargs):
-        self.toolbar.rescale_on_zoom(*args, **kwargs)
+        if self.toolbar is not None:
+            self.toolbar.rescale_on_zoom(*args, **kwargs)
