@@ -182,14 +182,10 @@ void copy_metadata(const DataArrayConstView &a, const DataArrayView &b);
                             const MasksConstView &masks);
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const MasksConstView &masks, const VariableView &out);
-[[nodiscard]] Variable mean(const VariableConstView &var,
-                            const MasksConstView &masks);
 [[nodiscard]] Variable nanmean(const VariableConstView &var, const Dim dim,
                                const MasksConstView &masks);
 VariableView nanmean(const VariableConstView &var, const Dim dim,
                      const MasksConstView &masks, const VariableView &out);
-[[nodiscard]] Variable nanmean(const VariableConstView &var,
-                               const MasksConstView &masks);
 [[nodiscard]] Variable sum(const VariableConstView &var,
                            const MasksConstView &masks);
 [[nodiscard]] Variable sum(const VariableConstView &var, const Dim dim,

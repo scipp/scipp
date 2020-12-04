@@ -6,6 +6,7 @@
 #include "dataset_operations_common.h"
 #include "scipp/core/element/util.h"
 #include "scipp/dataset/reduction.h"
+#include "scipp/dataset/special_values.h"
 
 using scipp::common::reduce_all_dims;
 
@@ -60,7 +61,9 @@ DataArray mean(const DataArrayConstView &a, const Dim dim) {
 }
 
 DataArray mean(const DataArrayConstView &a) {
-  return mean(a.data(), a.masks());
+  auto count = isInt(a.data().dtype()) ? sum(isfinite(astype(a, dtype<double>)))
+                                       : sum(isfinite(a));
+  return sum(a) * (1.0 * units::one) / count;
 }
 
 Dataset mean(const DatasetConstView &d, const Dim dim) {
@@ -78,7 +81,8 @@ DataArray nanmean(const DataArrayConstView &a, const Dim dim) {
 }
 
 DataArray nanmean(const DataArrayConstView &a) {
-  return nanmean(a.data(), a.masks());
+  auto count = sum(isfinite(a));
+  return nansum(a) * (1.0 * units::one) / count;
 }
 
 Dataset nanmean(const DatasetConstView &d, const Dim dim) {

@@ -135,13 +135,14 @@ Variable mean(const VariableConstView &var) {
 }
 
 Variable mean(const VariableConstView &var, const Dim dim) {
-  return mean_impl(
-      var, dim, sum(isfinite(values(astype(var, core::dtype<double>))), dim));
+  return mean_impl(var, dim,
+                   sum(isfinite(values(astype(var, dtype<double>))), dim));
 }
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
-  return mean_impl(var, dim, sum(isfinite(values(var)), dim), out);
+  return mean_impl(var, dim,
+                   sum(isfinite(values(astype(var, dtype<double>))), dim), out);
 }
 
 void validate_nanmean(const VariableConstView &var) {
