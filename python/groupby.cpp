@@ -28,45 +28,24 @@ template <class T> Docstring docstring_groupby(const std::string &op) {
 }
 
 template <class T> void bind_groupby(py::module &m, const std::string &name) {
-  auto doc = Docstring()
-                 .description("Group dataset or data array based on values of "
-                              "specified labels.")
-                 .returns("GroupBy helper object.")
-                 .rtype("GroupByDataArray or GroupByDataset")
-                 .param<T>("data", "Input data to reduce.")
-                 .param("group", "Name of labels to use for grouping", "str");
-
   m.def("groupby",
         py::overload_cast<const typename T::const_view_type &, const Dim>(
             &groupby),
         py::arg("data"), py::arg("group"),
-        py::call_guard<py::gil_scoped_release>(), doc.c_str());
+        py::call_guard<py::gil_scoped_release>());
 
-  m.def(
-      "groupby",
-      py::overload_cast<const typename T::const_view_type &, const Dim,
-                        const VariableConstView &>(&groupby),
-      py::arg("data"), py::arg("group"), py::arg("bins"),
-      py::call_guard<py::gil_scoped_release>(),
-      doc.param("bins", "Bins for grouping label values.", "Variable").c_str());
+  m.def("groupby",
+        py::overload_cast<const typename T::const_view_type &, const Dim,
+                          const VariableConstView &>(&groupby),
+        py::arg("data"), py::arg("group"), py::arg("bins"),
+        py::call_guard<py::gil_scoped_release>());
 
   m.def("groupby",
         py::overload_cast<const typename T::const_view_type &,
                           const VariableConstView &, const VariableConstView &>(
             &groupby),
         py::arg("data"), py::arg("group"), py::arg("bins"),
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Group dataset or data array based on values of specified labels.
-
-        :param data: Input dataset or data array
-        :param group: Variable to use for grouping
-        :param bins: Bins for grouping label values
-        :type data: DataArray or Dataset
-        :type group: VariableConstView
-        :type bins: VariableConstView
-        :return: GroupBy helper object.
-        :rtype: GroupByDataArray or GroupByDataset)");
+        py::call_guard<py::gil_scoped_release>());
 
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing to split-apply-combine mechanism.)");

@@ -5,20 +5,6 @@ from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
-def flatten(x, dim):
-    """Flatten the specified dimension into event lists equivalent to
-    summing dense data.
-
-    :param x: Input data.
-    :param dim: Dimension to flatten over.
-    :raises: If the dimension does not exist, or if x does not contain event
-             lists.
-    :return: The flattened data.
-    :seealso: :py:func:`scipp.sum` for regular dense data.
-    """
-    return _call_cpp_func(_cpp.flatten, x, dim)
-
-
 def mean(x, dim, out=None):
     """Element-wise mean over the specified dimension, if variances are
     present, the new variance is computated as standard-deviation of the mean.
