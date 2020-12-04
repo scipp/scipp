@@ -16,20 +16,31 @@
 #include <stddef.h>
 
 namespace scipp::core::element {
-
-/// Sets any masked elements to 0 to handle special FP vals
-constexpr auto convertMaskedToZero = overloaded{
+constexpr auto mask_to_zero_types =
     core::element::arg_list<std::tuple<double, bool>, std::tuple<float, bool>,
                             std::tuple<bool, bool>, std::tuple<int64_t, bool>,
-                            std::tuple<int32_t, bool>>,
-    [](const auto &a, bool isMasked) { return isMasked ? decltype(a){0} : a; },
-    [](const scipp::units::Unit &a, const scipp::units::Unit &b) {
-      if (b != scipp::units::dimensionless) {
-        throw except::UnitError("Expected mask to contain dimensionless units");
-      }
+                            std::tuple<int32_t, bool>>;
+constexpr auto dimensionless_mask_check = [](const scipp::units::Unit &a,
+                                             const scipp::units::Unit &b) {
+  if (b != scipp::units::dimensionless) {
+    throw except::UnitError("Expected mask to contain dimensionless units");
+  }
+  return a;
+};
 
-      return a;
-    }};
+/// Sets any masked elements to 0 to handle special FP vals. Output type taken
+/// from lhs input.
+constexpr auto convertMaskedToZero = overloaded{
+    mask_to_zero_types,
+    [](const auto &a, bool isMasked) { return isMasked ? decltype(a){0} : a; },
+    dimensionless_mask_check};
+
+/// Sets any masked elements to 0.0 to handle special FP vals. Output type
+/// always double precision float.
+constexpr auto convertMaskedToDoubleZero = overloaded{
+    mask_to_zero_types,
+    [](const auto &a, bool isMasked) { return isMasked ? double(0) : a; },
+    dimensionless_mask_check};
 
 /// Set the elements referenced by a span to 0
 template <class T> void zero(const scipp::span<T> &data) {

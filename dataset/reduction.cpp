@@ -60,7 +60,7 @@ DataArray mean(const DataArrayConstView &a, const Dim dim) {
 }
 
 DataArray mean(const DataArrayConstView &a) {
-  return sum(a) / scale_divisor(a.data(), a.masks());
+  return mean(a.data(), a.masks());
 }
 
 Dataset mean(const DatasetConstView &d, const Dim dim) {
@@ -78,7 +78,7 @@ DataArray nanmean(const DataArrayConstView &a, const Dim dim) {
 }
 
 DataArray nanmean(const DataArrayConstView &a) {
-  return nansum(a) / scale_divisor(a.data(), a.masks());
+  return nanmean(a.data(), a.masks());
 }
 
 Dataset nanmean(const DatasetConstView &d, const Dim dim) {
