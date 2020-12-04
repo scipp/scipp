@@ -83,6 +83,7 @@ VariableView mean(const VariableConstView &var, const Dim dim,
 
 Variable nanmean(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks) {
+  using variable::isfinite;
   validate_nanmean(var);
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     const auto count = sum(applyMask(isfinite(values(var)), mask_union), dim);
@@ -93,6 +94,7 @@ Variable nanmean(const VariableConstView &var, const Dim dim,
 
 VariableView nanmean(const VariableConstView &var, const Dim dim,
                      const MasksConstView &masks, const VariableView &out) {
+  using variable::isfinite;
   validate_nanmean(var);
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     const auto count = sum(applyMask(isfinite(values(var)), mask_union), dim);
