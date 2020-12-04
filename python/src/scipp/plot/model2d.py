@@ -121,7 +121,8 @@ class PlotModel2d(PlotModel):
             dslice.data = sc.rebin(dslice.data, dim, dslice.coords[dim], edges)
             for m in dslice.masks:
                 if dim in dslice.masks[m].dims:
-                    dslice.masks[m] = sc.rebin(dslice.masks[m], dim, dslice.coords[dim], edges)
+                    dslice.masks[m] = sc.rebin(dslice.masks[m], dim,
+                                               dslice.coords[dim], edges)
 
         # Divide by pixel width if we have normalized in update_data() in the
         # case of non-counts data.
@@ -158,12 +159,12 @@ class PlotModel2d(PlotModel):
             self.xyrebin["y"].shape[0] - 1, self.xyrebin["x"].shape[0] - 1
         ]
         self.dslice = sc.DataArray(coords=rebin_edges,
-                                   data=sc.Variable(dims=list(
-                                       self.displayed_dims.values()),
-                                                    values=np.ones(shape),
-                                                    variances=np.zeros(shape),
-                                                    dtype=self.vslice.data.dtype,
-                                                    unit=sc.units.one))
+                                   data=sc.Variable(
+                                       dims=list(self.displayed_dims.values()),
+                                       values=np.ones(shape),
+                                       variances=np.zeros(shape),
+                                       dtype=self.vslice.data.dtype,
+                                       unit=sc.units.one))
 
         # print(self.dslice)
         # print(resampled_image.data)

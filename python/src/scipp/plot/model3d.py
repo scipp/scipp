@@ -106,25 +106,24 @@ class PlotModel3d(PlotModel):
                 data_slice.coords[self.displayed_dims["x"]].shape[0] - 1
             ]
 
-            self.dslice = sc.DataArray(coords={
-                self.displayed_dims["z"]:
-                data_slice.coords[self.displayed_dims["z"]],
-                self.displayed_dims["y"]:
-                data_slice.coords[self.displayed_dims["y"]],
-                self.displayed_dims["x"]:
-                data_slice.coords[self.displayed_dims["x"]]
-            },
-                                       data=sc.Variable(
-                                           dims=[
-                                               self.displayed_dims["z"],
-                                               self.displayed_dims["y"],
-                                               self.displayed_dims["x"]
-                                           ],
-                                           values=np.ones(shape),
-                                           variances=np.zeros(shape),
-                                           dtype=data_slice.data.dtype,
-                                           unit=sc.units.one),
-                                       masks=data_slice.masks)
+            self.dslice = sc.DataArray(
+                coords={
+                    self.displayed_dims["z"]:
+                    data_slice.coords[self.displayed_dims["z"]],
+                    self.displayed_dims["y"]:
+                    data_slice.coords[self.displayed_dims["y"]],
+                    self.displayed_dims["x"]:
+                    data_slice.coords[self.displayed_dims["x"]]
+                },
+                data=sc.Variable(dims=[
+                    self.displayed_dims["z"], self.displayed_dims["y"],
+                    self.displayed_dims["x"]
+                ],
+                                 values=np.ones(shape),
+                                 variances=np.zeros(shape),
+                                 dtype=data_slice.data.dtype,
+                                 unit=sc.units.one),
+                masks=data_slice.masks)
 
             self.dslice *= data_slice.data
         else:

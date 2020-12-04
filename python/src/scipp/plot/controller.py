@@ -345,10 +345,9 @@ class PlotController:
         # to the model, which holds the coordinates.
         # ranges = {}
         lower, upper = self.model.get_slice_coord_bounds(
-                self.name, new_dim, [0, 1])
-        self.widgets.update_slider_readout(index, lower,
-                                               upper, [0, 1],
-                                               new_dim == self.multid_coord)
+            self.name, new_dim, [0, 1])
+        self.widgets.update_slider_readout(index, lower, upper, [0, 1],
+                                           new_dim == self.multid_coord)
 
     def update_log_axes_buttons(self):
         """
@@ -367,7 +366,7 @@ class PlotController:
         self.view.update_norm_button(*args, **kwargs)
 
     def update_axes(self, change=None, normalize=True):
-    # def update_axes(self, normalize=True):
+        # def update_axes(self, normalize=True):
         """
         This function is called when a dimension that is displayed along a
         given axis is changed. This happens for instance when we want to

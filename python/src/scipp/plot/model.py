@@ -66,13 +66,12 @@ class PlotModel:
                 if is_histogram:
                     coord_list[dim] = coord
                 else:
-                    coord_list[dim] = to_bin_edges(
-                        coord, dim)
+                    coord_list[dim] = to_bin_edges(coord, dim)
 
             # Create a PlotArray helper object that supports slicing where new
             # bin-edge coordinates can be attached to the data
             self.data_arrays[name] = PlotArray(data=array.data,
-                coords=coord_list)
+                                               coords=coord_list)
 
             # Include masks
             for m in array.masks:
@@ -105,7 +104,8 @@ class PlotModel:
 
         if dim not in data_array.coords:
             coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
-            return coord, formatter, name_with_unit(var=coord), name_with_unit(var=coord, name="")
+            return coord, formatter, name_with_unit(var=coord), name_with_unit(
+                var=coord, name="")
 
         tp = data_array.coords[dim].dtype
         coord_info = {}
@@ -149,14 +149,17 @@ class PlotModel:
                 if data_array.coords[dim].shape[-1] == dim_to_shape[dim]:
                     coord_values = to_bin_centers(coord, dim).values
             form = lambda val, pos: value_to_string(  # noqa: E731
-                data_array.coords[dim_label_map[dim]].values[np.abs(coord_values - val).
-                                              argmin()])
+                data_array.coords[dim_label_map[dim]].values[np.abs(
+                    coord_values - val).argmin()])
             formatter.update({"linear": form, "log": form})
-            coord_info["label"] = name_with_unit(var=data_array.coords[dim_label_map[dim]], name=dim_label_map[dim])
-            coord_info["unit"] = name_with_unit(var=data_array.coords[dim_label_map[dim]], name="")
+            coord_info["label"] = name_with_unit(
+                var=data_array.coords[dim_label_map[dim]],
+                name=dim_label_map[dim])
+            coord_info["unit"] = name_with_unit(
+                var=data_array.coords[dim_label_map[dim]], name="")
 
         else:
-            coord = data_array.coords[dim] # .astype(sc.dtype.float64)
+            coord = data_array.coords[dim]  # .astype(sc.dtype.float64)
 
         if len(coord_info) == 0:
             coord_info["label"] = name_with_unit(var=coord)
@@ -190,7 +193,8 @@ class PlotModel:
         """
         Get a coordinate along a requested dimension.
         """
-        return self.data_arrays[name].coords[dim], self.coord_info[name][dim]["label"], self.coord_info[name][dim]["unit"]
+        return self.data_arrays[name].coords[dim], self.coord_info[name][dim][
+            "label"], self.coord_info[name][dim]["unit"]
 
     def rescale_to_data(self):
         """

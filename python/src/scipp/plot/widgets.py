@@ -99,7 +99,8 @@ class PlotWidgets:
             self.dim_buttons[index] = {}
             for dim_ in possible_dims:
                 self.dim_buttons[index][dim_] = ipw.Button(
-                    description=dim_label_map[dim_] if dim_ in dim_label_map else dim_,
+                    description=dim_label_map[dim_]
+                    if dim_ in dim_label_map else dim_,
                     button_style='info' if dim == dim_ else '',
                     disabled=((dim != dim_) and (dim_ in slider_dims.values())
                               or (dim_ == self.multid_coord)),
@@ -276,8 +277,7 @@ class PlotWidgets:
         """
         self.thickness_slider[
             index].max = 1 if self.multid_coord is not None else max_value
-        self.thickness_slider[
-            index].value = 1
+        self.thickness_slider[index].value = 1
         self.update_slider_range(index, self.thickness_slider[index].value,
                                  max_value - 1)
 
@@ -327,9 +327,7 @@ class PlotWidgets:
             self._set_slider_defaults(index, dim_to_shape[dim])
             lims = ranges[dim]
             val = self.slider[index].value
-            self.update_slider_readout(
-                index, lims[0], lims[1],
-                [val, val + 1])
+            self.update_slider_readout(index, lims[0], lims[1], [val, val + 1])
             self.unit_labels[index].value = coord_units[dim]
 
     def get_slider_bounds(self, exclude=None):

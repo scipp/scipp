@@ -61,7 +61,8 @@ class PlotArrayView:
                     if isinstance(slice_obj[1], int):
                         sl[1] = slice(slice_obj[1], slice_obj[1] + 2)
                     else:
-                        sl[1] = slice(slice_obj[1].start, slice_obj[1].stop + 1)
+                        sl[1] = slice(slice_obj[1].start,
+                                      slice_obj[1].stop + 1)
                 self.coords[key] = plot_array.coords[key][tuple(sl)]
             else:
                 self.coords[key] = plot_array.coords[key]
@@ -79,7 +80,6 @@ class PlotArrayView:
 
     def __getitem__(self, slice_obj):
         return PlotArrayView(self, slice_obj)
-
 
 
 class PlotArray:
@@ -100,7 +100,8 @@ class PlotArray:
                 self.coords[key] = coord
                 self.isedges[key] = {}
                 for i, dim_ in enumerate(coord.dims):
-                    self.isedges[key][dim_] = coord.shape[i] == dim_to_shape[dim_] + 1
+                    self.isedges[key][dim_] = coord.shape[
+                        i] == dim_to_shape[dim_] + 1
         if masks is not None:
             self.masks.update({m: masks[m] for m in masks})
 

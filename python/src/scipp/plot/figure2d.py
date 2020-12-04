@@ -63,7 +63,12 @@ class PlotFigure2d(PlotFigure):
                                                           aspect=aspect,
                                                           zorder=2)
 
-    def make_default_imshow(self, cmap, norm, aspect=None, picker=None, zorder=1):
+    def make_default_imshow(self,
+                            cmap,
+                            norm,
+                            aspect=None,
+                            picker=None,
+                            zorder=1):
         """
         Make a base `imshow` object whose contents and extents will be later
         updated to display a 2d data array.
