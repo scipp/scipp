@@ -106,6 +106,9 @@ public:
                         variances);
   }
 
+  Dim elem_dim(const VariableConstView &var) const override {
+    return std::get<1>(var.constituents<bucket<T>>());
+  }
   DType elem_dtype(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).dtype();
   }

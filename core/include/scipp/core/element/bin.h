@@ -121,8 +121,8 @@ static constexpr auto update_indices_from_existing = overloaded{
 // - `offsets` Start indices of the output bins
 // - `bin_indices` Target output bin index (within input bin)
 template <class T, class Index>
-using bin_arg =
-    std::tuple<span<T>, span<const Index>, span<const T>, span<const Index>>;
+using bin_arg = std::tuple<span<T>, span<const scipp::index>, span<const T>,
+                           span<const Index>>;
 static constexpr auto bin = overloaded{
     element::arg_list<
         bin_arg<double, int64_t>, bin_arg<double, int32_t>,
@@ -155,8 +155,8 @@ static constexpr auto bin = overloaded{
 
 static constexpr auto count_indices = overloaded{
     element::arg_list<
-        std::tuple<scipp::span<int64_t>, scipp::span<const int64_t>>,
-        std::tuple<scipp::span<int32_t>, scipp::span<const int32_t>>>,
+        std::tuple<scipp::span<scipp::index>, scipp::span<const int64_t>>,
+        std::tuple<scipp::span<scipp::index>, scipp::span<const int32_t>>>,
     [](const units::Unit &counts, const units::Unit &indices) {
       expect::equals(indices, units::one);
       expect::equals(counts, units::one);

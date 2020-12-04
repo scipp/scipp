@@ -18,6 +18,10 @@ bool VariableFactory::is_buckets(const VariableConstView &var) const {
   return m_makers.at(var.dtype())->is_buckets();
 }
 
+Dim VariableFactory::elem_dim(const VariableConstView &var) const {
+  return m_makers.at(var.dtype())->elem_dim(var);
+}
+
 DType VariableFactory::elem_dtype(const VariableConstView &var) const {
   return m_makers.at(var.dtype())->elem_dtype(var);
 }

@@ -23,6 +23,7 @@ public:
   create(const DType elem_dtype, const Dimensions &dims,
          const units::Unit &unit, const bool variances,
          const std::vector<VariableConstView> &parents) const = 0;
+  virtual Dim elem_dim(const VariableConstView &var) const = 0;
   virtual DType elem_dtype(const VariableConstView &var) const = 0;
   virtual units::Unit elem_unit(const VariableConstView &var) const = 0;
   virtual void set_elem_unit(const VariableView &var,
@@ -52,6 +53,9 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
     else
       return makeVariable<T>(dims, unit,
                              Values(volume, core::default_init_elements));
+  }
+  Dim elem_dim(const VariableConstView &) const override {
+    return Dim::Invalid;
   }
   DType elem_dtype(const VariableConstView &var) const override {
     return var.dtype();
@@ -100,6 +104,7 @@ public:
         ->create(elem_dtype, dims, unit, variances,
                  std::vector<VariableConstView>{parents...});
   }
+  Dim elem_dim(const VariableConstView &var) const;
   DType elem_dtype(const VariableConstView &var) const;
   units::Unit elem_unit(const VariableConstView &var) const;
   void set_elem_unit(const VariableView &var, const units::Unit &u) const;

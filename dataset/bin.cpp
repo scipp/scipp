@@ -13,7 +13,6 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/cumulative.h"
-#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
@@ -97,9 +96,11 @@ template <class T> Variable as_subspan_view(T &&binned) {
 /// indices is a binned variable with sub-bin indices, i.e., new bins within
 /// bins
 Variable bin_sizes(const VariableConstView &sub_bin, const scipp::index nbin) {
-  const auto nbins = broadcast(nbin * units::one, sub_bin.dims());
-  auto sizes = resize(sub_bin, nbins);
-  buckets::reserve(sizes, nbins);
+  const auto end = cumsum(broadcast(nbin * units::one, sub_bin.dims()));
+  const auto dim = variable::variableFactory().elem_dim(sub_bin);
+  auto sizes = make_bins(zip(end - nbin * units::one, end), dim,
+                         makeVariable<scipp::index>(
+                             Dims{dim}, Shape{sub_bin.dims().volume() * nbin}));
   variable::transform_in_place(
       as_subspan_view(sizes), as_subspan_view(sub_bin),
       core::element::count_indices); // transform bins, not bin element
@@ -122,8 +123,6 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
       output_bin_sizes = sum(output_bin_sizes, dim);
     }
   offsets += cumsum_bins(output_bin_sizes, CumSumMode::Exclusive);
-  if (output_bin_sizes.dtype() != dtype<scipp::index>)
-    output_bin_sizes = astype(output_bin_sizes, dtype<scipp::index>);
   Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
   auto end = cumsum(filtered_input_bin_size);
   const auto total_size = end.dtype() == dtype<int64_t>
