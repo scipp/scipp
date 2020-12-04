@@ -11,7 +11,6 @@
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/math.h"
 
 #include "dataset_operations_common.h"
 
@@ -70,20 +69,20 @@ Variable mean(const VariableConstView &var, const Dim dim,
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const MasksConstView &masks, const VariableView &out) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
-    sum(applyMaskAsDouble(var, mask_union), dim, out);
-    out /=
-        sum(applyMaskAsDouble(isfinite(astype(var, dtype<double>)), mask_union),
-            dim);
-    return out;
+    return mean_impl(applyMask(var, mask_union), dim, sum(~mask_union, dim),
+                     out);
   }
-
   return mean(var, dim, out);
 }
 
 Variable mean(const VariableConstView &var, const MasksConstView &masks) {
   auto mask_union = masks_merge_if_contained(masks, var.dims());
-  return sum(applyMaskAsDouble(var, mask_union)) /
-         sum(applyMaskAsDouble(isfinite(var), mask_union));
+  if (isInt(var.dtype()))
+    return sum(applyMaskAsDouble(var, mask_union)) /
+           sum(applyMaskAsDouble(isfinite(var), mask_union));
+  else
+    return sum(applyMask(var, mask_union)) /
+           sum(applyMask(isfinite(var), mask_union));
 }
 
 Variable nanmean(const VariableConstView &var, const Dim dim,
@@ -108,8 +107,13 @@ VariableView nanmean(const VariableConstView &var, const Dim dim,
 
 Variable nanmean(const VariableConstView &var, const MasksConstView &masks) {
   auto mask_union = masks_merge_if_contained(masks, var.dims());
-  return nansum(applyMask(var, mask_union)) /
-         sum(applyMask(isfinite(astype(var, dtype<double>)), mask_union));
+  if (isInt(var.dtype()))
+    return nansum(applyMaskAsDouble(var, mask_union)) /
+           sum(applyMaskAsDouble(isfinite(astype(var, dtype<double>)),
+                                 mask_union));
+  else
+    return nansum(applyMask(var, mask_union)) /
+           sum(applyMask(isfinite(astype(var, dtype<double>)), mask_union));
 }
 
 /// Returns the union of all masks with irreducible dimension `dim`.
