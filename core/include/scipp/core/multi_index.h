@@ -150,6 +150,15 @@ public:
       increment_outer();
   }
 
+  constexpr void increment_innermost() noexcept {
+    for (scipp::index data = 0; data < N; ++data)
+      m_data_index[data] += m_stride[data][0];
+  }
+
+  void bump_coord_index(const scipp::index step) noexcept {
+    m_coord[0] += step;
+  }
+
   /// Set the absolute index. In the special case of iteration with buckets,
   /// this sets the *index of the bucket* and NOT the full index within the
   /// iterated data.
@@ -193,6 +202,10 @@ public:
     return m_coord != other.m_coord;
   }
 
+  [[nodiscard]] constexpr scipp::index ndim() const noexcept { return m_ndim; }
+
+  [[nodiscard]] constexpr auto shape() const noexcept { return m_shape; }
+
   auto begin() const noexcept {
     auto it(*this);
     it.set_index(0);
@@ -213,6 +226,13 @@ public:
       if (m_stride[0][i] == 0)
         return true;
     return false;
+  }
+
+  [[nodiscard]] bool innermost_are_contiguous() const noexcept {
+    return std::all_of(m_stride.begin(), m_stride.end(),
+                       [this](const auto &stride) {
+                         return this->m_ndim > 0 && stride[0] == 1;
+                       });
   }
 
 private:

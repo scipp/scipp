@@ -326,8 +326,19 @@ template <bool dry_run> struct in_place {
       return;
 
     auto run = [&](auto indices, const auto &end) {
-      for (; indices != end; indices.increment())
-        call_in_place(op, indices, arg, other...);
+      if (indices.innermost_are_contiguous()) {
+        const auto inner_size = indices.shape()[0];
+        while (indices != end) {
+          for (scipp::index inner = 0; inner < inner_size; ++inner, indices.increment_innermost()) {
+            call_in_place(op, indices, arg, other...);
+          }
+          indices.bump_coord_index(inner_size);
+          indices.increment_outer();
+        }
+      } else {
+        for (; indices != end; indices.increment())
+          call_in_place(op, indices, arg, other...);
+      }
     };
     if (begin.has_stride_zero()) {
       // The output has a dimension with stride zero so parallelization must
