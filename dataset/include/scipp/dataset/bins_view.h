@@ -55,6 +55,9 @@ public:
   auto end() const noexcept {
     return boost::make_transform_iterator(m_mapView.end(), make_item{this});
   }
+  bool contains(const key_type &key) const noexcept {
+    return m_mapView.contains(key);
+  }
 
 private:
   MapView m_mapView;

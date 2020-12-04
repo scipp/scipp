@@ -13,7 +13,7 @@
 using namespace scipp;
 using namespace scipp::dataset;
 
-class DataArrayBucketTest : public ::testing::Test {
+class DataArrayBinsTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
@@ -24,7 +24,7 @@ protected:
   Variable var = make_bins(indices, Dim::X, buffer);
 };
 
-TEST_F(DataArrayBucketTest, concatenate_dim_1d) {
+TEST_F(DataArrayBinsTest, concatenate_dim_1d) {
   Variable expected_indices =
       makeVariable<std::pair<scipp::index, scipp::index>>(
           Values{std::pair{0, 4}});
@@ -32,7 +32,7 @@ TEST_F(DataArrayBucketTest, concatenate_dim_1d) {
   EXPECT_EQ(buckets::concatenate(var, Dim::Y), expected);
 }
 
-TEST_F(DataArrayBucketTest, concatenate_dim_1d_masked) {
+TEST_F(DataArrayBinsTest, concatenate_dim_1d_masked) {
   const auto y = makeVariable<double>(dims);
   const auto scalar = makeVariable<double>(Values{1.2});
   const auto mask = makeVariable<bool>(dims, Values{true, false});
@@ -45,7 +45,7 @@ TEST_F(DataArrayBucketTest, concatenate_dim_1d_masked) {
   EXPECT_EQ(buckets::concatenate(a, Dim::Y), expected);
 }
 
-TEST(DataArrayBucket2dTest, concatenate_dim_2d) {
+TEST(DataArrayBins2dTest, concatenate_dim_2d) {
   Variable indicesZY = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::Z, Dim::Y}, Shape{2, 2},
       Values{std::pair{0, 2}, std::pair{2, 3}, std::pair{4, 6},
@@ -55,7 +55,7 @@ TEST(DataArrayBucket2dTest, concatenate_dim_2d) {
   DataArray buffer = DataArray(data, {{Dim::X, data + data}});
   Variable zy = make_bins(indicesZY, Dim::X, buffer);
 
-  // Note that equality ignores data not in any bucket.
+  // Note that equality ignores data not in any bin.
   Variable indicesZ = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::Z}, Shape{2}, Values{std::pair{0, 3}, std::pair{4, 6}});
   Variable z = make_bins(indicesZ, Dim::X, buffer);
@@ -74,7 +74,7 @@ TEST(DataArrayBucket2dTest, concatenate_dim_2d) {
                                               Dim::Y)));
 }
 
-TEST_F(DataArrayBucketTest, concatenate) {
+TEST_F(DataArrayBinsTest, concatenate) {
   const auto result = buckets::concatenate(var, var * (3.0 * units::one));
   Variable out_indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 4}, std::pair{4, 8}});
@@ -91,7 +91,7 @@ TEST_F(DataArrayBucketTest, concatenate) {
   buckets::append(var, -var);
 }
 
-TEST_F(DataArrayBucketTest, concatenate_with_broadcast) {
+TEST_F(DataArrayBinsTest, concatenate_with_broadcast) {
   auto var2 = var;
   var2.rename(Dim::Y, Dim::Z);
   var2 *= 3.0 * units::one;
@@ -113,7 +113,7 @@ TEST_F(DataArrayBucketTest, concatenate_with_broadcast) {
   EXPECT_THROW(buckets::append(var, var2), except::DimensionMismatchError);
 }
 
-TEST_F(DataArrayBucketTest, histogram) {
+TEST_F(DataArrayBinsTest, histogram) {
   Variable weights = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   DataArray events = DataArray(weights, {{Dim::Z, data}});
@@ -127,7 +127,7 @@ TEST_F(DataArrayBucketTest, histogram) {
                                  Variances{0, 1, 2, 0, 0, 3}));
 }
 
-TEST_F(DataArrayBucketTest, histogram_masked) {
+TEST_F(DataArrayBinsTest, histogram_masked) {
   Variable weights = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   Variable mask = makeVariable<bool>(Dims{Dim::X}, Shape{4},
@@ -143,7 +143,7 @@ TEST_F(DataArrayBucketTest, histogram_masked) {
                                  Variances{0, 1, 2, 0, 0, 0}));
 }
 
-TEST_F(DataArrayBucketTest, histogram_existing_dim) {
+TEST_F(DataArrayBinsTest, histogram_existing_dim) {
   Variable weights = makeVariable<double>(
       Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 2, 3, 4});
   DataArray events = DataArray(weights, {{Dim::Y, data}});
@@ -155,7 +155,7 @@ TEST_F(DataArrayBucketTest, histogram_existing_dim) {
       Dims{Dim::Y}, Shape{3}, Values{0, 1, 5}, Variances{0, 1, 5});
   EXPECT_EQ(buckets::histogram(buckets, bin_edges), expected);
 
-  // Histogram data array containing bucket variable
+  // Histogram data array containing binned variable
   DataArray a(buckets);
   EXPECT_EQ(histogram(a, bin_edges),
             DataArray(expected, {{Dim::Y, bin_edges}}));
@@ -168,12 +168,12 @@ TEST_F(DataArrayBucketTest, histogram_existing_dim) {
                       {{Dim::Y, bin_edges}}));
 }
 
-TEST_F(DataArrayBucketTest, sum) {
+TEST_F(DataArrayBinsTest, sum) {
   EXPECT_EQ(buckets::sum(var),
             makeVariable<double>(indices.dims(), Values{3, 7}));
 }
 
-class DataArrayBucketMapTest : public ::testing::Test {
+class DataArrayBinsMapTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
@@ -192,7 +192,7 @@ protected:
       {{Dim::Z, bin_edges}});
 };
 
-TEST_F(DataArrayBucketMapTest, map) {
+TEST_F(DataArrayBinsMapTest, map) {
   const auto out = buckets::map(histogram, buckets, Dim::Z);
   // event coords 1,2,3,4
   // histogram:
@@ -216,7 +216,7 @@ TEST_F(DataArrayBucketMapTest, map) {
   EXPECT_EQ(partial, expected);
 }
 
-TEST_F(DataArrayBucketMapTest, map_masked) {
+TEST_F(DataArrayBinsMapTest, map_masked) {
   histogram.masks().set(
       "mask", makeVariable<bool>(histogram.dims(), Values{false, true, false}));
   const auto out = buckets::map(histogram, buckets, Dim::Z);
@@ -225,7 +225,7 @@ TEST_F(DataArrayBucketMapTest, map_masked) {
   EXPECT_EQ(out, make_bins(indices, Dim::X, expected_scale));
 }
 
-class DataArrayBucketScaleTest : public ::testing::Test {
+class DataArrayBinsScaleTest : public ::testing::Test {
 protected:
   auto make_indices() const {
     return makeVariable<std::pair<scipp::index, scipp::index>>(
@@ -268,7 +268,7 @@ protected:
   }
 };
 
-TEST_F(DataArrayBucketScaleTest, fail_events_op_non_histogram) {
+TEST_F(DataArrayBinsScaleTest, fail_events_op_non_histogram) {
   const auto events = make_events();
   auto coord = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
                                     units::us, Values{0, 2, 1, 3});
@@ -286,13 +286,13 @@ TEST_F(DataArrayBucketScaleTest, fail_events_op_non_histogram) {
 
   // Fail because non-event operand has to be a histogram
   EXPECT_THROW(buckets::scale(buckets, not_hist), except::BinEdgeError);
-  // We have a single bucket in X, so setting the "same" coord as in `not_hist`
+  // We have a single bin in X, so setting the "same" coord as in `not_hist`
   // we have a matching coord, it it would be a bin-edge coord on `buckets`.
   buckets.coords().set(Dim::X, not_hist.coords()[Dim::X]);
   EXPECT_THROW(buckets::scale(buckets, not_hist), except::BinEdgeError);
 }
 
-TEST_F(DataArrayBucketScaleTest, events_times_histogram) {
+TEST_F(DataArrayBinsScaleTest, events_times_histogram) {
   const auto events = make_events();
   const auto hist = make_histogram();
   auto buckets = make_buckets(events);
@@ -311,7 +311,7 @@ TEST_F(DataArrayBucketScaleTest, events_times_histogram) {
   EXPECT_EQ(buckets, make_buckets(expected_events));
 }
 
-TEST_F(DataArrayBucketScaleTest,
+TEST_F(DataArrayBinsScaleTest,
        events_times_histogram_fail_too_many_bucketed_dims) {
   auto x = make_histogram();
   auto z(x);
@@ -327,7 +327,7 @@ TEST_F(DataArrayBucketScaleTest,
   EXPECT_THROW(buckets::scale(buckets, zx), except::BinEdgeError);
 }
 
-class DataArrayBucketPlusMinusTest : public ::testing::Test {
+class DataArrayBinsPlusMinusTest : public ::testing::Test {
 protected:
   auto make_events() const {
     auto weights = makeVariable<double>(
@@ -339,7 +339,7 @@ protected:
     return DataArray(weights, {{Dim::X, coord}});
   }
 
-  DataArrayBucketPlusMinusTest() {
+  DataArrayBinsPlusMinusTest() {
     eventsA = make_events();
     eventsB = eventsA;
     eventsB.coords()[Dim::X] += 0.01 * units::us;
@@ -363,12 +363,12 @@ protected:
   DataArray b;
 };
 
-TEST_F(DataArrayBucketPlusMinusTest, plus) {
+TEST_F(DataArrayBinsPlusMinusTest, plus) {
   using buckets::sum;
   EXPECT_EQ(sum(buckets::concatenate(a, b)), sum(a) + sum(b));
 }
 
-TEST_F(DataArrayBucketPlusMinusTest, minus) {
+TEST_F(DataArrayBinsPlusMinusTest, minus) {
   using buckets::sum;
   auto tmp = -b;
   EXPECT_EQ(b.unit(), units::one);
@@ -376,7 +376,7 @@ TEST_F(DataArrayBucketPlusMinusTest, minus) {
   EXPECT_EQ(sum(buckets::concatenate(a, -b)), sum(a) - sum(b));
 }
 
-TEST_F(DataArrayBucketPlusMinusTest, plus_equals) {
+TEST_F(DataArrayBinsPlusMinusTest, plus_equals) {
   auto out(a);
   buckets::append(out, b);
   EXPECT_EQ(out, buckets::concatenate(a, b));
@@ -386,19 +386,19 @@ TEST_F(DataArrayBucketPlusMinusTest, plus_equals) {
   EXPECT_EQ(out, buckets::concatenate(buckets::concatenate(a, b), -b));
 }
 
-TEST_F(DataArrayBucketPlusMinusTest, plus_equals_self) {
+TEST_F(DataArrayBinsPlusMinusTest, plus_equals_self) {
   auto out(a);
   buckets::append(out, out);
   EXPECT_EQ(out, buckets::concatenate(a, a));
 }
 
-TEST_F(DataArrayBucketPlusMinusTest, minus_equals) {
+TEST_F(DataArrayBinsPlusMinusTest, minus_equals) {
   auto out(a);
   buckets::append(out, -b);
   EXPECT_EQ(out, buckets::concatenate(a, -b));
 }
 
-class DatasetBucketTest : public ::testing::Test {
+class DatasetBinsTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
@@ -412,10 +412,10 @@ protected:
     Variable var0 = make_bins(indices, Dim::X, buffer0);
     Variable var1 = make_bins(indices, Dim::X, buffer1);
     const auto result = buckets::concatenate(var0, var1);
-    EXPECT_EQ(result.values<bucket<Dataset>>()[0],
+    EXPECT_EQ(result.values<core::bin<Dataset>>()[0],
               concatenate(buffer0.slice({Dim::X, 0, 2}),
                           buffer1.slice({Dim::X, 0, 2}), Dim::X));
-    EXPECT_EQ(result.values<bucket<Dataset>>()[1],
+    EXPECT_EQ(result.values<core::bin<Dataset>>()[1],
               concatenate(buffer0.slice({Dim::X, 2, 3}),
                           buffer1.slice({Dim::X, 2, 3}), Dim::X));
   }
@@ -427,7 +427,7 @@ protected:
   }
 };
 
-TEST_F(DatasetBucketTest, concatenate) {
+TEST_F(DatasetBinsTest, concatenate) {
   buffer0.coords().set(Dim::X, column);
   buffer1.coords().set(Dim::X, column + column);
   check();

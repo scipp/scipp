@@ -40,7 +40,7 @@ static constexpr auto update_indices_by_binning_linspace =
                      core::linear_edge_params(edges);
                  const double bin = (x - offset) * scale;
                  index *= scipp::size(edges) - 1;
-                 index += (bin < 0.0 || bin >= nbin) ? -1 : bin;
+                 index = (bin < 0.0 || bin >= nbin) ? -1 : (index + bin);
                }};
 
 static constexpr auto update_indices_by_binning_sorted_edges =
@@ -50,14 +50,15 @@ static constexpr auto update_indices_by_binning_sorted_edges =
                    return;
                  auto it = std::upper_bound(edges.begin(), edges.end(), x);
                  index *= scipp::size(edges) - 1;
-                 index += (it == edges.begin() || it == edges.end())
-                              ? -1
-                              : --it - edges.begin();
+                 index = (it == edges.begin() || it == edges.end())
+                             ? -1
+                             : (index + --it - edges.begin());
                }};
 
 static constexpr auto groups_to_map = overloaded{
-    element::arg_list<span<const int64_t>, span<const int32_t>,
-                      span<const std::string>>,
+    element::arg_list<span<const double>, span<const float>,
+                      span<const int64_t>, span<const int32_t>,
+                      span<const bool>, span<const std::string>>,
     transform_flags::expect_no_variance_arg<0>,
     [](const units::Unit &u) { return u; },
     [](const auto &groups) {
@@ -77,8 +78,11 @@ using update_indices_by_grouping_arg =
     std::tuple<scipp::index, T, std::unordered_map<T, scipp::index>>;
 
 static constexpr auto update_indices_by_grouping =
-    overloaded{element::arg_list<update_indices_by_grouping_arg<int64_t>,
+    overloaded{element::arg_list<update_indices_by_grouping_arg<double>,
+                                 update_indices_by_grouping_arg<float>,
+                                 update_indices_by_grouping_arg<int64_t>,
                                  update_indices_by_grouping_arg<int32_t>,
+                                 update_indices_by_grouping_arg<bool>,
                                  update_indices_by_grouping_arg<std::string>>,
                [](units::Unit &indices, const units::Unit &coord,
                   const units::Unit &groups) {
@@ -90,7 +94,7 @@ static constexpr auto update_indices_by_grouping =
                    return;
                  const auto it = groups.find(x);
                  index *= scipp::size(groups);
-                 index += it == groups.end() ? -1 : it->second;
+                 index = (it == groups.end()) ? -1 : (index + it->second);
                }};
 
 static constexpr auto update_indices_from_existing =
