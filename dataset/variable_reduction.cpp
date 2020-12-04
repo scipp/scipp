@@ -11,6 +11,7 @@
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/math.h"
 
 #include "dataset_operations_common.h"
 
@@ -61,13 +62,7 @@ VariableView nansum(const VariableConstView &var, const Dim dim,
 Variable mean(const VariableConstView &var, const Dim dim,
               const MasksConstView &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
-    const auto is_int = isInt(var.dtype());
-    const auto count = is_int ? sum(astype(~mask_union, dtype<double>), dim)
-                              : sum(astype(~mask_union, var.dtype()), dim);
-    const auto maskedData = is_int
-                                ? sum(applyMaskAsDouble(var, mask_union), dim)
-                                : sum(applyMask(var, mask_union), dim);
-    return maskedData / count;
+    return mean_impl(applyMask(var, mask_union), dim, sum(~mask_union, dim));
   }
   return mean(var, dim);
 }
