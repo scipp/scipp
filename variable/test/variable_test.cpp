@@ -807,10 +807,14 @@ TEST(VariableTest, rename) {
   VariableConstView view(var);
   view.rename(Dim::Y, Dim::Z);
   ASSERT_EQ(view, expected);
+  ASSERT_EQ(view.slice({Dim::X, 1}), expected.slice({Dim::X, 1}));
+  ASSERT_EQ(view.slice({Dim::Z, 1}), expected.slice({Dim::Z, 1}));
   ASSERT_NE(var, expected);
 
   var.rename(Dim::Y, Dim::Z);
   ASSERT_EQ(view, expected);
+  ASSERT_EQ(view.slice({Dim::X, 1}), expected.slice({Dim::X, 1}));
+  ASSERT_EQ(view.slice({Dim::Z, 1}), expected.slice({Dim::Z, 1}));
   ASSERT_EQ(var, expected);
 }
 
