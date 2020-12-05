@@ -48,6 +48,14 @@ TYPED_TEST(VariableSpecialValueTest, isfinite) {
               element::isfinite(x) * units::dimensionless);
   }
 }
+TEST(VariableSpecialValueTest, isfinite_valueandvariances) {
+  const auto var =
+      makeVariable<double>(Dimensions{Dim::Z, 3}, units::m,
+                           Values{1.0, 2.0, 3.0}, Variances{1.0, 2.0, 3.0});
+  EXPECT_THROW(isfinite(var),
+               except::VariancesError); // Characterisation test. Missing
+                                        // transform_flags::no_out_variance,
+}
 
 TYPED_TEST(VariableSpecialValueTest, isposinf) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
