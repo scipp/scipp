@@ -135,14 +135,13 @@ Variable mean(const VariableConstView &var) {
 }
 
 Variable mean(const VariableConstView &var, const Dim dim) {
-  return mean_impl(var, dim,
-                   sum(isfinite(values(astype(var, dtype<double>))), dim));
+  return mean_impl(var, dim, sum(isfinite(astype(var, dtype<double>)), dim));
 }
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
-  return mean_impl(var, dim,
-                   sum(isfinite(values(astype(var, dtype<double>))), dim), out);
+  return mean_impl(var, dim, sum(isfinite(astype(var, dtype<double>)), dim),
+                   out);
 }
 
 void validate_nanmean(const VariableConstView &var) {
@@ -159,13 +158,13 @@ Variable nanmean(const VariableConstView &var) {
 
 Variable nanmean(const VariableConstView &var, const Dim dim) {
   validate_nanmean(var);
-  return nanmean_impl(var, dim, sum(isfinite(values(var)), dim));
+  return nanmean_impl(var, dim, sum(isfinite(var), dim));
 }
 
 VariableView nanmean(const VariableConstView &var, const Dim dim,
                      const VariableView &out) {
   validate_nanmean(var);
-  return nanmean_impl(var, dim, sum(isfinite(values(var)), dim), out);
+  return nanmean_impl(var, dim, sum(isfinite(var), dim), out);
 }
 
 template <class Op>

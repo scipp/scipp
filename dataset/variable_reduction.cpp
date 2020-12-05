@@ -10,7 +10,6 @@
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/util.h"
 
 #include "dataset_operations_common.h"
 
@@ -86,7 +85,7 @@ Variable nanmean(const VariableConstView &var, const Dim dim,
   using variable::isfinite;
   validate_nanmean(var);
   if (const auto mask_union = irreducible_mask(masks, dim)) {
-    const auto count = sum(applyMask(isfinite(values(var)), mask_union), dim);
+    const auto count = sum(applyMask(isfinite(var), mask_union), dim);
     return nanmean_impl(applyMask(var, mask_union), dim, count);
   }
   return nanmean(var, dim);
@@ -97,7 +96,7 @@ VariableView nanmean(const VariableConstView &var, const Dim dim,
   using variable::isfinite;
   validate_nanmean(var);
   if (const auto mask_union = irreducible_mask(masks, dim)) {
-    const auto count = sum(applyMask(isfinite(values(var)), mask_union), dim);
+    const auto count = sum(applyMask(isfinite(var), mask_union), dim);
     return nanmean_impl(applyMask(var, mask_union), dim, count, out);
   }
   return nanmean(var, dim, out);

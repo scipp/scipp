@@ -7,6 +7,7 @@
 #include "scipp/core/element/special_values.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/special_values.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -48,14 +49,6 @@ TYPED_TEST(VariableSpecialValueTest, isfinite) {
               element::isfinite(x) * units::dimensionless);
   }
 }
-TEST(VariableSpecialValueTest, isfinite_valueandvariances) {
-  const auto var =
-      makeVariable<double>(Dimensions{Dim::Z, 3}, units::m,
-                           Values{1.0, 2.0, 3.0}, Variances{1.0, 2.0, 3.0});
-  EXPECT_THROW(isfinite(var),
-               except::VariancesError); // Characterisation test. Missing
-                                        // transform_flags::no_out_variance,
-}
 
 TYPED_TEST(VariableSpecialValueTest, isposinf) {
   for (TypeParam x : values_for_special_value_tests<TypeParam>()) {
@@ -69,6 +62,16 @@ TYPED_TEST(VariableSpecialValueTest, isneginf) {
     EXPECT_EQ(variable::isneginf(x * units::m),
               element::isneginf(x) * units::dimensionless);
   }
+}
+
+TEST(VariableSpecialValueTest, no_out_variances) {
+  const auto var = makeVariable<double>(Dimensions{Dim::Z, 2}, units::m,
+                                        Values{1.0, 2.0}, Variances{1.0, 2.0});
+  EXPECT_FALSE(isfinite(var).hasVariances());
+  EXPECT_FALSE(isnan(var).hasVariances());
+  EXPECT_FALSE(isinf(var).hasVariances());
+  EXPECT_FALSE(isneginf(var).hasVariances());
+  EXPECT_FALSE(isposinf(var).hasVariances());
 }
 
 TEST(VariableSpecialValueTest,

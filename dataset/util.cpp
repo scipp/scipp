@@ -66,11 +66,4 @@ scipp::index size_of(const DatasetConstView &dataset) {
   }
   return size;
 }
-
-DataArray values(const DataArrayConstView &x) {
-  return DataArray(values(x.data()), x.coords(), x.masks());
-}
-DataArray variances(const DataArrayConstView &x) {
-  return DataArray(variances(x.data()), x.coords(), x.masks());
-}
 } // namespace scipp
