@@ -399,6 +399,8 @@ class PlotController:
         updated when the axes have changed.
         """
 
+        owner_dim = None
+
         if self.update_data_lock:
             return
 
@@ -418,7 +420,7 @@ class PlotController:
         self.view.update_data(new_values, info=info)
         if self.panel is not None:
             self.panel.update_data(info)
-        if self.profile_dim is not None:
+        if (self.profile_dim is not None) and (owner_dim == self.profile_dim):
             self.profile.update_slice_area(lower, upper)
 
     def toggle_mask(self, change):
