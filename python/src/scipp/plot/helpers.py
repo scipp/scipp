@@ -58,11 +58,11 @@ class PlotArrayView:
             if slice_obj[0] in plot_array.coords[key].dims:
                 sl = list(slice_obj)
                 if plot_array.isedges[key][slice_obj[0]]:
-                    if isinstance(slice_obj[1], int):
-                        sl[1] = slice(slice_obj[1], slice_obj[1] + 2)
-                    else:
+                    if hasattr(slice_obj[1], "start"):
                         sl[1] = slice(slice_obj[1].start,
                                       slice_obj[1].stop + 1)
+                    else:
+                        sl[1] = slice(slice_obj[1], slice_obj[1] + 2)
                 self.coords[key] = plot_array.coords[key][tuple(sl)]
             else:
                 self.coords[key] = plot_array.coords[key]
