@@ -35,13 +35,6 @@ constexpr auto convertMaskedToZero = overloaded{
     [](const auto &a, bool isMasked) { return isMasked ? decltype(a){0} : a; },
     dimensionless_mask_check};
 
-/// Sets any masked elements to 0.0 to handle special FP vals. Output type
-/// always double precision float.
-constexpr auto convertMaskedToDoubleZero = overloaded{
-    mask_to_zero_types,
-    [](const auto &a, bool isMasked) { return isMasked ? double(0) : a; },
-    dimensionless_mask_check};
-
 /// Set the elements referenced by a span to 0
 template <class T> void zero(const scipp::span<T> &data) {
   for (auto &x : data)

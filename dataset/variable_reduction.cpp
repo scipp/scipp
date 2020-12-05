@@ -19,11 +19,6 @@ Variable applyMask(const VariableConstView &var, const Variable &masks) {
   return scipp::variable::transform(var, masks,
                                     scipp::core::element::convertMaskedToZero);
 }
-Variable applyMaskAsDouble(const VariableConstView &var,
-                           const Variable &masks) {
-  return scipp::variable::transform(
-      var, masks, scipp::core::element::convertMaskedToDoubleZero);
-}
 
 void validate_nanmean(const VariableConstView &var) {
   if (isInt(var.dtype()))
