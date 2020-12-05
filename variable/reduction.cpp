@@ -20,6 +20,13 @@ using scipp::common::reduce_all_dims;
 
 namespace scipp::variable {
 
+namespace {
+void validate_nanmean(const VariableConstView &var) {
+  if (isInt(var.dtype()))
+    throw except::TypeError(
+        "nanmean on integer input variables is not supported. Use mean");
+}
+} // namespace
 // Workaround VS C7526 (undefined inline variable) with dtype<> in template.
 bool is_dtype_bool(const VariableConstView &var) {
   return var.dtype() == dtype<bool>;
@@ -142,12 +149,6 @@ VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
   return mean_impl(var, dim, sum(isfinite(astype(var, dtype<double>)), dim),
                    out);
-}
-
-void validate_nanmean(const VariableConstView &var) {
-  if (isInt(var.dtype()))
-    throw except::TypeError(
-        "nanmean on integer input variables is not supported. Use mean");
 }
 
 /// Return the mean along all dimensions. Ignoring NaN values.

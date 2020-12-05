@@ -14,7 +14,7 @@
 #include "dataset_operations_common.h"
 
 namespace scipp::dataset {
-
+namespace {
 Variable applyMask(const VariableConstView &var, const Variable &masks) {
   return scipp::variable::transform(var, masks,
                                     scipp::core::element::convertMaskedToZero);
@@ -25,6 +25,7 @@ void validate_nanmean(const VariableConstView &var) {
     throw except::TypeError(
         "nanmean on integer input variables is not supported. Use mean");
 }
+} // namespace
 
 Variable sum(const VariableConstView &var, const Dim dim,
              const MasksConstView &masks) {
