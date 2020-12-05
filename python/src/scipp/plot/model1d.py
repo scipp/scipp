@@ -42,6 +42,8 @@ class PlotModel1d(PlotModel):
             new_values[name] = {"values": {}, "variances": {}, "masks": {}}
 
             self.dslice = self.slice_data(array, slices)
+            # for dim in slices:
+            #     self.dslice = self.dslice[dim, 0]
             ydata = self.dslice.data.values
             xcenters = to_bin_centers(self.dslice.coords[self.dim],
                                       self.dim).values
@@ -128,8 +130,9 @@ class PlotModel1d(PlotModel):
 
             if len(mask_info[name]) > 0:
                 base_mask = sc.Variable(dims=profile_slice.data.dims,
-                                        values=np.ones(profile_slice.data.shape,
-                                                       dtype=np.int32))
+                                        values=np.ones(
+                                            profile_slice.data.shape,
+                                            dtype=np.int32))
                 for m in mask_info[name]:
                     # Use automatic broadcast to broadcast 0D masks
                     msk = (base_mask * sc.Variable(

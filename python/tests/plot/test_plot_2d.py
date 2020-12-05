@@ -248,5 +248,5 @@ def test_plot_access_ax_and_fig():
     out["Sample"].fig.set_dpi(120.)
 
 
-def test_plot_2d_image_int32():
-    plot(make_dense_dataset(ndim=2, dtype=sc.dtype.int32))
+# def test_plot_2d_image_int32():
+#     plot(make_dense_dataset(ndim=2, dtype=sc.dtype.int32))

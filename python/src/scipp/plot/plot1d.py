@@ -73,6 +73,10 @@ class SciPlot1d(SciPlot):
                                  dim_to_shape=self.dim_to_shape,
                                  dim_label_map=self.dim_label_map)
 
+        # Run validation checks before rendering the plot.
+        # Note that validation needs to be run after model is created.
+        self.validate()
+
         # Create control widgets (sliders and buttons)
         self.widgets = PlotWidgets(axes=self.axes,
                                    ndim=view_ndims,
@@ -133,9 +137,6 @@ class SciPlot1d(SciPlot):
             view=self.view,
             panel=self.panel,
             profile=self.profile)
-
-        # Run validation checks before rendering the plot.
-        self.validate()
 
         # Render the figure once all components have been created.
         self.render(norm=norm)

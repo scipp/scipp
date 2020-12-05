@@ -61,7 +61,9 @@ class PlotModel2d(PlotModel):
         entries in the dict of data arrays.
         Then perform dynamic image resampling based on current viewport.
         """
-        self.vslice = self.slice_data(self.data_arrays[self.name], slices)
+        self.vslice = self.slice_data(self.data_arrays[self.name],
+                                      slices,
+                                      keep_dims=True)
         # Update pixel widths used for scaling before rebin step
         for xy, dim in self.displayed_dims.items():
             self.xywidth[xy] = (self.vslice.coords[dim][dim, 1:] -
@@ -118,16 +120,11 @@ class PlotModel2d(PlotModel):
 
         # Rebin the data
         for dim, edges in rebin_edges.items():
-            print(dslice.data)
             dslice.data = sc.rebin(dslice.data, dim, dslice.coords[dim], edges)
             for m in dslice.masks:
                 if dim in dslice.masks[m].dims:
                     dslice.masks[m] = sc.rebin(dslice.masks[m], dim,
                                                dslice.coords[dim], edges)
-
-        # # Slice away the remaining dims because we use slices of range 1 and not 0 in slice_data()
-        # for dim in set(dslice.data.dims) - set(list(rebin_edges.keys())):
-        #     dslice = dslice[dim, 0]
 
         # Divide by pixel width if we have normalized in update_data() in the
         # case of non-counts data.
@@ -157,8 +154,10 @@ class PlotModel2d(PlotModel):
         resampled_image = self.resample_data(self.vslice,
                                              rebin_edges=rebin_edges)
 
-        # Slice away the remaining dims because we use slices of range 1 and not 0 in slice_data()
-        for dim in set(resampled_image.data.dims) - set(list(rebin_edges.keys())):
+        # Slice away the remaining dims because we use slices of range 1 and
+        # not 0 in slice_data()
+        for dim in set(resampled_image.data.dims) - set(
+                list(rebin_edges.keys())):
             resampled_image = resampled_image[dim, 0]
 
         # Use Scipp's automatic transpose to match the image x/y axes
@@ -175,8 +174,6 @@ class PlotModel2d(PlotModel):
                                        dtype=self.vslice.data.dtype,
                                        unit=sc.units.one))
 
-        # print(self.dslice)
-        # print(resampled_image.data)
         self.dslice *= resampled_image.data
         for m in resampled_image.masks:
             self.dslice.masks[m] = resampled_image.masks[m]
@@ -276,11 +273,12 @@ class PlotModel2d(PlotModel):
 
         # dim = profile_slice.data.dims[0]
         ydata = profile_slice.data.values
-        xcenters = to_bin_centers(profile_slice.coords[profile_dim], profile_dim).values
+        xcenters = to_bin_centers(profile_slice.coords[profile_dim],
+                                  profile_dim).values
 
         if axparams["x"]["hist"][self.name]:
-            new_values[
-                self.name]["values"]["x"] = profile_slice.coords[profile_dim].values
+            new_values[self.name]["values"]["x"] = profile_slice.coords[
+                profile_dim].values
             new_values[self.name]["values"]["y"] = np.concatenate(
                 (ydata[0:1], ydata))
         else:

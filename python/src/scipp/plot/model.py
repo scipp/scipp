@@ -160,9 +160,9 @@ class PlotModel:
 
         else:
             coord = data_array.coords[dim]  # .astype(sc.dtype.float64)
-            if (coord.dtype != sc.dtype.float32) and (coord.dtype != sc.dtype.float64):
+            if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
+                                                      sc.dtype.float64):
                 coord = coord.astype(sc.dtype.float64)
-
 
         if len(coord_info) == 0:
             coord_info["label"] = name_with_unit(var=coord)
@@ -210,21 +210,25 @@ class PlotModel:
             vmax = sc.nanmax(self.dslice.data).value
         return vmin, vmax
 
-    def slice_data(self, array, slices):
+    def slice_data(self, array, slices, keep_dims=False):
         """
         Slice the data array according to the dimensions and extents listed
         in slices.
         """
         for dim, [lower, upper] in slices.items():
             # TODO: Could this be optimized for performance?
+            array = array[dim, lower:upper]
             if (upper - lower) > 1:
-                array = array[dim, lower:upper]
-                array.data = sc.rebin(
-                    array.data, dim, array.coords[dim],
-                    sc.concatenate(array.coords[dim][dim, 0],
-                                   array.coords[dim][dim, -1], dim)) # [dim, 0]
-            else:
-                array = array[dim, lower:lower+1]
+                # array = array[dim, lower:upper]
+                array.data = sc.rebin(array.data, dim, array.coords[dim],
+                                      sc.concatenate(
+                                          array.coords[dim][dim, 0],
+                                          array.coords[dim][dim, -1],
+                                          dim))  # [dim, 0]
+            # else:
+            #     array = array[dim, lower:lower + 1]
+            if not keep_dims:
+                array = array[dim, 0]
         return array
 
     def get_multid_coord(self):
