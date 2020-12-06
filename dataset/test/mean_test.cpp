@@ -15,8 +15,12 @@ auto make_1_values_and_variances(const std::string &name,
                                  const std::initializer_list<T2> &values,
                                  const std::initializer_list<T2> &variances) {
   auto d = Dataset();
-  d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                  Values(values), Variances(variances)));
+  if constexpr (std::is_same_v<T, int>)
+    d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                    Values(values)));
+  else
+    d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                    Values(values), Variances(variances)));
   return d;
 }
 
@@ -169,4 +173,14 @@ TEST(MeanTest, nanmean_all_dims) {
   EXPECT_EQ(nanmean(ds)["a"], nanmean(da));
 
   EXPECT_THROW(nanmean(astype(da, dtype<int64_t>)), except::TypeError);
+}
+
+TEST(MeanTest, nanmean_throws_on_int) {
+  // Do not support integer type input variables
+  auto d = make_1_values_and_variances<int>(
+      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {1, 2, 3});
+  EXPECT_THROW(nanmean(d), except::TypeError);
+  EXPECT_THROW(nanmean(d, Dim::X), except::TypeError);
+  EXPECT_THROW(nanmean(d["a"]), except::TypeError);
+  EXPECT_THROW(nanmean(d["a"], Dim::X), except::TypeError);
 }
