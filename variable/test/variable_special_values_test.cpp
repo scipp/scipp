@@ -64,14 +64,37 @@ TYPED_TEST(VariableSpecialValueTest, isneginf) {
   }
 }
 
-TEST(VariableSpecialValueTest, no_out_variances) {
+template <typename Op> void check_no_out_variances(Op op) {
   const auto var = makeVariable<double>(Dimensions{Dim::Z, 2}, units::m,
                                         Values{1.0, 2.0}, Variances{1.0, 2.0});
-  EXPECT_FALSE(isfinite(var).hasVariances());
-  EXPECT_FALSE(isnan(var).hasVariances());
-  EXPECT_FALSE(isinf(var).hasVariances());
-  EXPECT_FALSE(isneginf(var).hasVariances());
-  EXPECT_FALSE(isposinf(var).hasVariances());
+  const auto applied = op(var);
+  EXPECT_FALSE(applied.hasVariances());
+  const auto applied_on_values = isfinite(values(var));
+  EXPECT_EQ(applied, applied_on_values);
+}
+
+TEST(VariableSpecialValueTest, isfinite_no_out_variances) {
+  using namespace variable;
+  check_no_out_variances([](const auto &x) { return isfinite(x); });
+}
+
+TEST(VariableSpecialValueTest, isnan_no_out_variances) {
+  using namespace variable;
+  check_no_out_variances([](const auto &x) { return isnan(x); });
+}
+
+TEST(VariableSpecialValueTest, isinf_no_out_variances) {
+  using namespace variable;
+  check_no_out_variances([](const auto &x) { return isinf(x); });
+}
+
+TEST(VariableSpecialValueTest, isneginf_no_out_variances) {
+  using namespace variable;
+  check_no_out_variances([](const auto &x) { return isneginf(x); });
+}
+TEST(VariableSpecialValueTest, isposinf_no_out_variances) {
+  using namespace variable;
+  check_no_out_variances([](const auto &x) { return isposinf(x); });
 }
 
 TEST(VariableSpecialValueTest,
