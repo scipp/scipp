@@ -74,26 +74,26 @@ template <typename Op> void check_no_out_variances(Op op) {
 }
 
 TEST(VariableSpecialValueTest, isfinite_no_out_variances) {
-  using namespace variable;
+  using variable::isfinite;
   check_no_out_variances([](const auto &x) { return isfinite(x); });
 }
 
 TEST(VariableSpecialValueTest, isnan_no_out_variances) {
-  using namespace variable;
+  using variable::isnan;
   check_no_out_variances([](const auto &x) { return isnan(x); });
 }
 
 TEST(VariableSpecialValueTest, isinf_no_out_variances) {
-  using namespace variable;
+  using variable::isinf;
   check_no_out_variances([](const auto &x) { return isinf(x); });
 }
 
 TEST(VariableSpecialValueTest, isneginf_no_out_variances) {
-  using namespace variable;
+  using variable::isneginf;
   check_no_out_variances([](const auto &x) { return isneginf(x); });
 }
 TEST(VariableSpecialValueTest, isposinf_no_out_variances) {
-  using namespace variable;
+  using variable::isposinf;
   check_no_out_variances([](const auto &x) { return isposinf(x); });
 }
 
