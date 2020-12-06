@@ -69,7 +69,7 @@ template <typename Op> void check_no_out_variances(Op op) {
                                         Values{1.0, 2.0}, Variances{1.0, 2.0});
   const auto applied = op(var);
   EXPECT_FALSE(applied.hasVariances());
-  const auto applied_on_values = isfinite(values(var));
+  const auto applied_on_values = op(values(var));
   EXPECT_EQ(applied, applied_on_values);
 }
 
