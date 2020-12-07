@@ -1,13 +1,12 @@
-function(scipp_unary category function_name)
+function(scipp_function template category function_name)
   macro(configure_in_module module name)
     set(inc scipp/${module}/${name}.h)
     set(src ${name}.cpp)
     set(NAME ${function_name})
     configure_file(
-      ${module}/include/scipp/${module}/unary_function.h.in
-      ${module}/include/${inc}
+      templates/${module}_${template}.h.in ${module}/include/${inc}
     )
-    configure_file(${module}/unary_function.cpp.in ${module}/${src})
+    configure_file(templates/${module}_${template}.cpp.in ${module}/${src})
     set(${module}_INC_FILES
         ${${module}_INC_FILES} "include/${inc}"
         PARENT_SCOPE
@@ -28,7 +27,7 @@ function(scipp_unary category function_name)
   configure_in_module("variable" ${function_name})
   configure_in_module("dataset" ${function_name})
   set(src ${NAME}.cpp)
-  configure_file(python/unary_function.cpp.in python/${src})
+  configure_file(templates/python_${template}.cpp.in python/${src})
   set(python_SRC_FILES
       ${python_SRC_FILES} ${src}
       PARENT_SCOPE
@@ -44,6 +43,14 @@ function(scipp_unary category function_name)
       PARENT_SCOPE
   )
 endfunction()
+
+macro(scipp_unary category function_name)
+  scipp_function("unary" ${category} ${function_name})
+endmacro()
+
+macro(scipp_binary category function_name)
+  scipp_function("binary" ${category} ${function_name})
+endmacro()
 
 function(setup_scipp_category category)
   set(include_list ${variable_${category}_includes})

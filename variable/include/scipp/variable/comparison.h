@@ -4,12 +4,7 @@
 /// @author Piotr Rozyczko
 #pragma once
 
-#include "scipp/core/dtype.h"
-#include "scipp/variable/string.h"
-#include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
-
-#include <atomic>
 
 namespace scipp::variable {
 
