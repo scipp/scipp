@@ -33,18 +33,9 @@ Variable norm(const VariableConstView &var) {
   return transform(var, element::norm);
 }
 
-Variable sqrt(const VariableConstView &var) {
-  return transform<double, float>(var, element::sqrt);
-}
-
 Variable sqrt(Variable &&var) {
   sqrt(var, var);
   return std::move(var);
-}
-
-VariableView sqrt(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, assign_unary{element::sqrt});
-  return out;
 }
 
 Variable reciprocal(const VariableConstView &var) {

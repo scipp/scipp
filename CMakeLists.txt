@@ -155,6 +155,9 @@ enable_testing()
 
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
+
+include(scipp-unary-functions)
+
 add_subdirectory(common)
 add_subdirectory(benchmark)
 add_subdirectory(units)

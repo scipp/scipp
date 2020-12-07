@@ -7,6 +7,8 @@
 #include "scipp-variable_export.h"
 #include "scipp/variable/variable.h"
 
+#include "scipp/variable/sqrt.h"
+
 namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable abs(const VariableConstView &var);
@@ -17,10 +19,7 @@ SCIPP_VARIABLE_EXPORT VariableView abs(const VariableConstView &var,
                                                  const VariableConstView &b);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable norm(const VariableConstView &var);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sqrt(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sqrt(Variable &&var);
-SCIPP_VARIABLE_EXPORT VariableView sqrt(const VariableConstView &var,
-                                        const VariableView &out);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 reciprocal(const VariableConstView &var);
