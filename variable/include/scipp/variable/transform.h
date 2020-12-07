@@ -89,7 +89,12 @@ template <int N, class T> static constexpr auto get(const T &index) noexcept {
       return std::get<N>(index);
     else
       return std::get<N>(index).get();
-  } else
+  }
+  else if constexpr (visit_detail::is_array<T>::value) {
+    // TODO validate N
+    return index[N];
+  }
+  else
     return std::get<N>(index.get());
 }
 
@@ -326,14 +331,18 @@ template <bool dry_run> struct in_place {
       return;
 
     auto run = [&](auto indices, const auto &end) {
-      if (indices.innermost_are_contiguous()) {
-        const auto inner_size = indices.shape()[0];
+      if (const auto n_contiguous = indices.n_contiguous_dims();
+          n_contiguous > 0) {
+        const auto contiguous_volume = indices.volume(n_contiguous);
+        scipp::index total_index = 0;
         while (indices != end) {
-          for (scipp::index inner = 0; inner < inner_size; ++inner, indices.increment_innermost()) {
-            call_in_place(op, indices, arg, other...);
+          auto inner_indices = indices.get();
+          for (scipp::index cont = 0; cont < contiguous_volume; ++cont) {
+            call_in_place(op, inner_indices, arg, other...);
+            for (auto &i : inner_indices) { ++i; }
           }
-          indices.bump_coord_index(inner_size);
-          indices.increment_outer();
+          total_index += contiguous_volume;
+          indices.set_index(total_index);
         }
       } else {
         for (; indices != end; indices.increment())
