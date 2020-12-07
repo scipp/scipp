@@ -43,12 +43,12 @@ function(scipp_function function_name category)
   )
 endfunction()
 
-function(setup_scipp_category category)
-  set(include_list ${category_variable_includes})
+function(setup_scipp_category variable_includes dataset_includes)
+  set(include_list ${variable_includes})
   configure_file(
     CMake/generated.h.in variable/include/scipp/variable/generated_math.h
   )
-  set(include_list ${category_dataset_includes})
+  set(include_list ${dataset_includes})
   configure_file(
     CMake/generated.h.in dataset/include/scipp/dataset/generated_math.h
   )

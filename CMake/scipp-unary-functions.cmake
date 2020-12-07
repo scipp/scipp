@@ -7,4 +7,4 @@ scipp_function(log10 math)
 scipp_function(reciprocal math)
 scipp_function(sqrt math)
 
-setup_scipp_category(math)
+setup_scipp_category(${variable_math_includes} ${dataset_math_includes})
