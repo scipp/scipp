@@ -15,6 +15,7 @@ function(scipp_function function_name category)
   )
   configure_file(variable/unary_function.cpp.in variable/${src})
   configure_file(dataset/unary_function.cpp.in dataset/${src})
+  configure_file(python/unary_function.cpp.in python/${src})
   set(variable_INC_FILES
       ${variable_INC_FILES} "include/${variable_inc}"
       PARENT_SCOPE
@@ -31,25 +32,49 @@ function(scipp_function function_name category)
       ${dataset_SRC_FILES} ${src}
       PARENT_SCOPE
   )
-  set(category_variable_includes variable_${category}_includes)
-  set(category_dataset_includes dataset_${category}_includes)
-  set(${category_variable_includes}
-      "${${category_variable_includes}}\n#include \"${variable_inc}\""
+  set(python_SRC_FILES
+      ${python_SRC_FILES} ${src}
       PARENT_SCOPE
   )
-  set(${category_dataset_includes}
-      "${${category_dataset_includes}}\n#include \"${dataset_inc}\""
+  set(variable_includes variable_${category}_includes)
+  set(dataset_includes dataset_${category}_includes)
+  set(python_binders_fwd python_${category}_binders_fwd)
+  set(python_binders python_${category}_binders)
+  set(${variable_includes}
+      "${${variable_includes}}\n#include \"${variable_inc}\""
+      PARENT_SCOPE
+  )
+  set(${dataset_includes}
+      "${${dataset_includes}}\n#include \"${dataset_inc}\""
+      PARENT_SCOPE
+  )
+  set(${python_binders_fwd}
+      "${${python_binders_fwd}}\nvoid init_${NAME}(pybind11::module &)ENDL"
+      PARENT_SCOPE
+  )
+  set(${python_binders}
+      "${${python_binders}}\n  init_${NAME}(m)ENDL"
       PARENT_SCOPE
   )
 endfunction()
 
-function(setup_scipp_category variable_includes dataset_includes)
+function(setup_scipp_category category variable_includes dataset_includes
+         python_binders_fwd python_binders
+)
   set(include_list ${variable_includes})
   configure_file(
-    CMake/generated.h.in variable/include/scipp/variable/generated_math.h
+    CMake/generated.h.in
+    variable/include/scipp/variable/generated_${category}.h
   )
   set(include_list ${dataset_includes})
   configure_file(
-    CMake/generated.h.in dataset/include/scipp/dataset/generated_math.h
+    CMake/generated.h.in dataset/include/scipp/dataset/generated_${category}.h
+  )
+  string(REPLACE "ENDL" ";" init_list_forward ${python_binders_fwd})
+  string(REPLACE "ENDL" ";" init_list ${python_binders})
+  configure_file(python/generated.cpp.in python/generated_${category}.cpp)
+  set(python_SRC_FILES
+      ${python_SRC_FILES} generated_${category}.cpp
+      PARENT_SCOPE
   )
 endfunction()

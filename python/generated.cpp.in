@@ -1,0 +1,11 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Simon Heybrock
+#include "pybind11.h"
+
+@init_list_forward@
+
+void init_generated_@category@(pybind11::module &m) {
+  @init_list@
+}
