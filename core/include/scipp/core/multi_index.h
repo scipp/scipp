@@ -164,7 +164,7 @@ public:
   }
 
   [[nodiscard]] scipp::index n_contiguous_dims() const noexcept {
-    if (m_ndim_nested != NDIM_MAX) {
+    if (has_bins()) {
       return 0; // TODO can do better for bins?
     }
     scipp::index needed_stride = 1;
@@ -185,7 +185,7 @@ public:
   constexpr void set_index(const scipp::index offset) noexcept {
     auto remainder{offset};
     for (scipp::index d = 0; d < NDIM_MAX; ++d) {
-      if (m_ndim_nested != NDIM_MAX && d < m_ndim_nested) {
+      if (has_bins() && d < m_ndim_nested) {
         m_coord[d] = 0;
       } else {
         if (m_shape[d] == 0) {
@@ -201,7 +201,7 @@ public:
       for (scipp::index d = 0; d < NDIM_MAX; ++d)
         m_data_index[data] += m_stride[data][d] * m_coord[d];
     }
-    if (m_ndim_nested != NDIM_MAX) {
+    if (has_bins()) {
       for (scipp::index data = 0; data < N; ++data) {
         m_bucket[data].m_bucket_index = 0;
         for (scipp::index d = m_ndim_nested; d < NDIM_MAX; ++d)
@@ -248,6 +248,10 @@ public:
 
   [[nodiscard]] scipp::index end_sentinel() const noexcept {
     return m_end_sentinel;
+  }
+
+  [[nodiscard]] bool has_bins() const noexcept {
+    return m_ndim_nested != NDIM_MAX;
   }
 
   /// Return true if the first subindex has a 0 stride
