@@ -38,7 +38,6 @@ set(SRC_FILES
     groupby.cpp
     histogram.cpp
     map_view.cpp
-    math.cpp
     operations.cpp
     rebin.cpp
     reduction.cpp
