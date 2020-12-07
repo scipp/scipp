@@ -7,35 +7,17 @@
 #include "scipp-variable_export.h"
 #include "scipp/variable/variable.h"
 
-#include "scipp/variable/sqrt.h"
+#include "scipp/variable/generated_math.h"
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable abs(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable abs(Variable &&var);
-SCIPP_VARIABLE_EXPORT VariableView abs(const VariableConstView &var,
-                                       const VariableView &out);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable dot(const VariableConstView &a,
                                                  const VariableConstView &b);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable norm(const VariableConstView &var);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sqrt(Variable &&var);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-reciprocal(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reciprocal(Variable &&var);
-SCIPP_VARIABLE_EXPORT VariableView reciprocal(const VariableConstView &var,
-                                              const VariableView &out);
-
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable exp(const VariableConstView &var);
-SCIPP_VARIABLE_EXPORT VariableView exp(const VariableConstView &var,
-                                       const VariableView &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable log(const VariableConstView &var);
-SCIPP_VARIABLE_EXPORT VariableView log(const VariableConstView &var,
-                                       const VariableView &out);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-log10(const VariableConstView &var);
-SCIPP_VARIABLE_EXPORT VariableView log10(const VariableConstView &var,
-                                         const VariableView &out);
 
 } // namespace scipp::variable
