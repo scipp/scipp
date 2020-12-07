@@ -8,6 +8,6 @@ scipp_function(reciprocal math)
 scipp_function(sqrt math)
 
 configure_file(
-  variable/include/scipp/variable/generated_math.h.in
+  variable/include/scipp/variable/generated.h.in
   variable/include/scipp/variable/generated_math.h
 )
