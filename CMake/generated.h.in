@@ -3,4 +3,4 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
-@variable_math_includes@
+@include_list@
