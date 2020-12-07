@@ -7,6 +7,7 @@
 #include <map>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
 #include "scipp/variable/arithmetic.h"
 
 namespace scipp::dataset {
