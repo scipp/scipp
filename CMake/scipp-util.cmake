@@ -1,4 +1,4 @@
-function(scipp_function function_name category)
+function(scipp_function category function_name)
   macro(configure_in_module module name)
     set(inc scipp/${module}/${name}.h)
     set(src ${name}.cpp)
