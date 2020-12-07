@@ -1,53 +1,40 @@
 function(scipp_function function_name category)
+  macro(configure_in_module module name)
+    set(inc scipp/${module}/${name}.h)
+    set(src ${name}.cpp)
+    set(NAME ${function_name})
+    configure_file(
+      ${module}/include/scipp/${module}/unary_function.h.in
+      ${module}/include/${inc}
+    )
+    configure_file(${module}/unary_function.cpp.in ${module}/${src})
+    set(${module}_INC_FILES
+        ${${module}_INC_FILES} "include/${inc}"
+        PARENT_SCOPE
+    )
+    set(${module}_SRC_FILES
+        ${${module}_SRC_FILES} ${src}
+        PARENT_SCOPE
+    )
+    set(${module}_includes ${module}_${category}_includes)
+    set(${${module}_includes}
+        "${${${module}_includes}}\n#include \"${inc}\""
+        PARENT_SCOPE
+    )
+  endmacro()
   message("Generating files for ${function_name}")
   set(NAME ${function_name})
   set(ELEMENT_INCLUDE ${category})
-  set(variable_inc scipp/variable/${NAME}.h)
-  set(dataset_inc scipp/dataset/${NAME}.h)
+  configure_in_module("variable" ${function_name})
+  configure_in_module("dataset" ${function_name})
   set(src ${NAME}.cpp)
-  configure_file(
-    variable/include/scipp/variable/unary_function.h.in
-    variable/include/${variable_inc}
-  )
-  configure_file(
-    dataset/include/scipp/dataset/unary_function.h.in
-    dataset/include/${dataset_inc}
-  )
-  configure_file(variable/unary_function.cpp.in variable/${src})
-  configure_file(dataset/unary_function.cpp.in dataset/${src})
   configure_file(python/unary_function.cpp.in python/${src})
-  set(variable_INC_FILES
-      ${variable_INC_FILES} "include/${variable_inc}"
-      PARENT_SCOPE
-  )
-  set(dataset_INC_FILES
-      ${dataset_INC_FILES} "include/${dataset_inc}"
-      PARENT_SCOPE
-  )
-  set(variable_SRC_FILES
-      ${variable_SRC_FILES} ${src}
-      PARENT_SCOPE
-  )
-  set(dataset_SRC_FILES
-      ${dataset_SRC_FILES} ${src}
-      PARENT_SCOPE
-  )
   set(python_SRC_FILES
       ${python_SRC_FILES} ${src}
       PARENT_SCOPE
   )
-  set(variable_includes variable_${category}_includes)
-  set(dataset_includes dataset_${category}_includes)
   set(python_binders_fwd python_${category}_binders_fwd)
   set(python_binders python_${category}_binders)
-  set(${variable_includes}
-      "${${variable_includes}}\n#include \"${variable_inc}\""
-      PARENT_SCOPE
-  )
-  set(${dataset_includes}
-      "${${dataset_includes}}\n#include \"${dataset_inc}\""
-      PARENT_SCOPE
-  )
   set(${python_binders_fwd}
       "${${python_binders_fwd}}\nvoid init_${NAME}(pybind11::module &)ENDL"
       PARENT_SCOPE
