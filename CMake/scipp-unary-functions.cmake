@@ -11,3 +11,8 @@ configure_file(
   variable/include/scipp/variable/generated.h.in
   variable/include/scipp/variable/generated_math.h
 )
+
+configure_file(
+  dataset/include/scipp/dataset/generated.h.in
+  dataset/include/scipp/dataset/generated_math.h
+)

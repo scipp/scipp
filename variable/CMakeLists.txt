@@ -33,7 +33,7 @@ set(INC_FILES
 )
 
 set(SRC_FILES
-  ${variable_SRC_FILES}
+    ${variable_SRC_FILES}
     arithmetic.cpp
     bins.cpp
     comparison.cpp

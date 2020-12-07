@@ -3,5 +3,4 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
-
-#include "scipp/dataset/generated_math.h"
+@variable_math_includes@
