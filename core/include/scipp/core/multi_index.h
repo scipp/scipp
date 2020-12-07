@@ -4,6 +4,10 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <functional>
+#include <numeric>
+#include <optional>
+
 #include "scipp-core_export.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
@@ -221,6 +225,15 @@ public:
   [[nodiscard]] constexpr scipp::index ndim() const noexcept { return m_ndim; }
 
   [[nodiscard]] constexpr auto shape() const noexcept { return m_shape; }
+
+  [[nodiscard]] constexpr auto
+  volume(const std::optional<scipp::index> ndim) const noexcept {
+    return std::accumulate(
+        m_shape.begin(),
+        std::next(m_shape.begin(), std::min(ndim.value_or(m_ndim), m_ndim)),
+        1,
+        std::multiplies<scipp::index>{});
+  }
 
   auto begin() const noexcept {
     auto it(*this);
