@@ -1,10 +1,10 @@
 include(scipp-util)
 
-scipp_function(math abs)
-scipp_function(math exp)
-scipp_function(math log)
-scipp_function(math log10)
-scipp_function(math reciprocal)
-scipp_function(math sqrt)
+scipp_unary(math abs)
+scipp_unary(math exp)
+scipp_unary(math log)
+scipp_unary(math log10)
+scipp_unary(math reciprocal)
+scipp_unary(math sqrt)
 
 setup_scipp_category(math)
