@@ -159,6 +159,22 @@ public:
     m_coord[0] += step;
   }
 
+  [[nodiscard]] scipp::index n_contiguous_dims() const noexcept {
+    if (m_ndim_nested != NDIM_MAX) {
+      return 0;  // TODO can do better for bins?
+    }
+    scipp::index needed_stride = 1;
+    for (scipp::index dim = 0; dim < m_ndim; ++dim) {
+      for (scipp::index data = 0; data < N; ++data) {
+        if (m_stride[data][dim] != needed_stride) {
+          return dim;
+        }
+      }
+      needed_stride *= m_shape[dim];
+    }
+    return m_ndim;
+  }
+
   /// Set the absolute index. In the special case of iteration with buckets,
   /// this sets the *index of the bucket* and NOT the full index within the
   /// iterated data.
