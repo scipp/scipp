@@ -68,8 +68,13 @@ DataArray mean(const DataArrayConstView &a, const Dim dim) {
 }
 
 DataArray mean(const DataArrayConstView &a) {
-  auto count = sum(isfinite(a));
-  return sum(a) * (1.0 * units::one) / count;
+  auto _sum = sum(a);
+  auto scale = 1.0 * units::one / sum(isfinite(a));
+  if (isInt(a.data().dtype()))
+    return _sum * scale;
+  else
+    _sum *= scale;
+  return _sum;
 }
 
 Dataset mean(const DatasetConstView &d, const Dim dim) {

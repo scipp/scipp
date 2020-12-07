@@ -142,13 +142,12 @@ Variable mean(const VariableConstView &var) {
 }
 
 Variable mean(const VariableConstView &var, const Dim dim) {
-  return mean_impl(var, dim, sum(isfinite(astype(var, dtype<double>)), dim));
+  return mean_impl(var, dim, sum(isfinite(var), dim));
 }
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
-  return mean_impl(var, dim, sum(isfinite(astype(var, dtype<double>)), dim),
-                   out);
+  return mean_impl(var, dim, sum(isfinite(var), dim), out);
 }
 
 /// Return the mean along all dimensions. Ignoring NaN values.

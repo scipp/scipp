@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+#include "fix_typed_test_suite_warnings.h"
 #include "scipp/dataset/reduction.h"
-#include "test_macros.h"
 #include <gtest/gtest.h>
 #include <scipp/common/overloaded.h>
 
@@ -9,13 +9,17 @@ namespace {
 using namespace scipp;
 using namespace scipp::dataset;
 
+using MeanTestTypes = testing::Types<int32_t, int64_t, float, double>;
+template <typename T> class MeanTest : public ::testing::Test {};
+TYPED_TEST_SUITE(MeanTest, MeanTestTypes);
+
 template <class T, class T2>
 auto make_1_values_and_variances(const std::string &name,
                                  const Dimensions &dims, const units::Unit unit,
                                  const std::initializer_list<T2> &values,
                                  const std::initializer_list<T2> &variances) {
   auto d = Dataset();
-  if constexpr (std::is_same_v<T, int>)
+  if constexpr (std::numeric_limits<T>::is_integer)
     d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
                                     Values(values)));
   else
@@ -131,27 +135,34 @@ TEST(MeanTest, nanmean_masked_data_with_nans) {
   EXPECT_EQ(nanmean(a).data(), mean);
 }
 
-TEST(MeanTest, mean_over_dim) {
-  auto ds = make_1_values_and_variances<float>(
+TYPED_TEST(MeanTest, mean_over_dim) {
+  auto ds = make_1_values_and_variances<TypeParam>(
       "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(mean(ds, Dim::X)["a"].data(),
-            makeVariable<float>(Values{2}, Variances{5.0}));
-  EXPECT_EQ(mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(Values{1.5}, Variances{6.75}));
+  if constexpr (std::numeric_limits<TypeParam>::is_integer) {
+    EXPECT_EQ(mean(ds, Dim::X)["a"].data(), makeVariable<double>(Values{2}));
+    EXPECT_EQ(mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+              makeVariable<double>(Values{1.5}));
+  } else {
+    EXPECT_EQ(mean(ds, Dim::X)["a"].data(),
+              makeVariable<TypeParam>(Values{2}, Variances{5.0}));
+    EXPECT_EQ(mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+              makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
+  }
 }
 
-TEST(MeanTest, mean_all_dims) {
-  DataArray da{makeVariable<double>(Dims{Dim::X, Dim::Y}, Values{1, 2, 3, 4},
-                                    Shape{2, 2})};
+TYPED_TEST(MeanTest, mean_all_dims) {
+  DataArray da{makeVariable<TypeParam>(Dims{Dim::X, Dim::Y}, Values{1, 2, 3, 4},
+                                       Shape{2, 2})};
 
-  EXPECT_EQ(mean(da).data(), makeVariable<double>(Values{2.5}));
+  constexpr bool is_integer_t = std::numeric_limits<TypeParam>::is_integer;
+  // For all FP input dtypes, dtype is same on output. Integers are converted to
+  // double FP precision.
+  using T = std::conditional_t<is_integer_t, double, TypeParam>;
+  EXPECT_EQ(mean(da).data(), makeVariable<T>(Values{2.5}));
+  EXPECT_EQ(mean(da).data(), makeVariable<T>(Values{2.5}));
 
   Dataset ds{{{"a", da}}};
   EXPECT_EQ(mean(ds)["a"], mean(da));
-
-  // Int inputs should produce double outputs. i.e. operations should be
-  // identical.
-  EXPECT_EQ(mean(ds)["a"], mean(astype(da, dtype<int>)));
 }
 
 TEST(MeanTest, nanmean_over_dim) {
