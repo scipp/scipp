@@ -16,24 +16,20 @@
 #include <stddef.h>
 
 namespace scipp::core::element {
-constexpr auto mask_to_zero_types =
+
+/// Sets any masked elements to 0 to handle special FP vals
+constexpr auto convertMaskedToZero = overloaded{
     core::element::arg_list<std::tuple<double, bool>, std::tuple<float, bool>,
                             std::tuple<bool, bool>, std::tuple<int64_t, bool>,
-                            std::tuple<int32_t, bool>>;
-constexpr auto dimensionless_mask_check = [](const scipp::units::Unit &a,
-                                             const scipp::units::Unit &b) {
-  if (b != scipp::units::dimensionless) {
-    throw except::UnitError("Expected mask to contain dimensionless units");
-  }
-  return a;
-};
-
-/// Sets any masked elements to 0 to handle special FP vals. Output type taken
-/// from lhs input.
-constexpr auto convertMaskedToZero = overloaded{
-    mask_to_zero_types,
+                            std::tuple<int32_t, bool>>,
     [](const auto &a, bool isMasked) { return isMasked ? decltype(a){0} : a; },
-    dimensionless_mask_check};
+    [](const scipp::units::Unit &a, const scipp::units::Unit &b) {
+      if (b != scipp::units::dimensionless) {
+        throw except::UnitError("Expected mask to contain dimensionless units");
+      }
+
+      return a;
+    }};
 
 /// Set the elements referenced by a span to 0
 template <class T> void zero(const scipp::span<T> &data) {
