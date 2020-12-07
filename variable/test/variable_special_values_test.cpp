@@ -48,6 +48,8 @@ TYPED_TEST(VariableSpecialValueTest, isfinite) {
     EXPECT_EQ(variable::isfinite(x * units::m),
               element::isfinite(x) * units::dimensionless);
   }
+  EXPECT_EQ(variable::isfinite(1 * units::dimensionless),
+            element::isfinite(1) * units::dimensionless);
 }
 
 TYPED_TEST(VariableSpecialValueTest, isposinf) {

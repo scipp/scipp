@@ -4,11 +4,11 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <cmath>
-
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
+#include <cmath>
+#include <numeric>
 
 namespace scipp::core::element {
 
@@ -28,13 +28,15 @@ constexpr auto isinf =
                },
                [](const units::Unit &) { return units::dimensionless; }};
 
-constexpr auto isfinite =
-    overloaded{arg_list<double, float>, transform_flags::no_out_variance,
-               [](const auto x) {
-                 using std::isfinite;
-                 return isfinite(x);
-               },
-               [](const units::Unit &) { return units::dimensionless; }};
+constexpr auto isfinite = overloaded{
+    arg_list<int64_t, int32_t, double, float>, transform_flags::no_out_variance,
+    [](const auto x) {
+      using std::isfinite;
+      if constexpr (std::numeric_limits<std::decay_t<decltype(x)>>::is_integer)
+        return isfinite(double(x));
+      return isfinite(x);
+    },
+    [](const units::Unit &) { return units::dimensionless; }};
 
 namespace detail {
 template <typename T>
