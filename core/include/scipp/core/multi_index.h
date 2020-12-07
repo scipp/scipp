@@ -165,7 +165,7 @@ public:
 
   [[nodiscard]] scipp::index n_contiguous_dims() const noexcept {
     if (m_ndim_nested != NDIM_MAX) {
-      return 0;  // TODO can do better for bins?
+      return 0; // TODO can do better for bins?
     }
     scipp::index needed_stride = 1;
     for (scipp::index dim = 0; dim < m_ndim; ++dim) {
@@ -230,8 +230,7 @@ public:
   volume(const std::optional<scipp::index> ndim) const noexcept {
     return std::accumulate(
         m_shape.begin(),
-        std::next(m_shape.begin(), std::min(ndim.value_or(m_ndim), m_ndim)),
-        1,
+        std::next(m_shape.begin(), std::min(ndim.value_or(m_ndim), m_ndim)), 1,
         std::multiplies<scipp::index>{});
   }
 
@@ -247,10 +246,12 @@ public:
     return it;
   }
 
-  scipp::index end_sentinel() const noexcept { return m_end_sentinel; }
+  [[nodiscard]] scipp::index end_sentinel() const noexcept {
+    return m_end_sentinel;
+  }
 
   /// Return true if the first subindex has a 0 stride
-  bool has_stride_zero() const noexcept {
+  [[nodiscard]] bool has_stride_zero() const noexcept {
     for (scipp::index i = 0; i < m_ndim; ++i)
       if (m_stride[0][i] == 0)
         return true;
