@@ -45,20 +45,18 @@ function(scipp_function function_name category)
   )
 endfunction()
 
-function(setup_scipp_category category variable_includes dataset_includes
-         python_binders_fwd python_binders
-)
-  set(include_list ${variable_includes})
+function(setup_scipp_category category)
+  set(include_list ${variable_${category}_includes})
   configure_file(
     CMake/generated.h.in
     variable/include/scipp/variable/generated_${category}.h
   )
-  set(include_list ${dataset_includes})
+  set(include_list ${dataset_${category}_includes})
   configure_file(
     CMake/generated.h.in dataset/include/scipp/dataset/generated_${category}.h
   )
-  string(REPLACE "ENDL" ";" init_list_forward ${python_binders_fwd})
-  string(REPLACE "ENDL" ";" init_list ${python_binders})
+  string(REPLACE "ENDL" ";" init_list_forward ${python_${category}_binders_fwd})
+  string(REPLACE "ENDL" ";" init_list ${python_${category}_binders})
   configure_file(python/generated.cpp.in python/generated_${category}.cpp)
   set(python_SRC_FILES
       ${python_SRC_FILES} generated_${category}.cpp
