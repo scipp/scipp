@@ -7,7 +7,7 @@ if(result)
         CACHE BOOL "Link-time optimization: ON/OFF" FORCE
     )
   endif()
-  message("IPO set to ${CMAKE_INTERPROCEDURAL_OPTIMIZATION}")
+  message(STATUS "IPO set to ${CMAKE_INTERPROCEDURAL_OPTIMIZATION}")
 else()
   set(CMAKE_INTERPROCEDURAL_OPTIMIZATION
       FALSE
