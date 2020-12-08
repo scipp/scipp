@@ -135,11 +135,13 @@ Variable mean(const VariableConstView &var) {
 }
 
 Variable mean(const VariableConstView &var, const Dim dim) {
+  using variable::isfinite;
   return mean_impl(var, dim, sum(isfinite(var), dim));
 }
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
+  using variable::isfinite;
   return mean_impl(var, dim, sum(isfinite(var), dim), out);
 }
 
@@ -151,6 +153,7 @@ Variable nanmean(const VariableConstView &var) {
 }
 
 Variable nanmean(const VariableConstView &var, const Dim dim) {
+  using variable::isfinite;
   if (isInt(var.dtype()))
     return mean(var, dim);
   return nanmean_impl(var, dim, sum(isfinite(var), dim));
@@ -158,6 +161,7 @@ Variable nanmean(const VariableConstView &var, const Dim dim) {
 
 VariableView nanmean(const VariableConstView &var, const Dim dim,
                      const VariableView &out) {
+  using variable::isfinite;
   if (isInt(var.dtype()))
     return mean(var, dim, out);
   return nanmean_impl(var, dim, sum(isfinite(var), dim), out);
