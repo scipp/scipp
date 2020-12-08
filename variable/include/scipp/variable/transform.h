@@ -189,6 +189,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
               "Expected either all or none of inputs to have variances.");
         } else if constexpr (
             !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
+            core::canHaveVariances<typename Out::value_type>() &&
             (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...)) {
           auto out_var = out.variances();
           transform_elements(op, ValuesAndVariances{out_val, out_var},
@@ -255,7 +256,7 @@ template <class Op> struct Transform {
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
-        (handles.hasVariances() || ...);
+        core::canHaveVariances<Out>() && (handles.hasVariances() || ...);
     auto unit = op.base_op()(variableFactory().elem_unit(*handles.m_var)...);
     auto out = variableFactory().create(dtype<Out>, dims, unit, variances,
                                         *handles.m_var...);

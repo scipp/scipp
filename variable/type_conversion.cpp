@@ -5,7 +5,6 @@
 #include <cmath>
 
 #include "scipp/core/tag_util.h"
-#include "scipp/variable/except.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 
@@ -20,8 +19,11 @@ struct MakeVariableWithType {
               [](const units::Unit &x) { return x; },
               [](const auto &x) {
                 if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-                  return ValueAndVariance<T>{static_cast<T>(x.value),
-                                             static_cast<T>(x.variance)};
+                  if constexpr (std::numeric_limits<T>::is_integer)
+                    return static_cast<T>(x.value);
+                  else
+                    return ValueAndVariance<T>{static_cast<T>(x.value),
+                                               static_cast<T>(x.variance)};
                 else
                   return static_cast<T>(x);
               }});

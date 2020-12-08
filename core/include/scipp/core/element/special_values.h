@@ -13,7 +13,7 @@
 namespace scipp::core::element {
 
 constexpr auto isnan =
-    overloaded{arg_list<double, float>, transform_flags::no_out_variance,
+    overloaded{arg_list<double, float>,
                [](const auto x) {
                  using std::isnan;
                  return isnan(x);
@@ -21,7 +21,7 @@ constexpr auto isnan =
                [](const units::Unit &) { return units::dimensionless; }};
 
 constexpr auto isinf =
-    overloaded{arg_list<double, float>, transform_flags::no_out_variance,
+    overloaded{arg_list<double, float>,
                [](const auto x) {
                  using std::isinf;
                  return isinf(x);
@@ -29,7 +29,7 @@ constexpr auto isinf =
                [](const units::Unit &) { return units::dimensionless; }};
 
 constexpr auto isfinite = overloaded{
-    arg_list<int64_t, int32_t, double, float>, transform_flags::no_out_variance,
+    arg_list<int64_t, int32_t, double, float>,
     [](const auto x) {
       using std::isfinite;
       if constexpr (std::numeric_limits<std::decay_t<decltype(x)>>::is_integer)
@@ -51,7 +51,7 @@ auto isneginf(T x) -> std::enable_if_t<std::is_floating_point_v<T>, bool> {
 } // namespace detail
 
 constexpr auto isposinf =
-    overloaded{arg_list<double, float>, transform_flags::no_out_variance,
+    overloaded{arg_list<double, float>,
                [](const auto x) {
                  using detail::isposinf;
                  return isposinf(x);
@@ -59,7 +59,7 @@ constexpr auto isposinf =
                [](const units::Unit &) { return units::dimensionless; }};
 
 constexpr auto isneginf =
-    overloaded{arg_list<double, float>, transform_flags::no_out_variance,
+    overloaded{arg_list<double, float>,
                [](const auto x) {
                  using detail::isneginf;
                  return isneginf(x);
