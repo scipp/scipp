@@ -728,11 +728,11 @@ def test_make_variable_from_unit_scalar_mult_div():
 
 def test_construct_0d_numpy():
     v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
-    var = sc.Variable(v['x', 0])
+    var = v['x', 0].copy()
     assert sc.is_equal(var, sc.Variable(np.float32()))
 
     v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
-    var = sc.Variable(v['x', 0])
+    var = v['x', 0].copy()
     var.unit = sc.units.m
     assert sc.is_equal(var, np.float32(0.0) * sc.units.m)
     var.unit = sc.units.m**(-1)
