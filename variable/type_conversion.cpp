@@ -18,12 +18,8 @@ struct MakeVariableWithType {
           [](const units::Unit &x) { return x; },
           [](const auto &x) {
             if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-              if constexpr (core::canHaveVariances<T>())
-                return ValueAndVariance<T>{static_cast<T>(x.value),
-                                           static_cast<T>(x.variance)};
-              else
-                throw except::TypeError("Output type " + to_string(dtype<T>) +
-                                        " does not support variances");
+              return ValueAndVariance<T>{static_cast<T>(x.value),
+                                         static_cast<T>(x.variance)};
             else
               return static_cast<T>(x);
           }};
