@@ -62,15 +62,6 @@ Variable mean(const VariableConstView &var, const Dim dim,
   return mean(var, dim);
 }
 
-VariableView mean(const VariableConstView &var, const Dim dim,
-                  const MasksConstView &masks, const VariableView &out) {
-  if (const auto mask_union = irreducible_mask(masks, dim)) {
-    return mean_impl(applyMask(var, mask_union), dim, sum(~mask_union, dim),
-                     out);
-  }
-  return mean(var, dim, out);
-}
-
 Variable nanmean(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks) {
   using variable::isfinite;
@@ -81,18 +72,6 @@ Variable nanmean(const VariableConstView &var, const Dim dim,
     return nanmean_impl(applyMask(var, mask_union), dim, count);
   }
   return nanmean(var, dim);
-}
-
-VariableView nanmean(const VariableConstView &var, const Dim dim,
-                     const MasksConstView &masks, const VariableView &out) {
-  using variable::isfinite;
-  if (isInt(var.dtype()))
-    return mean(var, dim, masks, out);
-  if (const auto mask_union = irreducible_mask(masks, dim)) {
-    const auto count = sum(applyMask(isfinite(var), mask_union), dim);
-    return nanmean_impl(applyMask(var, mask_union), dim, count, out);
-  }
-  return nanmean(var, dim, out);
 }
 
 /// Returns the union of all masks with irreducible dimension `dim`.
