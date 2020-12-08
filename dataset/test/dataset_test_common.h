@@ -86,4 +86,5 @@ Dataset make_1d_masked();
 
 namespace scipp::testdata {
 Dataset make_dataset_x();
+DataArray make_table(const scipp::index size);
 } // namespace scipp::testdata
