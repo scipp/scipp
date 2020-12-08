@@ -155,6 +155,10 @@ enable_testing()
 
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
+
+# Generate files for free scipp API functions
+include(scipp-functions)
+
 add_subdirectory(common)
 add_subdirectory(benchmark)
 add_subdirectory(units)
