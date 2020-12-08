@@ -11,13 +11,6 @@
 using scipp::common::reduce_all_dims;
 
 namespace scipp::dataset {
-namespace {
-void validate_nanmean(const VariableConstView &var) {
-  if (isInt(var.dtype()))
-    throw except::TypeError(
-        "nanmean on integer input variables is not supported. Use mean");
-}
-} // namespace
 
 DataArray sum(const DataArrayConstView &a) {
   return reduce_all_dims(a, [](auto &&... _) { return sum(_...); });
@@ -87,15 +80,20 @@ Dataset mean(const DatasetConstView &d) {
 }
 
 DataArray nanmean(const DataArrayConstView &a, const Dim dim) {
-  validate_nanmean(a.data());
-  auto count = sum(isfinite(a), dim);
-  return nansum(a, dim) * (1.0 * units::one) / count;
+  return apply_to_items(
+      a, [](auto &&... _) { return nanmean(_...); }, dim);
 }
 
 DataArray nanmean(const DataArrayConstView &a) {
-  validate_nanmean(a.data());
-  auto count = sum(isfinite(a));
-  return nansum(a) * (1.0 * units::one) / count;
+  if (isInt(a.data().dtype()))
+    return mean(a);
+  auto _sum = nansum(a);
+  auto scale = 1.0 * units::one / sum(isfinite(a));
+  if (isInt(a.data().dtype()))
+    return _sum * scale;
+  else
+    _sum *= scale;
+  return _sum;
 }
 
 Dataset nanmean(const DatasetConstView &d, const Dim dim) {

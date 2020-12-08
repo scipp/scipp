@@ -165,33 +165,40 @@ TYPED_TEST(MeanTest, mean_all_dims) {
   EXPECT_EQ(mean(ds)["a"], mean(da));
 }
 
-TEST(MeanTest, nanmean_over_dim) {
-  auto ds = make_1_values_and_variances<double>(
-      "a", {Dim::X, 3}, units::dimensionless, {1.0, 2.0, double(NAN)},
-      {12.0, 15.0, 18.0});
-  EXPECT_EQ(nanmean(ds, Dim::X)["a"].data(),
-            makeVariable<double>(Values{1.5}, Variances{6.75}));
-  EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<double>(Values{1.5}, Variances{6.75}));
+TYPED_TEST(MeanTest, nanmean_over_dim) {
+  auto ds = make_1_values_and_variances<TypeParam>(
+      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
+  if constexpr (std::numeric_limits<TypeParam>::is_integer) {
+    EXPECT_EQ(nanmean(ds, Dim::X)["a"].data(), makeVariable<double>(Values{2}));
+    EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+              makeVariable<double>(Values{1.5}));
+  } else {
+    EXPECT_EQ(nanmean(ds, Dim::X)["a"].data(),
+              makeVariable<TypeParam>(Values{2}, Variances{5.0}));
+    EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+              makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
+    // Set and test with NANS
+    ds["a"].template values<TypeParam>()[3] = TypeParam(NAN);
+    EXPECT_EQ(nanmean(ds)["a"].data(), makeVariable<TypeParam>(Values{2.0}));
+    EXPECT_EQ(nanmean(ds)["a"].data(), makeVariable<TypeParam>(Values{2.0}));
+  }
 }
 
-TEST(MeanTest, nanmean_all_dims) {
-  DataArray da{makeVariable<double>(
-      Dims{Dim::X, Dim::Y}, Values{1.0, 2.0, 3.0, double(NAN)}, Shape{2, 2})};
-  EXPECT_EQ(nanmean(da).data(), makeVariable<double>(Values{2.0}));
+TYPED_TEST(MeanTest, nanmean_all_dims) {
+  DataArray da{makeVariable<TypeParam>(
+      Dims{Dim::X, Dim::Y}, Values{1.0, 2.0, 3.0, 4.0}, Shape{2, 2})};
+
+  constexpr bool is_integer_t = std::numeric_limits<TypeParam>::is_integer;
+  // For all FP input dtypes, dtype is same on output. Integers are converted to
+  // double FP precision.
+  using T = std::conditional_t<is_integer_t, double, TypeParam>;
+  EXPECT_EQ(nanmean(da).data(), makeVariable<T>(Values{2.5}));
 
   Dataset ds{{{"a", da}}};
   EXPECT_EQ(nanmean(ds)["a"], nanmean(da));
 
-  EXPECT_THROW(nanmean(astype(da, dtype<int64_t>)), except::TypeError);
-}
-
-TEST(MeanTest, nanmean_throws_on_int) {
-  // Do not support integer type input variables
-  auto d = make_1_values_and_variances<int>(
-      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {1, 2, 3});
-  EXPECT_THROW(nanmean(d), except::TypeError);
-  EXPECT_THROW(nanmean(d, Dim::X), except::TypeError);
-  EXPECT_THROW(nanmean(d["a"]), except::TypeError);
-  EXPECT_THROW(nanmean(d["a"], Dim::X), except::TypeError);
+  if constexpr (!is_integer_t) {
+    da.values<TypeParam>()[3] = TypeParam(NAN);
+    EXPECT_EQ(nanmean(da).data(), makeVariable<TypeParam>(Values{2.0}));
+  }
 }

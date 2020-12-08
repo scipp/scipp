@@ -20,11 +20,6 @@ Variable applyMask(const VariableConstView &var, const Variable &masks) {
                                     scipp::core::element::convertMaskedToZero);
 }
 
-void validate_nanmean(const VariableConstView &var) {
-  if (isInt(var.dtype()))
-    throw except::TypeError(
-        "nanmean on integer input variables is not supported. Use mean");
-}
 } // namespace
 
 Variable sum(const VariableConstView &var, const Dim dim,
@@ -79,7 +74,8 @@ VariableView mean(const VariableConstView &var, const Dim dim,
 Variable nanmean(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks) {
   using variable::isfinite;
-  validate_nanmean(var);
+  if (isInt(var.dtype()))
+    return mean(var, dim, masks);
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     const auto count = sum(applyMask(isfinite(var), mask_union), dim);
     return nanmean_impl(applyMask(var, mask_union), dim, count);
@@ -90,7 +86,8 @@ Variable nanmean(const VariableConstView &var, const Dim dim,
 VariableView nanmean(const VariableConstView &var, const Dim dim,
                      const MasksConstView &masks, const VariableView &out) {
   using variable::isfinite;
-  validate_nanmean(var);
+  if (isInt(var.dtype()))
+    return mean(var, dim, masks, out);
   if (const auto mask_union = irreducible_mask(masks, dim)) {
     const auto count = sum(applyMask(isfinite(var), mask_union), dim);
     return nanmean_impl(applyMask(var, mask_union), dim, count, out);
