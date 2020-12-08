@@ -159,10 +159,6 @@ public:
       m_data_index[data] += m_stride[data][0];
   }
 
-  void bump_coord_index(const scipp::index step) noexcept {
-    m_coord[0] += step;
-  }
-
   [[nodiscard]] scipp::index n_contiguous_dims() const noexcept {
     if (has_bins()) {
       return 0; // TODO can do better for bins?
