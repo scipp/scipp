@@ -73,9 +73,8 @@ static constexpr auto histogram = overloaded{
             "Data to histogram must have unit `counts` or `dimensionless`.");
       return weights_unit;
     },
-    transform_flags::expect_variance_arg<0>,
+    transform_flags::expect_in_variance_if_out_variance,
     transform_flags::expect_no_variance_arg<1>,
-    transform_flags::expect_variance_arg<2>,
     transform_flags::expect_no_variance_arg<3>};
 
 } // namespace scipp::core::element
