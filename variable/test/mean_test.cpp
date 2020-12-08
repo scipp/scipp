@@ -143,8 +143,7 @@ TEST(MeanTest, dtype_float_preserved) {
 
 TEST(MeanTest, dtype_int_gives_double_mean) {
   dtype_int_gives_double_mean(mean_func);
-  EXPECT_THROW(dtype_int_gives_double_mean(nanmean_func),
-               except::TypeError); // nansum and nanmean do not support ints
+  dtype_int_gives_double_mean(nanmean_func);
 }
 
 TEST(MeanTest, variances_as_standard_deviation_of_the_mean) {
@@ -182,12 +181,4 @@ TEST(MeanTest, nanmean_basic_inplace) {
   EXPECT_EQ(meanY, expectedY);
   EXPECT_EQ(viewY, meanY);
   EXPECT_EQ(viewY.underlying(), meanY);
-}
-
-TEST(MeanTest, nanmean_with_ints_throws) {
-  auto var = makeVariable<int>(Values{1});
-  EXPECT_THROW([[maybe_unused]] auto out = nanmean(var), except::TypeError);
-  EXPECT_THROW([[maybe_unused]] auto out = nanmean(var, Dim::X),
-               except::TypeError);
-  EXPECT_THROW(nanmean(var, Dim::X, var), except::TypeError);
 }
