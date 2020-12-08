@@ -4,7 +4,6 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <cmath>
 #include <numeric>
 
 #include "scipp/common/numeric.h"
@@ -17,11 +16,15 @@
 namespace scipp::core::element {
 
 namespace {
-constexpr auto value = [](const auto &v, const scipp::index idx) {
-  return v.value[idx];
-};
-constexpr auto variance = [](const auto &v, const scipp::index idx) {
-  return v.variance[idx];
+constexpr auto iadd = [](const auto &x1, const scipp::index i1, const auto &x2,
+                         const scipp::index i2) {
+  using V = std::decay_t<decltype(x1)>;
+  if constexpr (is_ValueAndVariance_v<V>) {
+    x1.value[i1] += x2.value[i2];
+    x1.variance[i1] += x2.variance[i2];
+  } else {
+    x1[i1] += x2[i2];
+  }
 };
 } // namespace
 
@@ -47,33 +50,27 @@ static constexpr auto histogram = overloaded{
         for (scipp::index i = 0; i < scipp::size(events); ++i) {
           const auto x = events[i];
           const double bin = (x - offset) * scale;
-          if (bin >= 0.0 && bin < nbin) {
-            const auto b = static_cast<scipp::index>(bin);
-            data.value[b] += value(weights, i);
-            data.variance[b] += variance(weights, i);
-          }
+          if (bin >= 0.0 && bin < nbin)
+            iadd(data, static_cast<scipp::index>(bin), weights, i);
         }
       } else {
         core::expect::histogram::sorted_edges(edges);
         for (scipp::index i = 0; i < scipp::size(events); ++i) {
           const auto x = events[i];
           auto it = std::upper_bound(edges.begin(), edges.end(), x);
-          if (it != edges.end() && it != edges.begin()) {
-            const auto b = --it - edges.begin();
-            data.value[b] += value(weights, i);
-            data.variance[b] += variance(weights, i);
-          }
+          if (it != edges.end() && it != edges.begin())
+            iadd(data, --it - edges.begin(), weights, i);
         }
       }
     },
     [](const units::Unit &events_unit, const units::Unit &weights_unit,
        const units::Unit &edge_unit) {
       if (events_unit != edge_unit)
-        throw except::UnitError("Bin edges must have same unit as the events "
-                                "input coordinate.");
+        throw except::UnitError(
+            "Bin edges must have same unit as the input coordinate.");
       if (weights_unit != units::counts && weights_unit != units::dimensionless)
-        throw except::UnitError("Weights of event data must be "
-                                "`units::counts` or `units::dimensionless`.");
+        throw except::UnitError(
+            "Data to histogram must have unit `counts` or `dimensionless`.");
       return weights_unit;
     },
     transform_flags::expect_variance_arg<0>,
