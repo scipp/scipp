@@ -19,11 +19,11 @@ struct MakeVariableWithType {
               [](const units::Unit &x) { return x; },
               [](const auto &x) {
                 if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-                  if constexpr (std::numeric_limits<T>::is_integer)
-                    return static_cast<T>(x.value);
-                  else
+                  if constexpr (core::canHaveVariances<T>())
                     return ValueAndVariance<T>{static_cast<T>(x.value),
                                                static_cast<T>(x.variance)};
+                  else
+                    return static_cast<T>(x.value);
                 else
                   return static_cast<T>(x);
               }});
