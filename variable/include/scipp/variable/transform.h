@@ -84,17 +84,13 @@ template <class T> static constexpr auto array_params(T &&iterable) noexcept {
 }
 
 template <int N, class T> static constexpr auto get(const T &index) noexcept {
-  if constexpr (visit_detail::is_tuple<T>::value) {
+  if constexpr (visit_detail::is_tuple<T>::value ||
+                visit_detail::is_array<T>::value) {
     if constexpr (std::is_integral_v<std::tuple_element_t<0, T>>)
       return std::get<N>(index);
     else
       return std::get<N>(index).get();
-  }
-  else if constexpr (visit_detail::is_array<T>::value) {
-    // TODO validate N
-    return index[N];
-  }
-  else
+  } else
     return std::get<N>(index.get());
 }
 
