@@ -244,7 +244,7 @@ TEST(HistogramTest, dense_vs_binned) {
   auto table_no_variance = make_table(100);
   table_no_variance.data().setVariances(Variable{});
   for (const auto &table :
-       {make_table(100), make_table(1000), table_no_variance}) {
+       {make_table(0), make_table(100), make_table(1000), table_no_variance}) {
     const auto binned_x =
         bin(table, {makeVariable<double>(Dims{Dim::X}, Shape{5},
                                          Values{-2, -1, 0, 1, 2})});
