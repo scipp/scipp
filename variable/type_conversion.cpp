@@ -23,7 +23,7 @@ struct MakeVariableWithType {
                     return ValueAndVariance<T>{static_cast<T>(x.value),
                                                static_cast<T>(x.variance)};
                   else
-                    return static_cast<T>(x.value);
+                    throw except::TypeError("Output type " + to_string(dtype<T>) + " does not support variances");
                 else
                   return static_cast<T>(x);
               }});
