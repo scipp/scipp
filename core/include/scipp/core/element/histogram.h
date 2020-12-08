@@ -18,28 +18,10 @@ namespace scipp::core::element {
 
 namespace {
 constexpr auto value = [](const auto &v, const scipp::index idx) {
-  using V = std::decay_t<decltype(v)>;
-  if constexpr (is_ValueAndVariance_v<V>) {
-    if constexpr (std::is_arithmetic_v<typename V::value_type>) {
-      static_cast<void>(idx);
-      return v.value;
-    } else {
-      return v.value[idx];
-    }
-  } else
-    return v.values[idx];
+  return v.value[idx];
 };
 constexpr auto variance = [](const auto &v, const scipp::index idx) {
-  using V = std::decay_t<decltype(v)>;
-  if constexpr (is_ValueAndVariance_v<V>) {
-    if constexpr (std::is_arithmetic_v<typename V::value_type>) {
-      static_cast<void>(idx);
-      return v.variance;
-    } else {
-      return v.variance[idx];
-    }
-  } else
-    return v.variances[idx];
+  return v.variance[idx];
 };
 } // namespace
 
@@ -67,10 +49,8 @@ static constexpr auto histogram = overloaded{
           const double bin = (x - offset) * scale;
           if (bin >= 0.0 && bin < nbin) {
             const auto b = static_cast<scipp::index>(bin);
-            const auto w = value(weights, i);
-            const auto e = variance(weights, i);
-            data.value[b] += w;
-            data.variance[b] += e;
+            data.value[b] += value(weights, i);
+            data.variance[b] += variance(weights, i);
           }
         }
       } else {
@@ -80,10 +60,8 @@ static constexpr auto histogram = overloaded{
           auto it = std::upper_bound(edges.begin(), edges.end(), x);
           if (it != edges.end() && it != edges.begin()) {
             const auto b = --it - edges.begin();
-            const auto w = value(weights, i);
-            const auto e = variance(weights, i);
-            data.value[b] += w;
-            data.variance[b] += e;
+            data.value[b] += value(weights, i);
+            data.variance[b] += variance(weights, i);
           }
         }
       }

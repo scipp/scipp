@@ -52,9 +52,9 @@ TEST(ElementHistogramTest, values) {
   std::vector<double> weight_vars{100, 200, 300, 400, 500, 600, 700};
   std::vector<double> result_vals{0, 0};
   std::vector<double> result_vars{0, 0};
-  element::histogram(ValueAndVariance(span(result_vals), span(result_vars)),
-                     events, ValuesAndVariances(weight_vals, weight_vars),
-                     edges);
+  element::histogram(
+      ValueAndVariance(span(result_vals), span(result_vars)), events,
+      ValueAndVariance(span(weight_vals), span(weight_vars)), edges);
   EXPECT_EQ(result_vals, std::vector<double>({20 + 30, 40 + 50}));
   EXPECT_EQ(result_vars, std::vector<double>({200 + 300, 400 + 500}));
 }
