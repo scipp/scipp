@@ -5,6 +5,7 @@
 #include "scipp/common/reduction.h"
 #include "dataset_operations_common.h"
 #include "scipp/core/element/util.h"
+#include "scipp/dataset/math.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/special_values.h"
 
@@ -62,11 +63,11 @@ DataArray mean(const DataArrayConstView &a, const Dim dim) {
 
 DataArray mean(const DataArrayConstView &a) {
   auto _sum = sum(a);
-  auto scale = 1.0 * units::one / sum(isfinite(a));
+  auto scale = reciprocal(astype(sum(isfinite(a)), dtype<double>));
   if (isInt(a.data().dtype()))
     return _sum * scale;
   else
-    _sum *= scale;
+    _sum *= scale; // preserves dtype
   return _sum;
 }
 
@@ -80,19 +81,19 @@ Dataset mean(const DatasetConstView &d) {
 }
 
 DataArray nanmean(const DataArrayConstView &a, const Dim dim) {
-  return apply_to_items(
-      a, [](auto &&... _) { return nanmean(_...); }, dim);
+  return apply_to_data_and_drop_dim(
+      a, [](auto &&... _) { return nanmean(_...); }, dim, a.masks());
 }
 
 DataArray nanmean(const DataArrayConstView &a) {
   if (isInt(a.data().dtype()))
     return mean(a);
   auto _sum = nansum(a);
-  auto scale = 1.0 * units::one / sum(isfinite(a));
+  auto scale = reciprocal(astype(sum(isfinite(a)), dtype<double>));
   if (isInt(a.data().dtype()))
     return _sum * scale;
   else
-    _sum *= scale;
+    _sum *= scale; // preserves dtype
   return _sum;
 }
 

@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
-#include "fix_typed_test_suite_warnings.h"
 #include "scipp/dataset/reduction.h"
 #include <gtest/gtest.h>
 #include <scipp/common/overloaded.h>
+// clang-format off
+#include "fix_typed_test_suite_warnings.h"
+// clang-format on
 
 namespace {
 using namespace scipp;
@@ -178,9 +180,11 @@ TYPED_TEST(MeanTest, nanmean_over_dim) {
     EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
               makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
     // Set and test with NANS
-    ds["a"].template values<TypeParam>()[3] = TypeParam(NAN);
-    EXPECT_EQ(nanmean(ds)["a"].data(), makeVariable<TypeParam>(Values{2.0}));
-    EXPECT_EQ(nanmean(ds)["a"].data(), makeVariable<TypeParam>(Values{2.0}));
+    ds["a"].template values<TypeParam>()[2] = TypeParam(NAN);
+    EXPECT_EQ(nanmean(ds)["a"].data(),
+              makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
+    EXPECT_EQ(nanmean(ds["a"]).data(),
+              makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
   }
 }
 
