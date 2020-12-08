@@ -34,7 +34,9 @@ constexpr auto isfinite = overloaded{
       using std::isfinite;
       if constexpr (std::numeric_limits<std::decay_t<decltype(x)>>::is_integer)
         return isfinite(double(x));
-      return isfinite(x);
+      else {
+        return isfinite(x);
+      };
     },
     [](const units::Unit &) { return units::dimensionless; }};
 
