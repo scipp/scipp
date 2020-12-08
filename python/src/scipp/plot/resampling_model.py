@@ -28,10 +28,10 @@ class ResamplingModel():
 
     @property
     def data(self):
-        self._resample()
+        self._call_resample()
         return self._resampled
 
-    def _resample(self):
+    def _call_resample(self):
         out = self._data
         edges = []
         params = {}
@@ -51,4 +51,34 @@ class ResamplingModel():
                                                    1)))
         if self._resampled is None or params != self._resampled_params:
             self._resampled_params = params
-            self._resampled = sc.bin(out.bins, edges=edges).bins.sum()
+            self._resampled = self._resample(out, edges)
+
+
+class ResamplingBinnedModel(ResamplingModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _resample(self, data, edges):
+        return sc.bin(data.bins, edges=edges).bins.sum()
+
+
+class ResamplingDenseModel(ResamplingModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def _resample(self, data, edges):
+        out = data
+        for edge in edges:
+            try:
+                out = sc.rebin(out, edge.dims[-1], edge)
+            except RuntimeError:  # Limitation of rebin for slice of inner dim
+                out = sc.rebin(out.copy(), edge.dims[-1], edge)
+
+        return out
+
+
+def resampling_model(data, **kwargs):
+    if data.bins is None:
+        return ResamplingDenseModel(data, **kwargs)
+    else:
+        return ResamplingBinnedModel(data, **kwargs)
