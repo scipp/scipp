@@ -14,22 +14,21 @@ namespace scipp::variable {
 struct MakeVariableWithType {
   template <class T> struct Maker {
     static Variable apply(const VariableConstView &parent) {
-      auto conversion = overloaded{
-          [](const units::Unit &x) { return x; },
-          [](const auto &x) {
-            if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-              return ValueAndVariance<T>{static_cast<T>(x.value),
-                                         static_cast<T>(x.variance)};
-            else
-              return static_cast<T>(x);
-          }};
-      if constexpr (core::canHaveVariances<T>())
-        return transform<double, float, int64_t, int32_t, bool>(parent,
-                                                                conversion);
-      else
-        return transform<double, float, int64_t, int32_t, bool>(
-            parent, overloaded{core::transform_flags::expect_no_variance_arg<0>,
-                               conversion});
+      using namespace core::transform_flags;
+      constexpr auto expect_input_variances =
+          std::conditional_t<core::canHaveVariances<T>(), null_flag_t,
+                             expect_no_variance_arg_t<0>>{};
+      return transform<double, float, int64_t, int32_t, bool>(
+          parent,
+          overloaded{
+              expect_input_variances, [](const units::Unit &x) { return x; },
+              [](const auto &x) {
+                if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+                  return ValueAndVariance<T>{static_cast<T>(x.value),
+                                             static_cast<T>(x.variance)};
+                else
+                  return static_cast<T>(x);
+              }});
     }
   };
   static Variable make(const VariableConstView &var, DType type) {
