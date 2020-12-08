@@ -17,7 +17,7 @@ Classes
    GroupByDataArray
    GroupByDataset
 
-Class factories
+Creation functions
 ===============
 
 .. autosummary::
