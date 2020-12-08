@@ -2,23 +2,25 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
 
 TEST(RebinTest, inner) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
-  var.setUnit(units::counts);
+  const auto base = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
+                                         Values{1.0, 2.0});
   const auto oldEdge =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, 2.0, 3.0});
   const auto newEdge =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 3.0});
-  auto rebinned = rebin(var, Dim::X, oldEdge, newEdge);
-  ASSERT_EQ(rebinned.dims().shape().size(), 1);
-  ASSERT_EQ(rebinned.dims().volume(), 1);
-  ASSERT_EQ(rebinned.values<double>().size(), 1);
-  EXPECT_EQ(rebinned.values<double>()[0], 3.0);
+  for (const auto &var :
+       {base, astype(base, dtype<int64_t>), astype(base, dtype<int32_t>)}) {
+    EXPECT_EQ(rebin(var, Dim::X, oldEdge, newEdge),
+              makeVariable<double>(Dims{Dim::X}, Shape{1}, units::counts,
+                                   Values{3.0}));
+  }
 }
 
 TEST(RebinTest, inner_descending) {
@@ -41,22 +43,21 @@ TEST(RebinTest, inner_descending) {
 }
 
 TEST(RebinTest, outer) {
-  auto var = makeVariable<double>(Dimensions{{Dim::Y, 6}, {Dim::X, 2}},
-                                  Values{1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
-  var.setUnit(units::counts);
+  auto base =
+      makeVariable<double>(Dimensions{{Dim::Y, 6}, {Dim::X, 2}}, units::counts,
+                           Values{1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
   const auto oldEdge =
       makeVariable<double>(Dims{Dim::Y}, Shape{7}, Values{1, 2, 3, 4, 5, 6, 7});
   const auto newEdge =
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 3, 8});
-  auto rebinned = rebin(var, Dim::Y, oldEdge, newEdge);
-  ASSERT_EQ(rebinned.dims().volume(), 4);
-  ASSERT_EQ(rebinned.values<double>().size(), 4);
 
-  auto expected = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
-                                       Values{4, 6, 14, 18});
-  expected.setUnit(units::counts);
+  for (const auto &var :
+       {base, astype(base, dtype<int64_t>), astype(base, dtype<int32_t>)}) {
+    EXPECT_EQ(rebin(var, Dim::Y, oldEdge, newEdge),
 
-  ASSERT_EQ(rebinned, expected);
+              makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
+                                   units::counts, Values{4, 6, 14, 18}));
+  }
 }
 
 TEST(RebinTest, outer_increasing) {
