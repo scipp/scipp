@@ -258,13 +258,6 @@ public:
     return false;
   }
 
-  [[nodiscard]] bool innermost_are_contiguous() const noexcept {
-    return std::all_of(m_stride.begin(), m_stride.end(),
-                       [this](const auto &stride) {
-                         return this->m_ndim > 0 && stride[0] == 1;
-                       });
-  }
-
 private:
   struct BucketIterator {
     BucketIterator() = default;
