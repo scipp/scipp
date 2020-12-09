@@ -79,29 +79,29 @@ template <typename Op> assign_unary(Op) -> assign_unary<Op>;
 /// operator.
 namespace transform_flags {
 
-template <typename T> struct Flag { void operator()() const {}; };
+/// Base and NULL flag. Do not test for this type.
+struct Flag {
+  void operator()() const {};
+};
 
+/// Helper to conditionally apply a given flag (T) under condition (B) otherwise
+/// Null Flag
+template <bool B, typename T>
+using enable_flag_if = std::conditional_t<B, T, Flag>;
+
+namespace {
+
+struct no_out_variance_t : Flag {};
 /// Add this to overloaded operator to indicate that the operation does not
 /// return data with variances, regardless of whether inputs have variances.
-// static constexpr auto no_out_variance = []() {};
-// using no_out_variance_t = decltype(no_out_variance);
-namespace {
-struct null_flag_t : public Flag<null_flag_t> {};
-
-struct no_out_variance_t : public Flag<no_out_variance_t> {};
 constexpr auto no_out_variance = no_out_variance_t{};
 
-template <int N>
-struct expect_no_variance_arg_t : public Flag<expect_no_variance_arg_t<N>> {};
+template <int N> struct expect_no_variance_arg_t : Flag {};
+/// Add this to overloaded operator to indicate that the operation does not
+/// support variances in the specified argument.
 template <int N>
 constexpr auto expect_no_variance_arg = expect_no_variance_arg_t<N>{};
 } // namespace
-
-/// Add this to overloaded operator to indicate that the operation does not
-/// support variances in the specified argument.
-// template <int N> static constexpr auto expect_no_variance_arg = []() {};
-// template <int N>
-// using expect_no_variance_arg_t = decltype(expect_no_variance_arg<N>);
 
 /// Add this to overloaded operator to indicate that the operation requires
 /// variances in the specified argument.
