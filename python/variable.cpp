@@ -148,7 +148,7 @@ of variances.)");
   bind_init_0D<scipp::core::time_point>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_0D<Eigen::Matrix3d>(variable);
-  variable.def(py::init<const VariableView &>())
+  variable
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
            py::arg("shape") = std::vector<scipp::index>{},

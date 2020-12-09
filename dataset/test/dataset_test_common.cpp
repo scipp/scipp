@@ -3,6 +3,7 @@
 #include <algorithm>
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/misc_operations.h"
 
 #include "dataset_test_common.h"
 
@@ -143,6 +144,24 @@ Dataset make_dataset_x() {
   d.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::X}, units::m, Shape{3},
                                           Values{1, 2, 3}));
   return d;
+}
+
+DataArray make_table(const scipp::index size) {
+  Random rand;
+  rand.seed(0);
+  const Dimensions dims(Dim::Row, size);
+  const auto data = makeVariable<double>(dims, Values(rand(dims.volume())),
+                                         Variances(rand(dims.volume())));
+  const auto x = makeVariable<double>(dims, Values(rand(dims.volume())));
+  const auto y = makeVariable<double>(dims, Values(rand(dims.volume())));
+  const auto group = astype(
+      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
+  const auto group2 = astype(
+      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
+  return DataArray(data, {{Dim::X, x},
+                          {Dim::Y, y},
+                          {Dim("group"), group},
+                          {Dim("group2"), group2}});
 }
 
 } // namespace scipp::testdata

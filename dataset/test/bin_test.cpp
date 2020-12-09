@@ -2,7 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "random.h"
+#include "dataset_test_common.h"
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
@@ -11,11 +11,11 @@
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
-#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
+using testdata::make_table;
 
 class DataArrayBinTest : public ::testing::Test {
 protected:
@@ -106,26 +106,6 @@ TEST(BinGroupTest, 1d) {
   EXPECT_EQ(binned.values<core::bin<DataArray>>()[0].slice({Dim::Row, 1}),
             table.slice({Dim::Row, 4}));
 }
-
-namespace {
-auto make_table(const scipp::index size) {
-  Random rand;
-  rand.seed(0);
-  const Dimensions dims(Dim::Row, size);
-  const auto data = makeVariable<double>(dims, Values(rand(dims.volume())),
-                                         Variances(rand(dims.volume())));
-  const auto x = makeVariable<double>(dims, Values(rand(dims.volume())));
-  const auto y = makeVariable<double>(dims, Values(rand(dims.volume())));
-  const auto group = astype(
-      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
-  const auto group2 = astype(
-      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
-  return DataArray(data, {{Dim::X, x},
-                          {Dim::Y, y},
-                          {Dim("group"), group},
-                          {Dim("group2"), group2}});
-}
-} // namespace
 
 class BinTest : public ::testing::TestWithParam<DataArray> {
 protected:

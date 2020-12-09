@@ -1,0 +1,31 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Simon Heybrock
+#include "pybind11.h"
+
+#include "scipp/dataset/@NAME@.h"
+#include "scipp/variable/@NAME@.h"
+
+using namespace scipp;
+
+namespace py = pybind11;
+
+template <typename T> void bind_@NAME@(py::module &m) {
+  m.def(
+      "@NAME@", [](const typename T::const_view_type &x) { return @NAME@(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  if constexpr(std::is_same_v<T, Variable>)
+    m.def(
+        "@NAME@",
+        [](const typename T::const_view_type &x,
+           const typename T::view_type &out) { return @NAME@(x, out); },
+        py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
+        py::call_guard<py::gil_scoped_release>());
+}
+
+
+void init_@NAME@(py::module &m) {
+  bind_@NAME@<Variable>(m);
+  bind_@NAME@<DataArray>(m);
+}

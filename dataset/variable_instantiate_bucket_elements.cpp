@@ -70,6 +70,9 @@ class BucketVariableMakerDataset : public variable::AbstractVariableMaker {
                   const std::vector<VariableConstView> &) const override {
     throw std::runtime_error("not implemented");
   }
+  Dim elem_dim(const VariableConstView &) const override {
+    throw std::runtime_error("undefined");
+  }
   DType elem_dtype(const VariableConstView &) const override {
     throw std::runtime_error("undefined");
   }

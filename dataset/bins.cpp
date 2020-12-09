@@ -302,12 +302,27 @@ Variable histogram(const VariableConstView &data,
                    const VariableConstView &binEdges) {
   using namespace scipp::core;
   auto hist_dim = binEdges.dims().inner();
-  const auto &[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
+  auto &&[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
+  // `hist_dim` may be the same as a dim of data if there is existing binning.
+  // We rename to a dummy to avoid duplicate dimensions, perform histogramming,
+  // and then sum over the dummy dimensions, i.e., sum contributions from all
+  // inputs bins to the same output histogram. This also allows for threading of
+  // 1-D histogramming provided that the input has multiple bins along
+  // `hist_dim`.
+  std::string nonclashing_name("dummy");
+  for (const auto &d : indices.dims().labels())
+    nonclashing_name += d.name();
+  const Dim dummy = Dim(nonclashing_name);
+  indices.rename(hist_dim, dummy);
   const Masker masker(buffer, dim);
-  return variable::transform_subspan(
+  auto hist = variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
       subspan_view(buffer.meta()[hist_dim], dim, indices),
       subspan_view(masker.data(), dim, indices), binEdges, element::histogram);
+  if (hist.dims().contains(dummy))
+    return sum(hist, dummy);
+  else
+    return hist;
 }
 
 Variable map(const DataArrayConstView &function, const VariableConstView &x,

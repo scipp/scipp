@@ -2,6 +2,10 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#pragma once
+#include "pybind11.h"
 
-#include "scipp/dataset/generated_math.h"
+@init_list_forward@
+
+void init_generated_@category@(pybind11::module &m) {
+  @init_list@
+}
