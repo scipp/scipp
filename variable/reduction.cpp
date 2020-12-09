@@ -147,8 +147,6 @@ VariableView mean(const VariableConstView &var, const Dim dim,
 
 /// Return the mean along all dimensions. Ignoring NaN values.
 Variable nanmean(const VariableConstView &var) {
-  if (isInt(var.dtype()))
-    return mean(var);
   return reduce_all_dims(var, [](auto &&... _) { return nanmean(_...); });
 }
 
