@@ -50,40 +50,57 @@ auto get_coord(VariableConstView coord, const Dim dim) {
   return std::tuple(coord, ascending);
 }
 
-template <class T>
-T slice(const T &data, const Dim dim, const VariableConstView value) {
+auto get_slice_params(const Dimensions &dims, const VariableConstView &coord_,
+                      const VariableConstView value) {
   core::expect::equals(value.dims(), Dimensions{});
-  if (is_histogram(data, dim)) {
-    const auto &[coord, ascending] = get_coord(data.coords()[dim], dim);
-    return data.slice({dim, get_count(coord, dim, value, ascending) - 1});
+  const auto dim = coord_.dims().inner();
+  if (dims[dim] + 1 == coord_.dims()[dim]) {
+    const auto &[coord, ascending] = get_coord(coord_, dim);
+    return std::tuple{dim, get_count(coord, dim, value, ascending) - 1};
   } else {
-    auto eq = equal(get_1d_coord(data.coords()[dim]), value);
+    auto eq = equal(get_1d_coord(coord_), value);
     if (sum(eq, dim).template value<scipp::index>() != 1)
       throw except::SliceError("Coord " + to_string(dim) +
                                " does not contain unique point with value " +
                                to_string(value) + '\n');
     auto values = eq.template values<bool>();
     auto it = std::find(values.begin(), values.end(), true);
-    return data.slice({dim, std::distance(values.begin(), it)});
+    return std::tuple{dim, std::distance(values.begin(), it)};
   }
+}
+
+auto get_slice_params(const Dimensions &dims, const VariableConstView &coord_,
+                      const VariableConstView begin,
+                      const VariableConstView end) {
+  if (begin)
+    core::expect::equals(begin.dims(), Dimensions{});
+  if (end)
+    core::expect::equals(end.dims(), Dimensions{});
+  const auto dim = coord_.dims().inner();
+  const auto &[coord, ascending] = get_coord(coord_, dim);
+  scipp::index first = 0;
+  scipp::index last = dims[dim];
+  const auto bin_edges = last + 1 == coord.dims()[dim];
+  if (begin)
+    first = get_index(coord, dim, begin, ascending, bin_edges);
+  if (end)
+    last = get_index(coord, dim, end, ascending, bin_edges);
+  return std::tuple{dim, first, last};
+}
+
+template <class T>
+T slice(const T &data, const Dim dim, const VariableConstView value) {
+  const auto [d, i] =
+      get_slice_params((data.dims()), data.coords()[dim], value);
+  return data.slice({d, i});
 }
 
 template <class T>
 T slice(const T &data, const Dim dim, const VariableConstView begin,
         const VariableConstView end) {
-  if (begin)
-    core::expect::equals(begin.dims(), Dimensions{});
-  if (end)
-    core::expect::equals(end.dims(), Dimensions{});
-  const auto &[coord, ascending] = get_coord(data.coords()[dim], dim);
-  const auto bin_edges = is_histogram(data, dim);
-  scipp::index first = 0;
-  scipp::index last = data.dims()[dim];
-  if (begin)
-    first = get_index(coord, dim, begin, ascending, bin_edges);
-  if (end)
-    last = get_index(coord, dim, end, ascending, bin_edges);
-  return data.slice({dim, first, last});
+  const auto [d, b, e] =
+      get_slice_params((data.dims()), data.coords()[dim], begin, end);
+  return data.slice({d, b, e});
 }
 
 } // namespace
