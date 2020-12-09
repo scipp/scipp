@@ -29,25 +29,23 @@ class NonOwningDataArray():
                 return var
 
         dim, s = key
-        return NonOwningDataArray(data=self._data[dim, s],
-                                  coords={
-                                      name:
-                                      maybe_slice(self.coords[name], dim, s)
-                                      for name in self.coords
-                                  })
+        coords = {
+            name: maybe_slice(self.coords[name], dim, s)
+            for name in self.coords
+        }
+        return NonOwningDataArray(data=self._data[dim, s], coords=coords)
 
 
 class ResamplingModel():
-    def __init__(self, data, resolution={}, bounds={}):
+    def __init__(self, data, coords, resolution={}, bounds={}):
         self._resolution = resolution
         self._bounds = bounds
         self._resampled = None
         self._resampled_params = None
         self._array = NonOwningDataArray(
-            data=data.data,
+            data=data,
             coords=dict(
-                zip([str(dim) for dim in data.coords.keys()],
-                    data.coords.values())))
+                zip([str(dim) for dim in coords.keys()], coords.values())))
 
     @property
     def resolution(self):
