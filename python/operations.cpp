@@ -6,6 +6,7 @@
 #include "pybind11.h"
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/slice.h"
 #include "scipp/dataset/sort.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/sort.h"
@@ -127,4 +128,17 @@ void init_operations(py::module &m) {
             .seealso(":py:func:`scipp.values`")
             .c_str(),
         py::call_guard<py::gil_scoped_release>());
+
+  m.def(
+      "select",
+      [](const VariableConstView &var, const VariableConstView &coord,
+         const VariableConstView &value) { return select(var, coord, value); },
+      py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "select",
+      [](const VariableConstView &var, const VariableConstView &coord,
+         const VariableConstView &begin, const VariableConstView &end) {
+        return select(var, coord, begin, end);
+      },
+      py::call_guard<py::gil_scoped_release>());
 }

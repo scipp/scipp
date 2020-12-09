@@ -52,3 +52,12 @@ slice(Dataset &ds, const Dim dim, const VariableConstView begin,
       const VariableConstView end);
 
 } // namespace scipp::dataset
+
+namespace scipp::variable {
+[[nodiscard]] SCIPP_DATASET_EXPORT VariableConstView
+select(const VariableConstView &var, const VariableConstView &coord,
+       const VariableConstView &value);
+[[nodiscard]] SCIPP_DATASET_EXPORT VariableConstView
+select(const VariableConstView &var, const VariableConstView &coord,
+       const VariableConstView &begin, const VariableConstView &end);
+} // namespace scipp::variable

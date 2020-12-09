@@ -13,7 +13,7 @@
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
-namespace scipp::dataset {
+namespace scipp::variable {
 
 namespace {
 
@@ -49,6 +49,8 @@ auto get_coord(VariableConstView coord, const Dim dim) {
                              "decreasing for value-based slicing");
   return std::tuple(coord, ascending);
 }
+
+} // namespace
 
 auto get_slice_params(const Dimensions &dims, const VariableConstView &coord_,
                       const VariableConstView value) {
@@ -88,10 +90,30 @@ auto get_slice_params(const Dimensions &dims, const VariableConstView &coord_,
   return std::tuple{dim, first, last};
 }
 
+VariableConstView select(const VariableConstView &var,
+                         const VariableConstView &coord,
+                         const VariableConstView &value) {
+  const auto [d, i] = get_slice_params(var.dims(), coord, value);
+  return var.slice({d, i});
+}
+
+VariableConstView select(const VariableConstView &var,
+                         const VariableConstView &coord,
+                         const VariableConstView &begin,
+                         const VariableConstView &end) {
+  const auto [d, b, e] = get_slice_params(var.dims(), coord, begin, end);
+  return var.slice({d, b, e});
+}
+
+} // namespace scipp::variable
+
+namespace scipp::dataset {
+
+namespace {
+
 template <class T>
 T slice(const T &data, const Dim dim, const VariableConstView value) {
-  const auto [d, i] =
-      get_slice_params((data.dims()), data.coords()[dim], value);
+  const auto [d, i] = get_slice_params(data.dims(), data.coords()[dim], value);
   return data.slice({d, i});
 }
 
@@ -99,7 +121,7 @@ template <class T>
 T slice(const T &data, const Dim dim, const VariableConstView begin,
         const VariableConstView end) {
   const auto [d, b, e] =
-      get_slice_params((data.dims()), data.coords()[dim], begin, end);
+      get_slice_params(data.dims(), data.coords()[dim], begin, end);
   return data.slice({d, b, e});
 }
 
@@ -164,4 +186,5 @@ DatasetView slice(Dataset &ds, const Dim dim, const VariableConstView begin,
                   const VariableConstView end) {
   return slice(DatasetView(ds), dim, begin, end);
 }
+
 } // namespace scipp::dataset

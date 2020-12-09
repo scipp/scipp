@@ -13,4 +13,10 @@ bin(const DataArrayConstView &array,
     const std::vector<VariableConstView> &edges,
     const std::vector<VariableConstView> &groups = {});
 
+template <class Coords, class Masks, class Attrs>
+DataArray bin(const VariableConstView &data, const Coords &coords,
+              const Masks &masks, const Attrs &attrs,
+              const std::vector<VariableConstView> &edges,
+              const std::vector<VariableConstView> &groups = {});
+
 } // namespace scipp::dataset
