@@ -65,10 +65,9 @@ DataArray mean(const DataArrayConstView &a) {
   auto _sum = sum(a);
   auto scale = reciprocal(astype(sum(isfinite(a)), dtype<double>));
   if (isInt(a.data().dtype()))
-    return _sum * scale;
+    return sum(a) * reciprocal(astype(sum(isfinite(a)), dtype<double>));
   else
-    _sum *= scale; // preserves dtype
-  return _sum;
+    return sum(a) * reciprocal(astype(sum(isfinite(a)), a.dtype()));
 }
 
 Dataset mean(const DatasetConstView &d, const Dim dim) {
@@ -88,13 +87,7 @@ DataArray nanmean(const DataArrayConstView &a, const Dim dim) {
 DataArray nanmean(const DataArrayConstView &a) {
   if (isInt(a.data().dtype()))
     return mean(a);
-  auto _sum = nansum(a);
-  auto scale = reciprocal(astype(sum(isfinite(a)), dtype<double>));
-  if (isInt(a.data().dtype()))
-    return _sum * scale;
-  else
-    _sum *= scale; // preserves dtype
-  return _sum;
+  return nansum(a) * reciprocal(astype(sum(isfinite(a)), a.dtype()));
 }
 
 Dataset nanmean(const DatasetConstView &d, const Dim dim) {
