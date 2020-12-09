@@ -110,31 +110,31 @@ class PlotModel2d(PlotModel):
         """
         Resample a DataArray according to new bin edges.
         """
-        dslice = array
+        # dslice = array
         # Select bins to speed up rebinning
         for dim in rebin_edges:
             this_slice = self._select_bins(array.coords[dim], dim,
                                            rebin_edges[dim][dim, 0],
                                            rebin_edges[dim][dim, -1])
-            dslice = dslice[this_slice]
+            array = array[this_slice]
 
         # Rebin the data
         for dim, edges in rebin_edges.items():
-            dslice.data = sc.rebin(dslice.data, dim, dslice.coords[dim], edges)
-            for m in dslice.masks:
-                if dim in dslice.masks[m].dims:
-                    dslice.masks[m] = sc.rebin(dslice.masks[m], dim,
-                                               dslice.coords[dim], edges)
+            array.data = sc.rebin(array.data, dim, array.coords[dim], edges)
+            for m in array.masks:
+                if dim in array.masks[m].dims:
+                    array.masks[m] = sc.rebin(array.masks[m], dim,
+                                              array.coords[dim], edges)
 
         # Divide by pixel width if we have normalized in update_data() in the
         # case of non-counts data.
-        if dslice.data.unit != sc.units.counts:
+        if array.data.unit != sc.units.counts:
             for dim, edges in rebin_edges.items():
                 div = edges[dim, 1:] - edges[dim, :-1]
                 div.unit = sc.units.one
-                dslice.data /= div
+                array.data /= div
 
-        return dslice
+        return array
 
     def update_image(self, extent=None, mask_info=None):
         """
@@ -166,13 +166,18 @@ class PlotModel2d(PlotModel):
         shape = [
             self.xyrebin["y"].shape[0] - 1, self.xyrebin["x"].shape[0] - 1
         ]
-        self.dslice = sc.DataArray(coords=rebin_edges,
-                                   data=sc.Variable(
-                                       dims=list(self.displayed_dims.values()),
-                                       values=np.ones(shape),
-                                       variances=np.zeros(shape),
-                                       dtype=self.vslice.data.dtype,
-                                       unit=sc.units.one))
+        self.dslice = sc.DataArray(
+            coords=rebin_edges,
+            data=sc.Variable(
+                dims=list(self.displayed_dims.values()),
+                values=np.ones(shape),
+                # variances=np.zeros(shape),
+                # dtype=self.vslice.data.dtype,
+                dtype=sc.dtype.float64,
+                unit=sc.units.one))
+
+        if resampled_image.data.variances is not None:
+            self.dslice.variances = np.zeros(shape)
 
         self.dslice *= resampled_image.data
         for m in resampled_image.masks:

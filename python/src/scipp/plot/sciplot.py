@@ -252,8 +252,6 @@ class SciPlot:
         """
 
         # Protect against having a multi-dimensional coord along a slider axis
-        print(self.axes)
-        print(self.model.get_multid_coord())
         for ax, dim in self.axes.items():
             if isinstance(ax, int) and (dim == self.model.get_multid_coord()):
                 raise RuntimeError("A ragged coordinate cannot lie along "

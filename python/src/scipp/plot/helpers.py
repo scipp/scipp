@@ -52,20 +52,12 @@ class PlotArrayView:
     def __init__(self, plot_array, slice_obj):
         # Add data slice
         self.data = plot_array.data[slice_obj]
-        # Add all coords except the slice dim coord
-        self.coords = {}
-        for key in plot_array.coords.keys():
-            if slice_obj[0] in plot_array.coords[key].dims:
-                sl = list(slice_obj)
-                if plot_array.isedges[key][slice_obj[0]]:
-                    if hasattr(slice_obj[1], "start"):
-                        sl[1] = slice(slice_obj[1].start,
-                                      slice_obj[1].stop + 1)
-                    else:
-                        sl[1] = slice(slice_obj[1], slice_obj[1] + 2)
-                self.coords[key] = plot_array.coords[key][tuple(sl)]
-            else:
-                self.coords[key] = plot_array.coords[key]
+        # Add all coords, including sliced slice dim coord
+        self.coords = self.initialize_map(plot_array.coords, slice_obj,
+                                          plot_array.isedges)
+        # Slice the attributes
+        self.attrs = self.initialize_map(plot_array.attrs, slice_obj,
+                                         plot_array.isedges)
         # Slice the masks
         self.masks = {}
         for m in plot_array.masks:
@@ -73,12 +65,27 @@ class PlotArrayView:
             if slice_obj[0] in msk.dims:
                 msk = msk[slice_obj]
             self.masks[m] = msk
-
         # Copy edges info
         self.isedges = plot_array.isedges
 
     def __getitem__(self, slice_obj):
         return PlotArrayView(self, slice_obj)
+
+    def initialize_map(self, old_map, slice_obj, isedges):
+        new_map = {}
+        for key in old_map.keys():
+            if slice_obj[0] in old_map[key].dims:
+                sl = list(slice_obj)
+                if isedges[key][slice_obj[0]]:
+                    if hasattr(slice_obj[1], "start"):
+                        sl[1] = slice(slice_obj[1].start,
+                                      slice_obj[1].stop + 1)
+                    else:
+                        sl[1] = slice(slice_obj[1], slice_obj[1] + 2)
+                new_map[key] = old_map[key][tuple(sl)]
+            else:
+                new_map[key] = old_map[key]
+        return new_map
 
 
 class PlotArray:
@@ -87,22 +94,29 @@ class PlotArray:
     PlotArray can be sliced to provide a PlotArrayView onto the contents of the
     PlotArray.
     """
-    def __init__(self, data, coords, masks=None):
+    def __init__(self, data, coords=None, masks=None, attrs=None):
         self.data = data
         self.coords = {}
         self.masks = {}
+        self.attrs = {}
         self.isedges = {}
         dim_to_shape = dict(zip(data.dims, data.shape))
+
         if coords is not None:
-            for dim, coord in coords.items():
-                key = str(dim)
-                self.coords[key] = coord
-                self.isedges[key] = {}
-                for i, dim_ in enumerate(coord.dims):
-                    self.isedges[key][dim_] = coord.shape[
-                        i] == dim_to_shape[dim_] + 1
+            self.initialize_map(self.coords, coords, dim_to_shape)
+        if attrs is not None:
+            self.initialize_map(self.attrs, attrs, dim_to_shape)
         if masks is not None:
             self.masks.update({m: masks[m] for m in masks})
 
     def __getitem__(self, slice_obj):
         return PlotArrayView(self, slice_obj)
+
+    def initialize_map(self, new_map, old_map, dim_to_shape):
+        for dim, item in old_map.items():
+            key = str(dim)
+            new_map[key] = item
+            self.isedges[key] = {}
+            for i, dim_ in enumerate(item.dims):
+                self.isedges[key][dim_] = item.shape[
+                    i] == dim_to_shape[dim_] + 1
