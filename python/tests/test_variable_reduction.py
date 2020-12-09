@@ -79,3 +79,24 @@ def test_nansum():
     out = sc.Variable(dims=['y'], values=np.zeros(2), dtype=sc.dtype.float64)
     sc.nansum(var, 'x', out)
     assert sc.is_equal(out, sc.Variable(dims=['y'], values=[2.0, 1.0]))
+
+
+def test_mean():
+    var = sc.Variable(['x', 'y'], values=np.arange(4.0).reshape(2, 2))
+    assert sc.is_equal(sc.mean(var), sc.Variable(value=6.0 / 4))
+    assert sc.is_equal(sc.mean(var, 'x'),
+                       sc.Variable(dims=['y'], values=[1.0, 2.0]))
+    out = sc.Variable(dims=['y'], values=np.zeros(2), dtype=sc.dtype.float64)
+    sc.mean(var, 'x', out)
+    assert sc.is_equal(out, sc.Variable(dims=['y'], values=[1.0, 2.0]))
+
+
+def test_nanmean():
+    var = sc.Variable(['x', 'y'],
+                      values=np.array([1.0, 1.0, 1.0, 1.0]).reshape(2, 2))
+    assert sc.is_equal(sc.nanmean(var), sc.Variable(value=3.0 / 3))
+    assert sc.is_equal(sc.nanmean(var, 'x'),
+                       sc.Variable(dims=['y'], values=[1.0, 1.0]))
+    out = sc.Variable(dims=['y'], values=np.zeros(2), dtype=sc.dtype.float64)
+    sc.mean(var, 'x', out)
+    assert sc.is_equal(out, sc.Variable(dims=['y'], values=[1.0, 1.0]))

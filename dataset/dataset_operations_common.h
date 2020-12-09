@@ -181,8 +181,8 @@ void copy_metadata(const DataArrayConstView &a, const DataArrayView &b);
 // Helpers for reductions for DataArray and Dataset, which include masks.
 [[nodiscard]] Variable mean(const VariableConstView &var, const Dim dim,
                             const MasksConstView &masks);
-VariableView mean(const VariableConstView &var, const Dim dim,
-                  const MasksConstView &masks, const VariableView &out);
+[[nodiscard]] Variable nanmean(const VariableConstView &var, const Dim dim,
+                               const MasksConstView &masks);
 [[nodiscard]] Variable sum(const VariableConstView &var,
                            const MasksConstView &masks);
 [[nodiscard]] Variable sum(const VariableConstView &var, const Dim dim,
@@ -193,8 +193,6 @@ VariableView sum(const VariableConstView &var, const Dim dim,
                               const MasksConstView &masks);
 [[nodiscard]] Variable nansum(const VariableConstView &var, const Dim dim,
                               const MasksConstView &masks);
-VariableView nansum(const VariableConstView &var, const Dim dim,
-                    const MasksConstView &masks, const VariableView &out);
 
 /// Helper class for applying irreducible masks along dim.
 ///

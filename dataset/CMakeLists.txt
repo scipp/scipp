@@ -18,6 +18,7 @@ set(INC_FILES
     include/scipp/dataset/math.h
     include/scipp/dataset/rebin.h
     include/scipp/dataset/reduction.h
+    include/scipp/dataset/special_values.h
     include/scipp/dataset/util.h
     include/scipp/dataset/slice.h
     include/scipp/dataset/shape.h
@@ -45,6 +46,7 @@ set(SRC_FILES
     shape.cpp
     slice.cpp
     sort.cpp
+    special_values.cpp
     string.cpp
     variable_instantiate_bucket_elements.cpp
     variable_instantiate_dataset.cpp
