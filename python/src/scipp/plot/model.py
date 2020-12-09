@@ -159,7 +159,7 @@ class PlotModel:
                 var=data_array.coords[dim_label_map[dim]], name="")
 
         else:
-            coord = data_array.coords[dim]  # .astype(sc.dtype.float64)
+            coord = data_array.coords[dim]
             if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
                                                       sc.dtype.float64):
                 coord = coord.astype(sc.dtype.float64)
@@ -217,16 +217,17 @@ class PlotModel:
         """
         for dim, [lower, upper] in slices.items():
             # TODO: Could this be optimized for performance?
+            # Note: we use the range 1 [dim, i:i+1] slicing here instead of
+            # index slicing [dim, i] so that we hit the correct branch in
+            # rebin, because in the case of slicing an outer dim, rebin-inner
+            # cannot deal with non-continuous data as an input.
             array = array[dim, lower:upper]
             if (upper - lower) > 1:
-                # array = array[dim, lower:upper]
                 array.data = sc.rebin(array.data, dim, array.coords[dim],
                                       sc.concatenate(
                                           array.coords[dim][dim, 0],
                                           array.coords[dim][dim, -1],
-                                          dim))  # [dim, 0]
-            # else:
-            #     array = array[dim, lower:lower + 1]
+                                          dim))
             if not keep_dims:
                 array = array[dim, 0]
         return array

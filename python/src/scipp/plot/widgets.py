@@ -246,7 +246,6 @@ class PlotWidgets:
             self.slider[index].max = sl_max
             self.slider[index].min = sl_min
         if set_value:
-            # self.slider[index].value = (sl_min + sl_max) // 2
             self.slider[index].value = sl_min
 
     def update_thickness(self, change=None):
@@ -266,7 +265,6 @@ class PlotWidgets:
         to lock the data update which is linked to the slider.
         """
         self.interface["lock_update_data"]()
-        # for ind, dim in inds_and_dims.items():
         self._set_slider_defaults(ind, self.interface["get_dim_shape"](dim))
         self.interface["unlock_update_data"]()
 

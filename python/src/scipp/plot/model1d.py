@@ -42,8 +42,6 @@ class PlotModel1d(PlotModel):
             new_values[name] = {"values": {}, "variances": {}, "masks": {}}
 
             self.dslice = self.slice_data(array, slices)
-            # for dim in slices:
-            #     self.dslice = self.dslice[dim, 0]
             ydata = self.dslice.data.values
             xcenters = to_bin_centers(self.dslice.coords[self.dim],
                                       self.dim).values

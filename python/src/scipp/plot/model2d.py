@@ -110,7 +110,6 @@ class PlotModel2d(PlotModel):
         """
         Resample a DataArray according to new bin edges.
         """
-        # dslice = array
         # Select bins to speed up rebinning
         for dim in rebin_edges:
             this_slice = self._select_bins(array.coords[dim], dim,
@@ -171,8 +170,6 @@ class PlotModel2d(PlotModel):
             data=sc.Variable(
                 dims=list(self.displayed_dims.values()),
                 values=np.ones(shape),
-                # variances=np.zeros(shape),
-                # dtype=self.vslice.data.dtype,
                 dtype=sc.dtype.float64,
                 unit=sc.units.one))
 
@@ -276,7 +273,6 @@ class PlotModel2d(PlotModel):
         profile_slice = self.slice_data(profile_slice, slices)
         new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
 
-        # dim = profile_slice.data.dims[0]
         ydata = profile_slice.data.values
         xcenters = to_bin_centers(profile_slice.coords[profile_dim],
                                   profile_dim).values

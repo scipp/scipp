@@ -97,8 +97,6 @@ class PlotModel3d(PlotModel):
         Get new slice of data and send it back to the controller.
         """
         data_slice = self.slice_data(self.data_arrays[self.name], slices)
-        # for dim in slices:
-        #     data_slice = data_slice[dim, 0]
 
         # Use automatic broadcast if positions are not used
         if self.positions is None:
