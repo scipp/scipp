@@ -116,12 +116,3 @@ class PlotProfile(PlotFigure1d):
         """
         self.ax.set_yscale("log" if owner.value else "linear")
         self.draw()
-
-    # def pan_view(self, owner):
-    #     self.toolbar.pan_view()
-
-    # def zoom_view(self, owner):
-    #     self.toolbar.zoom_view()
-
-    # def save_view(self, owner):
-    #     self.toolbar.save_view()
