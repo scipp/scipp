@@ -8,7 +8,6 @@
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
 #include <cmath>
-#include <limits>
 #include <numeric>
 
 namespace scipp::core::element {
