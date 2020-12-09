@@ -52,8 +52,9 @@ auto get_coord(VariableConstView coord, const Dim dim) {
 
 } // namespace
 
-auto get_slice_params(const Dimensions &dims, const VariableConstView &coord_,
-                      const VariableConstView value) {
+std::tuple<Dim, scipp::index> get_slice_params(const Dimensions &dims,
+                                               const VariableConstView &coord_,
+                                               const VariableConstView value) {
   core::expect::equals(value.dims(), Dimensions{});
   const auto dim = coord_.dims().inner();
   if (dims[dim] + 1 == coord_.dims()[dim]) {
@@ -67,13 +68,13 @@ auto get_slice_params(const Dimensions &dims, const VariableConstView &coord_,
                                to_string(value) + '\n');
     auto values = eq.template values<bool>();
     auto it = std::find(values.begin(), values.end(), true);
-    return std::tuple{dim, std::distance(values.begin(), it)};
+    return {dim, std::distance(values.begin(), it)};
   }
 }
 
-auto get_slice_params(const Dimensions &dims, const VariableConstView &coord_,
-                      const VariableConstView begin,
-                      const VariableConstView end) {
+std::tuple<Dim, scipp::index, scipp::index>
+get_slice_params(const Dimensions &dims, const VariableConstView &coord_,
+                 const VariableConstView begin, const VariableConstView end) {
   if (begin)
     core::expect::equals(begin.dims(), Dimensions{});
   if (end)
@@ -87,7 +88,7 @@ auto get_slice_params(const Dimensions &dims, const VariableConstView &coord_,
     first = get_index(coord, dim, begin, ascending, bin_edges);
   if (end)
     last = get_index(coord, dim, end, ascending, bin_edges);
-  return std::tuple{dim, first, last};
+  return {dim, first, last};
 }
 
 VariableConstView select(const VariableConstView &var,

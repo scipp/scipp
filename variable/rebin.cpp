@@ -9,6 +9,7 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
+#include "scipp/variable/rebin.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"

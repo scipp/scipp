@@ -54,6 +54,12 @@ slice(Dataset &ds, const Dim dim, const VariableConstView begin,
 } // namespace scipp::dataset
 
 namespace scipp::variable {
+[[nodiscard]] SCIPP_DATASET_EXPORT std::tuple<Dim, scipp::index>
+get_slice_params(const Dimensions &dims, const VariableConstView &coord,
+                 const VariableConstView value);
+[[nodiscard]] SCIPP_DATASET_EXPORT std::tuple<Dim, scipp::index, scipp::index>
+get_slice_params(const Dimensions &dims, const VariableConstView &coord,
+                 const VariableConstView begin, const VariableConstView end);
 [[nodiscard]] SCIPP_DATASET_EXPORT VariableConstView
 select(const VariableConstView &var, const VariableConstView &coord,
        const VariableConstView &value);

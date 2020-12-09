@@ -113,8 +113,10 @@ public:
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
   bool contains(const Key &k) const;
+  scipp::index count(const Key &k) const;
 
   typename mapped_type::const_view_type operator[](const Key &key) const;
+  typename mapped_type::const_view_type at(const Key &key) const;
 
   auto find(const Key &k) const && = delete;
   auto find(const Key &k) const &noexcept {

@@ -326,9 +326,9 @@ auto axis_actions(const VariableConstView &data, const Coords &coords,
     } else if (edges_dims.contains(dim)) {
       builder.bin(edges[edges_dims.index(dim)]);
     } else if (rebin) {
-      if (coords.contains(dim) && coords[dim].dims().ndim() != 1)
+      if (coords.count(dim) && coords.at(dim).dims().ndim() != 1)
         throw except::DimensionError(
-            "2-D coordinate " + to_string(coords[dim]) +
+            "2-D coordinate " + to_string(coords.at(dim)) +
             " conflicting with (re)bin of outer dimension. Try specifying new "
             "aligned (1-D) edges for dimension '" +
             to_string(dim) + "' with the `edges` option of `bin`.");
@@ -482,5 +482,12 @@ DataArray bin(const VariableConstView &data, const Coords &coords,
       bin<DataArrayConstView>(masked, *target_bins, builder.dims()), coords,
       masks, attrs, builder.edges(), builder.groups(), {});
 }
+
+template DataArray bin(const VariableConstView &,
+                       const std::map<Dim, VariableConstView> &,
+                       const std::map<std::string, VariableConstView> &,
+                       const std::map<Dim, VariableConstView> &,
+                       const std::vector<VariableConstView> &,
+                       const std::vector<VariableConstView> &);
 
 } // namespace scipp::dataset

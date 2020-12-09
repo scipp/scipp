@@ -7,6 +7,7 @@
 #include "scipp/core/except.h"
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/shape.h"
+#include "scipp/variable/rebin.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
@@ -188,5 +189,32 @@ void init_buckets(py::module &m) {
       "sum", [](const DatasetConstView &x) { return dataset::buckets::sum(x); },
       py::call_guard<py::gil_scoped_release>());
 
-  m.def("bin", dataset::bin, py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "bin",
+      [](const DataArrayConstView &array,
+         const std::vector<VariableConstView> &edges,
+         const std::vector<VariableConstView> &groups) {
+        return dataset::bin(array, edges, groups);
+      },
+      py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "bin_with_coords",
+      [](const VariableConstView &data, const py::dict &coords,
+         const std::vector<VariableConstView> &edges,
+         const std::vector<VariableConstView> &groups) {
+        std::map<Dim, VariableConstView> c;
+        for (const auto &[name, coord] : coords)
+          c.emplace(Dim(py::cast<std::string>(name)),
+                    py::cast<VariableConstView>(coord));
+        return dataset::bin(data, c, std::map<std::string, VariableConstView>{},
+                            std::map<Dim, VariableConstView>{}, edges, groups);
+      },
+      py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "rebin_with_coord",
+      [](const VariableConstView &data, const VariableConstView &coord,
+         const VariableConstView &edges) {
+        return variable::rebin(data, coord.dims().inner(), coord, edges);
+      },
+      py::call_guard<py::gil_scoped_release>());
 }
