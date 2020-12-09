@@ -336,13 +336,37 @@ def test_nansum_all():
 
 
 def test_mean_masked():
-    d = sc.Dataset(
-        {'a': sc.Variable(dims=['x'], values=np.array([1, 5, 4, 5, 1]))})
+    d = sc.Dataset({
+        'a':
+        sc.Variable(dims=['x'],
+                    values=np.array([1, 5, 4, 5, 1]),
+                    dtype=sc.dtype.float64)
+    })
     d['a'].masks['m1'] = sc.Variable(dims=['x'],
                                      values=np.array(
                                          [False, True, False, True, False]))
     d_ref = sc.Dataset({'a': sc.Variable(2.0)})
     assert sc.is_equal(sc.mean(d, 'x')['a'], d_ref['a'])
+    assert sc.is_equal(sc.nanmean(d, 'x')['a'], d_ref['a'])
+
+
+def test_mean_all():
+    var = sc.Variable(['x', 'y'], values=np.arange(4.0).reshape(2, 2))
+    mask = sc.Variable(['x', 'y'],
+                       values=np.array([[False, False], [True, False]]))
+    da = sc.DataArray(var, masks={'m': mask})  # Add masks
+    assert sc.sum(da).data.value == 0 + 1 + 3  # 2.0 masked
+    sc.mean(da).data.value == 4 / 3
+
+
+def test_nanmean_all():
+    var = sc.Variable(['x', 'y'], values=np.arange(4.0).reshape(2, 2))
+    var['x', 0]['y', 1].value = np.nan
+    mask = sc.Variable(['x', 'y'],
+                       values=np.array([[False, False], [True, False]]))
+    da = sc.DataArray(var, masks={'m': mask})  # Add masks
+    assert sc.nansum(da).data.value == 0 + 3  # 2.0 masked, 1.0 is nan
+    sc.mean(da).data.value == 3 / 2
 
 
 def test_dataset_merge():

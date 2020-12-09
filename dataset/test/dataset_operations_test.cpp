@@ -14,45 +14,36 @@ using namespace scipp::dataset;
 TEST(DatasetOperationsTest, sum_over_dim) {
   auto ds = make_1_values_and_variances<float>(
       "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(dataset::sum(ds, Dim::X)["a"].data(),
+  EXPECT_EQ(sum(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{6}, Variances{45}));
-  EXPECT_EQ(dataset::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+  EXPECT_EQ(sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{3}, Variances{27}));
 }
 
 TEST(DatasetOperationsTest, sum_all_dims) {
   DataArray da{makeVariable<double>(Dims{Dim::X, Dim::Y}, Values{1, 1, 1, 1},
                                     Shape{2, 2})};
-  EXPECT_EQ(dataset::sum(da).data(), makeVariable<double>(Values{4}));
+  EXPECT_EQ(sum(da).data(), makeVariable<double>(Values{4}));
 
   Dataset ds{{{"a", da}}};
-  EXPECT_EQ(dataset::nansum(ds)["a"], dataset::nansum(da));
+  EXPECT_EQ(nansum(ds)["a"], nansum(da));
 }
 
 TEST(DatasetOperationsTest, nansum_over_dim) {
   auto ds = make_1_values_and_variances<double>(
       "a", {Dim::X, 3}, units::dimensionless, {1.0, 2.0, double(NAN)},
       {2.0, 5.0, 6.0});
-  EXPECT_EQ(dataset::nansum(ds, Dim::X)["a"].data(),
+  EXPECT_EQ(nansum(ds, Dim::X)["a"].data(),
             makeVariable<double>(Values{3}, Variances{7}));
 }
 
 TEST(DatasetOperationsTest, nansum_all_dims) {
   DataArray da{makeVariable<double>(
       Dims{Dim::X, Dim::Y}, Values{1.0, 1.0, double(NAN), 1.0}, Shape{2, 2})};
-  EXPECT_EQ(dataset::nansum(da).data(), makeVariable<double>(Values{3}));
+  EXPECT_EQ(nansum(da).data(), makeVariable<double>(Values{3}));
 
   Dataset ds{{{"a", da}}};
-  EXPECT_EQ(dataset::nansum(ds)["a"], dataset::nansum(da));
-}
-
-TEST(DatasetOperationsTest, mean) {
-  auto ds = make_1_values_and_variances<float>(
-      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(dataset::mean(ds, Dim::X)["a"].data(),
-            makeVariable<float>(Values{2}, Variances{5.0}));
-  EXPECT_EQ(dataset::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(Values{1.5}, Variances{6.75}));
+  EXPECT_EQ(nansum(ds)["a"], nansum(da));
 }
 
 template <typename T>
@@ -113,8 +104,7 @@ TEST(DatasetOperationsTest, mean_two_dims) {
                                            false, true, false, false, true}));
 
   const Dataset result = mean(ds, Dim::X);
-
-  ASSERT_EQ(result["data_xy"].data(),
+  EXPECT_EQ(result["data_xy"].data(),
             makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{6, 8}));
 }
 
@@ -139,4 +129,13 @@ TEST(DatasetOperationsTest, mean_three_dims) {
   ASSERT_EQ(result["data_xy"].data(),
             makeVariable<double>(Dims{Dim::Z, Dim::Y}, Shape{2, 2},
                                  Values{6, 8, 6, 8}));
+}
+
+TEST(DatasetOperationsTest, dataset_mean_fails) {
+  Dataset d;
+  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}));
+  d.setData("b", makeVariable<double>(Values{1.0}));
+  // "b" does not depend on X, so this fails. This could change in the future if
+  // we find a clear definition of the functions behavior in this case.
+  EXPECT_THROW(mean(d, Dim::X), except::DimensionError);
 }

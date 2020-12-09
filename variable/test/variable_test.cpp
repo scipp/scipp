@@ -966,6 +966,7 @@ TYPED_TEST(AsTypeTest, variable_astype) {
     var2 = makeVariable<T2>(Values{1}, Variances{1});
     ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
   }
+
   var1 = makeVariable<T1>(Values{1});
   var2 = makeVariable<T2>(Values{1});
   ASSERT_EQ(astype(var1, core::dtype<T2>), var2);

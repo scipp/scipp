@@ -74,6 +74,7 @@ TYPED_TEST(ElementIsfiniteTest, value) {
                        std::numeric_limits<TypeParam>::signaling_NaN()}) {
     EXPECT_FALSE(element::isfinite(x));
   }
+  EXPECT_TRUE(element::isfinite(1));
 }
 
 template <typename T> class ElementIssignedinfTest : public ::testing::Test {};
