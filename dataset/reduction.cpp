@@ -63,7 +63,6 @@ DataArray mean(const DataArrayConstView &a, const Dim dim) {
 
 DataArray mean(const DataArrayConstView &a) {
   auto _sum = sum(a);
-  auto scale = reciprocal(astype(sum(isfinite(a)), dtype<double>));
   if (isInt(a.data().dtype()))
     return sum(a) * reciprocal(astype(sum(isfinite(a)), dtype<double>));
   else
