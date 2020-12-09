@@ -13,8 +13,8 @@
 
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
-#include "scipp/variable/transform.h"
 #include "scipp/variable/rebin.h"
+#include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
@@ -317,7 +317,8 @@ Mostly equivalent to Variable, see there for details.)");
 
   m.def("rebin",
         py::overload_cast<const VariableConstView &, const Dim,
-                          const VariableConstView &, const VariableConstView &>(&rebin),
+                          const VariableConstView &, const VariableConstView &>(
+            &rebin),
         py::arg("x"), py::arg("dim"), py::arg("old"), py::arg("new"),
         py::call_guard<py::gil_scoped_release>(),
         Docstring()
@@ -332,5 +333,4 @@ Mostly equivalent to Variable, see there for details.)");
             .param("old", "Old bin edges.", "Variable")
             .param("new", "New bin edges.", "Variable")
             .c_str());
-
 }
