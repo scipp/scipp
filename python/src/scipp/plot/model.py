@@ -223,11 +223,10 @@ class PlotModel:
             # cannot deal with non-continuous data as an input.
             array = array[dim, lower:upper]
             if (upper - lower) > 1:
-                array.data = sc.rebin(array.data, dim, array.coords[dim],
-                                      sc.concatenate(
-                                          array.coords[dim][dim, 0],
-                                          array.coords[dim][dim, -1],
-                                          dim))
+                array.data = sc.rebin(
+                    array.data, dim, array.coords[dim],
+                    sc.concatenate(array.coords[dim][dim, 0],
+                                   array.coords[dim][dim, -1], dim))
             if not keep_dims:
                 array = array[dim, 0]
         return array

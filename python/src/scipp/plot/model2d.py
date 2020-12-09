@@ -165,13 +165,12 @@ class PlotModel2d(PlotModel):
         shape = [
             self.xyrebin["y"].shape[0] - 1, self.xyrebin["x"].shape[0] - 1
         ]
-        self.dslice = sc.DataArray(
-            coords=rebin_edges,
-            data=sc.Variable(
-                dims=list(self.displayed_dims.values()),
-                values=np.ones(shape),
-                dtype=sc.dtype.float64,
-                unit=sc.units.one))
+        self.dslice = sc.DataArray(coords=rebin_edges,
+                                   data=sc.Variable(dims=list(
+                                       self.displayed_dims.values()),
+                                                    values=np.ones(shape),
+                                                    dtype=sc.dtype.float64,
+                                                    unit=sc.units.one))
 
         if resampled_image.data.variances is not None:
             self.dslice.variances = np.zeros(shape)
