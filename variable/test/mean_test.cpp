@@ -1,14 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+#include "fix_typed_test_suite_warnings.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/reduction.h"
 #include "test_macros.h"
+#include "test_nans.h"
 #include <gtest/gtest.h>
 #include <scipp/common/overloaded.h>
 
 namespace {
 using namespace scipp;
 using namespace scipp::dataset;
+
+using MeanTestTypes = testing::Types<int32_t, int64_t, float, double>;
+TYPED_TEST_SUITE(MeanTest, MeanTestTypes);
 
 template <typename Op> void unknown_dim_fail(Op op) {
   const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
@@ -61,40 +66,36 @@ template <typename Op> void in_place_fail_output_dtype(Op op) {
                except::UnitError);
 }
 
-template <typename Op> void dtype_float_preserved(Op op) {
-  const auto var = makeVariable<float>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                       units::m, Values{1.0, 2.0, 3.0, 4.0});
+template <typename TestFixture, typename Op> void dtype_preservation(Op op) {
+  const auto var = makeVariable<typename TestFixture::TestType>(
+      Dims{Dim::Y, Dim::X}, Shape{2, 2}, units::m, Values{1.0, 2.0, 3.0, 4.0});
+  using RetType = typename TestFixture::RetType;
   const auto meanX =
-      makeVariable<float>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.5});
+      makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.5});
   const auto meanY =
-      makeVariable<float>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0});
+      makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0});
   EXPECT_EQ(op(var, Dim::X), meanX);
   EXPECT_EQ(op(var, Dim::Y), meanY);
 }
 
-template <typename Op> void dtype_int_gives_double_mean(Op op) {
-  const auto var = makeVariable<int32_t>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                         units::m, Values{1, 2, 3, 4});
-  const auto meanX =
-      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.5});
-  const auto meanY =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0});
-  EXPECT_EQ(op(var, Dim::X), meanX);
-  EXPECT_EQ(op(var, Dim::Y), meanY);
-}
+template <typename TestFixture, typename Op>
+void variances_as_standard_deviation_of_the_mean(Op op) {
+  if constexpr (TestFixture::TestVariances) {
+    const auto var = makeVariable<typename TestFixture::TestType>(
+        Dims{Dim::Y, Dim::X}, Shape{2, 2}, units::m, Values{1.0, 2.0, 3.0, 4.0},
+        Variances{5.0, 6.0, 7.0, 8.0});
 
-template <typename Op> void variances_as_standard_deviation_of_the_mean(Op op) {
-  const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                        units::m, Values{1.0, 2.0, 3.0, 4.0},
-                                        Variances{5.0, 6.0, 7.0, 8.0});
-  const auto meanX =
-      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.5},
-                           Variances{0.5 * 5.5, 0.5 * 7.5});
-  const auto meanY =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0},
-                           Variances{0.5 * 6.0, 0.5 * 7.0});
-  EXPECT_EQ(op(var, Dim::X), meanX);
-  EXPECT_EQ(op(var, Dim::Y), meanY);
+    using RetType = typename TestFixture::RetType;
+    const auto meanX = makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, units::m,
+                                             Values{1.5, 3.5},
+                                             Variances{0.5 * 5.5, 0.5 * 7.5});
+    const auto meanY = makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m,
+                                             Values{2.0, 3.0},
+                                             Variances{0.5 * 6.0, 0.5 * 7.0});
+    EXPECT_EQ(op(var, Dim::X), meanX);
+    EXPECT_EQ(op(var, Dim::Y), meanY);
+  } else
+    GTEST_SKIP_("Test type does not support variance testing");
 }
 
 auto mean_func =
@@ -136,19 +137,13 @@ TEST(MeanTest, in_place_fail_output_dtype) {
   in_place_fail_output_dtype(nanmean_func);
 }
 
-TEST(MeanTest, dtype_float_preserved) {
-  dtype_float_preserved(mean_func);
-  dtype_float_preserved(nanmean_func);
+TYPED_TEST(MeanTest, dtype_preservation) {
+  dtype_preservation<TestFixture>(mean_func);
 }
 
-TEST(MeanTest, dtype_int_gives_double_mean) {
-  dtype_int_gives_double_mean(mean_func);
-  dtype_int_gives_double_mean(nanmean_func);
-}
-
-TEST(MeanTest, variances_as_standard_deviation_of_the_mean) {
-  variances_as_standard_deviation_of_the_mean(mean_func);
-  variances_as_standard_deviation_of_the_mean(nanmean_func);
+TYPED_TEST(MeanTest, variances_as_standard_deviation_of_the_mean) {
+  variances_as_standard_deviation_of_the_mean<TestFixture>(mean_func);
+  variances_as_standard_deviation_of_the_mean<TestFixture>(nanmean_func);
 }
 
 TEST(MeanTest, nanmean_basic) {

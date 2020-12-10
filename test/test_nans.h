@@ -5,6 +5,7 @@
 
 namespace {
 template <typename T> struct MeanTest : public ::testing::Test {
+  using TestType = T;
   /**
    * mean and nanmean will preserve input type for floating point types.
    * For any integer input type we expect the return type to be double
