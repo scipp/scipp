@@ -129,15 +129,14 @@ void init_operations(py::module &m) {
             .c_str(),
         py::call_guard<py::gil_scoped_release>());
 
-  m.def(
-      "get_slice_params",
-      [](const VariableConstView &var, const VariableConstView &coord,
-         const VariableConstView &begin, const VariableConstView &end) {
-        const auto [dim, start, stop] =
-            get_slice_params(var.dims(), coord, begin, end);
-        return std::tuple{dim.name(), py::slice(start, stop, 1)};
-      },
-      py::call_guard<py::gil_scoped_release>());
+  m.def("get_slice_params",
+        [](const VariableConstView &var, const VariableConstView &coord,
+           const VariableConstView &begin, const VariableConstView &end) {
+          const auto [dim, start, stop] =
+              get_slice_params(var.dims(), coord, begin, end);
+          // Do NOT release GIL since using py::slice
+          return std::tuple{dim.name(), py::slice(start, stop, 1)};
+        });
   m.def(
       "select",
       [](const VariableConstView &var, const VariableConstView &coord,

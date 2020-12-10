@@ -68,9 +68,19 @@ class ResamplingModel():
         self._call_resample()
         return self._resampled
 
+    def _make_edges(self, params):
+        edges = []
+        for dim, par in params.items():
+            if isinstance(par, int):
+                continue
+            low, high, res = par
+            edges.append(
+                sc.Variable(dims=[dim],
+                            values=np.linspace(low, high, num=res + 1)))
+        return edges
+
     def _call_resample(self):
         out = self._array
-        edges = []
         params = {}
         for dim, s in self.bounds.items():
             if isinstance(s, int):
@@ -81,15 +91,9 @@ class ResamplingModel():
                 params[dim] = (low.value, high.value, self.resolution[dim])
                 out = out[sc.get_slice_params(out.data, out.coords[dim], low,
                                               high)]
-                edges.append(
-                    sc.Variable(dims=[dim],
-                                values=np.linspace(low.value,
-                                                   high.value,
-                                                   num=self.resolution[dim] +
-                                                   1)))
         if self._resampled is None or params != self._resampled_params:
             self._resampled_params = params
-            self._resampled = self._resample(out, edges)
+            self._resampled = self._resample(out, self._make_edges(params))
 
 
 class ResamplingBinnedModel(ResamplingModel):
