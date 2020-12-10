@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+#include "fix_typed_test_suite_warnings.h"
 #include "scipp/dataset/reduction.h"
 #include <gtest/gtest.h>
 #include <scipp/common/overloaded.h>
-// clang-format off
-#include "fix_typed_test_suite_warnings.h"
-// clang-format on
 
 namespace {
 using namespace scipp;

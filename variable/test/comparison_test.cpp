@@ -1,11 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
-// clang-format off
-#include <gtest/gtest.h>
-#include "test_macros.h"
-// clang-format on
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
+#include "test_macros.h"
+#include <gtest/gtest.h>
 
 using namespace scipp;
 using namespace scipp::variable;

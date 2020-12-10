@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 
 #pragma once
+#include <gtest/gtest-typed-test.h>
 
 // Originally definition of this macro in gtest contains ellipsis
 // TYPED_TEST_SUITE(CaseName, Types, ...)
