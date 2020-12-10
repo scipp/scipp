@@ -12,21 +12,37 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 using MeanTestTypes = testing::Types<int32_t, int64_t, float, double>;
-template <typename T> class MeanTest : public ::testing::Test {};
+template <typename T> struct MeanTest : public ::testing::Test {
+  /**
+   * mean and nanmean will preserve input type for floating point types.
+   * For any integer input type we expect the return type to be double
+   */
+  using RetType =
+      std::conditional_t<std::numeric_limits<T>::is_integer, double, T>;
+  /// Held type supports nan testing. All FP types -> true
+  constexpr static bool TestNans = !std::numeric_limits<T>::is_integer;
+  /// Held type supports variances testing. All FP types -> true
+  constexpr static bool TestVariances = !std::numeric_limits<T>::is_integer;
+};
 TYPED_TEST_SUITE(MeanTest, MeanTestTypes);
 
 template <class T, class T2>
-auto make_1_values_and_variances(const std::string &name,
-                                 const Dimensions &dims, const units::Unit unit,
-                                 const std::initializer_list<T2> &values,
-                                 const std::initializer_list<T2> &variances) {
+auto make_one_item_dataset(const std::string &name, const Dimensions &dims,
+                           const units::Unit unit,
+                           const std::initializer_list<T2> &values,
+                           const std::initializer_list<T2> &variances) {
   auto d = Dataset();
-  if constexpr (std::numeric_limits<T>::is_integer)
-    d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                    Values(values)));
-  else
-    d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
-                                    Values(values), Variances(variances)));
+  d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                  Values(values), Variances(variances)));
+  return d;
+}
+template <class T, class T2>
+auto make_one_item_dataset(const std::string &name, const Dimensions &dims,
+                           const units::Unit unit,
+                           const std::initializer_list<T2> &values) {
+  auto d = Dataset();
+  d.setData(name, makeVariable<T>(Dimensions(dims), units::Unit(unit),
+                                  Values(values)));
   return d;
 }
 
@@ -120,35 +136,43 @@ TEST(MeanTest, masked_data_array_md_masks) {
   test_masked_data_array_nd_mask(nanmean_func);
 }
 
-TEST(MeanTest, nanmean_masked_data_with_nans) {
-  // Two Nans
-  const auto var =
-      makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}}, units::m,
-                           Values{double(NAN), double(NAN), 3.0, 4.0});
-  // Two masked element
-  const auto mask = makeVariable<bool>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
-                                       Values{false, true, true, false});
-  DataArray a(var);
-  a.masks().set("mask", mask);
-  // First element NaN, second NaN AND masked, third masked, forth non-masked
-  // finite number
-  const auto mean = makeVariable<double>(units::m, Shape{1},
-                                         Values{(0.0 + 0.0 + 0.0 + 4.0) / 1});
-  EXPECT_EQ(nanmean(a).data(), mean);
+TYPED_TEST(MeanTest, nanmean_masked_data_with_nans) {
+  if constexpr (!TestFixture::TestNans)
+    GTEST_SKIP_(
+        "Test skipped for non-FP types"); // If type does not support nans skip
+  else {
+    // Two Nans
+    const auto var =
+        makeVariable<TypeParam>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}}, units::m,
+                                Values{double(NAN), double(NAN), 3.0, 4.0});
+    // Two masked element
+    const auto mask = makeVariable<bool>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
+                                         Values{false, true, true, false});
+    DataArray a(var);
+    a.masks().set("mask", mask);
+    // First element NaN, second NaN AND masked, third masked, forth non-masked
+    // finite number
+    const auto mean = makeVariable<typename TestFixture::RetType>(
+        units::m, Shape{1}, Values{(0.0 + 0.0 + 0.0 + 4.0) / 1});
+    EXPECT_EQ(nanmean(a).data(), mean);
+  }
 }
 
 TYPED_TEST(MeanTest, mean_over_dim) {
-  auto ds = make_1_values_and_variances<TypeParam>(
-      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  if constexpr (std::numeric_limits<TypeParam>::is_integer) {
-    EXPECT_EQ(mean(ds, Dim::X)["a"].data(), makeVariable<double>(Values{2}));
-    EXPECT_EQ(mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-              makeVariable<double>(Values{1.5}));
-  } else {
+  if constexpr (TestFixture::TestVariances) {
+    // Test with variances
+    auto ds = make_one_item_dataset<TypeParam>(
+        "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
     EXPECT_EQ(mean(ds, Dim::X)["a"].data(),
               makeVariable<TypeParam>(Values{2}, Variances{5.0}));
     EXPECT_EQ(mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
               makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
+  } else {
+    auto ds = make_one_item_dataset<TypeParam>("a", {Dim::X, 3},
+                                               units::dimensionless, {1, 2, 3});
+    EXPECT_EQ(mean(ds, Dim::X)["a"].data(), makeVariable<double>(Values{2}));
+    EXPECT_EQ(mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+              makeVariable<double>(Values{1.5}));
   }
 }
 
@@ -156,25 +180,21 @@ TYPED_TEST(MeanTest, mean_all_dims) {
   DataArray da{makeVariable<TypeParam>(Dims{Dim::X, Dim::Y}, Values{1, 2, 3, 4},
                                        Shape{2, 2})};
 
-  constexpr bool is_integer_t = std::numeric_limits<TypeParam>::is_integer;
   // For all FP input dtypes, dtype is same on output. Integers are converted to
   // double FP precision.
-  using T = std::conditional_t<is_integer_t, double, TypeParam>;
-  EXPECT_EQ(mean(da).data(), makeVariable<T>(Values{2.5}));
-  EXPECT_EQ(mean(da).data(), makeVariable<T>(Values{2.5}));
+  using RetType = typename TestFixture::RetType;
+  EXPECT_EQ(mean(da).data(), makeVariable<RetType>(Values{2.5}));
+  EXPECT_EQ(mean(da).data(), makeVariable<RetType>(Values{2.5}));
 
   Dataset ds{{{"a", da}}};
   EXPECT_EQ(mean(ds)["a"], mean(da));
 }
 
 TYPED_TEST(MeanTest, nanmean_over_dim) {
-  auto ds = make_1_values_and_variances<TypeParam>(
-      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  if constexpr (std::numeric_limits<TypeParam>::is_integer) {
-    EXPECT_EQ(nanmean(ds, Dim::X)["a"].data(), makeVariable<double>(Values{2}));
-    EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-              makeVariable<double>(Values{1.5}));
-  } else {
+  if constexpr (TestFixture::TestVariances) {
+    // Test variances and values
+    auto ds = make_one_item_dataset<TypeParam>(
+        "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
     EXPECT_EQ(nanmean(ds, Dim::X)["a"].data(),
               makeVariable<TypeParam>(Values{2}, Variances{5.0}));
     EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
@@ -185,6 +205,12 @@ TYPED_TEST(MeanTest, nanmean_over_dim) {
               makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
     EXPECT_EQ(nanmean(ds["a"]).data(),
               makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
+  } else {
+    auto ds = make_one_item_dataset<TypeParam>("a", {Dim::X, 3},
+                                               units::dimensionless, {1, 2, 3});
+    EXPECT_EQ(nanmean(ds, Dim::X)["a"].data(), makeVariable<double>(Values{2}));
+    EXPECT_EQ(nanmean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+              makeVariable<double>(Values{1.5}));
   }
 }
 
@@ -192,16 +218,15 @@ TYPED_TEST(MeanTest, nanmean_all_dims) {
   DataArray da{makeVariable<TypeParam>(
       Dims{Dim::X, Dim::Y}, Values{1.0, 2.0, 3.0, 4.0}, Shape{2, 2})};
 
-  constexpr bool is_integer_t = std::numeric_limits<TypeParam>::is_integer;
   // For all FP input dtypes, dtype is same on output. Integers are converted to
   // double FP precision.
-  using T = std::conditional_t<is_integer_t, double, TypeParam>;
-  EXPECT_EQ(nanmean(da).data(), makeVariable<T>(Values{2.5}));
+  EXPECT_EQ(nanmean(da).data(),
+            makeVariable<typename TestFixture::RetType>(Values{2.5}));
 
   Dataset ds{{{"a", da}}};
   EXPECT_EQ(nanmean(ds)["a"], nanmean(da));
 
-  if constexpr (!is_integer_t) {
+  if constexpr (TestFixture::TestNans) {
     da.values<TypeParam>()[3] = TypeParam(NAN);
     EXPECT_EQ(nanmean(da).data(), makeVariable<TypeParam>(Values{2.0}));
   }
