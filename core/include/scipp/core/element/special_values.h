@@ -8,37 +8,44 @@
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
 #include <cmath>
-#include <numeric>
+#include <type_traits>
 
 namespace scipp::core::element {
 
+constexpr auto special_value_args = arg_list<int32_t, int64_t, double, float>;
+
 constexpr auto isnan =
-    overloaded{arg_list<double, float>,
+    overloaded{special_value_args,
                [](const auto x) {
                  using std::isnan;
-                 return isnan(x);
+                 if constexpr (std::is_integral_v<std::decay_t<decltype(x)>>)
+                   return false;
+                 else
+                   return isnan(x);
                },
                [](const units::Unit &) { return units::dimensionless; }};
 
 constexpr auto isinf =
-    overloaded{arg_list<double, float>,
+    overloaded{special_value_args,
                [](const auto x) {
                  using std::isinf;
-                 return isinf(x);
+                 if constexpr (std::is_integral_v<std::decay_t<decltype(x)>>)
+                   return false;
+                 else
+                   return isinf(x);
                },
                [](const units::Unit &) { return units::dimensionless; }};
 
-constexpr auto isfinite = overloaded{
-    arg_list<int64_t, int32_t, double, float>,
-    [](const auto x) {
-      using std::isfinite;
-      if constexpr (std::numeric_limits<std::decay_t<decltype(x)>>::is_integer)
-        return true;
-      else {
-        return isfinite(x);
-      };
-    },
-    [](const units::Unit &) { return units::dimensionless; }};
+constexpr auto isfinite =
+    overloaded{special_value_args,
+               [](const auto x) {
+                 using std::isfinite;
+                 if constexpr (std::is_integral_v<std::decay_t<decltype(x)>>)
+                   return true;
+                 else
+                   return isfinite(x);
+               },
+               [](const units::Unit &) { return units::dimensionless; }};
 
 namespace detail {
 template <typename T>
@@ -53,18 +60,25 @@ auto isneginf(T x) -> std::enable_if_t<std::is_floating_point_v<T>, bool> {
 } // namespace detail
 
 constexpr auto isposinf =
-    overloaded{arg_list<double, float>,
+    overloaded{special_value_args,
                [](const auto x) {
                  using detail::isposinf;
-                 return isposinf(x);
+                 if constexpr (std::is_integral_v<std::decay_t<decltype(x)>>)
+                   return false;
+                 else
+                   return isposinf(x);
                },
                [](const units::Unit &) { return units::dimensionless; }};
 
 constexpr auto isneginf =
-    overloaded{arg_list<double, float>,
+    overloaded{special_value_args,
                [](const auto x) {
                  using detail::isneginf;
-                 return isneginf(x);
+                 if constexpr (std::is_integral_v<std::decay_t<decltype(x)>>)
+                   return false;
+                 else {
+                   return isneginf(x);
+                 }
                },
                [](const units::Unit &) { return units::dimensionless; }};
 
