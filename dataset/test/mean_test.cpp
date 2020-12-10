@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include "fix_typed_test_suite_warnings.h"
 #include "scipp/dataset/reduction.h"
+#include "test_nans.h"
 #include <gtest/gtest.h>
 #include <scipp/common/overloaded.h>
 
@@ -10,18 +11,6 @@ using namespace scipp;
 using namespace scipp::dataset;
 
 using MeanTestTypes = testing::Types<int32_t, int64_t, float, double>;
-template <typename T> struct MeanTest : public ::testing::Test {
-  /**
-   * mean and nanmean will preserve input type for floating point types.
-   * For any integer input type we expect the return type to be double
-   */
-  using RetType =
-      std::conditional_t<std::numeric_limits<T>::is_integer, double, T>;
-  /// Held type supports nan testing. All FP types -> true
-  constexpr static bool TestNans = !std::numeric_limits<T>::is_integer;
-  /// Held type supports variances testing. All FP types -> true
-  constexpr static bool TestVariances = !std::numeric_limits<T>::is_integer;
-};
 TYPED_TEST_SUITE(MeanTest, MeanTestTypes);
 
 template <class T, class T2>
