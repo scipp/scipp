@@ -33,8 +33,8 @@ def scalar(value: Any,
         except TypeError:
             # Raise a more comprehensible error message in the case
             # where a dtype cannot be specified.
-            raise TypeError(f"dtype cannot be specified for value"
-                            f" type of {type(value)}")
+            raise TypeError(f"Cannot convert {value} to {dtype}. "
+                            f"Try omitting the 'dtype=' parameter.")
 
 
 def zeros(*,
