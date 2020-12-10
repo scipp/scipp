@@ -11,7 +11,10 @@ def make_dense_dataset(ndim=1,
                        binedges=False,
                        labels=False,
                        masks=False,
-                       ragged=False):
+                       attrs=False,
+                       ragged=False,
+                       dtype=sc.dtype.float64,
+                       unit=sc.units.counts):
 
     dim_list = ['tof', 'x', 'y', 'z', 'Q_x']
 
@@ -42,13 +45,20 @@ def make_dense_dataset(ndim=1,
                                          np.indices(mesh[-1].shape)[0])
 
     a = np.sin(np.arange(np.prod(shapes)).reshape(*shapes).astype(np.float64))
-    d["Sample"] = sc.Variable(dims, values=a, unit=sc.units.counts)
+    d["Sample"] = sc.Variable(dims, values=a, unit=unit, dtype=dtype)
+
     if variances:
         d["Sample"].variances = np.abs(np.random.normal(a * 0.1, 0.05))
+
     if labels:
         d.coords["somelabels"] = sc.Variable([dim_list[0]],
                                              values=np.linspace(
                                                  101., 105., shapes[0]),
+                                             unit=sc.units.s)
+    if attrs:
+        d["Sample"].attrs["a"] = sc.Variable([dim_list[0]],
+                                             values=np.linspace(
+                                                 10., 77., shapes[0]),
                                              unit=sc.units.s)
     if masks:
         d["Sample"].masks["mask"] = sc.Variable(dims,

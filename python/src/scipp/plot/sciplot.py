@@ -235,16 +235,16 @@ class SciPlot:
         for key, dim in supplied_axes.items():
             dim_list = list(self.axes.values())
             key_list = list(self.axes.keys())
+            underlying_dim = array.coords[dim].dims[-1]
             if dim in dim_list:
                 ind = dim_list.index(dim)
             else:
                 # Non-dimension coordinate
-                underlying_dim = array.coords[dim].dims[-1]
                 self.dim_label_map[underlying_dim] = dim
                 self.dim_label_map[dim] = underlying_dim
                 ind = dim_list.index(underlying_dim)
             self.axes[key_list[ind]] = self.axes[key]
-            self.axes[key] = dim
+            self.axes[key] = underlying_dim  # dim
 
     def validate(self):
         """
