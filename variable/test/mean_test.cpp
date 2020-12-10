@@ -146,16 +146,25 @@ TYPED_TEST(MeanTest, variances_as_standard_deviation_of_the_mean) {
   variances_as_standard_deviation_of_the_mean<TestFixture>(nanmean_func);
 }
 
-TEST(MeanTest, nanmean_basic) {
-  const auto var =
-      makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2}, units::m,
-                           Values{1.0, 2.0, 3.0, double(NAN)});
+TYPED_TEST(MeanTest, nanmean_basic) {
+  auto var = makeVariable<TypeParam>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
+                                     units::m, Values{1, 2, 3, 4});
+  using RetType = typename TestFixture::RetType;
   const auto meanX =
-      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.0});
+      makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, units::m, Values{1.5, 3.5});
   const auto meanY =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 2.0});
+      makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m, Values{2.0, 3.0});
   EXPECT_EQ(nanmean(var, Dim::X), meanX);
   EXPECT_EQ(nanmean(var, Dim::Y), meanY);
+  if constexpr (TestFixture::TestNans) {
+    var.template values<TypeParam>().data()[3] = TypeParam{NAN};
+    EXPECT_EQ(nanmean(var, Dim::X),
+              makeVariable<RetType>(Dims{Dim::Y}, Shape{2}, units::m,
+                                    Values{1.5, 3.0}));
+    EXPECT_EQ(nanmean(var, Dim::Y),
+              makeVariable<RetType>(Dims{Dim::X}, Shape{2}, units::m,
+                                    Values{2.0, 2.0}));
+  }
 }
 
 TEST(MeanTest, nanmean_basic_inplace) {
