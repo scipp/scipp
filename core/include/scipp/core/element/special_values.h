@@ -8,20 +8,17 @@
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
 #include <cmath>
-#include <numeric>
+#include <type_traits>
 
 namespace scipp::core::element {
 
 constexpr auto special_value_args = arg_list<int32_t, int64_t, double, float>;
 
-template <typename T>
-constexpr auto is_integer = std::numeric_limits<std::decay_t<T>>::is_integer;
-
 constexpr auto isnan =
     overloaded{special_value_args,
                [](const auto x) {
                  using std::isnan;
-                 if constexpr (is_integer<decltype(x)>)
+                 if constexpr (std::is_integral_v<std::decay_t<decltype(x)>>)
                    return false;
                  else
                    return isnan(x);
@@ -32,7 +29,7 @@ constexpr auto isinf =
     overloaded{special_value_args,
                [](const auto x) {
                  using std::isinf;
-                 if constexpr (is_integer<decltype(x)>)
+                 if constexpr (std::is_integral_v<std::decay_t<decltype(x)>>)
                    return false;
                  else
                    return isinf(x);
@@ -43,7 +40,7 @@ constexpr auto isfinite =
     overloaded{special_value_args,
                [](const auto x) {
                  using std::isfinite;
-                 if constexpr (is_integer<decltype(x)>)
+                 if constexpr (std::is_integral_v<std::decay_t<decltype(x)>>)
                    return true;
                  else
                    return isfinite(x);
@@ -66,7 +63,7 @@ constexpr auto isposinf =
     overloaded{special_value_args,
                [](const auto x) {
                  using detail::isposinf;
-                 if constexpr (is_integer<decltype(x)>)
+                 if constexpr (std::is_integral_v<std::decay_t<decltype(x)>>)
                    return false;
                  else
                    return isposinf(x);
@@ -77,7 +74,7 @@ constexpr auto isneginf =
     overloaded{special_value_args,
                [](const auto x) {
                  using detail::isneginf;
-                 if constexpr (is_integer<decltype(x)>)
+                 if constexpr (std::is_integral_v<std::decay_t<decltype(x)>>)
                    return false;
                  else {
                    return isneginf(x);
