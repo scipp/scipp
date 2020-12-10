@@ -62,3 +62,10 @@ setattr(DatasetView, 'bins', property(_bins, _set_bins))
 from ._bins import _groupby_bins
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
+
+setattr(Variable, 'plot', plot.plot)
+setattr(VariableConstView, 'plot', plot.plot)
+setattr(DataArray, 'plot', plot.plot)
+setattr(DataArrayConstView, 'plot', plot.plot)
+setattr(Dataset, 'plot', plot.plot)
+setattr(DatasetConstView, 'plot', plot.plot)
