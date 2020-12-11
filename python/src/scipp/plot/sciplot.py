@@ -224,8 +224,7 @@ class SciPlot:
         supplied_axes = {}
         if axes is not None:
             for dim in axes.values():
-                if (dim not in self.axes.values()) and (dim
-                                                        not in array.meta):
+                if (dim not in self.axes.values()) and (dim not in array.meta):
                     raise RuntimeError("Requested dimension was not found in "
                                        "input data: {}".format(dim))
             supplied_axes.update(axes)
@@ -235,7 +234,8 @@ class SciPlot:
         for key, dim in supplied_axes.items():
             dim_list = list(self.axes.values())
             key_list = list(self.axes.keys())
-            underlying_dim = array.meta[dim].dims[-1]
+            underlying_dim = array.meta[dim].dims[
+                -1] if dim in array.meta else dim
             if dim in dim_list:
                 ind = dim_list.index(dim)
             else:
