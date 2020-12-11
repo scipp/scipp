@@ -176,4 +176,8 @@ def plot(scipp_obj,
                                mpl_line_params=val["mpl_line_params"],
                                bins=bins,
                                **kwargs)
-    return output
+
+    if len(output) > 1:
+        return output
+    else:
+        return output[list(output.keys())[0]]
