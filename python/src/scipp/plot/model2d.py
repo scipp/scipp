@@ -49,6 +49,33 @@ class PlotModel2d(PlotModel):
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
 
+    def _make_masks(self, array, mask_info, histogram=False):
+        if not mask_info[self.name]:
+            return {}
+        masks = {}
+        # Use scipp's automatic broadcast functionality to broadcast
+        # lower dimension masks to higher dimensions.
+        # TODO: creating a Variable here could become expensive when
+        # sliders are being used. We could consider performing the
+        # automatic broadcasting once and store it in the Slicer class,
+        # but this could create a large memory overhead if the data is
+        # large.
+        # Here, the data is at most 2D, so having the Variable creation
+        # and broadcasting should remain cheap.
+        base_mask = sc.Variable(dims=array.dims,
+                                values=np.ones(array.shape, dtype=np.int32))
+        for m in mask_info[self.name]:
+            if m in array.masks:
+                msk = base_mask * sc.Variable(
+                    dims=array.masks[m].dims,
+                    values=array.masks[m].values.astype(np.int32))
+                masks[m] = mask_to_float(msk.values, array.values)
+                if histogram:
+                    masks[m] = np.concatenate((masks[m][0:1], masks[m]))
+            else:
+                masks[m] = None
+        return masks
+
     def _update_image(self, extent=None, mask_info=None):
         """
         Resample 2d images to a fixed resolution to handle very large images.
@@ -60,32 +87,11 @@ class PlotModel2d(PlotModel):
         values = self.dslice.values
         if self.displayed_dims['x'] == self.dslice.dims[0]:
             values = np.transpose(values)
-        new_values = {"values": values, "masks": {}, "extent": extent}
-        # Handle masks
-        if len(mask_info[self.name]) > 0:
-            # Use scipp's automatic broadcast functionality to broadcast
-            # lower dimension masks to higher dimensions.
-            # TODO: creating a Variable here could become expensive when
-            # sliders are being used. We could consider performing the
-            # automatic broadcasting once and store it in the Slicer class,
-            # but this could create a large memory overhead if the data is
-            # large.
-            # Here, the data is at most 2D, so having the Variable creation
-            # and broadcasting should remain cheap.
-            base_mask = sc.Variable(dims=self.dslice.dims,
-                                    values=np.ones(self.dslice.shape,
-                                                   dtype=np.int32))
-            for m in mask_info[self.name]:
-                if m in self.dslice.masks:
-                    msk = base_mask * sc.Variable(
-                        dims=self.dslice.masks[m].dims,
-                        values=self.dslice.masks[m].values.astype(np.int32))
-                    new_values["masks"][m] = mask_to_float(
-                        msk.values, self.dslice.values)
-                else:
-                    new_values["masks"][m] = None
-
-        return new_values
+        return {
+            "values": values,
+            "masks": self._make_masks(self.dslice, mask_info),
+            "extent": extent
+        }
 
     def update_data(self, slices, mask_info):
         """
@@ -148,7 +154,6 @@ class PlotModel2d(PlotModel):
         # them
         ix = int(xdata / (x.values[1] - x.values[0]))
         iy = int(ydata / (y.values[1] - y.values[0]))
-        unit = self.data_arrays[self.name].meta[profile_dim].unit
         self._profile_model.bounds = {
             dimx: (x[dimx, ix], x[dimx, ix + 1]),
             dimy: (y[dimy, iy], y[dimy, iy + 1]),
@@ -177,22 +182,7 @@ class PlotModel2d(PlotModel):
             new_values[self.name]["variances"]["e"] = vars_to_err(
                 profile_slice.data.variances)
 
-        # Handle masks
-        if len(mask_info[self.name]) > 0:
-            base_mask = sc.Variable(dims=profile_slice.data.dims,
-                                    values=np.ones(profile_slice.data.shape,
-                                                   dtype=np.int32))
-            for m in mask_info[self.name]:
-                if m in profile_slice.masks:
-                    msk = (base_mask * sc.Variable(
-                        dims=profile_slice.masks[m].dims,
-                        values=profile_slice.masks[m].values.astype(
-                            np.int32))).values
-                    if axparams["x"]["hist"][self.name]:
-                        msk = np.concatenate((msk[0:1], msk))
-                    new_values[self.name]["masks"][m] = mask_to_float(
-                        msk, new_values[self.name]["values"]["y"])
-                else:
-                    new_values[self.name]["masks"][m] = None
+        new_values[self.name]["masks"] = self._make_masks(
+            profile_slice, mask_info, axparams["x"]["hist"][self.name])
 
         return new_values
