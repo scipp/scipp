@@ -1,6 +1,8 @@
 import numpy as np
 import scipp as sc
 
+from .helpers import PlotArray
+
 
 class NonOwningDataArray():
     def __init__(self, data, coords):
@@ -37,15 +39,16 @@ class NonOwningDataArray():
 
 
 class ResamplingModel():
-    def __init__(self, data, coords, resolution={}, bounds={}):
+    def __init__(self, data, resolution={}, bounds={}):
         self._resolution = resolution
         self._bounds = bounds
         self._resampled = None
         self._resampled_params = None
-        self._array = NonOwningDataArray(
-            data=data,
-            coords=dict(
-                zip([str(dim) for dim in coords.keys()], coords.values())))
+        self._array = data
+        #PlotArray(
+        #    data=data,
+        #    coords=dict(
+        #        zip([str(dim) for dim in coords.keys()], coords.values())))
 
     @property
     def resolution(self):
@@ -68,6 +71,10 @@ class ResamplingModel():
         self._call_resample()
         return self._resampled
 
+    @property
+    def edges(self):
+        return self._edges
+
     def _make_edges(self, params):
         edges = []
         for dim, par in params.items():
@@ -77,13 +84,19 @@ class ResamplingModel():
             edges.append(
                 sc.Variable(dims=[dim],
                             values=np.linspace(low, high, num=res + 1)))
+        #print(edges)
         return edges
 
     def _call_resample(self):
+        #print(self.bounds)
         out = self._array
         params = {}
         for dim, s in self.bounds.items():
-            if isinstance(s, int):
+            if s is None:
+                low = self._array.coords[dim].values[0]
+                high = self._array.coords[dim].values[-1]
+                params[dim] = (low, high, self.resolution[dim])
+            elif isinstance(s, int):
                 out = out[dim, s]
                 params[dim] = s
             else:
@@ -93,18 +106,19 @@ class ResamplingModel():
                                               high)]
         if self._resampled is None or params != self._resampled_params:
             self._resampled_params = params
-            self._resampled = self._resample(out, self._make_edges(params))
+            self._edges = self._make_edges(params)
+            self._resampled = self._resample(out)
 
 
 class ResamplingBinnedModel(ResamplingModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _resample(self, array, edges):
+    def _resample(self, array):
         # TODO Note that this approach only works for binned data containing
         # all required event coords. This excludes grouped data. Must use
         # something based on groupby in this case?
-        return sc.bin_with_coords(array.data, array.coords, edges,
+        return sc.bin_with_coords(array.data, array.coords, self.edges,
                                   []).bins.sum()
 
 
@@ -112,22 +126,22 @@ class ResamplingDenseModel(ResamplingModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-    def _resample(self, array, edges):
+    def _resample(self, array):
         out = array.data
-        for edge in edges:
+        for edge in self.edges:
             dim = edge.dims[-1]
             coord = array.coords[dim]
             try:
                 out = sc.rebin_with_coord(out, coord, edge)
             except RuntimeError:  # Limitation of rebin for slice of inner dim
                 out = sc.rebin_with_coord(out.copy(), coord, edge)
-        return sc.DataArray(data=out,
-                            coords={edge.dims[-1]: edge
-                                    for edge in edges})
+        return sc.DataArray(
+            data=out, coords={edge.dims[-1]: edge
+                              for edge in self.edges})
 
 
 def resampling_model(data, **kwargs):
-    if data.bins is None:
+    if data.data.bins is None:
         return ResamplingDenseModel(data, **kwargs)
     else:
         return ResamplingBinnedModel(data, **kwargs)

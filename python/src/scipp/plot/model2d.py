@@ -5,6 +5,8 @@
 
 from .. import config
 from .model import PlotModel
+from .._utils.profile import time
+from .resampling_model import resampling_model
 from .tools import to_bin_centers, mask_to_float, vars_to_err
 from .._scipp import core as sc
 import numpy as np
@@ -34,6 +36,8 @@ class PlotModel2d(PlotModel):
                 "x": config.plot.width,
                 "y": config.plot.height
             }
+        self._model = resampling_model(self.data_arrays[self.name])
+        self._model.resolution = self.image_resolution  #TODO don't use x and y
 
     def update_axes(self, axparams):
         """
@@ -43,17 +47,28 @@ class PlotModel2d(PlotModel):
         for xy in "yx":
             # Useful maps
             self.displayed_dims[xy] = axparams[xy]["dim"]
-
+            unit = self.data_arrays[self.name].coords[axparams[xy]["dim"]].unit
+            self._model.bounds[xy] = (axparams[xy]["lims"][0] * unit,
+                                      axparams[xy]["lims"][1] * unit)
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
             # Create coordinate axes for resampled array to be used as image
-            self.xyrebin[xy] = sc.Variable(
-                dims=[axparams[xy]["dim"]],
-                values=np.linspace(axparams[xy]["lims"][0],
-                                   axparams[xy]["lims"][1],
-                                   self.image_resolution[xy] + 1),
-                unit=self.data_arrays[self.name].coords[axparams[xy]
-                                                        ["dim"]].unit)
+            #self.xyrebin[xy] = sc.Variable(
+            #    dims=[axparams[xy]["dim"]],
+            #    values=np.linspace(axparams[xy]["lims"][0],
+            #                       axparams[xy]["lims"][1],
+            #                       self.image_resolution[xy] + 1),
+            #    unit=self.data_arrays[self.name].coords[axparams[xy]
+            #                                            ["dim"]].unit)
+
+    def _update(self, extent=None):
+        print("update")
+        self.dslice = self._model.data
+        return {
+            "values": self._model.data.values,
+            "masks": {},
+            "extent": extent
+        }
 
     def update_data(self, slices, mask_info):
         """
@@ -61,9 +76,13 @@ class PlotModel2d(PlotModel):
         entries in the dict of data arrays.
         Then perform dynamic image resampling based on current viewport.
         """
+        print("update_data")
         self.vslice = self.slice_data(self.data_arrays[self.name],
                                       slices,
                                       keep_dims=True)
+        # TODO support thick slices
+        self._model.bounds['z'] = slices['z'][0]
+        return self._update()
         # Update pixel widths used for scaling before rebin step
         for xy, dim in self.displayed_dims.items():
             self.xywidth[xy] = (self.vslice.coords[dim][dim, 1:] -
@@ -139,6 +158,7 @@ class PlotModel2d(PlotModel):
         """
         Resample 2d images to a fixed resolution to handle very large images.
         """
+        print("update_image")
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
         xy = "yx"
@@ -217,20 +237,20 @@ class PlotModel2d(PlotModel):
         When an update to the viewport is requested on a zoom event, set new
         rebin edges and call for a resample of the image.
         """
+        print("update_viewport")
         if self.vslice is None:
             return None
 
         for xy, dim in self.displayed_dims.items():
-            # Create coordinate axes for resampled image array
-            self.xyrebin[xy] = sc.Variable(
-                dims=[dim],
-                values=np.linspace(xylims[xy][0], xylims[xy][1],
-                                   self.image_resolution[xy] + 1),
-                unit=self.data_arrays[self.name].coords[dim].unit)
-        return self.update_image(extent=np.array(list(
-            xylims.values())).flatten(),
-                                 mask_info=mask_info)
+            unit = self.data_arrays[self.name].coords[dim].unit
+            self._model.bounds[xy] = (xylims[xy][0] * unit,
+                                      xylims[xy][1] * unit)
+        return self._update(extent=np.array(list(xylims.values())).flatten())
+        #return self.update_image(extent=np.array(list(
+        #    xylims.values())).flatten(),
+        #                         mask_info=mask_info)
 
+    @time
     def update_profile(self,
                        xdata=None,
                        ydata=None,
@@ -246,30 +266,51 @@ class PlotModel2d(PlotModel):
         """
 
         # Find indices of pixel where cursor lies
-        dimx = self.xyrebin["x"].dims[0]
-        dimy = self.xyrebin["y"].dims[0]
+        dimx = 'x'
+        dimy = 'y'
+        #dimx = self.xyrebin["x"].dims[0]
+        #dimy = self.xyrebin["y"].dims[0]
         # Note that xdata and ydata already have the left edge subtracted from
         # them
-        ix = int(xdata /
-                 (self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]))
-        iy = int(ydata /
-                 (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
+        #ix = int(xdata /
+        #         (self.xyrebin["x"].values[1] - self.xyrebin["x"].values[0]))
+        #iy = int(ydata /
+        #         (self.xyrebin["y"].values[1] - self.xyrebin["y"].values[0]))
+
+        if len(slices) == 1:
+            dim, [start, stop] = slices[0]
+            self._profile_model = resampling_model(
+                self.data_arrays[self.name][dim, start:stop])
+        else:
+            self._profile_model = resampling_model(self.data_arrays[self.name])
+        self._profile_model.resolution = {'x': 1, 'y': 1, profile_dim: 200}
+        x = self._model.edges[1]
+        y = self._model.edges[0]
+        ix = int(xdata / (x.values[1] - x.values[0]))
+        iy = int(ydata / (y.values[1] - y.values[0]))
+        unit = self.data_arrays[self.name].coords[profile_dim].unit
+        self._profile_model.bounds = {
+            dimx: (x[dimx, ix], x[dimx, ix + 1]),
+            dimy: (y[dimy, iy], y[dimy, iy + 1]),
+            profile_dim: None
+        }
+        profile_slice = self._profile_model.data[dimx, 0][dimy, 0]
 
         # In the 2D case, we first resample to pixel resolution, to avoid
         # having to potentially resample a very large array in the following
         # slicing step.
-        profile_slice = self.resample_data(self.data_arrays[self.name],
-                                           rebin_edges={
-                                               dimx:
-                                               self.xyrebin["x"][dimx,
-                                                                 ix:ix + 2],
-                                               dimy:
-                                               self.xyrebin["y"][dimy,
-                                                                 iy:iy + 2]
-                                           })[dimx, 0][dimy, 0]
+        #profile_slice = self.resample_data(self.data_arrays[self.name],
+        #                                   rebin_edges={
+        #                                       dimx:
+        #                                       self.xyrebin["x"][dimx,
+        #                                                         ix:ix + 2],
+        #                                       dimy:
+        #                                       self.xyrebin["y"][dimy,
+        #                                                         iy:iy + 2]
+        #                                   })[dimx, 0][dimy, 0]
 
         # Slice the remaining dims
-        profile_slice = self.slice_data(profile_slice, slices)
+        #profile_slice = self.slice_data(profile_slice, slices)
         new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
 
         ydata = profile_slice.data.values
@@ -289,6 +330,7 @@ class PlotModel2d(PlotModel):
             new_values[self.name]["variances"]["y"] = ydata
             new_values[self.name]["variances"]["e"] = vars_to_err(
                 profile_slice.data.variances)
+        return new_values
 
         # Handle masks
         if len(mask_info[self.name]) > 0:
