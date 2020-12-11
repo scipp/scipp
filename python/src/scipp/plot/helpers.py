@@ -52,32 +52,26 @@ class PlotArray:
         return dict(zip(var.dims, var.shape))[dim] == dict(
             zip(self.data.dims, self.data.shape))[dim] + 1
 
-    def __getitem__(self, key):
-        def maybe_slice(var, dim, s):
-            if isinstance(s, int):
-                start = s
-                stop = s + 2
-            else:
-                start = s.start
-                stop = s.stop + 1
-            if dim in var.dims:
-                if self._is_edges(var, dim):
-                    if isinstance(s, int):
-                        return var[dim, s:s + 2]
-                    else:
-                        return var[dim, s.start:s.stop + 1]
+    def _maybe_slice(self, var, dim, s):
+        if dim in var.dims:
+            if self._is_edges(var, dim):
+                if isinstance(s, int):
+                    return var[dim, s:s + 2]
                 else:
-                    return var[dim, s]
+                    return var[dim, s.start:s.stop + 1]
             else:
-                return var
+                return var[dim, s]
+        else:
+            return var
 
+    def __getitem__(self, key):
         dim, s = key
         meta = {
-            name: maybe_slice(self.meta[name], dim, s)
+            name: self._maybe_slice(self.meta[name], dim, s)
             for name in self.meta
         }
         masks = {
-            name: maybe_slice(self.masks[name], dim, s)
+            name: self._maybe_slice(self.masks[name], dim, s)
             for name in self.masks
         }
         return PlotArray(data=self.data[dim, s], meta=meta, masks=masks)
