@@ -53,12 +53,37 @@ class PlotModel2d(PlotModel):
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
 
-    def _update(self, extent=None):
+    def _update(self, extent=None, mask_info=None):
         self.dslice = self._model.data
         values = self.dslice.values
         if self.displayed_dims['x'] == self.dslice.dims[0]:
             values = np.transpose(values)
-        return {"values": values, "masks": {}, "extent": extent}
+        new_values = {"values": values, "masks": {}, "extent": extent}
+        # Handle masks
+        if len(mask_info[self.name]) > 0:
+            # Use scipp's automatic broadcast functionality to broadcast
+            # lower dimension masks to higher dimensions.
+            # TODO: creating a Variable here could become expensive when
+            # sliders are being used. We could consider performing the
+            # automatic broadcasting once and store it in the Slicer class,
+            # but this could create a large memory overhead if the data is
+            # large.
+            # Here, the data is at most 2D, so having the Variable creation
+            # and broadcasting should remain cheap.
+            base_mask = sc.Variable(dims=self.dslice.dims,
+                                    values=np.ones(self.dslice.shape,
+                                                   dtype=np.int32))
+            for m in mask_info[self.name]:
+                if m in self.dslice.masks:
+                    msk = base_mask * sc.Variable(
+                        dims=self.dslice.masks[m].dims,
+                        values=self.dslice.masks[m].values.astype(np.int32))
+                    new_values["masks"][m] = mask_to_float(
+                        msk.values, self.dslice.values)
+                else:
+                    new_values["masks"][m] = None
+
+        return new_values
 
     def update_data(self, slices, mask_info):
         """
@@ -72,7 +97,7 @@ class PlotModel2d(PlotModel):
                                       keep_dims=True)
         # TODO support thick slices
         self._model.bounds['z'] = slices['z'][0]
-        return self._update()
+        return self._update(mask_info=mask_info)
         # Update pixel widths used for scaling before rebin step
         for xy, dim in self.displayed_dims.items():
             self.xywidth[xy] = (self.vslice.coords[dim][dim, 1:] -
@@ -235,7 +260,7 @@ class PlotModel2d(PlotModel):
             unit = self.data_arrays[self.name].coords[dim].unit
             self._model.bounds[dim] = (xylims[xy][0] * unit,
                                        xylims[xy][1] * unit)
-        return self._update(extent=np.array(list(xylims.values())).flatten())
+        return self._update(extent=np.array(list(xylims.values())).flatten(), mask_info=mask_info)
         #return self.update_image(extent=np.array(list(
         #    xylims.values())).flatten(),
         #                         mask_info=mask_info)

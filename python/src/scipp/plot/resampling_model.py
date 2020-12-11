@@ -75,6 +75,18 @@ class ResamplingModel():
     def edges(self):
         return self._edges
 
+    def _rebin(self, var, coords):
+        for edge in self.edges:
+            dim = edge.dims[-1]
+            if not dim in var.dims:
+                continue
+            coord = coords[dim]
+            try:
+                var = sc.rebin_with_coord(var, coord, edge)
+            except RuntimeError:  # Limitation of rebin for slice of inner dim
+                var = sc.rebin_with_coord(var.copy(), coord, edge)
+        return var
+
     def _make_edges(self, params):
         edges = []
         for dim, par in params.items():
@@ -118,8 +130,11 @@ class ResamplingBinnedModel(ResamplingModel):
         # TODO Note that this approach only works for binned data containing
         # all required event coords. This excludes grouped data. Must use
         # something based on groupby in this case?
-        return sc.bin_with_coords(array.data, array.coords, self.edges,
-                                  []).bins.sum()
+        a = sc.bin_with_coords(array.data, array.coords, self.edges,
+                               []).bins.sum()
+        for name, mask in array.masks.items():
+            a.masks[name] = self._rebin(mask, array.coords)
+        return a
 
 
 class ResamplingDenseModel(ResamplingModel):
@@ -127,17 +142,14 @@ class ResamplingDenseModel(ResamplingModel):
         super().__init__(*args, **kwargs)
 
     def _resample(self, array):
-        out = array.data
-        for edge in self.edges:
-            dim = edge.dims[-1]
-            coord = array.coords[dim]
-            try:
-                out = sc.rebin_with_coord(out, coord, edge)
-            except RuntimeError:  # Limitation of rebin for slice of inner dim
-                out = sc.rebin_with_coord(out.copy(), coord, edge)
         return sc.DataArray(
-            data=out, coords={edge.dims[-1]: edge
-                              for edge in self.edges})
+            data=_rebin(array.data, array.coords),
+            coords={edge.dims[-1]: edge
+                    for edge in self.edges},
+            masks={
+                name: _rebin(mask, array.coords)
+                for name, mask in array.masks.items()
+            })
 
 
 def resampling_model(data, **kwargs):
