@@ -36,14 +36,6 @@ class Plot(dict):
         for item in self.values():
             item.show()
 
-    # def as_static(self, *args, **kwargs):
-    #     """
-    #     Convert all the contents of the dict to static plots, releasing the
-    #     memory held by the plot (which makes a full copy of the input data).
-    #     """
-    #     for key, item in self.items():
-    #         self[key] = item.as_static(*args, **kwargs)
-
 
 class PlotArrayView:
     """
