@@ -52,15 +52,6 @@ class PlotModel2d(PlotModel):
         if not mask_info[self.name]:
             return {}
         masks = {}
-        # Use scipp's automatic broadcast functionality to broadcast
-        # lower dimension masks to higher dimensions.
-        # TODO: creating a Variable here could become expensive when
-        # sliders are being used. We could consider performing the
-        # automatic broadcasting once and store it in the Slicer class,
-        # but this could create a large memory overhead if the data is
-        # large.
-        # Here, the data is at most 2D, so having the Variable creation
-        # and broadcasting should remain cheap.
         base_mask = sc.Variable(dims=array.dims,
                                 values=np.ones(array.shape, dtype=np.int32))
         for m in mask_info[self.name]:
