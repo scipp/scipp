@@ -69,6 +69,10 @@ def test_plot_2d_image_with_labels():
     plot(make_dense_dataset(ndim=2, labels=True), axes={'x': 'somelabels'})
 
 
+def test_plot_2d_image_with_attrss():
+    plot(make_dense_dataset(ndim=2, attrs=True), axes={'x': 'attr'})
+
+
 def test_plot_2d_image_with_filename():
     plot(make_dense_dataset(ndim=2), filename='image.pdf')
 
