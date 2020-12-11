@@ -113,9 +113,16 @@ class ResamplingModel():
                 params[dim] = s
             else:
                 low, high = s
-                params[dim] = (low.value, high.value, self.resolution[dim])
-                out = out[sc.get_slice_params(out.data, out.coords[dim], low,
-                                              high)]
+                if isinstance(low, int):
+                    out = out[dim, low:high]
+                    low = out.coords[dim][dim, 0]
+                    high = out.coords[dim][dim, -1]
+                    # TODO 2d coord handling?
+                    params[dim] = (low.value, high.value, self.resolution[dim])
+                else:
+                    params[dim] = (low.value, high.value, self.resolution[dim])
+                    out = out[sc.get_slice_params(out.data, out.coords[dim], low,
+                                                  high)]
         if self._resampled is None or params != self._resampled_params:
             self._resampled_params = params
             self._edges = self._make_edges(params)

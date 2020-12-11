@@ -21,10 +21,6 @@ class PlotModel2d(PlotModel):
         super().__init__(*args, **kwargs)
 
         self.displayed_dims = {}
-        self.xyrebin = {}
-        self.xywidth = {}
-        self.image_pixel_size = {}
-        self.vslice = None
 
         if resolution is not None:
             if isinstance(resolution, int):
@@ -37,7 +33,6 @@ class PlotModel2d(PlotModel):
                 "y": config.plot.height
             }
         self._model = resampling_model(self.data_arrays[self.name])
-        self._model.resolution = self.image_resolution  #TODO don't use x and y
 
     def update_axes(self, axparams):
         """
@@ -48,6 +43,7 @@ class PlotModel2d(PlotModel):
             dim = axparams[xy]["dim"]
             self.displayed_dims[xy] = dim
             unit = self.data_arrays[self.name].coords[dim].unit
+            self._model.resolution[dim] = self.image_resolution[xy]
             self._model.bounds[dim] = (axparams[xy]["lims"][0] * unit,
                                        axparams[xy]["lims"][1] * unit)
             # TODO: if labels are used on a 2D coordinates, we need to update
@@ -58,6 +54,9 @@ class PlotModel2d(PlotModel):
         Resample 2d images to a fixed resolution to handle very large images.
         """
         self.dslice = self._model.data
+        for dim in self._squeeze:
+            self.dslice = self.dslice[dim, 0]
+
         values = self.dslice.values
         if self.displayed_dims['x'] == self.dslice.dims[0]:
             values = np.transpose(values)
@@ -94,12 +93,14 @@ class PlotModel2d(PlotModel):
         entries in the dict of data arrays.
         Then perform dynamic image resampling based on current viewport.
         """
-        print("update_data")
-        self.vslice = self.slice_data(self.data_arrays[self.name],
-                                      slices,
-                                      keep_dims=True)
-        # TODO support thick slices
-        self._model.bounds['z'] = slices['z'][0]
+        self._squeeze = []
+        for dim, [start, stop] in slices.items():
+            if start + 1 == stop:
+                self._model.bounds[dim] = start
+            else:
+                self._squeeze.append(dim)
+                self._model.resolution[dim] = 1
+                self._model.bounds[dim] = (start, stop)
         return self._update_image(mask_info=mask_info)
 
     def update_viewport(self, xylims, mask_info):
@@ -107,11 +108,9 @@ class PlotModel2d(PlotModel):
         When an update to the viewport is requested on a zoom event, set new
         rebin edges and call for a resample of the image.
         """
-        if self.vslice is None:
-            return None
-
         for xy, dim in self.displayed_dims.items():
             unit = self.data_arrays[self.name].coords[dim].unit
+            self._model.resolution[dim] = self.image_resolution[xy]
             self._model.bounds[dim] = (xylims[xy][0] * unit,
                                        xylims[xy][1] * unit)
         return self._update_image(extent=np.array(list(
