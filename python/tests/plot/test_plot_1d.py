@@ -29,6 +29,10 @@ def test_plot_1d_with_labels():
     plot(make_dense_dataset(ndim=1, labels=True), axes={"x": "somelabels"})
 
 
+def test_plot_1d_with_attrs():
+    plot(make_dense_dataset(ndim=1, attrs=True), axes={"x": "attr"})
+
+
 def test_plot_1d_log_axes():
     d = make_dense_dataset(ndim=1)
     plot(d, scale={'tof': 'log'})

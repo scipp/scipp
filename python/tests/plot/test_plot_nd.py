@@ -38,6 +38,10 @@ def test_plot_sliceviewer_2d_with_labels():
     plot(make_dense_dataset(ndim=3, labels=True), axes={'x': "somelabels"})
 
 
+def test_plot_sliceviewer_2d_with_attrs():
+    plot(make_dense_dataset(ndim=3, attrs=True), axes={'x': "attr"})
+
+
 def test_plot_sliceviewer_2d_with_binedges():
     plot(make_dense_dataset(ndim=3, binedges=True))
 

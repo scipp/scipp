@@ -209,7 +209,7 @@ class SciPlot:
         for i, dim in enumerate(array_dims[::-1]):
             if positions is not None:
                 if (dim == positions) or (dim
-                                          == array.coords[positions].dims[-1]):
+                                          == array.meta[positions].dims[-1]):
                     key = "x"
                 else:
                     key = i - ("x" in self.axes)
@@ -225,7 +225,7 @@ class SciPlot:
         if axes is not None:
             for dim in axes.values():
                 if (dim not in self.axes.values()) and (dim
-                                                        not in array.coords):
+                                                        not in array.meta):
                     raise RuntimeError("Requested dimension was not found in "
                                        "input data: {}".format(dim))
             supplied_axes.update(axes)
@@ -235,7 +235,7 @@ class SciPlot:
         for key, dim in supplied_axes.items():
             dim_list = list(self.axes.values())
             key_list = list(self.axes.keys())
-            underlying_dim = array.coords[dim].dims[-1]
+            underlying_dim = array.meta[dim].dims[-1]
             if dim in dim_list:
                 ind = dim_list.index(dim)
             else:

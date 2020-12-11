@@ -56,7 +56,7 @@ def make_dense_dataset(ndim=1,
                                                  101., 105., shapes[0]),
                                              unit=sc.units.s)
     if attrs:
-        d["Sample"].attrs["a"] = sc.Variable([dim_list[0]],
+        d["Sample"].attrs["attr"] = sc.Variable([dim_list[0]],
                                              values=np.linspace(
                                                  10., 77., shapes[0]),
                                              unit=sc.units.s)
