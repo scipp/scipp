@@ -5,7 +5,6 @@
 
 from .. import config
 from .model import PlotModel
-from .._utils.profile import time
 from .resampling_model import resampling_model
 from .tools import to_bin_centers, mask_to_float, vars_to_err
 from .._scipp import core as sc
@@ -123,7 +122,6 @@ class PlotModel2d(PlotModel):
             xylims.values())).flatten(),
                                   mask_info=mask_info)
 
-    @time
     def update_profile(self,
                        xdata=None,
                        ydata=None,
@@ -147,9 +145,9 @@ class PlotModel2d(PlotModel):
                 self.data_arrays[self.name][dim, start:stop])
         else:
             self._profile_model = resampling_model(self.data_arrays[self.name])
-        self._profile_model.resolution = {'x': 1, 'y': 1, profile_dim: 200}
-        x = self._model.edges[1]
-        y = self._model.edges[0]
+        self._profile_model.resolution = {dimx: 1, dimy: 1, profile_dim: 200}
+        x = self._model.data.meta[dimx]
+        y = self._model.data.meta[dimy]
         # Note that xdata and ydata already have the left edge subtracted from
         # them
         ix = int(xdata / (x.values[1] - x.values[0]))
@@ -161,7 +159,6 @@ class PlotModel2d(PlotModel):
         }
         profile_slice = self._profile_model.data[dimx, 0][dimy, 0]
 
-        # Slice the remaining dims
         new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
 
         ydata = profile_slice.data.values
