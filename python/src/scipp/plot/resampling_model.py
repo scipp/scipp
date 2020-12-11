@@ -1,3 +1,8 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# @file
+# @author Simon Heybrock
+
 import numpy as np
 import scipp as sc
 
@@ -121,8 +126,8 @@ class ResamplingModel():
                     params[dim] = (low.value, high.value, self.resolution[dim])
                 else:
                     params[dim] = (low.value, high.value, self.resolution[dim])
-                    out = out[sc.get_slice_params(out.data, out.coords[dim], low,
-                                                  high)]
+                    out = out[sc.get_slice_params(out.data, out.coords[dim],
+                                                  low, high)]
         if self._resampled is None or params != self._resampled_params:
             self._resampled_params = params
             self._edges = self._make_edges(params)
