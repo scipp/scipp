@@ -191,6 +191,6 @@ TYPED_TEST(MeanTest, nanmean_basic_inplace) {
     EXPECT_EQ(viewY, meanY);
     EXPECT_EQ(viewY.underlying(), meanY);
   } else {
-    GTEST_SKIP_("Test type does not support variance testing");
+    GTEST_SKIP_("Test type does not support nan testing");
   }
 }
