@@ -235,7 +235,8 @@ class SciPlot:
         for key, dim in supplied_axes.items():
             dim_list = list(self.axes.values())
             key_list = list(self.axes.keys())
-            underlying_dim = array.coords[dim].dims[-1]
+            underlying_dim = array.coords[dim].dims[
+                -1] if dim in array.coords else dim
             if dim in dim_list:
                 ind = dim_list.index(dim)
             else:
