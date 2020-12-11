@@ -83,9 +83,10 @@ DataArray nanmean(const DataArrayConstView &a, const Dim dim) {
 }
 
 DataArray nanmean(const DataArrayConstView &a) {
-  if (isInt(a.data().dtype()))
-    return mean(a);
-  return nansum(a) * reciprocal(astype(sum(isfinite(a)), a.dtype()));
+  if (isInt(a.dtype()))
+    return nansum(a) * reciprocal(astype(sum(isfinite(a)), dtype<double>));
+  else
+    return nansum(a) * reciprocal(astype(sum(isfinite(a)), a.dtype()));
 }
 
 Dataset nanmean(const DatasetConstView &d, const Dim dim) {

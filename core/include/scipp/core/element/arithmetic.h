@@ -22,19 +22,26 @@ constexpr auto add_inplace_types =
              std::tuple<float, int64_t>, std::tuple<float, int32_t>,
              std::tuple<int64_t, bool>>;
 
-constexpr auto add_inplace_nan_types =
-    arg_list<double, float, std::tuple<double, float>,
-             std::tuple<float, double>>;
+template <class T> struct ValueType { using value_type = T; };
+template <class T> struct ValueType<ValueAndVariance<T>> {
+  using value_type = T;
+};
 
 constexpr auto plus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};
 constexpr auto nan_plus_equals =
-    overloaded{add_inplace_nan_types, [](auto &&a, const auto &b) {
-                 using std::isnan;
-                 if (isnan(a))
-                   a = std::decay_t<decltype(a)>{0}; // Force zero
-                 if (!isnan(b))
+    overloaded{add_inplace_types, [](auto &&a, const auto &b) {
+                 using ArgT = std::decay_t<decltype(a)>;
+                 if constexpr (std::is_floating_point_v<
+                                   typename ValueType<ArgT>::value_type>) {
+                   using std::isnan;
+                   if (isnan(a))
+                     a = ArgT{0}; // Force zero
+                   if (!isnan(b))
+                     a += b;
+                 } else {
                    a += b;
+                 }
                }};
 constexpr auto minus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};

@@ -188,9 +188,9 @@ TYPED_TEST(MeanTest, nanmean_over_dim) {
               makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
     // Set and test with NANS
     ds["a"].template values<TypeParam>()[2] = TypeParam(NAN);
-    EXPECT_EQ(nanmean(ds)["a"].data(),
+    EXPECT_EQ(nanmean(ds, Dim::X)["a"].data(),
               makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
-    EXPECT_EQ(nanmean(ds["a"]).data(),
+    EXPECT_EQ(nanmean(ds["a"], Dim::X).data(),
               makeVariable<TypeParam>(Values{1.5}, Variances{6.75}));
   } else {
     auto ds = make_one_item_dataset<TypeParam>("a", {Dim::X, 3},
