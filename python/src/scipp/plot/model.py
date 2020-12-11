@@ -72,7 +72,7 @@ class PlotModel:
             # Create a PlotArray helper object that supports slicing where new
             # bin-edge coordinates can be attached to the data
             self.data_arrays[name] = PlotArray(data=array.data,
-                                               coords=coord_list)
+                                               meta=coord_list)
 
             # Include masks
             for m in array.masks:
@@ -81,7 +81,7 @@ class PlotModel:
         # Store dim of multi-dimensional coordinate if present
         self.multid_coord = None
         for array in self.data_arrays.values():
-            for dim, coord in array.coords.items():
+            for dim, coord in array.meta.items():
                 if len(coord.dims) > 1:
                     self.multid_coord = dim
 
@@ -181,9 +181,10 @@ class PlotModel:
         """
         Return the left, center, and right coordinates for a bin index.
         """
-        return self.data_arrays[name].coords[dim][
-            dim, bounds[0]].value, self.data_arrays[name].coords[dim][
-                dim, bounds[1]].value
+        return self.data_arrays[name].meta[dim][
+            dim,
+            bounds[0]].value, self.data_arrays[name].meta[dim][dim,
+                                                               bounds[1]].value
 
     def get_data_names(self):
         """
@@ -197,7 +198,7 @@ class PlotModel:
         """
         Get a coordinate along a requested dimension.
         """
-        return self.data_arrays[name].coords[dim], self.coord_info[name][dim][
+        return self.data_arrays[name].meta[dim], self.coord_info[name][dim][
             "label"], self.coord_info[name][dim]["unit"]
 
     def rescale_to_data(self):

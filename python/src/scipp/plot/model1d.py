@@ -43,11 +43,11 @@ class PlotModel1d(PlotModel):
 
             self.dslice = self.slice_data(array, slices)
             ydata = self.dslice.data.values
-            xcenters = to_bin_centers(self.dslice.coords[self.dim],
+            xcenters = to_bin_centers(self.dslice.meta[self.dim],
                                       self.dim).values
 
             if self.hist[name]:
-                new_values[name]["values"]["x"] = self.dslice.coords[
+                new_values[name]["values"]["x"] = self.dslice.meta[
                     self.dim].values
                 new_values[name]["values"]["y"] = np.concatenate(
                     (ydata[0:1], ydata))
@@ -95,12 +95,11 @@ class PlotModel1d(PlotModel):
         # Find closest point to cursor
         # TODO: can we optimize this with new buckets?
         distance_to_cursor = np.abs(
-            self.data_arrays[self.name].coords[self.dim].values - xdata)
+            self.data_arrays[self.name].meta[self.dim].values - xdata)
         ind = np.argmin(distance_to_cursor)
 
         xcenters = to_bin_centers(
-            self.data_arrays[self.name].coords[profile_dim],
-            profile_dim).values
+            self.data_arrays[self.name].meta[profile_dim], profile_dim).values
 
         for name, profile_slice in self.data_arrays.items():
             new_values[name] = {"values": {}, "variances": {}, "masks": {}}

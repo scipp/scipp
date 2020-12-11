@@ -42,7 +42,7 @@ class PlotModel2d(PlotModel):
         for xy in "yx":
             dim = axparams[xy]["dim"]
             self.displayed_dims[xy] = dim
-            unit = self.data_arrays[self.name].coords[dim].unit
+            unit = self.data_arrays[self.name].meta[dim].unit
             self._model.resolution[dim] = self.image_resolution[xy]
             self._model.bounds[dim] = (axparams[xy]["lims"][0] * unit,
                                        axparams[xy]["lims"][1] * unit)
@@ -109,7 +109,7 @@ class PlotModel2d(PlotModel):
         rebin edges and call for a resample of the image.
         """
         for xy, dim in self.displayed_dims.items():
-            unit = self.data_arrays[self.name].coords[dim].unit
+            unit = self.data_arrays[self.name].meta[dim].unit
             self._model.resolution[dim] = self.image_resolution[xy]
             self._model.bounds[dim] = (xylims[xy][0] * unit,
                                        xylims[xy][1] * unit)
@@ -148,7 +148,7 @@ class PlotModel2d(PlotModel):
         # them
         ix = int(xdata / (x.values[1] - x.values[0]))
         iy = int(ydata / (y.values[1] - y.values[0]))
-        unit = self.data_arrays[self.name].coords[profile_dim].unit
+        unit = self.data_arrays[self.name].meta[profile_dim].unit
         self._profile_model.bounds = {
             dimx: (x[dimx, ix], x[dimx, ix + 1]),
             dimy: (y[dimy, iy], y[dimy, iy + 1]),
