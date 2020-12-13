@@ -101,23 +101,24 @@ template <int N> struct expect_no_variance_arg_t : Flag {};
 /// support variances in the specified argument.
 template <int N>
 constexpr auto expect_no_variance_arg = expect_no_variance_arg_t<N>{};
-} // namespace
 
+template <int N> struct expect_variance_arg_t : Flag {};
 /// Add this to overloaded operator to indicate that the operation requires
 /// variances in the specified argument.
-template <int N> static constexpr auto expect_variance_arg = []() {};
-template <int N> using expect_variance_arg_t = decltype(expect_variance_arg<N>);
+template <int N>
+constexpr auto expect_variance_arg = expect_variance_arg_t<N>{};
 
+struct expect_in_variance_if_out_variance_t : Flag {};
 /// Add this to overloaded operator to indicate that the in-place operation
 /// requires inputs to have a variance if the output has a variance.
-static constexpr auto expect_in_variance_if_out_variance = []() {};
-using expect_in_variance_if_out_variance_t =
-    decltype(expect_in_variance_if_out_variance);
+constexpr auto expect_in_variance_if_out_variance =
+    expect_in_variance_if_out_variance_t{};
 
-static constexpr auto expect_all_or_none_have_variance = []() {};
-using expect_all_or_none_have_variance_t =
-    decltype(expect_all_or_none_have_variance);
+struct expect_all_or_none_have_variance_t : Flag {};
+static constexpr auto expect_all_or_none_have_variance =
+    expect_all_or_none_have_variance_t{};
 
+} // namespace
 } // namespace transform_flags
 
 } // namespace scipp::core
