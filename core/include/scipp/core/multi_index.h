@@ -105,6 +105,8 @@ public:
   constexpr void load_bucket_params(const scipp::index i) noexcept {
     if (m_bucket[i].m_bucket_index >= m_bucket[i].m_size)
       return; // at end or dense
+    // All bins are guaranteed to have the same size.
+    // Use common m_shape and m_nested_stride for all.
     const auto [begin, end] = m_bucket[i].m_indices[m_bucket[i].m_bucket_index];
     m_shape[m_nested_dim_index] = end - begin;
     m_data_index[i] = m_nested_stride * begin;
@@ -112,37 +114,46 @@ public:
 
   constexpr void seek_bucket() noexcept {
     do {
-      scipp::index d = m_ndim_nested - 1;
-      while ((m_coord[d] == m_shape[d]) && (d < NDIM_MAX - 1)) {
+      // go through bin dims which have reached their end (including last
+      // pre-bin dim)
+      for (scipp::index d = m_ndim_nested - 1;
+           (m_coord[d] == m_shape[d]) && (d < NDIM_MAX - 1); ++d) {
         for (scipp::index data = 0; data < N; ++data) {
           m_data_index[data] +=
-              m_stride[data][d + 1] - m_coord[d] * m_stride[data][d];
+              // take a step in dimension d+1
+              m_stride[data][d + 1]
+              // rewind dimension d (m_coord[d] == m_shape[d])
+              - m_coord[d] * m_stride[data][d];
           // move to next bucket
-          if (d == m_ndim_nested - 1)
+          if (d == m_ndim_nested - 1) // last non-bin dimension
             m_bucket[data].m_bucket_index += m_stride[data][d + 1];
-          else
+          else // bin dimension -> rewind earlier bins
             m_bucket[data].m_bucket_index +=
                 m_stride[data][d + 1] - m_coord[d] * m_stride[data][d];
           load_bucket_params(data);
         }
         ++m_coord[d + 1];
         m_coord[d] = 0;
-        ++d;
       }
     } while (m_shape[m_nested_dim_index] == 0 && m_coord[m_ndim] == 0);
   }
 
   constexpr void increment_outer() noexcept {
-    scipp::index d = 0;
-    while ((m_coord[d] == m_shape[d]) && (d < m_ndim_nested - 1)) {
+    // Go through all nested dims (with bins) / all dims (without bins)
+    // where we have reached the end.
+    for (scipp::index d = 0;
+         (m_coord[d] == m_shape[d]) && (d < m_ndim_nested - 1); ++d) {
       for (scipp::index data = 0; data < N; ++data) {
         m_data_index[data] +=
-            m_stride[data][d + 1] - m_coord[d] * m_stride[data][d];
+            // take a step in dimension d+1
+            m_stride[data][d + 1]
+            // rewind dimension d (m_coord[d] == m_shape[d])
+            - m_coord[d] * m_stride[data][d];
       }
       ++m_coord[d + 1];
       m_coord[d] = 0;
-      ++d;
     }
+    // nested dims incremented, move on to bins
     seek_bucket();
   }
 
