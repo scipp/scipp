@@ -85,17 +85,6 @@ VariableView nansum(const VariableConstView &var, const Dim dim,
   return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
 }
 
-Variable nanmean_impl(const VariableConstView &var, const Dim dim,
-                      const VariableConstView &count) {
-  auto summed = nansum(var, dim);
-  auto scale = reciprocal(astype(count, core::dtype<double>));
-  if (isInt(var.dtype()))
-    summed = summed * scale;
-  else
-    summed *= scale;
-  return summed;
-}
-
 VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
                           const VariableConstView &count,
                           const VariableView &out) {
@@ -117,6 +106,15 @@ Variable mean_impl(const VariableConstView &var, const Dim dim,
     summed = summed * scale;
   else
     summed *= scale;
+  return summed;
+}
+
+Variable nanmean_impl(const VariableConstView &var, const Dim dim,
+                      const VariableConstView &count) {
+  if (isInt(var.dtype()))
+    return mean_impl(var, dim, count);
+  auto summed = nansum(var, dim);
+  summed *= reciprocal(astype(count, core::dtype<double>));
   return summed;
 }
 
