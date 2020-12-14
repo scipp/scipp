@@ -39,6 +39,8 @@ void run(benchmark::State &state, Func func, bool variances = false) {
   state.SetItemsProcessed(state.iterations() * n * variance_factor);
   state.SetBytesProcessed(state.iterations() * n * variance_factor *
                           read_write_factor * sizeof(double));
+  state.counters["n"] = n;
+  state.counters["variances"] = variances;
   state.counters["size"] = benchmark::Counter(
       n * variance_factor * size_factor * sizeof(double),
       benchmark::Counter::kDefaults, benchmark::Counter::OneK::kIs1024);
@@ -190,6 +192,8 @@ static void BM_transform_in_place_events(benchmark::State &state) {
   state.SetItemsProcessed(state.iterations() * n * variance_factor);
   state.SetBytesProcessed(state.iterations() * n * variance_factor * 3 *
                           sizeof(double));
+  state.counters["n"] = n;
+  state.counters["variances"] = variances;
   state.counters["size"] = benchmark::Counter(
       n * variance_factor * 2 * sizeof(double), benchmark::Counter::kDefaults,
       benchmark::Counter::OneK::kIs1024);
