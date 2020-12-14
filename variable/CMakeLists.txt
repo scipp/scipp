@@ -16,6 +16,7 @@ set(INC_FILES
     include/scipp/variable/rebin.h
     include/scipp/variable/reduction.h
     include/scipp/variable/shape.h
+    include/scipp/variable/slice.h
     include/scipp/variable/sort.h
     include/scipp/variable/special_values.h
     include/scipp/variable/string.h
@@ -46,6 +47,7 @@ set(SRC_FILES
     rebin.cpp
     reduction.cpp
     shape.cpp
+    slice.cpp
     sort.cpp
     special_values.cpp
     string.cpp
