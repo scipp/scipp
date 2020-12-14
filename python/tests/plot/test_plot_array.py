@@ -17,7 +17,7 @@ def assert_is_equal(plotarray, dataarray):
 
 def test_plot_array_creation():
     da = make_dense_dataset(ndim=3, attrs=True, masks=True)["Sample"]
-    pa = PlotArray(data=da.data, meta=da.coords, masks=da.masks)
+    pa = PlotArray(data=da.data, meta=da.meta, masks=da.masks)
     assert_is_equal(pa, da)
 
 
