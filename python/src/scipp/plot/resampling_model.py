@@ -79,9 +79,10 @@ class ResamplingModel():
         for dim, s in self.bounds.items():
             dim = str(dim)
             if s is None:
-                low = self._array.meta[dim].values[0]
-                high = self._array.meta[dim].values[-1]
-                params[dim] = (low, high, self.resolution[dim])
+                coord = self._array.meta[dim]
+                low = coord.values[0]
+                high = coord.values[-1]
+                params[dim] = (low, high, coord.unit, self.resolution[dim])
             elif isinstance(s, int):
                 out = out[dim, s]
                 params[dim] = s
