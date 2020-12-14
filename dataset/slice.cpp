@@ -88,7 +88,7 @@ get_slice_params(const Dimensions &dims, const VariableConstView &coord_,
     first = get_index(coord, dim, begin, ascending, bin_edges);
   if (end)
     last = get_index(coord, dim, end, ascending, bin_edges);
-  return {dim, first, last + (bin_edges ? 1 : 0)};
+  return {dim, first, std::min(dims[dim], last + (bin_edges ? 1 : 0))};
 }
 
 VariableConstView select(const VariableConstView &var,
