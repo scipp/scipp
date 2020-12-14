@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 from .helpers import PlotArray
-from .resampling_model import resampling_model
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc

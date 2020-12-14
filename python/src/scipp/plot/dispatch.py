@@ -2,11 +2,6 @@
 # Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .._scipp import core as sc
-from .._bins import histogram
-from .._utils import is_variable
-import numpy as np
-
 
 def dispatch(scipp_obj_dict,
              ndim=0,
