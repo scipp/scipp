@@ -270,25 +270,3 @@ class SciPlot:
         directory where the script or notebook is running.
         """
         self.view.savefig(filename=filename)
-
-    def as_static(self, keep_widgets=False):
-        """
-        Convert the plot to a static plot, releasing the memory held (a full
-        copy of the data is made on input).
-        """
-        # Delete controller members
-        self.controller.widgets = None
-        self.controller.model = None
-        self.controller.panel = None
-        self.controller.profile = None
-        self.controller.view = None
-        # Delete sciplot members
-        self.controller = None
-        self.model = None
-        self.profile = None
-        if not keep_widgets:
-            self.panel = None
-            self.widgets = None
-            return self.view.figure
-        else:
-            return self

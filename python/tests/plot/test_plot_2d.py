@@ -248,8 +248,8 @@ def test_plot_customized_mpl_axes():
 def test_plot_access_ax_and_fig():
     d = make_dense_dataset(ndim=2)
     out = plot(d["Sample"], title="MyTitle")
-    out["Sample"].ax.set_xlabel("MyXlabel")
-    out["Sample"].fig.set_dpi(120.)
+    out.ax.set_xlabel("MyXlabel")
+    out.fig.set_dpi(120.)
 
 
 def test_plot_2d_image_int32():
