@@ -99,10 +99,10 @@ class ResamplingModel():
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution[dim])
         if params == self._home_params:
-            # This isa a crude caching mechanism for past views. Currently we
+            # This is a crude caching mechanism for past views. Currently we
             # have the "back" buttons disabled in the matplotlib toolbar, so
             # we cache only the "home" view. This is the most expensive to
-            # create anyay.
+            # create anyway.
             self._resampled_params = self._home_params
             self._resampled = self._home
         elif self._resampled is None or params != self._resampled_params:

@@ -300,7 +300,7 @@ TEST_P(BinTest, rebinned_meta_data_dropped) {
 TEST_P(BinTest, bin_by_group) {
   const auto table = GetParam();
   auto binned = bin(table, {}, {groups});
-  // Currently `bin` is not removing coords used for grouping, so TODO.
+  // Currently `bin` is not removing coords used for grouping, see TODO.
   std::get<2>(binned.data().constituents<core::bin<DataArray>>())
       .coords()
       .erase(Dim("group"));
