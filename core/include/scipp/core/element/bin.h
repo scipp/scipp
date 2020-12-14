@@ -19,18 +19,20 @@ template <class Index, class T>
 using update_indices_by_binning_arg =
     std::tuple<Index, T, scipp::span<const T>>;
 
-static constexpr auto update_indices_by_binning =
-    overloaded{element::arg_list<update_indices_by_binning_arg<int64_t, double>,
-                                 update_indices_by_binning_arg<int64_t, float>,
-                                 update_indices_by_binning_arg<int32_t, double>,
-                                 update_indices_by_binning_arg<int32_t, float>>,
-               [](units::Unit &indices, const units::Unit &coord,
-                  const units::Unit &groups) {
-                 expect::equals(coord, groups);
-                 expect::equals(indices, units::one);
-               },
-               transform_flags::expect_no_variance_arg<1>,
-               transform_flags::expect_no_variance_arg<2>};
+static constexpr auto update_indices_by_binning = overloaded{
+    element::arg_list<update_indices_by_binning_arg<int64_t, double>,
+                      update_indices_by_binning_arg<int64_t, float>,
+                      std::tuple<int64_t, int64_t, scipp::span<const double>>,
+                      update_indices_by_binning_arg<int32_t, double>,
+                      update_indices_by_binning_arg<int32_t, float>,
+                      std::tuple<int32_t, int64_t, scipp::span<const double>>>,
+    [](units::Unit &indices, const units::Unit &coord,
+       const units::Unit &groups) {
+      expect::equals(coord, groups);
+      expect::equals(indices, units::one);
+    },
+    transform_flags::expect_no_variance_arg<1>,
+    transform_flags::expect_no_variance_arg<2>};
 
 // Special faster implementation for linear bins.
 static constexpr auto update_indices_by_binning_linspace =
