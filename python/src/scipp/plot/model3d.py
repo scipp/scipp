@@ -29,7 +29,7 @@ class PlotModel3d(PlotModel):
         # If positions are specified, then the x, y, z points positions can
         # never change
         if self.positions is not None:
-            self.pos_coord = scipp_obj_dict[self.name].coords[self.positions]
+            self.pos_coord = scipp_obj_dict[self.name].meta[self.positions]
             self.pos_array = np.array(self.pos_coord.values, dtype=np.float32)
 
     def initialise(self, cut_options):
@@ -53,13 +53,13 @@ class PlotModel3d(PlotModel):
 
             z, y, x = np.meshgrid(
                 to_bin_centers(
-                    self.data_arrays[self.name].coords[axparams['z']["dim"]],
+                    self.data_arrays[self.name].meta[axparams['z']["dim"]],
                     axparams["z"]["dim"]).values,
                 to_bin_centers(
-                    self.data_arrays[self.name].coords[axparams['y']["dim"]],
+                    self.data_arrays[self.name].meta[axparams['y']["dim"]],
                     axparams["y"]["dim"]).values,
                 to_bin_centers(
-                    self.data_arrays[self.name].coords[axparams['x']["dim"]],
+                    self.data_arrays[self.name].meta[axparams['x']["dim"]],
                     axparams["x"]["dim"]).values,
                 indexing='ij')
 
@@ -101,19 +101,19 @@ class PlotModel3d(PlotModel):
         # Use automatic broadcast if positions are not used
         if self.positions is None:
             shape = [
-                data_slice.coords[self.displayed_dims["z"]].shape[0] - 1,
-                data_slice.coords[self.displayed_dims["y"]].shape[0] - 1,
-                data_slice.coords[self.displayed_dims["x"]].shape[0] - 1
+                data_slice.meta[self.displayed_dims["z"]].shape[0] - 1,
+                data_slice.meta[self.displayed_dims["y"]].shape[0] - 1,
+                data_slice.meta[self.displayed_dims["x"]].shape[0] - 1
             ]
 
             self.dslice = sc.DataArray(
                 coords={
                     self.displayed_dims["z"]:
-                    data_slice.coords[self.displayed_dims["z"]],
+                    data_slice.meta[self.displayed_dims["z"]],
                     self.displayed_dims["y"]:
-                    data_slice.coords[self.displayed_dims["y"]],
+                    data_slice.meta[self.displayed_dims["y"]],
                     self.displayed_dims["x"]:
-                    data_slice.coords[self.displayed_dims["x"]]
+                    data_slice.meta[self.displayed_dims["x"]]
                 },
                 data=sc.Variable(dims=[
                     self.displayed_dims["z"], self.displayed_dims["y"],
