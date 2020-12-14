@@ -9,8 +9,8 @@ from plot_helper import make_dense_dataset
 
 def assert_is_equal(plotarray, dataarray):
     assert sc.is_equal(plotarray.data, dataarray.data)
-    for key in dataarray.coords:
-        assert sc.is_equal(plotarray.meta[str(key)], dataarray.coords[key])
+    for key in dataarray.meta:
+        assert sc.is_equal(plotarray.meta[str(key)], dataarray.meta[key])
     for msk in dataarray.masks:
         assert sc.is_equal(plotarray.masks[msk], dataarray.masks[msk])
 
@@ -41,7 +41,7 @@ def test_plot_array_view_index_with_masks():
 
 def test_plot_array_view_index_with_attrs():
     da = make_dense_dataset(ndim=3, attrs=True)["Sample"]
-    pa = PlotArray(data=da.data, meta=da.coords, attrs=da.attrs)
+    pa = PlotArray(data=da.data, meta=da.meta)
     assert_is_equal(pa['x', 10], da['x', 10])
 
 

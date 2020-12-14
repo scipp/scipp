@@ -45,7 +45,7 @@ class PlotArray:
     """
     def __init__(self, data, meta={}, masks={}):
         self.data = data
-        self.meta = meta
+        self.meta = {str(name): var for name, var in meta.items()}
         self.masks = masks
 
     def _is_edges(self, var, dim):
