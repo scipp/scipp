@@ -106,8 +106,10 @@ class PlotFigure3d:
         """
         Return the renderer and the colorbar into a widget box.
         """
-        return ipw.HBox(
-            [self.toolbar._to_widget(), self.renderer, self.cbar_image])
+        return ipw.HBox([
+            self.toolbar._to_widget(),
+            ipw.HBox([self.renderer]), self.cbar_image
+        ])
 
     def savefig(self, filename=None):
         """
