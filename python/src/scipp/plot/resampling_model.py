@@ -42,11 +42,17 @@ class ResamplingModel():
         return self._edges
 
     def _rebin(self, var, coords):
+        plan = []
         for edge in self.edges:
             dim = edge.dims[-1]
             if dim not in var.dims:
                 continue
             coord = coords[dim]
+            if len(coord.dims) == 1:
+                plan.append((coord, edge))
+            else:
+                plan.insert(0, (coord, edge))
+        for coord, edge in plan:
             try:
                 var = sc.rebin_with_coord(var, coord, edge)
             except RuntimeError:  # Limitation of rebin for slice of inner dim
@@ -81,12 +87,12 @@ class ResamplingModel():
                     out = out[dim, low:high]
                     low = out.meta[dim][dim, 0]
                     high = out.meta[dim][dim, -1]
-                    # TODO 2d coord handling?
-                    params[dim] = (low.value, high.value, self.resolution[dim])
                 else:
-                    params[dim] = (low.value, high.value, self.resolution[dim])
-                    out = out[sc.get_slice_params(out.data, out.meta[dim], low,
-                                                  high)]
+                    # cannot pre-select bins for multi-dim coords
+                    if len(out.meta[dim].dims) == 1:
+                        out = out[sc.get_slice_params(out.data, out.meta[dim],
+                                                      low, high)]
+                params[dim] = (low.value, high.value, self.resolution[dim])
         if self._resampled is None or params != self._resampled_params:
             self._resampled_params = params
             self._edges = self._make_edges(params)
