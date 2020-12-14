@@ -43,10 +43,13 @@ class PlotArray:
     PlotArray can be sliced to provide a PlotArrayView onto the contents of the
     PlotArray.
     """
-    def __init__(self, data, meta={}, masks={}):
+    def __init__(self, data, meta=None, masks=None):
         self.data = data
-        self.meta = {str(name): var for name, var in meta.items()}
-        self.masks = masks
+        self.meta = {} if meta is None else {
+            str(name): var
+            for name, var in meta.items()
+        }
+        self.masks = {} if masks is None else masks
 
     def _is_edges(self, var, dim):
         return dict(zip(var.dims, var.shape))[dim] == dict(

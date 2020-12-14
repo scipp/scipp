@@ -9,9 +9,9 @@ from .helpers import PlotArray
 
 
 class ResamplingModel():
-    def __init__(self, data, resolution={}, bounds={}):
-        self._resolution = resolution
-        self._bounds = bounds
+    def __init__(self, data, resolution=None, bounds=None):
+        self._resolution = {} if resolution is None else resolution
+        self._bounds = {} if bounds is None else bounds
         self._resampled = None
         self._resampled_params = None
         self._array = data
@@ -64,9 +64,10 @@ class ResamplingModel():
         for dim, par in params.items():
             if isinstance(par, int):
                 continue
-            low, high, res = par
+            low, high, unit, res = par
             edges.append(
                 sc.Variable(dims=[dim],
+                            unit=unit,
                             values=np.linspace(low, high, num=res + 1)))
         return edges
 
@@ -74,6 +75,7 @@ class ResamplingModel():
         out = self._array
         params = {}
         for dim, s in self.bounds.items():
+            dim = str(dim)
             if s is None:
                 low = self._array.meta[dim].values[0]
                 high = self._array.meta[dim].values[-1]
@@ -92,7 +94,8 @@ class ResamplingModel():
                     if len(out.meta[dim].dims) == 1:
                         out = out[sc.get_slice_params(out.data, out.meta[dim],
                                                       low, high)]
-                params[dim] = (low.value, high.value, self.resolution[dim])
+                params[dim] = (low.value, high.value, low.unit,
+                               self.resolution[dim])
         if self._resampled is None or params != self._resampled_params:
             self._resampled_params = params
             self._edges = self._make_edges(params)
@@ -136,8 +139,9 @@ class ResamplingDenseModel(ResamplingModel):
         super().__init__(self._to_density(array), **kwargs)
 
     def _to_density(self, array):
-        array = PlotArray(array.data.astype(sc.dtype.float64), array.meta,
-                          array.masks)
+        array = PlotArray(data=array.data.astype(sc.dtype.float64),
+                          meta=array.meta,
+                          masks=array.masks)
         for dim in array.data.dims:
             coord = array.meta[dim]
             array.data *= coord[dim, 1:] - coord[dim, :-1]
