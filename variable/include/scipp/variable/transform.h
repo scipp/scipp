@@ -292,6 +292,66 @@ template <class Op> struct wrap_eigen : Op {
 };
 template <class... Ts> wrap_eigen(Ts...) -> wrap_eigen<Ts...>;
 
+template <size_t N_Operands>
+constexpr auto stride_special_cases = std::array<scipp::index, 0>{};
+
+template <>
+constexpr auto stride_special_cases<1> =
+    std::array<std::array<scipp::index, 1>, 2>{{{1}, {0}}};
+
+template <>
+constexpr auto stride_special_cases<2> =
+    std::array<std::array<scipp::index, 2>, 4>{
+        {{1, 1}, {0, 1}, {1, 0}, {0, 0}}};
+
+template <>
+constexpr auto stride_special_cases<3> =
+    std::array<std::array<scipp::index, 3>, 8>{{{1, 1, 1},
+                                                {0, 1, 1},
+                                                {1, 0, 1},
+                                                {0, 0, 1},
+                                                {1, 1, 0},
+                                                {0, 1, 0},
+                                                {1, 0, 0},
+                                                {0, 0, 0}}};
+
+template <>
+constexpr auto stride_special_cases<4> =
+    std::array<std::array<scipp::index, 4>, 8>{{{1, 1, 1, 1}, {1, 0, 1, 0}}};
+
+template <size_t I, size_t N_Operands, size_t... Is>
+auto stride_sequence_impl(std::index_sequence<Is...>)
+    -> std::integer_sequence<scipp::index,
+                             stride_special_cases<N_Operands>[I][Is]...>;
+
+template <size_t I, size_t N_Operands> struct stride_sequence {
+  using type = decltype(stride_sequence_impl<I, N_Operands>(
+      std::make_index_sequence<N_Operands>{}));
+};
+
+template <size_t I, size_t N_Operands>
+using make_stride_sequence = typename stride_sequence<I, N_Operands>::type;
+
+template <scipp::index... Strides, size_t... Is>
+void increment_impl(std::array<scipp::index, sizeof...(Strides)> &indices,
+                    std::integer_sequence<size_t, Is...>) noexcept {
+  ((indices[Is] += Strides), ...);
+}
+
+template <scipp::index... Strides>
+void increment(std::array<scipp::index, sizeof...(Strides)> &indices) noexcept {
+  increment_impl<Strides...>(indices,
+                             std::make_index_sequence<sizeof...(Strides)>{});
+}
+
+template <size_t N>
+void increment(std::array<scipp::index, N> &indices,
+               const std::array<scipp::index, N> &strides) noexcept {
+  for (size_t i = 0; i < N; ++i) {
+    indices[i] += strides[i];
+  }
+}
+
 } // namespace detail
 
 template <class... Ts, class Op>
@@ -318,6 +378,54 @@ constexpr auto overlaps = [](const auto &a, const auto &b) {
 /// of data. This is used to implement operations on datasets with a strong
 /// exception guarantee.
 template <bool dry_run> struct in_place {
+  /// Run transform with strides known at compile time.
+  template <class Op, class... Operands, scipp::index... Strides>
+  static void run(Op &&op,
+                  std::array<scipp::index, sizeof...(Operands)> indices,
+                  std::integer_sequence<scipp::index, Strides...>,
+                  const scipp::index n, Operands &&... operands) {
+    static_assert(sizeof...(Operands) == sizeof...(Strides));
+
+    for (scipp::index i = 0; i < n; ++i) {
+      detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
+      detail::increment<Strides...>(indices);
+    }
+  }
+
+  /// Run transform with strides known at run time but bypassing MultiIndex.
+  template <class Op, class... Operands>
+  static void run(Op &&op,
+                  std::array<scipp::index, sizeof...(Operands)> indices,
+                  const std::array<scipp::index, sizeof...(Operands)> &strides,
+                  const scipp::index n, Operands &&... operands) {
+    for (scipp::index i = 0; i < n; ++i) {
+      detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
+      detail::increment(indices, strides);
+    }
+  }
+
+  template <size_t I = 0, class Op, class... Operands>
+  static void dispatch_inner_loop(
+      Op &&op, const std::array<scipp::index, sizeof...(Operands)> &indices,
+      const std::array<scipp::index, sizeof...(Operands)> &inner_strides,
+      const size_t n, Operands &&... operands) {
+    constexpr auto N_Operands = sizeof...(Operands);
+    if constexpr (I == detail::stride_special_cases<N_Operands>.size()) {
+      run(std::forward<Op>(op), indices,
+          inner_strides, n,
+          std::forward<Operands>(operands)...);
+    } else {
+      if (inner_strides == detail::stride_special_cases<N_Operands>[I]) {
+        run(std::forward<Op>(op), indices,
+            detail::make_stride_sequence<I, N_Operands>{}, n,
+            std::forward<Operands>(operands)...);
+      } else {
+        dispatch_inner_loop<I + 1>(op, indices, inner_strides, n,
+                                   std::forward<Operands>(operands)...);
+      }
+    }
+  }
+
   template <class Op, class T, class... Ts>
   static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
@@ -327,18 +435,14 @@ template <bool dry_run> struct in_place {
       return;
 
     auto run = [&](auto indices, const auto &end) {
-      if (const auto n_contiguous = indices.n_contiguous_dims();
-          n_contiguous > 0) {
-        const auto contiguous_volume = indices.volume(n_contiguous);
-        scipp::index total_index = 0;
+      if (auto [ndim_inner, inner_strides] = begin.inner_strides();
+          ndim_inner > 0) {
         while (indices != end) {
-          auto inner_indices = indices.get();
-          for (scipp::index cont = 0; cont < contiguous_volume; ++cont) {
-            call_in_place(op, inner_indices, arg, other...);
-            for (auto &i : inner_indices) { ++i; }
-          }
-          total_index += contiguous_volume;
-          indices.set_index(total_index);
+          // Volume can change when moving between bins -> recompute every time.
+          const auto inner_volume = indices.volume(ndim_inner);
+          dispatch_inner_loop(op, indices.get(), inner_strides, inner_volume,
+                              std::forward<T>(arg), std::forward<Ts>(other)...);
+          indices.increment(ndim_inner);
         }
       } else {
         for (; indices != end; indices.increment())
