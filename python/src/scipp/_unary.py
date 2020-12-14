@@ -28,7 +28,7 @@ def isfinite(x: _cpp.Variable) -> bool:
 
 def isposinf(x: _cpp.Variable) -> bool:
     """
-    Returns true is any element is a posotive infinity.
+    Returns true if any element is a positive infinity.
     """
     _call_cpp_func(_cpp.isposinf, x)
 
