@@ -30,18 +30,22 @@ template <class T> struct ValueType<ValueAndVariance<T>> {
 constexpr auto plus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};
 constexpr auto nan_plus_equals =
-    overloaded{add_inplace_types, [](auto &&a, const auto &b) {
-                 using ArgT = std::decay_t<decltype(a)>;
+    overloaded{add_inplace_types, [](auto &&a, auto b) {
+                 using std::isnan;
+                 using ArgTA = std::decay_t<decltype(a)>;
+                 using ArgTB = std::decay_t<decltype(b)>;
                  if constexpr (std::is_floating_point_v<
-                                   typename ValueType<ArgT>::value_type>) {
-                   using std::isnan;
+                                   typename ValueType<ArgTA>::value_type>) {
                    if (isnan(a))
-                     a = ArgT{0}; // Force zero
-                   if (!isnan(b))
-                     a += b;
-                 } else {
-                   a += b;
+                     a = ArgTA{0}; // Force zero
                  }
+
+                 if constexpr (std::is_floating_point_v<
+                                   typename ValueType<ArgTB>::value_type>) {
+                   if (isnan(b))
+                     b = ArgTA{0}; // Force zero
+                 }
+                 a += b;
                }};
 constexpr auto minus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};
