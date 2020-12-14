@@ -210,11 +210,4 @@ void init_buckets(py::module &m) {
                             std::map<Dim, VariableConstView>{}, edges, groups);
       },
       py::call_guard<py::gil_scoped_release>());
-  m.def(
-      "rebin_with_coord",
-      [](const VariableConstView &data, const VariableConstView &coord,
-         const VariableConstView &edges) {
-        return variable::rebin(data, coord.dims().inner(), coord, edges);
-      },
-      py::call_guard<py::gil_scoped_release>());
 }

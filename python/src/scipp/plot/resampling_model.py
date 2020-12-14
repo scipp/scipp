@@ -4,7 +4,7 @@
 # @author Simon Heybrock
 
 import numpy as np
-import scipp as sc
+from .._scipp import core as sc
 from .helpers import PlotArray
 
 
@@ -54,9 +54,9 @@ class ResamplingModel():
                 plan.insert(0, (coord, edge))
         for coord, edge in plan:
             try:
-                var = sc.rebin_with_coord(var, coord, edge)
+                var = sc.rebin(var, dim, coord, edge)
             except RuntimeError:  # Limitation of rebin for slice of inner dim
-                var = sc.rebin_with_coord(var.copy(), coord, edge)
+                var = sc.rebin(var.copy(), edge.dims[-1], coord, edge)
         return var
 
     def _make_edges(self, params):
