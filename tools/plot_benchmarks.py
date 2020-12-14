@@ -121,7 +121,7 @@ def get_unit(data, name):
     return ''
 
 
-def plot(data, xname, yname, ignored):
+def plot(data, xname, yname, ignored, xscale='log'):
     """Plot the data."""
 
     designations = designate_columns(data, (xname, yname), ignored)
@@ -136,6 +136,7 @@ def plot(data, xname, yname, ignored):
         ax.set_title(plot_title(group, designations))
         ax.set_xlabel(xname + get_unit(data, xname))
         ax.set_ylabel(yname + get_unit(data, yname))
+        ax.set_xscale(xscale)
 
         for iline, (fname, line) in enumerate(group.groupby('file')):
             mean = line.query('aggregate == "mean"')
@@ -184,6 +185,7 @@ def parse_args():
                         '--yaxis',
                         default='real_time',
                         help='Quantity to display on the y-axis')
+    parser.add_argument('--xscale', default='log', help='Use a linear scale on the x-axis')
     parser.add_argument(
         '--ignore',
         type=lambda s: s.split(','),
@@ -196,7 +198,7 @@ def main():
     args = parse_args()
     data = load_data(args.infile, args.names)
     for _, benchmark_data in data.groupby('name'):
-        plot(benchmark_data, args.xaxis, args.yaxis, args.ignore)
+        plot(benchmark_data, args.xaxis, args.yaxis, args.ignore, xscale=args.xscale)
     plt.show()
 
 
