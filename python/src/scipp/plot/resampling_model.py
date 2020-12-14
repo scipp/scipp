@@ -130,7 +130,8 @@ class ResamplingDenseModel(ResamplingModel):
         super().__init__(self._to_density(array), **kwargs)
 
     def _to_density(self, array):
-        array = PlotArray(array.data.copy(), array.meta, array.masks)
+        array = PlotArray(array.data.astype(sc.dtype.float64), array.meta,
+                          array.masks)
         for dim in array.data.dims:
             coord = array.meta[dim]
             array.data *= coord[dim, 1:] - coord[dim, :-1]
