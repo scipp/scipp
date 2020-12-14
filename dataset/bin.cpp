@@ -232,13 +232,20 @@ class TargetBinBuilder {
 public:
   const Dimensions &dims() const noexcept { return m_dims; }
 
-  template <class Coords>
-  void build(const VariableView &indices, Coords &&coords) const {
+  /// `bin_coords` may optionally be used to provide bin-based coords, e.g., for
+  /// data that has prior grouping but did not retain the original group coord
+  /// for every event.
+  template <class Coords, class BinCoords = CoordsConstView>
+  void build(const VariableView &indices, Coords &&coords,
+             BinCoords &&bin_coords = {}) const {
+    const auto get_coord = [&](const Dim dim) {
+      return coords.count(dim) ? coords[dim] : Variable(bin_coords.at(dim));
+    };
     for (const auto &[action, dim, key] : m_actions) {
       if (action == AxisAction::Group)
-        update_indices_by_grouping(indices, coords[dim], key);
+        update_indices_by_grouping(indices, get_coord(dim), key);
       else if (action == AxisAction::Bin)
-        update_indices_by_binning(indices, coords[dim], key);
+        update_indices_by_binning(indices, get_coord(dim), key);
       else if (action == AxisAction::Existing)
         update_indices_from_existing(indices, dim);
       else if (action == AxisAction::Join) {
@@ -477,7 +484,8 @@ DataArray bin(const VariableConstView &data, const Coords &coords,
   auto builder = axis_actions(data, coords, edges, groups);
   const auto masked = hide_masked(data, masks, builder.dims());
   TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
-  builder.build(*target_bins, bins_view<DataArrayConstView>(masked).coords());
+  builder.build(*target_bins, bins_view<DataArrayConstView>(masked).coords(),
+                coords);
   return add_metadata(
       bin<DataArrayConstView>(masked, *target_bins, builder.dims()), coords,
       masks, attrs, builder.edges(), builder.groups(), {});

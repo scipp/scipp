@@ -15,6 +15,8 @@ class ResamplingModel():
         self._resampled = None
         self._resampled_params = None
         self._array = data
+        self._home = None
+        self._home_params = None
 
     @property
     def resolution(self):
@@ -96,22 +98,40 @@ class ResamplingModel():
                                                       low, high)]
                 params[dim] = (low.value, high.value, low.unit,
                                self.resolution[dim])
-        if self._resampled is None or params != self._resampled_params:
+        if params == self._home_params:
+            # This isa a crude caching mechanism for past views. Currently we
+            # have the "back" buttons disabled in the matplotlib toolbar, so
+            # we cache only the "home" view. This is the most expensive to
+            # create anyay.
+            self._resampled_params = self._home_params
+            self._resampled = self._home
+        elif self._resampled is None or params != self._resampled_params:
             self._resampled_params = params
             self._edges = self._make_edges(params)
             self._resampled = self._resample(out)
+        if self._home is None:
+            self._home = self._resampled
+            self._home_params = self._resampled_params
 
 
 class ResamplingBinnedModel(ResamplingModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # TODO See #1469. This is a temporary hack to work around the
+        # conversion of coords to edges in model.py.
+        for name in self._array.meta:
+            if name == 'spectrum':
+                self._array.meta['spectrum'] = 0.5 * (
+                    self._array.meta['spectrum']['spectrum', 1:] +
+                    self._array.meta['spectrum']['spectrum', :-1])
 
     def _resample(self, array):
-        # TODO Note that this approach only works for binned data containing
-        # all required event coords. This excludes grouped data. Must use
-        # something based on groupby in this case?
-        a = sc.bin_with_coords(array.data, array.meta, self.edges,
-                               []).bins.sum()
+        # We could bin with all edges and then use `bins.sum()` but especially
+        # for inputs with many bins handling the final edges using `histogram`
+        # is faster with the current implementation of `sc.bin`.
+        binned = sc.bin_with_coords(array.data, array.meta, self.edges[:-1],
+                                    [])
+        a = sc.histogram(binned, self.edges[-1])
         for name, mask in array.masks.items():
             a.masks[name] = self._rebin(mask, array.meta)
         return a

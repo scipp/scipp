@@ -296,3 +296,16 @@ TEST_P(BinTest, rebinned_meta_data_dropped) {
   xy1.attrs().set(Dim("aux2"), mask_x);
   expect_near(bin(xy1, {edges_x_coarse2, edges_y_coarse2}), xy2);
 }
+
+TEST_P(BinTest, bin_by_group) {
+  const auto table = GetParam();
+  auto binned = bin(table, {}, {groups});
+  // Currently `bin` is not removing coords used for grouping, so TODO.
+  std::get<2>(binned.data().constituents<core::bin<DataArray>>())
+      .coords()
+      .erase(Dim("group"));
+  const auto edges =
+      makeVariable<double>(Dims{Dim("group")}, Shape{3}, Values{-2, 0, 2});
+  // Using bin coord )instead of event coord) for binning.
+  bin(binned, {edges});
+}

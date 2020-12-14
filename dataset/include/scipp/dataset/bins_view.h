@@ -58,6 +58,9 @@ public:
   bool contains(const key_type &key) const noexcept {
     return m_mapView.contains(key);
   }
+  scipp::index count(const key_type &key) const noexcept {
+    return m_mapView.count(key);
+  }
 
 private:
   MapView m_mapView;
