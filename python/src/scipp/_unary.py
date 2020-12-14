@@ -35,6 +35,6 @@ def isposinf(x: _cpp.Variable) -> bool:
 
 def isneginf(x: _cpp.Variable) -> bool:
     """
-    Returns true is any element is a negative infinity.
+    Returns true if any element is a negative infinity.
     """
     _call_cpp_func(_cpp.isneginf, x)
