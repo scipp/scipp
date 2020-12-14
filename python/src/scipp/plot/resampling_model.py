@@ -5,6 +5,7 @@
 
 import numpy as np
 import scipp as sc
+from .helpers import PlotArray
 
 
 class ResamplingModel():
@@ -43,7 +44,7 @@ class ResamplingModel():
     def _rebin(self, var, coords):
         for edge in self.edges:
             dim = edge.dims[-1]
-            if not dim in var.dims:
+            if dim not in var.dims:
                 continue
             coord = coords[dim]
             try:
@@ -61,11 +62,9 @@ class ResamplingModel():
             edges.append(
                 sc.Variable(dims=[dim],
                             values=np.linspace(low, high, num=res + 1)))
-        #print(edges)
         return edges
 
     def _call_resample(self):
-        #print(self.bounds)
         out = self._array
         params = {}
         for dim, s in self.bounds.items():
@@ -109,23 +108,59 @@ class ResamplingBinnedModel(ResamplingModel):
         return a
 
 
-class ResamplingDenseModel(ResamplingModel):
+class ResamplingCountsModel(ResamplingModel):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
     def _resample(self, array):
         return sc.DataArray(
-            data=_rebin(array.data, array.meta),
+            data=self._rebin(array.data, array.meta),
             coords={edge.dims[-1]: edge
                     for edge in self.edges},
             masks={
-                name: _rebin(mask, array.meta)
+                name: self._rebin(mask, array.meta)
                 for name, mask in array.masks.items()
             })
 
 
-def resampling_model(data, **kwargs):
-    if data.data.bins is None:
-        return ResamplingDenseModel(data, **kwargs)
+class ResamplingDenseModel(ResamplingModel):
+    def __init__(self, array, **kwargs):
+        # Scale by bin widths, so `rebin` is effectively performing a "mean"
+        # operation instead of "sum".
+        super().__init__(self._to_density(array), **kwargs)
+
+    def _to_density(self, array):
+        array = PlotArray(array.data.copy(), array.meta, array.masks)
+        for dim in array.data.dims:
+            coord = array.meta[dim]
+            array.data *= coord[dim, 1:] - coord[dim, :-1]
+        array.data.unit = sc.units.one
+        return array
+
+    def _from_density(self, data):
+        for edge in self.edges:
+            dim = edge.dims[-1]
+            width = edge[dim, 1:] - edge[dim, :-1]
+            width.unit = sc.units.one
+            data /= width
+        return data
+
+    def _resample(self, array):
+        return sc.DataArray(
+            data=self._from_density(self._rebin(array.data, array.meta)),
+            coords={edge.dims[-1]: edge
+                    for edge in self.edges},
+            masks={
+                name: self._rebin(mask, array.meta)
+                for name, mask in array.masks.items()
+            })
+
+
+def resampling_model(array, **kwargs):
+    if array.data.bins is None:
+        if array.data.unit == sc.units.counts:
+            return ResamplingCountsModel(array, **kwargs)
+        else:
+            return ResamplingDenseModel(array, **kwargs)
     else:
-        return ResamplingBinnedModel(data, **kwargs)
+        return ResamplingBinnedModel(array, **kwargs)
