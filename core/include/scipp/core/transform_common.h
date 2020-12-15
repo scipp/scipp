@@ -115,7 +115,7 @@ constexpr auto expect_in_variance_if_out_variance =
     expect_in_variance_if_out_variance_t{};
 
 struct expect_all_or_none_have_variance_t : Flag {};
-static constexpr auto expect_all_or_none_have_variance =
+constexpr auto expect_all_or_none_have_variance =
     expect_all_or_none_have_variance_t{};
 
 } // namespace
