@@ -44,6 +44,18 @@ static std::vector<Shape> shapes{Shape{1}, Shape{2}, Shape{3}, Shape{5}, Shape{1
                                  Shape{1, 1}, Shape{1, 2}, Shape{2, 8}, Shape{5, 7},
                                  Shape{1, 1, 1}, Shape{1, 1, 4}, Shape{1, 5, 1},
                                  Shape{7, 1, 1}, Shape{2, 8, 4}};
+
+auto make_slices(const Shape &shape) {
+  std::vector<Slice> res{Slice{Dim::X, 0, shape.data.at(0) - 1},
+                         Slice{Dim::X, 0, shape.data.at(0) / 2}};
+  if (shape.data.size() > 1 && shape.data.at(1) > 1) {
+    res.emplace_back(Dim::Y, 0, shape.data.at(1) / 2);
+  }
+  if (shape.data.at(0) >= 2) {
+    res.emplace_back(Dim::X, 2, shape.data.at(0));
+  }
+  return res;
+}
 }
 
 class TransformUnaryTest : public ::testing::Test {
@@ -94,6 +106,38 @@ TEST_F(TransformUnaryTest, dense) {
       }
       // In-place transform used to check result of non-in-place transform.
       EXPECT_EQ(result_return, result_in_place);
+    }
+  }
+}
+
+TEST_F(TransformUnaryTest, slice) {
+  for (const auto &shape : shapes) {
+    if (shape.data.size() == 1) {
+      continue; // cannot construct strided slices of 1D Variables
+    }
+
+    for (bool variances : {false, true}) {
+      const auto initial_buffer = make_variable_for_test<double>(shape, variances);
+
+      for (const Slice &slice : make_slices(shape)) {
+        const auto initial = initial_buffer.slice(slice);
+
+        const auto result_return = transform<double>(initial, op);
+        Variable result_in_place_buffer = initial_buffer;
+        const auto result_in_place = result_in_place_buffer.slice(slice);
+        transform_in_place<double>(result_in_place, op_in_place);
+
+        EXPECT_TRUE(equals(result_return.values<double>(),
+                           op_manual_values(initial.values<double>())));
+        if (variances) {
+          EXPECT_TRUE(
+              equals(result_return.variances<double>(),
+                     op_manual_variances(initial.values<double>(),
+                                         initial.variances<double>())));
+        }
+        // In-place transform used to check result of non-in-place transform.
+        EXPECT_EQ(result_return, result_in_place);
+      }
     }
   }
 }
