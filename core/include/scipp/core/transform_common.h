@@ -84,10 +84,11 @@ struct Flag {
   void operator()() const {};
 };
 
-/// Helper to conditionally apply a given flag (T) under condition (B) otherwise
+/// Helper to conditionally apply a given flag under condition (B) otherwise
 /// Null Flag
-template <bool B, typename T>
-using enable_flag_if = std::conditional_t<B, T, Flag>;
+template <bool B>
+constexpr auto conditional_flag =
+    [](auto flag) { return std::conditional_t<B, decltype(flag), Flag>{}; };
 
 namespace {
 

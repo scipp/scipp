@@ -16,8 +16,8 @@ struct MakeVariableWithType {
     static Variable apply(const VariableConstView &parent) {
       using namespace core::transform_flags;
       constexpr auto expect_input_variances =
-          enable_flag_if<!core::canHaveVariances<T>(),
-                         expect_no_variance_arg_t<0>>{};
+          conditional_flag<!core::canHaveVariances<T>()>(
+              expect_no_variance_arg<0>);
       return transform<double, float, int64_t, int32_t, bool>(
           parent,
           overloaded{
