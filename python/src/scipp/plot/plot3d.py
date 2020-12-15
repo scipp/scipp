@@ -57,6 +57,11 @@ class SciPlot3d(SciPlot):
 
         view_ndims = 3
 
+        scipp_obj_dict = {
+            key: array if array.bins is None else array.bins.sum()
+            for key, array in scipp_obj_dict.items()
+        }
+
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          cmap=cmap,
