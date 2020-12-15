@@ -17,36 +17,85 @@ using namespace scipp;
 using namespace scipp::core;
 using namespace scipp::variable;
 
+namespace {
+template <typename T>
+auto make_variable_for_test(const Shape &shape, bool variances) {
+  auto ndim = shape.data.size();
+  auto dims = ndim == 1   ? Dims{Dim::X}
+                    : ndim == 2 ? Dims{Dim::X, Dim::Y}
+                                : Dims{Dim::X, Dim::Y, Dim::Z};
+  auto var = variances ? makeVariable<T>(dims, shape, Values{}, Variances{})
+                       : makeVariable<T>(dims, shape, Values{});
+
+  const auto total_size = var.dims().volume();
+  std::iota(var.template values<T>().begin(), var.template values<T>().end(),
+            -total_size / 2.0);
+  if (variances) {
+    std::generate(var.template variances<T>().begin(),
+                  var.template variances<T>().end(),
+                  [x = -total_size / 20.0, total_size]() mutable {
+                    return x += 10.0 / total_size;
+                  });
+  }
+  return var;
+}
+
+static std::vector<Shape> shapes{Shape{1}, Shape{2}, Shape{3}, Shape{5}, Shape{16},
+                                 Shape{1, 1}, Shape{1, 2}, Shape{2, 8}, Shape{5, 7},
+                                 Shape{1, 1, 1}, Shape{1, 1, 4}, Shape{1, 5, 1},
+                                 Shape{7, 1, 1}, Shape{2, 8, 4}};
+}
+
 class TransformUnaryTest : public ::testing::Test {
 protected:
   static constexpr auto op_in_place{
       overloaded{[](auto &x) { x *= 2.0; }, [](units::Unit &) {}}};
-  static constexpr auto op{
-      overloaded{[](const auto x) { return x * 2.0; },
-                 [](const units::Unit &unit) { return unit; }}};
+  static constexpr auto op{overloaded{
+      [](const auto x) { return x * 2.0; },
+      [](const units::Unit &unit) { return unit; }}};
+
+  template <typename T>
+  static auto op_manual_values(const ElementArrayView<T> values) {
+    std::vector<double> res;
+    res.reserve(values.size());
+    std::transform(values.begin(), values.end(), std::back_inserter(res), op);
+    return res;
+  }
+
+  template <typename T>
+  static auto op_manual_variances(const ElementArrayView<T> values,
+                                  const ElementArrayView<T> variances) {
+    std::vector<double> res;
+    res.reserve(values.size());
+    std::transform(
+        values.begin(), values.end(), variances.begin(),
+        std::back_inserter(res), [](auto value, auto variance) {
+          return op(ValueAndVariance<double>{value, variance}).variance;
+        });
+    return res;
+  }
 };
 
 TEST_F(TransformUnaryTest, dense) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2});
+  for (const auto &shape : shapes) {
+    for (bool variances : {false, true}) {
+      const auto initial = make_variable_for_test<double>(shape, variances);
 
-  const auto result = transform<double>(var, op);
-  transform_in_place<double>(var, op_in_place);
+      const auto result_return = transform<double>(initial, op);
+      Variable result_in_place = initial;
+      transform_in_place<double>(result_in_place, op_in_place);
 
-  EXPECT_TRUE(equals(var.values<double>(), {1.1 * 2.0, 2.2 * 2.0}));
-  // In-place transform used to check result of non-in-place transform.
-  EXPECT_EQ(result, var);
-}
-
-TEST_F(TransformUnaryTest, dense_with_variances) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
-                                  Variances{1.1, 3.0});
-
-  const auto result = transform<double>(var, op);
-  transform_in_place<double>(var, op_in_place);
-
-  EXPECT_TRUE(equals(var.values<double>(), {2.2, 4.4}));
-  EXPECT_TRUE(equals(var.variances<double>(), {4.4, 12.0}));
-  EXPECT_EQ(result, var);
+      EXPECT_TRUE(equals(result_in_place.values<double>(),
+                         op_manual_values(initial.values<double>())));
+      if (variances) {
+        EXPECT_TRUE(equals(result_in_place.variances<double>(),
+                           op_manual_variances(initial.values<double>(),
+                                               initial.variances<double>())));
+      }
+      // In-place transform used to check result of non-in-place transform.
+      EXPECT_EQ(result_return, result_in_place);
+    }
+  }
 }
 
 TEST_F(TransformUnaryTest, elements_of_buckets) {
