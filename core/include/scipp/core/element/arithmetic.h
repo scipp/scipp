@@ -6,6 +6,7 @@
 
 #include <Eigen/Dense>
 
+#include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
@@ -30,24 +31,15 @@ template <class T> struct ValueType<ValueAndVariance<T>> {
 constexpr auto plus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};
 
-namespace detail {
-constexpr auto zero_if_nan = [](auto &x) {
-  using ArgT = std::decay_t<decltype(x)>;
-  using std::isnan;
-  if constexpr (std::is_floating_point_v<
-                    typename ValueType<ArgT>::value_type>) {
-    if (isnan(x))
-      x = ArgT{0}; // Force zero
-  }
-};
-}
-
 constexpr auto nan_plus_equals =
-    overloaded{add_inplace_types, [](auto &&a, auto b) {
-                 detail::zero_if_nan(a);
-                 detail::zero_if_nan(b);
-                 a += b;
+    overloaded{add_inplace_types, [](auto &&a, const auto &b) {
+                 using numeric::isnan;
+                 if (isnan(a))
+                   a = std::decay_t<decltype(a)>{0}; // Force zero
+                 if (!isnan(b))
+                   a += b;
                }};
+
 constexpr auto minus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};
 

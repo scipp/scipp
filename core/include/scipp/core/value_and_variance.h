@@ -5,8 +5,8 @@
 
 #include <cmath>
 
+#include "scipp/common/numeric.h"
 #include "scipp/common/span.h"
-
 #include "scipp/core/dtype.h"
 
 namespace scipp::core {
@@ -97,30 +97,30 @@ constexpr auto log10(const ValueAndVariance<T> a) noexcept {
 }
 
 template <class T> constexpr auto isnan(const ValueAndVariance<T> a) noexcept {
-  using std::isnan;
+  using numeric::isnan;
   return isnan(a.value);
 }
 
 template <class T> constexpr auto isinf(const ValueAndVariance<T> a) noexcept {
-  using std::isinf;
+  using numeric::isinf;
   return isinf(a.value);
 }
 
 template <class T>
 constexpr auto isfinite(const ValueAndVariance<T> a) noexcept {
-  using std::isfinite;
+  using numeric::isfinite;
   return isfinite(a.value);
 }
 
 template <class T>
 constexpr auto isposinf(const ValueAndVariance<T> a) noexcept {
-  using std::isinf, std::signbit;
+  using numeric::isinf, std::signbit;
   return isinf(a.value) && !signbit(a.value);
 }
 
 template <class T>
 constexpr auto isneginf(const ValueAndVariance<T> a) noexcept {
-  using std::isinf, std::signbit;
+  using numeric::isinf, std::signbit;
   return isinf(a.value) && signbit(a.value);
 }
 
