@@ -48,7 +48,7 @@ class PlotModel2d(PlotModel):
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
 
-    def _make_masks(self, array, mask_info, histogram=False):
+    def _make_masks(self, array, mask_info, histogram=False, transpose=False):
         if not mask_info[self.name]:
             return {}
         masks = {}
@@ -62,6 +62,8 @@ class PlotModel2d(PlotModel):
                 masks[m] = mask_to_float(msk.values, array.values)
                 if histogram:
                     masks[m] = np.concatenate((masks[m][0:1], masks[m]))
+                if transpose:
+                    masks[m] = np.transpose(masks[m])
             else:
                 masks[m] = None
         return masks
@@ -75,12 +77,18 @@ class PlotModel2d(PlotModel):
             self.dslice = self.dslice[dim, 0]
 
         values = self.dslice.values
-        if self.displayed_dims['x'] == self.dslice.dims[0]:
+        transpose = self.displayed_dims['x'] == self.dslice.dims[0]
+        if transpose:
             values = np.transpose(values)
         return {
-            "values": values,
-            "masks": self._make_masks(self.dslice, mask_info),
-            "extent": extent
+            "values":
+            values,
+            "masks":
+            self._make_masks(self.dslice,
+                             mask_info=mask_info,
+                             transpose=transpose),
+            "extent":
+            extent
         }
 
     def update_data(self, slices, mask_info):
