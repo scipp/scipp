@@ -72,24 +72,18 @@ class PlotModel2d(PlotModel):
         """
         Resample 2d images to a fixed resolution to handle very large images.
         """
-        self.dslice = self._model.data
+        data = self._model.data
         for dim in self._squeeze:
-            self.dslice = self.dslice[dim, 0]
-
-        values = self.dslice.values
-        transpose = self.displayed_dims['x'] == self.dslice.dims[0]
+            data = data[dim, 0]
+        self.dslice = data
+        values = data.values
+        transpose = self.displayed_dims['x'] == data.dims[0]
         if transpose:
             values = np.transpose(values)
-        return {
-            "values":
-            values,
-            "masks":
-            self._make_masks(self.dslice,
-                             mask_info=mask_info,
-                             transpose=transpose),
-            "extent":
-            extent
-        }
+        masks = self._make_masks(data,
+                                 mask_info=mask_info,
+                                 transpose=transpose)
+        return {"values": values, "masks": masks, "extent": extent}
 
     def update_data(self, slices, mask_info):
         """
