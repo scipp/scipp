@@ -40,10 +40,10 @@ auto make_variable_for_test(const Shape &shape, bool variances) {
   return var;
 }
 
-static std::vector<Shape> shapes{Shape{1}, Shape{2}, Shape{3}, Shape{5}, Shape{16},
-                                 Shape{1, 1}, Shape{1, 2}, Shape{2, 8}, Shape{5, 7},
-                                 Shape{1, 1, 1}, Shape{1, 1, 4}, Shape{1, 5, 1},
-                                 Shape{7, 1, 1}, Shape{2, 8, 4}};
+const std::vector<Shape> shapes{Shape{1}, Shape{2}, Shape{3}, Shape{5}, Shape{16},      Shape{1, 1},
+                                Shape{1, 2},    Shape{2, 8},    Shape{5, 7},
+                                Shape{1, 1, 1}, Shape{1, 1, 4}, Shape{1, 5, 1},
+                                Shape{7, 1, 1}, Shape{2, 8, 4}};
 
 auto make_slices(const Shape &shape) {
   std::vector<Slice> res{Slice{Dim::X, 0, shape.data.at(0) - 1},
