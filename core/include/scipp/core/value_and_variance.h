@@ -114,13 +114,13 @@ constexpr auto isfinite(const ValueAndVariance<T> a) noexcept {
 
 template <class T>
 constexpr auto isposinf(const ValueAndVariance<T> a) noexcept {
-  using numeric::isinf, std::signbit;
+  using numeric::isinf, numeric::signbit;
   return isinf(a.value) && !signbit(a.value);
 }
 
 template <class T>
 constexpr auto isneginf(const ValueAndVariance<T> a) noexcept {
-  using numeric::isinf, std::signbit;
+  using numeric::isinf, numeric::signbit;
   return isinf(a.value) && signbit(a.value);
 }
 

@@ -23,11 +23,6 @@ constexpr auto add_inplace_types =
              std::tuple<float, int64_t>, std::tuple<float, int32_t>,
              std::tuple<int64_t, bool>>;
 
-template <class T> struct ValueType { using value_type = T; };
-template <class T> struct ValueType<ValueAndVariance<T>> {
-  using value_type = T;
-};
-
 constexpr auto plus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};
 
