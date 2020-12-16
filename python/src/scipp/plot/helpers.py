@@ -40,8 +40,9 @@ class Plot(dict):
 class PlotArray:
     """
     Helper class to hold the contents of a DataArray without making copies.
-    PlotArray can be sliced to provide a PlotArrayView onto the contents of the
-    PlotArray.
+    Slicing similar to slicing of data arrays is supported, without the
+    distinction between coords and attrs. Both are treated in a unified way
+    in the `meta` dict.
     """
     def __init__(self, data, meta=None, masks=None):
         self.data = data
