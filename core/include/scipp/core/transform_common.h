@@ -78,32 +78,48 @@ template <typename Op> assign_unary(Op) -> assign_unary<Op>;
 /// actually called since flag presence is checked via the base class of the
 /// operator.
 namespace transform_flags {
+
+/// Base and NULL flag. Do not test for this type.
+struct Flag {
+  void operator()() const {};
+};
+
+/// Helper to conditionally apply a given flag under condition (B) otherwise
+/// Null Flag
+template <bool B>
+constexpr auto conditional_flag =
+    [](auto flag) { return std::conditional_t<B, decltype(flag), Flag>{}; };
+
+namespace {
+
+struct no_out_variance_t : Flag {};
 /// Add this to overloaded operator to indicate that the operation does not
 /// return data with variances, regardless of whether inputs have variances.
-static constexpr auto no_out_variance = []() {};
-using no_out_variance_t = decltype(no_out_variance);
+constexpr auto no_out_variance = no_out_variance_t{};
 
+template <int N> struct expect_no_variance_arg_t : Flag {};
 /// Add this to overloaded operator to indicate that the operation does not
 /// support variances in the specified argument.
-template <int N> static constexpr auto expect_no_variance_arg = []() {};
 template <int N>
-using expect_no_variance_arg_t = decltype(expect_no_variance_arg<N>);
+constexpr auto expect_no_variance_arg = expect_no_variance_arg_t<N>{};
 
+template <int N> struct expect_variance_arg_t : Flag {};
 /// Add this to overloaded operator to indicate that the operation requires
 /// variances in the specified argument.
-template <int N> static constexpr auto expect_variance_arg = []() {};
-template <int N> using expect_variance_arg_t = decltype(expect_variance_arg<N>);
+template <int N>
+constexpr auto expect_variance_arg = expect_variance_arg_t<N>{};
 
+struct expect_in_variance_if_out_variance_t : Flag {};
 /// Add this to overloaded operator to indicate that the in-place operation
 /// requires inputs to have a variance if the output has a variance.
-static constexpr auto expect_in_variance_if_out_variance = []() {};
-using expect_in_variance_if_out_variance_t =
-    decltype(expect_in_variance_if_out_variance);
+constexpr auto expect_in_variance_if_out_variance =
+    expect_in_variance_if_out_variance_t{};
 
-static constexpr auto expect_all_or_none_have_variance = []() {};
-using expect_all_or_none_have_variance_t =
-    decltype(expect_all_or_none_have_variance);
+struct expect_all_or_none_have_variance_t : Flag {};
+constexpr auto expect_all_or_none_have_variance =
+    expect_all_or_none_have_variance_t{};
 
+} // namespace
 } // namespace transform_flags
 
 } // namespace scipp::core
