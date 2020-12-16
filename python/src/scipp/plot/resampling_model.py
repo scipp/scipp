@@ -120,11 +120,12 @@ class ResamplingBinnedModel(ResamplingModel):
         super().__init__(*args, **kwargs)
         # TODO See #1469. This is a temporary hack to work around the
         # conversion of coords to edges in model.py.
-        for name in self._array.meta:
-            if name == 'spectrum':
-                self._array.meta['spectrum'] = 0.5 * (
-                    self._array.meta['spectrum']['spectrum', 1:] +
-                    self._array.meta['spectrum']['spectrum', :-1])
+        for name, var in self._array.meta.items():
+            if len(var.dims) == 0:
+                continue
+            dim = var.dims[-1]
+            if name not in self._array.data.bins.data.meta:
+                self._array.meta[name] = 0.5 * (var[dim, 1:] + var[dim, :-1])
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
