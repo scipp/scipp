@@ -17,7 +17,6 @@ class PlotModel1d(PlotModel):
         super().__init__(*args, **kwargs)
 
         self.dim = None
-        self.hist = None
 
         return
 
@@ -26,7 +25,6 @@ class PlotModel1d(PlotModel):
         Update axes parameters on axis change.
         """
         self.dim = axparams["x"]["dim"]
-        self.hist = axparams["x"]["hist"]
         return
 
     def update_data(self, slices, mask_info):
