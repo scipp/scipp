@@ -33,8 +33,8 @@ scipp::index get_index(const VariableConstView &coord, const Dim dim,
 
 auto get_1d_coord(const VariableConstView &coord) {
   if (coord.dims().ndim() != 1)
-    throw except::DimensionError(
-        "Multi-dimensional coordinates cannot be used for value-based slicing");
+    throw except::DimensionError("Multi-dimensional coordinates cannot be used "
+                                 "for label-based indexing.");
   return coord;
 }
 
@@ -45,7 +45,7 @@ auto get_coord(VariableConstView coord, const Dim dim) {
       is_sorted(coord, dim, variable::SortOrder::Descending);
   if (!(ascending ^ descending))
     throw std::runtime_error("Coordinate must be monotonically increasing or "
-                             "decreasing for value-based slicing");
+                             "decreasing for label-based indexing.");
   return std::tuple(coord, ascending);
 }
 
