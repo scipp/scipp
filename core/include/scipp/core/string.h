@@ -80,6 +80,8 @@ element_to_string(const T &item,
     return {"(" + element_to_string(Eigen::Vector3d(item.row(0))) + ", " +
             element_to_string(Eigen::Vector3d(item.row(1))) + ", " +
             element_to_string(Eigen::Vector3d(item.row(2))) + "), "};
+  else if constexpr (std::is_same_v<T, std::pair<scipp::index, scipp::index>>)
+    return {"<" + to_string(item.first) + ", " + to_string(item.second) + ">, "};
   else
     return to_string(item) + ", ";
 }
@@ -92,9 +94,9 @@ std::string array_to_string(const T &arr,
     return std::string("[]");
   std::string s = "[";
   for (scipp::index i = 0; i < scipp::size(arr); ++i) {
-    if (i == 2 && size > 4) {
+    if (i == 2 && size > 6) {
       s += "..., ";
-      i = size - 2;
+      i = size - 4;
     }
     s += element_to_string(arr[i], unit);
   }
