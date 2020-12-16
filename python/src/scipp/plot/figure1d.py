@@ -11,7 +11,7 @@ import warnings
 
 class PlotFigure1d(PlotFigure):
     """
-    Class for 1 dimensional plots. This is used by both the `Plotview1d` for
+    Class for 1 dimensional plots. This is used by both the `PlotView1d` for
     normal 1d plots, and the `PlotProfile`.
 
     `PlotFigure1d` can "keep" the currently displayed line, or "remove" a
@@ -69,6 +69,7 @@ class PlotFigure1d(PlotFigure):
         the horizontal axis is changed.
         """
         xparams = axparams["x"]
+        self._xparams = xparams
 
         if self.own_axes:
             title = self.ax.get_title()
@@ -182,13 +183,31 @@ class PlotFigure1d(PlotFigure):
         if self.show_legend():
             self.ax.legend(loc=self.legend["loc"])
 
+    def _preprocess_hist(self, name, vals):
+        """
+        Convert 1d data to be plotted to internal format, e.g., padding
+        histograms and duplicating info for variances.
+        """
+        x = vals["values"]["x"]
+        y = vals["values"]["y"]
+        centers = 0.5 * (x[1:] + x[:-1])
+        if not self._xparams["hist"][name]:
+            vals["values"]["x"] = centers
+        else:
+            vals["values"]["y"] = np.concatenate((y[0:1], y))
+            for key, mask in vals["masks"].items():
+                vals["masks"][key] = np.concatenate((mask[0:1], mask))
+        vals["variances"]["x"] = centers
+        vals["variances"]["y"] = y
+        return vals
+
     def update_data(self, new_values, info):
         """
         Update the x and y positions of the data points when a new data slice
         is received for display.
         """
-        for name, vals in new_values.items():
-
+        for name in new_values:
+            vals = self._preprocess_hist(name, new_values[name])
             self.data_lines[name].set_data(vals["values"]["x"],
                                            vals["values"]["y"])
             lab = info["slice_label"] if len(info["slice_label"]) > 0 else name

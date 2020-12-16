@@ -6,7 +6,7 @@
 from .. import config
 from .model import PlotModel
 from .resampling_model import resampling_model
-from .tools import to_bin_centers, mask_to_float, vars_to_err
+from .tools import mask_to_float, vars_to_err
 from .._scipp import core as sc
 import numpy as np
 
@@ -48,7 +48,7 @@ class PlotModel2d(PlotModel):
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
 
-    def _make_masks(self, array, mask_info, histogram=False, transpose=False):
+    def _make_masks(self, array, mask_info, transpose=False):
         if not mask_info[self.name]:
             return {}
         masks = {}
@@ -60,8 +60,6 @@ class PlotModel2d(PlotModel):
                     dims=array.masks[m].dims,
                     values=array.masks[m].values.astype(np.int32))
                 masks[m] = mask_to_float(msk.values, array.values)
-                if histogram:
-                    masks[m] = np.concatenate((masks[m][0:1], masks[m]))
                 if transpose:
                     masks[m] = np.transpose(masks[m])
             else:
@@ -154,25 +152,14 @@ class PlotModel2d(PlotModel):
 
         new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
 
-        ydata = profile_slice.data.values
-        xcenters = to_bin_centers(profile_slice.coords[profile_dim],
-                                  profile_dim).values
-
-        if axparams["x"]["hist"][self.name]:
-            new_values[self.name]["values"]["x"] = profile_slice.coords[
-                profile_dim].values
-            new_values[self.name]["values"]["y"] = np.concatenate(
-                (ydata[0:1], ydata))
-        else:
-            new_values[self.name]["values"]["x"] = xcenters
-            new_values[self.name]["values"]["y"] = ydata
+        new_values[self.name]["values"]["x"] = profile_slice.coords[
+            profile_dim].values
+        new_values[self.name]["values"]["y"] = profile_slice.data.values
         if profile_slice.data.variances is not None:
-            new_values[self.name]["variances"]["x"] = xcenters
-            new_values[self.name]["variances"]["y"] = ydata
             new_values[self.name]["variances"]["e"] = vars_to_err(
                 profile_slice.data.variances)
 
         new_values[self.name]["masks"] = self._make_masks(
-            profile_slice, mask_info, axparams["x"]["hist"][self.name])
+            profile_slice, mask_info)
 
         return new_values

@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .model import PlotModel
-from .tools import to_bin_centers, vars_to_err, mask_to_float
+from .tools import vars_to_err, mask_to_float
 from .._scipp import core as sc
 import numpy as np
 
@@ -43,20 +43,10 @@ class PlotModel1d(PlotModel):
 
             self.dslice = self.slice_data(array, slices)
             ydata = self.dslice.data.values
-            xcenters = to_bin_centers(self.dslice.meta[self.dim],
-                                      self.dim).values
 
-            if self.hist[name]:
-                new_values[name]["values"]["x"] = self.dslice.meta[
-                    self.dim].values
-                new_values[name]["values"]["y"] = np.concatenate(
-                    (ydata[0:1], ydata))
-            else:
-                new_values[name]["values"]["x"] = xcenters
-                new_values[name]["values"]["y"] = ydata
+            new_values[name]["values"]["x"] = self.dslice.meta[self.dim].values
+            new_values[name]["values"]["y"] = ydata
             if self.dslice.data.variances is not None:
-                new_values[name]["variances"]["x"] = xcenters
-                new_values[name]["variances"]["y"] = ydata
                 new_values[name]["variances"]["e"] = vars_to_err(
                     self.dslice.data.variances)
 
@@ -71,9 +61,6 @@ class PlotModel1d(PlotModel):
                         sc.Variable(dims=self.dslice.masks[m].dims,
                                     values=self.dslice.masks[m].values.astype(
                                         np.int32))).values
-                    if self.hist[name]:
-                        msk = np.concatenate((msk[0:1], msk))
-
                     new_values[name]["masks"][m] = mask_to_float(
                         msk, new_values[name]["values"]["y"])
 
@@ -96,10 +83,7 @@ class PlotModel1d(PlotModel):
         # TODO: can we optimize this with new buckets?
         distance_to_cursor = np.abs(
             self.data_arrays[self.name].meta[self.dim].values - xdata)
-        ind = np.argmin(distance_to_cursor)
-
-        xcenters = to_bin_centers(
-            self.data_arrays[self.name].meta[profile_dim], profile_dim).values
+        ind = int(np.argmin(distance_to_cursor))
 
         for name, profile_slice in self.data_arrays.items():
             new_values[name] = {"values": {}, "variances": {}, "masks": {}}
@@ -109,19 +93,10 @@ class PlotModel1d(PlotModel):
 
             # Now slice the currently displayed dim
             profile_slice = profile_slice[self.dim, ind]
-
-            ydata = profile_slice.data.values
-            if axparams["x"]["hist"][name]:
-                new_values[name]["values"]["x"] = profile_slice.coords[
-                    profile_dim].values
-                new_values[name]["values"]["y"] = np.concatenate(
-                    (ydata[0:1], ydata))
-            else:
-                new_values[name]["values"]["x"] = xcenters
-                new_values[name]["values"]["y"] = ydata
+            new_values[name]["values"]["x"] = profile_slice.meta[
+                profile_dim].values
+            new_values[name]["values"]["y"] = profile_slice.data.values
             if profile_slice.data.variances is not None:
-                new_values[name]["variances"]["x"] = xcenters
-                new_values[name]["variances"]["y"] = ydata
                 new_values[name]["variances"]["e"] = vars_to_err(
                     profile_slice.data.variances)
 
@@ -136,9 +111,6 @@ class PlotModel1d(PlotModel):
                         dims=profile_slice.masks[m].dims,
                         values=profile_slice.masks[m].values.astype(
                             np.int32))).values
-                    if axparams["x"]["hist"][name]:
-                        msk = np.concatenate((msk[0:1], msk))
-
                     new_values[name]["masks"][m] = mask_to_float(
                         msk, new_values[name]["values"]["y"])
 
