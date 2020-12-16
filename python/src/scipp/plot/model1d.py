@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 from .model import PlotModel
-from .tools import vars_to_err
 import numpy as np
 
 
@@ -32,19 +31,15 @@ class PlotModel1d(PlotModel):
         entries in the dict of data arrays, and return a dict of 1d value
         arrays for data values, variances, and masks.
         """
-        new_values = {}
-        for name, array in self.data_arrays.items():
-            new_values[name] = {"values": {}, "variances": {}, "masks": {}}
-            self.dslice = self.slice_data(array, slices)
-            new_values[name]["values"]["x"] = self.dslice.meta[self.dim].values
-            new_values[name]["values"]["y"] = self.dslice.data.values
-            if self.dslice.data.variances is not None:
-                new_values[name]["variances"]["e"] = vars_to_err(
-                    self.dslice.data.variances)
-            new_values[name]["masks"] = self._make_masks(
-                self.dslice, mask_info=mask_info[name])
-
-        return new_values
+        # TODO Setting some self.dslice required to determine limits
+        self.dslice = self.slice_data(next(iter(self.data_arrays.values())),
+                                      slices)
+        return {
+            name:
+            self._make_profile(self.slice_data(self.data_arrays[name], slices),
+                               self.dim, mask_info[name])
+            for name in self.data_arrays
+        }
 
     def update_profile(self,
                        xdata=None,
@@ -57,29 +52,16 @@ class PlotModel1d(PlotModel):
         Slice down all dimensions apart from the profile dimension, and send
         the data values, variances and masks back to the `PlotController`.
         """
-        new_values = {}
-
         # Find closest point to cursor
         # TODO: can we optimize this with new buckets?
         distance_to_cursor = np.abs(
             self.data_arrays[self.name].meta[self.dim].values - xdata)
         ind = int(np.argmin(distance_to_cursor))
-
-        for name, profile_slice in self.data_arrays.items():
-            new_values[name] = {"values": {}, "variances": {}, "masks": {}}
-
-            # Slice all dims apart from profile dim and currently displayed dim
-            profile_slice = self.slice_data(profile_slice, slices)
-
-            # Now slice the currently displayed dim
-            profile_slice = profile_slice[self.dim, ind]
-            new_values[name]["values"]["x"] = profile_slice.meta[
-                profile_dim].values
-            new_values[name]["values"]["y"] = profile_slice.data.values
-            if profile_slice.data.variances is not None:
-                new_values[name]["variances"]["e"] = vars_to_err(
-                    profile_slice.data.variances)
-            new_values[name]["masks"] = self._make_masks(
-                profile_slice, mask_info=mask_info[name])
-
-        return new_values
+        # Slice all dims apart from profile dim and currently displayed dim,
+        # then currently displayed dim.
+        return {
+            name: self._make_profile(
+                self.slice_data(self.data_arrays[name], slices)[self.dim, ind],
+                profile_dim, mask_info[name])
+            for name in self.data_arrays
+        }

@@ -3,7 +3,8 @@
 # @author Neil Vaytet
 
 from .helpers import PlotArray
-from .tools import to_bin_edges, to_bin_centers, make_fake_coord, mask_to_float
+from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
+        mask_to_float, vars_to_err
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
@@ -188,6 +189,15 @@ class PlotModel:
             else:
                 masks[m] = None
         return masks
+
+    def _make_profile(self, profile, dim, mask_info):
+        values = {"values": {}, "variances": {}, "masks": {}}
+        values["values"]["x"] = profile.meta[dim].values
+        values["values"]["y"] = profile.data.values
+        if profile.data.variances is not None:
+            values["variances"]["e"] = vars_to_err(profile.data.variances)
+        values["masks"] = self._make_masks(profile, mask_info=mask_info)
+        return values
 
     def get_axformatter(self, name, dim):
         """

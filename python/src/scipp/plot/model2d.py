@@ -6,7 +6,6 @@
 from .. import config
 from .model import PlotModel
 from .resampling_model import resampling_model
-from .tools import vars_to_err
 import numpy as np
 
 
@@ -129,18 +128,8 @@ class PlotModel2d(PlotModel):
             dimy: (y[dimy, iy], y[dimy, iy + 1]),
             profile_dim: None
         }
-        profile_slice = self._profile_model.data[dimx, 0][dimy, 0]
-
-        new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
-
-        new_values[self.name]["values"]["x"] = profile_slice.coords[
-            profile_dim].values
-        new_values[self.name]["values"]["y"] = profile_slice.data.values
-        if profile_slice.data.variances is not None:
-            new_values[self.name]["variances"]["e"] = vars_to_err(
-                profile_slice.data.variances)
-
-        new_values[self.name]["masks"] = self._make_masks(
-            profile_slice, mask_info=mask_info[self.name])
-
-        return new_values
+        return {
+            self.name:
+            self._make_profile(self._profile_model.data[dimx, 0][dimy, 0],
+                               profile_dim, mask_info[self.name])
+        }
