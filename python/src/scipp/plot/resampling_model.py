@@ -166,7 +166,9 @@ class ResamplingDenseModel(ResamplingModel):
                           masks=array.masks)
         for dim in array.data.dims:
             coord = array.meta[dim]
-            array.data *= coord[dim, 1:] - coord[dim, :-1]
+            width = coord[dim, 1:] - coord[dim, :-1]
+            width.unit = sc.units.one
+            array.data *= width
         array.data.unit = sc.units.one
         return array
 
