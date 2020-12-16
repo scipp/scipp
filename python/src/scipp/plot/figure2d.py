@@ -60,9 +60,15 @@ class PlotFigure2d(PlotFigure):
         for m in masks["names"]:
             self.mask_image[m] = self.make_default_imshow(cmap=masks["cmap"],
                                                           norm=norm,
-                                                          aspect=aspect)
+                                                          aspect=aspect,
+                                                          zorder=2)
 
-    def make_default_imshow(self, cmap, norm, aspect=None, picker=None):
+    def make_default_imshow(self,
+                            cmap,
+                            norm,
+                            aspect=None,
+                            picker=None,
+                            zorder=1):
         """
         Make a base `imshow` object whose contents and extents will be later
         updated to display a 2d data array.
@@ -75,7 +81,8 @@ class PlotFigure2d(PlotFigure):
                               aspect=aspect,
                               interpolation="nearest",
                               cmap=cmap,
-                              picker=picker)
+                              picker=picker,
+                              zorder=zorder)
 
     def rescale_to_data(self, vmin, vmax):
         """
@@ -94,30 +101,6 @@ class PlotFigure2d(PlotFigure):
         if im.get_url() != "hide":
             im.set_visible(visible)
         self.draw()
-
-    def reset_home_button(self, axparams):
-        """
-        Some annoying house-keeping when using X/Y buttons: we need to update
-        the deeply embedded limits set by the Home button in the matplotlib
-        toolbar. The home button actually brings the first element in the
-        navigation stack to the top, so we need to modify the first element
-        in the navigation stack in-place.
-        """
-        if self.fig is not None:
-            if self.fig.canvas.toolbar is not None:
-                if len(self.fig.canvas.toolbar._nav_stack._elements) > 0:
-                    # Get the first key in the navigation stack
-                    key = list(self.fig.canvas.toolbar._nav_stack._elements[0].
-                               keys())[0]
-                    # Construct a new tuple for replacement
-                    alist = []
-                    for x in self.fig.canvas.toolbar._nav_stack._elements[0][
-                            key]:
-                        alist.append(x)
-                    alist[0] = (*axparams["x"]["lims"], *axparams["y"]["lims"])
-                    # Insert the new tuple
-                    self.fig.canvas.toolbar._nav_stack._elements[0][
-                        key] = tuple(alist)
 
     def update_axes(self, axparams=None):
         """
@@ -149,8 +132,6 @@ class PlotFigure2d(PlotFigure):
             self.ax.set_xlim(axparams["x"]["lims"])
             self.ax.set_ylim(axparams["y"]["lims"])
 
-        self.reset_home_button(axparams)
-
     def update_data(self, new_values, info=None):
         """
         Update image array with new values.
@@ -176,3 +157,7 @@ class PlotFigure2d(PlotFigure):
         for m in self.mask_image:
             self.mask_image[m].set_norm(new_norm)
         self.draw()
+
+    def rescale_on_zoom(self, *args, **kwargs):
+        if self.toolbar is not None:
+            self.toolbar.rescale_on_zoom(*args, **kwargs)

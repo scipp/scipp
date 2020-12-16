@@ -32,9 +32,11 @@ from ._dataset import *
 from ._groupby import *
 from ._math import *
 from ._operations import *
+from ._unary import *
 from ._reduction import *
 from ._shape import *
 from ._trigonometry import *
+from ._variable import *
 
 setattr(Variable, '_repr_html_', make_html)
 setattr(VariableConstView, '_repr_html_', make_html)
@@ -62,3 +64,10 @@ setattr(DatasetView, 'bins', property(_bins, _set_bins))
 from ._bins import _groupby_bins
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
+
+setattr(Variable, 'plot', plot.plot)
+setattr(VariableConstView, 'plot', plot.plot)
+setattr(DataArray, 'plot', plot.plot)
+setattr(DataArrayConstView, 'plot', plot.plot)
+setattr(Dataset, 'plot', plot.plot)
+setattr(DatasetConstView, 'plot', plot.plot)

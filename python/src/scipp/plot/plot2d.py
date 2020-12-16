@@ -69,11 +69,16 @@ class SciPlot2d(SciPlot):
                                  dim_label_map=self.dim_label_map,
                                  resolution=resolution)
 
+        # Run validation checks before rendering the plot.
+        # Note that validation needs to be run after model is created.
+        self.validate()
+
         # Create control widgets (sliders and buttons)
         self.widgets = PlotWidgets(axes=self.axes,
                                    ndim=view_ndims,
                                    name=self.name,
                                    dim_to_shape=self.dim_to_shape,
+                                   dim_label_map=self.dim_label_map,
                                    masks=self.masks,
                                    multid_coord=self.model.get_multid_coord())
 
@@ -126,9 +131,6 @@ class SciPlot2d(SciPlot):
             view=self.view,
             profile=self.profile,
             multid_coord=self.model.get_multid_coord())
-
-        # Run validation checks before rendering the plot.
-        self.validate()
 
         # Render the figure once all components have been created.
         self.render(norm=norm)

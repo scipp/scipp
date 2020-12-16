@@ -21,6 +21,10 @@ def test_plot_2d_image_with_vmin_vmax():
     plot(make_dense_dataset(ndim=2), vmin=0.1, vmax=0.9)
 
 
+def test_plot_2d_image_with_unit():
+    plot(make_dense_dataset(ndim=2, unit=sc.units.kg))
+
+
 def test_plot_2d_image_with_vmin_vmax_with_log():
     plot(make_dense_dataset(ndim=2), vmin=0.1, vmax=0.9, norm='log')
 
@@ -63,6 +67,10 @@ def test_plot_2d_image_with_yaxis_specified():
 
 def test_plot_2d_image_with_labels():
     plot(make_dense_dataset(ndim=2, labels=True), axes={'x': 'somelabels'})
+
+
+def test_plot_2d_image_with_attrss():
+    plot(make_dense_dataset(ndim=2, attrs=True), axes={'x': 'attr'})
 
 
 def test_plot_2d_image_with_filename():
@@ -240,5 +248,9 @@ def test_plot_customized_mpl_axes():
 def test_plot_access_ax_and_fig():
     d = make_dense_dataset(ndim=2)
     out = plot(d["Sample"], title="MyTitle")
-    out["Sample"].ax.set_xlabel("MyXlabel")
-    out["Sample"].fig.set_dpi(120.)
+    out.ax.set_xlabel("MyXlabel")
+    out.fig.set_dpi(120.)
+
+
+def test_plot_2d_image_int32():
+    plot(make_dense_dataset(ndim=2, dtype=sc.dtype.int32))

@@ -106,8 +106,10 @@ class PlotFigure3d:
         """
         Return the renderer and the colorbar into a widget box.
         """
-        return ipw.HBox(
-            [self.toolbar._to_widget(), self.renderer, self.cbar_image])
+        return ipw.HBox([
+            self.toolbar._to_widget(),
+            ipw.HBox([self.renderer]), self.cbar_image
+        ])
 
     def savefig(self, filename=None):
         """
@@ -128,7 +130,7 @@ class PlotFigure3d:
         """
         Connect the toolbar Home button to reset the camera position.
         """
-        callbacks.update({"home": self.reset_camera})
+        callbacks.update({"home_view": self.reset_camera})
         self.toolbar.connect(callbacks)
 
     def update_axes(self, axparams):

@@ -28,3 +28,9 @@ class PlotController1d(PlotController):
             "remove_line": self.remove_line,
             "update_line_color": self.update_line_color
         })
+
+    def toggle_xaxis_scale(self, owner):
+        """
+        Toggle x-axis scale from toolbar button signal.
+        """
+        super().toggle_xaxis_scale(owner, normalize=True)

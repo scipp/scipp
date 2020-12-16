@@ -18,7 +18,7 @@ class PlotModel2d(PlotModel):
 
         super().__init__(*args, **kwargs)
 
-        self.button_dims = {}
+        self.displayed_dims = {}
         self.xyrebin = {}
         self.xywidth = {}
         self.image_pixel_size = {}
@@ -42,7 +42,7 @@ class PlotModel2d(PlotModel):
         """
         for xy in "yx":
             # Useful maps
-            self.button_dims[xy] = axparams[xy]["dim"]
+            self.displayed_dims[xy] = axparams[xy]["dim"]
 
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
@@ -61,27 +61,30 @@ class PlotModel2d(PlotModel):
         entries in the dict of data arrays.
         Then perform dynamic image resampling based on current viewport.
         """
-        data_slice = self.slice_data(self.data_arrays[self.name], slices)
+        self.vslice = self.slice_data(self.data_arrays[self.name],
+                                      slices,
+                                      keep_dims=True)
         # Update pixel widths used for scaling before rebin step
-        for xy, dim in self.button_dims.items():
-            self.xywidth[xy] = (data_slice.coords[dim][dim, 1:] -
-                                data_slice.coords[dim][dim, :-1])
+        for xy, dim in self.displayed_dims.items():
+            self.xywidth[xy] = (self.vslice.coords[dim][dim, 1:] -
+                                self.vslice.coords[dim][dim, :-1])
             self.xywidth[xy].unit = sc.units.one
 
         # Scale by bin width and then rebin in both directions
         # Note that this has to be written as 2 operations to avoid
-        # creation of large 2D temporary from broadcast
+        # creation of large 2D temporary from broadcast.
         #
-        # In addition, in the first operation we make a copy to avoid two
-        # things:
-        #   1. in the case of no dimensions being sliced, we prevent
-        #      multiplying into the original data
-        #   2. self.vslice needs to be a DataArray and not a DataArrayView for
-        #      the rebin step during image resampling, since non-contiguous
-        #      data is not accepted by rebin (this happens when an outer dim is
-        #      sliced when the slice thickness is zero).
-        self.vslice = data_slice * self.xywidth["x"]
-        self.vslice *= self.xywidth["y"]
+        # Note that we only normalize for non-counts data, as rebin already
+        # performs the correct resampling for counts.
+        # Also note that when normalizing, we perform a copy of the data in
+        # the first operation to avoid multiplying the original data in-place.
+        #
+        # TODO: this can be avoided once we have a generic resample operation
+        # that can compute the mean in each new bin and handle any unit.
+        if self.vslice.data.unit != sc.units.counts:
+            self.vslice.data = self.vslice.data * self.xywidth["x"]
+            self.vslice.data *= self.xywidth["y"]
+            self.vslice.data.unit = sc.units.one
 
         # Update image with resampling
         new_values = self.update_image(mask_info=mask_info)
@@ -107,26 +110,30 @@ class PlotModel2d(PlotModel):
         """
         Resample a DataArray according to new bin edges.
         """
-        dslice = array
         # Select bins to speed up rebinning
         for dim in rebin_edges:
             this_slice = self._select_bins(array.coords[dim], dim,
                                            rebin_edges[dim][dim, 0],
                                            rebin_edges[dim][dim, -1])
-            dslice = dslice[this_slice]
+            array = array[this_slice]
 
         # Rebin the data
         for dim, edges in rebin_edges.items():
-            dslice = sc.rebin(dslice, dim, edges)
+            array.data = sc.rebin(array.data, dim, array.coords[dim], edges)
+            for m in array.masks:
+                if dim in array.masks[m].dims:
+                    array.masks[m] = sc.rebin(array.masks[m], dim,
+                                              array.coords[dim], edges)
 
-        # Divide by pixel width
-        # TODO: can this loop be combined with the one above?
-        for dim, edges in rebin_edges.items():
-            div = edges[dim, 1:] - edges[dim, :-1]
-            div.unit = sc.units.one
-            dslice /= div
+        # Divide by pixel width if we have normalized in update_data() in the
+        # case of non-counts data.
+        if array.data.unit != sc.units.counts:
+            for dim, edges in rebin_edges.items():
+                div = edges[dim, 1:] - edges[dim, :-1]
+                div.unit = sc.units.one
+                array.data /= div
 
-        return dslice
+        return array
 
     def update_image(self, extent=None, mask_info=None):
         """
@@ -135,7 +142,7 @@ class PlotModel2d(PlotModel):
         # The order of the dimensions that are rebinned matters if 2D coords
         # are present. We must rebin the base dimension of the 2D coord first.
         xy = "yx"
-        if len(self.vslice.coords[self.button_dims["x"]].dims) > 1:
+        if len(self.vslice.coords[self.displayed_dims["x"]].dims) > 1:
             xy = "xy"
 
         dimy = self.xyrebin[xy[0]].dims[0]
@@ -146,21 +153,31 @@ class PlotModel2d(PlotModel):
         resampled_image = self.resample_data(self.vslice,
                                              rebin_edges=rebin_edges)
 
+        # Slice away the remaining dims because we use slices of range 1 and
+        # not 0 in slice_data()
+        for dim in set(resampled_image.data.dims) - set(
+                list(rebin_edges.keys())):
+            resampled_image = resampled_image[dim, 0]
+
         # Use Scipp's automatic transpose to match the image x/y axes
         # TODO: once transpose is available for DataArrays,
-        # use sc.transpose(dslice, self.button_dims) instead.
+        # use sc.transpose(dslice, self.displayed_dims) instead.
         shape = [
             self.xyrebin["y"].shape[0] - 1, self.xyrebin["x"].shape[0] - 1
         ]
         self.dslice = sc.DataArray(coords=rebin_edges,
                                    data=sc.Variable(dims=list(
-                                       self.button_dims.values()),
+                                       self.displayed_dims.values()),
                                                     values=np.ones(shape),
-                                                    variances=np.zeros(shape),
-                                                    dtype=self.vslice.dtype,
+                                                    dtype=sc.dtype.float64,
                                                     unit=sc.units.one))
 
-        self.dslice *= resampled_image
+        if resampled_image.data.variances is not None:
+            self.dslice.variances = np.zeros(shape)
+
+        self.dslice *= resampled_image.data
+        for m in resampled_image.masks:
+            self.dslice.masks[m] = resampled_image.masks[m]
 
         # Update the matplotlib image data
         new_values = {
@@ -203,7 +220,7 @@ class PlotModel2d(PlotModel):
         if self.vslice is None:
             return None
 
-        for xy, dim in self.button_dims.items():
+        for xy, dim in self.displayed_dims.items():
             # Create coordinate axes for resampled image array
             self.xyrebin[xy] = sc.Variable(
                 dims=[dim],
@@ -219,6 +236,7 @@ class PlotModel2d(PlotModel):
                        ydata=None,
                        slices=None,
                        axparams=None,
+                       profile_dim=None,
                        mask_info=None):
         """
         Slice down all dimensions apart from the profile dimension, and send
@@ -252,31 +270,30 @@ class PlotModel2d(PlotModel):
 
         # Slice the remaining dims
         profile_slice = self.slice_data(profile_slice, slices)
-
         new_values = {self.name: {"values": {}, "variances": {}, "masks": {}}}
 
-        dim = profile_slice.dims[0]
-        ydata = profile_slice.values
-        xcenters = to_bin_centers(profile_slice.coords[dim], dim).values
+        ydata = profile_slice.data.values
+        xcenters = to_bin_centers(profile_slice.coords[profile_dim],
+                                  profile_dim).values
 
         if axparams["x"]["hist"][self.name]:
-            new_values[
-                self.name]["values"]["x"] = profile_slice.coords[dim].values
+            new_values[self.name]["values"]["x"] = profile_slice.coords[
+                profile_dim].values
             new_values[self.name]["values"]["y"] = np.concatenate(
                 (ydata[0:1], ydata))
         else:
             new_values[self.name]["values"]["x"] = xcenters
             new_values[self.name]["values"]["y"] = ydata
-        if profile_slice.variances is not None:
+        if profile_slice.data.variances is not None:
             new_values[self.name]["variances"]["x"] = xcenters
             new_values[self.name]["variances"]["y"] = ydata
             new_values[self.name]["variances"]["e"] = vars_to_err(
-                profile_slice.variances)
+                profile_slice.data.variances)
 
         # Handle masks
         if len(mask_info[self.name]) > 0:
-            base_mask = sc.Variable(dims=profile_slice.dims,
-                                    values=np.ones(profile_slice.shape,
+            base_mask = sc.Variable(dims=profile_slice.data.dims,
+                                    values=np.ones(profile_slice.data.shape,
                                                    dtype=np.int32))
             for m in mask_info[self.name]:
                 if m in profile_slice.masks:

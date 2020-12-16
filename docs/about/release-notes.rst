@@ -12,9 +12,11 @@ Features
 * New ``profiler`` plotting functionality where one of the slider dimensions can be displayed as a profile in a subplot (1D and 2D projections only).
 * Sliders have a thickness slider associated with them and can be used to show slices of arbitrary thickness.
 * Can hide/show individual masks on plots.
+* Can toggle log scale of axes and colorbar with buttons in figure toolbar.
 * Add binned data support, replacing "event list" dtypes as well as "realign" support.
 * Value-based slicing support.
 * Support for saving scipp objects to HDF5.
+* Possibility to plot Scipp objects using ``my_data_array.plot()`` in addition to the classical ``plot()`` free function.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
