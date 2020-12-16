@@ -11,19 +11,19 @@ class PlotModel1d(PlotModel):
     Model class for 1 dimensional plots.
     """
     def __init__(self, *args, **kwargs):
-
         super().__init__(*args, **kwargs)
-
+        for name, array in self.data_arrays.items():
+            if array.data.bins is not None:
+                raise RuntimeError(
+                    "1-D plots of binned data not implemented. Histogram "
+                    "manually, e.g., using `plot(array.bins.sum())`")
         self.dim = None
-
-        return
 
     def update_axes(self, axparams):
         """
         Update axes parameters on axis change.
         """
         self.dim = axparams["x"]["dim"]
-        return
 
     def update_data(self, slices, mask_info):
         """
