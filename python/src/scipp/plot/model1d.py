@@ -3,8 +3,7 @@
 # @author Neil Vaytet
 
 from .model import PlotModel
-from .tools import vars_to_err, mask_to_float
-from .._scipp import core as sc
+from .tools import vars_to_err
 import numpy as np
 
 
@@ -34,33 +33,16 @@ class PlotModel1d(PlotModel):
         arrays for data values, variances, and masks.
         """
         new_values = {}
-
         for name, array in self.data_arrays.items():
-
             new_values[name] = {"values": {}, "variances": {}, "masks": {}}
-
             self.dslice = self.slice_data(array, slices)
-            ydata = self.dslice.data.values
-
             new_values[name]["values"]["x"] = self.dslice.meta[self.dim].values
-            new_values[name]["values"]["y"] = ydata
+            new_values[name]["values"]["y"] = self.dslice.data.values
             if self.dslice.data.variances is not None:
                 new_values[name]["variances"]["e"] = vars_to_err(
                     self.dslice.data.variances)
-
-            if len(mask_info[name]) > 0:
-                base_mask = sc.Variable(dims=self.dslice.data.dims,
-                                        values=np.ones(self.dslice.data.shape,
-                                                       dtype=np.int32))
-                for m in mask_info[name]:
-                    # Use automatic broadcast to broadcast 0D masks
-                    msk = (
-                        base_mask *
-                        sc.Variable(dims=self.dslice.masks[m].dims,
-                                    values=self.dslice.masks[m].values.astype(
-                                        np.int32))).values
-                    new_values[name]["masks"][m] = mask_to_float(
-                        msk, new_values[name]["values"]["y"])
+            new_values[name]["masks"] = self._make_masks(
+                self.dslice, mask_info=mask_info[name])
 
         return new_values
 
@@ -97,19 +79,7 @@ class PlotModel1d(PlotModel):
             if profile_slice.data.variances is not None:
                 new_values[name]["variances"]["e"] = vars_to_err(
                     profile_slice.data.variances)
-
-            if len(mask_info[name]) > 0:
-                base_mask = sc.Variable(dims=profile_slice.data.dims,
-                                        values=np.ones(
-                                            profile_slice.data.shape,
-                                            dtype=np.int32))
-                for m in mask_info[name]:
-                    # Use automatic broadcast to broadcast 0D masks
-                    msk = (base_mask * sc.Variable(
-                        dims=profile_slice.masks[m].dims,
-                        values=profile_slice.masks[m].values.astype(
-                            np.int32))).values
-                    new_values[name]["masks"][m] = mask_to_float(
-                        msk, new_values[name]["values"]["y"])
+            new_values[name]["masks"] = self._make_masks(
+                profile_slice, mask_info=mask_info[name])
 
         return new_values

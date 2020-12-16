@@ -6,8 +6,7 @@
 from .. import config
 from .model import PlotModel
 from .resampling_model import resampling_model
-from .tools import mask_to_float, vars_to_err
-from .._scipp import core as sc
+from .tools import vars_to_err
 import numpy as np
 
 
@@ -48,24 +47,6 @@ class PlotModel2d(PlotModel):
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
 
-    def _make_masks(self, array, mask_info, transpose=False):
-        if not mask_info[self.name]:
-            return {}
-        masks = {}
-        base_mask = sc.Variable(dims=array.dims,
-                                values=np.ones(array.shape, dtype=np.int32))
-        for m in mask_info[self.name]:
-            if m in array.masks:
-                msk = base_mask * sc.Variable(
-                    dims=array.masks[m].dims,
-                    values=array.masks[m].values.astype(np.int32))
-                masks[m] = mask_to_float(msk.values, array.values)
-                if transpose:
-                    masks[m] = np.transpose(masks[m])
-            else:
-                masks[m] = None
-        return masks
-
     def _update_image(self, extent=None, mask_info=None):
         """
         Resample 2d images to a fixed resolution to handle very large images.
@@ -79,7 +60,7 @@ class PlotModel2d(PlotModel):
         if transpose:
             values = np.transpose(values)
         masks = self._make_masks(data,
-                                 mask_info=mask_info,
+                                 mask_info=mask_info[self.name],
                                  transpose=transpose)
         return {"values": values, "masks": masks, "extent": extent}
 
@@ -160,6 +141,6 @@ class PlotModel2d(PlotModel):
                 profile_slice.data.variances)
 
         new_values[self.name]["masks"] = self._make_masks(
-            profile_slice, mask_info)
+            profile_slice, mask_info=mask_info[self.name])
 
         return new_values

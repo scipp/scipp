@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .helpers import PlotArray
-from .tools import to_bin_edges, to_bin_centers, make_fake_coord
+from .tools import to_bin_edges, to_bin_centers, make_fake_coord, mask_to_float
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
@@ -169,6 +169,25 @@ class PlotModel:
             coord_info["unit"] = name_with_unit(var=coord, name="")
 
         return coord, formatter, coord_info["label"], coord_info["unit"]
+
+    def _make_masks(self, array, mask_info, transpose=False):
+        if not mask_info:
+            return {}
+        masks = {}
+        data = array.data
+        base_mask = sc.Variable(dims=data.dims,
+                                values=np.ones(data.shape, dtype=np.int32))
+        for m in mask_info:
+            if m in array.masks:
+                msk = base_mask * sc.Variable(
+                    dims=array.masks[m].dims,
+                    values=array.masks[m].values.astype(np.int32))
+                masks[m] = mask_to_float(msk.values, data.values)
+                if transpose:
+                    masks[m] = np.transpose(masks[m])
+            else:
+                masks[m] = None
+        return masks
 
     def get_axformatter(self, name, dim):
         """
