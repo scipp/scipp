@@ -140,16 +140,14 @@ namespace {
 
 template <class T> T coords_to_attrs(T &&x, const Dim from, const Dim to) {
   const auto to_attr = [&](const Dim field) {
+    if (!x.coords().contains(field))
+      return;
     Variable coord(x.coords()[field]);
     if constexpr (std::is_same_v<std::decay_t<T>, Dataset>) {
-      if (!x.coords().contains(field))
-        return;
       x.coords().erase(field);
       for (const auto &item : iter(x))
         item.attrs().set(field, coord);
     } else {
-      if (!x.coords().contains(field))
-        return;
       x.coords().erase(field);
       x.attrs().set(field, coord);
     }
