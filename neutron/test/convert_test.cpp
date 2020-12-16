@@ -91,6 +91,18 @@ TEST_P(ConvertTest, DataArray_to_tof) {
   }
 }
 
+TEST_P(ConvertTest, convert_slice) {
+  Dataset tof = GetParam();
+  const auto slice = Slice{Dim::Spectrum, 0};
+  // Note: Converting slics of data*sets* not supported right now, since meta
+  // data handling implementation in `convert` is current based on dataset
+  // coords, but slicing converts this into attrs of *items*.
+  for (const auto &dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
+    EXPECT_EQ(convert(tof["counts"].slice(slice), Dim::Tof, dim),
+              convert(tof["counts"], Dim::Tof, dim).slice(slice));
+  }
+}
+
 TEST_P(ConvertTest, fail_count_density) {
   const Dataset tof = GetParam();
   for (const Dim dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
