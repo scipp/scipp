@@ -486,6 +486,15 @@ TEST_F(GroupbyBinnedTest, concatenate_data_array) {
   EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
 }
 
+TEST_F(GroupbyBinnedTest, concatenate_data_array_2d) {
+  a = bin(a, {makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 8})});
+  auto grouped = groupby(a, Dim("labels")).concatenate(Dim::Y);
+  grouped.coords().erase(Dim::X);
+  EXPECT_EQ(grouped.slice({Dim::X, 0}), expected);
+  // Dim added by grouping is *outer* dim
+  EXPECT_EQ(grouped.dims(), Dimensions({Dim("labels"), Dim::X}, {2, 1}));
+}
+
 TEST_F(GroupbyBinnedTest, concatenate_data_array_conflicting_2d_coord) {
   a = bin(a, {makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 3, 8})});
   a.coords().set(

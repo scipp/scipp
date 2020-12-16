@@ -426,10 +426,13 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
   builder.erase(reductionDim);
   const auto dims = array.dims();
   for (const auto &dim : dims.labels())
-    if (array.coords().contains(dim) &&
-        array.coords()[dim].dims().ndim() != 1 &&
-        array.coords()[dim].dims().contains(reductionDim))
-      builder.join(dim, array.coords()[dim]);
+    if (array.coords().contains(dim)) {
+      if (array.coords()[dim].dims().ndim() != 1 &&
+          array.coords()[dim].dims().contains(reductionDim))
+        builder.join(dim, array.coords()[dim]);
+      else if (dim != reductionDim)
+        builder.existing(dim, array.dims()[dim]);
+    }
 
   const auto masked = hide_masked(array.data(), array.masks(), builder.dims());
   TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
