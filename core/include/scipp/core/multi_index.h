@@ -215,12 +215,6 @@ public:
     seek_bucket();
   }
 
-  // TODO remove?
-  constexpr void increment_innermost() noexcept {
-    for (scipp::index data = 0; data < N; ++data)
-      m_data_index[data] += m_stride[data][0];
-  }
-
   [[nodiscard]] auto inner_strides() const noexcept {
     std::array<scipp::index, N> strides;
     for (scipp::index data = 0; data < N; ++data) {
