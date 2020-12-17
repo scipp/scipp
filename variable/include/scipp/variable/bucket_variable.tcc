@@ -91,7 +91,7 @@ private:
                                 const bool variances) const = 0;
 
 public:
-  bool is_buckets() const override { return true; }
+  bool is_bins() const override { return true; }
 
   Variable
   create(const DType elem_dtype, const Dimensions &dims,

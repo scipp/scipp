@@ -97,12 +97,12 @@ void init_buckets(py::module &m) {
   bind_bin_size<DataArray>(m);
   bind_bin_size<Dataset>(m);
 
-  m.def("is_bins", variable::is_buckets);
+  m.def("is_bins", variable::is_bins);
   m.def("is_bins", [](const DataArrayConstView &array) {
-    return dataset::is_buckets(array);
+    return dataset::is_bins(array);
   });
   m.def("is_bins", [](const DatasetConstView &dataset) {
-    return dataset::is_buckets(dataset);
+    return dataset::is_bins(dataset);
   });
 
   m.def("bins_begin_end", [](const VariableConstView &var) -> py::object {

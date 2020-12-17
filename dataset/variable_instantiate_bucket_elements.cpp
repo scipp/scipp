@@ -62,9 +62,9 @@ private:
   }
 };
 
-/// This is currently a dummy implemented just to make `is_buckets` work.
+/// This is currently a dummy implemented just to make `is_bins` work.
 class BucketVariableMakerDataset : public variable::AbstractVariableMaker {
-  bool is_buckets() const override { return true; }
+  bool is_bins() const override { return true; }
   Variable create(const DType, const Dimensions &, const units::Unit &,
                   const bool,
                   const std::vector<VariableConstView> &) const override {

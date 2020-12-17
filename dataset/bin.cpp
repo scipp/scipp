@@ -132,7 +132,7 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
 
   // Perform actual binning step for data, all coords, all masks, ...
   auto out_buffer = dataset::transform(bins_view<T>(data), [&](auto &&var) {
-    if (!is_buckets(var))
+    if (!is_bins(var))
       return std::move(var);
     const auto &[input_indices, buffer_dim, in_buffer] =
         var.template constituents<core::bin<VariableConstView>>();

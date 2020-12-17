@@ -185,13 +185,11 @@ Dataset bucket_sizes(const DatasetConstView &dataset) {
   return apply_to_items(dataset, [](auto &&_) { return bucket_sizes(_); });
 }
 
-bool is_buckets(const DataArrayConstView &array) {
-  return is_buckets(array.data());
-}
+bool is_bins(const DataArrayConstView &array) { return is_bins(array.data()); }
 
-bool is_buckets(const DatasetConstView &dataset) {
+bool is_bins(const DatasetConstView &dataset) {
   return std::any_of(dataset.begin(), dataset.end(),
-                     [](const auto &item) { return is_buckets(item); });
+                     [](const auto &item) { return is_bins(item); });
 }
 
 } // namespace scipp::dataset

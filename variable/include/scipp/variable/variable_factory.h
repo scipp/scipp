@@ -18,7 +18,7 @@ protected:
 
 public:
   virtual ~AbstractVariableMaker() = default;
-  virtual bool is_buckets() const = 0;
+  virtual bool is_bins() const = 0;
   virtual Variable
   create(const DType elem_dtype, const Dimensions &dims,
          const units::Unit &unit, const bool variances,
@@ -43,7 +43,7 @@ public:
 
 template <class T> class VariableMaker : public AbstractVariableMaker {
   using AbstractVariableMaker::create;
-  bool is_buckets() const override { return false; }
+  bool is_bins() const override { return false; }
   Variable create(const DType, const Dimensions &dims, const units::Unit &unit,
                   const bool variances,
                   const std::vector<VariableConstView> &) const override {
@@ -78,7 +78,7 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   }
 };
 
-SCIPP_VARIABLE_EXPORT bool is_buckets(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT bool is_bins(const VariableConstView &var);
 
 /// Dynamic factory for variables.
 ///
@@ -90,17 +90,17 @@ class SCIPP_VARIABLE_EXPORT VariableFactory {
 private:
   auto bucket_dtype() const noexcept { return dtype<void>; }
   template <class T> auto bucket_dtype(const T &var) const noexcept {
-    return is_buckets(var) ? var.dtype() : dtype<void>;
+    return is_bins(var) ? var.dtype() : dtype<void>;
   }
   template <class T, class... Ts>
   auto bucket_dtype(const T &var, const Ts &... vars) const noexcept {
-    return is_buckets(var) ? var.dtype() : bucket_dtype(vars...);
+    return is_bins(var) ? var.dtype() : bucket_dtype(vars...);
   }
 
 public:
   void emplace(const DType key, std::unique_ptr<AbstractVariableMaker> makes);
   bool contains(const DType key) const noexcept;
-  bool is_buckets(const VariableConstView &var) const;
+  bool is_bins(const VariableConstView &var) const;
   template <class... Parents>
   Variable create(const DType elem_dtype, const Dimensions &dims,
                   const units::Unit &unit, const bool variances,
@@ -118,7 +118,7 @@ public:
   void set_elem_unit(const VariableView &var, const units::Unit &u) const;
   bool hasVariances(const VariableConstView &var) const;
   template <class T, class Var> auto values(Var &&var) const {
-    if (!is_buckets(var))
+    if (!is_bins(var))
       return var.template values<T>();
     const auto &maker = *m_makers.at(var.dtype());
     auto &&data = maker.data(view(var));
@@ -126,7 +126,7 @@ public:
                             data.template values<T>().data());
   }
   template <class T, class Var> auto variances(Var &&var) const {
-    if (!is_buckets(var))
+    if (!is_bins(var))
       return var.template variances<T>();
     const auto &maker = *m_makers.at(var.dtype());
     auto &&data = maker.data(view(var));
