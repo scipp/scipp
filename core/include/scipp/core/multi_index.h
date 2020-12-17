@@ -237,36 +237,12 @@ public:
     return m_ndim;
   }
 
-  [[nodiscard]] auto innermost_strides() const noexcept {
+  [[nodiscard]] auto inner_strides() const noexcept {
     std::array<scipp::index, N> strides;
     for (scipp::index data = 0; data < N; ++data) {
       strides[data] = m_stride[data][0];
     }
     return strides;
-  }
-
-  [[nodiscard]] auto inner_strides() const noexcept {
-    const auto strides = innermost_strides();
-    if (std::any_of(strides.begin(), strides.end(),
-                    [](scipp::index s) { return s > 1; })) {
-      return std::tuple(scipp::index{0}, strides);
-    }
-    // TODO (0,0,...0) allowed?
-
-    const scipp::index ndim_inner_max = has_bins() ? m_ndim_nested : m_ndim;
-    scipp::index ndim_inner = 1;
-    std::array<scipp::index, N> needed_strides = strides;
-    for (; ndim_inner < ndim_inner_max; ++ndim_inner) {
-      for (scipp::index data = 0; data < N; ++data) {
-        // This assumes that strides[data] in {0, 1}.
-        needed_strides[data] *=
-            strides[data] == 0 ? 0 : m_shape[ndim_inner - 1];
-        if (m_stride[data][ndim_inner] != needed_strides[data]) {
-          return std::tuple(ndim_inner, strides);
-        }
-      }
-    }
-    return std::tuple(ndim_inner, strides);
   }
 
   /// Set the absolute index. In the special case of iteration with buckets,
