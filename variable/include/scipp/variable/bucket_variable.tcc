@@ -76,7 +76,20 @@ auto contiguous_indices(const VariableConstView &parent,
 }
 } // namespace
 
-template <class T> class BucketVariableMaker : public AbstractVariableMaker {
+template <class T> class BinVariableMakerCommon : public AbstractVariableMaker {
+public:
+  bool is_bins() const override { return true; }
+  Variable empty_like(const VariableConstView &prototype,
+                      const VariableConstView &shape) const override {
+    const auto [begin, end] = unzip(shape);
+    const auto size = sum(end - begin).value<scipp::index>();
+    const auto dim = std::get<1>(prototype.constituents<bucket<T>>());
+    const auto buf = std::get<2>(prototype.constituents<bucket<T>>());
+    return make_bins(Variable(shape), dim, resize_default_init(buf, dim, size));
+  }
+};
+
+template <class T> class BinVariableMaker : public BinVariableMakerCommon<T> {
 private:
   const VariableConstView
   bucket_parent(const scipp::span<const VariableConstView> &parents) const {
@@ -91,8 +104,6 @@ private:
                                 const bool variances) const = 0;
 
 public:
-  bool is_bins() const override { return true; }
-
   Variable
   create(const DType elem_dtype, const Dimensions &dims,
          const units::Unit &unit, const bool variances,

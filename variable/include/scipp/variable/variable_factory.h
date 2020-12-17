@@ -39,6 +39,8 @@ public:
   array_params(const VariableConstView &) const {
     throw unreachable();
   }
+  virtual Variable empty_like(const VariableConstView &prototype,
+                              const VariableConstView &shape) const = 0;
 };
 
 template <class T> class VariableMaker : public AbstractVariableMaker {
@@ -75,6 +77,14 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   }
   bool hasVariances(const VariableConstView &var) const override {
     return var.hasVariances();
+  }
+  Variable empty_like(const VariableConstView &prototype,
+                      const VariableConstView &shape) const override {
+    if (shape)
+      throw except::TypeError("Bin sizes provided to `empty_like`, but "
+                              "prototype does not contains bins.");
+    return create(prototype.dtype(), prototype.dims(), prototype.unit(),
+                  prototype.hasVariances(), {});
   }
 };
 
@@ -133,6 +143,8 @@ public:
     return ElementArrayView(maker.array_params(var),
                             data.template variances<T>().data());
   }
+  Variable empty_like(const VariableConstView &prototype,
+                      const VariableConstView &shape = {});
 
 private:
   VariableConstView view(const VariableConstView &var) const { return var; }

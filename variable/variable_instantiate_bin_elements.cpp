@@ -14,8 +14,7 @@ INSTANTIATE_BUCKET_VARIABLE(VariableView_observer, bucket<VariableView>)
 INSTANTIATE_BUCKET_VARIABLE(VariableConstView_observer,
                             bucket<VariableConstView>)
 
-template <class T>
-class BucketVariableMakerVariable : public BucketVariableMaker<T> {
+template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {
 private:
   Variable make_buckets(const VariableConstView &,
                         const VariableConstView &indices, const Dim dim,
@@ -57,13 +56,13 @@ namespace {
 auto register_variable_maker_bucket_Variable(
     (variableFactory().emplace(
          dtype<bucket<Variable>>,
-         std::make_unique<BucketVariableMakerVariable<Variable>>()),
+         std::make_unique<BinVariableMakerVariable<Variable>>()),
      variableFactory().emplace(
          dtype<bucket<VariableView>>,
-         std::make_unique<BucketVariableMakerVariable<VariableView>>()),
+         std::make_unique<BinVariableMakerVariable<VariableView>>()),
      variableFactory().emplace(
          dtype<bucket<VariableConstView>>,
-         std::make_unique<BucketVariableMakerVariable<VariableConstView>>()),
+         std::make_unique<BinVariableMakerVariable<VariableConstView>>()),
      0));
 }
 
