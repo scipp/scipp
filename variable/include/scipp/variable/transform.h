@@ -30,6 +30,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <algorithm>
+
 #include "scipp/common/overloaded.h"
 
 #include "scipp/core/multi_index.h"
@@ -435,18 +437,23 @@ template <bool dry_run> struct in_place {
       return;
 
     auto run = [&](auto indices, const auto &end) {
-      if (auto [ndim_inner, inner_strides] = begin.inner_strides();
-          ndim_inner > 0) {
-        while (indices != end) {
-          // Volume can change when moving between bins -> recompute every time.
-          const auto inner_volume = indices.volume(ndim_inner);
-          dispatch_inner_loop(op, indices.get(), inner_strides, inner_volume,
-                              std::forward<T>(arg), std::forward<Ts>(other)...);
-          indices.increment(ndim_inner);
-        }
-      } else {
+      const auto inner_strides = indices.inner_strides();
+      if (std::all_of(inner_strides.begin(), inner_strides.end(), [](auto x) { return x == 0;})) {
+        // The special cases don't work when all strides are 0.
         for (; indices != end; indices.increment())
           call_in_place(op, indices, arg, other...);
+      }
+      else {
+        while (indices != end) {
+          // Shape can change when moving between bins -> recompute every time.
+          // TODO with flat inner dim: indices.shape[0] - indices.coord[0]
+          const auto inner_size = indices.inner_size();
+          // TODO check if in last partial line in par: indices.m_coord[1:] == end.m_coord[1:]
+          dispatch_inner_loop(op, indices.get(), inner_strides, inner_size,
+                              std::forward<T>(arg), std::forward<Ts>(other)...);
+          indices.inner_to_end();
+          indices.increment_outer();
+        }
       }
     };
     if (begin.has_stride_zero()) {
