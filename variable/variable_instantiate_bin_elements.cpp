@@ -24,8 +24,8 @@ private:
                         const bool variances) const override {
     // Buffer contains only variable, which is created with new dtype, no
     // information to copy from parent.
-    return Variable{std::make_unique<DataModel<bucket<Variable>>>(
-        indices, dim, variableFactory().create(type, dims, unit, variances))};
+    return make_bins(Variable(indices), dim,
+                     variableFactory().create(type, dims, unit, variances));
   }
   VariableConstView data(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>());

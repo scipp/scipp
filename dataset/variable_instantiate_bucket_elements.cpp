@@ -41,8 +41,7 @@ private:
     auto buffer = DataArray(
         variable::variableFactory().create(type, dims, unit, variances),
         source.coords(), source.masks(), source.attrs());
-    return Variable{std::make_unique<variable::DataModel<bucket<DataArray>>>(
-        indices, dim, std::move(buffer))};
+    return make_bins(Variable(indices), dim, std::move(buffer));
   }
   VariableConstView data(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<DataArray>>()).data();
