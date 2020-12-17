@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/shape.h"
@@ -298,4 +299,19 @@ TEST(ConcatenateTest, broadcast_coord) {
       DataArray(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 3, 1}),
                 {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
                                                Values{2, 2, 1})}}));
+}
+
+class ConcatenateBinnedTest : public ::testing::Test {
+protected:
+  Variable indices = makeVariable<scipp::index_pair>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 5}});
+  Variable data =
+      makeVariable<double>(Dims{Dim::Event}, Shape{5}, Values{1, 2, 3, 4, 5});
+  DataArray buffer = DataArray(data, {{Dim::X, data + data}});
+  Variable var = make_bins(indices, Dim::Event, buffer);
+};
+
+TEST_F(ConcatenateBinnedTest, concat_variables) {
+  EXPECT_NO_THROW(concatenate(var, var, Dim::X));
+  EXPECT_NO_THROW(concatenate(var, var, Dim::Y));
 }
