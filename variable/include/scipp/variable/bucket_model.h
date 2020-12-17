@@ -126,6 +126,16 @@ private:
             return x.second >= 0 && x.first > x.second;
           }) != vals.end())
         throw except::SliceError("Overlapping bucket indices are not allowed.");
+      if (buffer.dims().ndim() > 1 && buffer.dims().index(dim) != 0) {
+        if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
+              return x.first == x.second;
+            }) != vals.end()) {
+          throw except::BucketError(
+              "The bin dimension must be the outermost (first) dimension of "
+              "the buffer. This is a temporary workaround for issue #1479 and "
+              "will be fixed in the future.");
+        }
+      }
       // Copy to avoid a second memory allocation
       const auto &i = indices.values<range_type>();
       std::copy(i.begin(), i.end(), vals.begin());
