@@ -221,22 +221,6 @@ public:
       m_data_index[data] += m_stride[data][0];
   }
 
-  [[nodiscard]] scipp::index n_contiguous_dims() const noexcept {
-    if (has_bins()) {
-      return 0; // TODO can do better for bins?
-    }
-    scipp::index needed_stride = 1;
-    for (scipp::index dim = 0; dim < m_ndim; ++dim) {
-      for (scipp::index data = 0; data < N; ++data) {
-        if (m_stride[data][dim] != needed_stride) {
-          return dim;
-        }
-      }
-      needed_stride *= m_shape[dim];
-    }
-    return m_ndim;
-  }
-
   [[nodiscard]] auto inner_strides() const noexcept {
     std::array<scipp::index, N> strides;
     for (scipp::index data = 0; data < N; ++data) {
