@@ -96,6 +96,7 @@ stages:
           - bash: |
               set -ex
               source activate scipp-developer
+              PYTHONPATH="$PYTHONPATH:$(install_dir)" python -m pytest python/tests/compat/test_mantid.py
               PYTHONPATH="$PYTHONPATH:$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'
           - bash: |
