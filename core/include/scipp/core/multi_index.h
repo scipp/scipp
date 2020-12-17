@@ -165,6 +165,13 @@ public:
       increment_outer();
   }
 
+  constexpr void inner_to_end() noexcept {
+    for (scipp::index data = 0; data < N; ++data) {
+      m_data_index[data] += (m_shape[0] - m_coord[0]) * m_stride[data][0];
+    }
+    m_coord[0] = m_shape[0];
+  }
+
   constexpr void increment(const scipp::index first_dim) noexcept {
     // TODO check dims < first_dim?
     // TODO validate first_dim?
