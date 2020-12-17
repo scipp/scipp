@@ -52,8 +52,6 @@ stages:
               set -ex
               conda --version
               conda env create -f scipp-developer.yml
-              # TODO: source activate does not work (see https://github.com/conda/conda/issues/9566)
-              echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
               mkdir -p  "$(build_dir)" "$(install_dir)" "$(docs_build_dir)"
             displayName: 'Configure build environment'
           - bash: |
@@ -95,6 +93,7 @@ stages:
             displayName: 'Build Python library'
           - bash: |
               set -ex
+              source activate scipp-developer
               PYTHONPATH="$PYTHONPATH:$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'
           - bash: |
