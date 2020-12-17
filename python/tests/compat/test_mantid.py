@@ -48,7 +48,7 @@ class TestMantidConversion(unittest.TestCase):
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         d = mantidcompat.convert_Workspace2D_to_data_array(ws)
         self.assertEqual(
-            d.coords["run_start"].value,
+            d.attrs["run_start"].value,
             "2012-05-21T15:14:56.279289666",
         )
         self.assertEqual(d.data.unit, sc.units.counts)
@@ -240,7 +240,7 @@ class TestMantidConversion(unittest.TestCase):
         assert expected_monitor_attrs.issubset(attrs)
 
         for monitor_name in expected_monitor_attrs:
-            monitors = ds.coords[monitor_name].values
+            monitors = ds.attrs[monitor_name].values
             assert isinstance(monitors, sc.DataArray)
             assert monitors.shape == [4471]
 
@@ -256,7 +256,7 @@ class TestMantidConversion(unittest.TestCase):
             ["monitor1", "monitor2", "monitor3", "monitor4", "monitor5"])
         assert expected_monitor_attrs.issubset(attrs)
         for monitor_name in expected_monitor_attrs:
-            monitors = ds.coords[monitor_name].values
+            monitors = ds.attrs[monitor_name].values
             assert isinstance(monitors, sc.DataArray)
             assert monitors.shape == [4471]
 
@@ -270,7 +270,7 @@ class TestMantidConversion(unittest.TestCase):
         expected_monitor_attrs = set(["monitor2", "monitor3"])
         assert expected_monitor_attrs.issubset(attrs)
         for monitor_name in expected_monitor_attrs:
-            monitor = ds.coords[monitor_name].value
+            monitor = ds.attrs[monitor_name].value
             assert isinstance(monitor, sc.DataArray)
             assert monitor.shape == [200001]
             assert 'position' in monitor.coords
