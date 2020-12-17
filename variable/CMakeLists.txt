@@ -38,6 +38,7 @@ set(SRC_FILES
     arithmetic.cpp
     bins.cpp
     comparison.cpp
+    creation.cpp
     cumulative.cpp
     except.cpp
     inplace_arithmetic.cpp

@@ -80,11 +80,8 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   }
   Variable empty_like(const VariableConstView &prototype,
                       const VariableConstView &shape) const override {
-    if (shape)
-      throw except::TypeError("Bin sizes provided to `empty_like`, but "
-                              "prototype does not contains bins.");
-    return create(prototype.dtype(), prototype.dims(), prototype.unit(),
-                  prototype.hasVariances(), {});
+    return create(prototype.dtype(), shape ? shape.dims() : prototype.dims(),
+                  prototype.unit(), prototype.hasVariances(), {});
   }
 };
 

@@ -3,7 +3,9 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/shape.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/variable.tcc"
 #include "scipp/variable/variable_factory.h"
 
@@ -81,11 +83,17 @@ public:
   bool is_bins() const override { return true; }
   Variable empty_like(const VariableConstView &prototype,
                       const VariableConstView &shape) const override {
-    const auto [begin, end] = unzip(shape);
+    const auto [ indices, dim, buf ] = prototype.constituents<bucket<T>>();
+    Variable begin;
+    Variable end;
+    if (shape) {
+      end = cumsum(shape);
+      begin = end - shape;
+    } else {
+      std::tie(begin, end) = unzip(indices);
+    }
     const auto size = sum(end - begin).value<scipp::index>();
-    const auto dim = std::get<1>(prototype.constituents<bucket<T>>());
-    const auto buf = std::get<2>(prototype.constituents<bucket<T>>());
-    return make_bins(Variable(shape), dim, resize_default_init(buf, dim, size));
+    return make_bins(zip(begin, end), dim, resize_default_init(buf, dim, size));
   }
 };
 
