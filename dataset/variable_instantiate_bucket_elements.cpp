@@ -79,6 +79,10 @@ class BucketVariableMakerDataset : public variable::AbstractVariableMaker {
   units::Unit elem_unit(const VariableConstView &) const override {
     throw std::runtime_error("undefined");
   }
+  void expect_can_set_elem_unit(const VariableView &,
+                                const units::Unit &) const override {
+    throw std::runtime_error("undefined");
+  }
   void set_elem_unit(const VariableView &, const units::Unit &) const override {
     throw std::runtime_error("undefined");
   }

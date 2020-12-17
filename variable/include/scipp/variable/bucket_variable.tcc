@@ -115,12 +115,22 @@ public:
   units::Unit elem_unit(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).unit();
   }
+  void expect_can_set_elem_unit(const VariableView &var,
+                                const units::Unit &u) const override {
+    if constexpr (std::is_same_v<T, VariableConstView>)
+      throw std::runtime_error("Cannot set unit via const non-owning view");
+    else {
+      if ((elem_unit(var) != u) && (var.dims() != var.underlying().dims()))
+        throw except::UnitError("Partial view on data of variable cannot be "
+                                "used to change the unit.");
+    }
+  }
   void set_elem_unit(const VariableView &var,
                      const units::Unit &u) const override {
     if constexpr (std::is_same_v<T, VariableConstView>)
       throw std::runtime_error("Cannot set unit via const non-owning view");
     else
-      return std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
+      std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
   }
   bool hasVariances(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).hasVariances();
