@@ -317,6 +317,10 @@ public:
         std::multiplies<scipp::index>{});
   }
 
+  [[nodiscard]] constexpr auto inner_size() const noexcept {
+    return m_shape[0];
+  }
+
   auto begin() const noexcept {
     auto it(*this);
     it.set_index(0);
