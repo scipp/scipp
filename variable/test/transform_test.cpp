@@ -264,6 +264,17 @@ TEST_F(TransformBinaryTest, dense_events) {
   EXPECT_EQ(ba, events);
 }
 
+TEST_F(TransformBinaryTest, events_inner_dim) {
+  auto table = makeVariable<double>(Dims{Dim::Y, Dim::Event}, Shape{2, 4},
+                                    Values{0, 1, 2, 3, 0, 1, 2, 3});
+  auto begin =
+      makeVariable<scipp::index>(Dims{Dim::X}, Shape{3}, Values{0, 1, 1});
+  auto end =
+      makeVariable<scipp::index>(Dims{Dim::X}, Shape{3}, Values{1, 1, 4});
+  ASSERT_THROW(static_cast<void>(make_bins(zip(begin, end), Dim::Event, table)),
+               except::BucketError);
+}
+
 TEST_F(TransformBinaryTest, events_size_fail) {
   const auto indicesA = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{3, 4}});
