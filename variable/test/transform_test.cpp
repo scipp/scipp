@@ -21,9 +21,9 @@ namespace {
 template <typename T>
 auto make_variable_for_test(const Shape &shape, bool variances) {
   auto ndim = shape.data.size();
-  auto dims = ndim == 1   ? Dims{Dim::X}
-                    : ndim == 2 ? Dims{Dim::X, Dim::Y}
-                                : Dims{Dim::X, Dim::Y, Dim::Z};
+  auto dims = ndim == 1 ? Dims{Dim::X}
+                        : ndim == 2 ? Dims{Dim::X, Dim::Y}
+                                    : Dims{Dim::X, Dim::Y, Dim::Z};
   auto var = variances ? makeVariable<T>(dims, shape, Values{}, Variances{})
                        : makeVariable<T>(dims, shape, Values{});
 
@@ -43,10 +43,10 @@ auto make_variable_for_test(const Shape &shape, bool variances) {
 // TODO irregular partitions
 auto make_bin_indices(const scipp::index size, const scipp::index n_bins) {
   std::vector<index_pair> aux(n_bins);
-  std::generate(begin(aux),
-                end(aux),
+  std::generate(begin(aux), end(aux),
                 [lower = scipp::index{0}, size, n_bins]() mutable {
-                  const scipp::index upper = static_cast<scipp::index>(lower + (static_cast<double>(size) / n_bins));
+                  const scipp::index upper = static_cast<scipp::index>(
+                      lower + (static_cast<double>(size) / n_bins));
                   const index_pair res{lower, upper};
                   lower = upper;
                   return res;
@@ -55,7 +55,8 @@ auto make_bin_indices(const scipp::index size, const scipp::index n_bins) {
   return makeVariable<index_pair>(Dims{Dim::Event}, Shape{n_bins}, Values(aux));
 }
 
-const std::vector<Shape> shapes{Shape{1}, Shape{2}, Shape{3}, Shape{5}, Shape{16},      Shape{1, 1},
+const std::vector<Shape> shapes{Shape{1},       Shape{2},       Shape{3},
+                                Shape{5},       Shape{16},      Shape{1, 1},
                                 Shape{1, 2},    Shape{2, 8},    Shape{5, 7},
                                 Shape{1, 1, 1}, Shape{1, 1, 4}, Shape{1, 5, 1},
                                 Shape{7, 1, 1}, Shape{2, 8, 4}};
@@ -71,15 +72,15 @@ auto make_slices(const Shape &shape) {
   }
   return res;
 }
-}
+} // namespace
 
 class TransformUnaryTest : public ::testing::Test {
 protected:
   static constexpr auto op_in_place{
       overloaded{[](auto &x) { x *= 2.0; }, [](units::Unit &) {}}};
-  static constexpr auto op{overloaded{
-      [](const auto x) { return x * 2.0; },
-      [](const units::Unit &unit) { return unit; }}};
+  static constexpr auto op{
+      overloaded{[](const auto x) { return x * 2.0; },
+                 [](const units::Unit &unit) { return unit; }}};
 
   template <typename T>
   static auto op_manual_values(const ElementArrayView<T> values) {
@@ -132,7 +133,8 @@ TEST_F(TransformUnaryTest, slice) {
     }
 
     for (bool variances : {false, true}) {
-      const auto initial_buffer = make_variable_for_test<double>(shape, variances);
+      const auto initial_buffer =
+          make_variable_for_test<double>(shape, variances);
 
       for (const Slice &slice : make_slices(shape)) {
         const auto initial = initial_buffer.slice(slice);
@@ -145,10 +147,9 @@ TEST_F(TransformUnaryTest, slice) {
         EXPECT_TRUE(equals(result_return.values<double>(),
                            op_manual_values(initial.values<double>())));
         if (variances) {
-          EXPECT_TRUE(
-              equals(result_return.variances<double>(),
-                     op_manual_variances(initial.values<double>(),
-                                         initial.variances<double>())));
+          EXPECT_TRUE(equals(result_return.variances<double>(),
+                             op_manual_variances(initial.values<double>(),
+                                                 initial.variances<double>())));
         }
         // In-place transform used to check result of non-in-place transform.
         EXPECT_EQ(result_return, result_in_place);
@@ -159,7 +160,8 @@ TEST_F(TransformUnaryTest, slice) {
 
 TEST_F(TransformUnaryTest, elements_of_bins) {
   for (const auto &shape : shapes) {
-    for (scipp::index bin_dim = 0; bin_dim < static_cast<scipp::index>(shape.data.size()); ++bin_dim) {
+    for (scipp::index bin_dim = 0;
+         bin_dim < static_cast<scipp::index>(shape.data.size()); ++bin_dim) {
       for (scipp::index n_bins : {1, 2, 4, 5}) {
         if (n_bins > shape.data[bin_dim]) {
           continue;
@@ -168,8 +170,7 @@ TEST_F(TransformUnaryTest, elements_of_bins) {
           const auto buffer = make_variable_for_test<double>(shape, variances);
           const auto bin_dim_label = buffer.dims().labels()[bin_dim];
           const auto indices = make_bin_indices(shape.data[bin_dim], n_bins);
-          auto var =
-              make_bins(indices, bin_dim_label, buffer);
+          auto var = make_bins(indices, bin_dim_label, buffer);
 
           const auto result = transform<double>(var, op);
           transform_in_place<double>(var, op_in_place);

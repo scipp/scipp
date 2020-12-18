@@ -413,8 +413,7 @@ template <bool dry_run> struct in_place {
       const size_t n, Operands &&... operands) {
     constexpr auto N_Operands = sizeof...(Operands);
     if constexpr (I == detail::stride_special_cases<N_Operands>.size()) {
-      run(std::forward<Op>(op), indices,
-          inner_strides, n,
+      run(std::forward<Op>(op), indices, inner_strides, n,
           std::forward<Operands>(operands)...);
     } else {
       if (inner_strides == detail::stride_special_cases<N_Operands>[I]) {
@@ -438,12 +437,12 @@ template <bool dry_run> struct in_place {
 
     auto run = [&](auto indices, const auto &end) {
       const auto inner_strides = indices.inner_strides();
-      if (std::all_of(inner_strides.begin(), inner_strides.end(), [](auto x) { return x == 0;})) {
+      if (std::all_of(inner_strides.begin(), inner_strides.end(),
+                      [](auto x) { return x == 0; })) {
         // The special cases don't work when all strides are 0.
         for (; indices != end; indices.increment())
           call_in_place(op, indices, arg, other...);
-      }
-      else {
+      } else {
         while (indices != end) {
           // Shape can change when moving between bins -> recompute every time.
           const auto inner_size = indices.in_same_chunk(end, 1)
