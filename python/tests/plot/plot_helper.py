@@ -17,6 +17,10 @@ def make_dense_dataset(ndim=1,
                        unit=sc.units.counts):
 
     dim_list = ['tof', 'x', 'y', 'z', 'Q_x']
+    units = dict(
+        zip(dim_list, [
+            sc.units.us, sc.units.m, sc.units.m, sc.units.m, sc.units.angstrom
+        ]))
 
     N = 50
     M = 10
@@ -27,6 +31,7 @@ def make_dense_dataset(ndim=1,
     for i in range(ndim):
         n = N - (i * M)
         d.coords[dim_list[i]] = sc.Variable(dims=[dim_list[i]],
+                                            unit=units[dim_list[i]],
                                             values=np.arange(n + binedges,
                                                              dtype=np.float64))
         dims.append(dim_list[i])

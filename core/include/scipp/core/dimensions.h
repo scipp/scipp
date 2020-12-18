@@ -33,6 +33,10 @@ public:
     for (const auto &[label, size] : dims)
       addInner(label, size);
   }
+  Dimensions(const std::unordered_map<Dim, scipp::index> &dims) {
+    for (const auto &[label, size] : dims)
+      addInner(label, size);
+  }
 
   constexpr bool operator==(const Dimensions &other) const noexcept {
     if (m_ndim != other.m_ndim)

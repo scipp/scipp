@@ -72,19 +72,6 @@ Variable nanmean(const VariableConstView &var, const Dim dim,
   return nanmean(var, dim);
 }
 
-/// Returns the union of all masks with irreducible dimension `dim`.
-///
-/// Irreducible means that a reduction operation must apply these masks since
-/// depend on the reduction dimension. Returns an invalid (empty) variable if
-/// there is no irreducible mask.
-Variable irreducible_mask(const MasksConstView &masks, const Dim dim) {
-  Variable union_;
-  for (const auto &mask : masks)
-    if (mask.second.dims().contains(dim))
-      union_ = union_ ? union_ | mask.second : Variable(mask.second);
-  return union_;
-}
-
 /// Merges all the masks that have all their dimensions found in the given set
 //  of dimensions.
 Variable masks_merge_if_contained(const MasksConstView &masks,

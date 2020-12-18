@@ -8,6 +8,7 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/sort.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/slice.h"
 #include "scipp/variable/sort.h"
 #include "scipp/variable/util.h"
 
@@ -127,4 +128,13 @@ void init_operations(py::module &m) {
             .seealso(":py:func:`scipp.values`")
             .c_str(),
         py::call_guard<py::gil_scoped_release>());
+
+  m.def("get_slice_params",
+        [](const VariableConstView &var, const VariableConstView &coord,
+           const VariableConstView &begin, const VariableConstView &end) {
+          const auto [dim, start, stop] =
+              get_slice_params(var.dims(), coord, begin, end);
+          // Do NOT release GIL since using py::slice
+          return std::tuple{dim.name(), py::slice(start, stop, 1)};
+        });
 }

@@ -3,7 +3,8 @@
 # @author Neil Vaytet
 
 from .helpers import PlotArray
-from .tools import to_bin_edges, to_bin_centers, make_fake_coord
+from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
+        mask_to_float, vars_to_err
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
@@ -71,7 +72,7 @@ class PlotModel:
             # Create a PlotArray helper object that supports slicing where new
             # bin-edge coordinates can be attached to the data
             self.data_arrays[name] = PlotArray(data=array.data,
-                                               coords=coord_list)
+                                               meta=coord_list)
 
             # Include masks
             for m in array.masks:
@@ -80,7 +81,7 @@ class PlotModel:
         # Store dim of multi-dimensional coordinate if present
         self.multid_coord = None
         for array in self.data_arrays.values():
-            for dim, coord in array.coords.items():
+            for dim, coord in array.meta.items():
                 if len(coord.dims) > 1:
                     self.multid_coord = dim
 
@@ -170,6 +171,34 @@ class PlotModel:
 
         return coord, formatter, coord_info["label"], coord_info["unit"]
 
+    def _make_masks(self, array, mask_info, transpose=False):
+        if not mask_info:
+            return {}
+        masks = {}
+        data = array.data
+        base_mask = sc.Variable(dims=data.dims,
+                                values=np.ones(data.shape, dtype=np.int32))
+        for m in mask_info:
+            if m in array.masks:
+                msk = base_mask * sc.Variable(
+                    dims=array.masks[m].dims,
+                    values=array.masks[m].values.astype(np.int32))
+                masks[m] = mask_to_float(msk.values, data.values)
+                if transpose:
+                    masks[m] = np.transpose(masks[m])
+            else:
+                masks[m] = None
+        return masks
+
+    def _make_profile(self, profile, dim, mask_info):
+        values = {"values": {}, "variances": {}, "masks": {}}
+        values["values"]["x"] = profile.meta[dim].values
+        values["values"]["y"] = profile.data.values
+        if profile.data.variances is not None:
+            values["variances"]["e"] = vars_to_err(profile.data.variances)
+        values["masks"] = self._make_masks(profile, mask_info=mask_info)
+        return values
+
     def get_axformatter(self, name, dim):
         """
         Get an axformatter for a given data name and dimension.
@@ -180,9 +209,10 @@ class PlotModel:
         """
         Return the left, center, and right coordinates for a bin index.
         """
-        return self.data_arrays[name].coords[dim][
-            dim, bounds[0]].value, self.data_arrays[name].coords[dim][
-                dim, bounds[1]].value
+        return self.data_arrays[name].meta[dim][
+            dim,
+            bounds[0]].value, self.data_arrays[name].meta[dim][dim,
+                                                               bounds[1]].value
 
     def get_data_names(self):
         """
@@ -196,7 +226,7 @@ class PlotModel:
         """
         Get a coordinate along a requested dimension.
         """
-        return self.data_arrays[name].coords[dim], self.coord_info[name][dim][
+        return self.data_arrays[name].meta[dim], self.coord_info[name][dim][
             "label"], self.coord_info[name][dim]["unit"]
 
     def rescale_to_data(self):

@@ -31,28 +31,28 @@ template <class Range> bool is_linspace(const Range &range) {
                             }) == range.end();
 }
 
-template <typename T> bool isnan(T x) {
+template <typename T> bool isnan([[maybe_unused]] T x) {
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::isnan(x);
   else
     return false;
 }
 
-template <typename T> bool isinf(T x) {
+template <typename T> bool isinf([[maybe_unused]] T x) {
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::isinf(x);
   else
     return false;
 }
 
-template <typename T> bool isfinite(T x) {
+template <typename T> bool isfinite([[maybe_unused]] T x) {
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::isfinite(x);
   else
     return true;
 }
 
-template <typename T> bool signbit(T x) {
+template <typename T> bool signbit([[maybe_unused]] T x) {
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::signbit(x);
   else
