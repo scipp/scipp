@@ -249,14 +249,6 @@ public:
 
   [[nodiscard]] constexpr auto shape() const noexcept { return m_shape; }
 
-  [[nodiscard]] constexpr auto
-  volume(const std::optional<scipp::index> ndim) const noexcept {
-    return std::accumulate(
-        m_shape.begin(),
-        std::next(m_shape.begin(), std::min(ndim.value_or(m_ndim), m_ndim)), 1,
-        std::multiplies<scipp::index>{});
-  }
-
   [[nodiscard]] constexpr auto inner_size() const noexcept {
     return m_shape[0];
   }
