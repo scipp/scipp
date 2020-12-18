@@ -232,6 +232,19 @@ public:
     return m_coord != other.m_coord;
   }
 
+  constexpr bool in_same_chunk(const MultiIndex &other,
+                               const scipp::index first_dim) const noexcept {
+    if (m_ndim != other.m_ndim) {
+      return false;
+    }
+    for (scipp::index dim = first_dim; dim < NDIM_MAX; ++dim) {
+      if (m_coord[dim] != other.m_coord[dim]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   [[nodiscard]] constexpr scipp::index ndim() const noexcept { return m_ndim; }
 
   [[nodiscard]] constexpr auto shape() const noexcept { return m_shape; }
