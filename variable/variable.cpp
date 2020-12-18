@@ -215,4 +215,12 @@ void expect0D(const Dimensions &dims) {
 
 } // namespace detail
 
+VariableConstView Variable::bin_indices() const { return data().bin_indices(); }
+
+VariableConstView VariableConstView::bin_indices() const {
+  auto view = *this;
+  view.m_variable = &underlying().bin_indices().underlying();
+  return view;
+}
+
 } // namespace scipp::variable
