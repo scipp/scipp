@@ -45,8 +45,9 @@ bool VariableFactory::hasVariances(const VariableConstView &var) const {
 }
 
 Variable VariableFactory::empty_like(const VariableConstView &prototype,
-                                     const VariableConstView &shape) {
-  return m_makers.at(prototype.dtype())->empty_like(prototype, shape);
+                                     const std::optional<Dimensions> &shape,
+                                     const VariableConstView &sizes) {
+  return m_makers.at(prototype.dtype())->empty_like(prototype, shape, sizes);
 }
 
 VariableFactory &variableFactory() {

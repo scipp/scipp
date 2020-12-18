@@ -353,6 +353,7 @@ auto axis_actions(const VariableConstView &data, const Coords &coords,
 
 class HideMasked {
 public:
+  template <class Masks>
   HideMasked(const VariableConstView &data, const Masks &masks,
              const Dimensions &dims) {
     const auto &[begin_end, buffer_dim, buffer] =

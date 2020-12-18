@@ -13,8 +13,9 @@ namespace scipp::variable {
 /// `prototype` contains binned data the values of `shape` are interpreted as
 /// bin sizes.
 Variable empty_like(const VariableConstView &prototype,
-                    const VariableConstView &shape) {
-  return variableFactory().empty_like(prototype, shape);
+                    const std::optional<Dimensions> &shape,
+                    const VariableConstView &sizes) {
+  return variableFactory().empty_like(prototype, shape, sizes);
 }
 
 } // namespace scipp::variable

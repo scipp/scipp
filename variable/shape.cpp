@@ -3,7 +3,11 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/shape.h"
+#include "scipp/variable/arithmetic.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/util.h"
+#include "scipp/variable/variable_factory.h"
 
 using namespace scipp::core;
 
@@ -52,7 +56,7 @@ Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
     throw std::runtime_error(
         "Cannot concatenate Variables: Dimensions do not match.");
 
-  Variable out(a1);
+  Variable out;
   auto dims(dims1);
   scipp::index extent1 = 1;
   scipp::index extent2 = 1;
@@ -64,7 +68,18 @@ Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
     dims.resize(dim, extent1 + extent2);
   else
     dims.add(dim, extent1 + extent2);
-  out.setDims(dims);
+  if (is_bins(a1)) {
+    constexpr auto bin_sizes = [](const auto &ranges) {
+      const auto [begin, end] = unzip(ranges);
+      return end - begin;
+    };
+    out = empty_like(a1, {},
+                     concatenate(bin_sizes(a1.bin_indices()),
+                                 bin_sizes(a2.bin_indices()), dim));
+  } else {
+    out = Variable(a1);
+    out.setDims(dims);
+  }
 
   out.data().copy(a1, out.slice({dim, 0, extent1}));
   out.data().copy(a2, out.slice({dim, extent1, extent1 + extent2}));

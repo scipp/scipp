@@ -40,7 +40,8 @@ public:
     throw unreachable();
   }
   virtual Variable empty_like(const VariableConstView &prototype,
-                              const VariableConstView &shape) const = 0;
+                              const std::optional<Dimensions> &shape,
+                              const VariableConstView &sizes) const = 0;
 };
 
 template <class T> class VariableMaker : public AbstractVariableMaker {
@@ -79,8 +80,12 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
     return var.hasVariances();
   }
   Variable empty_like(const VariableConstView &prototype,
-                      const VariableConstView &shape) const override {
-    return create(prototype.dtype(), shape ? shape.dims() : prototype.dims(),
+                      const std::optional<Dimensions> &shape,
+                      const VariableConstView &sizes) const override {
+    if (sizes)
+      throw except::TypeError(
+          "Cannot specify sizes in `empty_like` for non-bin prototype.");
+    return create(prototype.dtype(), shape ? *shape : prototype.dims(),
                   prototype.unit(), prototype.hasVariances(), {});
   }
 };
@@ -141,7 +146,8 @@ public:
                             data.template variances<T>().data());
   }
   Variable empty_like(const VariableConstView &prototype,
-                      const VariableConstView &shape = {});
+                      const std::optional<Dimensions> &shape,
+                      const VariableConstView &sizes = {});
 
 private:
   VariableConstView view(const VariableConstView &var) const { return var; }

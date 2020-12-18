@@ -311,7 +311,22 @@ protected:
   Variable var = make_bins(indices, Dim::Event, buffer);
 };
 
-TEST_F(ConcatenateBinnedTest, concat_variables) {
-  EXPECT_NO_THROW(concatenate(var, var, Dim::X));
-  EXPECT_NO_THROW(concatenate(var, var, Dim::Y));
+TEST_F(ConcatenateBinnedTest, existing_dim) {
+  auto out = concatenate(var, var, Dim::X);
+  EXPECT_EQ(out.slice({Dim::X, 0, 2}), var);
+  EXPECT_EQ(out.slice({Dim::X, 2, 4}), var);
+  out = concatenate(var + 1.2 * units::one, out, Dim::X);
+  EXPECT_EQ(out.slice({Dim::X, 0, 2}), var + 1.2 * units::one);
+  EXPECT_EQ(out.slice({Dim::X, 2, 4}), var);
+  EXPECT_EQ(out.slice({Dim::X, 4, 6}), var);
+}
+
+TEST_F(ConcatenateBinnedTest, new_dim) {
+  auto out = concatenate(var, var, Dim::Y);
+  EXPECT_EQ(out.slice({Dim::Y, 0}), var);
+  EXPECT_EQ(out.slice({Dim::Y, 1}), var);
+  out = concatenate(var + 1.2 * units::one, out, Dim::Y);
+  EXPECT_EQ(out.slice({Dim::Y, 0}), var + 1.2 * units::one);
+  EXPECT_EQ(out.slice({Dim::Y, 1}), var);
+  EXPECT_EQ(out.slice({Dim::Y, 2}), var);
 }

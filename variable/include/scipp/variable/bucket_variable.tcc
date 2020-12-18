@@ -11,6 +11,16 @@
 
 namespace scipp::variable {
 
+VariableConstView Variable::bin_indices() const {
+  return data().bin_indices();
+}
+
+VariableConstView VariableConstView::bin_indices() const {
+  auto view = *this;
+  view.m_variable = &underlying().bin_indices().underlying();
+  return view;
+}
+
 template <class T>
 std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
   Variable tmp;
@@ -82,18 +92,23 @@ template <class T> class BinVariableMakerCommon : public AbstractVariableMaker {
 public:
   bool is_bins() const override { return true; }
   Variable empty_like(const VariableConstView &prototype,
-                      const VariableConstView &shape) const override {
+                      const std::optional<Dimensions> &shape,
+                      const VariableConstView &sizes) const override {
+    if (shape)
+      throw except::TypeError(
+          "Cannot specify shape in `empty_like` for non-bin prototype, shape "
+          "is given by shape of `sizes`.");
     const auto [indices, dim, buf] = prototype.constituents<bucket<T>>();
     Variable sizes_owner;
-    auto sizes = shape;
+    auto sizes_ = sizes;
     if (!sizes) {
       const auto &[begin, end] = unzip(indices);
       sizes_owner = end - begin;
-      sizes = sizes_owner;
+      sizes_ = sizes_owner;
     }
-    const auto end = cumsum(sizes);
-    const auto begin = end - sizes;
-    const auto size = sum(sizes).template value<scipp::index>();
+    const auto end = cumsum(sizes_);
+    const auto begin = end - sizes_;
+    const auto size = sum(sizes_).template value<scipp::index>();
     return make_bins(zip(begin, end), dim, resize_default_init(buf, dim, size));
   }
 };
