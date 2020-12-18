@@ -165,9 +165,14 @@ public:
       increment_outer();
   }
 
+  [[nodiscard]] constexpr scipp::index inner_distance_to_end() const noexcept {
+    return m_shape[0] - m_coord[0];
+  }
+
   constexpr void inner_to_end() noexcept {
+    const auto distance = inner_distance_to_end();
     for (scipp::index data = 0; data < N; ++data) {
-      m_data_index[data] += (m_shape[0] - m_coord[0]) * m_stride[data][0];
+      m_data_index[data] += distance * m_stride[data][0];
     }
     m_coord[0] = m_shape[0];
   }

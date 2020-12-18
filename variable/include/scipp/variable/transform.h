@@ -446,8 +446,7 @@ template <bool dry_run> struct in_place {
       else {
         while (indices != end) {
           // Shape can change when moving between bins -> recompute every time.
-          // TODO with flat inner dim: indices.shape[0] - indices.coord[0]
-          const auto inner_size = indices.inner_size();
+          const auto inner_size = indices.inner_distance_to_end();
           // TODO check if in last partial line in par: indices.m_coord[1:] == end.m_coord[1:]
           dispatch_inner_loop(op, indices.get(), inner_strides, inner_size,
                               std::forward<T>(arg), std::forward<Ts>(other)...);
