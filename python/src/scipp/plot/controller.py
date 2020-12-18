@@ -274,11 +274,21 @@ class PlotController:
         data slice.
         """
         vmin, vmax = self.model.rescale_to_data()
-        if button is None:
-            if self.vmin is not None:
+
+        # If the limits were requested by the user: if the rescale button is
+        # pressed by the user, it means we forcibly update the self.vmin/vmax.
+        # If no button is pressed, we use the global limits instead of the
+        # min and max values found by the model.
+        if self.vmin is not None:
+            if button is None:
                 vmin = self.vmin
-            if self.vmax is not None:
+            else:
+                self.vmin = vmin
+        if self.vmax is not None:
+            if button is None:
                 vmax = self.vmax
+            else:
+                self.vmax = vmax
         vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax, scale=self.norm)
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
@@ -327,8 +337,9 @@ class PlotController:
         Toggle data normalization from toolbar button signal.
         """
         self.norm = "log" if owner.value else "linear"
-        vmin, vmax = self.model.rescale_to_data()
-        vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax, scale=self.norm)
+        vmin, vmax = check_log_limits(vmin=self.vmin,
+                                      vmax=self.vmax,
+                                      scale=self.norm)
         self.view.toggle_norm(self.norm, vmin, vmax)
 
     def swap_dimensions(self, index, old_dim, new_dim):
