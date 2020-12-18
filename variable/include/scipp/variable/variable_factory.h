@@ -26,6 +26,8 @@ public:
   virtual Dim elem_dim(const VariableConstView &var) const = 0;
   virtual DType elem_dtype(const VariableConstView &var) const = 0;
   virtual units::Unit elem_unit(const VariableConstView &var) const = 0;
+  virtual void expect_can_set_elem_unit(const VariableView &var,
+                                        const units::Unit &u) const = 0;
   virtual void set_elem_unit(const VariableView &var,
                              const units::Unit &u) const = 0;
   virtual bool hasVariances(const VariableConstView &var) const = 0;
@@ -62,6 +64,10 @@ template <class T> class VariableMaker : public AbstractVariableMaker {
   }
   units::Unit elem_unit(const VariableConstView &var) const override {
     return var.unit();
+  }
+  void expect_can_set_elem_unit(const VariableView &var,
+                                const units::Unit &u) const override {
+    var.expectCanSetUnit(u);
   }
   void set_elem_unit(const VariableView &var,
                      const units::Unit &u) const override {
@@ -107,6 +113,8 @@ public:
   Dim elem_dim(const VariableConstView &var) const;
   DType elem_dtype(const VariableConstView &var) const;
   units::Unit elem_unit(const VariableConstView &var) const;
+  void expect_can_set_elem_unit(const VariableView &var,
+                                const units::Unit &u) const;
   void set_elem_unit(const VariableView &var, const units::Unit &u) const;
   bool hasVariances(const VariableConstView &var) const;
   template <class T, class Var> auto values(Var &&var) const {

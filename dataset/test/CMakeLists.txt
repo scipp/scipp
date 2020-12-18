@@ -5,8 +5,9 @@ add_dependencies(all-tests ${TARGET_NAME})
 add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
   attributes_test.cpp
-  bin_test.cpp
+  binned_arithmetic_test.cpp
   bins_test.cpp
+  bin_test.cpp
   choose_test.cpp
   concatenate_test.cpp
   coords_view_test.cpp

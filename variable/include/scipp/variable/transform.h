@@ -477,7 +477,7 @@ template <bool dry_run> struct in_place {
     auto unit = variableFactory().elem_unit(var);
     op(unit, variableFactory().elem_unit(other)...);
     // Stop early in bad cases of changing units (if `var` is a slice):
-    var.expectCanSetUnit(unit);
+    variableFactory().expect_can_set_elem_unit(var, unit);
     // Wrapped implementation to convert multiple tuples into a parameter pack.
     transform_data(type_tuples<Ts...>(op), op, std::forward<Var>(var),
                    other...);
