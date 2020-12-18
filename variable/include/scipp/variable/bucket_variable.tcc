@@ -86,8 +86,8 @@ public:
                       const VariableConstView &sizes) const override {
     if (shape)
       throw except::TypeError(
-          "Cannot specify shape in `empty_like` for non-bin prototype, shape "
-          "is given by shape of `sizes`.");
+          "Cannot specify shape in `empty_like` for prototype with bins, shape "
+          "must be given by shape of `sizes`.");
     const auto [indices, dim, buf] = prototype.constituents<bucket<T>>();
     Variable sizes_owner;
     auto sizes_ = sizes;
