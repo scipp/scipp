@@ -172,49 +172,6 @@ public:
     m_coord[0] += distance;
   }
 
-  constexpr void increment(const scipp::index first_dim) noexcept {
-    // TODO check dims < first_dim?
-    // TODO validate first_dim?
-    if (first_dim >= m_ndim) {
-      // Assuming all inner dims have been incremented by user.
-      set_index(m_end_sentinel);
-      return;
-    } else if (first_dim > m_ndim_nested) {
-      // starting in bin dimension (not the first one)
-      // TODO can we support this (do we need to?)
-      std::terminate();
-    } else if (first_dim == m_ndim_nested) {
-      // starting in first bin dimension
-      if (m_ndim_nested == 0) {
-        std::terminate(); // TODO can this be? (scalar bins)
-      }
-      // set last non-bin dim to its end
-      m_coord[m_ndim_nested - 1] = m_shape[m_ndim_nested - 1];
-    } else {
-      // starting in non-bin dim
-      for (scipp::index data = 0; data < N; ++data)
-        m_data_index[data] += m_stride[data][first_dim];
-      ++m_coord[first_dim];
-
-      // Go through all nested dims (with bins) / all dims (without bins)
-      // starting with first_dim where we have reached the end.
-      for (scipp::index d = first_dim;
-           (d < m_ndim_nested - 1) && (m_coord[d] == m_shape[d]); ++d) {
-        for (scipp::index data = 0; data < N; ++data) {
-          m_data_index[data] +=
-              // take a step in dimension d+1
-              m_stride[data][d + 1]
-              // rewind dimension d (m_coord[d] == m_shape[d])
-              - m_coord[d] * m_stride[data][d];
-        }
-        ++m_coord[d + 1];
-        m_coord[d] = 0;
-      }
-    }
-    // nested dims incremented, move on to bins
-    seek_bucket();
-  }
-
   [[nodiscard]] auto inner_strides() const noexcept {
     std::array<scipp::index, N> strides;
     for (scipp::index data = 0; data < N; ++data) {
