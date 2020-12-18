@@ -47,8 +47,7 @@ private:
             params.dims(),
             params.dataDims(),
             {dim, buffer.dims(),
-             indices.template values<std::pair<scipp::index, scipp::index>>()
-                 .data()}};
+             indices.template values<scipp::index_pair>().data()}};
   }
 };
 

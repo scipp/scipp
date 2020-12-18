@@ -55,8 +55,7 @@ private:
     return {0, // no offset required in buffer since access via indices
             params.dims(),
             params.dataDims(),
-            {dim, buffer.dims(),
-             indices.values<std::pair<scipp::index, scipp::index>>().data()}};
+            {dim, buffer.dims(), indices.values<scipp::index_pair>().data()}};
   }
 };
 

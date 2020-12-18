@@ -48,7 +48,8 @@ std::string to_string(const Slice &slice) {
 }
 
 std::string to_string(const scipp::index_pair &index) {
-  return '(' + index.first + ", " + index.second + ')';
+  return '(' + std::to_string(index.first) + ", " +
+         std::to_string(index.second) + ')';
 }
 
 std::map<DType, std::string> &dtypeNameRegistry() {

@@ -174,19 +174,13 @@ template <class T>
 void DataModel<bucket<T>>::copy(const VariableConstView &src,
                                 const VariableView &dst) const {
   const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
-  const auto [begin0, end0] = unzip(indices0);
-  const auto sizes1 = end0 - begin0;
-  const auto end1 = cumsum(sizes1);
-  const auto size1 = end1.template values<scipp::index>().as_span().back();
-  auto indices1 = zip(end1 - sizes1, end1);
-  auto buffer1 = resize_default_init(buffer0, dim0, size1);
-  copy_slices(buffer0, buffer1, dim0, indices0, indices1);
+  const auto &[indices1, dim1, buffer1] = dst.constituents<bucket<T>>();
   if constexpr (is_view_v<T>) {
+    // This is overly restrictive, could allow copy to non-const non-owning
     throw std::runtime_error(
-        "Copying a non-owning binned view is not supported.");
+        "Copying to non-owning binned view is not implemented.");
   } else {
-    dst.replace_model(
-        DataModel<bucket<T>>{std::move(indices1), dim0, std::move(buffer1)});
+    copy_slices(buffer0, buffer1, dim0, indices0, indices1);
   }
 }
 

@@ -22,6 +22,15 @@ protected:
 TEST_F(BinnedCreationTest, empty_like_default_shape) {
   const auto empty = empty_like(m_var);
   EXPECT_EQ(empty.dims(), m_var.dims());
+  const auto [indices, dim, buf] = empty.constituents<core::bin<DataArray>>();
+  EXPECT_EQ(indices, m_indices);
+}
+
+TEST_F(BinnedCreationTest, empty_like_slice_default_shape) {
+  const auto empty = empty_like(m_var.slice({Dim::X, 1}));
+  EXPECT_EQ(empty.dims(), m_var.slice({Dim::X, 1}).dims());
+  const auto [indices, dim, buf] = empty.constituents<core::bin<DataArray>>();
+  EXPECT_EQ(indices, makeVariable<scipp::index_pair>(Values{std::pair{0, 3}}));
 }
 
 TEST_F(BinnedCreationTest, empty_like) {
