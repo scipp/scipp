@@ -446,11 +446,12 @@ template <bool dry_run> struct in_place {
       else {
         while (indices != end) {
           // Shape can change when moving between bins -> recompute every time.
-          const auto inner_size = indices.inner_distance_to_end();
-          // TODO check if in last partial line in par: indices.m_coord[1:] == end.m_coord[1:]
+          const auto inner_size = indices.in_same_chunk(end, 1)
+                                      ? indices.inner_distance_to(end)
+                                      : indices.inner_distance_to_end();
           dispatch_inner_loop(op, indices.get(), inner_strides, inner_size,
                               std::forward<T>(arg), std::forward<Ts>(other)...);
-          indices.inner_to_end();
+          indices.increment_inner_by(inner_size);
           indices.increment_outer();
         }
       }

@@ -165,16 +165,11 @@ public:
       increment_outer();
   }
 
-  [[nodiscard]] constexpr scipp::index inner_distance_to_end() const noexcept {
-    return m_shape[0] - m_coord[0];
-  }
-
-  constexpr void inner_to_end() noexcept {
-    const auto distance = inner_distance_to_end();
+  constexpr void increment_inner_by(const scipp::index distance) noexcept {
     for (scipp::index data = 0; data < N; ++data) {
       m_data_index[data] += distance * m_stride[data][0];
     }
-    m_coord[0] = m_shape[0];
+    m_coord[0] += distance;
   }
 
   constexpr void increment(const scipp::index first_dim) noexcept {
@@ -226,6 +221,15 @@ public:
       strides[data] = m_stride[data][0];
     }
     return strides;
+  }
+
+  [[nodiscard]] constexpr scipp::index inner_distance_to_end() const noexcept {
+    return m_shape[0] - m_coord[0];
+  }
+
+  [[nodiscard]] constexpr scipp::index
+  inner_distance_to(const MultiIndex &other) const noexcept {
+    return other.m_coord[0] - m_coord[0];
   }
 
   /// Set the absolute index. In the special case of iteration with buckets,
