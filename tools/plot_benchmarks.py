@@ -185,7 +185,8 @@ def parse_args():
                         '--yaxis',
                         default='real_time',
                         help='Quantity to display on the y-axis')
-    parser.add_argument('--xscale', default='log', help='Use a linear scale on the x-axis')
+    parser.add_argument('--xscale', default='log',
+                        help='Use a linear scale on the x-axis')
     parser.add_argument(
         '--ignore',
         type=lambda s: s.split(','),
@@ -198,7 +199,8 @@ def main():
     args = parse_args()
     data = load_data(args.infile, args.names)
     for _, benchmark_data in data.groupby('name'):
-        plot(benchmark_data, args.xaxis, args.yaxis, args.ignore, xscale=args.xscale)
+        plot(benchmark_data, args.xaxis, args.yaxis,
+             args.ignore, xscale=args.xscale)
     plt.show()
 
 
