@@ -47,6 +47,10 @@ std::string to_string(const Slice &slice) {
          std::to_string(slice.begin()) + end + ")\n";
 }
 
+std::string to_string(const scipp::index_pair &index) {
+  return '(' + index.first + ", " + index.second + ')';
+}
+
 std::map<DType, std::string> &dtypeNameRegistry() {
   static std::map<DType, std::string> registry;
   return registry;
