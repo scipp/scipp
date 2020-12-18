@@ -79,7 +79,8 @@ template <class> struct is_tuple : std::false_type {};
 template <class... T> struct is_tuple<std::tuple<T...>> : std::true_type {};
 
 template <class> struct is_array : std::false_type {};
-template <class T, size_t N> struct is_array<std::array<T, N>> : std::true_type {};
+template <class T, size_t N>
+struct is_array<std::array<T, N>> : std::true_type {};
 
 /// Typedef for T if T is a tuple, else std::tuple<T, T, T, ...>, with T
 /// replicated sizeof...(V) times.
