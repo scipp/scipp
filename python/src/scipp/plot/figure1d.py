@@ -338,9 +338,12 @@ class PlotFigure1d(PlotFigure):
         """
         Automatically rescale x and y axes to the contents of the plot.
         """
-        self.ax.autoscale(True)
-        self.ax.relim()
-        self.ax.autoscale_view()
+        if vmin is None and vmax is None:
+            self.ax.autoscale(True)
+            self.ax.relim()
+            self.ax.autoscale_view()
+        else:
+            self.ax.set_ylim(vmin, vmax)
         self.draw()
 
     def show_legend(self):
