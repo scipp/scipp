@@ -98,7 +98,7 @@ public:
     }
     const auto end = cumsum(sizes_);
     const auto begin = end - sizes_;
-    const auto size = sum(sizes_).template value<scipp::index>();
+    const auto size = end.template values<scipp::index>().as_span().back();
     return make_bins(zip(begin, end), dim, resize_default_init(buf, dim, size));
   }
 };
