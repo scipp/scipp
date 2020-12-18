@@ -30,6 +30,7 @@ class PlotModel2d(PlotModel):
                 "y": config.plot.height
             }
         self._model = resampling_model(self.data_arrays[self.name])
+        self._squeeze = []
 
     def update_axes(self, axparams):
         """
