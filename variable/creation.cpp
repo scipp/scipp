@@ -9,9 +9,9 @@ namespace scipp::variable {
 
 /// Create empty (uninitialized) variable with same parameters as prototype.
 ///
-/// If specified, `shape` defines the shape and dims of the output. If
-/// `prototype` contains binned data the values of `shape` are interpreted as
-/// bin sizes.
+/// If specified, `shape` defines the shape of the output. If `prototype`
+/// contains binned data `shape` may not be specified, instead `sizes` defines
+/// the sizes of the desired bins.
 Variable empty_like(const VariableConstView &prototype,
                     const std::optional<Dimensions> &shape,
                     const VariableConstView &sizes) {
