@@ -30,7 +30,7 @@ public:
 
   const auto &indices() const { return m_indices; }
   auto &indices() { return m_indices; }
-  Dim dim() const noexcept { return m_dim; }
+  Dim bin_dim() const noexcept { return m_dim; }
 
 private:
   Indices m_indices;
@@ -62,7 +62,7 @@ public:
 
   bool operator==(const DataModel &other) const noexcept {
     return this->dims() == other.dims() && this->indices() == other.indices() &&
-           this->dim() == other.dim() && m_buffer == other.m_buffer;
+           this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
   }
   bool operator!=(const DataModel &other) const noexcept {
     return !(*this == other);
@@ -70,9 +70,9 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
-    return std::make_unique<DataModel>(makeVariable<range_type>(dims),
-                                       this->dim(),
-                                       T{m_buffer.slice({this->dim(), 0, 0})});
+    return std::make_unique<DataModel>(
+        makeVariable<range_type>(dims), this->bin_dim(),
+        T{m_buffer.slice({this->bin_dim(), 0, 0})});
   }
 
   VariableConceptHandle
@@ -83,12 +83,12 @@ public:
     if constexpr (is_view_v<T>) {
       // converting, e.g., bucket<VariableView> to bucket<Variable>
       return std::make_unique<DataModel<bucket<typename T::value_type>>>(
-          zip(begin, begin), this->dim(),
-          resize_default_init(m_buffer, this->dim(), size));
+          zip(begin, begin), this->bin_dim(),
+          resize_default_init(m_buffer, this->bin_dim(), size));
     } else {
       return std::make_unique<DataModel>(
-          zip(begin, begin), this->dim(),
-          resize_default_init(m_buffer, this->dim(), size));
+          zip(begin, begin), this->bin_dim(),
+          resize_default_init(m_buffer, this->bin_dim(), size));
     }
   }
 
@@ -107,11 +107,11 @@ public:
   T &buffer() noexcept { return m_buffer; }
 
   ElementArrayView<bucket<T>> values(const core::ElementArrayViewParams &base) {
-    return {index_values(base), this->dim(), m_buffer};
+    return {index_values(base), this->bin_dim(), m_buffer};
   }
   ElementArrayView<const bucket<T>>
   values(const core::ElementArrayViewParams &base) const {
-    return {index_values(base), this->dim(), m_buffer};
+    return {index_values(base), this->bin_dim(), m_buffer};
   }
 
   scipp::index dtype_size() const override { return sizeof(range_type); }

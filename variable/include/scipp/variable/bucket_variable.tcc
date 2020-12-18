@@ -16,7 +16,7 @@ std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
   Variable tmp;
   std::swap(*this, tmp);
   auto &model = requireT<DataModel<T>>(tmp.data());
-  return {Variable(std::move(model.indices())), model.dim(),
+  return {Variable(std::move(model.indices())), model.bin_dim(),
           std::move(model.buffer())};
 }
 
@@ -45,7 +45,7 @@ VariableConstView::constituents() const {
   } else {
     view.m_variable = &model.indices();
   }
-  return {view, model.dim(), model.buffer()};
+  return {view, model.bin_dim(), model.buffer()};
 }
 
 template <class T>
@@ -54,12 +54,12 @@ VariableView::constituents() const {
   auto &model = requireT<DataModel<T>>(m_mutableVariable->data());
   if constexpr (is_view_v<typename T::buffer_type>) {
     auto view = std::get<0>(VariableConstView::constituents<T>());
-    return {view, model.dim(), model.buffer()};
+    return {view, model.bin_dim(), model.buffer()};
   } else {
     auto view = *this;
     view.m_variable = &model.indices();
     view.m_mutableVariable = &model.indices();
-    return {view, model.dim(), model.buffer()};
+    return {view, model.bin_dim(), model.buffer()};
   }
 }
 
