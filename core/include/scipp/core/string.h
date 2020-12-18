@@ -81,7 +81,8 @@ element_to_string(const T &item,
             element_to_string(Eigen::Vector3d(item.row(1))) + ", " +
             element_to_string(Eigen::Vector3d(item.row(2))) + "), "};
   else if constexpr (std::is_same_v<T, std::pair<scipp::index, scipp::index>>)
-    return {"<" + to_string(item.first) + ", " + to_string(item.second) + ">, "};
+    return {"<" + to_string(item.first) + ", " + to_string(item.second) +
+            ">, "};
   else
     return to_string(item) + ", ";
 }
