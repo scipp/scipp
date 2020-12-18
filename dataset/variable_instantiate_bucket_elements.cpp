@@ -24,11 +24,11 @@ namespace scipp::dataset {
 
 class BinVariableMakerDataArray : public variable::BinVariableMaker<DataArray> {
 private:
-  Variable make_buckets(const VariableConstView &parent,
-                        const VariableConstView &indices, const Dim dim,
-                        const DType type, const Dimensions &dims,
-                        const units::Unit &unit,
-                        const bool variances) const override {
+  Variable call_make_bins(const VariableConstView &parent,
+                          const VariableConstView &indices, const Dim dim,
+                          const DType type, const Dimensions &dims,
+                          const units::Unit &unit,
+                          const bool variances) const override {
     const auto &source = std::get<2>(parent.constituents<bucket<DataArray>>());
     if (parent.dims() !=
         indices

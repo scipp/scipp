@@ -16,11 +16,11 @@ INSTANTIATE_BUCKET_VARIABLE(VariableConstView_observer,
 
 template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {
 private:
-  Variable make_buckets(const VariableConstView &,
-                        const VariableConstView &indices, const Dim dim,
-                        const DType type, const Dimensions &dims,
-                        const units::Unit &unit,
-                        const bool variances) const override {
+  Variable call_make_bins(const VariableConstView &,
+                          const VariableConstView &indices, const Dim dim,
+                          const DType type, const Dimensions &dims,
+                          const units::Unit &unit,
+                          const bool variances) const override {
     // Buffer contains only variable, which is created with new dtype, no
     // information to copy from parent.
     return make_bins(Variable(indices), dim,

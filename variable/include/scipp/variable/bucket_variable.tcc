@@ -111,11 +111,11 @@ private:
                ? parents.front()
                : bucket_parent(parents.subspan(1));
   }
-  virtual Variable make_buckets(const VariableConstView &parent,
-                                const VariableConstView &indices, const Dim dim,
-                                const DType type, const Dimensions &dims,
-                                const units::Unit &unit,
-                                const bool variances) const = 0;
+  virtual Variable call_make_bins(const VariableConstView &parent,
+                             const VariableConstView &indices, const Dim dim,
+                             const DType type, const Dimensions &dims,
+                             const units::Unit &unit,
+                             const bool variances) const = 0;
 
 public:
   Variable
@@ -127,8 +127,8 @@ public:
     auto [indices, size] = contiguous_indices(parentIndices, dims);
     auto bufferDims = buffer.dims();
     bufferDims.resize(dim, size);
-    return make_buckets(parent, indices, dim, elem_dtype, bufferDims, unit,
-                        variances);
+    return call_make_bins(parent, indices, dim, elem_dtype, bufferDims, unit,
+                     variances);
   }
 
   Dim elem_dim(const VariableConstView &var) const override {
