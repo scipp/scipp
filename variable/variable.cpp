@@ -7,7 +7,6 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/creation.h"
-#include "scipp/variable/string.h"
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
