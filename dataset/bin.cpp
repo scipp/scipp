@@ -115,11 +115,16 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   auto output_bin_sizes = bin_sizes(indices, nbin);
   auto offsets = output_bin_sizes;
   fill_zeros(offsets);
+  // Not using cumsum along *all* dims, since some outer dims may be left
+  // untouched (no rebin).
   for (const auto dim : data.dims().labels())
     if (dims.contains(dim)) {
       offsets += cumsum(output_bin_sizes, dim, CumSumMode::Exclusive);
       output_bin_sizes = sum(output_bin_sizes, dim);
     }
+  // cumsum with bin dimension is last, since this corresponds to different
+  // output bins, whereas the cumsum above handled different subbins of same
+  // output bin, i.e., contributions of different input bins to some output bin.
   offsets += cumsum_bins(output_bin_sizes, CumSumMode::Exclusive);
   Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
   auto end = cumsum(filtered_input_bin_size);
