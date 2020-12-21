@@ -321,10 +321,10 @@ TEST_F(ConcatenateBinnedTest, mismatching_buffer) {
         DataArray(data, {{Dim::Y, data + data}, {Dim::X, data + data}}),
         DataArray(data, {})}) {
     auto var2 = make_bins(indices, Dim::Event, buffer2);
-    EXPECT_THROW(concatenate(var, var2, Dim::X), std::runtime_error) << buffer2;
-    EXPECT_THROW(concatenate(var, var2, Dim::Y), std::runtime_error) << buffer2;
-    EXPECT_THROW(concatenate(var2, var, Dim::X), std::runtime_error) << buffer2;
-    EXPECT_THROW(concatenate(var2, var, Dim::Y), std::runtime_error) << buffer2;
+    EXPECT_THROW(concatenate(var, var2, Dim::X), std::runtime_error);
+    EXPECT_THROW(concatenate(var, var2, Dim::Y), std::runtime_error);
+    EXPECT_THROW(concatenate(var2, var, Dim::X), std::runtime_error);
+    EXPECT_THROW(concatenate(var2, var, Dim::Y), std::runtime_error);
   }
 }
 
