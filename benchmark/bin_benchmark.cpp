@@ -43,4 +43,23 @@ static void BM_bin_table(benchmark::State &state) {
 }
 BENCHMARK(BM_bin_table)->RangeMultiplier(10)->Ranges({{10, 1e6}, {1e5, 1e8}});
 
+static void BM_rebin_outer(benchmark::State &state) {
+  const scipp::index nx = state.range(0);
+  const scipp::index nEvent = state.range(1);
+  auto table = make_table(nEvent);
+  auto edges_x = make_edges(Dim::X, nx);
+  auto edges_y = make_edges(Dim::Y, 4);
+
+  auto binned = dataset::bin(table, {make_edges(Dim::X, 1e4), edges_y});
+
+  for (auto _ : state) {
+    auto a = dataset::bin(binned, {edges_x, edges_y});
+  }
+  state.SetItemsProcessed(state.iterations() * nEvent);
+  state.counters["xbins"] = nx;
+  state.counters["ybins"] = edges_y.dims().volume() - 1;
+  state.counters["events"] = nEvent;
+}
+BENCHMARK(BM_rebin_outer)->RangeMultiplier(10)->Ranges({{10, 1e6}, {1e5, 1e8}});
+
 BENCHMARK_MAIN();
