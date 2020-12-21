@@ -89,12 +89,12 @@ public:
           "Cannot specify shape in `empty_like` for prototype with bins, shape "
           "must be given by shape of `sizes`.");
     const auto [indices, dim, buf] = prototype.constituents<bucket<T>>();
-    Variable sizes_owner;
+    Variable keep_alive_sizes;
     auto sizes_ = sizes;
     if (!sizes) {
       const auto &[begin, end] = unzip(indices);
-      sizes_owner = end - begin;
-      sizes_ = sizes_owner;
+      keep_alive_sizes = end - begin;
+      sizes_ = keep_alive_sizes;
     }
     const auto end = cumsum(sizes_);
     const auto begin = end - sizes_;
