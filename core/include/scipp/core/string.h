@@ -14,6 +14,7 @@
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
+#include "scipp/core/bucket.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/slice.h"
@@ -33,6 +34,7 @@ SCIPP_CORE_EXPORT std::string to_string(const bool b);
 SCIPP_CORE_EXPORT std::string to_string(const DType dtype);
 SCIPP_CORE_EXPORT std::string to_string(const Dimensions &dims);
 SCIPP_CORE_EXPORT std::string to_string(const Slice &slice);
+SCIPP_CORE_EXPORT std::string to_string(const scipp::index_pair &index);
 
 template <class Id, class Key, class Value>
 std::string to_string(const ConstView<Id, Key, Value> &view) {
@@ -66,6 +68,7 @@ template <class T>
 std::string
 element_to_string(const T &item,
                   const std::optional<units::Unit> &unit = std::nullopt) {
+  using core::to_string;
   using std::to_string;
   if constexpr (std::is_same_v<T, std::string>)
     return {'"' + item + "\", "};

@@ -132,7 +132,7 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
 
   // Perform actual binning step for data, all coords, all masks, ...
   auto out_buffer = dataset::transform(bins_view<T>(data), [&](auto &&var) {
-    if (!is_buckets(var))
+    if (!is_bins(var))
       return std::move(var);
     const auto &[input_indices, buffer_dim, in_buffer] =
         var.template constituents<core::bin<VariableConstView>>();
@@ -351,21 +351,30 @@ auto axis_actions(const VariableConstView &data, const Coords &coords,
   return builder;
 }
 
-template <class Masks>
-auto hide_masked(const VariableConstView &data, const Masks &masks,
-                 const Dimensions &dims) {
-  const auto &[begin_end, buffer_dim, buffer] =
-      data.constituents<core::bin<DataArray>>();
-  auto [begin, end] = unzip(begin_end);
-  for (const auto dim : dims.labels()) {
-    auto mask = irreducible_mask(masks, dim);
-    if (mask) {
-      begin *= ~mask;
-      end *= ~mask;
+class HideMasked {
+public:
+  template <class Masks>
+  HideMasked(const VariableConstView &data, const Masks &masks,
+             const Dimensions &dims) {
+    const auto &[begin_end, buffer_dim, buffer] =
+        data.constituents<core::bin<DataArray>>();
+    auto [begin, end] = unzip(begin_end);
+    for (const auto dim : dims.labels()) {
+      auto mask = irreducible_mask(masks, dim);
+      if (mask) {
+        begin *= ~mask;
+        end *= ~mask;
+      }
     }
+    m_indices = zip(begin, end);
+    m_data = make_non_owning_bins(m_indices, buffer_dim, buffer);
   }
-  return make_non_owning_bins(zip(begin, end), buffer_dim, buffer);
-}
+  VariableConstView operator()() const { return m_data; }
+
+private:
+  Variable m_indices; // keep alive indices
+  Variable m_data;
+};
 
 template <class T> class TargetBins {
 public:
@@ -434,7 +443,8 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
         builder.existing(dim, array.dims()[dim]);
     }
 
-  const auto masked = hide_masked(array.data(), array.masks(), builder.dims());
+  HideMasked hide_masked(array.data(), array.masks(), builder.dims());
+  const auto masked = hide_masked();
   TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
   builder.build(*target_bins, array.coords());
   return add_metadata(
@@ -485,7 +495,8 @@ DataArray bin(const VariableConstView &data, const Coords &coords,
               const std::vector<VariableConstView> &edges,
               const std::vector<VariableConstView> &groups) {
   auto builder = axis_actions(data, coords, edges, groups);
-  const auto masked = hide_masked(data, masks, builder.dims());
+  HideMasked hide_masked(data, masks, builder.dims());
+  const auto masked = hide_masked();
   TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
   builder.build(*target_bins, bins_view<DataArrayConstView>(masked).coords(),
                 coords);

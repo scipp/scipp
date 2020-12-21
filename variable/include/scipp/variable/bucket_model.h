@@ -17,12 +17,35 @@
 
 namespace scipp::variable {
 
+template <class Indices> class BinModelBase : public VariableConcept {
+public:
+  BinModelBase(const VariableConstView &indices, const Dim dim)
+      : VariableConcept(indices.dims()), m_indices(indices), m_dim(dim) {}
+
+  bool hasVariances() const noexcept override { return false; }
+  void setVariances(Variable &&) override {
+    throw except::VariancesError("This data type cannot have variances.");
+  }
+  VariableConstView bin_indices() const override { return indices(); }
+
+  const auto &indices() const { return m_indices; }
+  auto &indices() { return m_indices; }
+  Dim bin_dim() const noexcept { return m_dim; }
+
+private:
+  Indices m_indices;
+  Dim m_dim;
+};
+
 /// Specialization of DataModel for "bucketed" data. T could be Variable,
 /// DataArray, or Dataset.
 ///
 /// A bucket in this context is defined as an element of a variable mapping to a
 /// range of data, such as a slice of a DataArray.
-template <class T> class DataModel<bucket<T>> : public VariableConcept {
+template <class T>
+class DataModel<bucket<T>>
+    : public BinModelBase<
+          std::conditional_t<is_view_v<T>, VariableConstView, Variable>> {
   using Indices = std::conditional_t<is_view_v<T>, VariableConstView, Variable>;
 
 public:
@@ -30,8 +53,7 @@ public:
   using range_type = typename bucket<T>::range_type;
 
   DataModel(const VariableConstView &indices, const Dim dim, T buffer)
-      : VariableConcept(indices.dims()),
-        m_indices(validated_indices(indices, dim, buffer)), m_dim(dim),
+      : BinModelBase<Indices>(validated_indices(indices, dim, buffer), dim),
         m_buffer(std::move(buffer)) {}
 
   VariableConceptHandle clone() const override {
@@ -39,8 +61,8 @@ public:
   }
 
   bool operator==(const DataModel &other) const noexcept {
-    return dims() == other.dims() && m_indices == other.m_indices &&
-           m_dim == other.m_dim && m_buffer == other.m_buffer;
+    return this->dims() == other.dims() && this->indices() == other.indices() &&
+           this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
   }
   bool operator!=(const DataModel &other) const noexcept {
     return !(*this == other);
@@ -48,8 +70,9 @@ public:
 
   VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
-    return std::make_unique<DataModel>(makeVariable<range_type>(dims), m_dim,
-                                       T{m_buffer.slice({m_dim, 0, 0})});
+    return std::make_unique<DataModel>(
+        makeVariable<range_type>(dims), this->bin_dim(),
+        T{m_buffer.slice({this->bin_dim(), 0, 0})});
   }
 
   VariableConceptHandle
@@ -60,21 +83,17 @@ public:
     if constexpr (is_view_v<T>) {
       // converting, e.g., bucket<VariableView> to bucket<Variable>
       return std::make_unique<DataModel<bucket<typename T::value_type>>>(
-          zip(begin, begin), m_dim, resize_default_init(m_buffer, m_dim, size));
+          zip(begin, begin), this->bin_dim(),
+          resize_default_init(m_buffer, this->bin_dim(), size));
     } else {
       return std::make_unique<DataModel>(
-          zip(begin, begin), m_dim, resize_default_init(m_buffer, m_dim, size));
+          zip(begin, begin), this->bin_dim(),
+          resize_default_init(m_buffer, this->bin_dim(), size));
     }
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
   DType dtype() const noexcept override { return scipp::dtype<bucket<T>>; }
-
-  bool hasVariances() const noexcept override { return false; }
-  void setVariances(Variable &&) override {
-    if (!core::canHaveVariances<T>())
-      throw except::VariancesError("This data type cannot have variances.");
-  }
 
   bool equals(const VariableConstView &a,
               const VariableConstView &b) const override;
@@ -82,20 +101,17 @@ public:
             const VariableView &dest) const override;
   void assign(const VariableConcept &other) override;
 
-  Dim dim() const noexcept { return m_dim; }
   // TODO Should the mutable version return a view to prevent risk of clients
   // breaking invariants of variable?
   const T &buffer() const noexcept { return m_buffer; }
   T &buffer() noexcept { return m_buffer; }
-  const auto &indices() const { return m_indices; }
-  auto &indices() { return m_indices; }
 
   ElementArrayView<bucket<T>> values(const core::ElementArrayViewParams &base) {
-    return {index_values(base), m_dim, m_buffer};
+    return {index_values(base), this->bin_dim(), m_buffer};
   }
   ElementArrayView<const bucket<T>>
   values(const core::ElementArrayViewParams &base) const {
-    return {index_values(base), m_dim, m_buffer};
+    return {index_values(base), this->bin_dim(), m_buffer};
   }
 
   scipp::index dtype_size() const override { return sizeof(range_type); }
@@ -135,21 +151,19 @@ private:
   auto index_values(const core::ElementArrayViewParams &base) const {
     if constexpr (is_view_v<T>) {
       // m_indices is a VariableConstView and may thus contain slicing
-      const auto params = m_indices.array_params();
+      const auto params = this->indices().array_params();
       const auto offset = params.offset() + base.offset();
       // `base` comes from the variable (view) holding this model, so it
       // contains slicing applied after the one that may be part of m_indices.
       // Dimensions are thus given by `base`:
       const auto dims = base.dims();
       const auto dataDims = params.dataDims();
-      return cast<range_type>(m_indices.underlying())
+      return cast<range_type>(this->indices().underlying())
           .values(core::ElementArrayViewParams(offset, dims, dataDims, {}));
     } else {
-      return cast<range_type>(m_indices).values(base);
+      return cast<range_type>(this->indices()).values(base);
     }
   }
-  Indices m_indices;
-  Dim m_dim;
   T m_buffer;
 };
 
@@ -174,19 +188,13 @@ template <class T>
 void DataModel<bucket<T>>::copy(const VariableConstView &src,
                                 const VariableView &dst) const {
   const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
-  const auto [begin0, end0] = unzip(indices0);
-  const auto sizes1 = end0 - begin0;
-  const auto end1 = cumsum(sizes1);
-  const auto size1 = end1.template values<scipp::index>().as_span().back();
-  auto indices1 = zip(end1 - sizes1, end1);
-  auto buffer1 = resize_default_init(buffer0, dim0, size1);
-  copy_slices(buffer0, buffer1, dim0, indices0, indices1);
+  const auto &[indices1, dim1, buffer1] = dst.constituents<bucket<T>>();
   if constexpr (is_view_v<T>) {
+    // This is overly restrictive, could allow copy to non-const non-owning
     throw std::runtime_error(
-        "Copying a non-owning binned view is not supported.");
+        "Copying to non-owning binned view is not implemented.");
   } else {
-    dst.replace_model(
-        DataModel<bucket<T>>{std::move(indices1), dim0, std::move(buffer1)});
+    copy_slices(buffer0, buffer1, dim0, indices0, indices1);
   }
 }
 

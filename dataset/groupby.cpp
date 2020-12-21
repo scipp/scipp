@@ -59,7 +59,7 @@ T GroupBy<T>::copy(const scipp::index group,
 template <class T>
 T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
   T out;
-  if (is_buckets(m_data)) {
+  if (is_bins(m_data)) {
     const auto out_sizes =
         GroupBy(bucket_sizes(m_data), {key(), groups()}).sum(reductionDim);
     out = resize(m_data, reductionDim, out_sizes);

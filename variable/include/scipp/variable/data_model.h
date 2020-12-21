@@ -117,6 +117,9 @@ public:
   }
 
   scipp::index dtype_size() const override { return sizeof(T); }
+  VariableConstView bin_indices() const override {
+    throw except::TypeError("This data type does not have bin indices.");
+  }
 
 private:
   void expectHasVariances() const {
