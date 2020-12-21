@@ -6,6 +6,7 @@
 from .. import config
 from .model import PlotModel
 from .resampling_model import resampling_model
+from .._scipp import core as sc
 import numpy as np
 
 
@@ -52,10 +53,21 @@ class PlotModel2d(PlotModel):
         transpose = self.displayed_dims['x'] == self.dslice.dims[0]
         if transpose:
             values = np.transpose(values)
-        masks = self._make_masks(self.dslice,
-                                 mask_info=mask_info[self.name],
-                                 transpose=transpose)
-        return {"values": values, "masks": masks, "extent": extent}
+        # masks = self._make_masks(self.dslice,
+        #                          mask_info=mask_info[self.name],
+        #                          transpose=transpose)
+        if len(mask_info[self.name]) > 0:
+            # Use automatic broadcasting in Scipp variables
+            msk = sc.Variable(dims=self.dslice.data.dims,
+                              values=np.zeros(self.dslice.data.shape,
+                                              dtype=np.int32))
+            for m, val in mask_info[self.name].items():
+                if val:
+                    msk += sc.Variable(
+                        dims=self.dslice.masks[m].dims,
+                        values=self.dslice.masks[m].values.astype(np.int32))
+            # new_values["masks"] = msk.values.ravel()
+        return {"values": values, "masks": msk.values, "extent": extent}
 
 
     def _update_image(self, extent=None, mask_info=None):

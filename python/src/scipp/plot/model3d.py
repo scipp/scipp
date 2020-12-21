@@ -78,7 +78,7 @@ class PlotModel3d(PlotModel):
         }
 
         # Handle masks
-        msk = None
+        # msk = None
         if len(mask_info[self.name]) > 0:
             # Use automatic broadcasting in Scipp variables
             msk = sc.Variable(dims=self.dslice.data.dims,

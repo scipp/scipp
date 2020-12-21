@@ -196,20 +196,28 @@ class PlotFigure2d(PlotFigure):
         """
         # self.image.set_data(new_values["values"])
         rgba = self.cmap(self.norm(new_values["values"]))
-        # print(new_values["masks"])
-        for m in new_values["masks"]:
-            if new_values["masks"][m] is not None:
-                indices = np.where(new_values["masks"][m])
-                # for i in range(len(indices[0])):
-                #     rgba[indices[0][i], indices[1][i], :] = [0, 0, 0, 1.0]
+        print(new_values["masks"])
+        if new_values["masks"] is not None:
+            indices = np.where(new_values["masks"])
+            rgba[indices] = self.masks_cmap(self.norm(new_values["values"][indices]))
 
-                # print(indices[0])
-                # print(rgba[indices].shape)
-                # print(self.masks_cmap(self.norm(new_values["values"][indices])).shape)
-                rgba[indices] = self.masks_cmap(self.norm(new_values["values"][indices]))
-                # rgba = np.where(new_values["masks"][m], self.masks_cmap(self.norm(new_values["values"])), rgba)
-                # self.mask_image[m].set_data(new_values["masks"][m])
-        # print(rgba.shape)
+
+
+
+
+        # for m in new_values["masks"]:
+        #     if new_values["masks"][m] is not None:
+        #         indices = np.where(new_values["masks"][m])
+        #         # for i in range(len(indices[0])):
+        #         #     rgba[indices[0][i], indices[1][i], :] = [0, 0, 0, 1.0]
+
+        #         # print(indices[0])
+        #         # print(rgba[indices].shape)
+        #         # print(self.masks_cmap(self.norm(new_values["values"][indices])).shape)
+        #         rgba[indices] = self.masks_cmap(self.norm(new_values["values"][indices]))
+        #         # rgba = np.where(new_values["masks"][m], self.masks_cmap(self.norm(new_values["values"])), rgba)
+        #         # self.mask_image[m].set_data(new_values["masks"][m])
+        # # print(rgba.shape)
 
         self.image_colors.set_data(rgba)
         self.image_values.set_data(new_values["values"])
