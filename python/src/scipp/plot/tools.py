@@ -135,8 +135,9 @@ def check_log_limits(lims=None, vmin=None, vmax=None, scale=None):
     if lims is not None:
         vmin = lims[0]
         vmax = lims[1]
-    if scale == "log" and vmin <= 0:
-        vmin = 1.0e-03 * vmax
+    if vmin is not None:
+        if scale == "log" and vmin <= 0:
+            vmin = 1.0e-03 * vmax
     if lims is not None:
         return [vmin, vmax]
     else:

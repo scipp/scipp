@@ -182,8 +182,10 @@ class PlotModel:
             if m in array.masks:
                 msk = base_mask * sc.Variable(
                     dims=array.masks[m].dims,
-                    values=array.masks[m].values.astype(np.int32))
-                masks[m] = mask_to_float(msk.values, data.values)
+                    values=array.masks[m].values)
+                    # values=array.masks[m].values.astype(np.int32))
+                # masks[m] = mask_to_float(msk.values, data.values)
+                masks[m] = msk.values
                 if transpose:
                     masks[m] = np.transpose(masks[m])
             else:

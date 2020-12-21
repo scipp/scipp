@@ -47,6 +47,17 @@ class PlotModel2d(PlotModel):
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
 
+    def get_slice_values(self, mask_info, extent=None):
+        values = self.dslice.values
+        transpose = self.displayed_dims['x'] == self.dslice.dims[0]
+        if transpose:
+            values = np.transpose(values)
+        masks = self._make_masks(self.dslice,
+                                 mask_info=mask_info[self.name],
+                                 transpose=transpose)
+        return {"values": values, "masks": masks, "extent": extent}
+
+
     def _update_image(self, extent=None, mask_info=None):
         """
         Resample 2d images to a fixed resolution to handle very large images.
@@ -55,14 +66,16 @@ class PlotModel2d(PlotModel):
         for dim in self._squeeze:
             data = data[dim, 0]
         self.dslice = data
-        values = data.values
-        transpose = self.displayed_dims['x'] == data.dims[0]
-        if transpose:
-            values = np.transpose(values)
-        masks = self._make_masks(data,
-                                 mask_info=mask_info[self.name],
-                                 transpose=transpose)
-        return {"values": values, "masks": masks, "extent": extent}
+        return self.get_slice_values(mask_info=mask_info, extent=extent)
+
+        # values = data.values
+        # transpose = self.displayed_dims['x'] == data.dims[0]
+        # if transpose:
+        #     values = np.transpose(values)
+        # masks = self._make_masks(data,
+        #                          mask_info=mask_info[self.name],
+        #                          transpose=transpose)
+        # return {"values": values, "masks": masks, "extent": extent}
 
     def update_data(self, slices, mask_info):
         """
