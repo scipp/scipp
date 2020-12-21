@@ -311,6 +311,23 @@ protected:
   Variable var = make_bins(indices, Dim::Event, buffer);
 };
 
+TEST_F(ConcatenateBinnedTest, mismatching_buffer) {
+  for (const auto buffer2 :
+       {buffer * (1.0 * units::m),
+        DataArray(data, {{Dim::X, data + data}}, {{"mask", 1.0 * units::one}},
+                  {}),
+        DataArray(data, {{Dim::X, data + data}}, {},
+                  {{Dim("attr"), 1.0 * units::one}}),
+        DataArray(data, {{Dim::Y, data + data}, {Dim::X, data + data}}),
+        DataArray(data, {})}) {
+    auto var2 = make_bins(indices, Dim::Event, buffer2);
+    EXPECT_THROW(concatenate(var, var2, Dim::X), std::runtime_error) << buffer2;
+    EXPECT_THROW(concatenate(var, var2, Dim::Y), std::runtime_error) << buffer2;
+    EXPECT_THROW(concatenate(var2, var, Dim::X), std::runtime_error) << buffer2;
+    EXPECT_THROW(concatenate(var2, var, Dim::Y), std::runtime_error) << buffer2;
+  }
+}
+
 TEST_F(ConcatenateBinnedTest, existing_dim) {
   auto out = concatenate(var, var, Dim::X);
   EXPECT_EQ(out.slice({Dim::X, 0, 2}), var);
