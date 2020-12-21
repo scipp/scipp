@@ -7,8 +7,6 @@
 
 #include "scipp/core/element/bin.h"
 #include "scipp/core/element/cumulative.h"
-#include "scipp/core/parallel.h"
-#include "scipp/core/tag_util.h"
 
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bins.h"
