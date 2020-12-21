@@ -314,8 +314,13 @@ TEST_P(BinTest, bin_by_group) {
   std::get<2>(binned.data().constituents<core::bin<DataArray>>())
       .coords()
       .erase(Dim("group"));
-  const auto edges =
-      makeVariable<double>(Dims{Dim("group")}, Shape{3}, Values{-2, 0, 2});
-  // Using bin coord )instead of event coord) for binning.
-  bin(binned, {edges});
+  // Using bin coord (instead of event coord) for binning.
+  // Edges giving same grouping as existing => data matches
+  auto edges = makeVariable<double>(Dims{Dim("group")}, Shape{6},
+                                    Values{-2, -1, 0, 1, 2, 3});
+  EXPECT_EQ(bin(binned, {edges}).data(), binned.data());
+
+  // Fewer bins than groups
+  edges = makeVariable<double>(Dims{Dim("group")}, Shape{3}, Values{-2, 0, 2});
+  EXPECT_NO_THROW(bin(binned, {edges}));
 }
