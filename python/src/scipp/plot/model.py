@@ -8,6 +8,7 @@ from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
+import os
 
 
 class PlotModel:
@@ -193,12 +194,18 @@ class PlotModel:
         return masks
 
     def _make_profile(self, profile, dim, mask_info):
+        os.write(1, "model _make_profile 1\n".encode())
         values = {"values": {}, "variances": {}, "masks": {}}
+        os.write(1, "model _make_profile 2\n".encode())
         values["values"]["x"] = profile.meta[dim].values
+        os.write(1, "model _make_profile 3\n".encode())
         values["values"]["y"] = profile.data.values
+        os.write(1, "model _make_profile 4\n".encode())
         if profile.data.variances is not None:
             values["variances"]["e"] = vars_to_err(profile.data.variances)
+        os.write(1, "model _make_profile 5\n".encode())
         values["masks"] = self._make_masks(profile, mask_info=mask_info)
+        os.write(1, "model _make_profile 6\n".encode())
         return values
 
     def get_axformatter(self, name, dim):

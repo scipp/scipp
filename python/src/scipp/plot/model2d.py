@@ -8,6 +8,7 @@ from .model import PlotModel
 from .resampling_model import resampling_model
 from .._scipp import core as sc
 import numpy as np
+import os
 
 
 class PlotModel2d(PlotModel):
@@ -139,26 +140,40 @@ class PlotModel2d(PlotModel):
         """
 
         # Find indices of pixel where cursor lies
+        os.write(1, "model2d update_profile 1\n".encode())
+
         dimx = self.displayed_dims['x']
         dimy = self.displayed_dims['y']
+        os.write(1, "model2d update_profile 2\n".encode())
         if len(slices) == 1:
+            os.write(1, "model2d update_profile 2.1\n".encode())
+            os.write(1, (str(slices)+"\n").encode())
+            
             dim, [start, stop] = slices[0]
+            os.write(1, "model2d update_profile 2.2\n".encode())
             self._profile_model = resampling_model(
                 self.data_arrays[self.name][dim, start:stop])
+            os.write(1, "model2d update_profile 2.3\n".encode())
         else:
+            os.write(1, "model2d update_profile 2.4\n".encode())
             self._profile_model = resampling_model(self.data_arrays[self.name])
+            os.write(1, "model2d update_profile 2.5\n".encode())
+        os.write(1, "model2d update_profile 3\n".encode())
         self._profile_model.resolution = {dimx: 1, dimy: 1, profile_dim: 200}
         x = self._model.data.meta[dimx]
         y = self._model.data.meta[dimy]
+        os.write(1, "model2d update_profile 4\n".encode())
         # Note that xdata and ydata already have the left edge subtracted from
         # them
         ix = int(xdata / (x.values[1] - x.values[0]))
         iy = int(ydata / (y.values[1] - y.values[0]))
+        os.write(1, "model2d update_profile 5\n".encode())
         self._profile_model.bounds = {
             dimx: (x[dimx, ix], x[dimx, ix + 1]),
             dimy: (y[dimy, iy], y[dimy, iy + 1]),
             profile_dim: None
         }
+        os.write(1, "model2d update_profile 6\n".encode())
         return {
             self.name:
             self._make_profile(self._profile_model.data[dimx, 0][dimy, 0],
