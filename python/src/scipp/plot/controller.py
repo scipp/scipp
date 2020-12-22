@@ -284,15 +284,15 @@ class PlotController:
                 vmin = self.vmin
             else:
                 self.vmin = vmin
-        else:
-            self.vmin = vmin
+        # else:
+        #     self.vmin = vmin
         if self.vmax is not None:
             if button is None:
                 vmax = self.vmax
             else:
                 self.vmax = vmax
-        else:
-            self.vmax = vmax
+        # else:
+        #     self.vmax = vmax
         vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax, scale=self.norm)
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
