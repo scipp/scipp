@@ -18,6 +18,9 @@ subbin_offsets(const VariableConstView &start_, const VariableConstView &stop_,
                const VariableConstView &subbin_sizes_, const scipp::index nsrc,
                const scipp::index ndst, const scipp::index nbin);
 
+// instead of this helper class, we could also just use three variables for
+// begin, end, sizes (the latter one a bin-variable), and implement custom sum
+// and cumsum ops.
 class SCIPP_VARIABLE_EXPORT SubbinSizes {
 public:
   SubbinSizes(const scipp::index begin, const scipp::index end,

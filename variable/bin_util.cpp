@@ -108,8 +108,7 @@ Variable subbin_sizes(const VariableConstView &subbins,
 //
 // We need to store this an a packed format to avoid O(M*N) memory (and compute)
 // requirements.
-// The difficulty is that we need to apply sum and cumsum along both vertical
-// axes.
+// The difficulty is that we need to apply sum and cumsum along both axes.
 // Can a helper class help?
 SubbinSizes::SubbinSizes(const scipp::index begin, const scipp::index end,
                          std::vector<scipp::index> &&sizes)
@@ -123,6 +122,13 @@ bool operator==(const SubbinSizes &a, const SubbinSizes &b) {
          std::tie(b.begin(), b.end(), b.sizes());
 }
 
+// is this good enough for what we need? for cumsum we want to avoid filling in
+// the area of zero padding.. instead (inclusive_scan, similar for
+// exclusive_scan):
+//
+// sum = intersection(sum, x) # drop lower subbins
+// sum += x
+// x = sum
 SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
   const auto begin = std::min(a.begin(), b.begin());
   const auto end = std::max(a.end(), b.end());
@@ -135,5 +141,18 @@ SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
     sizes[current++] += size;
   return {begin, end, std::move(sizes)};
 }
+
+// TODO next steps:
+// - implement operations needed for setup in bin.cpp:bin<T>
+//   - sum, cumsum
+//   - cumsum_bins (cumsum along sizes in SubbinSizes)
+//   - buckets::sum (sum along sizes in SubbinSizes)
+// - refactor bin_sizes to it creates Variable<SubbinSizes> instead of binned
+//   variable
+// - compute begin and end (and nbin) in TargetBinBuilder::build, forward those
+//   to bin<T>
+// - use computed begin and end in `update_indices_by*`:
+//   - create subspan views so each input bin in the transform sees only
+//     relevant section of output bin edges (or groups)
 
 } // namespace scipp::variable
