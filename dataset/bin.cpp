@@ -107,11 +107,10 @@ Variable bin_sizes(const VariableConstView &sub_bin, const scipp::index nbin) {
 
 template <class T>
 auto bin(const VariableConstView &data, const VariableConstView &indices,
-         const Dimensions &dims) {
+         const Dimensions &dims, const scipp::index nbin) {
   // Setup offsets within output bins, for every input bin. If rebinning occurs
   // along a dimension each output bin sees contributions from all input bins
   // along that dim.
-  const auto nbin = dims.volume();
   auto output_bin_sizes = bin_sizes(indices, nbin);
   auto offsets = output_bin_sizes;
   fill_zeros(offsets);
@@ -235,22 +234,33 @@ class TargetBinBuilder {
 
 public:
   const Dimensions &dims() const noexcept { return m_dims; }
+  scipp::index nbin() const { return m_nbin; }
 
   /// `bin_coords` may optionally be used to provide bin-based coords, e.g., for
   /// data that has prior grouping but did not retain the original group coord
   /// for every event.
   template <class Coords, class BinCoords = CoordsConstView>
   void build(const VariableView &indices, Coords &&coords,
-             BinCoords &&bin_coords = {}) const {
+             BinCoords &&bin_coords = {}) {
     const auto get_coord = [&](const Dim dim) {
       return coords.count(dim) ? coords[dim] : Variable(bin_coords.at(dim));
     };
+    m_nbin = dims().volume();
     for (const auto &[action, dim, key] : m_actions) {
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
-      else if (action == AxisAction::Bin)
-        update_indices_by_binning(indices, get_coord(dim), key);
-      else if (action == AxisAction::Existing)
+      else if (action == AxisAction::Bin) {
+        if (coords.count(dim))
+          update_indices_by_binning(indices, coords[dim], key);
+        else {
+          const auto &bin_coord = bin_coords.at(dim);
+          auto bin_indices = makeVariable<scipp::index>(bin_coord.dims());
+          update_indices_by_binning(bin_indices, bin_coord, key);
+          indices *= bin_coord.dims().volume() * units::one;
+          indices += bin_indices;
+          // m_nbin /= key.dims().volume() - 1;
+        }
+      } else if (action == AxisAction::Existing)
         update_indices_from_existing(indices, dim);
       else if (action == AxisAction::Join) {
         ; // target bin 0 for all
@@ -306,6 +316,7 @@ public:
 
 private:
   Dimensions m_dims;
+  scipp::index m_nbin = 0;
   std::vector<std::tuple<AxisAction, Dim, VariableConstView>> m_actions;
   std::vector<Variable> m_joined;
 };
@@ -416,7 +427,8 @@ Variable concat_bins(const VariableConstView &var, const Dim dim) {
   builder.erase(dim);
   TargetBins<T> target_bins(var, builder.dims());
   builder.build(*target_bins, std::map<Dim, Variable>{});
-  auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder.dims());
+  auto [buffer, bin_sizes] =
+      bin<DataArray>(var, *target_bins, builder.dims(), builder.nbin());
   squeeze(bin_sizes, {dim});
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
@@ -455,10 +467,10 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
   const auto masked = hide_masked();
   TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
   builder.build(*target_bins, array.coords());
-  return add_metadata(
-      bin<DataArrayConstView>(masked, *target_bins, builder.dims()),
-      array.coords(), array.masks(), array.attrs(), builder.edges(),
-      builder.groups(), {reductionDim});
+  return add_metadata(bin<DataArrayConstView>(masked, *target_bins,
+                                              builder.dims(), builder.nbin()),
+                      array.coords(), array.masks(), array.attrs(),
+                      builder.edges(), builder.groups(), {reductionDim});
 }
 
 namespace {
@@ -514,9 +526,10 @@ DataArray bin(const DataArrayConstView &array,
     builder.build(target_bins_buffer, coords);
     const auto target_bins = make_non_owning_bins(
         indices, dim, VariableConstView(target_bins_buffer));
-    return add_metadata(
-        bin<DataArrayConstView>(tmp, target_bins, builder.dims()), coords,
-        masks, attrs, builder.edges(), builder.groups(), {});
+    return add_metadata(bin<DataArrayConstView>(tmp, target_bins,
+                                                builder.dims(), builder.nbin()),
+                        coords, masks, attrs, builder.edges(), builder.groups(),
+                        {});
   }
 }
 
@@ -531,9 +544,10 @@ DataArray bin(const VariableConstView &data, const Coords &coords,
   TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
   builder.build(*target_bins, bins_view<DataArrayConstView>(masked).coords(),
                 coords);
-  return add_metadata(
-      bin<DataArrayConstView>(masked, *target_bins, builder.dims()), coords,
-      masks, attrs, builder.edges(), builder.groups(), {});
+  return add_metadata(bin<DataArrayConstView>(masked, *target_bins,
+                                              builder.dims(), builder.nbin()),
+                      coords, masks, attrs, builder.edges(), builder.groups(),
+                      {});
 }
 
 template DataArray bin(const VariableConstView &,

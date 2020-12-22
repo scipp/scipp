@@ -6,6 +6,7 @@ set(INC_FILES
     include/scipp/variable/apply.h
     include/scipp/variable/arithmetic.h
     include/scipp/variable/bins.h
+    include/scipp/variable/bin_util.h
     include/scipp/variable/comparison.h
     include/scipp/variable/except.h
     include/scipp/variable/indexed_slice_view.h
@@ -37,6 +38,7 @@ set(SRC_FILES
     ${variable_SRC_FILES}
     arithmetic.cpp
     bins.cpp
+    bin_util.cpp
     comparison.cpp
     creation.cpp
     cumulative.cpp
