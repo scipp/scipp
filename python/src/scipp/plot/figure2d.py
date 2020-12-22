@@ -45,7 +45,7 @@ class PlotFigure2d(PlotFigure):
         self.cmap = cmap
         self.norm = norm
         self.masks_cmap = masks["cmap"]
-        print(self.masks_cmap.name)
+        # print(self.masks_cmap.name)
 
         # print(cmap)
         # print(norm)
@@ -196,7 +196,7 @@ class PlotFigure2d(PlotFigure):
         """
         # self.image.set_data(new_values["values"])
         rgba = self.cmap(self.norm(new_values["values"]))
-        print(new_values["masks"])
+        # print(new_values["masks"])
         if new_values["masks"] is not None:
             indices = np.where(new_values["masks"])
             rgba[indices] = self.masks_cmap(self.norm(new_values["values"][indices]))
@@ -238,7 +238,7 @@ class PlotFigure2d(PlotFigure):
         self.norm = LogNorm(
             vmin=vmin, vmax=vmax) if norm == "log" else Normalize(vmin=vmin,
                                                                   vmax=vmax)
-        print(vmin, vmax)
+        # print(vmin, vmax)
         self.image_values.set_norm(self.norm)
         self.opacify_colorbar()
 

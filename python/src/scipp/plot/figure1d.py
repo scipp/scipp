@@ -215,7 +215,7 @@ class PlotFigure1d(PlotFigure):
 
             for m in vals["masks"]:
                 self.mask_lines[name][m].set_data(vals["values"]["x"],
-                                                  vals["masks"][m])
+                                                  np.where(vals["masks"][m], vals["values"]["y"], None).astype(np.float32))
 
             if self.errorbars[name]:
                 coll = self.error_lines[name].get_children()[0]
