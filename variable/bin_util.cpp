@@ -61,6 +61,7 @@ subbin_offsets(const VariableConstView &start_, const VariableConstView &stop_,
 ///   bins
 /// - `begin_bin` is the first output bin overlapping an input bin
 /// - `end_bin` is the output bin after the last overlapping an input bin
+/*
 Variable subbin_sizes(const VariableConstView &subbins,
                       const VariableConstView &begin_bin,
                       const VariableConstView &end_bin) {
@@ -76,15 +77,63 @@ Variable subbin_sizes(const VariableConstView &subbins,
       core::element::count_indices); // transform bins, not bin element
   return sizes;
 }
+*/
 
 // 1. subbin_sizes counts event for every target bin of every input bin
 //    its output is input centric
 // 2. reshape buffer
-// 3. non-owning bins (output-centric)
+// 3. non-owning bins (output-centric based on output bin ranges computed from
+//    begin_end and end_bin)
+// 4. cumsum_bins...but would need to transpose? should *first* iterate inputs,
+//    then bins
 //
-// must require than no dims inside ragged rebin dim?
-reshape(output_bin_sizes_buffer,
-        Dimensions({Dim("subbin"), Dim("bin")}, {nsubbin, nbin}));
-make_non_owning_bins(indices(dstdims), Dim("subbin"), ..);
+// are dims inside ragged rebinned dim guaranteed to have some begin_bin and
+// end_bin? if not then above does not work, I think
+// reshape(output_bin_sizes_buffer,
+//        Dimensions({Dim("subbin"), Dim("bin")}, {nsubbin, nbin}));
+// make_non_owning_bins(indices(dstdims), Dim("subbin"), ..);
+//
+// subbin_sizes looks like this:
+//
+// ---1
+// --11
+// --4-
+// 111-
+// 2---
+//
+// each row corresponds to an input bin
+// each column corresponds to an input bin
+// the example is for a single rebinned dim
+// `-` is 0
+//
+// We need to store this an a packed format to avoid O(M*N) memory (and compute)
+// requirements.
+// The difficulty is that we need to apply sum and cumsum along both vertical
+// axes.
+// Can a helper class help?
+SubbinSizes::SubbinSizes(const scipp::index begin, const scipp::index end,
+                         std::vector<scipp::index> &&sizes)
+    : m_begin(begin), m_end(end), m_sizes(std::move(sizes)) {
+  if (scipp::size(m_sizes) != (m_end - m_begin))
+    throw except::SizeError(
+        "List of sizes must match length given by begin and end.");
+}
+bool operator==(const SubbinSizes &a, const SubbinSizes &b) {
+  return std::tie(a.begin(), a.end(), a.sizes()) ==
+         std::tie(b.begin(), b.end(), b.sizes());
+}
+
+SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
+  const auto begin = std::min(a.begin(), b.begin());
+  const auto end = std::max(a.end(), b.end());
+  std::vector<scipp::index> sizes(end - begin);
+  scipp::index current = a.begin() - begin;
+  for (const auto &size : a.sizes())
+    sizes[current++] += size;
+  current = b.begin() - begin;
+  for (const auto &size : b.sizes())
+    sizes[current++] += size;
+  return {begin, end, std::move(sizes)};
+}
 
 } // namespace scipp::variable

@@ -5,6 +5,7 @@
 #include "scipp/variable/bin_util.h"
 
 using namespace scipp;
+using namespace scipp::variable;
 
 TEST(BinUtilTest, xxx) {
   const auto start =
@@ -27,4 +28,21 @@ TEST(BinUtilTest, xxx) {
   EXPECT_EQ(output_bin_sizes,
             makeVariable<scipp::index>(Dims{Dim("dst")}, Shape{ndst},
                                        Values{3, 1, 6, 2}));
+}
+
+TEST(SubbinSizesTest, contruct_fails) {
+  EXPECT_THROW(SubbinSizes(1, 3, {}), except::SizeError);
+  EXPECT_THROW(SubbinSizes(1, 3, {1}), except::SizeError);
+  EXPECT_THROW(SubbinSizes(1, 3, {1, 2, 3}), except::SizeError);
+  EXPECT_THROW(SubbinSizes(1, 0, {}), except::SizeError);
+}
+
+TEST(SubbinSizesTest, plus) {
+  SubbinSizes a(1, 3, {2, 3});
+  SubbinSizes b(1, 3, {3, 4});
+  SubbinSizes c(0, 3, {1, 2, 3});
+  SubbinSizes d(4, 5, {42});
+  EXPECT_EQ(a + b, SubbinSizes(1, 3, {5, 7}));
+  EXPECT_EQ(a + c, SubbinSizes(0, 3, {1, 4, 6}));
+  EXPECT_EQ(a + d, SubbinSizes(1, 5, {2, 3, 0, 42}));
 }
