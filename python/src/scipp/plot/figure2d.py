@@ -197,7 +197,7 @@ class PlotFigure2d(PlotFigure):
         # self.image.set_data(new_values["values"])
         rgba = self.cmap(self.norm(new_values["values"]))
         # print(new_values["masks"])
-        if new_values["masks"] is not None:
+        if "masks" in new_values:
             indices = np.where(new_values["masks"])
             rgba[indices] = self.masks_cmap(self.norm(new_values["values"][indices]))
 

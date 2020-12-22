@@ -56,6 +56,7 @@ class PlotModel2d(PlotModel):
         # masks = self._make_masks(self.dslice,
         #                          mask_info=mask_info[self.name],
         #                          transpose=transpose)
+        slice_values = {"values": values, "extent": extent}
         if len(mask_info[self.name]) > 0:
             # Use automatic broadcasting in Scipp variables
             msk = sc.Variable(dims=self.dslice.data.dims,
@@ -67,7 +68,11 @@ class PlotModel2d(PlotModel):
                         dims=self.dslice.masks[m].dims,
                         values=self.dslice.masks[m].values.astype(np.int32))
             # new_values["masks"] = msk.values.ravel()
-        return {"values": values, "masks": msk.values, "extent": extent}
+            if transpose:
+                slice_values["masks"] = np.transpose(msk.values)
+            else:
+                slice_values["masks"] = msk.values
+        return slice_values
 
 
     def _update_image(self, extent=None, mask_info=None):

@@ -74,7 +74,7 @@ class PlotModel3d(PlotModel):
         """
         new_values = {
             "values": self.dslice.data.values.astype(np.float32).ravel(),
-            "masks": None
+            # "masks": None
         }
 
         # Handle masks
