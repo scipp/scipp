@@ -6,18 +6,14 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
 
 Variable::Variable(const VariableConstView &slice)
-    : Variable(slice ? slice.is_trivial() ? Variable(slice.underlying())
-                                          : Variable(slice, slice.dims())
-                     : Variable()) {
-  // There is a bug in the implementation of MultiIndex used in ElementArrayView
-  // in case one of the dimensions has extent 0.
-  if (slice && !slice.is_trivial() && dims().volume() != 0)
-    data().copy(slice, *this);
+    : Variable(empty_like(slice)) {
+  data().copy(slice, *this);
 }
 
 /// Construct from parent with same dtype, unit, and hasVariances but new dims.
@@ -217,5 +213,13 @@ void expect0D(const Dimensions &dims) {
 }
 
 } // namespace detail
+
+VariableConstView Variable::bin_indices() const { return data().bin_indices(); }
+
+VariableConstView VariableConstView::bin_indices() const {
+  auto view = *this;
+  view.m_variable = &underlying().bin_indices().underlying();
+  return view;
+}
 
 } // namespace scipp::variable

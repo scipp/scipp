@@ -44,9 +44,9 @@ bucket_sizes(const DataArrayConstView &array);
 bucket_sizes(const DatasetConstView &dataset);
 
 [[nodiscard]] SCIPP_DATASET_EXPORT bool
-is_buckets(const DataArrayConstView &array);
+is_bins(const DataArrayConstView &array);
 [[nodiscard]] SCIPP_DATASET_EXPORT bool
-is_buckets(const DatasetConstView &dataset);
+is_bins(const DatasetConstView &dataset);
 
 } // namespace scipp::dataset
 

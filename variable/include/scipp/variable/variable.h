@@ -153,6 +153,8 @@ public:
     return {0, dims(), dims(), {}};
   }
 
+  VariableConstView bin_indices() const;
+
   template <class T>
   std::tuple<VariableConstView, Dim, typename T::const_element_type>
   constituents() const;
@@ -281,6 +283,8 @@ public:
   core::ElementArrayViewParams array_params() const noexcept {
     return {m_offset, m_dims, m_dataDims, {}};
   }
+
+  VariableConstView bin_indices() const;
 
   template <class T>
   std::tuple<VariableConstView, Dim, typename T::const_element_type>

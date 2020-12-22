@@ -60,6 +60,8 @@ public:
   virtual void assign(const VariableConcept &other) = 0;
   virtual scipp::index dtype_size() const = 0;
 
+  virtual VariableConstView bin_indices() const = 0;
+
   friend class Variable;
 
 private:

@@ -800,6 +800,8 @@ using dataset::DataArrayView;
 using dataset::Dataset;
 using dataset::DatasetConstView;
 using dataset::DatasetView;
+template <> struct is_view<DataArrayConstView> : std::true_type {};
 template <> struct is_view<DataArrayView> : std::true_type {};
+template <> struct is_view<DatasetConstView> : std::true_type {};
 template <> struct is_view<DatasetView> : std::true_type {};
 } // namespace scipp

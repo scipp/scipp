@@ -45,14 +45,33 @@ constexpr auto copy_or_match = [](const auto &a, const auto &b, const Dim dim,
   else
     core::expect::equals(a, b);
 };
+
+constexpr auto expect_matching_keys = [](const auto &a, const auto &b) {
+  bool ok = true;
+  constexpr auto key = [](const auto &x) {
+    if constexpr (std::is_base_of_v<DataArrayConstView,
+                                    std::decay_t<decltype(x)>>)
+      return x.name();
+    else
+      return x.first;
+  };
+  for (const auto &x : a)
+    ok &= b.contains(key(x));
+  for (const auto &x : b)
+    ok &= a.contains(key(x));
+  if (!ok)
+    throw std::runtime_error("Mismatching keys in\n" + to_string(a) + " and\n" +
+                             to_string(b));
+};
+
 } // namespace
 
 void copy_slices(const DataArrayConstView &src, const DataArrayView &dst,
                  const Dim dim, const VariableConstView &srcIndices,
                  const VariableConstView &dstIndices) {
   copy_slices(src.data(), dst.data(), dim, srcIndices, dstIndices);
-  core::expect::sizeMatches(src.meta(), dst.meta());
-  core::expect::sizeMatches(src.masks(), dst.masks());
+  expect_matching_keys(src.meta(), dst.meta());
+  expect_matching_keys(src.masks(), dst.masks());
   for (const auto &[name, coord] : src.meta())
     copy_or_match(coord, dst.meta()[name], dim, srcIndices, dstIndices);
   for (const auto &[name, mask] : src.masks())
@@ -64,12 +83,12 @@ void copy_slices(const DatasetConstView &src, const DatasetView &dst,
                  const VariableConstView &dstIndices) {
   for (const auto &[name, var] : src.coords())
     copy_or_match(var, dst.coords()[name], dim, srcIndices, dstIndices);
-  core::expect::sizeMatches(src.coords(), dst.coords());
-  core::expect::sizeMatches(src, dst);
+  expect_matching_keys(src.coords(), dst.coords());
+  expect_matching_keys(src, dst);
   for (const auto &item : src) {
     const auto &dst_ = dst[item.name()];
-    core::expect::sizeMatches(item.attrs(), dst_.attrs());
-    core::expect::sizeMatches(item.masks(), dst_.masks());
+    expect_matching_keys(item.attrs(), dst_.attrs());
+    expect_matching_keys(item.masks(), dst_.masks());
     copy_or_match(item.data(), dst_.data(), dim, srcIndices, dstIndices);
     for (const auto &[name, var] : item.masks())
       copy_or_match(var, dst_.masks()[name], dim, srcIndices, dstIndices);
@@ -185,13 +204,11 @@ Dataset bucket_sizes(const DatasetConstView &dataset) {
   return apply_to_items(dataset, [](auto &&_) { return bucket_sizes(_); });
 }
 
-bool is_buckets(const DataArrayConstView &array) {
-  return is_buckets(array.data());
-}
+bool is_bins(const DataArrayConstView &array) { return is_bins(array.data()); }
 
-bool is_buckets(const DatasetConstView &dataset) {
+bool is_bins(const DatasetConstView &dataset) {
   return std::any_of(dataset.begin(), dataset.end(),
-                     [](const auto &item) { return is_buckets(item); });
+                     [](const auto &item) { return is_bins(item); });
 }
 
 } // namespace scipp::dataset
