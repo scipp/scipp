@@ -48,12 +48,12 @@ constexpr auto copy_or_match = [](const auto &a, const auto &b, const Dim dim,
 
 constexpr auto expect_matching_keys = [](const auto &a, const auto &b) {
   bool ok = true;
-  constexpr auto key = [](const auto &x) {
+  constexpr auto key = [](const auto &_x) {
     if constexpr (std::is_base_of_v<DataArrayConstView,
-                                    std::decay_t<decltype(x)>>)
-      return x.name();
+                                    std::decay_t<decltype(_x)>>)
+      return _x.name();
     else
-      return x.first;
+      return _x.first;
   };
   for (const auto &x : a)
     ok &= b.contains(key(x));
@@ -220,6 +220,8 @@ template <class T>
 auto combine(const VariableConstView &var0, const VariableConstView &var1) {
   const auto &[indices0, dim0, buffer0] = var0.constituents<bucket<T>>();
   const auto &[indices1, dim1, buffer1] = var1.constituents<bucket<T>>();
+  (void)buffer1;
+  (void)dim1;
   const Dim dim = dim0;
   const auto [begin0, end0] = unzip(indices0);
   const auto [begin1, end1] = unzip(indices1);
@@ -247,6 +249,8 @@ template <class T>
 void reserve_impl(const VariableView &var, const VariableConstView &shape) {
   // TODO this only reserves in the bins, but assumes buffer has enough space
   const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
+  (void)dim;
+  (void)buffer;
   variable::transform_in_place(
       indices, shape,
       overloaded{

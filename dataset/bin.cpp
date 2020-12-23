@@ -136,6 +136,7 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
       return std::move(var);
     const auto &[input_indices, buffer_dim, in_buffer] =
         var.template constituents<core::bin<VariableConstView>>();
+    (void)input_indices;
     auto out = resize_default_init(in_buffer, buffer_dim, total_size);
     transform_in_place(subspan_view(out, buffer_dim, filtered_input_bin_ranges),
                        as_subspan_view(std::as_const(offsets)),
@@ -211,17 +212,17 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
       dims.emplace(coord.dims().inner());
       out_coords[coord.dims().inner()] = copy(coord);
     }
-  for (const auto &[dim, coord] : coords)
+  for (const auto &[_dim, coord] : coords)
     if (!rebinned(coord))
-      out_coords[dim] = copy(coord);
+      out_coords[_dim] = copy(coord);
   auto out_masks = extract_unbinned(buffer, get_masks);
   for (const auto &[name, mask] : masks)
     if (!rebinned(mask))
       out_masks[name] = copy(mask);
   auto out_attrs = extract_unbinned(buffer, get_attrs);
-  for (const auto &[dim, coord] : attrs)
+  for (const auto &[_dim, coord] : attrs)
     if (!rebinned(coord))
-      out_attrs[dim] = copy(coord);
+      out_attrs[_dim] = copy(coord);
   return {make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer)),
           std::move(out_coords), std::move(out_masks), std::move(out_attrs)};
 }
@@ -256,17 +257,21 @@ public:
 
   auto edges() const noexcept {
     std::vector<VariableConstView> vars;
-    for (const auto &[action, dim, key] : m_actions)
+    for (const auto &[action, dim, key] : m_actions) {
+      (void)dim;
       if (action == AxisAction::Bin || action == AxisAction::Join)
         vars.emplace_back(key);
+    }
     return vars;
   }
 
   auto groups() const noexcept {
     std::vector<VariableConstView> vars;
-    for (const auto &[action, dim, key] : m_actions)
+    for (const auto &[action, dim, key] : m_actions) {
+      (void)dim;
       if (action == AxisAction::Group)
         vars.emplace_back(key);
+    }
     return vars;
   }
 
