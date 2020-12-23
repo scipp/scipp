@@ -69,17 +69,23 @@ template <class T> void bind_bin_size(pybind11::module &m) {
 
 template <class T> auto bin_begin_end(const VariableConstView &var) {
   auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
+  (void)dim;
+  (void)buffer;
   return py::cast(unzip(indices));
 }
 
 template <class T> auto bin_dim(const VariableConstView &var) {
   auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
+  (void)buffer;
+  (void)indices;
   return py::cast(dim);
 }
 
 template <class T> auto get_buffer(py::object &obj) {
   auto &view = obj.cast<const VariableView &>();
   auto &&[indices, dim, buffer] = view.constituents<bucket<T>>();
+  (void)dim;
+  (void)indices;
   auto ret =
       py::cast(typename T::view_type(buffer), py::return_value_policy::move);
   pybind11::detail::keep_alive_impl(ret, obj);
