@@ -6,7 +6,7 @@ from .tools import check_log_limits
 from .._utils import value_to_string
 from .._scipp import core as sc
 import numpy as np
-import os
+
 
 class PlotController:
     """
@@ -589,25 +589,20 @@ class PlotController:
         ask the model to slice down the data, and send the new data returned by
         the model to the profile view.
         """
-        os.write(1, "controller update_profile 1\n".encode())
         info = {"slice_label": ""}
         ax_dims = {self.axparams[xyz]["dim"]: xyz for xyz in self.axparams}
         xydata = {'x': xdata, 'y': ydata}
-        os.write(1, "controller update_profile 2\n".encode())
 
         slices = self.widgets.get_slider_bounds(exclude=self.profile_dim)
-        os.write(1, "controller update_profile 3\n".encode())
 
         # Add pixel locations to profile label
         for dim in ax_dims:
             info["slice_label"] = "{},{}:{}".format(
                 info["slice_label"], dim,
                 value_to_string(xydata[ax_dims[dim]], precision=1))
-        os.write(1, "controller update_profile 4\n".encode())
 
         info["slice_label"] = self._make_slice_label(slices,
                                                      info["slice_label"])[1:]
-        os.write(1, "controller update_profile 5\n".encode())
 
         # Get new values from model
         new_values = self.model.update_profile(xdata=xdata,
@@ -616,10 +611,8 @@ class PlotController:
                                                axparams=self.profile_axparams,
                                                profile_dim=self.profile_dim,
                                                mask_info=self.get_masks_info())
-        os.write(1, "controller update_profile 6\n".encode())
         # Send new values to the profile view
         self.profile.update_data(new_values, info=info)
-        os.write(1, "controller update_profile 7\n".encode())
 
     def _make_slice_label(self, slices, label):
         # Add slice ranges to profile label
