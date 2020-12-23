@@ -82,7 +82,7 @@ template <typename TestFixture, typename Op> void dtype_preservation(Op op) {
 }
 
 template <typename TestFixture, typename Op>
-void variances_as_standard_deviation_of_the_mean(Op op) {
+void variances_as_standard_deviation_of_the_mean([[maybe_unused]] Op op) {
   if constexpr (TestFixture::TestVariances) {
     const auto var = makeVariable<typename TestFixture::TestType>(
         Dims{Dim::Y, Dim::X}, Shape{2, 2}, units::m, Values{1.0, 2.0, 3.0, 4.0},
