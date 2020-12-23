@@ -53,9 +53,6 @@ class PlotModel2d(PlotModel):
         transpose = self.displayed_dims['x'] == self.dslice.dims[0]
         if transpose:
             values = np.transpose(values)
-        # masks = self._make_masks(self.dslice,
-        #                          mask_info=mask_info[self.name],
-        #                          transpose=transpose)
         slice_values = {"values": values, "extent": extent}
         if len(mask_info[self.name]) > 0:
             # Use automatic broadcasting in Scipp variables
@@ -67,7 +64,6 @@ class PlotModel2d(PlotModel):
                     msk += sc.Variable(
                         dims=self.dslice.masks[m].dims,
                         values=self.dslice.masks[m].values.astype(np.int32))
-            # new_values["masks"] = msk.values.ravel()
             if transpose:
                 slice_values["masks"] = np.transpose(msk.values)
             else:
@@ -83,15 +79,6 @@ class PlotModel2d(PlotModel):
             data = data[dim, 0]
         self.dslice = data
         return self.get_slice_values(mask_info=mask_info, extent=extent)
-
-        # values = data.values
-        # transpose = self.displayed_dims['x'] == data.dims[0]
-        # if transpose:
-        #     values = np.transpose(values)
-        # masks = self._make_masks(data,
-        #                          mask_info=mask_info[self.name],
-        #                          transpose=transpose)
-        # return {"values": values, "masks": masks, "extent": extent}
 
     def update_data(self, slices, mask_info):
         """

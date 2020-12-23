@@ -355,7 +355,6 @@ class PlotController:
         vmin, vmax = check_log_limits(vmin=self.vmin,
                                       vmax=self.vmax,
                                       scale=self.norm)
-        print("vmin, vmax", vmin, vmax)
         self.view.toggle_norm(self.norm, vmin, vmax)
         self.refresh()
 

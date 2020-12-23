@@ -364,7 +364,6 @@ void main() {
         Also create a new colorbar image and update the colorbar widget
         container.
         """
-        print(vmin, vmax)
         self.scalar_map.set_clim(vmin, vmax)
         self.cbar.set_clim(vmin, vmax)
         self.update_colorbar()
