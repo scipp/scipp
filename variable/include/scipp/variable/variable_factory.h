@@ -115,11 +115,11 @@ public:
   bool is_bins(const VariableConstView &var) const;
   template <class... Parents>
   Variable create(const DType elem_dtype, const Dimensions &dims,
-                  const units::Unit &unit, const bool variances,
+                  const units::Unit &unit, const bool with_variances,
                   const Parents &... parents) const {
     const auto key = bucket_dtype(parents...);
     return m_makers.at(key == dtype<void> ? elem_dtype : key)
-        ->create(elem_dtype, dims, unit, variances,
+        ->create(elem_dtype, dims, unit, with_variances,
                  std::vector<VariableConstView>{parents...});
   }
   Dim elem_dim(const VariableConstView &var) const;
