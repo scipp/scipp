@@ -91,15 +91,11 @@ class PlotFigure2d(PlotFigure):
         self.cbar.set_alpha(1.0)
         self.cbar.draw_all()
 
-    def toggle_mask(self, mask_name, visible):
+    def toggle_mask(self, *args, **kwargs):
         """
         Show or hide a given mask.
         """
         return
-        im = self.mask_image[mask_name]
-        if im.get_url() != "hide":
-            im.set_visible(visible)
-        self.draw()
 
     def update_axes(self, axparams=None):
         """

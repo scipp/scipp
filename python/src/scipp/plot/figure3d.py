@@ -334,7 +334,7 @@ void main() {
         """
         self.points_material.depthTest = value
 
-    def toggle_mask(self, change):
+    def toggle_mask(self, *args, **kwargs):
         """
         Show/hide masks
         """
