@@ -33,7 +33,21 @@ class PlotController1d(PlotController):
         """
         Toggle x-axis scale from toolbar button signal.
         """
-        super().toggle_xaxis_scale(owner, normalize=True)
+        super().toggle_xaxis_scale(owner)
+        self.rescale_to_data()
+
+    def toggle_yaxis_scale(self, owner):
+        """
+        Toggle x-axis scale from toolbar button signal.
+        """
+        super().toggle_yaxis_scale(owner)
+        self.rescale_to_data()
+
+    def refresh(self):
+        """
+        Do nothing for refresh in case of 1d plot.
+        """
+        return
 
     def rescale_to_data(self, button=None):
         """

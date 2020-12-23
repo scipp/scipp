@@ -3,8 +3,7 @@
 # @author Neil Vaytet
 
 from .helpers import PlotArray
-from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
-        mask_to_float, vars_to_err
+from .tools import to_bin_edges, to_bin_centers, make_fake_coord, vars_to_err
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
@@ -180,10 +179,9 @@ class PlotModel:
                                 values=np.ones(data.shape, dtype=np.int32))
         for m in mask_info:
             if m in array.masks:
-                msk = base_mask * sc.Variable(
-                    dims=array.masks[m].dims,
-                    values=array.masks[m].values)
-                    # values=array.masks[m].values.astype(np.int32))
+                msk = base_mask * sc.Variable(dims=array.masks[m].dims,
+                                              values=array.masks[m].values)
+                # values=array.masks[m].values.astype(np.int32))
                 # masks[m] = mask_to_float(msk.values, data.values)
                 masks[m] = msk.values
                 if transpose:

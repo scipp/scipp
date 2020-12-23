@@ -74,7 +74,6 @@ class PlotModel2d(PlotModel):
                 slice_values["masks"] = msk.values
         return slice_values
 
-
     def _update_image(self, extent=None, mask_info=None):
         """
         Resample 2d images to a fixed resolution to handle very large images.

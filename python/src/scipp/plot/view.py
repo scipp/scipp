@@ -82,6 +82,12 @@ class PlotView:
         """
         self.figure.rescale_to_data(*args, **kwargs)
 
+    def toggle_mask(self, change=None):
+        """
+        Dummy toggle_mask function.
+        """
+        return
+
     def toggle_norm(self, *args, **kwargs):
         """
         Forward norm change to the `figure`.
