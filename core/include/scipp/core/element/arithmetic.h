@@ -100,4 +100,15 @@ constexpr auto unary_minus =
     overloaded{arg_list<double, float, int64_t, int32_t, Eigen::Vector3d>,
                [](const auto x) { return -x; }};
 
+constexpr auto floor_div =
+    overloaded{divide_types_t{},
+               [](const units::Unit &a, const units::Unit &b) { return a / b; },
+               [](const auto a, const auto b) {
+                 if constexpr (std::is_integral_v<decltype(a)> &&
+                               std::is_integral_v<decltype(b)>)
+                   return a / b;
+                 else
+                   return std::floor(a / b);
+               }};
+
 } // namespace scipp::core::element

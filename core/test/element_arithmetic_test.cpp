@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "fix_typed_test_suite_warnings.h"
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/units/unit.h"
 
@@ -126,4 +127,47 @@ TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_int_lhs_int) {
   auto lhs = 1;
   nan_plus_equals(lhs, 2);
   EXPECT_EQ(3, lhs);
+}
+TEST(FloorDivTest, with_ints) {
+  auto lhs = 1;
+  auto rhs = 2;
+  EXPECT_EQ(floor_div(lhs, rhs), 0);
+  rhs = 1;
+  EXPECT_EQ(floor_div(lhs, rhs), 1);
+}
+
+template <typename T> class FloorDivTest : public ::testing::Test {};
+using FloorDivTestTypes =
+    ::testing::Types<int32_t, int64_t, float, double,
+                     std::pair<int32_t, int64_t>, std::pair<int64_t, int32_t>,
+                     std::pair<double, int32_t>, std::pair<int32_t, double>,
+                     std::pair<float, int32_t>, std::pair<int32_t, float>>;
+TYPED_TEST_SUITE(FloorDivTest, FloorDivTestTypes);
+template <typename T> struct TestTypes {
+  using X = T;
+  using Y = T;
+  using ResultType = T;
+};
+template <typename A, typename B> struct TestTypes<std::pair<A, B>> {
+  using X = A;
+  using Y = B;
+  using ResultType = A;
+};
+
+TYPED_TEST(FloorDivTest, test_floor_div_numeric) {
+  typename TestTypes<TypeParam>::X lhs = 1;
+  typename TestTypes<TypeParam>::Y rhs = 2;
+  using ResType = typename TestTypes<TypeParam>::ResultType;
+  EXPECT_EQ(typeid(ResType), typeid(typename TestTypes<TypeParam>::X));
+  EXPECT_EQ(floor_div(lhs, rhs), ResType(0));
+  rhs = 1;
+  EXPECT_EQ(floor_div(lhs, rhs), ResType(1));
+}
+
+TEST(FloorDivTest, test_floor_div_units) {
+  auto a = scipp::units::m;
+  auto b = a;
+  EXPECT_EQ(floor_div(a, b), scipp::units::dimensionless);
+  b = scipp::units::rad;
+  EXPECT_THROW(floor_div(a, b), scipp::except::UnitError);
 }
