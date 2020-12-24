@@ -6,6 +6,7 @@
 #include "scipp/core/transform_common.h"
 #include "scipp/variable/math.h"
 #include "scipp/variable/transform.h"
+#include <scipp/core/element/arithmetic.h>
 
 using namespace scipp::core;
 
@@ -33,6 +34,10 @@ Variable reciprocal(Variable &&var) {
   auto out(std::move(var));
   reciprocal(out, out);
   return out;
+}
+
+Variable floor_div(const VariableConstView &a, const VariableConstView &b) {
+  return transform(a, b, element::floor_div);
 }
 
 } // namespace scipp::variable

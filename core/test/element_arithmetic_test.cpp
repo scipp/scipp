@@ -128,13 +128,6 @@ TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_int_lhs_int) {
   nan_plus_equals(lhs, 2);
   EXPECT_EQ(3, lhs);
 }
-TEST(FloorDivTest, with_ints) {
-  auto lhs = 1;
-  auto rhs = 2;
-  EXPECT_EQ(floor_div(lhs, rhs), 0);
-  rhs = 1;
-  EXPECT_EQ(floor_div(lhs, rhs), 1);
-}
 
 template <typename T> class FloorDivTest : public ::testing::Test {};
 using FloorDivTestTypes =
@@ -162,6 +155,25 @@ TYPED_TEST(FloorDivTest, test_floor_div_numeric) {
   EXPECT_EQ(floor_div(lhs, rhs), ResType(0));
   rhs = 1;
   EXPECT_EQ(floor_div(lhs, rhs), ResType(1));
+}
+
+TYPED_TEST(FloorDivTest, test_floor_div_numeric_ValueAndVariance) {
+  using X = typename TestTypes<TypeParam>::X;
+  using Y = typename TestTypes<TypeParam>::Y;
+  if constexpr (std::is_floating_point_v<X> || std::is_floating_point_v<Y>) {
+    ValueAndVariance<X> lhs{1, 1};
+    ValueAndVariance<Y> rhs{2, 2};
+
+    using InnerResType = typename TestTypes<TypeParam>::ResultType;
+    using ResType = ValueAndVariance<InnerResType>;
+    EXPECT_EQ(typeid(ResType), typeid(ValueAndVariance<X>));
+    auto res = floor_div(lhs, rhs);
+    EXPECT_EQ(res.value, 0);
+    EXPECT_EQ(res.variance, (lhs / rhs).variance);
+  } else {
+    GTEST_SKIP_("Scipping floor division testing for ValueAndVariance with "
+                "non-floating Type argument");
+  }
 }
 
 TEST(FloorDivTest, test_floor_div_units) {

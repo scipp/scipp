@@ -20,4 +20,7 @@ namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reciprocal(Variable &&var);
 
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+floor_div(const VariableConstView &a, const VariableConstView &b);
+
 } // namespace scipp::variable

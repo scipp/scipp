@@ -232,3 +232,12 @@ TEST(Variable, log10_out_arg) {
 TEST(Variable, log10_bad_unit) {
   EXPECT_THROW(static_cast<void>(log10(1.0 * units::s)), except::UnitError);
 }
+
+TYPED_TEST(VariableMathTest, floor_div_test_values) {
+  auto a = makeVariable<TypeParam>(Values{1}, units::m);
+  auto b = makeVariable<TypeParam>(Values{2}, units::m);
+  EXPECT_EQ(floor_div(a, b),
+            makeVariable<TypeParam>(Values{0}, units::dimensionless));
+  EXPECT_EQ(floor_div(a, a),
+            makeVariable<TypeParam>(Values{1}, units::dimensionless));
+}
