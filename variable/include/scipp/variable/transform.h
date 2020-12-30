@@ -295,7 +295,8 @@ template <class Op> struct wrap_eigen : Op {
 template <class... Ts> wrap_eigen(Ts...) -> wrap_eigen<Ts...>;
 
 template <size_t N_Operands>
-inline constexpr auto stride_special_cases = std::array<scipp::index, 0>{};
+inline constexpr auto stride_special_cases =
+    std::array<std::array<scipp::index, 0>, 0>{};
 
 template <>
 inline constexpr auto stride_special_cases<1> =
