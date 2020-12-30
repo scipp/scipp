@@ -144,6 +144,11 @@ TEST_P(BinTest, group) {
   EXPECT_EQ(binned.dims(), groups.dims());
 }
 
+TEST_P(BinTest, no_edges_or_groups) {
+  const auto table = GetParam();
+  EXPECT_THROW(bin(table, {}), except::BucketError);
+}
+
 TEST_P(BinTest, rebin_coarse_to_fine_1d) {
   const auto table = GetParam();
   EXPECT_EQ(bin(table, {edges_x}),
