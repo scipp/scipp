@@ -462,7 +462,7 @@ void expect_edges_or_groups(const std::vector<VariableConstView> &edges,
         "must be set.");
   }
 }
-}
+} // namespace
 
 DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &edges,
