@@ -454,12 +454,23 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
 }
 
 namespace {
-void expect_edges_or_groups(const std::vector<VariableConstView> &edges,
-                            const std::vector<VariableConstView> &groups) {
-  if (edges.empty() && groups.empty()) {
-    throw scipp::except::BucketError(
-        "Arguments 'edges' and 'groups' of 'bin' are both empty. At least one "
-        "must be set.");
+void validate_bin_args(const std::vector<VariableConstView> &edges,
+                       const std::vector<VariableConstView> &groups) {
+  if (edges.empty()) {
+    if (groups.empty()) {
+      throw except::BucketError(
+          "Arguments 'edges' and 'groups' of scipp.bin are "
+          "both empty. At least one must be set.");
+    }
+  } else {
+    for (std::size_t i = 0; i < edges.size(); ++i) {
+      if (const auto &shape = edges[i].dims().shape();
+          std::any_of(shape.begin(), shape.end(),
+                      [](const scipp::index s) { return s == 1; })) {
+        throw except::BucketError("Not enough bin edges in dim " +
+                                  std::to_string(i) + ". Need at least 2.");
+      }
+    }
   }
 }
 } // namespace
@@ -467,7 +478,7 @@ void expect_edges_or_groups(const std::vector<VariableConstView> &edges,
 DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &edges,
               const std::vector<VariableConstView> &groups) {
-  expect_edges_or_groups(edges, groups);
+  validate_bin_args(edges, groups);
   const auto &data = array.data();
   const auto &coords = array.coords();
   const auto &masks = array.masks();
