@@ -395,7 +395,7 @@ template <bool dry_run> struct in_place {
   static void dispatch_inner_loop(
       Op &&op, const std::array<scipp::index, sizeof...(Operands)> &indices,
       const std::array<scipp::index, sizeof...(Operands)> &inner_strides,
-      const size_t n, Operands &&... operands) {
+      const scipp::index n, Operands &&... operands) {
     constexpr auto N_Operands = sizeof...(Operands);
     if constexpr (I == detail::stride_special_cases<N_Operands>.size()) {
       run(std::forward<Op>(op), indices, inner_strides, n,
