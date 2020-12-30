@@ -453,9 +453,21 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
       builder.groups(), {reductionDim});
 }
 
+namespace {
+void expect_edges_or_groups(const std::vector<VariableConstView> &edges,
+                            const std::vector<VariableConstView> &groups) {
+  if (edges.empty() && groups.empty()) {
+    throw scipp::except::BucketError(
+        "Arguments 'edges' and 'groups' of 'bin' are both empty. At least one "
+        "must be set.");
+  }
+}
+}
+
 DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &edges,
               const std::vector<VariableConstView> &groups) {
+  expect_edges_or_groups(edges, groups);
   const auto &data = array.data();
   const auto &coords = array.coords();
   const auto &masks = array.masks();
