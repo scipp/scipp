@@ -139,7 +139,7 @@ TYPED_TEST(MeanTest, nanmean_masked_data_with_nans) {
     a.masks().set("mask", mask);
     // First element NaN, second NaN AND masked, third masked, forth non-masked
     // finite number
-    const auto mean = makeVariable<typename TestFixture::RetType>(
+    const auto mean = makeVariable<typename TestFixture::ReturnType>(
         units::m, Shape{1}, Values{(0.0 + 0.0 + 0.0 + 4.0) / 1});
     EXPECT_EQ(nanmean(a).data(), mean);
   }
@@ -169,7 +169,7 @@ TYPED_TEST(MeanTest, mean_all_dims) {
 
   // For all FP input dtypes, dtype is same on output. Integers are converted to
   // double FP precision.
-  using RetType = typename TestFixture::RetType;
+  using RetType = typename TestFixture::ReturnType;
   EXPECT_EQ(mean(da).data(), makeVariable<RetType>(Values{2.5}));
   EXPECT_EQ(mean(da).data(), makeVariable<RetType>(Values{2.5}));
 
@@ -208,7 +208,7 @@ TYPED_TEST(MeanTest, nanmean_all_dims) {
   // For all FP input dtypes, dtype is same on output. Integers are converted to
   // double FP precision.
   EXPECT_EQ(nanmean(da).data(),
-            makeVariable<typename TestFixture::RetType>(Values{2.5}));
+            makeVariable<typename TestFixture::ReturnType>(Values{2.5}));
 
   Dataset ds{{{"a", da}}};
   EXPECT_EQ(nanmean(ds)["a"], nanmean(da));
