@@ -14,6 +14,6 @@ template <typename T> struct MeanTest : public ::testing::Test {
   /// Held type supports nan testing.
   constexpr static bool TestNans = std::numeric_limits<T>::is_iec559;
   /// Held type supports variances testing. All FP types -> true
-  constexpr static bool TestVariances = !std::numeric_limits<T>::is_integer;
+  constexpr static bool TestVariances = std::is_floating_point_v<T>;
 };
 } // namespace
