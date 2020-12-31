@@ -247,7 +247,7 @@ template <class T> struct as_view {
   T &data;
   const Dimensions &dims;
 };
-template <class T> as_view(T &data, const Dimensions &dims)->as_view<T>;
+template <class T> as_view(T &data, const Dimensions &dims) -> as_view<T>;
 
 template <class Op> struct Transform {
   Op op;
@@ -265,7 +265,7 @@ template <class Op> struct Transform {
     return out;
   }
 };
-template <class Op> Transform(Op)->Transform<Op>;
+template <class Op> Transform(Op) -> Transform<Op>;
 
 // std::tuple_cat does not work correctly on with clang-7. Issue with
 // Eigen::Vector3d.
@@ -290,7 +290,7 @@ template <class Op> struct wrap_eigen : Op {
       return Op::template operator()(std::forward<Ts>(args)...);
   }
 };
-template <class... Ts> wrap_eigen(Ts...)->wrap_eigen<Ts...>;
+template <class... Ts> wrap_eigen(Ts...) -> wrap_eigen<Ts...>;
 
 } // namespace detail
 
