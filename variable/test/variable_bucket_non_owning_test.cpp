@@ -66,7 +66,7 @@ protected:
 using VariableBucketNonOwningTypes =
     ::testing::Types<VariableConstView, VariableView>;
 TYPED_TEST_SUITE(VariableBucketNonOwningTypedTest,
-                 VariableBucketNonOwningTypes);
+                 VariableBucketNonOwningTypes, );
 
 TYPED_TEST(VariableBucketNonOwningTypedTest, constituents) {
   auto [idx, dim, buf] =
