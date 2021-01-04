@@ -4,15 +4,16 @@
 
 #include "scipp/core/except.h"
 #include "scipp/variable/reduction.h"
+#include "test_macros.h"
 
 using namespace scipp;
 
 TEST(ReduceLogicalTest, fails) {
   const auto bad = makeVariable<int32_t>(Dims{Dim::X}, Shape{2});
-  EXPECT_THROW(static_cast<void>(all(bad, Dim::X)), except::TypeError);
-  EXPECT_THROW(static_cast<void>(any(bad, Dim::X)), except::TypeError);
-  EXPECT_THROW(static_cast<void>(all(bad, Dim::Y)), except::DimensionError);
-  EXPECT_THROW(static_cast<void>(any(bad, Dim::Y)), except::DimensionError);
+  EXPECT_THROW_DROP_RES(all(bad, Dim::X), except::TypeError);
+  EXPECT_THROW_DROP_RES(any(bad, Dim::X), except::TypeError);
+  EXPECT_THROW_DROP_RES(all(bad, Dim::Y), except::DimensionError);
+  EXPECT_THROW_DROP_RES(any(bad, Dim::Y), except::DimensionError);
 }
 
 TEST(ReduceLogicalTest, all) {

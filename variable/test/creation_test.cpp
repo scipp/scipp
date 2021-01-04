@@ -3,14 +3,14 @@
 #include <gtest/gtest.h>
 
 #include "scipp/variable/creation.h"
+#include "test_macros.h"
 #include "test_variables.h"
 
 using namespace scipp;
 
 TEST_P(DenseVariablesTest, empty_like_fail_if_sizes) {
   const auto var = GetParam();
-  EXPECT_THROW(static_cast<void>(
-                   empty_like(var, {}, makeVariable<scipp::index>(Values{12}))),
+  EXPECT_THROW(empty_like(var, {}, makeVariable<scipp::index>(Values{12})),
                except::TypeError);
 }
 
