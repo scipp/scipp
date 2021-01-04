@@ -136,7 +136,7 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
       return std::move(var);
     const auto &[input_indices, buffer_dim, in_buffer] =
         var.template constituents<core::bin<VariableConstView>>();
-    (void)input_indices;
+    static_cast<void>(input_indices);
     auto out = resize_default_init(in_buffer, buffer_dim, total_size);
     transform_in_place(subspan_view(out, buffer_dim, filtered_input_bin_ranges),
                        as_subspan_view(std::as_const(offsets)),
@@ -258,7 +258,7 @@ public:
   auto edges() const noexcept {
     std::vector<VariableConstView> vars;
     for (const auto &[action, dim, key] : m_actions) {
-      (void)dim;
+      static_cast<void>(dim);
       if (action == AxisAction::Bin || action == AxisAction::Join)
         vars.emplace_back(key);
     }
@@ -268,7 +268,7 @@ public:
   auto groups() const noexcept {
     std::vector<VariableConstView> vars;
     for (const auto &[action, dim, key] : m_actions) {
-      (void)dim;
+      static_cast<void>(dim);
       if (action == AxisAction::Group)
         vars.emplace_back(key);
     }

@@ -220,8 +220,8 @@ template <class T>
 auto combine(const VariableConstView &var0, const VariableConstView &var1) {
   const auto &[indices0, dim0, buffer0] = var0.constituents<bucket<T>>();
   const auto &[indices1, dim1, buffer1] = var1.constituents<bucket<T>>();
-  (void)buffer1;
-  (void)dim1;
+  static_cast<void>(buffer1);
+  static_cast<void>(dim1);
   const Dim dim = dim0;
   const auto [begin0, end0] = unzip(indices0);
   const auto [begin1, end1] = unzip(indices1);
@@ -249,8 +249,8 @@ template <class T>
 void reserve_impl(const VariableView &var, const VariableConstView &shape) {
   // TODO this only reserves in the bins, but assumes buffer has enough space
   const auto &[indices, dim, buffer] = var.constituents<bucket<T>>();
-  (void)dim;
-  (void)buffer;
+  static_cast<void>(dim);
+  static_cast<void>(buffer);
   variable::transform_in_place(
       indices, shape,
       overloaded{

@@ -189,7 +189,7 @@ void DataModel<bucket<T>>::copy(const VariableConstView &src,
                                 const VariableView &dst) const {
   const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
   const auto &[indices1, dim1, buffer1] = dst.constituents<bucket<T>>();
-  (void)dim1;
+  static_cast<void>(dim1);
   if constexpr (is_view_v<T>) {
     // This is overly restrictive, could allow copy to non-const non-owning
     throw std::runtime_error(
