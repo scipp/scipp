@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
+
 #include <fix_typed_test_suite_warnings.h>
 
 #include "scipp/variable/bins.h"
