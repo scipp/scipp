@@ -28,6 +28,13 @@
 scipp - Multi-dimensional data arrays with labeled dimensions
 =============================================================
 
+.. raw:: html
+   <select id="dynamic_select">
+     <option value="https://scipp.github.io/" selected>Latest</option>
+     <option value="https://scipp.github.io/release/0.4.0">v0.4</option>
+     <option value="https://scipp.github.io/release/0.3.0">v0.3</option>
+   </select>
+
 **scipp** is heavily inspired by `xarray <https://xarray.pydata.org>`_.
 It enriches raw NumPy-like multi-dimensional arrays of data by adding named dimensions and associated coordinates.
 Multiple arrays can be combined into datasets.
