@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
