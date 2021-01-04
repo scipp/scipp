@@ -72,7 +72,7 @@ class ResamplingModel():
                             unit=unit,
                             values=np.linspace(low, high, num=res + 1)))
             # The order of edges matters. We need to put the length 1 edges
-            # first to rebin these dims first and effectively slicing them out,
+            # first to rebin these dims first and effectively slice them out,
             # otherwise we will rebin N-D variables on high resolution.
             if res == 1:
                 edges.insert(0, edges.pop(i))
