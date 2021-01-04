@@ -212,17 +212,17 @@ DataArray add_metadata(std::tuple<DataArray, Variable> &&proto,
       dims.emplace(coord.dims().inner());
       out_coords[coord.dims().inner()] = copy(coord);
     }
-  for (const auto &[_dim, coord] : coords)
+  for (const auto &[dim_, coord] : coords)
     if (!rebinned(coord))
-      out_coords[_dim] = copy(coord);
+      out_coords[dim_] = copy(coord);
   auto out_masks = extract_unbinned(buffer, get_masks);
   for (const auto &[name, mask] : masks)
     if (!rebinned(mask))
       out_masks[name] = copy(mask);
   auto out_attrs = extract_unbinned(buffer, get_attrs);
-  for (const auto &[_dim, coord] : attrs)
+  for (const auto &[dim_, coord] : attrs)
     if (!rebinned(coord))
-      out_attrs[_dim] = copy(coord);
+      out_attrs[dim_] = copy(coord);
   return {make_bins(zip(end - bin_sizes, end), buffer_dim, std::move(buffer)),
           std::move(out_coords), std::move(out_masks), std::move(out_attrs)};
 }

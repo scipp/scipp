@@ -48,12 +48,12 @@ constexpr auto copy_or_match = [](const auto &a, const auto &b, const Dim dim,
 
 constexpr auto expect_matching_keys = [](const auto &a, const auto &b) {
   bool ok = true;
-  constexpr auto key = [](const auto &_x) {
+  constexpr auto key = [](const auto &x_) {
     if constexpr (std::is_base_of_v<DataArrayConstView,
-                                    std::decay_t<decltype(_x)>>)
-      return _x.name();
+                                    std::decay_t<decltype(x_)>>)
+      return x_.name();
     else
-      return _x.first;
+      return x_.first;
   };
   for (const auto &x : a)
     ok &= b.contains(key(x));
