@@ -11,7 +11,7 @@
 using namespace scipp;
 
 TEST(LinspaceTest, dim_mismatch) {
-  EXPECT_THROW_DROPRES(
+  EXPECT_THROW_DROP_RES(
       linspace(1.0 * units::one,
                makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::one), Dim::X,
                4),
@@ -19,26 +19,27 @@ TEST(LinspaceTest, dim_mismatch) {
 }
 
 TEST(LinspaceTest, unit_mismatch) {
-  EXPECT_THROW_DROPRES(linspace(1.0 * units::one, 4.0 * units::m, Dim::X, 4),
-                       except::UnitMismatchError);
+  EXPECT_THROW_DROP_RES(linspace(1.0 * units::one, 4.0 * units::m, Dim::X, 4),
+                        except::UnitMismatchError);
 }
 
 TEST(LinspaceTest, dtype_mismatch) {
-  EXPECT_THROW_DROPRES(linspace(1.0 * units::one, 4.0f * units::one, Dim::X, 4),
-                       except::TypeMismatchError);
+  EXPECT_THROW_DROP_RES(
+      linspace(1.0 * units::one, 4.0f * units::one, Dim::X, 4),
+      except::TypeMismatchError);
 }
 
 TEST(LinspaceTest, non_float_fail) {
-  EXPECT_THROW_DROPRES(linspace(1 * units::one, 4 * units::one, Dim::X, 4),
-                       except::TypeError);
+  EXPECT_THROW_DROP_RES(linspace(1 * units::one, 4 * units::one, Dim::X, 4),
+                        except::TypeError);
 }
 
 TEST(LinspaceTest, variances_fail) {
   const auto a = 1.0 * units::one;
   const auto b = makeVariable<double>(Values{1}, Variances{1});
-  EXPECT_THROW_DROPRES(linspace(a, b, Dim::X, 4), except::VariancesError);
-  EXPECT_THROW_DROPRES(linspace(b, a, Dim::X, 4), except::VariancesError);
-  EXPECT_THROW_DROPRES(linspace(b, b, Dim::X, 4), except::VariancesError);
+  EXPECT_THROW_DROP_RES(linspace(a, b, Dim::X, 4), except::VariancesError);
+  EXPECT_THROW_DROP_RES(linspace(b, a, Dim::X, 4), except::VariancesError);
+  EXPECT_THROW_DROP_RES(linspace(b, b, Dim::X, 4), except::VariancesError);
 }
 
 TEST(LinspaceTest, increasing) {
