@@ -71,7 +71,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'scipp'
-copyright = u'2020 Scipp contributors'
+copyright = u'2021 Scipp contributors'
 author = u'Scipp contributors'
 
 # The version info for the project you're documenting, acts as replacement for
