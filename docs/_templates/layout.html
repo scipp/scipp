@@ -1,8 +1,21 @@
 {% extends "!layout.html" %}
+
+  {% block menu %}
+    {{ super() }}
+    <div style="height: 32px; position: fixed; bottom: 0; left: 15px;">
+      Select version:&nbsp;
+      <select onchange="location = this.value;"
+              style="height: 30px; color: #27a54b; background-color: #403d3d;
+                    border: 0px; box-shadow: none;">
+        <option value="" selected>Latest</option>
+        <option value="release/0.4.0">v0.4</option>
+        <option value="release/0.3.0">v0.3</option>
+      </select>
+    </div>
+  {% endblock %}
+
   {% block footer %} {{ super() }}
-
-  <style>
-         .wy-nav-content { max-width: 1100px; }
-  </style>
-
-{% endblock %}
+    <style>
+      .wy-nav-content { max-width: 1100px; }
+    </style>
+  {% endblock %}
