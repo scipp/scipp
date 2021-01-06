@@ -61,7 +61,7 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
       s << tab << tab << format_variable(key, var, datasetDims);
   }
   if (!data.attrs().empty()) {
-    s << tab << "Coordinates (unaligned):\n";
+    s << tab << "Attributes:\n";
     for (const auto &[key, var] : sorted(data.attrs()))
       s << tab << tab << format_variable(key, var, datasetDims);
   }
