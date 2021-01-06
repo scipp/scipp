@@ -90,7 +90,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataArrayConstView>) {
-    s << shift << "Data:\n" << format_data_view(dataset.name(), dataset);
+    s << shift << "Data:\n" << format_data_view(dataset.name(), dataset, dims);
   } else {
     if (!dataset.empty())
       s << shift << "Data:\n";
