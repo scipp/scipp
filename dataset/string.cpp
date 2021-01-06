@@ -52,9 +52,8 @@ template <class T> auto sorted(const T &map) {
 
 template <class Key>
 auto format_data_view(const Key &name, const DataArrayConstView &data,
-                      const Dimensions &datasetDims,
-                      const std::string &shift, const bool inline_meta) {
-
+                      const Dimensions &datasetDims, const std::string &shift,
+                      const bool inline_meta) {
   std::stringstream s;
   s << shift << format_variable(name, data.data(), datasetDims);
 
@@ -95,8 +94,8 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataArrayConstView>) {
-    s << shift << "Data:\n" << format_data_view(dataset.name(), dataset,
-                          dims, shift, true);
+    s << shift << "Data:\n"
+      << format_data_view(dataset.name(), dataset, dims, shift, true);
   } else {
     if (!dataset.empty())
       s << shift << "Data:\n";
