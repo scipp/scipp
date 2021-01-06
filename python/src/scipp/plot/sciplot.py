@@ -180,6 +180,9 @@ class SciPlot:
         return ipw.VBox(widget_list)
 
     def hide_widgets(self):
+        """
+        Hide widgets for 1d and 2d (matplotlib) figures
+        """
         self.show_widgets = False if self.view_ndims < 3 else True
 
     def make_static(self):

@@ -187,10 +187,10 @@ def plot(*args, **kwargs):
     output = _plot(*args, **kwargs)
 
     if output is not None:
-        # Hide widgets if this is a static backend
+        # Hide all widgets if this is the inline backend
         if mpl.get_backend().lower().endswith('inline'):
             output.hide_widgets()
-        # Turn figure into image if doc build
+        # Turn mpl figure into image if doc build
         if is_doc_build:
             output.make_static()
 
