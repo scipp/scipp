@@ -52,7 +52,7 @@ template <class T> auto sorted(const T &map) {
 
 template <class Key>
 auto format_data_view(const Key &name, const DataArrayConstView &data,
-                      const Dimensions &datasetDims = Dimensions()) {
+                      const Dimensions &datasetDims) {
   std::stringstream s;
   s << format_variable(name, data.data(), datasetDims);
   if (!data.masks().empty()) {
