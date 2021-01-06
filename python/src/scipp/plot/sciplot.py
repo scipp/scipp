@@ -49,6 +49,10 @@ class SciPlot:
         self.view = None
         self.widgets = None
 
+        self.show_widgets = True
+        self.as_static = False
+        self.view_ndims = view_ndims
+
         # Shortcut access to the underlying figure for easier modification
         self.fig = None
         self.ax = None
@@ -165,11 +169,21 @@ class SciPlot:
         """
         Get the SciPlot object as an `ipywidget`.
         """
-        widget_list = []
-        for item in [self.view, self.profile, self.widgets, self.panel]:
-            if item is not None:
-                widget_list.append(item._to_widget())
+        widget_list = [self.view._to_widget(self.as_static)]
+        if self.profile is not None:
+            widget_list.append(self.profile._to_widget())
+        if self.show_widgets:
+            widget_list.append(self.widgets._to_widget())
+        if self.panel is not None and self.show_widgets:
+            widget_list.append(self.panel._to_widget())
+
         return ipw.VBox(widget_list)
+
+    def hide_widgets(self):
+        self.show_widgets = False if self.view_ndims < 3 else True
+
+    def make_static(self):
+        self.as_static = True
 
     def show(self):
         """

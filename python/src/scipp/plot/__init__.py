@@ -30,9 +30,7 @@ if ipy is not None:
         meta = meta.to_dict()
     if "scipp_docs_build" in meta:
         is_doc_build = meta["scipp_docs_build"]
-    # If we are in an IPython kernel, try to select widget backend
-    if ("IPKernelApp" in ipy.config) and (not is_doc_build) and (mpl
-                                                                 is not None):
+    if ("IPKernelApp" in ipy.config) and (mpl is not None):
         try:
             # Attempt to use ipympl backend
             from ipympl.backend_nbagg import Canvas
@@ -57,13 +55,6 @@ except ImportError:
 
 if is_doc_build and plt is not None:
     plt.rcParams.update({'figure.max_open_warning': 0})
-
-
-def _is_inline():
-    """
-    Determine if we are using a static or interactive backend
-    """
-    return mpl.get_backend().lower().endswith('inline')
 
 
 def plot(*args, **kwargs):
@@ -194,6 +185,14 @@ def plot(*args, **kwargs):
         interactive_on = True
 
     output = _plot(*args, **kwargs)
+
+    if output is not None:
+        # Hide widgets if this is a static backend
+        if mpl.get_backend().lower().endswith('inline'):
+            output.hide_widgets()
+        # Turn figure into image if doc build
+        if is_doc_build:
+            output.make_static()
 
     # Turn auto figure display back on if needed.
     if interactive_on:
