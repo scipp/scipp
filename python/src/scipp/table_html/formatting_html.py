@@ -172,9 +172,13 @@ def summarize_attrs_simple(attrs):
     return f"<dl class='xr-attrs'>{attrs_dl}</dl>"
 
 
-def summarize_attrs(attrs):
-    attrs_li = "".join(f"<li class='xr-var-item'>\
-            {summarize_variable(name, values, has_attrs=False)}</li>"
+def summarize_attrs(attrs, ds=None):
+    attrs_li = "".join("<li class='xr-var-item'>{}</li>".format(
+        summarize_variable(
+            name,
+            values,
+            has_attrs=False,
+            bin_edges=find_bin_edges(values, ds) if ds is not None else None))
                        for name, values in _ordered_dict(attrs).items())
     return f"<ul class='xr-var-list'>{attrs_li}</ul>"
 
@@ -476,7 +480,7 @@ def dataset_repr(ds):
         if len(ds.masks) > 0:
             sections.append(mask_section(ds.masks, ds))
         if len(ds.attrs) > 0:
-            sections.append(attr_section(ds.attrs))
+            sections.append(attr_section(ds.attrs, ds))
 
     return _obj_repr(header_components, sections)
 
