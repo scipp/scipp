@@ -240,7 +240,6 @@ void init_dataset(py::module &m) {
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, masks, and attributes.)");
-  dataArray.def(py::init<const DataArrayConstView &>());
   dataArray
       .def(py::init([](VariableConstView data,
                        std::map<Dim, VariableConstView> coords,
