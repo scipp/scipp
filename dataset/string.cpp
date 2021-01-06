@@ -52,18 +52,23 @@ template <class T> auto sorted(const T &map) {
 
 template <class Key>
 auto format_data_view(const Key &name, const DataArrayConstView &data,
-                      const Dimensions &datasetDims = Dimensions()) {
+                      const Dimensions &datasetDims,
+                      const std::string &shift, const bool inline_meta) {
+
   std::stringstream s;
-  s << format_variable(name, data.data(), datasetDims);
+  s << shift << format_variable(name, data.data(), datasetDims);
+
+  const std::string header_shift = inline_meta ? shift : (shift + tab);
+  const std::string data_shift = inline_meta ? shift : (header_shift + tab);
   if (!data.masks().empty()) {
-    s << tab << "Masks:\n";
+    s << header_shift << "Masks:\n";
     for (const auto &[key, var] : sorted(data.masks()))
-      s << tab << tab << format_variable(key, var, datasetDims);
+      s << data_shift << format_variable(key, var, datasetDims);
   }
   if (!data.attrs().empty()) {
-    s << tab << "Attributes:\n";
+    s << header_shift << "Attributes:\n";
     for (const auto &[key, var] : sorted(data.attrs()))
-      s << tab << tab << format_variable(key, var, datasetDims);
+      s << data_shift << format_variable(key, var, datasetDims);
   }
   return s.str();
 }
@@ -90,7 +95,8 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataArrayConstView>) {
-    s << shift << "Data:\n" << format_data_view(dataset.name(), dataset);
+    s << shift << "Data:\n" << format_data_view(dataset.name(), dataset,
+                          dims, shift, true);
   } else {
     if (!dataset.empty())
       s << shift << "Data:\n";
@@ -98,7 +104,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
     for (const auto &item : dataset)
       sorted_items.insert(item.name());
     for (const auto &name : sorted_items)
-      s << shift << format_data_view(name, dataset[name], dims);
+      s << shift << format_data_view(name, dataset[name], dims, shift, false);
   }
 
   s << '\n';
