@@ -57,7 +57,7 @@ auto format_data_view(const Key &name, const DataArrayConstView &data,
   std::stringstream s;
   s << shift << format_variable(name, data.data(), datasetDims);
 
-  const std::string header_shift = inline_meta ? shift : (shift + tab);
+  const std::string header_shift = inline_meta ? shift : (shift + tab + tab);
   const std::string data_shift = inline_meta ? shift : (header_shift + tab);
   if (!data.masks().empty()) {
     s << header_shift << "Masks:\n";
