@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .tools import check_log_limits
@@ -446,8 +446,13 @@ class PlotController:
         self.view.update_data(new_values, info=info)
         if self.panel is not None:
             self.panel.update_data(info)
-        if (self.profile_dim is not None) and (owner_dim == self.profile_dim):
-            self.profile.update_slice_area(lower, upper)
+        if self.profile_dim is not None:
+            if owner_dim == self.profile_dim:
+                self.profile.update_slice_area(lower, upper)
+            else:
+                self.model.update_profile_model(visible=True,
+                                                slices=slices,
+                                                profile_dim=self.profile_dim)
 
     def toggle_mask(self, change):
         """
@@ -589,6 +594,9 @@ class PlotController:
 
         if visible:
             slices = self.widgets.get_slider_bounds()
+            self.model.update_profile_model(visible=visible,
+                                            slices=slices,
+                                            profile_dim=self.profile_dim)
             lower, upper = self.model.get_slice_coord_bounds(
                 self.name, self.profile_dim, slices[self.profile_dim])
             self.profile.update_slice_area(lower, upper)

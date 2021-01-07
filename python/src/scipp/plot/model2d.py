@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet, Simon Heybrock
 
@@ -110,6 +110,27 @@ class PlotModel2d(PlotModel):
             xylims.values())).flatten(),
                                   mask_info=mask_info)
 
+    def update_profile_model(self,
+                             visible=False,
+                             slices=None,
+                             profile_dim=None):
+        """
+        When the profile view gets activated, make a new resampling model.
+        """
+        if visible:
+            model_data = self.data_arrays[self.name]
+            for dim in set(slices.keys()) - set([profile_dim]):
+                [start, stop] = slices[dim]
+                model_data = model_data[dim, start:stop]
+            self._profile_model = resampling_model(model_data)
+            self._profile_model.resolution = {
+                self.displayed_dims['x']: 1,
+                self.displayed_dims['y']: 1,
+                profile_dim: 200
+            }
+        else:
+            self._profile_model = None
+
     def update_profile(self,
                        xdata=None,
                        ydata=None,
@@ -123,17 +144,9 @@ class PlotModel2d(PlotModel):
 
         TODO: remove duplicate code between this and update_profile in model1d.
         """
-
         # Find indices of pixel where cursor lies
         dimx = self.displayed_dims['x']
         dimy = self.displayed_dims['y']
-        if len(slices) == 1:
-            dim, [start, stop] = slices[0]
-            self._profile_model = resampling_model(
-                self.data_arrays[self.name][dim, start:stop])
-        else:
-            self._profile_model = resampling_model(self.data_arrays[self.name])
-        self._profile_model.resolution = {dimx: 1, dimy: 1, profile_dim: 200}
         x = self._model.data.meta[dimx]
         y = self._model.data.meta[dimy]
         # Note that xdata and ydata already have the left edge subtracted from
