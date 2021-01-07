@@ -128,6 +128,10 @@ class GroupbyBins:
 
 
 def _bins(obj):
+    """
+    Returns binning object allowing bin-wise operations
+    to be performed.
+    """
     if _cpp.is_bins(obj):
         return _Bins(obj)
     else:
