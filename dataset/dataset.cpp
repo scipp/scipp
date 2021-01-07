@@ -178,18 +178,16 @@ void Dataset::setCoord(const Dim dim, Variable coord) {
     if (item.second.coords.count(dim))
       throw except::DataArrayError("Attempt to insert dataset coord with "
                                    "name " +
-                                   to_string(dim) +
-                                   "  shadowing unaligned (item) coord.");
+                                   to_string(dim) + "  shadowing attribute.");
   m_coords.insert_or_assign(dim, std::move(coord));
 }
 
-/// Set (insert or replace) an unaligned coordinate for item with given name.
+/// Set (insert or replace) an attribute for item with given name.
 void Dataset::setCoord(const std::string &name, const Dim dim, Variable coord) {
   scipp::expect::contains(*this, name);
   if (coords().contains(dim))
-    throw except::DataArrayError(
-        "Attempt to insert unaligned coord with name " + to_string(dim) +
-        " shadowing aligned coord.");
+    throw except::DataArrayError("Attempt to insert attribute with name " +
+                                 to_string(dim) + " shadowing coord.");
   setDims(coord.dims(), dim_of_coord(coord, dim));
   m_data[name].coords.insert_or_assign(dim, std::move(coord));
 }
