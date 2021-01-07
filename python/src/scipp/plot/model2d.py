@@ -6,6 +6,7 @@
 from .. import config
 from .model import PlotModel
 from .resampling_model import resampling_model
+from .._scipp import core as sc
 import numpy as np
 
 
@@ -47,6 +48,28 @@ class PlotModel2d(PlotModel):
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
 
+    def get_slice_values(self, mask_info, extent=None):
+        values = self.dslice.values
+        transpose = self.displayed_dims['x'] == self.dslice.dims[0]
+        if transpose:
+            values = np.transpose(values)
+        slice_values = {"values": values, "extent": extent}
+        if len(mask_info[self.name]) > 0:
+            # Use automatic broadcasting in Scipp variables
+            msk = sc.Variable(dims=self.dslice.data.dims,
+                              values=np.zeros(self.dslice.data.shape,
+                                              dtype=np.int32))
+            for m, val in mask_info[self.name].items():
+                if val:
+                    msk += sc.Variable(
+                        dims=self.dslice.masks[m].dims,
+                        values=self.dslice.masks[m].values.astype(np.int32))
+            if transpose:
+                slice_values["masks"] = np.transpose(msk.values)
+            else:
+                slice_values["masks"] = msk.values
+        return slice_values
+
     def _update_image(self, extent=None, mask_info=None):
         """
         Resample 2d images to a fixed resolution to handle very large images.
@@ -55,14 +78,7 @@ class PlotModel2d(PlotModel):
         for dim in self._squeeze:
             data = data[dim, 0]
         self.dslice = data
-        values = data.values
-        transpose = self.displayed_dims['x'] == data.dims[0]
-        if transpose:
-            values = np.transpose(values)
-        masks = self._make_masks(data,
-                                 mask_info=mask_info[self.name],
-                                 transpose=transpose)
-        return {"values": values, "masks": masks, "extent": extent}
+        return self.get_slice_values(mask_info=mask_info, extent=extent)
 
     def update_data(self, slices, mask_info):
         """

@@ -73,12 +73,10 @@ class PlotModel3d(PlotModel):
         Get data and mask values as numpy arrays.
         """
         new_values = {
-            "values": self.dslice.data.values.astype(np.float32).ravel(),
-            "masks": None
+            "values": self.dslice.data.values.astype(np.float32).ravel()
         }
 
         # Handle masks
-        msk = None
         if len(mask_info[self.name]) > 0:
             # Use automatic broadcasting in Scipp variables
             msk = sc.Variable(dims=self.dslice.data.dims,

@@ -35,12 +35,6 @@ class PlotView2d(PlotView):
         self.figure.ax.callbacks.connect('ylim_changed',
                                          self.check_for_ylim_update)
 
-    def toggle_mask(self, change):
-        """
-        Forward mask toggling to the `figure`.
-        """
-        self.figure.toggle_mask(change["owner"].mask_name, change["new"])
-
     def check_for_xlim_update(self, event_ax):
         """
         When we use the zoom tool, the event listener on the displayed axes
