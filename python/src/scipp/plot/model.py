@@ -192,10 +192,11 @@ class PlotModel:
 
     def _make_profile(self, profile, dim, mask_info):
         values = {"values": {}, "variances": {}, "masks": {}}
-        values["values"]["x"] = profile.meta[dim].values
-        values["values"]["y"] = profile.data.values
+        values["values"]["x"] = profile.meta[dim].values.ravel()
+        values["values"]["y"] = profile.data.values.ravel()
         if profile.data.variances is not None:
-            values["variances"]["e"] = vars_to_err(profile.data.variances)
+            values["variances"]["e"] = vars_to_err(
+                profile.data.variances.ravel())
         values["masks"] = self._make_masks(profile, mask_info=mask_info)
         return values
 
@@ -266,3 +267,6 @@ class PlotModel:
         Return the multi-dimensional coordinate.
         """
         return self.multid_coord
+
+    def update_profile_model(self, *args, **kwargs):
+        return
