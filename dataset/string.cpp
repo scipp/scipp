@@ -34,7 +34,7 @@ std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
   return os << DatasetConstView(dataset);
 }
 
-constexpr const char *tab = "    ";
+constexpr const char *tab = "  ";
 
 template <class D>
 std::string do_to_string(const D &dataset, const std::string &id,

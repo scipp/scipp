@@ -25,7 +25,7 @@ std::ostream &operator<<(std::ostream &os, const Variable &variable) {
   return os << VariableConstView(variable);
 }
 
-constexpr const char *tab = "    ";
+constexpr const char *tab = "  ";
 
 std::string make_dims_labels(const VariableConstView &variable,
                              const Dimensions &datasetDims) {
