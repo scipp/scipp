@@ -18,7 +18,7 @@ Classes
    GroupByDataset
 
 Creation functions
-===============
+==================
 
 .. autosummary::
    :toctree: ../generated

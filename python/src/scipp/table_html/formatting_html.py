@@ -172,9 +172,10 @@ def summarize_attrs_simple(attrs):
     return f"<dl class='xr-attrs'>{attrs_dl}</dl>"
 
 
-def summarize_attrs(attrs):
-    attrs_li = "".join(f"<li class='xr-var-item'>\
-            {summarize_variable(name, values, has_attrs=False)}</li>"
+def summarize_attrs(attrs, embedded_in=None):
+    attrs_li = "".join("<li class='xr-var-item'>{}</li>".format(
+        summarize_variable(
+            name, values, has_attrs=False, embedded_in=embedded_in))
                        for name, values in _ordered_dict(attrs).items())
     return f"<ul class='xr-var-list'>{attrs_li}</ul>"
 
@@ -189,8 +190,7 @@ def _icon(icon_name):
 
 def summarize_coord(dim, var, ds=None):
     is_index = dim in var.dims
-    bin_edges = find_bin_edges(var, ds) if ds is not None else None
-    return summarize_variable(str(dim), var, is_index, bin_edges=bin_edges)
+    return summarize_variable(str(dim), var, is_index, embedded_in=ds)
 
 
 def find_bin_edges(var, ds):
@@ -198,7 +198,6 @@ def find_bin_edges(var, ds):
     Checks if the coordinate contains bin-edges.
     """
     bin_edges = []
-
     for idx, dim in enumerate(var.dims):
         len = var.shape[idx]
         if dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == len:
@@ -214,7 +213,7 @@ def summarize_coords(coords, ds=None):
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
 
-def _make_inline_attributes(var, has_attrs):
+def _make_inline_attributes(var, has_attrs, embedded_in):
     disabled = "disabled"
     attrs_ul = ""
     attrs_sections = []
@@ -239,7 +238,7 @@ def _make_inline_attributes(var, has_attrs):
 
     if has_attrs and hasattr(var, "attrs"):
         if len(var.attrs) > 0:
-            attrs_sections.append(attr_section(var.attrs))
+            attrs_sections.append(attr_section(var.attrs, embedded_in))
             disabled = ""
 
     if len(attrs_sections) > 0:
@@ -287,17 +286,21 @@ def summarize_variable(name,
                        var,
                        is_index=False,
                        has_attrs=False,
-                       bin_edges=None,
+                       embedded_in=None,
                        add_dim_size=False):
     """
     Formats the variable data into the format expected when displaying
     as a standalone variable (when a single variable or data array is
     displayed) or as part of a dataset.
     """
-    dims_str = escape(f"({_make_dim_str(var, bin_edges, add_dim_size)})")
+    dims_str = escape("({})".format(
+        _make_dim_str(
+            var,
+            find_bin_edges(var, embedded_in)
+            if embedded_in is not None else None, add_dim_size)))
     unit = '' if var.unit == sc.units.dimensionless else repr(var.unit)
 
-    disabled, attrs_ul = _make_inline_attributes(var, has_attrs)
+    disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
 
     preview = inline_variable_repr(var)
     data_repr = f"Values:<br>{short_data_repr_html(var)}"
@@ -345,11 +348,10 @@ def summarize_variable(name,
 def summarize_data(dataset):
     has_attrs = is_dataset(dataset)
     vars_li = "".join("<li class='xr-var-item'>{}</li>".format(
-        summarize_variable(
-            name,
-            var,
-            has_attrs=has_attrs,
-            bin_edges=find_bin_edges(var, dataset) if has_attrs else None))
+        summarize_variable(name,
+                           var,
+                           has_attrs=has_attrs,
+                           embedded_in=dataset if has_attrs else None))
                       for name, var in _ordered_dict(dataset).items())
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
 
@@ -476,7 +478,7 @@ def dataset_repr(ds):
         if len(ds.masks) > 0:
             sections.append(mask_section(ds.masks, ds))
         if len(ds.attrs) > 0:
-            sections.append(attr_section(ds.attrs))
+            sections.append(attr_section(ds.attrs, ds))
 
     return _obj_repr(header_components, sections)
 
