@@ -292,21 +292,24 @@ void init_dataset(py::module &m) {
   Dict of data arrays with aligned dimensions.)");
 
   dataset
-      .def(
-          py::init([](const std::map<std::string, VariableConstView> &data,
-                      const std::map<Dim, VariableConstView> &coords) {
-            return Dataset(data, coords);
-          }),
-          py::arg("data") = std::map<std::string, VariableConstView>{},
-          py::arg("coords") = std::map<Dim, VariableConstView>{},
-          R"(__init__(self, data: Dict[str, VariableConstView] = {}, coords: Dict[str, VariableConstView] = {})
+      .def(py::init([](const std::map<std::string, VariableConstView> &data,
+                       const std::map<Dim, VariableConstView> &coords) {
+             return Dataset(data, coords);
+           }),
+           py::arg("data") = std::map<std::string, VariableConstView>{},
+           py::arg("coords") = std::map<Dim, VariableConstView>{},
+           R"(Overloaded Function
+             
+             __init__(self, data: Dict[str, VariableConstView] = {}, coords: Dict[str, VariableConstView] = {})
           
              Initialise from a dictionary of Variables and optionally coordinates.
              Each Variable is converted into a DataArray within the Dataset.
              )")
       .def(py::init<const std::map<std::string, DataArrayConstView> &>(),
            py::arg("data"),
-           R"(__init__(self, data: Dict[str, DataArrayConstView])
+           R"(Overloaded Function
+           
+              __init__(self, data: Dict[str, DataArrayConstView])
               
               Initialise from a dictionary of DataArrays.
               )");
