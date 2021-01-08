@@ -12,8 +12,8 @@ using namespace scipp;
 
 TEST(ReduceTest, min_max_fails) {
   const auto bad = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  EXPECT_THROW_DROP_RES(min(bad, Dim::Y), except::DimensionError);
-  EXPECT_THROW_DROP_RES(max(bad, Dim::Y), except::DimensionError);
+  EXPECT_THROW_DROP_RESULT(min(bad, Dim::Y), except::DimensionError);
+  EXPECT_THROW_DROP_RESULT(max(bad, Dim::Y), except::DimensionError);
 }
 
 TEST(ReduceTest, min_max) {

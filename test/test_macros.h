@@ -58,5 +58,5 @@ bool equals(const T1 &a, const T2 &b, const Tol tolerance) {
 #define ASSERT_THROW_NODISCARD(expr, type) ASSERT_THROW((void)expr, type)
 
 // Helper that casts the result of `statement` to void to suppress warnings.
-#define EXPECT_THROW_DROP_RES(statement, expected_expression)                  \
+#define EXPECT_THROW_DROP_RESULT(statement, expected_expression)               \
   EXPECT_THROW(static_cast<void>(statement), expected_expression)
