@@ -774,7 +774,7 @@ std::unordered_map<Dim, scipp::index> DatasetConstView::dimensions() const {
   auto base_dims = m_dataset->dimensions();
   // Note current slices are ordered, but NOT unique
   for (const auto &[slice, extents] : m_slices) {
-    (void)extents;
+    static_cast<void>(extents);
     auto it = base_dims.find(slice.dim());
     if (!slice.isRange()) { // For non-range. Erase dimension
       base_dims.erase(it);
