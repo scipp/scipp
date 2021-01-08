@@ -334,7 +334,7 @@ void main() {
         """
         self.points_material.depthTest = value
 
-    def toggle_mask(self, change):
+    def toggle_mask(self, *args, **kwargs):
         """
         Show/hide masks
         """
@@ -346,9 +346,8 @@ void main() {
         """
         colors = self.scalar_map.to_rgba(new_values["values"])
 
-        if new_values["masks"] is not None:
-            # In 3D, we change the colors of the points in-place where masks
-            # are True, instead of having an additional point cloud per mask.
+        if "masks" in new_values:
+            # We change the colors of the points in-place where masks are True
             masks_inds = np.where(new_values["masks"])
             masks_colors = self.masks_scalar_map.to_rgba(
                 new_values["values"][masks_inds])
