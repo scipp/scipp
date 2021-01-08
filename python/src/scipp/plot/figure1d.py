@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .figure import PlotFigure
@@ -214,8 +214,10 @@ class PlotFigure1d(PlotFigure):
             self.data_lines[name].set_label(lab)
 
             for m in vals["masks"]:
-                self.mask_lines[name][m].set_data(vals["values"]["x"],
-                                                  vals["masks"][m])
+                self.mask_lines[name][m].set_data(
+                    vals["values"]["x"],
+                    np.where(vals["masks"][m], vals["values"]["y"],
+                             None).astype(np.float32))
 
             if self.errorbars[name]:
                 coll = self.error_lines[name].get_children()[0]

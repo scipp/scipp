@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 
@@ -81,6 +81,12 @@ class PlotView:
         Forward rescaling to the `figure`.
         """
         self.figure.rescale_to_data(*args, **kwargs)
+
+    def toggle_mask(self, change=None):
+        """
+        Dummy toggle_mask function.
+        """
+        return
 
     def toggle_norm(self, *args, **kwargs):
         """

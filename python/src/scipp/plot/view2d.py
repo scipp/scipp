@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .figure2d import PlotFigure2d
@@ -34,12 +34,6 @@ class PlotView2d(PlotView):
                                          self.check_for_xlim_update)
         self.figure.ax.callbacks.connect('ylim_changed',
                                          self.check_for_ylim_update)
-
-    def toggle_mask(self, change):
-        """
-        Forward mask toggling to the `figure`.
-        """
-        self.figure.toggle_mask(change["owner"].mask_name, change["new"])
 
     def check_for_xlim_update(self, event_ax):
         """

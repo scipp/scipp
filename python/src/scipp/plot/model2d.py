@@ -1,11 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet, Simon Heybrock
 
 from .. import config
 from .model import PlotModel
 from .resampling_model import resampling_model
+from .._scipp import core as sc
 import numpy as np
 
 
@@ -47,6 +48,28 @@ class PlotModel2d(PlotModel):
             # TODO: if labels are used on a 2D coordinates, we need to update
             # the axes tick formatter to use xyrebin coords
 
+    def get_slice_values(self, mask_info, extent=None):
+        values = self.dslice.values
+        transpose = self.displayed_dims['x'] == self.dslice.dims[0]
+        if transpose:
+            values = np.transpose(values)
+        slice_values = {"values": values, "extent": extent}
+        if len(mask_info[self.name]) > 0:
+            # Use automatic broadcasting in Scipp variables
+            msk = sc.Variable(dims=self.dslice.data.dims,
+                              values=np.zeros(self.dslice.data.shape,
+                                              dtype=np.int32))
+            for m, val in mask_info[self.name].items():
+                if val:
+                    msk += sc.Variable(
+                        dims=self.dslice.masks[m].dims,
+                        values=self.dslice.masks[m].values.astype(np.int32))
+            if transpose:
+                slice_values["masks"] = np.transpose(msk.values)
+            else:
+                slice_values["masks"] = msk.values
+        return slice_values
+
     def _update_image(self, extent=None, mask_info=None):
         """
         Resample 2d images to a fixed resolution to handle very large images.
@@ -55,14 +78,7 @@ class PlotModel2d(PlotModel):
         for dim in self._squeeze:
             data = data[dim, 0]
         self.dslice = data
-        values = data.values
-        transpose = self.displayed_dims['x'] == data.dims[0]
-        if transpose:
-            values = np.transpose(values)
-        masks = self._make_masks(data,
-                                 mask_info=mask_info[self.name],
-                                 transpose=transpose)
-        return {"values": values, "masks": masks, "extent": extent}
+        return self.get_slice_values(mask_info=mask_info, extent=extent)
 
     def update_data(self, slices, mask_info):
         """
@@ -94,6 +110,27 @@ class PlotModel2d(PlotModel):
             xylims.values())).flatten(),
                                   mask_info=mask_info)
 
+    def update_profile_model(self,
+                             visible=False,
+                             slices=None,
+                             profile_dim=None):
+        """
+        When the profile view gets activated, make a new resampling model.
+        """
+        if visible:
+            model_data = self.data_arrays[self.name]
+            for dim in set(slices.keys()) - set([profile_dim]):
+                [start, stop] = slices[dim]
+                model_data = model_data[dim, start:stop]
+            self._profile_model = resampling_model(model_data)
+            self._profile_model.resolution = {
+                self.displayed_dims['x']: 1,
+                self.displayed_dims['y']: 1,
+                profile_dim: 200
+            }
+        else:
+            self._profile_model = None
+
     def update_profile(self,
                        xdata=None,
                        ydata=None,
@@ -107,17 +144,9 @@ class PlotModel2d(PlotModel):
 
         TODO: remove duplicate code between this and update_profile in model1d.
         """
-
         # Find indices of pixel where cursor lies
         dimx = self.displayed_dims['x']
         dimy = self.displayed_dims['y']
-        if len(slices) == 1:
-            dim, [start, stop] = slices[0]
-            self._profile_model = resampling_model(
-                self.data_arrays[self.name][dim, start:stop])
-        else:
-            self._profile_model = resampling_model(self.data_arrays[self.name])
-        self._profile_model.resolution = {dimx: 1, dimy: 1, profile_dim: 200}
         x = self._model.data.meta[dimx]
         y = self._model.data.meta[dimy]
         # Note that xdata and ydata already have the left edge subtracted from

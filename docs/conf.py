@@ -71,7 +71,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'scipp'
-copyright = u'2020 Scipp contributors'
+copyright = u'2021 Scipp contributors'
 author = u'Scipp contributors'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -131,7 +131,7 @@ else:
 html_theme_options = {'logo_only': True}
 
 html_logo = "_static/logo-large-v4.png"
-# html_favicon = "_static/favicon.ico"
+html_favicon = "_static/favicon.ico"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

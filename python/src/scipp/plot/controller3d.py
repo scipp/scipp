@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .controller import PlotController
@@ -105,32 +105,3 @@ class PlotController3d(PlotController):
         """
         alpha = self.model.update_cut_surface(*args, **kwargs)
         self.view.update_opacity(alpha=alpha)
-
-    def rescale_to_data(self, button=None):
-        """
-        When we rescale the colorbar limits, we also have to manually update
-        the colors in the figure, as opposed to Matplotlib's `imshow` which
-        does the update automatically.
-        """
-        super().rescale_to_data()
-        new_values = self.model.get_slice_values(
-            mask_info=self.get_masks_info())
-        self.view.update_data(new_values)
-
-    def toggle_mask(self, change=None):
-        """
-        Show/hide masks
-        """
-        new_values = self.model.get_slice_values(
-            mask_info=self.get_masks_info())
-        self.view.update_data(new_values)
-
-    def toggle_norm(self, change):
-        """
-        When toggling the color normalization, we need to get values from
-        the model to update the colors in 3d plots.
-        """
-        super().toggle_norm(change)
-        new_values = self.model.get_slice_values(
-            mask_info=self.get_masks_info())
-        self.view.update_data(new_values)

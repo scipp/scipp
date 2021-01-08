@@ -1,10 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .helpers import PlotArray
-from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
-        mask_to_float, vars_to_err
+from .tools import to_bin_edges, to_bin_centers, make_fake_coord, vars_to_err
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
@@ -180,10 +179,9 @@ class PlotModel:
                                 values=np.ones(data.shape, dtype=np.int32))
         for m in mask_info:
             if m in array.masks:
-                msk = base_mask * sc.Variable(
-                    dims=array.masks[m].dims,
-                    values=array.masks[m].values.astype(np.int32))
-                masks[m] = mask_to_float(msk.values, data.values)
+                msk = base_mask * sc.Variable(dims=array.masks[m].dims,
+                                              values=array.masks[m].values)
+                masks[m] = msk.values
                 if transpose:
                     masks[m] = np.transpose(masks[m])
             else:
@@ -192,10 +190,11 @@ class PlotModel:
 
     def _make_profile(self, profile, dim, mask_info):
         values = {"values": {}, "variances": {}, "masks": {}}
-        values["values"]["x"] = profile.meta[dim].values
-        values["values"]["y"] = profile.data.values
+        values["values"]["x"] = profile.meta[dim].values.ravel()
+        values["values"]["y"] = profile.data.values.ravel()
         if profile.data.variances is not None:
-            values["variances"]["e"] = vars_to_err(profile.data.variances)
+            values["variances"]["e"] = vars_to_err(
+                profile.data.variances.ravel())
         values["masks"] = self._make_masks(profile, mask_info=mask_info)
         return values
 
@@ -254,9 +253,9 @@ class PlotModel:
             array = array[dim, lower:upper]
             if (upper - lower) > 1:
                 array.data = sc.rebin(
-                    array.data, dim, array.coords[dim],
-                    sc.concatenate(array.coords[dim][dim, 0],
-                                   array.coords[dim][dim, -1], dim))
+                    array.data, dim, array.meta[dim],
+                    sc.concatenate(array.meta[dim][dim, 0],
+                                   array.meta[dim][dim, -1], dim))
             if not keep_dims:
                 array = array[dim, 0]
         return array
@@ -266,3 +265,6 @@ class PlotModel:
         Return the multi-dimensional coordinate.
         """
         return self.multid_coord
+
+    def update_profile_model(self, *args, **kwargs):
+        return
