@@ -299,14 +299,14 @@ void init_dataset(py::module &m) {
           }),
           py::arg("data") = std::map<std::string, VariableConstView>{},
           py::arg("coords") = std::map<Dim, VariableConstView>{},
-          R"(__init__(data: Dict[str, Variable] = {}, coords: Dict[str, Variable] = {})
+          R"(__init__(self, data: Dict[str, VariableConstView] = {}, coords: Dict[str, VariableConstView] = {})
           
              Initialise from a dictionary of Variables and optionally coordinates.
              Each Variable is converted into a DataArray within the Dataset.
              )")
       .def(py::init<const std::map<std::string, DataArrayConstView> &>(),
            py::arg("data"),
-           R"(__init__(data: Dict[str, DataArray])
+           R"(__init__(self, data: Dict[str, DataArrayConstView])
               
               Initialise from a dictionary of DataArrays.
               )");
