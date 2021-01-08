@@ -266,7 +266,7 @@ void init_dataset(py::module &m) {
           :param masks: Masks referenced by name.
           :param attrs: Attributes referenced by dimension.
           :param name: Name of DataArray.
-          :type data: Variable
+          :type data: VariableConstView
           :type coords: Dict[str, VariableConstView]
           :type masks: Dict[str, VariableConstView]
           :type attrs: Dict[str, VariableConstView]
