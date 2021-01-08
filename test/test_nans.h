@@ -10,11 +10,10 @@ template <typename T> struct MeanTest : public ::testing::Test {
    * mean and nanmean will preserve input type for floating point types.
    * For any integer input type we expect the return type to be double
    */
-  using RetType =
-      std::conditional_t<std::numeric_limits<T>::is_integer, double, T>;
-  /// Held type supports nan testing. All FP types -> true
-  constexpr static bool TestNans = !std::numeric_limits<T>::is_integer;
+  using ReturnType = std::conditional_t<std::is_integral_v<T>, double, T>;
+  /// Held type supports nan testing.
+  constexpr static bool TestNans = std::numeric_limits<T>::has_quiet_NaN;
   /// Held type supports variances testing. All FP types -> true
-  constexpr static bool TestVariances = !std::numeric_limits<T>::is_integer;
+  constexpr static bool TestVariances = std::is_floating_point_v<T>;
 };
 } // namespace
