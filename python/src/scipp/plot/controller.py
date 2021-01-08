@@ -1,9 +1,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .tools import check_log_limits
-from .._utils import name_with_unit, value_to_string
+from .._utils import value_to_string
 from .._scipp import core as sc
 import numpy as np
 
@@ -83,7 +83,7 @@ class PlotController:
             # Iterate through axes and collect dimensions
             for dim in self.axes.values():
 
-                coord = self.model.get_data_coord(name, dim)
+                coord, label, unit = self.model.get_data_coord(name, dim)
 
                 # To allow for 2D coordinates, the histograms are
                 # stored as dicts, with one key per dimension of the coordinate
@@ -111,8 +111,8 @@ class PlotController:
                                                    values=self.xlims[key][dim],
                                                    unit=coord.unit)
 
-                self.coord_labels[key][dim] = name_with_unit(var=coord)
-                self.coord_units[key][dim] = name_with_unit(var=coord, name="")
+                self.coord_labels[key][dim] = label
+                self.coord_units[key][dim] = unit
 
         self.initialise_widgets(dim_to_shape[self.name])
         self.initialise_view()
@@ -156,7 +156,11 @@ class PlotController:
         Initialise widget parameters once the `PlotModel`, `PlotView` and
         `PlotController` have been created.
         """
-        self.widgets.initialise(dim_to_shape, self.xlims[self.name],
+        ranges = {}
+        for dim in self.widgets.get_slider_bounds():
+            ranges[dim] = self.model.get_slice_coord_bounds(
+                self.name, dim, [0, 1])
+        self.widgets.initialise(dim_to_shape, ranges,
                                 self.coord_units[self.name])
 
     def initialise_view(self):
@@ -216,6 +220,10 @@ class PlotController:
             "toggle_xaxis_scale": self.toggle_xaxis_scale,
             "toggle_yaxis_scale": self.toggle_yaxis_scale,
             "toggle_norm": self.toggle_norm,
+            "home_view": self.home_view,
+            "pan_view": self.pan_view,
+            "zoom_view": self.zoom_view,
+            "save_view": self.save_view
         }
         self.view.connect(view_callbacks=view_callbacks,
                           figure_callbacks=figure_callbacks)
@@ -235,7 +243,7 @@ class PlotController:
     def lock_update_data(self):
         """
         When the thickness slider is changed, the range, and possibly the
-        value, of the position slider are changed. We therfore temporary lock
+        value, of the position slider are changed. We therefore temporary lock
         data updates until all slider ranges and values have been updated
         before manually updating the displayed data slice.
         """
@@ -247,6 +255,18 @@ class PlotController:
         """
         self.update_data_lock = False
 
+    def home_view(self, button=None):
+        self.update_axes()
+
+    def pan_view(self, button=None):
+        self.view.pan_view()
+
+    def zoom_view(self, button=None):
+        self.view.zoom_view()
+
+    def save_view(self, button=None):
+        self.view.save_view()
+
     def rescale_to_data(self, button=None):
         """
         Automatically rescale the y axis (1D plot) or the colorbar (2D+3D
@@ -254,11 +274,21 @@ class PlotController:
         data slice.
         """
         vmin, vmax = self.model.rescale_to_data()
-        if button is None:
-            if self.vmin is not None:
+
+        # If the limits were requested by the user: if the rescale button is
+        # pressed by the user, it means we forcibly update the self.vmin/vmax.
+        # If no button is pressed, we use the global limits instead of the
+        # min and max values found by the model.
+        if self.vmin is not None:
+            if button is None:
                 vmin = self.vmin
-            if self.vmax is not None:
+            else:
+                self.vmin = vmin
+        if self.vmax is not None:
+            if button is None:
                 vmax = self.vmax
+            else:
+                self.vmax = vmax
         vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax, scale=self.norm)
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
@@ -278,37 +308,38 @@ class PlotController:
         self.update_axes()
         self.update_log_axes_buttons()
 
-    def toggle_xaxis_scale(self, owner):
+    def toggle_xaxis_scale(self, owner, normalize=False):
         """
         Toggle x-axis scale from toolbar button signal.
         """
         dim = self.axes["x"]
         self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes()
+        self.update_axes(normalize=normalize)
 
-    def toggle_yaxis_scale(self, owner):
+    def toggle_yaxis_scale(self, owner, normalize=False):
         """
         Toggle y-axis scale from toolbar button signal.
         """
         dim = self.axes["y"]
         self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes()
+        self.update_axes(normalize=normalize)
 
-    def toggle_zaxis_scale(self, owner):
+    def toggle_zaxis_scale(self, owner, normalize=False):
         """
         Toggle z-axis scale from toolbar button signal.
         """
         dim = self.axes["z"]
         self.scale[dim] = "log" if owner.value else "linear"
-        self.update_axes()
+        self.update_axes(normalize=normalize)
 
     def toggle_norm(self, owner):
         """
         Toggle data normalization from toolbar button signal.
         """
         self.norm = "log" if owner.value else "linear"
-        vmin, vmax = self.model.rescale_to_data()
-        vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax, scale=self.norm)
+        vmin, vmax = check_log_limits(vmin=self.vmin,
+                                      vmax=self.vmax,
+                                      scale=self.norm)
         self.view.toggle_norm(self.norm, vmin, vmax)
 
     def swap_dimensions(self, index, old_dim, new_dim):
@@ -321,6 +352,13 @@ class PlotController:
         self.axes[index] = new_dim
         self.update_axes()
         self.update_log_axes_buttons()
+        # Update the slider readout here because the widgets do not have access
+        # to the model, which holds the coordinates.
+        # ranges = {}
+        lower, upper = self.model.get_slice_coord_bounds(
+            self.name, new_dim, [0, 1])
+        self.widgets.update_slider_readout(index, lower, upper, [0, 1],
+                                           new_dim == self.multid_coord)
 
     def update_log_axes_buttons(self):
         """
@@ -338,7 +376,7 @@ class PlotController:
         """
         self.view.update_norm_button(*args, **kwargs)
 
-    def update_axes(self, change=None):
+    def update_axes(self, change=None, normalize=True):
         """
         This function is called when a dimension that is displayed along a
         given axis is changed. This happens for instance when we want to
@@ -359,7 +397,8 @@ class PlotController:
         if self.profile is not None:
             self.toggle_profile_view()
         self.update_data()
-        self.rescale_to_data()
+        if normalize:
+            self.rescale_to_data()
 
     def update_data(self, change=None):
         """
@@ -369,6 +408,8 @@ class PlotController:
         called when update_axes is called since the displayed data needs to be
         updated when the axes have changed.
         """
+
+        owner_dim = None
 
         if self.update_data_lock:
             return
@@ -389,7 +430,7 @@ class PlotController:
         self.view.update_data(new_values, info=info)
         if self.panel is not None:
             self.panel.update_data(info)
-        if self.profile_dim is not None:
+        if (self.profile_dim is not None) and (owner_dim == self.profile_dim):
             self.profile.update_slice_area(lower, upper)
 
     def toggle_mask(self, change):
@@ -563,6 +604,7 @@ class PlotController:
                                                ydata=ydata,
                                                slices=slices,
                                                axparams=self.profile_axparams,
+                                               profile_dim=self.profile_dim,
                                                mask_info=self.get_masks_info())
         # Send new values to the profile view
         self.profile.update_data(new_values, info=info)

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element/arg_list.h"
@@ -43,6 +43,7 @@ void copy_slices(const VariableConstView &src, const VariableView &dst,
   const auto [begin1, end1] = unzip(dstIndices);
   const auto sizes0 = end0 - begin0;
   const auto sizes1 = end1 - begin1;
+  core::expect::equals(src.unit(), dst.unit());
   // May broadcast `src` but not `dst` since that would result in
   // multiple/conflicting writes to same bucket.
   expect::contains(sizes1.dims(), sizes0.dims());

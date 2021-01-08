@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -29,6 +29,34 @@ template <class Range> bool is_linspace(const Range &range) {
                               return std::abs(std::abs(b - a) - delta) >
                                      epsilon;
                             }) == range.end();
+}
+
+template <typename T> bool isnan([[maybe_unused]] T x) {
+  if constexpr (std::is_floating_point_v<std::decay_t<T>>)
+    return std::isnan(x);
+  else
+    return false;
+}
+
+template <typename T> bool isinf([[maybe_unused]] T x) {
+  if constexpr (std::is_floating_point_v<std::decay_t<T>>)
+    return std::isinf(x);
+  else
+    return false;
+}
+
+template <typename T> bool isfinite([[maybe_unused]] T x) {
+  if constexpr (std::is_floating_point_v<std::decay_t<T>>)
+    return std::isfinite(x);
+  else
+    return true;
+}
+
+template <typename T> bool signbit([[maybe_unused]] T x) {
+  if constexpr (std::is_floating_point_v<std::decay_t<T>>)
+    return std::signbit(x);
+  else
+    return std::signbit(double(x));
 }
 
 } // namespace scipp::numeric

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -930,4 +930,14 @@ TEST_F(TransformBucketElementsTest, single_arg_in_place) {
                              [](auto &x) { x *= x; }});
   Variable expected = make_bins(indices, Dim::X, buffer * buffer);
   EXPECT_EQ(var, expected);
+}
+
+TEST_F(TransformUnaryTest, drop_variances_when_not_supported_on_out_type) {
+  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.1, 2.2},
+                                  Variances{1.1, 2.2});
+  const auto result = transform<double>(
+      var, overloaded{[](const units::Unit &unit) { return unit; },
+                      [](const auto) { return true; }});
+  EXPECT_EQ(result,
+            makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, true}));
 }

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
@@ -194,10 +194,6 @@ def plot(*args, **kwargs):
         interactive_on = True
 
     output = _plot(*args, **kwargs)
-    if _is_inline():
-        for key in output:
-            if output[key] is not None:
-                output[key].as_static(keep_widgets=is_doc_build)
 
     # Turn auto figure display back on if needed.
     if interactive_on:

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -91,7 +91,7 @@ constexpr auto is_linspace =
                [](const auto &range) { return numeric::is_linspace(range); }};
 
 constexpr auto zip = overloaded{
-    arg_list<scipp::index>, transform_flags::expect_no_variance_arg<0>,
+    arg_list<int64_t, int32_t>, transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
     [](const units::Unit &first, const units::Unit &second) {
       expect::equals(first, second);

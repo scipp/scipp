@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/dataset/bin.h"
@@ -484,6 +484,15 @@ struct GroupbyBinnedTest : public ::testing::Test {
 
 TEST_F(GroupbyBinnedTest, concatenate_data_array) {
   EXPECT_EQ(groupby(a, Dim("labels")).concatenate(Dim::Y), expected);
+}
+
+TEST_F(GroupbyBinnedTest, concatenate_data_array_2d) {
+  a = bin(a, {makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 8})});
+  auto grouped = groupby(a, Dim("labels")).concatenate(Dim::Y);
+  grouped.coords().erase(Dim::X);
+  EXPECT_EQ(grouped.slice({Dim::X, 0}), expected);
+  // Dim added by grouping is *outer* dim
+  EXPECT_EQ(grouped.dims(), Dimensions({Dim("labels"), Dim::X}, {2, 1}));
 }
 
 TEST_F(GroupbyBinnedTest, concatenate_data_array_conflicting_2d_coord) {

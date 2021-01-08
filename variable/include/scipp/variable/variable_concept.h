@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -59,6 +59,8 @@ public:
                     const VariableView &dest) const = 0;
   virtual void assign(const VariableConcept &other) = 0;
   virtual scipp::index dtype_size() const = 0;
+
+  virtual VariableConstView bin_indices() const = 0;
 
   friend class Variable;
 

@@ -1,0 +1,20 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Simon Heybrock
+#include "scipp/variable/@NAME@.h"
+#include "scipp/dataset/@NAME@.h"
+
+#include "dataset_operations_common.h"
+
+namespace scipp::dataset {
+
+DataArray @NAME@(const DataArrayConstView &a, const DataArrayConstView &b) {
+  return DataArray(
+      @NAME@(a.data(), b.data()),
+      union_(a.coords(), b.coords()),
+      union_or(a.masks(), b.masks()),
+      intersection(a.attrs(), b.attrs()));
+}
+
+} // namespace scipp::dataset

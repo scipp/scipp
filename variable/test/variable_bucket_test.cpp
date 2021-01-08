@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/variable/bins.h"
@@ -36,11 +36,6 @@ TEST_F(VariableBucketTest, copy_view) {
   EXPECT_EQ(Variable(var.slice({Dim::Y, 0, 2})), var);
   EXPECT_EQ(Variable(var.slice({Dim::Y, 0, 1})), var.slice({Dim::Y, 0, 1}));
   EXPECT_EQ(Variable(var.slice({Dim::Y, 1, 2})), var.slice({Dim::Y, 1, 2}));
-}
-
-TEST_F(VariableBucketTest, shape_operations) {
-  // Not supported yet, not to ensure this fails instead of returning garbage.
-  EXPECT_ANY_THROW(concatenate(var, var, Dim::Y));
 }
 
 TEST_F(VariableBucketTest, basics) {

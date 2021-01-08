@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .model import PlotModel
@@ -19,7 +19,7 @@ class PlotModel3d(PlotModel):
 
         super().__init__(*args, scipp_obj_dict=scipp_obj_dict, **kwargs)
 
-        self.button_dims = {}
+        self.displayed_dims = {}
         self.positions = positions
         self.pos_array = None
         self.pos_coord = None
@@ -29,7 +29,7 @@ class PlotModel3d(PlotModel):
         # If positions are specified, then the x, y, z points positions can
         # never change
         if self.positions is not None:
-            self.pos_coord = scipp_obj_dict[self.name].coords[self.positions]
+            self.pos_coord = scipp_obj_dict[self.name].meta[self.positions]
             self.pos_array = np.array(self.pos_coord.values, dtype=np.float32)
 
     def initialise(self, cut_options):
@@ -49,17 +49,17 @@ class PlotModel3d(PlotModel):
         if self.positions is None:
 
             for xyz in "zyx":
-                self.button_dims[xyz] = axparams[xyz]["dim"]
+                self.displayed_dims[xyz] = axparams[xyz]["dim"]
 
             z, y, x = np.meshgrid(
                 to_bin_centers(
-                    self.data_arrays[self.name].coords[axparams['z']["dim"]],
+                    self.data_arrays[self.name].meta[axparams['z']["dim"]],
                     axparams["z"]["dim"]).values,
                 to_bin_centers(
-                    self.data_arrays[self.name].coords[axparams['y']["dim"]],
+                    self.data_arrays[self.name].meta[axparams['y']["dim"]],
                     axparams["y"]["dim"]).values,
                 to_bin_centers(
-                    self.data_arrays[self.name].coords[axparams['x']["dim"]],
+                    self.data_arrays[self.name].meta[axparams['x']["dim"]],
                     axparams["x"]["dim"]).values,
                 indexing='ij')
 
@@ -73,7 +73,7 @@ class PlotModel3d(PlotModel):
         Get data and mask values as numpy arrays.
         """
         new_values = {
-            "values": self.dslice.values.astype(np.float32).ravel(),
+            "values": self.dslice.data.values.astype(np.float32).ravel(),
             "masks": None
         }
 
@@ -81,8 +81,8 @@ class PlotModel3d(PlotModel):
         msk = None
         if len(mask_info[self.name]) > 0:
             # Use automatic broadcasting in Scipp variables
-            msk = sc.Variable(dims=self.dslice.dims,
-                              values=np.zeros(self.dslice.shape,
+            msk = sc.Variable(dims=self.dslice.data.dims,
+                              values=np.zeros(self.dslice.data.shape,
                                               dtype=np.int32))
             for m, val in mask_info[self.name].items():
                 if val:
@@ -101,31 +101,31 @@ class PlotModel3d(PlotModel):
         # Use automatic broadcast if positions are not used
         if self.positions is None:
             shape = [
-                data_slice.coords[self.button_dims["z"]].shape[0] - 1,
-                data_slice.coords[self.button_dims["y"]].shape[0] - 1,
-                data_slice.coords[self.button_dims["x"]].shape[0] - 1
+                data_slice.meta[self.displayed_dims["z"]].shape[0] - 1,
+                data_slice.meta[self.displayed_dims["y"]].shape[0] - 1,
+                data_slice.meta[self.displayed_dims["x"]].shape[0] - 1
             ]
 
-            self.dslice = sc.DataArray(coords={
-                self.button_dims["z"]:
-                data_slice.coords[self.button_dims["z"]],
-                self.button_dims["y"]:
-                data_slice.coords[self.button_dims["y"]],
-                self.button_dims["x"]:
-                data_slice.coords[self.button_dims["x"]]
-            },
-                                       data=sc.Variable(
-                                           dims=[
-                                               self.button_dims["z"],
-                                               self.button_dims["y"],
-                                               self.button_dims["x"]
-                                           ],
-                                           values=np.ones(shape),
-                                           variances=np.zeros(shape),
-                                           dtype=data_slice.dtype,
-                                           unit=sc.units.one))
+            self.dslice = sc.DataArray(
+                coords={
+                    self.displayed_dims["z"]:
+                    data_slice.meta[self.displayed_dims["z"]],
+                    self.displayed_dims["y"]:
+                    data_slice.meta[self.displayed_dims["y"]],
+                    self.displayed_dims["x"]:
+                    data_slice.meta[self.displayed_dims["x"]]
+                },
+                data=sc.Variable(dims=[
+                    self.displayed_dims["z"], self.displayed_dims["y"],
+                    self.displayed_dims["x"]
+                ],
+                                 values=np.ones(shape),
+                                 variances=np.zeros(shape),
+                                 dtype=data_slice.data.dtype,
+                                 unit=sc.units.one),
+                masks=data_slice.masks)
 
-            self.dslice *= data_slice
+            self.dslice *= data_slice.data
         else:
             self.dslice = data_slice
 

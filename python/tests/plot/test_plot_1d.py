@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
@@ -27,6 +27,10 @@ def test_plot_1d_bin_edges():
 
 def test_plot_1d_with_labels():
     plot(make_dense_dataset(ndim=1, labels=True), axes={"x": "somelabels"})
+
+
+def test_plot_1d_with_attrs():
+    plot(make_dense_dataset(ndim=1, attrs=True), axes={"x": "attr"})
 
 
 def test_plot_1d_log_axes():
@@ -201,5 +205,15 @@ def test_plot_customized_mpl_axes():
 def test_plot_access_ax_and_fig():
     d = make_dense_dataset(ndim=1)
     out = plot(d["Sample"], title="MyTitle")
+    out.ax.set_xlabel("MyXlabel")
+    out.fig.set_dpi(120.)
+
+
+def test_plot_access_ax_and_fig_two_entries():
+    d = make_dense_dataset(ndim=1)
+    d["Background"] = sc.Variable(['tof'],
+                                  values=2.0 * np.random.random(50),
+                                  unit=sc.units.kg)
+    out = plot(d)
     out['tof.counts'].ax.set_xlabel("MyXlabel")
     out['tof.counts'].fig.set_dpi(120.)

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-2.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/core/dimensions.h"
@@ -156,15 +156,14 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coord_1D_ascending) {
     EXPECT_EQ(out, sliceable);
     // Test start on left boundary (closed on left), so includes boundary
     out = slice(sliceable, Dim::X, 3.0 * units::m, 4.0 * units::m);
-    EXPECT_EQ(out, sliceable.slice({Dim::X, 0, 1}));
+    EXPECT_EQ(out, sliceable.slice({Dim::X, 0, 2}));
     // Test slicing with range boundary inside edge, same result as above
-    // expected
     out = slice(sliceable, Dim::X, 3.1 * units::m, 4.0 * units::m);
-    EXPECT_EQ(out, sliceable.slice({Dim::X, 0, 1}));
+    EXPECT_EQ(out, sliceable.slice({Dim::X, 0, 2}));
     // Test slicing with range lower boundary on upper edge of bin (open on
-    // right test)
+    // right test): The bin containing the stop value is *included*
     out = slice(sliceable, Dim::X, 4.0 * units::m, 6.0 * units::m);
-    EXPECT_EQ(out, sliceable.slice({Dim::X, 1, 3}));
+    EXPECT_EQ(out, sliceable.slice({Dim::X, 1, 4}));
     // Test end on right boundary (open on right), so does not include boundary
     out = slice(sliceable, Dim::X, 11.0 * units::m, 12.0 * units::m);
     EXPECT_EQ(out, sliceable.slice({Dim::X, 8, 9}));
@@ -181,15 +180,15 @@ TEST(SliceByValueTest, test_slice_range_on_edge_coord_1D_descending) {
     EXPECT_EQ(out, sliceable);
     // Test start on left boundary (closed on left), so includes boundary
     out = slice(sliceable, Dim::X, 12.0 * units::m, 11.0 * units::m);
-    EXPECT_EQ(out, sliceable.slice({Dim::X, 0, 1}));
+    EXPECT_EQ(out, sliceable.slice({Dim::X, 0, 2}));
     // Test slicing with range boundary inside edge, same result as above
     // expected
     out = slice(sliceable, Dim::X, 11.9 * units::m, 11.0 * units::m);
-    EXPECT_EQ(out, sliceable.slice({Dim::X, 0, 1}));
+    EXPECT_EQ(out, sliceable.slice({Dim::X, 0, 2}));
     // Test slicing with range lower boundary on upper edge of bin (open on
     // right test)
     out = slice(sliceable, Dim::X, 11.0 * units::m, 9.0 * units::m);
-    EXPECT_EQ(out, sliceable.slice({Dim::X, 1, 3}));
+    EXPECT_EQ(out, sliceable.slice({Dim::X, 1, 4}));
     // Test end on right boundary (open on right), so does not include boundary
     out = slice(sliceable, Dim::X, 4.0 * units::m, 3.0 * units::m);
     EXPECT_EQ(out, sliceable.slice({Dim::X, 8, 9}));

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock, Igor Gudich
 #include "scipp/core/element/rebin.h"
@@ -9,6 +9,7 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
+#include "scipp/variable/rebin.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/transform_subspan.h"
 #include "scipp/variable/util.h"
@@ -108,6 +109,8 @@ Variable rebin(const VariableConstView &var, const Dim dim,
         "The input does not have coordinates with bin-edges.");
 
   using transform_args = std::tuple<
+      args<double, double, int64_t, double>,
+      args<double, double, int32_t, double>,
       args<double, double, double, double>, args<float, float, float, float>,
       args<float, double, float, double>, args<float, float, float, double>,
       args<bool, double, bool, double>>;
@@ -118,20 +121,22 @@ Variable rebin(const VariableConstView &var, const Dim dim,
                       is_sorted(newCoord, dim, SortOrder::Descending)))
     throw except::BinEdgeError(
         "Rebin: The old or new bin edges are not sorted.");
+  const auto out_type = isInt(var.dtype()) ? dtype<double> : var.dtype();
   if (var.dims().inner() == dim) {
     if (ascending) {
       return transform_subspan<transform_args>(
-          var.dtype(), dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
+          out_type, dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
           core::element::rebin<Less>);
     } else {
       return transform_subspan<transform_args>(
-          var.dtype(), dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
+          out_type, dim, newCoord.dims()[dim] - 1, newCoord, var, oldCoord,
           core::element::rebin<Greater>);
     }
   } else {
     auto dims = var.dims();
     dims.resize(dim, newCoord.dims()[dim] - 1);
-    Variable rebinned(var, dims);
+    auto rebinned =
+        Variable(astype(Variable(var, Dimensions{}), out_type), dims);
     if (newCoord.dims().ndim() > 1)
       throw std::runtime_error(
           "Not inner rebin works only for 1d coordinates for now.");
@@ -147,8 +152,8 @@ Variable rebin(const VariableConstView &var, const Dim dim,
       else
         rebin_non_inner<float, Greater>(dim, var, rebinned, oldCoord, newCoord);
     } else {
-      throw std::runtime_error(
-          "Rebinning is possible only for double and float types.");
+      throw except::TypeError("Rebinning is possible only for coords of types "
+                              "`float64` or `float32`.");
     }
     return rebinned;
   }

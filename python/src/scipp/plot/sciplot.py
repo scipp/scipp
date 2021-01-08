@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .tools import parse_params
@@ -209,7 +209,7 @@ class SciPlot:
         for i, dim in enumerate(array_dims[::-1]):
             if positions is not None:
                 if (dim == positions) or (dim
-                                          == array.coords[positions].dims[-1]):
+                                          == array.meta[positions].dims[-1]):
                     key = "x"
                 else:
                     key = i - ("x" in self.axes)
@@ -224,8 +224,7 @@ class SciPlot:
         supplied_axes = {}
         if axes is not None:
             for dim in axes.values():
-                if (dim not in self.axes.values()) and (dim
-                                                        not in array.coords):
+                if (dim not in self.axes.values()) and (dim not in array.meta):
                     raise RuntimeError("Requested dimension was not found in "
                                        "input data: {}".format(dim))
             supplied_axes.update(axes)
@@ -235,16 +234,17 @@ class SciPlot:
         for key, dim in supplied_axes.items():
             dim_list = list(self.axes.values())
             key_list = list(self.axes.keys())
+            underlying_dim = array.meta[dim].dims[
+                -1] if dim in array.meta else dim
             if dim in dim_list:
                 ind = dim_list.index(dim)
             else:
                 # Non-dimension coordinate
-                underlying_dim = array.coords[dim].dims[-1]
                 self.dim_label_map[underlying_dim] = dim
                 self.dim_label_map[dim] = underlying_dim
                 ind = dim_list.index(underlying_dim)
             self.axes[key_list[ind]] = self.axes[key]
-            self.axes[key] = dim
+            self.axes[key] = underlying_dim  # dim
 
     def validate(self):
         """
@@ -270,25 +270,3 @@ class SciPlot:
         directory where the script or notebook is running.
         """
         self.view.savefig(filename=filename)
-
-    def as_static(self, keep_widgets=False):
-        """
-        Convert the plot to a static plot, releasing the memory held (a full
-        copy of the data is made on input).
-        """
-        # Delete controller members
-        self.controller.widgets = None
-        self.controller.model = None
-        self.controller.panel = None
-        self.controller.profile = None
-        self.controller.view = None
-        # Delete sciplot members
-        self.controller = None
-        self.model = None
-        self.profile = None
-        if not keep_widgets:
-            self.panel = None
-            self.widgets = None
-            return self.view.figure
-        else:
-            return self

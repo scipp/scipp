@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/core/element/arithmetic.h"
@@ -111,4 +111,19 @@ TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_nan_ValueAndVariance) {
   auto expected = z + ValueAndVariance<double>{0, 0};
   nan_plus_equals(z, asNaN);
   EXPECT_EQ(expected, z);
+}
+TEST_F(ElementNanArithmeticTest, plus_equals_with_lhs_nan_rhs_int) {
+  auto lhs = dNaN;
+  nan_plus_equals(lhs, 1);
+  EXPECT_EQ(1.0, lhs);
+}
+TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_int_lhs_nan) {
+  auto lhs = 1;
+  nan_plus_equals(lhs, dNaN);
+  EXPECT_EQ(1, lhs);
+}
+TEST_F(ElementNanArithmeticTest, plus_equals_with_rhs_int_lhs_int) {
+  auto lhs = 1;
+  nan_plus_equals(lhs, 2);
+  EXPECT_EQ(3, lhs);
 }

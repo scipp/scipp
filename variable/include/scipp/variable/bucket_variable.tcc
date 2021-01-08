@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/bucket_model.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable.tcc"
 #include "scipp/variable/variable_factory.h"
@@ -14,7 +16,7 @@ std::tuple<Variable, Dim, typename T::buffer_type> Variable::to_constituents() {
   Variable tmp;
   std::swap(*this, tmp);
   auto &model = requireT<DataModel<T>>(tmp.data());
-  return {Variable(std::move(model.indices())), model.dim(),
+  return {Variable(std::move(model.indices())), model.bin_dim(),
           std::move(model.buffer())};
 }
 
@@ -43,7 +45,7 @@ VariableConstView::constituents() const {
   } else {
     view.m_variable = &model.indices();
   }
-  return {view, model.dim(), model.buffer()};
+  return {view, model.bin_dim(), model.buffer()};
 }
 
 template <class T>
@@ -52,12 +54,12 @@ VariableView::constituents() const {
   auto &model = requireT<DataModel<T>>(m_mutableVariable->data());
   if constexpr (is_view_v<typename T::buffer_type>) {
     auto view = std::get<0>(VariableConstView::constituents<T>());
-    return {view, model.dim(), model.buffer()};
+    return {view, model.bin_dim(), model.buffer()};
   } else {
     auto view = *this;
     view.m_variable = &model.indices();
     view.m_mutableVariable = &model.indices();
-    return {view, model.dim(), model.buffer()};
+    return {view, model.bin_dim(), model.buffer()};
   }
 }
 
@@ -76,7 +78,32 @@ auto contiguous_indices(const VariableConstView &parent,
 }
 } // namespace
 
-template <class T> class BucketVariableMaker : public AbstractVariableMaker {
+template <class T> class BinVariableMakerCommon : public AbstractVariableMaker {
+public:
+  bool is_bins() const override { return true; }
+  Variable empty_like(const VariableConstView &prototype,
+                      const std::optional<Dimensions> &shape,
+                      const VariableConstView &sizes) const override {
+    if (shape)
+      throw except::TypeError(
+          "Cannot specify shape in `empty_like` for prototype with bins, shape "
+          "must be given by shape of `sizes`.");
+    const auto [indices, dim, buf] = prototype.constituents<bucket<T>>();
+    Variable keep_alive_sizes;
+    auto sizes_ = sizes;
+    if (!sizes) {
+      const auto &[begin, end] = unzip(indices);
+      keep_alive_sizes = end - begin;
+      sizes_ = keep_alive_sizes;
+    }
+    const auto end = cumsum(sizes_);
+    const auto begin = end - sizes_;
+    const auto size = end.template values<scipp::index>().as_span().back();
+    return make_bins(zip(begin, end), dim, resize_default_init(buf, dim, size));
+  }
+};
+
+template <class T> class BinVariableMaker : public BinVariableMakerCommon<T> {
 private:
   const VariableConstView
   bucket_parent(const scipp::span<const VariableConstView> &parents) const {
@@ -84,15 +111,13 @@ private:
                ? parents.front()
                : bucket_parent(parents.subspan(1));
   }
-  virtual Variable make_buckets(const VariableConstView &parent,
-                                const VariableConstView &indices, const Dim dim,
-                                const DType type, const Dimensions &dims,
-                                const units::Unit &unit,
-                                const bool variances) const = 0;
+  virtual Variable call_make_bins(const VariableConstView &parent,
+                             const VariableConstView &indices, const Dim dim,
+                             const DType type, const Dimensions &dims,
+                             const units::Unit &unit,
+                             const bool variances) const = 0;
 
 public:
-  bool is_buckets() const override { return true; }
-
   Variable
   create(const DType elem_dtype, const Dimensions &dims,
          const units::Unit &unit, const bool variances,
@@ -102,22 +127,35 @@ public:
     auto [indices, size] = contiguous_indices(parentIndices, dims);
     auto bufferDims = buffer.dims();
     bufferDims.resize(dim, size);
-    return make_buckets(parent, indices, dim, elem_dtype, bufferDims, unit,
-                        variances);
+    return call_make_bins(parent, indices, dim, elem_dtype, bufferDims, unit,
+                     variances);
   }
 
+  Dim elem_dim(const VariableConstView &var) const override {
+    return std::get<1>(var.constituents<bucket<T>>());
+  }
   DType elem_dtype(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).dtype();
   }
   units::Unit elem_unit(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).unit();
   }
+  void expect_can_set_elem_unit(const VariableView &var,
+                                const units::Unit &u) const override {
+    if constexpr (std::is_same_v<T, VariableConstView>)
+      throw std::runtime_error("Cannot set unit via const non-owning view");
+    else {
+      if ((elem_unit(var) != u) && (var.dims() != var.underlying().dims()))
+        throw except::UnitError("Partial view on data of variable cannot be "
+                                "used to change the unit.");
+    }
+  }
   void set_elem_unit(const VariableView &var,
                      const units::Unit &u) const override {
     if constexpr (std::is_same_v<T, VariableConstView>)
       throw std::runtime_error("Cannot set unit via const non-owning view");
     else
-      return std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
+      std::get<2>(var.constituents<bucket<T>>()).setUnit(u);
   }
   bool hasVariances(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>()).hasVariances();

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 import numpy as np
@@ -11,9 +11,16 @@ def make_dense_dataset(ndim=1,
                        binedges=False,
                        labels=False,
                        masks=False,
-                       ragged=False):
+                       attrs=False,
+                       ragged=False,
+                       dtype=sc.dtype.float64,
+                       unit=sc.units.counts):
 
     dim_list = ['tof', 'x', 'y', 'z', 'Q_x']
+    units = dict(
+        zip(dim_list, [
+            sc.units.us, sc.units.m, sc.units.m, sc.units.m, sc.units.angstrom
+        ]))
 
     N = 50
     M = 10
@@ -24,6 +31,7 @@ def make_dense_dataset(ndim=1,
     for i in range(ndim):
         n = N - (i * M)
         d.coords[dim_list[i]] = sc.Variable(dims=[dim_list[i]],
+                                            unit=units[dim_list[i]],
                                             values=np.arange(n + binedges,
                                                              dtype=np.float64))
         dims.append(dim_list[i])
@@ -42,14 +50,21 @@ def make_dense_dataset(ndim=1,
                                          np.indices(mesh[-1].shape)[0])
 
     a = np.sin(np.arange(np.prod(shapes)).reshape(*shapes).astype(np.float64))
-    d["Sample"] = sc.Variable(dims, values=a, unit=sc.units.counts)
+    d["Sample"] = sc.Variable(dims, values=a, unit=unit, dtype=dtype)
+
     if variances:
         d["Sample"].variances = np.abs(np.random.normal(a * 0.1, 0.05))
+
     if labels:
         d.coords["somelabels"] = sc.Variable([dim_list[0]],
                                              values=np.linspace(
                                                  101., 105., shapes[0]),
                                              unit=sc.units.s)
+    if attrs:
+        d["Sample"].attrs["attr"] = sc.Variable([dim_list[0]],
+                                                values=np.linspace(
+                                                    10., 77., shapes[0]),
+                                                unit=sc.units.s)
     if masks:
         d["Sample"].masks["mask"] = sc.Variable(dims,
                                                 values=np.where(

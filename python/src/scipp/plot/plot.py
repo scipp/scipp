@@ -1,55 +1,14 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .._scipp import core as sc
 from .. import _utils as su
 from ..compat.dict import from_dict
 from .dispatch import dispatch
+from .helpers import Plot
 from .tools import make_fake_coord, get_line_param
 import numpy as np
-
-
-class Plot(dict):
-    """
-    The Plot object is used as output for the plot command.
-    It is a small wrapper around python dict, with an `_ipython_display_`
-    representation.
-    The dict will contain one entry for each entry in the input supplied to
-    the plot function.
-    More functionalities can be added in the future.
-    """
-    def __init__(self, *arg, **kw):
-        super(Plot, self).__init__(*arg, **kw)
-
-    def _ipython_display_(self):
-        """
-        IPython display representation for Jupyter notebooks.
-        """
-        return self._to_widget()._ipython_display_()
-
-    def _to_widget(self):
-        """
-        Return plot contents into a single VBocx container
-        """
-        import ipywidgets as ipw
-        contents = []
-        for item in self.values():
-            if item is not None:
-                contents.append(item._to_widget())
-        return ipw.VBox(contents)
-
-    def show(self):
-        for item in self.values():
-            item.show()
-
-    def as_static(self, *args, **kwargs):
-        """
-        Convert all the contents of the dict to static plots, releasing the
-        memory held by the plot (which makes a full copy of the input data).
-        """
-        for key, item in self.items():
-            self[key] = item.as_static(*args, **kwargs)
 
 
 def _variable_to_data_array(variable):
@@ -217,4 +176,8 @@ def plot(scipp_obj,
                                mpl_line_params=val["mpl_line_params"],
                                bins=bins,
                                **kwargs)
-    return output
+
+    if len(output) > 1:
+        return output
+    else:
+        return output[list(output.keys())[0]]

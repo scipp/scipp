@@ -7,6 +7,7 @@
 #include "scipp/core/element/special_values.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/special_values.h"
+#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
@@ -47,6 +48,8 @@ TYPED_TEST(VariableSpecialValueTest, isfinite) {
     EXPECT_EQ(variable::isfinite(x * units::m),
               element::isfinite(x) * units::dimensionless);
   }
+  EXPECT_EQ(variable::isfinite(1 * units::dimensionless),
+            element::isfinite(1) * units::dimensionless);
 }
 
 TYPED_TEST(VariableSpecialValueTest, isposinf) {
@@ -61,6 +64,39 @@ TYPED_TEST(VariableSpecialValueTest, isneginf) {
     EXPECT_EQ(variable::isneginf(x * units::m),
               element::isneginf(x) * units::dimensionless);
   }
+}
+
+template <typename Op> void check_no_out_variances(Op op) {
+  const auto var = makeVariable<double>(Dimensions{Dim::Z, 2}, units::m,
+                                        Values{1.0, 2.0}, Variances{1.0, 2.0});
+  const Variable applied = op(var);
+  EXPECT_FALSE(applied.hasVariances());
+  const Variable applied_on_values = op(values(var));
+  EXPECT_EQ(applied, applied_on_values);
+}
+
+TEST(VariableSpecialValueTest, isfinite_no_out_variances) {
+  using variable::isfinite;
+  check_no_out_variances([](const auto &x) { return isfinite(x); });
+}
+
+TEST(VariableSpecialValueTest, isnan_no_out_variances) {
+  using variable::isnan;
+  check_no_out_variances([](const auto &x) { return isnan(x); });
+}
+
+TEST(VariableSpecialValueTest, isinf_no_out_variances) {
+  using variable::isinf;
+  check_no_out_variances([](const auto &x) { return isinf(x); });
+}
+
+TEST(VariableSpecialValueTest, isneginf_no_out_variances) {
+  using variable::isneginf;
+  check_no_out_variances([](const auto &x) { return isneginf(x); });
+}
+TEST(VariableSpecialValueTest, isposinf_no_out_variances) {
+  using variable::isposinf;
+  check_no_out_variances([](const auto &x) { return isposinf(x); });
 }
 
 TEST(VariableSpecialValueTest,

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 
@@ -13,6 +13,7 @@
 
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/rebin.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
@@ -147,7 +148,7 @@ of variances.)");
   bind_init_0D<scipp::core::time_point>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_0D<Eigen::Matrix3d>(variable);
-  variable.def(py::init<const VariableView &>())
+  variable
       .def(py::init(&makeVariableDefaultInit),
            py::arg("dims") = std::vector<Dim>{},
            py::arg("shape") = std::vector<scipp::index>{},
@@ -313,4 +314,23 @@ Mostly equivalent to Variable, see there for details.)");
                    "values, False otherwise.")
           .rtype("bool")
           .c_str());
+
+  m.def("rebin",
+        py::overload_cast<const VariableConstView &, const Dim,
+                          const VariableConstView &, const VariableConstView &>(
+            &rebin),
+        py::arg("x"), py::arg("dim"), py::arg("old"), py::arg("new"),
+        py::call_guard<py::gil_scoped_release>(),
+        Docstring()
+            .description("Rebin a dimension of a variable.")
+            .raises("If data cannot be rebinned, e.g., if the unit is not "
+                    "counts, or the existing coordinate is not a bin-edge "
+                    "coordinate.")
+            .returns("Data rebinned according to the new bin edges.")
+            .rtype("Variable")
+            .param("x", "Data to rebin.", "Variable")
+            .param("dim", "Dimension to rebin over.", "Dim")
+            .param("old", "Old bin edges.", "Variable")
+            .param("new", "New bin edges.", "Variable")
+            .c_str());
 }

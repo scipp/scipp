@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include "test_macros.h"
 #include <gtest/gtest.h>
 
@@ -88,6 +88,18 @@ TEST_P(ConvertTest, DataArray_to_tof) {
       result.setData(data.name(), convert(data, dim, Dim::Tof));
     for (const auto &data : result)
       EXPECT_EQ(data, expected[data.name()]);
+  }
+}
+
+TEST_P(ConvertTest, convert_slice) {
+  Dataset tof = GetParam();
+  const auto slice = Slice{Dim::Spectrum, 0};
+  // Note: Converting slics of data*sets* not supported right now, since meta
+  // data handling implementation in `convert` is current based on dataset
+  // coords, but slicing converts this into attrs of *items*.
+  for (const auto &dim : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
+    EXPECT_EQ(convert(tof["counts"].slice(slice), Dim::Tof, dim),
+              convert(tof["counts"], Dim::Tof, dim).slice(slice));
   }
 }
 

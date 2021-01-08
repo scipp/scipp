@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/bins.h"
@@ -22,14 +22,13 @@ INSTANTIATE_BUCKET_VARIABLE(DataArrayConstView_observer,
 
 namespace scipp::dataset {
 
-class BucketVariableMakerDataArray
-    : public variable::BucketVariableMaker<DataArray> {
+class BinVariableMakerDataArray : public variable::BinVariableMaker<DataArray> {
 private:
-  Variable make_buckets(const VariableConstView &parent,
-                        const VariableConstView &indices, const Dim dim,
-                        const DType type, const Dimensions &dims,
-                        const units::Unit &unit,
-                        const bool variances) const override {
+  Variable call_make_bins(const VariableConstView &parent,
+                          const VariableConstView &indices, const Dim dim,
+                          const DType type, const Dimensions &dims,
+                          const units::Unit &unit,
+                          const bool variances) const override {
     const auto &source = std::get<2>(parent.constituents<bucket<DataArray>>());
     if (parent.dims() !=
         indices
@@ -41,8 +40,7 @@ private:
     auto buffer = DataArray(
         variable::variableFactory().create(type, dims, unit, variances),
         source.coords(), source.masks(), source.attrs());
-    return Variable{std::make_unique<variable::DataModel<bucket<DataArray>>>(
-        indices, dim, std::move(buffer))};
+    return make_bins(Variable(indices), dim, std::move(buffer));
   }
   VariableConstView data(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<DataArray>>()).data();
@@ -57,23 +55,29 @@ private:
     return {0, // no offset required in buffer since access via indices
             params.dims(),
             params.dataDims(),
-            {dim, buffer.dims(),
-             indices.values<std::pair<scipp::index, scipp::index>>().data()}};
+            {dim, buffer.dims(), indices.values<scipp::index_pair>().data()}};
   }
 };
 
-/// This is currently a dummy implemented just to make `is_buckets` work.
-class BucketVariableMakerDataset : public variable::AbstractVariableMaker {
-  bool is_buckets() const override { return true; }
+/// This is currently a dummy implemented just to make `is_bins` work.
+class BinVariableMakerDataset
+    : public variable::BinVariableMakerCommon<Dataset> {
   Variable create(const DType, const Dimensions &, const units::Unit &,
                   const bool,
                   const std::vector<VariableConstView> &) const override {
     throw std::runtime_error("not implemented");
   }
+  Dim elem_dim(const VariableConstView &) const override {
+    throw std::runtime_error("undefined");
+  }
   DType elem_dtype(const VariableConstView &) const override {
     throw std::runtime_error("undefined");
   }
   units::Unit elem_unit(const VariableConstView &) const override {
+    throw std::runtime_error("undefined");
+  }
+  void expect_can_set_elem_unit(const VariableView &,
+                                const units::Unit &) const override {
     throw std::runtime_error("undefined");
   }
   void set_elem_unit(const VariableView &, const units::Unit &) const override {
@@ -99,12 +103,12 @@ auto register_dataset_types(
          dtype<bucket<DataArrayConstView>>,
          std::make_unique<variable::Formatter<bucket<DataArrayConstView>>>()),
      0));
-auto register_variable_maker_bucket_DataArray((
-    variable::variableFactory().emplace(
-        dtype<bucket<DataArray>>,
-        std::make_unique<BucketVariableMakerDataArray>()),
-    variable::variableFactory().emplace(
-        dtype<bucket<Dataset>>, std::make_unique<BucketVariableMakerDataset>()),
-    0));
+auto register_variable_maker_bucket_DataArray(
+    (variable::variableFactory().emplace(
+         dtype<bucket<DataArray>>,
+         std::make_unique<BinVariableMakerDataArray>()),
+     variable::variableFactory().emplace(
+         dtype<bucket<Dataset>>, std::make_unique<BinVariableMakerDataset>()),
+     0));
 } // namespace
 } // namespace scipp::dataset

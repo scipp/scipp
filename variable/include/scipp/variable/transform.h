@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file Various transform functions for variables.
 ///
 /// The underlying mechanism of the implementation is as follows:
@@ -192,6 +192,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed) {
               "Expected either all or none of inputs to have variances.");
         } else if constexpr (
             !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
+            core::canHaveVariances<typename Out::value_type>() &&
             (is_ValuesAndVariances_v<std::decay_t<decltype(args)>> || ...)) {
           auto out_var = out.variances();
           transform_elements(op, ValuesAndVariances{out_val, out_var},
@@ -258,7 +259,7 @@ template <class Op> struct Transform {
     using Out = decltype(maybe_eval(op(handles.values()[0]...)));
     const bool variances =
         !std::is_base_of_v<core::transform_flags::no_out_variance_t, Op> &&
-        (handles.hasVariances() || ...);
+        core::canHaveVariances<Out>() && (handles.hasVariances() || ...);
     auto unit = op.base_op()(variableFactory().elem_unit(*handles.m_var)...);
     auto out = variableFactory().create(dtype<Out>, dims, unit, variances,
                                         *handles.m_var...);
@@ -590,7 +591,7 @@ template <bool dry_run> struct in_place {
     auto unit = variableFactory().elem_unit(var);
     op(unit, variableFactory().elem_unit(other)...);
     // Stop early in bad cases of changing units (if `var` is a slice):
-    var.expectCanSetUnit(unit);
+    variableFactory().expect_can_set_elem_unit(var, unit);
     // Wrapped implementation to convert multiple tuples into a parameter pack.
     transform_data(type_tuples<Ts...>(op), op, std::forward<Var>(var),
                    other...);

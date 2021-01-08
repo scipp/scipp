@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/map_view.h"
@@ -33,12 +33,25 @@ bool ConstView<Id, Key, Value>::contains(const Key &k) const {
   return m_items.find(k) != m_items.cend();
 }
 
+/// Returns 1 or 0, depending on whether key is present in the view or not.
+template <class Id, class Key, class Value>
+scipp::index ConstView<Id, Key, Value>::count(const Key &k) const {
+  return static_cast<scipp::index>(contains(k));
+}
+
 /// Return a const view to the coordinate for given dimension.
 template <class Id, class Key, class Value>
 typename ConstView<Id, Key, Value>::mapped_type::const_view_type
 ConstView<Id, Key, Value>::operator[](const Key &key) const {
   scipp::expect::contains(*this, key);
   return make_slice(m_items.at(key), m_slices);
+}
+
+/// Return a const view to the coordinate for given dimension.
+template <class Id, class Key, class Value>
+typename ConstView<Id, Key, Value>::mapped_type::const_view_type
+ConstView<Id, Key, Value>::at(const Key &key) const {
+  return operator[](key);
 }
 
 template <class Id, class Key, class Value>

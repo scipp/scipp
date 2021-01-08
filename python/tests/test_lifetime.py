@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import numpy as np
 import scipp as sc
@@ -138,5 +138,5 @@ def test_lifetime_atan2_out_arg():
 def test_lifetime_reduction_out_arg(func):
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
     out = 0.0 * sc.units.one
-    out = func(var, 'x', out=out)
+    out = func(var, dim='x', out=out)
     out *= 1.0  # out would be an invalid view is keep_alive not correct

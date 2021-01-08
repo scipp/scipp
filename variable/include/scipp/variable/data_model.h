@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -117,6 +117,9 @@ public:
   }
 
   scipp::index dtype_size() const override { return sizeof(T); }
+  VariableConstView bin_indices() const override {
+    throw except::TypeError("This data type does not have bin indices.");
+  }
 
 private:
   void expectHasVariances() const {

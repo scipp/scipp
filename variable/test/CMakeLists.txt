@@ -6,8 +6,10 @@ add_executable(
   ${TARGET_NAME} EXCLUDE_FROM_ALL
   bucket_model_test.cpp
   comparison_test.cpp
+  creation_test.cpp
   cumulative_test.cpp
   indexed_slice_view_test.cpp
+  mean_test.cpp
   operations_test.cpp
   rebin_test.cpp
   reduce_logical_test.cpp
@@ -15,6 +17,7 @@ add_executable(
   shape_test.cpp
   sort_test.cpp
   subspan_view_test.cpp
+  test_variables.cpp
   transform_test.cpp
   trigonometry_test.cpp
   util_test.cpp

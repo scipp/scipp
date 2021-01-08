@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 import ipywidgets as ipw
@@ -11,24 +11,32 @@ class PlotToolbar:
     normalization, and with back/forward buttons removed.
     """
     def __init__(self, canvas=None, ndim=1):
+
         # Prepare containers
         self.container = ipw.VBox()
         self.members = {}
 
-        # Construct  toolbar
+        # Keep a reference to the matplotlib toolbar so we can call the zoom
+        # and pan methods
+        self.mpl_toolbar = None
+
         if canvas is not None:
-            old_tools = canvas.toolbar.toolitems
-            new_tools = [
-                old_tools[0], old_tools[3], old_tools[4], old_tools[5]
-            ]
-            canvas.toolbar.toolitems = new_tools
-            self.members["mpl_toolbar"] = canvas.toolbar
             canvas.toolbar_visible = False
-        else:
-            self.add_button(name="menu", icon="bars", tooltip="Menu")
-            self.add_button(name="home",
-                            icon="home",
-                            tooltip="Reset original view")
+            self.mpl_toolbar = canvas.toolbar
+
+        self.add_button(name="home_view",
+                        icon="home",
+                        tooltip="Reset original view")
+
+        if ndim < 3:
+            self.add_togglebutton(name="pan_view",
+                                  icon="arrows",
+                                  tooltip="Pan")
+
+            self.add_togglebutton(name="zoom_view",
+                                  icon="square-o",
+                                  tooltip="Zoom")
+
         self.add_button(name="rescale_to_data",
                         icon="arrows-v",
                         tooltip="Rescale")
@@ -55,6 +63,9 @@ class PlotToolbar:
             self.add_togglebutton(name="toggle_norm",
                                   description="log",
                                   tooltip="Log(data)")
+
+        if ndim < 3:
+            self.add_button(name="save_view", icon="save", tooltip="Save")
 
         self._update_container()
 
@@ -150,3 +161,26 @@ class PlotToolbar:
         """
         self.toggle_button_color(self.members["toggle_norm"],
                                  value=norm == "log")
+
+    def home_view(self):
+        self.mpl_toolbar.home()
+
+    def pan_view(self):
+        # In case the zoom button is selected, we need to de-select it
+        if self.members["zoom_view"].value:
+            self.toggle_button_color(self.members["zoom_view"])
+        self.mpl_toolbar.pan()
+
+    def zoom_view(self):
+        # In case the pan button is selected, we need to de-select it
+        if self.members["pan_view"].value:
+            self.toggle_button_color(self.members["pan_view"])
+        self.mpl_toolbar.zoom()
+
+    def save_view(self):
+        self.mpl_toolbar.save_figure()
+
+    def rescale_on_zoom(self):
+        if self.members["zoom_view"].value:
+            # Simulate a click on the rescale_to_data button
+            self.members["rescale_to_data"].click()

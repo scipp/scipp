@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -153,6 +153,8 @@ public:
     return {0, dims(), dims(), {}};
   }
 
+  VariableConstView bin_indices() const;
+
   template <class T>
   std::tuple<VariableConstView, Dim, typename T::const_element_type>
   constituents() const;
@@ -276,9 +278,13 @@ public:
   auto &underlying() const { return *m_variable; }
   bool is_trivial() const noexcept;
 
+  void rename(const Dim from, const Dim to);
+
   core::ElementArrayViewParams array_params() const noexcept {
     return {m_offset, m_dims, m_dataDims, {}};
   }
+
+  VariableConstView bin_indices() const;
 
   template <class T>
   std::tuple<VariableConstView, Dim, typename T::const_element_type>

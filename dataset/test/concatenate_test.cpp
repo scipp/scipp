@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/shape.h"
@@ -298,4 +299,51 @@ TEST(ConcatenateTest, broadcast_coord) {
       DataArray(makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{2, 3, 1}),
                 {{Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{3},
                                                Values{2, 2, 1})}}));
+}
+
+class ConcatenateBinnedTest : public ::testing::Test {
+protected:
+  Variable indices = makeVariable<scipp::index_pair>(
+      Dims{Dim::X}, Shape{2}, Values{std::pair{0, 2}, std::pair{2, 5}});
+  Variable data =
+      makeVariable<double>(Dims{Dim::Event}, Shape{5}, Values{1, 2, 3, 4, 5});
+  DataArray buffer = DataArray(data, {{Dim::X, data + data}});
+  Variable var = make_bins(indices, Dim::Event, buffer);
+};
+
+TEST_F(ConcatenateBinnedTest, mismatching_buffer) {
+  for (const auto buffer2 :
+       {buffer * (1.0 * units::m),
+        DataArray(data, {{Dim::X, data + data}}, {{"mask", 1.0 * units::one}},
+                  {}),
+        DataArray(data, {{Dim::X, data + data}}, {},
+                  {{Dim("attr"), 1.0 * units::one}}),
+        DataArray(data, {{Dim::Y, data + data}, {Dim::X, data + data}}),
+        DataArray(data, {})}) {
+    auto var2 = make_bins(indices, Dim::Event, buffer2);
+    EXPECT_THROW(concatenate(var, var2, Dim::X), std::runtime_error);
+    EXPECT_THROW(concatenate(var, var2, Dim::Y), std::runtime_error);
+    EXPECT_THROW(concatenate(var2, var, Dim::X), std::runtime_error);
+    EXPECT_THROW(concatenate(var2, var, Dim::Y), std::runtime_error);
+  }
+}
+
+TEST_F(ConcatenateBinnedTest, existing_dim) {
+  auto out = concatenate(var, var, Dim::X);
+  EXPECT_EQ(out.slice({Dim::X, 0, 2}), var);
+  EXPECT_EQ(out.slice({Dim::X, 2, 4}), var);
+  out = concatenate(var + 1.2 * units::one, out, Dim::X);
+  EXPECT_EQ(out.slice({Dim::X, 0, 2}), var + 1.2 * units::one);
+  EXPECT_EQ(out.slice({Dim::X, 2, 4}), var);
+  EXPECT_EQ(out.slice({Dim::X, 4, 6}), var);
+}
+
+TEST_F(ConcatenateBinnedTest, new_dim) {
+  auto out = concatenate(var, var, Dim::Y);
+  EXPECT_EQ(out.slice({Dim::Y, 0}), var);
+  EXPECT_EQ(out.slice({Dim::Y, 1}), var);
+  out = concatenate(var + 1.2 * units::one, out, Dim::Y);
+  EXPECT_EQ(out.slice({Dim::Y, 0}), var + 1.2 * units::one);
+  EXPECT_EQ(out.slice({Dim::Y, 1}), var);
+  EXPECT_EQ(out.slice({Dim::Y, 2}), var);
 }

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .figure2d import PlotFigure2d
@@ -90,6 +90,9 @@ class PlotView2d(PlotView):
             self.current_lims = xylims
             self.interface["update_viewport"](xylims)
 
+        # If we are zooming, rescale to data?
+        self.figure.rescale_on_zoom()
+
     def update_axes(self, axparams):
         """
         Update the current and global axes limits, before updating the figure
@@ -156,7 +159,8 @@ class PlotView2d(PlotView):
         if self.profile_scatter is None:
             self.profile_scatter = self.figure.ax.scatter([xdata], [ydata],
                                                           c=[col],
-                                                          picker=5)
+                                                          picker=5,
+                                                          zorder=10)
         else:
             new_offsets = np.concatenate(
                 (self.profile_scatter.get_offsets(), [[xdata, ydata]]), axis=0)

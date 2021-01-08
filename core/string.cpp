@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <chrono>
@@ -45,6 +45,11 @@ std::string to_string(const Slice &slice) {
   std::string end = slice.end() >= 0 ? ", " + std::to_string(slice.end()) : "";
   return "Slice(" + to_string(slice.dim()) + ", " +
          std::to_string(slice.begin()) + end + ")\n";
+}
+
+std::string to_string(const scipp::index_pair &index) {
+  return '(' + std::to_string(index.first) + ", " +
+         std::to_string(index.second) + ')';
 }
 
 std::map<DType, std::string> &dtypeNameRegistry() {

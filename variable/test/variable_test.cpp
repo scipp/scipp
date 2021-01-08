@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -804,7 +804,17 @@ TEST(VariableTest, rename) {
                                   Variances{7, 8, 9, 10, 11, 12});
   const Variable expected(reshape(var, {{Dim::X, 2}, {Dim::Z, 3}}));
 
+  VariableConstView view(var);
+  view.rename(Dim::Y, Dim::Z);
+  ASSERT_EQ(view, expected);
+  ASSERT_EQ(view.slice({Dim::X, 1}), expected.slice({Dim::X, 1}));
+  ASSERT_EQ(view.slice({Dim::Z, 1}), expected.slice({Dim::Z, 1}));
+  ASSERT_NE(var, expected);
+
   var.rename(Dim::Y, Dim::Z);
+  ASSERT_EQ(view, expected);
+  ASSERT_EQ(view.slice({Dim::X, 1}), expected.slice({Dim::X, 1}));
+  ASSERT_EQ(view.slice({Dim::Z, 1}), expected.slice({Dim::Z, 1}));
   ASSERT_EQ(var, expected);
 }
 
@@ -956,6 +966,7 @@ TYPED_TEST(AsTypeTest, variable_astype) {
     var2 = makeVariable<T2>(Values{1}, Variances{1});
     ASSERT_EQ(astype(var1, core::dtype<T2>), var2);
   }
+
   var1 = makeVariable<T1>(Values{1});
   var2 = makeVariable<T2>(Values{1});
   ASSERT_EQ(astype(var1, core::dtype<T2>), var2);

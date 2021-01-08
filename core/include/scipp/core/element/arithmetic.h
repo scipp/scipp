@@ -1,11 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
 
 #include <Eigen/Dense>
 
+#include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
@@ -22,20 +23,18 @@ constexpr auto add_inplace_types =
              std::tuple<float, int64_t>, std::tuple<float, int32_t>,
              std::tuple<int64_t, bool>>;
 
-constexpr auto add_inplace_nan_types =
-    arg_list<double, float, std::tuple<double, float>,
-             std::tuple<float, double>>;
-
 constexpr auto plus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a += b; }};
+
 constexpr auto nan_plus_equals =
-    overloaded{add_inplace_nan_types, [](auto &&a, const auto &b) {
-                 using std::isnan;
+    overloaded{add_inplace_types, [](auto &&a, const auto &b) {
+                 using numeric::isnan;
                  if (isnan(a))
                    a = std::decay_t<decltype(a)>{0}; // Force zero
                  if (!isnan(b))
                    a += b;
                }};
+
 constexpr auto minus_equals =
     overloaded{add_inplace_types, [](auto &&a, const auto &b) { a -= b; }};
 

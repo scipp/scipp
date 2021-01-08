@@ -1,0 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Simon Heybrock
+#include "scipp/core/element/@ELEMENT_INCLUDE@.h"
+#include "scipp/variable/@NAME@.h"
+#include "scipp/variable/transform.h"
+
+using namespace scipp::core;
+
+namespace scipp::variable {
+
+Variable @NAME@(const VariableConstView &a, const VariableConstView &b) {
+  return transform(a, b, element::@NAME@);
+}
+
+} // namespace scipp::variable

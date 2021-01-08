@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 
@@ -63,6 +63,18 @@ class PlotView:
                 self.interface[key] = func
         if figure_callbacks is not None:
             self.figure.connect(figure_callbacks)
+
+    def home_view(self, *args, **kwargs):
+        self.figure.home_view(*args, **kwargs)
+
+    def pan_view(self, *args, **kwargs):
+        self.figure.pan_view(*args, **kwargs)
+
+    def zoom_view(self, *args, **kwargs):
+        self.figure.zoom_view(*args, **kwargs)
+
+    def save_view(self, *args, **kwargs):
+        self.figure.save_view(*args, **kwargs)
 
     def rescale_to_data(self, *args, **kwargs):
         """

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -26,5 +26,11 @@ SCIPP_VARIABLE_EXPORT VariableView mean_impl(const VariableConstView &var,
                                              const Dim dim,
                                              const VariableConstView &masks_sum,
                                              const VariableView &out);
+SCIPP_VARIABLE_EXPORT Variable nanmean_impl(const VariableConstView &var,
+                                            const Dim dim,
+                                            const VariableConstView &masks_sum);
+SCIPP_VARIABLE_EXPORT VariableView
+nanmean_impl(const VariableConstView &var, const Dim dim,
+             const VariableConstView &masks_sum, const VariableView &out);
 
 } // namespace scipp::variable

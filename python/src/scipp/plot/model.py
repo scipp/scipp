@@ -1,9 +1,11 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import to_bin_edges, to_bin_centers, make_fake_coord
-from .._utils import value_to_string
+from .helpers import PlotArray
+from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
+        mask_to_float, vars_to_err
+from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
 
@@ -34,6 +36,7 @@ class PlotModel:
 
         # The main container of DataArrays
         self.data_arrays = {}
+        self.coord_info = {}
 
         self.axformatter = {}
 
@@ -44,49 +47,41 @@ class PlotModel:
 
             # Store axis tick formatters
             self.axformatter[name] = {}
-
-            # Create a DataArray with units of counts, and bin-edge
-            # coordinates, because it is to be passed to rebin during the
-            # resampling stage.
-            self.data_arrays[name] = sc.DataArray(
-                data=sc.Variable(dims=list(dim_to_shape[name].keys()),
-                                 unit=sc.units.counts,
-                                 values=array.values,
-                                 variances=array.variances,
-                                 dtype=sc.dtype.float64))
+            self.coord_info[name] = {}
+            coord_list = {}
 
             # Iterate through axes and collect coordinates
             for dim in axes_dims:
-                coord, formatter = self._axis_coord_and_formatter(
+                coord, formatter, label, unit = self._axis_coord_and_formatter(
                     dim, array, dim_to_shape[name], dim_label_map)
 
                 self.axformatter[name][dim] = formatter
+                self.coord_info[name][dim] = {"label": label, "unit": unit}
 
-                is_histogram = None
+                is_histogram = False
                 for i, d in enumerate(coord.dims):
                     if d == dim:
                         is_histogram = dim_to_shape[name][
                             d] == coord.shape[i] - 1
 
                 if is_histogram:
-                    self.data_arrays[name].coords[dim] = coord
+                    coord_list[dim] = coord
                 else:
-                    self.data_arrays[name].coords[dim] = to_bin_edges(
-                        coord, dim)
+                    coord_list[dim] = to_bin_edges(coord, dim)
+
+            # Create a PlotArray helper object that supports slicing where new
+            # bin-edge coordinates can be attached to the data
+            self.data_arrays[name] = PlotArray(data=array.data,
+                                               meta=coord_list)
 
             # Include masks
-            for m, msk in array.masks.items():
-                mask_dims = msk.dims
-                for dim in mask_dims:
-                    if dim not in axes_dims:
-                        mask_dims[mask_dims.index(dim)] = dim_label_map[dim]
-                self.data_arrays[name].masks[m] = sc.Variable(
-                    dims=mask_dims, values=msk.values, dtype=msk.dtype)
+            for m in array.masks:
+                self.data_arrays[name].masks[m] = array.masks[m]
 
         # Store dim of multi-dimensional coordinate if present
         self.multid_coord = None
         for array in self.data_arrays.values():
-            for dim, coord in array.coords.items():
+            for dim, coord in array.meta.items():
                 if len(coord.dims) > 1:
                     self.multid_coord = dim
 
@@ -108,67 +103,101 @@ class PlotModel:
 
         coord = None
 
-        if dim in data_array.coords:
+        if dim not in data_array.meta:
+            coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+            return coord, formatter, name_with_unit(var=coord), name_with_unit(
+                var=coord, name="")
 
-            underlying_dim = data_array.coords[dim].dims[-1]
-            tp = data_array.coords[dim].dtype
+        tp = data_array.meta[dim].dtype
+        coord_info = {}
 
-            if tp == sc.dtype.vector_3_float64:
-                coord = make_fake_coord(dim,
-                                        dim_to_shape[dim] + 1,
-                                        unit=data_array.coords[dim].unit)
-                form = lambda val, pos: "(" + ",".join([  # noqa: E731
-                    value_to_string(item, precision=2)
-                    for item in data_array.coords[dim].values[int(val)]
-                ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim]
-                             ) else ""
-                formatter.update({
-                    "linear": form,
-                    "log": form,
-                    "custom_locator": True
-                })
+        if tp == sc.dtype.vector_3_float64:
+            coord = make_fake_coord(dim,
+                                    dim_to_shape[dim] + 1,
+                                    unit=data_array.meta[dim].unit)
+            form = lambda val, pos: "(" + ",".join([  # noqa: E731
+                value_to_string(item, precision=2)
+                for item in data_array.meta[dim].values[int(val)]
+            ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim]
+                         ) else ""
+            formatter.update({
+                "linear": form,
+                "log": form,
+                "custom_locator": True
+            })
 
-            elif tp == sc.dtype.string:
-                coord = make_fake_coord(dim,
-                                        dim_to_shape[dim] + 1,
-                                        unit=data_array.coords[dim].unit)
-                form = lambda val, pos: data_array.coords[  # noqa: E731
-                    dim].values[int(val)] if (int(val) >= 0 and int(val) <
-                                              dim_to_shape[dim]) else ""
-                formatter.update({
-                    "linear": form,
-                    "log": form,
-                    "custom_locator": True
-                })
+        elif tp == sc.dtype.string:
+            coord = make_fake_coord(dim,
+                                    dim_to_shape[dim] + 1,
+                                    unit=data_array.meta[dim].unit)
+            form = lambda val, pos: data_array.meta[  # noqa: E731
+                dim].values[int(val)] if (int(val) >= 0 and int(val) <
+                                          dim_to_shape[dim]) else ""
+            formatter.update({
+                "linear": form,
+                "log": form,
+                "custom_locator": True
+            })
 
-            elif dim != underlying_dim:
-                # non-dimension coordinate
-                if underlying_dim in data_array.coords:
-                    coord = data_array.coords[underlying_dim]
-                    coord = sc.Variable([dim],
-                                        values=coord.values,
-                                        variances=coord.variances,
-                                        unit=coord.unit,
-                                        dtype=sc.dtype.float64)
-                    coord_values = coord.values
-                else:
-                    coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
-                    coord_values = coord.values
-                    if data_array.coords[dim].shape[-1] == dim_to_shape[dim]:
-                        coord_values = to_bin_centers(coord, dim).values
-                form = lambda val, pos: value_to_string(  # noqa: E731
-                    data_array.coords[dim].values[np.abs(coord_values - val).
-                                                  argmin()])
-                formatter.update({"linear": form, "log": form})
-
+        elif dim in dim_label_map:
+            # non-dimension coordinate
+            if dim in data_array.meta:
+                coord = data_array.meta[dim]
+                coord_values = coord.values
             else:
-                coord = data_array.coords[dim].astype(sc.dtype.float64)
+                coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+                coord_values = coord.values
+                if data_array.meta[dim].shape[-1] == dim_to_shape[dim]:
+                    coord_values = to_bin_centers(coord, dim).values
+            form = lambda val, pos: value_to_string(  # noqa: E731
+                data_array.meta[dim_label_map[dim]].values[np.abs(
+                    coord_values - val).argmin()])
+            formatter.update({"linear": form, "log": form})
+            coord_info["label"] = name_with_unit(
+                var=data_array.meta[dim_label_map[dim]],
+                name=dim_label_map[dim])
+            coord_info["unit"] = name_with_unit(
+                var=data_array.meta[dim_label_map[dim]], name="")
 
         else:
-            # dim not found in data_array.coords
-            coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+            coord = data_array.meta[dim]
+            if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
+                                                      sc.dtype.float64):
+                coord = coord.astype(sc.dtype.float64)
 
-        return coord, formatter
+        if len(coord_info) == 0:
+            coord_info["label"] = name_with_unit(var=coord)
+            coord_info["unit"] = name_with_unit(var=coord, name="")
+
+        return coord, formatter, coord_info["label"], coord_info["unit"]
+
+    def _make_masks(self, array, mask_info, transpose=False):
+        if not mask_info:
+            return {}
+        masks = {}
+        data = array.data
+        base_mask = sc.Variable(dims=data.dims,
+                                values=np.ones(data.shape, dtype=np.int32))
+        for m in mask_info:
+            if m in array.masks:
+                msk = base_mask * sc.Variable(
+                    dims=array.masks[m].dims,
+                    values=array.masks[m].values.astype(np.int32))
+                masks[m] = mask_to_float(msk.values, data.values)
+                if transpose:
+                    masks[m] = np.transpose(masks[m])
+            else:
+                masks[m] = None
+        return masks
+
+    def _make_profile(self, profile, dim, mask_info):
+        values = {"values": {}, "variances": {}, "masks": {}}
+        values["values"]["x"] = profile.meta[dim].values
+        values["values"]["y"] = profile.data.values
+        if profile.data.variances is not None:
+            values["variances"]["e"] = vars_to_err(profile.data.variances)
+        values["masks"] = self._make_masks(profile, mask_info=mask_info)
+        return values
 
     def get_axformatter(self, name, dim):
         """
@@ -180,9 +209,10 @@ class PlotModel:
         """
         Return the left, center, and right coordinates for a bin index.
         """
-        return self.data_arrays[name].coords[dim][
-            dim, bounds[0]].value, self.data_arrays[name].coords[dim][
-                dim, bounds[1]].value
+        return self.data_arrays[name].meta[dim][
+            dim,
+            bounds[0]].value, self.data_arrays[name].meta[dim][dim,
+                                                               bounds[1]].value
 
     def get_data_names(self):
         """
@@ -196,7 +226,8 @@ class PlotModel:
         """
         Get a coordinate along a requested dimension.
         """
-        return self.data_arrays[name].coords[dim]
+        return self.data_arrays[name].meta[dim], self.coord_info[name][dim][
+            "label"], self.coord_info[name][dim]["unit"]
 
     def rescale_to_data(self):
         """
@@ -209,22 +240,25 @@ class PlotModel:
             vmax = sc.nanmax(self.dslice.data).value
         return vmin, vmax
 
-    def slice_data(self, array, slices):
+    def slice_data(self, array, slices, keep_dims=False):
         """
         Slice the data array according to the dimensions and extents listed
         in slices.
         """
         for dim, [lower, upper] in slices.items():
             # TODO: Could this be optimized for performance?
+            # Note: we use the range 1 [dim, i:i+1] slicing here instead of
+            # index slicing [dim, i] so that we hit the correct branch in
+            # rebin, because in the case of slicing an outer dim, rebin-inner
+            # cannot deal with non-continuous data as an input.
+            array = array[dim, lower:upper]
             if (upper - lower) > 1:
-                array = array[dim, lower:upper]
-                array = sc.rebin(
-                    array, dim,
+                array.data = sc.rebin(
+                    array.data, dim, array.coords[dim],
                     sc.concatenate(array.coords[dim][dim, 0],
-                                   array.coords[dim][dim, -1], dim))[dim, 0]
-            else:
-                array = array[dim, lower]
-
+                                   array.coords[dim][dim, -1], dim))
+            if not keep_dims:
+                array = array[dim, 0]
         return array
 
     def get_multid_coord(self):

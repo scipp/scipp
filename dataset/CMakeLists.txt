@@ -2,6 +2,7 @@
 # contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-dataset")
 set(INC_FILES
+    ${dataset_INC_FILES}
     include/scipp/dataset/bin.h
     include/scipp/dataset/bins.h
     include/scipp/dataset/choose.h
@@ -17,6 +18,7 @@ set(INC_FILES
     include/scipp/dataset/math.h
     include/scipp/dataset/rebin.h
     include/scipp/dataset/reduction.h
+    include/scipp/dataset/special_values.h
     include/scipp/dataset/util.h
     include/scipp/dataset/slice.h
     include/scipp/dataset/shape.h
@@ -25,6 +27,7 @@ set(INC_FILES
 )
 
 set(SRC_FILES
+    ${dataset_SRC_FILES}
     arithmetic.cpp
     bin.cpp
     bins.cpp
@@ -36,7 +39,6 @@ set(SRC_FILES
     groupby.cpp
     histogram.cpp
     map_view.cpp
-    math.cpp
     operations.cpp
     rebin.cpp
     reduction.cpp
@@ -44,6 +46,7 @@ set(SRC_FILES
     shape.cpp
     slice.cpp
     sort.cpp
+    special_values.cpp
     string.cpp
     variable_instantiate_bucket_elements.cpp
     variable_instantiate_dataset.cpp
@@ -67,6 +70,7 @@ target_include_directories(
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
+         ${CMAKE_CURRENT_SOURCE_DIR}
          ${CMAKE_CURRENT_BINARY_DIR}
 )
 

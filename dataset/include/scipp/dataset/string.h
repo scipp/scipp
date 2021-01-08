@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -43,8 +43,9 @@ SCIPP_DATASET_EXPORT std::string to_string(const DatasetConstView &dataset);
 template <class Id, class Key, class Value>
 std::string to_string(const ConstView<Id, Key, Value> &view) {
   std::stringstream ss;
+  ss << "<scipp.ConstView>\n";
   for (const auto &[key, item] : view) {
-    ss << "<scipp.ConstView> (" << key << "):\n" << to_string(item);
+    ss << "  " << key << ":" << to_string(item);
   }
   return ss.str();
 }
@@ -52,8 +53,9 @@ std::string to_string(const ConstView<Id, Key, Value> &view) {
 template <class T, class U>
 std::string to_string(const MutableView<T, U> &mutableView) {
   std::stringstream ss;
+  ss << "<scipp.MutableView>\n";
   for (const auto &[key, item] : mutableView) {
-    ss << "<scipp.MutableView> (" << key << "):\n" << to_string(item);
+    ss << "  " << key << ":" << to_string(item);
   }
   return ss.str();
 }

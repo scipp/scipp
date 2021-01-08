@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/core/element/special_values.h"
@@ -10,6 +10,19 @@
 
 using namespace scipp;
 using namespace scipp::core;
+
+namespace {
+template <typename T, typename Op> void test_int_to_false_with_op(Op op) {
+  EXPECT_FALSE(op(std::numeric_limits<T>::min()));
+  EXPECT_FALSE(op(std::numeric_limits<T>::max()));
+  EXPECT_FALSE(op(T{0}));
+}
+template <typename T, typename Op> void test_int_to_true_with_op(Op op) {
+  EXPECT_TRUE(op(std::numeric_limits<T>::min()));
+  EXPECT_TRUE(op(std::numeric_limits<T>::max()));
+  EXPECT_TRUE(op(T{0}));
+}
+} // namespace
 
 using ElementSpecialValuesTestTypes = ::testing::Types<double, float>;
 
@@ -34,6 +47,11 @@ TYPED_TEST(ElementIsnanTest, value) {
   }
 }
 
+TYPED_TEST(ElementIsnanTest, int_values) {
+  test_int_to_false_with_op<int32_t>(element::isnan);
+  test_int_to_false_with_op<int64_t>(element::isnan);
+}
+
 template <typename T> class ElementIsinfTest : public ::testing::Test {};
 TYPED_TEST_SUITE(ElementIsinfTest, ElementSpecialValuesTestTypes);
 
@@ -55,6 +73,11 @@ TYPED_TEST(ElementIsinfTest, value) {
   }
 }
 
+TYPED_TEST(ElementIsinfTest, int_values) {
+  test_int_to_false_with_op<int32_t>(element::isinf);
+  test_int_to_false_with_op<int64_t>(element::isinf);
+}
+
 template <typename T> class ElementIsfiniteTest : public ::testing::Test {};
 TYPED_TEST_SUITE(ElementIsfiniteTest, ElementSpecialValuesTestTypes);
 
@@ -74,6 +97,12 @@ TYPED_TEST(ElementIsfiniteTest, value) {
                        std::numeric_limits<TypeParam>::signaling_NaN()}) {
     EXPECT_FALSE(element::isfinite(x));
   }
+  EXPECT_TRUE(element::isfinite(1));
+}
+
+TYPED_TEST(ElementIsfiniteTest, int_values) {
+  test_int_to_true_with_op<int32_t>(element::isfinite);
+  test_int_to_true_with_op<int64_t>(element::isfinite);
 }
 
 template <typename T> class ElementIssignedinfTest : public ::testing::Test {};
@@ -84,6 +113,13 @@ TEST(ElementIssignedinfTest, unit) {
     EXPECT_EQ(element::isposinf(u), units::dimensionless);
     EXPECT_EQ(element::isneginf(u), units::dimensionless);
   }
+}
+
+TYPED_TEST(ElementIssignedinfTest, int_values) {
+  test_int_to_false_with_op<int32_t>(element::isposinf);
+  test_int_to_false_with_op<int64_t>(element::isposinf);
+  test_int_to_false_with_op<int32_t>(element::isneginf);
+  test_int_to_false_with_op<int64_t>(element::isneginf);
 }
 
 TYPED_TEST(ElementIssignedinfTest, value) {

@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
-#include "random.h"
+#include "dataset_test_common.h"
 
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/bins.h"
@@ -11,11 +11,11 @@
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
-#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
+using testdata::make_table;
 
 class DataArrayBinTest : public ::testing::Test {
 protected:
@@ -106,26 +106,6 @@ TEST(BinGroupTest, 1d) {
   EXPECT_EQ(binned.values<core::bin<DataArray>>()[0].slice({Dim::Row, 1}),
             table.slice({Dim::Row, 4}));
 }
-
-namespace {
-auto make_table(const scipp::index size) {
-  Random rand;
-  rand.seed(0);
-  const Dimensions dims(Dim::Row, size);
-  const auto data = makeVariable<double>(dims, Values(rand(dims.volume())),
-                                         Variances(rand(dims.volume())));
-  const auto x = makeVariable<double>(dims, Values(rand(dims.volume())));
-  const auto y = makeVariable<double>(dims, Values(rand(dims.volume())));
-  const auto group = astype(
-      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
-  const auto group2 = astype(
-      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
-  return DataArray(data, {{Dim::X, x},
-                          {Dim::Y, y},
-                          {Dim("group"), group},
-                          {Dim("group2"), group2}});
-}
-} // namespace
 
 class BinTest : public ::testing::TestWithParam<DataArray> {
 protected:
@@ -315,4 +295,17 @@ TEST_P(BinTest, rebinned_meta_data_dropped) {
   xy1.coords().set(Dim("aux1-edge"), edges_x_coarse);
   xy1.attrs().set(Dim("aux2"), mask_x);
   expect_near(bin(xy1, {edges_x_coarse2, edges_y_coarse2}), xy2);
+}
+
+TEST_P(BinTest, bin_by_group) {
+  const auto table = GetParam();
+  auto binned = bin(table, {}, {groups});
+  // Currently `bin` is not removing coords used for grouping, see TODO.
+  std::get<2>(binned.data().constituents<core::bin<DataArray>>())
+      .coords()
+      .erase(Dim("group"));
+  const auto edges =
+      makeVariable<double>(Dims{Dim("group")}, Shape{3}, Values{-2, 0, 2});
+  // Using bin coord )instead of event coord) for binning.
+  bin(binned, {edges});
 }

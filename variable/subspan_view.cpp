@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/subspan_view.h"
@@ -19,6 +19,11 @@ auto make_subspans(const ElementArrayView<T> &first,
   for (scipp::index i = 0; i < len; ++i)
     spans.emplace_back(scipp::span(&first[i], &last[i] + 1));
   return spans;
+}
+
+template <class T>
+auto make_empty_subspans(const ElementArrayView<T> &, const Dimensions &dims) {
+  return std::vector<span<T>>(dims.volume());
 }
 
 template <class T>
@@ -69,13 +74,17 @@ template <class T, class Var> Variable subspan_view(Var &var, const Dim dim) {
 
   auto dims = var.dims();
   dims.erase(dim);
-  const auto values_view = [dim, len](auto &v) {
-    return make_subspans(v.slice({dim, 0}).template values<E>(),
-                         v.slice({dim, len - 1}).template values<E>());
+  const auto values_view = [dim, len, dims](auto &v) {
+    return len == 0
+               ? make_empty_subspans(v.template values<E>(), dims)
+               : make_subspans(v.slice({dim, 0}).template values<E>(),
+                               v.slice({dim, len - 1}).template values<E>());
   };
-  const auto variances_view = [dim, len](auto &v) {
-    return make_subspans(v.slice({dim, 0}).template variances<E>(),
-                         v.slice({dim, len - 1}).template variances<E>());
+  const auto variances_view = [dim, len, dims](auto &v) {
+    return len == 0
+               ? make_empty_subspans(v.template variances<E>(), dims)
+               : make_subspans(v.slice({dim, 0}).template variances<E>(),
+                               v.slice({dim, len - 1}).template variances<E>());
   };
   return make_subspan_view<T>(var, dims, values_view, variances_view);
 }

@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Piotr Rozyczko
 #pragma once
 
 #include <cmath>
 
+#include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
-#include <cmath>
 
 /// Operators to be used with transform and transform_in_place to implement
 /// operations for Variable.
@@ -75,10 +75,10 @@ constexpr auto max_equals =
                }};
 
 constexpr auto nanmax_equals =
-    overloaded{arg_list<double, float>,
+    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
                transform_flags::expect_in_variance_if_out_variance,
                [](auto &&a, const auto &b) {
-                 using std::isnan;
+                 using numeric::isnan;
                  using std::max;
                  if (isnan(a))
                    a = b;
@@ -95,10 +95,10 @@ constexpr auto min_equals =
                }};
 
 constexpr auto nanmin_equals =
-    overloaded{arg_list<double, float>,
+    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
                transform_flags::expect_in_variance_if_out_variance,
                [](auto &&a, const auto &b) {
-                 using std::isnan;
+                 using numeric::isnan;
                  using std::min;
                  if (isnan(a))
                    a = b;

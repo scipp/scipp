@@ -1,13 +1,13 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 
 
-def mean(x, dim, out=None):
+def mean(x, dim=None, out=None):
     """Element-wise mean over the specified dimension, if variances are
-    present, the new variance is computated as standard-deviation of the mean.
+    present, the new variance is computed as standard-deviation of the mean.
 
     If the input has variances, the variances stored in the ouput are based on
     the "standard deviation of the mean", i.e.,
@@ -17,13 +17,43 @@ def mean(x, dim, out=None):
     the input elements along that dimension.
 
     :param x: Input data.
-    :param dim: Dimension along which to calculate the mean.
+    :param dim: Dimension along which to calculate the mean. If not
+                given, the mean over all dimensions is calculated.
     :param out: Optional output buffer.
     :raises: If the dimension does not exist, or the dtype cannot be summed,
              e.g., if it is a string.
     :return: The mean of the input values.
     """
-    return _call_cpp_func(_cpp.mean, x, dim, out=out)
+    if dim is None:
+        return _call_cpp_func(_cpp.mean, x, out=out)
+    else:
+        return _call_cpp_func(_cpp.mean, x, dim=dim, out=out)
+
+
+def nanmean(x, dim=None, out=None):
+    """Element-wise mean over the specified dimension, if variances are
+    present, the new variance is computed as standard-deviation of the mean.
+    NaNs are ignored.
+
+    If the input has variances, the variances stored in the ouput are based on
+    the "standard deviation of the mean", i.e.,
+    :math:`\\sigma_{mean} = \\sigma / \\sqrt{N}`.
+    :math:`N` is the length of the input dimension.
+    :math:`sigma` is estimated as the average of the standard deviations of
+    the input elements along that dimension.
+
+    :param x: Input data.
+    :param dim: Dimension along which to calculate the mean. If not
+                given, the nanmean over all dimensions is calculated.
+    :param out: Optional output buffer.
+    :raises: If the dimension does not exist, or the dtype cannot be summed,
+             e.g., if it is a string.
+    :return: The mean of the input values.
+    """
+    if dim is None:
+        return _call_cpp_func(_cpp.nanmean, x, out=out)
+    else:
+        return _call_cpp_func(_cpp.nanmean, x, dim=dim, out=out)
 
 
 def sum(x, dim=None, out=None):

@@ -17,6 +17,16 @@ Classes
    GroupByDataArray
    GroupByDataset
 
+Creation functions
+==================
+
+.. autosummary::
+   :toctree: ../generated
+
+   array
+   scalar
+   zeros
+
 Free functions
 ==============
 
@@ -100,6 +110,7 @@ Reduction operations are operations to remove one or more dimension, e.g., by pe
    mean
    min
    nanmax
+   nanmean
    nanmin
    nansum
    sum

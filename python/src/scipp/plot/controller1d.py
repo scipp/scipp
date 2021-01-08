@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .controller import PlotController
@@ -28,3 +28,28 @@ class PlotController1d(PlotController):
             "remove_line": self.remove_line,
             "update_line_color": self.update_line_color
         })
+
+    def toggle_xaxis_scale(self, owner):
+        """
+        Toggle x-axis scale from toolbar button signal.
+        """
+        super().toggle_xaxis_scale(owner, normalize=True)
+
+    def rescale_to_data(self, button=None):
+        """
+        Automatically rescale the y axis (1D plot) or the colorbar (2D+3D
+        plots) to the minimum and maximum value inside the currently displayed
+        data slice.
+        """
+        vmin = None
+        vmax = None
+
+        # If the limits were requested by the user: if the rescale button is
+        # pressed by the user, it means we forcibly update the self.vmin/vmax.
+        # If no button is pressed, we use the global limits instead of the
+        # min and max values found by the model.
+        if button is None:
+            vmin = self.vmin
+            vmax = self.vmax
+
+        self.view.rescale_to_data(vmin, vmax)

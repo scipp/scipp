@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .controller3d import PlotController3d
@@ -57,6 +57,11 @@ class SciPlot3d(SciPlot):
 
         view_ndims = 3
 
+        scipp_obj_dict = {
+            key: array if array.bins is None else array.bins.sum()
+            for key, array in scipp_obj_dict.items()
+        }
+
         super().__init__(scipp_obj_dict=scipp_obj_dict,
                          axes=axes,
                          cmap=cmap,
@@ -75,11 +80,16 @@ class SciPlot3d(SciPlot):
                                  dim_label_map=self.dim_label_map,
                                  positions=positions)
 
+        # Run validation checks before rendering the plot.
+        # Note that validation needs to be run after model is created.
+        self.validate()
+
         # Create control widgets (sliders and buttons)
         self.widgets = PlotWidgets(axes=self.axes,
                                    ndim=view_ndims,
                                    name=self.name,
                                    dim_to_shape=self.dim_to_shape,
+                                   dim_label_map=self.dim_label_map,
                                    masks=self.masks,
                                    positions=positions,
                                    multid_coord=self.model.get_multid_coord())
@@ -123,9 +133,6 @@ class SciPlot3d(SciPlot):
             panel=self.panel,
             profile=self.profile,
             multid_coord=self.model.get_multid_coord())
-
-        # Run validation checks before rendering the plot.
-        self.validate()
 
         # Render the figure once all components have been created.
         self.render(norm=norm)

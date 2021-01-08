@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <algorithm>
@@ -45,14 +45,33 @@ constexpr auto copy_or_match = [](const auto &a, const auto &b, const Dim dim,
   else
     core::expect::equals(a, b);
 };
+
+constexpr auto expect_matching_keys = [](const auto &a, const auto &b) {
+  bool ok = true;
+  constexpr auto key = [](const auto &x) {
+    if constexpr (std::is_base_of_v<DataArrayConstView,
+                                    std::decay_t<decltype(x)>>)
+      return x.name();
+    else
+      return x.first;
+  };
+  for (const auto &x : a)
+    ok &= b.contains(key(x));
+  for (const auto &x : b)
+    ok &= a.contains(key(x));
+  if (!ok)
+    throw std::runtime_error("Mismatching keys in\n" + to_string(a) + " and\n" +
+                             to_string(b));
+};
+
 } // namespace
 
 void copy_slices(const DataArrayConstView &src, const DataArrayView &dst,
                  const Dim dim, const VariableConstView &srcIndices,
                  const VariableConstView &dstIndices) {
   copy_slices(src.data(), dst.data(), dim, srcIndices, dstIndices);
-  core::expect::sizeMatches(src.meta(), dst.meta());
-  core::expect::sizeMatches(src.masks(), dst.masks());
+  expect_matching_keys(src.meta(), dst.meta());
+  expect_matching_keys(src.masks(), dst.masks());
   for (const auto &[name, coord] : src.meta())
     copy_or_match(coord, dst.meta()[name], dim, srcIndices, dstIndices);
   for (const auto &[name, mask] : src.masks())
@@ -64,12 +83,12 @@ void copy_slices(const DatasetConstView &src, const DatasetView &dst,
                  const VariableConstView &dstIndices) {
   for (const auto &[name, var] : src.coords())
     copy_or_match(var, dst.coords()[name], dim, srcIndices, dstIndices);
-  core::expect::sizeMatches(src.coords(), dst.coords());
-  core::expect::sizeMatches(src, dst);
+  expect_matching_keys(src.coords(), dst.coords());
+  expect_matching_keys(src, dst);
   for (const auto &item : src) {
     const auto &dst_ = dst[item.name()];
-    core::expect::sizeMatches(item.attrs(), dst_.attrs());
-    core::expect::sizeMatches(item.masks(), dst_.masks());
+    expect_matching_keys(item.attrs(), dst_.attrs());
+    expect_matching_keys(item.masks(), dst_.masks());
     copy_or_match(item.data(), dst_.data(), dim, srcIndices, dstIndices);
     for (const auto &[name, var] : item.masks())
       copy_or_match(var, dst_.masks()[name], dim, srcIndices, dstIndices);
@@ -185,13 +204,11 @@ Dataset bucket_sizes(const DatasetConstView &dataset) {
   return apply_to_items(dataset, [](auto &&_) { return bucket_sizes(_); });
 }
 
-bool is_buckets(const DataArrayConstView &array) {
-  return is_buckets(array.data());
-}
+bool is_bins(const DataArrayConstView &array) { return is_bins(array.data()); }
 
-bool is_buckets(const DatasetConstView &dataset) {
+bool is_bins(const DatasetConstView &dataset) {
   return std::any_of(dataset.begin(), dataset.end(),
-                     [](const auto &item) { return is_buckets(item); });
+                     [](const auto &item) { return is_bins(item); });
 }
 
 } // namespace scipp::dataset
@@ -302,12 +319,27 @@ Variable histogram(const VariableConstView &data,
                    const VariableConstView &binEdges) {
   using namespace scipp::core;
   auto hist_dim = binEdges.dims().inner();
-  const auto &[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
+  auto &&[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
+  // `hist_dim` may be the same as a dim of data if there is existing binning.
+  // We rename to a dummy to avoid duplicate dimensions, perform histogramming,
+  // and then sum over the dummy dimensions, i.e., sum contributions from all
+  // inputs bins to the same output histogram. This also allows for threading of
+  // 1-D histogramming provided that the input has multiple bins along
+  // `hist_dim`.
+  std::string nonclashing_name("dummy");
+  for (const auto &d : indices.dims().labels())
+    nonclashing_name += d.name();
+  const Dim dummy = Dim(nonclashing_name);
+  indices.rename(hist_dim, dummy);
   const Masker masker(buffer, dim);
-  return variable::transform_subspan(
+  auto hist = variable::transform_subspan(
       buffer.dtype(), hist_dim, binEdges.dims()[hist_dim] - 1,
       subspan_view(buffer.meta()[hist_dim], dim, indices),
       subspan_view(masker.data(), dim, indices), binEdges, element::histogram);
+  if (hist.dims().contains(dummy))
+    return sum(hist, dummy);
+  else
+    return hist;
 }
 
 Variable map(const DataArrayConstView &function, const VariableConstView &x,

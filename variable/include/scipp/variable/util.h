@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -20,7 +20,7 @@ is_linspace(const VariableConstView &var, const Dim dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 variances(const VariableConstView &x);
 
-enum class SortOrder { Ascending, Descending };
+enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT bool
 is_sorted(const VariableConstView &x, const Dim dim,

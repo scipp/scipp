@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/bins.h"
@@ -7,24 +7,24 @@
 
 namespace scipp::variable {
 
-INSTANTIATE_VARIABLE(pair_int64, std::pair<scipp::index, scipp::index>)
+INSTANTIATE_VARIABLE(pair_int64, std::pair<int64_t, int64_t>)
+INSTANTIATE_VARIABLE(pair_int32, std::pair<int32_t, int32_t>)
 INSTANTIATE_BUCKET_VARIABLE(VariableView, bucket<Variable>)
 INSTANTIATE_BUCKET_VARIABLE(VariableView_observer, bucket<VariableView>)
 INSTANTIATE_BUCKET_VARIABLE(VariableConstView_observer,
                             bucket<VariableConstView>)
 
-template <class T>
-class BucketVariableMakerVariable : public BucketVariableMaker<T> {
+template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {
 private:
-  Variable make_buckets(const VariableConstView &,
-                        const VariableConstView &indices, const Dim dim,
-                        const DType type, const Dimensions &dims,
-                        const units::Unit &unit,
-                        const bool variances) const override {
+  Variable call_make_bins(const VariableConstView &,
+                          const VariableConstView &indices, const Dim dim,
+                          const DType type, const Dimensions &dims,
+                          const units::Unit &unit,
+                          const bool variances) const override {
     // Buffer contains only variable, which is created with new dtype, no
     // information to copy from parent.
-    return Variable{std::make_unique<DataModel<bucket<Variable>>>(
-        indices, dim, variableFactory().create(type, dims, unit, variances))};
+    return make_bins(Variable(indices), dim,
+                     variableFactory().create(type, dims, unit, variances));
   }
   VariableConstView data(const VariableConstView &var) const override {
     return std::get<2>(var.constituents<bucket<T>>());
@@ -47,8 +47,7 @@ private:
             params.dims(),
             params.dataDims(),
             {dim, buffer.dims(),
-             indices.template values<std::pair<scipp::index, scipp::index>>()
-                 .data()}};
+             indices.template values<scipp::index_pair>().data()}};
   }
 };
 
@@ -56,13 +55,13 @@ namespace {
 auto register_variable_maker_bucket_Variable(
     (variableFactory().emplace(
          dtype<bucket<Variable>>,
-         std::make_unique<BucketVariableMakerVariable<Variable>>()),
+         std::make_unique<BinVariableMakerVariable<Variable>>()),
      variableFactory().emplace(
          dtype<bucket<VariableView>>,
-         std::make_unique<BucketVariableMakerVariable<VariableView>>()),
+         std::make_unique<BinVariableMakerVariable<VariableView>>()),
      variableFactory().emplace(
          dtype<bucket<VariableConstView>>,
-         std::make_unique<BucketVariableMakerVariable<VariableConstView>>()),
+         std::make_unique<BinVariableMakerVariable<VariableConstView>>()),
      0));
 }
 

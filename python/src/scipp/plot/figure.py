@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
 from .. import config
@@ -176,3 +176,15 @@ class PlotFigure:
         """
         if self.toolbar is not None:
             self.toolbar.update_norm_button(*args, **kwargs)
+
+    def home_view(self, *args, **kwargs):
+        self.toolbar.home_view()
+
+    def pan_view(self, *args, **kwargs):
+        self.toolbar.pan_view()
+
+    def zoom_view(self, *args, **kwargs):
+        self.toolbar.zoom_view()
+
+    def save_view(self, *args, **kwargs):
+        self.toolbar.save_view()

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -113,8 +113,10 @@ public:
   [[nodiscard]] bool empty() const noexcept { return size() == 0; }
 
   bool contains(const Key &k) const;
+  scipp::index count(const Key &k) const;
 
   typename mapped_type::const_view_type operator[](const Key &key) const;
+  typename mapped_type::const_view_type at(const Key &key) const;
 
   auto find(const Key &k) const && = delete;
   auto find(const Key &k) const &noexcept {
@@ -247,8 +249,19 @@ public:
   const Access &access() const { return m_access; }
 };
 
-SCIPP_DATASET_EXPORT Variable irreducible_mask(const MasksConstView &masks,
-                                               const Dim dim);
+/// Returns the union of all masks with irreducible dimension `dim`.
+///
+/// Irreducible means that a reduction operation must apply these masks since
+/// depend on the reduction dimension. Returns an invalid (empty) variable if
+/// there is no irreducible mask.
+template <class Masks>
+[[nodiscard]] Variable irreducible_mask(const Masks &masks, const Dim dim) {
+  Variable union_;
+  for (const auto &mask : masks)
+    if (mask.second.dims().contains(dim))
+      union_ = union_ ? union_ | mask.second : Variable(mask.second);
+  return union_;
+}
 
 SCIPP_DATASET_EXPORT Variable
 masks_merge_if_contained(const MasksConstView &masks, const Dimensions &dims);

@@ -1,23 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/variable.h"
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
 
 Variable::Variable(const VariableConstView &slice)
-    : Variable(slice ? slice.is_trivial() ? Variable(slice.underlying())
-                                          : Variable(slice, slice.dims())
-                     : Variable()) {
-  // There is a bug in the implementation of MultiIndex used in ElementArrayView
-  // in case one of the dimensions has extent 0.
-  if (slice && !slice.is_trivial() && dims().volume() != 0)
-    data().copy(slice, *this);
+    : Variable(empty_like(slice)) {
+  data().copy(slice, *this);
 }
 
 /// Construct from parent with same dtype, unit, and hasVariances but new dims.
@@ -182,6 +178,14 @@ void Variable::rename(const Dim from, const Dim to) {
     data().m_dimensions.relabel(dims().index(from), to);
 }
 
+/// Rename dims of a view. Does NOT rename dims of the underlying variable.
+void VariableConstView::rename(const Dim from, const Dim to) {
+  if (dims().contains(from)) {
+    m_dims.relabel(m_dims.index(from), to);
+    m_dataDims.relabel(m_dataDims.index(from), to);
+  }
+}
+
 void Variable::setVariances(Variable v) {
   if (v)
     core::expect::equals(unit(), v.unit());
@@ -209,5 +213,13 @@ void expect0D(const Dimensions &dims) {
 }
 
 } // namespace detail
+
+VariableConstView Variable::bin_indices() const { return data().bin_indices(); }
+
+VariableConstView VariableConstView::bin_indices() const {
+  auto view = *this;
+  view.m_variable = &underlying().bin_indices().underlying();
+  return view;
+}
 
 } // namespace scipp::variable

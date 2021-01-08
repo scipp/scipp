@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
-#include <gtest/gtest.h>
-
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+#include "fix_typed_test_suite_warnings.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/variable.h"
+#include <gtest/gtest.h>
 
 using namespace scipp;
 
@@ -65,27 +65,52 @@ TEST(ReduceTest, all_any_all_dims) {
   EXPECT_EQ(any(any(var)), any(var));
 }
 
-TEST(ReduceTest, nansum_all_dims) {
-  const auto x = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
-                                      Values{1.0, 1.0, double(NAN), 1.0});
-  const auto expected = makeVariable<double>(Values{3});
-  EXPECT_EQ(nansum(x), expected);
+using NansumTypes = ::testing::Types<int32_t, int64_t, float, double>;
+template <typename T> struct NansumTest : public ::testing::Test {};
+TYPED_TEST_SUITE(NansumTest, NansumTypes);
+
+TYPED_TEST(NansumTest, nansum_all_dims) {
+  auto x = makeVariable<TypeParam>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                   Values{1, 1, 2, 1});
+  if constexpr (std::is_floating_point_v<TypeParam>) {
+    x.template values<TypeParam>()[2] = TypeParam(NAN);
+    const auto expected = makeVariable<TypeParam>(Values{3});
+    EXPECT_EQ(nansum(x), expected);
+  } else {
+    const auto expected = makeVariable<TypeParam>(Values{5});
+    EXPECT_EQ(nansum(x), expected);
+  }
+}
+TYPED_TEST(NansumTest, nansum_with_dim) {
+  auto x = makeVariable<TypeParam>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                   Values{1.0, 2.0, 3.0, 4.0});
+  if constexpr (std::is_floating_point_v<TypeParam>) {
+    x.template values<TypeParam>()[2] = TypeParam(NAN);
+    const auto expected =
+        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
+    EXPECT_EQ(nansum(x, Dim::X), expected);
+  } else {
+    const auto expected =
+        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{4, 6});
+    EXPECT_EQ(nansum(x, Dim::X), expected);
+  }
 }
 
-TEST(ReduceTest, nansum_with_dim) {
-  const auto x = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
-                                      Values{1.0, 2.0, double(NAN), 4.0});
-  const auto expected =
-      makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
-  EXPECT_EQ(nansum(x, Dim::X), expected);
-}
-
-TEST(ReduceTest, nansum_with_dim_out) {
-  auto x = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
-                                Values{1.0, 2.0, double(NAN), 4.0});
-  auto out = makeVariable<double>(Dims{Dim::Y}, Shape{2});
-  const auto expected =
-      makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
-  nansum(x, Dim::X, out);
-  EXPECT_EQ(out, expected);
+TYPED_TEST(NansumTest, nansum_with_dim_out) {
+  auto x = makeVariable<TypeParam>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                   Values{1.0, 2.0, 3.0, 4.0});
+  if constexpr (std::is_floating_point_v<TypeParam>) {
+    x.template values<TypeParam>()[2] = TypeParam(NAN);
+    auto out = makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2});
+    const auto expected =
+        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
+    nansum(x, Dim::X, out);
+    EXPECT_EQ(out, expected);
+  } else {
+    auto out = makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2});
+    const auto expected =
+        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{4, 6});
+    nansum(x, Dim::X, out);
+    EXPECT_EQ(out, expected);
+  }
 }

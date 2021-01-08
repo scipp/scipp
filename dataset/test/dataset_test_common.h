@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #pragma once
 
 #include "random.h"
@@ -86,4 +86,5 @@ Dataset make_1d_masked();
 
 namespace scipp::testdata {
 Dataset make_dataset_x();
+DataArray make_table(const scipp::index size);
 } // namespace scipp::testdata
