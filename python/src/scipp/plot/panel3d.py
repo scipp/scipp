@@ -256,6 +256,7 @@ class PlotPanel3d(PlotPanel):
                                     self.cut_slider.min) / 10.0
         if self.cut_surface_buttons.value < self.cut_options["Value"]:
             self.cut_slider.step = self.pixel_size * 1.1
+            self.cut_surface_thickness.max = self.cut_slider.max
         self.lock_surface_update = False
 
     def _update_cut_surface(self, change=None):

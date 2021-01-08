@@ -67,7 +67,8 @@ class PlotFigure3d:
         self.cbar_fig, self.cbar = self._create_colorbar(figsize, extend)
 
         # Create the point cloud material with pythreejs
-        self.points_material = self._create_points_material()
+        # self.points_material = self._create_points_material()
+        self.points_material = None
         self.points_geometry = None
         self.point_cloud = None
         self.outline = None
@@ -146,12 +147,16 @@ class PlotFigure3d:
         if self.axticks is not None:
             self.scene.remove(self.axticks)
 
-        self._create_point_cloud(axparams["positions"])
         self._create_outline(axparams)
+        self._create_points_material()
+        self._create_point_cloud(axparams["positions"])
 
         # Set camera controller target
         self.camera.position = list(
             np.array(axparams["centre"]) + 1.2 * axparams["box_size"])
+        cam_pos_norm = np.linalg.norm(self.camera.position)
+        self.camera.near = 0.01 * cam_pos_norm
+        self.camera.far = 5.0 * cam_pos_norm
         self.controls.target = axparams["centre"]
         self.camera.lookAt(axparams["centre"])
         # Save camera settings for reset button
@@ -159,7 +164,8 @@ class PlotFigure3d:
         self.camera_reset["lookat"] = copy(axparams["centre"])
 
         # Rescale axes helper
-        self.axes_3d.scale = [5.0 * np.linalg.norm(self.camera.position)] * 3
+        # self.axes_3d.scale = [5.0 * cam_pos_norm] * 3
+        self.axes_3d.scale = [self.camera.far] * 3
 
         self.scene.add(self.point_cloud)
         self.scene.add(self.outline)
