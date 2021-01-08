@@ -68,6 +68,7 @@ TEST(SizeOf, size_in_memory_sliced_variables) {
 TEST_F(BucketVariableSizeOfTest, size_in_memory_of_bucketed_variable) {
   const auto &[indices_, dim_, buffer_] =
       VariableConstView(var).constituents<bucket<Variable>>();
+  EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(var), size_of(buffer_) + size_of(indices_));
 }
 
@@ -75,12 +76,14 @@ TEST_F(BucketVariableSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
   auto slice = var.slice(Slice(Dim::Y, 0, 1));
   const auto &[indices_, dim_, buffer_] =
       slice.constituents<bucket<Variable>>();
+  EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(slice), size_of(buffer_) * 0.5 + size_of(indices_));
 }
 
 TEST_F(BucketDataArraySizeOfTest, size_in_memory_of_bucketed_variable) {
   const auto &[indices_, dim_, buffer_] =
       VariableConstView(var).constituents<bucket<DataArray>>();
+  EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(var), size_of(buffer_) + size_of(indices_));
 }
 
@@ -88,6 +91,7 @@ TEST_F(BucketDataArraySizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
   auto slice = var.slice(Slice(Dim::Y, 0, 1));
   const auto &[indices_, dim_, buffer_] =
       slice.constituents<bucket<DataArray>>();
+  EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(slice), size_of(buffer_) * 0.5 + size_of(indices_));
 }
 
@@ -96,6 +100,7 @@ TEST_F(BucketDatasetSizeOfTest, size_in_memory_of_bucketed_variable) {
   Variable var = make_bins(indices, Dim::X, buffer);
   const auto &[indices_, dim_, buffer_] =
       VariableConstView(var).constituents<bucket<Dataset>>();
+  EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(var), size_of(buffer_) + size_of(indices_));
 }
 
@@ -104,5 +109,6 @@ TEST_F(BucketDatasetSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
   Variable var = make_bins(indices, Dim::X, buffer);
   auto slice = var.slice(Slice(Dim::Y, 0, 1));
   const auto &[indices_, dim_, buffer_] = slice.constituents<bucket<Dataset>>();
+  EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(slice), size_of(buffer_) * 0.5 + size_of(indices_));
 }

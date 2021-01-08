@@ -326,8 +326,8 @@ template <bool dry_run> struct in_place {
     if constexpr (dry_run)
       return;
 
-    auto run = [&](auto indices, const auto &end) {
-      for (; indices != end; indices.increment())
+    auto run = [&](auto indices, const auto &end_) {
+      for (; indices != end_; indices.increment())
         call_in_place(op, indices, arg, other...);
     };
     if (begin.has_stride_zero()) {

@@ -178,7 +178,7 @@ TEST(Variable, exp_out_arg) {
 }
 
 TEST(Variable, exp_bad_unit) {
-  EXPECT_THROW(static_cast<void>(exp(0.0 * units::s)), except::UnitError);
+  EXPECT_THROW_DROP_RESULT(exp(0.0 * units::s), except::UnitError);
 }
 
 TYPED_TEST(VariableMathTest, log) {
@@ -204,7 +204,7 @@ TEST(Variable, log_out_arg) {
 }
 
 TEST(Variable, log_bad_unit) {
-  EXPECT_THROW(static_cast<void>(log(1.0 * units::s)), except::UnitError);
+  EXPECT_THROW_DROP_RESULT(log(1.0 * units::s), except::UnitError);
 }
 
 TYPED_TEST(VariableMathTest, log10) {
@@ -230,5 +230,5 @@ TEST(Variable, log10_out_arg) {
 }
 
 TEST(Variable, log10_bad_unit) {
-  EXPECT_THROW(static_cast<void>(log10(1.0 * units::s)), except::UnitError);
+  EXPECT_THROW_DROP_RESULT(log10(1.0 * units::s), except::UnitError);
 }
