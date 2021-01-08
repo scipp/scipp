@@ -310,7 +310,9 @@ inline constexpr auto stride_special_cases<2> =
 template <size_t I, size_t N_Operands, size_t... Is>
 auto stride_sequence_impl(std::index_sequence<Is...>)
     -> std::integer_sequence<scipp::index,
-                             stride_special_cases<N_Operands>[I][Is]...>;
+                             stride_special_cases<N_Operands>.at(I)[Is]...>;
+// THe above uses std::array::at instead of operator[] in order to circumvent
+// a false positive error in MSVC 19.
 
 template <size_t I, size_t N_Operands> struct stride_sequence {
   using type = decltype(stride_sequence_impl<I, N_Operands>(
