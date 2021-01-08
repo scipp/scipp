@@ -257,7 +257,7 @@ void init_dataset(py::module &m) {
           py::arg("masks") = std::map<std::string, VariableConstView>{},
           py::arg("attrs") = std::map<Dim, VariableConstView>{},
           py::arg("name") = std::string{},
-          R"(__init__(self, data: Variable, coords: Dict[str, Variable] = {}, masks: Dict[str, Variable] = {}, attrs: Dict[str, Variable] = {}, name: str = '') -> None
+          R"(__init__(self, data: VariableConstView, coords: Dict[str, VariableConstView] = {}, masks: Dict[str, VariableConstView] = {}, attrs: Dict[str, VariableConstView] = {}, name: str = '') -> None
           
           DataArray initialiser.
 
@@ -267,9 +267,9 @@ void init_dataset(py::module &m) {
           :param attrs: Attributes referenced by dimension.
           :param name: Name of DataArray.
           :type data: Variable
-          :type coords: Dict[str, Variable]
-          :type masks: Dict[str, Variable]
-          :type attrs: Dict[str, Variable]
+          :type coords: Dict[str, VariableConstView]
+          :type masks: Dict[str, VariableConstView]
+          :type attrs: Dict[str, VariableConstView]
           :type name: str
           )")
       .def("__sizeof__", [](const DataArrayConstView &array) {
