@@ -102,7 +102,7 @@ class PlotFigure3d:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self):
+    def _to_widget(self, as_static=False):
         """
         Return the renderer and the colorbar into a widget box.
         """
