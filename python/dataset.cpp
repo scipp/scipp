@@ -302,7 +302,7 @@ void init_dataset(py::module &m) {
               d.setCoord(dim, std::move(coord));
 
             for (auto &&[name, item] : data) {
-              auto visitor = [&d, &name](auto &object) {
+              auto visitor = [&d, name = name](auto &object) {
                 d.setData(std::string(name), std::move(object));
               };
               std::visit(visitor, item);
