@@ -284,17 +284,32 @@ class PlotController:
                 vmin = self.vmin
             else:
                 self.vmin = vmin
+        else:
+            self.vmin = vmin
         if self.vmax is not None:
             if button is None:
                 vmax = self.vmax
             else:
                 self.vmax = vmax
+        else:
+            self.vmax = vmax
         vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax, scale=self.norm)
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
             self.panel.rescale_to_data(vmin=vmin,
                                        vmax=vmax,
                                        mask_info=self.get_masks_info())
+        self.refresh()
+
+    def refresh(self):
+        """
+        Get current slice values from model and update the view.
+        This is used when either vmin and vmax limits have been changed, or
+        the normalization has been modified.
+        """
+        new_values = self.model.get_slice_values(
+            mask_info=self.get_masks_info())
+        self.view.update_data(new_values)
 
     def transpose(self, owner=None):
         """
@@ -341,6 +356,7 @@ class PlotController:
                                       vmax=self.vmax,
                                       scale=self.norm)
         self.view.toggle_norm(self.norm, vmin, vmax)
+        self.refresh()
 
     def swap_dimensions(self, index, old_dim, new_dim):
         """
@@ -430,14 +446,20 @@ class PlotController:
         self.view.update_data(new_values, info=info)
         if self.panel is not None:
             self.panel.update_data(info)
-        if (self.profile_dim is not None) and (owner_dim == self.profile_dim):
-            self.profile.update_slice_area(lower, upper)
+        if self.profile_dim is not None:
+            if owner_dim == self.profile_dim:
+                self.profile.update_slice_area(lower, upper)
+            else:
+                self.model.update_profile_model(visible=True,
+                                                slices=slices,
+                                                profile_dim=self.profile_dim)
 
     def toggle_mask(self, change):
         """
         Hide or show a given mask.
         """
         self.view.toggle_mask(change)
+        self.refresh()
         if self.profile is not None:
             self.profile.toggle_mask(change["owner"].mask_group,
                                      change["owner"].mask_name, change["new"])
@@ -572,6 +594,9 @@ class PlotController:
 
         if visible:
             slices = self.widgets.get_slider_bounds()
+            self.model.update_profile_model(visible=visible,
+                                            slices=slices,
+                                            profile_dim=self.profile_dim)
             lower, upper = self.model.get_slice_coord_bounds(
                 self.name, self.profile_dim, slices[self.profile_dim])
             self.profile.update_slice_area(lower, upper)

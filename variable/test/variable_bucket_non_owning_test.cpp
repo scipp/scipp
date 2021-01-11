@@ -2,6 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include <fix_typed_test_suite_warnings.h>
+
 #include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/string.h"

@@ -26,6 +26,17 @@ class PlotProfile(PlotFigure1d):
         self.slice_area = None
         self.visible = False
 
+    def _to_widget(self):
+        """
+        When using the inline backend, the figure is rendered as an image, so
+        if we want to hide the profile plot, we need to hide the entire widget
+        and not just the canvas, as in toggle_view().
+        """
+        widg = super()._to_widget()
+        if not self.is_widget():
+            widg.layout.display = None if self.visible else 'none'
+        return widg
+
     def update_axes(self, *args, **kwargs):
         """
         Upon axes update, we reset the slice area indicator.

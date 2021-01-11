@@ -312,7 +312,7 @@ protected:
 };
 
 TEST_F(ConcatenateBinnedTest, mismatching_buffer) {
-  for (const auto buffer2 :
+  for (const auto &buffer2 :
        {buffer * (1.0 * units::m),
         DataArray(data, {{Dim::X, data + data}}, {{"mask", 1.0 * units::one}},
                   {}),

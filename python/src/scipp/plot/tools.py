@@ -117,13 +117,6 @@ def vars_to_err(v):
     return v
 
 
-def mask_to_float(mask, var):
-    """
-    Return an array of masks as floats.
-    """
-    return np.where(mask, var, None).astype(np.float32)
-
-
 def check_log_limits(lims=None, vmin=None, vmax=None, scale=None):
     """
     Check if a limit is negative when a "log" norm is used.
@@ -135,8 +128,9 @@ def check_log_limits(lims=None, vmin=None, vmax=None, scale=None):
     if lims is not None:
         vmin = lims[0]
         vmax = lims[1]
-    if scale == "log" and vmin <= 0:
-        vmin = 1.0e-03 * vmax
+    if vmin is not None and vmax is not None:
+        if scale == "log" and vmin <= 0:
+            vmin = 1.0e-03 * vmax
     if lims is not None:
         return [vmin, vmax]
     else:

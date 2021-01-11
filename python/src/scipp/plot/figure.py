@@ -76,7 +76,7 @@ class PlotFigure:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self):
+    def _to_widget(self, as_static=False):
         """
         Convert the Matplotlib figure to a widget. If the ipympl (widget)
         backend is in use, return the custom toolbar and the figure canvas.
@@ -84,17 +84,23 @@ class PlotFigure:
         Image container.
         """
         if self.is_widget():
-            return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
+            if as_static:
+                return ipw.HBox([self.toolbar._to_widget(), self._to_image()])
+            else:
+                return ipw.HBox([self.toolbar._to_widget(), self.fig.canvas])
         else:
-            buf = io.BytesIO()
-            self.fig.savefig(buf, format='png')
-            # Here we close the figure to prevent it from showing up again in
-            # cells further down the notebook.
-            plt.close(self.fig)
-            buf.seek(0)
-            return ipw.Image(value=buf.getvalue(),
-                             width=config.plot.width,
-                             height=config.plot.height)
+            return self._to_image()
+
+    def _to_image(self):
+        buf = io.BytesIO()
+        self.fig.savefig(buf, format='png')
+        # Here we close the figure to prevent it from showing up again in
+        # cells further down the notebook.
+        plt.close(self.fig)
+        buf.seek(0)
+        return ipw.Image(value=buf.getvalue(),
+                         width=config.plot.width,
+                         height=config.plot.height)
 
     def show(self):
         """

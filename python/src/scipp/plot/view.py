@@ -29,11 +29,11 @@ class PlotView:
         """
         return self._to_widget()._ipython_display_()
 
-    def _to_widget(self):
+    def _to_widget(self, as_static=False):
         """
         The `view` as a widget is just the `figure` as a widget.
         """
-        return self.figure._to_widget()
+        return self.figure._to_widget(as_static=as_static)
 
     def show(self):
         """
@@ -81,6 +81,12 @@ class PlotView:
         Forward rescaling to the `figure`.
         """
         self.figure.rescale_to_data(*args, **kwargs)
+
+    def toggle_mask(self, change=None):
+        """
+        Dummy toggle_mask function.
+        """
+        return
 
     def toggle_norm(self, *args, **kwargs):
         """
