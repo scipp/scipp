@@ -15,16 +15,23 @@ using namespace scipp::variable;
 
 using Types = std::tuple<double>;
 
+namespace {
+Variable makeBenchmarkVariable(const Dimensions &dims,
+                               const bool use_variances) {
+  return use_variances
+             ? makeVariable<double>(Dimensions{dims}, Values{}, Variances{})
+             : makeVariable<double>(Dimensions(dims));
+}
+}
+
 template <bool in_place, class Func>
 void run(benchmark::State &state, Func func, bool variances = false) {
   const auto nx = 100;
   const auto ny = state.range(0);
   const auto n = nx * ny;
   const Dimensions dims{{Dim::Y, ny}, {Dim::X, nx}};
-  auto a = variances
-               ? makeVariable<double>(Dimensions{dims}, Values{}, Variances{})
-               : makeVariable<double>(Dimensions(dims));
-  auto b = a;
+  auto a = makeBenchmarkVariable(dims, variances);
+  auto b = makeBenchmarkVariable(dims, variances);
   if constexpr (in_place) {
     static constexpr auto op{[](auto &a_, const auto &b_) { a_ *= b_; }};
     func(state, a, b, op);
