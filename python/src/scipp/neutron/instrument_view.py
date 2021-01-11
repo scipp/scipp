@@ -18,7 +18,7 @@ def instrument_view(scipp_obj=None,
     of bin edges) as values.
     If no bins are specified, the data is histogrammed according to the bins
     that wrap the event data when it is loaded
-    (see https://scipp.github.io/user-guide/binned-data.html).
+    (see https://scipp.github.io/user-guide/binned-data.html ).
 
     Example:
 
