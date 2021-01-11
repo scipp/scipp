@@ -105,6 +105,16 @@ Variable bin_sizes(const VariableConstView &sub_bin, const scipp::index nbin) {
   return sizes;
 }
 
+/// indices is a binned variable with sub-bin indices, i.e., new bins within
+/// bins
+Variable bin_sizes2(const VariableConstView &sub_bin,
+                    const VariableConstView &offset,
+                    const VariableConstView &nbin) {
+  return variable::transform(
+      as_subspan_view(sub_bin), offset, nbin,
+      core::element::count_indices2); // transform bins, not bin element
+}
+
 template <class T>
 auto bin(const VariableConstView &data, const VariableConstView &indices,
          const Dimensions &dims, const scipp::index nbin) {
@@ -245,11 +255,49 @@ public:
     const auto get_coord = [&](const Dim dim) {
       return coords.count(dim) ? coords[dim] : Variable(bin_coords.at(dim));
     };
-    m_nbin = dims().volume();
+    m_nbin = dims().volume() * units::one;
     for (const auto &[action, dim, key] : m_actions) {
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
       else if (action == AxisAction::Bin) {
+        if (bin_coords.count(dim)) {
+          printf("existing grouping along %s\n", to_string(dim).c_str());
+          const auto &bin_coord = bin_coords.at(dim);
+          // must include all rebinned dims... then carry through index updating
+          // in parallel to event indices no, no need to broadcast, all inner
+          // dims have same offsets
+          auto bin_indices = makeVariable<scipp::index>(bin_coord.dims());
+          update_indices_by_binning(bin_indices, bin_coord, key);
+          // bin_indices contains index of bin coord value in new key
+          // TODO split into begin and end, fix -1
+          const auto begin =
+              bin_indices.slice({dim, 0, bin_indices.dims()[dim] - 1});
+          const auto end =
+              bin_indices.slice({dim, 1, bin_indices.dims()[dim]}) +
+              1 * units::one;
+          const auto indices_ = zip(begin, end);
+          const VariableConstView coord = bin_coord;
+          // TODO use in update_indices_by_binning
+          const auto coord_ = make_non_owning_bins(indices_, dim, coord);
+
+          // TODO this should go outside the loop (and get returned)
+          const auto inner_volume = dims().volume() / dims()[dim];
+          nbin = (end - begin) * inner_volume;
+          auto output_bin_sizes =
+              bin_sizes2(indices, begin * inner_volume, nbin);
+        }
+        // for every input bin:
+        // - candidate output begin bin
+        // - candidate output end bin
+        // => non-owning bins over coord..?
+        // need nbin as variable? (different extent in every input bin)
+        // build bin_sizes here instead?
+        // - begin and end created here
+        // - scale by length of all subsequent actions
+        // - run bin_sizes (returning vector of size (end-begin))
+        //   - does not need to handle offset, since indices start from 0 for
+        //     every input bin
+        // - create SubbinSizes with offset=begin
         if (coords.count(dim))
           update_indices_by_binning(indices, coords[dim], key);
         else {

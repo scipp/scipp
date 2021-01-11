@@ -5,6 +5,7 @@
 #pragma once
 
 #include <cmath>
+#include <limits>
 #include <numeric>
 
 #include "scipp/common/overloaded.h"
@@ -168,6 +169,22 @@ static constexpr auto count_indices = overloaded{
       for (const auto i : indices)
         if (i >= 0)
           ++counts[i];
+    }};
+
+static constexpr auto count_indices2 = overloaded{
+    element::arg_list<
+        std::tuple<scipp::span<const int64_t>, scipp::index, scipp::index>,
+        std::tuple<scipp::span<const int32_t>, scipp::index, scipp::index>>,
+    [](const units::Unit &indices) {
+      expect::equals(indices, units::one);
+      return units::one;
+    },
+    [](const auto &indices, const auto offset, const auto nbin) {
+      std::vector<scipp::index> counts(nbin);
+      for (const auto i : indices)
+        if (i >= 0)
+          ++counts[i];
+      return SubbinSizes{offset, std::move(counts)};
     }};
 
 } // namespace scipp::core::element

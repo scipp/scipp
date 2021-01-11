@@ -152,4 +152,9 @@ SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
 //   - create subspan views so each input bin in the transform sees only
 //     relevant section of output bin edges (or groups)
 
+// same as update_indices_by_binning?
+Variable xxx(const VariableConstView &coord, const VariableConstView &edges) {
+  return transform(coord, subspan_view(edges, edges.dims().inner()));
+}
+
 } // namespace scipp::variable
