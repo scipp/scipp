@@ -320,7 +320,7 @@ void init_dataset(py::module &m) {
              :param data: Dictionary of name and data pairs.
              :param coords: Dictionary of name and coord pairs.
              :type data: Dict[str, Union[Variable, DataArray]]
-             :type coord: Dict[str, Variable]
+             :type coords: Dict[str, Variable]
              )");
   options.enable_function_signatures();
 
