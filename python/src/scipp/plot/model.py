@@ -48,6 +48,7 @@ class PlotModel:
             self.axformatter[name] = {}
             self.coord_info[name] = {}
             coord_list = {}
+            print(axes_dims)
 
             # Iterate through axes and collect coordinates
             for dim in axes_dims:
@@ -102,21 +103,66 @@ class PlotModel:
 
         coord = None
 
-        if dim not in data_array.meta:
-            coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
-            return coord, formatter, name_with_unit(var=coord), name_with_unit(
-                var=coord, name="")
+        print(dim, dim_label_map, dim_to_shape)
 
-        tp = data_array.meta[dim].dtype
+        # if dim not in data_array.meta:
+        #     coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+        #     return coord, formatter, name_with_unit(var=coord), name_with_unit(
+        #         var=coord, name="")
+
+      
+
+        # tp = data_array.meta[dim].dtype
         coord_info = {}
 
-        if tp == sc.dtype.vector_3_float64:
+        contains_strings = False
+        contains_vectors = False
+
+        has_no_coord = dim not in data_array.meta
+        if not has_no_coord:
+            if data_array.meta[dim].dtype == sc.dtype.vector_3_float64:
+                contains_vectors = True
+            elif data_array.meta[dim].dtype == sc.dtype.string:
+                contains_strings = True
+        
+        print("contains_vectors", contains_vectors)
+
+
+
+        # Get the coordinate from the DataArray or generate a fake one
+        if has_no_coord or contains_vectors or contains_strings:
             coord = make_fake_coord(dim,
-                                    dim_to_shape[dim] + 1,
-                                    unit=data_array.meta[dim].unit)
+                                    dim_to_shape[dim] + 1)
+                                    # unit=data_array.meta[dim].unit)
+            if not has_no_coord:
+                coord.unit = data_array.meta[dim].unit
+        else:
+            coord = data_array.meta[dim]
+            if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
+                                                      sc.dtype.float64):
+                coord = coord.astype(sc.dtype.float64)
+
+
+        print("================:")
+        print(coord)
+        print("================:")
+
+        # if not has_no_coord:
+        #     # if coord.shape[-1] == dim_to_shape[dim] + 1:
+        #     if data_array.meta[dim].shape[-1] == dim_to_shape[dim]:
+        #         coord_values = to_bin_centers(data_array.meta[dim], dim).values
+        #     else:
+        #         coord_values = data_array.meta[dim].values
+        # print(coord_values)
+
+        # Set the axis formatter
+        if contains_vectors:
+            # coord = make_fake_coord(dim,
+            #                         dim_to_shape[dim] + 1,
+            #                         unit=data_array.meta[dim].unit)
             form = lambda val, pos: "(" + ",".join([  # noqa: E731
                 value_to_string(item, precision=2)
-                for item in data_array.meta[dim].values[int(val)]
+                for item in data_array.meta[dim][int(val)]
             ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim]
                          ) else ""
             formatter.update({
@@ -125,12 +171,12 @@ class PlotModel:
                 "custom_locator": True
             })
 
-        elif tp == sc.dtype.string:
-            coord = make_fake_coord(dim,
-                                    dim_to_shape[dim] + 1,
-                                    unit=data_array.meta[dim].unit)
+        elif contains_strings:
+            # coord = make_fake_coord(dim,
+            #                         dim_to_shape[dim] + 1,
+            #                         unit=data_array.meta[dim].unit)
             form = lambda val, pos: data_array.meta[  # noqa: E731
-                dim].values[int(val)] if (int(val) >= 0 and int(val) <
+                dim][int(val)] if (int(val) >= 0 and int(val) <
                                           dim_to_shape[dim]) else ""
             formatter.update({
                 "linear": form,
@@ -139,15 +185,18 @@ class PlotModel:
             })
 
         elif dim in dim_label_map:
-            # non-dimension coordinate
-            if dim in data_array.meta:
-                coord = data_array.meta[dim]
-                coord_values = coord.values
-            else:
-                coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
-                coord_values = coord.values
+            # # non-dimension coordinate
+            # if dim in data_array.meta:
+            #     coord = data_array.meta[dim]
+            #     coord_values = coord.values
+            # else:
+            #     coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+            coord_values = coord.values
+            if has_no_coord:
                 if data_array.meta[dim].shape[-1] == dim_to_shape[dim]:
                     coord_values = to_bin_centers(coord, dim).values
+            print(data_array.meta)
+            print(data_array.meta[dim_label_map[dim]])
             form = lambda val, pos: value_to_string(  # noqa: E731
                 data_array.meta[dim_label_map[dim]].values[np.abs(
                     coord_values - val).argmin()])
@@ -158,15 +207,69 @@ class PlotModel:
             coord_info["unit"] = name_with_unit(
                 var=data_array.meta[dim_label_map[dim]], name="")
 
-        else:
-            coord = data_array.meta[dim]
-            if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
-                                                      sc.dtype.float64):
-                coord = coord.astype(sc.dtype.float64)
+        # # Set the axis formatter
+        # if contains_vectors:
+        #     # coord = make_fake_coord(dim,
+        #     #                         dim_to_shape[dim] + 1,
+        #     #                         unit=data_array.meta[dim].unit)
+        #     form = lambda val, pos: "(" + ",".join([  # noqa: E731
+        #         value_to_string(item, precision=2)
+        #         for item in data_array.meta[dim].values[int(val)]
+        #     ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim]
+        #                  ) else ""
+        #     formatter.update({
+        #         "linear": form,
+        #         "log": form,
+        #         "custom_locator": True
+        #     })
+
+        # elif contains_strings:
+        #     # coord = make_fake_coord(dim,
+        #     #                         dim_to_shape[dim] + 1,
+        #     #                         unit=data_array.meta[dim].unit)
+        #     form = lambda val, pos: data_array.meta[  # noqa: E731
+        #         dim].values[int(val)] if (int(val) >= 0 and int(val) <
+        #                                   dim_to_shape[dim]) else ""
+        #     formatter.update({
+        #         "linear": form,
+        #         "log": form,
+        #         "custom_locator": True
+        #     })
+
+        # elif dim in dim_label_map:
+        #     # # non-dimension coordinate
+        #     # if dim in data_array.meta:
+        #     #     coord = data_array.meta[dim]
+        #     #     coord_values = coord.values
+        #     # else:
+        #     #     coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
+        #     coord_values = coord.values
+        #     if has_no_coord:
+        #         if data_array.meta[dim].shape[-1] == dim_to_shape[dim]:
+        #             coord_values = to_bin_centers(coord, dim).values
+        #     print(data_array.meta)
+        #     print(data_array.meta[dim_label_map[dim]])
+        #     form = lambda val, pos: value_to_string(  # noqa: E731
+        #         data_array.meta[dim_label_map[dim]].values[np.abs(
+        #             coord_values - val).argmin()])
+        #     formatter.update({"linear": form, "log": form})
+        #     coord_info["label"] = name_with_unit(
+        #         var=data_array.meta[dim_label_map[dim]],
+        #         name=dim_label_map[dim])
+        #     coord_info["unit"] = name_with_unit(
+        #         var=data_array.meta[dim_label_map[dim]], name="")
+
+        # else:
+        #     coord = data_array.meta[dim]
+        #     if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
+        #                                               sc.dtype.float64):
+        #         coord = coord.astype(sc.dtype.float64)
 
         if len(coord_info) == 0:
             coord_info["label"] = name_with_unit(var=coord)
             coord_info["unit"] = name_with_unit(var=coord, name="")
+
+        print(coord, formatter, coord_info["label"], coord_info["unit"])
 
         return coord, formatter, coord_info["label"], coord_info["unit"]
 
