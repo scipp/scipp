@@ -291,28 +291,37 @@ void init_dataset(py::module &m) {
   py::class_<Dataset> dataset(m, "Dataset", R"(
   Dict of data arrays with aligned dimensions.)");
 
-  dataset
-      .def(py::init([](const std::map<std::string, VariableConstView> &data,
-                       const std::map<Dim, VariableConstView> &coords) {
-             return Dataset(data, coords);
-           }),
-           py::arg("data") = std::map<std::string, VariableConstView>{},
-           py::arg("coords") = std::map<Dim, VariableConstView>{},
-           R"(Overloaded Function
-             
-             __init__(self, data: Dict[str, VariableConstView] = {}, coords: Dict[str, VariableConstView] = {})
-          
-             Initialise from a dictionary of Variables and optionally coordinates.
-             Each Variable is converted into a DataArray within the Dataset.
-             )")
-      .def(py::init<const std::map<std::string, DataArrayConstView> &>(),
-           py::arg("data"),
-           R"(Overloaded Function
-           
-              __init__(self, data: Dict[str, DataArrayConstView])
-              
-              Initialise from a dictionary of DataArrays.
-              )");
+  dataset.def(
+      py::init(
+          [](const std::map<std::string,
+                            std::variant<VariableConstView, DataArrayConstView>>
+                 &data,
+             const std::map<Dim, VariableConstView> &coords) {
+            Dataset d;
+            for (auto &&[dim, coord] : coords)
+              d.setCoord(dim, std::move(coord));
+
+            for (auto &&[name, item] : data) {
+              auto visitor = [&d, &name](auto &object) {
+                d.setData(std::string(name), std::move(object));
+              };
+              std::visit(visitor, item);
+            }
+            return d;
+          }),
+      py::arg("data") =
+          std::map<std::string,
+                   std::variant<VariableConstView, DataArrayConstView>>{},
+      py::arg("coords") = std::map<Dim, VariableConstView>{},
+      R"(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
+
+              Dataset initialiser.
+
+             :param data: Dictionary of name and data pairs.
+             :param coords: Dictionary of name and coord pairs.
+             :type data: Dict[str, Union[Variable, DataArray]]
+             :type coord: Dict[str, Variable]
+             )");
   options.enable_function_signatures();
 
   dataset
