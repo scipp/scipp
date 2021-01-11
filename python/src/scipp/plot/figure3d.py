@@ -148,7 +148,7 @@ class PlotFigure3d:
             self.scene.remove(self.axticks)
 
         self._create_outline(axparams)
-        self._create_points_material()
+        self._create_points_material(axparams)
         self._create_point_cloud(axparams["positions"])
 
         # Set camera controller target
@@ -191,10 +191,13 @@ class PlotFigure3d:
         self.point_cloud = p3.Points(geometry=self.points_geometry,
                                      material=self.points_material)
 
-    def _create_points_material(self):
+    def _create_points_material(self, axparams):
         """
         Define custom raw shader for point cloud to allow to RGBA color format.
         """
+        if self.pixel_size is None:
+            self.pixel_size = 0.05 * self._find_shortest_edge(axparams)
+
         return p3.ShaderMaterial(
             vertexShader='''
 precision highp float;
@@ -256,16 +259,19 @@ void main() {
                          scaleToTexture=True,
                          scale=[size, size, size])
 
+    def _find_shortest_edge(self, axparams):
+        return np.amin([
+                axparams['x']["lims"][1] - axparams['x']["lims"][0],
+                axparams['y']["lims"][1] - axparams['y']["lims"][0],
+                axparams['z']["lims"][1] - axparams['z']["lims"][0]
+            ])
+
     def _generate_axis_ticks_and_labels(self, axparams):
         """
         Create ticklabels on outline edges
         """
         if self.tick_size is None:
-            self.tick_size = 0.05 * np.amin([
-                axparams['x']["lims"][1] - axparams['x']["lims"][0],
-                axparams['y']["lims"][1] - axparams['y']["lims"][0],
-                axparams['z']["lims"][1] - axparams['z']["lims"][0]
-            ])
+            self.tick_size = 0.05 * self._find_shortest_edge(axparams)
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker_ = ticker.MaxNLocator(5)

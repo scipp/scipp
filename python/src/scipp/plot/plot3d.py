@@ -48,7 +48,7 @@ class SciPlot3d(SciPlot):
                  color=None,
                  aspect=None,
                  background="#f0f0f0",
-                 pixel_size=1.0,
+                 pixel_size=None,
                  tick_size=None,
                  show_outline=True,
                  xlabel=None,
