@@ -110,12 +110,12 @@ Variable subbin_sizes(const VariableConstView &subbins,
 // requirements.
 // The difficulty is that we need to apply sum and cumsum along both axes.
 // Can a helper class help?
-SubbinSizes::SubbinSizes(const scipp::index begin,
+SubbinSizes::SubbinSizes(const scipp::index offset,
                          std::vector<scipp::index> &&sizes)
-    : m_begin(begin), m_sizes(std::move(sizes)) {}
+    : m_offset(offset), m_sizes(std::move(sizes)) {}
 
 bool operator==(const SubbinSizes &a, const SubbinSizes &b) {
-  return std::tie(a.begin(), a.sizes()) == std::tie(b.begin(), b.sizes());
+  return std::tie(a.offset(), a.sizes()) == std::tie(b.offset(), b.sizes());
 }
 
 // is this good enough for what we need? for cumsum we want to avoid filling in
@@ -126,14 +126,14 @@ bool operator==(const SubbinSizes &a, const SubbinSizes &b) {
 // sum += x
 // x = sum
 SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
-  const auto begin = std::min(a.begin(), b.begin());
+  const auto begin = std::min(a.offset(), b.offset());
   const auto end =
-      std::max(a.begin() + a.sizes().size(), b.begin() + b.sizes().size());
+      std::max(a.offset() + a.sizes().size(), b.offset() + b.sizes().size());
   std::vector<scipp::index> sizes(end - begin);
-  scipp::index current = a.begin() - begin;
+  scipp::index current = a.offset() - begin;
   for (const auto &size : a.sizes())
     sizes[current++] += size;
-  current = b.begin() - begin;
+  current = b.offset() - begin;
   for (const auto &size : b.sizes())
     sizes[current++] += size;
   return {begin, std::move(sizes)};
