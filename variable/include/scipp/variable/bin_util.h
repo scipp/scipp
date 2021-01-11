@@ -18,20 +18,17 @@ subbin_offsets(const VariableConstView &start_, const VariableConstView &stop_,
                const VariableConstView &subbin_sizes_, const scipp::index nsrc,
                const scipp::index ndst, const scipp::index nbin);
 
-// instead of this helper class, we could also just use three variables for
-// begin, end, sizes (the latter one a bin-variable), and implement custom sum
+// instead of this helper class, we could also just use two variables for
+// begin and sizes (the latter one a bin-variable), and implement custom sum
 // and cumsum ops.
 class SCIPP_VARIABLE_EXPORT SubbinSizes {
 public:
-  SubbinSizes(const scipp::index begin, const scipp::index end,
-              std::vector<scipp::index> &&sizes);
+  SubbinSizes(const scipp::index begin, std::vector<scipp::index> &&sizes);
   const auto &begin() const noexcept { return m_begin; }
-  const auto &end() const noexcept { return m_end; }
   const auto &sizes() const noexcept { return m_sizes; }
 
 private:
   scipp::index m_begin;
-  scipp::index m_end;
   // consider boost::small_vector?
   std::vector<scipp::index> m_sizes; // TODO can we avoid many small vecs?
 };

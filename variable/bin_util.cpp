@@ -110,16 +110,12 @@ Variable subbin_sizes(const VariableConstView &subbins,
 // requirements.
 // The difficulty is that we need to apply sum and cumsum along both axes.
 // Can a helper class help?
-SubbinSizes::SubbinSizes(const scipp::index begin, const scipp::index end,
+SubbinSizes::SubbinSizes(const scipp::index begin,
                          std::vector<scipp::index> &&sizes)
-    : m_begin(begin), m_end(end), m_sizes(std::move(sizes)) {
-  if (scipp::size(m_sizes) != (m_end - m_begin))
-    throw except::SizeError(
-        "List of sizes must match length given by begin and end.");
-}
+    : m_begin(begin), m_sizes(std::move(sizes)) {}
+
 bool operator==(const SubbinSizes &a, const SubbinSizes &b) {
-  return std::tie(a.begin(), a.end(), a.sizes()) ==
-         std::tie(b.begin(), b.end(), b.sizes());
+  return std::tie(a.begin(), a.sizes()) == std::tie(b.begin(), b.sizes());
 }
 
 // is this good enough for what we need? for cumsum we want to avoid filling in
@@ -131,7 +127,8 @@ bool operator==(const SubbinSizes &a, const SubbinSizes &b) {
 // x = sum
 SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
   const auto begin = std::min(a.begin(), b.begin());
-  const auto end = std::max(a.end(), b.end());
+  const auto end =
+      std::max(a.begin() + a.sizes().size(), b.begin() + b.sizes().size());
   std::vector<scipp::index> sizes(end - begin);
   scipp::index current = a.begin() - begin;
   for (const auto &size : a.sizes())
@@ -139,7 +136,7 @@ SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
   current = b.begin() - begin;
   for (const auto &size : b.sizes())
     sizes[current++] += size;
-  return {begin, end, std::move(sizes)};
+  return {begin, std::move(sizes)};
 }
 
 // TODO next steps:
@@ -147,8 +144,8 @@ SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
 //   - sum, cumsum
 //   - cumsum_bins (cumsum along sizes in SubbinSizes)
 //   - buckets::sum (sum along sizes in SubbinSizes)
-// - refactor bin_sizes to it creates Variable<SubbinSizes> instead of binned
-//   variable
+// - refactor bin_sizes so it creates Variable<SubbinSizes> instead of binned
+//   variable -> just return vector (and begin?)?
 // - compute begin and end (and nbin) in TargetBinBuilder::build, forward those
 //   to bin<T>
 // - use computed begin and end in `update_indices_by*`:
