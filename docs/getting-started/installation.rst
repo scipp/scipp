@@ -43,7 +43,7 @@ To update or remove ``scipp`` use `conda update <https://docs.conda.io/projects/
 
 If you wish to use Scipp with Mantid you may use the following command to create an environment containing both Scipp and Mantid framework.
 
-Note that Conda packages for Mantid are only available on Linux and are currently maintained seperate to the Mantid project.
+Note that Conda packages for Mantid are only available on Linux and macOS, and are currently maintained seperate to the Mantid project.
 This is due to some dependencies being too old to work in the same environment as Scipp.
 
 .. code-block:: sh
