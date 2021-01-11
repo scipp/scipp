@@ -103,6 +103,38 @@ BENCHMARK(BM_transform_in_place_slice)
     ->RangeMultiplier(2)
     ->Ranges({{1, 2 << 18}, {false, true}});
 
+static void BM_transform_in_place_transposed(benchmark::State &state) {
+  const auto nx = 100;
+  const auto ny = state.range(0);
+  const auto n = nx * ny;
+  const bool use_variances = state.range(1);
+  auto a = makeBenchmarkVariable(Dimensions{{Dim::Y, ny}, {Dim::X, nx}},
+                                 use_variances);
+  auto b = makeBenchmarkVariable(Dimensions{{Dim::X, nx}, {Dim::Y, ny}},
+                                 use_variances);
+  static constexpr auto op{[](auto &a_, const auto &b_) { a_ *= b_; }};
+
+  for ([[maybe_unused]] auto _ : state) {
+    transform_in_place<Types>(a, b, op);
+  }
+
+  const scipp::index variance_factor = use_variances ? 2 : 1;
+  const scipp::index read_write_factor = 3;
+  const scipp::index size_factor = 2;
+  state.SetItemsProcessed(state.iterations() * n * variance_factor);
+  state.SetBytesProcessed(state.iterations() * n * variance_factor *
+                          read_write_factor * sizeof(double));
+  state.counters["n"] = n;
+  state.counters["variances"] = use_variances;
+  state.counters["size"] = benchmark::Counter(
+      static_cast<double>(n * variance_factor * size_factor * sizeof(double)),
+      benchmark::Counter::kDefaults, benchmark::Counter::OneK::kIs1024);
+}
+
+BENCHMARK(BM_transform_in_place_transposed)
+    ->RangeMultiplier(2)
+    ->Ranges({{1, 2ul << 18ul}, {false, true}});
+
 static void BM_transform(benchmark::State &state) {
   run<false>(
       state,
