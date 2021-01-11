@@ -22,7 +22,7 @@ Variable makeBenchmarkVariable(const Dimensions &dims,
              ? makeVariable<double>(Dimensions{dims}, Values{}, Variances{})
              : makeVariable<double>(Dimensions(dims));
 }
-}
+} // namespace
 
 template <bool in_place, class Func>
 void run(benchmark::State &state, Func func, bool variances = false) {
@@ -104,7 +104,8 @@ BENCHMARK(BM_transform_in_place_slice)
     ->Ranges({{1, 2 << 18}, {false, true}});
 
 static void BM_transform_in_place_transposed(benchmark::State &state) {
-  const auto nx = 100;
+  // small so that a row / column fits into a cacheline (hopefully)
+  const auto nx = 4;
   const auto ny = state.range(0);
   const auto n = nx * ny;
   const bool use_variances = state.range(1);
