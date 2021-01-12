@@ -31,6 +31,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 
 #include "scipp/common/overloaded.h"
 
@@ -234,6 +235,13 @@ static void dispatch_inner_loop(
   if constexpr (I == detail::stride_special_cases<N_Operands>.size()) {
     inner_loop<in_place>(std::forward<Op>(op), indices, inner_strides, n,
                          std::forward<Operands>(operands)...);
+  } else if constexpr (!in_place &&
+                       detail::stride_special_cases<N_Operands>[I][0] > 1) {
+    // The output Variable in non-in-place transforms always has stride 0 or 1.
+    // Skip the runtime check and code generation below when possible.
+    assert(inner_strides[0] < 2);
+    dispatch_inner_loop<in_place, I + 1>(op, indices, inner_strides, n,
+                                         std::forward<Operands>(operands)...);
   } else {
     if (inner_strides == detail::stride_special_cases<N_Operands>[I]) {
       inner_loop<in_place>(std::forward<Op>(op), indices,
