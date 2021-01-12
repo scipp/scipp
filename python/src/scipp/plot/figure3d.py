@@ -70,7 +70,7 @@ class PlotFigure3d:
         self.point_cloud = None
         self.outline = None
         self.axticks = None
-        self.camera_reset = {}
+        self.camera_backup = {}
 
         # Define camera
         self.camera = p3.PerspectiveCamera(position=[0, 0, 0],
@@ -128,7 +128,12 @@ class PlotFigure3d:
         """
         Connect the toolbar Home button to reset the camera position.
         """
-        callbacks.update({"home_view": self.reset_camera})
+        callbacks.update({
+            "home_view": self.reset_camera,
+            "camera_x_normal": self.camera_x_normal,
+            "camera_y_normal": self.camera_y_normal,
+            "camera_z_normal": self.camera_z_normal
+        })
         self.toolbar.connect(callbacks)
 
     def update_axes(self, axparams):
@@ -156,9 +161,22 @@ class PlotFigure3d:
         self.camera.far = 5.0 * cam_pos_norm
         self.controls.target = axparams["centre"]
         self.camera.lookAt(axparams["centre"])
-        # Save camera settings for reset button
-        self.camera_reset["position"] = copy(self.camera.position)
-        self.camera_reset["lookat"] = copy(axparams["centre"])
+
+        # Save camera settings
+        self.camera_backup["reset"] = copy(self.camera.position)
+        self.camera_backup["centre"] = copy(axparams["centre"])
+        self.camera_backup["x_normal"] = [
+            2.0 * axparams["box_size"][0], axparams["centre"][1],
+            axparams["centre"][2]
+        ]
+        self.camera_backup["y_normal"] = [
+            axparams["centre"][0], 2.0 * axparams["box_size"][1],
+            axparams["centre"][2]
+        ]
+        self.camera_backup["z_normal"] = [
+            axparams["centre"][0], axparams["centre"][1],
+            2.0 * axparams["box_size"][2]
+        ]
 
         # Rescale axes helper
         self.axes_3d.scale = [self.camera.far] * 3
@@ -384,9 +402,24 @@ void main() {
         """
         Reset the camera position.
         """
-        self.camera.position = self.camera_reset["position"]
-        self.controls.target = self.camera_reset["lookat"]
-        self.camera.lookAt(self.camera_reset["lookat"])
+        self.move_camera(position=self.camera_backup["reset"])
+
+    def camera_x_normal(self, owner=None):
+        """
+        Reset the camera position.
+        """
+        self.move_camera(position=self.camera_backup["x_normal"])
+
+    def camera_y_normal(self, owner=None):
+        self.move_camera(position=self.camera_backup["y_normal"])
+
+    def camera_z_normal(self, owner=None):
+        self.move_camera(position=self.camera_backup["z_normal"])
+
+    def move_camera(self, position):
+        self.camera.position = position
+        self.controls.target = self.camera_backup["centre"]
+        self.camera.lookAt(self.camera_backup["centre"])
 
     def toggle_norm(self, norm=None, vmin=None, vmax=None):
         """
