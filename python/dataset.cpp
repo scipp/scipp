@@ -258,7 +258,7 @@ void init_dataset(py::module &m) {
           py::arg("attrs") = std::map<Dim, VariableConstView>{},
           py::arg("name") = std::string{},
           R"(__init__(self, data: Variable, coords: Dict[str, Variable] = {}, masks: Dict[str, Variable] = {}, attrs: Dict[str, Variable] = {}, name: str = '') -> None
-          
+
           DataArray initialiser.
 
           :param data: Data and optionally variances.
@@ -290,7 +290,7 @@ void init_dataset(py::module &m) {
   options.disable_function_signatures();
   dataArrayView.def(py::init<DataArray &>(), py::arg("dataArray"),
                     R"(__init__(self, dataArray: DataArray) -> None
-                    
+
                     DataArrayView initialiser.
 
                     :param dataArray: Viewed DataArray.
@@ -308,7 +308,7 @@ void init_dataset(py::module &m) {
                                                         R"(
         View for Dataset, representing a sliced view onto a Dataset;
         Mostly equivalent to Dataset, see there for details.)");
-  py::options options;
+
   options.disable_function_signatures();
   datasetView.def(py::init<Dataset &>(), py::arg("dataset"),
                   R"(__init__(dataset: Dataset) -> None
