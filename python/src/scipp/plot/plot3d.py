@@ -39,6 +39,7 @@ class SciPlot3d(SciPlot):
                  positions=None,
                  axes=None,
                  figsize=None,
+                 aspect=None,
                  masks=None,
                  cmap=None,
                  norm=None,
@@ -46,7 +47,6 @@ class SciPlot3d(SciPlot):
                  vmin=None,
                  vmax=None,
                  color=None,
-                 aspect=None,
                  background="#f0f0f0",
                  pixel_size=None,
                  tick_size=None,
@@ -117,6 +117,7 @@ class SciPlot3d(SciPlot):
         # The main controller module which connects all the parts
         self.controller = PlotController3d(
             axes=self.axes,
+            aspect=aspect,
             name=self.name,
             dim_to_shape=self.dim_to_shape,
             coord_shapes=self.coord_shapes,

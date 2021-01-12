@@ -146,7 +146,7 @@ class PlotFigure3d:
 
         self._create_outline(axparams)
         self._create_points_material(axparams)
-        self._create_point_cloud(axparams["positions"])
+        self._create_point_cloud(axparams)
 
         # Set camera controller target
         self.camera.position = list(
@@ -171,12 +171,17 @@ class PlotFigure3d:
         self.outline.visible = self.show_outline
         self.axticks.visible = self.show_outline
 
-    def _create_point_cloud(self, pos_array):
+    def _create_point_cloud(self, axparams):
         """
         Make a PointsGeometry using pythreejs
         """
-        rgba_shape = list(pos_array.shape)
+        rgba_shape = list(axparams["positions"].shape)
         rgba_shape[1] += 1
+        pos_array = axparams["positions"] * np.array([
+            axparams["x"]["scaling"], axparams["y"]["scaling"],
+            axparams["z"]["scaling"]
+        ],
+                                                     dtype=np.float32)
         self.points_geometry = p3.BufferGeometry(
             attributes={
                 'position':
@@ -261,6 +266,7 @@ void main() {
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker_ = ticker.MaxNLocator(5)
+        lims = {x: axparams[x]["lims"] / axparams[x]["scaling"] for x in "xyz"}
         offsets = {
             'x': [0, axparams['y']["lims"][0], axparams['z']["lims"][0]],
             'y': [axparams['x']["lims"][0], 0, axparams['z']["lims"][0]],
@@ -268,12 +274,11 @@ void main() {
         }
 
         for axis, x in enumerate('xyz'):
-            ticks = ticker_.tick_values(axparams[x]["lims"][0],
-                                        axparams[x]["lims"][1])
+            ticks = ticker_.tick_values(lims[x][0], lims[x][1])
             for tick in ticks:
-                if tick >= axparams[x]["lims"][0] and tick <= axparams[x][
-                        "lims"][1]:
-                    tick_pos = iden[axis] * tick + offsets[x]
+                if tick >= lims[x][0] and tick <= lims[x][1]:
+                    tick_pos = iden[axis] * tick * axparams[x][
+                        "scaling"] + offsets[x]
                     ticks_and_labels.add(
                         self._make_axis_tick(string=value_to_string(
                             tick, precision=1),

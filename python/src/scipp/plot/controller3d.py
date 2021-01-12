@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .. import config
 from .controller import PlotController
 from .._utils import name_with_unit
 import numpy as np
@@ -14,11 +15,23 @@ class PlotController3d(PlotController):
     It handles some additional events from the cut surface panel, compared to
     the base class controller.
     """
-    def __init__(self, *args, pixel_size=None, positions=None, **kwargs):
+    def __init__(self,
+                 *args,
+                 pixel_size=None,
+                 positions=None,
+                 aspect=None,
+                 **kwargs):
 
         super().__init__(*args, **kwargs)
         self.positions = positions
         self.pixel_size = pixel_size
+        self.aspect = aspect
+        if self.aspect is None:
+            self.aspect = config.plot.aspect
+        if self.aspect not in ["equal", "auto"]:
+            raise RuntimeError(
+                "Invalid aspect requested. Expected 'auto' or "
+                "'equal', got", self.aspect)
 
     def initialise_model(self):
         """
@@ -60,17 +73,27 @@ class PlotController3d(PlotController):
         else:
             axparams = super()._get_axes_parameters()
 
-        axparams["centre"] = [
-            0.5 * np.sum(axparams['x']["lims"]),
-            0.5 * np.sum(axparams['y']["lims"]),
-            0.5 * np.sum(axparams['z']["lims"])
-        ]
-
         axparams["box_size"] = np.array([
             axparams['x']["lims"][1] - axparams['x']["lims"][0],
             axparams['y']["lims"][1] - axparams['y']["lims"][0],
             axparams['z']["lims"][1] - axparams['z']["lims"][0]
         ])
+
+        for i, xyz in enumerate("xyz"):
+            axparams[xyz]["scaling"] = 1.0 / axparams["box_size"][
+                i] if self.aspect == "auto" else 1.0
+            axparams[xyz]["lims"] *= axparams[xyz]["scaling"]
+
+        axparams["box_size"] *= np.array([
+            axparams['x']["scaling"], axparams['y']["scaling"],
+            axparams['z']["scaling"]
+        ])
+
+        axparams["centre"] = [
+            0.5 * np.sum(axparams['x']["lims"]),
+            0.5 * np.sum(axparams['y']["lims"]),
+            0.5 * np.sum(axparams['z']["lims"])
+        ]
 
         if self.pixel_size is not None:
             axparams["pixel_size"] = self.pixel_size
