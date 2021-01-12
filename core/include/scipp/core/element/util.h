@@ -8,6 +8,7 @@
 #include "scipp/common/overloaded.h"
 #include "scipp/common/span.h"
 #include "scipp/core/element/arg_list.h"
+#include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/except.h"
@@ -112,7 +113,7 @@ constexpr auto fill =
                [](auto &x, const auto &value) { x = value; }};
 
 constexpr auto fill_zeros =
-    overloaded{arg_list<double, float, int64_t, int32_t>, [](units::Unit &) {},
-               [](auto &x) { x = 0; }};
+    overloaded{arg_list<double, float, int64_t, int32_t, SubbinSizes>,
+               [](units::Unit &) {}, [](auto &x) { x = 0; }};
 
 } // namespace scipp::core::element

@@ -2,6 +2,7 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <iostream>
 #include <numeric>
 #include <set>
 
@@ -9,6 +10,7 @@
 #include "scipp/core/element/cumulative.h"
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bin_util.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
@@ -122,8 +124,9 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // Setup offsets within output bins, for every input bin. If rebinning occurs
   // along a dimension each output bin sees contributions from all input bins
   // along that dim.
-  Variable output_bin_sizes = bin_sizes(indices, dims.volume());
-  // bin_sizes2(indices, offsets, nbin);
+  Variable output_bin_sizes =
+      bin_sizes2(indices, builder.offsets, builder.nbin);
+  std::cout << output_bin_sizes;
   auto offsets = output_bin_sizes;
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
@@ -133,11 +136,15 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
       offsets += cumsum(output_bin_sizes, dim, CumSumMode::Exclusive);
       output_bin_sizes = sum(output_bin_sizes, dim);
     }
+  std::cout << output_bin_sizes;
+  std::cout << offsets;
   // cumsum with bin dimension is last, since this corresponds to different
   // output bins, whereas the cumsum above handled different subbins of same
   // output bin, i.e., contributions of different input bins to some output bin.
-  offsets += cumsum_bins(output_bin_sizes, CumSumMode::Exclusive);
-  Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
+  // offsets += cumsum_bins(output_bin_sizes, CumSumMode::Exclusive);
+  // Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
+  offsets += cumsum_subbin_sizes(output_bin_sizes);
+  Variable filtered_input_bin_size = sum_subbin_sizes(output_bin_sizes);
   auto end = cumsum(filtered_input_bin_size);
   const auto total_size = end.values<scipp::index>().as_span().back();
   end = broadcast(end, data.dims()); // required for some cases of rebinning
@@ -152,9 +159,11 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
         var.template constituents<core::bin<VariableConstView>>();
     static_cast<void>(input_indices);
     auto out = resize_default_init(in_buffer, buffer_dim, total_size);
+    std::cout << filtered_input_bin_ranges;
+    std::cout << out;
+    std::cout << offsets;
     transform_in_place(subspan_view(out, buffer_dim, filtered_input_bin_ranges),
-                       as_subspan_view(std::as_const(offsets)),
-                       as_subspan_view(var), as_subspan_view(indices),
+                       offsets, as_subspan_view(var), as_subspan_view(indices),
                        core::element::bin);
     return out;
   });
@@ -162,9 +171,11 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
   auto output_dims = merge(output_bin_sizes.dims(), dims);
-  auto bin_sizes =
-      reshape(std::get<2>(output_bin_sizes.constituents<core::bin<Variable>>()),
-              output_dims);
+  // auto bin_sizes =
+  //    reshape(std::get<2>(output_bin_sizes.constituents<core::bin<Variable>>()),
+  //            output_dims);
+  auto bin_sizes = makeVariable<scipp::index>(
+      output_dims, Values(flatten_subbin_sizes(output_bin_sizes)));
   return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
 }
 

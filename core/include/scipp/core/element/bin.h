@@ -125,8 +125,8 @@ static constexpr auto update_indices_from_existing = overloaded{
 // - `offsets` Start indices of the output bins
 // - `bin_indices` Target output bin index (within input bin)
 template <class T, class Index>
-using bin_arg = std::tuple<span<T>, span<const scipp::index>, span<const T>,
-                           span<const Index>>;
+using bin_arg =
+    std::tuple<span<T>, SubbinSizes, span<const T>, span<const Index>>;
 static constexpr auto bin = overloaded{
     element::arg_list<
         bin_arg<double, int64_t>, bin_arg<double, int32_t>,
@@ -141,7 +141,8 @@ static constexpr auto bin = overloaded{
        const units::Unit &) { binned = data; },
     [](const auto &binned, const auto &offsets, const auto &data,
        const auto &bin_indices) {
-      std::vector<scipp::index> bins(offsets.begin(), offsets.end());
+      std::vector<scipp::index> bins(offsets.sizes().begin(),
+                                     offsets.sizes().end());
       const auto size = scipp::size(bin_indices);
       using T = std::decay_t<decltype(data)>;
       for (scipp::index i = 0; i < size; ++i) {
@@ -152,6 +153,8 @@ static constexpr auto bin = overloaded{
           binned.variance[bins[i_bin]] = data.variance[i];
           binned.value[bins[i_bin]++] = data.value[i];
         } else {
+          fprintf(stderr, "%ld %ld %lu %lu %lu\n", i, i_bin, bins.size(),
+                  binned.size(), data.size());
           binned[bins[i_bin]++] = data[i];
         }
       }

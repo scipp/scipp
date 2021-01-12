@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <string>
 #include <vector>
 
 #include "scipp-core_export.h"
@@ -17,9 +18,19 @@ namespace scipp::core {
 class SCIPP_CORE_EXPORT SubbinSizes {
 public:
   SubbinSizes() = default;
+  SubbinSizes(const scipp::index value);
   SubbinSizes(const scipp::index offset, std::vector<scipp::index> &&sizes);
   const auto &offset() const noexcept { return m_offset; }
   const auto &sizes() const noexcept { return m_sizes; }
+  void operator=(const scipp::index value) {
+    for (auto &size : m_sizes)
+      size = value;
+  }
+  SubbinSizes &operator+=(const SubbinSizes &other);
+  SubbinSizes &operator-=(const SubbinSizes &other);
+
+  SubbinSizes cumsum() const;
+  scipp::index sum() const;
 
 private:
   scipp::index m_offset{0};
@@ -32,5 +43,10 @@ private:
 
 [[nodiscard]] SCIPP_CORE_EXPORT SubbinSizes operator+(const SubbinSizes &a,
                                                       const SubbinSizes &b);
+
+[[nodiscard]] SCIPP_CORE_EXPORT SubbinSizes operator-(const SubbinSizes &a,
+                                                      const SubbinSizes &b);
+
+[[nodiscard]] SCIPP_CORE_EXPORT std::string to_string(const SubbinSizes &s);
 
 } // namespace scipp::core

@@ -3,6 +3,8 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element/bin_util.h"
+#include "scipp/core/element/util.h" // fill_zeros
+#include "scipp/core/subbin_sizes.h"
 
 #include "scipp/variable/bin_util.h"
 #include "scipp/variable/subspan_view.h"
@@ -123,5 +125,47 @@ Variable subbin_sizes(const VariableConstView &subbins,
 // - use computed begin and end in `update_indices_by*`:
 //   - create subspan views so each input bin in the transform sees only
 //     relevant section of output bin edges (or groups)
+
+/// Fill variable with zeros.
+void subbin_sizes_fill_zeros(const VariableView &var) {
+  transform_in_place<core::SubbinSizes>(var, core::element::fill_zeros);
+}
+
+Variable cumsum_subbin_sizes(const VariableConstView &var) {
+  return transform<core::SubbinSizes>(
+      var, overloaded{[](const units::Unit &u) { return u; },
+                      [](const auto &sizes) { return sizes.cumsum(); }});
+}
+
+Variable sum_subbin_sizes(const VariableConstView &var) {
+  return transform<core::SubbinSizes>(
+      var, overloaded{[](const units::Unit &u) { return u; },
+                      [](const auto &sizes) { return sizes.sum(); }});
+}
+
+std::vector<scipp::index> flatten_subbin_sizes(const VariableConstView &var) {
+  std::vector<scipp::index> flat;
+  for (const auto &val : var.values<core::SubbinSizes>())
+    flat.insert(flat.end(), val.sizes().begin(), val.sizes().end());
+  return flat;
+}
+
+/*
+Variable subbin_sizes_cumsum(const VariableConstView &var, const Dim dim,
+                             const CumSumMode mode) {
+  if (var.dims()[dim] == 0)
+    return Variable{var};
+  Variable cumulative(var.slice({dim, 0}));
+  subbin_sizes_fill_zeros(cumulative);
+  Variable out(var);
+  if (mode == CumSumMode::Inclusive)
+    accumulate_in_place<core::SubbinSizes>(cumulative, out,
+                                           core::element::inclusive_scan);
+  else
+    accumulate_in_place<core::SubbinSizes>(cumulative, out,
+                                           core::element::exclusive_scan);
+  return out;
+}
+*/
 
 } // namespace scipp::variable
