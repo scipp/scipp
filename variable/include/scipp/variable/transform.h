@@ -227,6 +227,10 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
           std::tuple_cat(processed, std::tuple(ValuesAndVariances{vals, vars})),
           args...);
     }
+    // else {}  // Cannot happen because args.hasVariances()
+    //             implies canHaveVariances<value_type>.
+    //             The 2nd test is needed to avoid compilation errors
+    //             (hasVariances is a runtime check).
   } else {
     if constexpr (std::is_base_of_v<
                       core::transform_flags::expect_variance_arg_t<
