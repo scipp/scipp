@@ -24,9 +24,9 @@ def test_slice_init():
     orig = sc.DataArray(
         data=sc.Variable(['x'], values=np.arange(2.0)),
         coords={'x': sc.Variable(['x'], values=np.arange(3.0))})
-    a = sc.DataArray(orig['x', :])
+    a = orig['x', :].copy()
     assert sc.is_equal(a, orig)
-    b = sc.DataArray(orig['x', 1:])
+    b = orig['x', 1:].copy()
     assert b.data.values[0] == orig.data.values[1:]
 
 
