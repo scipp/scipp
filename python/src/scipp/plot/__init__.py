@@ -69,7 +69,7 @@ def plot(*args, **kwargs):
     - dict of DataArrays
 
     For more details, see
-    https://scipp.github.io/visualization/plotting-overview.html.
+    https://scipp.github.io/visualization/plotting-overview.html
 
     :param aspect: Specify the aspect ratio for 2d images. Defaults to
         `"auto"`.
