@@ -115,13 +115,15 @@ Variable bin_sizes2(const VariableConstView &sub_bin,
       core::element::count_indices2); // transform bins, not bin element
 }
 
-template <class T>
+template <class T, class Builder>
 auto bin(const VariableConstView &data, const VariableConstView &indices,
-         const Dimensions &dims, const scipp::index nbin) {
+         const Builder &builder) {
+  const auto dims = builder.dims();
   // Setup offsets within output bins, for every input bin. If rebinning occurs
   // along a dimension each output bin sees contributions from all input bins
   // along that dim.
-  auto output_bin_sizes = bin_sizes(indices, nbin);
+  Variable output_bin_sizes = bin_sizes(indices, dims.volume());
+  // bin_sizes2(indices, offsets, nbin);
   auto offsets = output_bin_sizes;
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
@@ -244,7 +246,6 @@ class TargetBinBuilder {
 
 public:
   const Dimensions &dims() const noexcept { return m_dims; }
-  scipp::index nbin() const { return m_nbin; }
 
   /// `bin_coords` may optionally be used to provide bin-based coords, e.g., for
   /// data that has prior grouping but did not retain the original group coord
@@ -255,11 +256,13 @@ public:
     const auto get_coord = [&](const Dim dim) {
       return coords.count(dim) ? coords[dim] : Variable(bin_coords.at(dim));
     };
-    m_nbin = dims().volume() * units::one;
+    offsets = makeVariable<scipp::index>(Values{0});
+    nbin = dims().volume() * units::one;
     for (const auto &[action, dim, key] : m_actions) {
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
       else if (action == AxisAction::Bin) {
+        /*
         if (bin_coords.count(dim)) {
           printf("existing grouping along %s\n", to_string(dim).c_str());
           const auto &bin_coord = bin_coords.at(dim);
@@ -279,13 +282,11 @@ public:
           const VariableConstView coord = bin_coord;
           // TODO use in update_indices_by_binning
           const auto coord_ = make_non_owning_bins(indices_, dim, coord);
-
-          // TODO this should go outside the loop (and get returned)
-          const auto inner_volume = dims().volume() / dims()[dim];
+          const auto inner_volume = dims().volume() / dims()[dim] * units::one;
           nbin = (end - begin) * inner_volume;
-          auto output_bin_sizes =
-              bin_sizes2(indices, begin * inner_volume, nbin);
+          offsets = begin * inner_volume;
         }
+        */
         // for every input bin:
         // - candidate output begin bin
         // - candidate output end bin
@@ -362,9 +363,11 @@ public:
   // All input bins mapped to same output bin => "add" 0 everywhere
   void erase(const Dim dim) { m_dims.addInner(dim, 1); }
 
+  Variable offsets;
+  Variable nbin;
+
 private:
   Dimensions m_dims;
-  scipp::index m_nbin = 0;
   std::vector<std::tuple<AxisAction, Dim, VariableConstView>> m_actions;
   std::vector<Variable> m_joined;
 };
@@ -474,9 +477,9 @@ Variable concat_bins(const VariableConstView &var, const Dim dim) {
   TargetBinBuilder builder;
   builder.erase(dim);
   TargetBins<T> target_bins(var, builder.dims());
+
   builder.build(*target_bins, std::map<Dim, Variable>{});
-  auto [buffer, bin_sizes] =
-      bin<DataArray>(var, *target_bins, builder.dims(), builder.nbin());
+  auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder);
   squeeze(bin_sizes, {dim});
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
@@ -515,8 +518,7 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
   const auto masked = hide_masked();
   TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
   builder.build(*target_bins, array.coords());
-  return add_metadata(bin<DataArrayConstView>(masked, *target_bins,
-                                              builder.dims(), builder.nbin()),
+  return add_metadata(bin<DataArrayConstView>(masked, *target_bins, builder),
                       array.coords(), array.masks(), array.attrs(),
                       builder.edges(), builder.groups(), {reductionDim});
 }
@@ -574,8 +576,7 @@ DataArray bin(const DataArrayConstView &array,
     builder.build(target_bins_buffer, coords);
     const auto target_bins = make_non_owning_bins(
         indices, dim, VariableConstView(target_bins_buffer));
-    return add_metadata(bin<DataArrayConstView>(tmp, target_bins,
-                                                builder.dims(), builder.nbin()),
+    return add_metadata(bin<DataArrayConstView>(tmp, target_bins, builder),
                         coords, masks, attrs, builder.edges(), builder.groups(),
                         {});
   }
@@ -592,8 +593,7 @@ DataArray bin(const VariableConstView &data, const Coords &coords,
   TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
   builder.build(*target_bins, bins_view<DataArrayConstView>(masked).coords(),
                 coords);
-  return add_metadata(bin<DataArrayConstView>(masked, *target_bins,
-                                              builder.dims(), builder.nbin()),
+  return add_metadata(bin<DataArrayConstView>(masked, *target_bins, builder),
                       coords, masks, attrs, builder.edges(), builder.groups(),
                       {});
 }

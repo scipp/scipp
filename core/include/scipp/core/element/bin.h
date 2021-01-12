@@ -12,6 +12,7 @@
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/element/util.h"
 #include "scipp/core/histogram.h"
+#include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core::element {
@@ -175,7 +176,7 @@ static constexpr auto count_indices2 = overloaded{
     element::arg_list<
         std::tuple<scipp::span<const int64_t>, scipp::index, scipp::index>,
         std::tuple<scipp::span<const int32_t>, scipp::index, scipp::index>>,
-    [](const units::Unit &indices) {
+    [](const units::Unit &indices, const auto &, const auto &) {
       expect::equals(indices, units::one);
       return units::one;
     },
