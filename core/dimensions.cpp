@@ -180,15 +180,28 @@ int32_t Dimensions::index(const Dim dim) const {
 ///
 /// Throws if there is a mismatching dimension extent.
 Dimensions merge(const Dimensions &a, const Dimensions &b) {
-  auto out(a);
-  for (const auto dim : b.labels()) {
-    if (a.contains(dim)) {
+  Dimensions out;
+  auto it = b.labels().begin();
+  auto end = b.labels().end();
+  for (const auto dim : a.labels()) {
+    // add any labels appearing *before* dim
+    if (b.contains(dim)) {
       if (a[dim] != b[dim])
         throw except::DimensionError(
             "Cannot merge subspaces with mismatching extent");
-    } else {
-      out.addInner(dim, b[dim]);
+      while (it != end && *it != dim) {
+        if (!a.contains(*it))
+          out.addInner(*it, b[*it]);
+        ++it;
+      }
     }
+    out.addInner(dim, a[dim]);
+  }
+  // add remaining labels appearing after last of a's labels
+  while (it != end) {
+    if (!a.contains(*it))
+      out.addInner(*it, b[*it]);
+    ++it;
   }
   return out;
 }
