@@ -285,6 +285,7 @@ class PlotWidgets:
         # Disable slider and profile button if there is only a single bin
         disabled = max_value == 1
         self.slider[index].disabled = disabled
+        self.continuous_update[index].disabled = disabled
         self.thickness_slider[index].disabled = disabled
         self.profile_button[index].disabled = disabled
 
