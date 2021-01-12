@@ -67,7 +67,7 @@ def test_plot_projection_3d_with_vectors_with_aspect():
     plot(make_data_with_position_vectors(),
          projection="3d",
          positions="xyz",
-         aspect="equal")
+         aspect="auto")
 
 
 def test_plot_variable_3d():
