@@ -98,6 +98,54 @@ template <int N, class T> static constexpr auto get(const T &index) noexcept {
 
 } // namespace iter
 
+template <size_t N_Operands>
+inline constexpr auto stride_special_cases =
+    std::array<std::array<scipp::index, N_Operands>, 0>{};
+
+template <>
+inline constexpr auto stride_special_cases<1> =
+    std::array<std::array<scipp::index, 1>, 2>{{{1}, {0}}};
+
+template <>
+inline constexpr auto stride_special_cases<2> =
+    std::array<std::array<scipp::index, 2>, 4>{
+        {{1, 1}, {0, 1}, {1, 0}, {0, 0}}};
+
+template <size_t I, size_t N_Operands, size_t... Is>
+auto stride_sequence_impl(std::index_sequence<Is...>)
+    -> std::integer_sequence<scipp::index,
+                             stride_special_cases<N_Operands>.at(I)[Is]...>;
+// THe above uses std::array::at instead of operator[] in order to circumvent
+// a false positive error in MSVC 19.
+
+template <size_t I, size_t N_Operands> struct stride_sequence {
+  using type = decltype(stride_sequence_impl<I, N_Operands>(
+      std::make_index_sequence<N_Operands>{}));
+};
+
+template <size_t I, size_t N_Operands>
+using make_stride_sequence = typename stride_sequence<I, N_Operands>::type;
+
+template <scipp::index... Strides, size_t... Is>
+void increment_impl(std::array<scipp::index, sizeof...(Strides)> &indices,
+                    std::integer_sequence<size_t, Is...>) noexcept {
+  ((indices[Is] += Strides), ...);
+}
+
+template <scipp::index... Strides>
+void increment(std::array<scipp::index, sizeof...(Strides)> &indices) noexcept {
+  increment_impl<Strides...>(indices,
+                             std::make_index_sequence<sizeof...(Strides)>{});
+}
+
+template <size_t N>
+void increment(std::array<scipp::index, N> &indices,
+               const std::array<scipp::index, N> &strides) noexcept {
+  for (size_t i = 0; i < N; ++i) {
+    indices[i] += strides[i];
+  }
+}
+
 template <class Op, class Indices, class... Args, size_t... I>
 static constexpr auto call_impl(Op &&op, const Indices &indices,
                                 std::index_sequence<I...>, Args &&... args) {
@@ -298,55 +346,6 @@ template <class Op> struct wrap_eigen : Op {
   }
 };
 template <class... Ts> wrap_eigen(Ts...) -> wrap_eigen<Ts...>;
-
-template <size_t N_Operands>
-inline constexpr auto stride_special_cases =
-    std::array<std::array<scipp::index, N_Operands>, 0>{};
-
-template <>
-inline constexpr auto stride_special_cases<1> =
-    std::array<std::array<scipp::index, 1>, 2>{{{1}, {0}}};
-
-template <>
-inline constexpr auto stride_special_cases<2> =
-    std::array<std::array<scipp::index, 2>, 4>{
-        {{1, 1}, {0, 1}, {1, 0}, {0, 0}}};
-
-template <size_t I, size_t N_Operands, size_t... Is>
-auto stride_sequence_impl(std::index_sequence<Is...>)
-    -> std::integer_sequence<scipp::index,
-                             stride_special_cases<N_Operands>.at(I)[Is]...>;
-// THe above uses std::array::at instead of operator[] in order to circumvent
-// a false positive error in MSVC 19.
-
-template <size_t I, size_t N_Operands> struct stride_sequence {
-  using type = decltype(stride_sequence_impl<I, N_Operands>(
-      std::make_index_sequence<N_Operands>{}));
-};
-
-template <size_t I, size_t N_Operands>
-using make_stride_sequence = typename stride_sequence<I, N_Operands>::type;
-
-template <scipp::index... Strides, size_t... Is>
-void increment_impl(std::array<scipp::index, sizeof...(Strides)> &indices,
-                    std::integer_sequence<size_t, Is...>) noexcept {
-  ((indices[Is] += Strides), ...);
-}
-
-template <scipp::index... Strides>
-void increment(std::array<scipp::index, sizeof...(Strides)> &indices) noexcept {
-  increment_impl<Strides...>(indices,
-                             std::make_index_sequence<sizeof...(Strides)>{});
-}
-
-template <size_t N>
-void increment(std::array<scipp::index, N> &indices,
-               const std::array<scipp::index, N> &strides) noexcept {
-  for (size_t i = 0; i < N; ++i) {
-    indices[i] += strides[i];
-  }
-}
-
 } // namespace detail
 
 template <class... Ts, class Op>
