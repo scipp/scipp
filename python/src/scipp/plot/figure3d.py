@@ -29,7 +29,6 @@ class PlotFigure3d:
                  log=None,
                  nan_color=None,
                  masks=None,
-                 pixel_size=None,
                  tick_size=None,
                  background=None,
                  show_outline=True,
@@ -57,7 +56,6 @@ class PlotFigure3d:
 
         self.axlabels = {"x": xlabel, "y": ylabel, "z": zlabel}
         self.positions = None
-        self.pixel_size = pixel_size
         self.tick_size = tick_size
         self.show_outline = show_outline
         self.unit = unit
@@ -67,7 +65,6 @@ class PlotFigure3d:
         self.cbar_fig, self.cbar = self._create_colorbar(figsize, extend)
 
         # Create the point cloud material with pythreejs
-        # self.points_material = self._create_points_material()
         self.points_material = None
         self.points_geometry = None
         self.point_cloud = None
@@ -164,7 +161,6 @@ class PlotFigure3d:
         self.camera_reset["lookat"] = copy(axparams["centre"])
 
         # Rescale axes helper
-        # self.axes_3d.scale = [5.0 * cam_pos_norm] * 3
         self.axes_3d.scale = [self.camera.far] * 3
 
         self.scene.add(self.point_cloud)
@@ -194,12 +190,9 @@ class PlotFigure3d:
     def _create_points_material(self, axparams):
         """
         Define custom raw shader for point cloud to allow to RGBA color format.
+        Note that the value of 580 was obtained from trial and error.
         """
-        if self.pixel_size is None:
-            self.pixel_size = 0.05 * self._find_shortest_edge(axparams)
-
-        return p3.ShaderMaterial(
-            vertexShader='''
+        self.points_material = p3.ShaderMaterial(vertexShader='''
 precision highp float;
 attribute vec4 rgba_color;
 varying vec3 mypos;
@@ -216,17 +209,17 @@ void main(){
     delta = pow(xDelta + yDelta + zDelta, 0.5);
     gl_PointSize = %f / delta;
 }
-''' % (580.0 * self.pixel_size, ),  # the value of 580 is from trial and error
-            fragmentShader='''
+''' % (580.0 * axparams["pixel_size"], ),
+                                                 fragmentShader='''
 precision highp float;
 varying vec4 vColor;
 void main() {
     gl_FragColor = vColor;
 }
 ''',
-            vertexColors='VertexColors',
-            transparent=True,
-            depthTest=True)
+                                                 vertexColors='VertexColors',
+                                                 transparent=True,
+                                                 depthTest=True)
 
     def _create_outline(self, axparams):
         """
@@ -259,19 +252,12 @@ void main() {
                          scaleToTexture=True,
                          scale=[size, size, size])
 
-    def _find_shortest_edge(self, axparams):
-        return np.amin([
-                axparams['x']["lims"][1] - axparams['x']["lims"][0],
-                axparams['y']["lims"][1] - axparams['y']["lims"][0],
-                axparams['z']["lims"][1] - axparams['z']["lims"][0]
-            ])
-
     def _generate_axis_ticks_and_labels(self, axparams):
         """
         Create ticklabels on outline edges
         """
         if self.tick_size is None:
-            self.tick_size = 0.05 * self._find_shortest_edge(axparams)
+            self.tick_size = 0.05 * np.amin(axparams["box_size"])
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker_ = ticker.MaxNLocator(5)

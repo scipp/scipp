@@ -17,19 +17,8 @@ class PlotController3d(PlotController):
     def __init__(self, *args, pixel_size=None, positions=None, **kwargs):
 
         super().__init__(*args, **kwargs)
-
         self.positions = positions
-        self.pos_axparams = {}
-
-        # If positions are specified, then the x, y, z points positions can
-        # never change
-        if self.positions is not None:
-            extents = self.model.get_positions_extents(pixel_size)
-            for xyz, ex in extents.items():
-                self.pos_axparams[xyz] = {
-                    "lims": ex["lims"],
-                    "label": name_with_unit(1.0 * ex["unit"], name=xyz.upper())
-                }
+        self.pixel_size = pixel_size
 
     def initialise_model(self):
         """
@@ -44,7 +33,8 @@ class PlotController3d(PlotController):
         self.panel.connect({
             "update_opacity": self.update_opacity,
             "update_depth_test": self.update_depth_test,
-            "update_cut_surface": self.update_cut_surface
+            "update_cut_surface": self.update_cut_surface,
+            "get_pixel_size": self.get_pixel_size
         })
 
     def _get_axes_parameters(self):
@@ -59,7 +49,14 @@ class PlotController3d(PlotController):
         """
         axparams = {}
         if self.positions is not None:
-            axparams = self.pos_axparams
+            extents = self.model.get_positions_extents()
+            axparams = {
+                xyz: {
+                    "lims": ex["lims"],
+                    "label": name_with_unit(1.0 * ex["unit"], name=xyz.upper())
+                }
+                for xyz, ex in extents.items()
+            }
         else:
             axparams = super()._get_axes_parameters()
 
@@ -74,6 +71,16 @@ class PlotController3d(PlotController):
             axparams['y']["lims"][1] - axparams['y']["lims"][0],
             axparams['z']["lims"][1] - axparams['z']["lims"][0]
         ])
+
+        if self.pixel_size is not None:
+            axparams["pixel_size"] = self.pixel_size
+        else:
+            if self.positions is not None:
+                axparams["pixel_size"] = 0.05 * np.amin(axparams["box_size"])
+            else:
+                axparams["pixel_size"] = self.model.estimate_pixel_size(
+                    axparams)
+
         return axparams
 
     def update_opacity(self, alpha):
@@ -105,3 +112,9 @@ class PlotController3d(PlotController):
         """
         alpha = self.model.update_cut_surface(*args, **kwargs)
         self.view.update_opacity(alpha=alpha)
+
+    def get_pixel_size(self):
+        """
+        Getter function for the pixel size.
+        """
+        return self.axparams["pixel_size"]

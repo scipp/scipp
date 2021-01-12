@@ -12,10 +12,9 @@ class PlotPanel3d(PlotPanel):
     Additional widgets that control the position, opacity and shape of the
     cut surface in the 3d plot.
     """
-    def __init__(self, pixel_size=None):
+    def __init__(self):
         super().__init__()
 
-        self.pixel_size = pixel_size
         self.current_cut_surface_value = None
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
         self.lock_surface_update = False
@@ -102,7 +101,7 @@ class PlotPanel3d(PlotPanel):
 
         # Allow to change the thickness of the cut surface
         self.cut_surface_thickness = ipw.BoundedFloatText(
-            value=self.pixel_size * 1.1,
+            value=1,
             min=0,
             layout={"width": "200px"},
             disabled=True,
@@ -255,7 +254,7 @@ class PlotPanel3d(PlotPanel):
             self.cut_slider.step = (self.cut_slider.max -
                                     self.cut_slider.min) / 10.0
         if self.cut_surface_buttons.value < self.cut_options["Value"]:
-            self.cut_slider.step = self.pixel_size * 1.1
+            self.cut_slider.step = self.interface["get_pixel_size"]() * 1.1
             self.cut_surface_thickness.max = self.cut_slider.max
         self.lock_surface_update = False
 
