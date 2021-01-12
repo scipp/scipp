@@ -178,7 +178,8 @@ class PlotModel3d(PlotModel):
         for xyz in "xyz":
             x = getattr(sc.geometry, xyz)(self.pos_coord)
             extents[xyz] = {
-                "lims": [sc.min(x).value, sc.max(x).value],
+                "lims": np.array([sc.min(x).value,
+                                  sc.max(x).value]),
                 "unit": self.pos_coord.unit
             }
         return extents
