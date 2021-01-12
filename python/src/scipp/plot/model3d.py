@@ -188,4 +188,5 @@ class PlotModel3d(PlotModel):
         ind = np.argmin(axparams["box_size"])
         xyz = "xyz"[ind]
         dim = axparams[xyz]["dim"]
-        return axparams["box_size"][ind] / self.dim_to_shape[self.name][dim]
+        return axparams["box_size"][ind] / self.dim_to_shape[
+            self.name][dim], axparams[xyz]["scaling"]

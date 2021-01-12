@@ -102,10 +102,14 @@ class PlotController3d(PlotController):
             axparams["pixel_size"] = self.pixel_size
         else:
             if self.positions is not None:
-                axparams["pixel_size"] = 0.05 * np.amin(axparams["box_size"])
+                ind = np.argmin(axparams["box_size"])
+                xyz = "xyz"[ind]
+                psize = 0.05 * axparams["box_size"][ind]
+                pscale = axparams[xyz]["scaling"]
             else:
-                axparams["pixel_size"] = self.model.estimate_pixel_size(
-                    axparams)
+                psize, pscale = self.model.estimate_pixel_size(axparams)
+            axparams["pixel_size"] = psize
+            axparams["pixel_scaling"] = pscale
 
         return axparams
 
@@ -143,4 +147,4 @@ class PlotController3d(PlotController):
         """
         Getter function for the pixel size.
         """
-        return self.axparams["pixel_size"]
+        return self.axparams["pixel_size"] / self.axparams["pixel_scaling"]

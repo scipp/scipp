@@ -158,9 +158,9 @@ class PlotPanel3d(PlotPanel):
         """
         Reset axes limits and cut surface buttons.
         """
-        self.xminmax["x"] = axparams['x']['lims']
-        self.xminmax["y"] = axparams['y']['lims']
-        self.xminmax["z"] = axparams['z']['lims']
+        self.xminmax["x"] = axparams['x']['lims'] / axparams['x']['scaling']
+        self.xminmax["y"] = axparams['y']['lims'] / axparams['y']['scaling']
+        self.xminmax["z"] = axparams['z']['lims'] / axparams['z']['scaling']
         self.cut_surface_buttons.value = None
         self.current_cut_surface_value = None
 
