@@ -240,25 +240,42 @@ void init_dataset(py::module &m) {
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
     Named variable with associated coords, masks, and attributes.)");
-  dataArray.def(py::init<const DataArrayConstView &>());
+  py::options options;
+  options.disable_function_signatures();
   dataArray
-      .def(py::init([](VariableConstView data,
-                       std::map<Dim, VariableConstView> coords,
-                       std::map<std::string, VariableConstView> masks,
-                       std::map<Dim, VariableConstView> unaligned_coords,
-                       const std::string &name) {
-             return DataArray{Variable{data}, coords, masks, unaligned_coords,
-                              name};
-           }),
-           py::arg("data") = Variable{},
-           py::arg("coords") = std::map<Dim, VariableConstView>{},
-           py::arg("masks") = std::map<std::string, VariableConstView>{},
-           py::arg("attrs") = std::map<Dim, VariableConstView>{},
-           py::arg("name") = std::string{})
+      .def(
+          py::init([](VariableConstView data,
+                      std::map<Dim, VariableConstView> coords,
+                      std::map<std::string, VariableConstView> masks,
+                      std::map<Dim, VariableConstView> unaligned_coords,
+                      const std::string &name) {
+            return DataArray{Variable{data}, coords, masks, unaligned_coords,
+                             name};
+          }),
+          py::arg("data") = Variable{},
+          py::arg("coords") = std::map<Dim, VariableConstView>{},
+          py::arg("masks") = std::map<std::string, VariableConstView>{},
+          py::arg("attrs") = std::map<Dim, VariableConstView>{},
+          py::arg("name") = std::string{},
+          R"(__init__(self, data: Variable, coords: Dict[str, Variable] = {}, masks: Dict[str, Variable] = {}, attrs: Dict[str, Variable] = {}, name: str = '') -> None
+
+          DataArray initialiser.
+
+          :param data: Data and optionally variances.
+          :param coords: Coordinates referenced by dimension.
+          :param masks: Masks referenced by name.
+          :param attrs: Attributes referenced by dimension.
+          :param name: Name of DataArray.
+          :type data: Variable
+          :type coords: Dict[str, Variable]
+          :type masks: Dict[str, Variable]
+          :type attrs: Dict[str, Variable]
+          :type name: str
+          )")
       .def("__sizeof__", [](const DataArrayConstView &array) {
         return size_of(array, true);
       });
-
+  options.enable_function_signatures();
   py::class_<DataArrayConstView>(m, "DataArrayConstView")
       .def(py::init<const DataArray &>())
       .def("__sizeof__", [](const DataArrayConstView &array) {
@@ -269,7 +286,17 @@ void init_dataset(py::module &m) {
       m, "DataArrayView", R"(
         View for DataArray, representing a sliced view onto a DataArray, or an item of a Dataset;
         Mostly equivalent to DataArray, see there for details.)");
-  dataArrayView.def(py::init<DataArray &>());
+
+  options.disable_function_signatures();
+  dataArrayView.def(py::init<DataArray &>(), py::arg("dataArray"),
+                    R"(__init__(self, dataArray: DataArray) -> None
+
+                    DataArrayView initialiser.
+
+                    :param dataArray: Viewed DataArray.
+                    :type dataArray: DataArray
+                    )");
+  options.enable_function_signatures();
 
   bind_data_array_properties(dataArray);
   bind_data_array_properties(dataArrayView);
@@ -281,20 +308,50 @@ void init_dataset(py::module &m) {
                                                         R"(
         View for Dataset, representing a sliced view onto a Dataset;
         Mostly equivalent to Dataset, see there for details.)");
-  datasetView.def(py::init<Dataset &>());
+
+  options.disable_function_signatures();
+  datasetView.def(py::init<Dataset &>(), py::arg("dataset"),
+                  R"(__init__(dataset: Dataset) -> None
+                    Initialises from viewed Dataset.
+                    )");
 
   py::class_<Dataset> dataset(m, "Dataset", R"(
-    Dict of data arrays with aligned dimensions.)");
+  Dict of data arrays with aligned dimensions.)");
 
-  dataset.def(py::init<const std::map<std::string, DataArrayConstView> &>())
-      .def(py::init<const DataArrayConstView &>())
-      .def(py::init([](const std::map<std::string, VariableConstView> &data,
-                       const std::map<Dim, VariableConstView> &coords) {
-             return Dataset(data, coords);
-           }),
-           py::arg("data") = std::map<std::string, VariableConstView>{},
-           py::arg("coords") = std::map<Dim, VariableConstView>{})
-      .def(py::init([](const DatasetView &other) { return Dataset{other}; }))
+  dataset.def(
+      py::init(
+          [](const std::map<std::string,
+                            std::variant<VariableConstView, DataArrayConstView>>
+                 &data,
+             const std::map<Dim, VariableConstView> &coords) {
+            Dataset d;
+            for (auto &&[dim, coord] : coords)
+              d.setCoord(dim, std::move(coord));
+
+            for (auto &&[name, item] : data) {
+              auto visitor = [&d, name = name](auto &object) {
+                d.setData(std::string(name), std::move(object));
+              };
+              std::visit(visitor, item);
+            }
+            return d;
+          }),
+      py::arg("data") =
+          std::map<std::string,
+                   std::variant<VariableConstView, DataArrayConstView>>{},
+      py::arg("coords") = std::map<Dim, VariableConstView>{},
+      R"(__init__(self, data: Dict[str, Union[Variable, DataArray]] = {}, coords: Dict[str, Variable] = {}) -> None
+
+              Dataset initialiser.
+
+             :param data: Dictionary of name and data pairs.
+             :param coords: Dictionary of name and coord pairs.
+             :type data: Dict[str, Union[Variable, DataArray]]
+             :type coords: Dict[str, Variable]
+             )");
+  options.enable_function_signatures();
+
+  dataset
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
               const VariableConstView &data) { self.setData(name, data); })
