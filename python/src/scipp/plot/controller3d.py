@@ -28,7 +28,9 @@ class PlotController3d(PlotController):
             for xyz, ex in extents.items():
                 self.pos_axparams[xyz] = {
                     "lims": ex["lims"],
-                    "label": name_with_unit(1.0 * ex["unit"], name=xyz.upper())
+                    "label": name_with_unit(1.0 * ex["unit"],
+                                            name=xyz.upper()),
+                    "unit": name_with_unit(1.0 * ex["unit"], name="")
                 }
 
     def initialise_model(self):
@@ -44,10 +46,12 @@ class PlotController3d(PlotController):
         self.panel.connect({
             "update_opacity": self.update_opacity,
             "update_depth_test": self.update_depth_test,
-            "update_cut_surface": self.update_cut_surface
+            "update_cut_surface": self.update_cut_surface,
+            "get_axes_parameters": self.get_axes_parameters,
+            "get_coord_unit": self.get_coord_unit
         })
 
-    def _get_axes_parameters(self):
+    def _make_axes_parameters(self):
         """
         Gather the information (dimensions, limits, etc...) about the (x, y, z)
         axes that are displayed on the plots.
@@ -61,7 +65,7 @@ class PlotController3d(PlotController):
         if self.positions is not None:
             axparams = self.pos_axparams
         else:
-            axparams = super()._get_axes_parameters()
+            axparams = super()._make_axes_parameters()
 
         axparams["centre"] = [
             0.5 * np.sum(axparams['x']["lims"]),
@@ -75,6 +79,12 @@ class PlotController3d(PlotController):
             axparams['z']["lims"][1] - axparams['z']["lims"][0]
         ])
         return axparams
+
+    def get_axes_parameters(self):
+        """
+        Getter function for the current axes parameters.
+        """
+        return self.axparams
 
     def update_opacity(self, alpha):
         """
