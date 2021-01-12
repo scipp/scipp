@@ -5,7 +5,7 @@
 
 def instrument_view(scipp_obj=None,
                     positions="position",
-                    pixel_size=0.1,
+                    aspect="equal",
                     **kwargs):
     """
     Plot a 3D view of the instrument, using the `position` coordinate as the
@@ -32,5 +32,5 @@ def instrument_view(scipp_obj=None,
     return plot(scipp_obj,
                 projection="3d",
                 positions=positions,
-                pixel_size=pixel_size,
+                aspect=aspect,
                 **kwargs)
