@@ -167,7 +167,7 @@ class PlotModel3d(PlotModel):
         # Value iso-surface
         elif button_value == self.cut_options["Value"]:
             return np.where(
-                np.abs(self.dslice.values.ravel() - target) <
+                np.abs(self.dslice.data.values.ravel() - target) <
                 0.5 * surface_thickness, opacity_upper, opacity_lower)
         else:
             raise RuntimeError(
