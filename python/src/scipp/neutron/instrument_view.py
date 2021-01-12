@@ -3,10 +3,7 @@
 # @author Neil Vaytet
 
 
-def instrument_view(scipp_obj=None,
-                    positions="position",
-                    aspect="equal",
-                    **kwargs):
+def instrument_view(scipp_obj=None, positions="position", **kwargs):
     """
     Plot a 3D view of the instrument, using the `position` coordinate as the
     detector vector positions.
@@ -29,8 +26,4 @@ def instrument_view(scipp_obj=None,
 
     from ..plot import plot
 
-    return plot(scipp_obj,
-                projection="3d",
-                positions=positions,
-                aspect=aspect,
-                **kwargs)
+    return plot(scipp_obj, projection="3d", positions=positions, **kwargs)

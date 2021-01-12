@@ -27,7 +27,10 @@ class PlotController3d(PlotController):
         self.pixel_size = pixel_size
         self.aspect = aspect
         if self.aspect is None:
-            self.aspect = config.plot.aspect
+            if positions is not None:
+                self.aspect = "equal"
+            else:
+                self.aspect = config.plot.aspect
         if self.aspect not in ["equal", "auto"]:
             raise RuntimeError(
                 "Invalid aspect requested. Expected 'auto' or "
