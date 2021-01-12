@@ -282,6 +282,12 @@ class PlotWidgets:
         self.update_slider_range(index, self.thickness_slider[index].value,
                                  max_value - 1)
 
+        # Disable slider and profile button if there is only a single bin
+        disabled = max_value == 1
+        self.slider[index].disabled = disabled
+        self.thickness_slider[index].disabled = disabled
+        self.profile_button[index].disabled = disabled
+
     def toggle_all_masks(self, change):
         """
         A main button to hide or show all masks at once.
