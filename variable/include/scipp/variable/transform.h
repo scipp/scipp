@@ -192,7 +192,7 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
   }
 }
 /// Run transform with strides known at compile time.
-template <class Op, class... Operands, scipp::index... Strides>
+template <bool in_place, class Op, class... Operands, scipp::index... Strides>
 static void inner_loop(Op &&op,
                        std::array<scipp::index, sizeof...(Operands)> indices,
                        std::integer_sequence<scipp::index, Strides...>,
@@ -200,40 +200,48 @@ static void inner_loop(Op &&op,
   static_assert(sizeof...(Operands) == sizeof...(Strides));
 
   for (scipp::index i = 0; i < n; ++i) {
-    detail::call(op, indices, std::forward<Operands>(operands)...);
+    if constexpr (in_place) {
+      detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
+    } else {
+      detail::call(op, indices, std::forward<Operands>(operands)...);
+    }
     detail::increment<Strides...>(indices);
   }
 }
 
 /// Run transform with strides known at run time but bypassing MultiIndex.
-template <class Op, class... Operands>
+template <bool in_place, class Op, class... Operands>
 static void
 inner_loop(Op &&op, std::array<scipp::index, sizeof...(Operands)> indices,
            const std::array<scipp::index, sizeof...(Operands)> &strides,
            const scipp::index n, Operands &&... operands) {
   for (scipp::index i = 0; i < n; ++i) {
-    detail::call(op, indices, std::forward<Operands>(operands)...);
+    if constexpr (in_place) {
+      detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
+    } else {
+      detail::call(op, indices, std::forward<Operands>(operands)...);
+    }
     detail::increment(indices, strides);
   }
 }
 
-template <size_t I = 0, class Op, class... Operands>
-static void dispatch_inner_loop_oop(
+template <bool in_place, size_t I = 0, class Op, class... Operands>
+static void dispatch_inner_loop(
     Op &&op, const std::array<scipp::index, sizeof...(Operands)> &indices,
     const std::array<scipp::index, sizeof...(Operands)> &inner_strides,
     const scipp::index n, Operands &&... operands) {
   constexpr auto N_Operands = sizeof...(Operands);
   if constexpr (I == detail::stride_special_cases<N_Operands>.size()) {
-    inner_loop(std::forward<Op>(op), indices, inner_strides, n,
-               std::forward<Operands>(operands)...);
+    inner_loop<in_place>(std::forward<Op>(op), indices, inner_strides, n,
+                         std::forward<Operands>(operands)...);
   } else {
     if (inner_strides == detail::stride_special_cases<N_Operands>[I]) {
-      inner_loop(std::forward<Op>(op), indices,
-                 detail::make_stride_sequence<I, N_Operands>{}, n,
-                 std::forward<Operands>(operands)...);
+      inner_loop<in_place>(std::forward<Op>(op), indices,
+                           detail::make_stride_sequence<I, N_Operands>{}, n,
+                           std::forward<Operands>(operands)...);
     } else {
-      dispatch_inner_loop_oop<I + 1>(op, indices, inner_strides, n,
-                                     std::forward<Operands>(operands)...);
+      dispatch_inner_loop<in_place, I + 1>(op, indices, inner_strides, n,
+                                           std::forward<Operands>(operands)...);
     }
   }
 }
@@ -250,9 +258,9 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
       const auto inner_size = indices.in_same_chunk(end, 1)
                                   ? indices.inner_distance_to(end)
                                   : indices.inner_distance_to_end();
-      dispatch_inner_loop_oop(op, indices.get(), inner_strides, inner_size,
-                              std::forward<Out>(out),
-                              std::forward<Ts>(other)...);
+      dispatch_inner_loop<false>(op, indices.get(), inner_strides, inner_size,
+                                 std::forward<Out>(out),
+                                 std::forward<Ts>(other)...);
       indices.increment_inner_by(inner_size);
       indices.increment_outer();
     }
@@ -434,53 +442,6 @@ constexpr auto overlaps = [](const auto &a, const auto &b) {
 /// of data. This is used to implement operations on datasets with a strong
 /// exception guarantee.
 template <bool dry_run> struct in_place {
-  /// Run transform with strides known at compile time.
-  template <class Op, class... Operands, scipp::index... Strides>
-  static void run(Op &&op,
-                  std::array<scipp::index, sizeof...(Operands)> indices,
-                  std::integer_sequence<scipp::index, Strides...>,
-                  const scipp::index n, Operands &&... operands) {
-    static_assert(sizeof...(Operands) == sizeof...(Strides));
-
-    for (scipp::index i = 0; i < n; ++i) {
-      detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
-      detail::increment<Strides...>(indices);
-    }
-  }
-
-  /// Run transform with strides known at run time but bypassing MultiIndex.
-  template <class Op, class... Operands>
-  static void run(Op &&op,
-                  std::array<scipp::index, sizeof...(Operands)> indices,
-                  const std::array<scipp::index, sizeof...(Operands)> &strides,
-                  const scipp::index n, Operands &&... operands) {
-    for (scipp::index i = 0; i < n; ++i) {
-      detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
-      detail::increment(indices, strides);
-    }
-  }
-
-  template <size_t I = 0, class Op, class... Operands>
-  static void dispatch_inner_loop(
-      Op &&op, const std::array<scipp::index, sizeof...(Operands)> &indices,
-      const std::array<scipp::index, sizeof...(Operands)> &inner_strides,
-      const scipp::index n, Operands &&... operands) {
-    constexpr auto N_Operands = sizeof...(Operands);
-    if constexpr (I == detail::stride_special_cases<N_Operands>.size()) {
-      run(std::forward<Op>(op), indices, inner_strides, n,
-          std::forward<Operands>(operands)...);
-    } else {
-      if (inner_strides == detail::stride_special_cases<N_Operands>[I]) {
-        run(std::forward<Op>(op), indices,
-            detail::make_stride_sequence<I, N_Operands>{}, n,
-            std::forward<Operands>(operands)...);
-      } else {
-        dispatch_inner_loop<I + 1>(op, indices, inner_strides, n,
-                                   std::forward<Operands>(operands)...);
-      }
-    }
-  }
-
   template <class Op, class T, class... Ts>
   static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
@@ -502,8 +463,9 @@ template <bool dry_run> struct in_place {
           const auto inner_size = indices.in_same_chunk(end, 1)
                                       ? indices.inner_distance_to(end)
                                       : indices.inner_distance_to_end();
-          dispatch_inner_loop(op, indices.get(), inner_strides, inner_size,
-                              std::forward<T>(arg), std::forward<Ts>(other)...);
+          detail::dispatch_inner_loop<true>(op, indices.get(), inner_strides,
+                                            inner_size, std::forward<T>(arg),
+                                            std::forward<Ts>(other)...);
           indices.increment_inner_by(inner_size);
           indices.increment_outer();
         }
