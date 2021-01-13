@@ -279,8 +279,7 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
     indices.set_index(range.begin());
     auto end = begin;
     end.set_index(range.end());
-    for (; indices != end; indices.increment())
-      run(indices, end);
+    run(indices, end);
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
                                run_parallel);
