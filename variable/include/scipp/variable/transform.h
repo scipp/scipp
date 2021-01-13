@@ -483,7 +483,7 @@ template <bool dry_run> struct in_place {
       // be done differently. Explicit and precise control of chunking is
       // required to avoid multiple threads writing to the same output. Not
       // implemented for now.
-      auto indices = begin;  // copy so that run doesn't modify begin
+      auto indices = begin; // copy so that run doesn't modify begin
       auto end = begin;
       end.set_index(arg.size());
       run(indices, end);
