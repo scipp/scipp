@@ -273,6 +273,9 @@ class HDF5IO:
 
 
 def to_hdf5(obj, filename):
+    """
+    Writes object out to file in hdf5 format.
+    """
     import h5py
     with h5py.File(filename, 'w') as f:
         HDF5IO.write(f, obj)
