@@ -144,10 +144,14 @@ Variable sum_subbin_sizes(const VariableConstView &var) {
                       [](const auto &sizes) { return sizes.sum(); }});
 }
 
-std::vector<scipp::index> flatten_subbin_sizes(const VariableConstView &var) {
+std::vector<scipp::index> flatten_subbin_sizes(const VariableConstView &var,
+                                               const scipp::index length) {
   std::vector<scipp::index> flat;
-  for (const auto &val : var.values<core::SubbinSizes>())
+  for (const auto &val : var.values<core::SubbinSizes>()) {
     flat.insert(flat.end(), val.sizes().begin(), val.sizes().end());
+    for (scipp::index i = 0; i < length - val.sizes().size(); ++i)
+      flat.push_back(0);
+  }
   return flat;
 }
 

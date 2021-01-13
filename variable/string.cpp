@@ -95,11 +95,13 @@ std::string format_variable(const std::string &key,
 }
 
 std::string to_string(const Variable &variable) {
-  return format_variable(std::string("<scipp.Variable>"), variable);
+  return to_string(variable.dims()) +
+         format_variable(std::string("<scipp.Variable>"), variable);
 }
 
 std::string to_string(const VariableConstView &variable) {
-  return format_variable(std::string("<scipp.VariableView>"), variable);
+  return to_string(variable.dims()) +
+         format_variable(std::string("<scipp.VariableView>"), variable);
 }
 
 std::string to_string(const std::pair<Dim, VariableConstView> &coord) {

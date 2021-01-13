@@ -95,9 +95,11 @@ SubbinSizes operator-(const SubbinSizes &a, const SubbinSizes &b) {
 
 std::string to_string(const SubbinSizes &s) {
   std::string out("(offset=" + std::to_string(s.offset()) + ", values={");
-  for (const auto &x : s.sizes())
-    out += std::to_string(x) + ", ";
-  ;
+  if (s.sizes().size() < 10)
+    for (const auto &x : s.sizes())
+      out += std::to_string(x) + ", ";
+  else
+    out += "vector of length " + std::to_string(s.sizes().size());
 
   return out + "})";
 }

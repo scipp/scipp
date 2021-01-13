@@ -63,7 +63,7 @@ void update_indices_by_binning(const VariableView &indices,
   //} else {
   //  if (!is_sorted(edges, dim))
   //    throw except::BinEdgeError("Bin edges must be sorted.");
-  // std::cout << edges;
+  std::cout << edges;
   variable::transform_in_place(
       indices, key,
       is_bins(edges) ? as_subspan_view(edges) : subspan_view(edges, dim),
@@ -128,7 +128,7 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // along that dim.
   Variable output_bin_sizes =
       bin_sizes2(indices, builder.offsets, builder.nbin);
-  // std::cout << output_bin_sizes;
+  std::cout << output_bin_sizes;
   auto offsets = output_bin_sizes;
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
@@ -136,20 +136,20 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   for (const auto dim : data.dims().labels())
     if (dims.contains(dim)) {
       // offsets += cumsum(output_bin_sizes, dim, CumSumMode::Exclusive);
-      offsets += subbin_sizes_exclusive_scan(output_bin_sizes, dim);
+      subbin_sizes_add_intersection(
+          offsets, subbin_sizes_exclusive_scan(output_bin_sizes, dim));
       output_bin_sizes = sum(output_bin_sizes, dim);
     }
-  // std::cout << output_bin_sizes;
-  // std::cout << "offsets " << offsets;
+  std::cout << output_bin_sizes;
+  std::cout << "offsets " << offsets;
   // cumsum with bin dimension is last, since this corresponds to different
   // output bins, whereas the cumsum above handled different subbins of same
   // output bin, i.e., contributions of different input bins to some output bin.
   // offsets += cumsum_bins(output_bin_sizes, CumSumMode::Exclusive);
   // Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
-  // std::cout << "cumsum_subbin_sizes " <<
-  // cumsum_subbin_sizes(output_bin_sizes);
+  std::cout << "cumsum_subbin_sizes " << cumsum_subbin_sizes(output_bin_sizes);
   subbin_sizes_add_intersection(offsets, cumsum_subbin_sizes(output_bin_sizes));
-  // std::cout << "offsets " << offsets;
+  std::cout << "offsets " << offsets;
   Variable filtered_input_bin_size = sum_subbin_sizes(output_bin_sizes);
   auto end = cumsum(filtered_input_bin_size);
   const auto total_size = end.values<scipp::index>().as_span().back();
@@ -177,10 +177,11 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // auto bin_sizes =
   //    reshape(std::get<2>(output_bin_sizes.constituents<core::bin<Variable>>()),
   //            output_dims);
-  // std::cout << output_dims;
-  // std::cout << output_bin_sizes;
+  std::cout << output_dims;
+  std::cout << output_bin_sizes;
   auto bin_sizes = makeVariable<scipp::index>(
-      output_dims, Values(flatten_subbin_sizes(output_bin_sizes)));
+      output_dims,
+      Values(flatten_subbin_sizes(output_bin_sizes, dims.volume())));
   return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
 }
 
@@ -278,11 +279,11 @@ public:
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
       else if (action == AxisAction::Bin) {
-        if (bin_coords.count(dim)) {
-          // printf("existing grouping along %s\n", to_string(dim).c_str());
+        if (bin_coords.count(dim) && (offsets.dims() == Dimensions{})) {
+          printf("existing grouping along %s\n", to_string(dim).c_str());
           const auto &bin_coord = bin_coords.at(dim);
-          // std::cout << "bin_coord " << bin_coord;
-          // std::cout << "key" << key;
+          std::cout << "bin_coord " << bin_coord;
+          std::cout << "key" << key;
           const auto bin_indices = bin_index_sorted(bin_coord, key);
           // auto bin_indices = makeVariable<scipp::index>(bin_coord.dims());
           // update_indices_by_binning(bin_indices, bin_coord, key);
@@ -300,10 +301,10 @@ public:
           const auto inner_volume = dims().volume() / dims()[dim] * units::one;
           nbin = (end - begin - 1 * units::one) * inner_volume;
           offsets = begin * inner_volume;
-          // std::cout << "begin " << begin;
-          // std::cout << "end" << end;
-          // std::cout << "nbin" << nbin;
-          // std::cout << "offsets" << offsets;
+          std::cout << "begin " << begin;
+          std::cout << "end" << end;
+          std::cout << "nbin" << nbin;
+          std::cout << "offsets" << offsets;
           update_indices_by_binning(indices, coords[dim], pre_selected_key);
         } else if (coords.count(dim))
           update_indices_by_binning(indices, coords[dim], key);
