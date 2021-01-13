@@ -50,12 +50,12 @@ void SubbinSizes::trim_to(const SubbinSizes &other) {
   out = 0;
   // full index begin/end
   const auto begin = std::max(offset(), out.offset());
-  const auto end =
-      std::min(offset() + sizes().size(), out.offset() + out.sizes().size());
+  const auto end = std::min(offset() + scipp::size(sizes()),
+                            out.offset() + scipp::size(out.sizes()));
   const auto ibegin = sizes().begin() + std::max(begin - offset(), 0l);
   const auto obegin = out.m_sizes.begin() + std::max(begin - out.offset(), 0l);
 
-  std::copy_n(ibegin, end - begin, obegin);
+  std::copy_n(ibegin, std::max(0l, end - begin), obegin);
   *this = out;
 }
 
