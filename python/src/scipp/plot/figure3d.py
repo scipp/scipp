@@ -166,16 +166,13 @@ class PlotFigure3d:
         self.camera_backup["reset"] = copy(self.camera.position)
         self.camera_backup["centre"] = copy(axparams["centre"])
         self.camera_backup["x_normal"] = [
-            2.0 * axparams["box_size"][0], axparams["centre"][1],
-            axparams["centre"][2]
+            cam_pos_norm, axparams["centre"][1], axparams["centre"][2]
         ]
         self.camera_backup["y_normal"] = [
-            axparams["centre"][0], 2.0 * axparams["box_size"][1],
-            axparams["centre"][2]
+            axparams["centre"][0], cam_pos_norm, axparams["centre"][2]
         ]
         self.camera_backup["z_normal"] = [
-            axparams["centre"][0], axparams["centre"][1],
-            2.0 * axparams["box_size"][2]
+            axparams["centre"][0], axparams["centre"][1], cam_pos_norm
         ]
 
         # Rescale axes helper

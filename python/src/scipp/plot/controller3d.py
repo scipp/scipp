@@ -24,7 +24,6 @@ class PlotController3d(PlotController):
 
         super().__init__(*args, **kwargs)
         self.positions = positions
-# <<<<<<< HEAD
         self.pixel_size = pixel_size
         self.aspect = aspect
         if self.aspect is None:
@@ -36,21 +35,6 @@ class PlotController3d(PlotController):
             raise RuntimeError(
                 "Invalid aspect requested. Expected 'auto' or "
                 "'equal', got", self.aspect)
-# =======
-#         self.pos_axparams = {}
-
-#         # If positions are specified, then the x, y, z points positions can
-#         # never change
-#         if self.positions is not None:
-#             extents = self.model.get_positions_extents(pixel_size)
-#             for xyz, ex in extents.items():
-#                 self.pos_axparams[xyz] = {
-#                     "lims": ex["lims"],
-#                     "label": name_with_unit(1.0 * ex["unit"],
-#                                             name=xyz.upper()),
-#                     "unit": name_with_unit(1.0 * ex["unit"], name="")
-#                 }
-# >>>>>>> master
 
     def initialise_model(self):
         """
@@ -66,12 +50,9 @@ class PlotController3d(PlotController):
             "update_opacity": self.update_opacity,
             "update_depth_test": self.update_depth_test,
             "update_cut_surface": self.update_cut_surface,
-# <<<<<<< HEAD
             "get_pixel_size": self.get_pixel_size,
-# =======
             "get_axes_parameters": self.get_axes_parameters,
             "get_coord_unit": self.get_coord_unit
-# >>>>>>> master
         })
 
     def _make_axes_parameters(self):
@@ -90,7 +71,8 @@ class PlotController3d(PlotController):
             axparams = {
                 xyz: {
                     "lims": ex["lims"],
-                    "label": name_with_unit(1.0 * ex["unit"], name=xyz.upper()),
+                    "label": name_with_unit(1.0 * ex["unit"],
+                                            name=xyz.upper()),
                     "unit": name_with_unit(1.0 * ex["unit"], name="")
                 }
                 for xyz, ex in extents.items()
