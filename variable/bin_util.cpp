@@ -21,7 +21,7 @@ Variable begin_bin_sorted(const VariableConstView &coord,
   const auto edges_ = edges.values<double>();
   scipp::index bin = 0;
   for (scipp::index i = 0; i < scipp::size(indices); ++i) {
-    while (bin + 1 < edges_.size() && edges_[bin + 1] <= coords_[i])
+    while (bin + 2 < edges_.size() && edges_[bin + 1] <= coords_[i])
       ++bin;
     indices[i] = bin;
   }
@@ -41,7 +41,7 @@ Variable end_bin_sorted(const VariableConstView &coord,
   const auto edges_ = edges.values<double>();
   scipp::index bin = 0;
   for (scipp::index i = 0; i < scipp::size(indices); ++i) {
-    while (bin + 1 < edges_.size() && edges_[bin + 1] < coords_[i])
+    while (bin + 2 < edges_.size() && edges_[bin + 1] < coords_[i])
       ++bin;
     indices[i] = bin + 1;
   }
