@@ -112,7 +112,8 @@ class SciPlot3d(SciPlot):
             zlabel=zlabel)
 
         # An additional panel view with widgets to control the cut surface
-        self.panel = PlotPanel3d()
+        self.panel = PlotPanel3d(positions=positions,
+                                 unit=self.params["values"][self.name]["unit"])
 
         # The main controller module which connects all the parts
         self.controller = PlotController3d(

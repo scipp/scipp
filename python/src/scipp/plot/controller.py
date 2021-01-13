@@ -403,7 +403,7 @@ class PlotController:
         state to the model. If then gets the updated data back from the model
         and sends it over to the view for display.
         """
-        self.axparams = self._get_axes_parameters()
+        self.axparams = self._make_axes_parameters()
         other_params = self.model.update_axes(self.axparams)
         if other_params is not None:
             self.axparams.update(other_params)
@@ -471,7 +471,7 @@ class PlotController:
         """
         return sorted(list(set(['x', 'y', 'z']) & set(self.axes.keys())))
 
-    def _get_axes_parameters(self):
+    def _make_axes_parameters(self):
         """
         Gather the information (dimensions, limits, etc...) about the (x, y, z)
         axes that are displayed on the plots.
