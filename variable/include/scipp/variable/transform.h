@@ -259,7 +259,7 @@ static void transform_elements(Op op, Out &&out, Ts &&... other) {
   const auto begin =
       core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
 
-  auto run = [&](auto indices, const auto &end) {
+  auto run = [&](auto &indices, const auto &end) {
     const auto inner_strides = indices.inner_strides();
     while (indices != end) {
       // Shape can change when moving between bins -> recompute every time.
@@ -457,7 +457,7 @@ template <bool dry_run> struct in_place {
     if constexpr (dry_run)
       return;
 
-    auto run = [&](auto indices, const auto &end) {
+    auto run = [&](auto &indices, const auto &end) {
       const auto inner_strides = indices.inner_strides();
       if (std::all_of(inner_strides.begin(), inner_strides.end(),
                       [](auto x) { return x == 0; })) {
@@ -483,9 +483,10 @@ template <bool dry_run> struct in_place {
       // be done differently. Explicit and precise control of chunking is
       // required to avoid multiple threads writing to the same output. Not
       // implemented for now.
+      auto indices = begin;  // copy so that run doesn't modify begin
       auto end = begin;
       end.set_index(arg.size());
-      run(begin, end);
+      run(indices, end);
     } else {
       auto run_parallel = [&](const auto &range) {
         auto indices = begin;
