@@ -112,6 +112,7 @@ inline constexpr auto stride_special_cases<2> =
     std::array<std::array<scipp::index, 2>, 4>{
         {{1, 1}, {0, 1}, {1, 0}, {0, 0}}};
 
+template <>
 inline constexpr auto stride_special_cases<3> =
     std::array<std::array<scipp::index, 3>, 3>{
         {{1, 1, 1}, {1, 0, 1}, {1, 1, 0}}};
