@@ -459,23 +459,16 @@ template <bool dry_run> struct in_place {
 
     auto run = [&](auto &indices, const auto &end) {
       const auto inner_strides = indices.inner_strides();
-      if (std::all_of(inner_strides.begin(), inner_strides.end(),
-                      [](auto x) { return x == 0; })) {
-        // The special cases don't work when all strides are 0.
-        for (; indices != end; indices.increment())
-          call_in_place(op, indices, arg, other...);
-      } else {
-        while (indices != end) {
-          // Shape can change when moving between bins -> recompute every time.
-          const auto inner_size = indices.in_same_chunk(end, 1)
-                                      ? indices.inner_distance_to(end)
-                                      : indices.inner_distance_to_end();
-          detail::dispatch_inner_loop<true>(op, indices.get(), inner_strides,
-                                            inner_size, std::forward<T>(arg),
-                                            std::forward<Ts>(other)...);
-          indices.increment_inner_by(inner_size);
-          indices.increment_outer();
-        }
+      while (indices != end) {
+        // Shape can change when moving between bins -> recompute every time.
+        const auto inner_size = indices.in_same_chunk(end, 1)
+                                    ? indices.inner_distance_to(end)
+                                    : indices.inner_distance_to_end();
+        detail::dispatch_inner_loop<true>(op, indices.get(), inner_strides,
+                                          inner_size, std::forward<T>(arg),
+                                          std::forward<Ts>(other)...);
+        indices.increment_inner_by(inner_size);
+        indices.increment_outer();
       }
     };
     if (begin.has_stride_zero()) {
