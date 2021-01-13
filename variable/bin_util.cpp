@@ -13,7 +13,7 @@
 namespace scipp::variable {
 
 // TODO two cases, input edges or groups
-Variable bin_index_sorted(const VariableConstView &coord,
+Variable begin_bin_sorted(const VariableConstView &coord,
                           const VariableConstView &edges) {
   auto out = makeVariable<scipp::index>(coord.dims());
   const auto indices = out.values<scipp::index>();
@@ -24,6 +24,26 @@ Variable bin_index_sorted(const VariableConstView &coord,
     while (bin + 1 < edges_.size() && edges_[bin + 1] <= coords_[i])
       ++bin;
     indices[i] = bin;
+  }
+  return out;
+  const auto dim = edges.dims().inner();
+  // TODO this is M * N, use linear alg instead
+  return transform(coord, subspan_view(edges, dim),
+                   core::element::bin_index_sorted);
+}
+
+// TODO two cases, input edges or groups
+Variable end_bin_sorted(const VariableConstView &coord,
+                        const VariableConstView &edges) {
+  auto out = makeVariable<scipp::index>(coord.dims());
+  const auto indices = out.values<scipp::index>();
+  const auto coords_ = coord.values<double>();
+  const auto edges_ = edges.values<double>();
+  scipp::index bin = 0;
+  for (scipp::index i = 0; i < scipp::size(indices); ++i) {
+    while (bin + 1 < edges_.size() && edges_[bin + 1] < coords_[i])
+      ++bin;
+    indices[i] = bin + 1;
   }
   return out;
   const auto dim = edges.dims().inner();
