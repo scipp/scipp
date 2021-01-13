@@ -4,6 +4,10 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <functional>
+#include <numeric>
+#include <optional>
+
 #include "scipp-core_export.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
@@ -101,6 +105,8 @@ public:
   constexpr void load_bucket_params(const scipp::index i) noexcept {
     if (m_bucket[i].m_bucket_index >= m_bucket[i].m_size)
       return; // at end or dense
+    // All bins are guaranteed to have the same size.
+    // Use common m_shape and m_nested_stride for all.
     const auto [begin, end] = m_bucket[i].m_indices[m_bucket[i].m_bucket_index];
     m_shape[m_nested_dim_index] = end - begin;
     m_data_index[i] = m_nested_stride * begin;
@@ -108,37 +114,46 @@ public:
 
   constexpr void seek_bucket() noexcept {
     do {
-      scipp::index d = m_ndim_nested - 1;
-      while ((m_coord[d] == m_shape[d]) && (d < NDIM_MAX - 1)) {
+      // go through bin dims which have reached their end (including last
+      // pre-bin dim)
+      for (scipp::index d = m_ndim_nested - 1;
+           (m_coord[d] == m_shape[d]) && (d < NDIM_MAX - 1); ++d) {
         for (scipp::index data = 0; data < N; ++data) {
           m_data_index[data] +=
-              m_stride[data][d + 1] - m_coord[d] * m_stride[data][d];
+              // take a step in dimension d+1
+              m_stride[data][d + 1]
+              // rewind dimension d (m_coord[d] == m_shape[d])
+              - m_coord[d] * m_stride[data][d];
           // move to next bucket
-          if (d == m_ndim_nested - 1)
+          if (d == m_ndim_nested - 1) // last non-bin dimension
             m_bucket[data].m_bucket_index += m_stride[data][d + 1];
-          else
+          else // bin dimension -> rewind earlier bins
             m_bucket[data].m_bucket_index +=
                 m_stride[data][d + 1] - m_coord[d] * m_stride[data][d];
           load_bucket_params(data);
         }
         ++m_coord[d + 1];
         m_coord[d] = 0;
-        ++d;
       }
     } while (m_shape[m_nested_dim_index] == 0 && m_coord[m_ndim] == 0);
   }
 
   constexpr void increment_outer() noexcept {
-    scipp::index d = 0;
-    while ((m_coord[d] == m_shape[d]) && (d < m_ndim_nested - 1)) {
+    // Go through all nested dims (with bins) / all dims (without bins)
+    // where we have reached the end.
+    for (scipp::index d = 0;
+         (m_coord[d] == m_shape[d]) && (d < m_ndim_nested - 1); ++d) {
       for (scipp::index data = 0; data < N; ++data) {
         m_data_index[data] +=
-            m_stride[data][d + 1] - m_coord[d] * m_stride[data][d];
+            // take a step in dimension d+1
+            m_stride[data][d + 1]
+            // rewind dimension d (m_coord[d] == m_shape[d])
+            - m_coord[d] * m_stride[data][d];
       }
       ++m_coord[d + 1];
       m_coord[d] = 0;
-      ++d;
     }
+    // nested dims incremented, move on to bins
     seek_bucket();
   }
 
@@ -150,13 +165,37 @@ public:
       increment_outer();
   }
 
+  constexpr void increment_inner_by(const scipp::index distance) noexcept {
+    for (scipp::index data = 0; data < N; ++data) {
+      m_data_index[data] += distance * m_stride[data][0];
+    }
+    m_coord[0] += distance;
+  }
+
+  [[nodiscard]] auto inner_strides() const noexcept {
+    std::array<scipp::index, N> strides;
+    for (scipp::index data = 0; data < N; ++data) {
+      strides[data] = m_stride[data][0];
+    }
+    return strides;
+  }
+
+  [[nodiscard]] constexpr scipp::index inner_distance_to_end() const noexcept {
+    return m_shape[0] - m_coord[0];
+  }
+
+  [[nodiscard]] constexpr scipp::index
+  inner_distance_to(const MultiIndex &other) const noexcept {
+    return other.m_coord[0] - m_coord[0];
+  }
+
   /// Set the absolute index. In the special case of iteration with buckets,
   /// this sets the *index of the bucket* and NOT the full index within the
   /// iterated data.
   constexpr void set_index(const scipp::index offset) noexcept {
     auto remainder{offset};
     for (scipp::index d = 0; d < NDIM_MAX; ++d) {
-      if (m_ndim_nested != NDIM_MAX && d < m_ndim_nested) {
+      if (has_bins() && d < m_ndim_nested) {
         m_coord[d] = 0;
       } else {
         if (m_shape[d] == 0) {
@@ -172,7 +211,7 @@ public:
       for (scipp::index d = 0; d < NDIM_MAX; ++d)
         m_data_index[data] += m_stride[data][d] * m_coord[d];
     }
-    if (m_ndim_nested != NDIM_MAX) {
+    if (has_bins()) {
       for (scipp::index data = 0; data < N; ++data) {
         m_bucket[data].m_bucket_index = 0;
         for (scipp::index d = m_ndim_nested; d < NDIM_MAX; ++d)
@@ -193,6 +232,24 @@ public:
     return m_coord != other.m_coord;
   }
 
+  constexpr bool in_same_chunk(const MultiIndex &other,
+                               const scipp::index first_dim) const noexcept {
+    for (scipp::index dim = first_dim; dim < NDIM_MAX; ++dim) {
+      if (m_coord[dim] != other.m_coord[dim]) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  [[nodiscard]] constexpr scipp::index ndim() const noexcept { return m_ndim; }
+
+  [[nodiscard]] constexpr auto shape() const noexcept { return m_shape; }
+
+  [[nodiscard]] constexpr auto inner_size() const noexcept {
+    return m_shape[0];
+  }
+
   auto begin() const noexcept {
     auto it(*this);
     it.set_index(0);
@@ -205,10 +262,16 @@ public:
     return it;
   }
 
-  scipp::index end_sentinel() const noexcept { return m_end_sentinel; }
+  [[nodiscard]] scipp::index end_sentinel() const noexcept {
+    return m_end_sentinel;
+  }
+
+  [[nodiscard]] bool has_bins() const noexcept {
+    return m_ndim_nested != NDIM_MAX;
+  }
 
   /// Return true if the first subindex has a 0 stride
-  bool has_stride_zero() const noexcept {
+  [[nodiscard]] bool has_stride_zero() const noexcept {
     for (scipp::index i = 0; i < m_ndim; ++i)
       if (m_stride[0][i] == 0)
         return true;

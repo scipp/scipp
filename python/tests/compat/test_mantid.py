@@ -123,7 +123,7 @@ class TestMantidConversion(unittest.TestCase):
         da = mantidcompat.convert_EventWorkspace_to_data_array(
             eventWS, load_pulse_times=False)
         da = sc.histogram(da.bins, target_tof)
-        d = sc.Dataset(da)
+        d = sc.Dataset({da.name: da})
         converted = sc.neutron.convert(d, 'tof', 'wavelength')
 
         self.assertTrue(
