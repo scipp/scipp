@@ -153,8 +153,6 @@ static constexpr auto bin = overloaded{
           binned.variance[bins[i_bin]] = data.variance[i];
           binned.value[bins[i_bin]++] = data.value[i];
         } else {
-          fprintf(stderr, "%ld %ld %lu %lu %lu\n", i, i_bin, bins.size(),
-                  binned.size(), data.size());
           binned[bins[i_bin]++] = data[i];
         }
       }

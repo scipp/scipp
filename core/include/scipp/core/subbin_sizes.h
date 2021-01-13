@@ -31,6 +31,8 @@ public:
 
   SubbinSizes cumsum() const;
   scipp::index sum() const;
+  void trim_to(const SubbinSizes &other);
+  void add_intersection(const SubbinSizes &other);
 
 private:
   scipp::index m_offset{0};

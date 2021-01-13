@@ -8,10 +8,8 @@
 
 namespace scipp::variable {
 
-//[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable make_bins(Variable indices,
-//                                                       const Dim dim,
-//                                                       Variable buffer);
-//
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable bin_index_sorted(
+    const VariableConstView &coord, const VariableConstView &edges);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::tuple<Variable, Variable>
 subbin_offsets(const VariableConstView &start_, const VariableConstView &stop_,
@@ -25,5 +23,10 @@ SCIPP_VARIABLE_EXPORT Variable sum_subbin_sizes(const VariableConstView &var);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::vector<scipp::index>
 flatten_subbin_sizes(const VariableConstView &var);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+subbin_sizes_exclusive_scan(const VariableConstView &var, const Dim dim);
+SCIPP_VARIABLE_EXPORT void
+subbin_sizes_add_intersection(const VariableView &a,
+                              const VariableConstView &b);
 
 } // namespace scipp::variable

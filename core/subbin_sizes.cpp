@@ -2,6 +2,7 @@
 // Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <algorithm>
 #include <numeric>
 
 #include "scipp/core/subbin_sizes.h"
@@ -31,6 +32,26 @@ SubbinSizes SubbinSizes::cumsum() const {
 
 scipp::index SubbinSizes::sum() const {
   return std::accumulate(sizes().begin(), sizes().end(), scipp::index{0});
+}
+
+void SubbinSizes::trim_to(const SubbinSizes &other) {
+  auto out = other;
+  out = 0;
+  // full index begin/end
+  const auto begin = std::max(offset(), out.offset());
+  const auto end =
+      std::min(offset() + sizes().size(), out.offset() + out.sizes().size());
+  const auto ibegin = sizes().begin() + std::max(begin - offset(), 0l);
+  const auto obegin = out.m_sizes.begin() + std::max(begin - out.offset(), 0l);
+
+  std::copy_n(ibegin, end - begin, obegin);
+  *this = out;
+}
+
+void SubbinSizes::add_intersection(const SubbinSizes &other) {
+  auto copy = other;
+  copy.trim_to(*this);
+  *this += copy;
 }
 
 bool operator==(const SubbinSizes &a, const SubbinSizes &b) {

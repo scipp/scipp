@@ -17,7 +17,8 @@ Variable bin_index_sorted(const VariableConstView &coord,
                           const VariableConstView &edges) {
   const auto dim = edges.dims().inner();
   // TODO this is M * N, use linear alg instead
-  return transform(coord, subspan_view(edges, dim), core::element::first);
+  return transform(coord, subspan_view(edges, dim),
+                   core::element::bin_index_sorted);
 }
 
 // start: first (outer) dst bin overlapping input bin
@@ -150,22 +151,21 @@ std::vector<scipp::index> flatten_subbin_sizes(const VariableConstView &var) {
   return flat;
 }
 
-/*
-Variable subbin_sizes_cumsum(const VariableConstView &var, const Dim dim,
-                             const CumSumMode mode) {
+Variable subbin_sizes_exclusive_scan(const VariableConstView &var,
+                                     const Dim dim) {
   if (var.dims()[dim] == 0)
     return Variable{var};
   Variable cumulative(var.slice({dim, 0}));
   subbin_sizes_fill_zeros(cumulative);
   Variable out(var);
-  if (mode == CumSumMode::Inclusive)
-    accumulate_in_place<core::SubbinSizes>(cumulative, out,
-                                           core::element::inclusive_scan);
-  else
-    accumulate_in_place<core::SubbinSizes>(cumulative, out,
-                                           core::element::exclusive_scan);
+  accumulate_in_place(cumulative, out,
+                      core::element::subbin_sizes_exclusive_scan);
   return out;
 }
-*/
+
+void subbin_sizes_add_intersection(const VariableView &a,
+                                   const VariableConstView &b) {
+  transform_in_place(a, b, core::element::subbin_sizes_add_intersection);
+}
 
 } // namespace scipp::variable
