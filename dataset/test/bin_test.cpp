@@ -11,6 +11,7 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/util.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -323,4 +324,28 @@ TEST_P(BinTest, bin_by_group) {
   // Fewer bins than groups
   edges = makeVariable<double>(Dims{Dim("group")}, Shape{3}, Values{-2, 0, 2});
   EXPECT_NO_THROW(bin(binned, {edges}));
+}
+
+TEST_P(BinTest, rebin_various_edges_1d) {
+  using units::one;
+  std::vector<Variable> edges;
+  edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 4));
+  edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 72));
+  edges.emplace_back(linspace(-1.23 * one, 1.2 * one, Dim::X, 45));
+  edges.emplace_back(linspace(-1.23 * one, 1.1 * one, Dim::X, 45));
+  edges.emplace_back(linspace(1.1 * one, 1.2 * one, Dim::X, 128));
+  edges.emplace_back(linspace(1.1 * one, 1.101 * one, Dim::X, 128));
+  const auto table = GetParam();
+  for (const auto &e0 : edges)
+    for (const auto &e1 : edges) {
+      auto binned = bin(table, {e0});
+      const auto x = binned.coords()[Dim::X];
+      const auto len = x.dims()[Dim::X];
+      binned.coords().set(Dim::X, (0.5 * one) * (x.slice({Dim::X, 0, len - 1}) +
+                                                 x.slice({Dim::X, 1, len})));
+      bin(binned, {e1});
+    }
+  for (const auto &e0 : edges)
+    for (const auto &e1 : edges)
+      bin(bin(table, {e0}), {e1});
 }
