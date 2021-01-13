@@ -17,7 +17,18 @@ SubbinSizes::SubbinSizes(const scipp::index value)
     : m_offset(0), m_sizes({value}) {}
 
 SubbinSizes &SubbinSizes::operator+=(const SubbinSizes &other) {
-  return *this = *this + other;
+  // fprintf(stderr, "SubbinSizes+= %ld %ld %ld %ld\n", offset(),
+  // other.offset(),
+  //        offset() + sizes().size(), other.offset() + other.sizes().size());
+  if (other.offset() < offset())
+    return *this = *this + other;
+  scipp::index current = other.offset() - offset();
+  const auto length = current + scipp::size(other.sizes());
+  if (length > scipp::size(sizes()))
+    m_sizes.resize(length);
+  for (const auto &x : other.sizes())
+    m_sizes[current++] += x;
+  return *this;
 }
 
 SubbinSizes &SubbinSizes::operator-=(const SubbinSizes &other) {
@@ -49,9 +60,13 @@ void SubbinSizes::trim_to(const SubbinSizes &other) {
 }
 
 void SubbinSizes::add_intersection(const SubbinSizes &other) {
-  auto copy = other;
-  copy.trim_to(*this);
-  *this += copy;
+  scipp::index delta = other.offset() - offset();
+  auto i = std::max(scipp::index(0), delta);
+  auto j = std::max(scipp::index(0), -delta);
+  for (; j < scipp::size(other.sizes()) && i < scipp::size(sizes()); ++j, ++i) {
+    m_sizes[i] += other.sizes()[j];
+  }
+  return;
 }
 
 bool operator==(const SubbinSizes &a, const SubbinSizes &b) {
