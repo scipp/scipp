@@ -109,8 +109,7 @@ inline constexpr auto stride_special_cases<1, true> =
 
 template <>
 inline constexpr auto stride_special_cases<2, true> =
-    std::array<std::array<scipp::index, 2>, 4>{
-        {{1, 1}, {0, 1}, {1, 0}}};
+    std::array<std::array<scipp::index, 2>, 4>{{{1, 1}, {0, 1}, {1, 0}}};
 
 template <>
 inline constexpr auto stride_special_cases<3, true> =
@@ -127,9 +126,8 @@ inline constexpr auto stride_special_cases<3, false> =
         {{1, 1, 1}, {1, 0, 1}, {1, 1, 0}}};
 
 template <size_t I, size_t N_Operands, bool in_place, size_t... Is>
-auto stride_sequence_impl(std::index_sequence<Is...>)
-    -> std::integer_sequence<scipp::index,
-                             stride_special_cases<N_Operands, in_place>.at(I)[Is]...>;
+auto stride_sequence_impl(std::index_sequence<Is...>) -> std::integer_sequence<
+    scipp::index, stride_special_cases<N_Operands, in_place>.at(I)[Is]...>;
 // THe above uses std::array::at instead of operator[] in order to circumvent
 // a false positive error in MSVC 19.
 
@@ -139,7 +137,8 @@ template <size_t I, size_t N_Operands, bool in_place> struct stride_sequence {
 };
 
 template <size_t I, size_t N_Operands, bool in_place>
-using make_stride_sequence = typename stride_sequence<I, N_Operands, in_place>::type;
+using make_stride_sequence =
+    typename stride_sequence<I, N_Operands, in_place>::type;
 
 template <scipp::index... Strides, size_t... Is>
 void increment_impl(std::array<scipp::index, sizeof...(Strides)> &indices,
@@ -246,14 +245,17 @@ static void dispatch_inner_loop(
     const std::array<scipp::index, sizeof...(Operands)> &inner_strides,
     const scipp::index n, Operands &&... operands) {
   constexpr auto N_Operands = sizeof...(Operands);
-  if constexpr (I == detail::stride_special_cases<N_Operands, in_place>.size()) {
+  if constexpr (I ==
+                detail::stride_special_cases<N_Operands, in_place>.size()) {
     inner_loop<in_place>(std::forward<Op>(op), indices, inner_strides, n,
                          std::forward<Operands>(operands)...);
   } else {
-    if (inner_strides == detail::stride_special_cases<N_Operands, in_place>[I]) {
-      inner_loop<in_place>(std::forward<Op>(op), indices,
-                           detail::make_stride_sequence<I, N_Operands, in_place>{}, n,
-                           std::forward<Operands>(operands)...);
+    if (inner_strides ==
+        detail::stride_special_cases<N_Operands, in_place>[I]) {
+      inner_loop<in_place>(
+          std::forward<Op>(op), indices,
+          detail::make_stride_sequence<I, N_Operands, in_place>{}, n,
+          std::forward<Operands>(operands)...);
     } else {
       dispatch_inner_loop<in_place, I + 1>(op, indices, inner_strides, n,
                                            std::forward<Operands>(operands)...);
