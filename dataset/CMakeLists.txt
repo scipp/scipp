@@ -61,7 +61,7 @@ endif(DYNAMIC_LIB)
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
 target_link_libraries(${TARGET_NAME} PUBLIC scipp-variable Boost::boost)
-if(TBB_FOUND)
+if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
 endif()
 
