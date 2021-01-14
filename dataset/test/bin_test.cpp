@@ -152,7 +152,7 @@ TEST_P(BinTest, no_edges_or_groups) {
 TEST_P(BinTest, edges_too_short) {
   const auto table = GetParam();
   const auto edges = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1});
-  EXPECT_THROW(bin(table, {edges}), except::BucketError);
+  EXPECT_THROW(bin(table, {edges}), except::BinEdgeError);
 }
 
 TEST_P(BinTest, rebin_coarse_to_fine_1d) {

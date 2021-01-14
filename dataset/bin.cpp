@@ -555,8 +555,11 @@ void validate_bin_args(const std::vector<VariableConstView> &edges,
   for (const auto &edge : edges) {
     const auto dim = edge.dims().inner();
     if (edge.dims()[dim] < 2)
-      throw except::BucketError("Not enough bin edges in dim " +
-                                to_string(dim) + ". Need at least 2.");
+      throw except::BinEdgeError("Not enough bin edges in dim " +
+                                 to_string(dim) + ". Need at least 2.");
+    if (!is_sorted(edge, dim))
+      throw except::BinEdgeError("Bin edges in dim " + to_string(dim) +
+                                 " must be sorted.");
   }
 }
 } // namespace
