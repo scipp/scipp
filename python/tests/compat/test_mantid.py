@@ -68,7 +68,7 @@ class TestMantidConversion(unittest.TestCase):
         target_tof = binned_mantid.coords['tof']
         d = mantidcompat.convert_EventWorkspace_to_data_array(
             eventWS, load_pulse_times=False)
-        binned = sc.histogram(d.bins, target_tof)
+        binned = sc.histogram(d, target_tof)
 
         delta = sc.sum(binned_mantid - binned, 'spectrum')
         delta = sc.sum(delta, 'tof')
@@ -122,7 +122,7 @@ class TestMantidConversion(unittest.TestCase):
 
         da = mantidcompat.convert_EventWorkspace_to_data_array(
             eventWS, load_pulse_times=False)
-        da = sc.histogram(da.bins, target_tof)
+        da = sc.histogram(da, target_tof)
         d = sc.Dataset({da.name: da})
         converted = sc.neutron.convert(d, 'tof', 'wavelength')
 
