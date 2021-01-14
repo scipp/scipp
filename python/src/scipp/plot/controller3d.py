@@ -108,6 +108,9 @@ class PlotController3d(PlotController):
             if self.positions is not None:
                 ind = np.argmin(axparams["box_size"])
                 xyz = "xyz"[ind]
+                # Note the value of 0.05 is arbitrary here. It is a sensible
+                # guess to render a plot that is not too crowded and shows
+                # individual pixels.
                 psize = 0.05 * axparams["box_size"][ind]
                 pscale = axparams[xyz]["scaling"]
             else:

@@ -174,6 +174,9 @@ class PlotModel3d(PlotModel):
                 "Unknown cut surface type {}".format(button_value))
 
     def get_positions_extents(self):
+        """
+        Find the extents of the box that contains all the positions.
+        """
         extents = {}
         for xyz in "xyz":
             x = getattr(sc.geometry, xyz)(self.pos_coord)
@@ -185,8 +188,14 @@ class PlotModel3d(PlotModel):
         return extents
 
     def estimate_pixel_size(self, axparams):
-        ind = np.argmin(axparams["box_size"])
-        xyz = "xyz"[ind]
-        dim = axparams[xyz]["dim"]
-        return axparams["box_size"][ind] / self.dim_to_shape[
-            self.name][dim], axparams[xyz]["scaling"]
+        """
+        Find the smallest pixel in the grid.
+        """
+        dx = [
+            axparams["box_size"][i] /
+            self.dim_to_shape[self.name][axparams[xyz]["dim"]]
+            for i, xyz in enumerate("xyz")
+        ]
+        scaling = [axparams[xyz]["scaling"] for xyz in "xyz"]
+        ind = np.argmin(dx)
+        return dx[ind], scaling[ind]

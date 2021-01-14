@@ -277,7 +277,7 @@ void main() {
         Create ticklabels on outline edges
         """
         if self.tick_size is None:
-            self.tick_size = 0.05 * np.amin(axparams["box_size"])
+            self.tick_size = 0.05 * np.mean(axparams["box_size"])
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker_ = ticker.MaxNLocator(5)

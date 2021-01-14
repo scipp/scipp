@@ -36,6 +36,19 @@ class PlotToolbar:
             self.add_togglebutton(name="zoom_view",
                                   icon="square-o",
                                   tooltip="Zoom")
+        else:
+            self.add_button(name="camera_x_normal",
+                            icon="camera",
+                            description="X",
+                            tooltip="Camera to X normal")
+            self.add_button(name="camera_y_normal",
+                            icon="camera",
+                            description="Y",
+                            tooltip="Camera to Y normal")
+            self.add_button(name="camera_z_normal",
+                            icon="camera",
+                            description="Z",
+                            tooltip="Camera to Z normal")
 
         self.add_button(name="rescale_to_data",
                         icon="arrows-v",
@@ -66,19 +79,6 @@ class PlotToolbar:
 
         if ndim < 3:
             self.add_button(name="save_view", icon="save", tooltip="Save")
-        else:
-            self.add_button(name="camera_x_normal",
-                            icon="camera",
-                            description="X",
-                            tooltip="Camera to X normal")
-            self.add_button(name="camera_y_normal",
-                            icon="camera",
-                            description="Y",
-                            tooltip="Camera to Y normal")
-            self.add_button(name="camera_z_normal",
-                            icon="camera",
-                            description="Z",
-                            tooltip="Camera to Z normal")
 
         self._update_container()
 
