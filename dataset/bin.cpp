@@ -549,21 +549,14 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
 namespace {
 void validate_bin_args(const std::vector<VariableConstView> &edges,
                        const std::vector<VariableConstView> &groups) {
-  if (edges.empty()) {
-    if (groups.empty()) {
-      throw except::BucketError(
-          "Arguments 'edges' and 'groups' of scipp.bin are "
-          "both empty. At least one must be set.");
-    }
-  } else {
-    for (std::size_t i = 0; i < edges.size(); ++i) {
-      if (const auto &shape = edges[i].dims().shape();
-          std::any_of(shape.begin(), shape.end(),
-                      [](const scipp::index s) { return s == 1; })) {
-        throw except::BucketError("Not enough bin edges in dim " +
-                                  std::to_string(i) + ". Need at least 2.");
-      }
-    }
+  if (edges.empty() && groups.empty())
+    throw except::BucketError("Arguments 'edges' and 'groups' of scipp.bin are "
+                              "both empty. At least one must be set.");
+  for (const auto &edge : edges) {
+    const auto dim = edge.dims().inner();
+    if (edge.dims()[dim] < 2)
+      throw except::BucketError("Not enough bin edges in dim " +
+                                to_string(dim) + ". Need at least 2.");
   }
 }
 } // namespace
