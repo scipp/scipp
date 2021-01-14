@@ -105,12 +105,12 @@ inline constexpr auto stride_special_cases =
 
 template <>
 inline constexpr auto stride_special_cases<1, true> =
-    std::array<std::array<scipp::index, 1>, 2>{{{1}, {0}}};
+    std::array<std::array<scipp::index, 1>, 2>{{{1}}};
 
 template <>
 inline constexpr auto stride_special_cases<2, true> =
     std::array<std::array<scipp::index, 2>, 4>{
-        {{1, 1}, {0, 1}, {1, 0}, {0, 0}}};
+        {{1, 1}, {0, 1}, {1, 0}}};
 
 template <>
 inline constexpr auto stride_special_cases<3, true> =
