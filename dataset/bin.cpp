@@ -321,18 +321,9 @@ public:
           // std::cout << "offsets" << offsets;
           update_indices_by_binning(indices, get_coord(dim), pre_selected_key,
                                     linspace);
-        } else // if (coords.count(dim))
+        } else {
           update_indices_by_binning(indices, get_coord(dim), key, linspace);
-        /*
-        else {
-          const auto &bin_coord = bin_coords.at(dim);
-          auto bin_indices = makeVariable<scipp::index>(bin_coord.dims());
-          update_indices_by_binning(bin_indices, bin_coord, key);
-          indices *= bin_coord.dims().volume() * units::one;
-          indices += bin_indices;
-          // m_nbin /= key.dims().volume() - 1;
         }
-        */
       } else if (action == AxisAction::Existing)
         update_indices_from_existing(indices, dim);
       else if (action == AxisAction::Join) {
