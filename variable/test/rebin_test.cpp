@@ -2,6 +2,7 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/variable/bins.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/variable.h"
@@ -223,4 +224,18 @@ TEST(Variable, rebin_mask_outer_single) {
   const auto result = rebin(mask, Dim::Y, oldEdge, newEdge);
 
   ASSERT_EQ(result, expected);
+}
+TEST(Variable, check_rebin_cannot_be_used_on_bin_data) {
+  Dimensions dims{Dim::Y, 1};
+  Variable buffer =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      dims, Values{std::pair{0, 3}});
+  Variable var = make_bins(indices, Dim::X, buffer);
+  const auto oldEdge =
+      makeVariable<double>(Dimensions{Dim::Y, 2}, Values{1, 4});
+  const auto newEdge =
+      makeVariable<double>(Dimensions{Dim::Y, 4}, Values{0, 1, 2, 3});
+  EXPECT_THROW([[maybe_unused]] auto res = rebin(var, Dim::Y, oldEdge, newEdge),
+               except::TypeError);
 }
