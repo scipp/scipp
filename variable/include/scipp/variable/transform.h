@@ -99,38 +99,47 @@ template <int N, class T> static constexpr auto get(const T &index) noexcept {
 
 } // namespace iter
 
-template <size_t N_Operands>
+template <size_t N_Operands, bool in_place>
 inline constexpr auto stride_special_cases =
     std::array<std::array<scipp::index, N_Operands>, 0>{};
 
 template <>
-inline constexpr auto stride_special_cases<1> =
+inline constexpr auto stride_special_cases<1, true> =
     std::array<std::array<scipp::index, 1>, 2>{{{1}, {0}}};
 
 template <>
-inline constexpr auto stride_special_cases<2> =
+inline constexpr auto stride_special_cases<2, true> =
     std::array<std::array<scipp::index, 2>, 4>{
         {{1, 1}, {0, 1}, {1, 0}, {0, 0}}};
 
 template <>
-inline constexpr auto stride_special_cases<3> =
+inline constexpr auto stride_special_cases<3, true> =
     std::array<std::array<scipp::index, 3>, 3>{
         {{1, 1, 1}, {1, 0, 1}, {1, 1, 0}}};
 
-template <size_t I, size_t N_Operands, size_t... Is>
+template <>
+inline constexpr auto stride_special_cases<2, false> =
+    std::array<std::array<scipp::index, 2>, 1>{{{1, 1}}};
+
+template <>
+inline constexpr auto stride_special_cases<3, false> =
+    std::array<std::array<scipp::index, 3>, 3>{
+        {{1, 1, 1}, {1, 0, 1}, {1, 1, 0}}};
+
+template <size_t I, size_t N_Operands, bool in_place, size_t... Is>
 auto stride_sequence_impl(std::index_sequence<Is...>)
     -> std::integer_sequence<scipp::index,
-                             stride_special_cases<N_Operands>.at(I)[Is]...>;
+                             stride_special_cases<N_Operands, in_place>.at(I)[Is]...>;
 // THe above uses std::array::at instead of operator[] in order to circumvent
 // a false positive error in MSVC 19.
 
-template <size_t I, size_t N_Operands> struct stride_sequence {
-  using type = decltype(stride_sequence_impl<I, N_Operands>(
+template <size_t I, size_t N_Operands, bool in_place> struct stride_sequence {
+  using type = decltype(stride_sequence_impl<I, N_Operands, in_place>(
       std::make_index_sequence<N_Operands>{}));
 };
 
-template <size_t I, size_t N_Operands>
-using make_stride_sequence = typename stride_sequence<I, N_Operands>::type;
+template <size_t I, size_t N_Operands, bool in_place>
+using make_stride_sequence = typename stride_sequence<I, N_Operands, in_place>::type;
 
 template <scipp::index... Strides, size_t... Is>
 void increment_impl(std::array<scipp::index, sizeof...(Strides)> &indices,
@@ -237,20 +246,20 @@ static void dispatch_inner_loop(
     const std::array<scipp::index, sizeof...(Operands)> &inner_strides,
     const scipp::index n, Operands &&... operands) {
   constexpr auto N_Operands = sizeof...(Operands);
-  if constexpr (I == detail::stride_special_cases<N_Operands>.size()) {
+  if constexpr (I == detail::stride_special_cases<N_Operands, in_place>.size()) {
     inner_loop<in_place>(std::forward<Op>(op), indices, inner_strides, n,
                          std::forward<Operands>(operands)...);
   } else if constexpr (!in_place &&
-                       detail::stride_special_cases<N_Operands>[I][0] > 1) {
+                       detail::stride_special_cases<N_Operands, in_place>[I][0] > 1) {
     // The output Variable in non-in-place transforms always has stride 0 or 1.
     // Skip the runtime check and code generation below when possible.
     assert(inner_strides[0] < 2);
     dispatch_inner_loop<in_place, I + 1>(op, indices, inner_strides, n,
                                          std::forward<Operands>(operands)...);
   } else {
-    if (inner_strides == detail::stride_special_cases<N_Operands>[I]) {
+    if (inner_strides == detail::stride_special_cases<N_Operands, in_place>[I]) {
       inner_loop<in_place>(std::forward<Op>(op), indices,
-                           detail::make_stride_sequence<I, N_Operands>{}, n,
+                           detail::make_stride_sequence<I, N_Operands, in_place>{}, n,
                            std::forward<Operands>(operands)...);
     } else {
       dispatch_inner_loop<in_place, I + 1>(op, indices, inner_strides, n,
