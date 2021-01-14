@@ -54,21 +54,20 @@ auto make_range(const scipp::index begin, const scipp::index end,
 
 void update_indices_by_binning(const VariableView &indices,
                                const VariableConstView &key,
-                               const VariableConstView &edges) {
+                               const VariableConstView &edges,
+                               const bool linspace) {
   const auto dim = edges.dims().inner();
-  // if (all(is_linspace(edges, dim)).value<bool>()) {
-  //  variable::transform_in_place(
-  //      indices, key, subspan_view(edges, dim),
-  //      core::element::update_indices_by_binning_linspace);
-  //} else {
-  //  if (!is_sorted(edges, dim))
-  //    throw except::BinEdgeError("Bin edges must be sorted.");
-  // std::cout << edges;
-  variable::transform_in_place(
-      indices, key,
-      is_bins(edges) ? as_subspan_view(edges) : subspan_view(edges, dim),
-      core::element::update_indices_by_binning_sorted_edges);
-  //}
+  const auto &edge_view =
+      is_bins(edges) ? as_subspan_view(edges) : subspan_view(edges, dim);
+  if (linspace) {
+    variable::transform_in_place(
+        indices, key, edge_view,
+        core::element::update_indices_by_binning_linspace);
+  } else {
+    variable::transform_in_place(
+        indices, key, edge_view,
+        core::element::update_indices_by_binning_sorted_edges);
+  }
 }
 
 template <class Index>
@@ -280,6 +279,7 @@ public:
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
       else if (action == AxisAction::Bin) {
+        const auto linspace = all(is_linspace(key, dim)).template value<bool>();
         if (bin_coords.count(dim) && (offsets.dims() == Dimensions{})) {
           // printf("existing grouping along %s\n", to_string(dim).c_str());
           const auto &bin_coord = bin_coords.at(dim);
@@ -319,9 +319,10 @@ public:
           // std::cout << "end" << end;
           // std::cout << "nbin" << nbin;
           // std::cout << "offsets" << offsets;
-          update_indices_by_binning(indices, get_coord(dim), pre_selected_key);
+          update_indices_by_binning(indices, get_coord(dim), pre_selected_key,
+                                    linspace);
         } else // if (coords.count(dim))
-          update_indices_by_binning(indices, get_coord(dim), key);
+          update_indices_by_binning(indices, get_coord(dim), key, linspace);
         /*
         else {
           const auto &bin_coord = bin_coords.at(dim);
