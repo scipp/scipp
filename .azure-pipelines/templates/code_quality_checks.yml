@@ -19,7 +19,7 @@ stages:
               set -ex
               clang-format-10 --version
               # Run clang-format in-place on all C++ files, excluding third party libraries
-              find . -type f -regex '.*\.\(c\|cpp\|h\|hpp\)' -not -path './common/include/scipp/common/span/*' -exec clang-format-10 -i {} +
+              find . -type f -regex '.*\.\(c\|cpp\|h\|hpp\|tcc\)' -not -path './common/include/scipp/common/span/*' -exec clang-format-10 -i {} +
               # Show the diff to give an inidcation of the issues in the CI log
               git diff
               # Run quiet diff to fail the job if any formatting was done (see man git-diff)
