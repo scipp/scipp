@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
-from .toolbar import PlotToolbar
+from .toolbar import PlotToolbar3d
 from .._utils import value_to_string
 import numpy as np
 import ipywidgets as ipw
@@ -41,7 +41,7 @@ class PlotFigure3d:
             figsize = (config.plot.width, config.plot.height)
 
         # Figure toolbar
-        self.toolbar = PlotToolbar(ndim=3)
+        self.toolbar = PlotToolbar3d()
 
         # Prepare colormaps
         self.cmap = cmap

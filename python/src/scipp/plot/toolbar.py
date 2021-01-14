@@ -10,7 +10,7 @@ class PlotToolbar:
     Custom toolbar with additional buttons for controlling log scales and
     normalization, and with back/forward buttons removed.
     """
-    def __init__(self, canvas=None, ndim=1):
+    def __init__(self, canvas=None):
 
         # Prepare containers
         self.container = ipw.VBox()
@@ -27,60 +27,6 @@ class PlotToolbar:
         self.add_button(name="home_view",
                         icon="home",
                         tooltip="Reset original view")
-
-        if ndim < 3:
-            self.add_togglebutton(name="pan_view",
-                                  icon="arrows",
-                                  tooltip="Pan")
-
-            self.add_togglebutton(name="zoom_view",
-                                  icon="square-o",
-                                  tooltip="Zoom")
-        else:
-            self.add_button(name="camera_x_normal",
-                            icon="camera",
-                            description="X",
-                            tooltip="Camera to X normal")
-            self.add_button(name="camera_y_normal",
-                            icon="camera",
-                            description="Y",
-                            tooltip="Camera to Y normal")
-            self.add_button(name="camera_z_normal",
-                            icon="camera",
-                            description="Z",
-                            tooltip="Camera to Z normal")
-
-        self.add_button(name="rescale_to_data",
-                        icon="arrows-v",
-                        tooltip="Rescale")
-        if ndim == 2:
-            self.add_button(name="transpose",
-                            icon="retweet",
-                            tooltip="Transpose")
-
-        if ndim < 3:
-            self.add_togglebutton(name="toggle_xaxis_scale",
-                                  description="logx",
-                                  tooltip="Log(x)")
-        if ndim == 1:
-            # In the case of a 1d plot, we connect the logy button to the
-            # toggle_norm function.
-            self.add_togglebutton(name="toggle_norm",
-                                  description="logy",
-                                  tooltip="Log(y)")
-        else:
-            if ndim < 3:
-                self.add_togglebutton(name="toggle_yaxis_scale",
-                                      description="logy",
-                                      tooltip="Log(y)")
-            self.add_togglebutton(name="toggle_norm",
-                                  description="log",
-                                  tooltip="Log(data)")
-
-        if ndim < 3:
-            self.add_button(name="save_view", icon="save", tooltip="Save")
-
-        self._update_container()
 
     def _ipython_display_(self):
         """
@@ -197,3 +143,85 @@ class PlotToolbar:
         if self.members["zoom_view"].value:
             # Simulate a click on the rescale_to_data button
             self.members["rescale_to_data"].click()
+
+
+class PlotToolbar1d(PlotToolbar):
+    """
+    Custom toolbar for 1d figures.
+    """
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.add_togglebutton(name="pan_view", icon="arrows", tooltip="Pan")
+        self.add_togglebutton(name="zoom_view",
+                              icon="square-o",
+                              tooltip="Zoom")
+        self.add_button(name="rescale_to_data",
+                        icon="arrows-v",
+                        tooltip="Rescale")
+        self.add_togglebutton(name="toggle_xaxis_scale",
+                              description="logx",
+                              tooltip="Log(x)")
+        self.add_togglebutton(name="toggle_norm",
+                              description="logy",
+                              tooltip="Log(y)")
+        self.add_button(name="save_view", icon="save", tooltip="Save")
+        self._update_container()
+
+
+class PlotToolbar2d(PlotToolbar):
+    """
+    Custom toolbar for 2d figures.
+    """
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+
+        self.add_togglebutton(name="pan_view", icon="arrows", tooltip="Pan")
+        self.add_togglebutton(name="zoom_view",
+                              icon="square-o",
+                              tooltip="Zoom")
+        self.add_button(name="rescale_to_data",
+                        icon="arrows-v",
+                        tooltip="Rescale")
+        self.add_button(name="transpose", icon="retweet", tooltip="Transpose")
+        self.add_togglebutton(name="toggle_xaxis_scale",
+                              description="logx",
+                              tooltip="Log(x)")
+        self.add_togglebutton(name="toggle_yaxis_scale",
+                              description="logy",
+                              tooltip="Log(y)")
+        self.add_togglebutton(name="toggle_norm",
+                              description="log",
+                              tooltip="Log(data)")
+        self.add_button(name="save_view", icon="save", tooltip="Save")
+        self._update_container()
+
+
+class PlotToolbar3d(PlotToolbar):
+    """
+    Custom toolbar for 3d figures.
+    """
+    def __init__(self, *args, **kwargs):
+
+        super().__init__(*args, **kwargs)
+        self.add_button(name="camera_x_normal",
+                        icon="camera",
+                        description="X",
+                        tooltip="Camera to X normal")
+        self.add_button(name="camera_y_normal",
+                        icon="camera",
+                        description="Y",
+                        tooltip="Camera to Y normal")
+        self.add_button(name="camera_z_normal",
+                        icon="camera",
+                        description="Z",
+                        tooltip="Camera to Z normal")
+        self.add_button(name="rescale_to_data",
+                        icon="arrows-v",
+                        tooltip="Rescale")
+        self.add_togglebutton(name="toggle_norm",
+                              description="log",
+                              tooltip="Log(data)")
+        self._update_container()
