@@ -237,5 +237,5 @@ TEST(Variable, check_rebin_cannot_be_used_on_bin_data) {
   const auto newEdge =
       makeVariable<double>(Dimensions{Dim::Y, 4}, Values{0, 1, 2, 3});
   EXPECT_THROW([[maybe_unused]] auto res = rebin(var, Dim::Y, oldEdge, newEdge),
-               except::BucketError);
+               except::TypeError);
 }
