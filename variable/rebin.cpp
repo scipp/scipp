@@ -109,7 +109,7 @@ Variable rebin(const VariableConstView &var, const Dim dim,
         "The input does not have coordinates with bin-edges.");
 
   if (is_bins(var))
-    throw except::TypeError("The input variable cannot be of type bins. Use "
+    throw except::TypeError("The input variable cannot be binned data. Use "
                             "`bin` or `histogram` instead of `rebin`.");
 
   using transform_args = std::tuple<
