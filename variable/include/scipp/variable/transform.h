@@ -31,6 +31,7 @@
 #pragma once
 
 #include <algorithm>
+#include <cassert>
 
 #include "scipp/common/overloaded.h"
 
@@ -98,6 +99,62 @@ template <int N, class T> static constexpr auto get(const T &index) noexcept {
 
 } // namespace iter
 
+template <size_t N_Operands, bool in_place>
+inline constexpr auto stride_special_cases =
+    std::array<std::array<scipp::index, N_Operands>, 0>{};
+
+template <>
+inline constexpr auto stride_special_cases<1, true> =
+    std::array<std::array<scipp::index, 1>, 2>{{{1}}};
+
+template <>
+inline constexpr auto stride_special_cases<2, true> =
+    std::array<std::array<scipp::index, 2>, 4>{{{1, 1}, {0, 1}, {1, 0}}};
+
+template <>
+inline constexpr auto stride_special_cases<2, false> =
+    std::array<std::array<scipp::index, 2>, 1>{{{1, 1}}};
+
+template <>
+inline constexpr auto stride_special_cases<3, false> =
+    std::array<std::array<scipp::index, 3>, 3>{
+        {{1, 1, 1}, {1, 0, 1}, {1, 1, 0}}};
+
+template <size_t I, size_t N_Operands, bool in_place, size_t... Is>
+auto stride_sequence_impl(std::index_sequence<Is...>) -> std::integer_sequence<
+    scipp::index, stride_special_cases<N_Operands, in_place>.at(I)[Is]...>;
+// THe above uses std::array::at instead of operator[] in order to circumvent
+// a false positive error in MSVC 19.
+
+template <size_t I, size_t N_Operands, bool in_place> struct stride_sequence {
+  using type = decltype(stride_sequence_impl<I, N_Operands, in_place>(
+      std::make_index_sequence<N_Operands>{}));
+};
+
+template <size_t I, size_t N_Operands, bool in_place>
+using make_stride_sequence =
+    typename stride_sequence<I, N_Operands, in_place>::type;
+
+template <scipp::index... Strides, size_t... Is>
+void increment_impl(std::array<scipp::index, sizeof...(Strides)> &indices,
+                    std::integer_sequence<size_t, Is...>) noexcept {
+  ((indices[Is] += Strides), ...);
+}
+
+template <scipp::index... Strides>
+void increment(std::array<scipp::index, sizeof...(Strides)> &indices) noexcept {
+  increment_impl<Strides...>(indices,
+                             std::make_index_sequence<sizeof...(Strides)>{});
+}
+
+template <size_t N>
+void increment(std::array<scipp::index, N> &indices,
+               const std::array<scipp::index, N> &strides) noexcept {
+  for (size_t i = 0; i < N; ++i) {
+    indices[i] += strides[i];
+  }
+}
+
 template <class Op, class Indices, class... Args, size_t... I>
 static constexpr auto call_impl(Op &&op, const Indices &indices,
                                 std::index_sequence<I...>, Args &&... args) {
@@ -143,18 +200,90 @@ static constexpr void call_in_place(Op &&op, const Indices &indices, Arg &&arg,
     arg.variances.data()[i] = arg_.variance;
   }
 }
+/// Run transform with strides known at compile time.
+template <bool in_place, class Op, class... Operands, scipp::index... Strides>
+static void inner_loop(Op &&op,
+                       std::array<scipp::index, sizeof...(Operands)> indices,
+                       std::integer_sequence<scipp::index, Strides...>,
+                       const scipp::index n, Operands &&... operands) {
+  static_assert(sizeof...(Operands) == sizeof...(Strides));
+
+  for (scipp::index i = 0; i < n; ++i) {
+    if constexpr (in_place) {
+      detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
+    } else {
+      detail::call(op, indices, std::forward<Operands>(operands)...);
+    }
+    detail::increment<Strides...>(indices);
+  }
+}
+
+/// Run transform with strides known at run time but bypassing MultiIndex.
+template <bool in_place, class Op, class... Operands>
+static void
+inner_loop(Op &&op, std::array<scipp::index, sizeof...(Operands)> indices,
+           const std::array<scipp::index, sizeof...(Operands)> &strides,
+           const scipp::index n, Operands &&... operands) {
+  for (scipp::index i = 0; i < n; ++i) {
+    if constexpr (in_place) {
+      detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
+    } else {
+      detail::call(op, indices, std::forward<Operands>(operands)...);
+    }
+    detail::increment(indices, strides);
+  }
+}
+
+template <bool in_place, size_t I = 0, class Op, class... Operands>
+static void dispatch_inner_loop(
+    Op &&op, const std::array<scipp::index, sizeof...(Operands)> &indices,
+    const std::array<scipp::index, sizeof...(Operands)> &inner_strides,
+    const scipp::index n, Operands &&... operands) {
+  constexpr auto N_Operands = sizeof...(Operands);
+  if constexpr (I ==
+                detail::stride_special_cases<N_Operands, in_place>.size()) {
+    inner_loop<in_place>(std::forward<Op>(op), indices, inner_strides, n,
+                         std::forward<Operands>(operands)...);
+  } else {
+    if (inner_strides ==
+        detail::stride_special_cases<N_Operands, in_place>[I]) {
+      inner_loop<in_place>(
+          std::forward<Op>(op), indices,
+          detail::make_stride_sequence<I, N_Operands, in_place>{}, n,
+          std::forward<Operands>(operands)...);
+    } else {
+      dispatch_inner_loop<in_place, I + 1>(op, indices, inner_strides, n,
+                                           std::forward<Operands>(operands)...);
+    }
+  }
+}
 
 template <class Op, class Out, class... Ts>
 static void transform_elements(Op op, Out &&out, Ts &&... other) {
   const auto begin =
       core::MultiIndex(iter::array_params(out), iter::array_params(other)...);
+
+  auto run = [&](auto &indices, const auto &end) {
+    const auto inner_strides = indices.inner_strides();
+    while (indices != end) {
+      // Shape can change when moving between bins -> recompute every time.
+      const auto inner_size = indices.in_same_chunk(end, 1)
+                                  ? indices.inner_distance_to(end)
+                                  : indices.inner_distance_to_end();
+      dispatch_inner_loop<false>(op, indices.get(), inner_strides, inner_size,
+                                 std::forward<Out>(out),
+                                 std::forward<Ts>(other)...);
+      indices.increment_inner_by(inner_size);
+      indices.increment_outer();
+    }
+  };
+
   auto run_parallel = [&](const auto &range) {
     auto indices = begin;
     indices.set_index(range.begin());
     auto end = begin;
     end.set_index(range.end());
-    for (; indices != end; indices.increment())
-      call(op, indices, out, other...);
+    run(indices, end);
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, out.size()),
                                run_parallel);
@@ -227,6 +356,10 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
           std::tuple_cat(processed, std::tuple(ValuesAndVariances{vals, vars})),
           args...);
     }
+    // else {}  // Cannot happen because args.hasVariances()
+    //             implies canHaveVariances<value_type>.
+    //             The 2nd test is needed to avoid compilation errors
+    //             (hasVariances is a runtime check).
   } else {
     if constexpr (std::is_base_of_v<
                       core::transform_flags::expect_variance_arg_t<
@@ -294,55 +427,6 @@ template <class Op> struct wrap_eigen : Op {
   }
 };
 template <class... Ts> wrap_eigen(Ts...) -> wrap_eigen<Ts...>;
-
-template <size_t N_Operands>
-inline constexpr auto stride_special_cases =
-    std::array<std::array<scipp::index, N_Operands>, 0>{};
-
-template <>
-inline constexpr auto stride_special_cases<1> =
-    std::array<std::array<scipp::index, 1>, 2>{{{1}, {0}}};
-
-template <>
-inline constexpr auto stride_special_cases<2> =
-    std::array<std::array<scipp::index, 2>, 4>{
-        {{1, 1}, {0, 1}, {1, 0}, {0, 0}}};
-
-template <size_t I, size_t N_Operands, size_t... Is>
-auto stride_sequence_impl(std::index_sequence<Is...>)
-    -> std::integer_sequence<scipp::index,
-                             stride_special_cases<N_Operands>.at(I)[Is]...>;
-// THe above uses std::array::at instead of operator[] in order to circumvent
-// a false positive error in MSVC 19.
-
-template <size_t I, size_t N_Operands> struct stride_sequence {
-  using type = decltype(stride_sequence_impl<I, N_Operands>(
-      std::make_index_sequence<N_Operands>{}));
-};
-
-template <size_t I, size_t N_Operands>
-using make_stride_sequence = typename stride_sequence<I, N_Operands>::type;
-
-template <scipp::index... Strides, size_t... Is>
-void increment_impl(std::array<scipp::index, sizeof...(Strides)> &indices,
-                    std::integer_sequence<size_t, Is...>) noexcept {
-  ((indices[Is] += Strides), ...);
-}
-
-template <scipp::index... Strides>
-void increment(std::array<scipp::index, sizeof...(Strides)> &indices) noexcept {
-  increment_impl<Strides...>(indices,
-                             std::make_index_sequence<sizeof...(Strides)>{});
-}
-
-template <size_t N>
-void increment(std::array<scipp::index, N> &indices,
-               const std::array<scipp::index, N> &strides) noexcept {
-  for (size_t i = 0; i < N; ++i) {
-    indices[i] += strides[i];
-  }
-}
-
 } // namespace detail
 
 template <class... Ts, class Op>
@@ -369,53 +453,6 @@ constexpr auto overlaps = [](const auto &a, const auto &b) {
 /// of data. This is used to implement operations on datasets with a strong
 /// exception guarantee.
 template <bool dry_run> struct in_place {
-  /// Run transform with strides known at compile time.
-  template <class Op, class... Operands, scipp::index... Strides>
-  static void run(Op &&op,
-                  std::array<scipp::index, sizeof...(Operands)> indices,
-                  std::integer_sequence<scipp::index, Strides...>,
-                  const scipp::index n, Operands &&... operands) {
-    static_assert(sizeof...(Operands) == sizeof...(Strides));
-
-    for (scipp::index i = 0; i < n; ++i) {
-      detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
-      detail::increment<Strides...>(indices);
-    }
-  }
-
-  /// Run transform with strides known at run time but bypassing MultiIndex.
-  template <class Op, class... Operands>
-  static void run(Op &&op,
-                  std::array<scipp::index, sizeof...(Operands)> indices,
-                  const std::array<scipp::index, sizeof...(Operands)> &strides,
-                  const scipp::index n, Operands &&... operands) {
-    for (scipp::index i = 0; i < n; ++i) {
-      detail::call_in_place(op, indices, std::forward<Operands>(operands)...);
-      detail::increment(indices, strides);
-    }
-  }
-
-  template <size_t I = 0, class Op, class... Operands>
-  static void dispatch_inner_loop(
-      Op &&op, const std::array<scipp::index, sizeof...(Operands)> &indices,
-      const std::array<scipp::index, sizeof...(Operands)> &inner_strides,
-      const scipp::index n, Operands &&... operands) {
-    constexpr auto N_Operands = sizeof...(Operands);
-    if constexpr (I == detail::stride_special_cases<N_Operands>.size()) {
-      run(std::forward<Op>(op), indices, inner_strides, n,
-          std::forward<Operands>(operands)...);
-    } else {
-      if (inner_strides == detail::stride_special_cases<N_Operands>[I]) {
-        run(std::forward<Op>(op), indices,
-            detail::make_stride_sequence<I, N_Operands>{}, n,
-            std::forward<Operands>(operands)...);
-      } else {
-        dispatch_inner_loop<I + 1>(op, indices, inner_strides, n,
-                                   std::forward<Operands>(operands)...);
-      }
-    }
-  }
-
   template <class Op, class T, class... Ts>
   static void transform_in_place_impl(Op op, T &&arg, Ts &&... other) {
     using namespace detail;
@@ -424,24 +461,18 @@ template <bool dry_run> struct in_place {
     if constexpr (dry_run)
       return;
 
-    auto run = [&](auto indices, const auto &end) {
+    auto run = [&](auto &indices, const auto &end) {
       const auto inner_strides = indices.inner_strides();
-      if (std::all_of(inner_strides.begin(), inner_strides.end(),
-                      [](auto x) { return x == 0; })) {
-        // The special cases don't work when all strides are 0.
-        for (; indices != end; indices.increment())
-          call_in_place(op, indices, arg, other...);
-      } else {
-        while (indices != end) {
-          // Shape can change when moving between bins -> recompute every time.
-          const auto inner_size = indices.in_same_chunk(end, 1)
-                                      ? indices.inner_distance_to(end)
-                                      : indices.inner_distance_to_end();
-          dispatch_inner_loop(op, indices.get(), inner_strides, inner_size,
-                              std::forward<T>(arg), std::forward<Ts>(other)...);
-          indices.increment_inner_by(inner_size);
-          indices.increment_outer();
-        }
+      while (indices != end) {
+        // Shape can change when moving between bins -> recompute every time.
+        const auto inner_size = indices.in_same_chunk(end, 1)
+                                    ? indices.inner_distance_to(end)
+                                    : indices.inner_distance_to_end();
+        detail::dispatch_inner_loop<true>(op, indices.get(), inner_strides,
+                                          inner_size, std::forward<T>(arg),
+                                          std::forward<Ts>(other)...);
+        indices.increment_inner_by(inner_size);
+        indices.increment_outer();
       }
     };
     if (begin.has_stride_zero()) {
@@ -449,9 +480,10 @@ template <bool dry_run> struct in_place {
       // be done differently. Explicit and precise control of chunking is
       // required to avoid multiple threads writing to the same output. Not
       // implemented for now.
+      auto indices = begin; // copy so that run doesn't modify begin
       auto end = begin;
       end.set_index(arg.size());
-      run(begin, end);
+      run(indices, end);
     } else {
       auto run_parallel = [&](const auto &range) {
         auto indices = begin;

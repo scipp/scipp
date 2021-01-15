@@ -39,6 +39,7 @@ class SciPlot3d(SciPlot):
                  positions=None,
                  axes=None,
                  figsize=None,
+                 aspect=None,
                  masks=None,
                  cmap=None,
                  norm=None,
@@ -46,9 +47,8 @@ class SciPlot3d(SciPlot):
                  vmin=None,
                  vmax=None,
                  color=None,
-                 aspect=None,
                  background="#f0f0f0",
-                 pixel_size=1.0,
+                 pixel_size=None,
                  tick_size=None,
                  show_outline=True,
                  xlabel=None,
@@ -102,7 +102,6 @@ class SciPlot3d(SciPlot):
             unit=self.params["values"][self.name]["unit"],
             masks=self.masks[self.name],
             nan_color=self.params["values"][self.name]["nan_color"],
-            pixel_size=pixel_size,
             tick_size=tick_size,
             background=background,
             show_outline=show_outline,
@@ -113,19 +112,21 @@ class SciPlot3d(SciPlot):
             zlabel=zlabel)
 
         # An additional panel view with widgets to control the cut surface
-        self.panel = PlotPanel3d(pixel_size=pixel_size)
+        self.panel = PlotPanel3d(positions=positions,
+                                 unit=self.params["values"][self.name]["unit"])
 
         # The main controller module which connects all the parts
         self.controller = PlotController3d(
             axes=self.axes,
+            aspect=aspect,
             name=self.name,
             dim_to_shape=self.dim_to_shape,
             coord_shapes=self.coord_shapes,
             norm=norm,
             vmin=self.params["values"][self.name]["vmin"],
             vmax=self.params["values"][self.name]["vmax"],
-            pixel_size=pixel_size,
             scale=scale,
+            pixel_size=pixel_size,
             positions=positions,
             widgets=self.widgets,
             model=self.model,

@@ -132,6 +132,6 @@ def check_log_limits(lims=None, vmin=None, vmax=None, scale=None):
         if scale == "log" and vmin <= 0:
             vmin = 1.0e-03 * vmax
     if lims is not None:
-        return [vmin, vmax]
+        return np.array([vmin, vmax])
     else:
         return vmin, vmax
