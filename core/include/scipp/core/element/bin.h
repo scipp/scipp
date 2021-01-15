@@ -141,8 +141,7 @@ static constexpr auto bin = overloaded{
        const units::Unit &) { binned = data; },
     [](const auto &binned, const auto &offsets, const auto &data,
        const auto &bin_indices) {
-      std::vector<scipp::index> bins(offsets.sizes().begin(),
-                                     offsets.sizes().end());
+      auto bins(offsets.sizes());
       const auto size = scipp::size(bin_indices);
       using T = std::decay_t<decltype(data)>;
       for (scipp::index i = 0; i < size; ++i) {
@@ -160,25 +159,12 @@ static constexpr auto bin = overloaded{
 
 static constexpr auto count_indices = overloaded{
     element::arg_list<
-        std::tuple<scipp::span<scipp::index>, scipp::span<const int64_t>>,
-        std::tuple<scipp::span<scipp::index>, scipp::span<const int32_t>>>,
-    [](const units::Unit &counts, const units::Unit &indices) {
-      expect::equals(indices, units::one);
-      expect::equals(counts, units::one);
-    },
-    [](const auto &counts, const auto &indices) {
-      zero(counts);
-      for (const auto i : indices)
-        if (i >= 0)
-          ++counts[i];
-    }};
-
-static constexpr auto count_indices2 = overloaded{
-    element::arg_list<
         std::tuple<scipp::span<const int64_t>, scipp::index, scipp::index>,
         std::tuple<scipp::span<const int32_t>, scipp::index, scipp::index>>,
-    [](const units::Unit &indices, const auto &, const auto &) {
+    [](const units::Unit &indices, const auto &offset, const auto &nbin) {
       expect::equals(indices, units::one);
+      expect::equals(offset, units::one);
+      expect::equals(nbin, units::one);
       return units::one;
     },
     [](const auto &indices, const auto offset, const auto nbin) {

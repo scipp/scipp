@@ -17,9 +17,6 @@ SubbinSizes::SubbinSizes(const scipp::index value)
     : m_offset(0), m_sizes({value}) {}
 
 SubbinSizes &SubbinSizes::operator+=(const SubbinSizes &other) {
-  // fprintf(stderr, "SubbinSizes+= %ld %ld %ld %ld\n", offset(),
-  // other.offset(),
-  //        offset() + sizes().size(), other.offset() + other.sizes().size());
   if (other.offset() < offset())
     return *this = *this + other;
   scipp::index current = other.offset() - offset();
@@ -73,13 +70,6 @@ bool operator==(const SubbinSizes &a, const SubbinSizes &b) {
   return (a.offset() == b.offset()) && (a.sizes() == b.sizes());
 }
 
-// is this good enough for what we need? for cumsum we want to avoid filling in
-// the area of zero padding.. instead (inclusive_scan, similar for
-// exclusive_scan):
-//
-// sum = intersection(sum, x) # drop lower subbins
-// sum += x
-// x = sum
 SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
   const auto begin = std::min(a.offset(), b.offset());
   const auto end =

@@ -19,7 +19,6 @@ begin_edge(const VariableConstView &coord, const VariableConstView &edges);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 end_edge(const VariableConstView &coord, const VariableConstView &edges);
 
-SCIPP_VARIABLE_EXPORT void subbin_sizes_fill_zeros(const VariableView &var);
 SCIPP_VARIABLE_EXPORT Variable
 cumsum_subbin_sizes(const VariableConstView &var);
 SCIPP_VARIABLE_EXPORT Variable sum_subbin_sizes(const VariableConstView &var);

@@ -19,7 +19,7 @@ static constexpr auto bin_range_common = overloaded{
     arg_list<bin_range_arg<double, double>, bin_range_arg<int64_t, double>>,
     transform_flags::expect_no_variance_arg<2>};
 
-static constexpr auto begin_bin =
+static constexpr auto begin_edge =
     overloaded{bin_range_common, [](auto &bin, auto &index, const auto &coord,
                                     const auto &edges) {
                  while (bin + 2 < scipp::size(edges) && edges[bin + 1] <= coord)
@@ -27,8 +27,7 @@ static constexpr auto begin_bin =
                  index = bin;
                }};
 
-// right_edge
-static constexpr auto end_bin =
+static constexpr auto end_edge =
     overloaded{bin_range_common, [](auto &bin, auto &index, const auto &coord,
                                     const auto &edges) {
                  while (bin + 2 < scipp::size(edges) && edges[bin + 1] < coord)

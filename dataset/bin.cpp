@@ -2,7 +2,6 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include <iostream>
 #include <numeric>
 #include <set>
 
@@ -100,7 +99,7 @@ Variable bin_sizes(const VariableConstView &sub_bin,
                    const VariableConstView &nbin) {
   return variable::transform(
       as_subspan_view(sub_bin), offset, nbin,
-      core::element::count_indices2); // transform bins, not bin element
+      core::element::count_indices); // transform bins, not bin element
 }
 
 template <class T, class Builder>
@@ -110,30 +109,21 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // Setup offsets within output bins, for every input bin. If rebinning occurs
   // along a dimension each output bin sees contributions from all input bins
   // along that dim.
-  Variable output_bin_sizes = bin_sizes(indices, builder.offsets, builder.nbin);
-  // std::cout << output_bin_sizes;
+  auto output_bin_sizes = bin_sizes(indices, builder.offsets, builder.nbin);
   auto offsets = output_bin_sizes;
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
   // untouched (no rebin).
   for (const auto dim : data.dims().labels())
     if (dims.contains(dim)) {
-      // offsets += cumsum(output_bin_sizes, dim, CumSumMode::Exclusive);
       subbin_sizes_add_intersection(
           offsets, subbin_sizes_exclusive_scan(output_bin_sizes, dim));
       output_bin_sizes = sum(output_bin_sizes, dim);
     }
-  // std::cout << output_bin_sizes;
-  // std::cout << "offsets " << offsets;
   // cumsum with bin dimension is last, since this corresponds to different
   // output bins, whereas the cumsum above handled different subbins of same
   // output bin, i.e., contributions of different input bins to some output bin.
-  // offsets += cumsum_bins(output_bin_sizes, CumSumMode::Exclusive);
-  // Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
-  // std::cout << "cumsum_subbin_sizes " <<
-  // cumsum_subbin_sizes(output_bin_sizes);
   subbin_sizes_add_intersection(offsets, cumsum_subbin_sizes(output_bin_sizes));
-  // std::cout << "offsets " << offsets;
   Variable filtered_input_bin_size = sum_subbin_sizes(output_bin_sizes);
   auto end = cumsum(filtered_input_bin_size);
   const auto total_size = end.values<scipp::index>().as_span().back();
@@ -158,11 +148,6 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
   auto output_dims = merge(output_bin_sizes.dims(), dims);
-  // auto bin_sizes =
-  //    reshape(std::get<2>(output_bin_sizes.constituents<core::bin<Variable>>()),
-  //            output_dims);
-  // std::cout << output_dims;
-  // std::cout << output_bin_sizes;
   auto bin_sizes = makeVariable<scipp::index>(
       output_dims,
       Values(flatten_subbin_sizes(output_bin_sizes, dims.volume())));
@@ -264,7 +249,8 @@ public:
         update_indices_by_grouping(indices, get_coord(dim), key);
       else if (action == AxisAction::Bin) {
         const auto linspace = all(is_linspace(key, dim)).template value<bool>();
-        if (bin_coords.count(dim) && (offsets.dims() == Dimensions{})) {
+        if (bin_coords.count(dim) && (offsets.dims() == Dimensions{}) &&
+            is_sorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
           const bool histogram =
               bin_coord.dims()[dim] == indices.dims()[dim] + 1;

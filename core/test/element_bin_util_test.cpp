@@ -9,12 +9,12 @@
 using namespace scipp;
 using namespace scipp::core::element;
 
-TEST(ElementBinUtilTest, begin_bin) {
+TEST(ElementBinUtilTest, begin_edge) {
   constexpr auto check = [](const double coord, const scipp::index expected) {
     const std::vector<double> edges{0, 1, 2, 3};
     scipp::index bin{0};
     scipp::index index;
-    begin_bin(bin, index, coord, edges);
+    begin_edge(bin, index, coord, edges);
     EXPECT_EQ(index, expected);
   };
   check(-0.1, 0);
@@ -26,12 +26,12 @@ TEST(ElementBinUtilTest, begin_bin) {
   check(3.0, 2);
 }
 
-TEST(ElementBinUtilTest, end_bin) {
+TEST(ElementBinUtilTest, end_edge) {
   constexpr auto check = [](const double coord, const scipp::index expected) {
     const std::vector<double> edges{0, 1, 2, 3};
     scipp::index bin{0};
     scipp::index index;
-    end_bin(bin, index, coord, edges);
+    end_edge(bin, index, coord, edges);
     EXPECT_EQ(index, expected);
   };
   check(-0.1, 2);

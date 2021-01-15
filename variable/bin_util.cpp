@@ -9,6 +9,7 @@
 #include "scipp/variable/bin_util.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/util.h"
 
 namespace scipp::variable {
 
@@ -34,7 +35,7 @@ Variable begin_edge(const VariableConstView &coord,
   const auto dim = edges.dims().inner();
   Variable bin(indices.slice({dim, 0}));
   accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
-                      core::element::begin_bin);
+                      core::element::begin_edge);
   return indices;
 }
 
@@ -49,7 +50,7 @@ Variable end_edge(const VariableConstView &coord,
   const auto dim = edges.dims().inner();
   Variable bin(indices.slice({dim, 0}));
   accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
-                      core::element::end_bin);
+                      core::element::end_edge);
   return indices;
 }
 
@@ -98,11 +99,6 @@ Variable end_edge(const VariableConstView &coord,
 //   - create subspan views so each input bin in the transform sees only
 //     relevant section of output bin edges (or groups)
 
-/// Fill variable with zeros.
-void subbin_sizes_fill_zeros(const VariableView &var) {
-  transform_in_place<core::SubbinSizes>(var, core::element::fill_zeros);
-}
-
 Variable cumsum_subbin_sizes(const VariableConstView &var) {
   return transform<core::SubbinSizes>(
       var, overloaded{[](const units::Unit &u) { return u; },
@@ -131,7 +127,7 @@ Variable subbin_sizes_exclusive_scan(const VariableConstView &var,
   if (var.dims()[dim] == 0)
     return Variable{var};
   Variable cumulative(var.slice({dim, 0}));
-  subbin_sizes_fill_zeros(cumulative);
+  fill_zeros(cumulative);
   Variable out(var);
   accumulate_in_place(cumulative, out,
                       core::element::subbin_sizes_exclusive_scan);
