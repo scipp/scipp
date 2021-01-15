@@ -9,6 +9,18 @@ using namespace scipp::core;
 
 class SubbinSizesTest : public ::testing::Test {};
 
+TEST_F(SubbinSizesTest, trim_to) {
+  SubbinSizes x(2, {1, 2, 3});
+  x.trim_to({2, {6, 6, 6}});
+  EXPECT_EQ(x, SubbinSizes(2, {1, 2, 3}));
+  x.trim_to({3, {6, 6, 6}});
+  EXPECT_EQ(x, SubbinSizes(3, {2, 3, 0}));
+  x.trim_to({1, {6, 6, 6, 6, 6}});
+  EXPECT_EQ(x, SubbinSizes(1, {0, 0, 2, 3, 0}));
+  x.trim_to({2, {6, 6, 6}});
+  EXPECT_EQ(x, SubbinSizes(2, {0, 2, 3}));
+}
+
 TEST_F(SubbinSizesTest, add_intersection) {
   SubbinSizes x(2, {1, 2, 3});
   // no overlap

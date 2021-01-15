@@ -18,16 +18,12 @@ namespace scipp::core {
 class SCIPP_CORE_EXPORT SubbinSizes {
 public:
   using container_type = std::vector<scipp::index>;
-
   SubbinSizes() = default;
   SubbinSizes(const scipp::index value);
   SubbinSizes(const scipp::index offset, container_type &&sizes);
   const auto &offset() const noexcept { return m_offset; }
   const auto &sizes() const noexcept { return m_sizes; }
-  void operator=(const scipp::index value) {
-    for (auto &size : m_sizes)
-      size = value;
-  }
+  void operator=(const scipp::index value);
   SubbinSizes &operator+=(const SubbinSizes &other);
   SubbinSizes &operator-=(const SubbinSizes &other);
 

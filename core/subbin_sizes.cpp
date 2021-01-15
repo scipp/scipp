@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <numeric>
 
+#include "scipp/common/except.h"
 #include "scipp/core/subbin_sizes.h"
 
 namespace scipp::core {
@@ -15,8 +16,13 @@ SubbinSizes::SubbinSizes(const scipp::index offset, container_type &&sizes)
 SubbinSizes::SubbinSizes(const scipp::index value)
     : m_offset(0), m_sizes({value}) {}
 
+void SubbinSizes::operator=(const scipp::index value) {
+  for (auto &size : m_sizes)
+    size = value;
+}
+
 SubbinSizes &SubbinSizes::operator+=(const SubbinSizes &other) {
-  if (other.offset() < offset())
+  if (other.offset() < offset()) // avoid realloc if possible
     return *this = *this + other;
   scipp::index current = other.offset() - offset();
   const auto length = current + scipp::size(other.sizes());
@@ -50,7 +56,6 @@ void SubbinSizes::trim_to(const SubbinSizes &other) {
                             out.offset() + scipp::size(out.sizes()));
   const auto ibegin = sizes().begin() + std::max(begin - offset(), 0l);
   const auto obegin = out.m_sizes.begin() + std::max(begin - out.offset(), 0l);
-
   std::copy_n(ibegin, std::max(0l, end - begin), obegin);
   *this = out;
 }
