@@ -11,24 +11,29 @@
 
 namespace scipp::core::element {
 
-template <class Index, class T>
-using update_indices_by_binning_arg =
-    std::tuple<Index, T, scipp::span<const T>>;
+template <class Coord, class Edge>
+using bin_range_arg =
+    std::tuple<scipp::index, scipp::index, Coord, scipp::span<const Edge>>;
 
-static constexpr auto bin_index_sorted =
-    overloaded{element::arg_list<std::tuple<double, span<const double>>>,
-               [](const units::Unit &x, const units::Unit &edges) {
-                 expect::equals(x, edges);
-                 return units::one;
-               },
-               [](const auto &x, const auto &edges) {
-                 for (scipp::index i = scipp::size(edges) - 1; i != 0; --i)
-                   if (x >= edges[i])
-                     return i;
-                 return scipp::index{0};
-               },
-               transform_flags::expect_no_variance_arg<0>,
-               transform_flags::expect_no_variance_arg<1>};
+static constexpr auto bin_range_common = overloaded{
+    arg_list<bin_range_arg<double, double>, bin_range_arg<int64_t, double>>,
+    transform_flags::expect_no_variance_arg<2>};
+
+static constexpr auto begin_bin =
+    overloaded{bin_range_common, [](auto &bin, auto &index, const auto &coord,
+                                    const auto &edges) {
+                 while (bin + 2 < scipp::size(edges) && edges[bin + 1] <= coord)
+                   ++bin;
+                 index = bin;
+               }};
+
+static constexpr auto end_bin =
+    overloaded{bin_range_common, [](auto &bin, auto &index, const auto &coord,
+                                    const auto &edges) {
+                 while (bin + 2 < scipp::size(edges) && edges[bin + 1] < coord)
+                   ++bin;
+                 index = bin + 1;
+               }};
 
 constexpr auto subbin_sizes_exclusive_scan =
     overloaded{arg_list<SubbinSizes>, [](auto &sum, auto &x) {

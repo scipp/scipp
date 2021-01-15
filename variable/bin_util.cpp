@@ -15,41 +15,23 @@ namespace scipp::variable {
 // TODO two cases, input edges or groups
 Variable begin_bin_sorted(const VariableConstView &coord,
                           const VariableConstView &edges) {
-  auto out = makeVariable<scipp::index>(coord.dims());
-  const auto indices = out.values<scipp::index>();
-  const auto coords_ = coord.values<double>();
-  const auto edges_ = edges.values<double>();
-  scipp::index bin = 0;
-  for (scipp::index i = 0; i < scipp::size(indices); ++i) {
-    while (bin + 2 < edges_.size() && edges_[bin + 1] <= coords_[i])
-      ++bin;
-    indices[i] = bin;
-  }
-  return out;
+  auto indices = makeVariable<scipp::index>(coord.dims());
   const auto dim = edges.dims().inner();
-  // TODO this is M * N, use linear alg instead
-  return transform(coord, subspan_view(edges, dim),
-                   core::element::bin_index_sorted);
+  Variable bin(indices.slice({dim, 0}));
+  accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
+                      core::element::begin_bin);
+  return indices;
 }
 
 // TODO two cases, input edges or groups
 Variable end_bin_sorted(const VariableConstView &coord,
                         const VariableConstView &edges) {
-  auto out = makeVariable<scipp::index>(coord.dims());
-  const auto indices = out.values<scipp::index>();
-  const auto coords_ = coord.values<double>();
-  const auto edges_ = edges.values<double>();
-  scipp::index bin = 0;
-  for (scipp::index i = 0; i < scipp::size(indices); ++i) {
-    while (bin + 2 < edges_.size() && edges_[bin + 1] < coords_[i])
-      ++bin;
-    indices[i] = bin + 1;
-  }
-  return out;
+  auto indices = makeVariable<scipp::index>(coord.dims());
   const auto dim = edges.dims().inner();
-  // TODO this is M * N, use linear alg instead
-  return transform(coord, subspan_view(edges, dim),
-                   core::element::bin_index_sorted);
+  Variable bin(indices.slice({dim, 0}));
+  accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
+                      core::element::end_bin);
+  return indices;
 }
 
 // start: first (outer) dst bin overlapping input bin
