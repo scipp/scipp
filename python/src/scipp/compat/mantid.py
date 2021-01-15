@@ -55,12 +55,15 @@ def make_run(ws):
 additional_unit_mapping = {
     "Kelvin": sc.units.K,
     "microsecond": sc.units.us,
+    "us": sc.units.us,
     "nanosecond": sc.units.ns,
     "second": sc.units.s,
     "Angstrom": sc.units.angstrom,
     "Hz": sc.units.one / sc.units.s,
     "degree": sc.units.deg,
     "millimetre": sc.units.mm,
+    " ": sc.units.one,
+    "none": sc.units.one,
 }
 
 
