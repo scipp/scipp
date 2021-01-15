@@ -6,7 +6,6 @@
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
-#include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core::element {
@@ -15,7 +14,7 @@ namespace scipp::core::element {
 // ValueAndVariance before calling the functor. Only the *first* arg in an
 // in-place transform is copied back to the input.
 constexpr auto exclusive_scan = overloaded{
-    arg_list<double, float, int64_t, int32_t, SubbinSizes>,
+    arg_list<double, float, int64_t, int32_t>,
     transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>, [](auto &sum, auto &x) {
       sum += x;
@@ -23,7 +22,7 @@ constexpr auto exclusive_scan = overloaded{
     }};
 
 constexpr auto inclusive_scan = overloaded{
-    arg_list<double, float, int64_t, int32_t, SubbinSizes>,
+    arg_list<double, float, int64_t, int32_t>,
     transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>, [](auto &sum, auto &x) {
       sum += x;

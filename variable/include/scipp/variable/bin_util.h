@@ -13,15 +13,11 @@ left_edge(const VariableConstView &edges);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT VariableConstView
 right_edge(const VariableConstView &edges);
 
+// TODO These are implementation details of `bin`. namespace bin_detail {?
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 begin_edge(const VariableConstView &coord, const VariableConstView &edges);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 end_edge(const VariableConstView &coord, const VariableConstView &edges);
-
-[[nodiscard]] SCIPP_VARIABLE_EXPORT std::tuple<Variable, Variable>
-subbin_offsets(const VariableConstView &start_, const VariableConstView &stop_,
-               const VariableConstView &subbin_sizes_, const scipp::index nsrc,
-               const scipp::index ndst, const scipp::index nbin);
 
 SCIPP_VARIABLE_EXPORT void subbin_sizes_fill_zeros(const VariableView &var);
 SCIPP_VARIABLE_EXPORT Variable

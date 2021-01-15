@@ -94,25 +94,10 @@ void update_indices_from_existing(const VariableView &indices, const Dim dim) {
                                core::element::update_indices_from_existing);
 }
 
-/// indices is a binned variable with sub-bin indices, i.e., new bins within
-/// bins
-Variable bin_sizes(const VariableConstView &sub_bin, const scipp::index nbin) {
-  const auto end = cumsum(broadcast(nbin * units::one, sub_bin.dims()));
-  const auto dim = variable::variableFactory().elem_dim(sub_bin);
-  auto sizes = make_bins(
-      zip(end - nbin * units::one, end), dim,
-      makeVariable<scipp::index>(Dims{dim}, Shape{end.dims().volume() * nbin}));
-  variable::transform_in_place(
-      as_subspan_view(sizes), as_subspan_view(sub_bin),
-      core::element::count_indices); // transform bins, not bin element
-  return sizes;
-}
-
-/// indices is a binned variable with sub-bin indices, i.e., new bins within
-/// bins
-Variable bin_sizes2(const VariableConstView &sub_bin,
-                    const VariableConstView &offset,
-                    const VariableConstView &nbin) {
+/// `sub_bin` is a binned variable with sub-bin indices: new bins within bins
+Variable bin_sizes(const VariableConstView &sub_bin,
+                   const VariableConstView &offset,
+                   const VariableConstView &nbin) {
   return variable::transform(
       as_subspan_view(sub_bin), offset, nbin,
       core::element::count_indices2); // transform bins, not bin element
@@ -125,8 +110,7 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // Setup offsets within output bins, for every input bin. If rebinning occurs
   // along a dimension each output bin sees contributions from all input bins
   // along that dim.
-  Variable output_bin_sizes =
-      bin_sizes2(indices, builder.offsets, builder.nbin);
+  Variable output_bin_sizes = bin_sizes(indices, builder.offsets, builder.nbin);
   // std::cout << output_bin_sizes;
   auto offsets = output_bin_sizes;
   fill_zeros(offsets);
@@ -293,10 +277,6 @@ public:
           const auto inner_volume = dims().volume() / dims()[dim] * units::one;
           nbin = (end - begin - 1 * units::one) * inner_volume;
           offsets = begin * inner_volume;
-          // std::cout << "begin " << begin;
-          // std::cout << "end" << end;
-          // std::cout << "nbin" << nbin;
-          // std::cout << "offsets" << offsets;
           update_indices_by_binning(indices, get_coord(dim), masked_key,
                                     linspace);
         } else {
