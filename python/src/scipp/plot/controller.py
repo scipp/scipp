@@ -561,8 +561,8 @@ class PlotController:
                 xmin = np.Inf
                 xmax = np.NINF
                 for name in self.xlims:
-                    xlims = self.xlims[name][self.profile_dim][
-                        self.scale[self.profile_dim]].values
+                    xlims = self.xlims[name][self.profile_dim][self.scale[
+                        self.profile_dim]].values
                     xmin = min(xmin, xlims[0])
                     xmax = max(xmax, xlims[1])
                 self.profile_axparams = {
