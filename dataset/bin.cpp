@@ -284,15 +284,10 @@ public:
           const auto &bin_coord = bin_coords.at(dim);
           const bool histogram =
               bin_coord.dims()[dim] == indices.dims()[dim] + 1;
-          const auto begin = begin_edge(
-              histogram ? bin_coord.slice({dim, 0, bin_coord.dims()[dim] - 1})
-                        : bin_coord,
-              key);
-          const auto end =
-              histogram
-                  ? end_edge(bin_coord.slice({dim, 1, bin_coord.dims()[dim]}),
-                             key)
-                  : begin + 2 * units::one;
+          const auto begin =
+              begin_edge(histogram ? left_edge(bin_coord) : bin_coord, key);
+          const auto end = histogram ? end_edge(right_edge(bin_coord), key)
+                                     : begin + 2 * units::one;
           const auto indices_ = zip(begin, end);
           const auto masked_key = make_non_owning_bins(indices_, dim, key);
           const auto inner_volume = dims().volume() / dims()[dim] * units::one;

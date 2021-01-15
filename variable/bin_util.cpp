@@ -12,6 +12,18 @@
 
 namespace scipp::variable {
 
+/// Return view onto left bin edges, i.e., all but the last edge
+VariableConstView left_edge(const VariableConstView &edges) {
+  const auto dim = edges.dims().inner();
+  return edges.slice({dim, 0, edges.dims()[dim] - 1});
+}
+
+/// Return view onto right bin edges, i.e., all but the first edge
+VariableConstView right_edge(const VariableConstView &edges) {
+  const auto dim = edges.dims().inner();
+  return edges.slice({dim, 1, edges.dims()[dim]});
+}
+
 /// Index of the bin (given by `edges`) containing a coord value.
 ///
 /// 0 if the coord is less than the first edge, nbin-1 if greater or equal last
