@@ -248,6 +248,26 @@ public:
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
       else if (action == AxisAction::Bin) {
+        // When binning along an existing dim with a coord (may be edges or
+        // not), not all input bins can map to all output bins. The array of
+        // subbin sizes that is normally created thus contains mainly zero
+        // entries, e.g.,:
+        // ---1
+        // --11
+        // --4-
+        // 111-
+        // 2---
+        //
+        // each row corresponds to an input bin
+        // each column corresponds to an input bin
+        // the example is for a single rebinned dim
+        // `-` is 0
+        //
+        // In practice this array of sizes can become very large (many GByte of
+        // memory) and has to be avoided. This is not just a performance issue.
+        // We detect this case, pre select relevant output bins, and store the
+        // sparse array in a specialized packed format, using the helper type
+        // SubbinSizes.
         const auto linspace = all(is_linspace(key, dim)).template value<bool>();
         if (bin_coords.count(dim) && (offsets.dims() == Dimensions{}) &&
             is_sorted(bin_coords.at(dim), dim)) {
