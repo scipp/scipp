@@ -262,7 +262,7 @@ class PlotModel:
         Get the min and max values of the currently displayed slice.
         """
         if self.dslice is not None:
-            return find_limits(self.dslice.data)[scale]
+            return find_limits(self.dslice.data, scale=scale)[scale]
         else:
             return [None, None]
 
