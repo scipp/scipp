@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <algorithm>
@@ -9,8 +9,7 @@
 
 namespace scipp::core {
 
-SubbinSizes::SubbinSizes(const scipp::index offset,
-                         std::vector<scipp::index> &&sizes)
+SubbinSizes::SubbinSizes(const scipp::index offset, container_type &&sizes)
     : m_offset(offset), m_sizes(std::move(sizes)) {}
 
 SubbinSizes::SubbinSizes(const scipp::index value)
@@ -56,14 +55,14 @@ void SubbinSizes::trim_to(const SubbinSizes &other) {
   *this = out;
 }
 
-void SubbinSizes::add_intersection(const SubbinSizes &other) {
+SubbinSizes &SubbinSizes::add_intersection(const SubbinSizes &other) {
   scipp::index delta = other.offset() - offset();
   auto i = std::max(scipp::index(0), delta);
   auto j = std::max(scipp::index(0), -delta);
   for (; j < scipp::size(other.sizes()) && i < scipp::size(sizes()); ++j, ++i) {
     m_sizes[i] += other.sizes()[j];
   }
-  return;
+  return *this;
 }
 
 bool operator==(const SubbinSizes &a, const SubbinSizes &b) {
@@ -74,7 +73,7 @@ SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
   const auto begin = std::min(a.offset(), b.offset());
   const auto end =
       std::max(a.offset() + a.sizes().size(), b.offset() + b.sizes().size());
-  std::vector<scipp::index> sizes(end - begin);
+  typename SubbinSizes::container_type sizes(end - begin);
   scipp::index current = a.offset() - begin;
   for (const auto &size : a.sizes())
     sizes[current++] += size;
@@ -88,7 +87,7 @@ SubbinSizes operator-(const SubbinSizes &a, const SubbinSizes &b) {
   const auto begin = std::min(a.offset(), b.offset());
   const auto end =
       std::max(a.offset() + a.sizes().size(), b.offset() + b.sizes().size());
-  std::vector<scipp::index> sizes(end - begin);
+  typename SubbinSizes::container_type sizes(end - begin);
   scipp::index current = a.offset() - begin;
   for (const auto &size : a.sizes())
     sizes[current++] += size;

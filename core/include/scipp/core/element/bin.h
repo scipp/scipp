@@ -168,7 +168,7 @@ static constexpr auto count_indices = overloaded{
       return units::one;
     },
     [](const auto &indices, const auto offset, const auto nbin) {
-      std::vector<scipp::index> counts(nbin);
+      typename SubbinSizes::container_type counts(nbin);
       for (const auto i : indices)
         if (i >= 0)
           ++counts[i];

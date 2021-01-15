@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -17,9 +17,11 @@ namespace scipp::core {
 // and cumsum ops.
 class SCIPP_CORE_EXPORT SubbinSizes {
 public:
+  using container_type = std::vector<scipp::index>;
+
   SubbinSizes() = default;
   SubbinSizes(const scipp::index value);
-  SubbinSizes(const scipp::index offset, std::vector<scipp::index> &&sizes);
+  SubbinSizes(const scipp::index offset, container_type &&sizes);
   const auto &offset() const noexcept { return m_offset; }
   const auto &sizes() const noexcept { return m_sizes; }
   void operator=(const scipp::index value) {
@@ -32,12 +34,11 @@ public:
   SubbinSizes cumsum() const;
   scipp::index sum() const;
   void trim_to(const SubbinSizes &other);
-  void add_intersection(const SubbinSizes &other);
+  SubbinSizes &add_intersection(const SubbinSizes &other);
 
 private:
   scipp::index m_offset{0};
-  // consider boost::small_vector?
-  std::vector<scipp::index> m_sizes; // TODO can we avoid many small vecs?
+  container_type m_sizes;
 };
 
 [[nodiscard]] SCIPP_CORE_EXPORT bool operator==(const SubbinSizes &a,
