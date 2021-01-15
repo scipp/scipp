@@ -281,45 +281,28 @@ public:
       else if (action == AxisAction::Bin) {
         const auto linspace = all(is_linspace(key, dim)).template value<bool>();
         if (bin_coords.count(dim) && (offsets.dims() == Dimensions{})) {
-          // printf("existing grouping along %s\n", to_string(dim).c_str());
           const auto &bin_coord = bin_coords.at(dim);
-          // std::cout << "bin_coord " << bin_coord;
-          // std::cout << "key" << key;
-          // const auto bin_indices = bin_index_sorted(bin_coord, key);
-          // bin_indices contains index of bin coord value in new key
           const bool histogram =
               bin_coord.dims()[dim] == indices.dims()[dim] + 1;
-          const auto begin = begin_bin_sorted(
+          const auto begin = begin_edge(
               histogram ? bin_coord.slice({dim, 0, bin_coord.dims()[dim] - 1})
                         : bin_coord,
               key);
           const auto end =
               histogram
-                  ? end_bin_sorted(
-                        bin_coord.slice({dim, 1, bin_coord.dims()[dim]}), key)
-                  : begin + 1 * units::one;
-          // const auto begin =
-          //    histogram
-          //        ? bin_indices.slice({dim, 0, bin_indices.dims()[dim] - 1})
-          //        : bin_indices;
-          // const auto end =
-          //    (histogram ? bin_indices.slice({dim, 1,
-          //    bin_indices.dims()[dim]})
-          //               : begin) +
-          //    1 * units::one;
-          const auto indices_ = zip(begin, end + 1 * units::one);
-          const auto pre_selected_key =
-              make_non_owning_bins(indices_, dim, key);
+                  ? end_edge(bin_coord.slice({dim, 1, bin_coord.dims()[dim]}),
+                             key)
+                  : begin + 2 * units::one;
+          const auto indices_ = zip(begin, end);
+          const auto masked_key = make_non_owning_bins(indices_, dim, key);
           const auto inner_volume = dims().volume() / dims()[dim] * units::one;
-          nbin = (end - begin) * inner_volume;
-          // if (histogram)
-          //  nbin -= inner_volume;
+          nbin = (end - begin - 1 * units::one) * inner_volume;
           offsets = begin * inner_volume;
           // std::cout << "begin " << begin;
           // std::cout << "end" << end;
           // std::cout << "nbin" << nbin;
           // std::cout << "offsets" << offsets;
-          update_indices_by_binning(indices, get_coord(dim), pre_selected_key,
+          update_indices_by_binning(indices, get_coord(dim), masked_key,
                                     linspace);
         } else {
           update_indices_by_binning(indices, get_coord(dim), key, linspace);

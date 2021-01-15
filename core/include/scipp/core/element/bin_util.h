@@ -27,12 +27,13 @@ static constexpr auto begin_bin =
                  index = bin;
                }};
 
+// right_edge
 static constexpr auto end_bin =
     overloaded{bin_range_common, [](auto &bin, auto &index, const auto &coord,
                                     const auto &edges) {
                  while (bin + 2 < scipp::size(edges) && edges[bin + 1] < coord)
                    ++bin;
-                 index = bin + 1;
+                 index = bin + 2;
                }};
 
 constexpr auto subbin_sizes_exclusive_scan =

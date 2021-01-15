@@ -8,10 +8,10 @@
 
 namespace scipp::variable {
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable begin_bin_sorted(
-    const VariableConstView &coord, const VariableConstView &edges);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-end_bin_sorted(const VariableConstView &coord, const VariableConstView &edges);
+begin_edge(const VariableConstView &coord, const VariableConstView &edges);
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+end_edge(const VariableConstView &coord, const VariableConstView &edges);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::tuple<Variable, Variable>
 subbin_offsets(const VariableConstView &start_, const VariableConstView &stop_,
