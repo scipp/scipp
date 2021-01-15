@@ -48,7 +48,7 @@ scipp::index SubbinSizes::sum() const {
 }
 
 void SubbinSizes::trim_to(const SubbinSizes &other) {
-  auto out = other;
+  auto out = other; // TODO in principle this allocation could be avoided
   out = 0;
   // full index begin/end
   const auto begin = std::max(offset(), out.offset());
@@ -57,7 +57,7 @@ void SubbinSizes::trim_to(const SubbinSizes &other) {
   const auto ibegin = sizes().begin() + std::max(begin - offset(), 0l);
   const auto obegin = out.m_sizes.begin() + std::max(begin - out.offset(), 0l);
   std::copy_n(ibegin, std::max(0l, end - begin), obegin);
-  *this = out;
+  *this = std::move(out);
 }
 
 SubbinSizes &SubbinSizes::add_intersection(const SubbinSizes &other) {
