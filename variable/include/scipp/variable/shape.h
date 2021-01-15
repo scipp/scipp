@@ -38,4 +38,7 @@ SCIPP_VARIABLE_EXPORT VariableView transpose(const VariableView &view,
                                              const std::vector<Dim> &dims = {});
 
 SCIPP_VARIABLE_EXPORT void squeeze(Variable &var, const std::vector<Dim> &dims);
+
+SCIPP_VARIABLE_EXPORT void expect_same_volume(const Dimensions &old_dims,
+                                              const Dimensions &new_dims);
 } // namespace scipp::variable
