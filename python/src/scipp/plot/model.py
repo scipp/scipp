@@ -36,6 +36,7 @@ class PlotModel:
         # The main container of DataArrays
         self.data_arrays = {}
         self.coord_info = {}
+        self.dim_to_shape = dim_to_shape
 
         self.axformatter = {}
 
@@ -52,7 +53,7 @@ class PlotModel:
             # Iterate through axes and collect coordinates
             for dim in axes_dims:
                 coord, formatter, label, unit = self._axis_coord_and_formatter(
-                    dim, array, dim_to_shape[name], dim_label_map)
+                    dim, array, self.dim_to_shape[name], dim_label_map)
 
                 self.axformatter[name][dim] = formatter
                 self.coord_info[name][dim] = {"label": label, "unit": unit}
@@ -60,7 +61,7 @@ class PlotModel:
                 is_histogram = False
                 for i, d in enumerate(coord.dims):
                     if d == dim:
-                        is_histogram = dim_to_shape[name][
+                        is_histogram = self.dim_to_shape[name][
                             d] == coord.shape[i] - 1
 
                 if is_histogram:

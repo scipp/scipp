@@ -486,7 +486,7 @@ class PlotController:
                 xmin = min(xmin, xlims[0])
                 xmax = max(xmax, xlims[1])
             axparams[ax] = {
-                "lims": [xmin, xmax],
+                "lims": np.array([xmin, xmax]),
                 "scale": self.scale[dim],
                 "hist": {
                     name: self.histograms[name][dim][dim]

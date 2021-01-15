@@ -173,16 +173,29 @@ class PlotModel3d(PlotModel):
             raise RuntimeError(
                 "Unknown cut surface type {}".format(button_value))
 
-    def get_positions_extents(self, pixel_size):
+    def get_positions_extents(self):
+        """
+        Find the extents of the box that contains all the positions.
+        """
         extents = {}
         for xyz in "xyz":
             x = getattr(sc.geometry, xyz)(self.pos_coord)
             extents[xyz] = {
-                "lims": [
-                    sc.min(x).value - 0.5 * pixel_size,
-                    sc.max(x).value + 0.5 * pixel_size
-                ],
-                "unit":
-                self.pos_coord.unit
+                "lims": np.array([sc.min(x).value,
+                                  sc.max(x).value]),
+                "unit": self.pos_coord.unit
             }
         return extents
+
+    def estimate_pixel_size(self, axparams):
+        """
+        Find the smallest pixel in the grid.
+        """
+        dx = [
+            axparams["box_size"][i] /
+            self.dim_to_shape[self.name][axparams[xyz]["dim"]]
+            for i, xyz in enumerate("xyz")
+        ]
+        scaling = [axparams[xyz]["scaling"] for xyz in "xyz"]
+        ind = np.argmin(dx)
+        return dx[ind], scaling[ind]

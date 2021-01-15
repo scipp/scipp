@@ -12,10 +12,9 @@ class PlotPanel3d(PlotPanel):
     Additional widgets that control the position, opacity and shape of the
     cut surface in the 3d plot.
     """
-    def __init__(self, pixel_size=None, positions=None, unit=None):
+    def __init__(self, positions=None, unit=None):
         super().__init__()
 
-        self.pixel_size = pixel_size
         self.positions = positions
         self.unit = unit
         self.current_cut_surface_value = None
@@ -104,7 +103,7 @@ class PlotPanel3d(PlotPanel):
 
         # Allow to change the thickness of the cut surface
         self.cut_surface_thickness = ipw.BoundedFloatText(
-            value=self.pixel_size * 1.1,
+            value=1,
             min=0,
             layout={"width": "200px"},
             disabled=True,
@@ -162,9 +161,9 @@ class PlotPanel3d(PlotPanel):
         """
         Reset axes limits and cut surface buttons.
         """
-        self.xminmax["x"] = axparams['x']['lims']
-        self.xminmax["y"] = axparams['y']['lims']
-        self.xminmax["z"] = axparams['z']['lims']
+        self.xminmax["x"] = axparams['x']['lims'] / axparams['x']['scaling']
+        self.xminmax["y"] = axparams['y']['lims'] / axparams['y']['scaling']
+        self.xminmax["z"] = axparams['z']['lims'] / axparams['z']['scaling']
         self.cut_surface_buttons.value = None
         self.current_cut_surface_value = None
 
@@ -273,7 +272,8 @@ class PlotPanel3d(PlotPanel):
             self.cut_slider.description = "Value:"
             self.cut_unit.value = self.unit
         if self.cut_surface_buttons.value < self.cut_options["Value"]:
-            self.cut_slider.step = self.pixel_size * 1.1
+            self.cut_slider.step = self.interface["get_pixel_size"]() * 1.1
+            self.cut_surface_thickness.max = self.cut_slider.max
         self.lock_surface_update = False
 
     def _update_cut_surface(self, change=None):
