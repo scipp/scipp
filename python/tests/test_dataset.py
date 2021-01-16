@@ -41,7 +41,7 @@ def test_create():
 def test_create_from_data_array():
     var = sc.Variable(dims=['x'], values=np.arange(4))
     da = sc.DataArray(var, coords={'x': var, 'aux': var})
-    d = sc.Dataset(da)
+    d = sc.Dataset({da.name: da})
     assert sc.is_equal(d[''], da)
 
 
@@ -63,6 +63,27 @@ def test_create_from_data_arrays():
                        'x': var1,
                        'aux': var2
                    }))
+
+
+def test_create_from_data_array_and_variable_mix():
+    var_1 = sc.Variable(dims=['x'], values=np.arange(4))
+    var_2 = sc.Variable(dims=['x'], values=np.arange(4))
+    da = sc.DataArray(data=var_1, coords={'x': var_1, 'aux': var_1})
+    d = sc.Dataset({'array': da, 'variable': var_2})
+    assert sc.is_equal(d['array'], da)
+    assert sc.is_equal(d['variable'].data, var_2)
+
+
+def test_create_with_data_array_and_additional_coords():
+    var = sc.Variable(dims=['x'], values=np.arange(4))
+    coord = sc.Variable(dims=['x'], values=np.arange(4))
+    da = sc.DataArray(data=var, coords={'x': var, 'aux': var})
+    d = sc.Dataset(data={'array': da}, coords={'y': coord})
+    da.coords['y'] = coord
+    assert sc.is_equal(d['array'], da)
+    assert sc.is_equal(d.coords['y'], coord)
+    assert sc.is_equal(d.coords['x'], var)
+    assert sc.is_equal(d.coords['aux'], var)
 
 
 def test_clear():
@@ -463,7 +484,7 @@ def test_binary__with_dataarray():
     da = sc.DataArray(
         data=sc.Variable(dims=['x'], values=np.arange(1.0, 10.0)),
         coords={'x': sc.Variable(dims=['x'], values=np.arange(1.0, 10.0))})
-    ds = sc.Dataset(da)
+    ds = sc.Dataset({da.name: da})
     orig = ds.copy()
     ds += da
     ds -= da

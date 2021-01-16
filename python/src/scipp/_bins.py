@@ -128,6 +128,10 @@ class GroupbyBins:
 
 
 def _bins(obj):
+    """
+    Returns binning object allowing bin-wise operations
+    to be performed.
+    """
     if _cpp.is_bins(obj):
         return _Bins(obj)
     else:
@@ -151,13 +155,6 @@ def histogram(x, bins):
              bin.
     :seealso: :py:func:`scipp.bin` for binning data.
     """
-    if isinstance(x, _Bins):
-        return _call_cpp_func(_cpp.histogram, x._obj, bins)
-    if _cpp.is_bins(x):
-        raise RuntimeError(
-            "Histogramming binned data not supported. Use the `bins` property "
-            "to histogram the bin *contents*, e.g., sc.histogram(binned.bins, "
-            "...).")
     return _call_cpp_func(_cpp.histogram, x, bins)
 
 
@@ -172,13 +169,6 @@ def bin(x, edges=[], groups=[]):
               :py:func:`scipp.bins` for creating binned data based on
               explicitly given index ranges.
     """
-    if isinstance(x, _Bins):
-        return _call_cpp_func(_cpp.bin, x._obj, edges, groups)
-    if _cpp.is_bins(x):
-        raise RuntimeError(
-            "Recursive binning not supported. Use the `bins` property to "
-            "subdivide bins in along additional dimensions, e.g., "
-            "sc.bin(binned.bins, ...).")
     return _call_cpp_func(_cpp.bin, x, edges, groups)
 
 

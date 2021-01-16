@@ -41,6 +41,11 @@ def test_plot_2d_image_with_log_scale_xy():
     plot(make_dense_dataset(ndim=2), scale={'tof': 'log', 'x': 'log'})
 
 
+def test_plot_2d_image_with_aspect():
+    plot(make_dense_dataset(ndim=2), aspect="equal")
+    plot(make_dense_dataset(ndim=2), aspect="auto")
+
+
 def test_plot_2d_image_with_with_nan():
     d = make_dense_dataset(ndim=2)
     d['Sample'].values[0, 0] = np.nan
