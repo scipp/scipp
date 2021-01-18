@@ -37,8 +37,12 @@ public:
       return;
     auto remainder{index};
     for (int32_t d = 0; d < m_dims - 1; ++d) {
-      m_coord[d] = remainder % m_extent[d];
-      remainder /= m_extent[d];
+      if (m_extent[d] != 0) {
+        m_coord[d] = remainder % m_extent[d];
+        remainder /= m_extent[d];
+      } else {
+        m_coord[d] = 0;
+      }
     }
     m_coord[m_dims - 1] = remainder;
     m_index = 0;
