@@ -166,13 +166,16 @@ class PlotFigure3d:
         self.camera_backup["reset"] = copy(self.camera.position)
         self.camera_backup["centre"] = copy(axparams["centre"])
         self.camera_backup["x_normal"] = [
-            cam_pos_norm, axparams["centre"][1], axparams["centre"][2]
+            2.0 * axparams["centre"][0] - cam_pos_norm, axparams["centre"][1],
+            axparams["centre"][2]
         ]
         self.camera_backup["y_normal"] = [
-            axparams["centre"][0], cam_pos_norm, axparams["centre"][2]
+            axparams["centre"][0], 2.0 * axparams["centre"][1] - cam_pos_norm,
+            axparams["centre"][2]
         ]
         self.camera_backup["z_normal"] = [
-            axparams["centre"][0], axparams["centre"][1], cam_pos_norm
+            axparams["centre"][0], axparams["centre"][1],
+            2.0 * axparams["centre"][2] - cam_pos_norm
         ]
 
         # Rescale axes helper
@@ -403,15 +406,33 @@ void main() {
 
     def camera_x_normal(self, owner=None):
         """
-        Reset the camera position.
+        View scene along the X normal.
         """
-        self.move_camera(position=self.camera_backup["x_normal"])
+        self.camera_normal(position=self.camera_backup["x_normal"].copy(),
+                           ind=0)
 
     def camera_y_normal(self, owner=None):
-        self.move_camera(position=self.camera_backup["y_normal"])
+        """
+        View scene along the Y normal.
+        """
+        self.camera_normal(position=self.camera_backup["y_normal"].copy(),
+                           ind=1)
 
     def camera_z_normal(self, owner=None):
-        self.move_camera(position=self.camera_backup["z_normal"])
+        """
+        View scene along the Z normal.
+        """
+        self.camera_normal(position=self.camera_backup["z_normal"].copy(),
+                           ind=2)
+
+    def camera_normal(self, position, ind):
+        """
+        Move camera to requested normal, and flip if current position is equal
+        to the requested position.
+        """
+        if np.array_equal(self.camera.position, position):
+            position[ind] = self.camera_backup["centre"][ind] - position[ind]
+        self.move_camera(position=position)
 
     def move_camera(self, position):
         self.camera.position = position
