@@ -430,7 +430,7 @@ void main() {
         Move camera to requested normal, and flip if current position is equal
         to the requested position.
         """
-        if np.array_equal(self.camera.position, position):
+        if np.allclose(self.camera.position, position):
             position[ind] = self.camera_backup["centre"][ind] - position[ind]
         self.move_camera(position=position)
 
