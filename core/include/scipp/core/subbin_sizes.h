@@ -12,9 +12,7 @@
 
 namespace scipp::core {
 
-// instead of this helper class, we could also just use two variables for
-// offset and sizes (the latter one a bin-variable), and implement custom sum
-// and cumsum ops.
+/// Helper of `bin` for representing rows of a sparse subbin-size array.
 class SCIPP_CORE_EXPORT SubbinSizes {
 public:
   using container_type = std::vector<scipp::index>;

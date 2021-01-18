@@ -6,6 +6,7 @@
 #include <numeric>
 
 #include "scipp/common/except.h"
+#include "scipp/core/element/arithmetic.h"
 #include "scipp/core/subbin_sizes.h"
 
 namespace scipp::core {
@@ -74,7 +75,8 @@ bool operator==(const SubbinSizes &a, const SubbinSizes &b) {
   return (a.offset() == b.offset()) && (a.sizes() == b.sizes());
 }
 
-SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
+template <class Op>
+SubbinSizes binary(const SubbinSizes &a, const SubbinSizes &b, Op op) {
   const auto begin = std::min(a.offset(), b.offset());
   const auto end =
       std::max(a.offset() + a.sizes().size(), b.offset() + b.sizes().size());
@@ -84,22 +86,16 @@ SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
     sizes[current++] += size;
   current = b.offset() - begin;
   for (const auto &size : b.sizes())
-    sizes[current++] += size;
+    op(sizes[current++], size);
   return {begin, std::move(sizes)};
 }
 
+SubbinSizes operator+(const SubbinSizes &a, const SubbinSizes &b) {
+  return binary(a, b, element::plus_equals);
+}
+
 SubbinSizes operator-(const SubbinSizes &a, const SubbinSizes &b) {
-  const auto begin = std::min(a.offset(), b.offset());
-  const auto end =
-      std::max(a.offset() + a.sizes().size(), b.offset() + b.sizes().size());
-  typename SubbinSizes::container_type sizes(end - begin);
-  scipp::index current = a.offset() - begin;
-  for (const auto &size : a.sizes())
-    sizes[current++] += size;
-  current = b.offset() - begin;
-  for (const auto &size : b.sizes())
-    sizes[current++] -= size;
-  return {begin, std::move(sizes)};
+  return binary(a, b, element::minus_equals);
 }
 
 std::string to_string(const SubbinSizes &s) {
