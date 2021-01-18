@@ -15,6 +15,18 @@ namespace py = pybind11;
 
 namespace {
 
+template <class T> void bind_broadcast(py::module &m) {
+  m.def(
+      "broadcast",
+      [](const typename T::const_view_type &self,
+         const std::vector<Dim> &labels,
+         const std::vector<scipp::index> &shape) {
+        Dimensions dims(labels, shape);
+        return broadcast(self, dims);
+      },
+      py::arg("x"), py::arg("dims"), py::arg("shape"));
+}
+
 template <class T> void bind_concatenate(py::module &m) {
   m.def(
       "concatenate",
@@ -24,6 +36,7 @@ template <class T> void bind_concatenate(py::module &m) {
       py::arg("x"), py::arg("y"), py::arg("dim"),
       py::call_guard<py::gil_scoped_release>());
 }
+
 template <class T> void bind_reshape(pybind11::module &mod) {
   mod.def(
       "reshape",
@@ -46,6 +59,7 @@ template <class T> void bind_transpose(pybind11::module &mod) {
 } // namespace
 
 void init_shape(py::module &m) {
+  bind_broadcast<Variable>(m);
   bind_concatenate<Variable>(m);
   bind_concatenate<DataArray>(m);
   bind_concatenate<Dataset>(m);

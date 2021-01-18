@@ -619,10 +619,12 @@ def convert_EventWorkspace_to_data_array(ws,
                         shape=[n_event],
                         unit=unit,
                         dtype=sc.dtype.float64)
-    weights = sc.Variable(dims=['event'],
-                          unit=data_unit,
-                          values=np.ones(n_event, dtype=np.float32),
-                          variances=np.ones(n_event, dtype=np.float32))
+    weights = sc.broadcast(sc.Variable(value=1.0,
+                                       variance=1.0,
+                                       unit=data_unit,
+                                       dtype=sc.dtype.float32),
+                           dims=['event'],
+                           shape=[n_event])
     pulse_times = sc.Variable(
         dims=['event'],
         shape=[n_event],
