@@ -38,7 +38,7 @@ SubbinSizes &SubbinSizes::operator-=(const SubbinSizes &other) {
   return *this = *this - other;
 }
 
-SubbinSizes SubbinSizes::cumsum() const {
+SubbinSizes SubbinSizes::cumsum_exclusive() const {
   auto out = sizes();
   std::exclusive_scan(out.begin(), out.end(), out.begin(), 0);
   return {offset(), std::move(out)};

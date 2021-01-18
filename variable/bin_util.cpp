@@ -56,8 +56,9 @@ Variable end_edge(const VariableConstView &coord,
 
 Variable cumsum_subbin_sizes(const VariableConstView &var) {
   return transform<core::SubbinSizes>(
-      var, overloaded{[](const units::Unit &u) { return u; },
-                      [](const auto &sizes) { return sizes.cumsum(); }});
+      var,
+      overloaded{[](const units::Unit &u) { return u; },
+                 [](const auto &sizes) { return sizes.cumsum_exclusive(); }});
 }
 
 Variable sum_subbin_sizes(const VariableConstView &var) {

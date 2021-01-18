@@ -25,7 +25,7 @@ public:
   SubbinSizes &operator+=(const SubbinSizes &other);
   SubbinSizes &operator-=(const SubbinSizes &other);
 
-  SubbinSizes cumsum() const;
+  SubbinSizes cumsum_exclusive() const;
   scipp::index sum() const;
   void trim_to(const SubbinSizes &other);
   SubbinSizes &add_intersection(const SubbinSizes &other);
