@@ -69,7 +69,7 @@ public:
 private:
   // NOTE:
   // We investigated different containers for the m_delta, m_coord & m_extent
-  // arrays, and their impact on peformance when iterating over a variable
+  // arrays, and their impact on performance when iterating over a variable
   // view.
   // Using std::array or C-style arrays give good performance (7.5 Gb/s) as long
   // as a range based loop is used:
