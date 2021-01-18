@@ -40,7 +40,11 @@ SubbinSizes &SubbinSizes::operator-=(const SubbinSizes &other) {
 
 SubbinSizes SubbinSizes::cumsum_exclusive() const {
   auto out = sizes();
-  std::exclusive_scan(out.begin(), out.end(), out.begin(), 0);
+  scipp::index sum = 0;
+  for (auto &x : out) {
+    sum += x;
+    x = sum - x;
+  }
   return {offset(), std::move(out)};
 }
 
