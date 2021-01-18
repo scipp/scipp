@@ -7,5 +7,4 @@
 using namespace scipp;
 using namespace scipp::variable;
 
-TEST(BinUtilTest, xxx) {
-}
+TEST(BinUtilTest, xxx) {}
