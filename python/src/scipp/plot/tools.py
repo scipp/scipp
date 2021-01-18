@@ -132,9 +132,8 @@ def find_log_limits(x):
                                                              num=61),
                                          unit=x.unit))
     # Find the first and the last non-zero bins
-    has_data = hist.data > 0.0 * sc.units.one
-    inds = np.where(has_data.values)
-    ar = np.arange(volume)[inds]
+    inds = np.nonzero((hist.data > 0.0 * sc.units.one).values)
+    ar = np.arange(hist.data.shape[0])[inds]
     # Safety check in case there are no positive values:
     # return arbitrary values that ensure toggling log on the plot with buttons
     # does not fail.
