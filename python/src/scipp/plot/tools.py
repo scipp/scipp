@@ -123,8 +123,7 @@ def find_log_limits(x):
     and 1.0e+30 and include only bins that are non-zero.
     """
     volume = np.product(x.shape)
-    pixel = sc.reshape(x, dims=['pixel'], shape=(volume, ))
-    pixel.variances = None  # no variances allowed in coord for histogram
+    pixel = sc.reshape(sc.values(x), dims=['pixel'], shape=(volume, ))
     weights = sc.Variable(dims=['pixel'], values=np.ones(volume))
     hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
                         bins=sc.Variable(dims=['order'],
@@ -133,8 +132,7 @@ def find_log_limits(x):
                                                              num=61),
                                          unit=x.unit))
     # Find the first and the last non-zero bins
-    has_data = hist.data > 0.0 * sc.units.one
-    inds = np.where(has_data.values)
+    inds = np.nonzero((hist.data > 0.0 * sc.units.one).values)
     ar = np.arange(hist.data.shape[0])[inds]
     # Safety check in case there are no values in range 1.0e-30:1.0e+30:
     # fall back to the linear method and replace with arbitrary values if the
