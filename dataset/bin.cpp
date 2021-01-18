@@ -571,7 +571,7 @@ DataArray bin(const DataArrayConstView &array,
 ///
 /// The overall approach of this is as follows:
 /// 1. Find target bin index for every input event (bin entry)
-/// 2. Next, we conceptually we want to do
+/// 2. Next, we conceptually want to do
 ///        for(i < events.size())
 ///          target_bin[bin_index[i]].push_back(events[i])
 ///    However, scipp's data layout for event data is a single 1-D array, and
