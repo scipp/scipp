@@ -44,6 +44,4 @@ private:
 [[nodiscard]] SCIPP_CORE_EXPORT SubbinSizes operator-(const SubbinSizes &a,
                                                       const SubbinSizes &b);
 
-[[nodiscard]] SCIPP_CORE_EXPORT std::string to_string(const SubbinSizes &s);
-
 } // namespace scipp::core

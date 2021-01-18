@@ -7,7 +7,6 @@
 
 #include "scipp/core/bucket_array_view.h"
 #include "scipp/core/string.h"
-#include "scipp/core/subbin_sizes.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/variable/string.h"
 #include "scipp/variable/variable.h"

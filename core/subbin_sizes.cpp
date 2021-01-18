@@ -98,15 +98,4 @@ SubbinSizes operator-(const SubbinSizes &a, const SubbinSizes &b) {
   return binary(a, b, element::minus_equals);
 }
 
-std::string to_string(const SubbinSizes &s) {
-  std::string out("(offset=" + std::to_string(s.offset()) + ", values={");
-  if (s.sizes().size() < 10)
-    for (const auto &x : s.sizes())
-      out += std::to_string(x) + ", ";
-  else
-    out += "vector of length " + std::to_string(s.sizes().size());
-
-  return out + "})";
-}
-
 } // namespace scipp::core
