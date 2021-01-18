@@ -54,7 +54,7 @@ Variable end_edge(const VariableConstView &coord,
   return indices;
 }
 
-Variable cumsum_subbin_sizes(const VariableConstView &var) {
+Variable cumsum_exclusive_subbin_sizes(const VariableConstView &var) {
   return transform<core::SubbinSizes>(
       var,
       overloaded{[](const units::Unit &u) { return u; },
@@ -78,8 +78,8 @@ std::vector<scipp::index> flatten_subbin_sizes(const VariableConstView &var,
   return flat;
 }
 
-Variable subbin_sizes_exclusive_scan(const VariableConstView &var,
-                                     const Dim dim) {
+Variable subbin_sizes_cumsum_exclusive(const VariableConstView &var,
+                                       const Dim dim) {
   if (var.dims()[dim] == 0)
     return Variable{var};
   Variable cumulative(var.slice({dim, 0}));

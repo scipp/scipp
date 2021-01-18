@@ -20,13 +20,13 @@ begin_edge(const VariableConstView &coord, const VariableConstView &edges);
 end_edge(const VariableConstView &coord, const VariableConstView &edges);
 
 SCIPP_VARIABLE_EXPORT Variable
-cumsum_subbin_sizes(const VariableConstView &var);
+cumsum_exclusive_subbin_sizes(const VariableConstView &var);
 SCIPP_VARIABLE_EXPORT Variable sum_subbin_sizes(const VariableConstView &var);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT std::vector<scipp::index>
 flatten_subbin_sizes(const VariableConstView &var, const scipp::index length);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-subbin_sizes_exclusive_scan(const VariableConstView &var, const Dim dim);
+subbin_sizes_cumsum_exclusive(const VariableConstView &var, const Dim dim);
 SCIPP_VARIABLE_EXPORT void
 subbin_sizes_add_intersection(const VariableView &a,
                               const VariableConstView &b);

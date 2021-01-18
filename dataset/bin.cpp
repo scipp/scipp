@@ -117,13 +117,14 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   for (const auto dim : data.dims().labels())
     if (dims.contains(dim)) {
       subbin_sizes_add_intersection(
-          offsets, subbin_sizes_exclusive_scan(output_bin_sizes, dim));
+          offsets, subbin_sizes_cumsum_exclusive(output_bin_sizes, dim));
       output_bin_sizes = sum(output_bin_sizes, dim);
     }
   // cumsum with bin dimension is last, since this corresponds to different
   // output bins, whereas the cumsum above handled different subbins of same
   // output bin, i.e., contributions of different input bins to some output bin.
-  subbin_sizes_add_intersection(offsets, cumsum_subbin_sizes(output_bin_sizes));
+  subbin_sizes_add_intersection(
+      offsets, cumsum_exclusive_subbin_sizes(output_bin_sizes));
   Variable filtered_input_bin_size = sum_subbin_sizes(output_bin_sizes);
   auto end = cumsum(filtered_input_bin_size);
   const auto total_size = end.values<scipp::index>().as_span().back();
@@ -248,6 +249,7 @@ public:
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
       else if (action == AxisAction::Bin) {
+        const auto linspace = all(is_linspace(key, dim)).template value<bool>();
         // When binning along an existing dim with a coord (may be edges or
         // not), not all input bins can map to all output bins. The array of
         // subbin sizes that is normally created thus contains mainly zero
@@ -268,7 +270,6 @@ public:
         // We detect this case, pre select relevant output bins, and store the
         // sparse array in a specialized packed format, using the helper type
         // SubbinSizes.
-        const auto linspace = all(is_linspace(key, dim)).template value<bool>();
         if (bin_coords.count(dim) && (offsets.dims() == Dimensions{}) &&
             is_sorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
