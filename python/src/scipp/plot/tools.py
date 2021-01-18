@@ -136,12 +136,17 @@ def find_log_limits(x):
     has_data = hist.data > 0.0 * sc.units.one
     inds = np.where(has_data.values)
     ar = np.arange(hist.data.shape[0])[inds]
-    # Safety check in case there are no positive values:
-    # return arbitrary values that ensure toggling log on the plot with buttons
-    # does not fail.
+    # Safety check in case there are no values in range 1.0e-30:1.0e+30:
+    # fall back to the linear method and replace with arbitrary values if the
+    # limits are negative.
     if len(ar) == 0:
-        vmin = 0.1
-        vmax = 1.0
+        [vmin, vmax] = find_linear_limits(x)
+        if vmin <= 0.0:
+            if vmax <= 0.0:
+                vmin = 0.1
+                vmax = 1.0
+            else:
+                vmin = 1.0e-3 * vmax
     else:
         vmin = hist.coords['order']['order', ar.min()].value
         vmax = hist.coords['order']['order', ar.max() + 1].value
