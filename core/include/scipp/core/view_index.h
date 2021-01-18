@@ -50,8 +50,10 @@ public:
       m_index += m_factors[j] * m_coord[m_offsets[j]];
   }
 
-  constexpr scipp::index get() const noexcept { return m_index; }
-  constexpr scipp::index index() const noexcept { return m_fullIndex; }
+  [[nodiscard]] constexpr scipp::index get() const noexcept { return m_index; }
+  [[nodiscard]] constexpr scipp::index index() const noexcept {
+    return m_fullIndex;
+  }
 
   constexpr bool operator==(const ViewIndex &other) const noexcept {
     return m_fullIndex == other.m_fullIndex;
@@ -60,7 +62,9 @@ public:
     return m_fullIndex != other.m_fullIndex;
   }
 
-  constexpr bool has_stride_zero() const noexcept { return m_dims > m_subdims; }
+  [[nodiscard]] constexpr bool has_stride_zero() const noexcept {
+    return m_dims > m_subdims;
+  }
 
 private:
   // NOTE:
