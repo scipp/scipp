@@ -80,6 +80,11 @@ template <class T, class View>
 bool memory_overlaps(const py::array_t<T> &data, const View &view) {
   const auto &buffer_info = data.request();
   const auto [data_begin, data_end] = memory_begin_end<T>(buffer_info);
+  const auto begin = view.begin();
+  const auto end = view.end();
+  if (begin == end) {
+    return false;
+  }
   const auto view_begin = &*view.begin();
   const auto view_end = &*view.end();
   // Note the use of std::less, pointer comparison with operator< may be
