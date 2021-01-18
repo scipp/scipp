@@ -263,7 +263,7 @@ public:
         // 2---
         //
         // each row corresponds to an input bin
-        // each column corresponds to an input bin
+        // each column corresponds to an output bin
         // the example is for a single rebinned dim
         // `-` is 0
         //
@@ -272,6 +272,10 @@ public:
         // We detect this case, pre select relevant output bins, and store the
         // sparse array in a specialized packed format, using the helper type
         // SubbinSizes.
+        // Note that there is another source of memory consumption in the
+        // algorithm, `indices`, containing the index of the target bin for
+        // every input event. This is unrelated and varies independently,
+        // depending on parameters of the input.
         if (bin_coords.count(dim) && m_offsets.dims().empty() &&
             is_sorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
@@ -282,10 +286,14 @@ public:
           const auto end = histogram ? end_edge(right_edge(bin_coord), key)
                                      : begin + 2 * units::one;
           const auto indices_ = zip(begin, end);
-          const auto masked_key = make_non_owning_bins(indices_, dim, key);
           const auto inner_volume = dims().volume() / dims()[dim] * units::one;
+          // Number of non-zero entries (per "row" above)
           m_nbin = (end - begin - 1 * units::one) * inner_volume;
+          // Offset to first non-zero entry (in "row" above)
           m_offsets = begin * inner_volume;
+          // Mask out any output bin edges that need not be considered since
+          // there is no overlap between given input and output bin.
+          const auto masked_key = make_non_owning_bins(indices_, dim, key);
           update_indices_by_binning(indices, get_coord(dim), masked_key,
                                     linspace);
         } else {
@@ -559,6 +567,19 @@ DataArray bin(const DataArrayConstView &array,
   }
 }
 
+/// Implementation of a generic binning algorithm.
+///
+/// The overall approach of this is as follows:
+/// 1. Find target bin index for every input event (bin entry)
+/// 2. Next, we conceptually we want to do
+///        for(i < events.size())
+///          target_bin[bin_index[i]].push_back(events[i])
+///    However, scipp's data layout for event data is a single 1-D array, and
+///    not a list of vector, i.e., the conceptual line above does not work
+///    directly. We need to obtain offsets into the 1-D array first, roughly:
+///        bin_sizes = count(bin_index) // number of events per target bin
+///        bin_offset = cumsum(bin_sizes) - bin_sizes
+/// 3. Copy from input to output bin, based on offset
 template <class Coords, class Masks, class Attrs>
 DataArray bin(const VariableConstView &data, const Coords &coords,
               const Masks &masks, const Attrs &attrs,
