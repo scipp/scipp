@@ -109,7 +109,7 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // Setup offsets within output bins, for every input bin. If rebinning occurs
   // along a dimension each output bin sees contributions from all input bins
   // along that dim.
-  auto output_bin_sizes = bin_sizes(indices, builder.offsets, builder.nbin);
+  auto output_bin_sizes = bin_sizes(indices, builder.offsets(), builder.nbin());
   auto offsets = output_bin_sizes;
   fill_zeros(offsets);
   // Not using cumsum along *all* dims, since some outer dims may be left
@@ -233,6 +233,8 @@ class TargetBinBuilder {
 
 public:
   const Dimensions &dims() const noexcept { return m_dims; }
+  const Variable &offsets() const noexcept { return m_offsets; }
+  const Variable &nbin() const noexcept { return m_nbin; }
 
   /// `bin_coords` may optionally be used to provide bin-based coords, e.g., for
   /// data that has prior grouping but did not retain the original group coord
@@ -243,8 +245,8 @@ public:
     const auto get_coord = [&](const Dim dim) {
       return coords.count(dim) ? coords[dim] : Variable(bin_coords.at(dim));
     };
-    offsets = makeVariable<scipp::index>(Values{0});
-    nbin = dims().volume() * units::one;
+    m_offsets = makeVariable<scipp::index>(Values{0});
+    m_nbin = dims().volume() * units::one;
     for (const auto &[action, dim, key] : m_actions) {
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
@@ -270,7 +272,7 @@ public:
         // We detect this case, pre select relevant output bins, and store the
         // sparse array in a specialized packed format, using the helper type
         // SubbinSizes.
-        if (bin_coords.count(dim) && (offsets.dims() == Dimensions{}) &&
+        if (bin_coords.count(dim) && m_offsets.dims().empty() &&
             is_sorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
           const bool histogram =
@@ -282,8 +284,8 @@ public:
           const auto indices_ = zip(begin, end);
           const auto masked_key = make_non_owning_bins(indices_, dim, key);
           const auto inner_volume = dims().volume() / dims()[dim] * units::one;
-          nbin = (end - begin - 1 * units::one) * inner_volume;
-          offsets = begin * inner_volume;
+          m_nbin = (end - begin - 1 * units::one) * inner_volume;
+          m_offsets = begin * inner_volume;
           update_indices_by_binning(indices, get_coord(dim), masked_key,
                                     linspace);
         } else {
@@ -343,11 +345,10 @@ public:
   // All input bins mapped to same output bin => "add" 0 everywhere
   void erase(const Dim dim) { m_dims.addInner(dim, 1); }
 
-  Variable offsets;
-  Variable nbin;
-
 private:
   Dimensions m_dims;
+  Variable m_offsets;
+  Variable m_nbin;
   std::vector<std::tuple<AxisAction, Dim, VariableConstView>> m_actions;
   std::vector<Variable> m_joined;
 };
