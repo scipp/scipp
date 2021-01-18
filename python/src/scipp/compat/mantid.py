@@ -673,7 +673,7 @@ def convert_EventWorkspace_to_data_array(ws,
     coords_labs_data["data"] = sc.bins(begin=begins,
                                        end=ends,
                                        dim='event',
-                                       data=events)
+                                       data=detail.move(events))
     return detail.move_to_data_array(**coords_labs_data)
 
 
