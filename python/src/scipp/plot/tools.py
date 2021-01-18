@@ -123,8 +123,7 @@ def find_log_limits(x):
     and 1.0e+30 and include only bins that are non-zero.
     """
     volume = np.product(x.shape)
-    pixel = sc.reshape(x, dims=['pixel'], shape=(volume, ))
-    pixel.variances = None  # no variances allowed in coord for histogram
+    pixel = sc.reshape(sc.values(x), dims=['pixel'], shape=(volume, ))
     weights = sc.Variable(dims=['pixel'], values=np.ones(volume))
     hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
                         bins=sc.Variable(dims=['order'],
