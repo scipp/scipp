@@ -17,7 +17,7 @@ class BucketVariableSizeOfTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 3};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
-      dims, Values{std::pair{0, 2}, std::pair{2, 3}, std::pair{3, 4}});
+      dims, Values{std::pair{0, 2}, std::pair{2, 2}, std::pair{2, 4}});
   Variable buffer = makeVariable<double>(Dims{Dim::X}, Shape{4});
   Variable var = make_bins(indices, Dim::X, buffer);
 };
@@ -78,6 +78,14 @@ TEST_F(BucketVariableSizeOfTest, size_in_memory_of_sliced_bucketed_variable) {
       slice.constituents<bucket<Variable>>();
   EXPECT_EQ(dim_, Dim::X);
   EXPECT_EQ(size_of(slice), size_of(buffer_) * 0.5 + size_of(indices_));
+}
+
+TEST_F(BucketVariableSizeOfTest, empty_buffer) {
+  Variable empty(var.slice(Slice(Dim::Y, 1)));
+  const auto &[indices_, dim_, buffer_] =
+      empty.constituents<bucket<Variable>>();
+  EXPECT_EQ(dim_, Dim::X);
+  EXPECT_EQ(size_of(empty), size_of(indices_));
 }
 
 TEST_F(BucketDataArraySizeOfTest, size_in_memory_of_bucketed_variable) {
