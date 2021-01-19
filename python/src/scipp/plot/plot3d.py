@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .. import config
 from .controller3d import PlotController3d
 from .model3d import PlotModel3d
 from .panel3d import PlotPanel3d
@@ -18,6 +19,26 @@ def plot3d(*args, filename=None, **kwargs):
     It is possible to add cut surfaces as cartesian, cylindrical or spherical
     planes.
     """
+
+    # In 3d scenes, the size of the pixels depends on the display's pixel
+    # scaling ratio, so we retrieve this from a javascript variable run when
+    # we imported the plot module.
+    if "pixel_ratio" not in config.plot:
+        try:
+            from IPython import get_ipython
+            ipy = get_ipython()
+            pixel_ratio = ipy.kernel.shell.user_ns.get("devicePixelRatio")
+            # Note that pixel_ratio appears to be None when building the
+            # documentation, possibly because the page is rendered in one go,
+            # before the asynchronous javascript has been run.
+            # See https://stackoverflow.com/questions/30902898
+            # So we do not update the config if it is None, and it will default
+            # to 1.0 in figure3d.py.
+            if pixel_ratio is not None:
+                config.update({'plot.pixel_ratio': pixel_ratio})
+        except ImportError:
+            pass
+
     sp = SciPlot3d(*args, **kwargs)
     if filename is not None:
         sp.savefig(filename)

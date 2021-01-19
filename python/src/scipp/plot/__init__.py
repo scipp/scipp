@@ -3,7 +3,6 @@
 # @file
 # @author Neil Vaytet
 
-from .. import config
 from .plot import plot as _plot
 import warnings
 
@@ -48,6 +47,9 @@ if ipy is not None:
 
         # Run some javascript to find the current device pixel ratio, which is
         # needed to properly scale the pixels in the three.js renderer.
+        # Note that the javascript has to be run here so that the pixel_ratio
+        # value is set after the initial import. Dealying this to inside the
+        # call to plot() would lead to devicePixelRatio being None.
         ipy.run_cell_magic(
             "js", "", "var kernel = IPython.notebook.kernel; "
             "var value = window.devicePixelRatio; "
@@ -191,12 +193,6 @@ def plot(*args, **kwargs):
     if plt is None:
         raise RuntimeError("Matplotlib not found. Matplotlib is required to "
                            "use plotting in Scipp.")
-
-    # If the pixel_ratio is not set in the user config, get the value from the
-    # kernel.
-    if ("pixel_ratio" not in config.plot) and (ipy is not None):
-        pixel_ratio = ipy.kernel.shell.user_ns.get("devicePixelRatio")
-        config.update({'plot.pixel_ratio': pixel_ratio})
 
     # Switch auto figure display off for better control over when figures are
     # displayed.
