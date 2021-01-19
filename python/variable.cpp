@@ -45,6 +45,16 @@ template <class T> void bind_init_0D(py::class_<Variable> &c) {
         }),
         py::arg("value"), py::arg("variance") = std::nullopt,
         py::arg("unit") = units::one);
+  if constexpr (std::is_same_v<T, Variable> || std::is_same_v<T, DataArray> ||
+                std::is_same_v<T, Dataset>) {
+    c.def(
+        py::init([](const typename T::const_view_type &value,
+                    const std::optional<T> &variance, const units::Unit &unit) {
+          return do_init_0D(copy(value), variance, unit);
+        }),
+        py::arg("value"), py::arg("variance") = std::nullopt,
+        py::arg("unit") = units::one);
+  }
 }
 
 // This function is used only to bind native python types: pyInt -> int64_t;
