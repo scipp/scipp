@@ -85,8 +85,8 @@ bool memory_overlaps(const py::array_t<T> &data, const View &view) {
   if (begin == end) {
     return false;
   }
-  const auto view_begin = &*view.begin();
-  const auto view_end = &*view.end();
+  const auto view_begin = &*begin;
+  const auto view_end = &*end;
   // Note the use of std::less, pointer comparison with operator< may be
   // undefined behavior with pointers from different arrays.
   return std::less<const T *>()(data_begin, view_end) &&
