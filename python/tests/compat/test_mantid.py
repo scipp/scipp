@@ -25,7 +25,7 @@ def memory_is_at_least_gb(required):
     return total >= required
 
 
-@pytest.mark.skipif(not memory_is_at_least_gb(16),
+@pytest.mark.skipif(not memory_is_at_least_gb(8),
                     reason='Insufficient virtual memory')
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
@@ -44,7 +44,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_Workspace2D(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         d = mantidcompat.convert_Workspace2D_to_data_array(ws)
         self.assertEqual(
@@ -60,7 +60,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_EventWorkspace(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000)
 
         binned_mantid = mantidcompat.convert_Workspace2D_to_data_array(ws)
@@ -111,7 +111,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_unit_conversion(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         tmp = mantidcompat.convert_Workspace2D_to_data_array(ws)
         target_tof = tmp.coords['tof']
@@ -152,7 +152,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_Workspace2D_common_bins_masks(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         ws_x = ws.readX(0)
 
@@ -174,7 +174,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_Workspace2D_common_bins_not_common_masks(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         ws_x = ws.readX(0)
 
@@ -198,7 +198,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_Workspace2D_not_common_bins_masks(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         ws = mantid.ConvertUnits(ws,
                                  "Wavelength",
@@ -231,8 +231,12 @@ class TestMantidConversion(unittest.TestCase):
         from mantid.simpleapi import mtd
         mtd.clear()
         filename = MantidDataHelper.find_file("WISH00016748.raw")
+        # This test would use 20 GB of memory if "SpectrumMax" was not set
         ds = mantidcompat.load(filename,
-                               mantid_args={"LoadMonitors": "Separate"})
+                               mantid_args={
+                                   "LoadMonitors": "Separate",
+                                   "SpectrumMax": 10000
+                               })
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
         attrs = [str(key) for key in ds.attrs.keys()]
         expected_monitor_attrs = set(
@@ -248,8 +252,12 @@ class TestMantidConversion(unittest.TestCase):
         from mantid.simpleapi import mtd
         mtd.clear()
         filename = MantidDataHelper.find_file("WISH00016748.raw")
+        # This test would use 20 GB of memory if "SpectrumMax" was not set
         ds = mantidcompat.load(filename,
-                               mantid_args={"LoadMonitors": "Include"})
+                               mantid_args={
+                                   "LoadMonitors": "Include",
+                                   "SpectrumMax": 10000
+                               })
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
         attrs = [str(key) for key in ds.attrs.keys()]
         expected_monitor_attrs = set(
@@ -593,7 +601,7 @@ def test_to_rot_from_vectors():
     assert np.allclose((rot * b).value, a.value)
 
 
-@pytest.mark.skipif(not memory_is_at_least_gb(16),
+@pytest.mark.skipif(not memory_is_at_least_gb(8),
                     reason='Insufficient virtual memory')
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')

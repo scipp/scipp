@@ -67,8 +67,9 @@ void bind_mutable_view(py::module &m, const std::string &name) {
       // This additional setitem allows us to do things like
       // d.coords["a"] = scipp.detail.move(scipp.Variable())
       .def("__setitem__",
-           [](T &self, const typename T::key_type key, MoveableVariable &mvar) {
-             self.set(key, std::move(mvar.var));
+           [](T &self, const typename T::key_type key,
+              Moveable<Variable> &mvar) {
+             self.set(key, std::move(mvar.value));
            })
       .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
       .def(
@@ -355,16 +356,18 @@ void init_dataset(py::module &m) {
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
               const VariableConstView &data) { self.setData(name, data); })
-      .def("__setitem__",
-           [](Dataset &self, const std::string &name, MoveableVariable &mvar) {
-             self.setData(name, std::move(mvar.var));
-           })
+      .def(
+          "__setitem__",
+          [](Dataset &self, const std::string &name, Moveable<Variable> &mvar) {
+            self.setData(name, std::move(mvar.value));
+          })
       .def("__setitem__",
            [](Dataset &self, const std::string &name,
               const DataArrayConstView &data) { self.setData(name, data); })
       .def("__setitem__",
-           [](Dataset &self, const std::string &name, MoveableDataArray &mdat) {
-             self.setData(name, std::move(mdat.data));
+           [](Dataset &self, const std::string &name,
+              Moveable<DataArray> &mdat) {
+             self.setData(name, std::move(mdat.value));
            })
       .def("__delitem__", &Dataset::erase,
            py::call_guard<py::gil_scoped_release>())

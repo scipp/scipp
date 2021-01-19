@@ -8,9 +8,4 @@
 
 using namespace scipp;
 
-struct MoveableVariable {
-  Variable var;
-};
-struct MoveableDataArray {
-  dataset::DataArray data;
-};
+template <class T> struct Moveable { T value; };
