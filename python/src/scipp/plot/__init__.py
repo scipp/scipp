@@ -49,12 +49,10 @@ if ipy is not None:
         # Run some javascript to find the current device pixel ratio, which is
         # needed to properly scale the pixels in the three.js renderer.
         ipy.run_cell_magic(
-            "js", "",
-            "var kernel = IPython.notebook.kernel; "
+            "js", "", "var kernel = IPython.notebook.kernel; "
             "var value = window.devicePixelRatio; "
             "var command = 'devicePixelRatio = ' + value; "
-            "kernel.execute(command);"
-        )
+            "kernel.execute(command);")
 
 # Note: due to some strange behaviour when importing matplotlib and pyplot in
 # different order, we need to import pyplot after switching to the ipympl
