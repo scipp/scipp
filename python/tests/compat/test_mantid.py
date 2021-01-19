@@ -694,6 +694,38 @@ def test_to_workspace_2d_handles_single_x_array():
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
+def test_attrs_with_dims():
+    from mantid.kernel import FloatArrayProperty
+    import mantid.simpleapi as sapi
+    dataX = [1, 2, 3]
+    dataY = [1, 2, 3]
+    ws = sapi.CreateWorkspace(DataX=dataX,
+                              DataY=dataY,
+                              NSpec=1,
+                              UnitX="Wavelength")
+    # Time series property
+    sapi.AddSampleLog(ws, 'attr0', LogText='1', LogType='Number Series')
+    # Single value property
+    sapi.AddSampleLog(ws, 'attr1', LogText='1', LogType='Number')
+    # Array property (not time series)
+    p = FloatArrayProperty('attr2', np.arange(10))
+    run = ws.mutableRun()
+    run.addProperty('attr2', p, replace=True)
+
+    ds = mantidcompat.from_mantid(ws)
+    # Variable (single value) wrapped DataArray
+    assert isinstance(ds.attrs['attr0'].value, sc.DataArray)
+    assert 'time' in ds.attrs['attr0'].value.coords
+    # Variable (single value)
+    assert isinstance(ds.attrs['attr1'].value, int)
+    # Variable (single value) wrapped Variable
+    assert isinstance(ds.attrs['attr2'].value, sc.Variable)
+    assert ds.attrs['attr2'].shape == []  # outer wrapper
+    assert ds.attrs['attr2'].value.shape == [10]  # inner held
+
+
+@pytest.mark.skipif(not mantid_is_available(),
+                    reason='Mantid framework is unavailable')
 def test_from_mask_workspace():
     from mantid.simpleapi import LoadMask
     from os import path
