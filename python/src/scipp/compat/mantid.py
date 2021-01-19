@@ -109,21 +109,12 @@ def make_variables_from_run_logs(ws):
                                                       dtype=sc.dtype.int64,
                                                       unit=sc.units.ns)
                                       })
-            yield property_name, sc.Variable(data_array)
+            yield property_name, sc.Variable(value=data_array)
         elif not np.isscalar(values):
-            # If property is multi-valued, create a DataArray index as coord.
-            # Note we store as DataArray in scalar Variable to prevent
-            # interference with global dimensions for for output Dataset.
-            data_array = sc.DataArray(
-                data=property_data,
-                coords={
-                    dimension_label:
-                    sc.Variable([dimension_label],
-                                values=np.arange(values.shape[0]),
-                                dtype=sc.dtype.int64,
-                                unit=sc.units.dimensionless)
-                })
-            yield property_name, sc.Variable(data_array)
+            # If property is multi-valued, create a wrapper single
+            # value variable. This prevents interference with
+            # global dimensions for for output Dataset.
+            yield property_name, sc.Variable(value=property_data)
         else:
             yield property_name, property_data
 

@@ -710,9 +710,10 @@ def test_attrs_with_dims():
     assert 'time' in ds.attrs['attr0'].value.coords
     # Variable (single value)
     assert isinstance(ds.attrs['attr1'].value, int)
-    # Variable (single value) wrapped DataArray
-    assert isinstance(ds.attrs['attr2'].value, sc.DataArray)
-    assert 'attr2' in ds.attrs['attr2'].value.coords
+    # Variable (single value) wrapped Variable
+    assert isinstance(ds.attrs['attr2'].value, sc.Variable)
+    assert ds.attrs['attr2'].shape == []  # outer wrapper
+    assert ds.attrs['attr2'].value.shape == [10]  # inner held
 
 
 @pytest.mark.skipif(not mantid_is_available(),
