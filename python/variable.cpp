@@ -142,6 +142,7 @@ void init_variable(py::module &m) {
                                 R"(
 Array of values with dimension labels and a unit, optionally including an array
 of variances.)");
+  bind_init_0D<Variable>(variable);
   bind_init_0D<DataArray>(variable);
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);

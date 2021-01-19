@@ -86,6 +86,24 @@ def test_create_scalar():
     assert var.unit == sc.units.dimensionless
 
 
+def test_create_scalar_Variable():
+    elem = 1.2 * sc.units.m
+    var = sc.Variable(elem)
+    assert sc.is_equal(var.value, elem)
+    assert var.dims == []
+    assert var.dtype == sc.dtype.Variable
+    assert var.unit == sc.units.dimensionless
+
+
+def test_create_scalar_DataArray():
+    data = sc.DataArray({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
+    var = sc.Variable(data)
+    assert sc.is_equal(var.value, data)
+    assert var.dims == []
+    assert var.dtype == sc.dtype.DataArray
+    assert var.unit == sc.units.dimensionless
+
+
 def test_create_scalar_Dataset():
     dataset = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
     var = sc.Variable(dataset)

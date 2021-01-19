@@ -134,6 +134,8 @@ template <class... Ts> class as_ElementArrayViewImpl {
         return {Getter::template get<std::string>(view)};
       if (type == dtype<scipp::core::time_point>)
         return {Getter::template get<scipp::core::time_point>(view)};
+      if (type == dtype<Variable>)
+        return {Getter::template get<Variable>(view)};
       if (type == dtype<DataArray>)
         return {Getter::template get<DataArray>(view)};
       if (type == dtype<Dataset>)
@@ -353,8 +355,8 @@ public:
 
 using as_ElementArrayView = as_ElementArrayViewImpl<
     double, float, int64_t, int32_t, bool, std::string, scipp::core::time_point,
-    DataArray, Dataset, bucket<Variable>, bucket<DataArray>, bucket<Dataset>,
-    Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject>;
+    Variable, DataArray, Dataset, bucket<Variable>, bucket<DataArray>,
+    bucket<Dataset>, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
