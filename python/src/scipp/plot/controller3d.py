@@ -104,6 +104,7 @@ class PlotController3d(PlotController):
 
         if self.pixel_size is not None:
             axparams["pixel_size"] = self.pixel_size
+            axparams["pixel_scaling"] = 1.0
         else:
             if self.positions is not None:
                 # Note the value of 0.05 is arbitrary here. It is a sensible
