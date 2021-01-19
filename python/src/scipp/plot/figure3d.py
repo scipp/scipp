@@ -236,7 +236,7 @@ void main(){
     delta = pow(xDelta + yDelta + zDelta, 0.5);
     gl_PointSize = %f / delta;
 }
-''' % (580.0 * axparams["pixel_size"], ),
+''' % (580.0 * axparams["pixel_size"] * config.plot.pixel_ratio, ),
                                                  fragmentShader='''
 precision highp float;
 varying vec4 vColor;
