@@ -4,6 +4,7 @@
 
 from .. import config
 from .figure import PlotFigure
+from .toolbar import PlotToolbar2d
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm
@@ -37,7 +38,8 @@ class PlotFigure2d(PlotFigure):
                          title=name if title is None else title,
                          ndim=2,
                          xlabel=xlabel,
-                         ylabel=ylabel)
+                         ylabel=ylabel,
+                         toolbar=PlotToolbar2d)
 
         if aspect is None:
             aspect = config.plot.aspect
@@ -152,4 +154,6 @@ class PlotFigure2d(PlotFigure):
 
     def rescale_on_zoom(self, *args, **kwargs):
         if self.toolbar is not None:
-            self.toolbar.rescale_on_zoom(*args, **kwargs)
+            return self.toolbar.rescale_on_zoom(*args, **kwargs)
+        else:
+            return False

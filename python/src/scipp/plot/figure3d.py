@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
-from .toolbar import PlotToolbar
+from .toolbar import PlotToolbar3d
 from .._utils import value_to_string
 import numpy as np
 import ipywidgets as ipw
@@ -29,7 +29,6 @@ class PlotFigure3d:
                  log=None,
                  nan_color=None,
                  masks=None,
-                 pixel_size=None,
                  tick_size=None,
                  background=None,
                  show_outline=True,
@@ -42,7 +41,7 @@ class PlotFigure3d:
             figsize = (config.plot.width, config.plot.height)
 
         # Figure toolbar
-        self.toolbar = PlotToolbar(ndim=3)
+        self.toolbar = PlotToolbar3d()
 
         # Prepare colormaps
         self.cmap = cmap
@@ -57,7 +56,6 @@ class PlotFigure3d:
 
         self.axlabels = {"x": xlabel, "y": ylabel, "z": zlabel}
         self.positions = None
-        self.pixel_size = pixel_size
         self.tick_size = tick_size
         self.show_outline = show_outline
         self.unit = unit
@@ -67,12 +65,12 @@ class PlotFigure3d:
         self.cbar_fig, self.cbar = self._create_colorbar(figsize, extend)
 
         # Create the point cloud material with pythreejs
-        self.points_material = self._create_points_material()
+        self.points_material = None
         self.points_geometry = None
         self.point_cloud = None
         self.outline = None
         self.axticks = None
-        self.camera_reset = {}
+        self.camera_backup = {}
 
         # Define camera
         self.camera = p3.PerspectiveCamera(position=[0, 0, 0],
@@ -130,7 +128,12 @@ class PlotFigure3d:
         """
         Connect the toolbar Home button to reset the camera position.
         """
-        callbacks.update({"home_view": self.reset_camera})
+        callbacks.update({
+            "home_view": self.reset_camera,
+            "camera_x_normal": self.camera_x_normal,
+            "camera_y_normal": self.camera_y_normal,
+            "camera_z_normal": self.camera_z_normal
+        })
         self.toolbar.connect(callbacks)
 
     def update_axes(self, axparams):
@@ -146,20 +149,41 @@ class PlotFigure3d:
         if self.axticks is not None:
             self.scene.remove(self.axticks)
 
-        self._create_point_cloud(axparams["positions"])
         self._create_outline(axparams)
+        self._create_points_material(axparams)
+        self._create_point_cloud(axparams)
 
         # Set camera controller target
+        distance_from_center = 1.2
         self.camera.position = list(
-            np.array(axparams["centre"]) + 1.2 * axparams["box_size"])
+            np.array(axparams["centre"]) +
+            distance_from_center * axparams["box_size"])
+        cam_pos_norm = np.linalg.norm(self.camera.position)
+        box_mean_size = np.linalg.norm(axparams["box_size"])
+        self.camera.near = 0.01 * box_mean_size
+        self.camera.far = 5.0 * cam_pos_norm
         self.controls.target = axparams["centre"]
         self.camera.lookAt(axparams["centre"])
-        # Save camera settings for reset button
-        self.camera_reset["position"] = copy(self.camera.position)
-        self.camera_reset["lookat"] = copy(axparams["centre"])
+
+        # Save camera settings
+        self.camera_backup["reset"] = copy(self.camera.position)
+        self.camera_backup["centre"] = copy(axparams["centre"])
+        self.camera_backup["x_normal"] = [
+            axparams["centre"][0] - distance_from_center * box_mean_size,
+            axparams["centre"][1], axparams["centre"][2]
+        ]
+        self.camera_backup["y_normal"] = [
+            axparams["centre"][0],
+            axparams["centre"][1] - distance_from_center * box_mean_size,
+            axparams["centre"][2]
+        ]
+        self.camera_backup["z_normal"] = [
+            axparams["centre"][0], axparams["centre"][1],
+            axparams["centre"][2] - distance_from_center * box_mean_size
+        ]
 
         # Rescale axes helper
-        self.axes_3d.scale = [5.0 * np.linalg.norm(self.camera.position)] * 3
+        self.axes_3d.scale = [self.camera.far] * 3
 
         self.scene.add(self.point_cloud)
         self.scene.add(self.outline)
@@ -169,12 +193,17 @@ class PlotFigure3d:
         self.outline.visible = self.show_outline
         self.axticks.visible = self.show_outline
 
-    def _create_point_cloud(self, pos_array):
+    def _create_point_cloud(self, axparams):
         """
         Make a PointsGeometry using pythreejs
         """
-        rgba_shape = list(pos_array.shape)
+        rgba_shape = list(axparams["positions"].shape)
         rgba_shape[1] += 1
+        pos_array = axparams["positions"] * np.array([
+            axparams["x"]["scaling"], axparams["y"]["scaling"],
+            axparams["z"]["scaling"]
+        ],
+                                                     dtype=np.float32)
         self.points_geometry = p3.BufferGeometry(
             attributes={
                 'position':
@@ -185,12 +214,12 @@ class PlotFigure3d:
         self.point_cloud = p3.Points(geometry=self.points_geometry,
                                      material=self.points_material)
 
-    def _create_points_material(self):
+    def _create_points_material(self, axparams):
         """
         Define custom raw shader for point cloud to allow to RGBA color format.
+        Note that the value of 580 was obtained from trial and error.
         """
-        return p3.ShaderMaterial(
-            vertexShader='''
+        self.points_material = p3.ShaderMaterial(vertexShader='''
 precision highp float;
 attribute vec4 rgba_color;
 varying vec3 mypos;
@@ -207,17 +236,17 @@ void main(){
     delta = pow(xDelta + yDelta + zDelta, 0.5);
     gl_PointSize = %f / delta;
 }
-''' % (580.0 * self.pixel_size, ),  # the value of 580 is from trial and error
-            fragmentShader='''
+''' % (580.0 * axparams["pixel_size"], ),
+                                                 fragmentShader='''
 precision highp float;
 varying vec4 vColor;
 void main() {
     gl_FragColor = vColor;
 }
 ''',
-            vertexColors='VertexColors',
-            transparent=True,
-            depthTest=True)
+                                                 vertexColors='VertexColors',
+                                                 transparent=True,
+                                                 depthTest=True)
 
     def _create_outline(self, axparams):
         """
@@ -255,14 +284,11 @@ void main() {
         Create ticklabels on outline edges
         """
         if self.tick_size is None:
-            self.tick_size = 0.05 * np.amin([
-                axparams['x']["lims"][1] - axparams['x']["lims"][0],
-                axparams['y']["lims"][1] - axparams['y']["lims"][0],
-                axparams['z']["lims"][1] - axparams['z']["lims"][0]
-            ])
+            self.tick_size = 0.05 * np.mean(axparams["box_size"])
         ticks_and_labels = p3.Group()
         iden = np.identity(3, dtype=np.float32)
         ticker_ = ticker.MaxNLocator(5)
+        lims = {x: axparams[x]["lims"] / axparams[x]["scaling"] for x in "xyz"}
         offsets = {
             'x': [0, axparams['y']["lims"][0], axparams['z']["lims"][0]],
             'y': [axparams['x']["lims"][0], 0, axparams['z']["lims"][0]],
@@ -270,12 +296,11 @@ void main() {
         }
 
         for axis, x in enumerate('xyz'):
-            ticks = ticker_.tick_values(axparams[x]["lims"][0],
-                                        axparams[x]["lims"][1])
+            ticks = ticker_.tick_values(lims[x][0], lims[x][1])
             for tick in ticks:
-                if tick >= axparams[x]["lims"][0] and tick <= axparams[x][
-                        "lims"][1]:
-                    tick_pos = iden[axis] * tick + offsets[x]
+                if tick >= lims[x][0] and tick <= lims[x][1]:
+                    tick_pos = iden[axis] * tick * axparams[x][
+                        "scaling"] + offsets[x]
                     ticks_and_labels.add(
                         self._make_axis_tick(string=value_to_string(
                             tick, precision=1),
@@ -381,9 +406,43 @@ void main() {
         """
         Reset the camera position.
         """
-        self.camera.position = self.camera_reset["position"]
-        self.controls.target = self.camera_reset["lookat"]
-        self.camera.lookAt(self.camera_reset["lookat"])
+        self.move_camera(position=self.camera_backup["reset"])
+
+    def camera_x_normal(self, owner=None):
+        """
+        View scene along the X normal.
+        """
+        self.camera_normal(position=self.camera_backup["x_normal"].copy(),
+                           ind=0)
+
+    def camera_y_normal(self, owner=None):
+        """
+        View scene along the Y normal.
+        """
+        self.camera_normal(position=self.camera_backup["y_normal"].copy(),
+                           ind=1)
+
+    def camera_z_normal(self, owner=None):
+        """
+        View scene along the Z normal.
+        """
+        self.camera_normal(position=self.camera_backup["z_normal"].copy(),
+                           ind=2)
+
+    def camera_normal(self, position, ind):
+        """
+        Move camera to requested normal, and flip if current position is equal
+        to the requested position.
+        """
+        if np.allclose(self.camera.position, position):
+            position[
+                ind] = 2.0 * self.camera_backup["centre"][ind] - position[ind]
+        self.move_camera(position=position)
+
+    def move_camera(self, position):
+        self.camera.position = position
+        self.controls.target = self.camera_backup["centre"]
+        self.camera.lookAt(self.camera_backup["centre"])
 
     def toggle_norm(self, norm=None, vmin=None, vmax=None):
         """

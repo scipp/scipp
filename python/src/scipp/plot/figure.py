@@ -3,7 +3,6 @@
 # @author Neil Vaytet
 
 from .. import config
-from .toolbar import PlotToolbar
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -22,7 +21,8 @@ class PlotFigure:
                  padding=None,
                  ndim=1,
                  xlabel=None,
-                 ylabel=None):
+                 ylabel=None,
+                 toolbar=None):
         self.fig = None
         self.ax = ax
         self.cax = cax
@@ -41,7 +41,7 @@ class PlotFigure:
             self.fig.tight_layout(rect=padding)
             if self.is_widget():
                 # We create a custom toolbar
-                self.toolbar = PlotToolbar(canvas=self.fig.canvas, ndim=ndim)
+                self.toolbar = toolbar(canvas=self.fig.canvas)
                 self.fig.canvas.toolbar_visible = False
         else:
             self.own_axes = False

@@ -3,7 +3,8 @@
 # @author Neil Vaytet
 
 from .helpers import PlotArray
-from .tools import to_bin_edges, to_bin_centers, make_fake_coord, vars_to_err
+from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
+                   vars_to_err, find_limits
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
@@ -36,6 +37,7 @@ class PlotModel:
         # The main container of DataArrays
         self.data_arrays = {}
         self.coord_info = {}
+        self.dim_to_shape = dim_to_shape
 
         self.axformatter = {}
 
@@ -52,7 +54,7 @@ class PlotModel:
             # Iterate through axes and collect coordinates
             for dim in axes_dims:
                 coord, formatter, label, unit = self._axis_coord_and_formatter(
-                    dim, array, dim_to_shape[name], dim_label_map)
+                    dim, array, self.dim_to_shape[name], dim_label_map)
 
                 self.axformatter[name][dim] = formatter
                 self.coord_info[name][dim] = {"label": label, "unit": unit}
@@ -60,7 +62,7 @@ class PlotModel:
                 is_histogram = False
                 for i, d in enumerate(coord.dims):
                     if d == dim:
-                        is_histogram = dim_to_shape[name][
+                        is_histogram = self.dim_to_shape[name][
                             d] == coord.shape[i] - 1
 
                 if is_histogram:
@@ -255,16 +257,14 @@ class PlotModel:
         return self.data_arrays[name].meta[dim], self.coord_info[name][dim][
             "label"], self.coord_info[name][dim]["unit"]
 
-    def rescale_to_data(self):
+    def rescale_to_data(self, scale=None):
         """
         Get the min and max values of the currently displayed slice.
         """
-        vmin = None
-        vmax = None
         if self.dslice is not None:
-            vmin = sc.nanmin(self.dslice.data).value
-            vmax = sc.nanmax(self.dslice.data).value
-        return vmin, vmax
+            return find_limits(self.dslice.data, scale=scale)[scale]
+        else:
+            return [None, None]
 
     def slice_data(self, array, slices, keep_dims=False):
         """

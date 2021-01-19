@@ -71,8 +71,9 @@ def plot(*args, **kwargs):
     For more details, see
     https://scipp.github.io/visualization/plotting-overview.html
 
-    :param aspect: Specify the aspect ratio for 2d images. Defaults to
-        `"auto"`.
+    :param aspect: Specify the aspect ratio for 2d images and 3d renderings.
+         Possible values are `"auto"` or `"equal"`.
+         Defaults to `"auto"`.
     :type aspect: str, optional
 
     :param ax: Attach returned plot to supplied Matplotlib axes (1d and 2d
@@ -149,6 +150,11 @@ def plot(*args, **kwargs):
     :param pax: Attach profile plot to supplied Matplotlib axes.
         Defaults to `None`.
     :type pax: matplotlib.axes.Axes, optional
+
+    :param pixel_size: Specify the size of the pixels to be used for the point
+        cloud (3d only). If none is supplied, the size is guessed based on the
+        extents of the data in the 3d space. Defaults to `None`.
+    :type pixel_size: float, optional
 
     :param positions: Specify an array of position vectors to be used as
         scatter points positions (3d only). Defaults to `None`.

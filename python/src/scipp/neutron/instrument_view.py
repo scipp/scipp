@@ -2,32 +2,33 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+import numpy as np
+
 
 def instrument_view(scipp_obj=None,
                     positions="position",
-                    pixel_size=0.1,
+                    pixel_size=None,
                     **kwargs):
     """
     Plot a 3D view of the instrument, using the `position` coordinate as the
     detector vector positions.
     Use the `positions` argument to change the vectors used as pixel positions.
     Sliders are added to navigate extra dimensions.
-    In the case of event data, on-the-fly histogramming can be performed using
-    the `bins` keyword argument, is expected to be a dict containing
-    dimensions to be histogrammed as keys, and the number of bins (or an array
-    of bin edges) as values.
-    If no bins are specified, the data is histogrammed according to the bins
-    that wrap the event data when it is loaded
-    (see https://scipp.github.io/user-guide/binned-data.html).
-
-    Example:
-
-    import scipp.neutron as sn
-    sample = sn.load(filename="PG3_4844_event.nxs")
-    sn.instrument_view(sample, bins={'tof': 256})
+    Spatial slicing and pixel opacity control is available using the controls
+    below the scene.
+    Use the `pixel_size` argument to specify the size of the detectors.
+    If no `pixel_size` is given, a guess is performed based on the distance
+    between the positions of the first two pixel positions.
+    The aspect ratio of the positions is preserved by default, but this can
+    be changed to automatic scaling using `aspect="equal"`.
     """
 
     from ..plot import plot
+
+    if pixel_size is None:
+        pos_array = scipp_obj.meta[positions].values
+        if len(pos_array) > 1:
+            pixel_size = np.linalg.norm(pos_array[1] - pos_array[0])
 
     return plot(scipp_obj,
                 projection="3d",

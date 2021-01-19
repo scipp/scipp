@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import check_log_limits
+from .tools import find_limits, fix_empty_range
 from .._utils import value_to_string
 from .._scipp import core as sc
 import numpy as np
@@ -54,7 +54,7 @@ class PlotController:
 
         self.vmin = vmin
         self.vmax = vmax
-        self.norm = norm
+        self.norm = norm if norm is not None else "linear"
 
         self.scale = {dim: "linear" for dim in self.axes.values()}
         if scale is not None:
@@ -93,23 +93,20 @@ class PlotController:
                         d] == coord_shapes[key][dim][i] - 1
 
                 # The limits for each dimension
-                self.xlims[key][dim] = np.array(
-                    [sc.min(coord).value,
-                     sc.max(coord).value], dtype=np.float)
-                if sc.is_sorted(coord, dim, order='descending'):
-                    self.xlims[key][dim] = np.flip(self.xlims[key][dim]).copy()
-                # Small correction if xmin == xmax
-                if self.xlims[key][dim][0] == self.xlims[key][dim][1]:
-                    if self.xlims[key][dim][0] == 0.0:
-                        self.xlims[key][dim] = [-0.5, 0.5]
-                    else:
-                        dx = 0.5 * abs(self.xlims[key][dim][0])
-                        self.xlims[key][dim][0] -= dx
-                        self.xlims[key][dim][1] += dx
+                self.xlims[key][dim] = find_limits(coord,
+                                                   flip=sc.is_sorted(
+                                                       coord,
+                                                       dim,
+                                                       order='descending'))
+                # Check if xmin == xmax
+                for scale in self.xlims[key][dim]:
+                    self.xlims[key][dim][scale] = fix_empty_range(
+                        self.xlims[key][dim][scale])
 
-                self.xlims[key][dim] = sc.Variable([dim],
-                                                   values=self.xlims[key][dim],
-                                                   unit=coord.unit)
+                    self.xlims[key][dim][scale] = sc.Variable(
+                        [dim],
+                        values=self.xlims[key][dim][scale],
+                        unit=coord.unit)
 
                 self.coord_labels[key][dim] = label
                 self.coord_units[key][dim] = unit
@@ -267,33 +264,34 @@ class PlotController:
     def save_view(self, button=None):
         self.view.save_view()
 
+    def find_vmin_vmax(self, button=None):
+        """
+        Find sensible min and max values for the data.
+        If the limits were requested by the user: if the rescale button is
+        pressed by the user, it means we forcibly update the self.vmin/vmax.
+        If no button is pressed, we use the global limits instead of the
+        min and max values found by the model.
+        """
+        [vmin, vmax] = self.model.rescale_to_data(scale=self.norm)
+        if self.vmin is not None:
+            if button is None:
+                vmin = self.vmin
+            else:
+                self.vmin = None
+        if self.vmax is not None:
+            if button is None:
+                vmax = self.vmax
+            else:
+                self.vmax = None
+        return vmin, vmax
+
     def rescale_to_data(self, button=None):
         """
         Automatically rescale the y axis (1D plot) or the colorbar (2D+3D
         plots) to the minimum and maximum value inside the currently displayed
         data slice.
         """
-        vmin, vmax = self.model.rescale_to_data()
-
-        # If the limits were requested by the user: if the rescale button is
-        # pressed by the user, it means we forcibly update the self.vmin/vmax.
-        # If no button is pressed, we use the global limits instead of the
-        # min and max values found by the model.
-        if self.vmin is not None:
-            if button is None:
-                vmin = self.vmin
-            else:
-                self.vmin = vmin
-        else:
-            self.vmin = vmin
-        if self.vmax is not None:
-            if button is None:
-                vmax = self.vmax
-            else:
-                self.vmax = vmax
-        else:
-            self.vmax = vmax
-        vmin, vmax = check_log_limits(vmin=vmin, vmax=vmax, scale=self.norm)
+        vmin, vmax = self.find_vmin_vmax(button=button)
         self.view.rescale_to_data(vmin, vmax)
         if self.panel is not None:
             self.panel.rescale_to_data(vmin=vmin,
@@ -352,9 +350,7 @@ class PlotController:
         Toggle data normalization from toolbar button signal.
         """
         self.norm = "log" if owner.value else "linear"
-        vmin, vmax = check_log_limits(vmin=self.vmin,
-                                      vmax=self.vmax,
-                                      scale=self.norm)
+        vmin, vmax = self.find_vmin_vmax()
         self.view.toggle_norm(self.norm, vmin, vmax)
         self.refresh()
 
@@ -482,11 +478,11 @@ class PlotController:
             xmin = np.Inf
             xmax = np.NINF
             for name in self.xlims:
-                xlims = self.xlims[name][dim].values
+                xlims = self.xlims[name][dim][self.scale[dim]].values
                 xmin = min(xmin, xlims[0])
                 xmax = max(xmax, xlims[1])
             axparams[ax] = {
-                "lims": [xmin, xmax],
+                "lims": np.array([xmin, xmax]),
                 "scale": self.scale[dim],
                 "hist": {
                     name: self.histograms[name][dim][dim]
@@ -495,9 +491,6 @@ class PlotController:
                 "dim": dim,
                 "label": self.coord_labels[self.name][dim]
             }
-            # Safety check for log axes
-            axparams[ax]["lims"] = check_log_limits(
-                lims=axparams[ax]["lims"], scale=axparams[ax]["scale"])
 
         return axparams
 
@@ -562,7 +555,8 @@ class PlotController:
                 xmin = np.Inf
                 xmax = np.NINF
                 for name in self.xlims:
-                    xlims = self.xlims[name][self.profile_dim].values
+                    xlims = self.xlims[name][self.profile_dim][self.scale[
+                        self.profile_dim]].values
                     xmin = min(xmin, xlims[0])
                     xmax = max(xmax, xlims[1])
                 self.profile_axparams = {
@@ -578,11 +572,6 @@ class PlotController:
                         "label": self.coord_labels[self.name][self.profile_dim]
                     }
                 }
-
-                # Safety check for log axes
-                self.profile_axparams["x"]["lims"] = check_log_limits(
-                    lims=self.profile_axparams["x"]["lims"],
-                    scale=self.profile_axparams["x"]["scale"])
 
                 self.profile.update_axes(axparams=self.profile_axparams)
             if not visible or self.profile.is_visible():

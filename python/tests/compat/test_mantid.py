@@ -25,7 +25,7 @@ def memory_is_at_least_gb(required):
     return total >= required
 
 
-@pytest.mark.skipif(not memory_is_at_least_gb(16),
+@pytest.mark.skipif(not memory_is_at_least_gb(8),
                     reason='Insufficient virtual memory')
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
@@ -44,7 +44,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_Workspace2D(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         d = mantidcompat.convert_Workspace2D_to_data_array(ws)
         self.assertEqual(
@@ -60,7 +60,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_EventWorkspace(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000)
 
         binned_mantid = mantidcompat.convert_Workspace2D_to_data_array(ws)
@@ -68,7 +68,7 @@ class TestMantidConversion(unittest.TestCase):
         target_tof = binned_mantid.coords['tof']
         d = mantidcompat.convert_EventWorkspace_to_data_array(
             eventWS, load_pulse_times=False)
-        binned = sc.histogram(d.bins, target_tof)
+        binned = sc.histogram(d, target_tof)
 
         delta = sc.sum(binned_mantid - binned, 'spectrum')
         delta = sc.sum(delta, 'tof')
@@ -111,7 +111,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_unit_conversion(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         tmp = mantidcompat.convert_Workspace2D_to_data_array(ws)
         target_tof = tmp.coords['tof']
@@ -122,7 +122,7 @@ class TestMantidConversion(unittest.TestCase):
 
         da = mantidcompat.convert_EventWorkspace_to_data_array(
             eventWS, load_pulse_times=False)
-        da = sc.histogram(da.bins, target_tof)
+        da = sc.histogram(da, target_tof)
         d = sc.Dataset({da.name: da})
         converted = sc.neutron.convert(d, 'tof', 'wavelength')
 
@@ -152,7 +152,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_Workspace2D_common_bins_masks(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         ws_x = ws.readX(0)
 
@@ -174,7 +174,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_Workspace2D_common_bins_not_common_masks(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         ws_x = ws.readX(0)
 
@@ -198,7 +198,7 @@ class TestMantidConversion(unittest.TestCase):
 
     def test_Workspace2D_not_common_bins_masks(self):
         import mantid.simpleapi as mantid
-        eventWS = mantid.CloneWorkspace(self.base_event_ws)
+        eventWS = self.base_event_ws
         ws = mantid.Rebin(eventWS, 10000, PreserveEvents=False)
         ws = mantid.ConvertUnits(ws,
                                  "Wavelength",
@@ -231,8 +231,12 @@ class TestMantidConversion(unittest.TestCase):
         from mantid.simpleapi import mtd
         mtd.clear()
         filename = MantidDataHelper.find_file("WISH00016748.raw")
+        # This test would use 20 GB of memory if "SpectrumMax" was not set
         ds = mantidcompat.load(filename,
-                               mantid_args={"LoadMonitors": "Separate"})
+                               mantid_args={
+                                   "LoadMonitors": "Separate",
+                                   "SpectrumMax": 10000
+                               })
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
         attrs = [str(key) for key in ds.attrs.keys()]
         expected_monitor_attrs = set(
@@ -248,8 +252,12 @@ class TestMantidConversion(unittest.TestCase):
         from mantid.simpleapi import mtd
         mtd.clear()
         filename = MantidDataHelper.find_file("WISH00016748.raw")
+        # This test would use 20 GB of memory if "SpectrumMax" was not set
         ds = mantidcompat.load(filename,
-                               mantid_args={"LoadMonitors": "Include"})
+                               mantid_args={
+                                   "LoadMonitors": "Include",
+                                   "SpectrumMax": 10000
+                               })
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
         attrs = [str(key) for key in ds.attrs.keys()]
         expected_monitor_attrs = set(
@@ -593,7 +601,7 @@ def test_to_rot_from_vectors():
     assert np.allclose((rot * b).value, a.value)
 
 
-@pytest.mark.skipif(not memory_is_at_least_gb(16),
+@pytest.mark.skipif(not memory_is_at_least_gb(8),
                     reason='Insufficient virtual memory')
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
@@ -682,6 +690,38 @@ def test_to_workspace_2d_handles_single_x_array():
     for i, (y_vals, e_vals) in enumerate(zip(expected_y, expected_e)):
         assert np.equal(ws.readY(i), y_vals).all()
         assert np.equal(ws.readE(i), np.sqrt(e_vals)).all()
+
+
+@pytest.mark.skipif(not mantid_is_available(),
+                    reason='Mantid framework is unavailable')
+def test_attrs_with_dims():
+    from mantid.kernel import FloatArrayProperty
+    import mantid.simpleapi as sapi
+    dataX = [1, 2, 3]
+    dataY = [1, 2, 3]
+    ws = sapi.CreateWorkspace(DataX=dataX,
+                              DataY=dataY,
+                              NSpec=1,
+                              UnitX="Wavelength")
+    # Time series property
+    sapi.AddSampleLog(ws, 'attr0', LogText='1', LogType='Number Series')
+    # Single value property
+    sapi.AddSampleLog(ws, 'attr1', LogText='1', LogType='Number')
+    # Array property (not time series)
+    p = FloatArrayProperty('attr2', np.arange(10))
+    run = ws.mutableRun()
+    run.addProperty('attr2', p, replace=True)
+
+    ds = mantidcompat.from_mantid(ws)
+    # Variable (single value) wrapped DataArray
+    assert isinstance(ds.attrs['attr0'].value, sc.DataArray)
+    assert 'time' in ds.attrs['attr0'].value.coords
+    # Variable (single value)
+    assert isinstance(ds.attrs['attr1'].value, int)
+    # Variable (single value) wrapped Variable
+    assert isinstance(ds.attrs['attr2'].value, sc.Variable)
+    assert ds.attrs['attr2'].shape == []  # outer wrapper
+    assert ds.attrs['attr2'].value.shape == [10]  # inner held
 
 
 @pytest.mark.skipif(not mantid_is_available(),

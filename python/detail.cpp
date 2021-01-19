@@ -12,13 +12,13 @@ using namespace scipp::core;
 namespace py = pybind11;
 
 void init_detail(py::module &m) {
-  py::class_<MoveableVariable>(m, "MoveableVariable");
-  py::class_<MoveableDataArray>(m, "MoveableDataArray");
+  py::class_<Moveable<Variable>>(m, "MoveableVariable");
+  py::class_<Moveable<DataArray>>(m, "MoveableDataArray");
 
   auto detail = m.def_submodule("detail");
 
   detail.def(
-      "move", [](Variable &var) { return MoveableVariable{std::move(var)}; },
+      "move", [](Variable &var) { return Moveable<Variable>{std::move(var)}; },
       py::call_guard<py::gil_scoped_release>(), R"(
         This function can be used in a similar way to the C++ std::move to
         transfer ownership of an input Variable to a container.
@@ -30,7 +30,7 @@ void init_detail(py::module &m) {
 
   detail.def(
       "move",
-      [](DataArray &data) { return MoveableDataArray{std::move(data)}; },
+      [](DataArray &data) { return Moveable<DataArray>{std::move(data)}; },
       py::call_guard<py::gil_scoped_release>(), R"(
         This function can be used in a similar way to the C++ std::move to
         transfer ownership of an input DataArray to a container.

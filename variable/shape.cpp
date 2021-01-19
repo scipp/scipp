@@ -13,6 +13,13 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
+void expect_same_volume(const Dimensions &old_dims,
+                        const Dimensions &new_dims) {
+  if (old_dims.volume() != new_dims.volume())
+    throw except::DimensionError(
+        "Cannot reshape to dimensions with different volume");
+}
+
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
   Variable result(var, dims);
   result.data().copy(var, result);
@@ -137,6 +144,7 @@ VariableView reshape(Variable &var, const Dimensions &dims) {
 }
 
 Variable reshape(Variable &&var, const Dimensions &dims) {
+  expect_same_volume(var.dims(), dims);
   Variable reshaped(std::move(var));
   reshaped.setDims(dims);
   return reshaped;
@@ -145,6 +153,7 @@ Variable reshape(Variable &&var, const Dimensions &dims) {
 Variable reshape(const VariableConstView &view, const Dimensions &dims) {
   // In general a variable slice is not contiguous. Therefore we cannot reshape
   // without making a copy (except for special cases).
+  expect_same_volume(view.dims(), dims);
   Variable reshaped(view);
   reshaped.setDims(dims);
   return reshaped;

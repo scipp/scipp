@@ -55,12 +55,15 @@ def make_run(ws):
 additional_unit_mapping = {
     "Kelvin": sc.units.K,
     "microsecond": sc.units.us,
+    "us": sc.units.us,
     "nanosecond": sc.units.ns,
     "second": sc.units.s,
     "Angstrom": sc.units.angstrom,
     "Hz": sc.units.one / sc.units.s,
     "degree": sc.units.deg,
     "millimetre": sc.units.mm,
+    " ": sc.units.one,
+    "none": sc.units.one,
 }
 
 
@@ -106,7 +109,12 @@ def make_variables_from_run_logs(ws):
                                                       dtype=sc.dtype.int64,
                                                       unit=sc.units.ns)
                                       })
-            yield property_name, sc.Variable(data_array)
+            yield property_name, sc.Variable(value=data_array)
+        elif not np.isscalar(values):
+            # If property is multi-valued, create a wrapper single
+            # value variable. This prevents interference with
+            # global dimensions for for output Dataset.
+            yield property_name, sc.Variable(value=property_data)
         else:
             yield property_name, property_data
 
@@ -616,10 +624,12 @@ def convert_EventWorkspace_to_data_array(ws,
                         shape=[n_event],
                         unit=unit,
                         dtype=sc.dtype.float64)
-    weights = sc.Variable(dims=['event'],
-                          unit=data_unit,
-                          values=np.ones(n_event, dtype=np.float32),
-                          variances=np.ones(n_event, dtype=np.float32))
+    weights = sc.broadcast(sc.Variable(value=1.0,
+                                       variance=1.0,
+                                       unit=data_unit,
+                                       dtype=sc.dtype.float32),
+                           dims=['event'],
+                           shape=[n_event])
     pulse_times = sc.Variable(
         dims=['event'],
         shape=[n_event],
@@ -670,7 +680,7 @@ def convert_EventWorkspace_to_data_array(ws,
     coords_labs_data["data"] = sc.bins(begin=begins,
                                        end=ends,
                                        dim='event',
-                                       data=events)
+                                       data=detail.move(events))
     return detail.move_to_data_array(**coords_labs_data)
 
 
