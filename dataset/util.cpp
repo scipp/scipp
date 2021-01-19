@@ -2,6 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Matthew Andrew
+#include <algorithm>
+
 #include "scipp/dataset/util.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/reduction.h"
@@ -14,8 +16,10 @@ template <class T>
 scipp::index size_of_bucket_impl(const VariableConstView &view) {
   const auto &[indices, dim, buffer] = view.constituents<T>();
   const auto &[begin, end] = unzip(indices);
+  // Using max to avoid division by zero. Other factors should be zero in this
+  // case, so this should not influence the result.
   const auto scale = sum(end - begin).template value<scipp::index>() /
-                     static_cast<double>(buffer.dims()[dim]);
+                     std::max(1.0, static_cast<double>(buffer.dims()[dim]));
   return size_of(indices) + size_of(buffer) * scale;
 }
 
