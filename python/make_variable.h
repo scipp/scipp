@@ -146,7 +146,7 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                  const bool variances) {
   return core::CallDType<
       double, float, int64_t, int32_t, bool, scipp::core::time_point,
-      std::string, DataArray, Dataset, Eigen::Vector3d,
+      std::string, Variable, DataArray, Dataset, Eigen::Vector3d,
       Eigen::Matrix3d>::apply<MakeVariableDefaultInit>(scipp_dtype(dtype),
                                                        labels, shape, unit,
                                                        variances);

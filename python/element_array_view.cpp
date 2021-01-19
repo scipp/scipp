@@ -72,6 +72,7 @@ void init_element_array_view(py::module &m) {
   declare_span<const std::string>(m, "string_const");
   declare_span<std::string>(m, "string");
   declare_span<const Dim>(m, "Dim_const");
+  declare_span<Variable>(m, "Variable");
   declare_span<DataArray>(m, "DataArray");
   declare_span<Dataset>(m, "Dataset");
   declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
@@ -83,6 +84,7 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<int32_t>(m, "int32");
   declare_ElementArrayView<std::string>(m, "string");
   declare_ElementArrayView<bool>(m, "bool");
+  declare_ElementArrayView<Variable>(m, "Variable");
   declare_ElementArrayView<DataArray>(m, "DataArray");
   declare_ElementArrayView<Dataset>(m, "Dataset");
   declare_ElementArrayView<Eigen::Vector3d>(m, "Eigen_Vector3d");
