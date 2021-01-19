@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .model import PlotModel
-from .tools import to_bin_centers
+from .tools import to_bin_centers, fix_empty_range
 from .._scipp import core as sc
 import numpy as np
 
@@ -173,16 +173,20 @@ class PlotModel3d(PlotModel):
             raise RuntimeError(
                 "Unknown cut surface type {}".format(button_value))
 
-    def get_positions_extents(self):
+    def get_positions_extents(self, pixel_size=None):
         """
         Find the extents of the box that contains all the positions.
         """
         extents = {}
         for xyz in "xyz":
             x = getattr(sc.geometry, xyz)(self.pos_coord)
+            xmin = sc.min(x).value
+            xmax = sc.max(x).value
+            if pixel_size is not None:
+                xmin -= 0.5 * pixel_size
+                xmax += 0.5 * pixel_size
             extents[xyz] = {
-                "lims": np.array([sc.min(x).value,
-                                  sc.max(x).value]),
+                "lims": np.array(fix_empty_range([xmin, xmax], replacement=pixel_size)),
                 "unit": self.pos_coord.unit
             }
         return extents

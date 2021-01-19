@@ -67,7 +67,7 @@ class PlotController3d(PlotController):
         """
         axparams = {}
         if self.positions is not None:
-            extents = self.model.get_positions_extents()
+            extents = self.model.get_positions_extents(self.pixel_size)
             axparams = {
                 xyz: {
                     "lims": ex["lims"],
