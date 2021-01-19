@@ -27,15 +27,16 @@ def plot3d(*args, filename=None, **kwargs):
         try:
             from IPython import get_ipython
             ipy = get_ipython()
-            pixel_ratio = ipy.kernel.shell.user_ns.get("devicePixelRatio")
-            # Note that pixel_ratio appears to be None when building the
-            # documentation, possibly because the page is rendered in one go,
-            # before the asynchronous javascript has been run.
-            # See https://stackoverflow.com/questions/30902898
-            # So we do not update the config if it is None, and it will default
-            # to 1.0 in figure3d.py.
-            if pixel_ratio is not None:
-                config.update({'plot.pixel_ratio': pixel_ratio})
+            if ipy is not None:
+                pixel_ratio = ipy.kernel.shell.user_ns.get("devicePixelRatio")
+                # Note that pixel_ratio appears to be None when building the
+                # documentation, possibly because the page is rendered in one
+                # go, before the asynchronous javascript has been run.
+                # See https://stackoverflow.com/questions/30902898
+                # So we do not update the config if it is None, and it will
+                # default to 1.0 in figure3d.py.
+                if pixel_ratio is not None:
+                    config.update({'plot.pixel_ratio': pixel_ratio})
         except ImportError:
             pass
 
