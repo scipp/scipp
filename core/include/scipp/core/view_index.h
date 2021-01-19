@@ -62,10 +62,6 @@ public:
     return m_fullIndex != other.m_fullIndex;
   }
 
-  [[nodiscard]] constexpr bool has_stride_zero() const noexcept {
-    return m_dims > m_subdims;
-  }
-
 private:
   // NOTE:
   // We investigated different containers for the m_delta, m_coord & m_extent
