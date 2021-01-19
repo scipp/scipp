@@ -109,7 +109,12 @@ def make_variables_from_run_logs(ws):
                                                       dtype=sc.dtype.int64,
                                                       unit=sc.units.ns)
                                       })
-            yield property_name, sc.Variable(data_array)
+            yield property_name, sc.Variable(value=data_array)
+        elif not np.isscalar(values):
+            # If property is multi-valued, create a wrapper single
+            # value variable. This prevents interference with
+            # global dimensions for for output Dataset.
+            yield property_name, sc.Variable(value=property_data)
         else:
             yield property_name, property_data
 

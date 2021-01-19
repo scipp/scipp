@@ -14,8 +14,9 @@ template <class T>
 scipp::index size_of_bucket_impl(const VariableConstView &view) {
   const auto &[indices, dim, buffer] = view.constituents<T>();
   const auto &[begin, end] = unzip(indices);
-  const auto scale = sum(end - begin).template value<scipp::index>() /
-                     static_cast<double>(buffer.dims()[dim]);
+  const auto sizes = sum(end - begin).template value<scipp::index>();
+  const auto scale = // avoid division by zero
+      sizes == 0 ? 0.0 : sizes / static_cast<double>(buffer.dims()[dim]);
   return size_of(indices) + size_of(buffer) * scale;
 }
 
