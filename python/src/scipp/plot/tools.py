@@ -182,7 +182,7 @@ def fix_empty_range(lims, replacement=None):
     dx = 0.0
     if lims[0] == lims[1]:
         if replacement is not None:
-            dx = 0.5*replacement
+            dx = 0.5 * replacement
         elif lims[0] == 0.0:
             dx = 0.5
         else:

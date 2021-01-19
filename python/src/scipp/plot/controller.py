@@ -100,7 +100,8 @@ class PlotController:
                                                        order='descending'))
                 # Check if xmin == xmax
                 for scale in self.xlims[key][dim]:
-                    self.xlims[key][dim][scale] = fix_empty_range(self.xlims[key][dim][scale])
+                    self.xlims[key][dim][scale] = fix_empty_range(
+                        self.xlims[key][dim][scale])
 
                     self.xlims[key][dim][scale] = sc.Variable(
                         [dim],

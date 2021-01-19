@@ -186,8 +186,11 @@ class PlotModel3d(PlotModel):
                 xmin -= 0.5 * pixel_size
                 xmax += 0.5 * pixel_size
             extents[xyz] = {
-                "lims": np.array(fix_empty_range([xmin, xmax], replacement=pixel_size)),
-                "unit": self.pos_coord.unit
+                "lims":
+                np.array(fix_empty_range([xmin, xmax],
+                                         replacement=pixel_size)),
+                "unit":
+                self.pos_coord.unit
             }
         return extents
 
