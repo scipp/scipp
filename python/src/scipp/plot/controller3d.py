@@ -67,7 +67,7 @@ class PlotController3d(PlotController):
         """
         axparams = {}
         if self.positions is not None:
-            extents = self.model.get_positions_extents()
+            extents = self.model.get_positions_extents(self.pixel_size)
             axparams = {
                 xyz: {
                     "lims": ex["lims"],
@@ -104,15 +104,14 @@ class PlotController3d(PlotController):
 
         if self.pixel_size is not None:
             axparams["pixel_size"] = self.pixel_size
+            axparams["pixel_scaling"] = 1.0
         else:
             if self.positions is not None:
-                ind = np.argmin(axparams["box_size"])
-                xyz = "xyz"[ind]
                 # Note the value of 0.05 is arbitrary here. It is a sensible
                 # guess to render a plot that is not too crowded and shows
                 # individual pixels.
-                psize = 0.05 * axparams["box_size"][ind]
-                pscale = axparams[xyz]["scaling"]
+                psize = 0.05 * np.mean(axparams["box_size"])
+                pscale = axparams["x"]["scaling"]
             else:
                 psize, pscale = self.model.estimate_pixel_size(axparams)
             axparams["pixel_size"] = psize

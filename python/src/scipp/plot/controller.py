@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import find_limits
+from .tools import find_limits, fix_empty_range
 from .._utils import value_to_string
 from .._scipp import core as sc
 import numpy as np
@@ -98,16 +98,10 @@ class PlotController:
                                                        coord,
                                                        dim,
                                                        order='descending'))
-                # Small correction if xmin == xmax
+                # Check if xmin == xmax
                 for scale in self.xlims[key][dim]:
-                    if self.xlims[key][dim][scale][0] == self.xlims[key][dim][
-                            scale][1]:
-                        if self.xlims[key][dim][scale][0] == 0.0:
-                            self.xlims[key][dim][scale] = [-0.5, 0.5]
-                        else:
-                            dx = 0.5 * abs(self.xlims[key][dim][scale][0])
-                            self.xlims[key][dim][scale][0] -= dx
-                            self.xlims[key][dim][scale][1] += dx
+                    self.xlims[key][dim][scale] = fix_empty_range(
+                        self.xlims[key][dim][scale])
 
                     self.xlims[key][dim][scale] = sc.Variable(
                         [dim],

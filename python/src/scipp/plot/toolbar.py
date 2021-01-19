@@ -207,15 +207,18 @@ class PlotToolbar3d(PlotToolbar):
         self.add_button(name="camera_x_normal",
                         icon="camera",
                         description="X",
-                        tooltip="Camera to X normal")
+                        tooltip="Camera to X normal. "
+                        "Click twice to flip the view direction.")
         self.add_button(name="camera_y_normal",
                         icon="camera",
                         description="Y",
-                        tooltip="Camera to Y normal")
+                        tooltip="Camera to Y normal "
+                        "Click twice to flip the view direction.")
         self.add_button(name="camera_z_normal",
                         icon="camera",
                         description="Z",
-                        tooltip="Camera to Z normal")
+                        tooltip="Camera to Z normal "
+                        "Click twice to flip the view direction.")
         self.add_button(name="rescale_to_data",
                         icon="arrows-v",
                         tooltip="Rescale")
