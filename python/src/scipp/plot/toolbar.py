@@ -140,9 +140,7 @@ class PlotToolbar:
         self.mpl_toolbar.save_figure()
 
     def rescale_on_zoom(self):
-        if self.members["zoom_view"].value:
-            # Simulate a click on the rescale_to_data button
-            self.members["rescale_to_data"].click()
+        return self.members["zoom_view"].value
 
 
 class PlotToolbar1d(PlotToolbar):
