@@ -86,13 +86,37 @@ def test_create_scalar():
     assert var.unit == sc.units.dimensionless
 
 
+def test_create_scalar_Variable():
+    elem = sc.Variable(dims=['x'], values=np.arange(4.0))
+    var = sc.Variable(elem)
+    assert sc.is_equal(var.value, elem)
+    assert var.dims == []
+    assert var.dtype == sc.dtype.Variable
+    assert var.unit == sc.units.dimensionless
+    var = sc.Variable(elem['x', 1:3])
+    assert var.dtype == sc.dtype.Variable
+
+
+def test_create_scalar_DataArray():
+    elem = sc.DataArray(data=sc.Variable(dims=['x'], values=np.arange(4.0)))
+    var = sc.Variable(elem)
+    assert sc.is_equal(var.value, elem)
+    assert var.dims == []
+    assert var.dtype == sc.dtype.DataArray
+    assert var.unit == sc.units.dimensionless
+    var = sc.Variable(elem['x', 1:3])
+    assert var.dtype == sc.dtype.DataArray
+
+
 def test_create_scalar_Dataset():
-    dataset = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
-    var = sc.Variable(dataset)
-    assert sc.is_equal(var.value, dataset)
+    elem = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
+    var = sc.Variable(elem)
+    assert sc.is_equal(var.value, elem)
     assert var.dims == []
     assert var.dtype == sc.dtype.Dataset
     assert var.unit == sc.units.dimensionless
+    var = sc.Variable(elem['x', 1:3])
+    assert var.dtype == sc.dtype.Dataset
 
 
 def test_create_scalar_quantity():
