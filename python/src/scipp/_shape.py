@@ -6,6 +6,23 @@ from ._cpp_wrapper_util import call_func as _call_cpp_func
 from typing import Sequence
 
 
+def broadcast(x, dims, shape):
+    """Broadcast a variable.
+
+    Note that scipp operations broadcast automatically, so using this function
+    directly is rarely required.
+
+    :param x: Variable to broadcast.
+    :param dims: List of new dimensions.
+    :param shape: New extents in each dimension.
+    :type x: Variable
+    :type dims: list[str]
+    :type shape: list[int]
+    :return: New variable with requested dimension labels and shape.
+    """
+    return _call_cpp_func(_cpp.broadcast, x, dims, shape)
+
+
 def concatenate(x, y, dim):
     """Concatenate input data array along the given dimension.
 
