@@ -66,12 +66,6 @@ TEST(ComparisonTest, variances_test) {
   EXPECT_EQ(not_equal(a, b), true * units::one);
 }
 
-TEST(ComparisonTest, less_dtypes_test) {
-  const auto a = makeVariable<float>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
-  const auto b = makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{0, 1});
-  EXPECT_THROW([[maybe_unused]] auto out = less(a, b), std::runtime_error);
-}
-
 TEST(ComparisonTest, less_units_test) {
   const auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.0, 3.0});

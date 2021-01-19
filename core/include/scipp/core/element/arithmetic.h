@@ -62,12 +62,12 @@ constexpr auto times_equals =
 constexpr auto divide_equals =
     overloaded{div_inplace_types, [](auto &&a, const auto &b) { a /= b; }};
 
-template <class... Ts> struct add_types_t {
+struct add_types_t {
   constexpr void operator()() const noexcept;
   using types = arithmetic_and_matrix_type_pairs;
 };
 
-template <class... Ts> struct times_types_t {
+struct times_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(std::tuple_cat(
       std::declval<arithmetic_type_pairs_with_bool>(),
@@ -75,7 +75,7 @@ template <class... Ts> struct times_types_t {
       std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>()));
 };
 
-template <class... Ts> struct divide_types_t {
+struct divide_types_t {
   constexpr void operator()() const noexcept;
   using types = arithmetic_type_pairs;
 };
