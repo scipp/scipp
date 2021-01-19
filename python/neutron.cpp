@@ -83,28 +83,28 @@ template <class T> void bind_convert(py::module &m) {
     Currently only conversion from time-of-flight (Dim.Tof) to other time-of-flight-derived units such as d-spacing (Dim.DSpacing) is supported.
 
     :param data: Input data with time-of-flight dimension (Dim.Tof)
-    :param from: Dimension to convert from
-    :param to: Dimension to convert into
+    :param origin: Dimension to convert from
+    :param target: Dimension to convert into
     :param out: Optional output container
     :return: New data array or dataset with converted dimension (dimension labels, coordinate values, and units)
     :rtype: DataArray or Dataset)";
   m.def(
       "convert",
-      [](ConstView data, const Dim from, const Dim to) {
-        return py::cast(convert(data, from, to));
+      [](ConstView data, const Dim origin, const Dim target) {
+        return py::cast(convert(data, origin, target));
       },
-      py::arg("data"), py::arg("from"), py::arg("to"),
+      py::arg("data"), py::arg("origin"), py::arg("target"),
       py::call_guard<py::gil_scoped_release>(), doc);
   m.def(
       "convert",
-      [](py::object &obj, const Dim from, const Dim to, T &out) {
+      [](py::object &obj, const Dim origin, const Dim target, T &out) {
         auto &data = obj.cast<T &>();
         if (&data != &out)
           throw std::runtime_error("Currently only out=<input> is supported");
-        data = convert(std::move(data), from, to);
+        data = convert(std::move(data), origin, target);
         return obj;
       },
-      py::arg("data"), py::arg("from"), py::arg("to"), py::arg("out"),
+      py::arg("data"), py::arg("origin"), py::arg("target"), py::arg("out"),
       py::call_guard<py::gil_scoped_release>(), doc);
 }
 

@@ -117,21 +117,59 @@ def vars_to_err(v):
     return v
 
 
-def check_log_limits(lims=None, vmin=None, vmax=None, scale=None):
+def find_log_limits(x):
     """
-    Check if a limit is negative when a "log" norm is used.
-    If so, set the lower limits as 1.0e-3 * max_value.
-    Input can either be:
-      - 2 values `vmin` and `vmax` -> return vmin, vmax
-      - a list of length 2 `lims` -> return [vmin, vmax]
+    To find log scale limits, we histogram the data between 1.0-30
+    and 1.0e+30 and include only bins that are non-zero.
     """
-    if lims is not None:
-        vmin = lims[0]
-        vmax = lims[1]
-    if vmin is not None and vmax is not None:
-        if scale == "log" and vmin <= 0:
-            vmin = 1.0e-03 * vmax
-    if lims is not None:
-        return np.array([vmin, vmax])
+    volume = np.product(x.shape)
+    pixel = sc.reshape(sc.values(x), dims=['pixel'], shape=(volume, ))
+    weights = sc.Variable(dims=['pixel'], values=np.ones(volume))
+    hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
+                        bins=sc.Variable(dims=['order'],
+                                         values=np.geomspace(1e-30,
+                                                             1e30,
+                                                             num=61),
+                                         unit=x.unit))
+    # Find the first and the last non-zero bins
+    inds = np.nonzero((hist.data > 0.0 * sc.units.one).values)
+    ar = np.arange(hist.data.shape[0])[inds]
+    # Safety check in case there are no values in range 1.0e-30:1.0e+30:
+    # fall back to the linear method and replace with arbitrary values if the
+    # limits are negative.
+    if len(ar) == 0:
+        [vmin, vmax] = find_linear_limits(x)
+        if vmin <= 0.0:
+            if vmax <= 0.0:
+                vmin = 0.1
+                vmax = 1.0
+            else:
+                vmin = 1.0e-3 * vmax
     else:
-        return vmin, vmax
+        vmin = hist.coords['order']['order', ar.min()].value
+        vmax = hist.coords['order']['order', ar.max() + 1].value
+    return [vmin, vmax]
+
+
+def find_linear_limits(x):
+    """
+    Find variable min and max.
+    """
+    return [sc.nanmin(x).value, sc.nanmax(x).value]
+
+
+def find_limits(x, scale=None, flip=False):
+    """
+    Find sensible limits, depending on linear or log scale.
+    """
+    if scale is not None:
+        if scale == "log":
+            lims = {"log": find_log_limits(x)}
+        else:
+            lims = {"linear": find_linear_limits(x)}
+    else:
+        lims = {"log": find_log_limits(x), "linear": find_linear_limits(x)}
+    if flip:
+        for key in lims:
+            lims[key] = np.flip(lims[key]).copy()
+    return lims

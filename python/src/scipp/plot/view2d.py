@@ -85,7 +85,8 @@ class PlotView2d(PlotView):
             self.interface["update_viewport"](xylims)
 
         # If we are zooming, rescale to data?
-        self.figure.rescale_on_zoom()
+        if self.figure.rescale_on_zoom():
+            self.interface["rescale_to_data"]()
 
     def update_axes(self, axparams):
         """

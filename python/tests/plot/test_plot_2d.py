@@ -13,8 +13,16 @@ def test_plot_2d_image():
     plot(make_dense_dataset(ndim=2))
 
 
+def test_plot_2d_image_with_variances():
+    plot(make_dense_dataset(ndim=2, variances=True))
+
+
 def test_plot_2d_image_with_log():
     plot(make_dense_dataset(ndim=2), norm='log')
+
+
+def test_plot_2d_image_with_log_and_variances():
+    plot(make_dense_dataset(ndim=2, variances=True), norm='log')
 
 
 def test_plot_2d_image_with_vmin_vmax():
