@@ -7,8 +7,6 @@
 #include "scipp/core/dtype.h"
 #include "scipp/units/unit.h"
 
-#include "make_variable.h"
-
 using namespace scipp;
 using namespace scipp::variable;
 

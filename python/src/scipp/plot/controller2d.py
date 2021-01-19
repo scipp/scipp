@@ -28,4 +28,7 @@ class PlotController2d(PlotController):
         """
         super().connect_view()
         self.view.connect(
-            view_callbacks={"update_viewport": self.update_viewport})
+            view_callbacks={
+                "update_viewport": self.update_viewport,
+                "rescale_to_data": self.rescale_to_data
+            })
