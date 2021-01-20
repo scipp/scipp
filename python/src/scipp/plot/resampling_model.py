@@ -125,6 +125,10 @@ class ResamplingBinnedModel(ResamplingModel):
         super().__init__(*args, **kwargs)
         # TODO See #1469. This is a temporary hack to work around the
         # conversion of coords to edges in model.py.
+        new_meta = {name: var.copy() for name, var in self._array.meta.items()}
+        self._array = PlotArray(data=self._array.data,
+                                masks=self._array.masks,
+                                meta=new_meta)
         for name, var in self._array.meta.items():
             if len(var.dims) == 0:
                 continue
