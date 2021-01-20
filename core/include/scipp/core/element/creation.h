@@ -1,0 +1,44 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Simon Heybrock
+#pragma once
+
+#include <limits>
+
+#include "scipp/common/overloaded.h"
+#include "scipp/core/element/arg_list.h"
+#include "scipp/core/transform_common.h"
+#include "scipp/units/unit.h"
+
+
+namespace scipp::core::element {
+
+constexpr auto full_like =
+    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
+               [](const units::Unit &u) { return u; }};
+
+constexpr auto zero_like = overloaded{
+    full_like, [](const auto &x) { return std::decay_t<decltype(x)>{0}; }};
+
+template <class T, T Value>
+constexpr auto value_like =
+    overloaded{full_like, [](const auto &) { return Value; }};
+
+template <class T> struct underlying { using type = T; };
+template <class T> struct underlying<ValueAndVariance<T>> { using type = T; };
+template <class T> using underlying_t = typename underlying<T>::type;
+
+constexpr auto numeric_limits_max_like =
+    overloaded{full_like, [](const auto &x) {
+                 return std::numeric_limits<
+                     underlying_t<std::decay_t<decltype(x)>>>::max();
+               }};
+
+constexpr auto numeric_limits_min_like =
+    overloaded{full_like, [](const auto &x) {
+                 return std::numeric_limits<
+                     underlying_t<std::decay_t<decltype(x)>>>::min();
+               }};
+
+} // namespace scipp::core::element

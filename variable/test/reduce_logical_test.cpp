@@ -23,6 +23,8 @@ TEST(ReduceLogicalTest, all) {
             makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{false, true}));
   EXPECT_EQ(all(var, Dim::Y),
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false}));
+  EXPECT_EQ(all(var.slice({Dim::X, 0, 0}), Dim::X),
+            makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{true, true}));
 }
 
 TEST(ReduceLogicalTest, any) {
@@ -32,4 +34,6 @@ TEST(ReduceLogicalTest, any) {
             makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{true, false}));
   EXPECT_EQ(any(var, Dim::Y),
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
+  EXPECT_EQ(any(var.slice({Dim::X, 0, 0}), Dim::X),
+            makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{false, false}));
 }
