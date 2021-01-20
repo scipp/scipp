@@ -15,19 +15,6 @@
 /// operations for Variable.
 namespace scipp::core::element {
 
-constexpr auto comparison = overloaded{
-    transform_flags::no_out_variance,
-    arg_list<double, float, int64_t, int32_t, bool,
-             std::tuple<int64_t, int32_t>, std::tuple<int32_t, int64_t>>,
-    [](const units::Unit &x, const units::Unit &y) {
-      expect::equals(x, y);
-      return units::dimensionless;
-    }};
-
-constexpr auto less = overloaded{
-    comparison,
-    [](const auto &x, const auto &y) { return x < y; },
-};
 constexpr auto is_approx = overloaded{
     transform_flags::no_out_variance,
     arg_list<double, float, int64_t, int32_t, std::tuple<double, double, float>,
@@ -45,6 +32,24 @@ constexpr auto is_approx = overloaded{
       using std::abs;
       return abs(x - y) <= t;
     }};
+
+struct comparison_types_t {
+  constexpr void operator()() const noexcept;
+  using types = decltype(std::tuple_cat(std::declval<arithmetic_type_pairs>(),
+                                        std::tuple<bool>{}));
+};
+
+constexpr auto comparison =
+    overloaded{comparison_types_t{}, transform_flags::no_out_variance,
+               [](const units::Unit &x, const units::Unit &y) {
+                 expect::equals(x, y);
+                 return units::dimensionless;
+               }};
+
+constexpr auto less = overloaded{
+    comparison,
+    [](const auto &x, const auto &y) { return x < y; },
+};
 
 constexpr auto greater = overloaded{
     comparison,
