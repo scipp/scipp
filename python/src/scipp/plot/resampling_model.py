@@ -6,6 +6,7 @@
 import numpy as np
 from .._scipp import core as sc
 from .helpers import PlotArray
+from .tools import to_bin_centers
 
 
 class ResamplingModel():
@@ -134,7 +135,7 @@ class ResamplingBinnedModel(ResamplingModel):
                 continue
             dim = var.dims[-1]
             if name not in self._array.data.bins.data.meta:
-                self._array.meta[name] = 0.5 * (var[dim, 1:] + var[dim, :-1])
+                self._array.meta[name] = to_bin_centers(var, dim)
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
