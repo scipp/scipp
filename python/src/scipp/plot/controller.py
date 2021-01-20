@@ -420,7 +420,6 @@ class PlotController:
         called when update_axes is called since the displayed data needs to be
         updated when the axes have changed.
         """
-
         owner_dim = None
 
         if self.update_data_lock:
