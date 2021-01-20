@@ -184,7 +184,7 @@ def _is_bin_centers(container, var, dim):
     :param container: scipp object defining all meta
     :param var: variable to determine if bin centers
     :param dim: dimension to consider
-    :return:
+    :return: True only if var is bin centers
     """
     largest = [c.shape[0] for _, c in container.meta.items() if dim in c.dims]
     return max(largest) == var.shape[0] + 1 if len(largest) > 0 else False
