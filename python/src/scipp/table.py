@@ -186,11 +186,8 @@ def _is_bin_centers(container, var, dim):
     :param dim: dimension to consider
     :return:
     """
-    consider = []
-    for _, c in container.meta.items():
-        if (dim in c.dims):
-            consider.append(c.shape[0])
-    return max(consider) == var.shape[0] + 1 if len(consider) > 0 else False
+    largest = [c.shape[0] for _, c in container.meta.items() if dim in c.dims]
+    return max(largest) == var.shape[0] + 1 if len(largest) > 0 else False
 
 
 def table(scipp_obj):
