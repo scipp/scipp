@@ -219,6 +219,10 @@ class PlotFigure3d:
         Define custom raw shader for point cloud to allow to RGBA color format.
         Note that the value of 580 was obtained from trial and error.
         """
+        if "pixel_ratio" in config.plot:
+            pixel_ratio = config.plot.pixel_ratio
+        else:
+            pixel_ratio = 1.0
         self.points_material = p3.ShaderMaterial(vertexShader='''
 precision highp float;
 attribute vec4 rgba_color;
@@ -236,7 +240,7 @@ void main(){
     delta = pow(xDelta + yDelta + zDelta, 0.5);
     gl_PointSize = %f / delta;
 }
-''' % (580.0 * axparams["pixel_size"], ),
+''' % (580.0 * axparams["pixel_size"] * pixel_ratio, ),
                                                  fragmentShader='''
 precision highp float;
 varying vec4 vColor;
