@@ -19,7 +19,8 @@ INSTANTIATE_TEST_SUITE_P(
 
 INSTANTIATE_TEST_SUITE_P(
     1D, DenseVariablesTest,
-    testing::Values(makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
+    testing::Values(makeVariable<double>(Dims{Dim::X}, Shape{0}, units::m),
+                    makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
                                          Values{1, 2}, Variances{3, 4}),
                     makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
                                          Values{1, 2}),
@@ -30,6 +31,10 @@ INSTANTIATE_TEST_SUITE_P(
 
 INSTANTIATE_TEST_SUITE_P(
     2D, DenseVariablesTest,
-    testing::Values(makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                         units::m, Values{1, 2, 3, 4, 5, 6},
-                                         Variances{1, 1, 2, 2, 3, 3})));
+    testing::Values(
+        makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{0, 0}, units::m),
+        makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{0, 2}, units::m),
+        makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 0}, units::m),
+        makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3}, units::m,
+                             Values{1, 2, 3, 4, 5, 6},
+                             Variances{1, 1, 2, 2, 3, 3})));
