@@ -155,6 +155,9 @@ enable_testing()
 
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
+add_custom_target(docs
+COMMAND mkdir -p docs && PYTHONPATH=$PYTHONPATH:${CMAKE_INSTALL_PREFIX} sphinx-build ${CMAKE_SOURCE_DIR}/docs docs
+DEPENDS install)
 
 # Generate files for free scipp API functions
 include(scipp-functions)
