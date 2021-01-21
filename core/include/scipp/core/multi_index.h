@@ -81,6 +81,10 @@ public:
     m_nested_stride = nestedDims.offset(sliceDim);
     m_nested_dim_index = m_ndim_nested - nestedDims.index(sliceDim) - 1;
     scipp::index dim = iterDims.ndim() - 1 + nestedDims.ndim();
+    m_end_sentinel = iterDims.volume();
+    if (m_end_sentinel == 0) {
+      return;  // operands are empty, leave everything below default initialised
+    }
     for (const auto size : iterDims.shape()) {
       m_shape[dim--] = size;
     }
@@ -97,7 +101,6 @@ public:
         m_stride[data][m_ndim_nested + d] = bucketStrides[data][d];
       load_bucket_params(data);
     }
-    m_end_sentinel = iterDims.volume();
     if (m_shape[m_nested_dim_index] == 0)
       seek_bucket();
   }
