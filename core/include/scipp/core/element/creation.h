@@ -11,7 +11,6 @@
 #include "scipp/core/transform_common.h"
 #include "scipp/units/unit.h"
 
-
 namespace scipp::core::element {
 
 constexpr auto special_like =
