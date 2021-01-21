@@ -80,10 +80,11 @@ auto contiguous_indices(const VariableConstView &parent,
 
 template <class T> class BinVariableMakerCommon : public AbstractVariableMaker {
 public:
-  bool is_bins() const override { return true; }
-  Variable empty_like(const VariableConstView &prototype,
-                      const std::optional<Dimensions> &shape,
-                      const VariableConstView &sizes) const override {
+  [[nodiscard]] bool is_bins() const override { return true; }
+  [[nodiscard]] Variable
+  empty_like(const VariableConstView &prototype,
+             const std::optional<Dimensions> &shape,
+             const VariableConstView &sizes) const override {
     if (shape)
       throw except::TypeError(
           "Cannot specify shape in `empty_like` for prototype with bins, shape "
