@@ -176,6 +176,20 @@ def _table_from_dict_of_variables(dict_of_variables,
     return html
 
 
+def _is_bin_centers(container, var, dim):
+    """
+    Is var considered to be bin_centers in dimension dim
+    Considers all meta including non-dimensional meta
+
+    :param container: scipp object defining all meta
+    :param var: variable to determine if bin centers
+    :param dim: dimension to consider
+    :return: True only if var is bin centers
+    """
+    largest = [c.shape[0] for _, c in container.meta.items() if dim in c.dims]
+    return max(largest) == var.shape[0] + 1 if len(largest) > 0 else False
+
+
 def table(scipp_obj):
     """
     Create a html table from the contents of a Dataset (0D and 1D Variables
@@ -231,14 +245,12 @@ class TableViewer:
                             self.is_bin_centers[group][key] = self.make_dict()
                             self.sizes[group][key] = []
                         self.is_bin_centers[group][key][tag][name_str] = False
-                        if dim in scipp_obj.coords:
-                            if scipp_obj.coords[dim].shape[
-                                    0] == var.shape[0] + 1:
-                                self.is_bin_centers[group][key][tag][
-                                    name_str] = True
+                        self.is_bin_centers[group][key][tag][
+                            name_str] = _is_bin_centers(scipp_obj, var, dim)
                         self.tabledict[group][key][tag][name_str] = var
                         self.sizes[group][key].append(
                             var.shape[0] if ndims > 0 else None)
+
         else:
             ndims = len(scipp_obj.shape)
             if ndims < 2:
