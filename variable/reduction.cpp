@@ -51,7 +51,7 @@ void nansum_impl(const VariableView &summed, const VariableConstView &var) {
 
 template <typename Op>
 Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
-  // Bool DType is a bit special in that it cannot contain it's sum.
+  // Bool DType is a bit special in that it cannot contain its sum.
   // Instead the sum is stored in a int64_t Variable
   auto summed = make_accumulant(var, dim, FillValue::ZeroNotBool);
   op(summed, var);
