@@ -6,6 +6,7 @@
 import numpy as np
 from .._scipp import core as sc
 from .helpers import PlotArray
+from .tools import to_bin_centers
 
 
 class ResamplingModel():
@@ -125,12 +126,16 @@ class ResamplingBinnedModel(ResamplingModel):
         super().__init__(*args, **kwargs)
         # TODO See #1469. This is a temporary hack to work around the
         # conversion of coords to edges in model.py.
+        new_meta = {name: var for name, var in self._array.meta.items()}
+        self._array = PlotArray(data=self._array.data,
+                                masks=self._array.masks,
+                                meta=new_meta)
         for name, var in self._array.meta.items():
             if len(var.dims) == 0:
                 continue
             dim = var.dims[-1]
             if name not in self._array.data.bins.data.meta:
-                self._array.meta[name] = 0.5 * (var[dim, 1:] + var[dim, :-1])
+                self._array.meta[name] = to_bin_centers(var, dim)
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially

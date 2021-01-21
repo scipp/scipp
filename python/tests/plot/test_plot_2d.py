@@ -241,6 +241,13 @@ def test_plot_2d_binned_data():
     plot(make_binned_data_array(ndim=2))
 
 
+def test_plot_3d_binned_data_where_outer_dimension_not_in_buffer():
+    data = make_binned_data_array(ndim=2)
+    data = sc.concatenate(data, data + data, 'run')
+    plot_obj = sc.plot.plot(data)
+    plot_obj.widgets.slider[0].value = 1
+
+
 def test_plot_2d_binned_data_with_variances():
     plot(make_binned_data_array(ndim=2, variances=True))
 
