@@ -20,13 +20,14 @@ Variable empty_like(const VariableConstView &prototype,
   return variableFactory().empty_like(prototype, shape, sizes);
 }
 
-Variable full_like(const VariableConstView &prototype, const FillValue &fill) {
-  if (fill == FillValue::Zero)
-    return transform(prototype, core::element::zero_like);
+Variable special_like(const VariableConstView &prototype,
+                      const FillValue &fill) {
+  if (fill == FillValue::ZeroNotBool)
+    return transform(prototype, core::element::zeros_not_bool_like);
   if (fill == FillValue::True)
-    return transform(prototype, core::element::value_like<bool, true>);
+    return transform(prototype, core::element::values_like<bool, true>);
   if (fill == FillValue::False)
-    return transform(prototype, core::element::value_like<bool, false>);
+    return transform(prototype, core::element::values_like<bool, false>);
   if (fill == FillValue::Max)
     return transform(prototype, core::element::numeric_limits_max_like);
   if (fill == FillValue::Min)

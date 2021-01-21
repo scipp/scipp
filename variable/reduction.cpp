@@ -43,7 +43,7 @@ auto make_accumulant(const VariableConstView &var, const Dim dim,
                      const FillValue &init) {
   auto dims = var.dims();
   dims.erase(dim);
-  return full_like(
+  return special_like(
       var.dims()[dim] == 0 ? Variable(var, dims) : var.slice({dim, 0}), init);
 }
 
@@ -53,9 +53,7 @@ template <typename Op>
 Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
   // Bool DType is a bit special in that it cannot contain it's sum.
   // Instead the sum is stored in a int64_t Variable
-  auto summed = make_accumulant(var, dim, FillValue::Zero);
-  if (is_dtype_bool(var))
-    summed = astype(summed, dtype<int64_t>);
+  auto summed = make_accumulant(var, dim, FillValue::ZeroNotBool);
   op(summed, var);
   return summed;
 }
