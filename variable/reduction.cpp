@@ -31,14 +31,6 @@ bool is_dtype_int64(const VariableConstView &var) {
   return var.dtype() == dtype<int64_t>;
 }
 
-void sum_impl(const VariableView &summed, const VariableConstView &var) {
-  accumulate_in_place(summed, var, element::plus_equals);
-}
-
-void nansum_impl(const VariableView &summed, const VariableConstView &var) {
-  accumulate_in_place(summed, var, element::nan_plus_equals);
-}
-
 auto make_accumulant(const VariableConstView &var, const Dim dim,
                      const FillValue &init) {
   auto dims = var.dims();
@@ -48,6 +40,14 @@ auto make_accumulant(const VariableConstView &var, const Dim dim,
 }
 
 } // namespace
+
+void sum_impl(const VariableView &summed, const VariableConstView &var) {
+  accumulate_in_place(summed, var, element::plus_equals);
+}
+
+void nansum_impl(const VariableView &summed, const VariableConstView &var) {
+  accumulate_in_place(summed, var, element::nan_plus_equals);
+}
 
 template <typename Op>
 Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
