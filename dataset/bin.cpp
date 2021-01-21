@@ -9,6 +9,7 @@
 #include "scipp/core/element/cumulative.h"
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bin_detail.h"
 #include "scipp/variable/bin_util.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/cumulative.h"
@@ -24,6 +25,8 @@
 #include "scipp/dataset/except.h"
 
 #include "dataset_operations_common.h"
+
+using namespace scipp::variable::bin_detail;
 
 namespace scipp::dataset {
 

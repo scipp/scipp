@@ -38,6 +38,7 @@ set(SRC_FILES
     ${variable_SRC_FILES}
     arithmetic.cpp
     bins.cpp
+    bin_detail.cpp
     bin_util.cpp
     comparison.cpp
     creation.cpp

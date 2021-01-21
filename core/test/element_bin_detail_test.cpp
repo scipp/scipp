@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 
-#include "scipp/core/element/bin_util.h"
+#include "scipp/core/element/bin_detail.h"
 
 #include <gtest/gtest.h>
 #include <vector>
