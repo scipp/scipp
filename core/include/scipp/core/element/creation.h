@@ -8,13 +8,14 @@
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
+#include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::core::element {
 
 constexpr auto special_like =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
+    overloaded{arg_list<double, float, int64_t, int32_t, bool, SubbinSizes>,
                [](const units::Unit &u) { return u; }};
 
 constexpr auto zeros_not_bool_like =
