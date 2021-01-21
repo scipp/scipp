@@ -24,6 +24,7 @@ TEST_F(SumTest, sum) {
   const auto expectedY =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{4.0, 6.0});
   EXPECT_EQ(sum(var, Dim::X), expectedX);
+  EXPECT_EQ(sum(var, Dim::Y), expectedY);
 }
 
 TEST_F(SumTest, sum_with_empty_dim) {
@@ -38,11 +39,8 @@ TEST_F(SumTest, sum_with_empty_dim) {
 TEST_F(SumTest, sum_in_place) {
   auto out = makeVariable<double>(Dims{Dim::Y}, Shape{2});
   auto view = sum(var, Dim::X, out);
-
-  const auto expected =
-      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{3.0, 7.0});
-
-  EXPECT_EQ(out, expected);
+  EXPECT_EQ(out, makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m,
+                                      Values{3.0, 7.0}));
   EXPECT_EQ(view, out);
   EXPECT_EQ(view.underlying(), out);
 }
@@ -50,17 +48,13 @@ TEST_F(SumTest, sum_in_place) {
 TEST_F(SumTest, sum_in_place_bool) {
   auto out = makeVariable<int64_t>(Dims{Dim::Y}, Shape{2});
   auto view = sum(var_bool, Dim::X, out);
-
-  const auto expected =
-      makeVariable<int64_t>(Dims{Dim::Y}, Shape{2}, units::m, Values{1, 2});
-
-  EXPECT_EQ(out, expected) << out << expected;
+  EXPECT_EQ(out, makeVariable<int64_t>(Dims{Dim::Y}, Shape{2}, units::m,
+                                       Values{1, 2}));
   EXPECT_EQ(view, out);
   EXPECT_EQ(view.underlying(), out);
 }
 
 TEST_F(SumTest, sum_in_place_bool_incorrect_out_type) {
   auto out = makeVariable<float>(Dims{Dim::Y}, Shape{2});
-  // why this error? TypeError?
-  EXPECT_THROW(sum(var_bool, Dim::X, out), except::UnitError);
+  EXPECT_THROW(sum(var_bool, Dim::X, out), except::TypeError);
 }

@@ -62,8 +62,8 @@ template <typename Op>
 VariableView sum_with_dim_inplace_impl(Op op, const VariableConstView &var,
                                        const Dim dim, const VariableView &out) {
   if (is_dtype_bool(var) && !is_dtype_int64(out))
-    throw except::UnitError("In-place sum of Bool dtype must be stored in an "
-                            "output variable of Int64 dtype.");
+    throw except::TypeError("In-place sum of dtype=bool must be stored in an "
+                            "output variable with dtype=int64.");
 
   auto dims = var.dims();
   dims.erase(dim);
@@ -99,7 +99,7 @@ VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
                           const VariableConstView &count,
                           const VariableView &out) {
   if (isInt(out.dtype()))
-    throw except::UnitError(
+    throw except::TypeError(
         "Cannot calculate nanmean in-place when output dtype is integer");
 
   nansum(var, dim, out);
@@ -132,7 +132,7 @@ VariableView mean_impl(const VariableConstView &var, const Dim dim,
                        const VariableConstView &count,
                        const VariableView &out) {
   if (isInt(out.dtype()))
-    throw except::UnitError(
+    throw except::TypeError(
         "Cannot calculate mean in-place when output dtype is integer");
 
   sum(var, dim, out);
