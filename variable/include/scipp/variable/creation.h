@@ -20,7 +20,7 @@ enum class SCIPP_VARIABLE_EXPORT FillValue {
   True,
   False,
   Max,
-  Min
+  Lowest
 };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable

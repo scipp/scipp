@@ -217,7 +217,8 @@ void max_impl(const VariableView &out, const VariableConstView &var) {
 /// Variances are not considered when determining the maximum. If present, the
 /// variance of the maximum element is returned.
 Variable max(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::max_equals, FillValue::Min);
+  return reduce_idempotent(var, dim, core::element::max_equals,
+                           FillValue::Lowest);
 }
 
 /// Return the maximum along given dimension ignoring NaN values.
@@ -226,7 +227,7 @@ Variable max(const VariableConstView &var, const Dim dim) {
 /// variance of the maximum element is returned.
 Variable nanmax(const VariableConstView &var, const Dim dim) {
   return reduce_idempotent(var, dim, core::element::nanmax_equals,
-                           FillValue::Min);
+                           FillValue::Lowest);
 }
 
 void min_impl(const VariableView &out, const VariableConstView &var) {

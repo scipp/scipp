@@ -30,8 +30,8 @@ Variable special_like(const VariableConstView &prototype,
     return transform(prototype, core::element::values_like<bool, false>);
   if (fill == FillValue::Max)
     return transform(prototype, core::element::numeric_limits_max_like);
-  if (fill == FillValue::Min)
-    return transform(prototype, core::element::numeric_limits_min_like);
+  if (fill == FillValue::Lowest)
+    return transform(prototype, core::element::numeric_limits_lowest_like);
   throw std::runtime_error("Unsupported fill value.");
 }
 

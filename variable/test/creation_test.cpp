@@ -60,10 +60,10 @@ TEST(CreationTest, special_like_double) {
                                  Values{std::numeric_limits<double>::max(),
                                         std::numeric_limits<double>::max()},
                                  Variances{0, 0}));
-  EXPECT_EQ(special_like(var, variable::FillValue::Min),
+  EXPECT_EQ(special_like(var, variable::FillValue::Lowest),
             makeVariable<double>(var.dims(), var.unit(),
-                                 Values{std::numeric_limits<double>::min(),
-                                        std::numeric_limits<double>::min()},
+                                 Values{std::numeric_limits<double>::lowest(),
+                                        std::numeric_limits<double>::lowest()},
                                  Variances{0, 0}));
 }
 
@@ -80,10 +80,11 @@ TEST(CreationTest, special_like_int) {
             makeVariable<int64_t>(var.dims(), var.unit(),
                                   Values{std::numeric_limits<int64_t>::max(),
                                          std::numeric_limits<int64_t>::max()}));
-  EXPECT_EQ(special_like(var, variable::FillValue::Min),
-            makeVariable<int64_t>(var.dims(), var.unit(),
-                                  Values{std::numeric_limits<int64_t>::min(),
-                                         std::numeric_limits<int64_t>::min()}));
+  EXPECT_EQ(
+      special_like(var, variable::FillValue::Lowest),
+      makeVariable<int64_t>(var.dims(), var.unit(),
+                            Values{std::numeric_limits<int64_t>::lowest(),
+                                   std::numeric_limits<int64_t>::lowest()}));
 }
 
 TEST(CreationTest, special_like_bool) {
@@ -95,8 +96,8 @@ TEST(CreationTest, special_like_bool) {
             makeVariable<bool>(var.dims(), var.unit(),
                                Values{std::numeric_limits<bool>::max(),
                                       std::numeric_limits<bool>::max()}));
-  EXPECT_EQ(special_like(var, variable::FillValue::Min),
+  EXPECT_EQ(special_like(var, variable::FillValue::Lowest),
             makeVariable<bool>(var.dims(), var.unit(),
-                               Values{std::numeric_limits<bool>::min(),
-                                      std::numeric_limits<bool>::min()}));
+                               Values{std::numeric_limits<bool>::lowest(),
+                                      std::numeric_limits<bool>::lowest()}));
 }

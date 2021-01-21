@@ -41,10 +41,10 @@ constexpr auto numeric_limits_max_like =
                      underlying_t<std::decay_t<decltype(x)>>>::max();
                }};
 
-constexpr auto numeric_limits_min_like =
+constexpr auto numeric_limits_lowest_like =
     overloaded{special_like, [](const auto &x) {
                  return std::numeric_limits<
-                     underlying_t<std::decay_t<decltype(x)>>>::min();
+                     underlying_t<std::decay_t<decltype(x)>>>::lowest();
                }};
 
 } // namespace scipp::core::element
