@@ -17,8 +17,8 @@ def _dtype_lut():
     # handling, but will do as we add support for other types such as
     # variable-length strings.
     dtypes = [
-        d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.DataArray,
-        d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView,
+        d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.Variable,
+        d.DataArray, d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView,
         d.vector_3_float64
     ]
     names = [str(dtype) for dtype in dtypes]
@@ -147,7 +147,7 @@ def _data_handler_lut():
         handler[str(dtype)] = NumpyDataIO
     for dtype in [d.VariableView, d.DataArrayView, d.DatasetView]:
         handler[str(dtype)] = BinDataIO
-    for dtype in [d.DataArray, d.Dataset]:
+    for dtype in [d.Variable, d.DataArray, d.Dataset]:
         handler[str(dtype)] = ScippDataIO
     for dtype in [d.string]:
         handler[str(dtype)] = StringDataIO
