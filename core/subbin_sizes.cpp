@@ -12,7 +12,10 @@
 namespace scipp::core {
 
 SubbinSizes::SubbinSizes(const scipp::index offset, container_type &&sizes)
-    : m_offset(offset), m_sizes(std::move(sizes)) {}
+    : m_offset(offset), m_sizes(std::move(sizes)) {
+  if (offset < 0)
+    throw std::logic_error("Bad offset in class SubbinSizes.");
+}
 
 SubbinSizes::SubbinSizes(const scipp::index value)
     : m_offset(0), m_sizes({value}) {}
