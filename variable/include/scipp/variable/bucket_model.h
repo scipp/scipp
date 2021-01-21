@@ -79,7 +79,9 @@ public:
   makeDefaultFromParent(const VariableConstView &shape) const override {
     const auto end = cumsum(shape);
     const auto begin = end - shape;
-    const auto size = end.values<scipp::index>().as_span().back();
+    const auto size = end.dims().volume() > 0
+                          ? end.values<scipp::index>().as_span().back()
+                          : 0;
     if constexpr (is_view_v<T>) {
       // converting, e.g., bucket<VariableView> to bucket<Variable>
       return std::make_unique<DataModel<bucket<typename T::value_type>>>(
