@@ -109,6 +109,7 @@ def test_data_array_2d():
 
 def test_data_array_dtype_scipp_container():
     a = sc.DataArray(data=x)
+    a.coords['variable'] = sc.Variable(value=x)
     a.coords['scalar'] = sc.Variable(value=a)
     a.coords['1d'] = sc.Variable(dims=a.dims,
                                  shape=a.shape,
