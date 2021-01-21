@@ -56,7 +56,7 @@ public:
       : BinModelBase<Indices>(validated_indices(indices, dim, buffer), dim),
         m_buffer(std::move(buffer)) {}
 
-  VariableConceptHandle clone() const override {
+  [[nodiscard]] VariableConceptHandle clone() const override {
     return std::make_unique<DataModel>(*this);
   }
 
@@ -68,14 +68,14 @@ public:
     return !(*this == other);
   }
 
-  VariableConceptHandle
+  [[nodiscard]] VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
     return std::make_unique<DataModel>(
         makeVariable<range_type>(dims), this->bin_dim(),
         T{m_buffer.slice({this->bin_dim(), 0, 0})});
   }
 
-  VariableConceptHandle
+  [[nodiscard]] VariableConceptHandle
   makeDefaultFromParent(const VariableConstView &shape) const override {
     const auto end = cumsum(shape);
     const auto begin = end - shape;
@@ -95,10 +95,12 @@ public:
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
-  DType dtype() const noexcept override { return scipp::dtype<bucket<T>>; }
+  [[nodiscard]] DType dtype() const noexcept override {
+    return scipp::dtype<bucket<T>>;
+  }
 
-  bool equals(const VariableConstView &a,
-              const VariableConstView &b) const override;
+  [[nodiscard]] bool equals(const VariableConstView &a,
+                            const VariableConstView &b) const override;
   void copy(const VariableConstView &src,
             const VariableView &dest) const override;
   void assign(const VariableConcept &other) override;
@@ -116,7 +118,9 @@ public:
     return {index_values(base), this->bin_dim(), m_buffer};
   }
 
-  scipp::index dtype_size() const override { return sizeof(range_type); }
+  [[nodiscard]] scipp::index dtype_size() const override {
+    return sizeof(range_type);
+  }
 
 private:
   static auto validated_indices(const VariableConstView &indices,
@@ -188,9 +192,9 @@ bool DataModel<bucket<T>>::equals(const VariableConstView &a,
 
 template <class T>
 void DataModel<bucket<T>>::copy(const VariableConstView &src,
-                                const VariableView &dst) const {
+                                const VariableView &dest) const {
   const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
-  const auto &[indices1, dim1, buffer1] = dst.constituents<bucket<T>>();
+  const auto &[indices1, dim1, buffer1] = dest.constituents<bucket<T>>();
   static_cast<void>(dim1);
   if constexpr (is_view_v<T>) {
     // This is overly restrictive, could allow copy to non-const non-owning
