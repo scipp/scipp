@@ -83,7 +83,7 @@ public:
     scipp::index dim = iterDims.ndim() - 1 + nestedDims.ndim();
     m_end_sentinel = iterDims.volume();
     if (m_end_sentinel == 0) {
-      return;  // operands are empty, leave everything below default initialised
+      return; // operands are empty, leave everything below default initialised
     }
     for (const auto size : iterDims.shape()) {
       m_shape[dim--] = size;
