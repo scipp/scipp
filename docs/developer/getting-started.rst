@@ -111,12 +111,12 @@ To run the Python tests, run (in the ``python/`` directory):
 
 Building Documentation
 ----------------------
-
-- Run ``python docs/data/fetch_neutron_data.py``
-- cd to a directory where the docs should be built (e.g. ``mkdir -p build/docs && cd build/docs``)
+- You first need to build a local installation of scipp.
+- Run ``python docs/data/fetch_neutron_data.py``. This downloads the data files required for some of the doc examples, storing them in docs/data.
+- Create the directory where the docs should be built (e.g. ``mkdir -p build/docs``)
 - Activate a conda environment with Mantid or ensure Mantid is in your ``PYTHONPATH``
 - If Mantid is unavailable (e.g. on Windows) edit ``docs/conf.py`` and include ``nbsphinx_allow_errors = True``. Take care to not commit this change though.
-- Run ``sphinx-build ../../docs .``
+- Run ``PYTHONPATH=$PYTHONPATH:install sphinx-build docs build/docs``. The form of this command is ``spinx-build <path to conf.py> <path to destination folder>``. The PYTHONPATH command is to ensure that scipp is on the python path.
 
 Precommit Hooks
 ---------------
