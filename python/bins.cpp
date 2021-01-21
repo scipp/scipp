@@ -228,8 +228,8 @@ void init_buckets(py::module &m) {
         for (const auto &[name, coord] : coords)
           c.emplace(Dim(py::cast<std::string>(name)),
                     py::cast<VariableConstView>(coord));
+        py::gil_scoped_release release; // release only *after* using py::cast
         return dataset::bin(data, c, std::map<std::string, VariableConstView>{},
                             std::map<Dim, VariableConstView>{}, edges, groups);
-      },
-      py::call_guard<py::gil_scoped_release>());
+      });
 }
