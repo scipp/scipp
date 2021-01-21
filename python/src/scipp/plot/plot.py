@@ -62,6 +62,24 @@ def _input_to_data_array(item, key=None):
     return to_plot
 
 
+def _make_0D_1D(scipp_obj, plot_options):
+    if 'positions' not in plot_options:
+        return
+    positions_key = plot_options['positions']
+    if hasattr(scipp_obj, 'meta'):
+        if positions_key in scipp_obj.meta:
+            positions = scipp_obj.meta[positions_key]
+            if not positions.dims:
+                positions = sc.concatenate(positions, positions, 'position')
+                scipp_obj.coords[positions_key] = positions
+                if isinstance(scipp_obj, sc.Dataset):
+                    for k, v in scipp_obj.items():
+                        scipp_obj[k] = sc.concatenate(v, v, 'position')
+                else:
+                    scipp_obj.data = sc.concatenate(scipp_obj.data,
+                                                    scipp_obj.data, 'position')
+
+
 def plot(scipp_obj,
          projection=None,
          axes=None,
@@ -92,17 +110,11 @@ def plot(scipp_obj,
     Returns a Plot object which can be displayed in a Jupyter notebook.
     """
 
-    if 'positions' in kwargs and hasattr(scipp_obj, 'meta'):
-        positions = scipp_obj.meta[kwargs['positions']]
-        if not positions.dims:
-            positions = sc.concatenate(positions, positions, 'position')
-            scipp_obj.coords[kwargs['positions']] = positions
-            if isinstance(scipp_obj, sc.Dataset):
-                for k, v in scipp_obj.items():
-                    scipp_obj[k] = sc.concatenate(v, v, 'position')
-            else:
-                scipp_obj.data = sc.concatenate(scipp_obj.data,
-                                                scipp_obj.data, 'position')
+    if isinstance(scipp_obj, dict):
+        for key, item in scipp_obj.items():
+            _make_0D_1D(item, kwargs)
+    else:
+        _make_0D_1D(item, kwargs)
 
     # Decompose the input and return a dict of DataArrays.
     inventory = {}
