@@ -287,3 +287,10 @@ TEST_F(MultiIndexTest, two_1d_arrays_of_1d_buckets_bucket_size_mismatch) {
                                   {0, 1, 2, 3, 4, 5, 6}, {0, 1, 2, 3, 4, 5, 6}),
                except::BucketError);
 }
+
+TEST_F(MultiIndexTest, 2d_empty_dims_array_of_1d_buckets) {
+  const Dim dim = Dim::Row;
+  Dimensions buf{dim, 0}; // 1d cut into dims=0x0 sections
+  Dimensions dims{{Dim::X, 0}};
+  check_with_buckets(buf, dim, {}, dims, dims, {});
+}
