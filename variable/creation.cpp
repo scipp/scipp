@@ -36,7 +36,7 @@ Variable special_like(const VariableConstView &prototype,
 }
 
 Variable make_accumulant(const VariableConstView &var, const Dim dim,
-                     const FillValue &init) {
+                         const FillValue &init) {
   auto dims = var.dims();
   dims.erase(dim);
   return special_like(

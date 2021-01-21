@@ -4,8 +4,8 @@
 /// @author Simon Heybrock
 #include "scipp/variable/cumulative.h"
 #include "scipp/core/element/cumulative.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/util.h"
 
 using namespace scipp;
 
@@ -13,10 +13,9 @@ namespace scipp::variable {
 
 Variable cumsum(const VariableConstView &var, const Dim dim,
                 const CumSumMode mode) {
+  Variable cumulative = make_accumulant(var, dim, FillValue::ZeroNotBool);
   if (var.dims()[dim] == 0)
-    return Variable{var};
-  Variable cumulative(var.slice({dim, 0}));
-  fill_zeros(cumulative);
+    return cumulative;
   Variable out(var);
   if (mode == CumSumMode::Inclusive)
     accumulate_in_place(cumulative, out, core::element::inclusive_scan);
