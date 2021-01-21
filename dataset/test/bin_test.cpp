@@ -11,6 +11,7 @@
 #include "scipp/dataset/string.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
+#include "scipp/variable/math.h"
 #include "scipp/variable/reduction.h"
 
 using namespace scipp;
@@ -87,6 +88,16 @@ TEST_F(DataArrayBinTest, 2d) {
             sorted_table.slice({Dim::Event, 1, 3}));
 
   EXPECT_EQ(bin(bin(table, {edges_x}), {edges_y}), bucketed);
+}
+
+TEST_F(DataArrayBinTest, operations_on_empty) {
+  const Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dimensions{{Dim::Event, 0}, {Dim::Y, 0}}, Values{});
+  const Variable binned = make_bins(indices, Dim::Event, data);
+
+  EXPECT_EQ(abs(binned), binned);
+  EXPECT_EQ(binned, binned * binned);
+  EXPECT_EQ(binned, binned * (2 * units::one));
 }
 
 TEST(BinGroupTest, 1d) {
