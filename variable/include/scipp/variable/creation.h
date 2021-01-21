@@ -26,4 +26,7 @@ enum class SCIPP_VARIABLE_EXPORT FillValue {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 special_like(const VariableConstView &prototype, const FillValue &fill);
 
+Variable make_accumulant(const VariableConstView &var, Dim dim,
+                         const FillValue &init);
+
 } // namespace scipp::variable

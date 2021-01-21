@@ -14,7 +14,6 @@
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/util.h"
 
 using namespace scipp::core;
 using scipp::common::reduce_all_dims;
@@ -29,14 +28,6 @@ bool is_dtype_bool(const VariableConstView &var) {
 }
 bool is_dtype_int64(const VariableConstView &var) {
   return var.dtype() == dtype<int64_t>;
-}
-
-auto make_accumulant(const VariableConstView &var, const Dim dim,
-                     const FillValue &init) {
-  auto dims = var.dims();
-  dims.erase(dim);
-  return special_like(
-      var.dims()[dim] == 0 ? Variable(var, dims) : var.slice({dim, 0}), init);
 }
 
 } // namespace

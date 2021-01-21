@@ -35,4 +35,12 @@ Variable special_like(const VariableConstView &prototype,
   throw std::runtime_error("Unsupported fill value.");
 }
 
+Variable make_accumulant(const VariableConstView &var, const Dim dim,
+                     const FillValue &init) {
+  auto dims = var.dims();
+  dims.erase(dim);
+  return special_like(
+      var.dims()[dim] == 0 ? Variable(var, dims) : var.slice({dim, 0}), init);
+}
+
 } // namespace scipp::variable
