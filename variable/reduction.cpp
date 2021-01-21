@@ -72,6 +72,7 @@ VariableView sum_with_dim_inplace_impl(Op op, const VariableConstView &var,
         "Output argument dimensions must be equal to input dimensions without "
         "the summing dimension.");
 
+  out.setUnit(var.unit());
   op(out, var);
   return out;
 }
