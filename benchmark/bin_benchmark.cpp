@@ -14,9 +14,8 @@ using namespace scipp;
 auto make_table(const scipp::index size) {
   Dimensions dims(Dim::Event, size);
   Variable data = makeVariable<double>(Dims{Dim::Event}, Shape{size});
-  // Range is -2.0 to 2.0
-  Variable x = makeRandom(dims);
-  Variable y = makeRandom(dims);
+  Variable x = makeRandom(dims, -2.0, 2.0);
+  Variable y = makeRandom(dims, -2.0, 2.0);
   return DataArray(data, {{Dim::X, x}, {Dim::Y, y}});
 }
 
