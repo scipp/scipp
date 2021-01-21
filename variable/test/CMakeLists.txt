@@ -17,6 +17,7 @@ add_executable(
   shape_test.cpp
   sort_test.cpp
   subspan_view_test.cpp
+  sum_test.cpp
   test_variables.cpp
   transform_test.cpp
   trigonometry_test.cpp

@@ -153,7 +153,7 @@ public:
   }
 
   template <class T2> bool overlaps(const ElementArrayView<T2> &other) const {
-    if (buffer() == other.buffer())
+    if (buffer() && buffer() == other.buffer())
       return ElementArrayViewParams::overlaps(other);
     return false;
   }

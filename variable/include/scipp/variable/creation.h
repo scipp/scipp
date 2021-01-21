@@ -15,4 +15,15 @@ empty_like(const VariableConstView &prototype,
            const std::optional<Dimensions> &shape = std::nullopt,
            const VariableConstView &sizes = {});
 
+enum class SCIPP_VARIABLE_EXPORT FillValue {
+  ZeroNotBool,
+  True,
+  False,
+  Max,
+  Lowest
+};
+
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
+special_like(const VariableConstView &prototype, const FillValue &fill);
+
 } // namespace scipp::variable

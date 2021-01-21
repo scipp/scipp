@@ -66,7 +66,7 @@ template <typename Op> void in_place_fail_output_dtype(Op op) {
                                         units::m, Values{1.0, 2.0, 3.0, 4.0});
   auto out = makeVariable<int>(Dims{Dim::Y}, Shape{2}, units::m);
   EXPECT_THROW([[maybe_unused]] const auto view = op(var, Dim::X, out),
-               except::UnitError);
+               except::TypeError);
 }
 
 template <typename TestFixture, typename Op> void dtype_preservation(Op op) {
