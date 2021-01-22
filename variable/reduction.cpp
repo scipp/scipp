@@ -30,6 +30,14 @@ bool is_dtype_int64(const VariableConstView &var) {
   return var.dtype() == dtype<int64_t>;
 }
 
+Variable make_accumulant(const VariableConstView &var, const Dim dim,
+                         const FillValue &init) {
+  auto dims = var.dims();
+  dims.erase(dim);
+  return special_like(
+      var.dims()[dim] == 0 ? Variable(var, dims) : var.slice({dim, 0}), init);
+}
+
 } // namespace
 
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
