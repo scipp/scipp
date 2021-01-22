@@ -25,9 +25,11 @@ template <class T> void do_make_slice(T &slice, const slice_list &slices) {
       if (slice.dims()[params.dim()] == extent) {
         slice = slice.slice(params);
       } else {
-        slice = slice.slice(
-            Slice{params.dim(), params.begin(),
-                  params.end() == -1 ? params.begin() + 2 : params.end() + 1});
+        const auto end = params.end() == -1 ? params.begin() + 2
+                                            : params.begin() == params.end()
+                                                  ? params.end()
+                                                  : params.end() + 1;
+        slice = slice.slice(Slice{params.dim(), params.begin(), end});
       }
     }
   }
