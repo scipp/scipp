@@ -9,7 +9,6 @@ from .dispatch import dispatch
 from .helpers import Plot
 from .tools import make_fake_coord, get_line_param
 import numpy as np
-import itertools
 
 
 def _variable_to_data_array(variable):
@@ -43,7 +42,7 @@ def _input_to_data_array(item, all_keys, key=None):
         for name in sorted(item.keys()):
             plt_key = name
             if name in all_keys:
-                plt_key = f'{key}_{name}' 
+                plt_key = f'{key}_{name}'
             to_plot[plt_key] = item[name]
     elif su.is_variable(item):
         if key is None:
