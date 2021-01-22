@@ -7,6 +7,7 @@
 
 #include "scipp/common/except.h"
 #include "scipp/core/element/arithmetic.h"
+#include "scipp/core/element/cumulative.h"
 #include "scipp/core/subbin_sizes.h"
 
 namespace scipp::core {
@@ -44,10 +45,8 @@ SubbinSizes &SubbinSizes::operator-=(const SubbinSizes &other) {
 SubbinSizes SubbinSizes::cumsum_exclusive() const {
   auto out = sizes();
   scipp::index sum = 0;
-  for (auto &x : out) {
-    sum += x;
-    x = sum - x;
-  }
+  for (auto &x : out)
+    element::exclusive_scan(sum, x);
   return {offset(), std::move(out)};
 }
 
@@ -56,7 +55,8 @@ scipp::index SubbinSizes::sum() const {
 }
 
 void SubbinSizes::trim_to(const SubbinSizes &other) {
-  auto out = other; // TODO in principle this allocation could be avoided
+  auto out = other; // TODO in principle this allocation could be avoided, but
+                    // initial implementation attempts got messy.
   out = 0;
   // full index begin/end
   const auto begin = std::max(offset(), out.offset());

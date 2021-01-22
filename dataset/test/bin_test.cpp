@@ -342,6 +342,8 @@ TEST_P(BinTest, bin_by_group) {
 }
 
 TEST_P(BinTest, rebin_various_edges_1d) {
+  // Trying to cover potential edge case in the bin sizes setup logic. No assert
+  // since in general it is hard to come up with the expected result.
   using units::one;
   std::vector<Variable> edges;
   edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 4));
