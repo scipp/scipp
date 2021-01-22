@@ -143,12 +143,16 @@ class ResamplingBinnedModel(ResamplingModel):
         # is faster with the current implementation of `sc.bin`.
         edges = self.edges[-1]
         dim = edges.dims[-1]
-        # Need to specify bounds for final dim despite handling by `histogram`
-        # below: If coord is ragged binning would throw otherwise.
-        bounds = sc.concatenate(edges[dim, 0], edges[dim, -1], dim)
-        binned = sc.bin_with_coords(array.data, array.meta,
-                                    self.edges[:-1] + [bounds], [])
-        a = sc.histogram(binned, edges)
+        if dim in array.data.bins.data.coords:
+            # Must specify bounds for final dim despite handling by `histogram`
+            # below: If coord is ragged binning would throw otherwise.
+            bounds = sc.concatenate(edges[dim, 0], edges[dim, -1], dim)
+            binned = sc.bin_with_coords(array.data, array.meta,
+                                        self.edges[:-1] + [bounds], [])
+            a = sc.histogram(binned, edges)
+        else:
+            a = sc.bin_with_coords(array.data, array.meta, self.edges,
+                                   []).bins.sum()
         for name, mask in array.masks.items():
             a.masks[name] = self._rebin(mask, array.meta)
         return a
