@@ -32,6 +32,11 @@ def _ndarray_to_variable(ndarray):
     return sc.Variable(dims=dims, values=ndarray)
 
 
+def _insert_if_not_0D(container, name, candidate):
+    if candidate.shape:
+        container[name] = candidate
+
+
 def _input_to_data_array(item, key=None):
     """
     Convert an input for the plot function to a DataArray or a dict of
@@ -40,19 +45,20 @@ def _input_to_data_array(item, key=None):
     to_plot = {}
     if su.is_dataset(item):
         for name in sorted(item.keys()):
-            to_plot[name] = item[name]
+            _insert_if_not_0D(to_plot, name, item[name])
     elif su.is_variable(item):
         if key is None:
             key = str(type(item))
-        to_plot[key] = _variable_to_data_array(item)
+        _insert_if_not_0D(to_plot, key, _variable_to_data_array(item))
     elif su.is_data_array(item):
         if key is None:
             key = item.name
-        to_plot[key] = item
+        _insert_if_not_0D(to_plot, key, item)
     elif isinstance(item, np.ndarray):
         if key is None:
             key = str(type(item))
-        to_plot[key] = _variable_to_data_array(_ndarray_to_variable(item))
+        _insert_if_not_0D(to_plot, key,
+                          _variable_to_data_array(_ndarray_to_variable(item)))
     else:
         raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
                            "a Dataset, a DataArray, a Variable (and their "
@@ -179,5 +185,10 @@ def plot(scipp_obj,
 
     if len(output) > 1:
         return output
-    else:
+    elif len(output) > 0:
         return output[list(output.keys())[0]]
+    else:
+        raise ValueError("Input contains nothing that can be plotted."
+                         " Your scipp_obj may be"
+                         " (or may contain items that are)"
+                         f" 0-D:\n\n{scipp_obj}")
