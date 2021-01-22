@@ -41,10 +41,10 @@ def _input_to_data_array(item, all_keys, key=None):
     to_plot = {}
     if su.is_dataset(item):
         for name in sorted(item.keys()):
-            key_gen = (f'{name}_{i}' if i > 0 else name
-                       for i in itertools.count(0))
-            key = next(x for x in key_gen if x not in all_keys)
-            to_plot[key] = item[name]
+            plt_key = name
+            if name in all_keys:
+                plt_key = f'{key}_{name}' 
+            to_plot[plt_key] = item[name]
     elif su.is_variable(item):
         if key is None:
             key = str(type(item))
