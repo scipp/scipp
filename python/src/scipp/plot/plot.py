@@ -114,7 +114,7 @@ def plot(scipp_obj,
         for key, item in scipp_obj.items():
             _make_0D_1D(item, kwargs)
     else:
-        _make_0D_1D(item, kwargs)
+        _make_0D_1D(scipp_obj, kwargs)
 
     # Decompose the input and return a dict of DataArrays.
     inventory = {}
