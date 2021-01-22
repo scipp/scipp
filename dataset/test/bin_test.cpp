@@ -266,10 +266,10 @@ TEST_P(BinTest, rebin_empty_dim) {
             bin(xy, {edges_y_coarse}).slice(sx));
   EXPECT_EQ(bin(xy.slice(sy), {edges_x_coarse}),
             bin(xy, {edges_x_coarse}).slice(sy));
-  EXPECT_THROW(bin(xy.slice(sx).slice(sy), {edges_x_coarse}),
-               except::BinEdgeError);
-  EXPECT_THROW(bin(xy.slice(sx).slice(sy), {edges_y_coarse}),
-               except::BinEdgeError);
+  EXPECT_EQ(bin(xy.slice(sx).slice(sy), {edges_x_coarse}),
+            bin(xy, {edges_x_coarse}).slice(sy));
+  EXPECT_EQ(bin(xy.slice(sx).slice(sy), {edges_y_coarse}),
+            bin(xy, {edges_y_coarse}).slice(sx));
 }
 
 TEST_P(BinTest, group_and_bin) {

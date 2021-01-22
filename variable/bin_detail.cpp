@@ -22,6 +22,8 @@ Variable begin_edge(const VariableConstView &coord,
                     const VariableConstView &edges) {
   auto indices = makeVariable<scipp::index>(coord.dims());
   const auto dim = edges.dims().inner();
+  if (indices.dims()[dim] == 0)
+    return indices;
   Variable bin(indices.slice({dim, 0}));
   accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
                       core::element::begin_edge);
@@ -37,6 +39,8 @@ Variable end_edge(const VariableConstView &coord,
                   const VariableConstView &edges) {
   auto indices = makeVariable<scipp::index>(coord.dims());
   const auto dim = edges.dims().inner();
+  if (indices.dims()[dim] == 0)
+    return indices;
   Variable bin(indices.slice({dim, 0}));
   accumulate_in_place(bin, indices, coord, subspan_view(edges, dim),
                       core::element::end_edge);
