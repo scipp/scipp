@@ -118,7 +118,7 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // Not using cumsum along *all* dims, since some outer dims may be left
   // untouched (no rebin).
   for (const auto dim : data.dims().labels())
-    if (dims.contains(dim)) {
+    if (dims.contains(dim) && dims[dim] > 0) {
       subbin_sizes_add_intersection(
           offsets, subbin_sizes_cumsum_exclusive(output_bin_sizes, dim));
       output_bin_sizes = sum(output_bin_sizes, dim);
@@ -130,7 +130,8 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
       offsets, cumsum_exclusive_subbin_sizes(output_bin_sizes));
   Variable filtered_input_bin_size = sum_subbin_sizes(output_bin_sizes);
   auto end = cumsum(filtered_input_bin_size);
-  const auto total_size = end.values<scipp::index>().as_span().back();
+  const auto total_size =
+      end.dims().volume() > 0 ? end.values<scipp::index>().as_span().back() : 0;
   end = broadcast(end, data.dims()); // required for some cases of rebinning
   const auto filtered_input_bin_ranges =
       zip(end - filtered_input_bin_size, end);

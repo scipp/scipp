@@ -257,6 +257,21 @@ TEST_P(BinTest, rebin_coarse_to_fine_2d_outer) {
   expect_near(bin(xy_coarse, {edges_x}), xy);
 }
 
+TEST_P(BinTest, rebin_empty_dim) {
+  const auto table = GetParam();
+  const auto xy = bin(table, {edges_x, edges_y});
+  const auto sx = Slice{Dim::X, 0, 0};
+  const auto sy = Slice{Dim::Y, 0, 0};
+  EXPECT_EQ(bin(xy.slice(sx), {edges_y_coarse}),
+            bin(xy, {edges_y_coarse}).slice(sx));
+  EXPECT_EQ(bin(xy.slice(sy), {edges_x_coarse}),
+            bin(xy, {edges_x_coarse}).slice(sy));
+  EXPECT_THROW(bin(xy.slice(sx).slice(sy), {edges_x_coarse}),
+               except::BinEdgeError);
+  EXPECT_THROW(bin(xy.slice(sx).slice(sy), {edges_y_coarse}),
+               except::BinEdgeError);
+}
+
 TEST_P(BinTest, group_and_bin) {
   const auto table = GetParam();
   const auto x_group = bin(table, {edges_x}, {groups});
