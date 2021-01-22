@@ -32,11 +32,6 @@ def _ndarray_to_variable(ndarray):
     return sc.Variable(dims=dims, values=ndarray)
 
 
-def _insert_if_not_0D(container, name, candidate):
-    if candidate.shape:
-        container[name] = candidate
-
-
 def _input_to_data_array(item, key=None):
     """
     Convert an input for the plot function to a DataArray or a dict of
@@ -45,20 +40,19 @@ def _input_to_data_array(item, key=None):
     to_plot = {}
     if su.is_dataset(item):
         for name in sorted(item.keys()):
-            _insert_if_not_0D(to_plot, name, item[name])
+            to_plot[name] = item[name]
     elif su.is_variable(item):
         if key is None:
             key = str(type(item))
-        _insert_if_not_0D(to_plot, key, _variable_to_data_array(item))
+        to_plot[key] = _variable_to_data_array(item)
     elif su.is_data_array(item):
         if key is None:
             key = item.name
-        _insert_if_not_0D(to_plot, key, item)
+        to_plot[key] = item
     elif isinstance(item, np.ndarray):
         if key is None:
             key = str(type(item))
-        _insert_if_not_0D(to_plot, key,
-                          _variable_to_data_array(_ndarray_to_variable(item)))
+        to_plot[key] = _variable_to_data_array(_ndarray_to_variable(item))
     else:
         raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
                            "a Dataset, a DataArray, a Variable (and their "
