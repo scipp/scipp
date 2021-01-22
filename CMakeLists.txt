@@ -159,15 +159,10 @@ add_custom_target(all-tests)
 # Custom target for building documentation
 if(NOT WIN32)
 add_custom_target(docs
-COMMAND mkdir -p docs 
+COMMAND rm -r docs/
+&& mkdir -p docs 
 && ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/data/fetch_neutron_data.py --destination=${CMAKE_SOURCE_DIR}/docs/data/ 
 && PYTHONPATH=$PYTHONPATH:${CMAKE_INSTALL_PREFIX} sphinx-build ${CMAKE_SOURCE_DIR}/docs docs
-DEPENDS install)
-else()
-add_custom_target(docs
-COMMAND IF NOT EXIST docs MKDIR docs
-&& ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}\docs\data\fetch_neutron_data.py --destination=${CMAKE_SOURCE_DIR}\docs\data\ 
-&& PYTHONPATH=$PYTHONPATH:${CMAKE_INSTALL_PREFIX} sphinx-build ${CMAKE_SOURCE_DIR}\docs docs
 DEPENDS install)
 endif(NOT WIN32)
 
