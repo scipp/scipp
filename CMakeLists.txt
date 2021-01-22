@@ -155,8 +155,12 @@ enable_testing()
 
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
+
+# Custom target for building documentation
 add_custom_target(docs
-COMMAND mkdir -p docs && PYTHONPATH=$PYTHONPATH:${CMAKE_INSTALL_PREFIX} sphinx-build ${CMAKE_SOURCE_DIR}/docs docs
+COMMAND mkdir -p docs 
+&& ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/data/fetch_neutron_data.py --destination=${CMAKE_SOURCE_DIR}/docs/data/ 
+&& PYTHONPATH=$PYTHONPATH:${CMAKE_INSTALL_PREFIX} sphinx-build ${CMAKE_SOURCE_DIR}/docs docs
 DEPENDS install)
 
 # Generate files for free scipp API functions

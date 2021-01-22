@@ -4,6 +4,12 @@
 
 import os
 import subprocess as sp
+import argparse
+
+parser = argparse.ArgumentParser(description='Download test data')
+parser.add_argument('--destination', default='data/')
+
+args = parser.parse_args()
 
 
 def download_file(source, destination):
@@ -15,9 +21,8 @@ def download_file(source, destination):
 
 
 if __name__ == '__main__':
-
     remote_url = "http://198.74.56.37/ftp/external-data/MD5/"
-    target_dir = "data/"
+    target_dir = args.destination
 
     data_files = {
         "PG3_4871_event.nxs": "a3d0edcb36ab8e9e3342cd8a4440b779",
@@ -27,4 +32,6 @@ if __name__ == '__main__':
     }
 
     for f, h in data_files.items():
-        download_file(os.path.join(remote_url, h), os.path.join(target_dir, f))
+        destination = os.path.join(target_dir, f)
+        if not os.path.isfile(destination):
+            download_file(os.path.join(remote_url, h), destination)
