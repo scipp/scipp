@@ -101,7 +101,7 @@ def plot(scipp_obj,
         try:
             inventory.update(
                 _input_to_data_array(
-                    from_dict(scipp_obj, all_keys=inventory.keys())))
+                    from_dict(scipp_obj), all_keys=inventory.keys()))
         except:  # noqa: E722
             for key, item in scipp_obj.items():
                 inventory.update(
