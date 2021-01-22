@@ -61,6 +61,7 @@ additional_unit_mapping = {
     "Angstrom": sc.units.angstrom,
     "Hz": sc.units.one / sc.units.s,
     "degree": sc.units.deg,
+    "°": sc.units.deg,
     "millimetre": sc.units.mm,
     " ": sc.units.one,
     "none": sc.units.one,
