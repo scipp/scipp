@@ -9,6 +9,7 @@ from .dispatch import dispatch
 from .helpers import Plot
 from .tools import make_fake_coord, get_line_param
 import numpy as np
+import itertools
 
 
 def _variable_to_data_array(variable):
@@ -40,10 +41,10 @@ def _input_to_data_array(item, all_keys, key=None):
     to_plot = {}
     if su.is_dataset(item):
         for name in sorted(item.keys()):
-            if name in all_keys:
-                to_plot[f"{name}_1"] = item[name]
-            else:
-                to_plot[name] = item[name]
+            key_gen = (f'{name}_{i}' if i > 0 else name
+                       for i in itertools.count(0))
+            key = next(x for x in key_gen if x not in all_keys)
+            to_plot[key] = item[name]
     elif su.is_variable(item):
         if key is None:
             key = str(type(item))
@@ -100,8 +101,8 @@ def plot(scipp_obj,
     if isinstance(scipp_obj, dict):
         try:
             inventory.update(
-                _input_to_data_array(
-                    from_dict(scipp_obj), all_keys=inventory.keys()))
+                _input_to_data_array(from_dict(scipp_obj),
+                                     all_keys=inventory.keys()))
         except:  # noqa: E722
             for key, item in scipp_obj.items():
                 inventory.update(
