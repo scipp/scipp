@@ -32,7 +32,7 @@ def _ndarray_to_variable(ndarray):
     return sc.Variable(dims=dims, values=ndarray)
 
 
-def _input_to_data_array(item, key=None):
+def _input_to_data_array(item, all_keys, key=None):
     """
     Convert an input for the plot function to a DataArray or a dict of
     DataArrays.
@@ -40,7 +40,10 @@ def _input_to_data_array(item, key=None):
     to_plot = {}
     if su.is_dataset(item):
         for name in sorted(item.keys()):
-            to_plot[name] = item[name]
+            if name in all_keys:
+                to_plot[f"{name}_1"] = item[name]
+            else:
+                to_plot[name] = item[name]
     elif su.is_variable(item):
         if key is None:
             key = str(type(item))
@@ -96,12 +99,18 @@ def plot(scipp_obj,
     inventory = {}
     if isinstance(scipp_obj, dict):
         try:
-            inventory.update(_input_to_data_array(from_dict(scipp_obj)))
+            inventory.update(
+                _input_to_data_array(
+                    from_dict(scipp_obj, all_keys=inventory.keys())))
         except:  # noqa: E722
             for key, item in scipp_obj.items():
-                inventory.update(_input_to_data_array(item, key=key))
+                inventory.update(
+                    _input_to_data_array(item,
+                                         all_keys=inventory.keys(),
+                                         key=key))
     else:
-        inventory.update(_input_to_data_array(scipp_obj))
+        inventory.update(
+            _input_to_data_array(scipp_obj, all_keys=inventory.keys()))
 
     # Prepare container for matplotlib line parameters
     line_params = {
