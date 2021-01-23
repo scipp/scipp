@@ -9,6 +9,7 @@ from .dispatch import dispatch
 from .helpers import Plot
 from .tools import make_fake_coord, get_line_param
 import numpy as np
+import itertools
 
 
 def _variable_to_data_array(variable):
@@ -32,6 +33,13 @@ def _ndarray_to_variable(ndarray):
     return sc.Variable(dims=dims, values=ndarray)
 
 
+def _make_plot_key(plt_key, all_keys):
+    if plt_key in all_keys:
+        key_gen = (f'{plt_key}_{i}' for i in itertools.count(1))
+        plt_key = next(x for x in key_gen if x not in all_keys)
+    return plt_key
+
+
 def _input_to_data_array(item, all_keys, key=None):
     """
     Convert an input for the plot function to a DataArray or a dict of
@@ -40,22 +48,21 @@ def _input_to_data_array(item, all_keys, key=None):
     to_plot = {}
     if su.is_dataset(item):
         for name in sorted(item.keys()):
-            plt_key = name
-            if name in all_keys:
-                plt_key = f'{key}_{name}'
-            to_plot[plt_key] = item[name]
+            proto_plt_key = f'{key}_{name}' if key else name
+            to_plot[_make_plot_key(proto_plt_key, all_keys)] = item[name]
     elif su.is_variable(item):
         if key is None:
             key = str(type(item))
-        to_plot[key] = _variable_to_data_array(item)
+        to_plot[_make_plot_key(key, all_keys)] = _variable_to_data_array(item)
     elif su.is_data_array(item):
         if key is None:
             key = item.name
-        to_plot[key] = item
+        to_plot[_make_plot_key(key, all_keys)] = item
     elif isinstance(item, np.ndarray):
         if key is None:
             key = str(type(item))
-        to_plot[key] = _variable_to_data_array(_ndarray_to_variable(item))
+        to_plot[_make_plot_key(key, all_keys)] = _variable_to_data_array(
+            _ndarray_to_variable(item))
     else:
         raise RuntimeError("plot: Unknown input type: {}. Allowed inputs are "
                            "a Dataset, a DataArray, a Variable (and their "
