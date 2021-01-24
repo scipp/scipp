@@ -347,3 +347,13 @@ TEST_F(ConcatenateBinnedTest, new_dim) {
   EXPECT_EQ(out.slice({Dim::Y, 1}), var);
   EXPECT_EQ(out.slice({Dim::Y, 2}), var);
 }
+
+TEST_F(ConcatenateBinnedTest, empty_bins) {
+  const Variable empty_indices =
+      makeVariable<scipp::index_pair>(Dims{Dim::X}, Shape{0});
+  const Variable empty = make_bins(empty_indices, Dim::Event, buffer);
+
+  EXPECT_EQ(concatenate(empty, empty, Dim::X), empty);
+  EXPECT_EQ(concatenate(empty, var, Dim::X), var);
+  EXPECT_EQ(concatenate(var, empty, Dim::X), var);
+}
