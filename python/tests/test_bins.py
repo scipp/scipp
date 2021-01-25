@@ -14,7 +14,7 @@ def test_bins_default_begin_end():
     assert var.dims == data.dims
     assert var.shape == data.shape
     for i in range(4):
-        assert sc.is_equal(var['x', i].value, data['x', i])
+        assert sc.is_equal(var['x', i].value, data['x', i:i + 1])
 
 
 def test_bins_default_end():
@@ -23,8 +23,8 @@ def test_bins_default_end():
     var = sc.bins(begin=begin, dim='x', data=data)
     assert var.dims == begin.dims
     assert var.shape == begin.shape
-    assert sc.is_equal(var['y', 0].value, data['x', 1])
-    assert sc.is_equal(var['y', 1].value, data['x', 3])
+    assert sc.is_equal(var['y', 0].value, data['x', 1:3])
+    assert sc.is_equal(var['y', 1].value, data['x', 3:4])
 
 
 def test_bins_fail_only_end():

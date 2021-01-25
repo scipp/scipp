@@ -8,6 +8,8 @@
 #include "scipp/core/except.h"
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/shape.h"
+#include "scipp/variable/arithmetic.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
@@ -23,34 +25,34 @@ namespace {
 template <class T>
 auto call_make_bins(const py::object &begin_obj, const py::object &end_obj,
                     const Dim dim, T &&data) {
-  element_array<std::pair<scipp::index, scipp::index>> indices;
+  Variable indices;
   Dimensions dims;
   if (!begin_obj.is_none()) {
     const auto &begin = begin_obj.cast<VariableView>();
-    indices.resize(begin.dims().volume());
     dims = begin.dims();
-    const auto &begin_ = begin.values<int64_t>();
     if (!end_obj.is_none()) {
       const auto &end = end_obj.cast<VariableView>();
-      core::expect::equals(begin.dims(), end.dims());
-      const auto &end_ = end.values<int64_t>();
-      for (scipp::index i = 0; i < indices.size(); ++i)
-        indices.data()[i] = {begin_[i], end_[i]};
+      indices = zip(begin, end);
     } else {
-      for (scipp::index i = 0; i < indices.size(); ++i)
-        indices.data()[i] = {begin_[i], -1};
+      indices = zip(begin, begin);
+      const auto indices_ = indices.values<scipp::index_pair>();
+      const auto nindex = scipp::size(indices_);
+      for (scipp::index i = 0; i < nindex; ++i) {
+        if (i < nindex - 1)
+          indices_[i].second = indices_[i + 1].first;
+        else
+          indices_[i].second = data.dims()[dim];
+      }
     }
   } else if (end_obj.is_none()) {
-    indices.resize(data.dims()[dim]);
-    dims = Dimensions(dim, indices.size());
-    for (scipp::index i = 0; i < indices.size(); ++i)
-      indices.data()[i] = {i, -1};
+    const auto one = scipp::index{1} * units::one;
+    const auto ones = broadcast(one, {dim, data.dims()[dim]});
+    const auto begin = cumsum(ones, dim, CumSumMode::Exclusive);
+    indices = zip(begin, begin + one);
   } else {
     throw std::runtime_error("`end` given but not `begin`");
   }
-  return make_bins(makeVariable<std::pair<scipp::index, scipp::index>>(
-                       dims, Values(std::move(indices))),
-                   dim, std::forward<T>(data));
+  return make_bins(std::move(indices), dim, std::forward<T>(data));
 }
 
 template <class T> void bind_bins(pybind11::module &m) {
