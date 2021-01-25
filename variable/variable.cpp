@@ -48,7 +48,7 @@ VariableConstView::VariableConstView(const VariableConstView &slice,
   if (end == -1)
     m_dims.erase(dim);
   else
-    m_dims.resize(dim, end - begin);
+    m_dims.resize(dim, std::max(end - begin, scipp::index{0}));
   // See implementation of ViewIndex regarding this relabeling.
   for (const auto label : m_dataDims.labels())
     if (label != Dim::Invalid && !m_dims.contains(label))
