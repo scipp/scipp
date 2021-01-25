@@ -11,6 +11,8 @@
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable.h"
 
+#include "scipp/variable/string.h"
+
 using namespace scipp;
 
 TEST(Variable, construct_default) {
@@ -497,6 +499,25 @@ TEST_F(VariableTest_3d, slice_range) {
             makeVariable<double>(Dimensions(dims_z2), units::m,
                                  Values(vals_z13.begin(), vals_z13.end()),
                                  Variances(vars_z13.begin(), vars_z13.end())));
+}
+
+TEST_F(VariableTest_3d, slice_range_end_lt_begin) {
+  const auto make_shape = [&](const scipp::index zero_dim) {
+    Shape shape{0, 0, 0};
+    const auto parent_shape = parent.dims().shape();
+    shape.data.assign(parent_shape.begin(), parent_shape.end());
+    shape.data[zero_dim] = 0;
+    return shape;
+  };
+  EXPECT_EQ(parent.slice({Dim::X, 2, 0}),
+            makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, make_shape(0),
+                                 Values{}, Variances{}, parent.unit()));
+  EXPECT_EQ(parent.slice({Dim::Y, 4, 1}),
+            makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, make_shape(1),
+                                 Values{}, Variances{}, parent.unit()));
+  EXPECT_EQ(parent.slice({Dim::Z, 100, 0}),
+            makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, make_shape(2),
+                                 Values{}, Variances{}, parent.unit()));
 }
 
 TEST(VariableView, full_const_view) {
