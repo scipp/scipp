@@ -10,10 +10,10 @@ using namespace scipp;
 
 TEST(ReduceLogicalTest, fails) {
   const auto bad = makeVariable<int32_t>(Dims{Dim::X}, Shape{2});
-  EXPECT_THROW_DROP_RESULT(all(bad, Dim::X), except::TypeError);
-  EXPECT_THROW_DROP_RESULT(any(bad, Dim::X), except::TypeError);
-  EXPECT_THROW_DROP_RESULT(all(bad, Dim::Y), except::DimensionError);
-  EXPECT_THROW_DROP_RESULT(any(bad, Dim::Y), except::DimensionError);
+  EXPECT_THROW_DISCARD(all(bad, Dim::X), except::TypeError);
+  EXPECT_THROW_DISCARD(any(bad, Dim::X), except::TypeError);
+  EXPECT_THROW_DISCARD(all(bad, Dim::Y), except::DimensionError);
+  EXPECT_THROW_DISCARD(any(bad, Dim::Y), except::DimensionError);
 }
 
 TEST(ReduceLogicalTest, all) {

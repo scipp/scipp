@@ -11,6 +11,7 @@
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/util.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -151,7 +152,7 @@ TEST_P(BinTest, no_edges_or_groups) {
 TEST_P(BinTest, edges_too_short) {
   const auto table = GetParam();
   const auto edges = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1});
-  EXPECT_THROW(bin(table, {edges}), except::BucketError);
+  EXPECT_THROW(bin(table, {edges}), except::BinEdgeError);
 }
 
 TEST_P(BinTest, rebin_coarse_to_fine_1d) {
@@ -256,6 +257,21 @@ TEST_P(BinTest, rebin_coarse_to_fine_2d_outer) {
   expect_near(bin(xy_coarse, {edges_x}), xy);
 }
 
+TEST_P(BinTest, rebin_empty_dim) {
+  const auto table = GetParam();
+  const auto xy = bin(table, {edges_x, edges_y});
+  const auto sx = Slice{Dim::X, 0, 0};
+  const auto sy = Slice{Dim::Y, 0, 0};
+  EXPECT_EQ(bin(xy.slice(sx), {edges_y_coarse}),
+            bin(xy, {edges_y_coarse}).slice(sx));
+  EXPECT_EQ(bin(xy.slice(sy), {edges_x_coarse}),
+            bin(xy, {edges_x_coarse}).slice(sy));
+  EXPECT_EQ(bin(xy.slice(sx).slice(sy), {edges_x_coarse}),
+            bin(xy, {edges_x_coarse}).slice(sy));
+  EXPECT_EQ(bin(xy.slice(sx).slice(sy), {edges_y_coarse}),
+            bin(xy, {edges_y_coarse}).slice(sx));
+}
+
 TEST_P(BinTest, group_and_bin) {
   const auto table = GetParam();
   const auto x_group = bin(table, {edges_x}, {groups});
@@ -314,8 +330,39 @@ TEST_P(BinTest, bin_by_group) {
   std::get<2>(binned.data().constituents<core::bin<DataArray>>())
       .coords()
       .erase(Dim("group"));
-  const auto edges =
-      makeVariable<double>(Dims{Dim("group")}, Shape{3}, Values{-2, 0, 2});
-  // Using bin coord )instead of event coord) for binning.
-  bin(binned, {edges});
+  // Using bin coord (instead of event coord) for binning.
+  // Edges giving same grouping as existing => data matches
+  auto edges = makeVariable<double>(Dims{Dim("group")}, Shape{6},
+                                    Values{-2, -1, 0, 1, 2, 3});
+  EXPECT_EQ(bin(binned, {edges}).data(), binned.data());
+
+  // Fewer bins than groups
+  edges = makeVariable<double>(Dims{Dim("group")}, Shape{3}, Values{-2, 0, 2});
+  EXPECT_NO_THROW(bin(binned, {edges}));
+}
+
+TEST_P(BinTest, rebin_various_edges_1d) {
+  // Trying to cover potential edge case in the bin sizes setup logic. No assert
+  // since in general it is hard to come up with the expected result.
+  using units::one;
+  std::vector<Variable> edges;
+  edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 4));
+  edges.emplace_back(linspace(-2.0 * one, 1.2 * one, Dim::X, 72));
+  edges.emplace_back(linspace(-1.23 * one, 1.2 * one, Dim::X, 45));
+  edges.emplace_back(linspace(-1.23 * one, 1.1 * one, Dim::X, 45));
+  edges.emplace_back(linspace(1.1 * one, 1.2 * one, Dim::X, 128));
+  edges.emplace_back(linspace(1.1 * one, 1.101 * one, Dim::X, 128));
+  const auto table = GetParam();
+  for (const auto &e0 : edges)
+    for (const auto &e1 : edges) {
+      auto binned = bin(table, {e0});
+      const auto x = binned.coords()[Dim::X];
+      const auto len = x.dims()[Dim::X];
+      binned.coords().set(Dim::X, (0.5 * one) * (x.slice({Dim::X, 0, len - 1}) +
+                                                 x.slice({Dim::X, 1, len})));
+      bin(binned, {e1});
+    }
+  for (const auto &e0 : edges)
+    for (const auto &e1 : edges)
+      bin(bin(table, {e0}), {e1});
 }

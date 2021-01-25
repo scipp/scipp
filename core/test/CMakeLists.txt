@@ -8,6 +8,7 @@ add_executable(
   element_array_test.cpp
   element_array_view_test.cpp
   element_arithmetic_test.cpp
+  element_bin_detail_test.cpp
   element_comparison_test.cpp
   element_event_operations_test.cpp
   element_geometric_operations_test.cpp
@@ -19,6 +20,7 @@ add_executable(
   element_util_test.cpp
   multi_index_test.cpp
   string_test.cpp
+  subbin_sizes_test.cpp
   time_point_test.cpp
   value_and_variance_test.cpp
   view_index_test.cpp

@@ -390,8 +390,8 @@ TEST_F(TransformBinaryTest, events_size_fail) {
   const auto table = makeVariable<double>(Dims{Dim::Event}, Shape{4});
   auto a = make_bins(indicesA, Dim::Event, table);
   auto b = make_bins(indicesB, Dim::Event, table);
-  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, b, op),
-                         except::BucketError);
+  ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, b, op),
+                       except::BucketError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
                except::BucketError);
 }
@@ -525,8 +525,8 @@ protected:
 };
 
 TEST_F(TransformTest_events_binary_values_variances_size_fail, baseline) {
-  ASSERT_NO_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op));
-  ASSERT_NO_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op));
+  ASSERT_NO_THROW_DISCARD(transform<pair_self_t<double>>(a, val_var, op));
+  ASSERT_NO_THROW_DISCARD(transform<pair_self_t<double>>(a, val, op));
   ASSERT_NO_THROW(
       transform_in_place<pair_self_t<double>>(a, val_var, op_in_place));
   ASSERT_NO_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place));
@@ -534,10 +534,10 @@ TEST_F(TransformTest_events_binary_values_variances_size_fail, baseline) {
 
 TEST_F(TransformTest_events_binary_values_variances_size_fail, a_size_bad) {
   a = b;
-  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val_var, op),
-                         except::BucketError);
-  ASSERT_THROW_NODISCARD(transform<pair_self_t<double>>(a, val, op),
-                         except::BucketError);
+  ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, val_var, op),
+                       except::BucketError);
+  ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, val, op),
+                       except::BucketError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
                except::BucketError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
