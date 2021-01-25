@@ -689,6 +689,7 @@ void accumulate_in_place(Var &&var, Other &&other, Op op) {
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
                                   std::forward<Var>(var), other);
 }
+
 template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const VariableConstView &var1,
                          const VariableConstView &var2, Op op) {
@@ -696,6 +697,17 @@ void accumulate_in_place(Var &&var, const VariableConstView &var1,
   scipp::expect::contains(var2.dims(), var.dims());
   in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
                                   std::forward<Var>(var), var1, var2);
+}
+
+template <class... TypePairs, class Var, class Op>
+void accumulate_in_place(Var &&var, const VariableView &var1,
+                         const VariableConstView &var2,
+                         const VariableConstView &var3, Op op) {
+  scipp::expect::contains(var1.dims(), var.dims());
+  scipp::expect::contains(var2.dims(), var.dims());
+  scipp::expect::contains(var3.dims(), var.dims());
+  in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
+                                  std::forward<Var>(var), var1, var2, var3);
 }
 
 namespace dry_run {

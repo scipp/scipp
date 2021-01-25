@@ -52,11 +52,9 @@ bool equals(const T1 &a, const T2 &b, const Tol tolerance) {
                     });
 }
 
-/* Helper macros to avoid warnings when testing [[nodiscard]] qualified
- * functions */
-#define ASSERT_NO_THROW_NODISCARD(expr) ASSERT_NO_THROW((void)expr)
-#define ASSERT_THROW_NODISCARD(expr, type) ASSERT_THROW((void)expr, type)
-
-// Helper that casts the result of `statement` to void to suppress warnings.
-#define EXPECT_THROW_DROP_RESULT(statement, expected_expression)               \
-  EXPECT_THROW(static_cast<void>(statement), expected_expression)
+/// Macros to avoid warnings when testing [[nodiscard]] qualified functions
+#define ASSERT_NO_THROW_DISCARD(expr) ASSERT_NO_THROW(static_cast<void>(expr))
+#define ASSERT_THROW_DISCARD(expr, type)                                       \
+  ASSERT_THROW(static_cast<void>(expr), type)
+#define EXPECT_THROW_DISCARD(expr, type)                                       \
+  EXPECT_THROW(static_cast<void>(expr), type)

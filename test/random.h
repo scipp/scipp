@@ -38,8 +38,10 @@ public:
   void seed(const uint32_t value) { mt.seed(value); }
 };
 
-inline scipp::Variable makeRandom(const scipp::Dimensions &dims) {
+inline scipp::Variable makeRandom(const scipp::Dimensions &dims,
+                                  const double min = -2.0,
+                                  const double max = 2.0) {
   using namespace scipp;
-  Random rand;
+  Random rand(min, max);
   return makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
 }

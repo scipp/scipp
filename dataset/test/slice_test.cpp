@@ -343,8 +343,8 @@ TEST_P(Dataset3DTest_slice_range_y, slice_with_edges) {
   const auto yEdges = makeRandom({Dim::Y, 6});
   datasetWithEdges.setCoord(Dim::Y, yEdges);
   auto referenceWithEdges = reference(begin, end);
-  // Is this the correct behavior for edges also in case the range is empty?
-  referenceWithEdges.setCoord(Dim::Y, yEdges.slice({Dim::Y, begin, end + 1}));
+  referenceWithEdges.setCoord(
+      Dim::Y, yEdges.slice({Dim::Y, begin, begin == end ? end : end + 1}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::Y, begin, end}), referenceWithEdges);
 }
 
@@ -369,7 +369,8 @@ TEST_P(Dataset3DTest_slice_range_z, slice_with_edges) {
   const auto zEdges = makeRandom({{Dim::X, 4}, {Dim::Y, 5}, {Dim::Z, 7}});
   datasetWithEdges.setCoord(Dim::Z, zEdges);
   auto referenceWithEdges = reference(begin, end);
-  referenceWithEdges.setCoord(Dim::Z, zEdges.slice({Dim::Z, begin, end + 1}));
+  referenceWithEdges.setCoord(
+      Dim::Z, zEdges.slice({Dim::Z, begin, begin == end ? end : end + 1}));
   EXPECT_EQ(datasetWithEdges.slice({Dim::Z, begin, end}), referenceWithEdges);
 }
 
@@ -571,7 +572,8 @@ TYPED_TEST(DataArrayView3DTest, slice_length_0_with_edges) {
             const auto slice = item.slice({dim, i, i + 0});
             EXPECT_EQ(slice, d.slice({dim, i, i + 0})[item.name()]);
             if (std::set(edgeDims).count(dim)) {
-              EXPECT_EQ(slice.coords()[dim].dims()[dim], 1);
+              // Note: NOT 1 edge
+              EXPECT_EQ(slice.coords()[dim].dims()[dim], 0);
             }
           }
           EXPECT_NO_THROW(

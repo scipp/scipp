@@ -10,7 +10,7 @@ using namespace scipp;
 
 TEST_P(DenseVariablesTest, empty_like_fail_if_sizes) {
   const auto var = GetParam();
-  EXPECT_THROW_DROP_RESULT(
+  EXPECT_THROW_DISCARD(
       empty_like(var, {}, makeVariable<scipp::index>(Values{12})),
       except::TypeError);
 }
