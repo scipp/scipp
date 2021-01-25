@@ -158,14 +158,16 @@ add_custom_target(all-tests)
 
 # Custom target for building documentation
 if(NOT WIN32)
-add_custom_target(docs
-COMMAND ./docs_build.sh
-DEPENDS install)
+  add_custom_target(
+    docs
+    COMMAND ./docs_build.sh
+    DEPENDS install)
 else()
-add_custom_target(docs
-COMMAND docs_build.bat
-DEPENDS install)
-endif(NOT WIN32)
+  add_custom_target(
+    docs
+    COMMAND docs_build.bat
+    DEPENDS install)
+endif()
 
 configure_file(CMake/docs_build.bat.in docs_build.bat)
 configure_file(CMake/docs_build.sh.in docs_build.sh)
