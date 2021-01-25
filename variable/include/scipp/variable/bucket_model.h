@@ -142,7 +142,7 @@ private:
                              [](const auto a, const auto b) {
                                return a.second > b.first;
                              }) != vals.end())
-        throw except::SliceError("Overlapping bucket indices are not allowed.");
+        throw except::SliceError("Overlapping bin indices are not allowed.");
       if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
             return x.first > x.second;
           }) != vals.end())
