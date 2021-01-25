@@ -127,13 +127,7 @@ def retrieve(var, variances=False, single=False):
 
 
 def _short_data_repr_html_non_events(var, variances=False):
-    if hasattr(var, "data"):
-        if var.data is None:
-            return "Realigned data based on unaligned content."
-            "Use `histogram` to obtain values."
-        return repr(retrieve(var.data, variances))
-    else:
-        return repr(retrieve(var, variances))
+    return repr(retrieve(var, variances))
 
 
 def _short_data_repr_html_events(var, variances=False):
@@ -217,19 +211,6 @@ def _make_inline_attributes(var, has_attrs, embedded_in):
     disabled = "disabled"
     attrs_ul = ""
     attrs_sections = []
-
-    if hasattr(var, "data") and var.data is None:
-        content = dataset_repr(var.unaligned)
-        content = f"<div class='xr-var-attrs'><span>{content}</span></div>"
-        hint = 'data is realigned, expand to view underlying unaligned content'
-        section = collapsible_section('Unaligned',
-                                      inline_details=hint,
-                                      details=content,
-                                      n_items=1,
-                                      enabled=True,
-                                      collapsed=True)
-        attrs_sections.append(section)
-        disabled = ""
 
     if has_attrs and hasattr(var, "masks"):
         if len(var.masks) > 0:
