@@ -1,4 +1,6 @@
 from ..._scipp import core as sc
+from ._event_data_loader import EventDataLoader, BadSource
+from ...compat._unit_map import lookup_units
 
 import h5py
 import numpy as np
@@ -46,7 +48,6 @@ def _open_if_path(file_in: Union[str, h5py.File]):
 
 def load_nexus(data_file: str,
                root: str = "/",
-               convert_ids: bool = False,
                instrument_file: Optional[str] = None):
     """
     Load a hdf/nxs file and return required information.
@@ -57,7 +58,6 @@ def load_nexus(data_file: str,
     :param data_file: path of NeXus file containing data to load
     :param root: path of group in file, only load data from the subtree of
       this group
-    :param convert_ids:
     :param instrument_file: path of separate NeXus file containing
       detector positions, load_nexus will look in the data file for
       this information if instrument_file is not provided
@@ -65,7 +65,7 @@ def load_nexus(data_file: str,
     Usage example:
       data = sc.neutron.load_nexus('PG3_4844_event.nxs')
     """
-    return _load_nexus(data_file, root, convert_ids, instrument_file)
+    return _load_nexus(data_file, root, instrument_file)
 
 
 @dataclass
@@ -74,9 +74,21 @@ class _Field:
     dtype: Any  # numpy.typing only available on Python 3.8
 
 
+def _all_equal(iterator):
+    iterator = iter(iterator)
+    try:
+        first = next(iterator)
+    except StopIteration:
+        return True
+    return all(first == rest for rest in iterator)
+
+
+def _check_all_event_groups_use_same_units():
+    pass
+
+
 def _load_nexus(data_file: Union[str, h5py.File],
                 root: str = "/",
-                convert_ids: bool = False,
                 instrument_file: Union[str, h5py.File, None] = None):
     """
     Allows h5py.File objects to be passed in place of
@@ -84,6 +96,33 @@ def _load_nexus(data_file: Union[str, h5py.File],
     """
     total_time = timer()
 
+    with _open_if_path(data_file) as nexus_file:
+        nx_event_data = "NXevent_data"
+        groups = _find_by_nx_class([nx_event_data], nexus_file)
+
+        event_sources = []
+        for group in groups[nx_event_data]:
+            try:
+                event_sources.append(EventDataLoader(group))
+            except BadSource:
+                # Reason for error is printed as warning
+                pass
+
+        # TODO complain if there are multiple event data groups and
+        #  they use different units
+        #   complain if we don't recognise the units
+        #   complain if units don't make sense for the data they correspond to?
+        _check_all_event_groups_use_same_units
+
+        # TODO convert unit string to scipp unit
+        lookup_units
+
+        # TODO preallocate events Variable
+        #   look at streaming notebook for what it should look like
+        # total_number_of_events = sum(
+        #     [loader.number_of_events for loader in event_sources])
+
+    ########################################################################
     fields = [
         _Field("event_id", np.int64),
         _Field("event_time_offset", np.float64),
