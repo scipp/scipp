@@ -137,17 +137,17 @@ private:
       std::sort(vals.begin(), vals.end());
       if ((!vals.empty() && (vals.begin()->first < 0)) ||
           (!vals.empty() && ((vals.end() - 1)->second > buffer.dims()[dim])))
-        throw except::SliceError("Bucket indices out of range");
+        throw except::SliceError("Bin indices out of range");
       if (std::adjacent_find(vals.begin(), vals.end(),
                              [](const auto a, const auto b) {
                                return a.second > b.first;
                              }) != vals.end())
-        throw except::SliceError(
-            "Bucket begin index must be less or equal to its end index.");
-      if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
-            return x.second >= 0 && x.first > x.second;
-          }) != vals.end())
         throw except::SliceError("Overlapping bucket indices are not allowed.");
+      if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
+            return x.first > x.second;
+          }) != vals.end())
+        throw except::SliceError(
+            "Bin begin index must be less or equal to its end index.");
       // Copy to avoid a second memory allocation
       const auto &i = indices.values<range_type>();
       std::copy(i.begin(), i.end(), vals.begin());
