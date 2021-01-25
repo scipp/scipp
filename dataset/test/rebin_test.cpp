@@ -117,6 +117,31 @@ TEST_F(RebinTest, keeps_unrelated_labels_but_drops_others) {
   ASSERT_EQ(rebin(a, Dim::X, edges), expected);
 }
 
+TEST_F(RebinTest, rebin_with_ragged_coord) {
+  Variable counts = makeVariable<double>(
+      Dims{Dim::Z, Dim::Y, Dim::X}, Shape{3, 2, 4}, units::counts,
+      Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
+             13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
+  Variable x = makeVariable<double>(
+      Dims{Dim::Y, Dim::X}, Shape{2, 5},
+      Values{1.0, 2.0, 3.0, 4.0, 5.0, 1.1, 2.2, 3.3, 4.4, 5.5});
+  Variable y = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3});
+  Variable z = makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{1, 2, 3, 4});
+
+  DataArray array{counts, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}}, {}};
+
+  auto edges =
+      makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0.0, 2.5, 5.0});
+  DataArray expected(
+      makeVariable<double>(
+          Dims{Dim::Z, Dim::Y, Dim::X}, Shape{2, 2, 4}, units::counts,
+          Values{5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5, 16.0, 21.5, 23.0, 24.5,
+                 26.0, 27.5, 29.0, 30.5, 32.0}),
+      {{Dim::Z, edges}, {Dim::X, x}, {Dim::Y, y}}, {});
+
+  ASSERT_EQ(rebin(array, Dim::Z, edges), expected);
+}
+
 TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   Dataset ds;
   ds.setCoord(Dim::X, makeVariable<double>(Dimensions{Dim::X, 6},
