@@ -159,12 +159,16 @@ add_custom_target(all-tests)
 # Custom target for building documentation
 if(NOT WIN32)
 add_custom_target(docs
-COMMAND rm -r docs/
-&& mkdir -p docs 
-&& ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/docs/data/fetch_neutron_data.py --destination=${CMAKE_SOURCE_DIR}/docs/data/ 
-&& PYTHONPATH=$PYTHONPATH:${CMAKE_INSTALL_PREFIX} sphinx-build ${CMAKE_SOURCE_DIR}/docs docs
+COMMAND docs_build.sh
+DEPENDS install)
+else()
+add_custom_target(docs
+COMMAND docs_build.bat
 DEPENDS install)
 endif(NOT WIN32)
+
+configure_file(CMake/docs_build.bat.in docs_build.bat)
+configure_file(CMake/docs_build.sh.in docs_build.sh)
 
 # Generate files for free scipp API functions
 include(scipp-functions)
