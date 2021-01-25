@@ -772,7 +772,7 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
 
 
 def from_mantid(workspace, **kwargs):
-    """Convert Mantid workspace to a scipp data array or dataset
+    """Convert Mantid workspace to a scipp data array or dataset.
     :param workspace: Mantid workspace to convert.
     """
     scipp_obj = None  # This is either a Dataset or DataArray
