@@ -336,9 +336,11 @@ def test_getitem():
 
 
 def test_setitem_broadcast():
-    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
-    var['x', 1:3] = sc.Variable(value=5)
-    assert sc.is_equal(var, sc.Variable(dims=['x'], values=[1, 5, 5, 4]))
+    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4], dtype=sc.dtype.int64)
+    var['x', 1:3] = sc.Variable(value=5, dtype=sc.dtype.int64)
+    assert sc.is_equal(var,
+                       sc.Variable(dims=['x'], values=[1, 5, 5, 4]),
+                       dtype=sc.dtype.int64)
 
 
 def test_slicing():
