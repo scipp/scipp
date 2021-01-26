@@ -189,8 +189,8 @@ def find_bin_edges(var, ds):
     """
     bin_edges = []
     for idx, dim in enumerate(var.dims):
-        len = var.shape[idx]
-        if dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == len:
+        length = var.shape[idx]
+        if dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == length:
             bin_edges.append(dim)
     return bin_edges
 
