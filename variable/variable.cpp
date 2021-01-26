@@ -86,7 +86,6 @@ template <class T> VariableView VariableView::assign(const T &other) const {
   if (*this == VariableConstView(other))
     return *this; // Self-assignment, return early.
   setUnit(other.unit());
-  core::expect::equals(dims(), other.dims());
   underlying().data().copy(other, *this);
   return *this;
 }
