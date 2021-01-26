@@ -143,7 +143,7 @@ class TestSliceByValue:
             self._d['a']['x', 1.5 * sc.units.dimensionless:4.5 *
                          sc.units.dimensionless] = sc.Variable(
                              dims=['x'], values=[6.0, 6.0], unit=sc.units.m)
-        assert str(e_info.value) == '{{x, 3}} expected to be equal to {{x, 2}}'
+        assert str(e_info.value) == 'Expected {{x, 3}} to contain {{x, 2}}.'
 
     def test_assign_incompatible_dataarray(self):
         with pytest.raises(RuntimeError):

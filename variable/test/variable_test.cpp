@@ -634,6 +634,13 @@ TEST(VariableView, variable_assign_from_slice_clears_variances) {
                                          Values{11, 12, 21, 22}));
 }
 
+TEST(VariableView, slice_assign_from_variable_broadcast) {
+  const auto source = makeVariable<double>(Values{2});
+  auto target = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  target.slice({Dim::X, 1, 3}).assign(source);
+  EXPECT_EQ(target, makeVariable<double>(target.dims(), Values{0, 2, 2}));
+}
+
 TEST(VariableView, variable_self_assign_via_slice) {
   auto target =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3},
@@ -654,6 +661,13 @@ TEST(VariableView, slice_assign_from_variable_unit_fail) {
   EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(source), except::UnitError);
   target = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
   EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(source));
+}
+
+TEST(VariableView, slice_assign_from_variable_dimension_fail) {
+  const auto source = makeVariable<double>(Dims{Dim::Y}, Shape{1});
+  auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(source),
+               except::NotFoundError);
 }
 
 TEST(VariableView, slice_assign_from_variable_full_slice_can_change_unit) {
