@@ -40,7 +40,7 @@ auto from_py_slice(const T &source,
   if (step != 1)
     throw std::runtime_error("Step must be 1");
   if (slicelength == 0) {
-    stop = start;  // Propagate vanishing slice length downstream.
+    stop = start; // Propagate vanishing slice length downstream.
   }
   return Slice(dim, start, stop);
 }
