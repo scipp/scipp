@@ -327,12 +327,18 @@ def test_create_dtype():
     assert var.dtype == sc.dtype.int32
 
 
-def test_get_slice():
+def test_getitem():
     var = sc.Variable(dims=['x', 'y'], values=np.arange(0, 8).reshape(2, 4))
     var_slice = var['x', 1:2]
     assert sc.is_equal(
         var_slice,
         sc.Variable(dims=['x', 'y'], values=np.arange(4, 8).reshape(1, 4)))
+
+
+def test_setitem_broadcast():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4])
+    var['x', 1:3] = sc.Variable(value=5)
+    assert sc.is_equal(var, sc.Variable(dims=['x'], values=[1, 5, 5, 4]))
 
 
 def test_slicing():
