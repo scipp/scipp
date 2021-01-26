@@ -1,4 +1,5 @@
 from ..._scipp import core as sc
+from scipp.detail import move_to_data_array
 from ._event_data_loader import EventDataLoader, BadSource
 from ...compat._unit_map import lookup_units
 
@@ -6,15 +7,27 @@ import h5py
 import numpy as np
 from os.path import join
 from timeit import default_timer as timer
-from typing import Union, List, Dict, Optional, Any
+from typing import Union, Tuple, Dict, Optional, List
 from contextlib import contextmanager
-from dataclasses import dataclass
+
+
+def _get_attr_as_str(h5_object, attribute_name: str):
+    try:
+        return h5_object.attrs[attribute_name].decode("utf8")
+    except AttributeError:
+        return h5_object.attrs[attribute_name]
 
 
 def _find_by_nx_class(
-        nx_class_names: List[str],
-        root: Union[h5py.File, h5py.Group]) -> Dict[str, h5py.Group]:
-    groups_with_requested_nx_class = {
+        nx_class_names: Tuple[str, ...],
+        root: Union[h5py.File, h5py.Group]) -> Dict[str, List[h5py.Group]]:
+    """
+    Finds groups with requested NX_class in the subtree of root
+
+    Returns a dictionary with NX_class name as the key and list of matching
+    groups as the value
+    """
+    groups_with_requested_nx_class: Dict[str, List[h5py.Group]] = {
         class_name: []
         for class_name in nx_class_names
     }
@@ -22,10 +35,9 @@ def _find_by_nx_class(
     def _match_nx_class(_, h5_object):
         if isinstance(h5_object, h5py.Group):
             try:
-                if h5_object.attrs["NX_class"].decode(
-                        "utf8") in nx_class_names:
-                    groups_with_requested_nx_class[h5_object.attrs[
-                        "NX_class"].decode("utf8")].append(h5_object)
+                if _get_attr_as_str(h5_object, "NX_class") in nx_class_names:
+                    groups_with_requested_nx_class[_get_attr_as_str(
+                        h5_object, "NX_class")].append(h5_object)
             except AttributeError:
                 pass
 
@@ -50,10 +62,7 @@ def load_nexus(data_file: str,
                root: str = "/",
                instrument_file: Optional[str] = None):
     """
-    Load a hdf/nxs file and return required information.
-    Note that the patterns are listed in order of preference,
-    i.e. if more than one is present in the file, the data will be read
-    from the first one found.
+    Load a NeXus file and return required information.
 
     :param data_file: path of NeXus file containing data to load
     :param root: path of group in file, only load data from the subtree of
@@ -66,12 +75,6 @@ def load_nexus(data_file: str,
       data = sc.neutron.load_nexus('PG3_4844_event.nxs')
     """
     return _load_nexus(data_file, root, instrument_file)
-
-
-@dataclass
-class _Field:
-    name: str
-    dtype: Any  # numpy.typing only available on Python 3.8
 
 
 def _all_equal(iterator):
@@ -94,12 +97,14 @@ def _load_nexus(data_file: Union[str, h5py.File],
     Allows h5py.File objects to be passed in place of
     file path strings in tests
     """
+    print("Load NeXus")
     total_time = timer()
 
     with _open_if_path(data_file) as nexus_file:
         nx_event_data = "NXevent_data"
-        groups = _find_by_nx_class([nx_event_data], nexus_file)
+        groups = _find_by_nx_class((nx_event_data, ), nexus_file[root])
 
+        print("Finding event data in file", flush=True)
         event_sources = []
         for group in groups[nx_event_data]:
             try:
@@ -108,133 +113,87 @@ def _load_nexus(data_file: Union[str, h5py.File],
                 # Reason for error is printed as warning
                 pass
 
+        if not event_sources:
+            raise RuntimeError("No valid event data found in file")
+
         # TODO complain if there are multiple event data groups and
-        #  they use different units
+        #  they use different units or dtype
         #   complain if we don't recognise the units
         #   complain if units don't make sense for the data they correspond to?
-        _check_all_event_groups_use_same_units
+        _check_all_event_groups_use_same_units()
 
-        # TODO convert unit string to scipp unit
-        lookup_units
+        tof_units = lookup_units[event_sources[0].tof_units]
+        pulse_time_units = lookup_units[event_sources[0].pulse_time_units]
 
-        # TODO preallocate events Variable
-        #   look at streaming notebook for what it should look like
-        # total_number_of_events = sum(
-        #     [loader.number_of_events for loader in event_sources])
+        print("Preallocating scipp variable for event data")
+        total_number_of_events = int(
+            sum([loader.number_of_events for loader in event_sources]))
+        tof_data = sc.Variable(dims=['event'],
+                               shape=[total_number_of_events],
+                               unit=tof_units,
+                               dtype=event_sources[0].tof_dtype)
+        id_data = sc.Variable(dims=['event'],
+                              shape=[total_number_of_events],
+                              unit=sc.units.one,
+                              dtype=np.int32)
+        pulse_time_data = sc.Variable(
+            dims=['event'],
+            unit=pulse_time_units,
+            values=np.ones(total_number_of_events,
+                           dtype=event_sources[0].pulse_time_dtype))
+        weight_data = sc.Variable(dims=['event'],
+                                  unit=sc.units.one,
+                                  values=np.ones(total_number_of_events,
+                                                 dtype=np.float32),
+                                  variances=np.ones(total_number_of_events,
+                                                    dtype=np.float32))
+        proto_events = {
+            'data': weight_data,
+            'coords': {
+                'Tof': tof_data,
+                'id': id_data,
+                'pulse_time': pulse_time_data
+            }
+        }
+        event_data = move_to_data_array(**proto_events)
 
-    ########################################################################
-    fields = [
-        _Field("event_id", np.int64),
-        _Field("event_time_offset", np.float64),
-        _Field("event_time_zero", np.float64),
-        _Field("event_index", np.float64),
-    ]
-
-    entries = {field.name: {} for field in fields}
-
-    spec_min = np.Inf  # Min spectrum number
-    spec_max = 0  # Max spectrum number
-    spec_num = []  # List of unique spectral numbers
-
-    start = timer()
-    with _open_if_path(data_file) as f:
-        contents = []
-        f[root].visit(contents.append)
-
-        for item in contents:
-            for field in fields:
-                if item.endswith(field.name):
-                    root = item.replace(field.name, '')
-                    entries[field.name][root] = np.array(f[item][...],
-                                                         dtype=field.dtype,
-                                                         copy=True)
-                    if field.name == "event_id":
-                        spec_min = min(spec_min,
-                                       entries[field.name][root].min())
-                        spec_max = max(spec_max,
-                                       entries[field.name][root].max())
-                        spec_num.append(np.unique(entries[field.name][root]))
-    print("Reading file:", timer() - start)
-
-    # Combine all banks into single arrays into a new dict
-    data = {}
-    for key, item in entries.items():
-        data[key] = np.concatenate(list(item.values()))
-
-    # Determine number of spectra and create map from spectrum number to
-    # detector id
-    start = timer()
-    spec_num = np.unique(np.concatenate(spec_num).ravel())
-    spec_map = {val: key for (key, val) in enumerate(spec_num)}
-    nspec = len(spec_num)
-    data['spectrum'] = np.zeros_like(data['event_id'])
-    for i in range(nspec):
-        data['spectrum'][i] = spec_map[data['event_id'][i]]
-    print("Building spectrum number map:", timer() - start)
-
-    # Sort the event ids so we can fill in event lists in chunks instead of one
-    # event at a time.
-    # TODO: sort using scipp.sort()
-    start = timer()
-    indices = np.argsort(data["event_id"])
-    print("ArgSort:", timer() - start)
-    start = timer()
-    data['event_id'] = data['event_id'][indices]
-    data['event_time_offset'] = data['event_time_offset'][indices]
-    print("Sort indexing:", timer() - start)
-
-    # Now find the locations where the event ids change/jump. This will tell
-    # us the number of events that are in each pixel.
-    # TODO: Using scipp Variables and indexing to get diff1d:
-    # var[dim, 1:] - var[dim, :-1]
-    diff = np.ediff1d(data['event_id'])
-    locs = np.where(diff > 0)[0]
-    # Need to add leading zero and the total size of the array at the end
-    locs = np.concatenate([[0], locs, [len(data['event_id'])]])
-
-    # Create event list
-    var = sc.Variable(dims=['spectrum'], shape=[nspec], dtype=sc.dtype.float64)
-    # Weights are set to one by default
-    weights = sc.Variable(dims=['spectrum'],
-                          shape=[nspec],
-                          unit=sc.units.counts,
-                          dtype=sc.dtype.float64,
-                          variances=True)
-
-    # Populate event list chunk by chunk
-    start = timer()
-    for n in range(nspec):
-        var['spectrum',
-            n].values.extend(data["event_time_offset"][locs[n]:locs[n + 1]])
-        ones = np.ones_like(var['spectrum', n].values)
-        weights['spectrum', n].values = ones
-        weights['spectrum', n].variances = ones
-    print("Filling events:", timer() - start)
-
-    # arange variable for spectra indices
-    specs = sc.Variable(dims=['spectrum'],
-                        values=np.arange(nspec),
-                        dtype=sc.dtype.int32)
-    # Also store the indices in the output? Are they every needed?
-    ids = sc.Variable(dims=['spectrum'], values=spec_num, dtype=sc.dtype.int32)
-    # Put everything together in a DataArray
-    da = sc.DataArray(data=weights,
-                      coords={
-                          'spectrum': specs,
-                          'ids': ids,
-                          'tof': var
-                      })
-    da.coords['tof'].unit = sc.units.us
+        # populate event_data with events for each source
+        print("Populating scipp variable with event data from file")
+        populated_to_event = 0
+        for event_source in event_sources:
+            n_pulses = 0
+            # iterate through the event data in source, one pulse at a time
+            for tof_array, ids_array, pulse_time in \
+                    event_source.get_data():
+                # TODO temporary debugging
+                if n_pulses == 2000:
+                    print("done bank", flush=True)
+                    break
+                event_data.coords['Tof'][
+                    'event', populated_to_event:populated_to_event +
+                    tof_array.size] = tof_array
+                event_data.coords['id']['event',
+                                        populated_to_event:populated_to_event +
+                                        ids_array.size] = ids_array
+                # TODO Not allowed to assign a scalar to a slice like one can
+                #  with numpy
+                event_data.coords['pulse_time'][
+                    'event', populated_to_event:populated_to_event + tof_array.
+                    size] = pulse_time * event_data.coords['pulse_time'][
+                        'event',
+                        populated_to_event:populated_to_event + tof_array.size]
+                populated_to_event += tof_array.size
+                n_pulses += 1
 
     # Load positions?
-    start = timer()
-    if instrument_file is None:
-        instrument_file = data_file
-    da.coords['position'] = load_positions(instrument_file, dim='spectrum')
-    print("Loading positions:", timer() - start)
+    # start = timer()
+    # if instrument_file is None:
+    #     instrument_file = data_file
+    # da.coords['position'] = load_positions(instrument_file, dim='spectrum')
+    # print("Loading positions:", timer() - start)
 
     print("Total time:", timer() - total_time)
-    return da
+    return event_data
 
 
 def load_positions(instrument_file: str, entry='/', dim='position'):
