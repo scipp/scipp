@@ -62,6 +62,16 @@ class EigenDataIO():
 class BinDataIO():
     @staticmethod
     def write(group, data):
+        from .. import sum as sc_sum
+        buffer_len = dict(zip(data.bins.data.dims,
+                              data.bins.data.shape))[str(data.bins.dim)]
+        # Crude mechanism to avoid writing large buffers, e.g., from
+        # overallocation or when writing a slice of a larger variable. The
+        # copy causes some overhead, but so would the (much mor complicated)
+        # solution to extract contents bin-by-bin. This approach will likely
+        # need to be revisited in the future.
+        if buffer_len > 1.5 * sc_sum(data.bins.size()).value:
+            data = data.copy()
         values = group.create_group('values')
         VariableIO.write(values.create_group('begin'), var=data.bins.begin)
         VariableIO.write(values.create_group('end'), var=data.bins.end)
