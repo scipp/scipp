@@ -345,10 +345,13 @@ def test_setitem_broadcast():
 
 def test_slicing():
     var = sc.Variable(dims=['x'], values=np.arange(0, 3))
-    var_slice = var[('x', slice(0, 2))]
-    assert isinstance(var_slice, sc.VariableView)
-    assert len(var_slice.values) == 2
-    assert np.array_equal(var_slice.values, np.array([0, 1]))
+    for slice_, expected in ((slice(0, 2), [0, 1]),
+                             (slice(-3, -1), [0, 1]),
+                             (slice(2, 1), [])):
+        var_slice = var[('x', slice_)]
+        assert isinstance(var_slice, sc.VariableView)
+        assert len(var_slice.values) == len(expected)
+        assert np.array_equal(var_slice.values, np.array(expected))
 
 
 def test_iadd():
