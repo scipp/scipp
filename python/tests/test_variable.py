@@ -327,7 +327,7 @@ def test_create_dtype():
     assert var.dtype == sc.dtype.int32
 
 
-def test_get_slice():
+def test_getitem():
     var = sc.Variable(dims=['x', 'y'], values=np.arange(0, 8).reshape(2, 4))
     var_slice = var['x', 1:2]
     assert sc.is_equal(
@@ -335,12 +335,22 @@ def test_get_slice():
         sc.Variable(dims=['x', 'y'], values=np.arange(4, 8).reshape(1, 4)))
 
 
+def test_setitem_broadcast():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4], dtype=sc.dtype.int64)
+    var['x', 1:3] = sc.Variable(value=5, dtype=sc.dtype.int64)
+    assert sc.is_equal(
+        var, sc.Variable(dims=['x'], values=[1, 5, 5, 4],
+                         dtype=sc.dtype.int64))
+
+
 def test_slicing():
     var = sc.Variable(dims=['x'], values=np.arange(0, 3))
-    var_slice = var[('x', slice(0, 2))]
-    assert isinstance(var_slice, sc.VariableView)
-    assert len(var_slice.values) == 2
-    assert np.array_equal(var_slice.values, np.array([0, 1]))
+    for slice_, expected in ((slice(0, 2), [0, 1]), (slice(-3, -1), [0, 1]),
+                             (slice(2, 1), [])):
+        var_slice = var[('x', slice_)]
+        assert isinstance(var_slice, sc.VariableView)
+        assert len(var_slice.values) == len(expected)
+        assert np.array_equal(var_slice.values, np.array(expected))
 
 
 def test_iadd():
