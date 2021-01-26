@@ -161,12 +161,14 @@ if(NOT WIN32)
   add_custom_target(
     docs
     COMMAND ./docs_build.sh
-    DEPENDS _scipp)
+    DEPENDS _scipp
+  )
 else()
   add_custom_target(
     docs
     COMMAND docs_build.bat
-    DEPENDS _scipp)
+    DEPENDS _scipp
+  )
 endif()
 
 configure_file(CMake/docs_build.bat.in docs_build.bat)
