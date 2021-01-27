@@ -40,6 +40,9 @@ Variable flight_path_length(const Dummy &dummy) {
          norm((position(dummy) - sample_position(dummy)));
 }
 
+Variable incident_energy(const Dummy &) { return Variable{}; }
+Variable final_energy(const Dummy &) { return Variable{}; }
+
 } // namespace mock
 
 class ConstantsTest : public ::testing::Test {

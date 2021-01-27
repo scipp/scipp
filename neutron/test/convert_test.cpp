@@ -340,6 +340,17 @@ TEST_P(ConvertTest, Tof_to_Energy_Elastic) {
     ASSERT_EQ(energy.coords()[Dim(name)], tof.coords()[Dim(name)]);
 }
 
+TEST_P(ConvertTest, Tof_to_Energy_Elastic_fails_if_inelastic_params_present) {
+  Dataset tof = GetParam();
+  EXPECT_NO_THROW_DISCARD(convert(tof, Dim::Tof, Dim::Energy));
+  tof.coords().set(Dim::IncidentEnergy, 2.1 * units::meV);
+  EXPECT_THROW_DISCARD(convert(tof, Dim::Tof, Dim::Energy), std::runtime_error);
+  tof.coords().erase(Dim::IncidentEnergy);
+  EXPECT_NO_THROW_DISCARD(convert(tof, Dim::Tof, Dim::Energy));
+  tof.coords().set(Dim::FinalEnergy, 2.1 * units::meV);
+  EXPECT_THROW_DISCARD(convert(tof, Dim::Tof, Dim::Energy), std::runtime_error);
+}
+
 TEST_P(ConvertTest, Energy_to_Tof_Elastic) {
   /* Assuming the Tof_to_Energy_Elastic test is correct and passing we can test
    * the inverse conversion by simply comparing a round trip conversion with

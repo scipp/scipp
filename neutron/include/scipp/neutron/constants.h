@@ -68,6 +68,10 @@ template <class T> static auto tof_to_wavelength(const T &d) {
 }
 
 template <class T> auto tof_to_energy(const T &d) {
+  if (incident_energy(d) || final_energy(d))
+    throw std::runtime_error(
+        "Data contains coords for incident or final energy. Conversion to "
+        "energy for inelastic data not implemented yet.");
   // l_total = l1 + l2
   auto conversionFactor = flight_path_length(d);
   // l_total^2
