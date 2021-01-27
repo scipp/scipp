@@ -39,15 +39,15 @@ def test_create_with_dtype():
 
 
 def test_construct_0d_datetime():
-    dt = np.datetime64('now','ns')
-    var = sc.Variable(dtype=sc.dtype.datetime64, unit=sc.units.ns)
-    var.value = dt
+    dt = np.datetime64('now', 'ns')
+    var = sc.Variable(dtype=sc.dtype.datetime64, unit=sc.units.ns, value=dt)
     assert var.dtype == sc.dtype.datetime64
     assert var.unit == sc.units.ns
     assert var.value == dt
     # dtype-less initialization
     var2 = sc.Variable(unit=sc.units.ns, value=dt)
-    assert var.value == dt
+    assert var2.dtype == sc.dtype.datetime64
+    assert var2.value == dt
 
 
 def test_construct_datetime():
