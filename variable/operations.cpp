@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element/geometric_operations.h"
@@ -49,48 +49,17 @@ Variable filter(const Variable &var, const Variable &filter) {
   // type for *every* slice. Should be combined into a single virtual call.
   for (scipp::index iIn = 0; iIn < scipp::size(mask); ++iIn)
     if (mask[iIn])
-      out.data().copy(var.data(), dim, iOut++, iIn, iIn + 1);
+      out.data().copy(var.slice({dim, iIn}), out.slice({dim, iOut++}));
   return out;
 }
 
 /// Return a deep copy of a Variable or of a VariableView.
 Variable copy(const VariableConstView &var) { return Variable(var); }
 
-VariableView nan_to_num(const VariableConstView &var,
-                        const VariableConstView &replacement,
-                        const VariableView &out) {
-  transform_in_place(out, var, replacement, element::nan_to_num_out_arg);
+/// Copy variable to output variable.
+VariableView copy(const VariableConstView &var, const VariableView &out) {
+  var.underlying().data().copy(var, out);
   return out;
-}
-
-VariableView positive_inf_to_num(const VariableConstView &var,
-                                 const VariableConstView &replacement,
-                                 const VariableView &out) {
-  transform_in_place(out, var, replacement,
-                     element::positive_inf_to_num_out_arg);
-  return out;
-}
-VariableView negative_inf_to_num(const VariableConstView &var,
-                                 const VariableConstView &replacement,
-                                 const VariableView &out) {
-  transform_in_place(out, var, replacement,
-                     element::negative_inf_to_num_out_arg);
-  return out;
-}
-
-Variable nan_to_num(const VariableConstView &var,
-                    const VariableConstView &replacement) {
-  return transform(var, replacement, element::nan_to_num);
-}
-
-Variable pos_inf_to_num(const VariableConstView &var,
-                        const VariableConstView &replacement) {
-  return transform(var, replacement, element::positive_inf_to_num);
-}
-
-Variable neg_inf_to_num(const VariableConstView &var,
-                        const VariableConstView &replacement) {
-  return transform(var, replacement, element::negative_inf_to_num);
 }
 
 namespace geometry {

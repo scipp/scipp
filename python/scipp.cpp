@@ -1,20 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "pybind11.h"
 
 namespace py = pybind11;
 
+void init_buckets(py::module &);
 void init_choose(py::module &);
 void init_comparison(py::module &);
 void init_counts(py::module &);
+void init_cumulative(py::module &);
 void init_dataset(py::module &);
 void init_detail(py::module &);
 void init_dtype(py::module &);
 void init_eigen(py::module &);
 void init_element_array_view(py::module &);
-void init_event_list(py::module &);
 void init_groupby(py::module &);
 void init_geometry(py::module &);
 void init_histogram(py::module &);
@@ -27,14 +28,18 @@ void init_unary(py::module &);
 void init_units_neutron(py::module &);
 void init_variable(py::module &);
 
+void init_generated_math(py::module &);
+
 void init_core(py::module &m) {
   auto core = m.def_submodule("core");
   init_units_neutron(core);
   init_eigen(core);
   init_dtype(core);
   init_variable(core);
+  init_buckets(core);
   init_choose(core);
   init_counts(core);
+  init_cumulative(core);
   init_dataset(core);
   init_groupby(core);
   init_comparison(core);
@@ -45,8 +50,9 @@ void init_core(py::module &m) {
   init_reduction(core);
   init_trigonometry(core);
   init_unary(core);
-  init_event_list(core);
   init_element_array_view(core);
+
+  init_generated_math(core);
 }
 
 PYBIND11_MODULE(_scipp, m) {

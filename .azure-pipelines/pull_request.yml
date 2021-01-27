@@ -148,6 +148,7 @@ stages:
                 -DPYTHON_EXECUTABLE=$(command -v python) \
                 -DCMAKE_INSTALL_PREFIX="$(install_dir)" \
                 -DCMAKE_BUILD_TYPE=Release \
+                -DCMAKE_INTERPROCEDURAL_OPTIMIZATION=OFF \
                 "$(Build.Repository.LocalPath)"
             displayName: 'CMake configuration'
           - bash: |
@@ -201,6 +202,7 @@ stages:
               cmake \
                 -G "Visual Studio 16 2019" \
                 -A x64 \
+                -DCMAKE_CXX_STANDARD=20 \
                 -DPYTHON_EXECUTABLE=$(command -v python) \
                 -DCMAKE_INSTALL_PREFIX="$(install_dir)" \
                 -DCMAKE_BUILD_TYPE=Release \

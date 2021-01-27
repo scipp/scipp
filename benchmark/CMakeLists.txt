@@ -7,18 +7,17 @@ add_executable(groupby_benchmark EXCLUDE_FROM_ALL groupby_benchmark.cpp)
 add_dependencies(all-benchmarks groupby_benchmark)
 target_link_libraries(groupby_benchmark LINK_PRIVATE scipp-dataset benchmark)
 
+add_executable(bin_benchmark EXCLUDE_FROM_ALL bin_benchmark.cpp)
+add_dependencies(all-benchmarks bin_benchmark)
+target_link_libraries(bin_benchmark LINK_PRIVATE scipp-dataset benchmark)
+
+add_executable(buckets_benchmark EXCLUDE_FROM_ALL buckets_benchmark.cpp)
+add_dependencies(all-benchmarks buckets_benchmark)
+target_link_libraries(buckets_benchmark LINK_PRIVATE scipp-dataset benchmark)
+
 add_executable(slice_benchmark EXCLUDE_FROM_ALL slice_benchmark.cpp)
 add_dependencies(all-benchmarks slice_benchmark)
 target_link_libraries(slice_benchmark LINK_PRIVATE scipp-dataset benchmark)
-
-add_executable(
-  event_filter_benchmark EXCLUDE_FROM_ALL event_filter_benchmark.cpp
-)
-add_dependencies(all-benchmarks event_filter_benchmark)
-target_link_libraries(
-  event_filter_benchmark LINK_PRIVATE benchmark scipp-dataset
-  scipp_test_helpers
-)
 
 add_executable(histogram_benchmark EXCLUDE_FROM_ALL histogram_benchmark.cpp)
 add_dependencies(all-benchmarks histogram_benchmark)

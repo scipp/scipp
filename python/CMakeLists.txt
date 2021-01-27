@@ -4,9 +4,12 @@ pybind11_add_module(
   _scipp
   SHARED
   SYSTEM
+  ${python_SRC_FILES}
+  bins.cpp
   choose.cpp
   comparison.cpp
   counts.cpp
+  cumulative.cpp
   dataset.cpp
   detail.cpp
   docstring.cpp
@@ -19,7 +22,6 @@ pybind11_add_module(
   operations.cpp
   py_object.cpp
   scipp.cpp
-  event_list.cpp
   reduction.cpp
   trigonometry.cpp
   unary.cpp
@@ -28,6 +30,9 @@ pybind11_add_module(
   variable_instantiate_py_object.cpp
   element_array_view.cpp
   shape.cpp
+)
+target_include_directories(
+  _scipp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
 )
 target_link_libraries(_scipp LINK_PRIVATE scipp-dataset scipp-neutron)
 

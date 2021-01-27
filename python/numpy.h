@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -80,8 +80,13 @@ template <class T, class View>
 bool memory_overlaps(const py::array_t<T> &data, const View &view) {
   const auto &buffer_info = data.request();
   const auto [data_begin, data_end] = memory_begin_end<T>(buffer_info);
-  const auto view_begin = &*view.begin();
-  const auto view_end = &*view.end();
+  const auto begin = view.begin();
+  const auto end = view.end();
+  if (begin == end) {
+    return false;
+  }
+  const auto view_begin = &*begin;
+  const auto view_end = &*end;
   // Note the use of std::less, pointer comparison with operator< may be
   // undefined behavior with pointers from different arrays.
   return std::less<const T *>()(data_begin, view_end) &&

@@ -9,6 +9,7 @@ set(INC_FILES
     include/scipp/core/element_array_view.h
     include/scipp/core/histogram.h
     include/scipp/core/memory_pool.h
+    include/scipp/core/multi_index.h
     include/scipp/core/parallel-fallback.h
     include/scipp/core/parallel-tbb.h
     include/scipp/core/slice.h
@@ -27,6 +28,7 @@ set(INC_FILES
     include/scipp/core/element/math.h
     include/scipp/core/element/rebin.h
     include/scipp/core/element/reduction.h
+    include/scipp/core/element/sort.h
     include/scipp/core/element/special_values.h
     include/scipp/core/element/trigonometry.h
     include/scipp/core/element/util.h
@@ -37,8 +39,10 @@ set(SRC_FILES
     dtype.cpp
     element_array_view.cpp
     except.cpp
+    multi_index.cpp
     slice.cpp
     string.cpp
+    subbin_sizes.cpp
     view_index.cpp
 )
 
@@ -52,7 +56,7 @@ generate_export_header(${TARGET_NAME})
 target_link_libraries(
   ${TARGET_NAME} PUBLIC scipp-common scipp-units Boost::boost
 )
-if(TBB_FOUND)
+if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
 endif()
 

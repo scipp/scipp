@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -30,6 +30,10 @@ public:
   Dimensions(const std::vector<Dim> &labels,
              const std::vector<scipp::index> &shape);
   Dimensions(const std::initializer_list<std::pair<Dim, scipp::index>> dims) {
+    for (const auto &[label, size] : dims)
+      addInner(label, size);
+  }
+  Dimensions(const std::unordered_map<Dim, scipp::index> &dims) {
     for (const auto &[label, size] : dims)
       addInner(label, size);
   }
@@ -85,6 +89,14 @@ public:
       if (m_dims[i] == dim)
         return true;
     return false;
+  }
+
+  /// Returns the number of occurences of `dim` in *this.
+  ///
+  /// This exists for convenience so generic code supporting std::unordered_map
+  /// can be written.
+  constexpr scipp::index count(const Dim dim) const noexcept {
+    return contains(dim) ? 1 : 0;
   }
 
   bool contains(const Dimensions &other) const noexcept;

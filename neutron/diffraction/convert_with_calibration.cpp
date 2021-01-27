@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Mads Bertelsen
 #include "scipp/neutron/diffraction/convert_with_calibration.h"
@@ -23,8 +23,7 @@ template <class T> bool has_dim(const T &d, const Dim dim) {
 
 template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
   for (const auto &item : iter(d))
-    if (item.hasData())
-      core::expect::notCountDensity(item.unit());
+    core::expect::notCountDensity(item.unit());
 
   // 1. There may be a grouping of detectors, in which case we need to apply it
   // to the cal information first.
@@ -59,21 +58,9 @@ template <class T> T convert_with_calibration_impl(T d, Dataset cal) {
 
   // 2. Transform coordinate
   if (d.coords().contains(Dim::Tof)) {
-    if (contains_events(d.coords()[Dim::Tof])) {
-      d.coords()[Dim::Tof] -= cal["tzero"].data();
-      d.coords()[Dim::Tof] *= reciprocal(cal["difc"].data());
-    } else {
-      d.coords().set(Dim::Tof, (d.coords()[Dim::Tof] - cal["tzero"].data()) /
-                                   cal["difc"].data());
-    }
+    d.coords().set(Dim::Tof, (d.coords()[Dim::Tof] - cal["tzero"].data()) /
+                                 cal["difc"].data());
   }
-
-  // 3. Transform realigned items
-  for (const auto &item : iter(d))
-    if (item.unaligned() && contains_events(item.unaligned())) {
-      item.unaligned().coords()[Dim::Tof] -= cal["tzero"].data();
-      item.unaligned().coords()[Dim::Tof] *= reciprocal(cal["difc"].data());
-    }
 
   d.rename(Dim::Tof, Dim::DSpacing);
   return d;

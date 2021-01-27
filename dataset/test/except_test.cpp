@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include <type_traits>
@@ -66,21 +66,14 @@ TEST(StringFormattingTest, to_string_MutableView) {
   auto [a, b] = makeDatasets();
 
   EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));
-  EXPECT_EQ(to_string(a.attrs()), to_string(b.attrs()));
+  EXPECT_EQ(to_string(a["a"].masks()), to_string(b["a"].masks()));
 }
 
 TEST(StringFormattingTest, to_string_ConstView) {
   const auto [a, b] = makeDatasets();
 
   EXPECT_EQ(to_string(a.coords()), to_string(b.coords()));
-  EXPECT_EQ(to_string(a.attrs()), to_string(b.attrs()));
-}
-
-TEST(StringFormattingTest, to_string_events_Dataset) {
-  Dataset a;
-  a.coords().set(Dim::X,
-                 makeVariable<event_list<double>>(Dims{Dim::Y}, Shape{4}));
-  ASSERT_NO_THROW(to_string(a));
+  EXPECT_EQ(to_string(a["a"].masks()), to_string(b["a"].masks()));
 }
 
 TEST(ValidSliceTest, test_slice_range) {

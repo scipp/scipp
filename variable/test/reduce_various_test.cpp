@@ -1,17 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
-#include <gtest/gtest.h>
-
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+#include "fix_typed_test_suite_warnings.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/variable.h"
+#include <gtest/gtest.h>
+
+#include "test_macros.h"
 
 using namespace scipp;
 
 TEST(ReduceTest, min_max_fails) {
   const auto bad = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  EXPECT_THROW(static_cast<void>(min(bad, Dim::Y)), except::DimensionError);
-  EXPECT_THROW(static_cast<void>(max(bad, Dim::Y)), except::DimensionError);
+  EXPECT_THROW_DISCARD(min(bad, Dim::Y), except::DimensionError);
+  EXPECT_THROW_DISCARD(max(bad, Dim::Y), except::DimensionError);
 }
 
 TEST(ReduceTest, min_max) {
@@ -45,6 +47,22 @@ TEST(ReduceTest, min_max_with_variances) {
                                  Variances{5, 7}));
 }
 
+TEST(ReduceTest, min_max_empty_dim) {
+  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 0},
+                                        Values{}, Variances{});
+  EXPECT_EQ(max(var, Dim::X), makeVariable<double>(Dims{Dim::Y}, Shape{0},
+                                                   Values{}, Variances{}));
+  const auto highest = std::numeric_limits<double>::max();
+  EXPECT_EQ(max(var, Dim::Y),
+            makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                 Values{-highest, -highest}, Variances{0, 0}));
+  EXPECT_EQ(min(var, Dim::X), makeVariable<double>(Dims{Dim::Y}, Shape{0},
+                                                   Values{}, Variances{}));
+  EXPECT_EQ(min(var, Dim::Y),
+            makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                 Values{highest, highest}, Variances{0, 0}));
+}
+
 TEST(ReduceTest, min_max_all_dims) {
   const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                         Values{1, 2, 3, 4});
@@ -63,4 +81,54 @@ TEST(ReduceTest, all_any_all_dims) {
   EXPECT_EQ(any(all(var)), all(var));
   EXPECT_EQ(all(any(var)), any(var));
   EXPECT_EQ(any(any(var)), any(var));
+}
+
+using NansumTypes = ::testing::Types<int32_t, int64_t, float, double>;
+template <typename T> struct NansumTest : public ::testing::Test {};
+TYPED_TEST_SUITE(NansumTest, NansumTypes);
+
+TYPED_TEST(NansumTest, nansum_all_dims) {
+  auto x = makeVariable<TypeParam>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                   Values{1, 1, 2, 1});
+  if constexpr (std::is_floating_point_v<TypeParam>) {
+    x.template values<TypeParam>()[2] = TypeParam(NAN);
+    const auto expected = makeVariable<TypeParam>(Values{3});
+    EXPECT_EQ(nansum(x), expected);
+  } else {
+    const auto expected = makeVariable<TypeParam>(Values{5});
+    EXPECT_EQ(nansum(x), expected);
+  }
+}
+TYPED_TEST(NansumTest, nansum_with_dim) {
+  auto x = makeVariable<TypeParam>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                   Values{1.0, 2.0, 3.0, 4.0});
+  if constexpr (std::is_floating_point_v<TypeParam>) {
+    x.template values<TypeParam>()[2] = TypeParam(NAN);
+    const auto expected =
+        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
+    EXPECT_EQ(nansum(x, Dim::X), expected);
+  } else {
+    const auto expected =
+        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{4, 6});
+    EXPECT_EQ(nansum(x, Dim::X), expected);
+  }
+}
+
+TYPED_TEST(NansumTest, nansum_with_dim_out) {
+  auto x = makeVariable<TypeParam>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
+                                   Values{1.0, 2.0, 3.0, 4.0});
+  if constexpr (std::is_floating_point_v<TypeParam>) {
+    x.template values<TypeParam>()[2] = TypeParam(NAN);
+    auto out = makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2});
+    const auto expected =
+        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{1, 6});
+    nansum(x, Dim::X, out);
+    EXPECT_EQ(out, expected);
+  } else {
+    auto out = makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2});
+    const auto expected =
+        makeVariable<TypeParam>(Dims{Dim::Y}, Shape{2}, Values{4, 6});
+    nansum(x, Dim::X, out);
+    EXPECT_EQ(out, expected);
+  }
 }

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -7,6 +7,8 @@
 #include <map>
 
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/except.h"
+#include "scipp/variable/arithmetic.h"
 
 namespace scipp::dataset {
 
@@ -28,7 +30,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 /// Return intersection of maps, i.e., all items with matching names that
 /// have matching content.
 template <class Map> auto intersection(const Map &a, const Map &b) {
-  std::map<std::string, Variable> out;
+  std::map<typename Map::key_type, Variable> out;
   for (const auto &[key, item] : a)
     if (const auto it = b.find(key); it != b.end() && it->second == item)
       out.emplace(key, item);
@@ -50,40 +52,40 @@ static inline void expectAlignedCoord(const Dim coord_dim,
   // different from that of the operation. Note we do not account for the
   // possibility that the coordinates actually align along the operation
   // dimension.
-  if (var.dims().ndim() > 1)
-    throw except::DimensionError(
-        "VariableConstView Coord/Label has more than one dimension "
-        "associated with " +
-        to_string(coord_dim) +
-        " and will not be reduced by the operation dimension " +
-        to_string(operation_dim) + " Terminating operation.");
+  if (var.dims().ndim() > 1 && var.dims().contains(operation_dim))
+    throw except::DimensionError("Coordinate " + to_string(coord_dim) +
+                                 " contains the operation dim " +
+                                 to_string(operation_dim) +
+                                 ", but has more than one dimension. It will "
+                                 "thus not be reduced by the operation.");
 }
-
-static constexpr auto no_realigned_support = []() {};
-using no_realigned_support_t = decltype(no_realigned_support);
 
 template <bool ApplyToData, class Func, class... Args>
 DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
                                  const Dim dim, Args &&... args) {
-  std::map<Dim, Variable> coords;
-  // Note the `copy` call, ensuring that the return value of the ternary
-  // operator can be moved. Without `copy`, the result of `func` is always
-  // copied.
-  for (auto &&[d, coord] : a.coords())
-    if (coord.dims().ndim() == 0 || dim_of_coord(coord, d) != dim) {
-      expectAlignedCoord(d, coord, dim);
-      if constexpr (ApplyToData) {
-        coords.emplace(d, coord.dims().contains(dim) ? func(coord, dim, args...)
-                                                     : copy(coord));
-      } else {
-        coords.emplace(d, coord);
+  const auto coord_apply_or_copy_dim = [&](auto &coords_, const auto &view,
+                                           const bool aligned) {
+    // Note the `copy` call, ensuring that the return value of the ternary
+    // operator can be moved. Without `copy`, the result of `func` is always
+    // copied.
+    for (auto &&[d, coord] : view)
+      if (coord.dims().ndim() == 0 || dim_of_coord(coord, d) != dim) {
+        if (aligned)
+          expectAlignedCoord(d, coord, dim);
+        if constexpr (ApplyToData) {
+          coords_.emplace(d, coord.dims().contains(dim)
+                                 ? func(coord, dim, args...)
+                                 : copy(coord));
+        } else {
+          coords_.emplace(d, coord);
+        }
       }
-    }
+  };
+  std::map<Dim, Variable> coords;
+  coord_apply_or_copy_dim(coords, a.coords(), true);
 
-  std::map<std::string, Variable> attrs;
-  for (auto &&[name, attr] : a.attrs())
-    if (!attr.dims().contains(dim))
-      attrs.emplace(name, attr);
+  std::map<Dim, Variable> attrs;
+  coord_apply_or_copy_dim(attrs, a.attrs(), false);
 
   std::map<std::string, Variable> masks;
   for (auto &&[name, mask] : a.masks())
@@ -91,17 +93,8 @@ DataArray apply_or_copy_dim_impl(const DataArrayConstView &a, Func func,
       masks.emplace(name, mask);
 
   if constexpr (ApplyToData) {
-    if (a.hasData()) {
-      return DataArray(func(a.data(), dim, args...), std::move(coords),
-                       std::move(masks), std::move(attrs), a.name());
-    } else {
-      if constexpr (std::is_base_of_v<no_realigned_support_t, Func>)
-        throw std::logic_error("Operation cannot handle realigned data.");
-      else
-        return DataArray(func(a.dims(), a.unaligned(), dim, args...),
-                         std::move(coords), std::move(masks), std::move(attrs),
-                         a.name());
-    }
+    return DataArray(func(a.data(), dim, args...), std::move(coords),
+                     std::move(masks), std::move(attrs), a.name());
   } else {
     return DataArray(func(a, dim, std::forward<Args>(args)...),
                      std::move(coords), std::move(masks), std::move(attrs),
@@ -159,22 +152,66 @@ Dataset apply_to_items(const DatasetConstView &d, Func func, Args &&... args) {
   Dataset result;
   for (const auto &data : d)
     result.setData(data.name(), func(data, std::forward<Args>(args)...));
-  for (auto &&[name, attr] : d.attrs())
-    if (copy_attr(attr, args...))
-      result.setAttr(name, attr);
   return result;
 }
+
+/// Copy all map items from `a` and insert them into `b`.
+template <class A, class B> auto copy_items(const A &a, const B &b) {
+  for (const auto &[key, item] : a)
+    b.set(key, item);
+}
+
+/// Return a copy of map-like objects such as CoordView with `func` applied to
+/// each item.
+template <class T, class Func> auto transform_map(const T &map, Func func) {
+  std::map<typename T::key_type, typename T::mapped_type> out;
+  for (const auto &[key, item] : map)
+    out.emplace(key, func(item));
+  return out;
+}
+
+template <class T, class Func> DataArray transform(const T &a, Func func) {
+  return DataArray(func(a.data()), transform_map(a.coords(), func),
+                   transform_map(a.masks(), func),
+                   transform_map(a.attrs(), func), a.name());
+}
+
+void copy_metadata(const DataArrayConstView &a, const DataArrayView &b);
 
 // Helpers for reductions for DataArray and Dataset, which include masks.
 [[nodiscard]] Variable mean(const VariableConstView &var, const Dim dim,
                             const MasksConstView &masks);
-VariableView mean(const VariableConstView &var, const Dim dim,
-                  const MasksConstView &masks, const VariableView &out);
-[[nodiscard]] Variable flatten(const VariableConstView &var, const Dim dim,
+[[nodiscard]] Variable nanmean(const VariableConstView &var, const Dim dim,
                                const MasksConstView &masks);
+[[nodiscard]] Variable sum(const VariableConstView &var,
+                           const MasksConstView &masks);
 [[nodiscard]] Variable sum(const VariableConstView &var, const Dim dim,
                            const MasksConstView &masks);
 VariableView sum(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks, const VariableView &out);
+[[nodiscard]] Variable nansum(const VariableConstView &var,
+                              const MasksConstView &masks);
+[[nodiscard]] Variable nansum(const VariableConstView &var, const Dim dim,
+                              const MasksConstView &masks);
+
+/// Helper class for applying irreducible masks along dim.
+///
+/// If a mask is applied this class keeps ownership of the masked temporary.
+/// `Masker` should thus be created in the scope where the masked data is
+/// needed. It will be deleted once the masked goes out of scope.
+class Masker {
+public:
+  Masker(const DataArrayConstView &array, const Dim dim) {
+    const auto mask = irreducible_mask(array.masks(), dim);
+    if (mask)
+      m_masked = array.data() * ~mask;
+    m_data = m_masked ? m_masked : array.data();
+  }
+  auto data() const noexcept { return m_data; }
+
+private:
+  Variable m_masked;
+  VariableConstView m_data;
+};
 
 } // namespace scipp::dataset

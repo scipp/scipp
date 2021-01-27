@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 
@@ -28,65 +28,27 @@ template <class T> Docstring docstring_groupby(const std::string &op) {
 }
 
 template <class T> void bind_groupby(py::module &m, const std::string &name) {
-  auto doc = Docstring()
-                 .description("Group dataset or data array based on values of "
-                              "specified labels.")
-                 .returns("GroupBy helper object.")
-                 .rtype("GroupByDataArray or GroupByDataset")
-                 .param<T>("data", "Input data to reduce.")
-                 .param("group", "Name of labels to use for grouping", "str");
-
   m.def("groupby",
         py::overload_cast<const typename T::const_view_type &, const Dim>(
             &groupby),
         py::arg("data"), py::arg("group"),
-        py::call_guard<py::gil_scoped_release>(), doc.c_str());
+        py::call_guard<py::gil_scoped_release>());
 
-  m.def(
-      "groupby",
-      py::overload_cast<const typename T::const_view_type &, const Dim,
-                        const VariableConstView &>(&groupby),
-      py::arg("data"), py::arg("group"), py::arg("bins"),
-      py::call_guard<py::gil_scoped_release>(),
-      doc.param("bins", "Bins for grouping label values.", "Variable").c_str());
+  m.def("groupby",
+        py::overload_cast<const typename T::const_view_type &, const Dim,
+                          const VariableConstView &>(&groupby),
+        py::arg("data"), py::arg("group"), py::arg("bins"),
+        py::call_guard<py::gil_scoped_release>());
 
   m.def("groupby",
         py::overload_cast<const typename T::const_view_type &,
                           const VariableConstView &, const VariableConstView &>(
             &groupby),
         py::arg("data"), py::arg("group"), py::arg("bins"),
-        py::call_guard<py::gil_scoped_release>(),
-        R"(
-        Group dataset or data array based on values of specified labels.
-
-        :param data: Input dataset or data array
-        :param group: Variable to use for grouping
-        :param bins: Bins for grouping label values
-        :type data: DataArray or Dataset
-        :type group: VariableConstView
-        :type bins: VariableConstView
-        :return: GroupBy helper object.
-        :rtype: GroupByDataArray or GroupByDataset)");
+        py::call_guard<py::gil_scoped_release>());
 
   py::class_<GroupBy<T>> groupBy(m, name.c_str(), R"(
     GroupBy object implementing to split-apply-combine mechanism.)");
-
-  groupBy.def(
-      "flatten", &GroupBy<T>::flatten, py::arg("dim"),
-      py::call_guard<py::gil_scoped_release>(),
-      Docstring()
-          .description("Flatten specified dimension into event lists.\n\n"
-                       "This is a event-data equivalent to calling ``sum`` on "
-                       "dense data.\n"
-                       "In particular, summing the result of histogrammed data "
-                       "yields the same result as histgramming data that has "
-                       "been flattened.")
-          .returns(
-              "Flattened event data for each group, combined along "
-              "the dimension specified when calling :py:func:`scipp.groupby`.")
-          .rtype<T>()
-          .param("dim", "Dimension to flatten.", "Dim")
-          .c_str());
 
   groupBy.def("mean", &GroupBy<T>::mean, py::arg("dim"),
               py::call_guard<py::gil_scoped_release>(),
@@ -111,6 +73,10 @@ template <class T> void bind_groupby(py::module &m, const std::string &name) {
   groupBy.def("max", &GroupBy<T>::max, py::arg("dim"),
               py::call_guard<py::gil_scoped_release>(),
               docstring_groupby<T>("max").c_str());
+
+  groupBy.def("concatenate", &GroupBy<T>::concatenate, py::arg("dim"),
+              py::call_guard<py::gil_scoped_release>(),
+              docstring_groupby<T>("concatenate").c_str());
 
   groupBy.def(
       "copy",

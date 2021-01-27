@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <random>
 #include <vector>
+
+#include "scipp/variable/variable.h"
 
 class Random {
   std::mt19937 mt{std::random_device()()};
@@ -35,3 +37,11 @@ public:
   }
   void seed(const uint32_t value) { mt.seed(value); }
 };
+
+inline scipp::Variable makeRandom(const scipp::Dimensions &dims,
+                                  const double min = -2.0,
+                                  const double max = 2.0) {
+  using namespace scipp;
+  Random rand(min, max);
+  return makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
+}

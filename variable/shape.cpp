@@ -1,30 +1,28 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/shape.h"
+#include "scipp/variable/arithmetic.h"
+#include "scipp/variable/creation.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/util.h"
+#include "scipp/variable/variable_factory.h"
 
 using namespace scipp::core;
 
 namespace scipp::variable {
 
+void expect_same_volume(const Dimensions &old_dims,
+                        const Dimensions &new_dims) {
+  if (old_dims.volume() != new_dims.volume())
+    throw except::DimensionError(
+        "Cannot reshape to dimensions with different volume");
+}
+
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
-  if (var.dims().contains(dims))
-    return Variable{var};
-  auto newDims = var.dims();
-  const auto labels = dims.labels();
-  for (auto it = labels.end(); it != labels.begin();) {
-    --it;
-    const auto label = *it;
-    if (newDims.contains(label))
-      core::expect::dimensionMatches(newDims, label, dims[label]);
-    else
-      newDims.add(label, dims[label]);
-  }
-  Variable result(var);
-  result.setDims(newDims);
-  result.data().copy(var.data(), Dim::Invalid, 0, 0, 1);
+  Variable result(var, dims);
+  result.data().copy(var, result);
   return result;
 }
 
@@ -65,7 +63,7 @@ Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
     throw std::runtime_error(
         "Cannot concatenate Variables: Dimensions do not match.");
 
-  Variable out(a1);
+  Variable out;
   auto dims(dims1);
   scipp::index extent1 = 1;
   scipp::index extent2 = 1;
@@ -77,10 +75,21 @@ Variable concatenate(const VariableConstView &a1, const VariableConstView &a2,
     dims.resize(dim, extent1 + extent2);
   else
     dims.add(dim, extent1 + extent2);
-  out.setDims(dims);
+  if (is_bins(a1)) {
+    constexpr auto bin_sizes = [](const auto &ranges) {
+      const auto [begin, end] = unzip(ranges);
+      return end - begin;
+    };
+    out = empty_like(a1, {},
+                     concatenate(bin_sizes(a1.bin_indices()),
+                                 bin_sizes(a2.bin_indices()), dim));
+  } else {
+    out = Variable(a1);
+    out.setDims(dims);
+  }
 
-  out.data().copy(a1.data(), dim, 0, 0, extent1);
-  out.data().copy(a2.data(), dim, extent1, 0, extent2);
+  out.data().copy(a1, out.slice({dim, 0, extent1}));
+  out.data().copy(a2, out.slice({dim, extent1, extent1 + extent2}));
 
   return out;
 }
@@ -89,7 +98,8 @@ Variable permute(const Variable &var, const Dim dim,
                  const std::vector<scipp::index> &indices) {
   auto permuted(var);
   for (scipp::index i = 0; i < scipp::size(indices); ++i)
-    permuted.data().copy(var.data(), dim, i, indices[i], indices[i] + 1);
+    permuted.data().copy(var.slice({dim, i}),
+                         permuted.slice({dim, indices[i]}));
   return permuted;
 }
 
@@ -98,6 +108,19 @@ Variable resize(const VariableConstView &var, const Dim dim,
   auto dims = var.dims();
   dims.resize(dim, size);
   return Variable(var, dims);
+}
+
+/// Return new variable resized to given shape.
+///
+/// For bucket variables the values of `shape` are interpreted as bucket sizes
+/// to RESERVE and the buffer is also resized accordingly. The emphasis is on
+/// "reserve", i.e., buffer size and begin indices are set up accordingly, but
+/// end=begin is set, i.e., the buckets are empty, but may be grown up to the
+/// requested size. For normal (non-bucket) variable the values of `shape` are
+/// ignored, i.e., only `shape.dims()` is used to determine the shape of the
+/// output.
+Variable resize(const VariableConstView &var, const VariableConstView &shape) {
+  return Variable(var, var.underlying().data().makeDefaultFromParent(shape));
 }
 
 namespace {
@@ -121,6 +144,7 @@ VariableView reshape(Variable &var, const Dimensions &dims) {
 }
 
 Variable reshape(Variable &&var, const Dimensions &dims) {
+  expect_same_volume(var.dims(), dims);
   Variable reshaped(std::move(var));
   reshaped.setDims(dims);
   return reshaped;
@@ -129,6 +153,7 @@ Variable reshape(Variable &&var, const Dimensions &dims) {
 Variable reshape(const VariableConstView &view, const Dimensions &dims) {
   // In general a variable slice is not contiguous. Therefore we cannot reshape
   // without making a copy (except for special cases).
+  expect_same_volume(view.dims(), dims);
   Variable reshaped(view);
   reshaped.setDims(dims);
   return reshaped;
@@ -149,6 +174,17 @@ VariableConstView transpose(const VariableConstView &view,
 
 VariableView transpose(const VariableView &view, const std::vector<Dim> &dims) {
   return view.transpose(dims);
+}
+
+void squeeze(Variable &var, const std::vector<Dim> &dims) {
+  auto squeezed = var.dims();
+  for (const auto dim : dims) {
+    if (squeezed[dim] != 1)
+      throw except::DimensionError("Cannot squeeze '" + to_string(dim) +
+                                   "' since it is not of length 1.");
+    squeezed.erase(dim);
+  }
+  var.setDims(squeezed);
 }
 
 } // namespace scipp::variable

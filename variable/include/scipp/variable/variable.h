@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -10,8 +10,6 @@
 #include <vector>
 
 #include <Eigen/Dense>
-
-#include "variable_concept.h"
 
 #include "scipp-variable_export.h"
 #include "scipp/common/index.h"
@@ -26,6 +24,7 @@
 #include "scipp/core/slice.h"
 #include "scipp/core/tag_util.h"
 
+#include "scipp/variable/variable_concept.h"
 #include "scipp/variable/variable_keyword_arg_constructor.h"
 
 namespace scipp::dataset {
@@ -42,6 +41,20 @@ void expect0D(const Dimensions &dims);
 class VariableConstView;
 class VariableView;
 
+} // namespace scipp::variable
+
+namespace scipp {
+template <class T> struct is_view : std::false_type {};
+template <class T> inline constexpr bool is_view_v = is_view<T>::value;
+template <> struct is_view<variable::VariableConstView> : std::true_type {};
+template <> struct is_view<variable::VariableView> : std::true_type {};
+} // namespace scipp
+
+namespace scipp::variable {
+template <class T>
+using bin_indices_t = std::conditional_t<is_view_v<typename T::buffer_type>,
+                                         VariableConstView, VariableView>;
+
 /// Variable is a type-erased handle to any data structure representing a
 /// multi-dimensional array. In addition it has a unit and a set of dimension
 /// labels.
@@ -54,7 +67,8 @@ public:
   explicit Variable(const VariableConstView &slice);
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const VariableConstView &parent, const Dimensions &dims);
-  Variable(const Variable &parent, VariableConceptHandle data);
+  Variable(const VariableConstView &parent, VariableConceptHandle data);
+  Variable(VariableConceptHandle data);
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            std::optional<T> variances);
@@ -84,12 +98,10 @@ public:
 
   bool hasVariances() const noexcept { return data().hasVariances(); }
 
-  template <class T> auto values() const { return scipp::span(cast<T>()); }
-  template <class T> auto values() { return scipp::span(cast<T>()); }
-  template <class T> auto variances() const {
-    return scipp::span(cast<T>(true));
-  }
-  template <class T> auto variances() { return scipp::span(cast<T>(true)); }
+  template <class T> ElementArrayView<const T> values() const;
+  template <class T> ElementArrayView<T> values();
+  template <class T> ElementArrayView<const T> variances() const;
+  template <class T> ElementArrayView<T> variances();
   template <class T> const auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];
@@ -137,13 +149,24 @@ public:
 
   void setVariances(Variable v);
 
+  core::ElementArrayViewParams array_params() const noexcept {
+    return {0, dims(), dims(), {}};
+  }
+
+  VariableConstView bin_indices() const;
+
+  template <class T>
+  std::tuple<VariableConstView, Dim, typename T::const_element_type>
+  constituents() const;
+  template <class T>
+  std::tuple<bin_indices_t<T>, Dim, typename T::element_type> constituents();
+
+  template <class T>
+  std::tuple<Variable, Dim, typename T::buffer_type> to_constituents();
+
 private:
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
-
-  template <class T>
-  const element_array<T> &cast(const bool variances = false) const;
-  template <class T> element_array<T> &cast(const bool variances = false);
 
   units::Unit m_unit;
   VariableConceptHandle m_object;
@@ -190,23 +213,25 @@ Variable Variable::construct(const DType &type, Args &&... args) {
 
 template <class... Ts>
 Variable::Variable(const DType &type, Ts &&... args)
-    : Variable{
-          construct<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
-                    Eigen::Matrix3d, std::string, scipp::core::time_point,
-                    event_list<double>, event_list<float>, event_list<int64_t>,
-                    event_list<int32_t>, event_list<scipp::core::time_point>>(
-              type, std::forward<Ts>(args)...)} {}
+    : Variable{construct<double, float, int64_t, int32_t, bool, Eigen::Vector3d,
+                         Eigen::Matrix3d, std::string, scipp::core::time_point>(
+          type, std::forward<Ts>(args)...)} {}
 
 /// Non-mutable view into (a subset of) a Variable.
 class SCIPP_VARIABLE_EXPORT VariableConstView {
 public:
   using value_type = Variable;
+  using const_view_type = VariableConstView;
+  using view_type = VariableConstView;
 
   VariableConstView() = default;
-  VariableConstView(const Variable &variable) : m_variable(&variable) {}
+  VariableConstView(const Variable &variable) : m_variable(&variable) {
+    if (variable) {
+      m_dims = variable.dims();
+      m_dataDims = variable.dims();
+    }
+  }
   VariableConstView(const Variable &variable, const Dimensions &dims);
-  VariableConstView(const Variable &variable, const Dim dim,
-                    const scipp::index begin, const scipp::index end = -1);
   VariableConstView(const VariableConstView &slice, const Dim dim,
                     const scipp::index begin, const scipp::index end = -1);
 
@@ -222,18 +247,11 @@ public:
 
   units::Unit unit() const { return m_variable->unit(); }
 
-  // Note: Returning by value to avoid issues with referencing a temporary
-  // (VariableView is returned by-value from DatasetSlice).
-  Dimensions dims() const { return data().dims(); }
+  const Dimensions &dims() const { return m_dims; }
 
   std::vector<scipp::index> strides() const;
 
   DType dtype() const noexcept { return m_variable->dtype(); }
-
-  const VariableConcept &data() const && = delete;
-  const VariableConcept &data() const & {
-    return m_view ? *m_view : m_variable->data();
-  }
 
   bool hasVariances() const noexcept { return m_variable->hasVariances(); }
 
@@ -242,8 +260,8 @@ public:
   // temporaries and we do not need to delete the rvalue overload, unlike for
   // many other methods. The data is owned by the underlying variable so it
   // will not be deleted even if *this is a temporary and gets deleted.
-  template <class T> auto values() const { return cast<T>(); }
-  template <class T> auto variances() const { return castVariances<T>(); }
+  template <class T> ElementArrayView<const T> values() const;
+  template <class T> ElementArrayView<const T> variances() const;
   template <class T> const auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];
@@ -258,15 +276,25 @@ public:
   Variable operator-() const;
 
   auto &underlying() const { return *m_variable; }
+  bool is_trivial() const noexcept;
+
+  void rename(const Dim from, const Dim to);
+
+  core::ElementArrayViewParams array_params() const noexcept {
+    return {m_offset, m_dims, m_dataDims, {}};
+  }
+
+  VariableConstView bin_indices() const;
+
+  template <class T>
+  std::tuple<VariableConstView, Dim, typename T::const_element_type>
+  constituents() const;
 
 protected:
-  friend class Variable;
-
-  template <class T> const ElementArrayView<const T> cast() const;
-  template <class T> const ElementArrayView<const T> castVariances() const;
-
   const Variable *m_variable{nullptr};
-  VariableConceptHandle m_view;
+  scipp::index m_offset{0};
+  Dimensions m_dims;
+  Dimensions m_dataDims; // not always actual, can be pretend, e.g. with reshape
 };
 
 /** Mutable view into (a subset of) a Variable.
@@ -275,12 +303,13 @@ protected:
  * VariableConstView will automatically work also for this mutable variant.*/
 class SCIPP_VARIABLE_EXPORT VariableView : public VariableConstView {
 public:
+  using const_view_type = VariableConstView;
+  using view_type = VariableView;
+
   VariableView() = default;
   VariableView(Variable &variable)
       : VariableConstView(variable), m_mutableVariable(&variable) {}
   VariableView(Variable &variable, const Dimensions &dims);
-  VariableView(Variable &variable, const Dim dim, const scipp::index begin,
-               const scipp::index end = -1);
   VariableView(const VariableView &slice, const Dim dim,
                const scipp::index begin, const scipp::index end = -1);
 
@@ -288,16 +317,9 @@ public:
 
   VariableView transpose(const std::vector<Dim> &dims = {}) const;
 
-  using VariableConstView::data;
-
-  VariableConcept &data() const && = delete;
-  VariableConcept &data() const & {
-    return m_view ? *m_view : m_mutableVariable->data();
-  }
-
   // Note: No need to delete rvalue overloads here, see VariableConstView.
-  template <class T> auto values() const { return cast<T>(); }
-  template <class T> auto variances() const { return castVariances<T>(); }
+  template <class T> ElementArrayView<T> values() const;
+  template <class T> ElementArrayView<T> variances() const;
   template <class T> auto &value() const {
     detail::expect0D(dims());
     return values<T>()[0];
@@ -336,10 +358,14 @@ public:
 
   void setUnit(const units::Unit &unit) const;
   void expectCanSetUnit(const units::Unit &unit) const;
-  scipp::index size() const { return data().size(); }
+
+  template <class T>
+  std::tuple<bin_indices_t<T>, Dim, typename T::element_type>
+  constituents() const;
+
+  template <class T> void replace_model(T model) const;
 
 private:
-  friend class Variable;
   friend class dataset::DataArrayConstView;
   template <class T> friend typename T::view_type dataset::makeViewItem(T &);
 
@@ -347,15 +373,12 @@ private:
   explicit VariableView(VariableConstView &&base)
       : VariableConstView(std::move(base)), m_mutableVariable{nullptr} {}
 
-  template <class T> ElementArrayView<T> cast() const;
-  template <class T> ElementArrayView<T> castVariances() const;
-
   Variable *m_mutableVariable{nullptr};
 };
 
 SCIPP_VARIABLE_EXPORT Variable copy(const VariableConstView &var);
-
-SCIPP_VARIABLE_EXPORT bool contains_events(const VariableConstView &var);
+SCIPP_VARIABLE_EXPORT VariableView copy(const VariableConstView &dataset,
+                                        const VariableView &out);
 
 } // namespace scipp::variable
 

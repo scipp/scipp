@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element/arithmetic.h"
@@ -14,27 +14,29 @@ using namespace scipp::core;
 
 namespace scipp::dataset {
 
+DataArray operator-(const DataArrayConstView &a) {
+  return DataArray(-a.data(), a.coords(), a.masks(), a.attrs());
+}
+
 DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
-  if (a.hasData() && b.hasData()) {
-    return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
-                     union_or(a.masks(), b.masks()),
-                     intersection(a.attrs(), b.attrs()));
-  } else {
-    DataArray out(a);
-    out += b; // No broadcast possible for now
-    return out;
-  }
+  return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
+                   union_or(a.masks(), b.masks()),
+                   intersection(a.attrs(), b.attrs()));
 }
 
 DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
-  if (a.hasData() && b.hasData()) {
-    return {a.data() - b.data(), union_(a.coords(), b.coords()),
-            union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
-  } else {
-    DataArray out(a);
-    out -= b; // No broadcast possible for now
-    return out;
-  }
+  return {a.data() - b.data(), union_(a.coords(), b.coords()),
+          union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
+}
+
+DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {
+  return {a.data() * b.data(), union_(a.coords(), b.coords()),
+          union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
+}
+
+DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
+  return {a.data() / b.data(), union_(a.coords(), b.coords()),
+          union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
 }
 
 DataArray operator+(const DataArrayConstView &a, const VariableConstView &b) {
@@ -67,6 +69,34 @@ DataArray operator*(const VariableConstView &a, const DataArrayConstView &b) {
 
 DataArray operator/(const VariableConstView &a, const DataArrayConstView &b) {
   return DataArray(a / b.data(), b.coords(), b.masks(), b.attrs());
+}
+
+DataArray &DataArray::operator+=(const DataArrayConstView &other) {
+  expect::coordsAreSuperset(*this, other);
+  union_or_in_place(masks(), other.masks());
+  data() += other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator-=(const DataArrayConstView &other) {
+  expect::coordsAreSuperset(*this, other);
+  union_or_in_place(masks(), other.masks());
+  data() -= other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator*=(const DataArrayConstView &other) {
+  expect::coordsAreSuperset(*this, other);
+  union_or_in_place(masks(), other.masks());
+  data() *= other.data();
+  return *this;
+}
+
+DataArray &DataArray::operator/=(const DataArrayConstView &other) {
+  expect::coordsAreSuperset(*this, other);
+  union_or_in_place(masks(), other.masks());
+  data() /= other.data();
+  return *this;
 }
 
 DataArray &DataArray::operator+=(const VariableConstView &other) {
@@ -195,8 +225,6 @@ auto apply_with_broadcast(const Op &op, const A &a, const B &b) {
   for (const auto &item : b)
     if (const auto it = a.find(item.name()); it != a.end())
       res.setData(item.name(), op(*it, item));
-  for (auto &[name, attr] : intersection(a.attrs(), b.attrs()))
-    res.setAttr(name, std::move(attr));
   return res;
 }
 
@@ -206,8 +234,6 @@ auto apply_with_broadcast(const Op &op, const A &a,
   Dataset res;
   for (const auto &item : a)
     res.setData(item.name(), op(item, b));
-  for (auto &[name, attr] : intersection(a.attrs(), b.attrs()))
-    res.setAttr(name, std::move(attr));
   return res;
 }
 
@@ -217,8 +243,6 @@ auto apply_with_broadcast(const Op &op, const DataArrayConstView &a,
   Dataset res;
   for (const auto &item : b)
     res.setData(item.name(), op(a, item));
-  for (auto &[name, attr] : intersection(a.attrs(), b.attrs()))
-    res.setAttr(name, std::move(attr));
   return res;
 }
 

@@ -3,6 +3,70 @@
 Release Notes
 =============
 
+Since v0.5
+----------
+
+Features
+~~~~~~~~
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+Contributors
+~~~~~~~~~~~~
+
+v0.5 (January 2021)
+-------------------
+
+Features
+~~~~~~~~
+
+* New ``profile`` plotting functionality where one of the slider dimensions can be displayed as a profile in a subplot (1-D and 2-D projections only).
+* Sliders have a thickness slider associated with them and can be used to show slices of arbitrary thickness.
+* Can hide/show individual masks on plots.
+* Can toggle log scale of axes and colorbar with buttons in figure toolbar.
+* Add binned data support, replacing "event list" dtypes as well as "realign" support.
+* Plotting of event data (binned data) with dynamic resampling with "infinite zoom" functionality.
+* Value-based slicing support.
+* Possibility to plot Scipp objects using ``my_data_array.plot()`` in addition to the classical ``plot()`` free function.
+* Support for saving and loading scipp data structures to HDF5.
+* More functions such as ``nanmean`` for better handling of special values such as ``INF`` and ``NaN``.
+* TBB (multi-threading) support for MacOS.
+* ``scipp.neutron``
+  * Improved instrument view, e.g., with buttons to align camera with an axis.
+  * Experiment logs (previously using Mantid's ``Run``) are now represented as native scipp objects, e.g., as scalar attributes holding a data array representing a time-series such as a temperature log.
+  * Support conversion of ``mantid.MaskWorkspace``.
+
+Breaking changes
+~~~~~~~~~~~~~~~~
+
+* ``Dataset`` does not have a ``masks`` property any more.
+  Use ``ds['item'].masks`` instead.
+* ``Dataset`` does not support attributes any more.
+* ``DataArray`` and dataset item attributes are now are now handled as "unaligned" coords.
+  Use ``ds['item'].coords`` or ``array.attrs`` to access these.
+* API for log scale on axes and colors has changed.
+  Use ``plot(da, scale={'tof': 'log'})`` to set a log scale on a coordinate axis, and use ``plot(da, norm='log')`` to have a log image colorscale or a log y axis on a 1d plot.
+* ``vmin`` and ``vmax`` now represent absolute values instead of exponents when ``norm='log'``.
+* The ``ipympl`` matplotlib backend is now required for using inside Jupyter notebooks.
+  This has been added as a dependency.
+  It is also the only interactive backend that works in JupyterLab.
+* Removed support for ``event_list`` ``dtype``, use binned data instead.
+* Removed support for "realigned" data. This is replaced by the more flexible and generic support for "binned" data.
+
+Contributors
+~~~~~~~~~~~~
+
+Matthew Andrew,
+Owen Arnold,
+Thibault Chatel,
+Simon Heybrock,
+Matthew D. Jones,
+Daniel Nixon,
+Piotr Rozyczko,
+Neil Vaytet,
+and Jan-Lukas Wynen,
+
 v0.4 (July 2020)
 ----------------
 

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -52,7 +52,9 @@ bool equals(const T1 &a, const T2 &b, const Tol tolerance) {
                     });
 }
 
-/* Helper macros to avoid warnings when testing [[nodiscard]] qualified
- * functions */
-#define ASSERT_NO_THROW_NODISCARD(expr) ASSERT_NO_THROW((void)expr)
-#define ASSERT_THROW_NODISCARD(expr, type) ASSERT_THROW((void)expr, type)
+/// Macros to avoid warnings when testing [[nodiscard]] qualified functions
+#define ASSERT_NO_THROW_DISCARD(expr) ASSERT_NO_THROW(static_cast<void>(expr))
+#define ASSERT_THROW_DISCARD(expr, type)                                       \
+  ASSERT_THROW(static_cast<void>(expr), type)
+#define EXPECT_THROW_DISCARD(expr, type)                                       \
+  EXPECT_THROW(static_cast<void>(expr), type)

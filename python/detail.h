@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Neil Vaytet
 #pragma once
@@ -8,9 +8,4 @@
 
 using namespace scipp;
 
-struct MoveableVariable {
-  Variable var;
-};
-struct MoveableDataArray {
-  dataset::DataArray data;
-};
+template <class T> struct Moveable { T value; };

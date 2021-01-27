@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 #include <benchmark/benchmark.h>
 
@@ -40,7 +40,7 @@ struct Generate {
     d.setData("a", makeData<double>({Dim::X, axisLength}));
     for (int i = 0; i < num_masks; ++i) {
       auto bools = make_bools(axisLength, {false, true});
-      d.setMask(std::string(1, ('a' + i)),
+      d.setMask("a", std::string(1, ('a' + i)),
                 makeVariable<bool>(Dims{Dim::X}, Shape{axisLength},
                                    Values(bools.begin(), bools.end())));
     }
@@ -55,7 +55,7 @@ struct Generate_2D_data {
               makeData<double>({{Dim::X, axisLength}, {Dim::Y, axisLength}}));
     auto bools = make_bools(axisLength * axisLength, {false, true});
     for (int i = 0; i < num_masks; ++i) {
-      d.setMask(std::string(1, ('a' + i)),
+      d.setMask("a", std::string(1, ('a' + i)),
                 makeVariable<bool>(Dims{Dim::X, Dim::Y},
                                    Shape{axisLength, axisLength},
                                    Values(bools.begin(), bools.end())));
@@ -73,7 +73,7 @@ struct Generate_3D_data {
     auto bools =
         make_bools(axisLength * axisLength * axisLength, {false, true});
     for (int i = 0; i < num_masks; ++i) {
-      d.setMask(std::string(1, ('a' + i)),
+      d.setMask("a", std::string(1, ('a' + i)),
                 makeVariable<bool>(Dims{Dim::X, Dim::Y, Dim::Z},
                                    Shape{axisLength, axisLength, axisLength},
                                    Values(bools.begin(), bools.end())));

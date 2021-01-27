@@ -81,7 +81,7 @@ To use the ``scipp`` Python module:
 .. code-block:: bash
 
   cd ../python
-  PYTHONPATH=$PYTHONPATH:./install python3
+  PYTHONPATH=$PYTHONPATH:../install python3
 
 In Python:
 
@@ -94,6 +94,7 @@ Additional build options
 
 1. ``-DDYNAMIC_LIB`` forces the shared libraries building, that also decreases link time.
 2. ``-DENABLE_THREAD_LIMIT`` limits the maximum number of threads that TBB can use. This defaults to the maximum number of cores identified on your build system. You may then optionally apply an artificial limit via ``-DTHREAD_LIMIT``.
+3. ``-DDISABLE_MULTI_THREADING`` disable multi-threading. By default, multi-threading is enabled if TBB was found. If this option is set to ``ON``, it overrides that.
 
 Running the unit tests
 ~~~~~~~~~~~~~~~~~~~~~~
@@ -111,8 +112,18 @@ To run the Python tests, run (in the ``python/`` directory):
 Building Documentation
 ----------------------
 
-- Run ``python3 data/fetch_neutron_data.py``
+- Run ``python docs/data/fetch_neutron_data.py``
 - cd to a directory where the docs should be built (e.g. ``mkdir -p build/docs && cd build/docs``)
 - Activate a conda environment with Mantid or ensure Mantid is in your ``PYTHONPATH``
 - If Mantid is unavailable (e.g. on Windows) edit ``docs/conf.py`` and include ``nbsphinx_allow_errors = True``. Take care to not commit this change though.
-- Run ``sphinx-build scipp/src/docs .``
+- Run ``sphinx-build ../../docs .``
+
+Precommit Hooks
+---------------
+
+If you wish, you can install precommit hooks for flake8 and yapf. In the source directory run:
+
+.. code-block:: bash
+
+  pre-commit install
+  pre-commit run --all-files

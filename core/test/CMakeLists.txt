@@ -8,20 +8,23 @@ add_executable(
   element_array_test.cpp
   element_array_view_test.cpp
   element_arithmetic_test.cpp
+  element_bin_detail_test.cpp
   element_comparison_test.cpp
   element_event_operations_test.cpp
   element_geometric_operations_test.cpp
   element_histogram_test.cpp
   element_logical_test.cpp
   element_math_test.cpp
-  element_reduction_test.cpp
   element_special_values_test.cpp
   element_trigonometry_test.cpp
   element_util_test.cpp
+  multi_index_test.cpp
   string_test.cpp
+  subbin_sizes_test.cpp
   time_point_test.cpp
   value_and_variance_test.cpp
   view_index_test.cpp
+  transform_common_test.cpp
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
 target_link_libraries(

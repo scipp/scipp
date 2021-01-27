@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "pybind11.h"
@@ -13,14 +13,10 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
-template <class T> void bind_flatten(py::module &m) {
-  m.def("flatten",
-        py::overload_cast<const typename T::const_view_type &, const Dim>(
-            &flatten),
-        py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
-}
-
 template <class T> void bind_mean(py::module &m) {
+  m.def(
+      "mean", [](const typename T::const_view_type &x) { return mean(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
   m.def(
       "mean",
       [](const typename T::const_view_type &x, const Dim dim) {
@@ -37,8 +33,32 @@ template <class T> void bind_mean_out(py::module &m) {
       py::arg("x"), py::arg("dim"), py::arg("out"), py::keep_alive<0, 3>(),
       py::call_guard<py::gil_scoped_release>());
 }
+template <class T> void bind_nanmean(py::module &m) {
+  m.def(
+      "nanmean",
+      [](const typename T::const_view_type &x) { return nanmean(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "nanmean",
+      [](const typename T::const_view_type &x, const Dim dim) {
+        return nanmean(x, dim);
+      },
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
+}
+
+template <class T> void bind_nanmean_out(py::module &m) {
+  m.def(
+      "nanmean",
+      [](const typename T::const_view_type &x, const Dim dim,
+         typename T::view_type out) { return mean(x, dim, out); },
+      py::arg("x"), py::arg("dim"), py::arg("out"), py::keep_alive<0, 3>(),
+      py::call_guard<py::gil_scoped_release>());
+}
 
 template <class T> void bind_sum(py::module &m) {
+  m.def(
+      "sum", [](const typename T::const_view_type &x) { return sum(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
   m.def(
       "sum",
       [](const typename T::const_view_type &x, const Dim dim) {
@@ -52,6 +72,28 @@ template <class T> void bind_sum_out(py::module &m) {
       "sum",
       [](const typename T::const_view_type &x, const Dim dim,
          const typename T::view_type &out) { return sum(x, dim, out); },
+      py::arg("x"), py::arg("dim"), py::arg("out"), py::keep_alive<0, 3>(),
+      py::call_guard<py::gil_scoped_release>());
+}
+
+template <class T> void bind_nansum(py::module &m) {
+  m.def(
+      "nansum", [](const typename T::const_view_type &x) { return nansum(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+
+  m.def(
+      "nansum",
+      [](const typename T::const_view_type &x, const Dim dim) {
+        return nansum(x, dim);
+      },
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
+}
+
+template <class T> void bind_nansum_out(py::module &m) {
+  m.def(
+      "nansum",
+      [](const typename T::const_view_type &x, const Dim dim,
+         const typename T::view_type &out) { return nansum(x, dim, out); },
       py::arg("x"), py::arg("dim"), py::arg("out"), py::keep_alive<0, 3>(),
       py::call_guard<py::gil_scoped_release>());
 }
@@ -76,6 +118,30 @@ template <class T> void bind_max(py::module &m) {
       "max",
       [](const typename T::const_view_type &x, const Dim dim) {
         return max(x, dim);
+      },
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
+}
+
+template <class T> void bind_nanmin(py::module &m) {
+  m.def(
+      "nanmin", [](const typename T::const_view_type &x) { return nanmin(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "nanmin",
+      [](const typename T::const_view_type &x, const Dim dim) {
+        return nanmin(x, dim);
+      },
+      py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
+}
+
+template <class T> void bind_nanmax(py::module &m) {
+  m.def(
+      "nanmax", [](const typename T::const_view_type &x) { return nanmax(x); },
+      py::arg("x"), py::call_guard<py::gil_scoped_release>());
+  m.def(
+      "nanmax",
+      [](const typename T::const_view_type &x, const Dim dim) {
+        return nanmax(x, dim);
       },
       py::arg("x"), py::arg("dim"), py::call_guard<py::gil_scoped_release>());
 }
@@ -105,22 +171,30 @@ template <class T> void bind_any(py::module &m) {
 }
 
 void init_reduction(py::module &m) {
-  bind_flatten<Variable>(m);
-  bind_flatten<DataArray>(m);
-  bind_flatten<Dataset>(m);
-
   bind_mean<Variable>(m);
   bind_mean<DataArray>(m);
   bind_mean<Dataset>(m);
   bind_mean_out<Variable>(m);
+
+  bind_nanmean<Variable>(m);
+  bind_nanmean<DataArray>(m);
+  bind_nanmean<Dataset>(m);
+  bind_nanmean_out<Variable>(m);
 
   bind_sum<Variable>(m);
   bind_sum<DataArray>(m);
   bind_sum<Dataset>(m);
   bind_sum_out<Variable>(m);
 
+  bind_nansum<Variable>(m);
+  bind_nansum<DataArray>(m);
+  bind_nansum<Dataset>(m);
+  bind_nansum_out<Variable>(m);
+
   bind_min<Variable>(m);
   bind_max<Variable>(m);
+  bind_nanmin<Variable>(m);
+  bind_nanmax<Variable>(m);
   bind_all<Variable>(m);
   bind_any<Variable>(m);
 }

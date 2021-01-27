@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include "test_macros.h"
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
@@ -117,6 +117,33 @@ TEST_F(RebinTest, keeps_unrelated_labels_but_drops_others) {
   ASSERT_EQ(rebin(a, Dim::X, edges), expected);
 }
 
+TEST_F(RebinTest, rebin_with_ragged_coord) {
+  Variable data = makeVariable<double>(
+      Dims{Dim::Z, Dim::Y, Dim::X}, Shape{3, 2, 4}, units::counts,
+      Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
+             13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
+  Variable var_x = makeVariable<double>(
+      Dims{Dim::Y, Dim::X}, Shape{2, 5},
+      Values{1.0, 2.0, 3.0, 4.0, 5.0, 1.1, 2.2, 3.3, 4.4, 5.5});
+  Variable var_y =
+      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 2, 3});
+  Variable var_z =
+      makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{1, 2, 3, 4});
+
+  DataArray da{data, {{Dim::X, var_x}, {Dim::Y, var_y}, {Dim::Z, var_z}}, {}};
+
+  auto edges =
+      makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0.0, 2.5, 5.0});
+  DataArray expected(
+      makeVariable<double>(
+          Dims{Dim::Z, Dim::Y, Dim::X}, Shape{2, 2, 4}, units::counts,
+          Values{5.5, 7.0, 8.5, 10.0, 11.5, 13.0, 14.5, 16.0, 21.5, 23.0, 24.5,
+                 26.0, 27.5, 29.0, 30.5, 32.0}),
+      {{Dim::Z, edges}, {Dim::X, var_x}, {Dim::Y, var_y}}, {});
+
+  ASSERT_EQ(rebin(da, Dim::Z, edges), expected);
+}
+
 TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   Dataset ds;
   ds.setCoord(Dim::X, makeVariable<double>(Dimensions{Dim::X, 6},
@@ -124,12 +151,12 @@ TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   ds.setData("data_x", makeVariable<double>(Dimensions{Dim::X, 5},
                                             Values{1, 2, 3, 4, 5}));
 
-  ds.setMask("mask_x",
-             makeVariable<bool>(Dimensions{Dim::X, 5},
-                                Values{false, false, true, false, false}));
-  ds.setMask("mask_y",
-             makeVariable<bool>(Dimensions{Dim::Y, 5},
-                                Values{false, false, true, false, false}));
+  ds["data_x"].masks().set(
+      "mask_x", makeVariable<bool>(Dimensions{Dim::X, 5},
+                                   Values{false, false, true, false, false}));
+  ds["data_x"].masks().set(
+      "mask_y", makeVariable<bool>(Dimensions{Dim::Y, 5},
+                                   Values{false, false, true, false, false}));
 
   const auto edges =
       makeVariable<double>(Dimensions{Dim::X, 3}, Values{1, 3, 5});
@@ -140,6 +167,6 @@ TEST(RebinWithMaskTest, preserves_unrelated_mask) {
   ASSERT_EQ(result["data_x"].masks()["mask_x"],
             makeVariable<bool>(Dimensions{Dim::X, 2}, Values{false, true}));
   // the Y masks should not have been touched
-  ASSERT_EQ(ds.masks().size(), 2);
-  ASSERT_EQ(ds.masks()["mask_y"].dims(), Dimensions(Dim::Y, 5));
+  ASSERT_EQ(ds["data_x"].masks().size(), 2);
+  ASSERT_EQ(ds["data_x"].masks()["mask_y"].dims(), Dimensions(Dim::Y, 5));
 }

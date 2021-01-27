@@ -2,10 +2,12 @@
 # contributors (https://github.com/scipp)
 set(TARGET_NAME "scipp-variable")
 set(INC_FILES
+    ${variable_INC_FILES}
     include/scipp/variable/apply.h
     include/scipp/variable/arithmetic.h
+    include/scipp/variable/bins.h
+    include/scipp/variable/bin_util.h
     include/scipp/variable/comparison.h
-    include/scipp/variable/event.h
     include/scipp/variable/except.h
     include/scipp/variable/indexed_slice_view.h
     include/scipp/variable/logical.h
@@ -15,6 +17,9 @@ set(INC_FILES
     include/scipp/variable/rebin.h
     include/scipp/variable/reduction.h
     include/scipp/variable/shape.h
+    include/scipp/variable/slice.h
+    include/scipp/variable/sort.h
+    include/scipp/variable/special_values.h
     include/scipp/variable/string.h
     include/scipp/variable/subspan_view.h
     include/scipp/variable/transform.h
@@ -22,6 +27,7 @@ set(INC_FILES
     include/scipp/variable/trigonometry.h
     include/scipp/variable/util.h
     include/scipp/variable/variable_concept.h
+    include/scipp/variable/variable_factory.h
     include/scipp/variable/variable.h
     include/scipp/variable/variable_keyword_arg_constructor.h
     include/scipp/variable/variable.tcc
@@ -29,9 +35,14 @@ set(INC_FILES
 )
 
 set(SRC_FILES
+    ${variable_SRC_FILES}
     arithmetic.cpp
+    bins.cpp
+    bin_detail.cpp
+    bin_util.cpp
     comparison.cpp
-    event.cpp
+    creation.cpp
+    cumulative.cpp
     except.cpp
     inplace_arithmetic.cpp
     logical.cpp
@@ -40,14 +51,20 @@ set(SRC_FILES
     rebin.cpp
     reduction.cpp
     shape.cpp
+    slice.cpp
+    sort.cpp
+    special_values.cpp
     string.cpp
     subspan_view.cpp
     trigonometry.cpp
     type_conversion.cpp
     util.cpp
     variable_concept.cpp
+    variable_factory.cpp
     variable.cpp
     variable_instantiate_basic.cpp
+    variable_instantiate_bin_elements.cpp
+    variable_instantiate_map_elements.cpp
     variable_instantiate_view_elements.cpp
 )
 
@@ -59,7 +76,7 @@ endif(DYNAMIC_LIB)
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
 target_link_libraries(${TARGET_NAME} PUBLIC scipp-core Boost::boost)
-if(TBB_FOUND)
+if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
 endif()
 

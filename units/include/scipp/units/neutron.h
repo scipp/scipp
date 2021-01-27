@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 /// @author Neil Vaytet
@@ -82,7 +82,12 @@ template <>
 struct boost::units::base_unit_info<
     scipp::units::detail::tof::wavelength_base_unit> {
   static std::string name() { return "angstroms"; }
-  static std::string symbol() { return u8"\u212B"; }
+  // The reinterpret cast is due to the support for char8_t introduced in C++20.
+  // We need C++20 (for windows) and C++17 (for other systems) compatibility.
+  // See http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1423r2.html
+  static std::string symbol() {
+    return reinterpret_cast<const char *>(u8"\u212B");
+  }
 };
 
 template <>
@@ -102,7 +107,12 @@ struct boost::units::base_unit_info<
 template <>
 struct boost::units::base_unit_info<scipp::units::detail::tof::tof_base_unit> {
   static std::string name() { return "microseconds"; }
-  static std::string symbol() { return u8"\u03BCs"; }
+  // The reinterpret cast is due to the support for char8_t introduced in C++20.
+  // We need C++20 (for windows) and C++17 (for other systems) compatibility.
+  // See http://www.open-std.org/jtc1/sc22/wg21/docs/papers/2019/p1423r2.html
+  static std::string symbol() {
+    return reinterpret_cast<const char *>(u8"\u03BCs");
+  }
 };
 
 template <>

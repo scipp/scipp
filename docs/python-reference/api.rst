@@ -17,6 +17,16 @@ Classes
    GroupByDataArray
    GroupByDataset
 
+Creation functions
+==================
+
+.. autosummary::
+   :toctree: ../generated
+
+   array
+   scalar
+   zeros
+
 Free functions
 ==============
 
@@ -29,15 +39,17 @@ General
    :toctree: ../generated
 
    abs
+   broadcast
    choose
    collapse
    concatenate
    dot
+   exp
    filter
    histogram
-   is_sorted
+   log
+   log10
    merge
-   nan_to_num
    norm
    rebin
    reciprocal
@@ -63,7 +75,26 @@ Comparison operators compare element-wise and *ignore variances*.
    greater_equal
    equal
    not_equal
+   is_approx
    is_equal
+   is_linspace
+   is_sorted
+
+`inf` and `nan` handling
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+Special-value (`inf` and `nan`) checks.
+`inf` and `nan` in the *variances is ignored*.
+
+.. autosummary::
+   :toctree: ../generated
+
+   isnan
+   isinf
+   isfinite
+   isposinf
+   isneginf
+   nan_to_num
 
 Reduction
 ~~~~~~~~~
@@ -75,9 +106,14 @@ Reduction operations are operations to remove one or more dimension, e.g., by pe
 
    all
    any
+   cumsum
    max
    mean
    min
+   nanmax
+   nanmean
+   nanmin
+   nansum
    sum
 
 Trigonometric
@@ -117,14 +153,12 @@ Reduction
    groupby
    GroupByDataArray.all
    GroupByDataArray.any
-   GroupByDataArray.flatten
    GroupByDataArray.max
    GroupByDataArray.mean
    GroupByDataArray.min
    GroupByDataArray.sum
    GroupByDataset.all
    GroupByDataset.any
-   GroupByDataset.flatten
    GroupByDataset.max
    GroupByDataset.mean
    GroupByDataset.min
@@ -151,6 +185,18 @@ This can be converted into a counts (frequency) density, e.g., for visualization
 
    counts_to_density
    density_to_counts
+
+Visualization
+~~~~~~~~~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   show
+   table
+   to_html
+   plot.plot
+
 
 Compatibility
 ~~~~~~~~~~~~~

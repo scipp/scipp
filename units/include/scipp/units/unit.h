@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 /// @author Neil Vaytet
@@ -48,6 +48,7 @@ constexpr scipp::index unit_index(Unit unit, std::tuple<Units...>) {
 
 namespace boost_units {
 using nanosecond = decltype(boost::units::si::nano * boost::units::si::seconds);
+using millimeter = decltype(boost::units::si::milli * boost::units::si::meter);
 static constexpr boost::units::si::dimensionless dimensionless;
 static constexpr boost::units::si::length m;
 static constexpr boost::units::si::time s;
@@ -55,6 +56,7 @@ static constexpr boost::units::si::mass kg;
 static constexpr boost::units::si::temperature K;
 static constexpr boost::units::si::plane_angle rad;
 static constexpr nanosecond ns;
+static constexpr millimeter mm;
 static constexpr decltype(boost::units::degree::plane_angle{} *
                           dimensionless) deg;
 
@@ -69,7 +71,7 @@ struct supported_units {
                       kg *m / s, m / s, c, c *m, meV / c, dimensionless / c, K,
                       us / angstrom, us / (angstrom * angstrom),
                       us / (m * angstrom), angstrom / us, (m * angstrom) / us,
-                      ns, dimensionless / meV)));
+                      ns, mm, dimensionless / meV)));
 };
 struct counts_unit {
   using type = decltype(boost_units::counts);
@@ -113,20 +115,20 @@ private:
                                           supported_units_t{})};
 };
 
-Unit operator+(const Unit &a, const Unit &b);
-Unit operator-(const Unit &a, const Unit &b);
-Unit operator*(const Unit &a, const Unit &b);
-Unit operator/(const Unit &a, const Unit &b);
-Unit operator-(const Unit &a);
-Unit abs(const Unit &a);
-Unit sqrt(const Unit &a);
-Unit sin(const Unit &a);
-Unit cos(const Unit &a);
-Unit tan(const Unit &a);
-Unit asin(const Unit &a);
-Unit acos(const Unit &a);
-Unit atan(const Unit &a);
-Unit atan2(const Unit &y, const Unit &x);
+SCIPP_UNITS_EXPORT Unit operator+(const Unit &a, const Unit &b);
+SCIPP_UNITS_EXPORT Unit operator-(const Unit &a, const Unit &b);
+SCIPP_UNITS_EXPORT Unit operator*(const Unit &a, const Unit &b);
+SCIPP_UNITS_EXPORT Unit operator/(const Unit &a, const Unit &b);
+SCIPP_UNITS_EXPORT Unit operator-(const Unit &a);
+SCIPP_UNITS_EXPORT Unit abs(const Unit &a);
+SCIPP_UNITS_EXPORT Unit sqrt(const Unit &a);
+SCIPP_UNITS_EXPORT Unit sin(const Unit &a);
+SCIPP_UNITS_EXPORT Unit cos(const Unit &a);
+SCIPP_UNITS_EXPORT Unit tan(const Unit &a);
+SCIPP_UNITS_EXPORT Unit asin(const Unit &a);
+SCIPP_UNITS_EXPORT Unit acos(const Unit &a);
+SCIPP_UNITS_EXPORT Unit atan(const Unit &a);
+SCIPP_UNITS_EXPORT Unit atan2(const Unit &y, const Unit &x);
 
 constexpr Unit dimensionless{boost_units::dimensionless};
 constexpr Unit one{boost_units::dimensionless}; /// alias for dimensionless
@@ -142,5 +144,6 @@ constexpr Unit meV{boost_units::meV};
 constexpr Unit us{boost_units::us};
 constexpr Unit c{boost_units::c};
 constexpr Unit ns{boost_units::ns};
+constexpr Unit mm{boost_units::mm};
 
 } // namespace scipp::units

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -65,6 +65,10 @@ struct SCIPP_CORE_EXPORT DimensionLengthError : public DimensionError {
 struct SCIPP_CORE_EXPORT EventsDimensionError : public DimensionError {
   EventsDimensionError()
       : DimensionError("Unsupported operation for events dimensions.") {}
+};
+
+struct SCIPP_CORE_EXPORT BucketError : public std::runtime_error {
+  using std::runtime_error::runtime_error;
 };
 
 struct SCIPP_CORE_EXPORT SizeError : public std::runtime_error {
@@ -166,10 +170,5 @@ void SCIPP_CORE_EXPORT validSlice(
 void SCIPP_CORE_EXPORT notCountDensity(const units::Unit &unit);
 void SCIPP_CORE_EXPORT validDim(const Dim dim);
 void SCIPP_CORE_EXPORT validExtent(const scipp::index size);
-template <class T> void hasVariances(const T &variable) {
-  if (!variable.hasVariances())
-    throw except::VariancesError(to_string(variable) +
-                                 " does not have variances.");
-}
 
 } // namespace scipp::core::expect

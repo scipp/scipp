@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <limits>
@@ -14,6 +14,7 @@ std::unordered_map<std::string, Dim::Id> Dim::builtin_ids{
     {"d-spacing", Dim::DSpacing},
     {"E", Dim::Energy},
     {"Delta-E", Dim::EnergyTransfer},
+    {"event", Dim::Event},
     {"group", Dim::Group},
     {"<invalid>", Dim::Invalid},
     {"position", Dim::Position},

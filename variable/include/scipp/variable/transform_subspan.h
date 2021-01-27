@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
+#include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
 
@@ -14,15 +16,11 @@ static constexpr auto erase = [](Dimensions dims, const Dim dim) {
   dims.erase(dim);
   return dims;
 };
-static constexpr auto need_subspan = [](const VariableConstView &var,
-                                        const Dim dim) {
-  return !contains_events(var) && var.dims().contains(dim);
-};
 
 static constexpr auto maybe_subspan = [](VariableConstView &var,
                                          const Dim dim) {
   auto ret = std::make_unique<Variable>();
-  if (need_subspan(var, dim)) {
+  if (var.dims().contains(dim)) {
     *ret = subspan_view(var, dim);
     var = *ret;
   }
@@ -30,7 +28,7 @@ static constexpr auto maybe_subspan = [](VariableConstView &var,
 };
 } // namespace transform_subspan_detail
 
-template <class Types, class Op, class... Var>
+template <class... Types, class Op, class... Var>
 [[nodiscard]] Variable transform_subspan_impl(const DType type, const Dim dim,
                                               const scipp::index size, Op op,
                                               Var... var) {
@@ -45,16 +43,12 @@ template <class Types, class Op, class... Var>
            core::transform_flags::expect_in_variance_if_out_variance_t, Op> &&
        (var.hasVariances() || ...));
   Variable out =
-      variance ? Variable(type, dims,
-                          Values(dims.volume(), core::default_init_elements),
-                          Variances(dims.volume(), core::default_init_elements))
-               : Variable(type, dims,
-                          Values(dims.volume(), core::default_init_elements));
+      variableFactory().create(type, dims, op(var.unit()...), variance);
 
   const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
 
-  out.setUnit(op(var.unit()...));
-  in_place<false>::transform_data(Types{}, op, subspan_view(out, dim), var...);
+  in_place<false>::transform_data(type_tuples<Types...>(op), op,
+                                  subspan_view(out, dim), var...);
   return out;
 }
 
@@ -73,28 +67,31 @@ template <class Types, class Op, class... Var>
 /// 3. The tuple of supported type combinations must include the type of the out
 ///    argument as the first type in the inner tuples. The output type must be
 ///    passed at runtime as the first argument. `transform_subspan` DOES NOT
-///    DEFAULT INITIALIZE the output array, i.e., `Op` must take care of
-///    initializating the respective subspans. This is done for improved
-///    performance, avoiding streaming/writing to memory twice.
+///    INITIALIZE the output array, i.e., `Op` must take care of initializating
+///    the respective subspans. This is done for improved performance, avoiding
+///    streaming/writing to memory twice. Optionally, initialization can be
+///    requested by passing an operator inheriting
+///    core::transform_flags::zero_output_t.
 /// 4. The output type and the type of non-events inputs that depend on `dim`
 ///    must be specified as `span<T>`. The user-provided lambda is called with a
 ///    span of values for these arguments.
 /// 5. Use the flag transform_flags::expect_variance_arg<0> to control whether
 ///    the output should have variances or not.
-template <class Types, class Op>
+template <class... Types, class Op>
 [[nodiscard]] Variable transform_subspan(const DType type, const Dim dim,
                                          const scipp::index size,
                                          const VariableConstView &var1,
                                          const VariableConstView &var2, Op op) {
-  return transform_subspan_impl<Types>(type, dim, size, op, var1, var2);
+  return transform_subspan_impl<Types...>(type, dim, size, op, var1, var2);
 }
 
-template <class Types, class Op>
+template <class... Types, class Op>
 [[nodiscard]] Variable
 transform_subspan(const DType type, const Dim dim, const scipp::index size,
                   const VariableConstView &var1, const VariableConstView &var2,
                   const VariableConstView &var3, Op op) {
-  return transform_subspan_impl<Types>(type, dim, size, op, var1, var2, var3);
+  return transform_subspan_impl<Types...>(type, dim, size, op, var1, var2,
+                                          var3);
 }
 
 } // namespace scipp::variable

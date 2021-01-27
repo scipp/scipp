@@ -1,22 +1,28 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+#include <ostream>
+
 #include "scipp/core/dtype.h"
-#include "scipp/core/except.h"
+#include "scipp/core/string.h"
 
 namespace scipp::core {
+
 bool isInt(DType tp) { return tp == dtype<int32_t> || tp == dtype<int64_t>; }
 
-DType event_dtype(const DType type) {
-  if (type == dtype<event_list<double>>)
-    return dtype<double>;
-  if (type == dtype<event_list<float>>)
-    return dtype<float>;
-  if (type == dtype<event_list<int64_t>>)
-    return dtype<int64_t>;
-  if (type == dtype<event_list<int32_t>>)
-    return dtype<int32_t>;
-  if (type == dtype<event_list<scipp::core::time_point>>)
-    return dtype<scipp::core::time_point>;
-  return type; // event data with scalar weights
+namespace {
+template <class... Ts> bool is_span_impl(DType tp) {
+  return (((tp == dtype<scipp::span<Ts>>) ||
+           (tp == dtype<scipp::span<const Ts>>)) ||
+          ...);
 }
+} // namespace
+
+bool is_span(DType tp) {
+  return is_span_impl<double, float, int64_t, int32_t, bool, time_point>(tp);
+}
+
+std::ostream &operator<<(std::ostream &os, const DType &dtype) {
+  return os << to_string(dtype);
+}
+
 } // namespace scipp::core

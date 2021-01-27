@@ -38,7 +38,7 @@ RUN wget --quiet -P "/home/$NB_USER/data" "${SANSURL}LARMOR00049334.nxs" && \
 RUN conda install --yes \
       -c conda-forge \
       -c scipp/label/dev \
-      -c dannixon \
+      -c scipp \
       ipython \
       ipywidgets \
       mantid-framework \
@@ -54,7 +54,7 @@ RUN pip install --upgrade nbconvert
 
 # Get code for SANS direct-beam iteration demo
 RUN cd "/home/$NB_USER/code" && \
-    git clone https://github.com/scipp/ess.git && \
+    git clone https://github.com/scipp/ess-legacy.git ess && \
     cd ess/sans && \
     python make_config.py -f "/home/$NB_USER/data" && \
     ln -s "/home/$NB_USER/code/ess/sans" "/home/$NB_USER/sans-demo"

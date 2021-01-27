@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/common/span.h"
 #include "scipp/core/element/arg_list.h"
+#include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/except.h"
@@ -82,5 +84,36 @@ constexpr auto is_sorted_nonascending = overloaded{
     is_sorted_common, [](bool &out, const auto &left, const auto &right) {
       out = out && (left >= right);
     }};
+
+constexpr auto is_linspace =
+    overloaded{arg_list<span<const double>, span<const float>>,
+               transform_flags::expect_no_variance_arg<0>,
+               [](const units::Unit &) { return units::one; },
+               [](const auto &range) { return numeric::is_linspace(range); }};
+
+constexpr auto zip = overloaded{
+    arg_list<int64_t, int32_t>, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](const units::Unit &first, const units::Unit &second) {
+      expect::equals(first, second);
+      return first;
+    },
+    [](const auto first, const auto second) {
+      return std::pair{first, second};
+    }};
+
+template <int N>
+constexpr auto get = overloaded{arg_list<std::pair<scipp::index, scipp::index>>,
+                                transform_flags::expect_no_variance_arg<0>,
+                                [](const auto &x) { return std::get<N>(x); },
+                                [](const units::Unit &u) { return u; }};
+
+constexpr auto fill =
+    overloaded{arg_list<double, float, std::tuple<float, double>>,
+               [](auto &x, const auto &value) { x = value; }};
+
+constexpr auto fill_zeros =
+    overloaded{arg_list<double, float, int64_t, int32_t, SubbinSizes>,
+               [](units::Unit &) {}, [](auto &x) { x = 0; }};
 
 } // namespace scipp::core::element

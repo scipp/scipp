@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
@@ -74,19 +74,6 @@ def test_variable_0D_matrix_to_dict():
     assert var_dict["shape"] == []
     assert np.array_equal(var_dict["value"], [[1, 2, 3], [4, 5, 6], [7, 8, 9]])
     assert var_dict["dtype"] == sc.dtype.matrix_3_float64
-
-
-def test_variable_event_to_dict():
-    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
-    var['x', 1].values.append(42)
-    var['x', 0].values.extend(np.ones(3))
-    var['x', 3].values = np.ones(6)
-    var_dict = sc.to_dict(var)
-    assert var_dict["shape"] == [4]
-    assert np.array_equal(var_dict["values"][0], [1, 1, 1])
-    assert np.array_equal(var_dict["values"][1], [42])
-    assert len(var_dict["values"][2]) == 0
-    assert np.array_equal(var_dict["values"][3], [1, 1, 1, 1, 1, 1])
 
 
 def test_variable_from_dict():
@@ -164,30 +151,6 @@ def test_variable_0D_matrix_from_dict():
     assert var.dtype == sc.dtype.matrix_3_float64
 
 
-def test_variable_event_from_dict():
-    var_dict = {
-        'dims': ['x'],
-        'dtype':
-        'event_list_float64',
-        'values':
-        np.array([
-            np.array([1., 1., 1.]),
-            np.array([42.]),
-            np.array([]),
-            np.array([1., 1., 1., 1., 1., 1.])
-        ])
-    }
-    var = sc.from_dict(var_dict)
-    assert var.dims == ['x']
-    assert var.shape == [4]
-    assert np.array_equal(var['x', 0].values, [1., 1., 1.])
-    assert np.array_equal(var['x', 1].values, [42.])
-    assert len(var['x', 2].values) == 0
-    assert np.array_equal(var['x', 3].values, [1., 1., 1., 1., 1., 1.])
-    assert var.unit == sc.units.one
-    assert var.dtype == sc.dtype.event_list_float64
-
-
 def test_variable_round_trip():
     var = sc.Variable(dims=["x"],
                       values=np.arange(10.),
@@ -234,14 +197,6 @@ def test_variable_0D_matrix_round_trip():
     assert sc.is_equal(var, sc.from_dict(sc.to_dict(var)))
 
 
-def test_variable_event_round_trip():
-    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
-    var['x', 1].values.append(42)
-    var['x', 0].values.extend(np.ones(3))
-    var['x', 3].values = np.ones(6)
-    assert sc.is_equal(var, sc.from_dict(sc.to_dict(var)))
-
-
 def test_data_array_to_dict():
     da = sc.DataArray(
         coords={
@@ -267,44 +222,6 @@ def test_data_array_to_dict():
                        da.masks["amask"])
     assert sc.is_equal(sc.from_dict(da_dict["attrs"]["attr1"]),
                        da.attrs["attr1"])
-
-
-def test_data_array_unaligned_to_dict():
-    N = 50
-    values = 10 * np.random.rand(N)
-    da = sc.DataArray(data=sc.Variable(dims=['position'],
-                                       unit=sc.units.counts,
-                                       values=values,
-                                       variances=values),
-                      coords={
-                          'position':
-                          sc.Variable(
-                              dims=['position'],
-                              values=['site-{}'.format(i) for i in range(N)]),
-                          'x':
-                          sc.Variable(dims=['position'],
-                                      unit=sc.units.m,
-                                      values=np.random.rand(N)),
-                          'y':
-                          sc.Variable(dims=['position'],
-                                      unit=sc.units.m,
-                                      values=np.random.rand(N))
-                      })
-    xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
-    ybins = sc.Variable(dims=['y'],
-                        unit=sc.units.m,
-                        values=[0.1, 0.3, 0.5, 0.7, 0.9])
-    realigned = sc.realign(da, {'y': ybins, 'x': xbins})
-
-    da_dict = sc.to_dict(realigned)
-    assert "unaligned" in da_dict
-    assert "data" not in da_dict
-    assert sc.from_dict(da_dict["coords"]["x"]) == xbins
-    assert sc.from_dict(da_dict["coords"]["y"]) == ybins
-    assert sc.from_dict(
-        da_dict["unaligned"]["coords"]["x"]) == realigned.unaligned.coords["x"]
-    assert sc.from_dict(
-        da_dict["unaligned"]["coords"]["y"]) == realigned.unaligned.coords["y"]
 
 
 def test_data_array_from_dict():
@@ -375,8 +292,8 @@ def test_dataset_to_dict():
                           values=np.random.random([5, 10]),
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
-    ds.masks["amask"] = sc.Variable(dims=["y"],
-                                    values=[True, True, False, True, False])
+    ds["a"].masks["amask"] = sc.Variable(
+        dims=["y"], values=[True, True, False, True, False])
     # Note that attributes complicate things here, as they are duplicated in
     # each entry during the conversion to dict. So for now, we leave attributes
     # out.
@@ -451,8 +368,8 @@ def test_dataset_round_trip():
                           values=np.random.random([5, 10]),
                           variances=np.random.random([5, 10]),
                           unit=sc.units.s)
-    ds.masks["amask"] = sc.Variable(dims=["y"],
-                                    values=[True, True, False, True, False])
+    ds["a"].masks["amask"] = sc.Variable(
+        dims=["y"], values=[True, True, False, True, False])
     # Note that round trip would not work if attrs are present, since they get
     # become a per-item attribute during the conversion to dict.
     assert sc.is_equal(ds, sc.from_dict(sc.to_dict(ds)))

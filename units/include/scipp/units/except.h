@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -18,5 +18,7 @@ using UnitMismatchError = MismatchError<units::Unit>;
 // mismatch and VariableView mismatch are the same type.
 template <class T>
 MismatchError(const units::Unit &, const T &) -> MismatchError<units::Unit>;
+template <class T>
+MismatchError(const units::Dim &, const T &) -> MismatchError<units::Dim>;
 
 } // namespace scipp::except

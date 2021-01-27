@@ -15,8 +15,6 @@ stages:
         timeoutInMinutes: 80
         strategy:
           matrix:
-            Python36:
-              PYTHON_VERSION: '3.6'
             Python37:
               PYTHON_VERSION: '3.7'
         pool:
@@ -131,28 +129,3 @@ stages:
 
     jobs:
       - template: templates/documentation_deploy.yml
-
-      - job: 'docker'
-        displayName: 'Docker'
-        timeoutInMinutes: 30
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
-          - task: Docker@2
-            inputs:
-              containerRegistry: 'DockerHub'
-              command: 'login'
-            displayName: 'Login to DockerHub'
-          - task: Docker@2
-            inputs:
-              containerRegistry: 'DockerHub'
-              repository: 'scipp/scipp-jupyter-demo'
-              command: 'buildAndPush'
-              Dockerfile: 'scipp-jupyter-demo.Dockerfile'
-              tags: 'latest'
-            displayName: 'Build image and push to DockerHub'
-          - task: Docker@2
-            inputs:
-              containerRegistry: 'DockerHub'
-              command: 'logout'
-            displayName: 'Logout of DockerHub'

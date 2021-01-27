@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <algorithm> // for std::sort
@@ -34,43 +34,42 @@ std::ostream &operator<<(std::ostream &os, const Dataset &dataset) {
   return os << DatasetConstView(dataset);
 }
 
-constexpr const char *tab = "    ";
+constexpr const char *tab = "  ";
 
 template <class D>
 std::string do_to_string(const D &dataset, const std::string &id,
                          const Dimensions &dims, const std::string &shift = "");
 
+template <class T> auto sorted(const T &map) {
+  using core::to_string;
+  std::vector<std::pair<std::string, VariableConstView>> elems;
+  for (const auto &[dim, var] : map)
+    elems.emplace_back(to_string(dim), var);
+  std::sort(elems.begin(), elems.end(),
+            [](const auto &a, const auto &b) { return a.first < b.first; });
+  return elems;
+}
+
 template <class Key>
 auto format_data_view(const Key &name, const DataArrayConstView &data,
-                      const Dimensions &datasetDims = Dimensions()) {
+                      const Dimensions &datasetDims, const std::string &shift,
+                      const bool inline_meta) {
   std::stringstream s;
-  if (data.hasData())
-    s << format_variable(name, data.data(), datasetDims);
-  else {
-    s << tab << name << " (data not histogrammed yet)\n";
-    s << tab << "Unaligned:\n";
-    s << do_to_string(data.unaligned(), "", data.unaligned().dims(),
-                      std::string(tab) + tab);
-  }
+  s << shift << format_variable(name, data.data(), datasetDims);
 
+  const std::string header_shift = inline_meta ? shift : (shift + tab + tab);
+  const std::string data_shift = inline_meta ? shift : (header_shift + tab);
+  if (!data.masks().empty()) {
+    s << header_shift << "Masks:\n";
+    for (const auto &[key, var] : sorted(data.masks()))
+      s << data_shift << format_variable(key, var, datasetDims);
+  }
   if (!data.attrs().empty()) {
-    s << tab << "Attributes:\n";
-    for (const auto &[attr_name, var] : data.attrs())
-      s << tab << tab << format_variable(attr_name, var, datasetDims);
+    s << header_shift << "Attributes:\n";
+    for (const auto &[key, var] : sorted(data.attrs()))
+      s << data_shift << format_variable(key, var, datasetDims);
   }
   return s.str();
-}
-
-bool comp(std::pair<std::string, VariableConstView> a,
-          std::pair<std::string, VariableConstView> b) {
-  return a.first < b.first;
-}
-
-template <class T> auto sorted(const T &map) {
-  std::vector<std::pair<std::string, VariableConstView>> elems(map.begin(),
-                                                               map.end());
-  std::sort(elems.begin(), elems.end(), comp);
-  return elems;
 }
 
 template <class D>
@@ -83,34 +82,20 @@ std::string do_to_string(const D &dataset, const std::string &id,
 
   if (!dataset.coords().empty()) {
     s << shift << "Coordinates:\n";
-    const auto map = dataset.coords();
-
-    // Elsewhere we just need a vector of Dataset attributes,
-    // here we need to call a function on these attributes,
-    // so first, cast dim.name() to its own map/vector.
-    std::vector<std::pair<std::string, VariableConstView>> elem;
-    for (const auto &[dim, var] : map) {
-      std::pair<std::string, VariableConstView> p = {dim.name(), var};
-      elem.push_back(p);
-    }
-    for (const auto &[name, var] : sorted(elem))
-      s << shift << format_variable(name, var, dims);
-  }
-  if (!dataset.attrs().empty()) {
-    s << shift << "Attributes:\n";
-    for (const auto &[name, var] : sorted(dataset.attrs()))
-      s << shift << format_variable(name, var, dims);
-  }
-  if (!dataset.masks().empty()) {
-    s << shift << "Masks:\n";
-
-    for (const auto &[name, var] : sorted(dataset.masks()))
+    CoordsConstView map;
+    if constexpr (std::is_same_v<D, DataArray> ||
+                  std::is_same_v<D, DataArrayConstView>)
+      map = dataset.coords();
+    else
+      map = dataset.coords();
+    for (const auto &[name, var] : sorted(map))
       s << shift << format_variable(name, var, dims);
   }
 
   if constexpr (std::is_same_v<D, DataArray> ||
                 std::is_same_v<D, DataArrayConstView>) {
-    s << shift << "Data:\n" << format_data_view(dataset.name(), dataset);
+    s << shift << "Data:\n"
+      << format_data_view(dataset.name(), dataset, dims, shift, true);
   } else {
     if (!dataset.empty())
       s << shift << "Data:\n";
@@ -118,7 +103,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
     for (const auto &item : dataset)
       sorted_items.insert(item.name());
     for (const auto &name : sorted_items)
-      s << shift << format_data_view(name, dataset[name], dims);
+      s << shift << format_data_view(name, dataset[name], dims, shift, false);
   }
 
   s << '\n';
@@ -126,20 +111,10 @@ std::string do_to_string(const D &dataset, const std::string &id,
 }
 
 template <class T> Dimensions dimensions(const T &dataset) {
-  Dimensions datasetDims;
-  for (const auto &item : dataset) {
-    const auto &dims = item.dims();
-    for (const auto dim : dims.labels())
-      if (!datasetDims.contains(dim))
-        datasetDims.add(dim, dims[dim]);
-  }
-  for (const auto &coord : dataset.coords()) {
-    const auto &dims = coord.second.dims();
-    for (const auto dim : dims.labels())
-      if (!datasetDims.contains(dim))
-        datasetDims.add(dim, dims[dim]);
-  }
-  return datasetDims;
+  Dimensions dims;
+  for (const auto &[dim, size] : dataset.dimensions())
+    dims.add(dim, size);
+  return dims;
 }
 
 std::string to_string(const DataArray &data) {

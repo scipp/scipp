@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 
@@ -18,31 +18,21 @@ namespace scipp::neutron {
 namespace beamline_impl {
 
 template <class T> static auto position(const T &d) {
-  if (d.coords().contains(Dim::Position))
-    return d.coords()[Dim::Position];
-  else
-    return d.attrs()["position"];
+  return d.meta()[Dim::Position];
 }
 
 template <class T> static auto source_position(const T &d) {
-  if (d.coords().contains(Dim("source-position")))
-    return d.coords()[Dim("source-position")];
-  else
-    return d.attrs()["source-position"];
+  return d.meta()[Dim("source-position")];
 }
 
 template <class T> static auto sample_position(const T &d) {
-  if (d.coords().contains(Dim("sample-position")))
-    return d.coords()[Dim("sample-position")];
-  else
-    return d.attrs()["sample-position"];
+  return d.meta()[Dim("sample-position")];
 }
 
 template <class T> static Variable flight_path_length(const T &d) {
   // If there is no sample this returns the straight distance from the source,
   // as required, e.g., for monitors.
-  if (d.coords().contains(Dim("sample-position")) ||
-      d.attrs().contains("sample-position"))
+  if (d.meta().contains(Dim("sample-position")))
     return l1(d) + l2(d);
   else
     return norm(position(d) - source_position(d));

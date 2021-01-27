@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -18,6 +18,11 @@ template <class T> struct ValuesAndVariances {
 
   ValuesAndVariances(T &val, T &var) : values(val), variances(var) {
     expect::sizeMatches(values, variances);
+  }
+  ValuesAndVariances &operator=(const ValuesAndVariances<const T> &other) {
+    values = other.values;
+    variances = other.variances;
+    return *this;
   }
   ValuesAndVariances &operator=(std::pair<T, T> &&data) {
     values = std::move(data.first);

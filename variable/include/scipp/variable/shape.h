@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -19,6 +19,8 @@ permute(const Variable &var, const Dim dim,
         const std::vector<scipp::index> &indices);
 SCIPP_VARIABLE_EXPORT Variable resize(const VariableConstView &var,
                                       const Dim dim, const scipp::index size);
+SCIPP_VARIABLE_EXPORT Variable resize(const VariableConstView &var,
+                                      const VariableConstView &shape);
 SCIPP_VARIABLE_EXPORT Variable reverse(Variable var, const Dim dim);
 SCIPP_VARIABLE_EXPORT VariableView reshape(Variable &var,
                                            const Dimensions &dims);
@@ -34,4 +36,9 @@ SCIPP_VARIABLE_EXPORT VariableConstView
 transpose(const VariableConstView &view, const std::vector<Dim> &dims = {});
 SCIPP_VARIABLE_EXPORT VariableView transpose(const VariableView &view,
                                              const std::vector<Dim> &dims = {});
+
+SCIPP_VARIABLE_EXPORT void squeeze(Variable &var, const std::vector<Dim> &dims);
+
+SCIPP_VARIABLE_EXPORT void expect_same_volume(const Dimensions &old_dims,
+                                              const Dimensions &new_dims);
 } // namespace scipp::variable

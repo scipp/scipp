@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/util.h"
@@ -10,6 +10,7 @@
 #include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
+#include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 
 using namespace scipp::core;
@@ -43,6 +44,10 @@ Variable linspace(const VariableConstView &start, const VariableConstView &stop,
   return out;
 }
 
+Variable is_linspace(const VariableConstView &var, const Dim dim) {
+  return transform(subspan_view(var, dim), core::element::is_linspace);
+}
+
 Variable values(const VariableConstView &x) {
   return transform(x, element::values);
 }
@@ -69,6 +74,28 @@ bool is_sorted(const VariableConstView &x, const Dim dim,
                         x.slice({dim, 1, size}),
                         core::element::is_sorted_nonascending);
   return out.value<bool>();
+}
+
+/// Zip elements of two variables into a variable where each element is a pair.
+Variable zip(const VariableConstView &first, const VariableConstView &second) {
+  return transform(first, second, core::element::zip);
+}
+
+/// For an input where elements are pairs, return two variables containing the
+/// first and second components of the input pairs.
+std::pair<Variable, Variable> unzip(const VariableConstView &var) {
+  return {transform(var, core::element::get<0>),
+          transform(var, core::element::get<1>)};
+}
+
+/// Fill variable with given values (and variances) and unit.
+void fill(const VariableView &var, const VariableConstView &value) {
+  transform_in_place(var, value, core::element::fill);
+}
+
+/// Fill variable with zeros.
+void fill_zeros(const VariableView &var) {
+  transform_in_place(var, core::element::fill_zeros);
 }
 
 } // namespace scipp::variable

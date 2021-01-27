@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "test_macros.h"
@@ -181,4 +181,21 @@ TEST_F(ViewIndex2DTest, edges) {
   EXPECT_EQ(i.get(), 17);
   i.increment();
   EXPECT_EQ(i.get(), 18);
+}
+
+TEST(ViewIndexTest, empty1D) {
+  Dimensions dims;
+  dims.add(Dim::X, 0);
+  const ViewIndex idx{dims, dims};
+  EXPECT_EQ(idx.get(), 0);
+  EXPECT_EQ(idx.index(), 0);
+}
+
+TEST(ViewIndexTest, empty2D) {
+  Dimensions dims;
+  dims.add(Dim::X, 0);
+  dims.add(Dim::Y, 0);
+  const ViewIndex idx{dims, dims};
+  EXPECT_EQ(idx.get(), 0);
+  EXPECT_EQ(idx.index(), 0);
 }

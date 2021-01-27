@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include <type_traits>
@@ -198,25 +198,34 @@ TEST(DimensionsTest, merge_self) {
   EXPECT_EQ(merge(dims, dims), dims);
 }
 
-TEST(DimensionsTest, merge_dense) {
+TEST(DimensionsTest, merge_non_overlapping) {
   Dimensions a(Dim::X, 2);
   Dimensions b({Dim::Y, Dim::Z}, {3, 4});
   EXPECT_EQ(merge(a, b), Dimensions({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}));
 }
 
-TEST(DimensionsTest, merge_dense_overlapping) {
+TEST(DimensionsTest, merge_overlapping) {
   Dimensions a({Dim::X, Dim::Y}, {2, 3});
   Dimensions b({Dim::Y, Dim::Z}, {3, 4});
   EXPECT_EQ(merge(a, b), Dimensions({Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}));
 }
 
-TEST(DimensionsTest, merge_dense_different_order) {
-  // The current implementation "favors" the order of the first argument if both
-  // inputs have the same number of dimension, but this is not necessarily a
-  // promise. Should there be different variants?
-  Dimensions a({Dim::Y, Dim::X}, {3, 2});
-  Dimensions b({Dim::X, Dim::Y}, {2, 3});
-  EXPECT_EQ(merge(a, b), Dimensions({Dim::Y, Dim::X}, {3, 2}));
+TEST(DimensionsTest, merge_different_order) {
+  // The implementation "favors" the order of the first argument if both
+  // inputs have the same number of dimension. Tranposing is avoided where
+  // possible, which is crucial for accumulate performance.
+  Dimensions x(Dim::X, 2);
+  Dimensions yx({Dim::Y, Dim::X}, {3, 2});
+  Dimensions xy({Dim::X, Dim::Y}, {2, 3});
+  Dimensions xyz({Dim::X, Dim::Y, Dim::Z}, {2, 3, 1});
+  Dimensions xzy({Dim::X, Dim::Z, Dim::Y}, {2, 1, 3});
+  Dimensions zxy({Dim::Z, Dim::X, Dim::Y}, {1, 2, 3});
+  EXPECT_EQ(merge(x, xy), xy);
+  EXPECT_EQ(merge(x, yx), yx); // no transpose
+  EXPECT_EQ(merge(yx, xy), yx);
+  EXPECT_EQ(merge(xy, xyz), xyz);
+  EXPECT_EQ(merge(xy, xzy), xzy); // no y-z transpose
+  EXPECT_EQ(merge(xy, zxy), zxy);
 }
 
 TEST(DimensionsTest, merge_size_fail) {

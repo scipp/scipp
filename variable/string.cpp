@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <chrono>
 #include <set>
 
+#include "scipp/core/bucket_array_view.h"
 #include "scipp/core/string.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/variable/string.h"
@@ -24,7 +25,7 @@ std::ostream &operator<<(std::ostream &os, const Variable &variable) {
   return os << VariableConstView(variable);
 }
 
-constexpr const char *tab = "    ";
+constexpr const char *tab = "  ";
 
 std::string make_dims_labels(const VariableConstView &variable,
                              const Dimensions &datasetDims) {
@@ -35,7 +36,7 @@ std::string make_dims_labels(const VariableConstView &variable,
   for (const auto dim : dims.labels()) {
     diminfo += to_string(dim);
     if (datasetDims.contains(dim) && (datasetDims[dim] + 1 == dims[dim]))
-      diminfo += " [bin-edges]";
+      diminfo += " [bin-edge]";
     diminfo += ", ";
   }
   diminfo.resize(diminfo.size() - 2);
@@ -50,7 +51,10 @@ template <class T> struct ValuesToString {
 };
 template <class T> struct VariancesToString {
   static auto apply(const VariableConstView &var) {
-    return core::array_to_string(var.template variances<T>());
+    if constexpr (core::canHaveVariances<T>())
+      return core::array_to_string(var.template variances<T>());
+    else
+      return std::string{};
   }
 };
 
@@ -63,10 +67,9 @@ auto apply(const DType dtype, Args &&... args) {
     return formatterRegistry().format(args...);
   return core::callDType<Callable>(
       std::tuple<double, float, int64_t, int32_t, std::string, bool,
-                 scipp::core::time_point, event_list<double>, event_list<float>,
-                 event_list<int64_t>, event_list<int32_t>,
-                 event_list<scipp::core::time_point>, Eigen::Vector3d,
-                 Eigen::Matrix3d>{},
+                 scipp::core::time_point, Eigen::Vector3d, Eigen::Matrix3d,
+                 Variable, bucket<Variable>, bucket<VariableConstView>,
+                 bucket<VariableView>, scipp::index_pair>{},
       dtype, std::forward<Args>(args)...);
 }
 
@@ -82,9 +85,9 @@ std::string format_variable(const std::string &key,
   s << colSep << std::setw(15) << '[' + variable.unit().name() + ']';
   s << colSep << make_dims_labels(variable, datasetDims);
   s << colSep;
-  s << apply<ValuesToString>(variable.data().dtype(), variable);
+  s << apply<ValuesToString>(variable.dtype(), variable);
   if (variable.hasVariances())
-    s << colSep << apply<VariancesToString>(variable.data().dtype(), variable);
+    s << colSep << apply<VariancesToString>(variable.dtype(), variable);
   s << '\n';
   return s.str();
 }

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
 import scipp as sc
@@ -48,27 +48,6 @@ def test_neutron_convert_out_arg():
     assert dspacing is d
 
 
-def test_neutron_convert_realign():
-    d = make_dataset_with_beamline()
-    # note that on the C++ side the request for realignment will be
-    # ignored since this is not realigned event data.
-    dspacing = sc.neutron.convert(d, 'tof', 'd-spacing', realign='linear')
-    assert dspacing.coords['d-spacing'].unit == sc.units.angstrom
-
-
-def test_neutron_convert_out_arg_realign():
-    d = make_dataset_with_beamline()
-    # note that on the C++ side the request for realignment will be
-    # ignored since this is not realigned event data.
-    dspacing = sc.neutron.convert(d,
-                                  'tof',
-                                  'd-spacing',
-                                  out=d,
-                                  realign='linear')
-    assert dspacing.coords['d-spacing'].unit == sc.units.angstrom
-    assert dspacing is d
-
-
 def test_neutron_beamline():
     d = make_dataset_with_beamline()
 
@@ -107,15 +86,15 @@ def test_neutron_instrument_view_with_dataset():
 def test_neutron_instrument_view_with_masks():
     d = make_dataset_with_beamline()
     x = np.transpose(d.coords['position'].values)[0, :]
-    d.masks['amask'] = sc.Variable(dims=['position'],
-                                   values=np.less(np.abs(x), 0.5))
+    d['a'].masks['amask'] = sc.Variable(dims=['position'],
+                                        values=np.less(np.abs(x), 0.5))
     sc.neutron.instrument_view(d["a"])
 
 
 def test_neutron_instrument_view_with_cmap_args():
     d = make_dataset_with_beamline()
     sc.neutron.instrument_view(d["a"],
-                               vmin=0,
-                               vmax=0.5,
+                               vmin=0.001,
+                               vmax=5.0,
                                cmap="magma",
-                               log=True)
+                               norm="log")

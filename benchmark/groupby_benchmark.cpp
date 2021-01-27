@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 #include <numeric>
 
 #include <benchmark/benchmark.h>
 
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/variable/operations.h"
 
@@ -13,58 +14,45 @@ using namespace scipp::variable;
 using namespace scipp::dataset;
 
 template <class T>
-auto make_1d_events_scalar_weights(const scipp::index size,
-                                   const scipp::index count) {
-  Variable var = makeVariable<event_list<T>>(Dims{Dim::X}, Shape{size});
-  auto vals = var.values<event_list<T>>();
-  for (scipp::index i = 0; i < size; ++i)
-    vals[i].resize(count);
+auto make_1d_events(const scipp::index size, const scipp::index count) {
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{size});
+  scipp::index row = 0;
+  for (auto &range : indices.values<std::pair<scipp::index, scipp::index>>()) {
+    range = {row, row + count};
+    row += count;
+  }
+  auto weights =
+      makeVariable<T>(Dims{Dim::Event}, Shape{row}, Values{}, Variances{});
+  auto y = makeVariable<T>(Dims{Dim::Event}, Shape{row});
+  // TODO Check if this comment from previous implementation is still relevant:
   // Not using initializer_list to init coord map to avoid distortion of
   // benchmark --- initializer_list induces a copy and yields 2x higher
   // performance due to some details of the memory and allocation system that
   // are not entirely understood.
-  std::map<Dim, Variable> map;
-  map.emplace(Dim::Y, std::move(var));
-  DataArray events(makeVariable<double>(Dims{Dim::X}, Shape{size},
-                                        units::counts, Values{}, Variances{}),
-                   std::move(map));
-  return events;
-}
-
-template <class T>
-auto make_1d_events(const scipp::index size, const scipp::index count) {
-  Variable var = makeVariable<event_list<T>>(Dims{Dim::X}, Shape{size},
-                                             Values{}, Variances{});
-  auto vals = var.values<event_list<T>>();
-  auto vars = var.variances<event_list<T>>();
-  for (scipp::index i = 0; i < size; ++i) {
-    vals[i].resize(count);
-    vars[i].resize(count);
-  }
-  auto events = make_1d_events_scalar_weights<T>(size, count);
-  events.setData(std::move(var));
+  DataArray buf(weights, {{Dim::Y, y}});
+  // TODO Check if this comment from previous implementation is still relevant:
   // Replacing the line below by `return copy(events);` yields more than 2x
   // higher performance. It is not clear whether this is just due to improved
   // "re"-allocation performance in the benchmark loop (compared to fresh
   // allocations) or something else.
-  return events;
+  return DataArray(make_bins(indices, Dim::Event, buf));
 }
 
-template <class T> static void BM_groupby_flatten(benchmark::State &state) {
+template <class T> static void BM_groupby_concatenate(benchmark::State &state) {
   const scipp::index nEvent = 1e8;
   const scipp::index nHist = state.range(0);
   const scipp::index nGroup = state.range(1);
-  const bool coord_only = state.range(2);
-  auto events = coord_only
-                    ? make_1d_events_scalar_weights<T>(nHist, nEvent / nHist)
-                    : make_1d_events<T>(nHist, nEvent / nHist);
+  auto events = make_1d_events<T>(nHist, nEvent / nHist);
   std::vector<int64_t> group_(nHist);
   std::iota(group_.begin(), group_.end(), 0);
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nHist},
                                      Values(group_.begin(), group_.end()));
-  events.coords().set(Dim("group"), group / (nHist / nGroup * units::one));
+  events.coords().set(
+      Dim("group"),
+      astype(group / (nHist / nGroup * units::one), dtype<int64_t>));
   for (auto _ : state) {
-    auto flat = groupby(events, Dim("group")).flatten(Dim::X);
+    auto flat = groupby(events, Dim("group")).concatenate(Dim::X);
     state.PauseTiming();
     flat = DataArray();
     state.ResumeTiming();
@@ -72,25 +60,23 @@ template <class T> static void BM_groupby_flatten(benchmark::State &state) {
   state.SetItemsProcessed(state.iterations() * nEvent);
   // Not taking into account vector reallocations, just the raw "effective" size
   // (read event, write to output).
-  int64_t data_factor = coord_only ? 1 : 3;
+  int64_t data_factor = 3;
   state.SetBytesProcessed(state.iterations() * (2 * nEvent * data_factor) *
                           sizeof(T));
-  state.counters["coord-only"] = coord_only;
   state.counters["groups"] = nGroup;
   state.counters["inputs"] = nHist;
 }
 // Params are:
 // - nHist
 // - nGroup
-// - coord_only
 // Also note the special case nHist = nGroup, which should effectively just make
 // a copy of the input with reshuffling events.
-BENCHMARK_TEMPLATE(BM_groupby_flatten, float)
+BENCHMARK_TEMPLATE(BM_groupby_concatenate, float)
     ->RangeMultiplier(4)
-    ->Ranges({{64, 2 << 19}, {1, 64}, {false, true}});
-BENCHMARK_TEMPLATE(BM_groupby_flatten, double)
+    ->Ranges({{64, 2 << 19}, {1, 64}});
+BENCHMARK_TEMPLATE(BM_groupby_concatenate, double)
     ->RangeMultiplier(4)
-    ->Ranges({{64, 2 << 19}, {1, 64}, {false, true}});
+    ->Ranges({{64, 2 << 19}, {1, 64}});
 
 static void BM_groupby_large_table(benchmark::State &state) {
   const scipp::index nCol = 3;
@@ -105,7 +91,8 @@ static void BM_groupby_large_table(benchmark::State &state) {
   d.setData("c", column);
   auto group = makeVariable<int64_t>(Dims{Dim::X}, Shape{nRow},
                                      Values(group_.begin(), group_.end()));
-  d.coords().set(Dim("group"), group / (nRow / nGroup * units::one));
+  d.coords().set(Dim("group"),
+                 astype(group / (nRow / nGroup * units::one), dtype<int64_t>));
   for (auto _ : state) {
     auto grouped = groupby(d, Dim("group")).sum(Dim::X);
     state.PauseTiming();

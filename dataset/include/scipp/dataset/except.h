@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -49,7 +49,9 @@ MismatchError(const std::pair<std::string, VariableConstView> &, const T &)
 
 namespace scipp::dataset::expect {
 
-void SCIPP_DATASET_EXPORT coordsAreSuperset(const DataArrayConstView &a,
+SCIPP_DATASET_EXPORT void coordsAreSuperset(const DataArrayConstView &a,
                                             const DataArrayConstView &b);
+
+SCIPP_DATASET_EXPORT void isKey(const VariableConstView &key);
 
 } // namespace scipp::dataset::expect

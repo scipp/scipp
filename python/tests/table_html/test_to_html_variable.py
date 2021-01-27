@@ -1,10 +1,12 @@
 import numpy as np
 import pytest
 from bs4 import BeautifulSoup
+import sys
 
 import scipp as sc
 from scipp.table_html import make_html
-from scipp.table_html.formatting_html import VARIANCE_PREFIX
+from scipp.table_html.formatting_html import (VARIANCE_PREFIX,
+                                              human_readable_size)
 
 from .common import (UNIT_CSS_CLASS, VALUE_CSS_CLASS, VAR_NAME_CSS_CLASS,
                      assert_common, assert_dims, assert_lengths, assert_unit)
@@ -53,7 +55,7 @@ def test_data_not_elided():
                       dtype=in_dtype)
 
     html = BeautifulSoup(make_html(var), features="html.parser")
-    assert_common(html, in_dtype)
+    assert_common(html, in_dtype, sys.getsizeof(var))
 
     name = html.find_all(class_=VAR_NAME_CSS_CLASS)
     assert len(name) == 1
@@ -66,65 +68,8 @@ def test_data_not_elided():
     assert "..." not in value[0].text
 
 
-def test_empty_events_1d_variable():
-    in_dtype = sc.dtype.event_list_float32
-    in_unit = sc.units.K
-    var = sc.Variable([], [], unit=in_unit, dtype=in_dtype)
-
-    html = BeautifulSoup(make_html(var), features="html.parser")
-    assert_common(html, in_dtype)
-    name = html.find_all(class_=VAR_NAME_CSS_CLASS)
-    assert len(name) == 1
-    assert_dims([], '')
-    assert_unit(in_unit, html.find_all(class_=UNIT_CSS_CLASS))
-
-    value = html.find_all(class_=VALUE_CSS_CLASS)
-    assert len(value) == 1
-
-
-def test_events_1d_variable():
-    in_dtype = sc.dtype.event_list_float32
-    in_unit = sc.units.deg
-    var = sc.Variable([], [], unit=in_unit, dtype=in_dtype)
-
-    length = 10
-    var.values.extend(np.arange(length))
-
-    html = BeautifulSoup(make_html(var), features="html.parser")
-    assert_common(html, in_dtype)
-
-    name = html.find_all(class_=VAR_NAME_CSS_CLASS)
-    assert len(name) == 1
-    assert_dims([], '')
-    # This checks if the 'size' of the Events dim is being added
-    # which would add a useless 'None'
-    assert "None" not in name[0].text
-    assert_unit(in_unit, html.find_all(class_=UNIT_CSS_CLASS))
-
-    value = html.find_all(class_=VALUE_CSS_CLASS)
-    assert len(value) == 1
-
-
-@pytest.mark.parametrize("dims, lengths",
-                         ((['x', 'y'], (10, 3)), (['x', 'y', 'z'],
-                                                  (10, 10, 3)),
-                          (['x', 'y', 'z', 'spectrum'], (10, 10, 10, 3))))
-def test_events(dims, lengths):
-    in_dtype = sc.dtype.event_list_float32
-    in_unit = sc.units.deg
-
-    var = sc.Variable(dims, lengths, unit=in_unit, dtype=in_dtype)
-    length = 10
-    var.values[0].extend(np.arange(length))
-
-    html = BeautifulSoup(make_html(var), features="html.parser")
-    assert_common(html, in_dtype)
-
-    name = html.find_all(class_=VAR_NAME_CSS_CLASS)
-    assert len(name) == 1
-    assert_dims(dims, name[0].text)
-    assert_unit(in_unit, html.find_all(class_=UNIT_CSS_CLASS))
-
-    value = html.find_all(class_=VALUE_CSS_CLASS)
-    assert len(value) == 1
-    assert f"len={length}" in value[0].text
+def test_size_of_unit_conversion():
+    assert "4.30 GB" == human_readable_size(4.3 * 1024 * 1024 * 1024)
+    assert "4.30 MB" == human_readable_size(4.3 * 1024 * 1024)
+    assert "4.30 KB" == human_readable_size(4.3 * 1024)
+    assert "5 Bytes" == human_readable_size(5)

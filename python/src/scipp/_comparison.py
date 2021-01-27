@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -110,3 +110,17 @@ def is_equal(x, y):
              dims, shapes, coords, and masks. Else False.
     """
     return _call_cpp_func(_cpp.is_equal, x, y)
+
+
+def is_approx(x, y, tol):
+    """Compares values (x, y) element by element against tolerance (tol).
+    Variances are not accounted for.
+
+    :param x: Left input.
+    :param y: Right input.
+    :param tol: Tolerance value.
+    :return: Variable same size as input.
+             Element True if absolute diff of value <= input tolerance,
+             otherwise False.
+    """
+    return _call_cpp_func(_cpp.is_approx, x, y, tol)

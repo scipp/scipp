@@ -7,6 +7,8 @@ Installation
 Once multiple options are available (or required) we will look into either shipping multiple binaries, or allow for configuration at run time.
 If you want to use scipp and require different units/dimensions, please see* :ref:`customizing`, *or better, get in touch with us.*
 
+Scipp requires Python 3.7 or above.
+
 Conda
 -----
 
@@ -43,7 +45,7 @@ To update or remove ``scipp`` use `conda update <https://docs.conda.io/projects/
 
 If you wish to use Scipp with Mantid you may use the following command to create an environment containing both Scipp and Mantid framework.
 
-Note that Conda packages for Mantid are only available on Linux and are currently maintained seperate to the Mantid project.
+Note that Conda packages for Mantid are only available on Linux and macOS, and are currently maintained separate to the Mantid project.
 This is due to some dependencies being too old to work in the same environment as Scipp.
 
 .. code-block:: sh
@@ -51,8 +53,8 @@ This is due to some dependencies being too old to work in the same environment a
   $ conda create \
       -n env_with_scipp_and_mantid \
       -c conda-forge \
-      -c dannixon \
       -c scipp/label/dev \
+      -c scipp \
       python=3.7 \
       scipp \
       mantid-framework

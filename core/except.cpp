@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/except.h"
@@ -22,9 +22,8 @@ DimensionError::DimensionError(scipp::index expectedDim, scipp::index userDim)
 
 DimensionNotFoundError::DimensionNotFoundError(const core::Dimensions &expected,
                                                const Dim actual)
-    : DimensionError("Expected dimension to be a non-events dimension of " +
-                     to_string(expected) + ", got " + to_string(actual) + ".") {
-}
+    : DimensionError("Expected dimension to be in " + to_string(expected) +
+                     ", got " + to_string(actual) + ".") {}
 
 DimensionLengthError::DimensionLengthError(const core::Dimensions &expected,
                                            const Dim actual,

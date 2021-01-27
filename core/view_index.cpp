@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Neil Vaytet
 #include "scipp/core/view_index.h"
+
+#include <algorithm>
 
 namespace scipp::core {
 ViewIndex::ViewIndex(const Dimensions &targetDimensions,
@@ -33,7 +35,7 @@ ViewIndex::ViewIndex(const Dimensions &targetDimensions,
       for (scipp::index d2 = 0; d2 < d; ++d2)
         m_delta[d] -= m_delta[d2];
     }
-    offset *= m_extent[d];
+    offset *= m_extent[d] == 0 ? 1 : m_extent[d];
   }
   setIndex(0);
 }

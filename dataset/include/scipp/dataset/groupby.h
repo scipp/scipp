@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -17,7 +17,7 @@ namespace scipp::dataset {
 class SCIPP_DATASET_EXPORT GroupByGrouping {
 public:
   using group = boost::container::small_vector<Slice, 4>;
-  GroupByGrouping(Variable &&key, std::vector<group> &&groups)
+  GroupByGrouping(Variable key, std::vector<group> groups)
       : m_key(std::move(key)), m_groups(std::move(groups)) {}
 
   scipp::index size() const noexcept { return scipp::size(m_groups); }
@@ -45,7 +45,7 @@ public:
   T copy(const scipp::index group,
          const AttrPolicy attrPolicy = AttrPolicy::Keep) const;
 
-  T flatten(const Dim reductionDim) const;
+  T concatenate(const Dim reductionDim) const;
   T mean(const Dim reductionDim) const;
   T sum(const Dim reductionDim) const;
   T all(const Dim reductionDim) const;
@@ -55,8 +55,7 @@ public:
 
 private:
   T makeReductionOutput(const Dim reductionDim) const;
-  template <class Op, class CoordOp = void *>
-  T reduce(Op op, const Dim reductionDim, CoordOp coord_op = nullptr) const;
+  template <class Op> T reduce(Op op, const Dim reductionDim) const;
 
   typename T::const_view_type m_data;
   GroupByGrouping m_grouping;

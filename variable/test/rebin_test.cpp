@@ -1,27 +1,30 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/variable/bins.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/variable.h"
 
 using namespace scipp;
 
-TEST(Variable, rebin) {
-  auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
-  var.setUnit(units::counts);
+TEST(RebinTest, inner) {
+  const auto base = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
+                                         Values{1.0, 2.0});
   const auto oldEdge =
       makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1.0, 2.0, 3.0});
   const auto newEdge =
       makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 3.0});
-  auto rebinned = rebin(var, Dim::X, oldEdge, newEdge);
-  ASSERT_EQ(rebinned.dims().shape().size(), 1);
-  ASSERT_EQ(rebinned.dims().volume(), 1);
-  ASSERT_EQ(rebinned.values<double>().size(), 1);
-  EXPECT_EQ(rebinned.values<double>()[0], 3.0);
+  for (const auto &var :
+       {base, astype(base, dtype<int64_t>), astype(base, dtype<int32_t>)}) {
+    EXPECT_EQ(rebin(var, Dim::X, oldEdge, newEdge),
+              makeVariable<double>(Dims{Dim::X}, Shape{1}, units::counts,
+                                   Values{3.0}));
+  }
 }
 
-TEST(Variable, rebin_descending) {
+TEST(RebinTest, inner_descending) {
   auto var = makeVariable<double>(
       Dims{Dim::X}, Shape{10},
       Values{1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0});
@@ -40,23 +43,98 @@ TEST(Variable, rebin_descending) {
   ASSERT_EQ(rebinned, expected);
 }
 
-TEST(Variable, rebin_outer) {
-  auto var = makeVariable<double>(Dimensions{{Dim::Y, 6}, {Dim::X, 2}},
-                                  Values{1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
-  var.setUnit(units::counts);
+TEST(RebinTest, outer) {
+  auto base =
+      makeVariable<double>(Dimensions{{Dim::Y, 6}, {Dim::X, 2}}, units::counts,
+                           Values{1, 2, 3, 4, 5, 6, 1, 2, 3, 4, 5, 6});
   const auto oldEdge =
       makeVariable<double>(Dims{Dim::Y}, Shape{7}, Values{1, 2, 3, 4, 5, 6, 7});
   const auto newEdge =
       makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 3, 8});
-  auto rebinned = rebin(var, Dim::Y, oldEdge, newEdge);
-  ASSERT_EQ(rebinned.dims().volume(), 4);
-  ASSERT_EQ(rebinned.values<double>().size(), 4);
 
-  auto expected = makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
-                                       Values{4, 6, 14, 18});
-  expected.setUnit(units::counts);
+  for (const auto &var :
+       {base, astype(base, dtype<int64_t>), astype(base, dtype<int32_t>)}) {
+    EXPECT_EQ(rebin(var, Dim::Y, oldEdge, newEdge),
 
-  ASSERT_EQ(rebinned, expected);
+              makeVariable<double>(Dimensions{{Dim::Y, 2}, {Dim::X, 2}},
+                                   units::counts, Values{4, 6, 14, 18}));
+  }
+}
+
+TEST(RebinTest, outer_increasing) {
+  const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4, 1},
+                                        Values{1, 2, 3, 4}, units::counts);
+  constexpr auto varY = [](const auto... vals) {
+    return makeVariable<double>(Dims{Dim::Y}, Shape{sizeof...(vals)},
+                                Values{vals...});
+  };
+  const auto oldY = varY(0, 1, 2, 3, 4);
+  constexpr auto var1x1 = [](const double value) {
+    return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 1},
+                                Values{value}, units::counts);
+  };
+  // full range
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, oldY), var);
+  // aligned old/bew edges
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0, 4)), var1x1(10));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0, 2)), var1x1(3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1, 3)), var1x1(5));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2, 4)), var1x1(7));
+  // crossing 0 bin bounds
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 0.3)), var1x1((0.3 - 0.1) * 1));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.1, 1.3)), var1x1((1.3 - 1.1) * 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.1, 3.3)), var1x1((3.3 - 3.1) * 4));
+  // crossing 1 bin bound
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 2.0)), var1x1(0.9 * 1 + 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 1.3)),
+            var1x1((1.0 - 0.1) * 1 + (1.3 - 1.0) * 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.1, 2.3)),
+            var1x1((2.0 - 1.1) * 2 + (2.3 - 2.0) * 3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.1, 3.3)),
+            var1x1((3.0 - 2.1) * 3 + (3.3 - 3.0) * 4));
+  // crossing 2 bin bounds
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.1, 2.3)),
+            var1x1((1.0 - 0.1) * 1 + 2 + (2.3 - 2.0) * 3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.1, 3.3)),
+            var1x1((2.0 - 1.1) * 2 + 3 + (3.3 - 3.0) * 4));
+}
+
+TEST(RebinTest, outer_decreasing) {
+  const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{4, 1},
+                                        Values{4, 3, 2, 1}, units::counts);
+  constexpr auto varY = [](const auto... vals) {
+    return makeVariable<double>(Dims{Dim::Y}, Shape{sizeof...(vals)},
+                                Values{vals...});
+  };
+  const auto oldY = varY(4, 3, 2, 1, 0);
+  constexpr auto var1x1 = [](const double value) {
+    return makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{1, 1},
+                                Values{value}, units::counts);
+  };
+  // full range
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, oldY), var);
+  // aligned old/bew edges
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(4, 0)), var1x1(10));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2, 0)), var1x1(3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3, 1)), var1x1(5));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(4, 2)), var1x1(7));
+  // crossing 0 bin bounds
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(0.3, 0.1)), var1x1((0.3 - 0.1) * 1));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.3, 1.1)), var1x1((1.3 - 1.1) * 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.3, 3.1)), var1x1((3.3 - 3.1) * 4));
+  // crossing 1 bin bound
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.0, 0.1)), var1x1(0.9 * 1 + 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(1.3, 0.1)),
+            var1x1((1.0 - 0.1) * 1 + (1.3 - 1.0) * 2));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.3, 1.1)),
+            var1x1((2.0 - 1.1) * 2 + (2.3 - 2.0) * 3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.3, 2.1)),
+            var1x1((3.0 - 2.1) * 3 + (3.3 - 3.0) * 4));
+  // crossing 2 bin bounds
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(2.3, 0.1)),
+            var1x1((1.0 - 0.1) * 1 + 2 + (2.3 - 2.0) * 3));
+  EXPECT_EQ(rebin(var, Dim::Y, oldY, varY(3.3, 1.1)),
+            var1x1((2.0 - 1.1) * 2 + 3 + (3.3 - 3.0) * 4));
 }
 
 class RebinMask1DTest : public ::testing::Test {
@@ -128,4 +206,36 @@ TEST(Variable, rebin_mask_outer) {
   const auto result = rebin(mask, Dim::Y, oldEdge, newEdge);
 
   ASSERT_EQ(result, expected);
+}
+
+TEST(Variable, rebin_mask_outer_single) {
+  const auto mask =
+      makeVariable<bool>(Dimensions{{Dim::Y, 3}, {Dim::X, 2}},
+                         Values{false, true, false, false, false, false});
+
+  const auto oldEdge =
+      makeVariable<double>(Dimensions{Dim::Y, 4}, Values{1, 3, 5, 6});
+
+  const auto newEdge =
+      makeVariable<double>(Dimensions{Dim::Y, 2}, Values{0.0, 6.5});
+  const auto expected = makeVariable<bool>(Dimensions{{Dim::Y, 1}, {Dim::X, 2}},
+                                           Values{false, true});
+
+  const auto result = rebin(mask, Dim::Y, oldEdge, newEdge);
+
+  ASSERT_EQ(result, expected);
+}
+TEST(Variable, check_rebin_cannot_be_used_on_bin_data) {
+  Dimensions dims{Dim::Y, 1};
+  Variable buffer =
+      makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      dims, Values{std::pair{0, 3}});
+  Variable var = make_bins(indices, Dim::X, buffer);
+  const auto oldEdge =
+      makeVariable<double>(Dimensions{Dim::Y, 2}, Values{1, 4});
+  const auto newEdge =
+      makeVariable<double>(Dimensions{Dim::Y, 4}, Values{0, 1, 2, 3});
+  EXPECT_THROW([[maybe_unused]] auto res = rebin(var, Dim::Y, oldEdge, newEdge),
+               except::TypeError);
 }

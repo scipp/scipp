@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Igor Gudich & Neil Vaytet
 
@@ -176,6 +176,20 @@ def _table_from_dict_of_variables(dict_of_variables,
     return html
 
 
+def _is_bin_centers(container, var, dim):
+    """
+    Is var considered to be bin_centers in dimension dim
+    Considers all meta including non-dimensional meta
+
+    :param container: scipp object defining all meta
+    :param var: variable to determine if bin centers
+    :param dim: dimension to consider
+    :return: True only if var is bin centers
+    """
+    largest = [c.shape[0] for _, c in container.meta.items() if dim in c.dims]
+    return max(largest) == var.shape[0] + 1 if len(largest) > 0 else False
+
+
 def table(scipp_obj):
     """
     Create a html table from the contents of a Dataset (0D and 1D Variables
@@ -206,13 +220,19 @@ class TableViewer:
         self.trigger_update = True
 
         if su.is_dataset_or_array(scipp_obj):
-            self.headers = 2
             if su.is_dataset(scipp_obj):
                 iterlist = scipp_obj
+                tag_names = ['coords', 'data']
+                tag_keys = [scipp_obj.coords, iterlist]
             else:
                 iterlist = {scipp_obj.name: scipp_obj}
-            for tag, cat in zip(["coords", "masks", "data"],
-                                [scipp_obj.coords, scipp_obj.masks, iterlist]):
+                tag_names = ['coords', 'attrs', 'masks', 'data']
+                tag_keys = [
+                    scipp_obj.coords, scipp_obj.attrs, scipp_obj.masks,
+                    iterlist
+                ]
+            self.headers = len(tag_names)
+            for tag, cat in zip(tag_names, tag_keys):
                 for name, var in cat.items():
                     ndims = len(var.dims)
                     name_str = str(name)
@@ -225,17 +245,13 @@ class TableViewer:
                             self.is_bin_centers[group][key] = self.make_dict()
                             self.sizes[group][key] = []
                         self.is_bin_centers[group][key][tag][name_str] = False
-                        if dim in scipp_obj.coords:
-                            if scipp_obj.coords[dim].shape[
-                                    0] == var.shape[0] + 1:
-                                self.is_bin_centers[group][key][tag][
-                                    name_str] = True
+                        self.is_bin_centers[group][key][tag][
+                            name_str] = _is_bin_centers(scipp_obj, var, dim)
                         self.tabledict[group][key][tag][name_str] = var
                         self.sizes[group][key].append(
                             var.shape[0] if ndims > 0 else None)
 
         else:
-
             ndims = len(scipp_obj.shape)
             if ndims < 2:
                 group = "{}D Variables".format(ndims)
@@ -324,7 +340,7 @@ class TableViewer:
         return
 
     def make_dict(self):
-        return {"coords": {}, "data": {}, "masks": {}}
+        return {"coords": {}, "data": {}, "masks": {}, "attrs": {}}
 
     def make_hbox(self, group, key, size):
         hbox = self.tables[group][key]

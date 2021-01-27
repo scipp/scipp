@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -10,4 +10,5 @@
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
+#include "scipp/variable/special_values.h"
 #include "scipp/variable/trigonometry.h"

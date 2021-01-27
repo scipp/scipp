@@ -1,31 +1,48 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
 
-#include <memory>
 #include <tuple>
 #include <utility>
 #include <variant>
 
+#include "scipp/core/bucket.h"
+#include "scipp/variable/variable_factory.h"
+
 namespace scipp::variable {
 
-template <class T> class VariableConceptT;
+/// Access wrapper for a variable with known dtype.
+///
+/// This uses VariableFactory to obtain views of the underlying data type, e.g.,
+/// to access the double values for bucket<Variable> or bucket<DataArray>.
+/// DataArray is not known in scipp::variable so the dynamic factory is used for
+/// decoupling this.
+template <class T, class Var> struct VariableAccess {
+  VariableAccess(Var &var) : m_var(&var) {}
+  using value_type = T;
+  Dimensions dims() const { return m_var->dims(); }
+  auto values() const { return variableFactory().values<T>(*m_var); }
+  auto variances() const { return variableFactory().variances<T>(*m_var); }
+  bool hasVariances() const { return variableFactory().hasVariances(*m_var); }
+  Variable clone() const { return copy(*m_var); }
+  Var *m_var{nullptr};
+};
+template <class T, class Var> auto variable_access(Var &var) {
+  return VariableAccess<T, Var>(var);
+}
 
 namespace visit_detail {
+
 template <template <class...> class Tuple, class... T, class... V>
 static bool holds_alternatives(Tuple<T...> &&, const V &... v) noexcept {
-  return ((dtype<T> == v.dtype()) && ...);
+  return ((dtype<T> == variableFactory().elem_dtype(v)) && ...);
 }
 
 template <template <class...> class Tuple, class... T, class... V>
 static auto get_args(Tuple<T...> &&, V &&... v) noexcept {
-  return std::forward_as_tuple(
-      dynamic_cast<
-          std::conditional_t<std::is_const_v<std::remove_reference_t<V>>,
-                             const VariableConceptT<T>, VariableConceptT<T>> &>(
-          v)...);
+  return std::tuple(variable_access<T>(v)...);
 }
 
 template <class... Tuple, class F, class... V>
@@ -61,6 +78,10 @@ decltype(auto) invoke(F &&f, V &&... v) {
 template <class> struct is_tuple : std::false_type {};
 template <class... T> struct is_tuple<std::tuple<T...>> : std::true_type {};
 
+template <class> struct is_array : std::false_type {};
+template <class T, size_t N>
+struct is_array<std::array<T, N>> : std::true_type {};
+
 /// Typedef for T if T is a tuple, else std::tuple<T, T, T, ...>, with T
 /// replicated sizeof...(V) times.
 template <class T, class... V>
@@ -73,7 +94,7 @@ using maybe_duplicate =
 ///
 /// Does not generate code for all possible combinations of alternatives,
 /// instead the tuples Ts provide a list of type combinations to try.
-template <class... Ts> struct visit_impl {
+template <class... Ts> struct visit {
   template <class F, class... V> static decltype(auto) apply(F &&f, V &&... v) {
     using namespace visit_detail;
     // For a single input or if same type required for all inputs, Ts is not a
@@ -82,8 +103,5 @@ template <class... Ts> struct visit_impl {
                                                 std::forward<V>(v)...);
   }
 };
-template <class... Ts> auto visit(const std::tuple<Ts...> &) {
-  return visit_impl<Ts...>{};
-}
 
 } // namespace scipp::variable

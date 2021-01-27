@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -70,16 +70,6 @@ TEST(CreateVariableTest, from_vector) {
   const std::vector<double> v{1, 2, 3};
   auto varRef = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{1, 2, 3});
   auto var = makeVariable<double>(Dims{Dim::X}, Shape{3}, Values(v));
-}
-
-TEST(CreateVariableTest, construct_events) {
-  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
-
-  auto dimensions = Dimensions{Dim::X, 2};
-  makeVariable<event_list<double>>(
-      Dimensions{dimensions},
-      Values{event_list<double>(), event_list<double>()},
-      Variances{event_list<double>(), event_list<double>()});
 }
 
 TEST(VariableUniversalConstructorTest, dimensions_unit_basic) {

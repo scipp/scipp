@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/dataset/histogram.h"
 #include "scipp/core/element/histogram.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
-#include "scipp/dataset/unaligned.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/transform_subspan.h"
 
@@ -18,65 +18,40 @@ using namespace scipp::variable;
 
 namespace scipp::dataset {
 
-namespace histogram_events_detail {
-template <class Out, class Coord, class Weight, class Edge>
-using args = std::tuple<span<Out>, event_list<Coord>, Weight, span<const Edge>>;
-}
-namespace histogram_dense_detail {
-template <class Out, class Coord, class Weight, class Edge>
-using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
-                        span<const Edge>>;
-}
-
 DataArray histogram(const DataArrayConstView &events,
                     const VariableConstView &binEdges) {
   using namespace scipp::core;
   auto dim = binEdges.dims().inner();
 
   DataArray result;
-  if (contains_events(events.coords()[dim])) {
-    result = apply_and_drop_dim(
-        events,
-        [](const DataArrayConstView &events_, const Dim eventDim,
-           const Dim dim_, const VariableConstView &binEdges_) {
-          static_cast<void>(eventDim); // This is just Dim::Invalid
-          using namespace histogram_events_detail;
-          // This supports scalar weights as well as event_list weights.
-          return transform_subspan<
-              std::tuple<args<double, double, double, double>,
-                         args<double, float, double, double>,
-                         args<double, float, double, float>,
-                         args<double, double, float, double>,
-                         args<double, double, event_list<double>, double>,
-                         args<double, float, event_list<double>, double>,
-                         args<double, float, event_list<double>, float>,
-                         args<double, double, event_list<float>, double>>>(
-              dtype<double>, dim_, binEdges_.dims()[dim_] - 1,
-              events_.coords()[dim_], events_.data(), binEdges_,
-              element::histogram);
-        },
-        dim_of_coord(events.coords()[dim], dim), dim, binEdges);
-  } else if (!is_histogram(events, dim)) {
+  if (events.dtype() == dtype<bucket<DataArray>>) {
+    // TODO Histogram data from buckets. Is this the natural choice for the API,
+    // i.e., does it make sense that histograming considers bucket contents?
+    // Should we instead have a separate named function for this case?
     result = apply_and_drop_dim(
         events,
         [](const DataArrayConstView &events_, const Dim dim_,
            const VariableConstView &binEdges_) {
-          const auto mask = irreducible_mask(events_.masks(), dim_);
-          Variable masked;
-          if (mask)
-            masked = events_.data() * ~mask;
-          using namespace histogram_dense_detail;
-          return transform_subspan<
-              std::tuple<args<double, double, double, double>,
-                         args<float, double, float, double>,
-                         args<double, float, double, float>,
-                         args<float, float, float, float>>>(
-              dtype<double>, dim_, binEdges_.dims()[dim_] - 1,
-              events_.coords()[dim_],
-              mask ? VariableConstView(masked) : events_.data(), binEdges_,
-              element::histogram);
+          const Masker masker(events_, dim_);
+          // TODO Creating a full copy of event data here is very inefficient
+          return buckets::histogram(masker.data(), binEdges_);
         },
         dim, binEdges);
+  } else if (!is_histogram(events, dim)) {
+    const auto data_dim = events.dims().inner();
+    result = apply_and_drop_dim(
+        events,
+        [](const DataArrayConstView &events_, const Dim data_dim_,
+           const VariableConstView &binEdges_) {
+          const auto dim_ = binEdges_.dims().inner();
+          const Masker masker(events_, dim_);
+          return transform_subspan(
+              events_.dtype(), dim_, binEdges_.dims()[dim_] - 1,
+              subspan_view(events_.coords()[dim_], data_dim_),
+              subspan_view(masker.data(), data_dim_), binEdges_,
+              element::histogram);
+        },
+        data_dim, binEdges);
   } else {
     throw except::BinEdgeError(
         "Data is already histogrammed. Expected event data or dense point "
@@ -118,84 +93,23 @@ Dim edge_dimension(const DataArrayConstView &a) {
   return *dims.begin();
 }
 
-/// Return true if the data array respresents a histogram for given dim.
-bool is_histogram(const DataArrayConstView &a, const Dim dim) {
+namespace {
+template <typename T> bool is_histogram_impl(const T &a, const Dim dim) {
   const auto dims = a.dims();
   const auto coords = a.coords();
-  return dims.contains(dim) && coords.contains(dim) &&
+  return dims.count(dim) == 1 && coords.contains(dim) &&
          coords[dim].dims().contains(dim) &&
-         coords[dim].dims()[dim] == dims[dim] + 1;
-}
-
-namespace {
-void histogram_md_recurse(const VariableView &data,
-                          const DataArrayConstView &unaligned,
-                          const DataArrayConstView &realigned,
-                          const scipp::index dim_index = 0) {
-  const auto &dims = realigned.dims();
-  const Dim dim = dims.labels()[dim_index];
-  const auto size = dims.shape()[dim_index];
-  if (unaligned.dims().contains(dim)) // skip over aligned dims
-    return histogram_md_recurse(data, unaligned, realigned, dim_index + 1);
-  auto groups = groupby(unaligned, dim, realigned.coords()[dim]);
-  if (data.dims().ndim() == unaligned.dims().ndim()) {
-    const Dim unaligned_dim = unaligned.coords()[dim].dims().inner();
-    auto hist1d = groups.sum(unaligned_dim);
-    data.assign(hist1d.data());
-    return;
-  }
-  for (scipp::index i = 0; i < size; ++i) {
-    auto slice = groups.copy(i, AttrPolicy::Drop);
-    slice.coords().erase(dim); // avoid carry of unnecessary coords in recursion
-    histogram_md_recurse(data.slice({dim, i}), slice, realigned, dim_index + 1);
-  }
+         coords[dim].dims()[dim] == dims.at(dim) + 1;
 }
 } // namespace
-
-DataArray histogram(const DataArrayConstView &realigned) {
-  if (realigned.hasData())
-    throw except::UnalignedError("Expected realigned data, but data appears to "
-                                 "be histogrammed already.");
-  if (unaligned::is_realigned_events(realigned)) {
-    const auto realigned_dims = unaligned::realigned_event_dims(realigned);
-    auto bounds = realigned.slice_bounds();
-    bounds.erase(std::remove_if(bounds.begin(), bounds.end(),
-                                [&realigned_dims](const auto &item) {
-                                  return realigned_dims.count(item.first);
-                                }),
-                 bounds.end());
-    DataArray out;
-    if (bounds.empty())
-      out = histogram(realigned.unaligned(),
-                      unaligned::realigned_event_coord(realigned));
-    else {
-      // Copy to drop events out of slice bounds
-      DataArray sliced(realigned);
-      out = histogram(sliced.unaligned(),
-                      unaligned::realigned_event_coord(realigned));
-    }
-    for (const auto &[name, attr] : realigned.attrs())
-      out.attrs().set(name, std::move(attr));
-    return out;
-  }
-  std::optional<DataArray> filtered;
-  // If `realigned` is sliced we need to copy the unaligned content to "apply"
-  // the slicing since slicing realigned dimensions does not affect the view
-  // onto the unaligned content. Note that we could in principle avoid the copy
-  // if only aligned dimensions are sliced.
-  if (!realigned.slices().empty())
-    filtered = DataArray(realigned, AttrPolicy::Drop);
-  const auto unaligned =
-      filtered ? filtered->unaligned() : realigned.unaligned();
-
-  Variable data(unaligned.data(), realigned.dims());
-  histogram_md_recurse(data, unaligned, realigned);
-  return DataArray{std::move(data), realigned.coords(), realigned.masks(),
-                   realigned.attrs()};
+/// Return true if the data array represents a histogram for given dim.
+bool is_histogram(const DataArrayConstView &a, const Dim dim) {
+  return is_histogram_impl(a, dim);
 }
 
-Dataset histogram(const DatasetConstView &realigned) {
-  return apply_to_items(realigned, [](auto &item) { return histogram(item); });
+/// Return true if the dataset represents a histogram for given dim.
+bool is_histogram(const DatasetConstView &a, const Dim dim) {
+  return is_histogram_impl(a, dim);
 }
 
 } // namespace scipp::dataset

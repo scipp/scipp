@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "test_macros.h"
@@ -40,7 +40,7 @@ TEST(UnitTest, cancellation) {
   EXPECT_EQ(units::deg * Unit(units::rad / units::deg), units::rad);
 }
 
-TEST(UnitTest, construct) { ASSERT_NO_THROW(Unit u{units::dimensionless}); }
+TEST(UnitTest, construct) { ASSERT_NO_THROW(Unit{units::dimensionless}); }
 
 TEST(UnitTest, construct_default) {
   Unit u;

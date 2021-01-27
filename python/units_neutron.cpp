@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/dtype.h"
@@ -161,6 +161,7 @@ void init_units_neutron(py::module &m) {
   units.attr("s") = units::s;
   units.attr("us") = units::us;
   units.attr("ns") = units::ns;
+  units.attr("mm") = units::mm;
 
   units.def(
       "supported_units",

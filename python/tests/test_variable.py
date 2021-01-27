@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
 
@@ -87,14 +87,6 @@ def test_create_with_shape_and_variances():
         sc.Variable(dims=['x'], shape=[2], variances=np.arange(2))
 
 
-def test_create_events():
-    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
-    assert var.dtype == sc.dtype.event_list_float64
-    assert len(var.values) == 4
-    for vals in var.values:
-        assert len(vals) == 0
-
-
 def test_create_from_numpy_1d():
     var = sc.Variable(dims=['x'], values=np.arange(4.0))
     assert var.dtype == sc.dtype.float64
@@ -124,13 +116,37 @@ def test_create_scalar():
     assert var.unit == sc.units.dimensionless
 
 
+def test_create_scalar_Variable():
+    elem = sc.Variable(dims=['x'], values=np.arange(4.0))
+    var = sc.Variable(elem)
+    assert sc.is_equal(var.value, elem)
+    assert var.dims == []
+    assert var.dtype == sc.dtype.Variable
+    assert var.unit == sc.units.dimensionless
+    var = sc.Variable(elem['x', 1:3])
+    assert var.dtype == sc.dtype.Variable
+
+
+def test_create_scalar_DataArray():
+    elem = sc.DataArray(data=sc.Variable(dims=['x'], values=np.arange(4.0)))
+    var = sc.Variable(elem)
+    assert sc.is_equal(var.value, elem)
+    assert var.dims == []
+    assert var.dtype == sc.dtype.DataArray
+    assert var.unit == sc.units.dimensionless
+    var = sc.Variable(elem['x', 1:3])
+    assert var.dtype == sc.dtype.DataArray
+
+
 def test_create_scalar_Dataset():
-    dataset = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
-    var = sc.Variable(dataset)
-    assert sc.is_equal(var.value, dataset)
+    elem = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
+    var = sc.Variable(elem)
+    assert sc.is_equal(var.value, elem)
     assert var.dims == []
     assert var.dtype == sc.dtype.Dataset
     assert var.unit == sc.units.dimensionless
+    var = sc.Variable(elem['x', 1:3])
+    assert var.dtype == sc.dtype.Dataset
 
 
 def test_create_scalar_quantity():
@@ -322,51 +338,6 @@ def test_2D_access_variances():
     assert np.array_equal(var.variances, np.ones(shape=(2, 3)))
 
 
-def test_events_slice():
-    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
-    vals0 = var['x', 0].values
-    assert len(vals0) == 0
-    vals0.append(1.2)
-    assert len(var['x', 0].values) == 1
-
-
-def test_events_setitem():
-    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
-    # __setitem__ of vector
-    var['x', 0].values = np.arange(4)
-    assert len(var['x', 0].values) == 4
-    # __setitem__ of span
-    var.values[1] = np.arange(3)
-    assert len(var['x', 1].values) == 3
-    # __setitem__ of ElementArrayView
-    var['x', :].values[2] = np.arange(2)
-    assert len(var['x', 2].values) == 2
-
-
-def test_events_setitem_events_fail():
-    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
-    with pytest.raises(RuntimeError):
-        var.values = np.arange(3)
-
-
-def test_events_setitem_shape_fail():
-    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
-    with pytest.raises(RuntimeError):
-        var['x', 0].values = np.ones(shape=(3, 2))
-
-
-def test_events_setitem_float():
-    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float32)
-    var['x', 0].values = np.arange(4)
-    assert len(var['x', 0].values) == 4
-
-
-def test_events_setitem_int64_t():
-    var = sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_int64)
-    var['x', 0].values = np.arange(4)
-    assert len(var['x', 0].values) == 4
-
-
 def test_create_dtype():
     var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.int64))
     assert var.dtype == sc.dtype.int64
@@ -386,7 +357,7 @@ def test_create_dtype():
     assert var.dtype == sc.dtype.int32
 
 
-def test_get_slice():
+def test_getitem():
     var = sc.Variable(dims=['x', 'y'], values=np.arange(0, 8).reshape(2, 4))
     var_slice = var['x', 1:2]
     assert sc.is_equal(
@@ -394,12 +365,22 @@ def test_get_slice():
         sc.Variable(dims=['x', 'y'], values=np.arange(4, 8).reshape(1, 4)))
 
 
+def test_setitem_broadcast():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4], dtype=sc.dtype.int64)
+    var['x', 1:3] = sc.Variable(value=5, dtype=sc.dtype.int64)
+    assert sc.is_equal(
+        var, sc.Variable(dims=['x'], values=[1, 5, 5, 4],
+                         dtype=sc.dtype.int64))
+
+
 def test_slicing():
     var = sc.Variable(dims=['x'], values=np.arange(0, 3))
-    var_slice = var[('x', slice(0, 2))]
-    assert isinstance(var_slice, sc.VariableView)
-    assert len(var_slice.values) == 2
-    assert np.array_equal(var_slice.values, np.array([0, 1]))
+    for slice_, expected in ((slice(0, 2), [0, 1]), (slice(-3, -1), [0, 1]),
+                             (slice(2, 1), [])):
+        var_slice = var[('x', slice_)]
+        assert isinstance(var_slice, sc.VariableView)
+        assert len(var_slice.values) == len(expected)
+        assert np.array_equal(var_slice.values, np.array(expected))
 
 
 def test_iadd():
@@ -804,18 +785,18 @@ def test_make_variable_from_unit_scalar_mult_div():
 
     var = sc.Variable(value=np.float32())
     var.unit = sc.units.m
-    assert var == np.float32(0.0) * sc.units.m
+    assert sc.is_equal(var, np.float32(0.0) * sc.units.m)
     var.unit = sc.units.m**(-1)
-    assert var == np.float32(0.0) / sc.units.m
+    assert sc.is_equal(var, np.float32(0.0) / sc.units.m)
 
 
 def test_construct_0d_numpy():
     v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
-    var = sc.Variable(v['x', 0])
+    var = v['x', 0].copy()
     assert sc.is_equal(var, sc.Variable(np.float32()))
 
     v = sc.Variable(dims=['x'], values=np.array([0]), dtype=np.float32)
-    var = sc.Variable(v['x', 0])
+    var = v['x', 0].copy()
     var.unit = sc.units.m
     assert sc.is_equal(var, np.float32(0.0) * sc.units.m)
     var.unit = sc.units.m**(-1)
@@ -873,6 +854,21 @@ def test_reciprocal():
 def test_reciprocal_out():
     var = sc.Variable()
     assert_export(sc.reciprocal, var, var)
+
+
+def test_exp():
+    var = sc.Variable()
+    assert_export(sc.exp, x=var)
+
+
+def test_log():
+    var = sc.Variable()
+    assert_export(sc.log, x=var)
+
+
+def test_log10():
+    var = sc.Variable()
+    assert_export(sc.log10, x=var)
 
 
 def test_sin():
@@ -939,6 +935,26 @@ def test_variable_data_array_binary_ops():
     a = sc.DataArray(1.0 * sc.units.m)
     var = 1.0 * sc.units.m
     assert sc.is_equal(a / var, var / a)
+
+
+def test_isnan():
+    assert_export(sc.isnan, sc.Variable())
+
+
+def test_isinf():
+    assert_export(sc.isinf, sc.Variable())
+
+
+def test_isfinite():
+    assert_export(sc.isfinite, sc.Variable())
+
+
+def test_isposinf():
+    assert_export(sc.isposinf, sc.Variable())
+
+
+def test_isneginf():
+    assert_export(sc.isneginf, sc.Variable())
 
 
 def test_nan_to_num():
@@ -1021,48 +1037,20 @@ def test_position():
     assert_export(sc.geometry.position, x=var, y=var, z=var)
 
 
-def test_x():
+def test_xyz():
     var = sc.Variable()
     assert_export(sc.geometry.x, pos=var)
-
-
-def test_y():
-    var = sc.Variable()
     assert_export(sc.geometry.y, pos=var)
-
-
-def test_z():
-    var = sc.Variable()
     assert_export(sc.geometry.z, pos=var)
 
 
-def test_less():
+def test_comparison():
     var = sc.Variable()
     assert_export(sc.less, x=var, y=var)
-
-
-def test_greater():
-    var = sc.Variable()
     assert_export(sc.greater, x=var, y=var)
-
-
-def test_greater_equal():
-    var = sc.Variable()
     assert_export(sc.greater_equal, x=var, y=var)
-
-
-def test_less_equal():
-    var = sc.Variable()
     assert_export(sc.less_equal, x=var, y=var)
-
-
-def test_equal():
-    var = sc.Variable()
     assert_export(sc.equal, x=var, y=var)
-
-
-def test_not_equal():
-    var = sc.Variable()
     assert_export(sc.not_equal, x=var, y=var)
 
 
@@ -1088,3 +1076,9 @@ def test_rtruediv_int():
     var = sc.Variable(dims=['x'], values=[1, 2, 3])
     assert (var / 1).dtype == sc.dtype.float64
     assert (1 / var).dtype == sc.dtype.float64
+
+
+def test_sort():
+    var = sc.Variable()
+    assert_export(sc.sort, x=var, dim='x', order='ascending')
+    assert_export(sc.is_sorted, x=var, dim='x', order='ascending')

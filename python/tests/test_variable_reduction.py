@@ -1,9 +1,10 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
 import scipp as sc
 import numpy as np
+from .common import assert_export
 
 
 def test_all():
@@ -45,3 +46,57 @@ def test_min():
 def test_max():
     var = sc.Variable(['x'], values=[1.0, 2.0, 3.0])
     assert sc.is_equal(sc.max(var, 'x'), sc.Variable(value=3.0))
+
+
+def test_nanmin():
+    var = sc.Variable(['x'], values=np.array([1]))
+    assert_export(sc.nanmin, var)
+    assert_export(sc.nanmin, var, 'x')
+
+
+def test_nanmax():
+    var = sc.Variable(['x'], values=np.array([1]))
+    assert_export(sc.nanmax, var)
+    assert_export(sc.nanmax, var, 'x')
+
+
+def test_sum():
+    var = sc.Variable(['x', 'y'], values=np.arange(4.0).reshape(2, 2))
+    assert sc.is_equal(sc.sum(var), sc.Variable(value=6.0))
+    assert sc.is_equal(sc.sum(var, 'x'),
+                       sc.Variable(dims=['y'], values=[2.0, 4.0]))
+    out = sc.Variable(dims=['y'], values=np.zeros(2), dtype=sc.dtype.float64)
+    sc.sum(var, 'x', out)
+    assert sc.is_equal(out, sc.Variable(dims=['y'], values=[2.0, 4.0]))
+
+
+def test_nansum():
+    var = sc.Variable(['x', 'y'],
+                      values=np.array([1.0, 1.0, 1.0, np.nan]).reshape(2, 2))
+    assert sc.is_equal(sc.nansum(var), sc.Variable(value=3.0))
+    assert sc.is_equal(sc.nansum(var, 'x'),
+                       sc.Variable(dims=['y'], values=[2.0, 1.0]))
+    out = sc.Variable(dims=['y'], values=np.zeros(2), dtype=sc.dtype.float64)
+    sc.nansum(var, 'x', out)
+    assert sc.is_equal(out, sc.Variable(dims=['y'], values=[2.0, 1.0]))
+
+
+def test_mean():
+    var = sc.Variable(['x', 'y'], values=np.arange(4.0).reshape(2, 2))
+    assert sc.is_equal(sc.mean(var), sc.Variable(value=6.0 / 4))
+    assert sc.is_equal(sc.mean(var, 'x'),
+                       sc.Variable(dims=['y'], values=[1.0, 2.0]))
+    out = sc.Variable(dims=['y'], values=np.zeros(2), dtype=sc.dtype.float64)
+    sc.mean(var, 'x', out)
+    assert sc.is_equal(out, sc.Variable(dims=['y'], values=[1.0, 2.0]))
+
+
+def test_nanmean():
+    var = sc.Variable(['x', 'y'],
+                      values=np.array([1.0, 1.0, 1.0, 1.0]).reshape(2, 2))
+    assert sc.is_equal(sc.nanmean(var), sc.Variable(value=3.0 / 3))
+    assert sc.is_equal(sc.nanmean(var, 'x'),
+                       sc.Variable(dims=['y'], values=[1.0, 1.0]))
+    out = sc.Variable(dims=['y'], values=np.zeros(2), dtype=sc.dtype.float64)
+    sc.mean(var, 'x', out)
+    assert sc.is_equal(out, sc.Variable(dims=['y'], values=[1.0, 1.0]))

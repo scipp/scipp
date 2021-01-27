@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 #include <numeric>
 
@@ -8,11 +8,11 @@
 #include "random.h"
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/unaligned.h"
 #include "scipp/variable/operations.h"
 
 using namespace scipp;
 
+/*
 auto make_2d_events_coord(const scipp::index size, const scipp::index count) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{size});
   auto vals = var.values<event_list<double>>();
@@ -118,5 +118,6 @@ static void BM_events_histogram_op(benchmark::State &state) {
 BENCHMARK(BM_events_histogram_op)
     ->RangeMultiplier(4)
     ->Ranges({{64, 2 << 14}, {128, 2 << 11}, {true, false}, {true, false}});
+*/
 
 BENCHMARK_MAIN();

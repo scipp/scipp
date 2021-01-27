@@ -1,13 +1,12 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-# Scipp imports
 from .. import config
+from .._utils import name_with_unit
 from .._scipp import core as sc
-
-# Other imports
 import numpy as np
+from copy import copy
 
 
 def get_line_param(name=None, index=None):
@@ -48,12 +47,12 @@ def parse_params(params=None,
                  globs=None,
                  variable=None,
                  array=None,
-                 min_val=None,
-                 max_val=None):
+                 name=None):
     """
     Construct the colorbar settings using default and input values
     """
     from matplotlib.colors import Normalize, LogNorm, LinearSegmentedColormap
+    from matplotlib import cm
 
     parsed = dict(config.plot.params)
     if defaults is not None:
@@ -71,52 +70,121 @@ def parse_params(params=None,
         for key, val in params.items():
             parsed[key] = val
 
-    need_norm = False
-    # TODO: sc.min/max currently return nan if the first value in the
-    # variable array is a nan. Until sc.nanmin/nanmax are implemented, we fall
-    # back to using numpy, both when a Variable and a numpy array are supplied.
-    if variable is not None:
-        _find_min_max(variable.values, parsed)
-        need_norm = True
-    if array is not None:
-        _find_min_max(array, parsed)
-        need_norm = True
-
-    if need_norm:
-        if min_val is not None:
-            parsed["vmin"] = min(parsed["vmin"], min_val)
-        if max_val is not None:
-            parsed["vmax"] = max(parsed["vmax"], max_val)
-        if parsed["log"]:
-            norm = LogNorm(vmin=10.0**parsed["vmin"],
-                           vmax=10.0**parsed["vmax"])
-        else:
-            norm = Normalize(vmin=parsed["vmin"], vmax=parsed["vmax"])
-        parsed["norm"] = norm
+    if parsed["norm"] == "log":
+        norm = LogNorm
+    elif parsed["norm"] == "linear":
+        norm = Normalize
+    else:
+        raise RuntimeError("Unknown norm. Expected 'linear' or 'log', "
+                           "got {}.".format(parsed["norm"]))
+    parsed["norm"] = norm(vmin=parsed["vmin"], vmax=parsed["vmax"])
 
     # Convert color into custom colormap
     if parsed["color"] is not None:
         parsed["cmap"] = LinearSegmentedColormap.from_list(
             "tmp", [parsed["color"], parsed["color"]])
+    else:
+        parsed["cmap"] = copy(cm.get_cmap(parsed["cmap"]))
+
+    parsed["cmap"].set_under(parsed["under_color"])
+    parsed["cmap"].set_over(parsed["over_color"])
+
+    if variable is not None:
+        parsed["unit"] = name_with_unit(var=variable, name="")
 
     return parsed
 
 
 def make_fake_coord(dim, size, unit=None):
-    args = {"values": np.arange(size, dtype=np.float64)}
+    """
+    Make a Variable with indices as values, to be used as a fake coordinate
+    for either missing coordinates or non-number coordinates (e.g. vector or
+    string coordinates).
+    """
+    kwargs = {"values": np.arange(size, dtype=np.float64)}
     if unit is not None:
-        args["unit"] = unit
-    return sc.Variable(dims=[dim], **args)
+        kwargs["unit"] = unit
+    return sc.Variable(dims=[dim], **kwargs)
 
 
-def _find_min_max(array, params):
-    if params["vmin"] is None or params["vmax"] is None:
-        if params["log"]:
-            with np.errstate(divide="ignore", invalid="ignore"):
-                valid = np.ma.log10(array)
+def vars_to_err(v):
+    """
+    Convert variances to errors.
+    """
+    with np.errstate(invalid="ignore"):
+        v = np.sqrt(v)
+    np.nan_to_num(v, copy=False)
+    return v
+
+
+def find_log_limits(x):
+    """
+    To find log scale limits, we histogram the data between 1.0-30
+    and 1.0e+30 and include only bins that are non-zero.
+    """
+    volume = np.product(x.shape)
+    pixel = sc.reshape(sc.values(x), dims=['pixel'], shape=(volume, ))
+    weights = sc.Variable(dims=['pixel'], values=np.ones(volume))
+    hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
+                        bins=sc.Variable(dims=['order'],
+                                         values=np.geomspace(1e-30,
+                                                             1e30,
+                                                             num=61),
+                                         unit=x.unit))
+    # Find the first and the last non-zero bins
+    inds = np.nonzero((hist.data > 0.0 * sc.units.one).values)
+    ar = np.arange(hist.data.shape[0])[inds]
+    # Safety check in case there are no values in range 1.0e-30:1.0e+30:
+    # fall back to the linear method and replace with arbitrary values if the
+    # limits are negative.
+    if len(ar) == 0:
+        [vmin, vmax] = find_linear_limits(x)
+        if vmin <= 0.0:
+            if vmax <= 0.0:
+                vmin = 0.1
+                vmax = 1.0
+            else:
+                vmin = 1.0e-3 * vmax
+    else:
+        vmin = hist.coords['order']['order', ar.min()].value
+        vmax = hist.coords['order']['order', ar.max() + 1].value
+    return [vmin, vmax]
+
+
+def find_linear_limits(x):
+    """
+    Find variable min and max.
+    """
+    return [sc.nanmin(x).value, sc.nanmax(x).value]
+
+
+def find_limits(x, scale=None, flip=False):
+    """
+    Find sensible limits, depending on linear or log scale.
+    """
+    if scale is not None:
+        if scale == "log":
+            lims = {"log": find_log_limits(x)}
         else:
-            valid = np.ma.masked_invalid(array, copy=False)
-    if params["vmin"] is None:
-        params["vmin"] = valid.min()
-    if params["vmax"] is None:
-        params["vmax"] = valid.max()
+            lims = {"linear": find_linear_limits(x)}
+    else:
+        lims = {"log": find_log_limits(x), "linear": find_linear_limits(x)}
+    if flip:
+        for key in lims:
+            lims[key] = np.flip(lims[key]).copy()
+    return lims
+
+
+def fix_empty_range(lims, replacement=None):
+    """
+    Range correction in case xmin == xmax
+    """
+    dx = 0.0
+    if lims[0] == lims[1]:
+        if replacement is not None:
+            dx = 0.5 * replacement
+        elif lims[0] == 0.0:
+            dx = 0.5
+        else:
+            dx = 0.5 * abs(lims[0])
+    return [lims[0] - dx, lims[1] + dx]

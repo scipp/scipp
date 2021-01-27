@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 //
 // The test in this file ensure that comparison operators for DataArray and
 // DataArrayConstView are correct. More complex tests should build on the
@@ -11,7 +11,6 @@
 
 #include "scipp/core/dimensions.h"
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/unaligned.h"
 #include "scipp/variable/operations.h"
 
 using namespace scipp;
@@ -34,32 +33,26 @@ void expect_ne(const DataArrayConstView &a, const DataArrayConstView &b) {
 
 class DataArray_comparison_operators : public ::testing::Test {
 protected:
-  DataArray_comparison_operators()
-      : default_event_weights(makeVariable<double>(
-            Dims{Dim::Y, Dim::Z}, Shape{3l, 2l}, Values{1, 1, 1, 1, 1, 1},
-            Variances{1, 1, 1, 1, 1, 1})),
-        events_variable(makeVariable<event_list<double>>(Dims{Dim::Y, Dim::Z},
-                                                         Shape{3, 2})) {
+  DataArray_comparison_operators() {
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
     dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
-    dataset.setMask("mask", makeVariable<bool>(Dims{Dim::X}, Shape{4}));
-
-    dataset.setAttr("global_attr", makeVariable<int>(Values{int{}}));
 
     dataset.setData("val_and_var",
                     makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
                                          Values(12), Variances(12)));
-    dataset.setAttr("val_and_var", "attr", makeVariable<int>(Values{int{}}));
+    dataset.setCoord("val_and_var", Dim("attr"),
+                     makeVariable<int>(Values{int{}}));
 
     dataset.setData("val", makeVariable<double>(Dims{Dim::X}, Shape{4}));
-    dataset.setAttr("val", "attr", makeVariable<int>(Values{int{}}));
+    dataset.setCoord("val", Dim("attr"), makeVariable<int>(Values{int{}}));
+    for (const auto &item : {"val_and_var", "val"})
+      dataset[item].masks().set("mask",
+                                makeVariable<bool>(Dims{Dim::X}, Shape{4}));
   }
 
   Dataset dataset;
-  Variable default_event_weights;
-  Variable events_variable;
 };
 
 template <class T> auto make_values(const Dimensions &dims) {
@@ -94,9 +87,9 @@ auto make_1_mask(const std::string &name, const Dimensions &dims,
                  const units::Unit unit,
                  const std::initializer_list<T2> &data) {
   Dataset d;
-  d.setMask(name,
-            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
   d.setData("", makeVariable<T>(Dimensions(dims)));
+  d[""].masks().set(
+      name, makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
   return DataArray(d[""]);
 }
 
@@ -106,8 +99,9 @@ auto make_1_attr(const std::string &name, const Dimensions &dims,
                  const std::initializer_list<T2> &data) {
   Dataset d;
   d.setData("", makeVariable<T>(Dimensions(dims)));
-  d.setAttr("", name,
-            makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
+  d.setCoord(
+      "", Dim(name),
+      makeVariable<T>(Dimensions(dims), units::Unit(unit), Values(data)));
   return DataArray(d[""]);
 }
 
@@ -253,15 +247,16 @@ TEST_F(DataArray_comparison_operators, extra_labels) {
 
 TEST_F(DataArray_comparison_operators, extra_mask) {
   auto extra = dataset;
-  extra.setMask("extra", makeVariable<bool>(Values{false}));
-  for (const auto &a : extra)
+  for (const auto &a : extra) {
+    a.masks().set("extra", makeVariable<bool>(Values{false}));
     expect_ne(a, dataset[a.name()]);
+  }
 }
 
 TEST_F(DataArray_comparison_operators, extra_attr) {
   auto extra = dataset;
   for (const auto &a : extra) {
-    extra.setAttr(a.name(), "extra", makeVariable<double>(Values{0.0}));
+    extra.setCoord(a.name(), Dim("extra"), makeVariable<double>(Values{0.0}));
     expect_ne(a, dataset[a.name()]);
   }
 }
@@ -274,103 +269,26 @@ TEST_F(DataArray_comparison_operators, extra_variance) {
 }
 
 TEST_F(DataArray_comparison_operators, different_coord_insertion_order) {
-  auto a = Dataset();
-  auto b = Dataset();
-  a.setCoord(Dim::X, dataset.coords()[Dim::X]);
-  a.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
-  b.setCoord(Dim::Y, dataset.coords()[Dim::Y]);
-  b.setCoord(Dim::X, dataset.coords()[Dim::X]);
-  for (const auto &a_ : a)
-    expect_ne(a_, b[a_.name()]);
-}
-
-TEST_F(DataArray_comparison_operators, different_label_insertion_order) {
-  auto a = Dataset();
-  auto b = Dataset();
-  a.setCoord(Dim("x"), dataset.coords()[Dim::X]);
-  a.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
-  b.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
-  b.setCoord(Dim("x"), dataset.coords()[Dim::X]);
-  for (const auto &a_ : a)
-    expect_ne(a_, b[a_.name()]);
+  const auto var = makeVariable<double>(Values{1.0});
+  auto a = DataArray(var);
+  auto b = DataArray(var);
+  a.coords().set(Dim::X, dataset.coords()[Dim::X]);
+  a.coords().set(Dim::Y, dataset.coords()[Dim::Y]);
+  b.coords().set(Dim::Y, dataset.coords()[Dim::Y]);
+  b.coords().set(Dim::X, dataset.coords()[Dim::X]);
+  expect_eq(a, b);
 }
 
 TEST_F(DataArray_comparison_operators, different_attr_insertion_order) {
   auto a = Dataset();
   auto b = Dataset();
-  a.setAttr("x", dataset.coords()[Dim::X]);
-  a.setAttr("y", dataset.coords()[Dim::Y]);
-  b.setAttr("y", dataset.coords()[Dim::Y]);
-  b.setAttr("x", dataset.coords()[Dim::X]);
+  const auto var = makeVariable<double>(Values{1.0});
+  a.setData("item", var);
+  b.setData("item", var);
+  a["item"].attrs().set(Dim::X, dataset.coords()[Dim::X]);
+  a["item"].attrs().set(Dim::Y, dataset.coords()[Dim::Y]);
+  b["item"].attrs().set(Dim::Y, dataset.coords()[Dim::Y]);
+  b["item"].attrs().set(Dim::X, dataset.coords()[Dim::X]);
   for (const auto &a_ : a)
-    expect_ne(a_, b[a_.name()]);
-}
-
-TEST_F(DataArray_comparison_operators, with_events_dimension_data) {
-  // a and b same, c different number of events values
-  auto a = Dataset();
-  auto data = makeVariable<event_list<double>>(Dims{}, Shape{});
-  const std::string var_name = "test_var";
-  data.values<event_list<double>>()[0] = {1, 2, 3};
-  a.setData(var_name, data);
-  auto b = Dataset();
-  b.setData(var_name, data);
-  expect_eq(a[var_name], b[var_name]);
-  data.values<event_list<double>>()[0] = {2, 3, 4};
-  auto c = Dataset();
-  c.setData(var_name, data);
-  expect_ne(a[var_name], c[var_name]);
-  expect_ne(b[var_name], c[var_name]);
-}
-
-class DataArray_comparison_operators_realigned : public ::testing::Test {
-protected:
-  Variable ybins{makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 2, 4})};
-  Variable zbins{makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{0, 2, 4})};
-  Variable d{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4})};
-  Variable x{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4})};
-  Variable y{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 1, 3, 3})};
-  Variable z{makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 3, 1, 3})};
-};
-
-TEST_F(DataArray_comparison_operators_realigned, self) {
-  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  const auto realigned =
-      unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  expect_eq(realigned, realigned);
-}
-
-TEST_F(DataArray_comparison_operators_realigned, swapped_dims) {
-  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  const auto zy = unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  const auto yz = unaligned::realign(a, {{Dim::Z, zbins}, {Dim::Y, ybins}});
-  expect_ne(yz, zy);
-}
-
-TEST_F(DataArray_comparison_operators_realigned, different_bins) {
-  DataArray a(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  const auto yz1 = unaligned::realign(a, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  const auto yz2 = unaligned::realign(
-      a, {{Dim::Y, ybins}, {Dim::Z, zbins + 0.5 * units::one}});
-  expect_ne(yz1, yz2);
-}
-
-TEST_F(DataArray_comparison_operators_realigned, different_unaligned_data) {
-  DataArray a1(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  DataArray a2(d + 0.5 * units::one, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  const auto realigned1 =
-      unaligned::realign(a1, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  const auto realigned2 =
-      unaligned::realign(a2, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  expect_ne(realigned1, realigned2);
-}
-
-TEST_F(DataArray_comparison_operators_realigned, different_unaligned_coord) {
-  DataArray a1(d, {{Dim::X, x}, {Dim::Y, y}, {Dim::Z, z}});
-  DataArray a2(d, {{Dim::X, x}, {Dim::Y, y + 0.5 * units::one}, {Dim::Z, z}});
-  const auto realigned1 =
-      unaligned::realign(a1, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  const auto realigned2 =
-      unaligned::realign(a2, {{Dim::Y, ybins}, {Dim::Z, zbins}});
-  expect_ne(realigned1, realigned2);
+    expect_eq(a_, b[a_.name()]);
 }

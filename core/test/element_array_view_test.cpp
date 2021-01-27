@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include <numeric>
@@ -373,27 +373,5 @@ TEST(ElementArrayViewTest, view_of_view_bad_broadcast) {
   // Base view with sliced Y
   ElementArrayView base(data.data(), 0, target, dims);
   EXPECT_THROW(ElementArrayView<const int32_t>(base, dims),
-               except::DimensionError);
-}
-
-TEST(ElementArrayViewTest, slicing_view_of_view_collapse_and_broadcast) {
-  Dimensions dataDims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
-  Dimensions baseDims{{Dim::X, Dim::Z}, {2, 4}};
-  Dimensions target{{Dim::X, Dim::Y}, {2, 2}};
-  const auto data = range(24);
-  ElementArrayView base(data.data(), 0, baseDims, dataDims);
-  // Slice Z and broadcast Y.
-  EXPECT_TRUE(equals(ElementArrayView<const int32_t>(base, target, Dim::Z, 1),
-                     {1, 1, 13, 13}));
-}
-
-TEST(ElementArrayViewTest, slicing_view_of_view_bad_broadcast) {
-  Dimensions dataDims{{Dim::X, Dim::Y, Dim::Z}, {2, 3, 4}};
-  Dimensions baseDims{{Dim::X, Dim::Y, Dim::Z}, {2, 1, 4}};
-  Dimensions target{{Dim::X, Dim::Y}, {2, 2}};
-  const auto data = range(24);
-  // Base view with sliced Y
-  ElementArrayView base(data.data(), 0, baseDims, dataDims);
-  EXPECT_THROW(ElementArrayView<const int32_t>(base, target, Dim::Z, 1),
                except::DimensionError);
 }

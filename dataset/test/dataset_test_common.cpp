@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <algorithm>
 
-#include "scipp/dataset/unaligned.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/misc_operations.h"
 
 #include "dataset_test_common.h"
 
@@ -20,10 +20,6 @@ std::vector<bool> make_bools(const scipp::index size,
 }
 std::vector<bool> make_bools(const scipp::index size, bool pattern) {
   return make_bools(size, std::initializer_list<bool>{pattern});
-}
-Variable makeRandom(const Dimensions &dims) {
-  Random rand;
-  return makeVariable<double>(Dimensions{dims}, Values(rand(dims.volume())));
 }
 
 DatasetFactory3D::DatasetFactory3D(const scipp::index lx_,
@@ -51,20 +47,6 @@ void DatasetFactory3D::init() {
                                      Values(rand(lx * ly))));
   base.setCoord(Dim("labels_z"),
                 makeVariable<double>(Dimensions{Dim::Z, lz}, Values(rand(lz))));
-
-  base.setMask("masks_x",
-               makeVariable<bool>(Dimensions{m_dim, lx},
-                                  Values(make_bools(lx, {false, true}))));
-  base.setMask("masks_xy",
-               makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
-                                  Values(make_bools(lx * ly, {false, true}))));
-  base.setMask("masks_z",
-               makeVariable<bool>(Dimensions{Dim::Z, lz},
-                                  Values(make_bools(lz, {false, true}))));
-
-  base.setAttr("attr_scalar", makeVariable<double>(Values{rand(1).front()}));
-  base.setAttr("attr_x",
-               makeVariable<double>(Dimensions{m_dim, lx}, Values(rand(lx))));
 }
 
 void DatasetFactory3D::seed(const uint32_t value) {
@@ -75,15 +57,6 @@ void DatasetFactory3D::seed(const uint32_t value) {
 
 Dataset DatasetFactory3D::make(const bool randomMasks) {
   Dataset dataset(base);
-  if (randomMasks) {
-    dataset.setMask("masks_x", makeVariable<bool>(Dimensions{m_dim, lx},
-                                                  Values(randBool(lx))));
-    dataset.setMask("masks_xy",
-                    makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
-                                       Values(randBool(lx * ly))));
-    dataset.setMask("masks_z", makeVariable<bool>(Dimensions{Dim::Z, lz},
-                                                  Values(randBool(lz))));
-  }
   dataset.setData("values_x", makeVariable<double>(Dimensions{m_dim, lx},
                                                    Values(rand(lx))));
   dataset.setData("data_x",
@@ -108,63 +81,52 @@ Dataset DatasetFactory3D::make(const bool randomMasks) {
 
   dataset.setData("data_scalar", makeVariable<double>(Values{rand(1).front()}));
 
+  if (randomMasks) {
+    for (const auto &item :
+         {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
+      dataset.setMask(
+          item, "masks_x",
+          makeVariable<bool>(Dimensions{m_dim, lx}, Values(randBool(lx))));
+    for (const auto &item : {"data_xy", "data_zyx", "data_xyz"})
+      dataset.setMask(item, "masks_xy",
+                      makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
+                                         Values(randBool(lx * ly))));
+    for (const auto &item : {"data_zyx", "data_xyz"})
+      dataset.setMask(
+          item, "masks_z",
+          makeVariable<bool>(Dimensions{Dim::Z, lz}, Values(randBool(lz))));
+  } else {
+    for (const auto &item :
+         {"values_x", "data_x", "data_xy", "data_zyx", "data_xyz"})
+      dataset.setMask(
+          item, "masks_x",
+          makeVariable<bool>(Dimensions{m_dim, lx},
+                             Values(make_bools(lx, {false, true}))));
+    for (const auto &item : {"data_xy", "data_zyx", "data_xyz"})
+      dataset.setMask(
+          item, "masks_xy",
+          makeVariable<bool>(Dimensions{{m_dim, lx}, {Dim::Y, ly}},
+                             Values(make_bools(lx * ly, {false, true}))));
+    for (const auto &item : {"data_zyx", "data_xyz"})
+      dataset.setMask(
+          item, "masks_z",
+          makeVariable<bool>(Dimensions{Dim::Z, lz},
+                             Values(make_bools(lz, {false, true}))));
+  }
+
   return dataset;
 }
 
 Dataset make_empty() { return Dataset(); }
-
-Dataset make_simple_events(std::initializer_list<double> values,
-                           std::string key) {
-  Dataset ds;
-  auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-  var.values<event_list<double>>()[0] = values;
-  ds.setData(key, var);
-  return ds;
-}
-
-Dataset make_events_with_coords_and_labels(
-    std::initializer_list<double> values,
-    std::initializer_list<double> coords_and_labels, std::string key) {
-  Dataset ds;
-
-  {
-    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.values<event_list<double>>()[0] = values;
-    ds.setData(key, var);
-  }
-
-  {
-    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.values<event_list<double>>()[0] = coords_and_labels;
-    ds.coords().set(Dim::X, var);
-  }
-
-  {
-    auto var = makeVariable<event_list<double>>(Dims{}, Shape{});
-    var.values<event_list<double>>()[0] = coords_and_labels;
-    ds.coords().set(Dim("l"), var);
-  }
-
-  return ds;
-}
-
-Dataset make_events_2d(std::initializer_list<double> values, std::string key) {
-  Dataset ds;
-  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{2});
-  var.values<event_list<double>>()[0] = values;
-  var.values<event_list<double>>()[1] = values;
-  ds.setData(key, var);
-  return ds;
-}
 
 Dataset make_1d_masked() {
   Random random;
   Dataset ds;
   ds.setData("data_x",
              makeVariable<double>(Dimensions{Dim::X, 10}, Values(random(10))));
-  ds.setMask("masks_x",
-             makeVariable<bool>(Dimensions{Dim::X, 10},
-                                Values(make_bools(10, {false, true}))));
+  ds["data_x"].masks().set(
+      "masks_x", makeVariable<bool>(Dimensions{Dim::X, 10},
+                                    Values(make_bools(10, {false, true}))));
   return ds;
 }
 
@@ -184,11 +146,22 @@ Dataset make_dataset_x() {
   return d;
 }
 
-Dataset make_dataset_realigned_x_to_y() {
-  auto d = make_dataset_x();
-  const auto edges =
-      makeVariable<double>(Dims{Dim::Y}, units::m, Shape{2}, Values{0, 4});
-  return unaligned::realign(d, {{Dim::Y, edges}});
+DataArray make_table(const scipp::index size) {
+  Random rand;
+  rand.seed(0);
+  const Dimensions dims(Dim::Row, size);
+  const auto data = makeVariable<double>(dims, Values(rand(dims.volume())),
+                                         Variances(rand(dims.volume())));
+  const auto x = makeVariable<double>(dims, Values(rand(dims.volume())));
+  const auto y = makeVariable<double>(dims, Values(rand(dims.volume())));
+  const auto group = astype(
+      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
+  const auto group2 = astype(
+      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
+  return DataArray(data, {{Dim::X, x},
+                          {Dim::Y, y},
+                          {Dim("group"), group},
+                          {Dim("group2"), group2}});
 }
 
 } // namespace scipp::testdata

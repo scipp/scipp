@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 //
 // The test in this file ensure that comparison operators for Dataset and
 // DatasetConstView are correct. More complex tests should build on the
@@ -34,15 +34,11 @@ private:
   }
 
 protected:
-  Dataset_comparison_operators()
-      : events_variable(makeVariable<event_list<double>>(Dims{Dim::Y, Dim::Z},
-                                                         Shape{3, 2})) {
+  Dataset_comparison_operators() {
     dataset.setCoord(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{4}));
     dataset.setCoord(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{3}));
 
     dataset.setCoord(Dim("labels"), makeVariable<int>(Dims{Dim::X}, Shape{4}));
-
-    dataset.setAttr("attr", makeVariable<int>(Values{int{}}));
 
     dataset.setData("val_and_var",
                     makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 4},
@@ -62,7 +58,6 @@ protected:
   }
 
   Dataset dataset;
-  Variable events_variable;
 };
 
 // Baseline checks: Does dataset comparison pick up arbitrary mismatch of
@@ -91,18 +86,6 @@ TEST_F(Dataset_comparison_operators, single_labels) {
   expect_ne(d, make_1_labels<double>("a", {Dim::X, 2}, units::m, {1, 2}));
   expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
   expect_ne(d, make_1_labels<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
-}
-
-TEST_F(Dataset_comparison_operators, single_attr) {
-  auto d = make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 3});
-  expect_eq(d, d);
-  expect_ne(d, make_empty());
-  expect_ne(d, make_1_attr<float>("a", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("b", {Dim::X, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::Y, 3}, units::m, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::X, 2}, units::m, {1, 2}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::X, 3}, units::s, {1, 2, 3}));
-  expect_ne(d, make_1_attr<double>("a", {Dim::X, 3}, units::m, {1, 2, 4}));
 }
 
 TEST_F(Dataset_comparison_operators, single_values) {
@@ -162,12 +145,6 @@ TEST_F(Dataset_comparison_operators, extra_labels) {
   expect_ne(extra, dataset);
 }
 
-TEST_F(Dataset_comparison_operators, extra_attr) {
-  auto extra = dataset;
-  extra.setAttr("extra", makeVariable<double>(Dims{Dim::Z}, Shape{2}));
-  expect_ne(extra, dataset);
-}
-
 TEST_F(Dataset_comparison_operators, extra_data) {
   auto extra = dataset;
   extra.setData("extra", makeVariable<double>(Dims{Dim::Z}, Shape{2}));
@@ -191,26 +168,6 @@ TEST_F(Dataset_comparison_operators, different_coord_insertion_order) {
   expect_eq(a, b);
 }
 
-TEST_F(Dataset_comparison_operators, different_label_insertion_order) {
-  auto a = make_empty();
-  auto b = make_empty();
-  a.setCoord(Dim("x"), dataset.coords()[Dim::X]);
-  a.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
-  b.setCoord(Dim("y"), dataset.coords()[Dim::Y]);
-  b.setCoord(Dim("x"), dataset.coords()[Dim::X]);
-  expect_eq(a, b);
-}
-
-TEST_F(Dataset_comparison_operators, different_attr_insertion_order) {
-  auto a = make_empty();
-  auto b = make_empty();
-  a.setAttr("x", dataset.coords()[Dim::X]);
-  a.setAttr("y", dataset.coords()[Dim::Y]);
-  b.setAttr("y", dataset.coords()[Dim::Y]);
-  b.setAttr("x", dataset.coords()[Dim::X]);
-  expect_eq(a, b);
-}
-
 TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
   auto a = make_empty();
   auto b = make_empty();
@@ -219,21 +176,4 @@ TEST_F(Dataset_comparison_operators, different_data_insertion_order) {
   b.setData("y", dataset.coords()[Dim::Y]);
   b.setData("x", dataset.coords()[Dim::X]);
   expect_eq(a, b);
-}
-
-TEST_F(Dataset_comparison_operators, with_events_dimension_data) {
-  // a and b same, c different number of events values
-  auto a = make_empty();
-  auto data = makeVariable<event_list<double>>(Dims{}, Shape{});
-  const std::string var_name = "test_var";
-  data.values<event_list<double>>()[0] = {1, 2, 3};
-  a.setData(var_name, data);
-  auto b = make_empty();
-  b.setData(var_name, data);
-  expect_eq(a, b);
-  data.values<event_list<double>>()[0] = {2, 3, 4};
-  auto c = make_empty();
-  c.setData(var_name, data);
-  expect_ne(a, c);
-  expect_ne(b, c);
 }

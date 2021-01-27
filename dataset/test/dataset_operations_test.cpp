@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
@@ -11,24 +11,39 @@
 using namespace scipp;
 using namespace scipp::dataset;
 
-TEST(DatasetOperationsTest, sum) {
+TEST(DatasetOperationsTest, sum_over_dim) {
   auto ds = make_1_values_and_variances<float>(
       "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(dataset::sum(ds, Dim::X)["a"].data(),
+  EXPECT_EQ(sum(ds, Dim::X)["a"].data(),
             makeVariable<float>(Values{6}, Variances{45}));
-  EXPECT_EQ(dataset::sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
+  EXPECT_EQ(sum(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
             makeVariable<float>(Values{3}, Variances{27}));
-  EXPECT_THROW(dataset::sum(make_events_2d({1, 2, 3, 4}, {0, 0}), Dim::X),
-               except::TypeError);
 }
 
-TEST(DatasetOperationsTest, mean) {
-  auto ds = make_1_values_and_variances<float>(
-      "a", {Dim::X, 3}, units::dimensionless, {1, 2, 3}, {12, 15, 18});
-  EXPECT_EQ(dataset::mean(ds, Dim::X)["a"].data(),
-            makeVariable<float>(Values{2}, Variances{5.0}));
-  EXPECT_EQ(dataset::mean(ds.slice({Dim::X, 0, 2}), Dim::X)["a"].data(),
-            makeVariable<float>(Values{1.5}, Variances{6.75}));
+TEST(DatasetOperationsTest, sum_all_dims) {
+  DataArray da{makeVariable<double>(Dims{Dim::X, Dim::Y}, Values{1, 1, 1, 1},
+                                    Shape{2, 2})};
+  EXPECT_EQ(sum(da).data(), makeVariable<double>(Values{4}));
+
+  Dataset ds{{{"a", da}}};
+  EXPECT_EQ(nansum(ds)["a"], nansum(da));
+}
+
+TEST(DatasetOperationsTest, nansum_over_dim) {
+  auto ds = make_1_values_and_variances<double>(
+      "a", {Dim::X, 3}, units::dimensionless, {1.0, 2.0, double(NAN)},
+      {2.0, 5.0, 6.0});
+  EXPECT_EQ(nansum(ds, Dim::X)["a"].data(),
+            makeVariable<double>(Values{3}, Variances{7}));
+}
+
+TEST(DatasetOperationsTest, nansum_all_dims) {
+  DataArray da{makeVariable<double>(
+      Dims{Dim::X, Dim::Y}, Values{1.0, 1.0, double(NAN), 1.0}, Shape{2, 2})};
+  EXPECT_EQ(nansum(da).data(), makeVariable<double>(Values{3}));
+
+  Dataset ds{{{"a", da}}};
+  EXPECT_EQ(nansum(ds)["a"], nansum(da));
 }
 
 template <typename T>
@@ -37,9 +52,9 @@ public:
   void SetUp() {
     ds.setData("data_x",
                makeVariable<T>(Dims{Dim::X}, Shape{5}, Values{1, 5, 4, 5, 1}));
-    ds.setMask("masks_x",
-               makeVariable<bool>(Dims{Dim::X}, Shape{5},
-                                  Values{false, true, false, true, false}));
+    ds["data_x"].masks().set(
+        "masks_x", makeVariable<bool>(Dims{Dim::X}, Shape{5},
+                                      Values{false, true, false, true, false}));
   }
   Dataset ds;
 };
@@ -65,7 +80,7 @@ TYPED_TEST(DatasetShapeChangingOpTest, mean_masked) {
 }
 
 TYPED_TEST(DatasetShapeChangingOpTest, mean_fully_masked) {
-  this->ds.setMask(
+  this->ds["data_x"].masks().set(
       "full_mask",
       makeVariable<bool>(Dimensions{Dim::X, 5}, Values(make_bools(5, true))));
   const Dataset result = mean(this->ds, Dim::X);
@@ -83,14 +98,13 @@ TEST(DatasetOperationsTest, mean_two_dims) {
                                               Values{-999, -999, 3, -999, 5, 6,
                                                      -999, 10, 10, -999}));
 
-  ds.setMask("mask_xy",
-             makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{5, 2},
-                                Values{true, true, false, true, false, false,
-                                       true, false, false, true}));
+  ds["data_xy"].masks().set(
+      "mask_xy", makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{5, 2},
+                                    Values{true, true, false, true, false,
+                                           false, true, false, false, true}));
 
   const Dataset result = mean(ds, Dim::X);
-
-  ASSERT_EQ(result["data_xy"].data(),
+  EXPECT_EQ(result["data_xy"].data(),
             makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{6, 8}));
 }
 
@@ -103,7 +117,7 @@ TEST(DatasetOperationsTest, mean_three_dims) {
                  Values{-999, -999, 3, -999, 5, 6, -999, 10, 10, -999,
                         -999, -999, 3, -999, 5, 6, -999, 10, 10, -999}));
 
-  ds.setMask(
+  ds["data_xy"].masks().set(
       "mask_xy",
       makeVariable<bool>(Dims{Dim::Z, Dim::X, Dim::Y}, Shape{2, 5, 2},
                          Values{true,  true,  false, true,  false, false, true,
@@ -115,4 +129,13 @@ TEST(DatasetOperationsTest, mean_three_dims) {
   ASSERT_EQ(result["data_xy"].data(),
             makeVariable<double>(Dims{Dim::Z, Dim::Y}, Shape{2, 2},
                                  Values{6, 8, 6, 8}));
+}
+
+TEST(DatasetOperationsTest, dataset_mean_fails) {
+  Dataset d;
+  d.setData("a", makeVariable<double>(Dims{Dim::X}, Shape{2}));
+  d.setData("b", makeVariable<double>(Values{1.0}));
+  // "b" does not depend on X, so this fails. This could change in the future if
+  // we find a clear definition of the functions behavior in this case.
+  EXPECT_THROW(mean(d, Dim::X), except::DimensionError);
 }

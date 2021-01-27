@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 import scipp as sc
@@ -22,23 +22,16 @@ def test_moving_variable_into_dataset_proxies():
     d = sc.Dataset()
     d.coords['x'] = sc.detail.move(sc.Variable(['x'],
                                                values=np.arange(1000.0)))
-    d.attrs["b"] = sc.detail.move(
-        sc.Variable(['y'], values=np.random.random(50)))
-    d.masks["c"] = sc.detail.move(
+    d['data'] = 1.0 * sc.units.m
+    d['data'].masks["c"] = sc.detail.move(
         sc.Variable(['z'], values=np.random.random(50)))
 
-    assert 'x' in d.dims
-    assert 'y' in d.dims
-    assert 'z' in d.dims
     assert len(d.coords) == 1
-    assert len(d.attrs) == 1
-    assert len(d.masks) == 1
+    assert len(d['data'].masks) == 1
     assert 'x' in d.coords
-    assert "b" in d.attrs
-    assert "c" in d.masks
+    assert "c" in d['data'].masks
     assert d.coords['x'].shape == [1000]
-    assert d.attrs["b"].shape == [50]
-    assert d.masks["c"].shape == [50]
+    assert d['data'].masks["c"].shape == [50]
 
 
 def test_moving_variable_into_data_array_proxies():
@@ -53,6 +46,7 @@ def test_moving_variable_into_data_array_proxies():
 
     assert a.dims == ['x']
     assert a.shape == [1000]
+    assert len(a.meta) == 2
     assert len(a.coords) == 1
     assert len(a.attrs) == 1
     assert len(a.masks) == 1

@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
+
+#include <algorithm>
 
 #include "scipp/common/index.h"
 
@@ -26,6 +28,10 @@ private:
 
 template <class Op> void parallel_for(const blocked_range &range, Op &&op) {
   op(range);
+}
+
+template <class... Args> void parallel_sort(Args &&... args) {
+  std::sort(std::forward<Args>(args)...);
 }
 
 } // namespace scipp::core::parallel

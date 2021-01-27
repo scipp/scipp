@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import numpy as np
 import pytest
@@ -24,9 +24,9 @@ def test_slice_init():
     orig = sc.DataArray(
         data=sc.Variable(['x'], values=np.arange(2.0)),
         coords={'x': sc.Variable(['x'], values=np.arange(3.0))})
-    a = sc.DataArray(orig['x', :])
+    a = orig['x', :].copy()
     assert sc.is_equal(a, orig)
-    b = sc.DataArray(orig['x', 1:])
+    b = orig['x', 1:].copy()
     assert b.data.values[0] == orig.data.values[1:]
 
 
@@ -39,8 +39,9 @@ def test_init():
         },
         attrs={'met1': sc.Variable(['x'], values=np.arange(3))},
         masks={'mask1': sc.Variable(['x'], values=np.ones(3, dtype=np.bool))})
-    assert len(d.attrs) == 1
+    assert len(d.meta) == 3
     assert len(d.coords) == 2
+    assert len(d.attrs) == 1
     assert len(d.masks) == 1
 
 
@@ -72,15 +73,13 @@ def test_init_from_variable_views():
 
 def test_coords():
     da = make_dataarray()
+    assert len(dict(da.meta)) == 4
     assert len(dict(da.coords)) == 3
+    assert len(dict(da.attrs)) == 1
     assert 'x' in da.coords
     assert 'y' in da.coords
     assert 'aux' in da.coords
-
-
-def test_attrs():
-    da = make_dataarray()
-    assert len(dict(da.attrs)) == 1
+    assert 'meta' in da.meta
     assert 'meta' in da.attrs
 
 
@@ -91,13 +90,6 @@ def test_masks():
                                                     dtype=np.bool))
     assert len(dict(da.masks)) == 1
     assert 'mask1' in da.masks
-
-
-def test_labels():
-    da = make_dataarray()
-    # Deprecated at point of use
-    with pytest.raises(RuntimeError):
-        da.labels
 
 
 def test_name():
@@ -231,24 +223,3 @@ def test_reciprocal():
     a = sc.DataArray(data=sc.Variable(['x'], values=np.array([5.0])))
     r = sc.reciprocal(a)
     assert r.values[0] == 1.0 / 5.0
-
-
-def test_realign():
-    co = sc.Variable(['x'], shape=[1], dtype=sc.dtype.event_list_float64)
-    co.values[0].append(1.0)
-    co.values[0].append(2.0)
-    co.values[0].append(2.0)
-    data = sc.Variable(['y'],
-                       dtype=sc.dtype.float64,
-                       values=np.array([1]),
-                       variances=np.array([1]))
-    da = sc.DataArray(data=data, coords={'x': co})
-    assert not da.unaligned
-    da_r = sc.realign(
-        da, {'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
-    assert da_r.shape == [1, 2]
-    assert sc.is_equal(da_r.unaligned, da)
-    assert not da_r.data
-    assert np.allclose(sc.histogram(da_r).values, np.array([0, 3]), atol=1e-9)
-    da.realign({'x': sc.Variable(['x'], values=np.array([0.0, 1.0, 3.0]))})
-    assert da.shape == [1, 2]

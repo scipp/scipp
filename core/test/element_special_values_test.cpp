@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/core/element/special_values.h"
@@ -11,9 +11,135 @@
 using namespace scipp;
 using namespace scipp::core;
 
+namespace {
+template <typename T, typename Op> void test_int_to_false_with_op(Op op) {
+  EXPECT_FALSE(op(std::numeric_limits<T>::min()));
+  EXPECT_FALSE(op(std::numeric_limits<T>::max()));
+  EXPECT_FALSE(op(T{0}));
+}
+template <typename T, typename Op> void test_int_to_true_with_op(Op op) {
+  EXPECT_TRUE(op(std::numeric_limits<T>::min()));
+  EXPECT_TRUE(op(std::numeric_limits<T>::max()));
+  EXPECT_TRUE(op(T{0}));
+}
+} // namespace
+
+using ElementSpecialValuesTestTypes = ::testing::Types<double, float>;
+
+template <typename T> class ElementIsnanTest : public ::testing::Test {};
+TYPED_TEST_SUITE(ElementIsnanTest, ElementSpecialValuesTestTypes);
+
+TEST(ElementIsnanTest, unit) {
+  for (const auto &u : {units::dimensionless, units::m, units::meV}) {
+    EXPECT_EQ(element::isnan(u), units::dimensionless);
+  }
+}
+
+TYPED_TEST(ElementIsnanTest, value) {
+  for (const auto x : {static_cast<TypeParam>(NAN),
+                       std::numeric_limits<TypeParam>::quiet_NaN(),
+                       std::numeric_limits<TypeParam>::signaling_NaN()}) {
+    EXPECT_TRUE(element::isnan(x));
+  }
+  for (const auto x : {static_cast<TypeParam>(0.0), static_cast<TypeParam>(1.0),
+                       std::numeric_limits<TypeParam>::infinity()}) {
+    EXPECT_FALSE(element::isnan(x));
+  }
+}
+
+TYPED_TEST(ElementIsnanTest, int_values) {
+  test_int_to_false_with_op<int32_t>(element::isnan);
+  test_int_to_false_with_op<int64_t>(element::isnan);
+}
+
+template <typename T> class ElementIsinfTest : public ::testing::Test {};
+TYPED_TEST_SUITE(ElementIsinfTest, ElementSpecialValuesTestTypes);
+
+TEST(ElementIsinfTest, unit) {
+  for (const auto &u : {units::dimensionless, units::m, units::meV}) {
+    EXPECT_EQ(element::isinf(u), units::dimensionless);
+  }
+}
+
+TYPED_TEST(ElementIsinfTest, value) {
+  for (const auto x : {std::numeric_limits<TypeParam>::infinity(),
+                       -std::numeric_limits<TypeParam>::infinity()}) {
+    EXPECT_TRUE(element::isinf(x));
+  }
+  for (const auto x : {static_cast<TypeParam>(0.0), static_cast<TypeParam>(1.0),
+                       std::numeric_limits<TypeParam>::quiet_NaN(),
+                       std::numeric_limits<TypeParam>::signaling_NaN()}) {
+    EXPECT_FALSE(element::isinf(x));
+  }
+}
+
+TYPED_TEST(ElementIsinfTest, int_values) {
+  test_int_to_false_with_op<int32_t>(element::isinf);
+  test_int_to_false_with_op<int64_t>(element::isinf);
+}
+
+template <typename T> class ElementIsfiniteTest : public ::testing::Test {};
+TYPED_TEST_SUITE(ElementIsfiniteTest, ElementSpecialValuesTestTypes);
+
+TEST(ElementIsfiniteTest, unit) {
+  for (const auto &u : {units::dimensionless, units::m, units::meV}) {
+    EXPECT_EQ(element::isfinite(u), units::dimensionless);
+  }
+}
+
+TYPED_TEST(ElementIsfiniteTest, value) {
+  for (const auto x : {static_cast<TypeParam>(0.0), static_cast<TypeParam>(3.4),
+                       static_cast<TypeParam>(-1.0e3)}) {
+    EXPECT_TRUE(element::isfinite(x));
+  }
+  for (const auto x : {std::numeric_limits<TypeParam>::infinity(),
+                       std::numeric_limits<TypeParam>::quiet_NaN(),
+                       std::numeric_limits<TypeParam>::signaling_NaN()}) {
+    EXPECT_FALSE(element::isfinite(x));
+  }
+  EXPECT_TRUE(element::isfinite(1));
+}
+
+TYPED_TEST(ElementIsfiniteTest, int_values) {
+  test_int_to_true_with_op<int32_t>(element::isfinite);
+  test_int_to_true_with_op<int64_t>(element::isfinite);
+}
+
+template <typename T> class ElementIssignedinfTest : public ::testing::Test {};
+TYPED_TEST_SUITE(ElementIssignedinfTest, ElementSpecialValuesTestTypes);
+
+TEST(ElementIssignedinfTest, unit) {
+  for (const auto &u : {units::dimensionless, units::m, units::meV}) {
+    EXPECT_EQ(element::isposinf(u), units::dimensionless);
+    EXPECT_EQ(element::isneginf(u), units::dimensionless);
+  }
+}
+
+TYPED_TEST(ElementIssignedinfTest, int_values) {
+  test_int_to_false_with_op<int32_t>(element::isposinf);
+  test_int_to_false_with_op<int64_t>(element::isposinf);
+  test_int_to_false_with_op<int32_t>(element::isneginf);
+  test_int_to_false_with_op<int64_t>(element::isneginf);
+}
+
+TYPED_TEST(ElementIssignedinfTest, value) {
+  {
+    const auto inf = std::numeric_limits<TypeParam>::infinity();
+    EXPECT_TRUE(element::isposinf(inf));
+    EXPECT_FALSE(element::isneginf(inf));
+    EXPECT_TRUE(element::isneginf(-inf));
+    EXPECT_FALSE(element::isposinf(-inf));
+  }
+  for (const auto x : {static_cast<TypeParam>(0.0), static_cast<TypeParam>(1.0),
+                       std::numeric_limits<TypeParam>::quiet_NaN(),
+                       std::numeric_limits<TypeParam>::signaling_NaN()}) {
+    EXPECT_FALSE(element::isposinf(x));
+    EXPECT_FALSE(element::isneginf(x));
+  }
+}
+
 template <typename T> class ElementNanToNumTest : public ::testing::Test {};
-using ElementReplacementTestTypes = ::testing::Types<double, float>;
-TYPED_TEST_SUITE(ElementNanToNumTest, ElementReplacementTestTypes);
+TYPED_TEST_SUITE(ElementNanToNumTest, ElementSpecialValuesTestTypes);
 
 template <typename T, typename Op>
 void targetted_replacement_test(Op op, const T &replaceable,
@@ -95,7 +221,7 @@ TYPED_TEST(ElementNanToNumTest, value_and_variance_out) {
 
 template <typename T>
 class ElementPositiveInfToNumTest : public ::testing::Test {};
-TYPED_TEST_SUITE(ElementPositiveInfToNumTest, ElementReplacementTestTypes);
+TYPED_TEST_SUITE(ElementPositiveInfToNumTest, ElementSpecialValuesTestTypes);
 
 TYPED_TEST(ElementPositiveInfToNumTest, unit) {
   targetted_unit_test(element::positive_inf_to_num);
@@ -142,7 +268,7 @@ TYPED_TEST(ElementPositiveInfToNumTest, value_and_variance_out) {
 
 template <typename T>
 class ElementNegativeInfToNumTest : public ::testing::Test {};
-TYPED_TEST_SUITE(ElementNegativeInfToNumTest, ElementReplacementTestTypes);
+TYPED_TEST_SUITE(ElementNegativeInfToNumTest, ElementSpecialValuesTestTypes);
 
 TYPED_TEST(ElementNegativeInfToNumTest, unit) {
   targetted_unit_test(element::negative_inf_to_num);

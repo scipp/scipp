@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
 import numpy as np
@@ -22,8 +22,6 @@ def test_create_empty():
     d = sc.Dataset()
     assert len(d) == 0
     assert len(d.coords) == 0
-    assert len(d.masks) == 0
-    assert len(d.attrs) == 0
     assert len(d.dims) == 0
 
 
@@ -33,17 +31,17 @@ def test_create():
     xy = sc.Variable(dims=['x', 'y'], values=np.arange(12).reshape(3, 4))
     d = sc.Dataset({'xy': xy, 'x': x}, coords={'x': x, 'y': y})
     assert len(d) == 2
-    assert d.coords['x'] == x
-    assert d.coords['y'] == y
-    assert d['xy'].data == xy
-    assert d['x'].data == x
-    assert bool(set(d.dims) - set(['y', 'x']))
+    assert sc.is_equal(d.coords['x'], x)
+    assert sc.is_equal(d.coords['y'], y)
+    assert sc.is_equal(d['xy'].data, xy)
+    assert sc.is_equal(d['x'].data, x)
+    assert set(d.dims) == set(['y', 'x'])
 
 
 def test_create_from_data_array():
     var = sc.Variable(dims=['x'], values=np.arange(4))
     da = sc.DataArray(var, coords={'x': var, 'aux': var})
-    d = sc.Dataset(da)
+    d = sc.Dataset({da.name: da})
     assert sc.is_equal(d[''], da)
 
 
@@ -65,6 +63,27 @@ def test_create_from_data_arrays():
                        'x': var1,
                        'aux': var2
                    }))
+
+
+def test_create_from_data_array_and_variable_mix():
+    var_1 = sc.Variable(dims=['x'], values=np.arange(4))
+    var_2 = sc.Variable(dims=['x'], values=np.arange(4))
+    da = sc.DataArray(data=var_1, coords={'x': var_1, 'aux': var_1})
+    d = sc.Dataset({'array': da, 'variable': var_2})
+    assert sc.is_equal(d['array'], da)
+    assert sc.is_equal(d['variable'].data, var_2)
+
+
+def test_create_with_data_array_and_additional_coords():
+    var = sc.Variable(dims=['x'], values=np.arange(4))
+    coord = sc.Variable(dims=['x'], values=np.arange(4))
+    da = sc.DataArray(data=var, coords={'x': var, 'aux': var})
+    d = sc.Dataset(data={'array': da}, coords={'y': coord})
+    da.coords['y'] = coord
+    assert sc.is_equal(d['array'], da)
+    assert sc.is_equal(d.coords['y'], coord)
+    assert sc.is_equal(d.coords['x'], var)
+    assert sc.is_equal(d.coords['aux'], var)
 
 
 def test_clear():
@@ -108,26 +127,6 @@ def test_coord_setitem():
     assert sc.is_equal(d.coords['y'], sc.Variable(1.0))
 
 
-def test_coord_setitem_events():
-    events = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
-    d = sc.Dataset({'a': events})
-    d.coords['x'] = events
-    assert len(d.coords) == 1
-    assert len(d['a'].coords) == 1
-    assert sc.is_equal(d['a'].coords['x'], events)
-    assert sc.is_equal(d['a'].coords['x'], d.coords['x'])
-
-
-def test_create_events_via_DataArray():
-    d = sc.Dataset()
-    events = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
-    d['a'] = sc.DataArray(data=events, coords={'x': events})
-    assert len(d.coords) == 1
-    assert len(d['a'].coords) == 1
-    assert sc.is_equal(d['a'].coords['x'], events)
-    assert sc.is_equal(d['a'].coords['x'], d.coords['x'])
-
-
 def test_contains_coord():
     d = sc.Dataset()
     assert 'x' not in d.coords
@@ -142,69 +141,14 @@ def test_coords_keys():
     assert 'x' in d.coords.keys()
 
 
-def test_masks_setitem():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = sc.Dataset({'a': var}, coords={'x': var})
-
-    with pytest.raises(RuntimeError):
-        d['x', 2:3].coords['label'] = sc.Variable(True)
-    d.masks['mask'] = sc.Variable(dims=['x'],
-                                  values=np.array([True, False, True, False]))
-    assert len(d) == 1
-    assert len(d.masks) == 1
-    assert sc.is_equal(
-        d.masks['mask'],
-        sc.Variable(dims=['x'], values=np.array([True, False, True, False])))
-
-
-def test_contains_masks():
-    d = sc.Dataset()
-    assert 'a' not in d.masks
-    d.masks['a'] = sc.Variable(True)
-    assert 'a' in d.masks
-
-
-def test_attrs_setitem():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = sc.Dataset({'a': var}, coords={'x': var})
-    with pytest.raises(RuntimeError):
-        d['x', 2:3].attrs['attr'] = sc.Variable(1.0)
-    d.attrs['attr'] = sc.Variable(1.0)
-    assert len(d) == 1
-    assert len(d.attrs) == 1
-    assert d.attrs['attr'] == sc.Variable(1.0)
-
-
-def test_attrs_setitem_events():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    events = sc.Variable(dims=[], shape=[], dtype=sc.dtype.event_list_float64)
-    d = sc.Dataset({'a': events}, coords={'x': var})
-    d.attrs['attr'] = events
-    d['a'].attrs['attr'] = events
-
-
-def test_contains_attrs():
-    d = sc.Dataset()
-    assert 'b' not in d.attrs
-    d.attrs['b'] = sc.Variable(1.0)
-    assert 'b' in d.attrs
-
-
-def test_attrs_keys():
-    d = sc.Dataset()
-    d.attrs['b'] = sc.Variable(1.0)
-    assert len(d.attrs.keys()) == 1
-    assert 'b' in d.attrs.keys()
-
-
 def test_slice_item():
     d = sc.Dataset(
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
-    assert d['a']['x', 2:4].data == sc.Variable(dims=['x'],
-                                                values=np.arange(2, 4))
-    assert d['a']['x', 2:4].coords['x'] == sc.Variable(dims=['x'],
-                                                       values=np.arange(6, 8))
+    assert sc.is_equal(d['a']['x', 2:4].data,
+                       sc.Variable(dims=['x'], values=np.arange(2, 4)))
+    assert sc.is_equal(d['a']['x', 2:4].coords['x'],
+                       sc.Variable(dims=['x'], values=np.arange(6, 8)))
 
 
 def test_set_item_slice_from_numpy():
@@ -212,8 +156,8 @@ def test_set_item_slice_from_numpy():
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
     d['a']['x', 2:4] = np.arange(2)
-    assert d['a'].data == sc.Variable(dims=['x'],
-                                      values=np.array([0, 1, 0, 1]))
+    assert sc.is_equal(d['a'].data,
+                       sc.Variable(dims=['x'], values=np.array([0, 1, 0, 1])))
 
 
 def test_set_item_slice_with_variances_from_numpy():
@@ -226,15 +170,6 @@ def test_set_item_slice_with_variances_from_numpy():
     d['a']['x', 2:4].variances = np.arange(2, 4)
     assert np.array_equal(d['a'].values, np.array([0.0, 1.0, 0.0, 1.0]))
     assert np.array_equal(d['a'].variances, np.array([0.0, 1.0, 2.0, 3.0]))
-
-
-def test_events_setitem():
-    d = sc.Dataset({
-        'a':
-        sc.Variable(dims=['x'], shape=[4], dtype=sc.dtype.event_list_float64)
-    })
-    d['a']['x', 0].values = np.arange(4)
-    assert len(d['a']['x', 0].values) == 4
 
 
 def test_iadd_slice():
@@ -371,17 +306,14 @@ def test_sum_mean():
 
 
 def test_sum_masked():
-    d = sc.Dataset(
-        {
-            'a':
-            sc.Variable(dims=['x'],
-                        values=np.array([1, 5, 4, 5, 1], dtype=np.int64))
-        },
-        masks={
-            'm1':
-            sc.Variable(dims=['x'],
-                        values=np.array([False, True, False, True, False]))
-        })
+    d = sc.Dataset({
+        'a':
+        sc.Variable(dims=['x'],
+                    values=np.array([1, 5, 4, 5, 1], dtype=np.int64))
+    })
+    d['a'].masks['m1'] = sc.Variable(dims=['x'],
+                                     values=np.array(
+                                         [False, True, False, True, False]))
 
     d_ref = sc.Dataset({'a': sc.Variable(np.int64(6))})
 
@@ -389,84 +321,73 @@ def test_sum_masked():
     assert sc.is_equal(result, d_ref['a'])
 
 
+def test_sum_all():
+    da = sc.DataArray(sc.Variable(['x', 'y'], values=np.ones(10).reshape(5,
+                                                                         2)))
+    ds = sc.Dataset({'a': da})
+    assert sc.is_equal(sc.sum(da).data, sc.Variable(value=10.0))
+    assert sc.is_equal(sc.sum(da), sc.sum(ds)['a'])
+
+
+def test_nansum_masked():
+    d = sc.Dataset({
+        'a':
+        sc.Variable(dims=['x'],
+                    values=np.array([1, 5, np.nan, np.nan, 1],
+                                    dtype=np.float64))
+    })
+    d['a'].masks['m1'] = sc.Variable(dims=['x'],
+                                     values=np.array(
+                                         [False, True, False, True, False]))
+
+    d_ref = sc.Dataset({'a': sc.Variable(np.float64(2))})
+
+    result = sc.nansum(d, 'x')['a']
+    assert sc.is_equal(result, d_ref['a'])
+
+
+def test_nansum_all():
+    da = sc.DataArray(sc.Variable(['x', 'y'], values=np.ones(10).reshape(5,
+                                                                         2)))
+    da.data.values[0, 0] = np.nan
+    ds = sc.Dataset({'a': da})
+    assert np.isnan(sc.sum(da).data.value)  # sanity check
+    assert sc.is_equal(sc.nansum(da).data, sc.Variable(value=9.0))
+    assert sc.is_equal(sc.nansum(da), sc.nansum(ds)['a'])
+
+
 def test_mean_masked():
-    d = sc.Dataset(
-        {'a': sc.Variable(dims=['x'], values=np.array([1, 5, 4, 5, 1]))},
-        masks={
-            'm1':
-            sc.Variable(dims=['x'],
-                        values=np.array([False, True, False, True, False]))
-        })
+    d = sc.Dataset({
+        'a':
+        sc.Variable(dims=['x'],
+                    values=np.array([1, 5, 4, 5, 1]),
+                    dtype=sc.dtype.float64)
+    })
+    d['a'].masks['m1'] = sc.Variable(dims=['x'],
+                                     values=np.array(
+                                         [False, True, False, True, False]))
     d_ref = sc.Dataset({'a': sc.Variable(2.0)})
     assert sc.is_equal(sc.mean(d, 'x')['a'], d_ref['a'])
+    assert sc.is_equal(sc.nanmean(d, 'x')['a'], d_ref['a'])
 
 
-def test_variable_histogram():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
-    var['x', 0].values = np.arange(3)
-    var['x', 0].values.append(42)
-    var['x', 0].values.extend(np.ones(3))
-    var['x', 1].values = np.ones(6)
-    ds = sc.Dataset()
-    ds['events'] = sc.DataArray(data=sc.Variable(dims=['x'],
-                                                 values=np.ones(2),
-                                                 variances=np.ones(2)),
-                                coords={'y': var})
-    hist = sc.histogram(
-        ds['events'],
-        sc.Variable(values=np.arange(5, dtype=np.float64), dims=['y']))
-    assert np.array_equal(
-        hist.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
+def test_mean_all():
+    var = sc.Variable(['x', 'y'], values=np.arange(4.0).reshape(2, 2))
+    mask = sc.Variable(['x', 'y'],
+                       values=np.array([[False, False], [True, False]]))
+    da = sc.DataArray(var, masks={'m': mask})  # Add masks
+    assert sc.sum(da).data.value == 0 + 1 + 3  # 2.0 masked
+    sc.mean(da).data.value == 4 / 3
 
 
-def test_dataset_histogram():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
-    var['x', 0].values = np.arange(3)
-    var['x', 0].values.append(42)
-    var['x', 0].values.extend(np.ones(3))
-    var['x', 1].values = np.ones(6)
-    ds = sc.Dataset()
-    s = sc.DataArray(data=sc.Variable(dims=['x'],
-                                      values=np.ones(2),
-                                      variances=np.ones(2)),
-                     coords={'y': var})
-    s1 = sc.DataArray(data=sc.Variable(dims=['x'],
-                                       values=np.ones(2),
-                                       variances=np.ones(2)),
-                      coords={'y': var * 5.0})
-    realign_coords = {
-        'y': sc.Variable(values=np.arange(5, dtype=np.float64), dims=['y'])
-    }
-    ds['s'] = sc.realign(s, realign_coords)
-    ds['s1'] = sc.realign(s1, realign_coords)
-    h = sc.histogram(ds)
-    assert np.array_equal(
-        h['s'].values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
-    assert np.array_equal(
-        h['s1'].values, np.array([[1.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]]))
-
-
-def test_histogram_and_setitem():
-    var = sc.Variable(dims=['x'],
-                      shape=[2],
-                      dtype=sc.dtype.event_list_float64,
-                      unit=sc.units.us)
-    var['x', 0].values = np.arange(3)
-    var['x', 0].values.append(42)
-    var['x', 0].values.extend(np.ones(3))
-    var['x', 1].values = np.ones(6)
-    ds = sc.Dataset()
-    ds['s'] = sc.DataArray(data=sc.Variable(dims=['x'],
-                                            values=np.ones(2),
-                                            variances=np.ones(2)),
-                           coords={'tof': var})
-    assert 'tof' in ds.coords
-    assert 'tof' in ds['s'].coords
-    edges = sc.Variable(dims=['tof'], values=np.arange(5.0), unit=sc.units.us)
-    h = sc.histogram(ds['s'], edges)
-    assert np.array_equal(
-        h.values, np.array([[1.0, 4.0, 1.0, 0.0], [0.0, 6.0, 0.0, 0.0]]))
-    assert 'tof' in ds.coords
+def test_nanmean_all():
+    var = sc.Variable(['x', 'y'], values=np.arange(4.0).reshape(2, 2))
+    var['x', 0]['y', 1].value = np.nan
+    mask = sc.Variable(['x', 'y'],
+                       values=np.array([[False, False], [True, False]]))
+    da = sc.DataArray(var, masks={'m': mask})  # Add masks
+    assert sc.nansum(da).data.value == 0 + 3  # 2.0 masked, 1.0 is nan
+    sc.mean(da).data.value == 3 / 2
 
 
 def test_dataset_merge():
@@ -524,12 +445,12 @@ def test_dataset_set_data():
 
     d3 = sc.Dataset()
     d3['b'] = d1['a']
-    assert d3['b'].data == d1['a'].data
+    assert sc.is_equal(d3['b'].data, d1['a'].data)
     assert d3['b'].coords == d1['a'].coords
     d1['a'] = d2['a']
     d1['c'] = d2['a']
-    assert d2['a'].data == d1['a'].data
-    assert d2['a'].data == d1['c'].data
+    assert sc.is_equal(d2['a'].data, d1['a'].data)
+    assert sc.is_equal(d2['a'].data, d1['c'].data)
 
     d = sc.Dataset()
     d.coords['row'] = sc.Variable(dims=['row'], values=np.arange(10.0))
@@ -549,16 +470,6 @@ def test_dataset_set_data():
     assert sc.is_equal(d2, expected)
 
 
-def test_dataset_data_access():
-    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.event_list_float64)
-    ds = sc.Dataset()
-    ds['events'] = sc.DataArray(data=sc.Variable(dims=['x'],
-                                                 values=np.ones(2),
-                                                 variances=np.ones(2)),
-                                coords={'y': var})
-    assert ds['events'].values is not None
-
-
 def test_binary_with_broadcast():
     d = sc.Dataset(
         {'data': sc.Variable(dims=['x'], values=np.arange(10.0))},
@@ -573,7 +484,7 @@ def test_binary__with_dataarray():
     da = sc.DataArray(
         data=sc.Variable(dims=['x'], values=np.arange(1.0, 10.0)),
         coords={'x': sc.Variable(dims=['x'], values=np.arange(1.0, 10.0))})
-    ds = sc.Dataset(da)
+    ds = sc.Dataset({da.name: da})
     orig = ds.copy()
     ds += da
     ds -= da
@@ -738,23 +649,13 @@ def test_coords_delitem():
     assert sc.is_equal(d, dref)
 
 
-def test_attrs_delitem():
-    var = sc.Variable(dims=['x'], values=np.arange(4))
-    d = sc.Dataset({'a': var}, coords={'x': var})
-    dref = d.copy()
-    d.attrs['attr'] = sc.Variable(1.0)
-    assert not sc.is_equal(d, dref)
-    del d.attrs['attr']
-    assert sc.is_equal(d, dref)
-
-
 def test_masks_delitem():
     var = sc.Variable(dims=['x'], values=np.array([True, True, False]))
     d = sc.Dataset({'a': var}, coords={'x': var})
     dref = d.copy()
-    d.masks['masks'] = var
+    d['a'].masks['masks'] = var
     assert not sc.is_equal(d, dref)
-    del d.masks['masks']
+    del d['a'].masks['masks']
     assert sc.is_equal(d, dref)
 
 
@@ -797,8 +698,8 @@ def test_correct_temporaries():
     N = 6
     M = 4
     d1 = sc.Dataset()
-    d1['x'] = sc.Variable(['x'], values=np.arange(N + 1).astype(np.float64))
-    d1['y'] = sc.Variable(['y'], values=np.arange(M + 1).astype(np.float64))
+    d1['x'] = sc.Variable(['x'], values=np.arange(N).astype(np.float64))
+    d1['y'] = sc.Variable(['y'], values=np.arange(M).astype(np.float64))
     arr1 = np.arange(N * M).reshape(N, M).astype(np.float64) + 1
     d1['A'] = sc.Variable(['x', 'y'], values=arr1)
     d1 = d1['x', 1:2]

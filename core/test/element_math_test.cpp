@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/core/element/math.h"
@@ -24,34 +24,8 @@ TEST(ElementAbsTest, value_and_variance) {
   EXPECT_EQ(element::abs(x), abs(x));
 }
 
-TEST(ElementAbsOutArgTest, unit) {
-  units::Unit m(units::m);
-  units::Unit out(units::one);
-  element::abs_out_arg(out, m);
-  EXPECT_EQ(out, units::abs(m));
-}
-
-TEST(ElementAbsOutArgTest, value_double) {
-  double out;
-  element::abs_out_arg(out, -1.23);
-  EXPECT_EQ(out, std::abs(-1.23));
-}
-
-TEST(ElementAbsOutArgTest, value_float) {
-  float out;
-  element::abs_out_arg(out, -1.23456789f);
-  EXPECT_EQ(out, std::abs(-1.23456789f));
-}
-
-TEST(ElementAbsOutArgTest, value_and_variance) {
-  const ValueAndVariance x(-2.0, 1.0);
-  ValueAndVariance out(x);
-  element::abs_out_arg(out, x);
-  EXPECT_EQ(out, abs(x));
-}
-
-TEST(ElementAbsOutArgTest, supported_types) {
-  auto supported = decltype(element::abs_out_arg)::types{};
+TEST(ElementAbsTest, supported_types) {
+  auto supported = decltype(element::abs)::types{};
   std::get<double>(supported);
   std::get<float>(supported);
 }
@@ -87,34 +61,8 @@ TEST(ElementSqrtTest, value_and_variance) {
   EXPECT_EQ(element::sqrt(x), sqrt(x));
 }
 
-TEST(ElementSqrtOutArgTest, unit) {
-  const units::Unit m2(units::m * units::m);
-  units::Unit out(units::one);
-  element::sqrt_out_arg(out, m2);
-  EXPECT_EQ(out, units::sqrt(m2));
-}
-
-TEST(ElementSqrtOutArgTest, value_double) {
-  double out;
-  element::sqrt_out_arg(out, 1.23);
-  EXPECT_EQ(out, std::sqrt(1.23));
-}
-
-TEST(ElementSqrtOutArgTest, value_float) {
-  float out;
-  element::sqrt_out_arg(out, 1.23456789f);
-  EXPECT_EQ(out, std::sqrt(1.23456789f));
-}
-
-TEST(ElementSqrtOutArgTest, value_and_variance) {
-  const ValueAndVariance x(2.0, 1.0);
-  ValueAndVariance out(x);
-  element::sqrt_out_arg(out, x);
-  EXPECT_EQ(out, sqrt(x));
-}
-
-TEST(ElementSqrtOutArgTest, supported_types) {
-  auto supported = decltype(element::sqrt_out_arg)::types{};
+TEST(ElementSqrtTest, supported_types) {
+  auto supported = decltype(element::sqrt)::types{};
   std::get<double>(supported);
   std::get<float>(supported);
 }
@@ -151,37 +99,35 @@ TEST(ElementReciprocalTest, value_and_variance) {
   EXPECT_EQ(element::reciprocal(x), 1 / x);
 }
 
-TEST(ElementReciprocalOutArgTest, unit) {
-  const units::Unit one_over_m(units::one / units::m);
-  units::Unit out(units::one);
-  element::reciprocal_out_arg(out, one_over_m);
-  EXPECT_EQ(out, units::m);
-  element::reciprocal_out_arg(out, units::s);
-  const units::Unit one_over_s(units::one / units::s);
-  EXPECT_EQ(out, one_over_s);
+TEST(ElementExpTest, value) {
+  EXPECT_EQ(element::exp(1.23), std::exp(1.23));
+  EXPECT_EQ(element::exp(1.23456789f), std::exp(1.23456789f));
 }
 
-TEST(ElementReciprocalOutArgTest, value_double) {
-  double out;
-  element::reciprocal_out_arg(out, 1.23);
-  EXPECT_EQ(out, 1 / 1.23);
+TEST(ElementExpTest, unit) {
+  EXPECT_EQ(element::exp(units::dimensionless), units::dimensionless);
 }
 
-TEST(ElementReciprocalOutArgTest, value_float) {
-  float out;
-  element::reciprocal_out_arg(out, 1.23456789f);
-  EXPECT_EQ(out, 1 / 1.23456789f);
+TEST(ElementExpTest, bad_unit) { EXPECT_ANY_THROW(element::exp(units::m)); }
+
+TEST(ElementLogTest, value) {
+  EXPECT_EQ(element::log(1.23), std::log(1.23));
+  EXPECT_EQ(element::log(1.23456789f), std::log(1.23456789f));
 }
 
-TEST(ElementReciprocalOutArgTest, value_and_variance) {
-  const ValueAndVariance x(2.0, 1.0);
-  ValueAndVariance out(x);
-  element::reciprocal_out_arg(out, x);
-  EXPECT_EQ(out, 1 / x);
+TEST(ElementLogTest, unit) {
+  EXPECT_EQ(element::log(units::dimensionless), units::dimensionless);
 }
 
-TEST(ElementReciprocalOutArgTest, supported_types) {
-  auto supported = decltype(element::reciprocal_out_arg)::types{};
-  std::get<double>(supported);
-  std::get<float>(supported);
+TEST(ElementLogTest, bad_unit) { EXPECT_ANY_THROW(element::log(units::m)); }
+
+TEST(ElementLog10Test, value) {
+  EXPECT_EQ(element::log10(1.23), std::log10(1.23));
+  EXPECT_EQ(element::log10(1.23456789f), std::log10(1.23456789f));
 }
+
+TEST(ElementLog10Test, unit) {
+  EXPECT_EQ(element::log10(units::dimensionless), units::dimensionless);
+}
+
+TEST(ElementLog10Test, bad_unit) { EXPECT_ANY_THROW(element::log10(units::m)); }

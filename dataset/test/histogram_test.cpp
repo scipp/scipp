@@ -1,12 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+#include "dataset_test_common.h"
 #include "test_macros.h"
 #include <gtest/gtest-matchers.h>
 #include <gtest/gtest.h>
 
+#include "scipp/dataset/bin.h"
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/histogram.h"
-#include "scipp/dataset/unaligned.h"
+#include "scipp/variable/shape.h"
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -54,6 +57,10 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   const auto histX = DataArray(dataX, {{Dim::X, edgesX}});
   EXPECT_TRUE(is_histogram(histX, Dim::X));
   EXPECT_FALSE(is_histogram(histX, Dim::Y));
+  // Also for Dataset
+  const auto ds_histX = Dataset{DataArrayConstView{histX}};
+  EXPECT_TRUE(is_histogram(ds_histX, Dim::X));
+  EXPECT_FALSE(is_histogram(ds_histX, Dim::Y));
 
   const auto histX2d = DataArray(dataXY, {{Dim::X, edgesX}});
   EXPECT_TRUE(is_histogram(histX2d, Dim::X));
@@ -71,21 +78,21 @@ TEST_F(HistogramHelpersTest, is_histogram) {
   // Coord length X is 2 and data does not depend on X, but this is *not*
   // interpreted as a single-bin histogram.
   EXPECT_FALSE(is_histogram(DataArray(dataY, {{Dim::X, coordX}}), Dim::X));
-
-  const auto events = makeVariable<event_list<double>>(Dims{}, Shape{});
-  EXPECT_FALSE(is_histogram(DataArray(events, {{Dim::X, coordX}}), Dim::X));
 }
 
 DataArray make_1d_events_default_weights() {
-  DataArray events(makeVariable<double>(Dims{Dim::X}, Shape{3}, units::counts,
-                                        Values{1, 1, 1}, Variances{1, 1, 1}));
-  auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{3});
-  var.values<event_list<double>>()[0] = {1.5, 2.5, 3.5, 4.5, 5.5};
-  var.values<event_list<double>>()[1] = {3.5, 4.5, 5.5, 6.5, 7.5};
-  var.values<event_list<double>>()[2] = {-1, 0, 0, 1, 1, 2, 2, 2, 4, 4, 4, 6};
-
-  events.coords().set(Dim::Y, var);
-  return events;
+  const auto y = makeVariable<double>(
+      Dims{Dim::Event}, Shape{22},
+      Values{1.5, 2.5, 3.5, 4.5, 5.5, 3.5, 4.5, 5.5, 6.5, 7.5, -1.0,
+             0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0, 4.0, 4.0, 4.0, 6.0});
+  const auto weights = broadcast(
+      makeVariable<double>(units::counts, Values{1}, Variances{1}), y.dims());
+  const DataArray table(weights, {{Dim::Y, y}});
+  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{3},
+      Values{std::pair{0, 5}, std::pair{5, 10}, std::pair{10, 22}});
+  auto var = make_bins(indices, Dim::Event, table);
+  return DataArray(var, {});
 }
 
 TEST(HistogramTest, fail_edges_not_sorted) {
@@ -97,12 +104,15 @@ TEST(HistogramTest, fail_edges_not_sorted) {
 }
 
 auto make_single_events() {
+  const auto x =
+      makeVariable<double>(Dims{Dim::Event}, Shape{5}, Values{0, 1, 1, 2, 3});
+  const auto weights = broadcast(
+      makeVariable<double>(units::counts, Values{1}, Variances{1}), x.dims());
+  const DataArray table(weights, {{Dim::X, x}});
+  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Values{std::pair{0, 5}});
   Dataset events;
-  auto x = makeVariable<event_list<double>>(Dims{}, Shape{});
-  x.values<event_list<double>>()[0] = {0, 1, 1, 2, 3};
-  events.coords().set(Dim::X, x);
-  events.setData("events", makeVariable<double>(Dims{}, Shape{}, units::counts,
-                                                Values{1}, Variances{1}));
+  events.setData("events", make_bins(indices, Dim::Event, table));
   return events;
 }
 
@@ -169,32 +179,25 @@ TEST(HistogramTest, dense) {
   auto events = make_1d_events_default_weights();
   auto edges1 =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
-  auto edges2 = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 3, 6});
-  auto expected = dataset::histogram(events, edges2);
+  auto edgesY = makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{1, 3, 6});
+  auto edgesZ = makeVariable<double>(Dims{Dim::Z}, Shape{3}, Values{1, 3, 6});
+  auto expected = dataset::histogram(events, edgesY);
   auto dense = dataset::histogram(events, edges1);
-  EXPECT_THROW(dataset::histogram(dense, edges2), except::BinEdgeError);
+  EXPECT_THROW(dataset::histogram(dense, edgesY), except::BinEdgeError);
+  // dense depends on Y, histogram by Y coord into Y-dependent histogram
+  EXPECT_TRUE(dense.dims().contains(edgesY.dims().inner()));
   dense.coords().erase(Dim::Y);
   dense.coords().set(Dim::Y,
                      makeVariable<double>(Dims{Dim::Y}, Shape{5},
                                           Values{1.5, 2.5, 3.5, 4.5, 5.5}));
-  EXPECT_EQ(dataset::histogram(dense, edges2), expected);
-}
-
-TEST(HistogramTest, drops_other_event_coords) {
-  auto events = make_1d_events_default_weights();
-  events.coords().set(Dim("pulse-time"), events.coords()[Dim::Y]);
-  std::vector<double> ref{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
-  auto edges =
-      makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
-  auto hist = dataset::histogram(events, edges);
-  auto expected = make_expected(
-      makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5}, units::counts,
-                           Values(ref.begin(), ref.end()),
-                           Variances(ref.begin(), ref.end())),
-      edges);
-
-  EXPECT_FALSE(hist.coords().contains(Dim("pulse=time")));
-  EXPECT_EQ(hist, expected);
+  EXPECT_EQ(dataset::histogram(dense, edgesY), expected);
+  // dense depends on Y, histogram by Z coord into Z-dependent histogram
+  EXPECT_FALSE(dense.dims().contains(edgesZ.dims().inner()));
+  dense.coords().set(Dim::Z,
+                     makeVariable<double>(Dims{Dim::Y}, Shape{5},
+                                          Values{1.5, 2.5, 3.5, 4.5, 5.5}));
+  expected.rename(Dim::Y, Dim::Z);
+  EXPECT_EQ(dataset::histogram(dense, edgesZ), expected);
 }
 
 TEST(HistogramTest, keeps_scalar_coords) {
@@ -205,20 +208,26 @@ TEST(HistogramTest, keeps_scalar_coords) {
   EXPECT_TRUE(hist.coords().contains(Dim("scalar")));
 }
 
+DataArray make_1d_events() {
+  const auto y = makeVariable<double>(
+      Dims{Dim::Event}, Shape{22},
+      Values{1.5, 2.5, 3.5, 4.5, 5.5, 3.5, 4.5, 5.5, 6.5, 7.5, -1.0,
+             0.0, 0.0, 1.0, 1.0, 2.0, 2.0, 2.0, 4.0, 4.0, 4.0, 6.0});
+  const auto weights = makeVariable<double>(
+      y.dims(), units::counts,
+      Values{1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1},
+      Variances{1, 1, 1, 2, 2, 2, 2, 2, 2, 2, 1,
+                1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1});
+  const DataArray table(weights, {{Dim::Y, y}});
+  const auto indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::X}, Shape{3},
+      Values{std::pair{0, 5}, std::pair{5, 10}, std::pair{10, 22}});
+  auto var = make_bins(indices, Dim::Event, table);
+  return DataArray(var, {});
+}
+
 TEST(HistogramTest, weight_lists) {
-  Variable data = makeVariable<event_list<double>>(Dimensions{{Dim::X, 3}},
-                                                   Values{}, Variances{});
-  data.values<event_list<double>>()[0] = {1, 1, 1, 2, 2};
-  data.values<event_list<double>>()[1] = {2, 2, 2, 2, 2};
-  data.values<event_list<double>>()[2] = {1, 1, 1, 1, 1, 1, 1,
-                                          1, 1, 1, 1, 1, 1};
-  data.variances<event_list<double>>()[0] = {1, 1, 1, 2, 2};
-  data.variances<event_list<double>>()[1] = {2, 2, 2, 2, 2};
-  data.variances<event_list<double>>()[2] = {1, 1, 1, 1, 1, 1, 1,
-                                             1, 1, 1, 1, 1, 1};
-  data.setUnit(units::counts);
-  auto events = make_1d_events_default_weights();
-  events.setData(data);
+  const auto events = make_1d_events();
   auto edges =
       makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
   std::vector<double> ref{1, 1, 1, 2, 2, 0, 0, 2, 2, 2, 2, 3, 0, 3, 0};
@@ -227,51 +236,26 @@ TEST(HistogramTest, weight_lists) {
                            Values(ref.begin(), ref.end()),
                            Variances(ref.begin(), ref.end())),
       edges);
-
   EXPECT_EQ(dataset::histogram(events, edges), expected);
 }
 
-TEST(HistogramTest, dataset_realigned) {
-  Dataset events;
-  const auto coord =
-      makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
-  events.setData("a", unaligned::realign(make_1d_events_default_weights(),
-                                         {{Dim::Y, coord}}));
-  auto b_events = make_1d_events_default_weights();
-  b_events.coords()[Dim::Y] += makeVariable<double>(Values{1.0});
-  events.setData("b", unaligned::realign(b_events, {{Dim::Y, coord}}));
-
-  std::vector<double> a{1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 2, 3, 0, 3, 0};
-  std::vector<double> b{0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 2, 2, 3, 0, 3};
-  Dataset expected;
-  expected.setCoord(Dim::Y, coord);
-  expected.setData("a", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
-                                             units::counts,
-                                             Values(a.begin(), a.end()),
-                                             Variances(a.begin(), a.end())));
-  expected.setData("b", makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{3, 5},
-                                             units::counts,
-                                             Values(b.begin(), b.end()),
-                                             Variances(b.begin(), b.end())));
-
-  EXPECT_EQ(dataset::histogram(events), expected);
-}
-
-TEST(HistogramTest, dataset_realigned2) {
-  // Similar to `dataset_realigned`, but testing vs direct histogram of items
-  Dataset events;
-  auto a = make_1d_events_default_weights();
-  auto b = make_1d_events_default_weights();
-  b.coords()[Dim::Y] += makeVariable<double>(Values{1.0});
-  const auto bins =
-      makeVariable<double>(Dims{Dim::Y}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
-
-  Dataset expected;
-  expected.setData("a", histogram(a, bins));
-  expected.setData("b", histogram(b, bins));
-
-  events.setData("a", unaligned::realign(a, {{Dim::Y, bins}}));
-  events.setData("b", unaligned::realign(b, {{Dim::Y, bins}}));
-
-  EXPECT_EQ(dataset::histogram(events), expected);
+TEST(HistogramTest, dense_vs_binned) {
+  using testdata::make_table;
+  auto table_no_variance = make_table(100);
+  table_no_variance.data().setVariances(Variable{});
+  for (const auto &table :
+       {make_table(0), make_table(100), make_table(1000), table_no_variance}) {
+    const auto binned_x =
+        bin(table, {makeVariable<double>(Dims{Dim::X}, Shape{5},
+                                         Values{-2, -1, 0, 1, 2})});
+    auto binned_y = bin(
+        table, {makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{-2, 2})});
+    binned_y.coords().erase(Dim::Y);
+    const auto edges =
+        makeVariable<double>(Dims{Dim::X}, Shape{8},
+                             Values{-2.0, -1.5, -1.0, 0.0, 0.5, 1.0, 1.5, 2.0});
+    EXPECT_EQ(histogram(table, edges), histogram(binned_x, edges));
+    EXPECT_EQ(histogram(table, edges),
+              histogram(binned_y.slice({Dim::Y, 0}), edges));
+  }
 }

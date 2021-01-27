@@ -1,77 +1,68 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/reduction.h"
+#include "scipp/common/reduction.h"
 #include "scipp/core/dtype.h"
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/core/element/comparison.h"
 #include "scipp/core/element/logical.h"
-#include "scipp/core/element/reduction.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/event.h"
-#include "scipp/variable/except.h"
+#include "scipp/variable/creation.h"
+#include "scipp/variable/math.h"
+#include "scipp/variable/misc_operations.h"
+#include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
 
-#include "operations_common.h"
-
 using namespace scipp::core;
+using scipp::common::reduce_all_dims;
 
 namespace scipp::variable {
 
-void flatten_impl(const VariableView &summed, const VariableConstView &var,
-                  const VariableConstView &mask) {
-  // Note that mask may often be "empty" (0-D false). Benchmarks show no
-  // significant penalty from handling it anyway. We thus avoid two separate
-  // code branches here.
-  if (!contains_events(var))
-    throw except::TypeError("`flatten` can only be used for event data, "
-                            "use `sum` for dense data.");
-  // 1. Reserve space in output. This yields approx. 3x speedup.
-  auto summed_sizes = event::sizes(summed);
-  sum_impl(summed_sizes, event::sizes(var) * mask);
-  event::reserve(summed, summed_sizes);
+namespace {
 
-  // 2. Flatten dimension(s) by concatenating along events dim.
-  accumulate_in_place(summed, var, mask, element::flatten);
+// Workaround VS C7526 (undefined inline variable) with dtype<> in template.
+bool is_dtype_bool(const VariableConstView &var) {
+  return var.dtype() == dtype<bool>;
+}
+bool is_dtype_int64(const VariableConstView &var) {
+  return var.dtype() == dtype<int64_t>;
 }
 
-/// Flatten dimension by concatenating along events dimension.
-///
-/// This is equivalent to summing dense data along a dimension, in the sense
-/// that summing histogrammed data is the same as histogramming flattened data.
-Variable flatten(const VariableConstView &var, const Dim dim) {
+Variable make_accumulant(const VariableConstView &var, const Dim dim,
+                         const FillValue &init) {
   auto dims = var.dims();
   dims.erase(dim);
-  Variable flattened(var, dims);
-  flatten_impl(flattened, var, makeVariable<bool>(Values{true}));
-  return flattened;
+  return special_like(
+      var.dims()[dim] == 0 ? Variable(var, dims) : var.slice({dim, 0}), init);
 }
 
+} // namespace
+
 void sum_impl(const VariableView &summed, const VariableConstView &var) {
-  if (contains_events(var))
-    throw except::TypeError("`sum` can only be used for dense data, use "
-                            "`flatten` for event data.");
   accumulate_in_place(summed, var, element::plus_equals);
 }
 
-Variable sum(const VariableConstView &var, const Dim dim) {
-  auto dims = var.dims();
-  dims.erase(dim);
-  // Bool DType is a bit special in that it cannot contain it's sum.
+void nansum_impl(const VariableView &summed, const VariableConstView &var) {
+  accumulate_in_place(summed, var, element::nan_plus_equals);
+}
+
+template <typename Op>
+Variable sum_with_dim_impl(Op op, const VariableConstView &var, const Dim dim) {
+  // Bool DType is a bit special in that it cannot contain its sum.
   // Instead the sum is stored in a int64_t Variable
-  Variable summed{var.dtype() == dtype<bool>
-                      ? makeVariable<int64_t>(Dimensions(dims))
-                      : Variable(var, dims)};
-  sum_impl(summed, var);
+  auto summed = make_accumulant(var, dim, FillValue::ZeroNotBool);
+  op(summed, var);
   return summed;
 }
 
-VariableView sum(const VariableConstView &var, const Dim dim,
-                 const VariableView &out) {
-  if (var.dtype() == dtype<bool> && out.dtype() != dtype<int64_t>)
-    throw except::UnitError("In-place sum of Bool dtype must be stored in an "
-                            "output variable of Int64 dtype.");
+template <typename Op>
+VariableView sum_with_dim_inplace_impl(Op op, const VariableConstView &var,
+                                       const Dim dim, const VariableView &out) {
+  if (is_dtype_bool(var) && !is_dtype_int64(out))
+    throw except::TypeError("In-place sum of dtype=bool must be stored in an "
+                            "output variable with dtype=int64.");
 
   auto dims = var.dims();
   dims.erase(dim);
@@ -80,14 +71,46 @@ VariableView sum(const VariableConstView &var, const Dim dim,
         "Output argument dimensions must be equal to input dimensions without "
         "the summing dimension.");
 
-  sum_impl(out, var);
+  out.setUnit(var.unit());
+  op(out, var);
+  return out;
+}
+
+Variable sum(const VariableConstView &var, const Dim dim) {
+  return sum_with_dim_impl(sum_impl, var, dim);
+}
+
+Variable nansum(const VariableConstView &var, const Dim dim) {
+  return sum_with_dim_impl(nansum_impl, var, dim);
+}
+
+VariableView sum(const VariableConstView &var, const Dim dim,
+                 const VariableView &out) {
+  return sum_with_dim_inplace_impl(sum_impl, var, dim, out);
+}
+
+VariableView nansum(const VariableConstView &var, const Dim dim,
+                    const VariableView &out) {
+  return sum_with_dim_inplace_impl(nansum_impl, var, dim, out);
+}
+
+VariableView nanmean_impl(const VariableConstView &var, const Dim dim,
+                          const VariableConstView &count,
+                          const VariableView &out) {
+  if (isInt(out.dtype()))
+    throw except::TypeError(
+        "Cannot calculate nanmean in-place when output dtype is integer");
+
+  nansum(var, dim, out);
+  auto scale = reciprocal(astype(count, core::dtype<double>));
+  out *= scale;
   return out;
 }
 
 Variable mean_impl(const VariableConstView &var, const Dim dim,
-                   const VariableConstView &masks_sum) {
+                   const VariableConstView &count) {
   auto summed = sum(var, dim);
-  auto scale = 1.0 * units::one / (var.dims()[dim] * units::one - masks_sum);
+  auto scale = reciprocal(astype(count, core::dtype<double>));
   if (isInt(var.dtype()))
     summed = summed * scale;
   else
@@ -95,25 +118,57 @@ Variable mean_impl(const VariableConstView &var, const Dim dim,
   return summed;
 }
 
+Variable nanmean_impl(const VariableConstView &var, const Dim dim,
+                      const VariableConstView &count) {
+  if (isInt(var.dtype()))
+    return mean_impl(var, dim, count);
+  auto summed = nansum(var, dim);
+  summed *= reciprocal(astype(count, core::dtype<double>));
+  return summed;
+}
+
 VariableView mean_impl(const VariableConstView &var, const Dim dim,
-                       const VariableConstView &masks_sum,
+                       const VariableConstView &count,
                        const VariableView &out) {
   if (isInt(out.dtype()))
-    throw except::UnitError(
+    throw except::TypeError(
         "Cannot calculate mean in-place when output dtype is integer");
 
   sum(var, dim, out);
-  out *= 1.0 * units::one / (var.dims()[dim] * units::one - masks_sum);
+  out *= reciprocal(astype(count, core::dtype<double>));
   return out;
 }
 
+/// Return the mean along all dimensions.
+Variable mean(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return mean(_...); });
+}
+
 Variable mean(const VariableConstView &var, const Dim dim) {
-  return mean_impl(var, dim, makeVariable<int64_t>(Values{0}));
+  using variable::isfinite;
+  return mean_impl(var, dim, sum(isfinite(var), dim));
 }
 
 VariableView mean(const VariableConstView &var, const Dim dim,
                   const VariableView &out) {
-  return mean_impl(var, dim, makeVariable<int64_t>(Values{0}), out);
+  using variable::isfinite;
+  return mean_impl(var, dim, sum(isfinite(var), dim), out);
+}
+
+/// Return the mean along all dimensions. Ignoring NaN values.
+Variable nanmean(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return nanmean(_...); });
+}
+
+Variable nanmean(const VariableConstView &var, const Dim dim) {
+  using variable::isfinite;
+  return nanmean_impl(var, dim, sum(isfinite(var), dim));
+}
+
+VariableView nanmean(const VariableConstView &var, const Dim dim,
+                     const VariableView &out) {
+  using variable::isfinite;
+  return nanmean_impl(var, dim, sum(isfinite(var), dim), out);
 }
 
 template <class Op>
@@ -128,8 +183,9 @@ void reduce_impl(const VariableView &out, const VariableConstView &var, Op op) {
 /// `max`. Note that masking is not supported here since it would make creation
 /// of a sensible starting value difficult.
 template <class Op>
-Variable reduce_idempotent(const VariableConstView &var, const Dim dim, Op op) {
-  Variable out(var.slice({dim, 0}));
+Variable reduce_idempotent(const VariableConstView &var, const Dim dim, Op op,
+                           const FillValue &init) {
+  auto out = make_accumulant(var, dim, init);
   reduce_impl(out, var, op);
   return out;
 }
@@ -139,7 +195,8 @@ void any_impl(const VariableView &out, const VariableConstView &var) {
 }
 
 Variable any(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::logical_or_equals);
+  return reduce_idempotent(var, dim, core::element::logical_or_equals,
+                           FillValue::False);
 }
 
 void all_impl(const VariableView &out, const VariableConstView &var) {
@@ -147,7 +204,8 @@ void all_impl(const VariableView &out, const VariableConstView &var) {
 }
 
 Variable all(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::logical_and_equals);
+  return reduce_idempotent(var, dim, core::element::logical_and_equals,
+                           FillValue::True);
 }
 
 void max_impl(const VariableView &out, const VariableConstView &var) {
@@ -159,7 +217,17 @@ void max_impl(const VariableView &out, const VariableConstView &var) {
 /// Variances are not considered when determining the maximum. If present, the
 /// variance of the maximum element is returned.
 Variable max(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::max_equals);
+  return reduce_idempotent(var, dim, core::element::max_equals,
+                           FillValue::Lowest);
+}
+
+/// Return the maximum along given dimension ignoring NaN values.
+///
+/// Variances are not considered when determining the maximum. If present, the
+/// variance of the maximum element is returned.
+Variable nanmax(const VariableConstView &var, const Dim dim) {
+  return reduce_idempotent(var, dim, core::element::nanmax_equals,
+                           FillValue::Lowest);
 }
 
 void min_impl(const VariableView &out, const VariableConstView &var) {
@@ -171,7 +239,26 @@ void min_impl(const VariableView &out, const VariableConstView &var) {
 /// Variances are not considered when determining the minimum. If present, the
 /// variance of the minimum element is returned.
 Variable min(const VariableConstView &var, const Dim dim) {
-  return reduce_idempotent(var, dim, core::element::min_equals);
+  return reduce_idempotent(var, dim, core::element::min_equals, FillValue::Max);
+}
+
+/// Return the minimum along given dimension ignorning NaN values.
+///
+/// Variances are not considered when determining the minimum. If present, the
+/// variance of the minimum element is returned.
+Variable nanmin(const VariableConstView &var, const Dim dim) {
+  return reduce_idempotent(var, dim, core::element::nanmin_equals,
+                           FillValue::Max);
+}
+
+/// Return the sum along all dimensions.
+Variable sum(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return sum(_...); });
+}
+
+/// Return the sum along all dimensions, nans treated as zero.
+Variable nansum(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return nansum(_...); });
 }
 
 /// Return the maximum along all dimensions.
@@ -179,9 +266,19 @@ Variable max(const VariableConstView &var) {
   return reduce_all_dims(var, [](auto &&... _) { return max(_...); });
 }
 
+/// Return the maximum along all dimensions ignorning NaN values.
+Variable nanmax(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return nanmax(_...); });
+}
+
 /// Return the minimum along all dimensions.
 Variable min(const VariableConstView &var) {
   return reduce_all_dims(var, [](auto &&... _) { return min(_...); });
+}
+
+/// Return the minimum along all dimensions ignoring NaN values.
+Variable nanmin(const VariableConstView &var) {
+  return reduce_all_dims(var, [](auto &&... _) { return nanmin(_...); });
 }
 
 /// Return the logical AND along all dimensions.

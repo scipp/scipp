@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @author Simon Heybrock
 #pragma once
 
@@ -7,15 +7,18 @@
 #include <mutex>
 #include <unordered_map>
 
+#include "scipp-units_export.h"
+
 namespace scipp::units {
 
-class Dim {
+class SCIPP_UNITS_EXPORT Dim {
 public:
   enum class Id : uint16_t {
     Detector,
     DSpacing,
     Energy,
     EnergyTransfer,
+    Event,
     Group,
     Position,
     PulseTime,
@@ -41,6 +44,7 @@ public:
   constexpr static auto DSpacing = Id::DSpacing;
   constexpr static auto Energy = Id::Energy;
   constexpr static auto EnergyTransfer = Id::EnergyTransfer;
+  constexpr static auto Event = Id::Event;
   constexpr static auto Group = Id::Group;
   constexpr static auto Invalid = Id::Invalid;
   constexpr static auto Position = Id::Position;
@@ -86,7 +90,7 @@ private:
   static std::mutex mutex;
 };
 
-std::string to_string(const Dim dim);
+SCIPP_UNITS_EXPORT std::string to_string(const Dim dim);
 
 } // namespace scipp::units
 

@@ -6,7 +6,7 @@ name: scipp-developer
 
 channels:
   - conda-forge
-  - dannixon
+  - scipp
 
 dependencies:
   # Build
@@ -15,22 +15,28 @@ dependencies:
 
   # Run
   - appdirs
+  - ipympl
   - ipywidgets
   - mantid-framework
-  - matplotlib
+  - matplotlib=3.2.2 # version 3.3.3 causes issues with nodejs in JupyterLab
   - numpy >=1.15.3
-  - Pillow
   - python
   - python-configuration
   - pythreejs
   - pyyaml
   - tbb
+  - traitlets=4.3.3 # see https://github.com/jupyter-widgets/pythreejs/issues/334
 
   # Test
   - beautifulsoup4
   - h5py
   - psutil
   - pytest
+
+  # Formatting & static analysis
+  - pre-commit
+  - yapf
+  - flake8
 
   # Docs
   - ipython=7.2.0

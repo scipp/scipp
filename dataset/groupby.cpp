@@ -1,24 +1,28 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <numeric>
 
+#include "scipp/core/bucket.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/parallel.h"
 #include "scipp/core/tag_util.h"
 
 #include "scipp/variable/indexed_slice_view.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/util.h"
 
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/choose.h"
-#include "scipp/dataset/event.h"
+#include "scipp/dataset/dataset_util.h"
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/groupby.h"
 #include "scipp/dataset/reduction.h"
 #include "scipp/dataset/shape.h"
 
 #include "../variable/operations_common.h"
+#include "bin_common.h"
 #include "dataset_operations_common.h"
 
 using namespace scipp::variable;
@@ -54,37 +58,41 @@ T GroupBy<T>::copy(const scipp::index group,
 /// - Default-init data.
 template <class T>
 T GroupBy<T>::makeReductionOutput(const Dim reductionDim) const {
-  auto out = resize(m_data, reductionDim, size());
-  out.rename(reductionDim, dim());
+  T out;
+  if (is_bins(m_data)) {
+    const auto out_sizes =
+        GroupBy(bucket_sizes(m_data), {key(), groups()}).sum(reductionDim);
+    out = resize(m_data, reductionDim, out_sizes);
+  } else {
+    out = resize(m_data, reductionDim, size());
+    out.rename(reductionDim, dim());
+  }
   out.coords().set(dim(), key());
   return out;
 }
 
 template <class T>
-template <class Op, class CoordOp>
-T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
+template <class Op>
+T GroupBy<T>::reduce(Op op, const Dim reductionDim) const {
   auto out = makeReductionOutput(reductionDim);
-  auto mask = irreducible_mask(m_data.masks(), reductionDim);
-  if (mask)
-    mask = ~std::move(
-        mask); // `op` multiplies mask into data to zero masked elements
+  const auto get_mask = [&](const auto &data) {
+    auto mask = irreducible_mask(data.masks(), reductionDim);
+    if (mask)
+      mask = ~std::move(
+          mask); // `op` multiplies mask into data to zero masked elements
+    return mask;
+  };
   // Apply to each group, storing result in output slice
   const auto process_groups = [&](const auto &range) {
     for (scipp::index group = range.begin(); group != range.end(); ++group) {
       const auto out_slice = out.slice({dim(), group});
       if constexpr (std::is_same_v<T, Dataset>) {
-        for (const auto &item : m_data) {
-          op(out_slice[item.name()], item, groups()[group], reductionDim, mask);
-        }
+        for (const auto &item : m_data)
+          op(out_slice[item.name()], item, groups()[group], reductionDim,
+             get_mask(m_data[item.name()]));
       } else {
-        op(out_slice, m_data, groups()[group], reductionDim, mask);
+        op(out_slice, m_data, groups()[group], reductionDim, get_mask(m_data));
       }
-      if constexpr (!std::is_same_v<CoordOp, void *>)
-        for (auto &&[dim, coord] : out_slice.coords())
-          coord_op(coord, m_data.coords()[dim], groups()[group], reductionDim,
-                   mask);
-      else
-        static_cast<void>(coord_op);
     }
   };
   core::parallel::parallel_for(core::parallel::blocked_range(0, size()),
@@ -93,100 +101,59 @@ T GroupBy<T>::reduce(Op op, const Dim reductionDim, CoordOp coord_op) const {
 }
 
 namespace groupby_detail {
-static constexpr auto flatten = [](const DataArrayView &out, const auto &in,
-                                   const GroupByGrouping::group &group,
-                                   const Dim reductionDim,
-                                   const Variable &mask_) {
-  // Here and below: Hack to make flatten work with scalar weights. Proper
-  // solution would be to create proper output and broadcast, but this is also
-  // bad solution. Removing support for scalar weights altogether might be the
-  // way forward.
-  if (in.hasData() && !contains_events(in.data())) {
-    if (min(in.data(), reductionDim) != max(in.data(), reductionDim))
-      throw except::EventDataError(
-          "flatten with non-constant scalar weights not possible yet.");
-  }
-  bool first = true;
-  const auto no_mask = makeVariable<bool>(Values{true});
-  for (const auto &slice : group) {
-    auto mask = mask_ ? mask_.slice(slice) : no_mask;
-    const auto &array = in.slice(slice);
-    if (in.hasData()) {
-      if (contains_events(array.data()))
-        flatten_impl(out.data(), array.data(), mask);
-      else if (first) {
-        // Note that masks can be ignored since no weights are concatenated
-        out.data().assign(array.data().slice({reductionDim, 0}));
-        first = false;
-      }
-    }
-  }
-};
 
-static constexpr auto flatten_coord =
-    [](const VariableView &out, const auto &in,
-       const GroupByGrouping::group &group, const Dim reductionDim,
-       const Variable &mask_) {
-      if (!in.dims().contains(reductionDim))
-        return;
-      const auto no_mask = makeVariable<bool>(Values{true});
-      for (const auto &slice : group) {
-        auto mask = mask_ ? mask_.slice(slice) : no_mask;
-        const auto &array = in.slice(slice);
-        if (contains_events(out))
-          flatten_impl(out, array, mask);
-      }
-    };
-
-static constexpr auto sum = [](const DataArrayView &out,
-                               const auto &data_container,
-                               const GroupByGrouping::group &group,
-                               const Dim reductionDim, const Variable &mask) {
-  if (out.hasData()) {
-    for (const auto &slice : group) {
-      const auto data_slice = data_container.slice(slice);
-      if (mask)
-        sum_impl(out.data(), data_slice.data() * mask.slice(slice));
-      else
-        sum_impl(out.data(), data_slice.data());
-    }
-  } else {
-    const auto &unaligned_out = out.unaligned();
-    const auto &unaligned_in = data_container.unaligned();
-    // Flatten in all cases, even if not event data? Try to sum?
-    flatten(unaligned_out, unaligned_in, group, reductionDim, mask);
-    for (auto &&[dim, coord] : unaligned_out.coords())
-      flatten_coord(coord, unaligned_in.coords()[dim], group, reductionDim,
-                    mask);
-  }
-};
-
-template <void (*Func)(const VariableView &, const VariableConstView &)>
-static constexpr auto reduce_idempotent =
+static constexpr auto sum =
     [](const DataArrayView &out, const auto &data_container,
-       const GroupByGrouping::group &group, const Dim reductionDim,
-       const Variable &mask) {
-      bool first = true;
+       const GroupByGrouping::group &group, const Dim, const Variable &mask) {
       for (const auto &slice : group) {
         const auto data_slice = data_container.slice(slice);
         if (mask)
-          throw std::runtime_error(
-              "This operation does not support masks yet.");
-        if (first) {
-          out.data().assign(data_slice.data().slice({reductionDim, 0}));
-          first = false;
-        }
-        Func(out.data(), data_slice.data());
+          sum_impl(out.data(), data_slice.data() * mask.slice(slice));
+        else
+          sum_impl(out.data(), data_slice.data());
       }
     };
+
+template <void (*Func)(const VariableView &, const VariableConstView &)>
+// The msvc compiler was failing to pass the templated function correctly
+// requiring the introduction of a wrapping struct to aid compiler
+// resolution.
+struct wrap {
+  static constexpr auto reduce_idempotent =
+      [](const DataArrayView &out, const auto &data_container,
+         const GroupByGrouping::group &group, const Dim reductionDim,
+         const Variable &mask) {
+        bool first = true;
+        for (const auto &slice : group) {
+          const auto data_slice = data_container.slice(slice);
+          if (mask)
+            throw std::runtime_error(
+                "This operation does not support masks yet.");
+          if (first) {
+            out.data().assign(data_slice.data().slice({reductionDim, 0}));
+            first = false;
+          }
+          Func(out.data(), data_slice.data());
+        }
+      };
+};
 } // namespace groupby_detail
 
-/// Flatten provided dimension in each group and return combined data.
+/// Reduce each group by concatenating elements and return combined data.
 ///
-/// This only supports event data.
-template <class T> T GroupBy<T>::flatten(const Dim reductionDim) const {
-  return reduce(groupby_detail::flatten, reductionDim,
-                groupby_detail::flatten_coord);
+/// This only supports binned data.
+template <class T> T GroupBy<T>::concatenate(const Dim reductionDim) const {
+  const auto concat = [&](const auto &data) {
+    if (key().dims().volume() == scipp::size(groups()))
+      return groupby_concat_bins(data, {}, key(), reductionDim);
+    else
+      return groupby_concat_bins(data, key(), {}, reductionDim);
+  };
+  if constexpr (std::is_same_v<T, DataArray>) {
+    return concat(m_data);
+  } else {
+    return apply_to_items(m_data, [&](auto &&... _) { return concat(_...); });
+  }
 }
 
 /// Reduce each group using `sum` and return combined data.
@@ -196,22 +163,26 @@ template <class T> T GroupBy<T>::sum(const Dim reductionDim) const {
 
 /// Reduce each group using `all` and return combined data.
 template <class T> T GroupBy<T>::all(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<all_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<all_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Reduce each group using `any` and return combined data.
 template <class T> T GroupBy<T>::any(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<any_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<any_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Reduce each group using `max` and return combined data.
 template <class T> T GroupBy<T>::max(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<max_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<max_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Reduce each group using `min` and return combined data.
 template <class T> T GroupBy<T>::min(const Dim reductionDim) const {
-  return reduce(groupby_detail::reduce_idempotent<min_impl>, reductionDim);
+  return reduce(groupby_detail::wrap<min_impl>::reduce_idempotent,
+                reductionDim);
 }
 
 /// Apply mean to groups and return combined data.
@@ -220,50 +191,45 @@ template <class T> T GroupBy<T>::mean(const Dim reductionDim) const {
   auto out = sum(reductionDim);
 
   // 2. Compute number of slices N contributing to each out slice
-  auto scale = makeVariable<double>(Dims{dim()}, Shape{size()});
-  const auto scaleT = scale.template values<double>();
-  const auto mask = irreducible_mask(m_data.masks(), reductionDim);
-  for (scipp::index group = 0; group < size(); ++group)
-    for (const auto &slice : groups()[group]) {
-      // N contributing to each slice
-      scaleT[group] += slice.end() - slice.begin();
-      // N masks for each slice, that need to be subtracted
-      if (mask) {
-        const auto masks_sum = variable::sum(mask.slice(slice), reductionDim);
-        scaleT[group] -= masks_sum.template value<int64_t>();
+  const auto get_scale = [&](const auto &data) {
+    auto scale = makeVariable<double>(Dims{dim()}, Shape{size()});
+    const auto scaleT = scale.template values<double>();
+    const auto mask = irreducible_mask(data.masks(), reductionDim);
+    for (scipp::index group = 0; group < size(); ++group)
+      for (const auto &slice : groups()[group]) {
+        // N contributing to each slice
+        scaleT[group] += slice.end() - slice.begin();
+        // N masks for each slice, that need to be subtracted
+        if (mask) {
+          const auto masks_sum = variable::sum(mask.slice(slice), reductionDim);
+          scaleT[group] -= masks_sum.template value<int64_t>();
+        }
       }
-    }
-
-  scale = 1.0 * units::one / scale;
+    return reciprocal(std::move(scale));
+  };
 
   // 3. sum/N -> mean
   if constexpr (std::is_same_v<T, Dataset>) {
     for (const auto &item : out) {
       if (isInt(item.data().dtype()))
-        out.setData(item.name(), item.data() * scale, AttrPolicy::Keep);
+        out.setData(item.name(), item.data() * get_scale(m_data[item.name()]),
+                    AttrPolicy::Keep);
       else
-        item *= scale;
+        item *= get_scale(m_data[item.name()]);
     }
   } else {
     if (isInt(out.data().dtype()))
-      out.setData(out.data() * scale);
+      out.setData(out.data() * get_scale(m_data));
     else
-      out *= scale;
+      out *= get_scale(m_data);
   }
 
   return out;
 }
 
-static void expectValidGroupbyKey(const VariableConstView &key) {
-  if (key.dims().ndim() != 1)
-    throw except::DimensionError("Group-by key must be 1-dimensional");
-  if (key.hasVariances())
-    throw except::VariancesError("Group-by key cannot have variances");
-}
-
 template <class T> struct MakeGroups {
   static auto apply(const VariableConstView &key, const Dim targetDim) {
-    expectValidGroupbyKey(key);
+    expect::isKey(key);
     const auto &values = key.values<T>();
 
     const auto dim = key.dims().inner();
@@ -298,7 +264,7 @@ template <class T> struct MakeGroups {
 template <class T> struct MakeBinGroups {
   static auto apply(const VariableConstView &key,
                     const VariableConstView &bins) {
-    expectValidGroupbyKey(key);
+    expect::isKey(key);
     if (bins.dims().ndim() != 1)
       throw except::DimensionError("Group-by bins must be 1-dimensional");
     if (key.unit() != bins.unit())

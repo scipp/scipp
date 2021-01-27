@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -96,12 +96,7 @@ class DataAccessHelper {
     }
 
     template <class View> static bool valid(py::object &obj) {
-      auto &view = obj.cast<View &>();
-      if constexpr (std::is_same_v<DataArray, View> ||
-                    std::is_base_of_v<DataArrayConstView, View>)
-        return view.hasData() && bool(view.data());
-      else
-        return bool(view);
+      return bool(obj.cast<View &>());
     }
   };
 
@@ -111,12 +106,7 @@ class DataAccessHelper {
     }
 
     template <class View> static bool valid(py::object &obj) {
-      auto &view = obj.cast<View &>();
-      if constexpr (std::is_same_v<DataArray, View> ||
-                    std::is_base_of_v<DataArrayConstView, View>)
-        return view.hasData() && view.hasVariances();
-      else
-        return view.hasVariances();
+      return obj.cast<View &>().hasVariances();
     }
   };
 };
@@ -126,51 +116,46 @@ template <class... Ts> class as_ElementArrayViewImpl {
   using get_variances = DataAccessHelper::get_variances;
 
   template <class View>
-  using outVariant_t = std::variant<
-      std::conditional_t<std::is_same_v<View, Variable>, scipp::span<Ts>,
-                         ElementArrayView<Ts>>...>;
+  using outVariant_t = std::variant<ElementArrayView<Ts>...>;
 
   template <class Getter, class View>
   static outVariant_t<View> get(View &view) {
-    DType type = view.data().dtype();
-    if constexpr (std::is_same_v<DataArray, View> ||
-                  std::is_base_of_v<DataArrayConstView, View>) {
-      const auto &v = view.data();
-      type = v.data().dtype();
-    }
+    const DType type = view.dtype();
     if (type == dtype<double>)
       return {Getter::template get<double>(view)};
     if (type == dtype<float>)
       return {Getter::template get<float>(view)};
-    if (type == dtype<int64_t>)
-      return {Getter::template get<int64_t>(view)};
-    if (type == dtype<int32_t>)
-      return {Getter::template get<int32_t>(view)};
-    if (type == dtype<bool>)
-      return {Getter::template get<bool>(view)};
-    if (type == dtype<std::string>)
-      return {Getter::template get<std::string>(view)};
-    if (type == dtype<scipp::core::time_point>)
-      return {Getter::template get<scipp::core::time_point>(view)};
-    if (type == dtype<event_list<double>>)
-      return {Getter::template get<event_list<double>>(view)};
-    if (type == dtype<event_list<float>>)
-      return {Getter::template get<event_list<float>>(view)};
-    if (type == dtype<event_list<int64_t>>)
-      return {Getter::template get<event_list<int64_t>>(view)};
-    if (type == dtype<DataArray>)
-      return {Getter::template get<DataArray>(view)};
-    if (type == dtype<Dataset>)
-      return {Getter::template get<Dataset>(view)};
-    if (type == dtype<Eigen::Vector3d>)
-      return {Getter::template get<Eigen::Vector3d>(view)};
-    if (type == dtype<Eigen::Matrix3d>)
-      return {Getter::template get<Eigen::Matrix3d>(view)};
-    if (type == dtype<event_list<scipp::core::time_point>>)
-      return {Getter::template get<event_list<scipp::core::time_point>>(view)};
-    if (type == dtype<scipp::python::PyObject>)
-      return {Getter::template get<scipp::python::PyObject>(view)};
-    throw std::runtime_error("not implemented for this type.");
+    if constexpr (std::is_same_v<Getter, get_values>) {
+      if (type == dtype<int64_t>)
+        return {Getter::template get<int64_t>(view)};
+      if (type == dtype<int32_t>)
+        return {Getter::template get<int32_t>(view)};
+      if (type == dtype<bool>)
+        return {Getter::template get<bool>(view)};
+      if (type == dtype<std::string>)
+        return {Getter::template get<std::string>(view)};
+      if (type == dtype<scipp::core::time_point>)
+        return {Getter::template get<scipp::core::time_point>(view)};
+      if (type == dtype<Variable>)
+        return {Getter::template get<Variable>(view)};
+      if (type == dtype<DataArray>)
+        return {Getter::template get<DataArray>(view)};
+      if (type == dtype<Dataset>)
+        return {Getter::template get<Dataset>(view)};
+      if (type == dtype<Eigen::Vector3d>)
+        return {Getter::template get<Eigen::Vector3d>(view)};
+      if (type == dtype<Eigen::Matrix3d>)
+        return {Getter::template get<Eigen::Matrix3d>(view)};
+      if (type == dtype<scipp::python::PyObject>)
+        return {Getter::template get<scipp::python::PyObject>(view)};
+      if (type == dtype<bucket<Variable>>)
+        return {Getter::template get<bucket<Variable>>(view)};
+      if (type == dtype<bucket<DataArray>>)
+        return {Getter::template get<bucket<DataArray>>(view)};
+      if (type == dtype<bucket<Dataset>>)
+        return {Getter::template get<bucket<Dataset>>(view)};
+    }
+    throw std::runtime_error("Value-access not implemented for this type.");
   }
 
   template <class View>
@@ -189,20 +174,6 @@ template <class... Ts> class as_ElementArrayViewImpl {
                                            "does not match the existing "
                                            "object.");
             copy_flattened<T>(data, view_);
-          } else if constexpr (core::is_events_v<T>) {
-            auto &data = obj.cast<const py::array_t<typename T::value_type>>();
-            // Event data can be set from an array only for a single item.
-            if (dims.shape().size() != 0)
-              throw except::DimensionError(
-                  "Event data cannot be set from a single "
-                  "array, unless the events dimension is the "
-                  "only dimension.");
-            if (data.ndim() != 1)
-              throw except::DimensionError("Expected 1-D data.");
-            auto r = data.unchecked();
-            view_[0].clear();
-            for (ssize_t i = 0; i < r.shape(0); ++i)
-              view_[0].emplace_back(r(i));
           } else {
             const auto &data = obj.cast<const std::vector<T>>();
             // TODO Related to #290, we should properly support
@@ -217,12 +188,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
   template <class Getter, class View>
   static py::object get_py_array_t(py::object &obj) {
     auto &view = obj.cast<View &>();
-    DType type = view.data().dtype();
-    if constexpr (std::is_same_v<DataArray, View> ||
-                  std::is_base_of_v<DataArrayConstView, View>) {
-      const auto &v = view.data();
-      type = v.data().dtype();
-    }
+    const DType type = view.dtype();
     if (type == dtype<double>)
       return DataAccessHelper::as_py_array_t_impl<Getter, double>(obj, view);
     if (type == dtype<float>)
@@ -250,6 +216,14 @@ template <class... Ts> class as_ElementArrayViewImpl {
               // the element, so it is ok if the parent `obj` (the variable)
               // goes out of scope.
               return data[0].to_pybind();
+            } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
+              // Views such as VariableView are returned by value and require
+              // separate handling to avoid the
+              // py::return_value_policy::reference_internal in the default case
+              // below.
+              auto ret = py::cast(data[0], py::return_value_policy::move);
+              pybind11::detail::keep_alive_impl(ret, obj);
+              return ret;
             } else {
               // Returning reference to element in variable. Return-policy
               // reference_internal keeps alive `obj`. Note that an attempt to
@@ -309,12 +283,17 @@ public:
     return std::visit(
         [&obj](const auto &data) {
           if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                       scipp::python::PyObject>)
+                                       scipp::python::PyObject>) {
             return data[0].to_pybind();
-          else
+          } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
+            auto ret = py::cast(data[0], py::return_value_policy::move);
+            pybind11::detail::keep_alive_impl(ret, obj);
+            return ret;
+          } else {
             // Passing `obj` as parent so py::keep_alive works.
             return py::cast(data[0],
                             py::return_value_policy::reference_internal, obj);
+          }
         },
         get<get_values>(view));
   }
@@ -328,12 +307,17 @@ public:
     return std::visit(
         [&obj](const auto &data) {
           if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                       scipp::python::PyObject>)
+                                       scipp::python::PyObject>) {
             return data[0].to_pybind();
-          else
+          } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
+            auto ret = py::cast(data[0], py::return_value_policy::move);
+            pybind11::detail::keep_alive_impl(ret, obj);
+            return ret;
+          } else {
             // Passing `obj` as parent so py::keep_alive works.
             return py::cast(data[0],
                             py::return_value_policy::reference_internal, obj);
+          }
         },
         get<get_variances>(view));
   }
@@ -374,10 +358,9 @@ public:
 };
 
 using as_ElementArrayView = as_ElementArrayViewImpl<
-    double, float, int64_t, int32_t, bool, std::string, event_list<double>,
-    scipp::core::time_point, event_list<scipp::core::time_point>,
-    event_list<float>, event_list<int64_t>, DataArray, Dataset, Eigen::Vector3d,
-    Eigen::Matrix3d, scipp::python::PyObject>;
+    double, float, int64_t, int32_t, bool, std::string, scipp::core::time_point,
+    Variable, DataArray, Dataset, bucket<Variable>, bucket<DataArray>,
+    bucket<Dataset>, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject>;
 
 template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
@@ -387,8 +370,12 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "dims",
       [](const T &self) {
-        const auto &dims = self.dims();
-        return std::vector<Dim>(dims.labels().begin(), dims.labels().end());
+        const auto &dims_ = self.dims();
+        std::vector<std::string> dims;
+        for (const auto &dim : dims_.labels()) {
+          dims.push_back(dim.name());
+        }
+        return dims;
       },
       "Dimension labels of the data (read-only).",
       py::return_value_policy::move);

@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 
@@ -26,20 +26,22 @@ defaults = {
         # The colorbar properties
         "params": {
             "cmap": "viridis",
-            "log": False,
+            "norm": "linear",
             "vmin": None,
             "vmax": None,
             "color": None,
             "show": True,
             "cbar": True,
-            "norm": None,
+            "nan_color": "#d3d3d3",
+            "under_color": "#9467bd",
+            "over_color": "#8c564b",
         },
         # The default image height (in pixels)
         "height":
-        533,
+        467,
         # The default image width (in pixels)
         "width":
-        800,
+        700,
         # Resolution
         "dpi":
         96,
@@ -75,6 +77,7 @@ defaults = {
         "linewidth": [1.5],
         # Default line style for 1D non-histogram plots
         "linestyle": ["none"],
+        "padding": [0.05, 0.02, 1, 1],
     },
     # The colors for each dataset member used in table and show functions
     "colors": {

@@ -1,10 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 #include <benchmark/benchmark.h>
 
+#include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/neutron/convert.h"
+#include "scipp/variable/arithmetic.h"
 
 using namespace scipp;
 
@@ -59,14 +61,20 @@ static void BM_neutron_convert(benchmark::State &state, const Dim targetDim) {
 auto make_events_default_weights(const scipp::index size,
                                  const scipp::index count) {
   auto out = make_beamline(size);
-  auto var = makeVariable<event_list<double>>(Dims{Dim::Spectrum}, Shape{size});
-  auto vals = var.values<event_list<double>>();
-  for (scipp::index i = 0; i < size; ++i)
-    vals[i].resize(count, 5000.0);
-  out.setCoord(Dim::Tof, std::move(var));
-  auto weights = makeVariable<double>(Dims{Dim::Spectrum}, Shape{size},
-                                      units::counts, Values{}, Variances{});
-  out.setData("", weights);
+  Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
+      Dims{Dim::Spectrum}, Shape{size});
+  scipp::index row = 0;
+  for (auto &range : indices.values<std::pair<scipp::index, scipp::index>>()) {
+    range = {row, row + count};
+    row += count;
+  }
+  auto weights =
+      makeVariable<double>(Dims{Dim::Event}, Shape{row}, Values{}, Variances{});
+  auto tof = makeVariable<double>(Dims{Dim::Event}, Shape{row}, units::us) +
+             5000.0 * units::us;
+  DataArray buf(weights, {{Dim::Tof, tof}});
+  out.setData("", make_bins(indices, Dim::Event, buf));
+
   return out;
 }
 

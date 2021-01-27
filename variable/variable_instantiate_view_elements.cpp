@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/variable.h"
@@ -21,5 +21,11 @@ INSTANTIATE_VARIABLE(span_int32, span<int32_t>)
 INSTANTIATE_VARIABLE(span_const_bool, span<const bool>)
 INSTANTIATE_VARIABLE(span_bool, span<bool>)
 INSTANTIATE_VARIABLE(span_datetime64, span<scipp::core::time_point>)
+INSTANTIATE_VARIABLE(span_const_time_point, span<const core::time_point>)
+INSTANTIATE_VARIABLE(span_time_point, span<core::time_point>)
+INSTANTIATE_VARIABLE(span_const_string, span<const std::string>)
+INSTANTIATE_VARIABLE(span_string, span<std::string>)
+INSTANTIATE_VARIABLE(span_const_vector_3_float64, span<const Eigen::Vector3d>)
+INSTANTIATE_VARIABLE(span_vector_3_float64, span<Eigen::Vector3d>)
 
 } // namespace scipp::variable

@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #pragma once
@@ -101,9 +101,11 @@ public:
   const T *data() const noexcept { return m_data.get(); }
   T *data() noexcept { return m_data.get(); }
   const T *begin() const noexcept { return data(); }
+  T *begin() noexcept { return data(); }
   const T *end() const noexcept {
     return m_size < 0 ? begin() : data() + size();
   }
+  T *end() noexcept { return m_size < 0 ? begin() : data() + size(); }
 
   void reset() noexcept {
     m_data.reset();

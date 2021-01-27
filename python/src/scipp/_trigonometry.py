@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 from ._scipp import core as _cpp
 from ._cpp_wrapper_util import call_func as _call_cpp_func
@@ -82,4 +82,4 @@ def atan2(y, x, out=None):
     :param out: Optional output buffer.
     :return: The signed inverse tan values of the inputs.
     """
-    return _call_cpp_func(_cpp.atan, x, out=out)
+    return _call_cpp_func(_cpp.atan2, y, x, out=out)

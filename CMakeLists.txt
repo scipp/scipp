@@ -2,7 +2,9 @@
 # contributors (https://github.com/scipp)
 cmake_minimum_required(VERSION 3.13)
 project(scipp)
-set(CMAKE_CXX_STANDARD 17)
+if(NOT DEFINED CMAKE_CXX_STANDARD)
+  set(CMAKE_CXX_STANDARD 17)
+endif(NOT DEFINED CMAKE_CXX_STANDARD)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -32,6 +34,7 @@ if(MSVC)
     message(STATUS "CLCACHE_PATH not specified. Not enabled.")
     unset(CMAKE_VS_GLOBALS) # Clear all vs globals
   endif(EXISTS ${CLCACHE_PATH})
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /constexpr:steps2000000")
 endif(MSVC)
 
 if(NOT CMAKE_BUILD_TYPE)
@@ -60,13 +63,14 @@ include(pybind11)
 include(GoogleBenchmark)
 include(GenerateExportHeader)
 find_package(Boost 1.67 REQUIRED)
-find_package(TBB CONFIG)
+
+option(DISABLE_MULTI_THREADING "Disable multi threading" OFF)
+if(NOT DISABLE_MULTI_THREADING)
+  find_package(TBB CONFIG)
+endif()
 if(TBB_FOUND)
-  set(ENABLE_THREAD_LIMIT
-      OFF
-      CACHE
-        BOOL
-        "Limit the number TBB threads. Exact number to be specified via THREAD_LIMIT"
+  option(ENABLE_THREAD_LIMIT
+         "Limit the number TBB threads. Limit number set via THREAD_LIMIT" OFF
   )
   if(ENABLE_THREAD_LIMIT)
     include(ProcessorCount)
@@ -151,6 +155,10 @@ enable_testing()
 
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
+
+# Generate files for free scipp API functions
+include(scipp-functions)
+
 add_subdirectory(common)
 add_subdirectory(benchmark)
 add_subdirectory(units)

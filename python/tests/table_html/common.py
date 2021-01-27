@@ -2,7 +2,8 @@ from typing import List
 
 import bs4
 
-from scipp.table_html.formatting_html import BIN_EDGE_LABEL
+from scipp.table_html.formatting_html import (BIN_EDGE_LABEL,
+                                              human_readable_size)
 
 VARIABLE_OBJECT_TYPE = "scipp.Variable"
 OBJ_TYPE_CSS_CLASS = "xr-obj-type"
@@ -73,8 +74,9 @@ def assert_data_repr_icon_present(tags: List[bs4.element.Tag]):
     assert len(tags) == 1
 
 
-def assert_common(html, in_dtype):
-    assert_obj_type(VARIABLE_OBJECT_TYPE,
+def assert_common(html, in_dtype, size_of):
+    size_suffix = human_readable_size(size_of)
+    assert_obj_type(VARIABLE_OBJECT_TYPE + f' ({size_suffix})',
                     html.find_all(class_=OBJ_TYPE_CSS_CLASS))
     assert_dtype(in_dtype, html.find_all(class_=DTYPE_CSS_CLASS))
     assert_data_repr_icon_present(html.find_all(class_=DATA_ICON_CSS_CLASS))
@@ -147,8 +149,8 @@ def _assert_section_multiple(section,
     name_html = section.find_all(class_=DATASET_NAME_CSS_CLASS)
 
     assert len(name_html) == len(name),\
-        f"Unexpected number of name tags found: {len(name_html)}."\
-        f"Expected: {len(name)}"
+        f"Unexpected number of name tags found: {section}."\
+        f"Expected: {name}"
 
     names = [html.text for html in name_html]
 

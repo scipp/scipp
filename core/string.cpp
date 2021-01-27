@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include <chrono>
@@ -48,20 +48,20 @@ std::string to_string(const Slice &slice) {
          std::to_string(slice.begin()) + end + ")\n";
 }
 
+std::string to_string(const scipp::index_pair &index) {
+  return '(' + std::to_string(index.first) + ", " +
+         std::to_string(index.second) + ')';
+}
+
 std::map<DType, std::string> &dtypeNameRegistry() {
   static std::map<DType, std::string> registry;
   return registry;
 }
 
 const std::string to_iso_date(const scipp::core::time_point &item,
-                              const std::optional<units::Unit> &unit) {
-  if (!unit)
-    throw except::UnitError(
-        "Time point should only have time units (ns or s).");
-
+                              const units::Unit &unit) {
   int64_t ts = item.time_since_epoch();
-
-  if (unit.value() == units::ns) {
+  if (unit == units::ns) {
     // cast timestamp into duration in seconds
     const std::chrono::duration<int64_t, std::nano> dur_nano(ts);
     auto dur_sec = std::chrono::duration_cast<std::chrono::seconds>(dur_nano);
@@ -77,7 +77,7 @@ const std::string to_iso_date(const scipp::core::time_point &item,
     std::stringstream ss;
     ss << std::put_time(tm, "%FT%T.") << std::setw(9) << std::setfill('0') << ns;
     return ss.str();
-  } else if (unit.value() == units::s) {
+  } else if (unit == units::s) {
     // cast timestamp into duration in seconds
     const std::chrono::duration<int64_t> dur_sec(ts);
     std::chrono::system_clock::time_point tp(dur_sec);

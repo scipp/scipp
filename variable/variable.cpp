@@ -1,68 +1,67 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/variable.h"
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/variable/creation.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
 
 Variable::Variable(const VariableConstView &slice)
-    : Variable(slice ? Variable(slice, slice.dims()) : Variable()) {
-  // There is a bug in the implementation of MultiIndex used in ElementArrayView
-  // in case one of the dimensions has extent 0.
-  if (slice && dims().volume() != 0)
-    data().copy(slice.data(), Dim::Invalid, 0, 0, 1);
+    : Variable(empty_like(slice)) {
+  data().copy(slice, *this);
 }
 
+/// Construct from parent with same dtype, unit, and hasVariances but new dims.
+///
+/// In the case of bucket variables the buffer size is set to zero.
 Variable::Variable(const Variable &parent, const Dimensions &dims)
-    : m_unit(parent.unit()),
-      m_object(parent.m_object->makeDefaultFromParent(dims)) {}
-
-Variable::Variable(const VariableConstView &parent, const Dimensions &dims)
     : m_unit(parent.unit()),
       m_object(parent.data().makeDefaultFromParent(dims)) {}
 
-Variable::Variable(const Variable &parent, VariableConceptHandle data)
+Variable::Variable(const VariableConstView &parent, const Dimensions &dims)
+    : m_unit(parent.unit()),
+      m_object(parent.underlying().data().makeDefaultFromParent(dims)) {}
+
+Variable::Variable(const VariableConstView &parent, VariableConceptHandle data)
     : m_unit(parent.unit()), m_object(std::move(data)) {}
+
+Variable::Variable(VariableConceptHandle data) : m_object(std::move(data)) {}
 
 VariableConstView::VariableConstView(const Variable &variable,
                                      const Dimensions &dims)
-    : m_variable(&variable), m_view(variable.data().reshape(dims)) {}
-
-VariableConstView::VariableConstView(const Variable &variable, const Dim dim,
-                                     const scipp::index begin,
-                                     const scipp::index end)
-    : m_variable(&variable), m_view(variable.data().makeView(dim, begin, end)) {
+    : m_variable(&variable), m_dims(dims), m_dataDims(dims) {
+  // TODO implement reshape differently, not with a special constructor?
+  expect_same_volume(m_variable->dims(), dims);
 }
 
 VariableConstView::VariableConstView(const VariableConstView &slice,
                                      const Dim dim, const scipp::index begin,
-                                     const scipp::index end)
-    : m_variable(slice.m_variable),
-      m_view(slice.data().makeView(dim, begin, end)) {}
+                                     const scipp::index end) {
+  *this = slice;
+  m_offset += begin * m_dataDims.offset(dim);
+  if (end == -1)
+    m_dims.erase(dim);
+  else
+    m_dims.resize(dim, end - begin);
+  // See implementation of ViewIndex regarding this relabeling.
+  for (const auto label : m_dataDims.labels())
+    if (label != Dim::Invalid && !m_dims.contains(label))
+      m_dataDims.relabel(m_dataDims.index(label), Dim::Invalid);
+}
 
-// Note that we use the basic constructor of VariableConstView to avoid
-// creation of a const m_view, which would be overwritten immediately.
 VariableView::VariableView(Variable &variable, const Dimensions &dims)
-    : VariableConstView(variable), m_mutableVariable(&variable) {
-  m_view = variable.data().reshape(dims);
-}
-
-VariableView::VariableView(Variable &variable, const Dim dim,
-                           const scipp::index begin, const scipp::index end)
-    : VariableConstView(variable), m_mutableVariable(&variable) {
-  m_view = variable.data().makeView(dim, begin, end);
-}
+    : VariableConstView(variable, dims), m_mutableVariable(&variable) {}
 
 VariableView::VariableView(const VariableView &slice, const Dim dim,
                            const scipp::index begin, const scipp::index end)
-    : VariableConstView(slice), m_mutableVariable(slice.m_mutableVariable) {
-  m_view = slice.data().makeView(dim, begin, end);
-}
+    : VariableConstView(slice, dim, begin, end),
+      m_mutableVariable(slice.m_mutableVariable) {}
 
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == m_object->dims().volume()) {
@@ -73,16 +72,10 @@ void Variable::setDims(const Dimensions &dimensions) {
   m_object = m_object->makeDefaultFromParent(dimensions);
 }
 
-template <class T1, class T2> bool equals(const T1 &a, const T2 &b) {
-  if (!a || !b)
-    return static_cast<bool>(a) == static_cast<bool>(b);
-  if (a.unit() != b.unit())
-    return false;
-  return a.data() == b.data();
-}
-
 bool Variable::operator==(const VariableConstView &other) const {
-  return equals(*this, other);
+  if (!*this || !other)
+    return static_cast<bool>(*this) == static_cast<bool>(other);
+  return data().equals(*this, other);
 }
 
 bool Variable::operator!=(const VariableConstView &other) const {
@@ -90,11 +83,9 @@ bool Variable::operator!=(const VariableConstView &other) const {
 }
 
 template <class T> VariableView VariableView::assign(const T &other) const {
-  if (data().isSame(other.data()))
+  if (*this == VariableConstView(other))
     return *this; // Self-assignment, return early.
-  setUnit(other.unit());
-  core::expect::equals(dims(), other.dims());
-  data().copy(other.data(), Dim::Invalid, 0, 0, 1);
+  underlying().data().copy(other, *this);
   return *this;
 }
 
@@ -106,9 +97,11 @@ template SCIPP_VARIABLE_EXPORT VariableView
 VariableView::assign(const VariableView &) const;
 
 bool VariableConstView::operator==(const VariableConstView &other) const {
+  if (!*this || !other)
+    return static_cast<bool>(*this) == static_cast<bool>(other);
   // Always use deep comparison (pointer comparison does not make sense since we
   // may be looking at a different section).
-  return equals(*this, other);
+  return underlying().data().equals(*this, other);
 }
 
 bool VariableConstView::operator!=(const VariableConstView &other) const {
@@ -151,15 +144,15 @@ VariableView VariableView::slice(const Slice slice) const {
 }
 
 VariableConstView
-VariableConstView::transpose(const std::vector<Dim> &dims) const {
+VariableConstView::transpose(const std::vector<Dim> &order) const {
   auto transposed(*this);
-  transposed.m_view = data().transpose(dims);
+  transposed.m_dims = core::transpose(dims(), order);
   return transposed;
 }
 
-VariableView VariableView::transpose(const std::vector<Dim> &dims) const {
+VariableView VariableView::transpose(const std::vector<Dim> &order) const {
   auto transposed(*this);
-  transposed.m_view = data().transpose(dims);
+  transposed.m_dims = core::transpose(dims(), order);
   return transposed;
 }
 
@@ -172,9 +165,22 @@ std::vector<scipp::index> VariableConstView::strides() const {
   return strides;
 }
 
+bool VariableConstView::is_trivial() const noexcept {
+  return m_variable && m_offset == 0 && m_dims == m_variable->dims() &&
+         m_dataDims == m_variable->dims();
+}
+
 void Variable::rename(const Dim from, const Dim to) {
   if (dims().contains(from))
     data().m_dimensions.relabel(dims().index(from), to);
+}
+
+/// Rename dims of a view. Does NOT rename dims of the underlying variable.
+void VariableConstView::rename(const Dim from, const Dim to) {
+  if (dims().contains(from)) {
+    m_dims.relabel(m_dims.index(from), to);
+    m_dataDims.relabel(m_dataDims.index(from), to);
+  }
 }
 
 void Variable::setVariances(Variable v) {
@@ -184,13 +190,12 @@ void Variable::setVariances(Variable v) {
 }
 
 void VariableView::setVariances(Variable v) const {
-  // If the view wraps the whole variable (common case: iterating a dataset)
-  // m_view is not set. A more complex check would be to verify dimensions,
-  // shape, and strides, but this should be sufficient for now.
-  if (m_view)
+  if (m_offset == 0 && m_dims == m_variable->dims() &&
+      m_dataDims == m_variable->dims())
+    m_mutableVariable->setVariances(std::move(v));
+  else
     throw except::VariancesError(
         "Cannot add variances via sliced or reshaped view of Variable.");
-  m_mutableVariable->setVariances(std::move(v));
 }
 
 namespace detail {
@@ -205,5 +210,13 @@ void expect0D(const Dimensions &dims) {
 }
 
 } // namespace detail
+
+VariableConstView Variable::bin_indices() const { return data().bin_indices(); }
+
+VariableConstView VariableConstView::bin_indices() const {
+  auto view = *this;
+  view.m_variable = &underlying().bin_indices().underlying();
+  return view;
+}
 
 } // namespace scipp::variable

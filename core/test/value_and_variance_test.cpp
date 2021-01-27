@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -30,6 +30,28 @@ TEST(ValueAndVarianceTest, unary_abs) {
   const auto b = abs(a);
   EXPECT_EQ(5.0, b.value);
   EXPECT_EQ(1.0, b.variance);
+}
+
+TEST(ValueAndVarianceTest, unary_exp) {
+  const ValueAndVariance a{2.0, 1.0};
+  const auto b = exp(a);
+  EXPECT_EQ(b.value, std::exp(a.value));
+  EXPECT_EQ(b.variance, b.value * b.value * a.variance);
+}
+
+TEST(ValueAndVarianceTest, unary_log) {
+  const ValueAndVariance a{2.0, 1.0};
+  const auto b = log(a);
+  EXPECT_EQ(b.value, std::log(a.value));
+  EXPECT_EQ(b.variance, a.variance / a.value / a.value);
+}
+
+TEST(ValueAndVarianceTest, unary_log10) {
+  const ValueAndVariance a{2.0, 1.0};
+  const auto b = log10(a);
+  EXPECT_EQ(b.value, std::log10(a.value));
+  EXPECT_EQ(b.variance,
+            a.variance / a.value / a.value / std::log(10.0) / std::log(10.0));
 }
 
 TEST(ValueAndVarianceTest, binary_plus) {

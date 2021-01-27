@@ -1,18 +1,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
 #include "scipp/core/except.h"
 #include "scipp/variable/reduction.h"
+#include "test_macros.h"
 
 using namespace scipp;
 
 TEST(ReduceLogicalTest, fails) {
   const auto bad = makeVariable<int32_t>(Dims{Dim::X}, Shape{2});
-  EXPECT_THROW(static_cast<void>(all(bad, Dim::X)), except::TypeError);
-  EXPECT_THROW(static_cast<void>(any(bad, Dim::X)), except::TypeError);
-  EXPECT_THROW(static_cast<void>(all(bad, Dim::Y)), except::DimensionError);
-  EXPECT_THROW(static_cast<void>(any(bad, Dim::Y)), except::DimensionError);
+  EXPECT_THROW_DISCARD(all(bad, Dim::X), except::TypeError);
+  EXPECT_THROW_DISCARD(any(bad, Dim::X), except::TypeError);
+  EXPECT_THROW_DISCARD(all(bad, Dim::Y), except::DimensionError);
+  EXPECT_THROW_DISCARD(any(bad, Dim::Y), except::DimensionError);
 }
 
 TEST(ReduceLogicalTest, all) {
@@ -22,6 +23,8 @@ TEST(ReduceLogicalTest, all) {
             makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{false, true}));
   EXPECT_EQ(all(var, Dim::Y),
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false}));
+  EXPECT_EQ(all(var.slice({Dim::X, 0, 0}), Dim::X),
+            makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{true, true}));
 }
 
 TEST(ReduceLogicalTest, any) {
@@ -31,4 +34,6 @@ TEST(ReduceLogicalTest, any) {
             makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{true, false}));
   EXPECT_EQ(any(var, Dim::Y),
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
+  EXPECT_EQ(any(var.slice({Dim::X, 0, 0}), Dim::X),
+            makeVariable<bool>(Dims{Dim::Y}, Shape{2}, Values{false, false}));
 }

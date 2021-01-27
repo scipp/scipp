@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Neil Vaytet
 import numpy as np
@@ -125,7 +125,8 @@ def test_dataset_with_masks():
                               variances=np.random.rand(N))
     d.coords["Normalized"] = sc.Variable(['tof'], values=np.arange(N))
 
-    d.masks["Mask"] = sc.Variable(['tof'], values=np.zeros(N, dtype=np.bool))
+    d['Counts'].masks["Mask"] = sc.Variable(['tof'],
+                                            values=np.zeros(N, dtype=np.bool))
 
     sc.table(d)
 
@@ -142,6 +143,42 @@ def test_dataset_histogram_with_masks():
         }, {'x': sc.Variable(['x'], values=np.arange(N + 1))})
     d.coords["Normalized"] = sc.Variable(['x'], values=np.arange(N))
 
-    d.masks["Mask"] = sc.Variable(['x'], values=np.zeros(N, dtype=np.bool))
+    d['Counts'].masks["Mask"] = sc.Variable(['x'],
+                                            values=np.zeros(N, dtype=np.bool))
 
     sc.table(d)
+
+
+def test_display_when_only_non_dim_coords_is_bin_edges():
+    da = sc.DataArray(coords={
+        'lab':
+        sc.Variable(['x'], values=np.arange(11), unit=sc.units.m)
+    },
+                      data=sc.Variable(['x'],
+                                       values=np.random.random(10),
+                                       unit=sc.units.counts))
+    sc.table(da)
+
+
+def test_display_when_only_attr_is_bin_edges():
+    da = sc.DataArray(attrs={
+        'attr0':
+        sc.Variable(['x'], values=np.arange(11), unit=sc.units.m)
+    },
+                      data=sc.Variable(['x'],
+                                       values=np.random.random(10),
+                                       unit=sc.units.counts))
+    sc.table(da)
+
+
+def test_display_when_largest_coord_non_dimensional():
+    da = sc.DataArray(coords={
+        'x':
+        sc.Variable(['x'], values=np.arange(10), unit=sc.units.m),
+        'lab':
+        sc.Variable(['x'], values=np.arange(11), unit=sc.units.m)
+    },
+                      data=sc.Variable(['x'],
+                                       values=np.random.random(10),
+                                       unit=sc.units.counts))
+    sc.table(da)

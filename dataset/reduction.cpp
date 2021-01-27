@@ -1,49 +1,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/common/numeric.h"
-#include "scipp/common/overloaded.h"
-
-#include "scipp/variable/reduction.h"
-
-#include "scipp/dataset/except.h"
-#include "scipp/dataset/reduction.h"
-
-#include "../variable/operations_common.h"
+#include "scipp/common/reduction.h"
 #include "dataset_operations_common.h"
+#include "scipp/core/element/util.h"
+#include "scipp/dataset/math.h"
+#include "scipp/dataset/reduction.h"
+#include "scipp/dataset/special_values.h"
+
+using scipp::common::reduce_all_dims;
 
 namespace scipp::dataset {
 
-DataArray flatten(const DataArrayConstView &a, const Dim dim) {
-  return apply_to_data_and_drop_dim(
-      a,
-      overloaded{no_realigned_support,
-                 [](const auto &x, const Dim dim_, const auto &mask_) {
-                   if (!contains_events(x) && min(x, dim_) != max(x, dim_))
-                     throw except::EventDataError(
-                         "flatten with non-constant scalar weights not "
-                         "possible yet.");
-                   return contains_events(x) ? flatten(x, dim_, mask_)
-                                             : copy(x.slice({dim_, 0}));
-                 }},
-      dim, a.masks());
+DataArray sum(const DataArrayConstView &a) {
+  return reduce_all_dims(a, [](auto &&... _) { return sum(_...); });
 }
-
-Dataset flatten(const DatasetConstView &d, const Dim dim) {
-  return apply_to_items(
-      d, [](auto &&... _) { return flatten(_...); }, dim);
-}
-
-namespace {
-UnalignedData sum(Dimensions dims, const DataArrayConstView &unaligned,
-                  const Dim dim, const MasksConstView &masks) {
-  static_cast<void>(masks); // relevant masks are part of unaligned as well
-  dims.erase(dim);
-  return {dims, flatten(unaligned, dim)};
-}
-} // namespace
-
 DataArray sum(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(
       a, [](auto &&... _) { return sum(_...); }, dim, a.masks());
@@ -58,16 +30,72 @@ Dataset sum(const DatasetConstView &d, const Dim dim) {
       d, [](auto &&... _) { return sum(_...); }, dim);
 }
 
+Dataset sum(const DatasetConstView &d) {
+  return apply_to_items(d, [](auto &&... _) { return sum(_...); });
+}
+
+DataArray nansum(const DataArrayConstView &a) {
+  return reduce_all_dims(a, [](auto &&... _) { return nansum(_...); });
+}
+
+DataArray nansum(const DataArrayConstView &a, const Dim dim) {
+  return apply_to_data_and_drop_dim(
+      a, [](auto &&... _) { return nansum(_...); }, dim, a.masks());
+}
+
+Dataset nansum(const DatasetConstView &d, const Dim dim) {
+  // Currently not supporting sum/mean of dataset if one or more items do not
+  // depend on the input dimension. The definition is ambiguous (return
+  // unchanged, vs. compute sum of broadcast) so it is better to avoid this for
+  // now.
+  return apply_to_items(
+      d, [](auto &&... _) { return nansum(_...); }, dim);
+}
+
+Dataset nansum(const DatasetConstView &d) {
+  return apply_to_items(d, [](auto &&... _) { return nansum(_...); });
+}
+
 DataArray mean(const DataArrayConstView &a, const Dim dim) {
   return apply_to_data_and_drop_dim(
-      a,
-      overloaded{no_realigned_support, [](auto &&... _) { return mean(_...); }},
-      dim, a.masks());
+      a, [](auto &&... _) { return mean(_...); }, dim, a.masks());
+}
+
+DataArray mean(const DataArrayConstView &a) {
+  if (isInt(a.data().dtype()))
+    return sum(a) * reciprocal(astype(sum(isfinite(a)), dtype<double>));
+  else
+    return sum(a) * reciprocal(astype(sum(isfinite(a)), a.dtype()));
 }
 
 Dataset mean(const DatasetConstView &d, const Dim dim) {
   return apply_to_items(
       d, [](auto &&... _) { return mean(_...); }, dim);
+}
+
+Dataset mean(const DatasetConstView &d) {
+  return apply_to_items(d, [](auto &&... _) { return mean(_...); });
+}
+
+DataArray nanmean(const DataArrayConstView &a, const Dim dim) {
+  return apply_to_data_and_drop_dim(
+      a, [](auto &&... _) { return nanmean(_...); }, dim, a.masks());
+}
+
+DataArray nanmean(const DataArrayConstView &a) {
+  if (isInt(a.dtype()))
+    return mean(a);
+  else
+    return nansum(a) * reciprocal(astype(sum(isfinite(a)), a.dtype()));
+}
+
+Dataset nanmean(const DatasetConstView &d, const Dim dim) {
+  return apply_to_items(
+      d, [](auto &&... _) { return nanmean(_...); }, dim);
+}
+
+Dataset nanmean(const DatasetConstView &d) {
+  return apply_to_items(d, [](auto &&... _) { return nanmean(_...); });
 }
 
 } // namespace scipp::dataset

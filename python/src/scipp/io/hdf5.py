@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# Copyright (c) 2020 Scipp contributors (https://github.com/scipp)
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @file
 # @author Simon Heybrock
 
@@ -16,105 +16,272 @@ def _dtype_lut():
     # For types understood by numpy we do not actually need this special
     # handling, but will do as we add support for other types such as
     # variable-length strings.
-    dtypes = [d.float64, d.float32, d.int64, d.int32, d.bool]
+    dtypes = [
+        d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.Variable,
+        d.DataArray, d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView,
+        d.vector_3_float64
+    ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
 
 
-class HDF5IO:
-    _units = _unit_lut()
-    _dtypes = _dtype_lut()
+class NumpyDataIO():
+    @staticmethod
+    def write(group, data):
+        dset = group.create_dataset('values', data=data.values)
+        if data.variances is not None:
+            variances = group.create_dataset('variances', data=data.variances)
+            dset.attrs['variances'] = variances.ref
+        return dset
 
-    def _read_unit(self, dset):
-        return self._units[dset.attrs['unit']]
+    @staticmethod
+    def read(group, data):
+        group['values'].read_direct(data.values)
+        if 'variances' in group:
+            group['variances'].read_direct(data.variances)
 
-    def _read_dtype(self, dset):
-        return self._dtypes[dset.attrs['dtype']]
 
-    def _write_array(self, group, name, array):
+class EigenDataIO():
+    @staticmethod
+    def write(group, data):
+        import numpy as np
+        dset = group.create_dataset('values', data=np.asarray(data.values))
+        return dset
+
+    @staticmethod
+    def read(group, data):
+        import numpy as np
+        if len(data.shape) == 0:
+            data.value = group['values']
+        else:
+            # Wrapping in np.asarray is important, otherwise we appear to be
+            # using a different, much slower code path in the setter
+            data.values = np.asarray(group['values'])
+
+
+class BinDataIO():
+    @staticmethod
+    def write(group, data):
+        values = group.create_group('values')
+        VariableIO.write(values.create_group('begin'), var=data.bins.begin)
+        VariableIO.write(values.create_group('end'), var=data.bins.end)
+        data_group = values.create_group('data')
+        data_group.attrs['dim'] = str(data.bins.dim)
+        HDF5IO.write(data_group, data.bins.data)
+        return values
+
+    @staticmethod
+    def read(group):
+        from .._scipp import core as sc
+        values = group['values']
+        begin = VariableIO.read(values['begin'])
+        end = VariableIO.read(values['end'])
+        dim = values['data'].attrs['dim']
+        data = HDF5IO.read(values['data'])
+        return sc.bins(begin=begin, end=end, dim=dim, data=data)
+
+
+class ScippDataIO():
+    @staticmethod
+    def write(group, data):
+        values = group.create_group('values')
+        if len(data.shape) == 0:
+            HDF5IO.write(values, data.value)
+        else:
+            for i, item in enumerate(data.values):
+                HDF5IO.write(values.create_group(f'value-{i}'), item)
+        return values
+
+    @staticmethod
+    def read(group, data):
+        values = group['values']
+        if len(data.shape) == 0:
+            data.value = HDF5IO.read(values)
+        else:
+            for i in range(len(data.values)):
+                data.values[i] = HDF5IO.read(values[f'value-{i}'])
+
+
+class StringDataIO():
+    @staticmethod
+    def write(group, data):
         import h5py
-        # Support for strings not enabled yet (see _dtype_lut), but something
-        # like this will work (if generalized to arrays of strings). Will need
-        # to also solve reading, e.g., but iterating all elements by hand.
-        if isinstance(array, str):
-            return group.create_dataset(name,
-                                        data=array,
-                                        dtype=h5py.string_dtype())
-        return group.create_dataset(name, data=array)
+        dt = h5py.string_dtype(encoding='utf-8')
+        dset = group.create_dataset('values', shape=data.shape, dtype=dt)
+        if len(data.shape) == 0:
+            dset[()] = data.value
+        else:
+            for i in range(len(data.values)):
+                dset[i] = data.values[i]
+        return dset
 
-    def _write_variable(self, group, var, name):
-        if var.dtype not in self._dtypes.values():
+    @staticmethod
+    def read(group, data):
+        values = group['values']
+        if len(data.shape) == 0:
+            data.value = values[()]
+        else:
+            for i in range(len(data.values)):
+                data.values[i] = values[i]
+
+
+def _write_scipp_header(group, what):
+    from .._scipp import __version__
+    group.attrs['scipp-version'] = __version__
+    group.attrs['scipp-type'] = what
+
+
+def _check_scipp_header(group, what):
+    if 'scipp-version' not in group.attrs:
+        raise RuntimeError(
+            "This does not look like an HDF5 file/group written by scipp.")
+    if (group.attrs['scipp-type'] != what):
+        raise RuntimeError(
+            f"Attempt to read {what}, found {group.attrs['scipp-type']}.")
+
+
+def _data_handler_lut():
+    from .._scipp.core import dtype as d
+    handler = {}
+    for dtype in [d.float64, d.float32, d.int64, d.int32, d.bool]:
+        handler[str(dtype)] = NumpyDataIO
+    for dtype in [d.VariableView, d.DataArrayView, d.DatasetView]:
+        handler[str(dtype)] = BinDataIO
+    for dtype in [d.Variable, d.DataArray, d.Dataset]:
+        handler[str(dtype)] = ScippDataIO
+    for dtype in [d.string]:
+        handler[str(dtype)] = StringDataIO
+    for dtype in [d.vector_3_float64]:
+        handler[str(dtype)] = EigenDataIO
+    return handler
+
+
+class VariableIO:
+    _dtypes = _dtype_lut()
+    _units = _unit_lut()
+    _data_handlers = _data_handler_lut()
+
+    @classmethod
+    def _write_data(cls, group, data):
+        return cls._data_handlers[str(data.dtype)].write(group, data)
+
+    @classmethod
+    def _read_data(cls, group, data):
+        return cls._data_handlers[str(data.dtype)].read(group, data)
+
+    @classmethod
+    def write(cls, group, var):
+        if var.dtype not in cls._dtypes.values():
             # In practice this may make the file unreadable, e.g., if values
             # have unsupported dtype.
             print(f'Writing with dtype={var.dtype} not implemented, skipping.')
             return
-        group = group.create_group(name)
-        dset = self._write_array(group, 'values', var.values)
+        _write_scipp_header(group, 'Variable')
+        dset = cls._write_data(group, var)
         dset.attrs['dims'] = [str(dim) for dim in var.dims]
         dset.attrs['shape'] = var.shape
         dset.attrs['dtype'] = str(var.dtype)
         dset.attrs['unit'] = str(var.unit)
-        if var.variances is not None:
-            variances = self._write_array(group, 'variances', var.variances)
-            dset.attrs['variances'] = variances.ref
+        return group
 
-    def _read_variable(self, group):
+    @classmethod
+    def read(cls, group):
+        _check_scipp_header(group, 'Variable')
         from .._scipp import core as sc
+        from .._scipp.core import dtype as d
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
-        contents['dtype'] = self._read_dtype(values)
-        contents['unit'] = self._read_unit(values)
+        contents['dtype'] = cls._dtypes[values.attrs['dtype']]
+        contents['unit'] = cls._units[values.attrs['unit']]
         contents['variances'] = 'variances' in group
-        var = sc.Variable(**contents)
-        values.read_direct(var.values)
-        if 'variances' in group:
-            group['variances'].read_direct(var.variances)
+        if contents['dtype'] in [
+                d.VariableView, d.DataArrayView, d.DatasetView
+        ]:
+            var = BinDataIO.read(group)
+        else:
+            var = sc.Variable(**contents)
+            cls._read_data(group, var)
         return var
 
-    def _write_data_array(self, group, data):
-        import scipp as sc
-        group.attrs['scipp-version'] = sc.__version__
-        group.attrs['type'] = 'DataArray'
+
+class DataArrayIO:
+    @staticmethod
+    def write(group, data):
+        _write_scipp_header(group, 'DataArray')
         group.attrs['name'] = data.name
         if data.data is None:
-            raise RuntimeError(
-                "Writing realigned data is not implemented yet.")
-        self._write_variable(group, var=data.data, name='data')
-        for view_name, view in zip(['coords', 'masks', 'attrs'],
-                                   [data.coords, data.masks, data.attrs]):
+            raise RuntimeError("Cannot write object with invalid data.")
+        VariableIO.write(group.create_group('data'), var=data.data)
+        views = [data.coords, data.masks, data.attrs]
+        # Note that we write aligned and unaligned coords into the same group.
+        # Distinction is via an attribute, which is more natural than having
+        # 2 separate groups.
+        for view_name, view in zip(['coords', 'masks', 'attrs'], views):
             subgroup = group.create_group(view_name)
             for name in view:
-                self._write_variable(group=subgroup,
-                                     var=view[name],
-                                     name=str(name))
+                g = VariableIO.write(group=subgroup.create_group(str(name)),
+                                     var=view[name])
+                if g is None:
+                    del subgroup[str(name)]
 
-    def _read_data_array(self, group):
+    @staticmethod
+    def read(group):
+        _check_scipp_header(group, 'DataArray')
         from .._scipp import core as sc
         contents = dict()
         contents['name'] = group.attrs['name']
-        contents['data'] = self._read_variable(group['data'])
+        contents['data'] = VariableIO.read(group['data'])
         for category in ['coords', 'masks', 'attrs']:
             contents[category] = dict()
             for name in group[category]:
-                contents[category][name] = self._read_variable(
-                    group[category][name])
+                g = group[category][name]
+                contents[category][name] = VariableIO.read(g)
         return sc.DataArray(**contents)
 
 
-def data_array_to_hdf5(self, filename):
+class DatasetIO:
+    @staticmethod
+    def write(group, data):
+        _write_scipp_header(group, 'Dataset')
+        # Slight redundancy here from writing aligned coords for each item,
+        # but irrelevant for common case of 1D coords with 2D (or higher)
+        # data. The advantage is the we can read individual dataset entries
+        # directly as data arrays.
+        for name in data:
+            HDF5IO.write(group.create_group(name), data[name])
+
+    @staticmethod
+    def read(group):
+        _check_scipp_header(group, 'Dataset')
+        from .._scipp import core as sc
+        return sc.Dataset({name: HDF5IO.read(group[name]) for name in group})
+
+
+class HDF5IO:
+    _handlers = dict(
+        zip(['Variable', 'DataArray', 'Dataset'],
+            [VariableIO, DataArrayIO, DatasetIO]))
+
+    @classmethod
+    def write(cls, group, data):
+        name = data.__class__.__name__.replace('View', '')
+        return cls._handlers[name].write(group, data)
+
+    @classmethod
+    def read(cls, group):
+        return cls._handlers[group.attrs['scipp-type']].read(group)
+
+
+def to_hdf5(obj, filename):
+    """
+    Writes object out to file in hdf5 format.
+    """
     import h5py
     with h5py.File(filename, 'w') as f:
-        io = HDF5IO()
-        io._write_data_array(f, self)
+        HDF5IO.write(f, obj)
 
 
 def open_hdf5(filename):
     import h5py
     with h5py.File(filename, 'r') as f:
-        io = HDF5IO()
-        if 'scipp-version' not in f.attrs:
-            raise RuntimeError(
-                "This does not look like an HDF5 file written by scipp.")
-        if f.attrs['type'] == 'DataArray':
-            return io._read_data_array(f)
-        raise RuntimeError(f"Unknown data type {f.attrs['type']})")
+        return HDF5IO.read(f)
