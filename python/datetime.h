@@ -50,13 +50,7 @@ public:
       return false;
     // Get timestamp (ns precision) from the numpy object
     int64_t timestamp = src.attr("astype")("int").cast<int64_t>();
-<<<<<<< HEAD
     value = scipp::core::time_point(timestamp);
-
-=======
-    scipp::core::time_point ts_obj(timestamp);
-    value = ts_obj;
->>>>>>> 8f5636bc... Updates with recent attempts to enable python bindings for slices.
     return true;
   }
 
@@ -67,10 +61,6 @@ public:
     auto unit = var_h.attr("unit").cast<py::str>();
     py::object np = py::module::import("numpy");
     py::object nd64 = np.attr("datetime64")(epoch, unit);
-<<<<<<< HEAD
-
-=======
->>>>>>> 8f5636bc... Updates with recent attempts to enable python bindings for slices.
     return nd64.release();
   }
 };

@@ -75,12 +75,7 @@ const std::string to_iso_date(const scipp::core::time_point &item,
         std::chrono::duration_cast<std::chrono::nanoseconds>(dur_nano).count() %
         1000000000;
     std::stringstream ss;
-<<<<<<< HEAD
-    ss << std::put_time(tm, "%FT%T.") << std::setw(9) << std::setfill('0')
-       << ns;
-=======
     ss << std::put_time(tm, "%FT%T.") << std::setw(9) << std::setfill('0') << ns;
->>>>>>> 8f5636bc... Updates with recent attempts to enable python bindings for slices.
     return ss.str();
   } else if (unit.value() == units::s) {
     // cast timestamp into duration in seconds
