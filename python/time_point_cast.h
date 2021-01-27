@@ -10,10 +10,9 @@
 #include <chrono>
 #include <cmath>
 #include <ctime>
-#include <datetime.h>
+#include <pybind11/chrono.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
-#include <pybind11/chrono.h>
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/time_point.h"

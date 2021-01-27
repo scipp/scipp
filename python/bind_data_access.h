@@ -12,10 +12,10 @@
 #include "scipp/dataset/except.h"
 #include "scipp/variable/variable.h"
 
-#include "datetime.h"
 #include "numpy.h"
 #include "py_object.h"
 #include "pybind11.h"
+#include "time_point_cast.h"
 
 namespace py = pybind11;
 using namespace scipp;

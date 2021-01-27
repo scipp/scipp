@@ -8,7 +8,7 @@
 #include "scipp/units/unit.h"
 #include "make_variable.h"
 
-#include "datetime.h"
+#include "time_point_cast.h"
 
 using namespace scipp;
 using namespace scipp::variable;
