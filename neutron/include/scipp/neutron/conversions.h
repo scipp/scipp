@@ -17,5 +17,11 @@ constexpr auto energy_to_tof = [](auto &coord, const auto &c) {
 constexpr auto wavelength_to_q = [](auto &coord, const auto &c) {
   coord = c / coord;
 };
+constexpr auto tof_to_energy_transfer = [](auto &coord, const auto &scale,
+                                           const auto &tof_shift,
+                                           const auto &energy_shift) {
+  const auto tof = (coord - tof_shift);
+  coord = scale / (tof * tof) - energy_shift;
+};
 
 } // namespace scipp::neutron::conversions

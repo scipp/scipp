@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <set>
+#include <tuple>
 
 #include "scipp/core/element/arg_list.h"
 
@@ -23,18 +24,22 @@ using namespace scipp::dataset;
 
 namespace scipp::neutron {
 
-template <class T, class Op>
+template <class T, class Op, class... Args>
 T convert_generic(T &&d, const Dim from, const Dim to, Op op,
-                  const VariableConstView &arg) {
+                  const Args &... args) {
   using core::element::arg_list;
-  const auto op_ = overloaded{arg_list<double, std::tuple<float, double>>, op};
+  const auto op_ = overloaded{
+      arg_list<double,
+               std::tuple<float, std::conditional_t<true, double, Args>...>>,
+      op};
   const auto items = iter(d);
   // 1. Transform coordinate
   if (d.coords().contains(from)) {
     const auto coord = d.coords()[from];
-    if (!coord.dims().contains(arg.dims()))
-      d.coords().set(from, broadcast(coord, merge(arg.dims(), coord.dims())));
-    transform_in_place(d.coords()[from], arg, op_);
+    if (!coord.dims().contains(merge(args.dims()...)))
+      d.coords().set(from,
+                     broadcast(coord, merge(args.dims()..., coord.dims())));
+    transform_in_place(d.coords()[from], args..., op_);
   }
   // 2. Transform coordinates in bucket variables
   for (const auto &item : iter(d)) {
@@ -46,13 +51,30 @@ T convert_generic(T &&d, const Dim from, const Dim to, Op op,
       continue;
     auto buffer_coord = buffer.coords().extract(from);
     auto coord = make_non_owning_bins(indices, dim, VariableView(buffer_coord));
-    transform_in_place(coord, arg, op_);
+    transform_in_place(coord, args..., op_);
     buffer.coords().set(to, std::move(buffer_coord));
   }
 
   // 3. Rename dims
   d.rename(from, to);
   return std::move(d);
+}
+
+namespace {
+template <class T, class Op, class Tuple, std::size_t... I>
+T convert_arg_tuple_impl(T &&d, const Dim from, const Dim to, Op op, Tuple &&t,
+                         std::index_sequence<I...>) {
+  return convert_generic(std::forward<T>(d), from, to, op,
+                         std::get<I>(std::forward<Tuple>(t))...);
+}
+} // namespace
+
+template <class T, class Op, class Tuple>
+T convert_arg_tuple(T &&d, const Dim from, const Dim to, Op op, Tuple &&t) {
+  return convert_arg_tuple_impl(
+      std::forward<T>(d), from, to, op, std::forward<Tuple>(t),
+      std::make_index_sequence<
+          std::tuple_size_v<std::remove_reference_t<Tuple>>>{});
 }
 
 template <class T>
@@ -228,6 +250,11 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
   if ((from == Dim::Energy) && (to == Dim::Tof))
     return convert_generic(std::move(d), from, to, conversions::energy_to_tof,
                            constants::tof_to_energy(d));
+
+  if ((from == Dim::Tof) && (to == Dim::EnergyTransfer))
+    return convert_arg_tuple(std::move(d), from, to,
+                             conversions::tof_to_energy_transfer,
+                             constants::tof_to_energy_transfer(d));
 
   // lambda <-> Q conversion is symmetric
   if (((from == Dim::Wavelength) && (to == Dim::Q)) ||

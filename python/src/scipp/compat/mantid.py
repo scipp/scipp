@@ -194,7 +194,7 @@ def md_dimension(mantid_dim, index):
 
     # Look for common/known mantid dimensions
     patterns = ["DeltaE", "T"]
-    dims = ['Delta-E', 'temperature']
+    dims = ['energy-transfer', 'temperature']
     pattern_result = zip(patterns, dims)
     for pattern, result in pattern_result:
         if re.search(pattern, mantid_dim.name, re.IGNORECASE):
@@ -228,7 +228,7 @@ def md_unit(frame):
 
 def validate_and_get_unit(unit, allow_empty=False):
     known_units = {
-        "DeltaE": ['Delta-E', sc.units.meV],
+        "DeltaE": ['energy-transfer', sc.units.meV],
         "TOF": ['tof', sc.units.us],
         "Wavelength": ['wavelength', sc.units.angstrom],
         "Energy": ['energy', sc.units.meV],
@@ -943,10 +943,10 @@ def load_component_info(ds, file, advanced_geometry=False):
 
 def validate_dim_and_get_mantid_string(unit_dim):
     known_units = {
-        'Delta-E': "DeltaE",
+        'energy-transfer': "DeltaE",
         'tof': "TOF",
         'wavelength': "Wavelength",
-        'E': "Energy",
+        'energy': "Energy",
         'd-spacing': "dSpacing",
         'Q': "MomentumTransfer",
         'Q^2': "QSquared",

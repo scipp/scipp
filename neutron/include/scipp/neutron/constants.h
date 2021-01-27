@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <tuple>
+
 #include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 #include <boost/units/systems/si/codata/universal_constants.hpp>
@@ -78,6 +80,31 @@ template <class T> auto tof_to_energy(const T &d) {
   conversionFactor *= conversionFactor;
   conversionFactor *= Variable(tof_to_energy_physical_constants);
   return conversionFactor;
+}
+
+template <class T> auto tof_to_energy_transfer(const T &d) {
+  const auto Ei = incident_energy(d);
+  const auto Ef = final_energy(d);
+  if (Ei && Ef)
+    throw std::runtime_error(
+        "Data contains coords for incident *and* final energy, cannot have "
+        "both for inelastic scattering.");
+  if (!Ei && !Ef)
+    throw std::runtime_error(
+        "Data contains neither coords for incident nor for final energy, this "
+        "does notappear to be ineleastic-scattering data, "
+        "cannot convert to energy transfer.");
+  auto l1_square = l1(d);
+  l1_square *= l1_square;
+  l1_square *= Variable(tof_to_energy_physical_constants);
+  auto l2_square = l2(d);
+  l2_square *= l2_square;
+  l2_square *= Variable(tof_to_energy_physical_constants);
+  if (Ei) { // Direct-inelastic.
+    return std::tuple{-l2_square, sqrt(l1_square / Ei), -Ei};
+  } else { // Indirect-inelastic.
+    return std::tuple{std::move(l1_square), sqrt(l2_square / Ef), Variable(Ef)};
+  }
 }
 
 template <class T> auto wavelength_to_q(const T &d) {
