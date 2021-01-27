@@ -158,17 +158,9 @@ add_custom_target(all-tests)
 
 # Custom target for building documentation
 if(NOT WIN32)
-  add_custom_target(
-    docs
-    COMMAND ./docs_build.sh
-    DEPENDS _scipp
-  )
+  add_custom_target(docs COMMAND ./docs_build.sh)
 else()
-  add_custom_target(
-    docs
-    COMMAND docs_build.bat
-    DEPENDS _scipp
-  )
+  add_custom_target(docs COMMAND docs_build.bat)
 endif()
 
 configure_file(CMake/docs_build.bat.in docs_build.bat)
