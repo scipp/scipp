@@ -1,5 +1,10 @@
 {% extends "!layout.html" %}
 
+  {% block htmltitle %}
+    {{ super() }}
+    <meta http-equiv="refresh" content="0; URL=https://scipp.github.io/release/0.5.0/" />
+  {% endblock %}
+
   {% block menu %}
     {{ super() }}
     <div style="height: 32px; position: fixed; bottom: 0; left: 15px;">
@@ -7,8 +12,8 @@
       <select onchange="location = this.value;"
               style="height: 30px; color: #27a54b; background-color: #403d3d;
                     border: 0px; box-shadow: none;">
-        <option value="https://scipp.github.io" selected>latest (unstable)</option>
-        <option value="https://scipp.github.io/release/0.5.0">v0.5</option>
+        <option value="https://scipp.github.io">latest (unstable)</option>
+        <option value="https://scipp.github.io/release/0.5.0" selected>v0.5</option>
         <option value="https://scipp.github.io/release/0.4.0">v0.4</option>
         <option value="https://scipp.github.io/release/0.3.0">v0.3</option>
       </select>
