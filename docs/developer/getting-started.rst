@@ -111,12 +111,10 @@ To run the Python tests, run (in the ``python/`` directory):
 
 Building Documentation
 ----------------------
-
-- Run ``python docs/data/fetch_neutron_data.py``
-- cd to a directory where the docs should be built (e.g. ``mkdir -p build/docs && cd build/docs``)
-- Activate a conda environment with Mantid or ensure Mantid is in your ``PYTHONPATH``
 - If Mantid is unavailable (e.g. on Windows) edit ``docs/conf.py`` and include ``nbsphinx_allow_errors = True``. Take care to not commit this change though.
-- Run ``sphinx-build ../../docs .``
+- run ``cmake --build . --target docs`` from your build directory.
+- This will build the documentation and put it on ``<build dir>/docs``.
+- If rebuuilding the documentation is slow it can be quicker to remove the docs build directory and start a fresh build.
 
 Precommit Hooks
 ---------------
