@@ -92,8 +92,8 @@ template <class T> auto tof_to_energy_transfer(const T &d) {
   if (!Ei && !Ef)
     throw std::runtime_error(
         "Data contains neither coords for incident nor for final energy, this "
-        "does notappear to be ineleastic-scattering data, "
-        "cannot convert to energy transfer.");
+        "does not appear to be inelastic-scattering data, cannot convert to "
+        "energy transfer.");
   auto l1_square = l1(d);
   l1_square *= l1_square;
   l1_square *= Variable(tof_to_energy_physical_constants);

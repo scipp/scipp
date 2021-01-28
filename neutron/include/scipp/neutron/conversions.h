@@ -6,6 +6,8 @@
 #include <cmath>
 #include <limits>
 
+#include "scipp/units/unit.h"
+
 namespace scipp::neutron::conversions {
 
 constexpr auto tof_to_energy = [](auto &coord, const auto &c) {
