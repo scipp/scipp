@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 #include <cmath>
+#include <limits>
 
 namespace scipp::neutron::conversions {
 
@@ -21,7 +22,21 @@ constexpr auto tof_to_energy_transfer = [](auto &coord, const auto &scale,
                                            const auto &tof_shift,
                                            const auto &energy_shift) {
   const auto tof = (coord - tof_shift);
+  if constexpr (!std::is_same_v<std::decay_t<decltype(coord)>, units::Unit>) {
+    if (tof <= 0.0) {
+      if (energy_shift >= 0.0)
+        coord = std::numeric_limits<double>::max();
+      else
+        coord = -std::numeric_limits<double>::max();
+      return;
+    }
+  }
   coord = scale / (tof * tof) - energy_shift;
+};
+constexpr auto energy_transfer_to_tof = [](auto &coord, const auto &scale,
+                                           const auto &tof_shift,
+                                           const auto &energy_shift) {
+  coord = tof_shift + sqrt(scale / (coord + energy_shift));
 };
 
 } // namespace scipp::neutron::conversions
