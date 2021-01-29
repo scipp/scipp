@@ -359,22 +359,41 @@ using as_ElementArrayView = as_ElementArrayViewImpl<
     bucket<Dataset>, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject>;
 
 template <class T, class... Ignored>
+void bind_sizes_property(pybind11::class_<T, Ignored...> &c) {
+  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
+    c.def_property_readonly(
+        "sizes",
+        [](const T &self) {
+          std::unordered_map<std::string, scipp::index> out;
+          const auto &dims_ = self.dims();
+          for (const auto &[dim, index] : dims_) {
+            out[dim.name()] = index;
+          }
+          return out;
+        },
+        "Dictionary of dimension labels (dims) to sizes.",
+        py::return_value_policy::move);
+  } else {
+    c.def_property_readonly(
+        "sizes",
+        [](const T &self) {
+          std::unordered_map<std::string, scipp::index> out;
+          const auto &dims_ = self.dims();
+          for (const auto &dim : dims_.labels()) {
+            out[dim.name()] = dims_[dim];
+          }
+          return out;
+        },
+        "Dictionary of dimension labels (dims) to sizes.",
+        py::return_value_policy::move);
+  }
+}
+
+template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "dtype", [](const T &self) { return self.dtype(); },
       "Data type contained in the variable.");
-  c.def_property_readonly(
-      "sizes",
-      [](const T &self) {
-        std::unordered_map<std::string, scipp::index> out;
-        const auto &dims_ = self.dims();
-        for (const auto &dim : dims_.labels()) {
-          out[dim.name()] = dims_[dim];
-        }
-        return out;
-      },
-      "Dictionary of dimension labels (dims) to sizes.",
-      py::return_value_policy::move);
   c.def_property_readonly(
       "dims",
       [](const T &self) {
@@ -415,4 +434,5 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       &as_ElementArrayView::set_variance<T>,
       "The only variance for 0-dimensional data, raising an exception if the "
       "data is not 0-dimensional.");
+  bind_sizes_property(c);
 }
