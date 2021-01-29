@@ -19,25 +19,11 @@
 
 namespace py = pybind11;
 
-// type caster: scipp::core::time_point <-> NumPy-datetime64
-namespace pybind11 {
-
-template <> struct format_descriptor<scipp::core::time_point>{
-    static constexpr const char value[2] = { 'M', '\0' };
-    static std::string format() {
-        return std::string(value);
-    }
- };
-
-namespace detail {
-
-   template <> struct is_fmt_numeric<scipp::core::time_point>{
-         static constexpr bool value = true;
-         static constexpr int index = 15; // NPI_DATETIME
-    };
-
-template <> struct type_caster<scipp::core::time_point>: public type_caster_base<scipp::core::time_point> {
-
+namespace pybind11::detail {
+/// Type caster: scipp::core::time_point <-> NumPy.datetime64
+template <>
+struct type_caster<scipp::core::time_point>
+    : public type_caster_base<scipp::core::time_point> {
 public:
   PYBIND11_TYPE_CASTER(scipp::core::time_point, _("numpy.datetime64"));
   // Conversion part 1 (Python -> C++)
@@ -64,6 +50,4 @@ public:
   }
 };
 
-} // namespace detail
-} // namespace pybind11
-
+} // namespace pybind11::detail
