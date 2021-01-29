@@ -360,33 +360,30 @@ using as_ElementArrayView = as_ElementArrayViewImpl<
 
 template <class T, class... Ignored>
 void bind_sizes_property(pybind11::class_<T, Ignored...> &c) {
+  using Sizes = std::unordered_map<std::string, scipp::index>;
+  std::function<Sizes(const T &self)> generator;
   if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
-    c.def_property_readonly(
-        "sizes",
-        [](const T &self) {
-          std::unordered_map<std::string, scipp::index> out;
-          const auto &dims_ = self.dims();
-          for (const auto &[dim, index] : dims_) {
-            out[dim.name()] = index;
-          }
-          return out;
-        },
-        "Dictionary of dimension labels (dims) to sizes.",
-        py::return_value_policy::move);
+    generator = [](const T &self) {
+      Sizes out;
+      const auto &dims_ = self.dims();
+      for (const auto &[dim, index] : dims_) {
+        out[dim.name()] = index;
+      }
+      return out;
+    };
   } else {
-    c.def_property_readonly(
-        "sizes",
-        [](const T &self) {
-          std::unordered_map<std::string, scipp::index> out;
-          const auto &dims_ = self.dims();
-          for (const auto &dim : dims_.labels()) {
-            out[dim.name()] = dims_[dim];
-          }
-          return out;
-        },
-        "Dictionary of dimension labels (dims) to sizes.",
-        py::return_value_policy::move);
+    generator = [](const T &self) {
+      Sizes out;
+      const auto &dims_ = self.dims();
+      for (const auto &dim : dims_.labels()) {
+        out[dim.name()] = dims_[dim];
+      }
+      return out;
+    };
   }
+  c.def_property_readonly("sizes", generator,
+                          "Dictionary of dimension labels (dims) to sizes.",
+                          py::return_value_policy::move);
 }
 
 template <class T, class... Ignored>
