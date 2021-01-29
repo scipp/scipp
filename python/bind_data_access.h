@@ -366,9 +366,11 @@ void bind_sizes_property(pybind11::class_<T, Ignored...> &c) {
     generator = [](const T &self) {
       Sizes out;
       const auto &dims_ = self.dims();
-      for (const auto &[dim, index] : dims_) {
-        out[dim.name()] = index;
-      }
+      std::transform(
+          dims_.begin(), dims_.end(), std::inserter(out, out.end()),
+          [](const auto &in) {
+            return typename Sizes::value_type{in.first.name(), in.second};
+          });
       return out;
     };
   } else {
