@@ -896,23 +896,34 @@ def test_variable_data_array_binary_ops():
 
 
 def test_isnan():
-    assert_export(sc.isnan, sc.Variable())
+    assert sc.is_equal(
+        sc.isnan(sc.Variable(['x'], values=np.array([1, 1, np.nan]))),
+        sc.Variable(['x'], values=[False, False, True]))
 
 
 def test_isinf():
-    assert_export(sc.isinf, sc.Variable())
+    assert sc.is_equal(
+        sc.isinf(sc.Variable(['x'], values=np.array([1, -np.inf, np.inf]))),
+        sc.Variable(['x'], values=[False, True, True]))
 
 
 def test_isfinite():
-    assert_export(sc.isfinite, sc.Variable())
+    assert sc.is_equal(
+        sc.isfinite(
+            sc.Variable(['x'], values=np.array([1, -np.inf, np.inf, np.nan]))),
+        sc.Variable(['x'], values=[True, False, False, False]))
 
 
 def test_isposinf():
-    assert_export(sc.isposinf, sc.Variable())
+    assert sc.is_equal(
+        sc.isposinf(sc.Variable(['x'], values=np.array([1, -np.inf, np.inf]))),
+        sc.Variable(['x'], values=[False, False, True]))
 
 
 def test_isneginf():
-    assert_export(sc.isneginf, sc.Variable())
+    assert sc.is_equal(
+        sc.isneginf(sc.Variable(['x'], values=np.array([1, -np.inf, np.inf]))),
+        sc.Variable(['x'], values=[False, True, False]))
 
 
 def test_nan_to_num():
