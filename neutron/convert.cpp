@@ -194,8 +194,15 @@ template <class T> T convert_impl(T d, const Dim from, const Dim to) {
     return convert_generic(std::move(d), from, to, conversions::wavelength_to_q,
                            constants::wavelength_to_q(d));
 
-  throw except::UnitError(
-      "Conversion between requested dimensions not implemented yet.");
+  try {
+    // Could get better performance by doing a direct conversion.
+    return convert_impl(convert_impl(std::move(d), from, Dim::Tof), Dim::Tof,
+                        to);
+  } catch (const except::UnitError &) {
+    throw except::UnitError("Conversion between " + to_string(from) + " and " +
+                            to_string(to) +
+                            " not implemented yet or not possible.");
+  }
 }
 
 DataArray convert(DataArray d, const Dim from, const Dim to) {

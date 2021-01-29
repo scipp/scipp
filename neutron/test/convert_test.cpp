@@ -92,6 +92,23 @@ TEST_P(ConvertTest, DataArray_to_tof) {
   }
 }
 
+TEST_P(ConvertTest, DataArray_non_tof) {
+  Dataset tof = GetParam();
+  for (const auto &from : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
+    const auto input = convert(tof, Dim::Tof, from);
+    for (const auto &to : {Dim::DSpacing, Dim::Wavelength, Dim::Energy}) {
+      const auto expected = convert(tof, Dim::Tof, to);
+      Dataset result;
+      for (const auto &data : input)
+        result.setData(data.name(), convert(data, from, to));
+      for (const auto &data : result)
+        EXPECT_TRUE(all(is_approx(data.coords()[to], expected.coords()[to],
+                                  1e-9 * expected.coords()[to].unit()))
+                        .value<bool>());
+    }
+  }
+}
+
 TEST_P(ConvertTest, convert_slice) {
   Dataset tof = GetParam();
   const auto slice = Slice{Dim::Spectrum, 0};
