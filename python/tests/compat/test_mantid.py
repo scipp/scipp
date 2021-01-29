@@ -134,7 +134,28 @@ class TestMantidConversion(unittest.TestCase):
                     converted_mantid.coords['wavelength'].values,
                     converted.coords['wavelength'].values,
                 )))
-        # delta = sc.sum(converted_mantid - converted, 'spectrum')
+
+    def test_inelastic_unit_conversion(self):
+        import mantid.simpleapi as mantid
+        eventWS = self.base_event_ws
+        ws_deltaE = mantid.ConvertUnits(eventWS,
+                                        Target='DeltaE',
+                                        EMode='Direct',
+                                        EFixed=3)
+        ref = mantidcompat.from_mantid(ws_deltaE)
+        da = mantidcompat.from_mantid(eventWS)
+        da.coords['incident-energy'] = 3.0 * sc.units.meV
+        da = sc.neutron.convert(da, 'tof', 'energy-transfer')
+        assert sc.all(
+            sc.is_approx(
+                da.coords['energy-transfer'], ref.coords['energy-transfer'],
+                1e-8 * sc.units.meV +
+                1e-8 * sc.abs(ref.coords['energy-transfer']))).value
+        assert sc.all(
+            sc.is_approx(
+                da.bins.data.coords['energy-transfer'],
+                ref.bins.data.coords['energy-transfer'], 1e-8 * sc.units.meV +
+                1e-8 * sc.abs(ref.bins.data.coords['energy-transfer']))).value
 
     @staticmethod
     def _mask_bins_and_spectra(ws, xmin, xmax, num_spectra, indices=None):
