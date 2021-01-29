@@ -51,11 +51,12 @@ def test_construct_0d_datetime():
 
 
 def test_construct_datetime():
-    dt = np.datetime64('now','ns')
-    var = sc.Variable(values=[dt, dt], dims=['x'], unit=sc.units.ns)
+    dt = np.datetime64('now', 'ns')
+    values = [dt, dt + 123456789]
+    var = sc.Variable(values=values, dims=['x'], unit=sc.units.ns)
     assert var.dtype == sc.dtype.datetime64
     assert var.unit == sc.units.ns
-    assert var.values == [str(dt), str(dt)]
+    np.testing.assert_array_equal(var.values, values)
 
 
 def test_mismatched_datetime():
