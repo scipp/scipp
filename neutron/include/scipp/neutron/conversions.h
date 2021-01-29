@@ -25,11 +25,12 @@ constexpr auto tof_to_energy_transfer = [](auto &coord, const auto &scale,
                                            const auto &energy_shift) {
   const auto tof = (coord - tof_shift);
   if constexpr (!std::is_same_v<std::decay_t<decltype(coord)>, units::Unit>) {
+    // Unlike Mantid we set unphysical regions to NAN instead of +=DBL_MAX. This
+    // avoids moving bin bounds or coords to wrong places when, e.g., converting
+    // back to TOF. However, it is currently not clear if this approach will
+    // cause too many issues downstream, so we may need to revisit.
     if (tof <= 0.0) {
-      if (energy_shift >= 0.0)
-        coord = std::numeric_limits<double>::max();
-      else
-        coord = -std::numeric_limits<double>::max();
+      coord = NAN;
       return;
     }
   }

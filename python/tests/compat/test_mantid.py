@@ -147,12 +147,12 @@ class TestMantidConversion(unittest.TestCase):
         da.coords['incident-energy'] = 3.0 * sc.units.meV
         da = sc.neutron.convert(da, 'tof', 'energy-transfer')
         assert sc.all(
-            sc.is_approx(
+            sc.isnan(da.coords['energy-transfer']) | sc.is_approx(
                 da.coords['energy-transfer'], ref.coords['energy-transfer'],
                 1e-8 * sc.units.meV +
                 1e-8 * sc.abs(ref.coords['energy-transfer']))).value
         assert sc.all(
-            sc.is_approx(
+            sc.isnan(da.bins.data.coords['energy-transfer']) | sc.is_approx(
                 da.bins.data.coords['energy-transfer'],
                 ref.bins.data.coords['energy-transfer'], 1e-8 * sc.units.meV +
                 1e-8 * sc.abs(ref.bins.data.coords['energy-transfer']))).value
