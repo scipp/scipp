@@ -675,8 +675,8 @@ def convert_EventWorkspace_to_data_array(ws,
     # events that are not within bucket bounds. Consider using `bin` instead
     # of `bins`?
     edges = coords_labs_data['coords'][dim]
-    coords_labs_data['coords'][dim] = sc.concatenate(edges[dim, 0],
-                                                     edges[dim, -1], dim)
+    coords_labs_data['coords'][dim] = sc.concatenate(edges[dim, 0:1],
+                                                     edges[dim, -2:-1], dim)
 
     coords_labs_data["data"] = sc.bins(begin=begins,
                                        end=ends,
