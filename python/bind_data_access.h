@@ -84,10 +84,20 @@ class DataAccessHelper {
       strides = VariableView(view).strides();
     }
     const auto &dims = view.dims();
-    using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
-    return py::array_t<py_T>{
-        dims.shape(), numpy_strides<T>(strides),
-        reinterpret_cast<py_T *>(Getter::template get<T>(view).data()), obj};
+
+    const auto dtype = []() {
+      if constexpr (std::is_same_v<T, scipp::core::time_point>) {
+        // Need a custom implementation because py::dtype::of only works with
+        // types supported by the buffer protocol.
+        return py::dtype("datetime64[ns]");
+      } else {
+        using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
+        return py::dtype::of<py_T>();
+      }
+    }();
+
+    return py::array{dtype, dims.shape(), numpy_strides<T>(strides),
+                     Getter::template get<T>(view).data(), obj};
   }
 
   struct get_values {
@@ -200,7 +210,9 @@ template <class... Ts> class as_ElementArrayViewImpl {
     if (type == dtype<bool>)
       return DataAccessHelper::as_py_array_t_impl<Getter, bool>(obj, view);
     if (type == dtype<scipp::core::time_point>)
-      return DataAccessHelper::as_py_array_t_impl<Getter, scipp::core::time_point>(obj, view);
+      return DataAccessHelper::as_py_array_t_impl<Getter,
+                                                  scipp::core::time_point>(
+          obj, view);
     return std::visit(
         [&view, &obj](const auto &data) {
           const auto &dims = view.dims();
