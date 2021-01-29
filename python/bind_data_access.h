@@ -362,6 +362,7 @@ template <class T, class... Ignored>
 void bind_sizes_property(pybind11::class_<T, Ignored...> &c) {
   using Sizes = std::unordered_map<std::string, scipp::index>;
   std::function<Sizes(const T &self)> generator;
+  // Handle different return types from dims method
   if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
     generator = [](const T &self) {
       Sizes out;
