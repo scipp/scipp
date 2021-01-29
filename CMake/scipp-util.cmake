@@ -22,12 +22,17 @@ function(scipp_function template category function_name)
     )
   endmacro()
 
-  set(options SKIP_VARIABLE)
+  set(options SKIP_VARIABLE NO_OUT)
   cmake_parse_arguments(PARSE_ARGV 3 SCIPP_FUNCTION "${options}" "" "" )
 
   message("Generating files for ${function_name}")
   set(NAME ${function_name})
   set(ELEMENT_INCLUDE ${category})
+  if(SCIPP_FUNCTION_NO_OUT)
+    set(GENERATE_OUT "false")
+  else()
+    set(GENERATE_OUT "true")
+  endif()
 
   if(NOT SCIPP_FUNCTION_SKIP_VARIABLE)
     configure_in_module("variable" ${function_name})
@@ -51,12 +56,8 @@ function(scipp_function template category function_name)
   )
 endfunction()
 
-macro(scipp_unary category function_name)
-  scipp_function("unary" ${category} ${function_name})
-endmacro()
-
-macro(scipp_dataset_unary category function_name)
-  scipp_function("unary" ${category} ${function_name} SKIP_VARIABLE)
+macro(scipp_unary)
+  scipp_function("unary" ${ARGV})
 endmacro()
 
 macro(scipp_binary category function_name)
