@@ -21,10 +21,17 @@ function(scipp_function template category function_name)
         PARENT_SCOPE
     )
   endmacro()
+
+  set(options SKIP_VARIABLE)
+  cmake_parse_arguments(PARSE_ARGV 3 SCIPP_FUNCTION "${options}" "" "" )
+
   message("Generating files for ${function_name}")
   set(NAME ${function_name})
   set(ELEMENT_INCLUDE ${category})
-  configure_in_module("variable" ${function_name})
+
+  if(NOT SCIPP_FUNCTION_SKIP_VARIABLE)
+    configure_in_module("variable" ${function_name})
+  endif()
   configure_in_module("dataset" ${function_name})
   set(src ${NAME}.cpp)
   configure_file(templates/python_${template}.cpp.in python/${src})
@@ -46,6 +53,10 @@ endfunction()
 
 macro(scipp_unary category function_name)
   scipp_function("unary" ${category} ${function_name})
+endmacro()
+
+macro(scipp_dataset_unary category function_name)
+  scipp_function("unary" ${category} ${function_name} SKIP_VARIABLE)
 endmacro()
 
 macro(scipp_binary category function_name)

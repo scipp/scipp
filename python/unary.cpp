@@ -13,47 +13,10 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
-template <typename T> void bind_abs(py::module &m) {
-  m.def(
-      "abs", [](const typename T::const_view_type &x) { return abs(x); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>());
-  m.def(
-      "abs",
-      [](const typename T::const_view_type &x,
-         const typename T::view_type &out) { return abs(x, out); },
-      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
-      py::call_guard<py::gil_scoped_release>());
-}
-
-template <typename T> void bind_sqrt(py::module &m) {
-  m.def(
-      "sqrt", [](const typename T::const_view_type &x) { return sqrt(x); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>());
-  m.def(
-      "sqrt",
-      [](const typename T::const_view_type &x,
-         const typename T::view_type &out) { return sqrt(x, out); },
-      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
-      py::call_guard<py::gil_scoped_release>());
-}
-
 template <typename T> void bind_norm(py::module &m) {
   m.def(
       "norm", [](const typename T::const_view_type &x) { return norm(x); },
       py::arg("x"), py::call_guard<py::gil_scoped_release>());
-}
-
-template <typename T> void bind_reciprocal(py::module &m) {
-  m.def(
-      "reciprocal",
-      [](const typename T::const_view_type &x) { return reciprocal(x); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>());
-  m.def(
-      "reciprocal",
-      [](const typename T::const_view_type &x,
-         const typename T::view_type &out) { return reciprocal(x, out); },
-      py::arg("x"), py::arg("out"), py::keep_alive<0, 2>(),
-      py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_isnan(py::module &m) {
@@ -131,36 +94,12 @@ template <typename T> void bind_nan_to_num(py::module &m) {
       py::keep_alive<0, 5>(), py::call_guard<py::gil_scoped_release>());
 }
 
-template <typename T> void bind_exp(py::module &m) {
-  m.def(
-      "exp", [](const VariableConstView &x) { return exp(x); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>());
-}
-
-template <typename T> void bind_log(py::module &m) {
-  m.def(
-      "log", [](const VariableConstView &x) { return log(x); }, py::arg("x"),
-      py::call_guard<py::gil_scoped_release>());
-}
-
-template <typename T> void bind_log10(py::module &m) {
-  m.def(
-      "log10", [](const VariableConstView &x) { return log10(x); },
-      py::arg("x"), py::call_guard<py::gil_scoped_release>());
-}
-
 void init_unary(py::module &m) {
-  bind_abs<Variable>(m);
-  bind_sqrt<Variable>(m);
   bind_norm<Variable>(m);
-  bind_reciprocal<Variable>(m);
   bind_isnan<Variable>(m);
   bind_isinf<Variable>(m);
   bind_isfinite<Variable>(m);
   bind_isposinf<Variable>(m);
   bind_isneginf<Variable>(m);
   bind_nan_to_num<Variable>(m);
-  bind_exp<Variable>(m);
-  bind_log<Variable>(m);
-  bind_log10<Variable>(m);
 }
