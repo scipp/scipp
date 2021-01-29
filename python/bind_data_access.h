@@ -364,6 +364,18 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       "dtype", [](const T &self) { return self.dtype(); },
       "Data type contained in the variable.");
   c.def_property_readonly(
+      "sizes",
+      [](const T &self) {
+        std::unordered_map<std::string, scipp::index> out;
+        const auto &dims_ = self.dims();
+        for (const auto &dim : dims_.labels()) {
+          out[dim.name()] = dims_[dim];
+        }
+        return out;
+      },
+      "Dictionary of dimension labels (dims) to sizes.",
+      py::return_value_policy::move);
+  c.def_property_readonly(
       "dims",
       [](const T &self) {
         const auto &dims_ = self.dims();
