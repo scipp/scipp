@@ -20,6 +20,13 @@ scipp_unary(trigonometry acos SKIP_VARIABLE)
 scipp_unary(trigonometry atan SKIP_VARIABLE)
 setup_scipp_category(trigonometry)
 
+scipp_unary(special_values isnan NO_OUT)
+scipp_unary(special_values isinf NO_OUT)
+scipp_unary(special_values isfinite NO_OUT)
+scipp_unary(special_values isposinf NO_OUT)
+scipp_unary(special_values isneginf NO_OUT)
+setup_scipp_category(special_values)
+
 scipp_binary(comparison equal)
 scipp_binary(comparison greater)
 scipp_binary(comparison greater_equal)
