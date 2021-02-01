@@ -26,6 +26,4 @@ template <class T> void bind_atan2(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
-void init_trigonometry(py::module &m) {
-  bind_atan2<Variable>(m);
-}
+void init_trigonometry(py::module &m) { bind_atan2<Variable>(m); }
