@@ -23,7 +23,7 @@ function(scipp_function template category function_name)
   endmacro()
 
   set(options SKIP_VARIABLE NO_OUT)
-  cmake_parse_arguments(PARSE_ARGV 3 SCIPP_FUNCTION "${options}" "" "" )
+  cmake_parse_arguments(PARSE_ARGV 3 SCIPP_FUNCTION "${options}" "" "")
 
   message("Generating files for ${function_name}")
   set(NAME ${function_name})
