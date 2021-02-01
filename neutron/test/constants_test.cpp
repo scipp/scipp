@@ -47,8 +47,7 @@ Variable l2(const Dummy &dummy) {
 }
 
 Variable flight_path_length(const Dummy &dummy) {
-  return norm(sample_position(dummy) - source_position(dummy)) +
-         norm(position(dummy) - sample_position(dummy));
+  return l1(dummy) + l2(dummy);
 }
 
 Variable incident_energy(const Dummy &dummy) { return dummy.ei; }
