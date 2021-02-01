@@ -36,11 +36,7 @@ pybind11_add_module(
   shape.cpp
 )
 pybind11_add_module(
-  _scipp_neutron
-  SHARED
-  SYSTEM
-  ${python_SRC_FILES}
-  neutron.cpp
+  _scipp_neutron SHARED SYSTEM ${python_SRC_FILES} neutron.cpp
   scipp_neutron.cpp
 )
 target_include_directories(
