@@ -29,11 +29,13 @@ namespace py = pybind11;
 template <template <class> class View, class T>
 void bind_helper_view(py::module &m, const std::string &name) {
   std::string suffix;
-  if (std::is_same_v<View<T>, items_view<T>>)
+  if (std::is_same_v<View<T>, items_view<T>> ||
+      std::is_same_v<View<T>, str_items_view<T>>)
     suffix = "_items_view";
   if (std::is_same_v<View<T>, values_view<T>>)
     suffix = "_values_view";
-  if (std::is_same_v<View<T>, keys_view<T>>)
+  if (std::is_same_v<View<T>, keys_view<T>> ||
+      std::is_same_v<View<T>, str_keys_view<T>>)
     suffix = "_keys_view";
   py::class_<View<T>>(m, (name + suffix).c_str())
       .def(py::init([](T &obj) { return View{obj}; }))
@@ -87,6 +89,52 @@ void bind_mutable_view(py::module &m, const std::string &name) {
           py::keep_alive<0, 1>(), R"(view on self's values)")
       .def(
           "items", [](T &self) { return items_view(self); },
+          py::return_value_policy::move, py::keep_alive<0, 1>(),
+          R"(view on self's items)")
+      .def("__contains__", &T::contains);
+  bind_inequality_to_operator<T>(view);
+}
+
+template <class T, class ConstT>
+void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
+  py::class_<ConstT>(m, (name + "ConstView").c_str());
+  py::class_<T, ConstT> view(m, (name + "View").c_str());
+  view.def("__len__", &T::size)
+      .def("__getitem__", &T::operator[], py::return_value_policy::move,
+           py::keep_alive<0, 1>())
+      .def("__setitem__",
+           [](T &self, const typename T::key_type key,
+              const VariableConstView &var) {
+             if (self.contains(key) &&
+                 self[key].dims().ndim() == var.dims().ndim() &&
+                 self[key].dims().contains(var.dims()))
+               self[key].assign(var);
+             else
+               self.set(key, var);
+           })
+      // This additional setitem allows us to do things like
+      // d.coords["a"] = scipp.detail.move(scipp.Variable())
+      .def("__setitem__",
+           [](T &self, const typename T::key_type key,
+              Moveable<Variable> &mvar) {
+             self.set(key, std::move(mvar.value));
+           })
+      .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
+      .def(
+          "__iter__",
+          [](T &self) {
+            return py::make_iterator(self.keys_begin(), self.keys_end(),
+                                     py::return_value_policy::move);
+          },
+          py::keep_alive<0, 1>())
+      .def(
+          "keys", [](T &self) { return str_keys_view(self); },
+          py::keep_alive<0, 1>(), R"(view on self's keys)")
+      .def(
+          "values", [](T &self) { return values_view(self); },
+          py::keep_alive<0, 1>(), R"(view on self's values)")
+      .def(
+          "items", [](T &self) { return str_items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
           R"(view on self's items)")
       .def("__contains__", &T::contains);
@@ -225,18 +273,18 @@ void init_dataset(py::module &m) {
 
   bind_helper_view<items_view, Dataset>(m, "Dataset");
   bind_helper_view<items_view, DatasetView>(m, "DatasetView");
-  bind_helper_view<items_view, CoordsView>(m, "CoordsView");
+  bind_helper_view<str_items_view, CoordsView>(m, "CoordsView");
   bind_helper_view<items_view, MasksView>(m, "MasksView");
   bind_helper_view<keys_view, Dataset>(m, "Dataset");
   bind_helper_view<keys_view, DatasetView>(m, "DatasetView");
-  bind_helper_view<keys_view, CoordsView>(m, "CoordsView");
+  bind_helper_view<str_keys_view, CoordsView>(m, "CoordsView");
   bind_helper_view<keys_view, MasksView>(m, "MasksView");
   bind_helper_view<values_view, Dataset>(m, "Dataset");
   bind_helper_view<values_view, DatasetView>(m, "DatasetView");
   bind_helper_view<values_view, CoordsView>(m, "CoordsView");
   bind_helper_view<values_view, MasksView>(m, "MasksView");
 
-  bind_mutable_view<CoordsView, CoordsConstView>(m, "Coords");
+  bind_mutable_view_no_dim<CoordsView, CoordsConstView>(m, "Coords");
   bind_mutable_view<MasksView, MasksConstView>(m, "Masks");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(
