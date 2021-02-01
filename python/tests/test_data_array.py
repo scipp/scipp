@@ -223,3 +223,12 @@ def test_reciprocal():
     a = sc.DataArray(data=sc.Variable(['x'], values=np.array([5.0])))
     r = sc.reciprocal(a)
     assert r.values[0] == 1.0 / 5.0
+
+
+def test_sizes():
+    a = sc.DataArray(data=sc.scalar(value=1))
+    assert a.sizes == {}
+    a = sc.DataArray(data=sc.Variable(['x'], values=np.ones(2)))
+    assert a.sizes == {'x': 2}
+    a = sc.DataArray(data=sc.Variable(['x', 'z'], values=np.ones((2, 4))))
+    assert a.sizes == {'x': 2, 'z': 4}

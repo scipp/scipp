@@ -353,6 +353,15 @@ def test_slicing():
         assert np.array_equal(var_slice.values, np.array(expected))
 
 
+def test_sizes():
+    a = sc.Variable(value=1)
+    assert a.sizes == {}
+    a = sc.Variable(['x'], shape=[2])
+    assert a.sizes == {'x': 2}
+    a = sc.Variable(['y', 'z'], shape=[3, 4])
+    assert a.sizes == {'y': 3, 'z': 4}
+
+
 def test_iadd():
     expected = sc.Variable(2.2)
     a = sc.Variable(1.2)
