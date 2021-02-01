@@ -35,7 +35,14 @@ pybind11_add_module(
   element_array_view.cpp
   shape.cpp
 )
-pybind11_add_module(_scipp_neutron SHARED SYSTEM neutron.cpp scipp_neutron.cpp)
+pybind11_add_module(
+  _scipp_neutron
+  SHARED
+  SYSTEM
+  ${python_SRC_FILES}
+  neutron.cpp
+  scipp_neutron.cpp
+)
 target_include_directories(
   _scipp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
 )
@@ -51,18 +58,9 @@ target_compile_definitions(_scipp PRIVATE SCIPP_EXPORT=)
 # Set symbol visibility to hidden to reduce binary size, as recommended in
 # pybind11 FAQ.
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
+set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 set_target_properties(_scipp_neutron PROPERTIES CXX_VISIBILITY_PRESET hidden)
-if(UNIX AND NOT APPLE)
-  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
-  set_target_properties(
-    _scipp_neutron PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib"
-  )
-elseif(APPLE)
-  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "@loader_path/../lib")
-  set_target_properties(
-    _scipp_neutron PROPERTIES INSTALL_RPATH "@loader_path/../lib"
-  )
-endif()
+set_target_properties(_scipp_neutron PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(_scipp PRIVATE pybind11.h)
@@ -70,6 +68,30 @@ endif()
 
 add_sanitizers(_scipp)
 add_sanitizers(_scipp_neutron)
+
+set(PY_FILES
+    scipp/src/__init__.py
+    scipp/src/extend_units.py
+    scipp/src/object_list.py
+    scipp/src/show.py
+    scipp/src/table.py
+    scipp/src/compat/mantid.py
+    scipp/src/neutron/__init__.py
+    scipp/src/neutron/exceptions.py
+    scipp/src/neutron/load.py
+    scipp/src/neutron/diffraction/__init__.py
+    scipp/src/neutron/diffraction/load.py
+    scipp/src/plot/__init__.py
+    scipp/src/plot/config.py
+    scipp/src/plot/dispatch.py
+    scipp/src/plot/plot_1d.py
+    scipp/src/plot/plot_2d.py
+    scipp/src/plot/plot_3d.py
+    scipp/src/plot/plot_collapse.py
+    scipp/src/plot/plot_matplotlib.py
+    scipp/src/plot/plot.py
+    scipp/src/plot/tools.py
+)
 
 install(DIRECTORY "src/scipp/" DESTINATION ${PYTHONDIR})
 install(TARGETS _scipp DESTINATION ${PYTHONDIR})
