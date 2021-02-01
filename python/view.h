@@ -81,7 +81,7 @@ static constexpr auto item_to_str = [](auto &&item) -> decltype(auto) {
                                                               item.second);
 };
 
-/// Helper to provide equivalent of the `keys()` method of a Python dict.
+/// Helper to provide equivalent of the `items()` method of a Python dict.
 template <class T> class str_items_view {
 public:
   str_items_view(T &obj) : m_obj(&obj) {}

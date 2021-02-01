@@ -49,10 +49,8 @@ void bind_helper_view(py::module &m, const std::string &name) {
           py::return_value_policy::move, py::keep_alive<0, 1>());
 }
 
-template <class T, class ConstT>
-void bind_mutable_view(py::module &m, const std::string &name) {
-  py::class_<ConstT>(m, (name + "ConstView").c_str());
-  py::class_<T, ConstT> view(m, (name + "View").c_str());
+template <class Other, class T, class... Ignored>
+void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
   view.def("__len__", &T::size)
       .def("__getitem__", &T::operator[], py::return_value_policy::move,
            py::keep_alive<0, 1>())
@@ -75,6 +73,18 @@ void bind_mutable_view(py::module &m, const std::string &name) {
            })
       .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
       .def(
+          "values", [](T &self) { return values_view(self); },
+          py::keep_alive<0, 1>(), R"(view on self's values)")
+      .def("__contains__", &T::contains);
+  bind_inequality_to_operator<T>(view);
+}
+
+template <class T, class ConstT>
+void bind_mutable_view(py::module &m, const std::string &name) {
+  py::class_<ConstT>(m, (name + "ConstView").c_str());
+  py::class_<T, ConstT> view(m, (name + "View").c_str());
+  bind_common_mutable_view_operators<T>(view);
+  view.def(
           "__iter__",
           [](T &self) {
             return py::make_iterator(self.keys_begin(), self.keys_end(),
@@ -85,60 +95,26 @@ void bind_mutable_view(py::module &m, const std::string &name) {
           "keys", [](T &self) { return keys_view(self); },
           py::keep_alive<0, 1>(), R"(view on self's keys)")
       .def(
-          "values", [](T &self) { return values_view(self); },
-          py::keep_alive<0, 1>(), R"(view on self's values)")
-      .def(
           "items", [](T &self) { return items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
-          R"(view on self's items)")
-      .def("__contains__", &T::contains);
-  bind_inequality_to_operator<T>(view);
+          R"(view on self's items)");
 }
 
 template <class T, class ConstT>
 void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
   py::class_<ConstT>(m, (name + "ConstView").c_str());
   py::class_<T, ConstT> view(m, (name + "View").c_str());
-  view.def("__len__", &T::size)
-      .def("__getitem__", &T::operator[], py::return_value_policy::move,
-           py::keep_alive<0, 1>())
-      .def("__setitem__",
-           [](T &self, const typename T::key_type key,
-              const VariableConstView &var) {
-             if (self.contains(key) &&
-                 self[key].dims().ndim() == var.dims().ndim() &&
-                 self[key].dims().contains(var.dims()))
-               self[key].assign(var);
-             else
-               self.set(key, var);
-           })
-      // This additional setitem allows us to do things like
-      // d.coords["a"] = scipp.detail.move(scipp.Variable())
-      .def("__setitem__",
-           [](T &self, const typename T::key_type key,
-              Moveable<Variable> &mvar) {
-             self.set(key, std::move(mvar.value));
-           })
-      .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
-      .def(
-          "__iter__",
-          [](T &self) {
-            return py::make_iterator(self.keys_begin(), self.keys_end(),
-                                     py::return_value_policy::move);
-          },
+  bind_common_mutable_view_operators<T>(view);
+  view.def(
+          "__iter__", [](T &self) { return str_keys_view(self); },
           py::keep_alive<0, 1>())
       .def(
           "keys", [](T &self) { return str_keys_view(self); },
           py::keep_alive<0, 1>(), R"(view on self's keys)")
       .def(
-          "values", [](T &self) { return values_view(self); },
-          py::keep_alive<0, 1>(), R"(view on self's values)")
-      .def(
           "items", [](T &self) { return str_items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
-          R"(view on self's items)")
-      .def("__contains__", &T::contains);
-  bind_inequality_to_operator<T>(view);
+          R"(view on self's items)");
 }
 
 template <class T, class... Ignored>
