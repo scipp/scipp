@@ -16,8 +16,14 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/time_point.h"
+#include "scipp/units/unit.h"
 
 namespace py = pybind11;
+
+/// Extract the unit from a numpy datetime64 dtype name.
+/// Throws if the name does not math
+[[nodiscard]] scipp::units::Unit
+parse_datetime_dtype(std::string_view dtype_name);
 
 namespace pybind11::detail {
 /// Type caster: scipp::core::time_point <-> NumPy.datetime64
@@ -26,16 +32,24 @@ struct type_caster<scipp::core::time_point>
     : public type_caster_base<scipp::core::time_point> {
 public:
   PYBIND11_TYPE_CASTER(scipp::core::time_point, _("numpy.datetime64"));
+
   // Conversion part 1 (Python -> C++)
   bool load(py::handle src, bool convert) {
     if (!convert)
       return false;
-
     if (!src)
       return false;
-    // Get timestamp (ns precision) from the numpy object
-    int64_t timestamp = src.attr("astype")("int").cast<int64_t>();
-    value = scipp::core::time_point(timestamp);
+
+    const auto unit = parse_datetime_dtype(
+        src.attr("dtype").attr("name").cast<std::string_view>());
+    const auto time = src.attr("astype")("int").cast<int64_t>();
+
+    // time_point requires ns.
+    // TODO use units lib?
+    const auto ns_time = unit == scipp::units::s    ? time * 1000000000
+                         : unit == scipp::units::us ? time * 1000
+                                                    : time;
+    value = scipp::core::time_point(ns_time);
     return true;
   }
 
