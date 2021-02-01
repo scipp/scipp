@@ -388,9 +388,6 @@ void init_dataset(py::module &m) {
   bind_slice_methods(dataset);
   bind_slice_methods(datasetView);
 
-  bind_sizes_property(dataset);
-  bind_sizes_property(datasetView);
-
   bind_in_place_binary<Dataset>(dataset);
   bind_in_place_binary<DatasetView>(dataset);
   bind_in_place_binary<DataArrayView>(dataset);

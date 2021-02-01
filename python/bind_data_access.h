@@ -359,35 +359,6 @@ using as_ElementArrayView = as_ElementArrayViewImpl<
     bucket<Dataset>, Eigen::Vector3d, Eigen::Matrix3d, scipp::python::PyObject>;
 
 template <class T, class... Ignored>
-void bind_sizes_property(pybind11::class_<T, Ignored...> &c) {
-  using Sizes = std::unordered_map<std::string, scipp::index>;
-  std::function<Sizes(const T &self)> generator;
-  // Handle different return types from dims method
-  if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
-    generator = [](const T &self) {
-      Sizes out;
-      const auto &dims_ = self.dims();
-      for (const auto &[dim, index] : dims_) {
-        out[dim.name()] = index;
-      }
-      return out;
-    };
-  } else {
-    generator = [](const T &self) {
-      Sizes out;
-      const auto &dims_ = self.dims();
-      for (const auto &dim : dims_.labels()) {
-        out[dim.name()] = dims_[dim];
-      }
-      return out;
-    };
-  }
-  c.def_property_readonly("sizes", generator,
-                          "Dictionary of dimension labels (dims) to sizes.",
-                          py::return_value_policy::move);
-}
-
-template <class T, class... Ignored>
 void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
   c.def_property_readonly(
       "dtype", [](const T &self) { return self.dtype(); },
@@ -432,5 +403,4 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
       &as_ElementArrayView::set_variance<T>,
       "The only variance for 0-dimensional data, raising an exception if the "
       "data is not 0-dimensional.");
-  bind_sizes_property(c);
 }
