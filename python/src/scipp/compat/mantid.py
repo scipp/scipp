@@ -775,7 +775,8 @@ def convert_WorkspaceGroup_to_dataarray_dict(group_workspace, **kwargs):
     workspace_dict = {}
     for i in range(group_workspace.getNumberOfEntries()):
         workspace = group_workspace.getItem(i)
-        workspace_dict[workspace.name()] = from_mantid(workspace, **kwargs)
+        workspace_name = workspace.name().replace(group_workspace.name(), '')
+        workspace_dict[workspace_name] = from_mantid(workspace, **kwargs)
 
     return workspace_dict
 
@@ -910,7 +911,7 @@ def load(filename="",
             mantid.LoadInstrument(data_ws,
                                   FileName=instrument_filename,
                                   RewriteSpectraMap=True)
-
+        print(data_ws.name())
         return from_mantid(data_ws,
                            load_pulse_times=load_pulse_times,
                            error_connection=error_connection,
