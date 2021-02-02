@@ -591,6 +591,21 @@ class TestMantidConversion(unittest.TestCase):
             with self.assertRaises(RuntimeError):
                 mantidcompat.validate_dim_and_get_mantid_string(i)
 
+    def test_WorkspaceGroup_parsed_correctly(self):
+        from mantid.simpleapi import mtd, CreateSampleWorkspace, GroupWorkspaces
+        CreateSampleWorkspace(OutputWorkspace="ws1")
+        CreateSampleWorkspace(OutputWorkspace="ws2")
+        CreateSampleWorkspace(OutputWorkspace="ws3")
+        GroupWorkspaces(InputWorkspaces="ws1,ws2,ws3", OutputWorkspace="NewGroup")
+
+        converted_group = mantidcompat.from_mantid(mtd["NewGroup"])
+        converted_single = mantidcompat.from_mantid(mtd["ws1"])
+
+        assert len(ds) == 3
+        assert sc.is_equal(converted_group['ws1'], converted_single)
+
+        mtd.clear()
+
 
 def test_to_rot_from_vectors():
     a = sc.Variable(value=[1, 0, 0], dtype=sc.dtype.vector_3_float64)
