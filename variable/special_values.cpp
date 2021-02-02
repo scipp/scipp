@@ -8,26 +8,6 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-Variable isnan(const VariableConstView &var) {
-  return transform(var, element::isnan);
-}
-
-Variable isinf(const VariableConstView &var) {
-  return transform(var, element::isinf);
-}
-
-Variable isfinite(const VariableConstView &var) {
-  return transform(var, element::isfinite);
-}
-
-Variable isposinf(const VariableConstView &var) {
-  return transform(var, element::isposinf);
-}
-
-Variable isneginf(const VariableConstView &var) {
-  return transform(var, element::isneginf);
-}
-
 VariableView nan_to_num(const VariableConstView &var,
                         const VariableConstView &replacement,
                         const VariableView &out) {

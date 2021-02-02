@@ -48,7 +48,6 @@ set(SRC_FILES
     shape.cpp
     slice.cpp
     sort.cpp
-    special_values.cpp
     string.cpp
     variable_instantiate_bucket_elements.cpp
     variable_instantiate_dataset.cpp

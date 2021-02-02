@@ -5,18 +5,9 @@
 #include "scipp-variable_export.h"
 #include "scipp/variable/variable.h"
 
-namespace scipp::variable {
+#include "scipp/variable/generated_special_values.h"
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-isnan(const VariableConstView &var);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-isinf(const VariableConstView &var);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-isfinite(const VariableConstView &var);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-isposinf(const VariableConstView &var);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-isneginf(const VariableConstView &var);
+namespace scipp::variable {
 
 SCIPP_VARIABLE_EXPORT VariableView
 nan_to_num(const VariableConstView &var, const VariableConstView &replacement,

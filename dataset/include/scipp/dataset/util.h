@@ -6,6 +6,8 @@
 #include <scipp/dataset/dataset.h>
 #include <scipp/variable/variable.h>
 
+#include "scipp/dataset/generated_util.h"
+
 namespace scipp {
 SCIPP_DATASET_EXPORT scipp::index size_of(const VariableConstView &view);
 SCIPP_DATASET_EXPORT scipp::index size_of(const DataArrayConstView &dataarray,
