@@ -911,7 +911,6 @@ def load(filename="",
             mantid.LoadInstrument(data_ws,
                                   FileName=instrument_filename,
                                   RewriteSpectraMap=True)
-        print(data_ws.name())
         return from_mantid(data_ws,
                            load_pulse_times=load_pulse_times,
                            error_connection=error_connection,
