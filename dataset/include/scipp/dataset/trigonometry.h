@@ -4,4 +4,4 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "scipp/dataset/generated_special_values.h"
+#include "scipp/dataset/generated_trigonometry.h"
