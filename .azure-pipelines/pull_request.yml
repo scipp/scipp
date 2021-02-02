@@ -20,7 +20,7 @@ stages:
         displayName: 'Linux'
         timeoutInMinutes: 90
         pool:
-          vmImage: 'ubuntu-18.04'
+          vmImage: 'ubuntu-20.04'
         variables:
           ccache_dir: '$(Pipeline.Workspace)/ccache'
           build_dir: '$(Build.StagingDirectory)/build'
