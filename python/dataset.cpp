@@ -106,7 +106,12 @@ void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
   py::class_<T, ConstT> view(m, (name + "View").c_str());
   bind_common_mutable_view_operators<T>(view);
   view.def(
-          "__iter__", [](T &self) { return str_keys_view(self); },
+          "__iter__",
+          [](T &self) {
+            auto keys_view = str_keys_view(self);
+            return py::make_iterator(keys_view.begin(), keys_view.end(),
+                                     py::return_value_policy::move);
+          },
           py::keep_alive<0, 1>())
       .def(
           "keys", [](T &self) { return str_keys_view(self); },

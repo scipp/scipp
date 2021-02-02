@@ -5,7 +5,6 @@
 import pytest
 
 import scipp as sc
-from scipp import Dim
 
 
 @pytest.fixture(params=['Dataset', 'DatasetView'])
@@ -66,7 +65,7 @@ def test_dataset_coords_iter():
 
 def test_dataset_coords_keys():
     d = make_coords_xyz()
-    assert set(d.coords.keys()) == set([Dim('x'), Dim('y'), Dim('z')])
+    assert set(d.coords.keys()) == set(['x', 'y', 'z'])
 
 
 def test_dataset_coords_values():
