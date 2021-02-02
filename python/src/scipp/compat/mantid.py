@@ -810,7 +810,8 @@ def from_mantid(workspace, **kwargs):
     elif w_id == 'MDHistoWorkspace':
         scipp_obj = convert_MDHistoWorkspace_to_data_array(workspace, **kwargs)
     elif w_id == 'WorkspaceGroup':
-        scipp_obj = convert_WorkspaceGroup_to_dataarray_dict(workspace, **kwargs)
+        scipp_obj = convert_WorkspaceGroup_to_dataarray_dict(
+            workspace, **kwargs)
 
     if scipp_obj is None:
         raise RuntimeError('Unsupported workspace type {}'.format(w_id))
