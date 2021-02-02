@@ -56,7 +56,7 @@ public:
       : BinModelBase<Indices>(validated_indices(indices, dim, buffer), dim),
         m_buffer(std::move(buffer)) {}
 
-  VariableConceptHandle clone() const override {
+  [[nodiscard]] VariableConceptHandle clone() const override {
     return std::make_unique<DataModel>(*this);
   }
 
@@ -68,18 +68,20 @@ public:
     return !(*this == other);
   }
 
-  VariableConceptHandle
+  [[nodiscard]] VariableConceptHandle
   makeDefaultFromParent(const Dimensions &dims) const override {
     return std::make_unique<DataModel>(
         makeVariable<range_type>(dims), this->bin_dim(),
         T{m_buffer.slice({this->bin_dim(), 0, 0})});
   }
 
-  VariableConceptHandle
+  [[nodiscard]] VariableConceptHandle
   makeDefaultFromParent(const VariableConstView &shape) const override {
     const auto end = cumsum(shape);
     const auto begin = end - shape;
-    const auto size = end.values<scipp::index>().as_span().back();
+    const auto size = end.dims().volume() > 0
+                          ? end.values<scipp::index>().as_span().back()
+                          : 0;
     if constexpr (is_view_v<T>) {
       // converting, e.g., bucket<VariableView> to bucket<Variable>
       return std::make_unique<DataModel<bucket<typename T::value_type>>>(
@@ -93,10 +95,12 @@ public:
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<bucket<T>>; }
-  DType dtype() const noexcept override { return scipp::dtype<bucket<T>>; }
+  [[nodiscard]] DType dtype() const noexcept override {
+    return scipp::dtype<bucket<T>>;
+  }
 
-  bool equals(const VariableConstView &a,
-              const VariableConstView &b) const override;
+  [[nodiscard]] bool equals(const VariableConstView &a,
+                            const VariableConstView &b) const override;
   void copy(const VariableConstView &src,
             const VariableView &dest) const override;
   void assign(const VariableConcept &other) override;
@@ -114,7 +118,9 @@ public:
     return {index_values(base), this->bin_dim(), m_buffer};
   }
 
-  scipp::index dtype_size() const override { return sizeof(range_type); }
+  [[nodiscard]] scipp::index dtype_size() const override {
+    return sizeof(range_type);
+  }
 
 private:
   static auto validated_indices(const VariableConstView &indices,
@@ -131,17 +137,17 @@ private:
       std::sort(vals.begin(), vals.end());
       if ((!vals.empty() && (vals.begin()->first < 0)) ||
           (!vals.empty() && ((vals.end() - 1)->second > buffer.dims()[dim])))
-        throw except::SliceError("Bucket indices out of range");
+        throw except::SliceError("Bin indices out of range");
       if (std::adjacent_find(vals.begin(), vals.end(),
                              [](const auto a, const auto b) {
                                return a.second > b.first;
                              }) != vals.end())
-        throw except::SliceError(
-            "Bucket begin index must be less or equal to its end index.");
+        throw except::SliceError("Overlapping bin indices are not allowed.");
       if (std::find_if(vals.begin(), vals.end(), [](const auto x) {
-            return x.second >= 0 && x.first > x.second;
+            return x.first > x.second;
           }) != vals.end())
-        throw except::SliceError("Overlapping bucket indices are not allowed.");
+        throw except::SliceError(
+            "Bin begin index must be less or equal to its end index.");
       // Copy to avoid a second memory allocation
       const auto &i = indices.values<range_type>();
       std::copy(i.begin(), i.end(), vals.begin());
@@ -186,9 +192,9 @@ bool DataModel<bucket<T>>::equals(const VariableConstView &a,
 
 template <class T>
 void DataModel<bucket<T>>::copy(const VariableConstView &src,
-                                const VariableView &dst) const {
+                                const VariableView &dest) const {
   const auto &[indices0, dim0, buffer0] = src.constituents<bucket<T>>();
-  const auto &[indices1, dim1, buffer1] = dst.constituents<bucket<T>>();
+  const auto &[indices1, dim1, buffer1] = dest.constituents<bucket<T>>();
   static_cast<void>(dim1);
   if constexpr (is_view_v<T>) {
     // This is overly restrictive, could allow copy to non-const non-owning

@@ -45,6 +45,17 @@ if ipy is not None:
                 "Falling back to a static backend. Use "
                 "conda install -c conda-forge ipympl to install ipympl.")
 
+        # Run some javascript to find the current device pixel ratio, which is
+        # needed to properly scale the pixels in the three.js renderer.
+        # Note that the javascript has to be run here so that the pixel_ratio
+        # value is set after the initial import. Dealying this to inside the
+        # call to plot() would lead to devicePixelRatio being None.
+        ipy.run_cell_magic(
+            "js", "", "var kernel = IPython.notebook.kernel; "
+            "var value = window.devicePixelRatio; "
+            "var command = 'devicePixelRatio = ' + value; "
+            "kernel.execute(command);")
+
 # Note: due to some strange behaviour when importing matplotlib and pyplot in
 # different order, we need to import pyplot after switching to the ipympl
 # backend (see https://github.com/matplotlib/matplotlib/issues/19032).
@@ -71,8 +82,9 @@ def plot(*args, **kwargs):
     For more details, see
     https://scipp.github.io/visualization/plotting-overview.html
 
-    :param aspect: Specify the aspect ratio for 2d images. Defaults to
-        `"auto"`.
+    :param aspect: Specify the aspect ratio for 2d images and 3d renderings.
+         Possible values are `"auto"` or `"equal"`.
+         Defaults to `"auto"`.
     :type aspect: str, optional
 
     :param ax: Attach returned plot to supplied Matplotlib axes (1d and 2d
@@ -149,6 +161,11 @@ def plot(*args, **kwargs):
     :param pax: Attach profile plot to supplied Matplotlib axes.
         Defaults to `None`.
     :type pax: matplotlib.axes.Axes, optional
+
+    :param pixel_size: Specify the size of the pixels to be used for the point
+        cloud (3d only). If none is supplied, the size is guessed based on the
+        extents of the data in the 3d space. Defaults to `None`.
+    :type pixel_size: float, optional
 
     :param positions: Specify an array of position vectors to be used as
         scatter points positions (3d only). Defaults to `None`.

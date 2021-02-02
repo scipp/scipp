@@ -119,8 +119,8 @@ auto invoke_subspan_view(const DType dtype, Args &&... args) {
 
 template <class Var, class... Args>
 Variable subspan_view_impl(Var &var, Args &&... args) {
-  return invoke_subspan_view<double, float, int64_t, int32_t, bool,
-                             std::string>(var.dtype(), var, args...);
+  return invoke_subspan_view<double, float, int64_t, int32_t, bool, std::string,
+                             Eigen::Vector3d>(var.dtype(), var, args...);
 }
 
 } // namespace

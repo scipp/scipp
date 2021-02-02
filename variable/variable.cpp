@@ -7,6 +7,7 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/creation.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/variable_concept.h"
 
 namespace scipp::variable {
@@ -36,9 +37,7 @@ VariableConstView::VariableConstView(const Variable &variable,
                                      const Dimensions &dims)
     : m_variable(&variable), m_dims(dims), m_dataDims(dims) {
   // TODO implement reshape differently, not with a special constructor?
-  if (m_variable->dims().volume() != dims.volume())
-    throw except::DimensionError(
-        "Cannot reshape to dimensions with different volume");
+  expect_same_volume(m_variable->dims(), dims);
 }
 
 VariableConstView::VariableConstView(const VariableConstView &slice,
@@ -86,8 +85,6 @@ bool Variable::operator!=(const VariableConstView &other) const {
 template <class T> VariableView VariableView::assign(const T &other) const {
   if (*this == VariableConstView(other))
     return *this; // Self-assignment, return early.
-  setUnit(other.unit());
-  core::expect::equals(dims(), other.dims());
   underlying().data().copy(other, *this);
   return *this;
 }

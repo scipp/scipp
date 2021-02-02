@@ -6,6 +6,7 @@ set(INC_FILES
     include/scipp/variable/apply.h
     include/scipp/variable/arithmetic.h
     include/scipp/variable/bins.h
+    include/scipp/variable/bin_util.h
     include/scipp/variable/comparison.h
     include/scipp/variable/except.h
     include/scipp/variable/indexed_slice_view.h
@@ -37,6 +38,8 @@ set(SRC_FILES
     ${variable_SRC_FILES}
     arithmetic.cpp
     bins.cpp
+    bin_detail.cpp
+    bin_util.cpp
     comparison.cpp
     creation.cpp
     cumulative.cpp
@@ -73,7 +76,7 @@ endif(DYNAMIC_LIB)
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
 target_link_libraries(${TARGET_NAME} PUBLIC scipp-core Boost::boost)
-if(TBB_FOUND)
+if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
 endif()
 

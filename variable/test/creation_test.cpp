@@ -10,7 +10,7 @@ using namespace scipp;
 
 TEST_P(DenseVariablesTest, empty_like_fail_if_sizes) {
   const auto var = GetParam();
-  EXPECT_THROW_DROP_RESULT(
+  EXPECT_THROW_DISCARD(
       empty_like(var, {}, makeVariable<scipp::index>(Values{12})),
       except::TypeError);
 }
@@ -43,4 +43,61 @@ TEST_P(DenseVariablesTest, empty_like) {
   EXPECT_EQ(empty.dims(), dims);
   EXPECT_EQ(empty.unit(), var.unit());
   EXPECT_EQ(empty.hasVariances(), var.hasVariances());
+}
+
+TEST(CreationTest, special_like_double) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m,
+                                        Values{1, 2}, Variances{3, 4});
+  EXPECT_EQ(special_like(var, variable::FillValue::ZeroNotBool),
+            makeVariable<double>(var.dims(), var.unit(), Values{0, 0},
+                                 Variances{0, 0}));
+  EXPECT_EQ(special_like(var, variable::FillValue::True),
+            makeVariable<bool>(var.dims(), var.unit(), Values{true, true}));
+  EXPECT_EQ(special_like(var, variable::FillValue::False),
+            makeVariable<bool>(var.dims(), var.unit(), Values{false, false}));
+  EXPECT_EQ(special_like(var, variable::FillValue::Max),
+            makeVariable<double>(var.dims(), var.unit(),
+                                 Values{std::numeric_limits<double>::max(),
+                                        std::numeric_limits<double>::max()},
+                                 Variances{0, 0}));
+  EXPECT_EQ(special_like(var, variable::FillValue::Lowest),
+            makeVariable<double>(var.dims(), var.unit(),
+                                 Values{std::numeric_limits<double>::lowest(),
+                                        std::numeric_limits<double>::lowest()},
+                                 Variances{0, 0}));
+}
+
+TEST(CreationTest, special_like_int) {
+  const auto var =
+      makeVariable<int64_t>(Dims{Dim::X}, Shape{2}, units::m, Values{1, 2});
+  EXPECT_EQ(special_like(var, variable::FillValue::ZeroNotBool),
+            makeVariable<int64_t>(var.dims(), var.unit(), Values{0, 0}));
+  EXPECT_EQ(special_like(var, variable::FillValue::True),
+            makeVariable<bool>(var.dims(), var.unit(), Values{true, true}));
+  EXPECT_EQ(special_like(var, variable::FillValue::False),
+            makeVariable<bool>(var.dims(), var.unit(), Values{false, false}));
+  EXPECT_EQ(special_like(var, variable::FillValue::Max),
+            makeVariable<int64_t>(var.dims(), var.unit(),
+                                  Values{std::numeric_limits<int64_t>::max(),
+                                         std::numeric_limits<int64_t>::max()}));
+  EXPECT_EQ(
+      special_like(var, variable::FillValue::Lowest),
+      makeVariable<int64_t>(var.dims(), var.unit(),
+                            Values{std::numeric_limits<int64_t>::lowest(),
+                                   std::numeric_limits<int64_t>::lowest()}));
+}
+
+TEST(CreationTest, special_like_bool) {
+  const auto var =
+      makeVariable<bool>(Dims{Dim::X}, Shape{2}, units::m, Values{true, false});
+  EXPECT_EQ(special_like(var, variable::FillValue::ZeroNotBool),
+            makeVariable<int64_t>(var.dims(), var.unit(), Values{0, 0}));
+  EXPECT_EQ(special_like(var, variable::FillValue::Max),
+            makeVariable<bool>(var.dims(), var.unit(),
+                               Values{std::numeric_limits<bool>::max(),
+                                      std::numeric_limits<bool>::max()}));
+  EXPECT_EQ(special_like(var, variable::FillValue::Lowest),
+            makeVariable<bool>(var.dims(), var.unit(),
+                               Values{std::numeric_limits<bool>::lowest(),
+                                      std::numeric_limits<bool>::lowest()}));
 }

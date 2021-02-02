@@ -12,10 +12,11 @@ class PlotPanel3d(PlotPanel):
     Additional widgets that control the position, opacity and shape of the
     cut surface in the 3d plot.
     """
-    def __init__(self, pixel_size=None):
+    def __init__(self, positions=None, unit=None):
         super().__init__()
 
-        self.pixel_size = pixel_size
+        self.positions = positions
+        self.unit = unit
         self.current_cut_surface_value = None
         self.permutations = {"x": ["y", "z"], "y": ["x", "z"], "z": ["x", "y"]}
         self.lock_surface_update = False
@@ -102,7 +103,7 @@ class PlotPanel3d(PlotPanel):
 
         # Allow to change the thickness of the cut surface
         self.cut_surface_thickness = ipw.BoundedFloatText(
-            value=self.pixel_size * 1.1,
+            value=1,
             min=0,
             layout={"width": "200px"},
             disabled=True,
@@ -120,6 +121,7 @@ class PlotPanel3d(PlotPanel):
             disabled=True,
             value=0.5,
             layout={"width": "350px"})
+        self.cut_unit = ipw.Label()
         self.cut_checkbox = ipw.Checkbox(value=True,
                                          description="Continuous update",
                                          indent=False,
@@ -141,7 +143,7 @@ class PlotPanel3d(PlotPanel):
                                        self.cut_surface_buttons,
                                        ipw.VBox([
                                            ipw.HBox([
-                                               self.cut_slider,
+                                               self.cut_slider, self.cut_unit,
                                                self.cut_checkbox
                                            ]), self.cut_surface_thickness
                                        ])
@@ -159,9 +161,9 @@ class PlotPanel3d(PlotPanel):
         """
         Reset axes limits and cut surface buttons.
         """
-        self.xminmax["x"] = axparams['x']['lims']
-        self.xminmax["y"] = axparams['y']['lims']
-        self.xminmax["z"] = axparams['z']['lims']
+        self.xminmax["x"] = axparams['x']['lims'] / axparams['x']['scaling']
+        self.xminmax["y"] = axparams['y']['lims'] / axparams['y']['scaling']
+        self.xminmax["z"] = axparams['z']['lims'] / axparams['z']['scaling']
         self.cut_surface_buttons.value = None
         self.current_cut_surface_value = None
 
@@ -192,6 +194,7 @@ class PlotPanel3d(PlotPanel):
             self.cut_slider.disabled = True
             self.cut_checkbox.disabled = True
             self.cut_surface_thickness.disabled = True
+            self.cut_unit.value = ""
             self._update_opacity({"new": self.opacity_slider.value})
         else:
             self.interface["update_depth_test"](False)
@@ -202,6 +205,18 @@ class PlotPanel3d(PlotPanel):
             self._update_cut_slider_bounds()
             self._update_cut_surface()
 
+    def _safe_cut_slider_range_update(self, vmin, vmax):
+        """
+        We need to be careful about the order in which we update the limits,
+        as ipywidgets throws if we set min larger than the current max.
+        """
+        if vmin < self.cut_slider.max:
+            self.cut_slider.min = vmin
+            self.cut_slider.max = vmax
+        else:
+            self.cut_slider.max = vmax
+            self.cut_slider.min = vmin
+
     def _update_cut_slider_bounds(self):
         """
         When axes are changed, we update the possible spatial range for the cut
@@ -209,16 +224,19 @@ class PlotPanel3d(PlotPanel):
         We also update the possible range for value-based slicing.
         """
         self.lock_surface_update = True
+        axparams = self.interface["get_axes_parameters"]()
         # Cartesian X, Y, Z
         if self.cut_surface_buttons.value < self.cut_options["Xcylinder"]:
             minmax = self.xminmax["xyz"[self.cut_surface_buttons.value]]
-            if minmax[0] < self.cut_slider.max:
-                self.cut_slider.min = minmax[0]
-                self.cut_slider.max = minmax[1]
-            else:
-                self.cut_slider.max = minmax[1]
-                self.cut_slider.min = minmax[0]
+            self._safe_cut_slider_range_update(minmax[0], minmax[1])
             self.cut_slider.value = 0.5 * (minmax[0] + minmax[1])
+            self.cut_slider.description = "Position:"
+            if self.positions is not None:
+                self.cut_unit.value = axparams["x"]["unit"]
+            else:
+                self.cut_unit.value = self.interface["get_coord_unit"](
+                    axparams[self.cut_surface_buttons.label.replace(
+                        ' ', '').lower()]["dim"])
         # Cylindrical X, Y, Z
         elif self.cut_surface_buttons.value < self.cut_options["Sphere"]:
             j = self.cut_surface_buttons.value - 3
@@ -228,34 +246,33 @@ class PlotPanel3d(PlotPanel):
                 self.xminmax[remaining_axes[1]][0],
                 self.xminmax[remaining_axes[0]][1],
                 self.xminmax[remaining_axes[1]][1]
-            ]).max()
-            self.cut_slider.min = 0
-            self.cut_slider.max = rmax * np.sqrt(2.0)
+            ]).max() * np.sqrt(2.0)
+            self._safe_cut_slider_range_update(0, rmax)
             self.cut_slider.value = 0.5 * self.cut_slider.max
+            self.cut_slider.description = "Radius:"
+            self._set_cylindrical_or_spherical_unit(axparams)
         # Spherical
         elif self.cut_surface_buttons.value == self.cut_options["Sphere"]:
-            rmax = np.abs(list(self.xminmax.values())).max()
-            self.cut_slider.min = 0
-            self.cut_slider.max = rmax * np.sqrt(3.0)
+            rmax = np.abs(list(self.xminmax.values())).max() * np.sqrt(3.0)
+            self._safe_cut_slider_range_update(0, rmax)
             self.cut_slider.value = 0.5 * self.cut_slider.max
+            self.cut_slider.description = "Radius:"
+            self._set_cylindrical_or_spherical_unit(axparams)
         # Value iso-surface
         elif self.cut_surface_buttons.value == self.cut_options["Value"]:
             self.cut_surface_thickness.max = self.vmax - self.vmin
-            # We need to be careful about the order here, as ipywidgets throws
-            # if we set min larger than the current max
-            if self.vmax > self.cut_slider.min:
-                self.cut_slider.max = self.vmax
-                self.cut_slider.min = self.vmin
-            else:
-                self.cut_slider.min = self.vmin
-                self.cut_slider.max = self.vmax
+            self._safe_cut_slider_range_update(self.vmin, self.vmax)
             self.cut_slider.value = 0.5 * (self.vmin + self.vmax)
             # Update slider step because it is no longer related to pixel size.
             # Slice thickness is linked to the step via jslink.
             self.cut_slider.step = (self.cut_slider.max -
                                     self.cut_slider.min) / 10.0
+            self.cut_slider.description = "Value:"
+            self.cut_unit.value = self.unit
         if self.cut_surface_buttons.value < self.cut_options["Value"]:
-            self.cut_slider.step = self.pixel_size * 1.1
+            self.cut_slider.step = self.interface["get_pixel_size"]() * 1.1
+            self.cut_surface_thickness.max = (self.cut_slider.max -
+                                              self.cut_slider.min)
         self.lock_surface_update = False
 
     def _update_cut_surface(self, change=None):
@@ -285,3 +302,14 @@ class PlotPanel3d(PlotPanel):
         self.vmax = vmax
         if self.cut_surface_buttons.value == self.cut_options["Value"]:
             self._update_cut_slider_bounds()
+
+    def _set_cylindrical_or_spherical_unit(self, axparams):
+        """
+        For cylindrical and spherical cut surfaces, if the data is dense, set
+        slider unit to None as the unit may be ill-defined if the coordinates
+        of the dense data do no all have the same dimension.
+        """
+        if self.positions is not None:
+            self.cut_unit.value = axparams["x"]["unit"]
+        else:
+            self.cut_unit.value = ""

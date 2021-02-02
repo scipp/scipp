@@ -68,18 +68,7 @@ def _format_non_events(var, has_variances):
 
 
 def _get_events(var, variances, ellipsis_after, summary=False):
-    if len(var.dims) == 0:
-        # handles a 1D Variable with only a events dimension
-        size = len(var.values)
-        if summary:
-            return [SPARSE_PREFIX.format(size)]
-        else:
-            return [
-                _format_array(var.values, size, ellipsis_after, size > 1000)
-            ]
-    else:
-        # Handles 2D and higher Variables with a events dimension
-        size = var.shape[0]
+    size = len(var.values)
 
     i = 0
     s = []
@@ -90,23 +79,27 @@ def _get_events(var, variances, ellipsis_after, summary=False):
     ]) > 1000
 
     data = retrieve(var, variances=variances)
+    dim = var.bins.dim
+    bin_dim = dict(zip(var.bins.data.dims,
+                       range(len(var.bins.data.dims))))[str(dim)]
     while i < size:
         if i == ellipsis_after and do_ellide and size > 2 * ellipsis_after + 1:
             s.append("...")
             i = size - ellipsis_after
         item = data[i]
         if summary:
-            s.append(SPARSE_PREFIX.format(len(item)))
+            s.append(SPARSE_PREFIX.format(item.shape[bin_dim]))
         else:
             s.append('events({})'.format(
-                _format_array(item, len(item), ellipsis_after, do_ellide)))
+                _format_array(item, item.shape[bin_dim], ellipsis_after,
+                              do_ellide)))
         i += 1
     return s
 
 
 def _format_events(var, has_variances):
-    s = _get_events(var, has_variances, ellipsis_after=1, summary=True)
-    return _make_row(", ".join([row for row in s]))
+    s = _get_events(var, has_variances, ellipsis_after=2, summary=True)
+    return _make_row(f'binned data [{", ".join([row for row in s])}]')
 
 
 def _ordered_dict(data):
@@ -116,7 +109,10 @@ def _ordered_dict(data):
 
 
 def inline_variable_repr(var, has_variances=False):
-    return _format_non_events(var, has_variances)
+    if var.bins is None:
+        return _format_non_events(var, has_variances)
+    else:
+        return _format_events(var, has_variances)
 
 
 def retrieve(var, variances=False, single=False):
@@ -127,17 +123,11 @@ def retrieve(var, variances=False, single=False):
 
 
 def _short_data_repr_html_non_events(var, variances=False):
-    if hasattr(var, "data"):
-        if var.data is None:
-            return "Realigned data based on unaligned content."
-            "Use `histogram` to obtain values."
-        return repr(retrieve(var.data, variances))
-    else:
-        return repr(retrieve(var, variances))
+    return repr(retrieve(var, variances))
 
 
 def _short_data_repr_html_events(var, variances=False):
-    return "array([" + ",\n       ".join(
+    return "binned data([" + ",\n       ".join(
         _get_events(var, variances, ellipsis_after=3)) + "])"
 
 
@@ -217,19 +207,6 @@ def _make_inline_attributes(var, has_attrs, embedded_in):
     disabled = "disabled"
     attrs_ul = ""
     attrs_sections = []
-
-    if hasattr(var, "data") and var.data is None:
-        content = dataset_repr(var.unaligned)
-        content = f"<div class='xr-var-attrs'><span>{content}</span></div>"
-        hint = 'data is realigned, expand to view underlying unaligned content'
-        section = collapsible_section('Unaligned',
-                                      inline_details=hint,
-                                      details=content,
-                                      n_items=1,
-                                      enabled=True,
-                                      collapsed=True)
-        attrs_sections.append(section)
-        disabled = ""
 
     if has_attrs and hasattr(var, "masks"):
         if len(var.masks) > 0:

@@ -86,13 +86,37 @@ def test_create_scalar():
     assert var.unit == sc.units.dimensionless
 
 
+def test_create_scalar_Variable():
+    elem = sc.Variable(dims=['x'], values=np.arange(4.0))
+    var = sc.Variable(elem)
+    assert sc.is_equal(var.value, elem)
+    assert var.dims == []
+    assert var.dtype == sc.dtype.Variable
+    assert var.unit == sc.units.dimensionless
+    var = sc.Variable(elem['x', 1:3])
+    assert var.dtype == sc.dtype.Variable
+
+
+def test_create_scalar_DataArray():
+    elem = sc.DataArray(data=sc.Variable(dims=['x'], values=np.arange(4.0)))
+    var = sc.Variable(elem)
+    assert sc.is_equal(var.value, elem)
+    assert var.dims == []
+    assert var.dtype == sc.dtype.DataArray
+    assert var.unit == sc.units.dimensionless
+    var = sc.Variable(elem['x', 1:3])
+    assert var.dtype == sc.dtype.DataArray
+
+
 def test_create_scalar_Dataset():
-    dataset = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
-    var = sc.Variable(dataset)
-    assert sc.is_equal(var.value, dataset)
+    elem = sc.Dataset({'a': sc.Variable(dims=['x'], values=np.arange(4.0))})
+    var = sc.Variable(elem)
+    assert sc.is_equal(var.value, elem)
     assert var.dims == []
     assert var.dtype == sc.dtype.Dataset
     assert var.unit == sc.units.dimensionless
+    var = sc.Variable(elem['x', 1:3])
+    assert var.dtype == sc.dtype.Dataset
 
 
 def test_create_scalar_quantity():
@@ -303,7 +327,7 @@ def test_create_dtype():
     assert var.dtype == sc.dtype.int32
 
 
-def test_get_slice():
+def test_getitem():
     var = sc.Variable(dims=['x', 'y'], values=np.arange(0, 8).reshape(2, 4))
     var_slice = var['x', 1:2]
     assert sc.is_equal(
@@ -311,12 +335,31 @@ def test_get_slice():
         sc.Variable(dims=['x', 'y'], values=np.arange(4, 8).reshape(1, 4)))
 
 
+def test_setitem_broadcast():
+    var = sc.Variable(dims=['x'], values=[1, 2, 3, 4], dtype=sc.dtype.int64)
+    var['x', 1:3] = sc.Variable(value=5, dtype=sc.dtype.int64)
+    assert sc.is_equal(
+        var, sc.Variable(dims=['x'], values=[1, 5, 5, 4],
+                         dtype=sc.dtype.int64))
+
+
 def test_slicing():
     var = sc.Variable(dims=['x'], values=np.arange(0, 3))
-    var_slice = var[('x', slice(0, 2))]
-    assert isinstance(var_slice, sc.VariableView)
-    assert len(var_slice.values) == 2
-    assert np.array_equal(var_slice.values, np.array([0, 1]))
+    for slice_, expected in ((slice(0, 2), [0, 1]), (slice(-3, -1), [0, 1]),
+                             (slice(2, 1), [])):
+        var_slice = var[('x', slice_)]
+        assert isinstance(var_slice, sc.VariableView)
+        assert len(var_slice.values) == len(expected)
+        assert np.array_equal(var_slice.values, np.array(expected))
+
+
+def test_sizes():
+    a = sc.Variable(value=1)
+    assert a.sizes == {}
+    a = sc.Variable(['x'], shape=[2])
+    assert a.sizes == {'x': 2}
+    a = sc.Variable(['y', 'z'], shape=[3, 4])
+    assert a.sizes == {'y': 3, 'z': 4}
 
 
 def test_iadd():
@@ -862,23 +905,34 @@ def test_variable_data_array_binary_ops():
 
 
 def test_isnan():
-    assert_export(sc.isnan, sc.Variable())
+    assert sc.is_equal(
+        sc.isnan(sc.Variable(['x'], values=np.array([1, 1, np.nan]))),
+        sc.Variable(['x'], values=[False, False, True]))
 
 
 def test_isinf():
-    assert_export(sc.isinf, sc.Variable())
+    assert sc.is_equal(
+        sc.isinf(sc.Variable(['x'], values=np.array([1, -np.inf, np.inf]))),
+        sc.Variable(['x'], values=[False, True, True]))
 
 
 def test_isfinite():
-    assert_export(sc.isfinite, sc.Variable())
+    assert sc.is_equal(
+        sc.isfinite(
+            sc.Variable(['x'], values=np.array([1, -np.inf, np.inf, np.nan]))),
+        sc.Variable(['x'], values=[True, False, False, False]))
 
 
 def test_isposinf():
-    assert_export(sc.isposinf, sc.Variable())
+    assert sc.is_equal(
+        sc.isposinf(sc.Variable(['x'], values=np.array([1, -np.inf, np.inf]))),
+        sc.Variable(['x'], values=[False, False, True]))
 
 
 def test_isneginf():
-    assert_export(sc.isneginf, sc.Variable())
+    assert sc.is_equal(
+        sc.isneginf(sc.Variable(['x'], values=np.array([1, -np.inf, np.inf]))),
+        sc.Variable(['x'], values=[False, True, False]))
 
 
 def test_nan_to_num():

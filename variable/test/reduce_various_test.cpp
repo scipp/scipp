@@ -12,8 +12,8 @@ using namespace scipp;
 
 TEST(ReduceTest, min_max_fails) {
   const auto bad = makeVariable<double>(Dims{Dim::X}, Shape{2});
-  EXPECT_THROW_DROP_RESULT(min(bad, Dim::Y), except::DimensionError);
-  EXPECT_THROW_DROP_RESULT(max(bad, Dim::Y), except::DimensionError);
+  EXPECT_THROW_DISCARD(min(bad, Dim::Y), except::DimensionError);
+  EXPECT_THROW_DISCARD(max(bad, Dim::Y), except::DimensionError);
 }
 
 TEST(ReduceTest, min_max) {
@@ -45,6 +45,22 @@ TEST(ReduceTest, min_max_with_variances) {
   EXPECT_EQ(min(var, Dim::Y),
             makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1, 3},
                                  Variances{5, 7}));
+}
+
+TEST(ReduceTest, min_max_empty_dim) {
+  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 0},
+                                        Values{}, Variances{});
+  EXPECT_EQ(max(var, Dim::X), makeVariable<double>(Dims{Dim::Y}, Shape{0},
+                                                   Values{}, Variances{}));
+  const auto highest = std::numeric_limits<double>::max();
+  EXPECT_EQ(max(var, Dim::Y),
+            makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                 Values{-highest, -highest}, Variances{0, 0}));
+  EXPECT_EQ(min(var, Dim::X), makeVariable<double>(Dims{Dim::Y}, Shape{0},
+                                                   Values{}, Variances{}));
+  EXPECT_EQ(min(var, Dim::Y),
+            makeVariable<double>(Dims{Dim::X}, Shape{2},
+                                 Values{highest, highest}, Variances{0, 0}));
 }
 
 TEST(ReduceTest, min_max_all_dims) {

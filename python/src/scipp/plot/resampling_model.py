@@ -6,6 +6,7 @@
 import numpy as np
 from .._scipp import core as sc
 from .helpers import PlotArray
+from .tools import to_bin_centers
 
 
 class ResamplingModel():
@@ -125,12 +126,16 @@ class ResamplingBinnedModel(ResamplingModel):
         super().__init__(*args, **kwargs)
         # TODO See #1469. This is a temporary hack to work around the
         # conversion of coords to edges in model.py.
+        new_meta = {name: var for name, var in self._array.meta.items()}
+        self._array = PlotArray(data=self._array.data,
+                                masks=self._array.masks,
+                                meta=new_meta)
         for name, var in self._array.meta.items():
             if len(var.dims) == 0:
                 continue
             dim = var.dims[-1]
             if name not in self._array.data.bins.data.meta:
-                self._array.meta[name] = 0.5 * (var[dim, 1:] + var[dim, :-1])
+                self._array.meta[name] = to_bin_centers(var, dim)
 
     def _resample(self, array):
         # We could bin with all edges and then use `bins.sum()` but especially
@@ -138,12 +143,16 @@ class ResamplingBinnedModel(ResamplingModel):
         # is faster with the current implementation of `sc.bin`.
         edges = self.edges[-1]
         dim = edges.dims[-1]
-        # Need to specify bounds for final dim despite handling by `histogram`
-        # below: If coord is ragged binning would throw otherwise.
-        bounds = sc.concatenate(edges[dim, 0], edges[dim, -1], dim)
-        binned = sc.bin_with_coords(array.data, array.meta,
-                                    self.edges[:-1] + [bounds], [])
-        a = sc.histogram(binned, edges)
+        if dim in array.data.bins.data.coords:
+            # Must specify bounds for final dim despite handling by `histogram`
+            # below: If coord is ragged binning would throw otherwise.
+            bounds = sc.concatenate(edges[dim, 0], edges[dim, -1], dim)
+            binned = sc.bin_with_coords(array.data, array.meta,
+                                        self.edges[:-1] + [bounds], [])
+            a = sc.histogram(binned, edges)
+        else:
+            a = sc.bin_with_coords(array.data, array.meta, self.edges,
+                                   []).bins.sum()
         for name, mask in array.masks.items():
             a.masks[name] = self._rebin(mask, array.meta)
         return a

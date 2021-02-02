@@ -3,10 +3,13 @@
 /// @file
 /// @author Simon Hezbrock
 #include "scipp/dataset/bins.h"
+#include "detail.h"
 #include "pybind11.h"
 #include "scipp/core/except.h"
 #include "scipp/dataset/bin.h"
 #include "scipp/dataset/shape.h"
+#include "scipp/variable/arithmetic.h"
+#include "scipp/variable/cumulative.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
@@ -19,39 +22,54 @@ namespace py = pybind11;
 
 namespace {
 
+template <class T>
+auto call_make_bins(const py::object &begin_obj, const py::object &end_obj,
+                    const Dim dim, T &&data) {
+  Variable indices;
+  Dimensions dims;
+  if (!begin_obj.is_none()) {
+    const auto &begin = begin_obj.cast<VariableView>();
+    dims = begin.dims();
+    if (!end_obj.is_none()) {
+      const auto &end = end_obj.cast<VariableView>();
+      indices = zip(begin, end);
+    } else {
+      indices = zip(begin, begin);
+      const auto indices_ = indices.values<scipp::index_pair>();
+      const auto nindex = scipp::size(indices_);
+      for (scipp::index i = 0; i < nindex; ++i) {
+        if (i < nindex - 1)
+          indices_[i].second = indices_[i + 1].first;
+        else
+          indices_[i].second = data.dims()[dim];
+      }
+    }
+  } else if (end_obj.is_none()) {
+    const auto one = scipp::index{1} * units::one;
+    const auto ones = broadcast(one, {dim, data.dims()[dim]});
+    const auto begin = cumsum(ones, dim, CumSumMode::Exclusive);
+    indices = zip(begin, begin + one);
+  } else {
+    throw std::runtime_error("`end` given but not `begin`");
+  }
+  return make_bins(std::move(indices), dim, std::forward<T>(data));
+}
+
 template <class T> void bind_bins(pybind11::module &m) {
   m.def(
       "bins",
       [](const py::object &begin_obj, const py::object &end_obj, const Dim dim,
+         Moveable<T> &data) {
+        return call_make_bins(begin_obj, end_obj, dim, std::move(data.value));
+      },
+      py::arg("begin") = py::none(), py::arg("end") = py::none(),
+      py::arg("dim"), py::arg("data")); // do not release GIL since using
+                                        // implicit conversions in functor
+  m.def(
+      "bins",
+      [](const py::object &begin_obj, const py::object &end_obj, const Dim dim,
          const typename T::const_view_type &data) {
-        element_array<std::pair<scipp::index, scipp::index>> indices;
-        Dimensions dims;
-        if (!begin_obj.is_none()) {
-          const auto &begin = begin_obj.cast<VariableView>();
-          indices.resize(begin.dims().volume());
-          dims = begin.dims();
-          const auto &begin_ = begin.values<int64_t>();
-          if (!end_obj.is_none()) {
-            const auto &end = end_obj.cast<VariableView>();
-            core::expect::equals(begin.dims(), end.dims());
-            const auto &end_ = end.values<int64_t>();
-            for (scipp::index i = 0; i < indices.size(); ++i)
-              indices.data()[i] = {begin_[i], end_[i]};
-          } else {
-            for (scipp::index i = 0; i < indices.size(); ++i)
-              indices.data()[i] = {begin_[i], -1};
-          }
-        } else if (end_obj.is_none()) {
-          indices.resize(data.dims()[dim]);
-          dims = Dimensions(dim, indices.size());
-          for (scipp::index i = 0; i < indices.size(); ++i)
-            indices.data()[i] = {i, -1};
-        } else {
-          throw std::runtime_error("`end` given but not `begin`");
-        }
-        return make_bins(makeVariable<std::pair<scipp::index, scipp::index>>(
-                             dims, Values(std::move(indices))),
-                         dim, T(data));
+        return call_make_bins(begin_obj, end_obj, dim, T(data));
       },
       py::arg("begin") = py::none(), py::arg("end") = py::none(),
       py::arg("dim"), py::arg("data")); // do not release GIL since using
@@ -203,17 +221,16 @@ void init_buckets(py::module &m) {
         return dataset::bin(array, edges, groups);
       },
       py::call_guard<py::gil_scoped_release>());
-  m.def(
-      "bin_with_coords",
-      [](const VariableConstView &data, const py::dict &coords,
-         const std::vector<VariableConstView> &edges,
-         const std::vector<VariableConstView> &groups) {
-        std::map<Dim, VariableConstView> c;
-        for (const auto &[name, coord] : coords)
-          c.emplace(Dim(py::cast<std::string>(name)),
-                    py::cast<VariableConstView>(coord));
-        return dataset::bin(data, c, std::map<std::string, VariableConstView>{},
-                            std::map<Dim, VariableConstView>{}, edges, groups);
-      },
-      py::call_guard<py::gil_scoped_release>());
+  m.def("bin_with_coords", [](const VariableConstView &data,
+                              const py::dict &coords,
+                              const std::vector<VariableConstView> &edges,
+                              const std::vector<VariableConstView> &groups) {
+    std::map<Dim, VariableConstView> c;
+    for (const auto &[name, coord] : coords)
+      c.emplace(Dim(py::cast<std::string>(name)),
+                py::cast<VariableConstView>(coord));
+    py::gil_scoped_release release; // release only *after* using py::cast
+    return dataset::bin(data, c, std::map<std::string, VariableConstView>{},
+                        std::map<Dim, VariableConstView>{}, edges, groups);
+  });
 }

@@ -7,6 +7,7 @@
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/math.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/variable_factory.h"
 
@@ -171,6 +172,17 @@ TEST_F(DataArrayBinsTest, histogram_existing_dim) {
 TEST_F(DataArrayBinsTest, sum) {
   EXPECT_EQ(buckets::sum(var),
             makeVariable<double>(indices.dims(), Values{3, 7}));
+}
+
+TEST_F(DataArrayBinsTest, operations_on_empty) {
+  const Variable empty_indices =
+      makeVariable<std::pair<scipp::index, scipp::index>>(
+          Dimensions{{Dim::Y, 0}, {Dim::Z, 0}}, Values{});
+  const Variable binned = make_bins(empty_indices, Dim::X, data);
+
+  EXPECT_EQ(abs(binned), binned);
+  EXPECT_EQ(binned, binned * binned);
+  EXPECT_EQ(binned, binned * (2 * units::one));
 }
 
 class DataArrayBinsMapTest : public ::testing::Test {

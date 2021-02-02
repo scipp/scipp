@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .. import config
 from .controller import PlotController
 from .._utils import name_with_unit
 import numpy as np
@@ -14,22 +15,26 @@ class PlotController3d(PlotController):
     It handles some additional events from the cut surface panel, compared to
     the base class controller.
     """
-    def __init__(self, *args, pixel_size=None, positions=None, **kwargs):
+    def __init__(self,
+                 *args,
+                 pixel_size=None,
+                 positions=None,
+                 aspect=None,
+                 **kwargs):
 
         super().__init__(*args, **kwargs)
-
         self.positions = positions
-        self.pos_axparams = {}
-
-        # If positions are specified, then the x, y, z points positions can
-        # never change
-        if self.positions is not None:
-            extents = self.model.get_positions_extents(pixel_size)
-            for xyz, ex in extents.items():
-                self.pos_axparams[xyz] = {
-                    "lims": ex["lims"],
-                    "label": name_with_unit(1.0 * ex["unit"], name=xyz.upper())
-                }
+        self.pixel_size = pixel_size
+        self.aspect = aspect
+        if self.aspect is None:
+            if positions is not None:
+                self.aspect = "equal"
+            else:
+                self.aspect = config.plot.aspect
+        if self.aspect not in ["equal", "auto"]:
+            raise RuntimeError(
+                "Invalid aspect requested. Expected 'auto' or "
+                "'equal', got", self.aspect)
 
     def initialise_model(self):
         """
@@ -44,10 +49,13 @@ class PlotController3d(PlotController):
         self.panel.connect({
             "update_opacity": self.update_opacity,
             "update_depth_test": self.update_depth_test,
-            "update_cut_surface": self.update_cut_surface
+            "update_cut_surface": self.update_cut_surface,
+            "get_pixel_size": self.get_pixel_size,
+            "get_axes_parameters": self.get_axes_parameters,
+            "get_coord_unit": self.get_coord_unit
         })
 
-    def _get_axes_parameters(self):
+    def _make_axes_parameters(self):
         """
         Gather the information (dimensions, limits, etc...) about the (x, y, z)
         axes that are displayed on the plots.
@@ -59,9 +67,34 @@ class PlotController3d(PlotController):
         """
         axparams = {}
         if self.positions is not None:
-            axparams = self.pos_axparams
+            extents = self.model.get_positions_extents(self.pixel_size)
+            axparams = {
+                xyz: {
+                    "lims": ex["lims"],
+                    "label": name_with_unit(1.0 * ex["unit"],
+                                            name=xyz.upper()),
+                    "unit": name_with_unit(1.0 * ex["unit"], name="")
+                }
+                for xyz, ex in extents.items()
+            }
         else:
-            axparams = super()._get_axes_parameters()
+            axparams = super()._make_axes_parameters()
+
+        axparams["box_size"] = np.array([
+            axparams['x']["lims"][1] - axparams['x']["lims"][0],
+            axparams['y']["lims"][1] - axparams['y']["lims"][0],
+            axparams['z']["lims"][1] - axparams['z']["lims"][0]
+        ])
+
+        for i, xyz in enumerate("xyz"):
+            axparams[xyz]["scaling"] = 1.0 / axparams["box_size"][
+                i] if self.aspect == "auto" else 1.0
+            axparams[xyz]["lims"] *= axparams[xyz]["scaling"]
+
+        axparams["box_size"] *= np.array([
+            axparams['x']["scaling"], axparams['y']["scaling"],
+            axparams['z']["scaling"]
+        ])
 
         axparams["centre"] = [
             0.5 * np.sum(axparams['x']["lims"]),
@@ -69,12 +102,28 @@ class PlotController3d(PlotController):
             0.5 * np.sum(axparams['z']["lims"])
         ]
 
-        axparams["box_size"] = np.array([
-            axparams['x']["lims"][1] - axparams['x']["lims"][0],
-            axparams['y']["lims"][1] - axparams['y']["lims"][0],
-            axparams['z']["lims"][1] - axparams['z']["lims"][0]
-        ])
+        if self.pixel_size is not None:
+            axparams["pixel_size"] = self.pixel_size
+            axparams["pixel_scaling"] = 1.0
+        else:
+            if self.positions is not None:
+                # Note the value of 0.05 is arbitrary here. It is a sensible
+                # guess to render a plot that is not too crowded and shows
+                # individual pixels.
+                psize = 0.05 * np.mean(axparams["box_size"])
+                pscale = axparams["x"]["scaling"]
+            else:
+                psize, pscale = self.model.estimate_pixel_size(axparams)
+            axparams["pixel_size"] = psize
+            axparams["pixel_scaling"] = pscale
+
         return axparams
+
+    def get_axes_parameters(self):
+        """
+        Getter function for the current axes parameters.
+        """
+        return self.axparams
 
     def update_opacity(self, alpha):
         """
@@ -105,3 +154,9 @@ class PlotController3d(PlotController):
         """
         alpha = self.model.update_cut_surface(*args, **kwargs)
         self.view.update_opacity(alpha=alpha)
+
+    def get_pixel_size(self):
+        """
+        Getter function for the pixel size.
+        """
+        return self.axparams["pixel_size"] / self.axparams["pixel_scaling"]

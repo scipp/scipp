@@ -216,6 +216,10 @@ class SciPlot:
         they appear in the input object.
         """
 
+        if positions and not array.meta[positions].dims:
+            raise ValueError(f"{positions} cannot be 0 dimensional"
+                             f" on input object\n\n{array}")
+
         array_dims = array.dims
         self.ndim = len(array_dims)
 

@@ -33,7 +33,11 @@ void validate_bucket_indices_impl(const ElementArrayViewParams &param0,
   for (scipp::index i = 0; i < iterDims.volume(); ++i) {
     const auto [i0, i1] = index.get();
     if (size(indices0[i0]) != size(indices1[i1]))
-      throw except::BucketError("Bucket size mismatch");
+      throw except::BucketError(
+          "Bin size mismatch in operation with binned data. Refer to "
+          "https://scipp.github.io/user-guide/binned-data/"
+          "computation.html#Overview-and-Quick-Reference for equivalent "
+          "operations for binned data (event data).");
     index.increment();
   }
 }

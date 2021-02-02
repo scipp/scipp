@@ -13,8 +13,16 @@ def test_plot_2d_image():
     plot(make_dense_dataset(ndim=2))
 
 
+def test_plot_2d_image_with_variances():
+    plot(make_dense_dataset(ndim=2, variances=True))
+
+
 def test_plot_2d_image_with_log():
     plot(make_dense_dataset(ndim=2), norm='log')
+
+
+def test_plot_2d_image_with_log_and_variances():
+    plot(make_dense_dataset(ndim=2, variances=True), norm='log')
 
 
 def test_plot_2d_image_with_vmin_vmax():
@@ -39,6 +47,11 @@ def test_plot_2d_image_with_log_scale_y():
 
 def test_plot_2d_image_with_log_scale_xy():
     plot(make_dense_dataset(ndim=2), scale={'tof': 'log', 'x': 'log'})
+
+
+def test_plot_2d_image_with_aspect():
+    plot(make_dense_dataset(ndim=2), aspect="equal")
+    plot(make_dense_dataset(ndim=2), aspect="auto")
 
 
 def test_plot_2d_image_with_with_nan():
@@ -226,6 +239,19 @@ def test_plot_2d_with_decreasing_edges():
 
 def test_plot_2d_binned_data():
     plot(make_binned_data_array(ndim=2))
+
+
+def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
+    data = make_binned_data_array(ndim=2)
+    data = sc.concatenate(data, data + data, 'run')
+    plot_obj = sc.plot.plot(data)
+    plot_obj.widgets.slider[0].value = 1
+
+
+def test_plot_3d_binned_data_where_inner_dimension_nas_no_event_coord():
+    data = make_binned_data_array(ndim=2)
+    data = sc.concatenate(data, data + data, 'run')
+    sc.plot.plot(data, axes={'x': 'run', 'y': 'tof'})
 
 
 def test_plot_2d_binned_data_with_variances():

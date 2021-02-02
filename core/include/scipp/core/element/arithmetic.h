@@ -9,12 +9,13 @@
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
+#include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core::element {
 
 constexpr auto add_inplace_types =
-    arg_list<double, float, int64_t, int32_t, Eigen::Vector3d,
+    arg_list<double, float, int64_t, int32_t, Eigen::Vector3d, SubbinSizes,
              std::tuple<scipp::core::time_point, int64_t>,
              std::tuple<scipp::core::time_point, int32_t>,
              std::tuple<double, float>, std::tuple<float, double>,
@@ -62,12 +63,12 @@ constexpr auto times_equals =
 constexpr auto divide_equals =
     overloaded{div_inplace_types, [](auto &&a, const auto &b) { a /= b; }};
 
-template <class... Ts> struct add_types_t {
+struct add_types_t {
   constexpr void operator()() const noexcept;
   using types = arithmetic_and_matrix_type_pairs;
 };
 
-template <class... Ts> struct times_types_t {
+struct times_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(std::tuple_cat(
       std::declval<arithmetic_type_pairs_with_bool>(),
@@ -75,7 +76,7 @@ template <class... Ts> struct times_types_t {
       std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>()));
 };
 
-template <class... Ts> struct divide_types_t {
+struct divide_types_t {
   constexpr void operator()() const noexcept;
   using types = arithmetic_type_pairs;
 };

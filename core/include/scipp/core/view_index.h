@@ -37,8 +37,12 @@ public:
       return;
     auto remainder{index};
     for (int32_t d = 0; d < m_dims - 1; ++d) {
-      m_coord[d] = remainder % m_extent[d];
-      remainder /= m_extent[d];
+      if (m_extent[d] != 0) {
+        m_coord[d] = remainder % m_extent[d];
+        remainder /= m_extent[d];
+      } else {
+        m_coord[d] = 0;
+      }
     }
     m_coord[m_dims - 1] = remainder;
     m_index = 0;
@@ -46,8 +50,10 @@ public:
       m_index += m_factors[j] * m_coord[m_offsets[j]];
   }
 
-  constexpr scipp::index get() const noexcept { return m_index; }
-  constexpr scipp::index index() const noexcept { return m_fullIndex; }
+  [[nodiscard]] constexpr scipp::index get() const noexcept { return m_index; }
+  [[nodiscard]] constexpr scipp::index index() const noexcept {
+    return m_fullIndex;
+  }
 
   constexpr bool operator==(const ViewIndex &other) const noexcept {
     return m_fullIndex == other.m_fullIndex;
@@ -56,12 +62,10 @@ public:
     return m_fullIndex != other.m_fullIndex;
   }
 
-  constexpr bool has_stride_zero() const noexcept { return m_dims > m_subdims; }
-
 private:
   // NOTE:
   // We investigated different containers for the m_delta, m_coord & m_extent
-  // arrays, and their impact on peformance when iterating over a variable
+  // arrays, and their impact on performance when iterating over a variable
   // view.
   // Using std::array or C-style arrays give good performance (7.5 Gb/s) as long
   // as a range based loop is used:

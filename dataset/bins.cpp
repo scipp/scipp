@@ -230,8 +230,11 @@ auto combine(const VariableConstView &var0, const VariableConstView &var1) {
   const auto sizes = sizes0 + sizes1;
   const auto end = cumsum(sizes);
   const auto begin = end - sizes;
-  auto buffer = resize_default_init(
-      buffer0, dim, end.template values<scipp::index>().as_span().back());
+  const auto total_size =
+      end.dims().volume() > 0
+          ? end.template values<scipp::index>().as_span().back()
+          : 0;
+  auto buffer = resize_default_init(buffer0, dim, total_size);
   copy_slices(buffer0, buffer, dim, indices0, zip(begin, end - sizes1));
   copy_slices(buffer1, buffer, dim, indices1, zip(begin + sizes0, end));
   return variable::DataModel<bucket<T>>{zip(begin, end), dim,

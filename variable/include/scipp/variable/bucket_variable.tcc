@@ -80,10 +80,11 @@ auto contiguous_indices(const VariableConstView &parent,
 
 template <class T> class BinVariableMakerCommon : public AbstractVariableMaker {
 public:
-  bool is_bins() const override { return true; }
-  Variable empty_like(const VariableConstView &prototype,
-                      const std::optional<Dimensions> &shape,
-                      const VariableConstView &sizes) const override {
+  [[nodiscard]] bool is_bins() const override { return true; }
+  [[nodiscard]] Variable
+  empty_like(const VariableConstView &prototype,
+             const std::optional<Dimensions> &shape,
+             const VariableConstView &sizes) const override {
     if (shape)
       throw except::TypeError(
           "Cannot specify shape in `empty_like` for prototype with bins, shape "
@@ -98,7 +99,7 @@ public:
     }
     const auto end = cumsum(sizes_);
     const auto begin = end - sizes_;
-    const auto size = end.template values<scipp::index>().as_span().back();
+    const auto size = sum(end - begin).template value<scipp::index>();
     return make_bins(zip(begin, end), dim, resize_default_init(buf, dim, size));
   }
 };
@@ -106,29 +107,32 @@ public:
 template <class T> class BinVariableMaker : public BinVariableMakerCommon<T> {
 private:
   const VariableConstView
-  bucket_parent(const scipp::span<const VariableConstView> &parents) const {
+  bin_parent(const scipp::span<const VariableConstView> &parents) const {
+    if (parents.empty())
+      throw except::BucketError("Bin cannot have zero parents");
     return parents.front().dtype() == dtype<bucket<T>>
                ? parents.front()
-               : bucket_parent(parents.subspan(1));
+               : bin_parent(parents.subspan(1));
   }
   virtual Variable call_make_bins(const VariableConstView &parent,
-                             const VariableConstView &indices, const Dim dim,
-                             const DType type, const Dimensions &dims,
-                             const units::Unit &unit,
-                             const bool variances) const = 0;
+                                  const VariableConstView &indices,
+                                  const Dim dim, const DType type,
+                                  const Dimensions &dims,
+                                  const units::Unit &unit,
+                                  const bool variances) const = 0;
 
 public:
   Variable
   create(const DType elem_dtype, const Dimensions &dims,
          const units::Unit &unit, const bool variances,
          const std::vector<VariableConstView> &parents) const override {
-    const VariableConstView parent = bucket_parent(parents);
+    const VariableConstView parent = bin_parent(parents);
     const auto &[parentIndices, dim, buffer] = parent.constituents<bucket<T>>();
     auto [indices, size] = contiguous_indices(parentIndices, dims);
     auto bufferDims = buffer.dims();
     bufferDims.resize(dim, size);
     return call_make_bins(parent, indices, dim, elem_dtype, bufferDims, unit,
-                     variances);
+                          variances);
   }
 
   Dim elem_dim(const VariableConstView &var) const override {

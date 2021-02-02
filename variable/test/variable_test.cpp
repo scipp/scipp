@@ -634,6 +634,13 @@ TEST(VariableView, variable_assign_from_slice_clears_variances) {
                                          Values{11, 12, 21, 22}));
 }
 
+TEST(VariableView, slice_assign_from_variable_broadcast) {
+  const auto source = makeVariable<double>(Values{2});
+  auto target = makeVariable<double>(Dims{Dim::X}, Shape{3});
+  target.slice({Dim::X, 1, 3}).assign(source);
+  EXPECT_EQ(target, makeVariable<double>(target.dims(), Values{0, 2, 2}));
+}
+
 TEST(VariableView, variable_self_assign_via_slice) {
   auto target =
       makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{3, 3},
@@ -654,6 +661,13 @@ TEST(VariableView, slice_assign_from_variable_unit_fail) {
   EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(source), except::UnitError);
   target = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m);
   EXPECT_NO_THROW(target.slice({Dim::X, 1, 2}).assign(source));
+}
+
+TEST(VariableView, slice_assign_from_variable_dimension_fail) {
+  const auto source = makeVariable<double>(Dims{Dim::Y}, Shape{1});
+  auto target = makeVariable<double>(Dims{Dim::X}, Shape{2});
+  EXPECT_THROW(target.slice({Dim::X, 1, 2}).assign(source),
+               except::NotFoundError);
 }
 
 TEST(VariableView, slice_assign_from_variable_full_slice_can_change_unit) {
@@ -710,92 +724,6 @@ TEST(VariableView, slice_assign_from_variable) {
   EXPECT_EQ(target, makeVariable<double>(
                         Dimensions(dims), Values{0, 0, 0, 0, 11, 12, 0, 21, 22},
                         Variances{0, 0, 0, 0, 33, 34, 0, 43, 44}));
-}
-
-TEST(VariableTest, reshape) {
-  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                        units::m, Values{1, 2, 3, 4, 5, 6});
-
-  ASSERT_EQ(reshape(var, {Dim::Row, 6}),
-            makeVariable<double>(Dims{Dim::Row}, Shape{6}, units::m,
-                                 Values{1, 2, 3, 4, 5, 6}));
-  ASSERT_EQ(reshape(var, {{Dim::Row, 3}, {Dim::Z, 2}}),
-            makeVariable<double>(Dims{Dim::Row, Dim::Z}, Shape{3, 2}, units::m,
-                                 Values{1, 2, 3, 4, 5, 6}));
-}
-
-TEST(VariableTest, reshape_with_variance) {
-  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                        Values{1, 2, 3, 4, 5, 6},
-                                        Variances{7, 8, 9, 10, 11, 12});
-
-  ASSERT_EQ(reshape(var, {Dim::Row, 6}),
-            makeVariable<double>(Dims{Dim::Row}, Shape{6},
-                                 Values{1, 2, 3, 4, 5, 6},
-                                 Variances{7, 8, 9, 10, 11, 12}));
-  ASSERT_EQ(reshape(var, {{Dim::Row, 3}, {Dim::Z, 2}}),
-            makeVariable<double>(Dims{Dim::Row, Dim::Z}, Shape{3, 2},
-                                 Values{1, 2, 3, 4, 5, 6},
-                                 Variances{7, 8, 9, 10, 11, 12}));
-}
-
-TEST(VariableTest, reshape_temporary) {
-  const auto var = makeVariable<double>(
-      Dims{Dim::X, Dim::Row}, Shape{2, 4}, units::m,
-      Values{1, 2, 3, 4, 5, 6, 7, 8}, Variances{9, 10, 11, 12, 13, 14, 15, 16});
-  auto reshaped = reshape(sum(var, Dim::X), {{Dim::Y, 2}, {Dim::Z, 2}});
-  ASSERT_EQ(reshaped, makeVariable<double>(Dims{Dim::Y, Dim::Z}, Shape{2, 2},
-                                           units::m, Values{6, 8, 10, 12},
-                                           Variances{22, 24, 26, 28}));
-
-  EXPECT_EQ(typeid(decltype(reshape(std::move(var), {}))), typeid(Variable));
-}
-
-TEST(VariableTest, reshape_fail) {
-  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                  Values{1, 2, 3, 4, 5, 6});
-  EXPECT_THROW_MSG(reshape(var, {Dim::Row, 5}), std::runtime_error,
-                   "Cannot reshape to dimensions with different volume");
-}
-
-TEST(VariableTest, reshape_and_slice) {
-  auto var = makeVariable<double>(
-      Dims{Dim::Z}, Shape{16},
-      Values{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
-      Variances{17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
-                32});
-
-  auto slice = reshape(var, {{Dim::X, 4}, {Dim::Y, 4}})
-                   .slice({Dim::X, 1, 3})
-                   .slice({Dim::Y, 1, 3});
-  ASSERT_EQ(slice, makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
-                                        Values{6, 7, 10, 11},
-                                        Variances{22, 23, 26, 27}));
-
-  Variable center = reshape(reshape(var, {{Dim::X, 4}, {Dim::Y, 4}})
-                                .slice({Dim::X, 1, 3})
-                                .slice({Dim::Y, 1, 3}),
-                            {Dim::Z, 4});
-
-  ASSERT_EQ(center,
-            makeVariable<double>(Dims{Dim::Z}, Shape{4}, Values{6, 7, 10, 11},
-                                 Variances{22, 23, 26, 27}));
-}
-
-TEST(VariableTest, reshape_mutable) {
-  auto modified_original = makeVariable<double>(
-      Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values{1, 2, 3, 0, 5, 6});
-  auto reference =
-      makeVariable<double>(Dims{Dim::Row}, Shape{6}, Values{1, 2, 3, 0, 5, 6});
-
-  auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
-                                  Values{1, 2, 3, 4, 5, 6});
-
-  auto view = reshape(var, {Dim::Row, 6});
-  view.values<double>()[3] = 0;
-
-  ASSERT_EQ(view, reference);
-  ASSERT_EQ(var, modified_original);
 }
 
 TEST(VariableTest, rename) {

@@ -3,7 +3,8 @@
 # @author Neil Vaytet
 
 from .helpers import PlotArray
-from .tools import to_bin_edges, to_bin_centers, make_fake_coord, vars_to_err
+from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
+                   vars_to_err, find_limits
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
@@ -36,6 +37,7 @@ class PlotModel:
         # The main container of DataArrays
         self.data_arrays = {}
         self.coord_info = {}
+        self.dim_to_shape = dim_to_shape
 
         self.axformatter = {}
 
@@ -52,7 +54,7 @@ class PlotModel:
             # Iterate through axes and collect coordinates
             for dim in axes_dims:
                 coord, formatter, label, unit = self._axis_coord_and_formatter(
-                    dim, array, dim_to_shape[name], dim_label_map)
+                    dim, array, self.dim_to_shape[name], dim_label_map)
 
                 self.axformatter[name][dim] = formatter
                 self.coord_info[name][dim] = {"label": label, "unit": unit}
@@ -60,7 +62,7 @@ class PlotModel:
                 is_histogram = False
                 for i, d in enumerate(coord.dims):
                     if d == dim:
-                        is_histogram = dim_to_shape[name][
+                        is_histogram = self.dim_to_shape[name][
                             d] == coord.shape[i] - 1
 
                 if is_histogram:
@@ -101,74 +103,101 @@ class PlotModel:
         formatter = {"linear": None, "log": None, "custom_locator": False}
 
         coord = None
+        contains_strings = False
+        contains_vectors = False
 
-        if dim not in data_array.meta:
+        has_no_coord = dim not in data_array.meta
+        if not has_no_coord:
+            if data_array.meta[dim].dtype == sc.dtype.vector_3_float64:
+                contains_vectors = True
+            elif data_array.meta[dim].dtype == sc.dtype.string:
+                contains_strings = True
+
+        # Get the coordinate from the DataArray or generate a fake one
+        if has_no_coord or contains_vectors or contains_strings:
             coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
-            return coord, formatter, name_with_unit(var=coord), name_with_unit(
-                var=coord, name="")
-
-        tp = data_array.meta[dim].dtype
-        coord_info = {}
-
-        if tp == sc.dtype.vector_3_float64:
-            coord = make_fake_coord(dim,
-                                    dim_to_shape[dim] + 1,
-                                    unit=data_array.meta[dim].unit)
-            form = lambda val, pos: "(" + ",".join([  # noqa: E731
-                value_to_string(item, precision=2)
-                for item in data_array.meta[dim].values[int(val)]
-            ]) + ")" if (int(val) >= 0 and int(val) < dim_to_shape[dim]
-                         ) else ""
-            formatter.update({
-                "linear": form,
-                "log": form,
-                "custom_locator": True
-            })
-
-        elif tp == sc.dtype.string:
-            coord = make_fake_coord(dim,
-                                    dim_to_shape[dim] + 1,
-                                    unit=data_array.meta[dim].unit)
-            form = lambda val, pos: data_array.meta[  # noqa: E731
-                dim].values[int(val)] if (int(val) >= 0 and int(val) <
-                                          dim_to_shape[dim]) else ""
-            formatter.update({
-                "linear": form,
-                "log": form,
-                "custom_locator": True
-            })
-
-        elif dim in dim_label_map:
-            # non-dimension coordinate
-            if dim in data_array.meta:
-                coord = data_array.meta[dim]
-                coord_values = coord.values
-            else:
-                coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
-                coord_values = coord.values
-                if data_array.meta[dim].shape[-1] == dim_to_shape[dim]:
-                    coord_values = to_bin_centers(coord, dim).values
-            form = lambda val, pos: value_to_string(  # noqa: E731
-                data_array.meta[dim_label_map[dim]].values[np.abs(
-                    coord_values - val).argmin()])
-            formatter.update({"linear": form, "log": form})
-            coord_info["label"] = name_with_unit(
-                var=data_array.meta[dim_label_map[dim]],
-                name=dim_label_map[dim])
-            coord_info["unit"] = name_with_unit(
-                var=data_array.meta[dim_label_map[dim]], name="")
-
+            if not has_no_coord:
+                coord.unit = data_array.meta[dim].unit
         else:
             coord = data_array.meta[dim]
             if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
                                                       sc.dtype.float64):
                 coord = coord.astype(sc.dtype.float64)
 
-        if len(coord_info) == 0:
-            coord_info["label"] = name_with_unit(var=coord)
-            coord_info["unit"] = name_with_unit(var=coord, name="")
+        # Set up tick formatters
+        if dim in dim_label_map:
 
-        return coord, formatter, coord_info["label"], coord_info["unit"]
+            if data_array.meta[
+                    dim_label_map[dim]].dtype == sc.dtype.vector_3_float64:
+                # If the non-dimension coordinate contains vectors
+                form = self._vector_tick_formatter(
+                    data_array.meta[dim_label_map[dim]].values,
+                    dim_to_shape[dim])
+                formatter.update({"custom_locator": True})
+            elif data_array.meta[dim_label_map[dim]].dtype == sc.dtype.string:
+                # If the non-dimension coordinate contains strings
+                form = self._string_tick_formatter(
+                    data_array.meta[dim_label_map[dim]].values,
+                    dim_to_shape[dim])
+                formatter.update({"custom_locator": True})
+            else:
+                coord_values = coord.values
+                if has_no_coord:
+                    # In this case we always have a bin-edge coord
+                    coord_values = to_bin_centers(coord, dim).values
+                else:
+                    if data_array.meta[dim].shape[-1] == dim_to_shape[dim]:
+                        coord_values = to_bin_centers(coord, dim).values
+                form = lambda val, pos: value_to_string(  # noqa: E731
+                    data_array.meta[dim_label_map[dim]].values[np.abs(
+                        coord_values - val).argmin()])
+
+            formatter.update({"linear": form, "log": form})
+
+            coord_label = name_with_unit(
+                var=data_array.meta[dim_label_map[dim]],
+                name=dim_label_map[dim])
+            coord_unit = name_with_unit(
+                var=data_array.meta[dim_label_map[dim]], name="")
+
+        else:
+            if contains_vectors:
+                form = self._vector_tick_formatter(data_array.meta[dim].values,
+                                                   dim_to_shape[dim])
+                formatter.update({
+                    "linear": form,
+                    "log": form,
+                    "custom_locator": True
+                })
+            elif contains_strings:
+                form = self._string_tick_formatter(data_array.meta[dim].values,
+                                                   dim_to_shape[dim])
+                formatter.update({
+                    "linear": form,
+                    "log": form,
+                    "custom_locator": True
+                })
+
+            coord_label = name_with_unit(var=coord)
+            coord_unit = name_with_unit(var=coord, name="")
+
+        return coord, formatter, coord_label, coord_unit
+
+    def _vector_tick_formatter(self, array_values, size):
+        """
+        Format vector output for ticks: return 3 components as a string.
+        """
+        return lambda val, pos: "(" + ",".join([
+            value_to_string(item, precision=2)
+            for item in array_values[int(val)]
+        ]) + ")" if (int(val) >= 0 and int(val) < size) else ""
+
+    def _string_tick_formatter(self, array_values, size):
+        """
+        Format string ticks: find closest string in coordinate array.
+        """
+        return lambda val, pos: array_values[int(val)] if (int(
+            val) >= 0 and int(val) < size) else ""
 
     def _make_masks(self, array, mask_info, transpose=False):
         if not mask_info:
@@ -228,16 +257,14 @@ class PlotModel:
         return self.data_arrays[name].meta[dim], self.coord_info[name][dim][
             "label"], self.coord_info[name][dim]["unit"]
 
-    def rescale_to_data(self):
+    def rescale_to_data(self, scale=None):
         """
         Get the min and max values of the currently displayed slice.
         """
-        vmin = None
-        vmax = None
         if self.dslice is not None:
-            vmin = sc.nanmin(self.dslice.data).value
-            vmax = sc.nanmax(self.dslice.data).value
-        return vmin, vmax
+            return find_limits(self.dslice.data, scale=scale)[scale]
+        else:
+            return [None, None]
 
     def slice_data(self, array, slices, keep_dims=False):
         """

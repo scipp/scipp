@@ -5,12 +5,14 @@
 #pragma once
 
 #include <cmath>
+#include <limits>
 #include <numeric>
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/element/util.h"
 #include "scipp/core/histogram.h"
+#include "scipp/core/subbin_sizes.h"
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core::element {
@@ -123,8 +125,8 @@ static constexpr auto update_indices_from_existing = overloaded{
 // - `offsets` Start indices of the output bins
 // - `bin_indices` Target output bin index (within input bin)
 template <class T, class Index>
-using bin_arg = std::tuple<span<T>, span<const scipp::index>, span<const T>,
-                           span<const Index>>;
+using bin_arg =
+    std::tuple<span<T>, SubbinSizes, span<const T>, span<const Index>>;
 static constexpr auto bin = overloaded{
     element::arg_list<
         bin_arg<double, int64_t>, bin_arg<double, int32_t>,
@@ -139,7 +141,7 @@ static constexpr auto bin = overloaded{
        const units::Unit &) { binned = data; },
     [](const auto &binned, const auto &offsets, const auto &data,
        const auto &bin_indices) {
-      std::vector<scipp::index> bins(offsets.begin(), offsets.end());
+      auto bins(offsets.sizes());
       const auto size = scipp::size(bin_indices);
       using T = std::decay_t<decltype(data)>;
       for (scipp::index i = 0; i < size; ++i) {
@@ -157,17 +159,20 @@ static constexpr auto bin = overloaded{
 
 static constexpr auto count_indices = overloaded{
     element::arg_list<
-        std::tuple<scipp::span<scipp::index>, scipp::span<const int64_t>>,
-        std::tuple<scipp::span<scipp::index>, scipp::span<const int32_t>>>,
-    [](const units::Unit &counts, const units::Unit &indices) {
+        std::tuple<scipp::span<const int64_t>, scipp::index, scipp::index>,
+        std::tuple<scipp::span<const int32_t>, scipp::index, scipp::index>>,
+    [](const units::Unit &indices, const auto &offset, const auto &nbin) {
       expect::equals(indices, units::one);
-      expect::equals(counts, units::one);
+      expect::equals(offset, units::one);
+      expect::equals(nbin, units::one);
+      return units::one;
     },
-    [](const auto &counts, const auto &indices) {
-      zero(counts);
+    [](const auto &indices, const auto offset, const auto nbin) {
+      typename SubbinSizes::container_type counts(nbin);
       for (const auto i : indices)
         if (i >= 0)
           ++counts[i];
+      return SubbinSizes{offset, std::move(counts)};
     }};
 
 } // namespace scipp::core::element

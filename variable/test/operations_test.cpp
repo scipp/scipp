@@ -407,62 +407,6 @@ TEST(Variable, concatenate_from_slices_with_broadcast) {
                                       Values(expected), Variances(expected)));
 }
 
-TEST(Variable, sum) {
-  const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                        units::m, Values{1.0, 2.0, 3.0, 4.0});
-  const auto expectedX =
-      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{3.0, 7.0});
-  const auto expectedY =
-      makeVariable<double>(Dims{Dim::X}, Shape{2}, units::m, Values{4.0, 6.0});
-  EXPECT_EQ(sum(var, Dim::X), expectedX);
-  EXPECT_EQ(sum(var, Dim::Y), expectedY);
-}
-
-TEST(Variable, sum_in_place) {
-  const auto var = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                        units::m, Values{1.0, 2.0, 3.0, 4.0});
-
-  auto out =
-      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::Unit{units::m});
-  auto view = sum(var, Dim::X, out);
-
-  const auto expected =
-      makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::m, Values{3.0, 7.0});
-
-  EXPECT_EQ(out, expected);
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
-}
-
-TEST(Variable, sum_in_place_bool) {
-  const auto var = makeVariable<bool>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                      Values{true, false, true, true});
-
-  auto out = makeVariable<int64_t>(Dims{Dim::Y}, Shape{2});
-  auto view = sum(var, Dim::X, out);
-
-  const auto expected =
-      makeVariable<int64_t>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
-
-  EXPECT_EQ(out, expected);
-  EXPECT_EQ(view, out);
-  EXPECT_EQ(view.underlying(), out);
-}
-
-TEST(Variable, sum_in_place_bool_incorrect_out_type) {
-  const auto var = makeVariable<bool>(Dims{Dim::Y, Dim::X}, Shape{2, 2},
-                                      Values{true, false, true, true});
-  auto out = makeVariable<float>(Dims{Dim::Y}, Shape{2});
-  EXPECT_THROW(sum(var, Dim::X, out), except::UnitError);
-}
-
-TEST(VariableConstView, sum) {
-  const auto var =
-      makeVariable<float>(Dims{Dim::X}, Shape{4}, Values{1.0, 2.0, 3.0, 4.0});
-  EXPECT_EQ(sum(var.slice({Dim::X, 0, 2}), Dim::X),
-            makeVariable<float>(Values{3}));
-}
-
 TEST(VariableView, minus_equals_failures) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 2},
                                   Values{1.0, 2.0, 3.0, 4.0});

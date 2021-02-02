@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from .. import config
 from .controller3d import PlotController3d
 from .model3d import PlotModel3d
 from .panel3d import PlotPanel3d
@@ -18,6 +19,27 @@ def plot3d(*args, filename=None, **kwargs):
     It is possible to add cut surfaces as cartesian, cylindrical or spherical
     planes.
     """
+
+    # In 3d scenes, the size of the pixels depends on the display's pixel
+    # scaling ratio, so we retrieve this from a javascript variable run when
+    # we imported the plot module.
+    if "pixel_ratio" not in config.plot:
+        try:
+            from IPython import get_ipython
+            ipy = get_ipython()
+            if ipy is not None:
+                pixel_ratio = ipy.kernel.shell.user_ns.get("devicePixelRatio")
+                # Note that pixel_ratio appears to be None when building the
+                # documentation, possibly because the page is rendered in one
+                # go, before the asynchronous javascript has been run.
+                # See https://stackoverflow.com/questions/30902898
+                # So we do not update the config if it is None, and it will
+                # default to 1.0 in figure3d.py.
+                if pixel_ratio is not None:
+                    config.update({'plot.pixel_ratio': pixel_ratio})
+        except ImportError:
+            pass
+
     sp = SciPlot3d(*args, **kwargs)
     if filename is not None:
         sp.savefig(filename)
@@ -39,6 +61,7 @@ class SciPlot3d(SciPlot):
                  positions=None,
                  axes=None,
                  figsize=None,
+                 aspect=None,
                  masks=None,
                  cmap=None,
                  norm=None,
@@ -46,9 +69,8 @@ class SciPlot3d(SciPlot):
                  vmin=None,
                  vmax=None,
                  color=None,
-                 aspect=None,
                  background="#f0f0f0",
-                 pixel_size=1.0,
+                 pixel_size=None,
                  tick_size=None,
                  show_outline=True,
                  xlabel=None,
@@ -102,7 +124,6 @@ class SciPlot3d(SciPlot):
             unit=self.params["values"][self.name]["unit"],
             masks=self.masks[self.name],
             nan_color=self.params["values"][self.name]["nan_color"],
-            pixel_size=pixel_size,
             tick_size=tick_size,
             background=background,
             show_outline=show_outline,
@@ -113,19 +134,21 @@ class SciPlot3d(SciPlot):
             zlabel=zlabel)
 
         # An additional panel view with widgets to control the cut surface
-        self.panel = PlotPanel3d(pixel_size=pixel_size)
+        self.panel = PlotPanel3d(positions=positions,
+                                 unit=self.params["values"][self.name]["unit"])
 
         # The main controller module which connects all the parts
         self.controller = PlotController3d(
             axes=self.axes,
+            aspect=aspect,
             name=self.name,
             dim_to_shape=self.dim_to_shape,
             coord_shapes=self.coord_shapes,
             norm=norm,
             vmin=self.params["values"][self.name]["vmin"],
             vmax=self.params["values"][self.name]["vmax"],
-            pixel_size=pixel_size,
             scale=scale,
+            pixel_size=pixel_size,
             positions=positions,
             widgets=self.widgets,
             model=self.model,

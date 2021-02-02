@@ -111,10 +111,9 @@ TEST_F(BucketModelTest, values_const) {
 
 TEST_F(BucketModelTest, values_non_range) {
   auto i = make_indices({{2, 4}, {0, -1}});
-  Model model(i, Dim::X, buffer);
-  core::ElementArrayViewParams params(0, i.dims(), i.dims(), {});
-  EXPECT_EQ(*(model.values(params).begin() + 0), buffer.slice({Dim::X, 2, 4}));
-  EXPECT_EQ(*(model.values(params).begin() + 1), buffer.slice({Dim::X, 0}));
+  // The model would actually support this, but operations with such data do not
+  // handle this case, so it is disabled.
+  EXPECT_THROW(Model(i, Dim::X, buffer), except::SliceError);
 }
 
 TEST_F(BucketModelTest, out_of_order_indices) {

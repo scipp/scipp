@@ -39,6 +39,7 @@ General
    :toctree: ../generated
 
    abs
+   broadcast
    choose
    collapse
    concatenate

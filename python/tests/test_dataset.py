@@ -15,7 +15,16 @@ def test_shape():
     a = sc.Variable(['x'], shape=[2])
     b = sc.Variable(['y', 'z'], shape=[3, 4])
     d = sc.Dataset(data={'a': a, 'b': b})
-    assert not bool(set(d.shape) - set([4, 3, 2]))
+    assert not bool(set(d.shape) - set([2, 3, 4]))
+
+
+def test_sizes():
+    d = sc.Dataset(data={'a': sc.scalar(value=1)})
+    assert d.sizes == {}
+    a = sc.Variable(['x'], shape=[2])
+    b = sc.Variable(['y', 'z'], shape=[3, 4])
+    d = sc.Dataset(data={'a': a, 'b': b})
+    assert d.sizes == {'x': 2, 'y': 3, 'z': 4}
 
 
 def test_create_empty():

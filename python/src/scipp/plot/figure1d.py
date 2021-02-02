@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .figure import PlotFigure
+from .toolbar import PlotToolbar1d
 from .tools import get_line_param
 import numpy as np
 import copy as cp
@@ -38,7 +39,8 @@ class PlotFigure1d(PlotFigure):
                          title=title,
                          padding=padding,
                          xlabel=xlabel,
-                         ylabel=ylabel)
+                         ylabel=ylabel,
+                         toolbar=PlotToolbar1d)
 
         # Matplotlib line containers
         self.data_lines = {}

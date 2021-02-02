@@ -7,10 +7,10 @@
 
 #include "scipp/core/element/bin.h"
 #include "scipp/core/element/cumulative.h"
-#include "scipp/core/parallel.h"
-#include "scipp/core/tag_util.h"
 
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/bin_detail.h"
+#include "scipp/variable/bin_util.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/cumulative.h"
 #include "scipp/variable/reduction.h"
@@ -26,9 +26,27 @@
 
 #include "dataset_operations_common.h"
 
+using namespace scipp::variable::bin_detail;
+
 namespace scipp::dataset {
 
 namespace {
+
+template <class T> Variable as_subspan_view(T &&binned) {
+  if (binned.dtype() == dtype<core::bin<Variable>>) {
+    auto &&[indices, dim, buffer] =
+        binned.template constituents<core::bin<Variable>>();
+    return subspan_view(buffer, dim, indices);
+  } else if (binned.dtype() == dtype<core::bin<VariableView>>) {
+    auto &&[indices, dim, buffer] =
+        binned.template constituents<core::bin<VariableView>>();
+    return subspan_view(buffer, dim, indices);
+  } else {
+    auto &&[indices, dim, buffer] =
+        binned.template constituents<core::bin<VariableConstView>>();
+    return subspan_view(buffer, dim, indices);
+  }
+}
 
 auto make_range(const scipp::index begin, const scipp::index end,
                 const scipp::index stride, const Dim dim) {
@@ -38,17 +56,18 @@ auto make_range(const scipp::index begin, const scipp::index end,
 
 void update_indices_by_binning(const VariableView &indices,
                                const VariableConstView &key,
-                               const VariableConstView &edges) {
+                               const VariableConstView &edges,
+                               const bool linspace) {
   const auto dim = edges.dims().inner();
-  if (all(is_linspace(edges, dim)).value<bool>()) {
+  const auto &edge_view =
+      is_bins(edges) ? as_subspan_view(edges) : subspan_view(edges, dim);
+  if (linspace) {
     variable::transform_in_place(
-        indices, key, subspan_view(edges, dim),
+        indices, key, edge_view,
         core::element::update_indices_by_binning_linspace);
   } else {
-    if (!is_sorted(edges, dim))
-      throw except::BinEdgeError("Bin edges must be sorted.");
     variable::transform_in_place(
-        indices, key, subspan_view(edges, dim),
+        indices, key, edge_view,
         core::element::update_indices_by_binning_sorted_edges);
   }
 }
@@ -77,55 +96,42 @@ void update_indices_from_existing(const VariableView &indices, const Dim dim) {
                                core::element::update_indices_from_existing);
 }
 
-template <class T> Variable as_subspan_view(T &&binned) {
-  if (binned.dtype() == dtype<core::bin<Variable>>) {
-    auto &&[indices, dim, buffer] =
-        binned.template constituents<core::bin<Variable>>();
-    return subspan_view(buffer, dim, indices);
-  } else if (binned.dtype() == dtype<core::bin<VariableView>>) {
-    auto &&[indices, dim, buffer] =
-        binned.template constituents<core::bin<VariableView>>();
-    return subspan_view(buffer, dim, indices);
-  } else {
-    auto &&[indices, dim, buffer] =
-        binned.template constituents<core::bin<VariableConstView>>();
-    return subspan_view(buffer, dim, indices);
-  }
-}
-
-/// indices is a binned variable with sub-bin indices, i.e., new bins within
-/// bins
-Variable bin_sizes(const VariableConstView &sub_bin, const scipp::index nbin) {
-  const auto end = cumsum(broadcast(nbin * units::one, sub_bin.dims()));
-  const auto dim = variable::variableFactory().elem_dim(sub_bin);
-  auto sizes = make_bins(
-      zip(end - nbin * units::one, end), dim,
-      makeVariable<scipp::index>(Dims{dim}, Shape{end.dims().volume() * nbin}));
-  variable::transform_in_place(
-      as_subspan_view(sizes), as_subspan_view(sub_bin),
+/// `sub_bin` is a binned variable with sub-bin indices: new bins within bins
+Variable bin_sizes(const VariableConstView &sub_bin,
+                   const VariableConstView &offset,
+                   const VariableConstView &nbin) {
+  return variable::transform(
+      as_subspan_view(sub_bin), offset, nbin,
       core::element::count_indices); // transform bins, not bin element
-  return sizes;
 }
 
-template <class T>
+template <class T, class Builder>
 auto bin(const VariableConstView &data, const VariableConstView &indices,
-         const Dimensions &dims) {
+         const Builder &builder) {
+  const auto dims = builder.dims();
   // Setup offsets within output bins, for every input bin. If rebinning occurs
   // along a dimension each output bin sees contributions from all input bins
   // along that dim.
-  const auto nbin = dims.volume();
-  auto output_bin_sizes = bin_sizes(indices, nbin);
+  auto output_bin_sizes = bin_sizes(indices, builder.offsets(), builder.nbin());
   auto offsets = output_bin_sizes;
   fill_zeros(offsets);
+  // Not using cumsum along *all* dims, since some outer dims may be left
+  // untouched (no rebin).
   for (const auto dim : data.dims().labels())
-    if (dims.contains(dim)) {
-      offsets += cumsum(output_bin_sizes, dim, CumSumMode::Exclusive);
+    if (dims.contains(dim) && dims[dim] > 0) {
+      subbin_sizes_add_intersection(
+          offsets, subbin_sizes_cumsum_exclusive(output_bin_sizes, dim));
       output_bin_sizes = sum(output_bin_sizes, dim);
     }
-  offsets += cumsum_bins(output_bin_sizes, CumSumMode::Exclusive);
-  Variable filtered_input_bin_size = buckets::sum(output_bin_sizes);
+  // cumsum with bin dimension is last, since this corresponds to different
+  // output bins, whereas the cumsum above handled different subbins of same
+  // output bin, i.e., contributions of different input bins to some output bin.
+  subbin_sizes_add_intersection(
+      offsets, cumsum_exclusive_subbin_sizes(output_bin_sizes));
+  Variable filtered_input_bin_size = sum_subbin_sizes(output_bin_sizes);
   auto end = cumsum(filtered_input_bin_size);
-  const auto total_size = end.values<scipp::index>().as_span().back();
+  const auto total_size =
+      end.dims().volume() > 0 ? end.values<scipp::index>().as_span().back() : 0;
   end = broadcast(end, data.dims()); // required for some cases of rebinning
   const auto filtered_input_bin_ranges =
       zip(end - filtered_input_bin_size, end);
@@ -133,14 +139,13 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // Perform actual binning step for data, all coords, all masks, ...
   auto out_buffer = dataset::transform(bins_view<T>(data), [&](auto &&var) {
     if (!is_bins(var))
-      return std::move(var);
+      return std::forward<decltype(var)>(var);
     const auto &[input_indices, buffer_dim, in_buffer] =
         var.template constituents<core::bin<VariableConstView>>();
     static_cast<void>(input_indices);
     auto out = resize_default_init(in_buffer, buffer_dim, total_size);
     transform_in_place(subspan_view(out, buffer_dim, filtered_input_bin_ranges),
-                       as_subspan_view(std::as_const(offsets)),
-                       as_subspan_view(var), as_subspan_view(indices),
+                       offsets, as_subspan_view(var), as_subspan_view(indices),
                        core::element::bin);
     return out;
   });
@@ -148,9 +153,9 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   // Up until here the output was viewed with same bin index ranges as input.
   // Now switch to desired final bin indices.
   auto output_dims = merge(output_bin_sizes.dims(), dims);
-  auto bin_sizes =
-      reshape(std::get<2>(output_bin_sizes.constituents<core::bin<Variable>>()),
-              output_dims);
+  auto bin_sizes = makeVariable<scipp::index>(
+      output_dims,
+      Values(flatten_subbin_sizes(output_bin_sizes, dims.volume())));
   return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
 }
 
@@ -232,22 +237,73 @@ class TargetBinBuilder {
 
 public:
   const Dimensions &dims() const noexcept { return m_dims; }
+  const Variable &offsets() const noexcept { return m_offsets; }
+  const Variable &nbin() const noexcept { return m_nbin; }
 
   /// `bin_coords` may optionally be used to provide bin-based coords, e.g., for
   /// data that has prior grouping but did not retain the original group coord
   /// for every event.
   template <class Coords, class BinCoords = CoordsConstView>
   void build(const VariableView &indices, Coords &&coords,
-             BinCoords &&bin_coords = {}) const {
+             BinCoords &&bin_coords = {}) {
     const auto get_coord = [&](const Dim dim) {
       return coords.count(dim) ? coords[dim] : Variable(bin_coords.at(dim));
     };
+    m_offsets = makeVariable<scipp::index>(Values{0});
+    m_nbin = dims().volume() * units::one;
     for (const auto &[action, dim, key] : m_actions) {
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
-      else if (action == AxisAction::Bin)
-        update_indices_by_binning(indices, get_coord(dim), key);
-      else if (action == AxisAction::Existing)
+      else if (action == AxisAction::Bin) {
+        const auto linspace = all(is_linspace(key, dim)).template value<bool>();
+        // When binning along an existing dim with a coord (may be edges or
+        // not), not all input bins can map to all output bins. The array of
+        // subbin sizes that is normally created thus contains mainly zero
+        // entries, e.g.,:
+        // ---1
+        // --11
+        // --4-
+        // 111-
+        // 2---
+        //
+        // each row corresponds to an input bin
+        // each column corresponds to an output bin
+        // the example is for a single rebinned dim
+        // `-` is 0
+        //
+        // In practice this array of sizes can become very large (many GByte of
+        // memory) and has to be avoided. This is not just a performance issue.
+        // We detect this case, pre select relevant output bins, and store the
+        // sparse array in a specialized packed format, using the helper type
+        // SubbinSizes.
+        // Note that there is another source of memory consumption in the
+        // algorithm, `indices`, containing the index of the target bin for
+        // every input event. This is unrelated and varies independently,
+        // depending on parameters of the input.
+        if (bin_coords.count(dim) && m_offsets.dims().empty() &&
+            is_sorted(bin_coords.at(dim), dim)) {
+          const auto &bin_coord = bin_coords.at(dim);
+          const bool histogram =
+              bin_coord.dims()[dim] == indices.dims()[dim] + 1;
+          const auto begin =
+              begin_edge(histogram ? left_edge(bin_coord) : bin_coord, key);
+          const auto end = histogram ? end_edge(right_edge(bin_coord), key)
+                                     : begin + 2 * units::one;
+          const auto indices_ = zip(begin, end);
+          const auto inner_volume = dims().volume() / dims()[dim] * units::one;
+          // Number of non-zero entries (per "row" above)
+          m_nbin = (end - begin - 1 * units::one) * inner_volume;
+          // Offset to first non-zero entry (in "row" above)
+          m_offsets = begin * inner_volume;
+          // Mask out any output bin edges that need not be considered since
+          // there is no overlap between given input and output bin.
+          const auto masked_key = make_non_owning_bins(indices_, dim, key);
+          update_indices_by_binning(indices, get_coord(dim), masked_key,
+                                    linspace);
+        } else {
+          update_indices_by_binning(indices, get_coord(dim), key, linspace);
+        }
+      } else if (action == AxisAction::Existing)
         update_indices_from_existing(indices, dim);
       else if (action == AxisAction::Join) {
         ; // target bin 0 for all
@@ -303,6 +359,8 @@ public:
 
 private:
   Dimensions m_dims;
+  Variable m_offsets;
+  Variable m_nbin;
   std::vector<std::tuple<AxisAction, Dim, VariableConstView>> m_actions;
   std::vector<Variable> m_joined;
 };
@@ -412,8 +470,9 @@ Variable concat_bins(const VariableConstView &var, const Dim dim) {
   TargetBinBuilder builder;
   builder.erase(dim);
   TargetBins<T> target_bins(var, builder.dims());
+
   builder.build(*target_bins, std::map<Dim, Variable>{});
-  auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder.dims());
+  auto [buffer, bin_sizes] = bin<DataArray>(var, *target_bins, builder);
   squeeze(bin_sizes, {dim});
   const auto end = cumsum(bin_sizes);
   const auto buffer_dim = buffer.dims().inner();
@@ -452,15 +511,33 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
   const auto masked = hide_masked();
   TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
   builder.build(*target_bins, array.coords());
-  return add_metadata(
-      bin<DataArrayConstView>(masked, *target_bins, builder.dims()),
-      array.coords(), array.masks(), array.attrs(), builder.edges(),
-      builder.groups(), {reductionDim});
+  return add_metadata(bin<DataArrayConstView>(masked, *target_bins, builder),
+                      array.coords(), array.masks(), array.attrs(),
+                      builder.edges(), builder.groups(), {reductionDim});
 }
+
+namespace {
+void validate_bin_args(const std::vector<VariableConstView> &edges,
+                       const std::vector<VariableConstView> &groups) {
+  if (edges.empty() && groups.empty())
+    throw except::BucketError("Arguments 'edges' and 'groups' of scipp.bin are "
+                              "both empty. At least one must be set.");
+  for (const auto &edge : edges) {
+    const auto dim = edge.dims().inner();
+    if (edge.dims()[dim] < 2)
+      throw except::BinEdgeError("Not enough bin edges in dim " +
+                                 to_string(dim) + ". Need at least 2.");
+    if (!is_sorted(edge, dim))
+      throw except::BinEdgeError("Bin edges in dim " + to_string(dim) +
+                                 " must be sorted.");
+  }
+}
+} // namespace
 
 DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &edges,
               const std::vector<VariableConstView> &groups) {
+  validate_bin_args(edges, groups);
   const auto &data = array.data();
   const auto &coords = array.coords();
   const auto &masks = array.masks();
@@ -488,12 +565,25 @@ DataArray bin(const DataArrayConstView &array,
     builder.build(target_bins_buffer, coords);
     const auto target_bins = make_non_owning_bins(
         indices, dim, VariableConstView(target_bins_buffer));
-    return add_metadata(
-        bin<DataArrayConstView>(tmp, target_bins, builder.dims()), coords,
-        masks, attrs, builder.edges(), builder.groups(), {});
+    return add_metadata(bin<DataArrayConstView>(tmp, target_bins, builder),
+                        coords, masks, attrs, builder.edges(), builder.groups(),
+                        {});
   }
 }
 
+/// Implementation of a generic binning algorithm.
+///
+/// The overall approach of this is as follows:
+/// 1. Find target bin index for every input event (bin entry)
+/// 2. Next, we conceptually want to do
+///        for(i < events.size())
+///          target_bin[bin_index[i]].push_back(events[i])
+///    However, scipp's data layout for event data is a single 1-D array, and
+///    not a list of vector, i.e., the conceptual line above does not work
+///    directly. We need to obtain offsets into the 1-D array first, roughly:
+///        bin_sizes = count(bin_index) // number of events per target bin
+///        bin_offset = cumsum(bin_sizes) - bin_sizes
+/// 3. Copy from input to output bin, based on offset
 template <class Coords, class Masks, class Attrs>
 DataArray bin(const VariableConstView &data, const Coords &coords,
               const Masks &masks, const Attrs &attrs,
@@ -505,9 +595,9 @@ DataArray bin(const VariableConstView &data, const Coords &coords,
   TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
   builder.build(*target_bins, bins_view<DataArrayConstView>(masked).coords(),
                 coords);
-  return add_metadata(
-      bin<DataArrayConstView>(masked, *target_bins, builder.dims()), coords,
-      masks, attrs, builder.edges(), builder.groups(), {});
+  return add_metadata(bin<DataArrayConstView>(masked, *target_bins, builder),
+                      coords, masks, attrs, builder.edges(), builder.groups(),
+                      {});
 }
 
 template DataArray bin(const VariableConstView &,
