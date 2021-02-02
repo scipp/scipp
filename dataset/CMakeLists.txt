@@ -1,5 +1,7 @@
-# SPDX-License-Identifier: GPL-3.0-or-later Copyright (c) 2019 Scipp
-# contributors (https://github.com/scipp)
+# ~~~
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# ~~~
 set(TARGET_NAME "scipp-dataset")
 set(INC_FILES
     ${dataset_INC_FILES}
