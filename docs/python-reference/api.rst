@@ -6,7 +6,6 @@ Classes
 .. autosummary::
    :toctree: ../generated
 
-   Dim
    Unit
    Variable
    VariableView
