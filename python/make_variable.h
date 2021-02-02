@@ -6,7 +6,6 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/units/unit.h"
-#include "make_variable.h"
 
 #include "time_point_cast.h"
 
