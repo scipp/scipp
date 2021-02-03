@@ -12,10 +12,10 @@
 #include "scipp/dataset/except.h"
 #include "scipp/variable/variable.h"
 
+#include "dtype.h"
 #include "numpy.h"
 #include "py_object.h"
 #include "pybind11.h"
-#include "time_point_cast.h"
 
 namespace py = pybind11;
 using namespace scipp;
@@ -42,12 +42,26 @@ template <class T> struct ElementTypeMap {
   using CppType = T;
   using PyType = T;
   constexpr static bool reinterpret = false;
+
+  static void check_assignable(const py::object &, const units::Unit &) {}
 };
 
 template <> struct ElementTypeMap<scipp::core::time_point> {
   using CppType = scipp::core::time_point;
   using PyType = int64_t;
   constexpr static bool reinterpret = true;
+
+  static void check_assignable(const py::object &obj, const units::Unit &unit) {
+    const auto &dtype = obj.cast<py::array>().dtype();
+    const auto np_unit = parse_datetime_dtype(
+        dtype.attr("name").cast<std::string_view>());
+    if (np_unit != unit) {
+      std::ostringstream oss;
+      oss << "Unable to assign datetime with unit " << to_string(np_unit)
+          << " to " << to_string(unit);
+      throw std::invalid_argument(oss.str());
+    }
+  }
 };
 
 /// Add element size as factor to strides.
@@ -180,16 +194,18 @@ template <class... Ts> class as_ElementArrayViewImpl {
   }
 
   template <class View>
-  static void set(const Dimensions &dims, const View &view,
+  static void set(const Dimensions &dims, const units::Unit &unit, const View &view,
                   const py::object &obj) {
     std::visit(
-        [&dims, &obj](const auto &view_) {
+        [&dims, &unit, &obj](const auto &view_) {
           using T =
               typename std::remove_reference_t<decltype(view_)>::value_type;
 
           if constexpr (std::is_pod_v<T>) {
             using TM = ElementTypeMap<T>;
+            TM::check_assignable(obj, unit);
             const auto &shape = dims.shape();
+            // Need py::array_t here to handle conversions like int -> float.
             const auto &data = obj.cast<py::array_t<typename TM::PyType>>();
             if (!std::equal(shape.begin(), shape.end(), data.shape(),
                             data.shape() + data.ndim()))
@@ -299,7 +315,7 @@ public:
 
   template <class Var>
   static void set_values(Var &view, const py::object &obj) {
-    set(view.dims(), get<get_values>(view), obj);
+    set(view.dims(), view.unit(), get<get_values>(view), obj);
   }
 
   template <class Var>
@@ -308,7 +324,7 @@ public:
       return remove_variances(view);
     if (!view.hasVariances())
       init_variances(view);
-    set(view.dims(), get<get_variances>(view), obj);
+    set(view.dims(), view.unit(), get<get_variances>(view), obj);
   }
 
   // Return a scalar value from a variable, implicitly requiring that the
