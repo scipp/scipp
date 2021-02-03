@@ -775,8 +775,8 @@ def convert_WorkspaceGroup_to_dataarray_dict(group_workspace, **kwargs):
     workspace_dict = {}
     for i in range(group_workspace.getNumberOfEntries()):
         workspace = group_workspace.getItem(i)
-        workspace_name = workspace.name().replace(f'_{group_workspace.name()}',
-                                                  '')
+        workspace_name = workspace.name().replace(f'{group_workspace.name()}',
+                                                  '').strip('_')
         workspace_dict[workspace_name] = from_mantid(workspace, **kwargs)
 
     return workspace_dict
