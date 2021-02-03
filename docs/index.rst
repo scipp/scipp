@@ -142,6 +142,7 @@ Documentation
    developer/api
    developer/concepts
    developer/architecture-decision-records
+   developer/deployment
 
 .. toctree::
    :caption: About
