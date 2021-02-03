@@ -40,3 +40,8 @@ scipp_function("binary" arithmetic operator- OP minus)
 scipp_function("binary" arithmetic operator* OP times)
 scipp_function("binary" arithmetic operator/ OP divide)
 setup_scipp_category(arithmetic)
+
+scipp_function("binary" logical operator| OP logical_or)
+scipp_function("binary" logical operator& OP logical_and)
+scipp_function("binary" logical operator^ OP logical_xor)
+setup_scipp_category(logical)

@@ -21,7 +21,7 @@ template <class T1, class T2 = T1> void bind_@OPNAME@(py::module &m) {
       py::arg("a"),py::arg("b"), py::call_guard<py::gil_scoped_release>());
 }
 
-void init_@NAME@(py::module &m) {
+void init_@OPNAME@(py::module &m) {
   bind_@OPNAME@<Variable>(m);
   bind_@OPNAME@<DataArray>(m);
   bind_@OPNAME@<DataArray, Variable>(m);

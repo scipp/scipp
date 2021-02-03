@@ -40,16 +40,6 @@ VariableView VariableView::operator^=(const VariableConstView &other) const {
   return *this;
 }
 
-Variable operator&(const VariableConstView &a, const VariableConstView &b) {
-  return transform(a, b, element::logical_and);
-}
-Variable operator|(const VariableConstView &a, const VariableConstView &b) {
-  return transform(a, b, element::logical_or);
-}
-Variable operator^(const VariableConstView &a, const VariableConstView &b) {
-  return transform(a, b, element::logical_xor);
-}
-
 Variable Variable::operator~() const {
   return transform(*this, core::element::logical_not);
 }
