@@ -62,6 +62,9 @@ constexpr auto times_equals =
     overloaded{mul_inplace_types, [](auto &&a, const auto &b) { a *= b; }};
 constexpr auto divide_equals =
     overloaded{div_inplace_types, [](auto &&a, const auto &b) { a /= b; }};
+constexpr auto mod_equals =
+    overloaded{arg_list<int64_t, int32_t, std::tuple<int64_t, int32_t>>,
+               [](auto &&a, const auto &b) { a %= b; }};
 
 struct add_types_t {
   constexpr void operator()() const noexcept;
@@ -96,6 +99,10 @@ constexpr auto divide =
                  else
                    return a / b;
                }};
+constexpr auto mod =
+    overloaded{arg_list<int64_t, int32_t, std::tuple<int32_t, int64_t>,
+                        std::tuple<int64_t, int32_t>>,
+               [](const auto a, const auto b) { return a % b; }};
 
 constexpr auto unary_minus =
     overloaded{arg_list<double, float, int64_t, int32_t, Eigen::Vector3d>,

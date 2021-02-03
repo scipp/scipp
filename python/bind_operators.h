@@ -5,6 +5,7 @@
 #pragma once
 
 #include "pybind11.h"
+#include "scipp/dataset/arithmetic.h"
 #include "scipp/dataset/generated_comparison.h"
 #include "scipp/dataset/generated_logical.h"
 #include "scipp/variable/arithmetic.h"
@@ -126,6 +127,18 @@ template <class RHSSetup> struct OpBinder {
           return a;
         },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    if constexpr (!(std::is_same_v<T, Dataset> ||
+                    std::is_same_v<T, DatasetView> ||
+                    std::is_same_v<Other, Dataset> ||
+                    std::is_same_v<Other, DatasetView>)) {
+      c.def(
+          "__imod__",
+          [](py::object &a, Other &b) {
+            a.cast<T &>() %= RHSSetup{}(b);
+            return a;
+          },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    }
   }
 
   template <class Other, class T, class... Ignored>
@@ -142,6 +155,14 @@ template <class RHSSetup> struct OpBinder {
     c.def(
         "__truediv__", [](T &a, Other &b) { return a / RHSSetup{}(b); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    if constexpr (!(std::is_same_v<T, Dataset> ||
+                    std::is_same_v<T, DatasetView> ||
+                    std::is_same_v<Other, Dataset> ||
+                    std::is_same_v<Other, DatasetView>)) {
+      c.def(
+          "__mod__", [](T &a, Other &b) { return a % RHSSetup{}(b); },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+    }
   }
 };
 

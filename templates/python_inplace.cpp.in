@@ -14,7 +14,6 @@ namespace py = pybind11;
 template <typename T> void bind_@OPNAME@(py::module &) {
 }
 
-
 void init_@OPNAME@(py::module &m) {
   bind_@OPNAME@<Variable>(m);
   bind_@OPNAME@<DataArray>(m);

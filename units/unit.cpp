@@ -77,6 +77,8 @@ Unit &Unit::operator/=(const Unit &other) {
   return static_cast<Unit &>(*this = *this / other);
 }
 
+Unit &Unit::operator%=(const Unit &other) { return operator/=(other); }
+
 Unit operator+(const Unit &a, const Unit &b) {
   if (a == b)
     return a;
@@ -152,6 +154,8 @@ Unit operator/(const Unit &a, const Unit &b) {
                             a.name() + ") / (" + b.name() + ')');
   return Unit::fromIndex(resultIndex);
 }
+
+Unit operator%(const Unit &a, const Unit &b) { return a / b; }
 
 Unit operator-(const Unit &a) { return static_cast<const Unit &>(a); }
 
