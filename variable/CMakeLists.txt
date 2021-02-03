@@ -91,6 +91,13 @@ target_include_directories(
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+if (PRECOMPILED_HEADERS)
+  target_precompile_headers(${TARGET_NAME} PUBLIC
+                            include/scipp/variable/transform.h
+                            include/scipp/variable/variable.h)
+endif()
+
 add_subdirectory(test)
 
 if(DYNAMIC_LIB)

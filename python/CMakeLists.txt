@@ -43,6 +43,10 @@ target_link_libraries(_scipp LINK_PRIVATE scipp-dataset scipp-neutron)
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
 set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 
+if (PRECOMPILED_HEADERS)
+  target_precompile_headers(_scipp PRIVATE pybind11.h)
+endif()
+
 add_sanitizers(_scipp)
 
 set(PY_FILES

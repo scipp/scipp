@@ -150,8 +150,10 @@ endif(NOT WIN32)
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
 
-# permissive- : Std compilant parsing, warnings (W3) set by CMake defaults
+# permissive- : Std compliant parsing, warnings (W3) set by CMake defaults
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-permissive->)
+
+option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" ON)
 
 enable_testing()
 
