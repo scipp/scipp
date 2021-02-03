@@ -26,11 +26,13 @@ class Case:
 ##############################
 #      CONFIGURATION         #
 
-# source directory, defaults to root of scipp repository
+# Source directory, defaults to root of scipp repository.
 SRCDIR = None
 
+# Build target for CMake.
 TARGET = "install"
 
+# CMake configuration arguments used for every case.
 COMMON_CMAKE_ARGS = dict(
     CMAKE_CXX_COMPILER=None,
     CMAKE_BUILD_TYPE="Debug",
@@ -38,26 +40,20 @@ COMMON_CMAKE_ARGS = dict(
     DYNAMIC_LIB="ON",
 )
 
-COMMON_BUILD_ARGS = ['-j12']
+# Build arguments used for every case.
+COMMON_BUILD_ARGS = ['-j6']
 
+# Cases to build, each can specify a set of options for configuration and build.
 CASES = [
     Case(name='base'),
-    Case(name='unit', cmake_args=dict(UNIT_PCH='ON')),
-    Case(name='core', cmake_args=dict(CORE_PCH='ON')),
-    Case(name='corunit', cmake_args=dict(CORE_PCH='ON', UNIT_PCH="ON")),
-    Case(name='corunitvar', cmake_args=dict(CORE_PCH='ON', UNIT_PCH="ON")),
+    Case(name='feature',
+         cmake_args=dict(MY_FEATURE='ON')),
+    Case(name='serial',
+         build_args=dict(j='1'))
 ]
 
-# CASES = [
-#     Case(name='base'),
-#     Case(name='feature',
-#          cmake_args=dict(DYNAMIC_LIB='OFF')),
-#          # cmake_args=dict(MY_FEATURE='ON')),
-#     Case(name='serial',
-#          build_args=dict(j='1'))
-# ]
-
-# None is implied
+# For every set of files provided here, the build is re-run after touching those files.
+# A clean build is always performed to set the baseline and configure the setup.
 TOUCH = [
     [Path('variable/include/scipp/variable/transform.h')],
     [Path('core/include/scipp/core/multi_index.h')],
