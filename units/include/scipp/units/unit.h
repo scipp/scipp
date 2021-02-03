@@ -71,7 +71,7 @@ struct supported_units {
                       kg *m / s, m / s, c, c *m, meV / c, dimensionless / c, K,
                       us / angstrom, us / (angstrom * angstrom),
                       us / (m * angstrom), angstrom / us, (m * angstrom) / us,
-                      ns, mm, dimensionless / meV, rad / s)));
+                      ns, mm, dimensionless / meV, rad / s, (m * m) / s)));
 };
 struct counts_unit {
   using type = decltype(boost_units::counts);
