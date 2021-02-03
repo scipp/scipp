@@ -227,6 +227,11 @@ def md_unit(frame):
 
 
 def validate_and_get_unit(unit, allow_empty=False):
+    if hasattr(unit, 'unitID'):
+        if unit.unitID() == 'Label':
+            unit = unit.name()
+        else:
+            unit = unit.unitID()
     known_units = {
         "DeltaE": ['energy-transfer', sc.units.meV],
         "TOF": ['tof', sc.units.us],
@@ -238,19 +243,13 @@ def validate_and_get_unit(unit, allow_empty=False):
             'Q^2',
             sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)
         ],
-        "Label": ['spectrum', sc.units.dimensionless],
+        "Spectrum": ['spectrum', sc.units.dimensionless],
         "Empty": ['empty', sc.units.dimensionless],
         "Counts": ['counts', sc.units.counts]
     }
 
     if unit not in known_units.keys():
-        if allow_empty:
-            return ['unknown', sc.units.dimensionless]
-        else:
-            raise RuntimeError("Unit not currently supported."
-                               "Possible values are: {}, "
-                               "got '{}'. ".format(
-                                   [k for k in known_units.keys()], unit))
+        return [str(unit), sc.units.dimensionless]
     else:
         return known_units[unit]
 
@@ -458,7 +457,7 @@ def _get_dtype_from_values(values, coerce_floats_to_ints):
 
 def init_spec_axis(ws):
     axis = ws.getAxis(1)
-    dim, unit = validate_and_get_unit(axis.getUnit().unitID())
+    dim, unit = validate_and_get_unit(axis.getUnit())
     values = axis.extractValues()
     dtype = _get_dtype_from_values(values, dim == 'spectrum')
     return dim, sc.Variable([dim], values=values, unit=unit, dtype=dtype)
@@ -473,7 +472,7 @@ def _convert_MatrixWorkspace_info(ws,
                                   advanced_geometry=False,
                                   load_run_logs=True):
     common_bins = ws.isCommonBins()
-    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit())
     source_pos, sample_pos = make_component_info(ws)
     pos, rot, shp = get_detector_properties(
         ws, source_pos, sample_pos, advanced_geometry=advanced_geometry)
@@ -529,7 +528,7 @@ def _convert_MatrixWorkspace_info(ws,
 
 
 def convert_monitors_ws(ws, converter, **ignored):
-    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit())
     spec_dim, spec_coord = init_spec_axis(ws)
     spec_info = spec_info = ws.spectrumInfo()
     comp_info = ws.componentInfo()
@@ -564,7 +563,7 @@ def convert_Workspace2D_to_data_array(ws,
                                       advanced_geometry=False,
                                       **ignored):
 
-    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit())
     spec_dim, spec_coord = init_spec_axis(ws)
 
     coords_labs_data = _convert_MatrixWorkspace_info(
@@ -615,7 +614,7 @@ def convert_EventWorkspace_to_data_array(ws,
                                          **ignored):
     from mantid.api import EventType
 
-    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit())
     spec_dim, spec_coord = init_spec_axis(ws)
     nHist = ws.getNumberHistograms()
     _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
@@ -776,7 +775,8 @@ def convert_WorkspaceGroup_to_dataarray_dict(group_workspace, **kwargs):
     workspace_dict = {}
     for i in range(group_workspace.getNumberOfEntries()):
         workspace = group_workspace.getItem(i)
-        workspace_name = workspace.name().replace(group_workspace.name(), '')
+        workspace_name = workspace.name().replace(f'_{group_workspace.name()}',
+                                                  '')
         workspace_dict[workspace_name] = from_mantid(workspace, **kwargs)
 
     return workspace_dict
