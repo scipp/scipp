@@ -1,0 +1,21 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Simon Heybrock
+#include "pybind11.h"
+
+#include "scipp/dataset/@ELEMENT_INCLUDE@.h"
+#include "scipp/variable/@ELEMENT_INCLUDE@.h"
+
+using namespace scipp;
+
+namespace py = pybind11;
+
+template <typename T> void bind_@OPNAME@(py::module &m) {
+}
+
+
+void init_@OPNAME@(py::module &m) {
+  bind_@OPNAME@<Variable>(m);
+  bind_@OPNAME@<DataArray>(m);
+}

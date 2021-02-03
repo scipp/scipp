@@ -133,11 +133,6 @@ public:
   bool operator!=(const VariableConstView &other) const;
   Variable operator-() const;
 
-  Variable &operator+=(const VariableConstView &other) &;
-  Variable &operator-=(const VariableConstView &other) &;
-  Variable &operator*=(const VariableConstView &other) &;
-  Variable &operator/=(const VariableConstView &other) &;
-
   Variable &operator|=(const VariableConstView &other) &;
   Variable &operator&=(const VariableConstView &other) &;
   Variable &operator^=(const VariableConstView &other) &;
@@ -345,11 +340,6 @@ public:
   // (would this suffer from the same issue?).
   template <class T> VariableView assign(const T &other) const;
 
-  VariableView operator+=(const VariableConstView &other) const;
-  VariableView operator-=(const VariableConstView &other) const;
-  VariableView operator*=(const VariableConstView &other) const;
-  VariableView operator/=(const VariableConstView &other) const;
-
   VariableView operator|=(const VariableConstView &other) const;
   VariableView operator&=(const VariableConstView &other) const;
   VariableView operator^=(const VariableConstView &other) const;
@@ -392,3 +382,5 @@ using variable::VariableConstView;
 using variable::VariableView;
 using variable::Variances;
 } // namespace scipp
+
+#include "scipp/variable/generated_arithmetic.h"

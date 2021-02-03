@@ -1,0 +1,32 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Simon Heybrock
+#include "scipp/dataset/@OPNAME@.h"
+#include "scipp/variable/@OPNAME@.h"
+
+#include "dataset_operations_common.h"
+
+namespace scipp::dataset {
+
+DataArray &@NAME@(DataArray &lhs, const VariableConstView &rhs) {
+  @NAME@(lhs.data(), rhs);
+  return lhs;
+}
+DataArray &@NAME@(DataArray &lhs, const DataArrayConstView &rhs) {
+  expect::coordsAreSuperset(lhs, rhs);
+  union_or_in_place(lhs.masks(), rhs.masks());
+  @NAME@(lhs.data(), rhs.data());
+  return lhs;
+}
+DataArrayView @NAME@(const DataArrayView &lhs, const VariableConstView &rhs) {
+  @NAME@(lhs.data(), rhs);
+  return lhs;
+}
+DataArrayView @NAME@(const DataArrayView &lhs, const DataArrayConstView &rhs) {
+  expect::coordsAreSuperset(lhs, rhs);
+  union_or_in_place(lhs.masks(), rhs.masks());
+  return @NAME@(lhs, rhs.data());
+}
+
+} // namespace scipp::dataset
