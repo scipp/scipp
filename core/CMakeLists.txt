@@ -81,6 +81,15 @@ target_include_directories(
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+if(PRECOMPILED_HEADERS)
+  target_precompile_headers(
+    ${TARGET_NAME} PUBLIC include/scipp/core/element_array.h
+    include/scipp/core/element_array_view.h include/scipp/core/multi_index.h
+    ${CMAKE_CURRENT_BINARY_DIR}/include/scipp/core/parallel.h
+  )
+endif()
+
 add_subdirectory(test)
 
 if(DYNAMIC_LIB)
