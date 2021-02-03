@@ -11,7 +11,7 @@ using namespace scipp;
 
 namespace py = pybind11;
 
-template <typename T> void bind_@OPNAME@(py::module &m) {
+template <typename T> void bind_@OPNAME@(py::module &) {
 }
 
 
