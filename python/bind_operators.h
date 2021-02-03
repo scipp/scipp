@@ -6,8 +6,10 @@
 
 #include "pybind11.h"
 #include "scipp/dataset/generated_comparison.h"
+#include "scipp/dataset/generated_logical.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
+#include "scipp/variable/logical.h"
 
 namespace py = pybind11;
 
@@ -184,33 +186,40 @@ void bind_boolean_unary(pybind11::class_<T, Ignored...> &c) {
 }
 
 template <class Other, class T, class... Ignored>
-void bind_boolean_operators(pybind11::class_<T, Ignored...> &c) {
+void bind_logical(pybind11::class_<T, Ignored...> &c) {
+  using T1 = const typename T::const_view_type;
+  using T2 = const typename Other::const_view_type;
   c.def(
-      "__or__", [](T &a, Other &b) { return a | b; }, py::is_operator(),
+      "__or__", [](T1 &a, T2 &b) { return a | b; }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());
   c.def(
-      "__xor__", [](T &a, Other &b) { return a ^ b; }, py::is_operator(),
+      "__xor__", [](T1 &a, T2 &b) { return a ^ b; }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());
   c.def(
-      "__and__", [](T &a, Other &b) { return a & b; }, py::is_operator(),
+      "__and__", [](T1 &a, T2 &b) { return a & b; }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());
+}
+
+template <class Other, class T, class... Ignored>
+void bind_in_place_logical(pybind11::class_<T, Ignored...> &c) {
+  using T2 = const typename Other::const_view_type;
   c.def(
       "__ior__",
-      [](py::object &a, Other &b) {
+      [](py::object &a, T2 &b) {
         a.cast<T &>() |= b;
         return a;
       },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
       "__ixor__",
-      [](py::object &a, Other &b) {
+      [](py::object &a, T2 &b) {
         a.cast<T &>() ^= b;
         return a;
       },
       py::is_operator(), py::call_guard<py::gil_scoped_release>());
   c.def(
       "__iand__",
-      [](py::object &a, Other &b) {
+      [](py::object &a, T2 &b) {
         a.cast<T &>() &= b;
         return a;
       },

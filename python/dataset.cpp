@@ -242,6 +242,8 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   bind_comparison<DataArrayConstView>(c);
   bind_comparison<VariableConstView>(c);
   bind_unary(c);
+  bind_logical<DataArray>(c);
+  bind_logical<Variable>(c);
 }
 
 template <class T> void bind_rebin(py::module &m) {
