@@ -4,16 +4,16 @@
 /// @author Simon Heybrock
 #include "pybind11.h"
 
-#include "scipp/dataset/@NAME@.h"
-#include "scipp/variable/@NAME@.h"
+#include "scipp/dataset/@OPNAME@.h"
+#include "scipp/variable/@OPNAME@.h"
 
 using namespace scipp;
 
 namespace py = pybind11;
 
-template <class T1, class T2 = T1> void bind_@NAME@(py::module &m) {
+template <class T1, class T2 = T1> void bind_@OPNAME@(py::module &m) {
   m.def(
-      "@NAME@", [](
+      "@OPNAME@", [](
         const typename T1::const_view_type &a,
         const typename T2::const_view_type &b) {
       return @NAME@(a,b);
@@ -22,8 +22,8 @@ template <class T1, class T2 = T1> void bind_@NAME@(py::module &m) {
 }
 
 void init_@NAME@(py::module &m) {
-  bind_@NAME@<Variable>(m);
-  bind_@NAME@<DataArray>(m);
-  bind_@NAME@<DataArray, Variable>(m);
-  bind_@NAME@<Variable, DataArray>(m);
+  bind_@OPNAME@<Variable>(m);
+  bind_@OPNAME@<DataArray>(m);
+  bind_@OPNAME@<DataArray, Variable>(m);
+  bind_@OPNAME@<Variable, DataArray>(m);
 }
