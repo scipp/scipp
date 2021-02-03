@@ -675,8 +675,8 @@ def convert_EventWorkspace_to_data_array(ws,
     # of `bins`?
     edges = coords_labs_data['coords'][dim]
     # Using range slice of thickness 1 to avoid transposing 2-D coords
-    coords_labs_data['coords'][dim] = sc.concatenate(edges[dim, 0:1],
-                                                     edges[dim, -2:-1], dim)
+    coords_labs_data['coords'][dim] = sc.concatenate(edges[dim, :1],
+                                                     edges[dim, -1:], dim)
 
     coords_labs_data["data"] = sc.bins(begin=begins,
                                        end=ends,
