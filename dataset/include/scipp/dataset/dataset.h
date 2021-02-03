@@ -701,33 +701,6 @@ private:
 
 SCIPP_DATASET_EXPORT DataArray operator-(const DataArrayConstView &a);
 
-SCIPP_DATASET_EXPORT DataArray operator+(const DataArrayConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator-(const DataArrayConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator*(const DataArrayConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator/(const DataArrayConstView &a,
-                                         const DataArrayConstView &b);
-
-SCIPP_DATASET_EXPORT DataArray operator+(const DataArrayConstView &a,
-                                         const VariableConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator-(const DataArrayConstView &a,
-                                         const VariableConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator*(const DataArrayConstView &a,
-                                         const VariableConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator/(const DataArrayConstView &a,
-                                         const VariableConstView &b);
-
-SCIPP_DATASET_EXPORT DataArray operator+(const VariableConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator-(const VariableConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator*(const VariableConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator/(const VariableConstView &a,
-                                         const DataArrayConstView &b);
-
 SCIPP_DATASET_EXPORT Dataset operator+(const DatasetConstView &lhs,
                                        const DatasetConstView &rhs);
 SCIPP_DATASET_EXPORT Dataset operator+(const DatasetConstView &lhs,
@@ -805,3 +778,5 @@ template <> struct is_view<DataArrayView> : std::true_type {};
 template <> struct is_view<DatasetConstView> : std::true_type {};
 template <> struct is_view<DatasetView> : std::true_type {};
 } // namespace scipp
+
+#include "scipp/dataset/generated_arithmetic.h"

@@ -18,59 +18,6 @@ DataArray operator-(const DataArrayConstView &a) {
   return DataArray(-a.data(), a.coords(), a.masks(), a.attrs());
 }
 
-DataArray operator+(const DataArrayConstView &a, const DataArrayConstView &b) {
-  return DataArray(a.data() + b.data(), union_(a.coords(), b.coords()),
-                   union_or(a.masks(), b.masks()),
-                   intersection(a.attrs(), b.attrs()));
-}
-
-DataArray operator-(const DataArrayConstView &a, const DataArrayConstView &b) {
-  return {a.data() - b.data(), union_(a.coords(), b.coords()),
-          union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
-}
-
-DataArray operator*(const DataArrayConstView &a, const DataArrayConstView &b) {
-  return {a.data() * b.data(), union_(a.coords(), b.coords()),
-          union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
-}
-
-DataArray operator/(const DataArrayConstView &a, const DataArrayConstView &b) {
-  return {a.data() / b.data(), union_(a.coords(), b.coords()),
-          union_or(a.masks(), b.masks()), intersection(a.attrs(), b.attrs())};
-}
-
-DataArray operator+(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() + b, a.coords(), a.masks(), a.attrs());
-}
-
-DataArray operator-(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() - b, a.coords(), a.masks(), a.attrs());
-}
-
-DataArray operator*(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() * b, a.coords(), a.masks(), a.attrs());
-}
-
-DataArray operator/(const DataArrayConstView &a, const VariableConstView &b) {
-  return DataArray(a.data() / b, a.coords(), a.masks(), a.attrs());
-}
-
-DataArray operator+(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a + b.data(), b.coords(), b.masks(), b.attrs());
-}
-
-DataArray operator-(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a - b.data(), b.coords(), b.masks(), b.attrs());
-}
-
-DataArray operator*(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a * b.data(), b.coords(), b.masks(), b.attrs());
-}
-
-DataArray operator/(const VariableConstView &a, const DataArrayConstView &b) {
-  return DataArray(a / b.data(), b.coords(), b.masks(), b.attrs());
-}
-
 DataArray &DataArray::operator+=(const DataArrayConstView &other) {
   expect::coordsAreSuperset(*this, other);
   union_or_in_place(masks(), other.masks());
