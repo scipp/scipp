@@ -11,12 +11,7 @@ namespace scipp::core {
 /// Time-point similar to std::chrono::time point but without compile-time unit.
 class time_point {
 public:
-  int64_t duration{0};
-
-  constexpr time_point() noexcept = default;
-  constexpr time_point(const int64_t &d) noexcept : duration(d){};
-  constexpr time_point(const int32_t &d) noexcept
-      : duration(static_cast<int64_t>(d)){};
+  int64_t duration;
 
   int64_t time_since_epoch() const noexcept { return duration; };
 
