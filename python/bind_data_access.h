@@ -36,6 +36,20 @@ template <class T> void init_variances(T &obj) {
     obj.setVariances(Variable(obj));
 }
 
+/// Map C++ types to Python types to perform conversion / reinterpret casting
+/// between scipp containers and numpy arrays.
+template <class T> struct ElementTypeMap {
+  using CppType = T;
+  using PyType = T;
+  constexpr static bool reinterpret = false;
+};
+
+template <> struct ElementTypeMap<scipp::core::time_point> {
+  using CppType = scipp::core::time_point;
+  using PyType = int64_t;
+  constexpr static bool reinterpret = true;
+};
+
 /// Add element size as factor to strides.
 template <class T>
 std::vector<ssize_t> numpy_strides(const std::vector<scipp::index> &s) {
@@ -172,16 +186,20 @@ template <class... Ts> class as_ElementArrayViewImpl {
         [&dims, &obj](const auto &view_) {
           using T =
               typename std::remove_reference_t<decltype(view_)>::value_type;
-          if constexpr (std::is_trivial_v<T>) {
-            auto &data = obj.cast<const py::array_t<T>>();
+
+          if constexpr (std::is_pod_v<T>) {
+            using TM = ElementTypeMap<T>;
             const auto &shape = dims.shape();
+            const auto &data = obj.cast<py::array_t<typename TM::PyType>>();
             if (!std::equal(shape.begin(), shape.end(), data.shape(),
                             data.shape() + data.ndim()))
               throw except::DimensionError("The shape of the provided data "
                                            "does not match the existing "
                                            "object.");
-            copy_flattened<T>(data, view_);
+            copy_flattened<TM::reinterpret>(data, view_);
           } else {
+            // py::array only supports POD types. Use a simple but expensive
+            // solution for other types.
             const auto &data = obj.cast<const std::vector<T>>();
             // TODO Related to #290, we should properly support
             // multi-dimensional input, and ignore bad shapes.
