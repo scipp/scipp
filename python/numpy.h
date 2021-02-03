@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <cstddef>
 #include <functional>
 
 #include "scipp/core/parallel.h"
@@ -12,24 +13,49 @@
 #include "pybind11.h"
 
 namespace py = pybind11;
+
+namespace scipp::detail {
+/// Copy the bytes of src into dst.
+template <class Source, class Destination>
+void reinterpret_copy_element(const Source &src, Destination &&dst) noexcept {
+  // Go through std::byte in order to avoid UB of casting Destination
+  // to Source or vice versa. Should be optimized away.
+  static_assert(sizeof(Destination) == sizeof(Source));
+  auto src_ptr = reinterpret_cast<const std::byte *>(&src);
+  std::remove_reference_t<Destination> &dst_ = dst;
+  auto dst_ptr = reinterpret_cast<std::byte *>(&dst_);
+  std::copy(src_ptr, src_ptr + sizeof(Source), dst_ptr);
+}
+
+template <bool reinterpret, class Source, class Destination>
+void copy_element(const Source &src, Destination &&dst) noexcept(reinterpret) {
+  if constexpr (reinterpret) {
+    reinterpret_copy_element(src, std::forward<Destination>(dst));
+  } else {
+    std::forward<Destination>(dst) = src;
+  }
+}
+} // namespace scipp::detail
+
 using namespace scipp;
 
-template <class T, class View>
+template <bool reinterpret, class T, class View>
 void copy_flattened_0d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
-  *it = r();
+  detail::copy_element<reinterpret>(r(), *it);
 }
 
-template <class T, class View>
+template <bool reinterpret, class T, class View>
 void copy_flattened_1d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
-  for (ssize_t i = 0; i < r.shape(0); ++i, ++it)
-    *it = r(i);
+  for (ssize_t i = 0; i < r.shape(0); ++i, ++it) {
+    detail::copy_element<reinterpret>(r(i), *it);
+  }
 }
 
-template <class T, class View>
+template <bool reinterpret, class T, class View>
 void copy_flattened_2d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   const auto begin = view.begin();
@@ -38,21 +64,21 @@ void copy_flattened_2d(const py::array_t<T> &data, View &&view) {
         auto it = begin + range.begin() * r.shape(1);
         for (ssize_t i = range.begin(); i < range.end(); ++i)
           for (ssize_t j = 0; j < r.shape(1); ++j, ++it)
-            *it = r(i, j);
+            detail::copy_element<reinterpret>(r(i, j), *it);
       });
 }
 
-template <class T, class View>
+template <bool reinterpret, class T, class View>
 void copy_flattened_3d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
   for (ssize_t i = 0; i < r.shape(0); ++i)
     for (ssize_t j = 0; j < r.shape(1); ++j)
       for (ssize_t k = 0; k < r.shape(2); ++k, ++it)
-        *it = r(i, j, k);
+        detail::copy_element<reinterpret>(r(i, j, k), *it);
 }
 
-template <class T, class View>
+template <bool reinterpret, class T, class View>
 void copy_flattened_4d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
@@ -60,7 +86,7 @@ void copy_flattened_4d(const py::array_t<T> &data, View &&view) {
     for (ssize_t j = 0; j < r.shape(1); ++j)
       for (ssize_t k = 0; k < r.shape(2); ++k)
         for (ssize_t l = 0; l < r.shape(3); ++l, ++it)
-          *it = r(i, j, k, l);
+          detail::copy_element<reinterpret>(r(i, j, k, l), *it);
 }
 
 template <class T> auto memory_begin_end(const py::buffer_info &info) {
@@ -79,40 +105,47 @@ template <class T> auto memory_begin_end(const py::buffer_info &info) {
 template <class T, class View>
 bool memory_overlaps(const py::array_t<T> &data, const View &view) {
   const auto &buffer_info = data.request();
-  const auto [data_begin, data_end] = memory_begin_end<T>(buffer_info);
+  const auto [data_begin, data_end] = memory_begin_end<std::byte>(buffer_info);
   const auto begin = view.begin();
   const auto end = view.end();
   if (begin == end) {
     return false;
   }
-  const auto view_begin = &*begin;
-  const auto view_end = &*end;
+  const auto view_begin = reinterpret_cast<const std::byte *>(&*begin);
+  const auto view_end = reinterpret_cast<const std::byte *>(&*end);
   // Note the use of std::less, pointer comparison with operator< may be
   // undefined behavior with pointers from different arrays.
-  return std::less<const T *>()(data_begin, view_end) &&
-         std::greater_equal<const T *>()(data_end, view_begin);
+  return std::less<>()(data_begin, view_end) &&
+         std::greater_equal<>()(data_end, view_begin);
 }
 
-template <class T, class View>
-void copy_flattened(py::array_t<T> data, View &&view) {
-  if (scipp::size(view) != data.size())
+/// Copy all elements from src into dst.
+/// Performs proper conversions from element type of src to element type of dst
+/// if reinterpret=false.
+/// Otherwise, elements in src are copied bitwise into dst.
+template <bool reinterpret, class T, class View>
+void copy_flattened(const py::array_t<T> &src, View &&dst) {
+  if (scipp::size(dst) != src.size())
     throw std::runtime_error(
         "Numpy data size does not match size of target object.");
-  if (memory_overlaps(data, view))
-    data = py::array_t<T>(data.request());
-  switch (data.ndim()) {
-  case 0:
-    return copy_flattened_0d(data, view);
-  case 1:
-    return copy_flattened_1d(data, view);
-  case 2:
-    return copy_flattened_2d(data, view);
-  case 3:
-    return copy_flattened_3d(data, view);
-  case 4:
-    return copy_flattened_4d(data, view);
-  default:
-    throw std::runtime_error("Numpy array has more dimensions than supported "
-                             "in the current implementation.");
-  }
+
+  const auto dispatch = [](const py::array_t<T> &src_, View &&dst_) {
+    switch (src_.ndim()) {
+    case 0:
+      return copy_flattened_0d<reinterpret>(src_, std::forward<View>(dst_));
+    case 1:
+      return copy_flattened_1d<reinterpret>(src_, std::forward<View>(dst_));
+    case 2:
+      return copy_flattened_2d<reinterpret>(src_, std::forward<View>(dst_));
+    case 3:
+      return copy_flattened_3d<reinterpret>(src_, std::forward<View>(dst_));
+    case 4:
+      return copy_flattened_4d<reinterpret>(src_, std::forward<View>(dst_));
+    default:
+      throw std::runtime_error("Numpy array has more dimensions than supported "
+                               "in the current implementation.");
+    }
+  };
+  dispatch(memory_overlaps(src, dst) ? py::array_t<T>(src.request()) : src,
+           std::forward<View>(dst));
 }
