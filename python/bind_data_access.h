@@ -198,9 +198,20 @@ template <class... Ts> class as_ElementArrayViewImpl {
                                            "object.");
             copy_flattened<TM::reinterpret>(data, view_);
           } else {
-            // py::array only supports POD types. Use a simple but expensive
-            // solution for other types.
-            const auto &data = obj.cast<const std::vector<T>>();
+            const auto &data = [&obj]() {
+              try {
+                // py::array only supports POD types. Use a simple but expensive
+                // solution for other types.
+                return obj.cast<const std::vector<T>>();
+              } catch (std::runtime_error &) {
+                const auto &array = obj.cast<py::array>();
+                std::ostringstream oss;
+                oss << "Unable to assign object of dtype "
+                    << py::str(array.dtype())
+                    << " to " << scipp::core::dtype<T>;
+                throw std::invalid_argument(oss.str());
+              }
+            }();
             // TODO Related to #290, we should properly support
             // multi-dimensional input, and ignore bad shapes.
             core::expect::sizeMatches(view_, data);
