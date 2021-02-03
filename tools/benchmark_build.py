@@ -1,0 +1,187 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+"""
+
+"""
+
+from dataclasses import dataclass, field
+from datetime import timedelta
+from itertools import chain, groupby, product
+from pathlib import Path
+import random
+import re
+import subprocess
+from typing import Dict, List
+from tempfile import TemporaryDirectory
+import sys
+
+
+@dataclass
+class Case:
+    name: str
+    cmake_args: Dict[str, str] = field(default_factory=dict)
+    build_args: List[str] = field(default_factory=list)
+
+
+##############################
+#      CONFIGURATION         #
+
+# source directory, defaults to root of scipp repository
+SRCDIR = None
+
+TARGET = "install"
+
+COMMON_CMAKE_ARGS = dict(
+    CMAKE_CXX_COMPILER=None,
+    CMAKE_BUILD_TYPE="Debug",
+    CMAKE_INTERPROCEDURAL_OPTIMIZATION="OFF",
+    DYNAMIC_LIB="ON",
+)
+
+COMMON_BUILD_ARGS = ['-j12']
+
+CASES = [
+    Case(name='base'),
+    Case(name='unit', cmake_args=dict(UNIT_PCH='ON')),
+    Case(name='core', cmake_args=dict(CORE_PCH='ON')),
+    Case(name='corunit', cmake_args=dict(CORE_PCH='ON', UNIT_PCH="ON")),
+    Case(name='corunitvar', cmake_args=dict(CORE_PCH='ON', UNIT_PCH="ON")),
+]
+
+# CASES = [
+#     Case(name='base'),
+#     Case(name='feature',
+#          cmake_args=dict(DYNAMIC_LIB='OFF')),
+#          # cmake_args=dict(MY_FEATURE='ON')),
+#     Case(name='serial',
+#          build_args=dict(j='1'))
+# ]
+
+# None is implied
+TOUCH = [
+    [Path('variable/include/scipp/variable/transform.h')],
+    [Path('core/include/scipp/core/multi_index.h')],
+]
+
+#                            #
+##############################
+
+
+# apply default config
+SRCDIR = Path(Path(__file__).resolve().parent.parent if SRCDIR is None else SRCDIR)
+
+
+def make_dirs(base_dir):
+    base_dir = Path(base_dir).resolve()
+    index = 0
+    while True:
+        build_dir = base_dir / f'build_{index:04d}'
+        build_dir.mkdir()
+        install_dir = base_dir / f'install_{index:04d}'
+        install_dir.mkdir()
+        index += 1
+        yield build_dir, install_dir
+
+
+def grope(paths):
+    if paths is None:
+        return
+    for path in paths:
+        (SRCDIR / path).touch()
+
+
+def configure(case, build_dir, install_dir):
+    cmake_args = [f'-D{key}={val}' for key, val in chain(COMMON_CMAKE_ARGS.items(),
+                                                         case.cmake_args.items()) if val]
+    cmake_args.extend([f'-DCMAKE_INSTALL_PREFIX={install_dir}',
+                       f'-DPYTHON_EXECUTABLE={sys.executable}',
+                       str(SRCDIR)])
+
+    try:
+        subprocess.run(['cmake', *cmake_args], capture_output=True, check=True,
+                       encoding='utf-8', cwd=build_dir)
+    except subprocess.CalledProcessError as err:
+        print(f"Configuring build '{case.name}' failed:\n{err.stdout}\n{err.stderr}")
+        sys.exit(1)
+
+
+@dataclass
+class Times:
+    real: timedelta
+    user: timedelta
+
+    @classmethod
+    def parse(cls, msg):
+        time_pattern = re.compile(r'(real|user|sys)\s+(\d+)m(\d+)[,.]?(\d*)s')
+        times_dict = dict()
+        for line in msg.rsplit('\n', 10)[1:]:  # do not look at all of the output, it can get very long
+            match = time_pattern.match(line)
+            if match:
+                # Truncate sub second results, those will not be reliable.
+                times_dict[match[1]] = timedelta(minutes=int(match[2]),
+                                                 seconds=int(match[3]))
+        try:
+            return cls(times_dict['real'], times_dict['user'])
+        except KeyError:
+            print('Did not find all required time measurements in the output')
+            raise
+
+
+def build(case, build_dir):
+    build_args = ['--build', '.', '--target', TARGET]
+    all_build_args = [*COMMON_BUILD_ARGS, *case.build_args]
+    if all_build_args:
+        build_args.append('--')
+        build_args.extend(all_build_args)
+    try:
+        res = subprocess.run(' '.join(['time', 'cmake', *build_args]), capture_output=True,
+                             check=True, encoding='utf-8', cwd=build_dir, shell=True)
+    except subprocess.CalledProcessError as err:
+        print(f"Build '{case.name}' failed:\n{err.stdout}\n{err.stderr}")
+        sys.exit(1)
+
+    return Times.parse(res.stderr)
+
+
+def report(results):
+    print('Result:\n')
+    results = sorted(sorted(results, key=lambda t: t[0]),
+                     key=lambda t: ' '.join('' if t[1] == 'clean' else str(t[1])))
+    printed_names = False
+    for touch, group in groupby(results, key=lambda t: t[1]):
+        names, _, times = zip(*group)
+        if not printed_names:
+            print(f'                      ' + '  '.join(f'{name:20s}' for name in names) + '\n')
+            printed_names = True
+        if touch:
+            for path in touch[:-1]:
+                print(f'{str(path)[-20::]:20s}')
+        touch = touch[-1] if touch else ''
+        time_strs = [
+            f'R{time.real.seconds // 60:2d}m{time.real.seconds % 60:02d}s '
+            f'U{time.user.seconds // 60:2d}m{time.user.seconds % 60:02d}s'
+            for time in times]
+        print(f'{str(touch)[-20::]:20s}  ' + '  '.join(f'{time:20s}' for time in time_strs) + '\n')
+
+
+def main():
+    results = []
+    with TemporaryDirectory(dir='./') as working_dir:
+        for case, dirs in zip(CASES, make_dirs(working_dir)):
+            print(f"Running '{case.name}'")
+            print('    Clean build')
+            configure(case, *dirs)
+            times = build(case, dirs[0])
+            results.append((case.name, ['clean'], times))
+
+            for touch in TOUCH:
+                grope(touch)
+                print('    Touching ', touch)
+                times = build(case, dirs[0])
+                results.append((case.name, touch, times))
+
+    report(results)
+
+
+if __name__ == '__main__':
+    main()
