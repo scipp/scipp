@@ -9,11 +9,26 @@ Since v0.5
 Features
 ~~~~~~~~
 
+* Add ``sizes`` properties, an ordered ``dict`` to lookup the size of a specific dimension [#1636](https://github.com/scipp/scipp/pull/1636).
+* Add more functions for data arrays that were previously available only for variables [#1638](https://github.com/scipp/scipp/pull/1638).
+* ``scipp.neutron``
+
+  * Support unit conversion to energy transfer, for inelastic TOF experiments [#1635](https://github.com/scipp/scipp/pull/1635).
+  * Support loading/converting Mantid ``WorkspaceGroup``, this will produce a ``dict`` of data arrays [#1654](https://github.com/scipp/scipp/pull/1654).
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~
+
+Matthew Andrew,
+Owen Arnold,
+Simon Heybrock,
+Matthew D. Jones,
+Andrew McCluskey,
+Neil Vaytet,
+and Jan-Lukas Wynen
 
 v0.5.0 (January 2021)
 -------------------
@@ -66,7 +81,7 @@ Matthew D. Jones,
 Daniel Nixon,
 Piotr Rozyczko,
 Neil Vaytet,
-and Jan-Lukas Wynen,
+and Jan-Lukas Wynen
 
 v0.4 (July 2020)
 ----------------
