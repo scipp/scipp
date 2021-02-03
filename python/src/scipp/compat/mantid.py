@@ -194,7 +194,7 @@ def md_dimension(mantid_dim, index):
 
     # Look for common/known mantid dimensions
     patterns = ["DeltaE", "T"]
-    dims = ['Delta-E', 'temperature']
+    dims = ['energy-transfer', 'temperature']
     pattern_result = zip(patterns, dims)
     for pattern, result in pattern_result:
         if re.search(pattern, mantid_dim.name, re.IGNORECASE):
@@ -228,7 +228,7 @@ def md_unit(frame):
 
 def validate_and_get_unit(unit, allow_empty=False):
     known_units = {
-        "DeltaE": ['Delta-E', sc.units.meV],
+        "DeltaE": ['energy-transfer', sc.units.meV],
         "TOF": ['tof', sc.units.us],
         "Wavelength": ['wavelength', sc.units.angstrom],
         "Energy": ['energy', sc.units.meV],
@@ -669,14 +669,15 @@ def convert_EventWorkspace_to_data_array(ws,
     coords_labs_data = _convert_MatrixWorkspace_info(
         ws, advanced_geometry=advanced_geometry, load_run_logs=load_run_logs)
     # For now we ignore potential finer bin edges to avoid creating too many
-    # buckets. Use just a single bucket along dim and use extents given by
-    # workspace edges.
-    # TODO If there are events outside edges this might create buckets with
-    # events that are not within bucket bounds. Consider using `bin` instead
+    # bins. Use just a single bin along dim and use extents given by workspace
+    # edges.
+    # TODO If there are events outside edges this might create bins with
+    # events that are not within bin bounds. Consider using `bin` instead
     # of `bins`?
     edges = coords_labs_data['coords'][dim]
-    coords_labs_data['coords'][dim] = sc.concatenate(edges[dim, 0],
-                                                     edges[dim, -1], dim)
+    # Using range slice of thickness 1 to avoid transposing 2-D coords
+    coords_labs_data['coords'][dim] = sc.concatenate(edges[dim, 0:1],
+                                                     edges[dim, -2:-1], dim)
 
     coords_labs_data["data"] = sc.bins(begin=begins,
                                        end=ends,
@@ -955,10 +956,10 @@ def load_component_info(ds, file, advanced_geometry=False):
 
 def validate_dim_and_get_mantid_string(unit_dim):
     known_units = {
-        'Delta-E': "DeltaE",
+        'energy-transfer': "DeltaE",
         'tof': "TOF",
         'wavelength': "Wavelength",
-        'E': "Energy",
+        'energy': "Energy",
         'd-spacing': "dSpacing",
         'Q': "MomentumTransfer",
         'Q^2': "QSquared",

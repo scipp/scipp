@@ -30,6 +30,10 @@ SCIPP_NEUTRON_EXPORT variable::Variable
 scattering_angle(const dataset::DatasetConstView &d);
 SCIPP_NEUTRON_EXPORT variable::Variable
 two_theta(const dataset::DatasetConstView &d);
+SCIPP_NEUTRON_EXPORT variable::VariableConstView
+incident_energy(const dataset::DatasetConstView &d);
+SCIPP_NEUTRON_EXPORT variable::VariableConstView
+final_energy(const dataset::DatasetConstView &d);
 
 SCIPP_NEUTRON_EXPORT variable::VariableConstView
 position(const dataset::DataArrayConstView &d);
@@ -53,5 +57,9 @@ SCIPP_NEUTRON_EXPORT variable::Variable
 scattering_angle(const dataset::DataArrayConstView &d);
 SCIPP_NEUTRON_EXPORT variable::Variable
 two_theta(const dataset::DataArrayConstView &d);
+SCIPP_NEUTRON_EXPORT variable::VariableConstView
+incident_energy(const dataset::DataArrayConstView &d);
+SCIPP_NEUTRON_EXPORT variable::VariableConstView
+final_energy(const dataset::DataArrayConstView &d);
 
 } // namespace scipp::neutron

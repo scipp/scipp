@@ -19,7 +19,9 @@ public:
     Energy,
     EnergyTransfer,
     Event,
+    FinalEnergy,
     Group,
+    IncidentEnergy,
     Position,
     PulseTime,
     Q,
@@ -45,15 +47,17 @@ public:
   constexpr static auto Energy = Id::Energy;
   constexpr static auto EnergyTransfer = Id::EnergyTransfer;
   constexpr static auto Event = Id::Event;
+  constexpr static auto FinalEnergy = Id::FinalEnergy;
   constexpr static auto Group = Id::Group;
+  constexpr static auto IncidentEnergy = Id::IncidentEnergy;
   constexpr static auto Invalid = Id::Invalid;
   constexpr static auto Position = Id::Position;
   constexpr static auto PulseTime = Id::PulseTime;
   constexpr static auto Q = Id::Q;
+  constexpr static auto QSquared = Id::QSquared;
   constexpr static auto Qx = Id::Qx;
   constexpr static auto Qy = Id::Qy;
   constexpr static auto Qz = Id::Qz;
-  constexpr static auto QSquared = Id::QSquared;
   constexpr static auto Row = Id::Row;
   constexpr static auto ScatteringAngle = Id::ScatteringAngle;
   constexpr static auto Spectrum = Id::Spectrum;

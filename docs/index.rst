@@ -120,6 +120,7 @@ Documentation
    :maxdepth: 3
 
    scipp-neutron/overview
+   scipp-neutron/unit-conversions
    scipp-neutron/groupby
    scipp-neutron/diffraction
    scipp-neutron/from-mantid-to-scipp
