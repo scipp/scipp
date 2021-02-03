@@ -771,6 +771,16 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
     return dataset
 
 
+def convert_WorkspaceGroup_to_dataarray_dict(group_workspace, **kwargs):
+    workspace_dict = {}
+    for i in range(group_workspace.getNumberOfEntries()):
+        workspace = group_workspace.getItem(i)
+        workspace_name = workspace.name().replace(group_workspace.name(), '')
+        workspace_dict[workspace_name] = from_mantid(workspace, **kwargs)
+
+    return workspace_dict
+
+
 def from_mantid(workspace, **kwargs):
     """Convert Mantid workspace to a scipp data array or dataset.
     :param workspace: Mantid workspace to convert.
@@ -799,6 +809,9 @@ def from_mantid(workspace, **kwargs):
         scipp_obj = convert_TableWorkspace_to_dataset(workspace, **kwargs)
     elif w_id == 'MDHistoWorkspace':
         scipp_obj = convert_MDHistoWorkspace_to_data_array(workspace, **kwargs)
+    elif w_id == 'WorkspaceGroup':
+        scipp_obj = convert_WorkspaceGroup_to_dataarray_dict(
+            workspace, **kwargs)
 
     if scipp_obj is None:
         raise RuntimeError('Unsupported workspace type {}'.format(w_id))
@@ -899,7 +912,6 @@ def load(filename="",
             mantid.LoadInstrument(data_ws,
                                   FileName=instrument_filename,
                                   RewriteSpectraMap=True)
-
         return from_mantid(data_ws,
                            load_pulse_times=load_pulse_times,
                            error_connection=error_connection,
