@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 /// @author Neil Vaytet
 #include <stdexcept>
+#include <vector>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/units/cmath.hpp>
@@ -99,8 +100,13 @@ constexpr auto make_times_inner(std::tuple<Ts...>) {
   return std::array{times_(T{}, Ts{})...};
 }
 
-template <class... Ts> constexpr auto make_times_lut(std::tuple<Ts...>) {
-  return std::array{make_times_inner<Ts>(std::tuple<Ts...>{})...};
+template <class... Ts> auto make_times_lut(std::tuple<Ts...>) {
+  return std::vector{make_times_inner<Ts>(std::tuple<Ts...>{})...};
+}
+
+template <class... Ts> auto times_lut() {
+  static auto lut = make_times_lut(supported_units_t{});
+  return lut;
 }
 
 template <class T, class... Ts>
@@ -113,8 +119,13 @@ constexpr auto make_divide_inner(std::tuple<Ts...>) {
   return std::array{divide_(T{}, Ts{})...};
 }
 
-template <class... Ts> constexpr auto make_divide_lut(std::tuple<Ts...>) {
-  return std::array{make_divide_inner<Ts>(std::tuple<Ts...>{})...};
+template <class... Ts> auto make_divide_lut(std::tuple<Ts...>) {
+  return std::vector{make_divide_inner<Ts>(std::tuple<Ts...>{})...};
+}
+
+template <class... Ts> auto divide_lut() {
+  static auto lut = make_divide_lut(supported_units_t{});
+  return lut;
 }
 
 template <class... Ts> constexpr auto make_sqrt_lut(std::tuple<Ts...>) {
@@ -127,8 +138,7 @@ template <class... Ts> constexpr auto make_sqrt_lut(std::tuple<Ts...>) {
 }
 
 Unit operator*(const Unit &a, const Unit &b) {
-  static constexpr auto lut = make_times_lut(supported_units_t{});
-  auto resultIndex = lut[a.index()][b.index()];
+  auto resultIndex = times_lut()[a.index()][b.index()];
   if (resultIndex < 0)
     throw except::UnitError("Unsupported unit as result of multiplication: (" +
                             a.name() + ") * (" + b.name() + ')');
@@ -136,8 +146,7 @@ Unit operator*(const Unit &a, const Unit &b) {
 }
 
 Unit operator/(const Unit &a, const Unit &b) {
-  static constexpr auto lut = make_divide_lut(supported_units_t{});
-  auto resultIndex = lut[a.index()][b.index()];
+  auto resultIndex = divide_lut()[a.index()][b.index()];
   if (resultIndex < 0)
     throw except::UnitError("Unsupported unit as result of division: (" +
                             a.name() + ") / (" + b.name() + ')');
