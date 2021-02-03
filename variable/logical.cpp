@@ -10,36 +10,6 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-Variable &Variable::operator|=(const VariableConstView &other) & {
-  VariableView(*this) |= other;
-  return *this;
-}
-
-Variable &Variable::operator&=(const VariableConstView &other) & {
-  VariableView(*this) &= other;
-  return *this;
-}
-
-Variable &Variable::operator^=(const VariableConstView &other) & {
-  VariableView(*this) ^= other;
-  return *this;
-}
-
-VariableView VariableView::operator|=(const VariableConstView &other) const {
-  transform_in_place(*this, other, element::logical_or_equals);
-  return *this;
-}
-
-VariableView VariableView::operator&=(const VariableConstView &other) const {
-  transform_in_place(*this, other, element::logical_and_equals);
-  return *this;
-}
-
-VariableView VariableView::operator^=(const VariableConstView &other) const {
-  transform_in_place(*this, other, element::logical_xor_equals);
-  return *this;
-}
-
 Variable Variable::operator~() const {
   return transform(*this, core::element::logical_not);
 }

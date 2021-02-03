@@ -275,8 +275,6 @@ Mostly equivalent to Variable, see there for details.)");
   bind_boolean_unary(variableView);
   bind_logical<Variable>(variable);
   bind_logical<Variable>(variableView);
-  bind_in_place_logical<Variable>(variable);
-  bind_in_place_logical<Variable>(variableView);
 
   bind_data_properties(variable);
   bind_data_properties(variableView);

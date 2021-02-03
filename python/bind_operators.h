@@ -198,11 +198,6 @@ void bind_logical(pybind11::class_<T, Ignored...> &c) {
   c.def(
       "__and__", [](T1 &a, T2 &b) { return a & b; }, py::is_operator(),
       py::call_guard<py::gil_scoped_release>());
-}
-
-template <class Other, class T, class... Ignored>
-void bind_in_place_logical(pybind11::class_<T, Ignored...> &c) {
-  using T2 = const typename Other::const_view_type;
   c.def(
       "__ior__",
       [](py::object &a, T2 &b) {
