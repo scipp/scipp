@@ -645,7 +645,8 @@ def test_to_rot_from_vectors():
                     reason='Mantid framework is unavailable')
 @pytest.mark.parametrize(
     "param_dim",
-    ('tof', 'wavelength', 'E', 'd-spacing', 'Q', 'Q^2', 'Delta-E'))
+    ('tof', 'wavelength', 'energy', 'd-spacing', 'Q', 'Q^2', 'energy-transfer')
+)
 def test_to_workspace_2d(param_dim):
     from mantid.simpleapi import mtd
     mtd.clear()

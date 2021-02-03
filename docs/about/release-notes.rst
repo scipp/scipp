@@ -15,6 +15,7 @@ Features
 
   * Support unit conversion to energy transfer, for inelastic TOF experiments [#1635](https://github.com/scipp/scipp/pull/1635).
   * Support loading/converting Mantid ``WorkspaceGroup``, this will produce a ``dict`` of data arrays [#1654](https://github.com/scipp/scipp/pull/1654).
+  * Fixes to support loading/converting ``McStasNexus`` files [#1659](https://github.com/scipp/scipp/pull/1659).
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
