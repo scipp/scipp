@@ -11,18 +11,19 @@ using namespace scipp;
 
 namespace py = pybind11;
 
-template <typename T> void bind_@NAME@(py::module &m) {
+template <class T1, class T2 = T1> void bind_@NAME@(py::module &m) {
   m.def(
       "@NAME@", [](
-        const typename T::const_view_type &a,
-        const typename T::const_view_type &b) {
+        const typename T1::const_view_type &a,
+        const typename T2::const_view_type &b) {
       return @NAME@(a,b);
       },
       py::arg("a"),py::arg("b"), py::call_guard<py::gil_scoped_release>());
 }
 
-
 void init_@NAME@(py::module &m) {
   bind_@NAME@<Variable>(m);
   bind_@NAME@<DataArray>(m);
+  bind_@NAME@<DataArray, Variable>(m);
+  bind_@NAME@<Variable, DataArray>(m);
 }

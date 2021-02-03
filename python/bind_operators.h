@@ -5,6 +5,7 @@
 #pragma once
 
 #include "pybind11.h"
+#include "scipp/dataset/generated_comparison.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
 

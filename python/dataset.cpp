@@ -5,6 +5,7 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
+#include "scipp/dataset/generated_comparison.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/map_view.h"
 #include "scipp/dataset/math.h"
@@ -238,6 +239,8 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   bind_binary<DatasetView>(c);
   bind_binary<DataArrayView>(c);
   bind_binary<VariableConstView>(c);
+  bind_comparison<DataArrayConstView>(c);
+  bind_comparison<VariableConstView>(c);
   bind_unary(c);
 }
 

@@ -17,4 +17,12 @@ DataArray @NAME@(const DataArrayConstView &a, const DataArrayConstView &b) {
       intersection(a.attrs(), b.attrs()));
 }
 
+DataArray @NAME@(const DataArrayConstView &a, const VariableConstView &b) {
+  return DataArray(@NAME@(a.data(), b), a.coords(), a.masks(), a.attrs());
+}
+
+DataArray @NAME@(const VariableConstView &a, const DataArrayConstView &b) {
+  return DataArray(@NAME@(a, b.data()), b.coords(), b.masks(), b.attrs());
+}
+
 } // namespace scipp::dataset
