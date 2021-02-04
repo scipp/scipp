@@ -57,6 +57,33 @@ template <> struct ElementTypeMap<scipp::core::time_point> {
   static void check_assignable(const py::object &obj, units::Unit unit);
 };
 
+/// Cast a py::object referring to an array to py::array_t<T> if supported.
+/// Otherwise, copies the contents into a std::vector<T>.
+template <class T>
+auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
+  if constexpr (std::is_pod_v<T>) {
+    using TM = ElementTypeMap<T>;
+    TM::check_assignable(obj, unit);
+    // Casting to py::array_t applies all sorts of automatic conversions
+    // such as integer to double, if required.
+    return obj.cast<py::array_t<typename TM::PyType>>();
+  } else {
+    // py::array only supports POD types. Use a simple but expensive
+    // solution for other types.
+    // TODO Related to #290, we should properly support
+    //  multi-dimensional input, and ignore bad shapes.
+    try {
+      return obj.cast<const std::vector<T>>();
+    } catch (std::runtime_error &) {
+      const auto &array = obj.cast<py::array>();
+      std::ostringstream oss;
+      oss << "Unable to assign object of dtype " << py::str(array.dtype())
+          << " to " << scipp::core::dtype<T>;
+      throw std::invalid_argument(oss.str());
+    }
+  }
+}
+
 template <bool reinterpret, class T, class View>
 void copy_flattened_0d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();

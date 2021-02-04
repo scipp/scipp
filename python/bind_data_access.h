@@ -12,7 +12,6 @@
 #include "scipp/dataset/except.h"
 #include "scipp/variable/variable.h"
 
-#include "dtype.h"
 #include "numpy.h"
 #include "py_object.h"
 #include "pybind11.h"
@@ -166,42 +165,23 @@ template <class... Ts> class as_ElementArrayViewImpl {
   }
 
   template <class View>
-  static void set(const Dimensions &dims, const units::Unit &unit, const View &view,
-                  const py::object &obj) {
+  static void set(const Dimensions &dims, const units::Unit unit,
+                  const View &view, const py::object &obj) {
     std::visit(
         [&dims, &unit, &obj](const auto &view_) {
           using T =
               typename std::remove_reference_t<decltype(view_)>::value_type;
 
-          if constexpr (std::is_pod_v<T>) {
-            using TM = ElementTypeMap<T>;
-            TM::check_assignable(obj, unit);
+          const auto data = cast_to_array_like<T>(obj, unit);
+          if constexpr (std::is_pod_v<T>) {  // data is a py::array_t
             const auto &shape = dims.shape();
-            // Need py::array_t here to handle conversions like int -> float.
-            const auto &data = obj.cast<py::array_t<typename TM::PyType>>();
             if (!std::equal(shape.begin(), shape.end(), data.shape(),
                             data.shape() + data.ndim()))
               throw except::DimensionError("The shape of the provided data "
                                            "does not match the existing "
                                            "object.");
-            copy_flattened<TM::reinterpret>(data, view_);
-          } else {
-            const auto &data = [&obj]() {
-              try {
-                // py::array only supports POD types. Use a simple but expensive
-                // solution for other types.
-                return obj.cast<const std::vector<T>>();
-              } catch (std::runtime_error &) {
-                const auto &array = obj.cast<py::array>();
-                std::ostringstream oss;
-                oss << "Unable to assign object of dtype "
-                    << py::str(array.dtype())
-                    << " to " << scipp::core::dtype<T>;
-                throw std::invalid_argument(oss.str());
-              }
-            }();
-            // TODO Related to #290, we should properly support
-            // multi-dimensional input, and ignore bad shapes.
+            copy_flattened<ElementTypeMap<T>::reinterpret>(data, view_);
+          } else {  // data is a std::vector
             core::expect::sizeMatches(view_, data);
             std::copy(data.begin(), data.end(), view_.begin());
           }
