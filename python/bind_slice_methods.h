@@ -47,25 +47,15 @@ auto from_py_slice(const T &source,
 
 template <class View> struct SetData {
   template <class T> struct Impl {
-    static void apply(View &slice, const py::array &data) {
+    static void apply(View &slice, const py::object &obj) {
       if (slice.hasVariances())
         throw std::runtime_error("Data object contains variances, to set data "
                                  "values use the `values` property or provide "
                                  "a tuple of values and variances.");
-      // Pybind11 converts py::array to py::array_t for us, with all sorts of
-      // automatic conversions such as integer to double, if required.
-      py::array_t<T> dataT(data);
 
-      const auto &dims = slice.dims();
-      const py::buffer_info info = dataT.request();
-      const auto &shape = dims.shape();
-      if (!std::equal(info.shape.begin(), info.shape.end(), shape.begin(),
-                      shape.end()))
-        throw std::runtime_error(
-            "Shape mismatch when setting data from numpy array.");
-
-      auto buf = slice.template values<T>();
-      copy_flattened<T>(dataT, buf);
+      auto view = slice.template values<T>();
+      copy_array_into_view(cast_to_array_like<T>(obj, slice.unit()), view,
+                           slice.dims());
     }
   };
 };
@@ -129,24 +119,32 @@ template <class T> struct slicer {
 
   static void set_from_numpy(T &self,
                              const std::tuple<Dim, scipp::index> &index,
-                             const py::array &data) {
+                             const py::object &obj) {
     auto slice = slicer<T>::get(self, index);
     core::CallDType<double, float, int64_t, int32_t, bool>::apply<
-        SetData<decltype(slice)>::template Impl>(slice.dtype(), slice, data);
+        SetData<decltype(slice)>::template Impl>(slice.dtype(), slice, obj);
   }
 
-  static void
-  set_range_from_numpy(T &self, const std::tuple<Dim, const py::slice> &index,
-                       const py::array &data) {
+  static void set_from_numpy(T &self,
+                             const std::tuple<Dim, const py::slice> &index,
+                             const py::object &obj) {
     auto slice = slicer<T>::get_range(self, index);
     core::CallDType<double, float, int64_t, int32_t, bool>::apply<
-        SetData<decltype(slice)>::template Impl>(slice.dtype(), slice, data);
+        SetData<decltype(slice)>::template Impl>(slice.dtype(), slice, obj);
   }
 
   template <class Other>
-  static void set(T &self, const std::tuple<Dim, scipp::index> &index,
-                  const Other &data) {
+  static void set_from_view(T &self, const std::tuple<Dim, scipp::index> &index,
+                            const Other &data) {
     auto slice = slicer<T>::get(self, index);
+    slice.assign(data);
+  }
+
+  template <class Other>
+  static void set_from_view(T &self,
+                            const std::tuple<Dim, const py::slice> &index,
+                            const Other &data) {
+    auto slice = slicer<T>::get_range(self, index);
     slice.assign(data);
   }
 
@@ -158,11 +156,51 @@ template <class T> struct slicer {
     slice.assign(data);
   }
 
-  template <class Other>
-  static void set_range(T &self, const std::tuple<Dim, const py::slice> &index,
-                        const Other &data) {
-    auto slice = slicer<T>::get_range(self, index);
-    slice.assign(data);
+  // Manually dispatch based on the object we are assigning from in order to
+  // cast it correctly to a scipp view, numpy array or fallback std::vector.
+  // This needs to happen partly based on the dtype which cannot be encoded
+  // in the Python bindings directly.
+  template <class IndexOrRange>
+  static void set(T &self, const IndexOrRange &index,
+                  const py::object &data) {
+    if constexpr (std::is_same_v<T, Dataset> ||
+                  std::is_same_v<T, DatasetView>) {
+      if (py::isinstance<DatasetView>(data)) {
+        set_from_view(self, index, py::cast<DatasetView>(data));
+        return;
+      } else if (py::isinstance<Dataset>(data)) {
+        set_from_view(self, index, py::cast<Dataset>(data));
+        return;
+      }
+    } else if constexpr (std::is_same_v<T, DataArray> ||
+                         std::is_same_v<T, DataArrayView>) {
+      if (py::isinstance<DataArrayView>(data)) {
+        set_from_view(self, index, py::cast<DataArrayView>(data));
+        return;
+      } else if (py::isinstance<DataArray>(data)) {
+        set_from_view(self, index, py::cast<DataArray>(data));
+        return;
+      }
+    }
+
+    if constexpr (!std::is_same_v<T, Dataset> &&
+                  !std::is_same_v<T, DatasetView>) {
+      if (py::isinstance<VariableView>(data)) {
+        set_from_view(self, index, py::cast<VariableView>(data));
+        return;
+      } else if (py::isinstance<Variable>(data)) {
+        set_from_view(self, index, py::cast<Variable>(data));
+        return;
+      } else {
+        set_from_numpy(self, index, data);
+        return;
+      }
+    }
+
+    std::ostringstream oss;
+    oss << "Cannot to assign a " << py::str(data.get_type())
+        << " to a slice of a " << py::type_id<T>();
+    throw py::type_error(oss.str());
   }
 };
 
@@ -170,25 +208,16 @@ template <class T, class... Ignored>
 void bind_slice_methods(pybind11::class_<T, Ignored...> &c) {
   c.def("__getitem__", &slicer<T>::get, py::keep_alive<0, 1>());
   c.def("__getitem__", &slicer<T>::get_range, py::keep_alive<0, 1>());
-  if constexpr (!std::is_same_v<T, Dataset> &&
-                !std::is_same_v<T, DatasetView>) {
-    c.def("__setitem__", &slicer<T>::set_from_numpy);
-    c.def("__setitem__", &slicer<T>::set_range_from_numpy);
-    c.def("__setitem__", &slicer<T>::template set<VariableView>);
-    c.def("__setitem__", &slicer<T>::template set_range<VariableView>);
-  }
+  c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, scipp::index>>);
+  c.def("__setitem__", &slicer<T>::template set<std::tuple<Dim, py::slice>>);
   if constexpr (std::is_same_v<T, DataArray> ||
                 std::is_same_v<T, DataArrayView>) {
     c.def("__getitem__", &slicer<T>::get_by_value, py::keep_alive<0, 1>());
-    c.def("__setitem__", &slicer<T>::template set<DataArrayView>);
-    c.def("__setitem__", &slicer<T>::template set_range<DataArrayView>);
     c.def("__setitem__", &slicer<T>::template set_by_value<VariableView>);
     c.def("__setitem__", &slicer<T>::template set_by_value<DataArrayView>);
   }
   if constexpr (std::is_same_v<T, Dataset> || std::is_same_v<T, DatasetView>) {
     c.def("__getitem__", &slicer<T>::get_by_value, py::keep_alive<0, 1>());
-    c.def("__setitem__", &slicer<T>::template set<DatasetView>);
-    c.def("__setitem__", &slicer<T>::template set_range<DatasetView>);
     c.def("__setitem__", &slicer<T>::template set_by_value<DatasetView>);
   }
 }
