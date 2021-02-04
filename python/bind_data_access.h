@@ -171,20 +171,7 @@ template <class... Ts> class as_ElementArrayViewImpl {
         [&dims, &unit, &obj](const auto &view_) {
           using T =
               typename std::remove_reference_t<decltype(view_)>::value_type;
-
-          const auto data = cast_to_array_like<T>(obj, unit);
-          if constexpr (std::is_pod_v<T>) {  // data is a py::array_t
-            const auto &shape = dims.shape();
-            if (!std::equal(shape.begin(), shape.end(), data.shape(),
-                            data.shape() + data.ndim()))
-              throw except::DimensionError("The shape of the provided data "
-                                           "does not match the existing "
-                                           "object.");
-            copy_flattened<ElementTypeMap<T>::reinterpret>(data, view_);
-          } else {  // data is a std::vector
-            core::expect::sizeMatches(view_, data);
-            std::copy(data.begin(), data.end(), view_.begin());
-          }
+          copy_array_into_view(cast_to_array_like<T>(obj, unit), view_, dims);
         },
         view);
   }

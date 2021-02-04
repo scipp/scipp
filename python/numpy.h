@@ -194,3 +194,23 @@ void copy_flattened(const py::array_t<T> &src, View &&dst) {
   dispatch(memory_overlaps(src, dst) ? py::array_t<T>(src.request()) : src,
            std::forward<View>(dst));
 }
+
+template <class SourceDType, class Destination>
+void copy_array_into_view(const py::array_t<SourceDType> &src, Destination &dst,
+                          const Dimensions &dims) {
+  const auto &shape = dims.shape();
+  if (!std::equal(shape.begin(), shape.end(), src.shape(),
+                  src.shape() + src.ndim()))
+    throw except::DimensionError("The shape of the provided data "
+                                 "does not match the existing "
+                                 "object.");
+  copy_flattened<ElementTypeMap<typename Destination::value_type>::reinterpret>(
+      src, dst);
+}
+
+template <class SourceDType, class Destination>
+void copy_array_into_view(const std::vector<SourceDType> &src, Destination &dst,
+                          const Dimensions &) {
+  core::expect::sizeMatches(dst, src);
+  std::copy(begin(src), end(src), dst.begin());
+}
