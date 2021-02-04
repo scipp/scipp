@@ -10,31 +10,9 @@
 using namespace scipp;
 using scipp::units::Unit;
 
-/*
-TEST(DISABLED_UnitTest, constants) {
-  EXPECT_EQ(units::dimensionless, Unit(units::boost_units::dimensionless));
-  EXPECT_EQ(units::one, Unit(units::boost_units::dimensionless));
-  EXPECT_EQ(units::m, Unit(units::boost_units::m));
-  EXPECT_EQ(units::s, Unit(units::boost_units::s));
-  EXPECT_EQ(units::kg, Unit(units::boost_units::kg));
-  EXPECT_EQ(units::K, Unit(units::boost_units::K));
-  EXPECT_EQ(units::rad, Unit(units::boost_units::rad));
-  EXPECT_EQ(units::deg, Unit(units::boost_units::deg));
-  EXPECT_EQ(units::angstrom, Unit(units::boost_units::angstrom));
-  EXPECT_EQ(units::meV, Unit(units::boost_units::meV));
-  EXPECT_EQ(units::us, Unit(units::boost_units::us));
-  EXPECT_EQ(units::c, Unit(units::boost_units::c));
-  EXPECT_EQ(units::ns, Unit(units::boost_units::ns));
-}
-
 TEST(UnitTest, c) {
-  auto c = 1.0 * units::boost_units::c;
-  EXPECT_EQ(c.value(), 1.0);
-
-  boost::units::quantity<boost::units::si::velocity> si_c(c);
-  EXPECT_EQ(si_c.value(), 299792458.0);
+  EXPECT_EQ(units::c.underlying().multiplier(), 299792458.0);
 }
-*/
 
 TEST(UnitTest, cancellation) {
   EXPECT_EQ(Unit(units::deg / units::deg), units::dimensionless);
@@ -110,40 +88,6 @@ TEST(UnitTest, divide_counts) {
   Unit counts{units::counts};
   EXPECT_EQ(counts / counts, units::dimensionless);
 }
-
-/*
-TEST(UnitTest, conversion_factors) {
-  boost::units::quantity<units::detail::tof::wavelength> a(
-      2.0 * units::boost_units::angstrom);
-  boost::units::quantity<boost::units::si::length> b(
-      3.0 * units::boost_units::angstrom);
-  boost::units::quantity<units::detail::tof::wavelength> c(
-      4.0 * boost::units::si::meters);
-  boost::units::quantity<boost::units::si::area> d(
-      5.0 * boost::units::si::meters * units::boost_units::angstrom);
-  boost::units::quantity<units::detail::tof::energy> e =
-      6.0 * units::boost_units::meV;
-  boost::units::quantity<boost::units::si::energy> f(7.0 *
-                                                     units::boost_units::meV);
-  boost::units::quantity<boost::units::si::time> g(8.0 *
-                                                   units::boost_units::us);
-  boost::units::quantity<units::detail::tof::tof> h(9.0 *
-                                                    boost::units::si::seconds);
-  boost::units::quantity<boost::units::si::time> i(20 * units::boost_units::ns);
-
-  EXPECT_DOUBLE_EQ(a.value(), 2.0);
-  EXPECT_DOUBLE_EQ(b.value(), 3.0e-10);
-  EXPECT_DOUBLE_EQ(c.value(), 4.0e10);
-  EXPECT_DOUBLE_EQ(d.value(), 5.0e-10);
-  EXPECT_DOUBLE_EQ(e.value(), 6.0);
-  EXPECT_DOUBLE_EQ(f.value(),
-                   7.0e-3 *
-                       boost::units::si::constants::codata::e.value().value());
-  EXPECT_DOUBLE_EQ(g.value(), 8.0e-6);
-  EXPECT_DOUBLE_EQ(h.value(), 9.0e6);
-  EXPECT_EQ(i.value(), 2e-08);
-}
-*/
 
 TEST(UnitTest, neutron_units) {
   Unit c(units::c);
