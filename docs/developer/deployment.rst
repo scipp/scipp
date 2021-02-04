@@ -45,6 +45,6 @@ Mantid Framework Deployment Procedure
 #. Push the tag to origin, which will trigger the tagged release pipeline
 
 .. note::
-  As part of the ``conda build`` step (encoded in ``meta.yaml``), mantids imports are tested and the mantid-scipp interface is tested in ``run_test.sh``. Packaging can therefore fail if mantid does not appear to work (import) or there are incompatibilities between scipp and mantid.
+  As part of the ``conda build`` step (encoded in ``meta.yaml``), mantid's imports are tested and the mantid-scipp interface is tested in ``run_test.sh``. Packaging can therefore fail if mantid does not appear to work (import) or there are incompatibilities between scipp and mantid. Be aware of reasons for packaging failure.
 
 
