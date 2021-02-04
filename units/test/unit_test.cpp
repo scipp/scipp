@@ -10,6 +10,7 @@
 using namespace scipp;
 using scipp::units::Unit;
 
+/*
 TEST(DISABLED_UnitTest, constants) {
   EXPECT_EQ(units::dimensionless, Unit(units::boost_units::dimensionless));
   EXPECT_EQ(units::one, Unit(units::boost_units::dimensionless));
@@ -33,6 +34,7 @@ TEST(UnitTest, c) {
   boost::units::quantity<boost::units::si::velocity> si_c(c);
   EXPECT_EQ(si_c.value(), 299792458.0);
 }
+*/
 
 TEST(UnitTest, cancellation) {
   EXPECT_EQ(Unit(units::deg / units::deg), units::dimensionless);
@@ -109,6 +111,7 @@ TEST(UnitTest, divide_counts) {
   EXPECT_EQ(counts / counts, units::dimensionless);
 }
 
+/*
 TEST(UnitTest, conversion_factors) {
   boost::units::quantity<units::detail::tof::wavelength> a(
       2.0 * units::boost_units::angstrom);
@@ -140,6 +143,7 @@ TEST(UnitTest, conversion_factors) {
   EXPECT_DOUBLE_EQ(h.value(), 9.0e6);
   EXPECT_EQ(i.value(), 2e-08);
 }
+*/
 
 TEST(UnitTest, neutron_units) {
   Unit c(units::c);

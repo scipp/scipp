@@ -646,14 +646,15 @@ protected:
 // without dry-run, transform_in_place should not touch the data if there is a
 // failure. Maybe this should be a parametrized test?
 TEST_F(TransformInPlaceDryRunTest, unit_fail) {
-  auto a =
-      makeVariable<double>(Dims(), Shape(), units::Unit(units::m * units::m));
+  auto a = makeVariable<double>(Dims(), Shape(), units::m);
   const auto original(a);
 
-  EXPECT_THROW(dry_run::transform_in_place<double>(a, unary),
-               std::runtime_error);
+  EXPECT_THROW(
+      dry_run::transform_in_place<double>(a, [](auto &x) { x += x * x; }),
+      std::runtime_error);
   EXPECT_EQ(a, original);
-  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, a, binary),
+  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(
+                   a, a * a, [](auto &x, const auto &y) { x += y; }),
                std::runtime_error);
   EXPECT_EQ(a, original);
 }

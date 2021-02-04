@@ -126,17 +126,6 @@ void equals_any_of(const A &a, const std::initializer_list<B> possible) {
     throw scipp::except::MismatchError(a, possible);
 }
 
-template <class A, class Dim, class System, class Enable>
-void equals(const A &a, const boost::units::unit<Dim, System, Enable> &unit) {
-  const auto expectedUnit = units::Unit(unit);
-  if (a != expectedUnit)
-    throw scipp::except::MismatchError(a, expectedUnit);
-}
-template <class A, class Dim, class System, class Enable>
-void equals(const boost::units::unit<Dim, System, Enable> &unit, const A &a) {
-  equals(a, unit);
-}
-
 SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,
                                         const scipp::index length);
 

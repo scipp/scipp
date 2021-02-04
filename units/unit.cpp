@@ -6,48 +6,16 @@
 #include <stdexcept>
 #include <vector>
 
-#include <boost/lexical_cast.hpp>
-#include <boost/units/cmath.hpp>
-#include <boost/units/io.hpp>
-
 #include <units/units.hpp>
 
-#include "scipp/units/boost_units_util.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 
 namespace scipp::units {
 
-// Helper to check whether type is a member of a given std::tuple
-template <typename T, typename VARIANT_T> struct isTupleMember;
-template <typename T, typename... ALL_T>
-struct isTupleMember<T, std::tuple<ALL_T...>>
-    : public std::disjunction<std::is_same<T, ALL_T>...> {};
-// Helper to make checking for allowed units more compact
-template <class Units, class T> constexpr bool isKnownUnit(const T &) {
-  return isTupleMember<T, Units>::value;
-}
-
-template <class... Ts> auto make_name_lut(std::tuple<Ts...>) {
-  return std::array{std::string(boost::lexical_cast<std::string>(Ts{}))...};
-}
-
 std::string Unit::name() const { return to_string(m_unit); }
 
 bool Unit::isCounts() const { return *this == counts; }
-
-template <class Counts, class... Ts>
-constexpr auto make_count_density_lut(std::tuple<Ts...>) {
-  if constexpr (std::is_same_v<Counts, boost::units::si::dimensionless>) {
-    // Can we do anything better here? Checking for `dimensionless` in the
-    // nominator could be one option, but actually it would not be correct in
-    // general, e.g., for counts / velocity = s/m.
-    return std::array{!std::is_same_v<Ts, std::decay_t<Counts>>...};
-  } else {
-    return std::array{(!std::is_same_v<Ts, std::decay_t<Counts>> &&
-                       getExponent(Ts{}, Counts()) == 1)...};
-  }
-}
 
 bool Unit::isCountDensity() const {
   return !isCounts() && m_unit.base_units().count() != 0;
@@ -79,53 +47,6 @@ Unit operator-(const Unit &a, const Unit &b) {
     return a;
   throw except::UnitError("Cannot subtract " + a.name() + " and " + b.name() +
                           ".");
-}
-
-template <class T, class... Ts>
-constexpr auto make_times_inner(std::tuple<Ts...>) {
-  using Tuple = std::tuple<Ts...>;
-  constexpr auto times_ = [](auto x, auto y) -> int64_t {
-    using resultT = typename decltype(x * y)::unit_type;
-    return detail::unit_index(resultT{}, Tuple{});
-  };
-  return std::array{times_(T{}, Ts{})...};
-}
-
-template <class... Ts> auto make_times_lut(std::tuple<Ts...>) {
-  return std::vector{make_times_inner<Ts>(std::tuple<Ts...>{})...};
-}
-
-template <class... Ts> auto times_lut() {
-  static auto lut = make_times_lut(supported_units_t{});
-  return lut;
-}
-
-template <class T, class... Ts>
-constexpr auto make_divide_inner(std::tuple<Ts...>) {
-  using Tuple = std::tuple<Ts...>;
-  constexpr auto divide_ = [](auto x, auto y) -> int64_t {
-    using resultT = typename decltype(x / y)::unit_type;
-    return detail::unit_index(resultT{}, Tuple{});
-  };
-  return std::array{divide_(T{}, Ts{})...};
-}
-
-template <class... Ts> auto make_divide_lut(std::tuple<Ts...>) {
-  return std::vector{make_divide_inner<Ts>(std::tuple<Ts...>{})...};
-}
-
-template <class... Ts> auto divide_lut() {
-  static auto lut = make_divide_lut(supported_units_t{});
-  return lut;
-}
-
-template <class... Ts> constexpr auto make_sqrt_lut(std::tuple<Ts...>) {
-  using Tuple = std::tuple<Ts...>;
-  constexpr auto sqrt_ = [](auto x) -> int64_t {
-    using resultT = typename decltype(sqrt(1.0 * x))::unit_type;
-    return detail::unit_index(resultT{}, Tuple{});
-  };
-  return std::array{sqrt_(Ts{})...};
 }
 
 Unit operator*(const Unit &a, const Unit &b) {
