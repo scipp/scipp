@@ -18,9 +18,7 @@ template <class T> struct MakeVariable {
   static Variable apply(const std::vector<Dim> &labels, py::array values,
                         const std::optional<py::array> &variances,
                         const units::Unit unit) {
-    // Pybind11 converts py::array to py::array_t for us, with all sorts of
-    // automatic conversions such as integer to double, if required.
-    py::array_t<T> valuesT(values);
+    const auto valuesT = cast_to_array_like<T>(values, unit);
     py::buffer_info info = valuesT.request();
     Dimensions dims(labels, {info.shape.begin(), info.shape.end()});
     auto var = variances
@@ -31,15 +29,12 @@ template <class T> struct MakeVariable {
                    : makeVariable<T>(
                          Dimensions(dims),
                          Values(dims.volume(), core::default_init_elements));
-    copy_flattened<T>(valuesT, var.template values<T>());
-    if (variances) {
-      py::array_t<T> variancesT(*variances);
-      info = variancesT.request();
-      core::expect::equals(
-          dims, Dimensions(labels, {info.shape.begin(), info.shape.end()}));
-      copy_flattened<T>(variancesT, var.template variances<T>());
-    }
     var.setUnit(unit);
+    copy_array_into_view(valuesT, var.template values<T>(), dims);
+    if (variances) {
+      copy_array_into_view(cast_to_array_like<T>(*variances, unit),
+                           var.template variances<T>(), dims);
+    }
     return var;
   }
 };
@@ -117,13 +112,6 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
       return init_1D_no_variance(labels, shape,
                                  values.cast<std::vector<std::string>>(), unit);
     }
-    if (dtypeTag == core::dtype<scipp::core::time_point>) {
-      std::vector<scipp::index> shape(values.shape(),
-                                      values.shape() + values.ndim());
-      return init_1D_no_variance(
-          labels, shape, values.cast<std::vector<scipp::core::time_point>>(),
-          unit);
-    }
     if (dtypeTag == core::dtype<Eigen::Vector3d>) {
       std::vector<scipp::index> shape(values.shape(),
                                       values.shape() + values.ndim() - 1);
@@ -137,8 +125,9 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
     }
   }
 
-  return core::CallDType<double, float, int64_t, int32_t,
-                         bool, scipp::core::time_point>::apply<MakeVariable>(dtypeTag, labels, values,
+  return core::CallDType<
+      double, float, int64_t, int32_t, bool,
+      scipp::core::time_point>::apply<MakeVariable>(dtypeTag, labels, values,
                                                     variances, unit);
 }
 
