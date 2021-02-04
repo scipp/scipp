@@ -85,7 +85,7 @@ using counts_unit_t = typename boost_units::counts_unit::type;
 class SCIPP_UNITS_EXPORT Unit {
 public:
   constexpr Unit() = default;
-  constexpr Unit(const llnl::units::unit &u) noexcept : m_unit(u) {}
+  constexpr Unit(const llnl::units::precise_unit &u) noexcept : m_unit(u) {}
   template <class Dim, class System, class Enable>
   explicit constexpr Unit(boost::units::unit<Dim, System, Enable> unit) {
     constexpr auto index = detail::unit_index(unit, supported_units_t{});
@@ -114,7 +114,7 @@ public:
   Unit &operator%=(const Unit &other);
 
 private:
-  llnl::units::unit m_unit;
+  llnl::units::precise_unit m_unit;
 };
 
 SCIPP_UNITS_EXPORT Unit operator+(const Unit &a, const Unit &b);
@@ -133,20 +133,22 @@ SCIPP_UNITS_EXPORT Unit acos(const Unit &a);
 SCIPP_UNITS_EXPORT Unit atan(const Unit &a);
 SCIPP_UNITS_EXPORT Unit atan2(const Unit &y, const Unit &x);
 
-constexpr Unit dimensionless{llnl::units::one};
-constexpr Unit one{llnl::units::one}; /// alias for dimensionless
-constexpr Unit m{llnl::units::meter};
-constexpr Unit s{llnl::units::second};
-constexpr Unit kg{llnl::units::kg};
-constexpr Unit K{llnl::units::K};
-constexpr Unit rad{llnl::units::rad};
-constexpr Unit deg{llnl::units::deg};
-constexpr Unit us{llnl::units::micro * llnl::units::second};
-constexpr Unit ns{llnl::units::ns};
-constexpr Unit mm{llnl::units::mm};
-constexpr Unit counts{llnl::units::one};
-constexpr Unit angstrom{llnl::units::m};
-constexpr Unit meV{llnl::units::J};
-constexpr Unit c{llnl::units::m / llnl::units::s};
+constexpr Unit dimensionless{llnl::units::precise::one};
+constexpr Unit one{llnl::units::precise::one}; /// alias for dimensionless
+constexpr Unit m{llnl::units::precise::meter};
+constexpr Unit s{llnl::units::precise::second};
+constexpr Unit kg{llnl::units::precise::kg};
+constexpr Unit K{llnl::units::precise::K};
+constexpr Unit rad{llnl::units::precise::rad};
+constexpr Unit deg{llnl::units::precise::deg};
+constexpr Unit us{llnl::units::precise::micro * llnl::units::precise::second};
+constexpr Unit ns{llnl::units::precise::ns};
+constexpr Unit mm{llnl::units::precise::mm};
+constexpr Unit counts{llnl::units::precise::count};
+constexpr Unit angstrom{llnl::units::precise::distance::angstrom};
+constexpr Unit meV{llnl::units::precise::milli *
+                   llnl::units::precise::energy::eV};
+constexpr Unit c{
+    {llnl::units::precise::m / llnl::units::precise::s, 299792458}};
 
 } // namespace scipp::units

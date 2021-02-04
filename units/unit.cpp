@@ -34,7 +34,7 @@ template <class... Ts> auto make_name_lut(std::tuple<Ts...>) {
 
 std::string Unit::name() const { return to_string(m_unit); }
 
-bool Unit::isCounts() const { return *this == Unit(counts_unit_t{}); }
+bool Unit::isCounts() const { return *this == counts; }
 
 template <class Counts, class... Ts>
 constexpr auto make_count_density_lut(std::tuple<Ts...>) {
@@ -50,9 +50,7 @@ constexpr auto make_count_density_lut(std::tuple<Ts...>) {
 }
 
 bool Unit::isCountDensity() const {
-  static constexpr auto lut =
-      make_count_density_lut<counts_unit_t>(supported_units_t{});
-  return lut[index()];
+  return !isCounts() && m_unit.base_units().count() != 0;
 }
 
 bool Unit::operator==(const Unit &other) const {
@@ -131,21 +129,19 @@ template <class... Ts> constexpr auto make_sqrt_lut(std::tuple<Ts...>) {
 }
 
 Unit operator*(const Unit &a, const Unit &b) {
-  try {
-    return {a.underlying() * b.underlying()};
-  } catch (const std::runtime_error &) {
+  auto out = Unit{a.underlying() * b.underlying()};
+  if (out == llnl::units::precise::error)
     throw except::UnitError("Unsupported unit as result of multiplication: (" +
                             a.name() + ") * (" + b.name() + ')');
-  }
+  return out;
 }
 
 Unit operator/(const Unit &a, const Unit &b) {
-  try {
-    return {a.underlying() / b.underlying()};
-  } catch (const std::runtime_error &) {
+  auto out = Unit{a.underlying() / b.underlying()};
+  if (out == llnl::units::precise::error)
     throw except::UnitError("Unsupported unit as result of division: (" +
                             a.name() + ") / (" + b.name() + ')');
-  }
+  return out;
 }
 
 Unit operator%(const Unit &a, const Unit &b) { return a / b; }
@@ -155,12 +151,11 @@ Unit operator-(const Unit &a) { return a; }
 Unit abs(const Unit &a) { return a; }
 
 Unit sqrt(const Unit &a) {
-  try {
-    return {sqrt(a.underlying())};
-  } catch (const std::runtime_error &) {
+  auto out = Unit{sqrt(a.underlying())};
+  if (out == llnl::units::precise::error)
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
                             a.name() + ").");
-  }
+  return out;
 }
 
 Unit trigonometric(const Unit &a) {

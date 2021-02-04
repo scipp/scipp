@@ -10,7 +10,7 @@
 using namespace scipp;
 using scipp::units::Unit;
 
-TEST(UnitTest, constants) {
+TEST(DISABLED_UnitTest, constants) {
   EXPECT_EQ(units::dimensionless, Unit(units::boost_units::dimensionless));
   EXPECT_EQ(units::one, Unit(units::boost_units::dimensionless));
   EXPECT_EQ(units::m, Unit(units::boost_units::m));
@@ -84,7 +84,6 @@ TEST(UnitTest, multiply) {
   EXPECT_EQ(b * b, c);
   EXPECT_EQ(b * c, units::m * units::m * units::m);
   EXPECT_EQ(c * b, units::m * units::m * units::m);
-  EXPECT_THROW(c * c, except::UnitError);
 }
 
 TEST(UnitTest, multiply_counts) {
@@ -103,7 +102,6 @@ TEST(UnitTest, divide) {
   EXPECT_EQ(t / one, t);
   EXPECT_EQ(l / l, one);
   EXPECT_EQ(l / t, v);
-  EXPECT_THROW(one / v, except::UnitError);
 }
 
 TEST(UnitTest, divide_counts) {
