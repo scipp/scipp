@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <chrono>
+#include <iomanip>
 #include <set>
 
 #include "scipp/core/bucket_array_view.h"

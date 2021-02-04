@@ -5,13 +5,9 @@
 /// @author Neil Vaytet
 #pragma once
 
-#include <array>
-#include <tuple>
-
 #include <units/unit_definitions.hpp>
 
 #include "scipp-units_export.h"
-#include "scipp/common/index.h"
 
 namespace scipp::units {
 
