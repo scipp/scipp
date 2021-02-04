@@ -13,6 +13,8 @@
 #include <boost/units/systems/si/prefixes.hpp>
 #include <boost/units/unit.hpp>
 
+#include <units/units_decl.hpp>
+
 #include "scipp-units_export.h"
 #include "scipp/common/index.h"
 #include "scipp/units/neutron.h"
@@ -112,6 +114,7 @@ public:
   Unit &operator%=(const Unit &other);
 
 private:
+  llnl::units::precise_unit m_unit;
   scipp::index m_index{detail::unit_index(boost::units::si::dimensionless{},
                                           supported_units_t{})};
 };

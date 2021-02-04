@@ -1,0 +1,170 @@
+diff --git a/units/commodities.cpp b/units/commodities.cpp
+index 83871ff..1e53322 100644
+--- a/units/commodities.cpp
++++ b/units/commodities.cpp
+@@ -94,6 +94,7 @@ enum commodity : std::uint32_t
+ 
+ */
+ 
++namespace llnl {
+ namespace units {
+ namespace commodities {
+     using commodityMap = std::unordered_map<std::uint32_t, const char*>;
+@@ -412,3 +413,4 @@ void clearCustomCommodities()
+     customCommodityCodes.clear();
+ }
+ }  // namespace units
++}  // namespace llnl
+diff --git a/units/r20_conv.cpp b/units/r20_conv.cpp
+index df2f0e0..8dadd28 100644
+--- a/units/r20_conv.cpp
++++ b/units/r20_conv.cpp
+@@ -12,6 +12,7 @@ SPDX-License-Identifier: BSD-3-Clause
+ #include <tuple>
+ #include <unordered_map>
+ 
++namespace llnl {
+ namespace units {
+ using unitD = std::tuple<const char*, const char*, precise_unit>;
+ static UNITS_CPP14_CONSTEXPR_OBJECT std::array<unitD, 2088> r20_units = {{
+@@ -2751,3 +2752,4 @@ precise_unit r20_unit(const std::string& r20_string)
+ }
+ 
+ }  // namespace units
++}  // namespace llnl
+diff --git a/units/unit_definitions.hpp b/units/unit_definitions.hpp
+index f727420..8c62a89 100644
+--- a/units/unit_definitions.hpp
++++ b/units/unit_definitions.hpp
+@@ -12,6 +12,7 @@ SPDX-License-Identifier: BSD-3-Clause
+ #include <array>
+ #include <limits>
+ 
++namespace llnl {
+ namespace units {
+ /// Constants used in definitions of units
+ 
+@@ -1804,3 +1805,4 @@ namespace detail {
+     // probably shouldn't be supported
+ }  // namespace detail
+ }  // namespace units
++}  // namespace llnl
+diff --git a/units/units.cpp b/units/units.cpp
+index e3994a1..9cad2ef 100644
+--- a/units/units.cpp
++++ b/units/units.cpp
+@@ -26,6 +26,7 @@ SPDX-License-Identifier: BSD-3-Clause
+ references http://people.csail.mit.edu/jaffer/MIXF/MIXF-08
+ */
+ 
++namespace llnl {
+ namespace units {
+ 
+ template<typename X>
+@@ -6559,3 +6560,4 @@ precise_unit default_unit(std::string unit_type)
+ }
+ 
+ }  // namespace units
++}  // namespace llnl
+diff --git a/units/units.hpp b/units/units.hpp
+index d166b0d..b32b01a 100644
+--- a/units/units.hpp
++++ b/units/units.hpp
+@@ -20,6 +20,7 @@ SPDX-License-Identifier: BSD-3-Clause
+ #define UNITS_CPP14_CONSTEXPR_METHOD
+ #endif
+ 
++namespace llnl {
+ namespace units {
+ /// Generate a conversion factor between two units in a constexpr function, the
+ /// units will only convert if they have the same base unit
+@@ -1974,3 +1975,4 @@ namespace detail {
+ }  // namespace detail
+ 
+ }  // namespace units
++}  // namespace llnl
+diff --git a/units/units_decl.hpp b/units/units_decl.hpp
+index 1a051f1..57b298c 100644
+--- a/units/units_decl.hpp
++++ b/units/units_decl.hpp
+@@ -11,6 +11,7 @@ SPDX-License-Identifier: BSD-3-Clause
+ #include <cstring>  // for std::memcpy
+ #include <functional>  // for std::hash
+ 
++namespace llnl {
+ namespace units {
+ namespace detail {
+     /** Class representing base unit data
+@@ -316,12 +317,13 @@ namespace detail {
+ 
+ }  // namespace detail
+ }  // namespace units
++}  // namespace llnl
+ 
+ namespace std {
+ /// Hash function for unit_data
+ template<>
+-struct hash<units::detail::unit_data> {
+-    size_t operator()(const units::detail::unit_data& x) const noexcept
++struct hash<llnl::units::detail::unit_data> {
++    size_t operator()(const llnl::units::detail::unit_data& x) const noexcept
+     {
+         unsigned int val;
+         std::memcpy(&val, &x, sizeof(val));
+@@ -330,6 +332,7 @@ struct hash<units::detail::unit_data> {
+ };
+ }  // namespace std
+ 
++namespace llnl {
+ namespace units {
+ namespace detail {
+     /// constexpr operator to generate an integer power of a number
+@@ -952,24 +955,25 @@ static_assert(
+     "precise unit type is too large");
+ 
+ }  // namespace units
++}  // namespace llnl
+ 
+ /// Defining the hash functions for a unit and precise_unit so they can be used
+ /// in unordered_map
+ namespace std {
+ template<>
+-struct hash<units::unit> {
+-    size_t operator()(const units::unit& x) const
++struct hash<llnl::units::unit> {
++    size_t operator()(const llnl::units::unit& x) const
+     {
+-        return hash<units::detail::unit_data>()(x.base_units()) ^
++        return hash<llnl::units::detail::unit_data>()(x.base_units()) ^
+             hash<float>()(x.cround());
+     }
+ };
+ 
+ template<>
+-struct hash<units::precise_unit> {
+-    size_t operator()(const units::precise_unit& x) const
++struct hash<llnl::units::precise_unit> {
++    size_t operator()(const llnl::units::precise_unit& x) const
+     {
+-        return hash<units::detail::unit_data>()(x.base_units()) ^
++        return hash<llnl::units::detail::unit_data>()(x.base_units()) ^
+             hash<double>()(x.cround());
+     }
+ };
+diff --git a/units/x12_conv.cpp b/units/x12_conv.cpp
+index bee6862..1fb938b 100644
+--- a/units/x12_conv.cpp
++++ b/units/x12_conv.cpp
+@@ -11,6 +11,7 @@ SPDX-License-Identifier: BSD-3-Clause
+ #include <cstring>
+ #include <tuple>
+ 
++namespace llnl {
+ namespace units {
+ using unitD = std::tuple<const char*, const char*, precise_unit>;
+ static UNITS_CPP14_CONSTEXPR_OBJECT std::array<unitD, 486> x12_units{{
+@@ -1037,3 +1038,4 @@ precise_unit dod_unit(const std::string& dod_string)
+ }
+ 
+ }  // namespace units
++}  // namespace llnl
