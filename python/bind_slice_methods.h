@@ -53,9 +53,8 @@ template <class View> struct SetData {
                                  "values use the `values` property or provide "
                                  "a tuple of values and variances.");
 
-      auto view = slice.template values<T>();
-      copy_array_into_view(cast_to_array_like<T>(obj, slice.unit()), view,
-                           slice.dims());
+      copy_array_into_view(cast_to_array_like<T>(obj, slice.unit()),
+                           slice.template values<T>(), slice.dims());
     }
   };
 };
@@ -161,8 +160,7 @@ template <class T> struct slicer {
   // This needs to happen partly based on the dtype which cannot be encoded
   // in the Python bindings directly.
   template <class IndexOrRange>
-  static void set(T &self, const IndexOrRange &index,
-                  const py::object &data) {
+  static void set(T &self, const IndexOrRange &index, const py::object &data) {
     if constexpr (std::is_same_v<T, Dataset> ||
                   std::is_same_v<T, DatasetView>) {
       if (py::isinstance<DatasetView>(data)) {
