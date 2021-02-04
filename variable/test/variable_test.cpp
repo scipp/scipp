@@ -3,6 +3,8 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+#include <units/units.hpp>
+
 #include "test_macros.h"
 
 #include "scipp/core/except.h"
@@ -25,6 +27,14 @@ TEST(Variable, construct) {
   const auto a = makeVariable<double>(Dims{Dim::X}, Shape{2});
   const auto &data = a.values<double>();
   EXPECT_EQ(data.size(), 2);
+}
+
+TEST(Variable, construct_llnl_units_quantity) {
+  EXPECT_EQ(Variable(1.2 * llnl::units::precise::meter),
+            makeVariable<double>(Values{1.2}, units::m));
+  // llnl measurement is always double
+  EXPECT_EQ(Variable(1.0f * llnl::units::precise::meter),
+            makeVariable<double>(Values{1.0}, units::m));
 }
 
 TEST(Variable, construct_fail) {
