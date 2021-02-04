@@ -30,3 +30,5 @@ add_subdirectory(
   ${CMAKE_BINARY_DIR}/llnl-units-src ${CMAKE_BINARY_DIR}/llnl-units-build
   EXCLUDE_FROM_ALL
 )
+
+set_target_properties(units-static PROPERTIES POSITION_INDEPENDENT_CODE TRUE)

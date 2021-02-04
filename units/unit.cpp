@@ -10,6 +10,8 @@
 #include <boost/units/cmath.hpp>
 #include <boost/units/io.hpp>
 
+#include <units/units.hpp>
+
 #include "scipp/units/boost_units_util.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
@@ -30,10 +32,7 @@ template <class... Ts> auto make_name_lut(std::tuple<Ts...>) {
   return std::array{std::string(boost::lexical_cast<std::string>(Ts{}))...};
 }
 
-std::string Unit::name() const {
-  static const auto names = make_name_lut(supported_units_t{});
-  return names[index()];
-}
+std::string Unit::name() const { return to_string(m_unit); }
 
 bool Unit::isCounts() const { return *this == Unit(counts_unit_t{}); }
 
@@ -57,25 +56,17 @@ bool Unit::isCountDensity() const {
 }
 
 bool Unit::operator==(const Unit &other) const {
-  return index() == other.index();
+  return m_unit == other.m_unit;
 }
 bool Unit::operator!=(const Unit &other) const { return !(*this == other); }
 
-Unit &Unit::operator+=(const Unit &other) {
-  return static_cast<Unit &>(*this = *this + other);
-}
+Unit &Unit::operator+=(const Unit &other) { return *this = *this + other; }
 
-Unit &Unit::operator-=(const Unit &other) {
-  return static_cast<Unit &>(*this = *this - other);
-}
+Unit &Unit::operator-=(const Unit &other) { return *this = *this - other; }
 
-Unit &Unit::operator*=(const Unit &other) {
-  return static_cast<Unit &>(*this = *this * other);
-}
+Unit &Unit::operator*=(const Unit &other) { return *this = *this * other; }
 
-Unit &Unit::operator/=(const Unit &other) {
-  return static_cast<Unit &>(*this = *this / other);
-}
+Unit &Unit::operator/=(const Unit &other) { return *this = *this / other; }
 
 Unit &Unit::operator%=(const Unit &other) { return operator/=(other); }
 
@@ -140,34 +131,36 @@ template <class... Ts> constexpr auto make_sqrt_lut(std::tuple<Ts...>) {
 }
 
 Unit operator*(const Unit &a, const Unit &b) {
-  auto resultIndex = times_lut()[a.index()][b.index()];
-  if (resultIndex < 0)
+  try {
+    return {a.underlying() * b.underlying()};
+  } catch (const std::runtime_error &) {
     throw except::UnitError("Unsupported unit as result of multiplication: (" +
                             a.name() + ") * (" + b.name() + ')');
-  return Unit::fromIndex(resultIndex);
+  }
 }
 
 Unit operator/(const Unit &a, const Unit &b) {
-  auto resultIndex = divide_lut()[a.index()][b.index()];
-  if (resultIndex < 0)
+  try {
+    return {a.underlying() / b.underlying()};
+  } catch (const std::runtime_error &) {
     throw except::UnitError("Unsupported unit as result of division: (" +
                             a.name() + ") / (" + b.name() + ')');
-  return Unit::fromIndex(resultIndex);
+  }
 }
 
 Unit operator%(const Unit &a, const Unit &b) { return a / b; }
 
-Unit operator-(const Unit &a) { return static_cast<const Unit &>(a); }
+Unit operator-(const Unit &a) { return a; }
 
-Unit abs(const Unit &a) { return static_cast<const Unit &>(a); }
+Unit abs(const Unit &a) { return a; }
 
 Unit sqrt(const Unit &a) {
-  static constexpr auto lut = make_sqrt_lut(supported_units_t{});
-  auto resultIndex = lut[a.index()];
-  if (resultIndex < 0)
+  try {
+    return {sqrt(a.underlying())};
+  } catch (const std::runtime_error &) {
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
                             a.name() + ").");
-  return Unit::fromIndex(resultIndex);
+  }
 }
 
 Unit trigonometric(const Unit &a) {

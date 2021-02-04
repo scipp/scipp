@@ -13,7 +13,7 @@
 #include <boost/units/systems/si/prefixes.hpp>
 #include <boost/units/unit.hpp>
 
-#include <units/units_decl.hpp>
+#include <units/unit_definitions.hpp>
 
 #include "scipp-units_export.h"
 #include "scipp/common/index.h"
@@ -85,19 +85,19 @@ using counts_unit_t = typename boost_units::counts_unit::type;
 class SCIPP_UNITS_EXPORT Unit {
 public:
   constexpr Unit() = default;
+  constexpr Unit(const llnl::units::unit &u) noexcept : m_unit(u) {}
   template <class Dim, class System, class Enable>
   explicit constexpr Unit(boost::units::unit<Dim, System, Enable> unit) {
     constexpr auto index = detail::unit_index(unit, supported_units_t{});
     static_assert(index >= 0, "Unsupported unit.");
-    m_index = index;
   }
   static constexpr Unit fromIndex(const int64_t index) {
     Unit u;
-    u.m_index = index;
     return u;
   }
 
-  constexpr scipp::index index() const noexcept { return m_index; }
+  constexpr scipp::index index() const noexcept { return 0; }
+  constexpr auto underlying() const noexcept { return m_unit; }
 
   std::string name() const;
 
@@ -114,9 +114,7 @@ public:
   Unit &operator%=(const Unit &other);
 
 private:
-  llnl::units::precise_unit m_unit;
-  scipp::index m_index{detail::unit_index(boost::units::si::dimensionless{},
-                                          supported_units_t{})};
+  llnl::units::unit m_unit;
 };
 
 SCIPP_UNITS_EXPORT Unit operator+(const Unit &a, const Unit &b);
@@ -135,20 +133,20 @@ SCIPP_UNITS_EXPORT Unit acos(const Unit &a);
 SCIPP_UNITS_EXPORT Unit atan(const Unit &a);
 SCIPP_UNITS_EXPORT Unit atan2(const Unit &y, const Unit &x);
 
-constexpr Unit dimensionless{boost_units::dimensionless};
-constexpr Unit one{boost_units::dimensionless}; /// alias for dimensionless
-constexpr Unit m{boost_units::m};
-constexpr Unit s{boost_units::s};
-constexpr Unit kg{boost_units::kg};
-constexpr Unit K{boost_units::K};
-constexpr Unit rad{boost_units::rad};
-constexpr Unit deg{boost_units::deg};
-constexpr Unit counts{boost_units::counts};
-constexpr Unit angstrom{boost_units::angstrom};
-constexpr Unit meV{boost_units::meV};
-constexpr Unit us{boost_units::us};
-constexpr Unit c{boost_units::c};
-constexpr Unit ns{boost_units::ns};
-constexpr Unit mm{boost_units::mm};
+constexpr Unit dimensionless{llnl::units::one};
+constexpr Unit one{llnl::units::one}; /// alias for dimensionless
+constexpr Unit m{llnl::units::meter};
+constexpr Unit s{llnl::units::second};
+constexpr Unit kg{llnl::units::kg};
+constexpr Unit K{llnl::units::K};
+constexpr Unit rad{llnl::units::rad};
+constexpr Unit deg{llnl::units::deg};
+constexpr Unit us{llnl::units::micro * llnl::units::second};
+constexpr Unit ns{llnl::units::ns};
+constexpr Unit mm{llnl::units::mm};
+constexpr Unit counts{llnl::units::one};
+constexpr Unit angstrom{llnl::units::m};
+constexpr Unit meV{llnl::units::J};
+constexpr Unit c{llnl::units::m / llnl::units::s};
 
 } // namespace scipp::units
