@@ -10,6 +10,8 @@
 #include <boost/units/systems/si/codata/neutron_constants.hpp>
 #include <boost/units/systems/si/codata/universal_constants.hpp>
 
+#include <units/units.hpp>
+
 #include "scipp/common/constants.h"
 
 #include "scipp/units/unit.h"
@@ -32,17 +34,31 @@ constexpr auto m_to_angstrom = units::boost_units::angstrom /
 
 // In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
 // tof_to_s factor is in the denominator.
-constexpr auto tof_to_energy_physical_constants =
+constexpr auto tof_to_energy_physical_constants_ =
     0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
     (tof_to_s * tof_to_s);
+constexpr auto tof_to_energy_physical_constants =
+    tof_to_energy_physical_constants_.value() *
+    (llnl::units::precise::milli * llnl::units::precise::energy::eV *
+     llnl::units::precise::micro * llnl::units::precise::second *
+     llnl::units::precise::micro * llnl::units::precise::second) /
+    (llnl::units::precise::meter * llnl::units::precise::meter);
 
-constexpr auto tof_to_dspacing_physical_constants =
+constexpr auto tof_to_dspacing_physical_constants_ =
     2.0 * boost::units::si::constants::codata::m_n /
     boost::units::si::constants::codata::h / (m_to_angstrom * tof_to_s);
+constexpr auto tof_to_dspacing_physical_constants =
+    tof_to_dspacing_physical_constants_.value() * llnl::units::precise::micro *
+    llnl::units::precise::second /
+    (llnl::units::precise::meter * llnl::units::precise::distance::angstrom);
 
-constexpr auto tof_to_wavelength_physical_constants =
+constexpr auto tof_to_wavelength_physical_constants_ =
     tof_to_s * m_to_angstrom * boost::units::si::constants::codata::h /
     boost::units::si::constants::codata::m_n;
+constexpr auto tof_to_wavelength_physical_constants =
+    tof_to_wavelength_physical_constants_.value() *
+    (llnl::units::precise::meter * llnl::units::precise::distance::angstrom) /
+    (llnl::units::precise::micro * llnl::units::precise::second);
 
 template <class T> auto tof_to_dspacing(const T &d) {
   const auto &sourcePos = source_position(d);
