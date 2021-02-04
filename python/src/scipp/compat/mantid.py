@@ -53,29 +53,15 @@ def make_run(ws):
 
 
 additional_unit_mapping = {
-    "Kelvin": sc.units.K,
-    "microsecond": sc.units.us,
-    "us": sc.units.us,
-    "nanosecond": sc.units.ns,
-    "second": sc.units.s,
-    "Angstrom": sc.units.angstrom,
-    "Hz": sc.units.one / sc.units.s,
-    "degree": sc.units.deg,
-    "°": sc.units.deg,
-    "millimetre": sc.units.mm,
     " ": sc.units.one,
     "none": sc.units.one,
 }
 
 
 def make_variables_from_run_logs(ws):
-    lookup_units = dict(
-        zip([str(unit) for unit in sc.units.supported_units()],
-            sc.units.supported_units()))
-    lookup_units.update(additional_unit_mapping)
     for property_name in ws.run().keys():
         units_string = ws.run()[property_name].units
-        unit = lookup_units.get(units_string, None)
+        unit = additional_unit_mapping.get(units_string, sc.Unit(units_string))
         values = deepcopy(ws.run()[property_name].value)
 
         if units_string and unit is None:

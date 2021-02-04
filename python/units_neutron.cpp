@@ -2,6 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <units/units.hpp>
+
 #include "scipp/core/dtype.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/units/unit.h"
@@ -37,11 +39,6 @@ Variable doDivScalarUnit(const units::Unit &unit, const py::object &scalar,
                          const py::dtype &type) {
   return scipp::core::CallDType<double, float, int64_t, int32_t>::apply<
       DivScalarUnit>(scipp_dtype(type), scalar, unit);
-}
-
-template <class... Ts>
-auto supported_units_runtime_list(const std::tuple<Ts...> &) {
-  return std::vector{units::Unit(Ts{})...};
 }
 } // namespace
 
@@ -104,6 +101,9 @@ void init_units_neutron(py::module &m) {
 
   py::class_<units::Unit>(m, "Unit", "A physical unit.")
       .def(py::init())
+      .def(py::init([](const std::string &unit) {
+        return units::Unit({llnl::units::unit_from_string(unit)});
+      }))
       .def("__repr__",
            [](const units::Unit &u) -> std::string { return u.name(); })
       .def_property_readonly("name", &units::Unit::name,
@@ -162,9 +162,4 @@ void init_units_neutron(py::module &m) {
   units.attr("us") = units::us;
   units.attr("ns") = units::ns;
   units.attr("mm") = units::mm;
-
-  units.def(
-      "supported_units",
-      []() { return supported_units_runtime_list(units::supported_units_t{}); },
-      "Return a list of all supported units and unit combinations.");
 }

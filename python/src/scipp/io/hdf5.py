@@ -4,13 +4,6 @@
 # @author Simon Heybrock
 
 
-def _unit_lut():
-    from .._scipp.core import units as u
-    units = u.supported_units()
-    names = [str(unit) for unit in units]
-    return dict(zip(names, units))
-
-
 def _dtype_lut():
     from .._scipp.core import dtype as d
     # For types understood by numpy we do not actually need this special
@@ -168,7 +161,6 @@ def _data_handler_lut():
 
 class VariableIO:
     _dtypes = _dtype_lut()
-    _units = _unit_lut()
     _data_handlers = _data_handler_lut()
 
     @classmethod
@@ -202,7 +194,7 @@ class VariableIO:
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]
-        contents['unit'] = cls._units[values.attrs['unit']]
+        contents['unit'] = sc.Unit(values.attrs['unit'])
         contents['variances'] = 'variances' in group
         if contents['dtype'] in [
                 d.VariableView, d.DataArrayView, d.DatasetView
