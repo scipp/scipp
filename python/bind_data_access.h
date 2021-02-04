@@ -36,34 +36,6 @@ template <class T> void init_variances(T &obj) {
     obj.setVariances(Variable(obj));
 }
 
-/// Map C++ types to Python types to perform conversion / reinterpret casting
-/// between scipp containers and numpy arrays.
-template <class T> struct ElementTypeMap {
-  using CppType = T;
-  using PyType = T;
-  constexpr static bool reinterpret = false;
-
-  static void check_assignable(const py::object &, const units::Unit &) {}
-};
-
-template <> struct ElementTypeMap<scipp::core::time_point> {
-  using CppType = scipp::core::time_point;
-  using PyType = int64_t;
-  constexpr static bool reinterpret = true;
-
-  static void check_assignable(const py::object &obj, const units::Unit &unit) {
-    const auto &dtype = obj.cast<py::array>().dtype();
-    const auto np_unit = parse_datetime_dtype(
-        dtype.attr("name").cast<std::string_view>());
-    if (np_unit != unit) {
-      std::ostringstream oss;
-      oss << "Unable to assign datetime with unit " << to_string(np_unit)
-          << " to " << to_string(unit);
-      throw std::invalid_argument(oss.str());
-    }
-  }
-};
-
 /// Add element size as factor to strides.
 template <class T>
 std::vector<ssize_t> numpy_strides(const std::vector<scipp::index> &s) {

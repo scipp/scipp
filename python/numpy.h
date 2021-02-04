@@ -39,6 +39,24 @@ void copy_element(const Source &src, Destination &&dst) noexcept(reinterpret) {
 
 using namespace scipp;
 
+/// Map C++ types to Python types to perform conversion / reinterpret casting
+/// between scipp containers and numpy arrays.
+template <class T> struct ElementTypeMap {
+  using CppType = T;
+  using PyType = T;
+  constexpr static bool reinterpret = false;
+
+  static void check_assignable(const py::object &, const units::Unit &) {}
+};
+
+template <> struct ElementTypeMap<scipp::core::time_point> {
+  using CppType = scipp::core::time_point;
+  using PyType = int64_t;
+  constexpr static bool reinterpret = true;
+
+  static void check_assignable(const py::object &obj, units::Unit unit);
+};
+
 template <bool reinterpret, class T, class View>
 void copy_flattened_0d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
