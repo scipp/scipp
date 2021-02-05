@@ -25,7 +25,7 @@ def memory_is_at_least_gb(required):
     return total >= required
 
 
-@pytest.mark.skipif(not memory_is_at_least_gb(8),
+@pytest.mark.skipif(not memory_is_at_least_gb(4),
                     reason='Insufficient virtual memory')
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
@@ -40,6 +40,7 @@ class TestMantidConversion(unittest.TestCase):
         cls.base_event_ws = mantid.LoadEventNexus(
             MantidDataHelper.find_file(filename),
             OutputWorkspace="test_ws{}".format(__file__),
+            SpectrumMax=200,
             StoreInADS=False)
 
     def test_Workspace2D(self):
@@ -239,11 +240,11 @@ class TestMantidConversion(unittest.TestCase):
 
         # bin with 3 masks
         np.testing.assert_array_equal(ds.masks["bin"].values[0],
-                                      [True, True, False, False, False])
+                                      [True, True, False])
 
         # bin with only 2
         np.testing.assert_array_equal(ds.masks["bin"].values[31],
-                                      [True, True, True, False, False])
+                                      [True, True, False])
 
         np.testing.assert_array_equal(ds.masks["spectrum"].values[0:3],
                                       [True, True, True])
@@ -277,7 +278,7 @@ class TestMantidConversion(unittest.TestCase):
         ds = mantidcompat.load(filename,
                                mantid_args={
                                    "LoadMonitors": "Include",
-                                   "SpectrumMax": 10000
+                                   "SpectrumMax": 100
                                })
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
         attrs = [str(key) for key in ds.attrs.keys()]
@@ -293,7 +294,11 @@ class TestMantidConversion(unittest.TestCase):
         from mantid.simpleapi import mtd
         mtd.clear()
         filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
-        ds = mantidcompat.load(filename, mantid_args={"LoadMonitors": True})
+        ds = mantidcompat.load(filename,
+                               mantid_args={
+                                   "LoadMonitors": True,
+                                   "SpectrumMax": 1
+                               })
         self.assertEqual(len(mtd), 0, mtd.getObjectNames())
         attrs = [str(key) for key in ds.attrs.keys()]
         expected_monitor_attrs = set(["monitor2", "monitor3"])
