@@ -104,8 +104,7 @@ void init_units_neutron(py::module &m) {
       .def(py::init([](const std::string &unit) {
         return units::Unit({llnl::units::unit_from_string(unit)});
       }))
-      .def("__repr__",
-           [](const units::Unit &u) -> std::string { return u.name(); })
+      .def("__repr__", [](const units::Unit &u) { return u.name(); })
       .def_property_readonly("name", &units::Unit::name,
                              "A read-only string describing the "
                              "type of unit.")
@@ -113,27 +112,8 @@ void init_units_neutron(py::module &m) {
       .def(py::self - py::self)
       .def(py::self * py::self)
       .def(py::self / py::self)
-      .def("__pow__",
-           [](const units::Unit &self, int power) -> units::Unit {
-             switch (power) {
-             case 0:
-               return units::one;
-             case 1:
-               return self;
-             case 2:
-               return self * self;
-             case 3:
-               return self * self * self;
-             case -1:
-               return units::Unit() / (self);
-             case -2:
-               return units::Unit() / (self * self);
-             case -3:
-               return units::Unit() / (self * self * self);
-             default:
-               throw std::runtime_error("Unsupported power of unit.");
-             }
-           })
+      .def("__pow__", [](const units::Unit &self,
+                         const int64_t power) { return pow(self, power); })
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__rmul",

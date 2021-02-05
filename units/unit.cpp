@@ -79,6 +79,14 @@ Unit sqrt(const Unit &a) {
   return out;
 }
 
+Unit pow(const Unit &a, const int64_t power) {
+  auto out = Unit{a.underlying().pow(power)};
+  if (out == llnl::units::precise::error)
+    throw except::UnitError("Unsupported unit as result of pow: pow(" +
+                            a.name() + ", " + std::to_string(power) + ").");
+  return out;
+}
+
 Unit trigonometric(const Unit &a) {
   if (a == units::rad || a == units::deg)
     return units::dimensionless;

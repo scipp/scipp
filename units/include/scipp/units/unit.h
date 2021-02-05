@@ -43,6 +43,7 @@ SCIPP_UNITS_EXPORT Unit operator%(const Unit &a, const Unit &b);
 SCIPP_UNITS_EXPORT Unit operator-(const Unit &a);
 SCIPP_UNITS_EXPORT Unit abs(const Unit &a);
 SCIPP_UNITS_EXPORT Unit sqrt(const Unit &a);
+SCIPP_UNITS_EXPORT Unit pow(const Unit &a, const int64_t power);
 SCIPP_UNITS_EXPORT Unit sin(const Unit &a);
 SCIPP_UNITS_EXPORT Unit cos(const Unit &a);
 SCIPP_UNITS_EXPORT Unit tan(const Unit &a);
