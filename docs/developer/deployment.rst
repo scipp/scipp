@@ -39,12 +39,11 @@ Mantid Framework Deployment Procedure
 #. Determine the git revision of mantid you wish to use.
 #. Compute a version string for the revision using ``tools/make_version.py`` from the recipe repository.
 #. From the recipe repository update ``.azure-pipelines/release.yml`` setting the ``git_rev`` and ``mantid_ver`` to match the two values from the previous steps.
-#. Check the scipp tag used for the compatibility tests in ``run_test.sh`` and update if necessary (say if you've just re-released scipp as a new version)
 #. Commit changes to recipe repository to master (peer review advisable).
 #. Create a new annotated tag in the recipe repository to describe the release and its purppose 
 #. Push the tag to origin, which will trigger the tagged release pipeline
 
 .. note::
-  As part of the ``conda build`` step (encoded in ``meta.yaml``), mantid's imports are tested and the mantid-scipp interface is tested in ``run_test.sh`` `(see conda docs) <https://docs.conda.io/projects/conda-build/en/latest/resources/define-metadata.html#run-test-script>`_. Packaging can therefore fail if mantid does not appear to work (import) or there are incompatibilities between scipp and mantid. Be aware of reasons for packaging failure.
+  As part of the ``conda build`` step mantid's imports are tested and the mantid-scipp interface is tested in ``run_test.sh`` `(see conda docs) <https://docs.conda.io/projects/conda-build/en/latest/resources/define-metadata.html#run-test-script>`_. Packaging can therefore fail if mantid does not appear to work (import) or there are incompatibilities between scipp and mantid. The compatibility checks take the test code from the latest scipp tag. scipp itself is installed from the ``scipp/label/main`` (stable) channel as part of the process. All this means that the package can fail generation at the final test stage (all within ``conda build``) despite ``mantid-framework`` itself building and packaging,  so check reasons for packaging failure by inspecting full log output on azure pipeline.
 
 
