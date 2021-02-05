@@ -15,6 +15,8 @@ class SCIPP_UNITS_EXPORT Unit {
 public:
   constexpr Unit() = default;
   constexpr Unit(const llnl::units::precise_unit &u) noexcept : m_unit(u) {}
+  Unit(const std::string &unit);
+
   constexpr auto underlying() const noexcept { return m_unit; }
 
   std::string name() const;

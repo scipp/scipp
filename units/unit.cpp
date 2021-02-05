@@ -13,6 +13,9 @@
 
 namespace scipp::units {
 
+Unit::Unit(const std::string &unit)
+    : Unit(llnl::units::unit_from_string(unit)) {}
+
 std::string Unit::name() const {
   auto repr = to_string(m_unit);
   // Replace 'LATIN CAPITAL LETTER A WITH RING ABOVE' by 'ANGSTROM SIGN'
