@@ -43,26 +43,7 @@ Mantid Framework Deployment Procedure
 #. Create a new annotated tag in the recipe repository to describe the release and its purppose 
 #. Push the tag to origin, which will trigger the tagged release pipeline
 
-Mantid Framework Verification Procedure
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-If the previous steps ran correctly you will have new packages on `Anaconda Cloud <https://anaconda.org/scipp/mantid-framework>`_. 
-It is advisable to install the new ``mantid-framework`` and ``scipp`` together and then to run the compatibility tests for mantid.py in the scipp source code to ensure the interfaces work as expected.
-
 .. note::
-  The process outlined here will be used as part of the CI in future.
+  As part of the ``conda build`` step mantid's imports are tested and the mantid-scipp interface is tested in ``run_test.sh`` `(see conda docs) <https://docs.conda.io/projects/conda-build/en/latest/resources/define-metadata.html#run-test-script>`_. Packaging can therefore fail if mantid does not appear to work (import) or there are incompatibilities between scipp and mantid. The compatibility checks take the test code from the latest scipp tag. scipp itself is installed from the ``scipp/label/main`` (stable) channel as part of the process. All this means that the package can fail generation at the final test stage (all within ``conda build``) despite ``mantid-framework`` itself building and packaging,  so check reasons for packaging failure by inspecting full log output on azure pipeline.
 
-.. code-block:: sh 
 
-  $ conda create \
-      -n env_test_scipp_and_mantid \
-      -c conda-forge \
-      -c scipp \
-      python=3.7 \
-      scipp \
-      mantid-framework \
-      pytest \
-      psutil \
-
-  $ conda activate env_test_scipp_and_mantid
-
-  $ python -m pytest python/tests/compat/test_mantid.py  
