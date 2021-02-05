@@ -74,6 +74,8 @@ void init_units_neutron(py::module &m) {
                             int64_t scalar) { return scalar / self; })
       .def("__rtruediv", &doDivScalarUnit);
 
+  m.def("sqrt", [](const units::Unit &u) { return sqrt(u); });
+
   auto units = m.def_submodule("units");
   units.attr("angstrom") = units::angstrom;
   units.attr("counts") = units::counts;
