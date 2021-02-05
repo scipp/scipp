@@ -112,7 +112,10 @@ def test_data_array_1d_no_coords():
 
 
 def test_data_array_all_units_supported():
-    for unit in sc.units.supported_units():
+    for unit in [
+            sc.units.one, sc.units.us, sc.units.angstrom, sc.units.counts,
+            sc.units.counts / sc.units.us, sc.units.meV
+    ]:
         a = sc.DataArray(data=1.0 * unit)
         check_roundtrip(a)
 
