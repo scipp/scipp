@@ -14,7 +14,8 @@
 namespace scipp::units {
 
 Unit::Unit(const std::string &unit)
-    : Unit(llnl::units::unit_from_string(unit)) {}
+    : Unit(llnl::units::unit_from_string(unit == "dimensionless" ? "" : unit)) {
+}
 
 std::string Unit::name() const {
   auto repr = to_string(m_unit);

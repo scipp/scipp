@@ -606,7 +606,7 @@ class TestMantidConversion(unittest.TestCase):
                            unmoved_det_positions.values)))
 
     def test_validate_units(self):
-        acceptable = ["wavelength", sc.Dim.Wavelength]
+        acceptable = ["wavelength", "Wavelength"]
         for i in acceptable:
             ret = mantidcompat.validate_dim_and_get_mantid_string(i)
             self.assertEqual(ret, "Wavelength")
