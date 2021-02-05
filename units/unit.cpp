@@ -3,8 +3,8 @@
 /// @file
 /// @author Simon Heybrock
 /// @author Neil Vaytet
+#include <regex>
 #include <stdexcept>
-#include <vector>
 
 #include <units/units.hpp>
 
@@ -13,7 +13,14 @@
 
 namespace scipp::units {
 
-std::string Unit::name() const { return to_string(m_unit); }
+std::string Unit::name() const {
+  auto repr = to_string(m_unit);
+  // Replace 'LATIN CAPITAL LETTER A WITH RING ABOVE' by 'ANGSTROM SIGN'
+  repr = std::regex_replace(repr, std::regex("Å"), "Å");
+  repr = std::regex_replace(repr, std::regex("^u"), "µ");
+  repr = std::regex_replace(repr, std::regex("item"), "counts");
+  return repr == "" ? "dimensionless" : repr;
+}
 
 bool Unit::isCounts() const { return *this == counts; }
 
