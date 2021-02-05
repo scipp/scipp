@@ -26,15 +26,6 @@ void reinterpret_copy_element(const Source &src, Destination &&dst) noexcept {
   auto dst_ptr = reinterpret_cast<std::byte *>(&dst_);
   std::copy(src_ptr, src_ptr + sizeof(Source), dst_ptr);
 }
-
-template <bool reinterpret, class Source, class Destination>
-void copy_element(const Source &src, Destination &&dst) noexcept(reinterpret) {
-  if constexpr (reinterpret) {
-    reinterpret_copy_element(src, std::forward<Destination>(dst));
-  } else {
-    std::forward<Destination>(dst) = src;
-  }
-}
 } // namespace scipp::detail
 
 using namespace scipp;
@@ -56,6 +47,15 @@ template <> struct ElementTypeMap<scipp::core::time_point> {
 
   static void check_assignable(const py::object &obj, units::Unit unit);
 };
+
+template <bool reinterpret, class Source, class Destination>
+void copy_element(const Source &src, Destination &&dst) noexcept(reinterpret) {
+  if constexpr (reinterpret) {
+    detail::reinterpret_copy_element(src, std::forward<Destination>(dst));
+  } else {
+    std::forward<Destination>(dst) = src;
+  }
+}
 
 /// Cast a py::object referring to an array to py::array_t<T> if supported.
 /// Otherwise, copies the contents into a std::vector<T>.
