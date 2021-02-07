@@ -9,7 +9,6 @@ from functools import partial, reduce
 from html import escape
 import sys
 
-import numpy as np
 
 from .._scipp import core as sc
 from .._utils import is_dataset
