@@ -9,7 +9,6 @@ from functools import partial, reduce
 from html import escape
 import sys
 
-
 from .._scipp import core as sc
 from .._utils import is_dataset
 
