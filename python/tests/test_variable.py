@@ -735,7 +735,7 @@ def test_remove_variance():
 def test_set_variance_convert_dtype():
     values = np.random.rand(2, 3)
     variances = np.arange(6).reshape(2, 3)
-    assert variances.dtype == np.int
+    assert variances.dtype == int
     var = sc.Variable(dims=['x', 'y'], values=values)
     expected = sc.Variable(dims=['x', 'y'], values=values, variances=variances)
 
@@ -792,7 +792,7 @@ def test_construct_0d_dtype():
     assert sc.Variable(2, dtype=np.int32).dtype == sc.dtype.int32
     assert sc.Variable(np.float64(2),
                        dtype=np.float32).dtype == sc.dtype.float32
-    assert sc.Variable(1, dtype=np.bool).dtype == sc.dtype.bool
+    assert sc.Variable(1, dtype=bool).dtype == sc.dtype.bool
 
 
 def test_rename_dims():

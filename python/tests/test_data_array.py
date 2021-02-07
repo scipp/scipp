@@ -38,7 +38,7 @@ def test_init():
             'lib1': sc.Variable(['x'], values=np.random.rand(3))
         },
         attrs={'met1': sc.Variable(['x'], values=np.arange(3))},
-        masks={'mask1': sc.Variable(['x'], values=np.ones(3, dtype=np.bool))})
+        masks={'mask1': sc.Variable(['x'], values=np.ones(3, dtype=bool))})
     assert len(d.meta) == 3
     assert len(d.coords) == 2
     assert len(d.attrs) == 1
@@ -86,8 +86,7 @@ def test_coords():
 def test_masks():
     da = make_dataarray()
     da.masks['mask1'] = sc.Variable(['x'],
-                                    values=np.array([False, True],
-                                                    dtype=np.bool))
+                                    values=np.array([False, True], dtype=bool))
     assert len(dict(da.masks)) == 1
     assert 'mask1' in da.masks
 

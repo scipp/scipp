@@ -110,6 +110,6 @@ def make_binned_data_array(ndim=1, variances=False, masks=False):
         # Make a checkerboard mask, see https://stackoverflow.com/a/51715491
         binned.masks["mask"] = sc.Variable(
             dims=binned.dims,
-            values=(np.indices(binned.shape).sum(axis=0) % 2).astype(np.bool))
+            values=(np.indices(binned.shape).sum(axis=0) % 2).astype(bool))
 
     return binned

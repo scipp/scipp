@@ -9,7 +9,7 @@ import pytest
 
 class TestSliceByValue:
     def setup_method(self):
-        var = sc.Variable(['x'], values=np.arange(5, dtype=np.float) + 0.5)
+        var = sc.Variable(['x'], values=np.arange(5, dtype=float) + 0.5)
         values_a = sc.Variable(dims=['x'],
                                values=[1.0, 1.1, 1.2, 1.3, 1.4],
                                unit=sc.units.m)
