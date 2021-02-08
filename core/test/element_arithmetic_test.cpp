@@ -90,6 +90,7 @@ TEST(ElementArithmeticIntegerDivisionTest, mod) {
   EXPECT_EQ(mod(-2, -2), 0);
   EXPECT_EQ(mod(-3, -2), -1);
 
+  EXPECT_EQ(mod(-4, 3), 2);
   EXPECT_EQ(mod(-3, 3), 0);
   EXPECT_EQ(mod(-2, 3), 1);
   EXPECT_EQ(mod(-1, 3), 2);
@@ -117,6 +118,8 @@ TEST(ElementArithmeticIntegerDivisionTest, mod_equals) {
   check_mod(-2, -2, 0);
   check_mod(-3, -2, -1);
 
+  check_mod(-4, 3, 2);
+  check_mod(-3, 3, 0);
   check_mod(-2, 3, 1);
   check_mod(-1, 3, 2);
   check_mod(0, 3, 0);
