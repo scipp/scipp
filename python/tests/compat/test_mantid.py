@@ -532,6 +532,7 @@ class TestMantidConversion(unittest.TestCase):
     def test_warning_raised_when_convert_run_log_with_unrecognised_units(self):
         import mantid.simpleapi as mantid
         target = mantid.CloneWorkspace(self.base_event_ws)
+        target.getRun()['LambdaRequest'].units = 'abcde'
         with warnings.catch_warnings(record=True) as caught_warnings:
             mantidcompat.convert_EventWorkspace_to_data_array(target, False)
             assert len(

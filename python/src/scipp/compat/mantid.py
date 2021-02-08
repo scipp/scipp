@@ -61,7 +61,13 @@ additional_unit_mapping = {
 def make_variables_from_run_logs(ws):
     for property_name in ws.run().keys():
         units_string = ws.run()[property_name].units
-        unit = additional_unit_mapping.get(units_string, sc.Unit(units_string))
+        try:
+            unit = additional_unit_mapping.get(units_string,
+                                               sc.Unit(units_string))
+        except RuntimeError:  # TODO catch UnitError once exposed from C++
+            # Parsing unit string failed
+            unit = None
+
         values = deepcopy(ws.run()[property_name].value)
 
         if units_string and unit is None:
