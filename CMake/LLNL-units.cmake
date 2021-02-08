@@ -26,7 +26,7 @@ if(result)
   message(FATAL_ERROR "Build step for llnl-units failed: ${result}")
 endif()
 
-set(UNITS_NAMESPACE "llnl::units")
+set(UNITS_NAMESPACE "llnl\:\:units")
 add_subdirectory(
   ${CMAKE_BINARY_DIR}/llnl-units-src ${CMAKE_BINARY_DIR}/llnl-units-build
   EXCLUDE_FROM_ALL
