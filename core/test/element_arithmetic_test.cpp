@@ -76,6 +76,63 @@ TEST(ElementArithmeticIntegerDivisionTest, inplace_truediv_not_supported) {
   EXPECT_TRUE(no_int_as_first_arg(decltype(divide_equals)::types{}));
 }
 
+TEST(ElementArithmeticIntegerDivisionTest, mod) {
+  EXPECT_EQ(mod(units::m, units::s), units::m / units::s);
+
+  // x mod 0 is not really defined, but numpy returns 0 and prints a warning
+  EXPECT_EQ(mod(0, 0), 0);
+  EXPECT_EQ(mod(1, 0), 0);
+  EXPECT_EQ(mod(-1, 0), 0);
+
+  EXPECT_EQ(mod(0, -2), 0);
+  EXPECT_EQ(mod(1, -2), -1);
+  EXPECT_EQ(mod(2, -2), 0);
+  EXPECT_EQ(mod(3, -2), -1);
+  EXPECT_EQ(mod(-1, -2), -1);
+  EXPECT_EQ(mod(-2, -2), 0);
+  EXPECT_EQ(mod(-3, -2), -1);
+
+  EXPECT_EQ(mod(-4, 3), 2);
+  EXPECT_EQ(mod(-3, 3), 0);
+  EXPECT_EQ(mod(-2, 3), 1);
+  EXPECT_EQ(mod(-1, 3), 2);
+  EXPECT_EQ(mod(0, 3), 0);
+  EXPECT_EQ(mod(1, 3), 1);
+  EXPECT_EQ(mod(2, 3), 2);
+  EXPECT_EQ(mod(3, 3), 0);
+  EXPECT_EQ(mod(4, 3), 1);
+}
+
+TEST(ElementArithmeticIntegerDivisionTest, mod_equals) {
+  constexpr auto check_mod = [](auto a, auto b, auto expected) {
+    mod_equals(a, b);
+    EXPECT_EQ(a, expected);
+  };
+  check_mod(units::m, units::s, units::m / units::s);
+
+  check_mod(0, 0, 0);
+  check_mod(1, 0, 0);
+  check_mod(-1, 0, 0);
+
+  check_mod(0, -2, 0);
+  check_mod(1, -2, -1);
+  check_mod(2, -2, 0);
+  check_mod(3, -2, -1);
+  check_mod(-1, -2, -1);
+  check_mod(-2, -2, 0);
+  check_mod(-3, -2, -1);
+
+  check_mod(-4, 3, 2);
+  check_mod(-3, 3, 0);
+  check_mod(-2, 3, 1);
+  check_mod(-1, 3, 2);
+  check_mod(0, 3, 0);
+  check_mod(1, 3, 1);
+  check_mod(2, 3, 2);
+  check_mod(3, 3, 0);
+  check_mod(4, 3, 1);
+}
+
 class ElementNanArithmeticTest : public ::testing::Test {
 protected:
   double x = 1.0;

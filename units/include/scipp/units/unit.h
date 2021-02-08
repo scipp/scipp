@@ -109,6 +109,7 @@ public:
   Unit &operator-=(const Unit &other);
   Unit &operator*=(const Unit &other);
   Unit &operator/=(const Unit &other);
+  Unit &operator%=(const Unit &other);
 
 private:
   scipp::index m_index{detail::unit_index(boost::units::si::dimensionless{},
@@ -119,6 +120,7 @@ SCIPP_UNITS_EXPORT Unit operator+(const Unit &a, const Unit &b);
 SCIPP_UNITS_EXPORT Unit operator-(const Unit &a, const Unit &b);
 SCIPP_UNITS_EXPORT Unit operator*(const Unit &a, const Unit &b);
 SCIPP_UNITS_EXPORT Unit operator/(const Unit &a, const Unit &b);
+SCIPP_UNITS_EXPORT Unit operator%(const Unit &a, const Unit &b);
 SCIPP_UNITS_EXPORT Unit operator-(const Unit &a);
 SCIPP_UNITS_EXPORT Unit abs(const Unit &a);
 SCIPP_UNITS_EXPORT Unit sqrt(const Unit &a);

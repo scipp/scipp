@@ -165,15 +165,6 @@ public:
   DataArrayView assign(const Variable &other) const;
   DataArrayView assign(const VariableConstView &other) const;
 
-  DataArrayView operator+=(const DataArrayConstView &other) const;
-  DataArrayView operator-=(const DataArrayConstView &other) const;
-  DataArrayView operator*=(const DataArrayConstView &other) const;
-  DataArrayView operator/=(const DataArrayConstView &other) const;
-  DataArrayView operator+=(const VariableConstView &other) const;
-  DataArrayView operator-=(const VariableConstView &other) const;
-  DataArrayView operator*=(const VariableConstView &other) const;
-  DataArrayView operator/=(const VariableConstView &other) const;
-
   void setData(Variable data) const;
 
   auto &get_dataset() const { return *m_mutableDataset; }
@@ -661,15 +652,6 @@ public:
 
   void rename(const Dim from, const Dim to) { m_holder.rename(from, to); }
 
-  DataArray &operator+=(const DataArrayConstView &other);
-  DataArray &operator-=(const DataArrayConstView &other);
-  DataArray &operator*=(const DataArrayConstView &other);
-  DataArray &operator/=(const DataArrayConstView &other);
-  DataArray &operator+=(const VariableConstView &other);
-  DataArray &operator-=(const VariableConstView &other);
-  DataArray &operator*=(const VariableConstView &other);
-  DataArray &operator/=(const VariableConstView &other);
-
   void setData(Variable data) {
     m_holder.setData(name(), std::move(data), AttrPolicy::Keep);
   }
@@ -700,33 +682,6 @@ private:
 };
 
 SCIPP_DATASET_EXPORT DataArray operator-(const DataArrayConstView &a);
-
-SCIPP_DATASET_EXPORT DataArray operator+(const DataArrayConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator-(const DataArrayConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator*(const DataArrayConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator/(const DataArrayConstView &a,
-                                         const DataArrayConstView &b);
-
-SCIPP_DATASET_EXPORT DataArray operator+(const DataArrayConstView &a,
-                                         const VariableConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator-(const DataArrayConstView &a,
-                                         const VariableConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator*(const DataArrayConstView &a,
-                                         const VariableConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator/(const DataArrayConstView &a,
-                                         const VariableConstView &b);
-
-SCIPP_DATASET_EXPORT DataArray operator+(const VariableConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator-(const VariableConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator*(const VariableConstView &a,
-                                         const DataArrayConstView &b);
-SCIPP_DATASET_EXPORT DataArray operator/(const VariableConstView &a,
-                                         const DataArrayConstView &b);
 
 SCIPP_DATASET_EXPORT Dataset operator+(const DatasetConstView &lhs,
                                        const DatasetConstView &rhs);
@@ -805,3 +760,5 @@ template <> struct is_view<DataArrayView> : std::true_type {};
 template <> struct is_view<DatasetConstView> : std::true_type {};
 template <> struct is_view<DatasetView> : std::true_type {};
 } // namespace scipp
+
+#include "scipp/dataset/arithmetic.h"

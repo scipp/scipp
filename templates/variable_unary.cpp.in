@@ -3,7 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/core/element/@ELEMENT_INCLUDE@.h"
-#include "scipp/variable/@NAME@.h"
+#include "scipp/variable/@OPNAME@.h"
 #include "scipp/variable/transform.h"
 
 using namespace scipp::core;
@@ -11,11 +11,11 @@ using namespace scipp::core;
 namespace scipp::variable {
 
 Variable @NAME@(const VariableConstView &var) {
-  return transform(var, element::@NAME@);
+  return transform(var, element::@OPNAME@);
 }
 
 VariableView @NAME@(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, assign_unary{element::@NAME@});
+  transform_in_place(out, var, assign_unary{element::@OPNAME@});
   return out;
 }
 
