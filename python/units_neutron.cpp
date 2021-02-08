@@ -76,6 +76,8 @@ void init_units_neutron(py::module &m) {
 
   m.def("sqrt", [](const units::Unit &u) { return sqrt(u); });
 
+  py::implicitly_convertible<std::string, units::Unit>();
+
   auto units = m.def_submodule("units");
   units.attr("angstrom") = units::angstrom;
   units.attr("counts") = units::counts;
