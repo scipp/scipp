@@ -12,6 +12,7 @@
 #include "scipp/dataset/except.h"
 #include "scipp/variable/variable.h"
 
+#include "dtype.h"
 #include "numpy.h"
 #include "py_object.h"
 #include "pybind11.h"
@@ -269,28 +270,49 @@ public:
 private:
   // Helper function object to get a scalar value or variance.
   template <class View> struct GetScalarVisitor {
-    py::object &obj;
-    std::remove_reference_t<View> &view;
+    py::object &self; // The object we're getting the value / variance from.
+    std::remove_reference_t<View> &view; // self as a view.
 
-    template <class Data>
-    auto operator()(const Data &&data) const {
+    template <class Data> auto operator()(const Data &&data) const {
       if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-          scipp::python::PyObject>) {
+                                   scipp::python::PyObject>) {
         return data[0].to_pybind();
       } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
         auto ret = py::cast(data[0], py::return_value_policy::move);
-        pybind11::detail::keep_alive_impl(ret, obj);
+        pybind11::detail::keep_alive_impl(ret, self);
         return ret;
       } else if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-          core::time_point>) {
+                                          core::time_point>) {
         static const auto np_datetime64 =
             py::module::import("numpy").attr("datetime64");
         return np_datetime64(data[0].duration, to_string(view.unit()));
       } else {
         // Passing `obj` as parent so py::keep_alive works.
-        return py::cast(data[0],
-                        py::return_value_policy::reference_internal, obj);
+        return py::cast(data[0], py::return_value_policy::reference_internal,
+                        self);
       }
+    }
+  };
+
+  // Helper function object to set a scalar value or variance.
+  template <class View> struct SetScalarVisitor {
+    const py::object &rhs;               // The object we are assigning.
+    std::remove_reference_t<View> &view; // View of self.
+
+    template <class Data> auto operator()(Data &&data) const {
+      using T = typename std::decay_t<decltype(data)>::value_type;
+      if constexpr (std::is_same_v<T, scipp::python::PyObject>)
+        data[0] = rhs;
+      else if constexpr (std::is_same_v<T, scipp::core::time_point>) {
+        // TODO support int
+        if (view.unit() != parse_datetime_dtype(rhs)) {
+          // TODO implement
+          throw std::runtime_error(
+              "Conversion of time units is not implemented.");
+        }
+        data[0] = make_time_point(rhs.template cast<py::buffer>());
+      } else
+        data[0] = rhs.cast<T>();
     }
   };
 
@@ -303,7 +325,7 @@ public:
     auto &view = obj.cast<Var &>();
     core::expect::equals(Dimensions(), view.dims());
     return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
-        get<get_values>(view));
+                      get<get_values>(view));
   }
   // Return a scalar variance from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
@@ -313,41 +335,27 @@ public:
     auto &view = obj.cast<Var &>();
     core::expect::equals(Dimensions(), view.dims());
     return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
-        get<get_variances>(view));
+                      get<get_variances>(view));
   }
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var> static void set_value(Var &view, const py::object &o) {
+  template <class Var> static void set_value(Var &view, const py::object &obj) {
     core::expect::equals(Dimensions(), view.dims());
-    std::visit(
-        [&o](const auto &data) {
-          using T = typename std::decay_t<decltype(data)>::value_type;
-          if constexpr (std::is_same_v<T, scipp::python::PyObject>)
-            data[0] = o;
-          else
-            data[0] = o.cast<T>();
-        },
-        get<get_values>(view));
+    std::visit(SetScalarVisitor<decltype(view)>{obj, view},
+               get<get_values>(view));
   }
   // Set a scalar variance in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var>
-  static void set_variance(Var &view, const py::object &o) {
+  static void set_variance(Var &view, const py::object &obj) {
     core::expect::equals(Dimensions(), view.dims());
-    if (o.is_none())
+    if (obj.is_none())
       return remove_variances(view);
     if (!view.hasVariances())
       init_variances(view);
 
-    std::visit(
-        [&o](const auto &data) {
-          using T = typename std::decay_t<decltype(data)>::value_type;
-          if constexpr (std::is_same_v<T, scipp::python::PyObject>)
-            data[0] = o;
-          else
-            data[0] = o.cast<T>();
-        },
-        get<get_variances>(view));
+    std::visit(SetScalarVisitor<decltype(view)>{obj, view},
+               get<get_variances>(view));
   }
 };
 
