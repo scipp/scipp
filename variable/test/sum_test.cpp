@@ -74,7 +74,7 @@ TEST(VectorReducTest, mean_vector) {
       Dims{Dim::X}, Shape{2}, units::m,
       Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});
   const auto expected = makeVariable<Eigen::Vector3d>(
-      Dims{}, Shape{1}, units::m, Values{Eigen::Vector3d{5, 7, 9}});
-  auto summed = mean(vector_var, Dim::X);
-  EXPECT_EQ(vector_var, expected);
+      Dims{}, Shape{1}, units::m, Values{Eigen::Vector3d{2.5, 3.5, 4.5}});
+  auto averaged = mean(vector_var, Dim::X);
+  EXPECT_EQ(averaged, expected);
 }

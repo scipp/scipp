@@ -22,7 +22,7 @@ setup_scipp_category(trigonometry)
 
 scipp_unary(special_values isnan NO_OUT)
 scipp_unary(special_values isinf NO_OUT)
-scipp_unary(special_values isfinite NO_OUT)
+scipp_unary(special_values isfinite NO_OUT SKIP_VARIABLE)
 scipp_unary(special_values isposinf NO_OUT)
 scipp_unary(special_values isneginf NO_OUT)
 setup_scipp_category(special_values)

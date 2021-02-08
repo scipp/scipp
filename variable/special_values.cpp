@@ -45,4 +45,8 @@ Variable neg_inf_to_num(const VariableConstView &var,
   return transform(var, replacement, element::negative_inf_to_num);
 }
 
+Variable isfinite(const VariableConstView &var) {
+  return transform(var, element::isfinite);
+}
+
 } // namespace scipp::variable

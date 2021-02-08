@@ -230,3 +230,9 @@ TEST(VariableSpecialValueTest,
   EXPECT_EQ(b, expected);
   EXPECT_EQ(a, expected);
 }
+
+TEST(VariableSpecialValueTest, isfinite_on_vector) {
+  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1},
+                                           Values{Eigen::Vector3d{1, 2, 4}});
+  // isfinite(vec);
+}

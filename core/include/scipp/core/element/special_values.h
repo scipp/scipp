@@ -16,6 +16,9 @@ namespace scipp::core::element {
 
 constexpr auto special_value_args = arg_list<int32_t, int64_t, double, float>;
 
+constexpr auto special_value_args_finite =
+    arg_list<int32_t, int64_t, double, float, Eigen::Vector3d>;
+
 constexpr auto isnan =
     overloaded{special_value_args,
                [](const auto x) {
@@ -33,11 +36,12 @@ constexpr auto isinf =
                [](const units::Unit &) { return units::dimensionless; }};
 
 constexpr auto isfinite =
-    overloaded{special_value_args,
+    overloaded{special_value_args_finite,
                [](const auto x) {
                  using numeric::isfinite;
                  return isfinite(x);
                },
+               [](const Eigen::Vector3d &vec) { return vec.allFinite(); },
                [](const units::Unit &) { return units::dimensionless; }};
 
 namespace detail {
