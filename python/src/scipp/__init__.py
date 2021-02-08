@@ -21,6 +21,8 @@ from .extend_units import *
 from .table_html import to_html, make_html
 from .object_list import _repr_html_
 from ._utils import collapse, slices
+from ._utils.is_type import is_variable, is_dataset, is_data_array, \
+                            is_dataset_or_array
 from .compat.dict import to_dict, from_dict
 from .sizes import _make_sizes
 
