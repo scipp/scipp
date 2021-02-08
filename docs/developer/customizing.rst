@@ -33,22 +33,6 @@ To support formatting of variables with the new ``dtype`` it should be registere
 In addition to these steps, it is currently required to manually add Python bindings in several places.
 TODO: Improve or document this process.
 
-Units systems
--------------
-
-The current unit system is based on ``boost::units`` and therefore has a hard-coded set of supported unit combinations.
-Customization may therefore be necessary:
-
-1. Adapt the ``supported_units`` helper in ``units/include/scipp/units/unit.h``.
-   This must list all units and unit combinations that are to be supported (this is a shortcoming of the current implementation, which is based on the compile-time units library ``boost-units``).
-2. Adapt the ``counts_unit`` helper.
-   This is used to define the unit for "counts", e.g., the number of detector neutrons, or measurements with a certain value.
-   When working with event data that is histogrammed later (or data that is a histogram in the first place) it is recommended to use something other than ``dimensionless`` here.
-   Otherwise operations like ``rebin`` cannot correctly distinguish data that represents counts or densities of counts from other data.
-3. Currently ``units/include/scipp/units/neutron.h`` provides some additional base units relevant to neutron scattering.
-   This contains some SI units as well as a unit for "counts" and some particle-physics-related units like ``meV`` and ``meV/c``.
-   More may be defined in a similar way, if SI units are not sufficient.
-
 Container used for event data
 ------------------------------
 
