@@ -266,6 +266,35 @@ public:
     set(view.dims(), view.unit(), get<get_variances>(view), obj);
   }
 
+private:
+  // Helper function object to get a scalar value or variance.
+  template <class View> struct GetScalarVisitor {
+    py::object &obj;
+    std::remove_reference_t<View> &view;
+
+    template <class Data>
+    auto operator()(const Data &&data) const {
+      if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
+          scipp::python::PyObject>) {
+        return data[0].to_pybind();
+      } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
+        auto ret = py::cast(data[0], py::return_value_policy::move);
+        pybind11::detail::keep_alive_impl(ret, obj);
+        return ret;
+      } else if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
+          core::time_point>) {
+        static const auto np_datetime64 =
+            py::module::import("numpy").attr("datetime64");
+        return np_datetime64(data[0].duration, to_string(view.unit()));
+      } else {
+        // Passing `obj` as parent so py::keep_alive works.
+        return py::cast(data[0],
+                        py::return_value_policy::reference_internal, obj);
+      }
+    }
+  };
+
+public:
   // Return a scalar value from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object value(py::object &obj) {
@@ -273,21 +302,7 @@ public:
       return py::none();
     auto &view = obj.cast<Var &>();
     core::expect::equals(Dimensions(), view.dims());
-    return std::visit(
-        [&obj](const auto &data) {
-          if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                       scipp::python::PyObject>) {
-            return data[0].to_pybind();
-          } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
-            auto ret = py::cast(data[0], py::return_value_policy::move);
-            pybind11::detail::keep_alive_impl(ret, obj);
-            return ret;
-          } else {
-            // Passing `obj` as parent so py::keep_alive works.
-            return py::cast(data[0],
-                            py::return_value_policy::reference_internal, obj);
-          }
-        },
+    return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
         get<get_values>(view));
   }
   // Return a scalar variance from a variable, implicitly requiring that the
@@ -297,21 +312,7 @@ public:
       return py::none();
     auto &view = obj.cast<Var &>();
     core::expect::equals(Dimensions(), view.dims());
-    return std::visit(
-        [&obj](const auto &data) {
-          if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                       scipp::python::PyObject>) {
-            return data[0].to_pybind();
-          } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
-            auto ret = py::cast(data[0], py::return_value_policy::move);
-            pybind11::detail::keep_alive_impl(ret, obj);
-            return ret;
-          } else {
-            // Passing `obj` as parent so py::keep_alive works.
-            return py::cast(data[0],
-                            py::return_value_policy::reference_internal, obj);
-          }
-        },
+    return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
         get<get_variances>(view));
   }
   // Set a scalar value in a variable, implicitly requiring that the
