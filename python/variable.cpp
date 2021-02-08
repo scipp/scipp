@@ -77,9 +77,80 @@ void bind_init_0D_native_python_types(py::class_<Variable> &c) {
         py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
+namespace {
+std::tuple<units::Unit, int64_t, int64_t>
+get_time_unit(const std::optional<scipp::units::Unit> value_unit,
+              const std::optional<scipp::units::Unit> variance_unit,
+              const std::optional<scipp::units::Unit> dtype_unit,
+              const units::Unit sc_unit) {
+  // TODO proper dimension check
+  if (sc_unit != units::one && sc_unit != units::s && sc_unit != units::ns &&
+      sc_unit != units::us) {
+    throw std::invalid_argument("Invalid unit for dtype=datetime64: " +
+                                to_string(sc_unit));
+  }
+  if (dtype_unit && (sc_unit != units::one && *dtype_unit != sc_unit)) {
+    throw std::invalid_argument(
+        "dtype (" + to_string(*dtype_unit) +
+        ") has a different time unit from 'unit' argument (" +
+        to_string(sc_unit) + ")");
+  }
+  units::Unit actual_unit;
+  if (sc_unit != units::one)
+    actual_unit = sc_unit;
+  else if (dtype_unit.has_value())
+    actual_unit = *dtype_unit;
+  else if (value_unit.has_value())
+    actual_unit = *value_unit;
+  else if (variance_unit.has_value())
+    actual_unit = *variance_unit;
+  else
+    throw std::invalid_argument("Unable to infer time unit from any argument.");
+
+  // TODO implement
+  if (value_unit && value_unit != actual_unit) {
+    throw std::runtime_error("Conversion of time units is not implemented.");
+  }
+  if (variance_unit && variance_unit != actual_unit) {
+    throw std::runtime_error("Conversion of time units is not implemented.");
+  }
+
+  return {actual_unit, 1, 1};
+}
+
+std::tuple<units::Unit, int64_t, int64_t>
+get_time_unit(py::buffer &value, const std::optional<py::buffer> &variance,
+              const units::Unit &unit, py::object &dtype) {
+  return get_time_unit(
+      parse_datetime_dtype(
+          value.attr("dtype").attr("name").cast<std::string_view>()),
+      variance.has_value()
+          ? parse_datetime_dtype(
+                variance->attr("dtype").attr("name").cast<std::string_view>())
+          : std::optional<units::Unit>{},
+      dtype.is_none() ? std::optional<units::Unit>{}
+                      : parse_datetime_dtype(py::dtype::from_args(dtype)
+                                                 .attr("name")
+                                                 .cast<std::string_view>()),
+      unit);
+}
+
+core::time_point make_time_point(const py::buffer &buffer) {
+  // buffer.cast does not always work because numpy.datetime64.__int__
+  // delegates to datetime.datetime if the unit is larger than ns and
+  // that cannot be converted to long.
+  using PyType = typename ElementTypeMap<core::time_point>::PyType;
+  return core::time_point{
+      buffer.attr("astype")(py::dtype::of<PyType>()).cast<PyType>()};
+}
+} // namespace
+
 void bind_init_0D_numpy_types(py::class_<Variable> &c) {
   c.def(py::init([](py::buffer &b, const std::optional<py::buffer> &v,
                     const units::Unit &unit, py::object &dtype) {
+          static auto np_datetime64_type =
+              py::module::import("numpy").attr("datetime64").get_type();
+
           py::buffer_info info = b.request();
           if (info.ndim == 0) {
             auto arr = py::array(b);
@@ -97,12 +168,19 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
                 b.cast<Eigen::Matrix3d>(),
                 v ? std::optional(v->cast<Eigen::Matrix3d>()) : std::nullopt,
                 unit);
-          } else if ((info.ndim == 1) && (unit == units::ns || unit == units::s)){
-            return do_init_0D<scipp::core::time_point>(
-                b.cast<scipp::core::time_point>(),
-                v ? std::optional(v->cast<scipp::core::time_point>())
-                  : std::nullopt,
-                unit);
+          } else if ((info.ndim == 1) &&
+                     py::isinstance(b.get_type(), np_datetime64_type)) {
+            // TODO allow construction from int
+            //                     scipp_dtype(dtype) ==
+            //                     core::dtype<core::time_point>) {
+            const auto [actual_unit, value_factor, variance_factor] =
+                get_time_unit(b, v, unit, dtype);
+            return do_init_0D<core::time_point>(
+                make_time_point(b) * value_factor,
+                v.has_value() ? make_time_point(*v) * variance_factor
+                              : std::optional<core::time_point>{},
+                actual_unit);
+
           } else {
             throw scipp::except::VariableError(
                 "Wrong overload for making 0D variable.");
@@ -155,7 +233,8 @@ of variances.)");
   bind_init_0D<DataArray>(variable);
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
-  bind_init_0D<scipp::core::time_point>(variable);
+  // TODO??
+  //  bind_init_0D<scipp::core::time_point>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_0D<Eigen::Matrix3d>(variable);
   variable
