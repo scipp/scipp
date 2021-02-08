@@ -974,3 +974,18 @@ TEST(VariableTest, rotate) {
       Values{rot1.toRotationMatrix() * vec1, rot2.toRotationMatrix() * vec2});
   EXPECT_EQ(vec_new, rotated);
 }
+
+TEST(VariableTest, scale_vector) {
+  Eigen::Vector3d vec1(1, 2, 3);
+  Eigen::Vector3d vec2(2, 4, 6);
+  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
+                                           Values{vec1});
+  auto expected_vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1},
+                                                    units::m, Values{vec2});
+  auto scale = makeVariable<double>(Dims{}, Shape{1}, units::one, Values{2.0});
+
+  auto scaled_vec = scale * vec;
+  scaled_vec = vec * scale;
+
+  EXPECT_EQ(scaled_vec, expected_vec);
+}

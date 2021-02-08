@@ -103,6 +103,12 @@ template <int N> struct expect_no_variance_arg_t : Flag {};
 template <int N>
 constexpr auto expect_no_variance_arg = expect_no_variance_arg_t<N>{};
 
+struct expect_no_in_variance_if_out_cannot_have_variance_t : Flag {};
+/// Add this to overloaded operator to indicate that the operation does not
+/// support variances in the specified argument.
+constexpr auto expect_no_in_variance_if_out_cannot_have_variance =
+    expect_no_in_variance_if_out_cannot_have_variance_t{};
+
 template <int N> struct expect_variance_arg_t : Flag {};
 /// Add this to overloaded operator to indicate that the operation requires
 /// variances in the specified argument.
