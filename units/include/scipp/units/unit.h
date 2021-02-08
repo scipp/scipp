@@ -5,6 +5,8 @@
 /// @author Neil Vaytet
 #pragma once
 
+#include <string>
+
 #include <units/unit_definitions.hpp>
 
 #include "scipp-units_export.h"
