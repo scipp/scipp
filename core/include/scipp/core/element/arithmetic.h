@@ -66,6 +66,7 @@ constexpr auto divide_equals =
 // mod defined as in Python
 constexpr auto mod_equals = overloaded{
     arg_list<int64_t, int32_t, std::tuple<int64_t, int32_t>>,
+    [](units::Unit &a, const units::Unit &b) { a %= b; },
     [](auto &&a, const auto &b) { a = b == 0 ? b : ((a % b) + b) % b; }};
 
 struct add_types_t {
@@ -106,6 +107,7 @@ constexpr auto divide =
 constexpr auto mod = overloaded{
     arg_list<int64_t, int32_t, std::tuple<int32_t, int64_t>,
              std::tuple<int64_t, int32_t>>,
+    [](const units::Unit &a, const units::Unit &b) { return a % b; },
     [](const auto a, const auto b) { return b == 0 ? 0 : ((a % b) + b) % b; }};
 
 constexpr auto unary_minus =

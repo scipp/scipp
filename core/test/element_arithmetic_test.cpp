@@ -77,6 +77,8 @@ TEST(ElementArithmeticIntegerDivisionTest, inplace_truediv_not_supported) {
 }
 
 TEST(ElementArithmeticIntegerDivisionTest, mod) {
+  EXPECT_EQ(mod(units::m, units::s), units::m / units::s);
+
   // x mod 0 is not really defined, but numpy returns 0 and prints a warning
   EXPECT_EQ(mod(0, 0), 0);
   EXPECT_EQ(mod(1, 0), 0);
@@ -106,6 +108,8 @@ TEST(ElementArithmeticIntegerDivisionTest, mod_equals) {
     mod_equals(a, b);
     EXPECT_EQ(a, expected);
   };
+  check_mod(units::m, units::s, units::m / units::s);
+
   check_mod(0, 0, 0);
   check_mod(1, 0, 0);
   check_mod(-1, 0, 0);
