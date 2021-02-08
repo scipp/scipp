@@ -88,7 +88,7 @@ template <bool reinterpret, class T, class View>
 void copy_flattened_0d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
-  detail::copy_element<reinterpret>(r(), *it);
+  copy_element<reinterpret>(r(), *it);
 }
 
 template <bool reinterpret, class T, class View>
@@ -96,7 +96,7 @@ void copy_flattened_1d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
   for (ssize_t i = 0; i < r.shape(0); ++i, ++it) {
-    detail::copy_element<reinterpret>(r(i), *it);
+    copy_element<reinterpret>(r(i), *it);
   }
 }
 
@@ -109,7 +109,7 @@ void copy_flattened_2d(const py::array_t<T> &data, View &&view) {
         auto it = begin + range.begin() * r.shape(1);
         for (ssize_t i = range.begin(); i < range.end(); ++i)
           for (ssize_t j = 0; j < r.shape(1); ++j, ++it)
-            detail::copy_element<reinterpret>(r(i, j), *it);
+            copy_element<reinterpret>(r(i, j), *it);
       });
 }
 
@@ -120,7 +120,7 @@ void copy_flattened_3d(const py::array_t<T> &data, View &&view) {
   for (ssize_t i = 0; i < r.shape(0); ++i)
     for (ssize_t j = 0; j < r.shape(1); ++j)
       for (ssize_t k = 0; k < r.shape(2); ++k, ++it)
-        detail::copy_element<reinterpret>(r(i, j, k), *it);
+        copy_element<reinterpret>(r(i, j, k), *it);
 }
 
 template <bool reinterpret, class T, class View>
@@ -131,7 +131,7 @@ void copy_flattened_4d(const py::array_t<T> &data, View &&view) {
     for (ssize_t j = 0; j < r.shape(1); ++j)
       for (ssize_t k = 0; k < r.shape(2); ++k)
         for (ssize_t l = 0; l < r.shape(3); ++l, ++it)
-          detail::copy_element<reinterpret>(r(i, j, k, l), *it);
+          copy_element<reinterpret>(r(i, j, k, l), *it);
 }
 
 template <class T> auto memory_begin_end(const py::buffer_info &info) {
