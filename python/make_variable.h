@@ -7,7 +7,6 @@
 #include "scipp/core/dtype.h"
 #include "scipp/units/unit.h"
 
-#include "time_point_cast.h"
 
 using namespace scipp;
 using namespace scipp::variable;
