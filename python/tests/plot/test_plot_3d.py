@@ -18,7 +18,7 @@ def make_data_with_position_vectors():
     x = r * np.sin(theta) * np.sin(phi)
     y = r * np.sin(theta) * np.cos(phi)
     z = r * np.cos(theta)
-    tof = np.arange(M).astype(np.float)
+    tof = np.arange(M).astype(float)
     a = np.arange(M * N).reshape([M, N]) * np.sin(y)
     d = sc.Dataset()
     d.coords['xyz'] = sc.Variable(['xyz'],

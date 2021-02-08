@@ -126,7 +126,7 @@ def test_dataset_with_masks():
     d.coords["Normalized"] = sc.Variable(['tof'], values=np.arange(N))
 
     d['Counts'].masks["Mask"] = sc.Variable(['tof'],
-                                            values=np.zeros(N, dtype=np.bool))
+                                            values=np.zeros(N, dtype=bool))
 
     sc.table(d)
 
@@ -144,7 +144,7 @@ def test_dataset_histogram_with_masks():
     d.coords["Normalized"] = sc.Variable(['x'], values=np.arange(N))
 
     d['Counts'].masks["Mask"] = sc.Variable(['x'],
-                                            values=np.zeros(N, dtype=np.bool))
+                                            values=np.zeros(N, dtype=bool))
 
     sc.table(d)
 

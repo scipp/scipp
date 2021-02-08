@@ -9,8 +9,6 @@ from functools import partial, reduce
 from html import escape
 import sys
 
-import numpy as np
-
 from .._scipp import core as sc
 from .._utils import is_dataset
 
@@ -36,7 +34,7 @@ def _format_array(data, size, ellipsis_after, do_ellide=True):
             i = size - ellipsis_after
         elem = data[i]
         if hasattr(elem, "__round__"):
-            if not hasattr(data, "dtype") or data.dtype != np.bool:
+            if not hasattr(data, "dtype") or data.dtype != bool:
                 elem = round(elem, 2)
         s.append(str(elem))
         i += 1
