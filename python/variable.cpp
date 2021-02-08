@@ -121,18 +121,13 @@ get_time_unit(const std::optional<scipp::units::Unit> value_unit,
 std::tuple<units::Unit, int64_t, int64_t>
 get_time_unit(py::buffer &value, const std::optional<py::buffer> &variance,
               const units::Unit &unit, py::object &dtype) {
-  return get_time_unit(
-      parse_datetime_dtype(
-          value.attr("dtype").attr("name").cast<std::string_view>()),
-      variance.has_value()
-          ? parse_datetime_dtype(
-                variance->attr("dtype").attr("name").cast<std::string_view>())
-          : std::optional<units::Unit>{},
-      dtype.is_none() ? std::optional<units::Unit>{}
-                      : parse_datetime_dtype(py::dtype::from_args(dtype)
-                                                 .attr("name")
-                                                 .cast<std::string_view>()),
-      unit);
+  return get_time_unit(parse_datetime_dtype(value),
+                       variance.has_value() ? parse_datetime_dtype(*variance)
+                                            : std::optional<units::Unit>{},
+                       dtype.is_none()
+                           ? std::optional<units::Unit>{}
+                           : parse_datetime_dtype(py::dtype::from_args(dtype)),
+                       unit);
 }
 } // namespace
 

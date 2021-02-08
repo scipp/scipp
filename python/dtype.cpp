@@ -82,5 +82,22 @@ parse_datetime_dtype(const std::string_view dtype_name) {
   }
 
   throw std::invalid_argument(
-      std::string("Invalid dtype, expected datetime64, got ").append(dtype_name));
+      std::string("Invalid dtype, expected datetime64, got ")
+          .append(dtype_name));
+}
+
+[[nodiscard]] scipp::units::Unit
+parse_datetime_dtype(const pybind11::object &dtype) {
+  if (py::isinstance<py::buffer>(dtype.get_type())) {
+    return parse_datetime_dtype(dtype.attr("dtype"));
+  } else if (py::isinstance<py::dtype>(dtype)) {
+    return parse_datetime_dtype(dtype.attr("name").cast<std::string_view>());
+  }
+  static const auto np_datetime64_type =
+      py::module::import("numpy").attr("datetime64").get_type();
+  if (py::isinstance(dtype.get_type(), np_datetime64_type)) {
+    return parse_datetime_dtype(dtype.attr("dtype"));
+  }
+  throw std::invalid_argument("Unable to extract time unit from " +
+                              py::str(dtype).cast<std::string>());
 }
