@@ -134,15 +134,6 @@ get_time_unit(py::buffer &value, const std::optional<py::buffer> &variance,
                                                  .cast<std::string_view>()),
       unit);
 }
-
-core::time_point make_time_point(const py::buffer &buffer) {
-  // buffer.cast does not always work because numpy.datetime64.__int__
-  // delegates to datetime.datetime if the unit is larger than ns and
-  // that cannot be converted to long.
-  using PyType = typename ElementTypeMap<core::time_point>::PyType;
-  return core::time_point{
-      buffer.attr("astype")(py::dtype::of<PyType>()).cast<PyType>()};
-}
 } // namespace
 
 void bind_init_0D_numpy_types(py::class_<Variable> &c) {

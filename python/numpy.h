@@ -215,3 +215,5 @@ void copy_array_into_view(const std::vector<SourceDType> &src,
   core::expect::sizeMatches(dst, src);
   std::copy(begin(src), end(src), dst.begin());
 }
+
+core::time_point make_time_point(const py::buffer &buffer);
