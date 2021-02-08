@@ -27,6 +27,10 @@ TEST(UnitTest, construct_default) {
   ASSERT_EQ(u, units::dimensionless);
 }
 
+TEST(UnitTest, construct_bad_string) {
+  EXPECT_THROW(Unit("abcde"), except::UnitError);
+}
+
 TEST(UnitTest, compare) {
   Unit u1{units::dimensionless};
   Unit u2{units::m};

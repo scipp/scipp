@@ -15,6 +15,9 @@ namespace scipp::units {
 
 Unit::Unit(const std::string &unit)
     : Unit(llnl::units::unit_from_string(unit == "dimensionless" ? "" : unit)) {
+  if (!is_valid(m_unit))
+    throw except::UnitError("Failed to convert string `" + unit +
+                            "` to valid unit.");
 }
 
 std::string Unit::name() const {
