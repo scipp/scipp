@@ -87,3 +87,10 @@ def array(*,
                     variances=variances,
                     unit=unit,
                     dtype=dtype)
+
+
+def datetime64(*args, **kwargs) -> numpy.datetime64:
+    """Constructs an object representing a date and time point.
+    Currently, this simply wraps ``numpy.datetime64` and takes the same arguments.
+    """
+    return numpy.datetime64(*args, **kwargs)
