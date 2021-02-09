@@ -3,8 +3,8 @@ Dependencies
 
 Places where dependencies are specified:
 
-  - Conda package build (`conda/meta.yml <https://github.com/scipp/scipp/blob/master/conda/meta.yaml>`_)
-  - Developer environment (`scipp-developer.yml <https://github.com/scipp/scipp/blob/master/scipp-developer.yml>`_)
+  - Conda package build (`conda/meta.yml <https://github.com/scipp/scipp/blob/main/conda/meta.yaml>`_)
+  - Developer environment (`scipp-developer.yml <https://github.com/scipp/scipp/blob/main/scipp-developer.yml>`_)
 
 CMake ExternalProject
 #####################
