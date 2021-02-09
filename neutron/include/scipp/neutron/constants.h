@@ -26,19 +26,19 @@ constexpr auto J_to_meV =
     llnl::units::precise::energy::eV / llnl::units::precise::J;
 constexpr auto m_to_angstrom = 1e10 * llnl::units::precise::distance::angstrom /
                                llnl::units::precise::meter;
-constexpr auto m_n = llnl::units::precise_measurement{1.67492749804e-27,
-                                                      llnl::units::precise::kg};
 
 // In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
 // tof_to_s factor is in the denominator.
 constexpr auto tof_to_energy_physical_constants =
-    0.5 * m_n * J_to_meV / (tof_to_s * tof_to_s);
+    0.5 * llnl::units::constants::mn * J_to_meV / (tof_to_s * tof_to_s);
 
 constexpr auto tof_to_dspacing_physical_constants =
-    2.0 * m_n / llnl::units::constants::h / (m_to_angstrom * tof_to_s);
+    2.0 * llnl::units::constants::mn / llnl::units::constants::h /
+    (m_to_angstrom * tof_to_s);
 
 constexpr auto tof_to_wavelength_physical_constants =
-    tof_to_s * m_to_angstrom * llnl::units::constants::h / m_n;
+    tof_to_s * m_to_angstrom * llnl::units::constants::h /
+    llnl::units::constants::mn;
 
 template <class T> auto tof_to_dspacing(const T &d) {
   const auto &sourcePos = source_position(d);
