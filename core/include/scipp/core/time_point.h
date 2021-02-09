@@ -68,7 +68,7 @@ public:
   bool operator>=(const time_point &time) const noexcept {
     return m_duration >= time.time_since_epoch();
   }
-  
+
 private:
   int64_t m_duration;
 };
