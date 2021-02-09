@@ -26,6 +26,7 @@ pybind11_add_module(
   reduction.cpp
   trigonometry.cpp
   unary.cpp
+  unit.cpp
   units_neutron.cpp
   variable.cpp
   variable_instantiate_py_object.cpp
