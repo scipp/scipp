@@ -10,7 +10,7 @@ schedules:
     displayName: 'Weekly Recurring Jobs'
     branches:
       include:
-        - 'master'
+        - 'main'
     always: true
 
 jobs:
