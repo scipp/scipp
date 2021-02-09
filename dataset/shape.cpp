@@ -141,4 +141,17 @@ Dataset resize(const DatasetConstView &d, const Dim dim,
   return result;
 }
 
+DataArray reshape(const DataArrayConstView &a, const Dimensions &dims) {
+  auto adims = a.data().dims();
+  auto reshaped = DataArray(reshape(a.data(), dims));
+  for (auto &&[name, coord] : a.meta()) {
+    reshaped.meta().set(name, reshape(coord, dims));
+  }
+  for (auto &&[name, mask] : a.masks()) {
+    reshaped.masks().set(name, reshape(mask, dims));
+  }
+  return reshaped;
+}
+
+
 } // namespace scipp::dataset

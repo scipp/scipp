@@ -67,7 +67,7 @@ TEST_F(SqueezeTest, both) {
   EXPECT_EQ(var, sum(sum(original, Dim::Z), Dim::X));
 }
 
-TEST(VariableTest, reshape) {
+TEST(ShapeTest, reshape) {
   const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                         units::m, Values{1, 2, 3, 4, 5, 6});
 
@@ -79,7 +79,7 @@ TEST(VariableTest, reshape) {
                                  Values{1, 2, 3, 4, 5, 6}));
 }
 
-TEST(VariableTest, reshape_with_variance) {
+TEST(ShapeTest, reshape_with_variance) {
   const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                         Values{1, 2, 3, 4, 5, 6},
                                         Variances{7, 8, 9, 10, 11, 12});
@@ -94,7 +94,7 @@ TEST(VariableTest, reshape_with_variance) {
                                  Variances{7, 8, 9, 10, 11, 12}));
 }
 
-TEST(VariableTest, reshape_temporary) {
+TEST(ShapeTest, reshape_temporary) {
   const auto var = makeVariable<double>(
       Dims{Dim::X, Dim::Row}, Shape{2, 4}, units::m,
       Values{1, 2, 3, 4, 5, 6, 7, 8}, Variances{9, 10, 11, 12, 13, 14, 15, 16});
@@ -106,7 +106,7 @@ TEST(VariableTest, reshape_temporary) {
   EXPECT_EQ(typeid(decltype(reshape(std::move(var), {}))), typeid(Variable));
 }
 
-TEST(VariableTest, reshape_fail) {
+TEST(ShapeTest, reshape_fail) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                   Values{1, 2, 3, 4, 5, 6});
   EXPECT_THROW_MSG(reshape(var, {Dim::Row, 5}), std::runtime_error,
@@ -116,7 +116,7 @@ TEST(VariableTest, reshape_fail) {
                    "Cannot reshape to dimensions with different volume");
 }
 
-TEST(VariableTest, reshape_and_slice) {
+TEST(ShapeTest, reshape_and_slice) {
   auto var = makeVariable<double>(
       Dims{Dim::Z}, Shape{16},
       Values{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
@@ -140,7 +140,7 @@ TEST(VariableTest, reshape_and_slice) {
                                  Variances{22, 23, 26, 27}));
 }
 
-TEST(VariableTest, reshape_mutable) {
+TEST(ShapeTest, reshape_mutable) {
   auto modified_original = makeVariable<double>(
       Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values{1, 2, 3, 0, 5, 6});
   auto reference =

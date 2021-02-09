@@ -41,3 +41,24 @@ TEST(ResizeTest, data_array_2d) {
   Dataset expected_d({{"a", expected}});
   EXPECT_EQ(resize(d, Dim::Y, 1), expected_d);
 }
+
+TEST(ReshapeTest, reshape) {
+  const auto var = makeVariable<double>(Dims{Dim::X}, Shape{6}, Values{1, 2, 3, 4, 5, 6});
+  DataArray a(var);
+  a.coords().set(Dim::X, var);
+  a.attrs().set(Dim::Tof, var);
+  a.masks().set("mask", var);
+  DataArray expected(makeVariable<double>(Dims{Dim::Z, Dim::Y}, Shape{3, 2}, Values{1, 2, 3, 4, 5, 6}));
+  EXPECT_EQ(reshape(a, {{Dim::Z, 3}, {Dim::Y, 2}}), expected);
+
+
+  // const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
+  //                                       units::m, Values{1, 2, 3, 4, 5, 6});
+
+  // ASSERT_EQ(reshape(var, {Dim::Row, 6}),
+  //           makeVariable<double>(Dims{Dim::Row}, Shape{6}, units::m,
+  //                                Values{1, 2, 3, 4, 5, 6}));
+  // ASSERT_EQ(reshape(var, {{Dim::Row, 3}, {Dim::Z, 2}}),
+  //           makeVariable<double>(Dims{Dim::Row, Dim::Z}, Shape{3, 2}, units::m,
+  //                                Values{1, 2, 3, 4, 5, 6}));
+}
