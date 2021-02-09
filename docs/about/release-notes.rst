@@ -10,7 +10,9 @@ Features
 ~~~~~~~~
 
 * Add ``sizes`` properties, an ordered ``dict`` to lookup the size of a specific dimension [#1636](https://github.com/scipp/scipp/pull/1636).
-* Add more functions for data arrays that were previously available only for variables [#1638](https://github.com/scipp/scipp/pull/1638).
+* Add more functions for data arrays that were previously available only for variables [#1638](https://github.com/scipp/scipp/pull/1638) [#1660](https://github.com/scipp/scipp/pull/1660).
+* Add named versions of operators such as ``logical_and`` [#1660](https://github.com/scipp/scipp/pull/1660).
+* Add modulo operations [#1660](https://github.com/scipp/scipp/pull/1660).
 * ``scipp.neutron``
 
   * Support unit conversion to energy transfer, for inelastic TOF experiments [#1635](https://github.com/scipp/scipp/pull/1635).

@@ -11,6 +11,7 @@
 #include "scipp/dataset/map_view_forward.h"
 #include "scipp/units/dim.h"
 #include "scipp/units/unit.h"
+#include "scipp/variable/logical.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::dataset {

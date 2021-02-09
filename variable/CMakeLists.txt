@@ -46,7 +46,6 @@ set(SRC_FILES
     creation.cpp
     cumulative.cpp
     except.cpp
-    inplace_arithmetic.cpp
     logical.cpp
     math.cpp
     operations.cpp

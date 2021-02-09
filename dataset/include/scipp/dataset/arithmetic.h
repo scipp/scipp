@@ -4,4 +4,4 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include "scipp/variable/generated_logical.h"
+#include "scipp/dataset/generated_arithmetic.h"
