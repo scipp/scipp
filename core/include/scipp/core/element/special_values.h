@@ -37,10 +37,12 @@ constexpr auto isinf =
 
 constexpr auto isfinite = overloaded{
     special_value_args_finite,
-    [](const Eigen::Vector3d &vec) { return vec.allFinite(); },
     [](const auto x) {
-      using numeric::isfinite;
-      return isfinite(x);
+      if constexpr (std::is_same_v<std::decay_t<decltype(x)>,
+                                   Eigen::Vector3d>) {
+        return x.allFinite();
+      }
+      return numeric::isfinite(x);
     },
     [](const units::Unit &) {
       return units::dimensionless;
