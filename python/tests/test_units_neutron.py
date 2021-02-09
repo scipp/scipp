@@ -11,6 +11,7 @@ def test_default_unit():
 
 
 def test_unit_repr():
-    assert repr(sc.units.angstrom) == "\u212B"
+    assert (repr(sc.units.angstrom) == "\u212B") or (repr(sc.units.angstrom)
+                                                     == "\u00C5")
     assert repr(sc.units.m) == "m"
     assert repr(sc.units.us) == "µs"
