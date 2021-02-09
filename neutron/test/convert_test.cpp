@@ -280,8 +280,9 @@ TEST_P(ConvertTest, Wavelength_to_Tof) {
   ASSERT_TRUE(tof.contains("counts"));
   // Broadcasting is needed as conversion introduces the dependance on
   // Dim::Spectrum
-  EXPECT_EQ(tof.coords()[Dim::Tof], broadcast(tof_original.coords()[Dim::Tof],
-                                              tof.coords()[Dim::Tof].dims()));
+  EXPECT_TRUE(all(is_approx(tof.coords()[Dim::Tof],
+                            tof_original.coords()[Dim::Tof], 1e-12 * units::us))
+                  .value<bool>());
 
   ASSERT_EQ(tof.coords()[Dim("position")],
             tof_original.coords()[Dim("position")]);
@@ -404,7 +405,7 @@ TEST_P(ConvertTest, Tof_to_EnergyTransfer) {
   const auto direct = convert(tof, Dim::Tof, Dim::EnergyTransfer);
   auto tof_direct = convert(direct, Dim::EnergyTransfer, Dim::Tof);
   ASSERT_TRUE(all(is_approx(tof_direct.coords()[Dim::Tof],
-                            tof.coords()[Dim::Tof], 1e-9 * units::us))
+                            tof.coords()[Dim::Tof], 1e-11 * units::us))
                   .value<bool>());
   tof_direct.coords().set(Dim::Tof, tof.coords()[Dim::Tof]);
   EXPECT_EQ(tof_direct, tof);
@@ -416,7 +417,7 @@ TEST_P(ConvertTest, Tof_to_EnergyTransfer) {
   const auto indirect = convert(tof, Dim::Tof, Dim::EnergyTransfer);
   auto tof_indirect = convert(indirect, Dim::EnergyTransfer, Dim::Tof);
   ASSERT_TRUE(all(is_approx(tof_indirect.coords()[Dim::Tof],
-                            tof.coords()[Dim::Tof], 1e-9 * units::us))
+                            tof.coords()[Dim::Tof], 1e-12 * units::us))
                   .value<bool>());
   tof_indirect.coords().set(Dim::Tof, tof.coords()[Dim::Tof]);
   EXPECT_EQ(tof_indirect, tof);

@@ -145,6 +145,22 @@ class TestMantidConversion(unittest.TestCase):
                                         EFixed=3)
         ref = mantidcompat.from_mantid(ws_deltaE)
         da = mantidcompat.from_mantid(eventWS)
+        # Boost and Mantid use CODATA 2006. This test passes if we manually
+        # change the implementation to use the old constants. Alternatively
+        # we can correct for this by scaling L1^2 or L2^2, and this was also
+        # confirmed in C++. Unfortunately only positions are accessible to
+        # correct for this here, and due to precision issues with
+        # dot/norm/sqrt this doesn't actually fix the test. We additionally
+        # exclude low TOF region, and bump relative and absolute accepted
+        # errors from 1e-8 to 1e-5.
+        m_n_2006 = 1.674927211
+        m_n_2018 = 1.67492749804
+        e_2006 = 1.602176487
+        e_2018 = 1.602176634
+        scale = (m_n_2006 / m_n_2018) / (e_2006 / e_2018)
+        da.coords['source-position'] *= np.sqrt(scale)
+        da.coords['position'] *= np.sqrt(scale)
+        low_tof = da.bins.data.coords['tof'] < 49000.0 * sc.units.us
         da.coords['incident-energy'] = 3.0 * sc.units.meV
         da = sc.neutron.convert(da, 'tof', 'energy-transfer')
         assert sc.all(
@@ -153,10 +169,11 @@ class TestMantidConversion(unittest.TestCase):
                 1e-8 * sc.units.meV +
                 1e-8 * sc.abs(ref.coords['energy-transfer']))).value
         assert sc.all(
-            sc.isnan(da.bins.data.coords['energy-transfer']) | sc.is_approx(
+            low_tof | sc.isnan(da.bins.data.coords['energy-transfer'])
+            | sc.is_approx(
                 da.bins.data.coords['energy-transfer'],
-                ref.bins.data.coords['energy-transfer'], 1e-8 * sc.units.meV +
-                1e-8 * sc.abs(ref.bins.data.coords['energy-transfer']))).value
+                ref.bins.data.coords['energy-transfer'], 1e-5 * sc.units.meV +
+                1e-5 * sc.abs(ref.bins.data.coords['energy-transfer']))).value
 
     @staticmethod
     def _mask_bins_and_spectra(ws, xmin, xmax, num_spectra, indices=None):
@@ -515,6 +532,7 @@ class TestMantidConversion(unittest.TestCase):
     def test_warning_raised_when_convert_run_log_with_unrecognised_units(self):
         import mantid.simpleapi as mantid
         target = mantid.CloneWorkspace(self.base_event_ws)
+        target.getRun()['LambdaRequest'].units = 'abcde'
         with warnings.catch_warnings(record=True) as caught_warnings:
             mantidcompat.convert_EventWorkspace_to_data_array(target, False)
             assert len(
@@ -606,7 +624,7 @@ class TestMantidConversion(unittest.TestCase):
                            unmoved_det_positions.values)))
 
     def test_validate_units(self):
-        acceptable = ["wavelength", sc.Dim.Wavelength]
+        acceptable = ["wavelength", "Wavelength"]
         for i in acceptable:
             ret = mantidcompat.validate_dim_and_get_mantid_string(i)
             self.assertEqual(ret, "Wavelength")

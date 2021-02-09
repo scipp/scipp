@@ -238,7 +238,7 @@ class TableViewer:
                     name_str = str(name)
                     if ndims < 2:
                         group = "{}D Variables".format(ndims)
-                        dim = var.dims[0] if ndims == 1 else sc.Dim.Invalid
+                        dim = var.dims[0] if ndims == 1 else ''
                         key = str(dim)
                         if key not in self.tabledict[group]:
                             self.tabledict[group][key] = self.make_dict()
@@ -262,7 +262,7 @@ class TableViewer:
                 else:
                     self.headers = 0
                     key = " "
-                    var = sc.Variable([sc.Dim.Row], values=scipp_obj)
+                    var = sc.Variable(['row'], values=scipp_obj)
 
                 self.tabledict[group][key] = {"data": {key: var}}
                 self.is_bin_centers[group][key] = {"data": {key: False}}
