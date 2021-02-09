@@ -83,11 +83,11 @@ class DataAccessHelper {
         return numpy_strides<T>(VariableView(view).strides());
       }
     };
-    const auto get_dtype = []() {
+    const auto get_dtype = [&view]() {
       if constexpr (std::is_same_v<T, scipp::core::time_point>) {
         // Need a custom implementation because py::dtype::of only works with
         // types supported by the buffer protocol.
-        return py::dtype("datetime64[ns]");
+        return py::dtype("datetime64["+to_string(view.unit())+"]");
       } else {
         return py::dtype::of<T>();
       }
