@@ -232,7 +232,12 @@ TEST(VariableSpecialValueTest,
 }
 
 TEST(VariableSpecialValueTest, isfinite_on_vector) {
-  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1},
-                                           Values{Eigen::Vector3d{1, 2, 4}});
-  // isfinite(vec);
+  auto vec = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{2},
+      Values{Eigen::Vector3d{1, 2, 4},
+             Eigen::Vector3d{1, double(INFINITY), 4}});
+  auto expected =
+      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
+
+  EXPECT_EQ(isfinite(vec), expected);
 }

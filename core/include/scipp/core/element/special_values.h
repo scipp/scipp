@@ -35,14 +35,17 @@ constexpr auto isinf =
                },
                [](const units::Unit &) { return units::dimensionless; }};
 
-constexpr auto isfinite =
-    overloaded{special_value_args_finite,
-               [](const auto x) {
-                 using numeric::isfinite;
-                 return isfinite(x);
-               },
-               [](const Eigen::Vector3d &vec) { return vec.allFinite(); },
-               [](const units::Unit &) { return units::dimensionless; }};
+constexpr auto isfinite = overloaded{
+    special_value_args_finite,
+    [](const Eigen::Vector3d &vec) { return vec.allFinite(); },
+    [](const auto x) {
+      using numeric::isfinite;
+      return isfinite(x);
+    },
+    [](const units::Unit &) {
+      return units::dimensionless;
+    } // namespace scipp::core::element
+};
 
 namespace detail {
 template <typename T> auto isposinf(T x) {

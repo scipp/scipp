@@ -104,8 +104,8 @@ template <int N>
 constexpr auto expect_no_variance_arg = expect_no_variance_arg_t<N>{};
 
 struct expect_no_in_variance_if_out_cannot_have_variance_t : Flag {};
-/// Add this to overloaded operator to indicate that the operation does not
-/// support variances in the specified argument.
+/// Add this to overloaded operator to indicate that if the output dtype
+/// does not support variance none of the inputs should have a variance.
 constexpr auto expect_no_in_variance_if_out_cannot_have_variance =
     expect_no_in_variance_if_out_cannot_have_variance_t{};
 
