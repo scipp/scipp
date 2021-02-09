@@ -51,9 +51,11 @@ get_time_unit(const std::optional<scipp::units::Unit> value_unit,
 }
 
 std::tuple<units::Unit, int64_t, int64_t>
-get_time_unit(py::buffer &value, const std::optional<py::buffer> &variance,
-              const units::Unit &unit, py::object &dtype) {
-  return get_time_unit(parse_datetime_dtype(value),
+get_time_unit(const py::buffer &value,
+              const std::optional<py::buffer> &variance,
+              const py::object &dtype, const units::Unit unit) {
+  return get_time_unit(value.is_none() ? std::optional<units::Unit>{}
+                                       : parse_datetime_dtype(value),
                        variance.has_value() ? parse_datetime_dtype(*variance)
                                             : std::optional<units::Unit>{},
                        dtype.is_none()
