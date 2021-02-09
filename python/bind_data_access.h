@@ -285,7 +285,7 @@ private:
                                           core::time_point>) {
         static const auto np_datetime64 =
             py::module::import("numpy").attr("datetime64");
-        return np_datetime64(data[0].duration, to_string(view.unit()));
+        return np_datetime64(data[0].time_since_epoch(), to_string(view.unit()));
       } else {
         // Passing `obj` as parent so py::keep_alive works.
         return py::cast(data[0], py::return_value_policy::reference_internal,

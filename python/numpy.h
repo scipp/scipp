@@ -43,32 +43,32 @@ void copy_element(const Source &src, Destination &&dst) {
   }
 }
 
-/// Cast a py::object referring to an array to py::array_t<T> if supported.
-/// Otherwise, copies the contents into a std::vector<T>.
+/// Cast a py::object referring to an array to py::array_t<auto> if supported.
+/// Otherwise, copies the contents into a std::vector<auto>.
 template <class T>
 auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
-  if constexpr (std::is_pod_v<T>
-                // TODO
-                && !std::is_same_v<T, core::time_point>) {
-    using TM = ElementTypeMap<T>;
+  using TM = ElementTypeMap<T>;
+  using PyType = typename TM::PyType;
+  if constexpr (std::is_same_v<T, core::time_point>) {
     TM::check_assignable(obj, unit);
-    // Casting to py::array_t applies all sorts of automatic conversions
-    // such as integer to double, if required.
-    return obj.cast<py::array_t<typename TM::PyType>>();
-  } else if constexpr (std::is_same_v<T, core::time_point>) {
-    using TM = ElementTypeMap<T>;
-    using PyType = typename TM::PyType;
-    TM::check_assignable(obj, unit);
+    // pbj.cast<py::array_t<PyType> does not always work because
+    // numpy.datetime64.__int__ delegates to datetime.datetime if the unit is
+    // larger than ns and that cannot be converted to long.
     return obj.cast<py::array>()
         .attr("astype")(py::dtype::of<PyType>())
         .template cast<py::array_t<PyType>>();
+  } else if constexpr (std::is_pod_v<T>) {
+    TM::check_assignable(obj, unit);
+    // Casting to py::array_t applies all sorts of automatic conversions
+    // such as integer to double, if required.
+    return obj.cast<py::array_t<PyType>>();
   } else {
     // py::array only supports POD types. Use a simple but expensive
     // solution for other types.
     // TODO Related to #290, we should properly support
     //  multi-dimensional input, and ignore bad shapes.
     try {
-      return obj.cast<const std::vector<T>>();
+      return obj.cast<const std::vector<PyType>>();
     } catch (std::runtime_error &) {
       const auto &array = obj.cast<py::array>();
       std::ostringstream oss;
