@@ -14,28 +14,14 @@
 
 namespace py = pybind11;
 
-namespace scipp::detail {
-/// Copy the bytes of src into dst.
-template <class Source, class Destination>
-void reinterpret_copy_element(const Source &src, Destination &&dst) noexcept {
-  // Go through std::byte in order to avoid UB of casting Destination
-  // to Source or vice versa. Should be optimized away.
-  static_assert(sizeof(Destination) == sizeof(Source));
-  auto src_ptr = reinterpret_cast<const std::byte *>(&src);
-  std::remove_reference_t<Destination> &dst_ = dst;
-  auto dst_ptr = reinterpret_cast<std::byte *>(&dst_);
-  std::copy(src_ptr, src_ptr + sizeof(Source), dst_ptr);
-}
-} // namespace scipp::detail
-
 using namespace scipp;
 
-/// Map C++ types to Python types to perform conversion / reinterpret casting
-/// between scipp containers and numpy arrays.
+/// Map C++ types to Python types to perform conversion between scipp containers
+/// and numpy arrays.
 template <class T> struct ElementTypeMap {
   using CppType = T;
   using PyType = T;
-  constexpr static bool reinterpret = false;
+  constexpr static bool convert = false;
 
   static void check_assignable(const py::object &, const units::Unit &) {}
 };
@@ -43,15 +29,15 @@ template <class T> struct ElementTypeMap {
 template <> struct ElementTypeMap<scipp::core::time_point> {
   using CppType = scipp::core::time_point;
   using PyType = int64_t;
-  constexpr static bool reinterpret = true;
+  constexpr static bool convert = true;
 
   static void check_assignable(const py::object &obj, units::Unit unit);
 };
 
-template <bool reinterpret, class Source, class Destination>
-void copy_element(const Source &src, Destination &&dst) noexcept(reinterpret) {
-  if constexpr (reinterpret) {
-    detail::reinterpret_copy_element(src, std::forward<Destination>(dst));
+template <bool convert, class Source, class Destination>
+void copy_element(const Source &src, Destination &&dst) {
+  if constexpr (convert) {
+    dst = std::remove_reference_t<Destination>{src};
   } else {
     std::forward<Destination>(dst) = src;
   }
@@ -61,12 +47,21 @@ void copy_element(const Source &src, Destination &&dst) noexcept(reinterpret) {
 /// Otherwise, copies the contents into a std::vector<T>.
 template <class T>
 auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
-  if constexpr (std::is_pod_v<T>) {
+  if constexpr (std::is_pod_v<T>
+                // TODO
+                && !std::is_same_v<T, core::time_point>) {
     using TM = ElementTypeMap<T>;
     TM::check_assignable(obj, unit);
     // Casting to py::array_t applies all sorts of automatic conversions
     // such as integer to double, if required.
     return obj.cast<py::array_t<typename TM::PyType>>();
+  } else if constexpr (std::is_same_v<T, core::time_point>) {
+    using TM = ElementTypeMap<T>;
+    using PyType = typename TM::PyType;
+    TM::check_assignable(obj, unit);
+    return obj.cast<py::array>()
+        .attr("astype")(py::dtype::of<PyType>())
+        .template cast<py::array_t<PyType>>();
   } else {
     // py::array only supports POD types. Use a simple but expensive
     // solution for other types.
@@ -84,23 +79,23 @@ auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
   }
 }
 
-template <bool reinterpret, class T, class View>
+template <bool convert, class T, class View>
 void copy_flattened_0d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
-  copy_element<reinterpret>(r(), *it);
+  copy_element<convert>(r(), *it);
 }
 
-template <bool reinterpret, class T, class View>
+template <bool convert, class T, class View>
 void copy_flattened_1d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
   for (ssize_t i = 0; i < r.shape(0); ++i, ++it) {
-    copy_element<reinterpret>(r(i), *it);
+    copy_element<convert>(r(i), *it);
   }
 }
 
-template <bool reinterpret, class T, class View>
+template <bool convert, class T, class View>
 void copy_flattened_2d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   const auto begin = view.begin();
@@ -109,21 +104,21 @@ void copy_flattened_2d(const py::array_t<T> &data, View &&view) {
         auto it = begin + range.begin() * r.shape(1);
         for (ssize_t i = range.begin(); i < range.end(); ++i)
           for (ssize_t j = 0; j < r.shape(1); ++j, ++it)
-            copy_element<reinterpret>(r(i, j), *it);
+            copy_element<convert>(r(i, j), *it);
       });
 }
 
-template <bool reinterpret, class T, class View>
+template <bool convert, class T, class View>
 void copy_flattened_3d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
   for (ssize_t i = 0; i < r.shape(0); ++i)
     for (ssize_t j = 0; j < r.shape(1); ++j)
       for (ssize_t k = 0; k < r.shape(2); ++k, ++it)
-        copy_element<reinterpret>(r(i, j, k), *it);
+        copy_element<convert>(r(i, j, k), *it);
 }
 
-template <bool reinterpret, class T, class View>
+template <bool convert, class T, class View>
 void copy_flattened_4d(const py::array_t<T> &data, View &&view) {
   auto r = data.unchecked();
   auto it = view.begin();
@@ -131,7 +126,7 @@ void copy_flattened_4d(const py::array_t<T> &data, View &&view) {
     for (ssize_t j = 0; j < r.shape(1); ++j)
       for (ssize_t k = 0; k < r.shape(2); ++k)
         for (ssize_t l = 0; l < r.shape(3); ++l, ++it)
-          copy_element<reinterpret>(r(i, j, k, l), *it);
+          copy_element<convert>(r(i, j, k, l), *it);
 }
 
 template <class T> auto memory_begin_end(const py::buffer_info &info) {
@@ -165,10 +160,10 @@ bool memory_overlaps(const py::array_t<T> &data, const View &view) {
 }
 
 /// Copy all elements from src into dst.
-/// Performs proper conversions from element type of src to element type of dst
-/// if reinterpret=false.
-/// Otherwise, elements in src are copied bitwise into dst.
-template <bool reinterpret, class T, class View>
+/// Performs an explicit conversion of elements in `src` to the element type of
+/// `dst` `convert == true`.
+/// Otherwise, elements in src are simply assigned to dst.
+template <bool convert, class T, class View>
 void copy_flattened(const py::array_t<T> &src, View &&dst) {
   if (scipp::size(dst) != src.size())
     throw std::runtime_error(
@@ -177,15 +172,15 @@ void copy_flattened(const py::array_t<T> &src, View &&dst) {
   const auto dispatch = [](const py::array_t<T> &src_, View &&dst_) {
     switch (src_.ndim()) {
     case 0:
-      return copy_flattened_0d<reinterpret>(src_, std::forward<View>(dst_));
+      return copy_flattened_0d<convert>(src_, std::forward<View>(dst_));
     case 1:
-      return copy_flattened_1d<reinterpret>(src_, std::forward<View>(dst_));
+      return copy_flattened_1d<convert>(src_, std::forward<View>(dst_));
     case 2:
-      return copy_flattened_2d<reinterpret>(src_, std::forward<View>(dst_));
+      return copy_flattened_2d<convert>(src_, std::forward<View>(dst_));
     case 3:
-      return copy_flattened_3d<reinterpret>(src_, std::forward<View>(dst_));
+      return copy_flattened_3d<convert>(src_, std::forward<View>(dst_));
     case 4:
-      return copy_flattened_4d<reinterpret>(src_, std::forward<View>(dst_));
+      return copy_flattened_4d<convert>(src_, std::forward<View>(dst_));
     default:
       throw std::runtime_error("Numpy array has more dimensions than supported "
                                "in the current implementation.");
@@ -205,7 +200,7 @@ void copy_array_into_view(const py::array_t<SourceDType> &src,
                                  "does not match the existing "
                                  "object.");
   copy_flattened<ElementTypeMap<
-      typename std::remove_reference_t<Destination>::value_type>::reinterpret>(
+      typename std::remove_reference_t<Destination>::value_type>::convert>(
       src, std::forward<Destination>(dst));
 }
 
