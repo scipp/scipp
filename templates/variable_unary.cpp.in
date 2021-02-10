@@ -15,8 +15,13 @@ Variable @NAME@(const VariableConstView &var) {
 }
 
 VariableView @NAME@(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, assign_unary{element::@OPNAME@});
+  if constexpr (@GENERATE_OUT@) {
+  transform_in_place(
+      out, var, assign_unary { element::@OPNAME@ });
   return out;
+  } else {
+    throw std::logic_error("Inplace operation not supported for @NAME@");
+  }
 }
 
 } // namespace scipp::variable

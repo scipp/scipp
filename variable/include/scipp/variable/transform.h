@@ -357,7 +357,7 @@ static void do_transform(Op op, Out &&out, Tuple &&processed, const Arg &arg,
         !core::canHaveVariances<typename Out::value_type>()) {
       throw except::VariancesError(
           "Variances in argument " + std::to_string(std::tuple_size_v<Tuple>) +
-          " not supported. As output dtype cannot have variances");
+          " not supported as output dtype cannot have variances");
     } else if constexpr (core::canHaveVariances<typename Arg::value_type>()) {
       auto vars = arg.variances();
       do_transform(

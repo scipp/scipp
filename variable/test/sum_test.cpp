@@ -59,7 +59,7 @@ TEST_F(SumTest, sum_in_place_bool_incorrect_out_type) {
   EXPECT_THROW(sum(var_bool, Dim::X, out), except::TypeError);
 }
 
-TEST(VectorReducTest, sum_vector) {
+TEST(VectorReduceTest, sum_vector) {
   const auto vector_var = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{2}, units::m,
       Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});
@@ -69,7 +69,7 @@ TEST(VectorReducTest, sum_vector) {
   EXPECT_EQ(vector_var, expected);
 }
 
-TEST(VectorReducTest, mean_vector) {
+TEST(VectorReduceTest, mean_vector) {
   const auto vector_var = makeVariable<Eigen::Vector3d>(
       Dims{Dim::X}, Shape{2}, units::m,
       Values{Eigen::Vector3d{1, 2, 3}, Eigen::Vector3d{4, 5, 6}});

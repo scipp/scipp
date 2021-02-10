@@ -26,7 +26,4 @@ nan_to_num(const VariableConstView &var, const VariableConstView &replacement);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable neg_inf_to_num(
     const VariableConstView &var, const VariableConstView &replacement);
 
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-isfinite(const VariableConstView &var);
-
 } // namespace scipp::variable
