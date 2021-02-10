@@ -318,7 +318,7 @@ private:
         // TODO support int
         if (view.unit() != parse_datetime_dtype(rhs)) {
           // TODO implement
-          throw std::runtime_error(
+          throw std::invalid_argument(
               "Conversion of time units is not implemented.");
         }
         data[0] = make_time_point(rhs.template cast<py::buffer>());
