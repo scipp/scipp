@@ -800,7 +800,8 @@ def test_from_mask_workspace():
     assert da.variances is None
 
 
-def _all_indirect(config, blacklist):
+def _all_indirect(blacklist):
+    from mantid.simpleapi import config
     # Any indirect instrument considered
     for f in config.getFacilities():
         for i in f.instruments():
@@ -810,11 +811,28 @@ def _all_indirect(config, blacklist):
                 yield i.name()
 
 
+def _load_indirect_instrument(instr, parameters):
+    from mantid.simpleapi import LoadEmptyInstrument, \
+        LoadParameterFile, AddSampleLog, config
+    # Create a workspace from an indirect instrument
+    out = LoadEmptyInstrument(InstrumentName=instr)
+    if instr in parameters:
+        LoadParameterFile(out,
+                          Filename=os.path.join(
+                              config.getInstrumentDirectory(),
+                              parameters[instr]))
+    if not out.run().hasProperty('EMode'):
+        # EMode would usually get attached via data loading
+        # We skip that so have to apply manually
+        AddSampleLog(out, LogName='EMode', LogText='Direct', LogType='String')
+    return out
+
+
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
 def test_extract_energy_final():
-    from mantid.simpleapi import config, \
-        LoadEmptyInstrument, LoadParameterFile, AddSampleLog
+
+    # Efinal is often stored in a non-default parameter file
     parameters = {
         'IN16B': 'IN16B_silicon_311_Parameters.xml',
         'IRIS': 'IRIS_mica_002_Parameters.xml',
@@ -822,22 +840,8 @@ def test_extract_energy_final():
         'BASIS': 'BASIS_silicon_311_Parameters.xml'
     }
     unsupported = ['ZEEMANS', 'MARS', 'IN10', 'IN13', 'IN16', 'VISION']
-    for instr in _all_indirect(config, blacklist=unsupported):
-        # Create a workspace from an indirect instrument
-        out = LoadEmptyInstrument(InstrumentName=instr)
-        if instr in parameters:
-            # Efinal is often stored in a non-default parameter file
-            LoadParameterFile(out,
-                              Filename=os.path.join(
-                                  config.getInstrumentDirectory(),
-                                  parameters[instr]))
-        if not out.run().hasProperty('EMode'):
-            # EMode would usually get attached via data loading
-            # We skip that so have to apply manually
-            AddSampleLog(out,
-                         LogName='EMode',
-                         LogText='Direct',
-                         LogType='String')
+    for instr in _all_indirect(blacklist=unsupported):
+        out = _load_indirect_instrument(instr, parameters)
         efs = sc.compat.mantid.extract_efinal(out)
         assert np.sum(efs) > 0.0
 
