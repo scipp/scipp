@@ -1097,3 +1097,47 @@ def fit(data, mantid_args):
     ws = to_mantid(data, dim)
     mantid_args['workspace_index'] = 0
     return _fit_workspace(ws, mantid_args)
+
+
+def _try_except(op, possible_except, failure, **kwargs):
+    try:
+        return op(**kwargs)
+    except possible_except:
+        return failure
+
+
+def _get_efixed(workspace):
+    inst = workspace.getInstrument()
+    if inst.hasParameter('Efixed'):
+        return inst.getNumberParameter('EFixed')[0]
+
+    if inst.hasParameter('analyser'):
+        analyser_name = inst.getStringParameter('analyser')[0]
+        analyser_comp = inst.getComponentByName(analyser_name)
+
+        if analyser_comp is not None and analyser_comp.hasParameter('Efixed'):
+            return analyser_comp.getNumberParameter('EFixed')[0]
+
+    return None
+
+
+def extract_efinal(ws):
+    # TODO return a data-array for this! coord to allow spectra-mapping.
+    detInfo = ws.detectorInfo()
+    ef = np.zeros(shape=(detInfo.size()), dtype=float)
+    analyser_ef = _get_efixed(workspace=ws)
+    ids = detInfo.detectorIDs()
+    for i, id in enumerate(ids):
+        detector_ef = _try_except(op=ws.getEFixed,
+                                  possible_except=RuntimeError,
+                                  failure=None,
+                                  detId=int(id))
+        detector_ef = detector_ef if detector_ef is not None else analyser_ef
+        if not detector_ef:
+            continue  # Rather than throw I think!
+        ef[i] = detector_ef
+
+    if np.count_nonzero(ef) == 0:
+        raise RuntimeError("No detectors with Ef in instrument {0}".format(
+            ws.getInstrument().getName()))
+    return ef
