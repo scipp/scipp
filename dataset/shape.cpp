@@ -170,7 +170,7 @@ DataArray reshape(const DataArrayConstView &a, const Dimensions &dims) {
   //    the reshape operation, just copy over to the new DataArray.
   //  - if a coordinate, attribute or mask has the same dimensions as the data,
   //    reshape that coordinate, attribute or mask.
-  //  - if a mask has all its dimensions contained in the data dimension, we
+  //  - if a mask has all its dimensions contained in the data dimensions, we
   //    first broadcast the mask to the data dimensions before reshaping it.
   //  - if a coordinate, attribute or mask satisfies none of these requirements,
   //    it is dropped during the reshape operation.
