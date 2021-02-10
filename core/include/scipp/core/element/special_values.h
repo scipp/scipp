@@ -41,8 +41,10 @@ constexpr auto isfinite = overloaded{
       if constexpr (std::is_same_v<std::decay_t<decltype(x)>,
                                    Eigen::Vector3d>) {
         return x.allFinite();
+      } else {
+        using numeric::isfinite;
+        return isfinite(x);
       }
-      return numeric::isfinite(x);
     },
     [](const units::Unit &) {
       return units::dimensionless;
