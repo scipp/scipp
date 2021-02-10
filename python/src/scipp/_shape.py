@@ -52,17 +52,18 @@ def concatenate(x, y, dim):
 
 
 def reshape(x, dims, shape):
-    """Reshape a variable.
+    """Reshape a variable, data array or dataset.
 
-    :param x: Variable to reshape.
+    :param x: Container to reshape.
     :param dims: List of new dimensions.
     :param shape: New extents in each dimension.
-    :type x: Variable
+    :type x: Dataset, DataArray or Variable
     :type dims: list[str]
     :type shape: list[int]
     :raises: If the volume of the old shape is not equal to the
              volume of the new shape.
-    :return: New variable with requested dimension labels and shape.
+    :return: New Dataset, DataArray or Variable with requested dimension labels
+             and shape.
     """
     return _call_cpp_func(_cpp.reshape, x, dims, shape)
 
