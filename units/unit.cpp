@@ -23,8 +23,8 @@ Unit::Unit(const std::string &unit)
 std::string Unit::name() const {
   auto repr = to_string(m_unit);
   repr = std::regex_replace(repr, std::regex("^u"), "µ");
-  repr = std::regex_replace(repr, std::regex("count"), "counts");
-  repr = std::regex_replace(repr, std::regex("item"), "counts");
+  repr = std::regex_replace(repr, std::regex("item"), "count");
+  repr = std::regex_replace(repr, std::regex("count(?!s)"), "counts");
   return repr == "" ? "dimensionless" : repr;
 }
 
