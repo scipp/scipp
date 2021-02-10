@@ -1122,7 +1122,7 @@ def _get_efixed(workspace):
 
 
 def extract_efinal(ws):
-    # TODO return a data-array for this! coord to allow spectra-mapping.
+
     detInfo = ws.detectorInfo()
     ef = np.zeros(shape=(detInfo.size()), dtype=float)
     analyser_ef = _get_efixed(workspace=ws)
@@ -1140,4 +1140,9 @@ def extract_efinal(ws):
     if np.count_nonzero(ef) == 0:
         raise RuntimeError("No detectors with Ef in instrument {0}".format(
             ws.getInstrument().getName()))
-    return ef
+    return sc.DataArray(data=sc.Variable(dims=['detector'], values=ef),
+                        coords={
+                            'detectorindex':
+                            sc.Variable(dims=['detector'],
+                                        values=np.arange(len(ids)))
+                        })
