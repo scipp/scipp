@@ -89,8 +89,5 @@ def array(*,
                     dtype=dtype)
 
 
-def datetime64(*args, **kwargs) -> numpy.datetime64:
-    """Constructs an object representing a date and time point.
-    Currently, this simply wraps ``numpy.datetime64` and takes the same arguments.
-    """
-    return numpy.datetime64(*args, **kwargs)
+# Wrapper to make dateime usable without importing numpy manually.
+datetime64 = numpy.datetime64
