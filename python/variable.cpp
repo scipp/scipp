@@ -9,18 +9,14 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
-#include "scipp/core/tag_util.h"
 #include "scipp/core/time_point.h"
 
-#include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/sort.h"
 #include "scipp/dataset/util.h"
 
 #include "bind_data_access.h"
@@ -30,7 +26,6 @@
 #include "dtype.h"
 #include "make_variable.h"
 #include "numpy.h"
-#include "py_object.h"
 #include "pybind11.h"
 #include "rename.h"
 #include "unit.h"
