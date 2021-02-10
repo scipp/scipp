@@ -18,6 +18,8 @@ class TestUnits():
         assert repr(var1.unit) == "\u212B" or repr(var1.unit) == "\u00C5"
         var1.unit = sc.units.m * sc.units.m
         assert repr(var1.unit) == "m^2"
+        var1.unit = sc.units.counts
+        assert repr(var1.unit) == "counts"
         var1.unit = sc.units.counts / sc.units.m
         assert repr(var1.unit) == "counts/m"
         var1.unit = sc.units.m / sc.units.m * sc.units.counts
