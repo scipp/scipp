@@ -3,6 +3,8 @@
 # @file
 # @author Simon Heybrock
 
+import itertools
+
 import numpy as np
 import pytest
 
@@ -36,37 +38,6 @@ def test_create_default_dtype():
 def test_create_with_dtype():
     var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.float32)
     assert var.dtype == sc.dtype.float32
-
-
-def test_construct_0d_datetime():
-    dt = np.datetime64('now', 'ns')
-    var = sc.Variable(dtype=sc.dtype.datetime64, unit=sc.units.ns, value=dt)
-    assert var.dtype == sc.dtype.datetime64
-    assert var.unit == sc.units.ns
-    assert var.value == dt
-    # dtype-less initialization
-    var2 = sc.Variable(unit=sc.units.ns, value=dt)
-    assert var2.dtype == sc.dtype.datetime64
-    assert var2.value == dt
-
-
-def test_construct_datetime():
-    dt = np.datetime64('now', 'ns')
-    values = [dt, dt + 123456789]
-    var = sc.Variable(values=values, dims=['x'], unit=sc.units.ns)
-    assert var.dtype == sc.dtype.datetime64
-    assert var.unit == sc.units.ns
-    np.testing.assert_array_equal(var.values, values)
-
-
-def test_mismatched_datetime():
-    dt = np.datetime64('now','ns')
-    var = sc.Variable(value=dt, unit=sc.units.s)
-    with pytest.raises(RuntimeError):
-        var = sc.Variable(value=dt, unit=sc.units.s)
-    dt = np.datetime64('now','s')
-    with pytest.raises(RuntimeError):
-        var = sc.Variable(value=dt, unit=sc.units.ns)
 
 
 def test_create_with_numpy_dtype():
@@ -194,14 +165,148 @@ def test_create_1D_vector_3_float64():
     assert var.unit == sc.units.m
 
 
-def test_create_datetime64():
-    var = sc.Variable(dims=['x'],
-                      unit=sc.units.ns,
-                      shape=[2],
-                      dtype=sc.dtype.datetime64)
-    assert var.dims == ['x']
-    assert var.dtype == sc.dtype.datetime64
-    assert var.unit == sc.units.ns
+def test_construct_0d_datetime():
+    for unit in ('s', 'us', 'ns'):
+        dtype = f'datetime64[{unit}]'
+        value = np.datetime64(2431, unit)
+        # with value
+        for var in (sc.Variable(dtype=dtype, unit=unit, value=value),
+                    sc.Variable(unit=unit, value=value),
+                    sc.Variable(dtype=dtype,
+                                value=value), sc.Variable(value=value)):
+            assert str(var.dtype) == 'datetime64'
+            assert var.unit == unit
+            assert var.value.dtype == dtype
+            assert var.value == value
+        # default init
+        for var in (sc.Variable(dtype=dtype,
+                                unit=unit), sc.Variable(dtype=dtype)):
+            assert str(var.dtype) == 'datetime64'
+            assert var.unit == unit
+            assert var.value.dtype == dtype
+
+
+def test_construct_0d_datetime_mismatch():
+    for unit1, unit2 in filter(
+            lambda t: t[0] != t[1],
+            itertools.product(('s', 'us', 'ns'), ('s', 'us', 'ns'))):
+        with pytest.raises(ValueError):
+            sc.Variable(unit=unit1, dtype=f'datetime64[{unit2}]')
+        with pytest.raises(RuntimeError):
+            sc.Variable(value=np.datetime64('now', unit1),
+                        dtype=f'datetime64[{unit2}]')
+        with pytest.raises(RuntimeError):
+            sc.Variable(value=np.datetime64('now', unit1), unit=unit2)
+
+
+def test_0d_datetime_setter():
+    for unit in ('s', 'us', 'ns'):
+        initial = np.datetime64(np.random.randint(0, 1000), unit)
+        value = np.datetime64(np.random.randint(0, 1000), unit)
+        var = sc.Variable(value=initial)
+        var.value = value
+        assert var.value == value
+        # TODO
+        # assert var == sc.Variable(value=value)
+
+
+def test_0d_datetime_setter_mismatch():
+    for unit1, unit2 in filter(
+            lambda t: t[0] != t[1],
+            itertools.product(('s', 'us', 'ns'), ('s', 'us', 'ns'))):
+        initial = np.datetime64(np.random.randint(0, 1000), unit1)
+        value = np.datetime64(np.random.randint(0, 1000), unit2)
+        var1 = sc.Variable(value=initial)
+        with pytest.raises(ValueError):
+            var1.value = value
+
+
+def test_construct_datetime():
+    for unit in ('s', 'us', 'ns'):
+        dtype = f'datetime64[{unit}]'
+        values = np.array([
+            np.datetime64(np.random.randint(0, 1000), unit)
+            for _ in range(np.random.randint(1, 5))
+        ])
+        shape = [len(values)]
+        # with values
+        for var in (sc.Variable(dims=['x'],
+                                dtype=dtype,
+                                unit=unit,
+                                values=values),
+                    sc.Variable(dims=['x'], unit=unit, values=values),
+                    sc.Variable(dims=['x'], dtype=dtype, values=values),
+                    sc.Variable(dims=['x'], values=values)):
+            assert var.dims == ['x']
+            assert str(var.dtype) == 'datetime64'
+            assert var.unit == unit
+            assert var.values.dtype == dtype
+            np.testing.assert_array_equal(var.values, values)
+        # default init
+        for var in (sc.Variable(dims=['x'],
+                                shape=shape,
+                                dtype=dtype,
+                                unit=unit),
+                    sc.Variable(dims=['x'], shape=shape, dtype=dtype)):
+            assert var.dims == ['x']
+            assert var.shape == shape
+            assert str(var.dtype) == 'datetime64'
+            assert var.unit == unit
+            assert var.values.dtype == dtype
+
+
+def test_construct_datetime_mismatch():
+    for unit1, unit2 in filter(
+            lambda t: t[0] != t[1],
+            itertools.product(('s', 'us', 'ns'), ('s', 'us', 'ns'))):
+        values = np.array([
+            np.datetime64(np.random.randint(0, 1000), unit1)
+            for _ in range(np.random.randint(1, 5))
+        ])
+        with pytest.raises(ValueError):
+            sc.Variable(dims=['x'], unit=unit1, dtype=f'datetime64[{unit2}]')
+        with pytest.raises(RuntimeError):
+            sc.Variable(dims=['x'],
+                        values=values,
+                        dtype=f'datetime64[{unit2}]')
+        with pytest.raises(RuntimeError):
+            sc.Variable(dims=['x'], values=values, unit=unit2)
+
+
+def test_datetime_setter():
+    for unit in ('s', 'us', 'ns'):
+        size = np.random.randint(1, 5)
+        initial = np.array([
+            np.datetime64(np.random.randint(0, 1000), unit)
+            for _ in range(size)
+        ])
+        values = np.array([
+            np.datetime64(np.random.randint(0, 1000), unit)
+            for _ in range(size)
+        ])
+        var = sc.Variable(dims=['x'], values=initial)
+        var.values = values
+        np.testing.assert_array_equal(var.values, values)
+        # TODO
+        # assert var == sc.Variable(dims=['x'], values=values)
+
+
+def test_datetime_setter_mismatch():
+    for unit1, unit2 in filter(
+            lambda t: t[0] != t[1],
+            itertools.product(('s', 'us', 'ns'), ('s', 'us', 'ns'))):
+        size = np.random.randint(1, 5)
+        initial = np.array([
+            np.datetime64(np.random.randint(0, 1000), unit1)
+            for _ in range(size)
+        ])
+        values = np.array([
+            np.datetime64(np.random.randint(0, 1000), unit2)
+            for _ in range(size)
+        ])
+        var1 = sc.Variable(dims=['x'], values=initial)
+        with pytest.raises(ValueError):
+            var1.values = values
 
 
 def test_create_2D_inner_size_3():
@@ -831,18 +936,6 @@ def test_construct_0d_dtype():
     assert sc.Variable(np.float64(2),
                        dtype=np.float32).dtype == sc.dtype.float32
     assert sc.Variable(1, dtype=bool).dtype == sc.dtype.bool
-
-
-def test_construct_0d_datetime():
-    dt = np.datetime64('now','ns')
-    var = sc.Variable(dtype=sc.dtype.datetime64, unit=sc.units.ns)
-    var.value = dt
-    assert var.dtype == sc.dtype.datetime64
-    assert var.unit == sc.units.ns
-    assert var.value == dt
-    # dtype-less initialization
-    var2 = sc.Variable(unit=sc.units.ns, value=dt)
-    assert var.value == dt
 
 
 def test_rename_dims():
