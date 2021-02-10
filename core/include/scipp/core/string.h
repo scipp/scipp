@@ -61,7 +61,11 @@ std::string
 array_to_string(const T &arr,
                 const std::optional<units::Unit> &unit = std::nullopt);
 
-SCIPP_CORE_EXPORT const std::string
+// Format a time point according to ISO 8601 including sub-second precision
+// depending on the unit.
+// Always displays in UTC without time zone offset.
+// The input is interpreted as being in the local time zone.
+SCIPP_CORE_EXPORT std::string
 to_iso_date(const scipp::core::time_point &item, const units::Unit &unit);
 
 template <class T>

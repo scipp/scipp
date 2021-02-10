@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include <chrono>
 #include <iomanip>
+#include <mutex>
 #include <sstream>
 
 #include "scipp/units/unit.h"
@@ -58,37 +59,55 @@ std::map<DType, std::string> &dtypeNameRegistry() {
   return registry;
 }
 
-const std::string to_iso_date(const scipp::core::time_point &item,
-                              const units::Unit &unit) {
-  int64_t ts = item.time_since_epoch();
-  if (unit == units::ns) {
-    // cast timestamp into duration in seconds
-    const std::chrono::duration<int64_t, std::nano> dur_nano(ts);
-    auto dur_sec = std::chrono::duration_cast<std::chrono::seconds>(dur_nano);
-    // convert to chrono::time_point
-    std::chrono::system_clock::time_point tp(dur_sec);
-    // convert time_point to GMT time
-    auto timet = std::chrono::system_clock::to_time_t(tp);
-    std::tm *tm = std::gmtime(&timet);
-    // get nanoseconds
-    auto ns =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(dur_nano).count() %
-        1000000000;
-    std::stringstream ss;
-    ss << std::put_time(tm, "%FT%T.") << std::setw(9) << std::setfill('0') << ns;
-    return ss.str();
-  } else if (unit == units::s) {
-    // cast timestamp into duration in seconds
-    const std::chrono::duration<int64_t> dur_sec(ts);
-    std::chrono::system_clock::time_point tp(dur_sec);
-    auto timet = std::chrono::system_clock::to_time_t(tp);
-    std::tm *tm = std::gmtime(&timet);
-    std::stringstream ss;
-    ss << std::put_time(tm, "%FT%T");
-    return ss.str();
-  } else
-    throw except::UnitError(
-        "Time point should only have time units (ns or s).");
+namespace {
+template <class Ratio> constexpr int64_t num_digits() {
+  static_assert(Ratio::num == 1 || Ratio::num % 10 == 0);
+  static_assert(Ratio::den == 1 || Ratio::den % 10 == 0);
+  static_assert(Ratio::den > Ratio::num);
+  int64_t result = 0;
+  for (std::size_t i = Ratio::num; i < Ratio::den; i *= 10) {
+    ++result;
+  }
+  return result;
 }
 
+// For synchronizing access to gmtime because its return value is shared.
+std::mutex gmtime_mutex;
+
+void put_utc_time(std::ostream &os, const std::time_t time_point) {
+  std::lock_guard guard_{gmtime_mutex};
+  const std::tm *tm = std::gmtime(&time_point);
+  os << std::put_time(tm, "%FT%T");
+}
+} // namespace
+
+std::string to_iso_date(const scipp::core::time_point &item,
+                        const units::Unit &unit) {
+  using Clock = std::chrono::system_clock;
+
+  const auto print = [&](const auto duration) {
+    using Period = typename decltype(duration)::period;
+    std::ostringstream oss;
+    // Cast to seconds to be independent of clock precision.
+    // Sub-second digits are formatted manually.
+    put_utc_time(
+        oss, Clock::to_time_t(Clock::time_point{
+                 std::chrono::duration_cast<std::chrono::seconds>(duration)}));
+    if constexpr (std::ratio_less_v<Period, std::ratio<1, 1>>) {
+      oss << '.' << std::setw(num_digits<Period>()) << std::setfill('0')
+          << (duration.count() % (Period::den / Period::num));
+    }
+    return oss.str();
+  };
+
+  if (unit == units::ns) {
+    return print(std::chrono::nanoseconds{item.time_since_epoch()});
+  } else if (unit == units::us) {
+    return print(std::chrono::microseconds{item.time_since_epoch()});
+  } else if (unit == units::s) {
+    return print(std::chrono::seconds{item.time_since_epoch()});
+  }
+  throw except::UnitError("Cannot display time point, unsupported unit: " +
+                          to_string(unit));
+}
 } // namespace scipp::core
