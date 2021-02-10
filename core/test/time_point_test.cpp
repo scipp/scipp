@@ -10,24 +10,24 @@ using namespace scipp::core;
 
 class TimePointTest : public ::testing::Test {
 protected:
-  const int64_t ts1 = 1;
-  const int32_t ts2 = 2;
+  const int64_t i1 = 1;
+  const int32_t i2 = 2;
 
-  time_point t0 = time_point();
-  time_point t1 = time_point(ts1);
-  time_point t2 = time_point(ts2);
+  const time_point t0 = time_point();
+  const time_point t1 = time_point{i1};
+  const time_point t2 = time_point{i2};
 };
 
 TEST_F(TimePointTest, time_since_epoch) {
   EXPECT_EQ(t0.time_since_epoch(), 0);
-  EXPECT_EQ(t2.time_since_epoch(), 2);
+  EXPECT_EQ(t2.time_since_epoch(), i2);
 }
 
 TEST_F(TimePointTest, plus_minus_arithmetics) {
-  EXPECT_EQ(t1 - 1, ts1 - 1);
+  EXPECT_EQ(t1 - 1, time_point{i1 - 1});
+  EXPECT_EQ(t2 - t1, i2 - i1);
   EXPECT_EQ(t1 + 1, t2);
-
-  EXPECT_EQ(t2 - t1, ts2 - ts1);
+  EXPECT_EQ(1 + t1, t2);
 }
 
 TEST_F(TimePointTest, inequalities_arithmetics) {
@@ -40,6 +40,7 @@ TEST_F(TimePointTest, inequalities_arithmetics) {
 }
 
 TEST_F(TimePointTest, inplace_arithmetics) {
-  EXPECT_EQ(t2 -= 1, t1);
-  EXPECT_EQ(t2 += 1, time_point(ts2));
+  time_point aux = t2;
+  EXPECT_EQ(aux -= 1, t1);
+  EXPECT_EQ(aux += 1, t2);
 }
