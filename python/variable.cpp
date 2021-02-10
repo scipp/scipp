@@ -161,8 +161,6 @@ of variances.)");
   bind_init_0D<DataArray>(variable);
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
-  // TODO??
-  //  bind_init_0D<scipp::core::time_point>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_0D<Eigen::Matrix3d>(variable);
   variable
