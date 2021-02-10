@@ -13,6 +13,7 @@ Features
 * Add more functions for data arrays that were previously available only for variables [#1638](https://github.com/scipp/scipp/pull/1638) [#1660](https://github.com/scipp/scipp/pull/1660).
 * Add named versions of operators such as ``logical_and`` [#1660](https://github.com/scipp/scipp/pull/1660).
 * Add modulo operations [#1660](https://github.com/scipp/scipp/pull/1660).
+* Add reshape for DataArray and Dataset [#1676](https://github.com/scipp/scipp/pull/1676)
 * ``scipp.neutron``
 
   * Support unit conversion to energy transfer, for inelastic TOF experiments [#1635](https://github.com/scipp/scipp/pull/1635).
