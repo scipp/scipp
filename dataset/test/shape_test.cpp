@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-#include <gtest/gtest.h>
-
 #include "scipp/dataset/shape.h"
+
+#include <gtest/gtest.h>
 
 using namespace scipp;
 using namespace scipp::dataset;
@@ -162,4 +162,40 @@ TEST(ReshapeTest, reshape_merge_dims) {
                                 true,  true,  true,  false, false, false}));
 
   EXPECT_EQ(reshape(a, {{Dim::Row, 24}}), expected);
+}
+
+TEST(ReshapeTest, reshape_dataset) {
+  auto a = make_2d_data_array();
+  auto b = make_2d_data_array();
+  b.masks().erase("mask_y");
+  Dataset d{{{"a", a}, {"b", b}}};
+  const auto rshp = makeVariable<double>(
+      Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{3, 2, 4},
+      Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
+             13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
+  DataArray a_reshaped(rshp);
+  a_reshaped.coords().set(Dim::Y, a.coords()[Dim::Y]);
+  a_reshaped.attrs().set(Dim::Qy, a.attrs()[Dim::Qy]);
+  a_reshaped.coords().set(Dim::Z, rshp);
+  a_reshaped.masks().set(
+      "mask2d",
+      makeVariable<bool>(Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{3, 2, 4},
+                         Values{true,  true,  true,  true,  true,  true,
+                                false, false, false, false, false, false,
+                                true,  false, true,  false, true,  false,
+                                true,  true,  true,  false, false, false}));
+  a_reshaped.masks().set(
+      "mask_x",
+      makeVariable<bool>(Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{3, 2, 4},
+                         Values{true,  true,  true,  true,  true,  true,
+                                true,  true,  true,  true,  true,  true,
+                                false, false, false, false, false, false,
+                                false, false, false, false, false, false}));
+
+  DataArray b_reshaped(a_reshaped);
+  a_reshaped.masks().set("mask_y", a.masks()["mask_y"]);
+
+  Dataset expected{{{"a", a_reshaped}, {"b", b_reshaped}}};
+
+  EXPECT_EQ(reshape(d, {{Dim::Row, 3}, {Dim::Tof, 2}, {Dim::Y, 4}}), expected);
 }

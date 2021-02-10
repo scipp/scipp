@@ -28,4 +28,6 @@ SCIPP_DATASET_EXPORT Dataset resize(const DatasetConstView &d, const Dim dim,
 
 SCIPP_DATASET_EXPORT DataArray reshape(const DataArrayConstView &a,
                                        const Dimensions &dims);
+SCIPP_DATASET_EXPORT Dataset reshape(const DatasetConstView &a,
+                                     const Dimensions &dims);
 } // namespace scipp::dataset

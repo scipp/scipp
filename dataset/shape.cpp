@@ -199,4 +199,9 @@ DataArray reshape(const DataArrayConstView &a, const Dimensions &dims) {
   return reshaped;
 }
 
+Dataset reshape(const DatasetConstView &d, const Dimensions &dims) {
+  return apply_to_items(
+      d, [](auto &&... _) { return reshape(_...); }, dims);
+}
+
 } // namespace scipp::dataset
