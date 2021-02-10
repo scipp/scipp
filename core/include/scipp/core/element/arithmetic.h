@@ -92,7 +92,12 @@ struct times_types_t {
 
 struct divide_types_t {
   constexpr void operator()() const noexcept;
-  using types = arithmetic_type_pairs;
+  using types = decltype(
+      std::tuple_cat(std::declval<arithmetic_type_pairs>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, double>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, float>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
 };
 
 constexpr auto plus =
@@ -106,15 +111,17 @@ constexpr auto times = overloaded{
       return a * b;
     } // namespace scipp::core::element
 };
-constexpr auto divide =
-    overloaded{divide_types_t{}, [](const auto a, const auto b) {
-                 // Integer division is truediv, as in Python 3 and numpy
-                 if constexpr (std::is_integral_v<decltype(a)> &&
-                               std::is_integral_v<decltype(b)>)
-                   return static_cast<double>(a) / b;
-                 else
-                   return a / b;
-               }};
+constexpr auto divide = overloaded{
+    divide_types_t{},
+    transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
+    [](const auto a, const auto b) {
+      // Integer division is truediv, as in Python 3 and numpy
+      if constexpr (std::is_integral_v<decltype(a)> &&
+                    std::is_integral_v<decltype(b)>)
+        return static_cast<double>(a) / b;
+      else
+        return a / b;
+    }};
 
 // mod defined as in Python
 constexpr auto mod = overloaded{

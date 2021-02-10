@@ -975,7 +975,7 @@ TEST(VariableTest, rotate) {
   EXPECT_EQ(vec_new, rotated);
 }
 
-TEST(VariableTest, scale_vector) {
+TEST(VariableTest, mul_vector) {
   Eigen::Vector3d vec1(1, 2, 3);
   Eigen::Vector3d vec2(2, 4, 6);
   auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
@@ -983,9 +983,27 @@ TEST(VariableTest, scale_vector) {
   auto expected_vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1},
                                                     units::m, Values{vec2});
   auto scale = makeVariable<double>(Dims{}, Shape{1}, units::one, Values{2.0});
+  auto scale_with_variance = makeVariable<double>(Dims{}, Shape{1}, units::one,
+                                                  Values{2.0}, Variances{1.0});
 
-  auto scaled_vec = scale * vec;
-  scaled_vec = vec * scale;
+  auto left_scaled_vec = scale * vec;
+  auto right_scaled_vec = vec * scale;
+
+  EXPECT_THROW(vec * scale_with_variance, except::VariancesError);
+  EXPECT_EQ(left_scaled_vec, expected_vec);
+  EXPECT_EQ(right_scaled_vec, expected_vec);
+}
+
+TEST(VariableTest, divide_vector) {
+  Eigen::Vector3d vec1(1, 2, 3);
+  Eigen::Vector3d vec2(2, 4, 6);
+  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
+                                           Values{vec2});
+  auto expected_vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1},
+                                                    units::m, Values{vec1});
+  auto scale = makeVariable<double>(Dims{}, Shape{1}, units::one, Values{2.0});
+
+  auto scaled_vec = vec / scale;
 
   EXPECT_EQ(scaled_vec, expected_vec);
 }
