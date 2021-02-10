@@ -206,8 +206,7 @@ def test_0d_datetime_setter():
         var = sc.Variable(value=initial)
         var.value = value
         assert var.value == value
-        # TODO
-        # assert var == sc.Variable(value=value)
+        assert sc.is_equal(var, sc.Variable(value=value))
 
 
 def test_0d_datetime_setter_mismatch():
@@ -287,8 +286,7 @@ def test_datetime_setter():
         var = sc.Variable(dims=['x'], values=initial)
         var.values = values
         np.testing.assert_array_equal(var.values, values)
-        # TODO
-        # assert var == sc.Variable(dims=['x'], values=values)
+        assert sc.is_equal(var, sc.Variable(dims=['x'], values=values))
 
 
 def test_datetime_setter_mismatch():
