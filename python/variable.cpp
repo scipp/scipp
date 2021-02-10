@@ -261,6 +261,7 @@ Mostly equivalent to Variable, see there for details.)");
   bind_comparison<VariableConstView>(variable);
   bind_comparison<Variable>(variableView);
   bind_comparison<VariableConstView>(variableView);
+  bind_comparison<DataArrayConstView>(variableView);
 
   bind_in_place_binary<Variable>(variable);
   bind_in_place_binary<VariableConstView>(variable);
@@ -283,10 +284,8 @@ Mostly equivalent to Variable, see there for details.)");
 
   bind_boolean_unary(variable);
   bind_boolean_unary(variableView);
-  bind_boolean_operators<Variable>(variable);
-  bind_boolean_operators<VariableConstView>(variable);
-  bind_boolean_operators<Variable>(variableView);
-  bind_boolean_operators<VariableConstView>(variableView);
+  bind_logical<Variable>(variable);
+  bind_logical<Variable>(variableView);
 
   bind_data_properties(variable);
   bind_data_properties(variableView);

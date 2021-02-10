@@ -4,12 +4,13 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <cmath>
+#include <type_traits>
+
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
-#include <cmath>
-#include <type_traits>
 
 namespace scipp::core::element {
 

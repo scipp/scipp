@@ -223,14 +223,13 @@ TEST(Variable, operator_times_equal_scalar) {
   EXPECT_EQ(a.unit(), units::m);
 }
 
-TEST(Variable, operator_times_equal_unit_fail_integrity) {
+TEST(Variable, operator_plus_equal_unit_fail_integrity) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2},
                            units::Unit(units::m * units::m), Values{2.0, 3.0});
   const auto expected(a);
 
-  // This test relies on m^4 being an unsupported unit.
-  ASSERT_THROW(a *= a, std::runtime_error);
+  ASSERT_THROW(a += a * a, std::runtime_error);
   EXPECT_EQ(a, expected);
 }
 

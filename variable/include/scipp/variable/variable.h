@@ -27,6 +27,10 @@
 #include "scipp/variable/variable_concept.h"
 #include "scipp/variable/variable_keyword_arg_constructor.h"
 
+namespace llnl::units {
+class precise_measurement;
+}
+
 namespace scipp::dataset {
 class DataArrayConstView;
 template <class T> typename T::view_type makeViewItem(T &);
@@ -72,9 +76,7 @@ public:
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            std::optional<T> variances);
-  template <class T, class U>
-  explicit Variable(const boost::units::quantity<T, U> &quantity)
-      : Variable(quantity.value() * units::Unit(T{})) {}
+  explicit Variable(const llnl::units::precise_measurement &m);
 
   /// Keyword-argument constructor.
   ///
@@ -132,15 +134,6 @@ public:
   bool operator==(const VariableConstView &other) const;
   bool operator!=(const VariableConstView &other) const;
   Variable operator-() const;
-
-  Variable &operator+=(const VariableConstView &other) &;
-  Variable &operator-=(const VariableConstView &other) &;
-  Variable &operator*=(const VariableConstView &other) &;
-  Variable &operator/=(const VariableConstView &other) &;
-
-  Variable &operator|=(const VariableConstView &other) &;
-  Variable &operator&=(const VariableConstView &other) &;
-  Variable &operator^=(const VariableConstView &other) &;
 
   const VariableConcept &data() const && = delete;
   const VariableConcept &data() const & { return *m_object; }
@@ -345,15 +338,6 @@ public:
   // (would this suffer from the same issue?).
   template <class T> VariableView assign(const T &other) const;
 
-  VariableView operator+=(const VariableConstView &other) const;
-  VariableView operator-=(const VariableConstView &other) const;
-  VariableView operator*=(const VariableConstView &other) const;
-  VariableView operator/=(const VariableConstView &other) const;
-
-  VariableView operator|=(const VariableConstView &other) const;
-  VariableView operator&=(const VariableConstView &other) const;
-  VariableView operator^=(const VariableConstView &other) const;
-
   void setVariances(Variable v) const;
 
   void setUnit(const units::Unit &unit) const;
@@ -392,3 +376,6 @@ using variable::VariableConstView;
 using variable::VariableView;
 using variable::Variances;
 } // namespace scipp
+
+#include "scipp/variable/arithmetic.h"
+#include "scipp/variable/logical.h"

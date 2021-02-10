@@ -67,6 +67,17 @@ template <class T> static Variable two_theta(const T &d) {
 
   return acos(dot(beam, scattered));
 }
+
+template <class T> static VariableConstView incident_energy(const T &d) {
+  return d.meta().contains(Dim::IncidentEnergy) ? d.meta()[Dim::IncidentEnergy]
+                                                : VariableConstView{};
+}
+
+template <class T> static VariableConstView final_energy(const T &d) {
+  return d.meta().contains(Dim::FinalEnergy) ? d.meta()[Dim::FinalEnergy]
+                                             : VariableConstView{};
+}
+
 } // namespace beamline_impl
 
 variable::VariableConstView position(const dataset::DatasetConstView &d) {
@@ -104,6 +115,13 @@ variable::Variable scattering_angle(const dataset::DatasetConstView &d) {
 variable::Variable two_theta(const dataset::DatasetConstView &d) {
   return beamline_impl::two_theta(d);
 }
+variable::VariableConstView
+incident_energy(const dataset::DatasetConstView &d) {
+  return beamline_impl::incident_energy(d);
+}
+variable::VariableConstView final_energy(const dataset::DatasetConstView &d) {
+  return beamline_impl::final_energy(d);
+}
 
 variable::VariableConstView position(const dataset::DataArrayConstView &d) {
   return beamline_impl::position(d);
@@ -139,6 +157,13 @@ variable::Variable scattering_angle(const dataset::DataArrayConstView &d) {
 }
 variable::Variable two_theta(const dataset::DataArrayConstView &d) {
   return beamline_impl::two_theta(d);
+}
+variable::VariableConstView
+incident_energy(const dataset::DataArrayConstView &d) {
+  return beamline_impl::incident_energy(d);
+}
+variable::VariableConstView final_energy(const dataset::DataArrayConstView &d) {
+  return beamline_impl::final_energy(d);
 }
 
 } // namespace scipp::neutron

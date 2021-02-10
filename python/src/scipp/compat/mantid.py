@@ -53,29 +53,21 @@ def make_run(ws):
 
 
 additional_unit_mapping = {
-    "Kelvin": sc.units.K,
-    "microsecond": sc.units.us,
-    "us": sc.units.us,
-    "nanosecond": sc.units.ns,
-    "second": sc.units.s,
-    "Angstrom": sc.units.angstrom,
-    "Hz": sc.units.one / sc.units.s,
-    "degree": sc.units.deg,
-    "°": sc.units.deg,
-    "millimetre": sc.units.mm,
     " ": sc.units.one,
     "none": sc.units.one,
 }
 
 
 def make_variables_from_run_logs(ws):
-    lookup_units = dict(
-        zip([str(unit) for unit in sc.units.supported_units()],
-            sc.units.supported_units()))
-    lookup_units.update(additional_unit_mapping)
     for property_name in ws.run().keys():
         units_string = ws.run()[property_name].units
-        unit = lookup_units.get(units_string, None)
+        try:
+            unit = additional_unit_mapping.get(units_string,
+                                               sc.Unit(units_string))
+        except RuntimeError:  # TODO catch UnitError once exposed from C++
+            # Parsing unit string failed
+            unit = None
+
         values = deepcopy(ws.run()[property_name].value)
 
         if units_string and unit is None:
@@ -194,7 +186,7 @@ def md_dimension(mantid_dim, index):
 
     # Look for common/known mantid dimensions
     patterns = ["DeltaE", "T"]
-    dims = ['Delta-E', 'temperature']
+    dims = ['energy-transfer', 'temperature']
     pattern_result = zip(patterns, dims)
     for pattern, result in pattern_result:
         if re.search(pattern, mantid_dim.name, re.IGNORECASE):
@@ -227,8 +219,13 @@ def md_unit(frame):
 
 
 def validate_and_get_unit(unit, allow_empty=False):
+    if hasattr(unit, 'unitID'):
+        if unit.unitID() == 'Label':
+            unit = unit.name()
+        else:
+            unit = unit.unitID()
     known_units = {
-        "DeltaE": ['Delta-E', sc.units.meV],
+        "DeltaE": ['energy-transfer', sc.units.meV],
         "TOF": ['tof', sc.units.us],
         "Wavelength": ['wavelength', sc.units.angstrom],
         "Energy": ['energy', sc.units.meV],
@@ -238,19 +235,13 @@ def validate_and_get_unit(unit, allow_empty=False):
             'Q^2',
             sc.units.dimensionless / (sc.units.angstrom * sc.units.angstrom)
         ],
-        "Label": ['spectrum', sc.units.dimensionless],
+        "Spectrum": ['spectrum', sc.units.dimensionless],
         "Empty": ['empty', sc.units.dimensionless],
         "Counts": ['counts', sc.units.counts]
     }
 
     if unit not in known_units.keys():
-        if allow_empty:
-            return ['unknown', sc.units.dimensionless]
-        else:
-            raise RuntimeError("Unit not currently supported."
-                               "Possible values are: {}, "
-                               "got '{}'. ".format(
-                                   [k for k in known_units.keys()], unit))
+        return [str(unit), sc.units.dimensionless]
     else:
         return known_units[unit]
 
@@ -458,7 +449,7 @@ def _get_dtype_from_values(values, coerce_floats_to_ints):
 
 def init_spec_axis(ws):
     axis = ws.getAxis(1)
-    dim, unit = validate_and_get_unit(axis.getUnit().unitID())
+    dim, unit = validate_and_get_unit(axis.getUnit())
     values = axis.extractValues()
     dtype = _get_dtype_from_values(values, dim == 'spectrum')
     return dim, sc.Variable([dim], values=values, unit=unit, dtype=dtype)
@@ -473,7 +464,7 @@ def _convert_MatrixWorkspace_info(ws,
                                   advanced_geometry=False,
                                   load_run_logs=True):
     common_bins = ws.isCommonBins()
-    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit())
     source_pos, sample_pos = make_component_info(ws)
     pos, rot, shp = get_detector_properties(
         ws, source_pos, sample_pos, advanced_geometry=advanced_geometry)
@@ -529,7 +520,7 @@ def _convert_MatrixWorkspace_info(ws,
 
 
 def convert_monitors_ws(ws, converter, **ignored):
-    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit())
     spec_dim, spec_coord = init_spec_axis(ws)
     spec_info = spec_info = ws.spectrumInfo()
     comp_info = ws.componentInfo()
@@ -564,7 +555,7 @@ def convert_Workspace2D_to_data_array(ws,
                                       advanced_geometry=False,
                                       **ignored):
 
-    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit())
     spec_dim, spec_coord = init_spec_axis(ws)
 
     coords_labs_data = _convert_MatrixWorkspace_info(
@@ -615,7 +606,7 @@ def convert_EventWorkspace_to_data_array(ws,
                                          **ignored):
     from mantid.api import EventType
 
-    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit().unitID())
+    dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit())
     spec_dim, spec_coord = init_spec_axis(ws)
     nHist = ws.getNumberHistograms()
     _, data_unit = validate_and_get_unit(ws.YUnit(), allow_empty=True)
@@ -669,14 +660,15 @@ def convert_EventWorkspace_to_data_array(ws,
     coords_labs_data = _convert_MatrixWorkspace_info(
         ws, advanced_geometry=advanced_geometry, load_run_logs=load_run_logs)
     # For now we ignore potential finer bin edges to avoid creating too many
-    # buckets. Use just a single bucket along dim and use extents given by
-    # workspace edges.
-    # TODO If there are events outside edges this might create buckets with
-    # events that are not within bucket bounds. Consider using `bin` instead
+    # bins. Use just a single bin along dim and use extents given by workspace
+    # edges.
+    # TODO If there are events outside edges this might create bins with
+    # events that are not within bin bounds. Consider using `bin` instead
     # of `bins`?
     edges = coords_labs_data['coords'][dim]
-    coords_labs_data['coords'][dim] = sc.concatenate(edges[dim, 0],
-                                                     edges[dim, -1], dim)
+    # Using range slice of thickness 1 to avoid transposing 2-D coords
+    coords_labs_data['coords'][dim] = sc.concatenate(edges[dim, :1],
+                                                     edges[dim, -1:], dim)
 
     coords_labs_data["data"] = sc.bins(begin=begins,
                                        end=ends,
@@ -771,6 +763,17 @@ def convert_TableWorkspace_to_dataset(ws, error_connection=None, **ignored):
     return dataset
 
 
+def convert_WorkspaceGroup_to_dataarray_dict(group_workspace, **kwargs):
+    workspace_dict = {}
+    for i in range(group_workspace.getNumberOfEntries()):
+        workspace = group_workspace.getItem(i)
+        workspace_name = workspace.name().replace(f'{group_workspace.name()}',
+                                                  '').strip('_')
+        workspace_dict[workspace_name] = from_mantid(workspace, **kwargs)
+
+    return workspace_dict
+
+
 def from_mantid(workspace, **kwargs):
     """Convert Mantid workspace to a scipp data array or dataset.
     :param workspace: Mantid workspace to convert.
@@ -799,6 +802,9 @@ def from_mantid(workspace, **kwargs):
         scipp_obj = convert_TableWorkspace_to_dataset(workspace, **kwargs)
     elif w_id == 'MDHistoWorkspace':
         scipp_obj = convert_MDHistoWorkspace_to_data_array(workspace, **kwargs)
+    elif w_id == 'WorkspaceGroup':
+        scipp_obj = convert_WorkspaceGroup_to_dataarray_dict(
+            workspace, **kwargs)
 
     if scipp_obj is None:
         raise RuntimeError('Unsupported workspace type {}'.format(w_id))
@@ -899,7 +905,6 @@ def load(filename="",
             mantid.LoadInstrument(data_ws,
                                   FileName=instrument_filename,
                                   RewriteSpectraMap=True)
-
         return from_mantid(data_ws,
                            load_pulse_times=load_pulse_times,
                            error_connection=error_connection,
@@ -943,10 +948,10 @@ def load_component_info(ds, file, advanced_geometry=False):
 
 def validate_dim_and_get_mantid_string(unit_dim):
     known_units = {
-        'Delta-E': "DeltaE",
+        'energy-transfer': "DeltaE",
         'tof': "TOF",
         'wavelength': "Wavelength",
-        'E': "Energy",
+        'energy': "Energy",
         'd-spacing': "dSpacing",
         'Q': "MomentumTransfer",
         'Q^2': "QSquared",

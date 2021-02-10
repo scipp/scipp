@@ -1,5 +1,7 @@
-# SPDX-License-Identifier: GPL-3.0-or-later Copyright (c) 2019 Scipp
-# contributors (https://github.com/scipp)
+# ~~~
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# ~~~
 set(TARGET_NAME "scipp-variable")
 set(INC_FILES
     ${variable_INC_FILES}
@@ -44,7 +46,6 @@ set(SRC_FILES
     creation.cpp
     cumulative.cpp
     except.cpp
-    inplace_arithmetic.cpp
     logical.cpp
     math.cpp
     operations.cpp
@@ -89,6 +90,14 @@ target_include_directories(
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+if(PRECOMPILED_HEADERS)
+  target_precompile_headers(
+    ${TARGET_NAME} PUBLIC include/scipp/variable/transform.h
+    include/scipp/variable/variable.h
+  )
+endif()
+
 add_subdirectory(test)
 
 if(DYNAMIC_LIB)

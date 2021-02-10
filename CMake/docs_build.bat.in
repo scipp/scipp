@@ -1,0 +1,7 @@
+@ECHO OFF
+setlocal
+cmake --build @CMAKE_BINARY_DIR@ --target install
+if not exist docs mkdir docs
+set PYTHONPATH=@CMAKE_INSTALL_PREFIX@
+sphinx-build @CMAKE_SOURCE_DIR@/docs docs
+endlocal

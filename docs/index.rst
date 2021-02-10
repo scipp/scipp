@@ -120,6 +120,7 @@ Documentation
    :maxdepth: 3
 
    scipp-neutron/overview
+   scipp-neutron/unit-conversions
    scipp-neutron/groupby
    scipp-neutron/diffraction
    scipp-neutron/from-mantid-to-scipp
@@ -141,6 +142,7 @@ Documentation
    developer/api
    developer/concepts
    developer/architecture-decision-records
+   developer/deployment
 
 .. toctree::
    :caption: About

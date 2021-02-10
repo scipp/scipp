@@ -28,7 +28,13 @@ void init_unary(py::module &);
 void init_units_neutron(py::module &);
 void init_variable(py::module &);
 
+void init_generated_arithmetic(py::module &);
+void init_generated_comparison(py::module &);
+void init_generated_logical(py::module &);
 void init_generated_math(py::module &);
+void init_generated_trigonometry(py::module &);
+void init_generated_util(py::module &);
+void init_generated_special_values(py::module &);
 
 void init_core(py::module &m) {
   auto core = m.def_submodule("core");
@@ -52,7 +58,13 @@ void init_core(py::module &m) {
   init_unary(core);
   init_element_array_view(core);
 
+  init_generated_arithmetic(core);
+  init_generated_comparison(core);
+  init_generated_logical(core);
   init_generated_math(core);
+  init_generated_trigonometry(core);
+  init_generated_util(core);
+  init_generated_special_values(core);
 }
 
 PYBIND11_MODULE(_scipp, m) {

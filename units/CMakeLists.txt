@@ -1,8 +1,10 @@
-# SPDX-License-Identifier: GPL-3.0-or-later Copyright (c) 2019 Scipp
-# contributors (https://github.com/scipp)
+# ~~~
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# ~~~
 set(TARGET_NAME "scipp-units")
 set(INC_FILES include/scipp/units/except.h include/scipp/units/string.h
-              include/scipp/units/unit.h include/scipp/units/neutron.h
+              include/scipp/units/unit.h
 )
 
 set(SRC_FILES dim.cpp except.cpp string.cpp unit.cpp)
@@ -18,7 +20,7 @@ target_compile_definitions(
   ${TARGET_NAME} PUBLIC SCIPP_UNITS_${SCIPP_UNITS_SYSTEM}
 )
 include_directories(SYSTEM ${GMOCK_INCLUDE_DIR} ${GTEST_INCLUDE_DIR})
-target_link_libraries(${TARGET_NAME} PUBLIC scipp-common Boost::boost)
+target_link_libraries(${TARGET_NAME} PUBLIC scipp-common units::static)
 target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
@@ -27,6 +29,10 @@ target_include_directories(
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+
+if(PRECOMPILED_HEADERS)
+  target_precompile_headers(${TARGET_NAME} PUBLIC ${INC_FILES})
+endif()
 
 add_subdirectory(test)
 

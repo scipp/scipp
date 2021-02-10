@@ -19,17 +19,4 @@ Variable VariableConstView::operator-() const {
   return -copy;
 }
 
-Variable operator+(const VariableConstView &a, const VariableConstView &b) {
-  return transform(a, b, element::plus);
-}
-Variable operator-(const VariableConstView &a, const VariableConstView &b) {
-  return transform(a, b, element::minus);
-}
-Variable operator*(const VariableConstView &a, const VariableConstView &b) {
-  return transform(a, b, element::times);
-}
-Variable operator/(const VariableConstView &a, const VariableConstView &b) {
-  return transform(a, b, element::divide);
-}
-
 } // namespace scipp::variable

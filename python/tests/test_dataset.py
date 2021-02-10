@@ -15,7 +15,16 @@ def test_shape():
     a = sc.Variable(['x'], shape=[2])
     b = sc.Variable(['y', 'z'], shape=[3, 4])
     d = sc.Dataset(data={'a': a, 'b': b})
-    assert not bool(set(d.shape) - set([4, 3, 2]))
+    assert not bool(set(d.shape) - set([2, 3, 4]))
+
+
+def test_sizes():
+    d = sc.Dataset(data={'a': sc.scalar(value=1)})
+    assert d.sizes == {}
+    a = sc.Variable(['x'], shape=[2])
+    b = sc.Variable(['y', 'z'], shape=[3, 4])
+    d = sc.Dataset(data={'a': a, 'b': b})
+    assert d.sizes == {'x': 2, 'y': 3, 'z': 4}
 
 
 def test_create_empty():
@@ -660,10 +669,10 @@ def test_masks_delitem():
 
 
 def test_replace():
-    v1 = sc.Variable([sc.Dim.X], values=np.array([1, 2, 3]))
+    v1 = sc.Variable(['x'], values=np.array([1, 2, 3]))
     d = sc.Dataset({'a': v1})
     d['a'].data == v1
-    v2 = sc.Variable([sc.Dim.X], values=np.array([4, 5, 6]))
+    v2 = sc.Variable(['x'], values=np.array([4, 5, 6]))
     d['a'].data == v2
 
 

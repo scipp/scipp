@@ -1,8 +1,27 @@
 function(scipp_function template category function_name)
+  set(options SKIP_VARIABLE NO_OUT)
+  set(oneValueArgs OP)
+  cmake_parse_arguments(
+    PARSE_ARGV 3 SCIPP_FUNCTION "${options}" "${oneValueArgs}" ""
+  )
+
+  message("Generating files for ${function_name}")
+  set(NAME ${function_name})
+  set(ELEMENT_INCLUDE ${category})
+  if(SCIPP_FUNCTION_NO_OUT)
+    set(GENERATE_OUT "false")
+  else()
+    set(GENERATE_OUT "true")
+  endif()
+  if(DEFINED SCIPP_FUNCTION_OP)
+    set(OPNAME ${SCIPP_FUNCTION_OP})
+  else()
+    set(OPNAME ${NAME})
+  endif()
+  set(src ${OPNAME}.cpp)
+
   macro(configure_in_module module name)
     set(inc scipp/${module}/${name}.h)
-    set(src ${name}.cpp)
-    set(NAME ${function_name})
     configure_file(
       templates/${module}_${template}.h.in ${module}/include/${inc}
     )
@@ -21,12 +40,11 @@ function(scipp_function template category function_name)
         PARENT_SCOPE
     )
   endmacro()
-  message("Generating files for ${function_name}")
-  set(NAME ${function_name})
-  set(ELEMENT_INCLUDE ${category})
-  configure_in_module("variable" ${function_name})
-  configure_in_module("dataset" ${function_name})
-  set(src ${NAME}.cpp)
+
+  if(NOT SCIPP_FUNCTION_SKIP_VARIABLE)
+    configure_in_module("variable" ${OPNAME})
+  endif()
+  configure_in_module("dataset" ${OPNAME})
   configure_file(templates/python_${template}.cpp.in python/${src})
   set(python_SRC_FILES
       ${python_SRC_FILES} ${src}
@@ -35,17 +53,17 @@ function(scipp_function template category function_name)
   set(python_binders_fwd python_${category}_binders_fwd)
   set(python_binders python_${category}_binders)
   set(${python_binders_fwd}
-      "${${python_binders_fwd}}\nvoid init_${NAME}(pybind11::module &)ENDL"
+      "${${python_binders_fwd}}\nvoid init_${OPNAME}(pybind11::module &)ENDL"
       PARENT_SCOPE
   )
   set(${python_binders}
-      "${${python_binders}}\n  init_${NAME}(m)ENDL"
+      "${${python_binders}}\n  init_${OPNAME}(m)ENDL"
       PARENT_SCOPE
   )
 endfunction()
 
-macro(scipp_unary category function_name)
-  scipp_function("unary" ${category} ${function_name})
+macro(scipp_unary)
+  scipp_function("unary" ${ARGV})
 endmacro()
 
 macro(scipp_binary category function_name)

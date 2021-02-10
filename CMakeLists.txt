@@ -1,6 +1,8 @@
-# SPDX-License-Identifier: GPL-3.0-or-later Copyright (c) 2019 Scipp
-# contributors (https://github.com/scipp)
-cmake_minimum_required(VERSION 3.13)
+# ~~~
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# ~~~
+cmake_minimum_required(VERSION 3.16)
 project(scipp)
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -58,6 +60,7 @@ add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-MP>)
 
 include(GTest)
 include(boost)
+include(LLNL-units)
 include(Eigen)
 include(pybind11)
 include(GoogleBenchmark)
@@ -148,13 +151,25 @@ endif(NOT WIN32)
 # This is currently causing to many warnings, reenable when appropriate.
 # add_compile_options ( -Wconversion )
 
-# permissive- : Std compilant parsing, warnings (W3) set by CMake defaults
+# permissive- : Std compliant parsing, warnings (W3) set by CMake defaults
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-permissive->)
+
+option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" ON)
 
 enable_testing()
 
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
+
+# Custom target for building documentation
+if(NOT WIN32)
+  add_custom_target(docs COMMAND ./docs_build.sh)
+else()
+  add_custom_target(docs COMMAND docs_build.bat)
+endif()
+
+configure_file(CMake/docs_build.bat.in docs_build.bat)
+configure_file(CMake/docs_build.sh.in docs_build.sh)
 
 # Generate files for free scipp API functions
 include(scipp-functions)

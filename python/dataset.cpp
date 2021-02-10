@@ -5,6 +5,7 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
+#include "scipp/dataset/generated_comparison.h"
 #include "scipp/dataset/histogram.h"
 #include "scipp/dataset/map_view.h"
 #include "scipp/dataset/math.h"
@@ -29,11 +30,13 @@ namespace py = pybind11;
 template <template <class> class View, class T>
 void bind_helper_view(py::module &m, const std::string &name) {
   std::string suffix;
-  if (std::is_same_v<View<T>, items_view<T>>)
+  if (std::is_same_v<View<T>, items_view<T>> ||
+      std::is_same_v<View<T>, str_items_view<T>>)
     suffix = "_items_view";
   if (std::is_same_v<View<T>, values_view<T>>)
     suffix = "_values_view";
-  if (std::is_same_v<View<T>, keys_view<T>>)
+  if (std::is_same_v<View<T>, keys_view<T>> ||
+      std::is_same_v<View<T>, str_keys_view<T>>)
     suffix = "_keys_view";
   py::class_<View<T>>(m, (name + suffix).c_str())
       .def(py::init([](T &obj) { return View{obj}; }))
@@ -47,10 +50,8 @@ void bind_helper_view(py::module &m, const std::string &name) {
           py::return_value_policy::move, py::keep_alive<0, 1>());
 }
 
-template <class T, class ConstT>
-void bind_mutable_view(py::module &m, const std::string &name) {
-  py::class_<ConstT>(m, (name + "ConstView").c_str());
-  py::class_<T, ConstT> view(m, (name + "View").c_str());
+template <class Other, class T, class... Ignored>
+void bind_common_mutable_view_operators(pybind11::class_<T, Ignored...> &view) {
   view.def("__len__", &T::size)
       .def("__getitem__", &T::operator[], py::return_value_policy::move,
            py::keep_alive<0, 1>())
@@ -73,6 +74,18 @@ void bind_mutable_view(py::module &m, const std::string &name) {
            })
       .def("__delitem__", &T::erase, py::call_guard<py::gil_scoped_release>())
       .def(
+          "values", [](T &self) { return values_view(self); },
+          py::keep_alive<0, 1>(), R"(view on self's values)")
+      .def("__contains__", &T::contains);
+  bind_inequality_to_operator<T>(view);
+}
+
+template <class T, class ConstT>
+void bind_mutable_view(py::module &m, const std::string &name) {
+  py::class_<ConstT>(m, (name + "ConstView").c_str());
+  py::class_<T, ConstT> view(m, (name + "View").c_str());
+  bind_common_mutable_view_operators<T>(view);
+  view.def(
           "__iter__",
           [](T &self) {
             return py::make_iterator(self.keys_begin(), self.keys_end(),
@@ -83,14 +96,31 @@ void bind_mutable_view(py::module &m, const std::string &name) {
           "keys", [](T &self) { return keys_view(self); },
           py::keep_alive<0, 1>(), R"(view on self's keys)")
       .def(
-          "values", [](T &self) { return values_view(self); },
-          py::keep_alive<0, 1>(), R"(view on self's values)")
-      .def(
           "items", [](T &self) { return items_view(self); },
           py::return_value_policy::move, py::keep_alive<0, 1>(),
-          R"(view on self's items)")
-      .def("__contains__", &T::contains);
-  bind_inequality_to_operator<T>(view);
+          R"(view on self's items)");
+}
+
+template <class T, class ConstT>
+void bind_mutable_view_no_dim(py::module &m, const std::string &name) {
+  py::class_<ConstT>(m, (name + "ConstView").c_str());
+  py::class_<T, ConstT> view(m, (name + "View").c_str());
+  bind_common_mutable_view_operators<T>(view);
+  view.def(
+          "__iter__",
+          [](T &self) {
+            auto keys_view = str_keys_view(self);
+            return py::make_iterator(keys_view.begin(), keys_view.end(),
+                                     py::return_value_policy::move);
+          },
+          py::keep_alive<0, 1>())
+      .def(
+          "keys", [](T &self) { return str_keys_view(self); },
+          py::keep_alive<0, 1>(), R"(view on self's keys)")
+      .def(
+          "items", [](T &self) { return str_items_view(self); },
+          py::return_value_policy::move, py::keep_alive<0, 1>(),
+          R"(view on self's items)");
 }
 
 template <class T, class... Ignored>
@@ -209,7 +239,11 @@ void bind_data_array_properties(py::class_<T, Ignored...> &c) {
   bind_binary<DatasetView>(c);
   bind_binary<DataArrayView>(c);
   bind_binary<VariableConstView>(c);
+  bind_comparison<DataArrayConstView>(c);
+  bind_comparison<VariableConstView>(c);
   bind_unary(c);
+  bind_logical<DataArray>(c);
+  bind_logical<Variable>(c);
 }
 
 template <class T> void bind_rebin(py::module &m) {
@@ -225,18 +259,18 @@ void init_dataset(py::module &m) {
 
   bind_helper_view<items_view, Dataset>(m, "Dataset");
   bind_helper_view<items_view, DatasetView>(m, "DatasetView");
-  bind_helper_view<items_view, CoordsView>(m, "CoordsView");
+  bind_helper_view<str_items_view, CoordsView>(m, "CoordsView");
   bind_helper_view<items_view, MasksView>(m, "MasksView");
   bind_helper_view<keys_view, Dataset>(m, "Dataset");
   bind_helper_view<keys_view, DatasetView>(m, "DatasetView");
-  bind_helper_view<keys_view, CoordsView>(m, "CoordsView");
+  bind_helper_view<str_keys_view, CoordsView>(m, "CoordsView");
   bind_helper_view<keys_view, MasksView>(m, "MasksView");
   bind_helper_view<values_view, Dataset>(m, "Dataset");
   bind_helper_view<values_view, DatasetView>(m, "DatasetView");
   bind_helper_view<values_view, CoordsView>(m, "CoordsView");
   bind_helper_view<values_view, MasksView>(m, "MasksView");
 
-  bind_mutable_view<CoordsView, CoordsConstView>(m, "Coords");
+  bind_mutable_view_no_dim<CoordsView, CoordsConstView>(m, "Coords");
   bind_mutable_view<MasksView, MasksConstView>(m, "Masks");
 
   py::class_<DataArray> dataArray(m, "DataArray", R"(

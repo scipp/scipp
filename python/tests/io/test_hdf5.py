@@ -15,7 +15,9 @@ def roundtrip(obj):
 
 
 def check_roundtrip(obj):
-    assert sc.is_equal(roundtrip(obj), obj)
+    result = roundtrip(obj)
+    assert sc.is_equal(result, obj)
+    return result  # for optional addition tests
 
 
 x = sc.Variable(dims=['x'], values=np.arange(4.0), unit=sc.units.m)
@@ -77,6 +79,22 @@ def test_variable_binned_variable():
     check_roundtrip(binned)
 
 
+def test_variable_binned_variable_slice():
+    begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.dtype.int64)
+    end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.dtype.int64)
+    binned = sc.bins(begin=begin, end=end, dim='x', data=x)
+    # Note the current arbitrary limit is to avoid writing the buffer if it is
+    # more than 50% too large. These cutoffs or the entiry mechanism may
+    # change in the future, so this test should be adapted. This test does not
+    # documented a strict requirement.
+    result = check_roundtrip(binned['y', 0])
+    assert result.bins.data.shape[0] == 4
+    result = check_roundtrip(binned['y', 1])
+    assert result.bins.data.shape[0] == 1
+    result = check_roundtrip(binned['y', 1:2])
+    assert result.bins.data.shape[0] == 1
+
+
 def test_variable_binned_data_array():
     binned = sc.bins(dim='x', data=array_1d)
     check_roundtrip(binned)
@@ -94,7 +112,10 @@ def test_data_array_1d_no_coords():
 
 
 def test_data_array_all_units_supported():
-    for unit in sc.units.supported_units():
+    for unit in [
+            sc.units.one, sc.units.us, sc.units.angstrom, sc.units.counts,
+            sc.units.counts / sc.units.us, sc.units.meV
+    ]:
         a = sc.DataArray(data=1.0 * unit)
         check_roundtrip(a)
 

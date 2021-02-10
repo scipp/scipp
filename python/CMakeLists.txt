@@ -1,5 +1,7 @@
-# SPDX-License-Identifier: GPL-3.0-or-later Copyright (c) 2019 Scipp
-# contributors (https://github.com/scipp)
+# ~~~
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# ~~~
 pybind11_add_module(
   _scipp
   SHARED
@@ -42,6 +44,10 @@ target_link_libraries(_scipp LINK_PRIVATE scipp-dataset scipp-neutron)
 # pybind11 FAQ.
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
 set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
+
+if(PRECOMPILED_HEADERS)
+  target_precompile_headers(_scipp PRIVATE pybind11.h)
+endif()
 
 add_sanitizers(_scipp)
 

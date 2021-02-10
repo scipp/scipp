@@ -21,7 +21,10 @@ from .extend_units import *
 from .table_html import to_html, make_html
 from .object_list import _repr_html_
 from ._utils import collapse, slices
+from ._utils.is_type import is_variable, is_dataset, is_data_array, \
+                            is_dataset_or_array
 from .compat.dict import to_dict, from_dict
+from .sizes import _make_sizes
 
 # Wrappers for free functions from _scipp.core
 from ._bins import *
@@ -52,6 +55,13 @@ setattr(DataArray, 'to_hdf5', _to_hdf5)
 setattr(DataArrayView, 'to_hdf5', _to_hdf5)
 setattr(Dataset, 'to_hdf5', _to_hdf5)
 setattr(DatasetView, 'to_hdf5', _to_hdf5)
+
+setattr(Variable, 'sizes', property(_make_sizes))
+setattr(VariableView, 'sizes', property(_make_sizes))
+setattr(DataArray, 'sizes', property(_make_sizes))
+setattr(DataArrayView, 'sizes', property(_make_sizes))
+setattr(Dataset, 'sizes', property(_make_sizes))
+setattr(DatasetView, 'sizes', property(_make_sizes))
 
 from ._bins import _bins, _set_bins
 setattr(Variable, 'bins', property(_bins, _set_bins))

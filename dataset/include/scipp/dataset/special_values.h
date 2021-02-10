@@ -1,5 +1,7 @@
-#include "scipp/dataset/dataset.h"
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+/// @file
+/// @author Simon Heybrock
+#pragma once
 
-namespace scipp::dataset {
-DataArray isfinite(const DataArrayConstView &a);
-}
+#include "scipp/dataset/generated_special_values.h"

@@ -74,6 +74,13 @@ def test_create_with_numpy_dtype():
     assert var.dtype == sc.dtype.float32
 
 
+def test_create_with_unit_as_string():
+    var = sc.Variable(dims=['x'], unit='meV', values=np.arange(2))
+    assert var.unit == sc.units.meV
+    var.unit = 'm/s'
+    assert var.unit == sc.units.m / sc.units.s
+
+
 def test_create_with_variances():
     assert sc.Variable(dims=['x'], shape=[2]).variances is None
     assert sc.Variable(dims=['x'], shape=[2],
@@ -382,6 +389,15 @@ def test_slicing():
         assert isinstance(var_slice, sc.VariableView)
         assert len(var_slice.values) == len(expected)
         assert np.array_equal(var_slice.values, np.array(expected))
+
+
+def test_sizes():
+    a = sc.Variable(value=1)
+    assert a.sizes == {}
+    a = sc.Variable(['x'], shape=[2])
+    assert a.sizes == {'x': 2}
+    a = sc.Variable(['y', 'z'], shape=[3, 4])
+    assert a.sizes == {'y': 3, 'z': 4}
 
 
 def test_iadd():
@@ -757,7 +773,7 @@ def test_remove_variance():
 def test_set_variance_convert_dtype():
     values = np.random.rand(2, 3)
     variances = np.arange(6).reshape(2, 3)
-    assert variances.dtype == np.int
+    assert variances.dtype == int
     var = sc.Variable(dims=['x', 'y'], values=values)
     expected = sc.Variable(dims=['x', 'y'], values=values, variances=variances)
 
@@ -814,7 +830,7 @@ def test_construct_0d_dtype():
     assert sc.Variable(2, dtype=np.int32).dtype == sc.dtype.int32
     assert sc.Variable(np.float64(2),
                        dtype=np.float32).dtype == sc.dtype.float32
-    assert sc.Variable(1, dtype=np.bool).dtype == sc.dtype.bool
+    assert sc.Variable(1, dtype=bool).dtype == sc.dtype.bool
 
 
 def test_construct_0d_datetime():
@@ -939,23 +955,34 @@ def test_variable_data_array_binary_ops():
 
 
 def test_isnan():
-    assert_export(sc.isnan, sc.Variable())
+    assert sc.is_equal(
+        sc.isnan(sc.Variable(['x'], values=np.array([1, 1, np.nan]))),
+        sc.Variable(['x'], values=[False, False, True]))
 
 
 def test_isinf():
-    assert_export(sc.isinf, sc.Variable())
+    assert sc.is_equal(
+        sc.isinf(sc.Variable(['x'], values=np.array([1, -np.inf, np.inf]))),
+        sc.Variable(['x'], values=[False, True, True]))
 
 
 def test_isfinite():
-    assert_export(sc.isfinite, sc.Variable())
+    assert sc.is_equal(
+        sc.isfinite(
+            sc.Variable(['x'], values=np.array([1, -np.inf, np.inf, np.nan]))),
+        sc.Variable(['x'], values=[True, False, False, False]))
 
 
 def test_isposinf():
-    assert_export(sc.isposinf, sc.Variable())
+    assert sc.is_equal(
+        sc.isposinf(sc.Variable(['x'], values=np.array([1, -np.inf, np.inf]))),
+        sc.Variable(['x'], values=[False, False, True]))
 
 
 def test_isneginf():
-    assert_export(sc.isneginf, sc.Variable())
+    assert sc.is_equal(
+        sc.isneginf(sc.Variable(['x'], values=np.array([1, -np.inf, np.inf]))),
+        sc.Variable(['x'], values=[False, True, False]))
 
 
 def test_nan_to_num():

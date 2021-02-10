@@ -9,13 +9,31 @@ Since v0.5
 Features
 ~~~~~~~~
 
+* Add ``sizes`` properties, an ordered ``dict`` to lookup the size of a specific dimension [#1636](https://github.com/scipp/scipp/pull/1636).
+* Add more functions for data arrays that were previously available only for variables [#1638](https://github.com/scipp/scipp/pull/1638) [#1660](https://github.com/scipp/scipp/pull/1660).
+* Add named versions of operators such as ``logical_and`` [#1660](https://github.com/scipp/scipp/pull/1660).
+* Add modulo operations [#1660](https://github.com/scipp/scipp/pull/1660).
+* ``scipp.neutron``
+
+  * Support unit conversion to energy transfer, for inelastic TOF experiments [#1635](https://github.com/scipp/scipp/pull/1635).
+  * Support loading/converting Mantid ``WorkspaceGroup``, this will produce a ``dict`` of data arrays [#1654](https://github.com/scipp/scipp/pull/1654).
+  * Fixes to support loading/converting ``McStasNexus`` files [#1659](https://github.com/scipp/scipp/pull/1659).
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
 Contributors
 ~~~~~~~~~~~~
 
-v0.5 (January 2021)
+Matthew Andrew,
+Owen Arnold,
+Simon Heybrock,
+Matthew D. Jones,
+Andrew McCluskey,
+Neil Vaytet,
+and Jan-Lukas Wynen
+
+v0.5.0 (January 2021)
 -------------------
 
 Features
@@ -33,6 +51,7 @@ Features
 * More functions such as ``nanmean`` for better handling of special values such as ``INF`` and ``NaN``.
 * TBB (multi-threading) support for MacOS.
 * ``scipp.neutron``
+
   * Improved instrument view, e.g., with buttons to align camera with an axis.
   * Experiment logs (previously using Mantid's ``Run``) are now represented as native scipp objects, e.g., as scalar attributes holding a data array representing a time-series such as a temperature log.
   * Support conversion of ``mantid.MaskWorkspace``.
@@ -65,7 +84,7 @@ Matthew D. Jones,
 Daniel Nixon,
 Piotr Rozyczko,
 Neil Vaytet,
-and Jan-Lukas Wynen,
+and Jan-Lukas Wynen
 
 v0.4 (July 2020)
 ----------------
@@ -99,9 +118,11 @@ Breaking changes
 * ``scipp.neutron.load`` must use ``advanced_geometry=True`` option for loading ``detector-info`` and pixel shapes.
 * Normalization of event data cannot be done directly any more, must use ``realign``.
 * Plotting variances in 2D has been removed, and the API for using ``matplotlib`` axes has been simplified slightly, since we no longer have axes for variances:
+
   * Before: ``plot(..., mpl_axes={"ax": myax0, "cax": myax1})``
   * After: ``plot(..., ax=myax0, cax=myax1)``
 * Plot with keyword argument ``collapse`` has been removed in favour of two more generic free functions that return a ``dict`` of data arrays that can then directly be passed to the ``plot`` function:
+
   * ``collapse(d, keep='x')`` slices all dimensions away to keep only ``'x'``, thus always returning 1D slices.
   * ``slices(d, dim='x')`` slices along dimension ``'x'``, returning slices with ``ndim-1`` dimensions contaiing all dimensions other than ``'x'``.
 
