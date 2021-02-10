@@ -200,6 +200,8 @@ DataArray reshape(const DataArrayConstView &a, const Dimensions &dims) {
 }
 
 Dataset reshape(const DatasetConstView &d, const Dimensions &dims) {
+  // Note that we are paying for the coordinate reshaping multiple times here.
+  // It is a trade-off between code simplicity and performance.
   return apply_to_items(
       d, [](auto &&... _) { return reshape(_...); }, dims);
 }
