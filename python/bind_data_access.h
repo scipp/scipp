@@ -87,7 +87,15 @@ class DataAccessHelper {
       if constexpr (std::is_same_v<T, scipp::core::time_point>) {
         // Need a custom implementation because py::dtype::of only works with
         // types supported by the buffer protocol.
-        return py::dtype("datetime64[" + to_string(view.unit()) + "]");
+        if (const auto unit = view.unit(); unit != units::us) {
+          return py::dtype("datetime64[" + to_string(view.unit()) + "]");
+        }
+        else {
+          // TODO to_string(us) produces a utf-8 representation.
+          //  Remove special case and fore ASCII formatting if / when
+          //  supported by to_string.
+          return py::dtype("datetime64[us]");
+        }
       } else {
         return py::dtype::of<T>();
       }
@@ -285,8 +293,10 @@ private:
                                           core::time_point>) {
         static const auto np_datetime64 =
             py::module::import("numpy").attr("datetime64");
-        return np_datetime64(data[0].time_since_epoch(),
-                             to_string(view.unit()));
+        // TODO remove if / when to_string(Unit) supports ASCII only output.
+        const auto unit_str = view.unit() != units::us ? to_string(view.unit())
+            : "us";
+        return np_datetime64(data[0].time_since_epoch(), unit_str);
       } else {
         // Passing `obj` as parent so py::keep_alive works.
         return py::cast(data[0], py::return_value_policy::reference_internal,
