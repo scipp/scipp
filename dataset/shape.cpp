@@ -141,17 +141,62 @@ Dataset resize(const DatasetConstView &d, const Dim dim,
   return result;
 }
 
+namespace {
+
+bool all_dims_unchanged(const Dimensions &item_dims,
+                        const Dimensions &new_dims) {
+  for (const auto dim : item_dims.labels()) {
+    if (!new_dims.contains(dim))
+      return false;
+    if (new_dims[dim] != item_dims[dim])
+      return false;
+  }
+  return true;
+}
+
+bool contains_all_dim_labels(const Dimensions &item_dims,
+                             const Dimensions &old_dims) {
+  for (const auto dim : item_dims.labels())
+    if (!old_dims.contains(dim))
+      return false;
+  return true;
+}
+
+} // end anonymous namespace
+
 DataArray reshape(const DataArrayConstView &a, const Dimensions &dims) {
-  auto adims = a.data().dims();
+  // The rules are the following:
+  //  - if a coordinate, attribute or mask has all its dimensions unchanged by
+  //    the reshape operation, just copy over to the new DataArray.
+  //  - if a coordinate, attribute or mask has the same dimensions as the data,
+  //    reshape that coordinate, attribute or mask.
+  //  - if a mask has all its dimensions contained in the data dimension, we
+  //    first broadcast the mask to the data dimensions before reshaping it.
+  //  - if a coordinate, attribute or mask satisfies none of these requirements,
+  //    it is dropped during the reshape operation.
   auto reshaped = DataArray(reshape(a.data(), dims));
-  for (auto &&[name, coord] : a.meta()) {
-    reshaped.meta().set(name, reshape(coord, dims));
+  for (auto &&[name, coord] : a.coords()) {
+    if (all_dims_unchanged(coord.dims(), dims))
+      reshaped.coords().set(name, coord);
+    else if (coord.dims() == a.data().dims())
+      reshaped.coords().set(name, reshape(coord, dims));
+  }
+  for (auto &&[name, attr] : a.attrs()) {
+    if (all_dims_unchanged(attr.dims(), dims))
+      reshaped.attrs().set(name, attr);
+    else if (attr.dims() == a.data().dims())
+      reshaped.attrs().set(name, reshape(attr, dims));
   }
   for (auto &&[name, mask] : a.masks()) {
-    reshaped.masks().set(name, reshape(mask, dims));
+    if (all_dims_unchanged(mask.dims(), dims))
+      reshaped.masks().set(name, mask);
+    else if (mask.dims() == a.data().dims())
+      reshaped.masks().set(name, reshape(mask, dims));
+    else if (contains_all_dim_labels(mask.dims(), a.data().dims()))
+      reshaped.masks().set(name,
+                           reshape(broadcast(mask, a.data().dims()), dims));
   }
   return reshaped;
 }
-
 
 } // namespace scipp::dataset
