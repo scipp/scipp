@@ -66,7 +66,7 @@ TEST(VectorReduceTest, sum_vector) {
   const auto expected = makeVariable<Eigen::Vector3d>(
       Dims{}, Shape{1}, units::m, Values{Eigen::Vector3d{5, 7, 9}});
   auto summed = sum(vector_var, Dim::X);
-  EXPECT_EQ(vector_var, expected);
+  EXPECT_EQ(summed, expected);
 }
 
 TEST(VectorReduceTest, mean_vector) {
