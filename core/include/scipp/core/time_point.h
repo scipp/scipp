@@ -20,35 +20,57 @@ public:
   time_point &operator=(time_point &&other) noexcept = default;
   ~time_point() noexcept = default;
 
-  int64_t time_since_epoch() const noexcept { return m_duration; };
+  [[nodiscard]] int64_t time_since_epoch() const noexcept {
+    return m_duration;
+  };
 
-  time_point operator+(const int64_t &d) { return time_point{m_duration + d}; }
-  time_point operator-(const int64_t &d) { return time_point{m_duration - d}; }
-  int64_t operator-(const time_point &time) const noexcept {
-    return m_duration - time.time_since_epoch();
+  friend time_point operator+(const time_point a, const int64_t b) {
+    return time_point{a.time_since_epoch() + b};
+  }
+  friend time_point operator+(const int64_t a, const time_point b) {
+    return time_point{a + b.time_since_epoch()};
+  }
+  
+  friend time_point operator-(const time_point a, const int64_t b) {
+    return time_point{a.time_since_epoch() - b};
+  }
+  friend int64_t operator-(const time_point a, const time_point b) {
+    return a.time_since_epoch() - b.time_since_epoch();
+  }
+
+  friend time_point operator*(const time_point a, const int64_t b) noexcept {
+    return time_point{a.time_since_epoch() * b};
+  }
+  friend time_point operator*(const int64_t a, const time_point b) noexcept {
+    return time_point{a * b.time_since_epoch()};
+  }
+  
+  friend time_point operator/(const time_point a, const int64_t b) noexcept {
+    return time_point{a.time_since_epoch() / b};
+  }
+  friend int64_t operator/(const time_point a, const time_point b) noexcept {
+    return a.time_since_epoch() / b.time_since_epoch();
   }
 
   time_point &operator+=(const int64_t duration) {
     m_duration += duration;
     return *this;
   };
+
   time_point &operator-=(const int64_t duration) {
     m_duration -= duration;
     return *this;
   };
 
-  time_point &operator*=(const int64_t other) noexcept {
-    m_duration *= other;
-    return *this;
-  };
-  time_point &operator/=(const int64_t other) noexcept {
-    m_duration /= other;
+  time_point &operator*=(const int64_t duration) noexcept {
+    m_duration *= duration;
     return *this;
   };
 
-  friend time_point operator*(const time_point a, const int64_t b) noexcept {
-    return time_point{a.m_duration * b};
-  }
+  time_point &operator/=(const int64_t duration) noexcept {
+    m_duration /= duration;
+    return *this;
+  };
 
   bool operator==(const time_point &time) const noexcept {
     return m_duration == time.time_since_epoch();
