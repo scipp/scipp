@@ -177,6 +177,11 @@ TEST(UnitFunctionsTest, atan2) {
   EXPECT_THROW(atan2(units::m, units::s), except::UnitError);
 }
 
+TEST(UnitParseTest, singular_plural) {
+  EXPECT_EQ(units::Unit("counts"), units::counts);
+  EXPECT_EQ(units::Unit("count"), units::counts);
+}
+
 TEST(UnitFormatTest, roundtrip_string) {
   for (const auto &s : {"m", "m/s", "meV", "pAh", "mAh", "ns", "counts",
                         "counts/meV", "1/counts", "counts/m"}) {
