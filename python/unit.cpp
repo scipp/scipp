@@ -44,9 +44,9 @@ get_time_unit(const std::optional<scipp::units::Unit> value_unit,
   return {actual_unit, 1};
 }
 
-std::tuple<units::Unit, int64_t>
-get_time_unit(const py::buffer &value, const py::object &dtype,
-              const units::Unit unit) {
+std::tuple<units::Unit, int64_t> get_time_unit(const py::buffer &value,
+                                               const py::object &dtype,
+                                               const units::Unit unit) {
   return get_time_unit(value.is_none() ? std::optional<units::Unit>{}
                                        : parse_datetime_dtype(value),
                        dtype.is_none()

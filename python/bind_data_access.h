@@ -89,8 +89,7 @@ class DataAccessHelper {
         // types supported by the buffer protocol.
         if (const auto unit = view.unit(); unit != units::us) {
           return py::dtype("datetime64[" + to_string(view.unit()) + "]");
-        }
-        else {
+        } else {
           // TODO to_string(us) produces a utf-8 representation.
           //  Remove special case and fore ASCII formatting if / when
           //  supported by to_string.
@@ -294,8 +293,8 @@ private:
         static const auto np_datetime64 =
             py::module::import("numpy").attr("datetime64");
         // TODO remove if / when to_string(Unit) supports ASCII only output.
-        const auto unit_str = view.unit() != units::us ? to_string(view.unit())
-            : "us";
+        const auto unit_str =
+            view.unit() != units::us ? to_string(view.unit()) : "us";
         return np_datetime64(data[0].time_since_epoch(), unit_str);
       } else {
         // Passing `obj` as parent so py::keep_alive works.

@@ -79,10 +79,10 @@ struct add_types_t {
 
 struct minus_types_t {
   constexpr void operator()() const noexcept;
-  using types = decltype(std::tuple_cat(
-      std::declval<arithmetic_and_matrix_type_pairs>(),
-      std::tuple<std::tuple<time_point, int64_t>,
-                 std::tuple<time_point, time_point>>{}));
+  using types = decltype(
+      std::tuple_cat(std::declval<arithmetic_and_matrix_type_pairs>(),
+                     std::tuple<std::tuple<time_point, int64_t>,
+                                std::tuple<time_point, time_point>>{}));
 };
 
 struct times_types_t {
