@@ -38,15 +38,17 @@ scipp::core::DType scipp_dtype(const py::dtype &type) {
     return scipp::core::dtype<int32_t>;
   if (type.is(py::dtype::of<bool>()))
     return scipp::core::dtype<bool>;
-  auto type_string = py::str(static_cast<py::handle>(type));
-  if (type_string.contains("<U")) // TODO is where normal way to do that ?
+  if (type.kind() == 'U')
     return scipp::core::dtype<std::string>;
-  if (type_string.contains("datetime64")) {
+  if (type.kind() == 'M') {
     return scipp::core::dtype<scipp::core::time_point>;
   }
-  throw std::runtime_error("Unsupported numpy dtype.\n"
-                           "Supported types are: bool, float32, float64,"
-                           " int32, int64, string and datetime64");
+  throw std::runtime_error(
+      "Unsupported numpy dtype: " +
+      py::str(static_cast<py::handle>(type)).cast<std::string>() +
+      "\n"
+      "Supported types are: bool, float32, float64,"
+      " int32, int64, string, and datetime64");
 }
 
 scipp::core::DType scipp_dtype(const py::object &type) {
