@@ -239,7 +239,7 @@ TEST(VariableSpecialValueTest, isfinite_on_vector) {
   auto expected =
       makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
 
-  EXPECT_EQ(isfinite(vec), expected);
+  EXPECT_EQ(variable::isfinite(vec), expected);
 }
 
 TEST(VariableSpecialValueTest, isfinite_inplace_throws_exception) {
@@ -252,6 +252,6 @@ TEST(VariableSpecialValueTest, isfinite_with_variance) {
   auto vec = makeVariable<double>(
       Dims{Dim::X}, Shape{2}, Values{double(NAN), 7.0}, Variances{1.0, 1.0});
 
-  EXPECT_EQ(isfinite(vec),
+  EXPECT_EQ(variable::isfinite(vec),
             makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
 }
