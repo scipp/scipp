@@ -1124,20 +1124,25 @@ def _get_efixed(workspace):
 
 def extract_efinal(ws):
     detInfo = ws.detectorInfo()
-    ef = np.empty(shape=(detInfo.size()), dtype=float)
+    specInfo = ws.spectrumInfo()
+    ef = np.empty(shape=(specInfo.size(), ), dtype=float)
     ef[:] = np.nan
     analyser_ef = _get_efixed(workspace=ws)
     ids = detInfo.detectorIDs()
-    for i, id in enumerate(ids):
-        detector_ef = _try_except(op=ws.getEFixed,
-                                  possible_except=RuntimeError,
-                                  failure=None,
-                                  detId=int(id))
+    for spec_index in range(len(specInfo)):
+        detector_ef = None
+        if specInfo.hasDetectors(spec_index):
+            # Just like mantid, we only take the first entry of the group.
+            det_index = specInfo.getSpectrumDefinition(spec_index)[0][0]
+            detector_ef = _try_except(op=ws.getEFixed,
+                                      possible_except=RuntimeError,
+                                      failure=None,
+                                      detId=int(ids[det_index]))
         detector_ef = detector_ef if detector_ef is not None else analyser_ef
         if not detector_ef:
             continue  # Cannot assign an Ef. May or may not be an error
             # - i.e. a diffraction detector, monitor etc.
-        ef[i] = detector_ef
+        ef[spec_index] = detector_ef
 
     if np.nansum(ef) == 0:
         raise RuntimeError("No detectors with Ef in instrument {0}".format(
