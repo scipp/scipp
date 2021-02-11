@@ -313,7 +313,7 @@ def test_datetime_slicing():
     for unit in ('s', 'us', 'ns'):
         values = np.array([
             np.datetime64(np.random.randint(0, 1000), unit)
-            for _ in range(np.random.randint(3, 6))
+            for _ in range(np.random.randint(4, 6))
         ])
         var = sc.Variable(dims=['x'], values=values)
         for i in range(len(values)):
@@ -329,7 +329,11 @@ def test_datetime_slicing():
         ])
         for i in range(len(values)):
             var['x', i] = values2[i] * sc.Unit(unit)
-        assert sc.is_equal(var, sc.Variable(['x'], values=values2))
+        assert sc.is_equal(var, sc.Variable(dims=['x'], values=values2))
+
+        var['x', 1:4] = sc.Variable(dims=['x'], values=values[1:4])
+        values2[1:4] = values[1:4]
+        assert sc.is_equal(var, sc.Variable(dims=['x'], values=values2))
 
 
 def test_datetime_operations():
