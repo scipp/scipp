@@ -74,7 +74,7 @@ template <class Ratio> constexpr int64_t num_digits() {
 // For synchronizing access to gmtime because its return value is shared.
 std::mutex gmtime_mutex;
 
-void put_utc_time(std::ostream &os, const std::time_t time_point) {
+void put_time(std::ostream &os, const std::time_t time_point) {
   std::lock_guard guard_{gmtime_mutex};
   const std::tm *tm = std::gmtime(&time_point);
   os << std::put_time(tm, "%FT%T");
@@ -90,8 +90,8 @@ std::string to_iso_date(const scipp::core::time_point &item,
     std::ostringstream oss;
     // Cast to seconds to be independent of clock precision.
     // Sub-second digits are formatted manually.
-    put_utc_time(
-        oss, Clock::to_time_t(Clock::time_point{
+    put_time(oss,
+             Clock::to_time_t(Clock::time_point{
                  std::chrono::duration_cast<std::chrono::seconds>(duration)}));
     if constexpr (std::ratio_less_v<Period, std::ratio<1, 1>>) {
       oss << '.' << std::setw(num_digits<Period>()) << std::setfill('0')
