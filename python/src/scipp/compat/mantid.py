@@ -168,6 +168,7 @@ def make_detector_info(ws):
 
     # May want to include more information here, such as detector positions,
     # but for now this is not necessary.
+
     return sc.Variable(value=sc.Dataset(coords={
         'detector': detector,
         'spectrum': spectrum
@@ -1122,9 +1123,9 @@ def _get_efixed(workspace):
 
 
 def extract_efinal(ws):
-
     detInfo = ws.detectorInfo()
-    ef = np.zeros(shape=(detInfo.size()), dtype=float)
+    ef = np.empty(shape=(detInfo.size()), dtype=float)
+    ef[:] = np.nan
     analyser_ef = _get_efixed(workspace=ws)
     ids = detInfo.detectorIDs()
     for i, id in enumerate(ids):
@@ -1134,10 +1135,11 @@ def extract_efinal(ws):
                                   detId=int(id))
         detector_ef = detector_ef if detector_ef is not None else analyser_ef
         if not detector_ef:
-            continue  # Rather than throw I think!
+            continue  # Cannot assign an Ef. May or may not be an error
+            # - i.e. a diffraction detector, monitor etc.
         ef[i] = detector_ef
 
-    if np.count_nonzero(ef) == 0:
+    if np.nansum(ef) == 0:
         raise RuntimeError("No detectors with Ef in instrument {0}".format(
             ws.getInstrument().getName()))
     return sc.DataArray(data=sc.Variable(dims=['detector'], values=ef),

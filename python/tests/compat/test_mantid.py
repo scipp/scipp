@@ -843,7 +843,7 @@ def test_extract_energy_final():
     for instr in _all_indirect(blacklist=unsupported):
         out = _load_indirect_instrument(instr, parameters)
         efs = sc.compat.mantid.extract_efinal(out)
-        assert sc.sum(efs).values > 0.0
+        assert sc.nansum(efs).values > 0.0
 
 
 if __name__ == "__main__":
