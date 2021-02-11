@@ -307,12 +307,35 @@ def test_datetime_setter_mismatch():
             var1.values = values
 
 
+def test_datetime_slicing():
+    for unit in ('s', 'us', 'ns'):
+        values = np.array([
+            np.datetime64(np.random.randint(0, 1000), unit)
+            for _ in range(np.random.randint(3, 6))
+        ])
+        var = sc.Variable(dims=['x'], values=values)
+        for i in range(len(values)):
+            assert sc.is_equal(var['x', i], sc.Variable(value=values[i]))
+        for i in range(len(values) - 2):
+            for j in range(i + 1, len(values)):
+                assert sc.is_equal(var['x', i:j],
+                                   sc.Variable(dims=['x'], values=values[i:j]))
+
+        values2 = np.array([
+            np.datetime64(np.random.randint(0, 1000), unit)
+            for _ in range(len(values))
+        ])
+        for i in range(len(values)):
+            var['x', i] = sc.scalar(values2[i], unit=sc.Unit(unit))
+        assert sc.is_equal(var, sc.Variable(['x'], values=values2))
+
+
 def test_datetime_operations():
     dt = np.datetime64('now', 'ns')
     values = np.array([dt, dt + 123456789])
     var = sc.Variable(dims=['x'], values=values)
 
-    res = var + 1*sc.Unit('ns')
+    res = var + 1 * sc.Unit('ns')
     assert str(res.dtype) == 'datetime64'
     assert res.unit == sc.units.ns
     np.testing.assert_array_equal(res.values, values + 1)
@@ -330,9 +353,11 @@ def test_datetime_operations_mismatch():
     var = sc.Variable(dims=['x'], values=values)
 
     with pytest.raises(RuntimeError):
-        var + 1*sc.Unit('s')
+        var + 1 * sc.Unit('s')
     with pytest.raises(RuntimeError):
-        var + sc.Variable(['x'], values=np.random.randint(0, 100, len(values)), unit=sc.units.us)
+        var + sc.Variable(['x'],
+                          values=np.random.randint(0, 100, len(values)),
+                          unit=sc.units.us)
 
 
 def test_create_2D_inner_size_3():
