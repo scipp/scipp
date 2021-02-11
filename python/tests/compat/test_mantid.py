@@ -842,8 +842,9 @@ def test_extract_energy_final():
     unsupported = ['ZEEMANS', 'MARS', 'IN10', 'IN13', 'IN16', 'VISION']
     for instr in _all_indirect(blacklist=unsupported):
         out = _load_indirect_instrument(instr, parameters)
-        efs = sc.compat.mantid.extract_efinal(out)
+        efs = sc.compat.mantid._extract_efinal(out)
         assert sc.nansum(efs).values > 0.0
+
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
@@ -852,8 +853,10 @@ def test_extract_energy_final_when_not_present():
 
     ws = CreateSampleWorkspace(StoreInADS=False)
 
-    efs = sc.compat.mantid.extract_efinal(ws)
+    efs = sc.compat.mantid._extract_efinal(ws)
+    assert efs.shape[0] == ws.spectrumInfo().size()
     assert sc.is_equal(sc.all(sc.isnan(efs)), sc.scalar(value=True))
+
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
@@ -862,8 +865,9 @@ def test_extract_energy_initial():
     mtd.clear()
     filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
     ws = Load(filename, LoadMonitors=False, SpectrumMax=1, StoreInADS=False)
-    ei = sc.compat.mantid.extract_einitial(ws)
+    ei = sc.compat.mantid._extract_einitial(ws)
     assert sc.is_equal(ei, sc.Variable(value=3.0, unit=sc.Unit("MeV")))
+
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
@@ -871,9 +875,8 @@ def test_extract_energy_inital_when_not_present():
     # Remove log and check behaviour
     from mantid.simpleapi import CreateWorkspace
     ws = CreateWorkspace(DataY=np.ones(1), DataX=np.ones(1), StoreInADS=False)
-    ei = sc.compat.mantid.extract_einitial(ws)
+    ei = sc.compat.mantid._extract_einitial(ws)
     assert sc.is_equal(ei, sc.Variable(value=None, unit=sc.Unit("MeV")))
-
 
 
 if __name__ == "__main__":

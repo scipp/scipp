@@ -1107,7 +1107,7 @@ def _try_except(op, possible_except, failure, **kwargs):
         return failure
 
 
-def _get_efixed(workspace):
+def _get_instrument_efixed(workspace):
     inst = workspace.getInstrument()
     if inst.hasParameter('Efixed'):
         return inst.getNumberParameter('EFixed')[0]
@@ -1121,18 +1121,20 @@ def _get_efixed(workspace):
 
     return None
 
-def extract_einitial(ws):
+
+def _extract_einitial(ws):
     ei = None
     if ws.run().hasProperty('EnergyRequest'):
         ei = ws.run().getProperty('EnergyRequest').value[-1]
     return sc.Variable(value=ei, unit=sc.Unit("MeV"))
 
-def extract_efinal(ws):
+
+def _extract_efinal(ws):
     detInfo = ws.detectorInfo()
     specInfo = ws.spectrumInfo()
     ef = np.empty(shape=(specInfo.size(), ), dtype=float)
     ef[:] = np.nan
-    analyser_ef = _get_efixed(workspace=ws)
+    analyser_ef = _get_instrument_efixed(workspace=ws)
     ids = detInfo.detectorIDs()
     for spec_index in range(len(specInfo)):
         detector_ef = None
