@@ -1121,6 +1121,11 @@ def _get_efixed(workspace):
 
     return None
 
+def extract_einitial(ws):
+    ei = None
+    if ws.run().hasProperty('EnergyRequest'):
+        ei = ws.run().getProperty('EnergyRequest').value[-1]
+    return sc.Variable(value=ei, unit=sc.Unit("MeV"))
 
 def extract_efinal(ws):
     detInfo = ws.detectorInfo()
@@ -1144,12 +1149,4 @@ def extract_efinal(ws):
             # - i.e. a diffraction detector, monitor etc.
         ef[spec_index] = detector_ef
 
-    if np.nansum(ef) == 0:
-        raise RuntimeError("No detectors with Ef in instrument {0}".format(
-            ws.getInstrument().getName()))
-    return sc.DataArray(data=sc.Variable(dims=['detector'], values=ef),
-                        coords={
-                            'detectorindex':
-                            sc.Variable(dims=['detector'],
-                                        values=np.arange(len(ids)))
-                        })
+    return sc.Variable(dims=['detector'], values=ef, unit=sc.Unit("MeV"))
