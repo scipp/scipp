@@ -8,20 +8,20 @@
 
 using namespace scipp::core;
 
+#cmakedefine GENERATE_OUT
+
 namespace scipp::variable {
 
 Variable @NAME@(const VariableConstView &var) {
   return transform(var, element::@OPNAME@);
 }
 
+#ifdef GENERATE_OUT
 VariableView @NAME@(const VariableConstView &var, const VariableView &out) {
-  if constexpr (@GENERATE_OUT@) {
   transform_in_place(
       out, var, assign_unary { element::@OPNAME@ });
   return out;
-  } else {
-    throw std::logic_error("Inplace operation not supported for @NAME@");
-  }
 }
+#endif
 
 } // namespace scipp::variable

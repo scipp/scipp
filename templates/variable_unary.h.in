@@ -7,8 +7,12 @@
 #include "scipp-variable_export.h"
 #include "scipp/variable/variable.h"
 
+#cmakedefine GENERATE_OUT
+
 namespace scipp::variable {
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable @NAME@(const VariableConstView &var);
+#ifdef GENERATE_OUT
 SCIPP_VARIABLE_EXPORT VariableView @NAME@(const VariableConstView &var, const VariableView &out);
+#endif
 } // namespace scipp::variable
