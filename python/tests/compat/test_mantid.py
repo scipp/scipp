@@ -843,7 +843,8 @@ def test_extract_energy_final():
     for instr in _all_indirect(blacklist=unsupported):
         out = _load_indirect_instrument(instr, parameters)
         efs = sc.compat.mantid._extract_efinal(out)
-        assert sc.nansum(efs).values > 0.0
+        assert not sc.all(sc.isnan(efs)).value
+        assert efs.unit == sc.Unit("MeV")
 
 
 @pytest.mark.skipif(not mantid_is_available(),
