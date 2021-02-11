@@ -14,11 +14,6 @@ class time_point {
 public:
   time_point() = default;
   explicit time_point(int64_t duration) : m_duration{duration} {}
-  time_point(const time_point &other) = default;
-  time_point(time_point &&other) noexcept = default;
-  time_point &operator=(const time_point &other) = default;
-  time_point &operator=(time_point &&other) noexcept = default;
-  ~time_point() noexcept = default;
 
   [[nodiscard]] int64_t time_since_epoch() const noexcept {
     return m_duration;
