@@ -177,8 +177,14 @@ TEST(UnitFunctionsTest, atan2) {
   EXPECT_THROW(atan2(units::m, units::s), except::UnitError);
 }
 
+TEST(UnitParseTest, singular_plural) {
+  EXPECT_EQ(units::Unit("counts"), units::counts);
+  EXPECT_EQ(units::Unit("count"), units::counts);
+}
+
 TEST(UnitFormatTest, roundtrip_string) {
-  for (const auto &s : {"m", "m/s", "meV", "pAh", "mAh", "ns", "counts"}) {
+  for (const auto &s : {"m", "m/s", "meV", "pAh", "mAh", "ns", "counts",
+                        "counts/meV", "1/counts", "counts/m"}) {
     const auto unit = units::Unit(s);
     EXPECT_EQ(to_string(unit), s);
     EXPECT_EQ(units::Unit(to_string(unit)), unit);
@@ -188,8 +194,7 @@ TEST(UnitFormatTest, roundtrip_string) {
 TEST(UnitFormatTest, roundtrip_unit) {
   // Some formattings use special characters, e.g., for micro and Angstrom, but
   // some are actually formatted badly right now, but at least roundtrip works.
-  for (const auto &s :
-       {"us", "angstrom", "counts/us", "1/counts", "counts/meV"}) {
+  for (const auto &s : {"us", "angstrom", "counts/us"}) {
     const auto unit = units::Unit(s);
     EXPECT_EQ(units::Unit(to_string(unit)), unit);
   }
