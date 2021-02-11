@@ -107,10 +107,8 @@ constexpr auto minus =
 constexpr auto times = overloaded{
     times_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
-    [](const auto a, const auto b) {
-      return a * b;
-    } // namespace scipp::core::element
-};
+    [](const auto a, const auto b) { return a * b; }};
+
 constexpr auto divide = overloaded{
     divide_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
