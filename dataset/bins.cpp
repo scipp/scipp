@@ -392,6 +392,14 @@ void scale(const DataArrayView &array, const DataArrayConstView &histogram,
   }
 }
 
+namespace {
+Variable applyMask(const VariableConstView &var, const Variable &masks) {
+  return scipp::variable::transform(var, masks,
+                                    scipp::core::element::convertMaskedToZero);
+}
+
+} // namespace
+
 Variable sum(const VariableConstView &data) {
   auto type = variable::variableFactory().elem_dtype(data);
   type = type == dtype<bool> ? dtype<int64_t> : type;
@@ -401,7 +409,15 @@ Variable sum(const VariableConstView &data) {
     summed = Variable(type, data.dims(), unit, Values{}, Variances{});
   else
     summed = Variable(type, data.dims(), unit, Values{});
-  variable::sum_impl(summed, data);
+  const auto &&[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
+  if (const auto mask_union = irreducible_mask(buffer.masks(), dim)) {
+    auto indices_copy = Variable(indices);
+    auto masked_data = applyMask(buffer.data(), mask_union);
+    variable::sum_impl(summed, make_bins(std::move(indices_copy), dim,
+                                         std::move(masked_data)));
+  } else {
+    variable::sum_impl(summed, data);
+  }
   return summed;
 }
 
