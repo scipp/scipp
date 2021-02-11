@@ -126,9 +126,11 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
   }
 
   if (dtypeTag == scipp::dtype<core::time_point>) {
-    const auto [actual_unit, value_factor, variance_factor] =
-        get_time_unit(values, variances, dtype, unit);
-    if (value_factor != 1 || variance_factor != 1) {
+    if (variances.has_value()) {
+      throw except::VariancesError("datetimes cannot have variances.");
+    }
+    const auto [actual_unit, value_factor] = get_time_unit(values, dtype, unit);
+    if (value_factor != 1) {
       throw std::invalid_argument(
           "Scaling datetimes is not supported. The units of the datetime64 "
           "objects must match the unit of the Variables.");
@@ -148,12 +150,15 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
                                  const bool variances) {
   const auto dtypeTag = scipp_dtype(dtype);
   if (dtypeTag == scipp::dtype<core::time_point>) {
-    const auto [actual_unit, value_factor, variance_factor] = get_time_unit(
-        std::nullopt, std::nullopt,
+    if (variances) {
+      throw except::VariancesError("datetimes cannot have variances.");
+    }
+    const auto [actual_unit, value_factor] = get_time_unit(
+        std::nullopt,
         dtype.is_none() ? std::optional<units::Unit>{}
                         : parse_datetime_dtype(py::dtype::from_args(dtype)),
         unit);
-    if (value_factor != 1 || variance_factor != 1) {
+    if (value_factor != 1) {
       throw std::invalid_argument(
           "Scaling datetimes is not supported. The units of the datetime64 "
           "objects must match the unit of the Variables.");

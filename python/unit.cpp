@@ -10,9 +10,8 @@
 using namespace scipp;
 namespace py = pybind11;
 
-std::tuple<units::Unit, int64_t, int64_t>
+std::tuple<units::Unit, int64_t>
 get_time_unit(const std::optional<scipp::units::Unit> value_unit,
-              const std::optional<scipp::units::Unit> variance_unit,
               const std::optional<scipp::units::Unit> dtype_unit,
               const units::Unit sc_unit) {
   // TODO proper dimension check
@@ -34,8 +33,6 @@ get_time_unit(const std::optional<scipp::units::Unit> value_unit,
     actual_unit = *dtype_unit;
   else if (value_unit.has_value())
     actual_unit = *value_unit;
-  else if (variance_unit.has_value())
-    actual_unit = *variance_unit;
   else
     throw std::invalid_argument("Unable to infer time unit from any argument.");
 
@@ -43,21 +40,15 @@ get_time_unit(const std::optional<scipp::units::Unit> value_unit,
   if (value_unit && value_unit != actual_unit) {
     throw std::runtime_error("Conversion of time units is not implemented.");
   }
-  if (variance_unit && variance_unit != actual_unit) {
-    throw std::runtime_error("Conversion of time units is not implemented.");
-  }
 
-  return {actual_unit, 1, 1};
+  return {actual_unit, 1};
 }
 
-std::tuple<units::Unit, int64_t, int64_t>
-get_time_unit(const py::buffer &value,
-              const std::optional<py::buffer> &variance,
-              const py::object &dtype, const units::Unit unit) {
+std::tuple<units::Unit, int64_t>
+get_time_unit(const py::buffer &value, const py::object &dtype,
+              const units::Unit unit) {
   return get_time_unit(value.is_none() ? std::optional<units::Unit>{}
                                        : parse_datetime_dtype(value),
-                       variance.has_value() ? parse_datetime_dtype(*variance)
-                                            : std::optional<units::Unit>{},
                        dtype.is_none()
                            ? std::optional<units::Unit>{}
                            : parse_datetime_dtype(py::dtype::from_args(dtype)),

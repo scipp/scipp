@@ -99,15 +99,13 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
           } else if ((info.ndim == 1) &&
                      py::isinstance(b.get_type(), np_datetime64_type)) {
             // TODO allow construction from int
-            //                     scipp_dtype(dtype) ==
-            //                     core::dtype<core::time_point>) {
-            const auto [actual_unit, value_factor, variance_factor] =
-                get_time_unit(b, v, dtype, unit);
+            if (v.has_value()) {
+              throw except::VariancesError("datetimes cannot have variances.");
+            }
+            const auto [actual_unit, value_factor] =
+                get_time_unit(b, dtype, unit);
             return do_init_0D<core::time_point>(
-                make_time_point(b, value_factor),
-                v.has_value() ? make_time_point(*v, variance_factor)
-                              : std::optional<core::time_point>{},
-                actual_unit);
+                make_time_point(b, value_factor), std::nullopt, actual_unit);
 
           } else {
             throw scipp::except::VariableError(
