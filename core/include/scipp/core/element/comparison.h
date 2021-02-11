@@ -37,7 +37,7 @@ struct comparison_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(std::tuple_cat(
       std::declval<arithmetic_type_pairs>(), std::tuple<bool>{},
-      std::tuple<core::time_point, core::time_point, core::time_point>{}));
+      std::tuple<core::time_point>{}));
 };
 
 constexpr auto comparison =
