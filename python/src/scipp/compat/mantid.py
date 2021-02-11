@@ -464,6 +464,7 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
 def _convert_MatrixWorkspace_info(ws,
                                   advanced_geometry=False,
                                   load_run_logs=True):
+    from mantid.kernel import DeltaEModeType
     common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit())
     source_pos, sample_pos = make_component_info(ws)
@@ -517,6 +518,12 @@ def _convert_MatrixWorkspace_info(ws,
             spectrum_info.isMasked(i) for i in range(ws.getNumberHistograms())
         ])
         info["masks"]["spectrum"] = sc.Variable([spec_dim], values=mask)
+
+    if ws.getEMode() == DeltaEModeType.Direct:
+        if not ws.run().hasProperty("Ei"):  # ConvertUnits will add Ei
+            info["coords"]["Ei"] = _extract_einitial(ws)
+    elif ws.getEMode() == DeltaEModeType.Indirect:
+        info["coords"]["Ef"] = _extract_efinal(ws)
     return info
 
 
@@ -1151,4 +1158,4 @@ def _extract_efinal(ws):
             # - i.e. a diffraction detector, monitor etc.
         ef[spec_index] = detector_ef
 
-    return sc.Variable(dims=['detector'], values=ef, unit=sc.Unit("MeV"))
+    return sc.Variable(dims=['spectrum'], values=ef, unit=sc.Unit("MeV"))

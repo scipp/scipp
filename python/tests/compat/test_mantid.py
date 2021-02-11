@@ -824,14 +824,16 @@ def _load_indirect_instrument(instr, parameters):
     if not out.run().hasProperty('EMode'):
         # EMode would usually get attached via data loading
         # We skip that so have to apply manually
-        AddSampleLog(out, LogName='EMode', LogText='Direct', LogType='String')
+        AddSampleLog(out,
+                     LogName='EMode',
+                     LogText='Indirect',
+                     LogType='String')
     return out
 
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
 def test_extract_energy_final():
-
     # Efinal is often stored in a non-default parameter file
     parameters = {
         'IN16B': 'IN16B_silicon_311_Parameters.xml',
@@ -839,10 +841,13 @@ def test_extract_energy_final():
         'OSIRIS': 'OSIRIS_graphite_002_Parameters.xml',
         'BASIS': 'BASIS_silicon_311_Parameters.xml'
     }
-    unsupported = ['ZEEMANS', 'MARS', 'IN10', 'IN13', 'IN16', 'VISION']
+    unsupported = [
+        'ZEEMANS', 'MARS', 'IN10', 'IN13', 'IN16', 'VISION', 'VESUVIO'
+    ]
     for instr in _all_indirect(blacklist=unsupported):
         out = _load_indirect_instrument(instr, parameters)
-        efs = sc.compat.mantid._extract_efinal(out)
+        ds = sc.compat.mantid.from_mantid(out)
+        efs = ds.coords["Ef"]
         assert not sc.all(sc.isnan(efs)).value
         assert efs.unit == sc.Unit("MeV")
 
@@ -850,34 +855,32 @@ def test_extract_energy_final():
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
 def test_extract_energy_final_when_not_present():
+    # Remove log and check behaviour
     from mantid.simpleapi import CreateSampleWorkspace
-
     ws = CreateSampleWorkspace(StoreInADS=False)
-
-    efs = sc.compat.mantid._extract_efinal(ws)
-    assert efs.shape[0] == ws.spectrumInfo().size()
-    assert sc.is_equal(sc.all(sc.isnan(efs)), sc.scalar(value=True))
+    ds = sc.compat.mantid.from_mantid(ws)
+    assert "Ef" not in ds.coords
 
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
 def test_extract_energy_initial():
-    from mantid.simpleapi import mtd, Load
+    from mantid.simpleapi import mtd
     mtd.clear()
     filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
-    ws = Load(filename, LoadMonitors=False, SpectrumMax=1, StoreInADS=False)
-    ei = sc.compat.mantid._extract_einitial(ws)
-    assert sc.is_equal(ei, sc.Variable(value=3.0, unit=sc.Unit("MeV")))
+    ds = mantidcompat.load(filename, mantid_args={"SpectrumMax": 1})
+    assert sc.is_equal(ds.coords["Ei"],
+                       sc.scalar(value=3.0, unit=sc.Unit("MeV")))
 
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
 def test_extract_energy_inital_when_not_present():
     # Remove log and check behaviour
-    from mantid.simpleapi import CreateWorkspace
-    ws = CreateWorkspace(DataY=np.ones(1), DataX=np.ones(1), StoreInADS=False)
-    ei = sc.compat.mantid._extract_einitial(ws)
-    assert sc.is_equal(ei, sc.Variable(value=None, unit=sc.Unit("MeV")))
+    from mantid.simpleapi import CreateSampleWorkspace
+    ws = CreateSampleWorkspace(StoreInADS=False)
+    ds = sc.compat.mantid.from_mantid(ws)
+    assert "Ei" not in ds.coords
 
 
 if __name__ == "__main__":
