@@ -104,8 +104,8 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
             const auto [actual_unit, value_factor, variance_factor] =
                 get_time_unit(b, v, dtype, unit);
             return do_init_0D<core::time_point>(
-                make_time_point(b) * value_factor,
-                v.has_value() ? make_time_point(*v) * variance_factor
+                make_time_point(b, value_factor),
+                v.has_value() ? make_time_point(*v, variance_factor)
                               : std::optional<core::time_point>{},
                 actual_unit);
 

@@ -90,17 +90,14 @@ struct times_types_t {
   using types = decltype(std::tuple_cat(
       std::declval<arithmetic_type_pairs_with_bool>(),
       std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>{},
-      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>{},
-      std::tuple<std::tuple<time_point, int64_t>,
-          std::tuple<int64_t, time_point>>{}));
+      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>{}));
 };
 
 struct divide_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(std::tuple_cat(
       std::declval<arithmetic_type_pairs>(),
-      std::tuple<std::tuple<time_point, int64_t>,
-          std::tuple<time_point, time_point>>{}));
+      std::tuple<std::tuple<time_point, time_point>>{}));
 };
 
 constexpr auto plus =
