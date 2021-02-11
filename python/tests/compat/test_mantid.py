@@ -855,9 +855,10 @@ def test_extract_energy_final():
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
 def test_extract_energy_final_when_not_present():
-    # Remove log and check behaviour
     from mantid.simpleapi import CreateSampleWorkspace
+    from mantid.kernel import DeltaEModeType
     ws = CreateSampleWorkspace(StoreInADS=False)
+    assert ws.getEMode() == DeltaEModeType.Elastic
     ds = sc.compat.mantid.from_mantid(ws)
     assert "Ef" not in ds.coords
 
@@ -876,9 +877,10 @@ def test_extract_energy_initial():
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
 def test_extract_energy_inital_when_not_present():
-    # Remove log and check behaviour
     from mantid.simpleapi import CreateSampleWorkspace
+    from mantid.kernel import DeltaEModeType
     ws = CreateSampleWorkspace(StoreInADS=False)
+    assert ws.getEMode() == DeltaEModeType.Elastic
     ds = sc.compat.mantid.from_mantid(ws)
     assert "Ei" not in ds.coords
 
