@@ -67,8 +67,8 @@ void init_shape(py::module &m) {
   bind_reshape<VariableView>(m);
   bind_reshape<DataArray>(m);
   bind_reshape<DataArrayView>(m);
-  bind_reshape<Dataset>(m);
-  bind_reshape<DatasetView>(m);
+  // bind_reshape<Dataset>(m);
+  // bind_reshape<DatasetView>(m);
   bind_transpose<Variable>(m);
   bind_transpose<VariableView>(m);
 }

@@ -162,48 +162,130 @@ bool contains_all_dim_labels(const Dimensions &item_dims,
   return true;
 }
 
+// Variable reshape_(const VariableConstView &var,
+//                   scipp::span<const scipp::index> &new_shape,
+//                   scipp::span<const scipp::index> &old_shape) {
+//   if (new_shape.size() > old_shape.size())
+
+// }
+
 } // end anonymous namespace
 
 DataArray reshape(const DataArrayConstView &a, const Dimensions &dims) {
-  // The rules are the following:
-  //  - if a coordinate, attribute or mask has all its dimensions unchanged by
-  //    the reshape operation, just copy over to the new DataArray.
-  //  - if a coordinate, attribute or mask has the same dimensions as the data,
-  //    reshape that coordinate, attribute or mask.
-  //  - if a mask has all its dimensions contained in the data dimensions, we
-  //    first broadcast the mask to the data dimensions before reshaping it.
-  //  - if a coordinate, attribute or mask satisfies none of these requirements,
-  //    it is dropped during the reshape operation.
+  // const auto &old_shape = a.data().shape();
+  // constexpr auto reshp = [&dims, &old_shape](const auto &var) {
+  //   return reshape_(var, dims.shape(), old_shape);
+  // };
+  // return transform(a, reshp);
+
+  // ndim_new < ndim_old
+  //     : broadcast coords to original data shape and then reshape them all -
+  //       ndim_new ==
+  //     ndim_old : if shapes are the same,
+  //     then keep coords but rename labels,
+  //     if not drop coords
+
   auto reshaped = DataArray(reshape(a.data(), dims));
-  for (auto &&[name, coord] : a.coords()) {
-    if (all_dims_unchanged(coord.dims(), dims))
-      reshaped.coords().set(name, coord);
-    else if (coord.dims() == a.data().dims())
-      reshaped.coords().set(name, reshape(coord, dims));
-  }
-  for (auto &&[name, attr] : a.attrs()) {
-    if (all_dims_unchanged(attr.dims(), dims))
-      reshaped.attrs().set(name, attr);
-    else if (attr.dims() == a.data().dims())
-      reshaped.attrs().set(name, reshape(attr, dims));
-  }
-  for (auto &&[name, mask] : a.masks()) {
-    if (all_dims_unchanged(mask.dims(), dims))
-      reshaped.masks().set(name, mask);
-    else if (mask.dims() == a.data().dims())
-      reshaped.masks().set(name, reshape(mask, dims));
-    else if (contains_all_dim_labels(mask.dims(), a.data().dims()))
+
+  if (a.data().dims().labels().size() > dims.labels().size()) {
+    for (auto &&[name, coord] : a.coords()) {
+      reshaped.coords().set(name,
+                            reshape(broadcast(coord, a.data().dims()), dims));
+    }
+    for (auto &&[name, attr] : a.attrs()) {
+      reshaped.attrs().set(name,
+                           reshape(broadcast(attr, a.data().dims()), dims));
+    }
+    for (auto &&[name, mask] : a.masks()) {
       reshaped.masks().set(name,
                            reshape(broadcast(mask, a.data().dims()), dims));
+    }
+  } else if (a.data().dims().labels().size() == dims.labels().size()) {
   }
+
+  // // build a map
+
+  // for (auto &&[name, coord] : a.coords()) {
+  //   auto shp = std::partial_sum(v.begin(), v.end(), v.begin(),
+  //                               std::multiplies<int>());
+  //   const auto product = std::accumulate(coord.shape().rbegin(), v.end(), 1,
+  //                                        std::multiplies<scipp::index>());
+  // for (const auto &vol : pro
+
+  // for (auto it = coord.shape().rbegin(); it != my_vector.rend(); ++it) {
+  // }
+
+  // if (all_dims_unchanged(coord.dims(), dims))
+  //   reshaped.coords().set(name, coord);
+  // else if (coord.dims() == a.data().dims())
+  //   reshaped.coords().set(name, reshape(coord, dims));
+  // }
+
+  // for (auto &&[name, attr] : a.attrs()) {
+  //   if (all_dims_unchanged(attr.dims(), dims))
+  //     reshaped.attrs().set(name, attr);
+  //   else if (attr.dims() == a.data().dims())
+  //     reshaped.attrs().set(name, reshape(attr, dims));
+  // }
+  // for (auto &&[name, mask] : a.masks()) {
+  //   if (all_dims_unchanged(mask.dims(), dims))
+  //     reshaped.masks().set(name, mask);
+  //   else if (mask.dims() == a.data().dims())
+  //     reshaped.masks().set(name, reshape(mask, dims));
+  //   else if (contains_all_dim_labels(mask.dims(), a.data().dims()))
+  //     reshaped.masks().set(name,
+  //                          reshape(broadcast(mask, a.data().dims()), dims));
+  // }
   return reshaped;
 }
 
-Dataset reshape(const DatasetConstView &d, const Dimensions &dims) {
-  // Note that we are paying for the coordinate reshaping multiple times here.
-  // It is a trade-off between code simplicity and performance.
-  return apply_to_items(
-      d, [](auto &&... _) { return reshape(_...); }, dims);
-}
+// DataArray reshape(const DataArrayConstView &a, const Dimensions &dims) {
+//   // The rules are the following:
+//   //  - if a coordinate, attribute or mask has all its dimensions unchanged
+//   by
+//   //    the reshape operation, just copy over to the new DataArray.
+//   //  - if a coordinate, attribute or mask has the same dimensions as the
+//   data,
+//   //    reshape that coordinate, attribute or mask.
+//   //  - if a mask has all its dimensions contained in the data dimensions,
+//   we
+//   //    first broadcast the mask to the data dimensions before reshaping
+//   it.
+//   //  - if a coordinate, attribute or mask satisfies none of these
+//   requirements,
+//   //    it is dropped during the reshape operation.
+//   auto reshaped = DataArray(reshape(a.data(), dims));
+//   for (auto &&[name, coord] : a.coords()) {
+//     if (all_dims_unchanged(coord.dims(), dims))
+//       reshaped.coords().set(name, coord);
+//     else if (coord.dims() == a.data().dims())
+//       reshaped.coords().set(name, reshape(coord, dims));
+//   }
+//   for (auto &&[name, attr] : a.attrs()) {
+//     if (all_dims_unchanged(attr.dims(), dims))
+//       reshaped.attrs().set(name, attr);
+//     else if (attr.dims() == a.data().dims())
+//       reshaped.attrs().set(name, reshape(attr, dims));
+//   }
+//   for (auto &&[name, mask] : a.masks()) {
+//     if (all_dims_unchanged(mask.dims(), dims))
+//       reshaped.masks().set(name, mask);
+//     else if (mask.dims() == a.data().dims())
+//       reshaped.masks().set(name, reshape(mask, dims));
+//     else if (contains_all_dim_labels(mask.dims(), a.data().dims()))
+//       reshaped.masks().set(name,
+//                            reshape(broadcast(mask, a.data().dims()),
+//                            dims));
+//   }
+//   return reshaped;
+// }
+
+// Dataset reshape(const DatasetConstView &d, const Dimensions &dims) {
+//   // Note that we are paying for the coordinate reshaping multiple times
+//   here.
+//   // It is a trade-off between code simplicity and performance.
+//   return apply_to_items(
+//       d, [](auto &&... _) { return reshape(_...); }, dims);
+// }
 
 } // namespace scipp::dataset
