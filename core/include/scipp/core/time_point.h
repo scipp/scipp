@@ -30,7 +30,7 @@ public:
   friend time_point operator+(const int64_t a, const time_point b) {
     return time_point{a + b.time_since_epoch()};
   }
-  
+
   friend time_point operator-(const time_point a, const int64_t b) {
     return time_point{a.time_since_epoch() - b};
   }
@@ -44,7 +44,7 @@ public:
   friend time_point operator*(const int64_t a, const time_point b) noexcept {
     return time_point{a * b.time_since_epoch()};
   }
-  
+
   friend time_point operator/(const time_point a, const int64_t b) noexcept {
     return time_point{a.time_since_epoch() / b};
   }
@@ -92,7 +92,7 @@ public:
   }
 
 private:
-  int64_t m_duration;
+  int64_t m_duration = 0;
 };
 
 } // namespace scipp::core
