@@ -184,9 +184,9 @@ TEST(Variable, operator_plus_unit_fail) {
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
                                 Variances{3.0, 4.0});
   b.setUnit(units::s);
-  ASSERT_ANY_THROW(a + b);
+  ASSERT_ANY_THROW([[maybe_unused]] auto c = a + b);
   b.setUnit(units::m);
-  ASSERT_NO_THROW(a + b);
+  ASSERT_NO_THROW([[maybe_unused]] auto c = a + b);
 }
 
 TEST(Variable, operator_plus_eigen_type) {
@@ -989,7 +989,8 @@ TEST(VariableTest, mul_vector) {
   auto left_scaled_vec = scale * vec;
   auto right_scaled_vec = vec * scale;
 
-  EXPECT_THROW(vec * scale_with_variance, except::VariancesError);
+  EXPECT_THROW([[maybe_unused]] auto res = vec * scale_with_variance,
+               except::VariancesError);
   EXPECT_EQ(left_scaled_vec, expected_vec);
   EXPECT_EQ(right_scaled_vec, expected_vec);
 }
