@@ -95,9 +95,7 @@ struct times_types_t {
 
 struct divide_types_t {
   constexpr void operator()() const noexcept;
-  using types = decltype(std::tuple_cat(
-      std::declval<arithmetic_type_pairs>(),
-      std::tuple<std::tuple<time_point, time_point>>{}));
+  using types = arithmetic_type_pairs;
 };
 
 constexpr auto plus =

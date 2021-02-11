@@ -38,20 +38,6 @@ public:
     return a.time_since_epoch() - b.time_since_epoch();
   }
 
-  friend time_point operator*(const time_point a, const int64_t b) noexcept {
-    return time_point{a.time_since_epoch() * b};
-  }
-  friend time_point operator*(const int64_t a, const time_point b) noexcept {
-    return time_point{a * b.time_since_epoch()};
-  }
-
-  friend time_point operator/(const time_point a, const int64_t b) noexcept {
-    return time_point{a.time_since_epoch() / b};
-  }
-  friend int64_t operator/(const time_point a, const time_point b) noexcept {
-    return a.time_since_epoch() / b.time_since_epoch();
-  }
-
   time_point &operator+=(const int64_t duration) {
     m_duration += duration;
     return *this;
@@ -59,16 +45,6 @@ public:
 
   time_point &operator-=(const int64_t duration) {
     m_duration -= duration;
-    return *this;
-  };
-
-  time_point &operator*=(const int64_t duration) noexcept {
-    m_duration *= duration;
-    return *this;
-  };
-
-  time_point &operator/=(const int64_t duration) noexcept {
-    m_duration /= duration;
     return *this;
   };
 
