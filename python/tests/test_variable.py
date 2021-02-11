@@ -3,7 +3,9 @@
 # @file
 # @author Simon Heybrock
 
+from datetime import datetime, timedelta, timezone
 import itertools
+import re
 
 import numpy as np
 import pytest
@@ -326,7 +328,7 @@ def test_datetime_slicing():
             for _ in range(len(values))
         ])
         for i in range(len(values)):
-            var['x', i] = sc.scalar(values2[i], unit=sc.Unit(unit))
+            var['x', i] = values2[i] * sc.Unit(unit)
         assert sc.is_equal(var, sc.Variable(['x'], values=values2))
 
 
@@ -358,6 +360,19 @@ def test_datetime_operations_mismatch():
         var + sc.Variable(['x'],
                           values=np.random.randint(0, 100, len(values)),
                           unit=sc.units.us)
+
+
+def test_datetime_formatting():
+    # Time since epoch for a totally arbitrary date.
+    # The timezone has an offset of 0 to emulate a timestamp obtained from some source that
+    # is not aware of timezones.
+    timestamp = int(datetime(year=1991, month=8, day=16, hour=1, minute=2, second=3, microsecond=456789,
+                             tzinfo=timezone(timedelta(hours=0))).timestamp() * 10**6)
+    var = sc.scalar(np.datetime64(timestamp, 'us'))
+    match = re.search(r'\[[\dT\-:\.]+]', str(var))
+    assert match
+    # Make sure that date and time are printed unchanged, i.e. there was no timezone conversion.
+    assert match[0][1:-1] == "1991-08-16T01:02:03.456789"
 
 
 def test_create_2D_inner_size_3():
@@ -416,7 +431,7 @@ def test_0D_scalar_string():
 
 
 def test_1D_scalar_access_fail():
-    var = sc.Variable(dims=['x'], shape=(1, ))
+    var = sc.Variable(dims=['x'], shape=(1,))
     with pytest.raises(RuntimeError):
         assert var.value == 0.0
     with pytest.raises(RuntimeError):
@@ -424,21 +439,21 @@ def test_1D_scalar_access_fail():
 
 
 def test_1D_access_shape_mismatch_fail():
-    var = sc.Variable(dims=['x'], shape=(2, ))
+    var = sc.Variable(dims=['x'], shape=(2,))
     with pytest.raises(RuntimeError):
         var.values = 1.2
 
 
 def test_1D_access():
-    var = sc.Variable(dims=['x'], shape=(2, ))
+    var = sc.Variable(dims=['x'], shape=(2,))
     assert len(var.values) == 2
-    assert var.values.shape == (2, )
+    assert var.values.shape == (2,)
     var.values[1] = 1.2
     assert var.values[1] == 1.2
 
 
 def test_1D_set_from_list():
-    var = sc.Variable(dims=['x'], shape=(2, ))
+    var = sc.Variable(dims=['x'], shape=(2,))
     var.values = [1.0, 2.0]
     assert sc.is_equal(var, sc.Variable(dims=['x'], values=[1.0, 2.0]))
 
@@ -460,7 +475,7 @@ def test_1D_converting():
 
 
 def test_1D_dataset():
-    var = sc.Variable(dims=['x'], shape=(2, ), dtype=sc.dtype.Dataset)
+    var = sc.Variable(dims=['x'], shape=(2,), dtype=sc.dtype.Dataset)
     d1 = sc.Dataset({'a': 1.5 * sc.units.m})
     d2 = sc.Dataset({'a': 2.5 * sc.units.m})
     var.values = [d1, d2]
@@ -469,7 +484,7 @@ def test_1D_dataset():
 
 
 def test_1D_access_bad_shape_fail():
-    var = sc.Variable(dims=['x'], shape=(2, ))
+    var = sc.Variable(dims=['x'], shape=(2,))
     with pytest.raises(RuntimeError):
         var.values = np.arange(3)
 
@@ -511,13 +526,13 @@ def test_create_dtype():
     assert var.dtype == sc.dtype.float64
     var = sc.Variable(dims=['x'], values=np.arange(4).astype(np.float32))
     assert var.dtype == sc.dtype.float32
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.float64))
+    var = sc.Variable(dims=['x'], shape=(4,), dtype=np.dtype(np.float64))
     assert var.dtype == sc.dtype.float64
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.float32))
+    var = sc.Variable(dims=['x'], shape=(4,), dtype=np.dtype(np.float32))
     assert var.dtype == sc.dtype.float32
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.int64))
+    var = sc.Variable(dims=['x'], shape=(4,), dtype=np.dtype(np.int64))
     assert var.dtype == sc.dtype.int64
-    var = sc.Variable(dims=['x'], shape=(4, ), dtype=np.dtype(np.int32))
+    var = sc.Variable(dims=['x'], shape=(4,), dtype=np.dtype(np.int32))
     assert var.dtype == sc.dtype.int32
 
 
@@ -953,13 +968,13 @@ def test_make_variable_from_unit_scalar_mult_div():
     var = sc.Variable()
     var.unit = sc.units.m
     assert sc.is_equal(var, 0.0 * sc.units.m)
-    var.unit = sc.units.m**(-1)
+    var.unit = sc.units.m ** (-1)
     assert sc.is_equal(var, 0.0 / sc.units.m)
 
     var = sc.Variable(value=np.float32())
     var.unit = sc.units.m
     assert sc.is_equal(var, np.float32(0.0) * sc.units.m)
-    var.unit = sc.units.m**(-1)
+    var.unit = sc.units.m ** (-1)
     assert sc.is_equal(var, np.float32(0.0) / sc.units.m)
 
 
@@ -972,7 +987,7 @@ def test_construct_0d_numpy():
     var = v['x', 0].copy()
     var.unit = sc.units.m
     assert sc.is_equal(var, np.float32(0.0) * sc.units.m)
-    var.unit = sc.units.m**(-1)
+    var.unit = sc.units.m ** (-1)
     assert sc.is_equal(var, np.float32(0.0) / sc.units.m)
 
 
