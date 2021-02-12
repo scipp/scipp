@@ -19,10 +19,32 @@ def _mismatch_pairs(units):
     yield from filter(lambda t: t[0] != t[1], itertools.product(units, units))
 
 
+def _make_arrays(units, num_arrays, minsize=1):
+    size = np.random.randint(minsize, minsize + 5)
+    units = units if isinstance(units, (tuple, list)) else [units]*num_arrays
+    res = [
+        np.array([
+            np.datetime64(np.random.randint(0, 1000), unit)
+            for _ in range(size)
+        ]) for unit in units
+    ]
+    if num_arrays == 1:
+        return res[0]
+    return res
+
+
+def _make_datetimes(units, num):
+    units = units if isinstance(units, (tuple, list)) else [units]*num
+    res = [np.datetime64(np.random.randint(0, 1000), unit) for unit in units]
+    if num == 1:
+        return res[0]
+    return res
+
+
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
 def test_construct_0d_datetime(unit):
     dtype = f'datetime64[{unit}]'
-    value = np.datetime64(2431, unit)
+    value = _make_datetimes(unit, 1)
     # with value
     for var in (sc.Variable(dtype=dtype, unit=unit,
                             value=value), sc.Variable(unit=unit, value=value),
@@ -52,30 +74,25 @@ def test_construct_0d_datetime_mismatch(unit1, unit2):
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
 def test_0d_datetime_setter(unit):
-    initial = np.datetime64(np.random.randint(0, 1000), unit)
-    value = np.datetime64(np.random.randint(0, 1000), unit)
+    initial, replacement = _make_datetimes(unit, 2)
     var = sc.Variable(value=initial)
-    var.value = value
-    assert var.value == value
-    assert sc.is_equal(var, sc.Variable(value=value))
+    var.value = replacement
+    assert var.value == replacement
+    assert sc.is_equal(var, sc.Variable(value=replacement))
 
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
 def test_0d_datetime_setter_mismatch(unit1, unit2):
-    initial = np.datetime64(np.random.randint(0, 1000), unit1)
-    value = np.datetime64(np.random.randint(0, 1000), unit2)
+    initial, replacement = _make_datetimes((unit1, unit2), 2)
     var1 = sc.Variable(value=initial)
     with pytest.raises(ValueError):
-        var1.value = value
+        var1.value = replacement
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
 def test_construct_datetime(unit):
     dtype = f'datetime64[{unit}]'
-    values = np.array([
-        np.datetime64(np.random.randint(0, 1000), unit)
-        for _ in range(np.random.randint(1, 5))
-    ])
+    values = _make_arrays(unit, 1)
     shape = [len(values)]
     # with values
     for var in (sc.Variable(dims=['x'], dtype=dtype, unit=unit, values=values),
@@ -99,10 +116,7 @@ def test_construct_datetime(unit):
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
 def test_construct_datetime_mismatch(unit1, unit2):
-    values = np.array([
-        np.datetime64(np.random.randint(0, 1000), unit1)
-        for _ in range(np.random.randint(1, 5))
-    ])
+    values = _make_arrays(unit1, 1)
     with pytest.raises(ValueError):
         sc.Variable(dims=['x'], unit=unit1, dtype=f'datetime64[{unit2}]')
     with pytest.raises(RuntimeError):
@@ -113,55 +127,38 @@ def test_construct_datetime_mismatch(unit1, unit2):
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
 def test_datetime_setter(unit):
-    size = np.random.randint(1, 5)
-    initial = np.array(
-        [np.datetime64(np.random.randint(0, 1000), unit) for _ in range(size)])
-    values = np.array(
-        [np.datetime64(np.random.randint(0, 1000), unit) for _ in range(size)])
+    initial, replacement = _make_arrays(unit, 2)
     var = sc.Variable(dims=['x'], values=initial)
-    var.values = values
-    np.testing.assert_array_equal(var.values, values)
-    assert sc.is_equal(var, sc.Variable(dims=['x'], values=values))
+    var.values = replacement
+    np.testing.assert_array_equal(var.values, replacement)
+    assert sc.is_equal(var, sc.Variable(dims=['x'], values=replacement))
 
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
 def test_datetime_setter_mismatch(unit1, unit2):
-    size = np.random.randint(1, 5)
-    initial = np.array([
-        np.datetime64(np.random.randint(0, 1000), unit1) for _ in range(size)
-    ])
-    values = np.array([
-        np.datetime64(np.random.randint(0, 1000), unit2) for _ in range(size)
-    ])
+    initial, replacement = _make_arrays((unit1, unit2), 2)
     var1 = sc.Variable(dims=['x'], values=initial)
     with pytest.raises(ValueError):
-        var1.values = values
+        var1.values = replacement
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
 def test_datetime_slicing(unit):
-    values = np.array([
-        np.datetime64(np.random.randint(0, 1000), unit)
-        for _ in range(np.random.randint(4, 6))
-    ])
-    var = sc.Variable(dims=['x'], values=values)
-    for i in range(len(values)):
-        assert sc.is_equal(var['x', i], sc.Variable(value=values[i]))
-    for i in range(len(values) - 2):
-        for j in range(i + 1, len(values)):
+    values1, values2 = _make_arrays(unit, 2, minsize=4)
+    var = sc.Variable(dims=['x'], values=values1)
+    for i in range(len(values1)):
+        assert sc.is_equal(var['x', i], sc.Variable(value=values1[i]))
+    for i in range(len(values1) - 2):
+        for j in range(i + 1, len(values1)):
             assert sc.is_equal(var['x', i:j],
-                               sc.Variable(dims=['x'], values=values[i:j]))
+                               sc.Variable(dims=['x'], values=values1[i:j]))
 
-    values2 = np.array([
-        np.datetime64(np.random.randint(0, 1000), unit)
-        for _ in range(len(values))
-    ])
-    for i in range(len(values)):
+    for i in range(len(values1)):
         var['x', i] = values2[i] * sc.Unit(unit)
     assert sc.is_equal(var, sc.Variable(dims=['x'], values=values2))
 
-    var['x', 1:4] = sc.Variable(dims=['x'], values=values[1:4])
-    values2[1:4] = values[1:4]
+    var['x', 1:4] = sc.Variable(dims=['x'], values=values1[1:4])
+    values2[1:4] = values1[1:4]
     assert sc.is_equal(var, sc.Variable(dims=['x'], values=values2))
 
 
