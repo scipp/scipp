@@ -51,7 +51,9 @@ class PlotWidgets:
         for ax, dim in axes.items():
             if isinstance(ax, int):
                 slider_dims[ax] = dim
-        possible_dims = set(axes.values()) - set(pos_dims)
+        possible_dims = set(axes.values())
+        if pos_dims is not None:
+            possible_dims -= set(pos_dims)
 
         # Now begin loop to construct sliders
         for index, (ax, dim) in enumerate(slider_dims.items()):
