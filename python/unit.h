@@ -14,3 +14,8 @@ get_time_unit(std::optional<scipp::units::Unit> value_unit,
 std::tuple<scipp::units::Unit, int64_t>
 get_time_unit(const pybind11::buffer &value, const pybind11::object &dtype,
               scipp::units::Unit unit);
+
+/// Format a time unit as an ASCII string.
+/// Only time units are supported!
+// TODO Can be removed if / when the units library supports this.
+std::string to_string_ascii_time(scipp::units::Unit unit);
