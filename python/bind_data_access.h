@@ -87,14 +87,12 @@ class DataAccessHelper {
       if constexpr (std::is_same_v<T, scipp::core::time_point>) {
         // Need a custom implementation because py::dtype::of only works with
         // types supported by the buffer protocol.
-        if (const auto unit = view.unit(); unit != units::us) {
-          return py::dtype("datetime64[" + to_string(view.unit()) + "]");
-        } else {
-          // TODO to_string(us) produces a utf-8 representation.
-          //  Remove special case and fore ASCII formatting if / when
-          //  supported by to_string.
-          return py::dtype("datetime64[us]");
-        }
+        // TODO to_string(us) produces a utf-8 representation.
+        //  Remove special case and fore ASCII formatting if / when
+        //  supported by to_string.
+        return py::dtype(
+            "datetime64[" +
+            (view.unit() == units::us ? "us" : to_string(view.unit())) + ']');
       } else {
         return py::dtype::of<T>();
       }
