@@ -1133,7 +1133,7 @@ def _extract_einitial(ws):
     ei = None
     if ws.run().hasProperty('EnergyRequest'):
         ei = ws.run().getProperty('EnergyRequest').value[-1]
-    return sc.Variable(value=ei, unit=sc.Unit("MeV"))
+    return sc.Variable(value=ei, unit=sc.Unit("meV"))
 
 
 def _extract_efinal(ws):
@@ -1158,4 +1158,4 @@ def _extract_efinal(ws):
             # - i.e. a diffraction detector, monitor etc.
         ef[spec_index] = detector_ef
 
-    return sc.Variable(dims=['spectrum'], values=ef, unit=sc.Unit("MeV"))
+    return sc.Variable(dims=['spectrum'], values=ef, unit=sc.Unit("meV"))

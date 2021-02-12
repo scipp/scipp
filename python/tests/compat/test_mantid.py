@@ -849,7 +849,7 @@ def test_extract_energy_final():
         ds = sc.compat.mantid.from_mantid(out)
         efs = ds.coords["Ef"]
         assert not sc.all(sc.isnan(efs)).value
-        assert efs.unit == sc.Unit("MeV")
+        assert efs.unit == sc.Unit("meV")
 
 
 @pytest.mark.skipif(not mantid_is_available(),
@@ -871,7 +871,7 @@ def test_extract_energy_initial():
     filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
     ds = mantidcompat.load(filename, mantid_args={"SpectrumMax": 1})
     assert sc.is_equal(ds.coords["Ei"],
-                       sc.scalar(value=3.0, unit=sc.Unit("MeV")))
+                       sc.scalar(value=3.0, unit=sc.Unit("meV")))
 
 
 @pytest.mark.skipif(not mantid_is_available(),
