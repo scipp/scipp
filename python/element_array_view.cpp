@@ -75,7 +75,6 @@ void init_element_array_view(py::module &m) {
   declare_span<Variable>(m, "Variable");
   declare_span<DataArray>(m, "DataArray");
   declare_span<Dataset>(m, "Dataset");
-  //  declare_span<scipp::core::time_point>(m, "time_point");
   declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
   declare_span<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
   declare_ElementArrayView<double>(m, "double");
@@ -84,7 +83,6 @@ void init_element_array_view(py::module &m) {
   declare_ElementArrayView<int32_t>(m, "int32");
   declare_ElementArrayView<std::string>(m, "string");
   declare_ElementArrayView<bool>(m, "bool");
-  //  declare_ElementArrayView<scipp::core::time_point>(m, "time_point");
   declare_ElementArrayView<Variable>(m, "Variable");
   declare_ElementArrayView<DataArray>(m, "DataArray");
   declare_ElementArrayView<Dataset>(m, "Dataset");
