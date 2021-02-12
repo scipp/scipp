@@ -159,9 +159,9 @@ auto bin(const VariableConstView &data, const VariableConstView &indices,
   return std::tuple{std::move(out_buffer), std::move(bin_sizes)};
 }
 
-constexpr static auto get_coords = [](auto &a) { return a.coords(); };
-constexpr static auto get_attrs = [](auto &a) { return a.attrs(); };
-constexpr static auto get_masks = [](auto &a) { return a.masks(); };
+constexpr auto get_coords = [](auto &a) { return a.coords(); };
+constexpr auto get_attrs = [](auto &a) { return a.attrs(); };
+constexpr auto get_masks = [](auto &a) { return a.masks(); };
 
 template <class T, class Meta> auto extract_unbinned(T &array, Meta meta) {
   const auto dim = array.dims().inner();
@@ -236,9 +236,9 @@ class TargetBinBuilder {
   enum class AxisAction { Group, Bin, Existing, Join };
 
 public:
-  const Dimensions &dims() const noexcept { return m_dims; }
-  const Variable &offsets() const noexcept { return m_offsets; }
-  const Variable &nbin() const noexcept { return m_nbin; }
+  [[nodiscard]] const Dimensions &dims() const noexcept { return m_dims; }
+  [[nodiscard]] const Variable &offsets() const noexcept { return m_offsets; }
+  [[nodiscard]] const Variable &nbin() const noexcept { return m_nbin; }
 
   /// `bin_coords` may optionally be used to provide bin-based coords, e.g., for
   /// data that has prior grouping but did not retain the original group coord
@@ -311,7 +311,7 @@ public:
     }
   }
 
-  auto edges() const noexcept {
+  [[nodiscard]] auto edges() const noexcept {
     std::vector<VariableConstView> vars;
     for (const auto &[action, dim, key] : m_actions) {
       static_cast<void>(dim);
@@ -321,7 +321,7 @@ public:
     return vars;
   }
 
-  auto groups() const noexcept {
+  [[nodiscard]] auto groups() const noexcept {
     std::vector<VariableConstView> vars;
     for (const auto &[action, dim, key] : m_actions) {
       static_cast<void>(dim);
@@ -366,15 +366,21 @@ private:
 };
 
 // Order is defined as:
-// 1. Any rebinned dim and dims inside the first rebinned dim, in the order of
+// 1. Erase binning from any dimensions listed in clear
+// 2. Any rebinned dim and dims inside the first rebinned dim, in the order of
 // appearance in array.
-// 2. All new grouped dims.
-// 3. All new binned dims.
+// 3. All new grouped dims.
+// 4. All new binned dims.
 template <class Coords>
 auto axis_actions(const VariableConstView &data, const Coords &coords,
                   const std::vector<VariableConstView> &edges,
-                  const std::vector<VariableConstView> &groups) {
+                  const std::vector<VariableConstView> &groups,
+                  const std::vector<Dim> &clear) {
   TargetBinBuilder builder;
+  for (const auto dim : clear) {
+    builder.erase(dim);
+  }
+
   constexpr auto get_dims = [](const auto &coords_) {
     Dimensions dims;
     for (const auto &coord : coords_)
@@ -536,14 +542,15 @@ void validate_bin_args(const std::vector<VariableConstView> &edges,
 
 DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &edges,
-              const std::vector<VariableConstView> &groups) {
+              const std::vector<VariableConstView> &groups,
+              const std::vector<Dim> &clear) {
   validate_bin_args(edges, groups);
   const auto &data = array.data();
   const auto &coords = array.coords();
   const auto &masks = array.masks();
   const auto &attrs = array.attrs();
   if (data.dtype() == dtype<core::bin<DataArray>>) {
-    return bin(data, coords, masks, attrs, edges, groups);
+    return bin(data, coords, masks, attrs, edges, groups, clear);
   } else {
     // Pretend existing binning along outermost binning dim to enable threading
     const auto dim = data.dims().inner();
@@ -561,13 +568,13 @@ DataArray bin(const DataArrayConstView &array,
         (data.dims().volume() > std::numeric_limits<int32_t>::max())
             ? makeVariable<int64_t>(data.dims())
             : makeVariable<int32_t>(data.dims());
-    auto builder = axis_actions(data, coords, edges, groups);
+    auto builder = axis_actions(data, coords, edges, groups, clear);
     builder.build(target_bins_buffer, coords);
     const auto target_bins = make_non_owning_bins(
         indices, dim, VariableConstView(target_bins_buffer));
     return add_metadata(bin<DataArrayConstView>(tmp, target_bins, builder),
                         coords, masks, attrs, builder.edges(), builder.groups(),
-                        {});
+                        clear);
   }
 }
 
@@ -588,8 +595,9 @@ template <class Coords, class Masks, class Attrs>
 DataArray bin(const VariableConstView &data, const Coords &coords,
               const Masks &masks, const Attrs &attrs,
               const std::vector<VariableConstView> &edges,
-              const std::vector<VariableConstView> &groups) {
-  auto builder = axis_actions(data, coords, edges, groups);
+              const std::vector<VariableConstView> &groups,
+              const std::vector<Dim> &clear) {
+  auto builder = axis_actions(data, coords, edges, groups, clear);
   HideMasked hide_masked(data, masks, builder.dims());
   const auto masked = hide_masked();
   TargetBins<DataArrayConstView> target_bins(masked, builder.dims());
@@ -597,7 +605,7 @@ DataArray bin(const VariableConstView &data, const Coords &coords,
                 coords);
   return add_metadata(bin<DataArrayConstView>(masked, *target_bins, builder),
                       coords, masks, attrs, builder.edges(), builder.groups(),
-                      {});
+                      clear);
 }
 
 template DataArray bin(const VariableConstView &,
@@ -605,6 +613,7 @@ template DataArray bin(const VariableConstView &,
                        const std::map<std::string, VariableConstView> &,
                        const std::map<Dim, VariableConstView> &,
                        const std::vector<VariableConstView> &,
-                       const std::vector<VariableConstView> &);
+                       const std::vector<VariableConstView> &,
+                       const std::vector<Dim> &);
 
 } // namespace scipp::dataset

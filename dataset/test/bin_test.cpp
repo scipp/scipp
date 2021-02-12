@@ -373,8 +373,9 @@ TEST_P(BinTest, clear_binning_and_bin_along_different_dimension) {
   const auto binned_along_y = bin(table, {edges_y});
 
   const std::vector<Dim> clear_binning_from_dimension = {Dim::X};
-  EXPECT_EQ(bin(binned_along_x, {edges_y}, {}, clear_binning_from_dimension),
-            binned_along_y)
+  const auto test_output =
+      bin(binned_along_x, {edges_y}, {}, clear_binning_from_dimension);
+  EXPECT_EQ(test_output, binned_along_y)
       << "Expected result of clearing x binning and adding y binning to be the "
          "same as binning the original data along y";
 }
