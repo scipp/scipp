@@ -168,7 +168,7 @@ def test_create_1D_vector_3_float64():
 
 
 def test_construct_0d_datetime():
-    for unit in ('s', 'us', 'ns'):
+    for unit in ('s', 'ms', 'us', 'ns'):
         dtype = f'datetime64[{unit}]'
         value = np.datetime64(2431, unit)
         # with value
@@ -191,7 +191,7 @@ def test_construct_0d_datetime():
 def test_construct_0d_datetime_mismatch():
     for unit1, unit2 in filter(
             lambda t: t[0] != t[1],
-            itertools.product(('s', 'us', 'ns'), ('s', 'us', 'ns'))):
+            itertools.product(('s', 'ms', 'us', 'ns'), ('s', 'ms', 'us', 'ns'))):
         with pytest.raises(ValueError):
             sc.Variable(unit=unit1, dtype=f'datetime64[{unit2}]')
         with pytest.raises(RuntimeError):
@@ -202,7 +202,7 @@ def test_construct_0d_datetime_mismatch():
 
 
 def test_0d_datetime_setter():
-    for unit in ('s', 'us', 'ns'):
+    for unit in ('s', 'ms', 'us', 'ns'):
         initial = np.datetime64(np.random.randint(0, 1000), unit)
         value = np.datetime64(np.random.randint(0, 1000), unit)
         var = sc.Variable(value=initial)
@@ -214,7 +214,7 @@ def test_0d_datetime_setter():
 def test_0d_datetime_setter_mismatch():
     for unit1, unit2 in filter(
             lambda t: t[0] != t[1],
-            itertools.product(('s', 'us', 'ns'), ('s', 'us', 'ns'))):
+            itertools.product(('s', 'ms', 'us', 'ns'), ('s', 'ms', 'us', 'ns'))):
         initial = np.datetime64(np.random.randint(0, 1000), unit1)
         value = np.datetime64(np.random.randint(0, 1000), unit2)
         var1 = sc.Variable(value=initial)
@@ -223,7 +223,7 @@ def test_0d_datetime_setter_mismatch():
 
 
 def test_construct_datetime():
-    for unit in ('s', 'us', 'ns'):
+    for unit in ('s', 'ms', 'us', 'ns'):
         dtype = f'datetime64[{unit}]'
         values = np.array([
             np.datetime64(np.random.randint(0, 1000), unit)
@@ -259,7 +259,7 @@ def test_construct_datetime():
 def test_construct_datetime_mismatch():
     for unit1, unit2 in filter(
             lambda t: t[0] != t[1],
-            itertools.product(('s', 'us', 'ns'), ('s', 'us', 'ns'))):
+            itertools.product(('s', 'ms', 'us', 'ns'), ('s', 'ms', 'us', 'ns'))):
         values = np.array([
             np.datetime64(np.random.randint(0, 1000), unit1)
             for _ in range(np.random.randint(1, 5))
@@ -275,7 +275,7 @@ def test_construct_datetime_mismatch():
 
 
 def test_datetime_setter():
-    for unit in ('s', 'us', 'ns'):
+    for unit in ('s', 'ms', 'us', 'ns'):
         size = np.random.randint(1, 5)
         initial = np.array([
             np.datetime64(np.random.randint(0, 1000), unit)
@@ -294,7 +294,7 @@ def test_datetime_setter():
 def test_datetime_setter_mismatch():
     for unit1, unit2 in filter(
             lambda t: t[0] != t[1],
-            itertools.product(('s', 'us', 'ns'), ('s', 'us', 'ns'))):
+            itertools.product(('s', 'ms', 'us', 'ns'), ('s', 'ms', 'us', 'ns'))):
         size = np.random.randint(1, 5)
         initial = np.array([
             np.datetime64(np.random.randint(0, 1000), unit1)
@@ -310,7 +310,7 @@ def test_datetime_setter_mismatch():
 
 
 def test_datetime_slicing():
-    for unit in ('s', 'us', 'ns'):
+    for unit in ('s', 'ms', 'us', 'ns'):
         values = np.array([
             np.datetime64(np.random.randint(0, 1000), unit)
             for _ in range(np.random.randint(4, 6))

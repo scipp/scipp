@@ -102,10 +102,14 @@ std::string to_iso_date(const scipp::core::time_point &item,
 
   if (unit == units::ns) {
     return print(std::chrono::nanoseconds{item.time_since_epoch()});
-  } else if (unit == units::us) {
-    return print(std::chrono::microseconds{item.time_since_epoch()});
   } else if (unit == units::s) {
     return print(std::chrono::seconds{item.time_since_epoch()});
+  } else if (unit == units::us) {
+    return print(std::chrono::microseconds{item.time_since_epoch()});
+  }
+  static const auto ms = units::Unit("ms");
+  if (unit == ms) {
+    return print(std::chrono::milliseconds{item.time_since_epoch()});
   }
   throw except::UnitError("Cannot display time point, unsupported unit: " +
                           to_string(unit));

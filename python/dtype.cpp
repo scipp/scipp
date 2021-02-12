@@ -78,6 +78,9 @@ parse_datetime_dtype(const std::string_view dtype_name) {
         return scipp::units::ns;
       case 'u':
         return scipp::units::us;
+      case 'm':
+        static const auto ms = units::Unit("ms");
+        return ms;
       default:
         throw std::invalid_argument(
             std::string("Unsupported unit in datetime: ") + dtype_name[11] +

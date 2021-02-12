@@ -10,13 +10,20 @@
 using namespace scipp;
 namespace py = pybind11;
 
+namespace {
+// TODO proper dimension check
+bool temporal_or_dimensionless(const units::Unit unit) {
+  static const auto ms = units::Unit("ms");
+  return unit != units::one && unit != units::s && unit != units::ns &&
+         unit != units::us && unit != ms;
+}
+} // namespace
+
 std::tuple<units::Unit, int64_t>
 get_time_unit(const std::optional<scipp::units::Unit> value_unit,
               const std::optional<scipp::units::Unit> dtype_unit,
               const units::Unit sc_unit) {
-  // TODO proper dimension check
-  if (sc_unit != units::one && sc_unit != units::s && sc_unit != units::ns &&
-      sc_unit != units::us) {
+  if (temporal_or_dimensionless(sc_unit)) {
     throw std::invalid_argument("Invalid unit for dtype=datetime64: " +
                                 to_string(sc_unit));
   }
