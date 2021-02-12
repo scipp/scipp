@@ -230,3 +230,22 @@ TEST(VariableSpecialValueTest,
   EXPECT_EQ(b, expected);
   EXPECT_EQ(a, expected);
 }
+
+TEST(VariableSpecialValueTest, isfinite_on_vector) {
+  auto vec = makeVariable<Eigen::Vector3d>(
+      Dims{Dim::X}, Shape{2},
+      Values{Eigen::Vector3d{1, 2, 4},
+             Eigen::Vector3d{1, double(INFINITY), 4}});
+  auto expected =
+      makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{true, false});
+
+  EXPECT_EQ(variable::isfinite(vec), expected);
+}
+
+TEST(VariableSpecialValueTest, isfinite_with_variance) {
+  auto vec = makeVariable<double>(
+      Dims{Dim::X}, Shape{2}, Values{double(NAN), 7.0}, Variances{1.0, 1.0});
+
+  EXPECT_EQ(variable::isfinite(vec),
+            makeVariable<bool>(Dims{Dim::X}, Shape{2}, Values{false, true}));
+}

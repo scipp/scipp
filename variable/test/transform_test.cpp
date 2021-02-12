@@ -910,6 +910,20 @@ TEST(TransformFlagsTest, expect_all_or_none_have_variance_in_place) {
       var_with_variance, var_with_variance, op_has_flags));
 }
 
+TEST(TransformFlagsTest, expect_no_in_variance_if_out_cannot_have_variance) {
+  auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
+  auto var_no_variance = makeVariable<double>(Values{1});
+  auto unary_op = [](const auto) { return false; };
+  auto op_has_flags = scipp::overloaded{
+      element::arg_list<double>,
+      transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
+      unary_op, [](const units::Unit &) { return units::one; }};
+  Variable out;
+  EXPECT_THROW(out = transform(var_with_variance, op_has_flags),
+               except::VariancesError);
+  EXPECT_NO_THROW(out = transform(var_no_variance, op_has_flags));
+}
+
 TEST(TransformEigenTest, is_eigen_type_test) {
   EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Vector3d>);
   EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Matrix3d>);
