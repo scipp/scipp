@@ -186,7 +186,7 @@ TEST(Variable, operator_plus_unit_fail) {
   b.setUnit(units::s);
   ASSERT_ANY_THROW_DISCARD(a + b);
   b.setUnit(units::m);
-  ASSERT_ANY_THROW_DISCARD(a + b);
+  ASSERT_NO_THROW_DISCARD(a + b);
 }
 
 TEST(Variable, operator_plus_eigen_type) {
