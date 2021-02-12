@@ -520,10 +520,9 @@ def _convert_MatrixWorkspace_info(ws,
         info["masks"]["spectrum"] = sc.Variable([spec_dim], values=mask)
 
     if ws.getEMode() == DeltaEModeType.Direct:
-        if not ws.run().hasProperty("Ei"):  # ConvertUnits will add Ei
-            info["coords"]["Ei"] = _extract_einitial(ws)
+        info["coords"]["incident-energy"] = _extract_einitial(ws)
     elif ws.getEMode() == DeltaEModeType.Indirect:
-        info["coords"]["Ef"] = _extract_efinal(ws)
+        info["coords"]["final-energy"] = _extract_efinal(ws)
     return info
 
 
@@ -1131,7 +1130,9 @@ def _get_instrument_efixed(workspace):
 
 def _extract_einitial(ws):
     ei = None
-    if ws.run().hasProperty('EnergyRequest'):
+    if ws.run().hasProperty("Ei"):
+        ei = ws.run().getProperty("Ei").value
+    elif ws.run().hasProperty('EnergyRequest'):
         ei = ws.run().getProperty('EnergyRequest').value[-1]
     return sc.Variable(value=ei, unit=sc.Unit("meV"))
 

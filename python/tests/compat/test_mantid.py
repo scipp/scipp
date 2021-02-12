@@ -847,7 +847,7 @@ def test_extract_energy_final():
     for instr in _all_indirect(blacklist=unsupported):
         out = _load_indirect_instrument(instr, parameters)
         ds = sc.compat.mantid.from_mantid(out)
-        efs = ds.coords["Ef"]
+        efs = ds.coords["final-energy"]
         assert not sc.all(sc.isnan(efs)).value
         assert efs.unit == sc.Unit("meV")
 
@@ -860,7 +860,7 @@ def test_extract_energy_final_when_not_present():
     ws = CreateSampleWorkspace(StoreInADS=False)
     assert ws.getEMode() == DeltaEModeType.Elastic
     ds = sc.compat.mantid.from_mantid(ws)
-    assert "Ef" not in ds.coords
+    assert "final-energy" not in ds.coords
 
 
 @pytest.mark.skipif(not mantid_is_available(),
@@ -870,7 +870,7 @@ def test_extract_energy_initial():
     mtd.clear()
     filename = MantidDataHelper.find_file("CNCS_51936_event.nxs")
     ds = mantidcompat.load(filename, mantid_args={"SpectrumMax": 1})
-    assert sc.is_equal(ds.coords["Ei"],
+    assert sc.is_equal(ds.coords["incident-energy"],
                        sc.scalar(value=3.0, unit=sc.Unit("meV")))
 
 
@@ -882,7 +882,7 @@ def test_extract_energy_inital_when_not_present():
     ws = CreateSampleWorkspace(StoreInADS=False)
     assert ws.getEMode() == DeltaEModeType.Elastic
     ds = sc.compat.mantid.from_mantid(ws)
-    assert "Ei" not in ds.coords
+    assert "incident-energy" not in ds.coords
 
 
 if __name__ == "__main__":
