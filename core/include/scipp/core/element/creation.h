@@ -24,6 +24,8 @@ constexpr auto zeros_not_bool_like =
                  using T = std::decay_t<decltype(x)>;
                  if constexpr (std::is_same_v<T, bool>)
                    return int64_t{0};
+                 else if constexpr (std::is_same_v<Eigen::Vector3d, T>)
+                   return T::Zero();
                  else
                    return T{0};
                }};
