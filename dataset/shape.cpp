@@ -188,56 +188,81 @@ DataArray reshape(const DataArrayConstView &a, const Dimensions &dims) {
   auto reshaped = DataArray(reshape(a.data(), dims));
 
   if (a.data().dims().labels().size() > dims.labels().size()) {
+    auto &new_shape = dims.shape();
     for (auto &&[name, coord] : a.coords()) {
-      reshaped.coords().set(name,
-                            reshape(broadcast(coord, a.data().dims()), dims));
+      auto &coord_shape = coord.dims().shape();
+      // auto &coord_labels = coord.dims().labels();
+      Dimensions to_broadcast;
+      for (int32_t i = new_shape.size() - 1; i >= 0; --i) {
+        if (new_shape[i] == coord_shape[i])
+          to_broadcast.add(coord.dims()[i]);
+        else
+          break;
+      }
     }
-    for (auto &&[name, attr] : a.attrs()) {
-      reshaped.attrs().set(name,
-                           reshape(broadcast(attr, a.data().dims()), dims));
-    }
-    for (auto &&[name, mask] : a.masks()) {
-      reshaped.masks().set(name,
-                           reshape(broadcast(mask, a.data().dims()), dims));
-    }
-  } else if (a.data().dims().labels().size() == dims.labels().size()) {
+
+    reshaped.coords().set(name,
+                          reshape(broadcast(coord, a.data().dims()), dims));
   }
-
-  // // build a map
-
-  // for (auto &&[name, coord] : a.coords()) {
-  //   auto shp = std::partial_sum(v.begin(), v.end(), v.begin(),
-  //                               std::multiplies<int>());
-  //   const auto product = std::accumulate(coord.shape().rbegin(), v.end(), 1,
-  //                                        std::multiplies<scipp::index>());
-  // for (const auto &vol : pro
-
-  // for (auto it = coord.shape().rbegin(); it != my_vector.rend(); ++it) {
-  // }
-
-  // if (all_dims_unchanged(coord.dims(), dims))
-  //   reshaped.coords().set(name, coord);
-  // else if (coord.dims() == a.data().dims())
-  //   reshaped.coords().set(name, reshape(coord, dims));
-  // }
-
   // for (auto &&[name, attr] : a.attrs()) {
-  //   if (all_dims_unchanged(attr.dims(), dims))
-  //     reshaped.attrs().set(name, attr);
-  //   else if (attr.dims() == a.data().dims())
-  //     reshaped.attrs().set(name, reshape(attr, dims));
+  //   reshaped.attrs().set(name,
+  //                        reshape(broadcast(attr, a.data().dims()), dims));
   // }
   // for (auto &&[name, mask] : a.masks()) {
-  //   if (all_dims_unchanged(mask.dims(), dims))
-  //     reshaped.masks().set(name, mask);
-  //   else if (mask.dims() == a.data().dims())
-  //     reshaped.masks().set(name, reshape(mask, dims));
-  //   else if (contains_all_dim_labels(mask.dims(), a.data().dims()))
-  //     reshaped.masks().set(name,
-  //                          reshape(broadcast(mask, a.data().dims()), dims));
+  //   reshaped.masks().set(name,
+  //                        reshape(broadcast(mask, a.data().dims()), dims));
   // }
-  return reshaped;
-}
+} // else if (a.data().dims().labels().size() == dims.labels().size()) {
+//   for (auto &&[name, coord] : a.coords()) {
+//     reshaped.coords().set(name,
+//                           reshape(broadcast(coord, a.data().dims()),
+//                           dims));
+//   }
+//   for (auto &&[name, attr] : a.attrs()) {
+//     reshaped.attrs().set(name,
+//                          reshape(broadcast(attr, a.data().dims()), dims));
+//   }
+//   for (auto &&[name, mask] : a.masks()) {
+//     reshaped.masks().set(name,
+//                          reshape(broadcast(mask, a.data().dims()), dims));
+//   }
+// }
+
+// // build a map
+
+// for (auto &&[name, coord] : a.coords()) {
+//   auto shp = std::partial_sum(v.begin(), v.end(), v.begin(),
+//                               std::multiplies<int>());
+//   const auto product = std::accumulate(coord.shape().rbegin(), v.end(), 1,
+//                                        std::multiplies<scipp::index>());
+// for (const auto &vol : pro
+
+// for (auto it = coord.shape().rbegin(); it != my_vector.rend(); ++it) {
+// }
+
+// if (all_dims_unchanged(coord.dims(), dims))
+//   reshaped.coords().set(name, coord);
+// else if (coord.dims() == a.data().dims())
+//   reshaped.coords().set(name, reshape(coord, dims));
+// }
+
+// for (auto &&[name, attr] : a.attrs()) {
+//   if (all_dims_unchanged(attr.dims(), dims))
+//     reshaped.attrs().set(name, attr);
+//   else if (attr.dims() == a.data().dims())
+//     reshaped.attrs().set(name, reshape(attr, dims));
+// }
+// for (auto &&[name, mask] : a.masks()) {
+//   if (all_dims_unchanged(mask.dims(), dims))
+//     reshaped.masks().set(name, mask);
+//   else if (mask.dims() == a.data().dims())
+//     reshaped.masks().set(name, reshape(mask, dims));
+//   else if (contains_all_dim_labels(mask.dims(), a.data().dims()))
+//     reshaped.masks().set(name,
+//                          reshape(broadcast(mask, a.data().dims()), dims));
+// }
+return reshaped;
+} // namespace scipp::dataset
 
 // DataArray reshape(const DataArrayConstView &a, const Dimensions &dims) {
 //   // The rules are the following:
