@@ -77,7 +77,6 @@ def test_0d_datetime_setter(unit):
     initial, replacement = _make_datetimes(unit, 2)
     var = sc.Variable(value=initial)
     var.value = replacement
-    assert var.value == replacement
     assert sc.is_equal(var, sc.Variable(value=replacement))
 
 
