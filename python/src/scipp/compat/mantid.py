@@ -168,6 +168,7 @@ def make_detector_info(ws):
 
     # May want to include more information here, such as detector positions,
     # but for now this is not necessary.
+
     return sc.Variable(value=sc.Dataset(coords={
         'detector': detector,
         'spectrum': spectrum
@@ -463,6 +464,7 @@ def set_bin_masks(bin_masks, dim, index, masked_bins):
 def _convert_MatrixWorkspace_info(ws,
                                   advanced_geometry=False,
                                   load_run_logs=True):
+    from mantid.kernel import DeltaEModeType
     common_bins = ws.isCommonBins()
     dim, unit = validate_and_get_unit(ws.getAxis(0).getUnit())
     source_pos, sample_pos = make_component_info(ws)
@@ -516,6 +518,11 @@ def _convert_MatrixWorkspace_info(ws,
             spectrum_info.isMasked(i) for i in range(ws.getNumberHistograms())
         ])
         info["masks"]["spectrum"] = sc.Variable([spec_dim], values=mask)
+
+    if ws.getEMode() == DeltaEModeType.Direct:
+        info["coords"]["incident-energy"] = _extract_einitial(ws)
+    elif ws.getEMode() == DeltaEModeType.Indirect:
+        info["coords"]["final-energy"] = _extract_efinal(ws)
     return info
 
 
@@ -1097,3 +1104,59 @@ def fit(data, mantid_args):
     ws = to_mantid(data, dim)
     mantid_args['workspace_index'] = 0
     return _fit_workspace(ws, mantid_args)
+
+
+def _try_except(op, possible_except, failure, **kwargs):
+    try:
+        return op(**kwargs)
+    except possible_except:
+        return failure
+
+
+def _get_instrument_efixed(workspace):
+    inst = workspace.getInstrument()
+    if inst.hasParameter('Efixed'):
+        return inst.getNumberParameter('EFixed')[0]
+
+    if inst.hasParameter('analyser'):
+        analyser_name = inst.getStringParameter('analyser')[0]
+        analyser_comp = inst.getComponentByName(analyser_name)
+
+        if analyser_comp is not None and analyser_comp.hasParameter('Efixed'):
+            return analyser_comp.getNumberParameter('EFixed')[0]
+
+    return None
+
+
+def _extract_einitial(ws):
+    ei = None
+    if ws.run().hasProperty("Ei"):
+        ei = ws.run().getProperty("Ei").value
+    elif ws.run().hasProperty('EnergyRequest'):
+        ei = ws.run().getProperty('EnergyRequest').value[-1]
+    return sc.Variable(value=ei, unit=sc.Unit("meV"))
+
+
+def _extract_efinal(ws):
+    detInfo = ws.detectorInfo()
+    specInfo = ws.spectrumInfo()
+    ef = np.empty(shape=(specInfo.size(), ), dtype=float)
+    ef[:] = np.nan
+    analyser_ef = _get_instrument_efixed(workspace=ws)
+    ids = detInfo.detectorIDs()
+    for spec_index in range(len(specInfo)):
+        detector_ef = None
+        if specInfo.hasDetectors(spec_index):
+            # Just like mantid, we only take the first entry of the group.
+            det_index = specInfo.getSpectrumDefinition(spec_index)[0][0]
+            detector_ef = _try_except(op=ws.getEFixed,
+                                      possible_except=RuntimeError,
+                                      failure=None,
+                                      detId=int(ids[det_index]))
+        detector_ef = detector_ef if detector_ef is not None else analyser_ef
+        if not detector_ef:
+            continue  # Cannot assign an Ef. May or may not be an error
+            # - i.e. a diffraction detector, monitor etc.
+        ef[spec_index] = detector_ef
+
+    return sc.Variable(dims=['spectrum'], values=ef, unit=sc.Unit("meV"))

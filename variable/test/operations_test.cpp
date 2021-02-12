@@ -184,9 +184,9 @@ TEST(Variable, operator_plus_unit_fail) {
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
                                 Variances{3.0, 4.0});
   b.setUnit(units::s);
-  ASSERT_ANY_THROW(a + b);
+  ASSERT_ANY_THROW_DISCARD(a + b);
   b.setUnit(units::m);
-  ASSERT_NO_THROW(a + b);
+  ASSERT_NO_THROW_DISCARD(a + b);
 }
 
 TEST(Variable, operator_plus_eigen_type) {
@@ -973,4 +973,37 @@ TEST(VariableTest, rotate) {
       Dims{Dim::X}, Shape{2}, units::m,
       Values{rot1.toRotationMatrix() * vec1, rot2.toRotationMatrix() * vec2});
   EXPECT_EQ(vec_new, rotated);
+}
+
+TEST(VariableTest, mul_vector) {
+  Eigen::Vector3d vec1(1, 2, 3);
+  Eigen::Vector3d vec2(2, 4, 6);
+  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
+                                           Values{vec1});
+  auto expected_vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1},
+                                                    units::m, Values{vec2});
+  auto scale = makeVariable<double>(Dims{}, Shape{1}, units::one, Values{2.0});
+  auto scale_with_variance = makeVariable<double>(Dims{}, Shape{1}, units::one,
+                                                  Values{2.0}, Variances{1.0});
+
+  auto left_scaled_vec = scale * vec;
+  auto right_scaled_vec = vec * scale;
+
+  EXPECT_THROW_DISCARD(vec * scale_with_variance, except::VariancesError);
+  EXPECT_EQ(left_scaled_vec, expected_vec);
+  EXPECT_EQ(right_scaled_vec, expected_vec);
+}
+
+TEST(VariableTest, divide_vector) {
+  Eigen::Vector3d vec1(1, 2, 3);
+  Eigen::Vector3d vec2(2, 4, 6);
+  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
+                                           Values{vec2});
+  auto expected_vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1},
+                                                    units::m, Values{vec1});
+  auto scale = makeVariable<double>(Dims{}, Shape{1}, units::one, Values{2.0});
+
+  auto scaled_vec = vec / scale;
+
+  EXPECT_EQ(scaled_vec, expected_vec);
 }
