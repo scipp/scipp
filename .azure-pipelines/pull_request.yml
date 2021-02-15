@@ -155,7 +155,7 @@ stages:
               set -ex
               cd "$(build_dir)"
               cmake --build . --target all-tests
-            displayName: 'Cuild C++ unit tests'
+            displayName: 'Build C++ unit tests'
           - bash: |
               set -ex
               cd "$(build_dir)"
