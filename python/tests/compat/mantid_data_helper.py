@@ -36,26 +36,26 @@ class MantidDataHelper:
         "{algorithm}/{hash}"
 
     @classmethod
-    def find_file(cls, name):
-        data_file = cls.DATA_FILES[name]
-        data_location = cls.DATA_LOCATION.format(
-            data_dir=cls.DATA_DIR,
-            algorithm=data_file["algorithm"],
-            hash=data_file["hash"])
-
+    def do_find_file(cls, hash, algorithm):
+        data_location = cls.DATA_LOCATION.format(data_dir=cls.DATA_DIR,
+                                                 algorithm=algorithm,
+                                                 hash=hash)
         dir_name = os.path.dirname(data_location)
         if not os.path.exists(dir_name):
             os.makedirs(dir_name, exist_ok=True)
 
         if not os.path.isfile(data_location):
-            file_hash = data_file["hash"]
-            algorithm = data_file["algorithm"]
-            query = cls.REMOTE_URL.format(algorithm=algorithm, hash=file_hash)
+            query = cls.REMOTE_URL.format(algorithm=algorithm, hash=hash)
             download_file(query, data_location)
             if algorithm == "MD5":
                 with open(data_location, "rb") as file:
                     md5 = hashlib.md5(file.read()).hexdigest()
-                    if md5 != file_hash:
+                    if md5 != hash:
                         raise RuntimeError("Check sum doesn't match.")
 
         return data_location
+
+    @classmethod
+    def find_file(cls, name):
+        data_file = cls.DATA_FILES[name]
+        return cls.do_find_file(data_file["hash"], data_file["algorithm"])
