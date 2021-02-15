@@ -414,12 +414,18 @@ Variable sum(const VariableConstView &data) {
   else
     summed = Variable(type, data.dims(), unit, Values{});
 
-  const auto &&[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
-  if (const auto mask_union = irreducible_mask(buffer.masks(), dim)) {
-    variable::sum_impl(summed, applyMask(buffer, indices, dim, mask_union));
+  if (data.dtype() == dtype<bucket<DataArray>>) {
+    const auto &&[indices, dim, buffer] =
+        data.constituents<bucket<DataArray>>();
+    if (const auto mask_union = irreducible_mask(buffer.masks(), dim)) {
+      variable::sum_impl(summed, applyMask(buffer, indices, dim, mask_union));
+    } else {
+      variable::sum_impl(summed, data);
+    }
   } else {
     variable::sum_impl(summed, data);
   }
+
   return summed;
 }
 
