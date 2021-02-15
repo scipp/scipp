@@ -12,7 +12,7 @@ def _dtype_lut():
     dtypes = [
         d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.Variable,
         d.DataArray, d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView,
-        d.vector_3_float64
+        d.vector_3_float64, d.matrix_3_float64
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
@@ -38,8 +38,7 @@ class EigenDataIO():
     @staticmethod
     def write(group, data):
         import numpy as np
-        dset = group.create_dataset('values', data=np.asarray(data.values))
-        return dset
+        return group.create_dataset('values', data=np.asarray(data.values))
 
     @staticmethod
     def read(group, data):
@@ -154,7 +153,7 @@ def _data_handler_lut():
         handler[str(dtype)] = ScippDataIO
     for dtype in [d.string]:
         handler[str(dtype)] = StringDataIO
-    for dtype in [d.vector_3_float64]:
+    for dtype in [d.vector_3_float64, d.matrix_3_float64]:
         handler[str(dtype)] = EigenDataIO
     return handler
 
