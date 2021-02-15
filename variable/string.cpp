@@ -35,7 +35,8 @@ std::string make_dims_labels(const VariableConstView &variable,
   std::string diminfo = "(";
   for (const auto dim : dims.labels()) {
     diminfo += to_string(dim);
-    if (datasetDims.contains(dim) && (datasetDims[dim] + 1 == dims[dim]))
+    if ((datasetDims.contains(dim) && (datasetDims[dim] + 1 == dims[dim])) ||
+        (datasetDims.empty() && dims[dim] == 2))
       diminfo += " [bin-edge]";
     diminfo += ", ";
   }
