@@ -18,7 +18,7 @@ class PlotWidgets:
                  name=None,
                  dim_to_shape=None,
                  dim_label_map=None,
-                 positions=None,
+                 pos_dims=None,
                  masks=None,
                  multid_coord=None):
 
@@ -47,14 +47,13 @@ class PlotWidgets:
         # all_masks_button: button to hide/show all masks in a single click
         self.all_masks_button = None
 
-        pos_dim = dim_label_map[
-            positions] if positions in dim_label_map else positions
-
         slider_dims = {}
         for ax, dim in axes.items():
-            if isinstance(ax, int) and dim != pos_dim:
+            if isinstance(ax, int):
                 slider_dims[ax] = dim
-        possible_dims = set(axes.values()) - set([pos_dim])
+        possible_dims = set(axes.values())
+        if pos_dims is not None:
+            possible_dims -= set(pos_dims)
 
         # Now begin loop to construct sliders
         for index, (ax, dim) in enumerate(slider_dims.items()):
