@@ -3,6 +3,8 @@
 # @file
 # @author Igor Gudich & Neil Vaytet
 
+from html import escape
+
 # Scipp imports
 from . import config
 from . import _utils as su
@@ -36,7 +38,7 @@ def _make_table_unit_headers(dict_of_variables, text_style):
         for name, val in section.items():
             html.append("<th {} colspan='{}'>{}</th>".format(
                 text_style, 1 + (val.variances is not None),
-                su.name_with_unit(val, name=name)))
+                escape(su.name_with_unit(val, name=name))))
     return "".join(html)
 
 
@@ -66,10 +68,10 @@ def _make_value_rows(dict_of_variables, is_bin_centers, index, base_style,
                         html.append("<td {}></td>".format(edge_style))
             else:
                 html.append("<td rowspan='2' {}>{}</td>".format(
-                    base_style, su.value_to_string(val.values[index])))
+                    base_style, escape(su.value_to_string(val.values[index]))))
                 if val.variances is not None:
                     html.append("<td rowspan='2' {}>{}</td>".format(
-                        base_style, su.value_to_string(val.variances[index])))
+                        base_style, escape(su.value_to_string(val.variances[index]))))
 
     return "".join(html)
 
@@ -86,11 +88,11 @@ def _make_trailing_cells(dict_of_variables, is_bin_centers, index, size,
                         html.append("<td {}></td>".format(edge_style))
                 else:
                     html.append("<td rowspan='2' {}>{}</td>".format(
-                        base_style, su.value_to_string(val.values[index])))
+                        base_style, escape(su.value_to_string(val.values[index]))))
                     if val.variances is not None:
                         html.append("<td rowspan='2' {}>{}</td>".format(
                             base_style,
-                            su.value_to_string(val.variances[index])))
+                            escape(su.value_to_string(val.variances[index]))))
 
     return "".join(html)
 
@@ -147,10 +149,10 @@ def _table_from_dict_of_variables(dict_of_variables,
         for key, section in dict_of_variables.items():
             for name, val in section.items():
                 html += "<td {}>{}</td>".format(base_style,
-                                                su.value_to_string(val.value))
+                                                escape(su.value_to_string(val.value)))
                 if val.variances is not None:
                     html += "<td {}>{}</td>".format(
-                        base_style, su.value_to_string(val.variance))
+                        base_style, escape(su.value_to_string(val.variance)))
         html += "</tr>"
     else:
         row_end = min(size, row_start + max_rows)
