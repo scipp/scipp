@@ -65,7 +65,12 @@ except ImportError:
     plt = None
 
 if is_doc_build and plt is not None:
-    plt.rcParams.update({'figure.max_open_warning': 0})
+    plt.rcParams.update({
+        "figure.max_open_warning": 0,
+        "interactive": False,
+        "figure.figsize": [6.4, 4.8],
+        "figure.dpi": 96
+    })
 
 
 def plot(*args, **kwargs):
