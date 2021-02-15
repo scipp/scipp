@@ -36,7 +36,7 @@ class MantidDataHelper:
         "{algorithm}/{hash}"
 
     @classmethod
-    def do_find_file(cls, hash, algorithm):
+    def find_file(cls, hash, algorithm):
         data_location = cls.DATA_LOCATION.format(data_dir=cls.DATA_DIR,
                                                  algorithm=algorithm,
                                                  hash=hash)
@@ -56,6 +56,6 @@ class MantidDataHelper:
         return data_location
 
     @classmethod
-    def find_file(cls, name):
+    def find_known_file(cls, name):
         data_file = cls.DATA_FILES[name]
-        return cls.do_find_file(data_file["hash"], data_file["algorithm"])
+        return cls.find_file(data_file["hash"], data_file["algorithm"])
