@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
+#include "scipp/common/initialization.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
@@ -36,20 +37,6 @@ bool equals_impl(const T1 &view1, const T2 &view2) {
   else
     return std::equal(view1.begin(), view1.end(), view2.begin(), view2.end());
 }
-
-namespace {
-template <class T> struct default_init {
-  static T value() { return T(); }
-};
-// Eigen does not zero-initialize matrices (vectors), which is a recurrent
-// source of bugs. Variable does zero-init instead.
-template <class T, int Rows, int Cols>
-struct default_init<Eigen::Matrix<T, Rows, Cols>> {
-  static Eigen::Matrix<T, Rows, Cols> value() {
-    return Eigen::Matrix<T, Rows, Cols>::Zero();
-  }
-};
-} // namespace
 
 /// Implementation of VariableConcept that holds and array with element type T.
 template <class T> class DataModel : public VariableConcept {
