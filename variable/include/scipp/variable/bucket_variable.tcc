@@ -109,7 +109,7 @@ private:
   const VariableConstView
   bin_parent(const scipp::span<const VariableConstView> &parents) const {
     if (parents.empty())
-      throw except::BucketError("Bin cannot have zero parents");
+      throw except::BinnedDataError("Bin cannot have zero parents");
     return parents.front().dtype() == dtype<bucket<T>>
                ? parents.front()
                : bin_parent(parents.subspan(1));
