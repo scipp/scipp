@@ -216,25 +216,3 @@ def plot(*args, **kwargs):
         plt.ion()
 
     return output
-
-
-def superplot(*args, **kwargs):
-    """
-    Plot a Scipp object with a 1d projection that offers the possibility to
-    keep individual profiles as coloured lines.
-    """
-    return plot(*args, projection="1d", **kwargs)
-
-
-def image(*args, **kwargs):
-    """
-    Plot a Scipp object as a 2d image.
-    """
-    return plot(*args, projection="2d", **kwargs)
-
-
-def scatter3d(*args, **kwargs):
-    """
-    Plot a Scipp object as a 3d scatter plot.
-    """
-    return plot(*args, projection="3d", **kwargs)
