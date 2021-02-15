@@ -73,19 +73,16 @@ parse_datetime_dtype(const std::string_view dtype_name) {
         // no scale given
         return scipp::units::s;
       }
-      switch (dtype_name[11]) {
-      case 'n':
+      if (dtype_name[11] == 'n') {
         return scipp::units::ns;
-      case 'u':
+      } else if (dtype_name[11] == 'u') {
         return scipp::units::us;
-      case 'm':
+      } else if (dtype_name[11] == 'm') {
         static const auto ms = units::Unit("ms");
         return ms;
-      default:
-        throw std::invalid_argument(
-            std::string("Unsupported unit in datetime: ") + dtype_name[11] +
-            "s");
       }
+      throw std::invalid_argument(
+          std::string("Unsupported unit in datetime: ") + dtype_name[11] + "s");
     }
   }
 
