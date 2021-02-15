@@ -120,7 +120,7 @@ class VariableDrawer:
         height += 0.3 * depth
         return [width, height]
 
-    def _draw_array(self, color, data, offset=[0, 0]):
+    def _draw_array(self, color, offset=[0, 0]):
         """Draw the array of boxes"""
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
@@ -209,19 +209,18 @@ class VariableDrawer:
         svg += self._draw_info(offset, title)
         items = []
         if self._variable.variances is not None:
-            items.append(('variances', self._variable.variances, color))
+            items.append(('variances', color))
         if self._variable.values is not None:
-            items.append(('values', self._variable.values, color))
+            items.append(('values', color))
 
-        for i, (name, data, color) in enumerate(items):
+        for i, (name, color) in enumerate(items):
             svg += '<g>'
             svg += '<title>{}</title>'.format(name)
             svg += self._draw_array(
                 color=color,
                 offset=offset +
                 np.array([(len(items) - i - 1) * self._variance_offset(),
-                          i * self._variance_offset()]),
-                data=data)
+                          i * self._variance_offset()]))
             svg += '</g>'
             svg += self._draw_labels(offset=offset)
         svg += '</g>'
