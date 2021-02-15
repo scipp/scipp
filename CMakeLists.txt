@@ -53,6 +53,9 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
                       "${CMAKE_SOURCE_DIR}/CMake/sanitizers-cmake/cmake"
 )
 
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+
 find_package(Sanitizers REQUIRED)
 
 # MP : Parallel compile, add before any targets so all use it
