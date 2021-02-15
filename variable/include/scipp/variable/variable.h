@@ -39,7 +39,7 @@ template <class T> typename T::view_type makeViewItem(T &);
 namespace scipp::variable {
 
 namespace detail {
-void expect0D(const Dimensions &dims);
+SCIPP_VARIABLE_EXPORT void expect0D(const Dimensions &dims);
 } // namespace detail
 
 class VariableConstView;
