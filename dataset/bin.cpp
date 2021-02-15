@@ -520,8 +520,9 @@ namespace {
 void validate_bin_args(const std::vector<VariableConstView> &edges,
                        const std::vector<VariableConstView> &groups) {
   if (edges.empty() && groups.empty())
-    throw except::BucketError("Arguments 'edges' and 'groups' of scipp.bin are "
-                              "both empty. At least one must be set.");
+    throw except::BinnedDataError(
+        "Arguments 'edges' and 'groups' of scipp.bin are "
+        "both empty. At least one must be set.");
   for (const auto &edge : edges) {
     const auto dim = edge.dims().inner();
     if (edge.dims()[dim] < 2)
