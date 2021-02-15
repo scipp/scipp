@@ -7,9 +7,8 @@ See section 'CONFIGURATION' below for setup.
 
 from dataclasses import dataclass, field
 from datetime import timedelta
-from itertools import chain, groupby, product
+from itertools import chain, groupby
 from pathlib import Path
-import random
 import re
 import subprocess
 from typing import Dict, List
@@ -44,15 +43,17 @@ COMMON_CMAKE_ARGS = dict(
 # Build arguments used for every case.
 COMMON_BUILD_ARGS = ['-j6']
 
-# Cases to build, each can specify a set of options for configuration and build.
+# Cases to benchmark, each can specify a set of options
+# for configuration and build.
 CASES = [
     Case(name='base'),
     Case(name='feature', cmake_args=dict(MY_FEATURE='ON')),
-    Case(name='serial', build_args=dict(j='1'))
+    Case(name='serial', build_args=['-j1'])
 ]
 
-# For every set of files provided here, the build is re-run after touching those files.
-# A clean build is always performed to set the baseline and configure the setup.
+# For every set of files provided here, the build is re-run after touching
+# those files. A clean build is always performed to set the baseline
+# and configure the setup.
 TOUCH = [
     [Path('variable/include/scipp/variable/transform.h')],
     [Path('core/include/scipp/core/multi_index.h')],
@@ -103,9 +104,8 @@ def configure(case, build_dir, install_dir):
                        encoding='utf-8',
                        cwd=build_dir)
     except subprocess.CalledProcessError as err:
-        print(
-            f"Configuring build '{case.name}' failed:\n{err.stdout}\n{err.stderr}"
-        )
+        print(f"Configuring build '{case.name}' "
+              f"failed:\n{err.stdout}\n{err.stderr}")
         sys.exit(1)
 
 
@@ -162,7 +162,7 @@ def report(results):
     for touch, group in groupby(results, key=lambda t: t[1]):
         names, _, times = zip(*group)
         if not printed_names:
-            print(f'                      ' +
+            print('                      ' +
                   '  '.join(f'{name:20s}' for name in names) + '\n')
             printed_names = True
         if touch:
