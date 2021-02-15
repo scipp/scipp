@@ -190,7 +190,12 @@ def find_bin_edges(var, ds):
     bin_edges = []
     for idx, dim in enumerate(var.dims):
         length = var.shape[idx]
-        if dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == length:
+        if not ds.dims:
+            # Have a scalar slice.
+            # Cannot match dims, just assume length 2 attributes are bin-edge
+            if length == 2:
+                bin_edges.append(dim)
+        elif dim in ds.dims and ds.shape[ds.dims.index(dim)] + 1 == length:
             bin_edges.append(dim)
     return bin_edges
 
