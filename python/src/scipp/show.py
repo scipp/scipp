@@ -2,6 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
 import colorsys
+from html import escape
 
 import numpy as np
 from ._scipp import core as sc
@@ -154,14 +155,14 @@ class VariableDrawer:
                 y_pos = dy + view_height - self._margin + _smaller_font
                 return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
                          fill="dim-color" \
-                         style="font-size:#smaller-font">{dim}</text>'
+                         style="font-size:#smaller-font">{escape(dim)}</text>'
 
             if axis == 1:
                 x_pos = dx + self._margin - 0.3 * _smaller_font
                 y_pos = dy + view_height - self._margin - 0.5 * extent
                 return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
                     fill="dim-color" style="font-size:#smaller-font" \
-                    transform="rotate(-90, {x_pos}, {y_pos})">{dim}</text>'
+                    transform="rotate(-90, {x_pos}, {y_pos})">{escape(dim)}</text>'
 
             if axis == 0:
                 x_pos = dx + self._margin + 0.3 * 0.5 * extent - \
@@ -170,7 +171,7 @@ class VariableDrawer:
                 )[-2] - 0.3 * 0.5 * extent - 0.2 * _smaller_font
                 return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
                     fill="dim-color" style="font-size:#smaller-font" \
-                    transform="rotate(-45, {x_pos}, {y_pos})">{dim}</text>'
+                    transform="rotate(-45, {x_pos}, {y_pos})">{escape(dim)}</text>'
 
         extents = self._extents()
         for dim in self._variable.dims:
@@ -194,13 +195,13 @@ class VariableDrawer:
             title = _truncate_long_string(str(title))
             svg = f'<text x="{x_pos}" y="{y_pos}" \
                     style="font-size:#normal-font"> \
-                    {title}</text>'
+                    {escape(title)}</text>'
 
-            svg += f'<title>{details}</title>'
+            svg += f'<title>{escape(details)}</title>'
         else:
             svg = f'<text x="{x_pos}" y="{y_pos}" \
                     style="font-size:#small-font"> \
-                    {details}</text>'
+                    {escape(details)}</text>'
 
         return svg
 
