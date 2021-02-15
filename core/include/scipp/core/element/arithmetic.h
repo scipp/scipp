@@ -71,12 +71,11 @@ constexpr auto mod_equals = overloaded{
 
 struct add_types_t {
   constexpr void operator()() const noexcept;
-  using types =
-      decltype(std::tuple_cat(std::declval<arithmetic_and_matrix_type_pairs>(),
-                              std::tuple<std::tuple<time_point, int64_t>,
-                                         std::tuple<time_point, int32_t>,
-                                         std::tuple<int64_t, time_point>,
-                                         std::tuple<int32_t, time_point>>{}));
+  using types = decltype(std::tuple_cat(
+      std::declval<arithmetic_and_matrix_type_pairs>(),
+      std::tuple<
+          std::tuple<time_point, int64_t>, std::tuple<time_point, int32_t>,
+          std::tuple<int64_t, time_point>, std::tuple<int32_t, time_point>>{}));
 };
 
 struct minus_types_t {
