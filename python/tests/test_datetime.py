@@ -193,8 +193,8 @@ def test_datetime_operations_mismatch():
 
 def test_datetime_formatting():
     # Time since epoch for a totally arbitrary date.
-    # The timezone has an offset of 0 to emulate a timestamp obtained from some source that
-    # is not aware of timezones.
+    # The timezone has an offset of 0 to emulate a timestamp obtained from
+    # some source that is not aware of timezones.
     timestamp = int(
         datetime(year=1991,
                  month=8,
@@ -207,5 +207,6 @@ def test_datetime_formatting():
     var = sc.scalar(np.datetime64(timestamp, 'us'))
     match = re.search(r'\[[\dT\-:\.]+]', str(var))
     assert match
-    # Make sure that date and time are printed unchanged, i.e. there was no timezone conversion.
+    # Make sure that date and time are printed unchanged,
+    # i.e. there was no timezone conversion.
     assert match[0][1:-1] == "1991-08-16T01:02:03.456789"
