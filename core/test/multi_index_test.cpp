@@ -281,11 +281,11 @@ TEST_F(MultiIndexTest, two_1d_arrays_of_1d_buckets_bucket_size_mismatch) {
   EXPECT_THROW(check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, buf, dim,
                                   {{0, 4}, {3, 7}}, x, x, x,
                                   {0, 1, 2, 3, 4, 5, 6}, {0, 1, 2, 3, 4, 5, 6}),
-               except::BucketError);
+               except::BinnedDataError);
   EXPECT_THROW(check_with_buckets(buf, dim, {{0, 3}, {3, 7}}, buf, dim,
                                   {{0, 3}, {4, 7}}, x, x, x,
                                   {0, 1, 2, 3, 4, 5, 6}, {0, 1, 2, 3, 4, 5, 6}),
-               except::BucketError);
+               except::BinnedDataError);
 }
 
 TEST_F(MultiIndexTest, 2d_empty_dims_array_of_1d_buckets) {
