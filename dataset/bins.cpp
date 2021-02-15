@@ -393,9 +393,13 @@ void scale(const DataArrayView &array, const DataArrayConstView &histogram,
 }
 
 namespace {
-Variable applyMask(const VariableConstView &var, const Variable &masks) {
-  return scipp::variable::transform(var, masks,
-                                    scipp::core::element::convertMaskedToZero);
+Variable applyMask(const DataArrayConstView &buffer,
+                   const VariableConstView &indices, const Dim dim,
+                   const Variable &masks) {
+  auto indices_copy = Variable(indices);
+  auto masked_data = scipp::variable::transform(
+      buffer.data(), masks, scipp::core::element::convertMaskedToZero);
+  return make_bins(std::move(indices_copy), dim, std::move(masked_data));
 }
 
 } // namespace
@@ -409,12 +413,10 @@ Variable sum(const VariableConstView &data) {
     summed = Variable(type, data.dims(), unit, Values{}, Variances{});
   else
     summed = Variable(type, data.dims(), unit, Values{});
+
   const auto &&[indices, dim, buffer] = data.constituents<bucket<DataArray>>();
   if (const auto mask_union = irreducible_mask(buffer.masks(), dim)) {
-    auto indices_copy = Variable(indices);
-    auto masked_data = applyMask(buffer.data(), mask_union);
-    variable::sum_impl(summed, make_bins(std::move(indices_copy), dim,
-                                         std::move(masked_data)));
+    variable::sum_impl(summed, applyMask(buffer, indices, dim, mask_union));
   } else {
     variable::sum_impl(summed, data);
   }
