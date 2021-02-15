@@ -41,6 +41,6 @@ dependencies:
   # Docs
   - ipython=7.2.0
   - pandoc
-  - sphinx>=1.6
+  - sphinx=3.4.3 # see https://github.com/sphinx-doc/sphinx/issues/8885
   - sphinx_rtd_theme
   - nbsphinx
