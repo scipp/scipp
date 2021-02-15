@@ -157,7 +157,7 @@ endif(NOT WIN32)
 # permissive- : Std compliant parsing, warnings (W3) set by CMake defaults
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-permissive->)
 
-option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" ON)
+option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" OFF)
 
 enable_testing()
 
