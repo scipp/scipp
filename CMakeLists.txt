@@ -105,7 +105,7 @@ if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
 endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
-option(DYNAMIC_LIB "Build shared libraries" OFF)
+option(DYNAMIC_LIB "Build shared libraries" ON)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include(IPO)
