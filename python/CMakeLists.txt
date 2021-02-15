@@ -35,10 +35,7 @@ pybind11_add_module(
   element_array_view.cpp
   shape.cpp
 )
-pybind11_add_module(
-  _scipp_neutron SHARED SYSTEM ${python_SRC_FILES} neutron.cpp
-  scipp_neutron.cpp
-)
+pybind11_add_module(_scipp_neutron SHARED SYSTEM neutron.cpp scipp_neutron.cpp)
 target_include_directories(
   _scipp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
 )
