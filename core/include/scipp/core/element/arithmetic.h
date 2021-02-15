@@ -87,15 +87,28 @@ struct minus_types_t {
 
 struct times_types_t {
   constexpr void operator()() const noexcept;
-  using types = decltype(std::tuple_cat(
-      std::declval<arithmetic_type_pairs_with_bool>(),
-      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>{},
-      std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>{}));
+  using types = decltype(
+      std::tuple_cat(std::declval<arithmetic_type_pairs_with_bool>(),
+                     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Matrix3d>>(),
+                     std::tuple<std::tuple<Eigen::Matrix3d, Eigen::Vector3d>>(),
+                     std::tuple<std::tuple<double, Eigen::Vector3d>>(),
+                     std::tuple<std::tuple<float, Eigen::Vector3d>>(),
+                     std::tuple<std::tuple<int64_t, Eigen::Vector3d>>(),
+                     std::tuple<std::tuple<int32_t, Eigen::Vector3d>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, double>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, float>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
 };
 
 struct divide_types_t {
   constexpr void operator()() const noexcept;
-  using types = arithmetic_type_pairs;
+  using types = decltype(
+      std::tuple_cat(std::declval<arithmetic_type_pairs>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, double>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, float>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
+                     std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
 };
 
 constexpr auto plus =
@@ -103,16 +116,21 @@ constexpr auto plus =
 constexpr auto minus = overloaded{
     minus_types_t{}, [](const auto a, const auto b) { return a - b; }};
 constexpr auto times = overloaded{
-    times_types_t{}, [](const auto a, const auto b) { return a * b; }};
-constexpr auto divide =
-    overloaded{divide_types_t{}, [](const auto a, const auto b) {
-                 // Integer division is truediv, as in Python 3 and numpy
-                 if constexpr (std::is_integral_v<decltype(a)> &&
-                               std::is_integral_v<decltype(b)>)
-                   return static_cast<double>(a) / b;
-                 else
-                   return a / b;
-               }};
+    times_types_t{},
+    transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
+    [](const auto a, const auto b) { return a * b; }};
+
+constexpr auto divide = overloaded{
+    divide_types_t{},
+    transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
+    [](const auto a, const auto b) {
+      // Integer division is truediv, as in Python 3 and numpy
+      if constexpr (std::is_integral_v<decltype(a)> &&
+                    std::is_integral_v<decltype(b)>)
+        return static_cast<double>(a) / b;
+      else
+        return a / b;
+    }};
 
 // mod defined as in Python
 constexpr auto mod = overloaded{
