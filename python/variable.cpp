@@ -9,17 +9,14 @@
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
-#include "scipp/core/tag_util.h"
+#include "scipp/core/time_point.h"
 
-#include "scipp/variable/comparison.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/rebin.h"
 #include "scipp/variable/transform.h"
-#include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 
 #include "scipp/dataset/dataset.h"
-#include "scipp/dataset/sort.h"
 #include "scipp/dataset/util.h"
 
 #include "bind_data_access.h"
@@ -29,9 +26,9 @@
 #include "dtype.h"
 #include "make_variable.h"
 #include "numpy.h"
-#include "py_object.h"
 #include "pybind11.h"
 #include "rename.h"
+#include "unit.h"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -79,6 +76,9 @@ void bind_init_0D_native_python_types(py::class_<Variable> &c) {
 void bind_init_0D_numpy_types(py::class_<Variable> &c) {
   c.def(py::init([](py::buffer &b, const std::optional<py::buffer> &v,
                     const units::Unit &unit, py::object &dtype) {
+          static auto np_datetime64_type =
+              py::module::import("numpy").attr("datetime64").get_type();
+
           py::buffer_info info = b.request();
           if (info.ndim == 0) {
             auto arr = py::array(b);
@@ -90,20 +90,23 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
                 b.cast<Eigen::Vector3d>(),
                 v ? std::optional(v->cast<Eigen::Vector3d>()) : std::nullopt,
                 unit);
-          } else if (info.ndim == 1 &&
-                     scipp_dtype(dtype) ==
-                         core::dtype<scipp::core::time_point>) {
-            return do_init_0D<scipp::core::time_point>(
-                b.cast<scipp::core::time_point>(),
-                v ? std::optional(v->cast<scipp::core::time_point>())
-                  : std::nullopt,
-                unit);
           } else if (info.ndim == 2 &&
                      scipp_dtype(dtype) == core::dtype<Eigen::Matrix3d>) {
             return do_init_0D<Eigen::Matrix3d>(
                 b.cast<Eigen::Matrix3d>(),
                 v ? std::optional(v->cast<Eigen::Matrix3d>()) : std::nullopt,
                 unit);
+          } else if ((info.ndim == 1) &&
+                     py::isinstance(b.get_type(), np_datetime64_type)) {
+            // TODO allow construction from int
+            if (v.has_value()) {
+              throw except::VariancesError("datetimes cannot have variances.");
+            }
+            const auto [actual_unit, value_factor] =
+                get_time_unit(b, dtype, unit);
+            return do_init_0D<core::time_point>(
+                make_time_point(b, value_factor), std::nullopt, actual_unit);
+
           } else {
             throw scipp::except::VariableError(
                 "Wrong overload for making 0D variable.");
@@ -156,7 +159,6 @@ of variances.)");
   bind_init_0D<DataArray>(variable);
   bind_init_0D<Dataset>(variable);
   bind_init_0D<std::string>(variable);
-  bind_init_0D<scipp::core::time_point>(variable);
   bind_init_0D<Eigen::Vector3d>(variable);
   bind_init_0D<Eigen::Matrix3d>(variable);
   variable

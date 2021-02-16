@@ -10,13 +10,17 @@
 
 namespace scipp::units {
 template <typename T>
-std::enable_if_t<std::is_arithmetic_v<T>, Variable>
+std::enable_if_t<std::is_arithmetic_v<T> ||
+                     std::is_same_v<T, scipp::core::time_point>,
+                 Variable>
 operator*(T v, const units::Unit &unit) {
   return makeVariable<T>(units::Unit{unit}, Values{v});
 }
 
 template <typename T>
-std::enable_if_t<std::is_arithmetic_v<T>, Variable>
+std::enable_if_t<std::is_arithmetic_v<T> ||
+                     std::is_same_v<T, scipp::core::time_point>,
+                 Variable>
 operator/(T v, const units::Unit &unit) {
   return makeVariable<T>(units::one / unit, Values{v});
 }
