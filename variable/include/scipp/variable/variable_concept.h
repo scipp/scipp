@@ -36,12 +36,10 @@ public:
 ///
 /// This is the most generic representation for a multi-dimensional array of
 /// data. More operations are supportd by the typed DataModel.
-class SCIPP_VARIABLE_EXPORT VariableConcept {
+class VariableConcept {
 public:
-  VariableConcept(const Dimensions &dimensions);
-  VariableConcept(const VariableConcept &) = delete;            // for MSVC
-  VariableConcept &operator=(const VariableConcept &) = delete; // for MSVC
-  virtual ~VariableConcept() = default;
+  SCIPP_VARIABLE_EXPORT VariableConcept(const Dimensions &dimensions);
+  SCIPP_VARIABLE_EXPORT virtual ~VariableConcept() = default;
 
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle
@@ -50,7 +48,7 @@ public:
   makeDefaultFromParent(const VariableConstView &shape) const = 0;
 
   virtual DType dtype() const noexcept = 0;
-  const Dimensions &dims() const { return m_dimensions; }
+  SCIPP_VARIABLE_EXPORT const Dimensions &dims() const { return m_dimensions; }
 
   virtual bool hasVariances() const noexcept = 0;
   virtual void setVariances(Variable &&variances) = 0;
