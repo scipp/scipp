@@ -65,6 +65,7 @@ class SciPlot:
         self.dim_to_shape = {}
         self.coord_shapes = {}
         self.dim_label_map = {}
+        self.position_dims = None
 
         self.name = list(scipp_obj_dict.keys())[0]
         self._process_axes_dimensions(scipp_obj_dict[self.name],
@@ -216,9 +217,12 @@ class SciPlot:
         they appear in the input object.
         """
 
-        if positions and not array.meta[positions].dims:
-            raise ValueError(f"{positions} cannot be 0 dimensional"
-                             f" on input object\n\n{array}")
+        if positions:
+            if not array.meta[positions].dims:
+                raise ValueError(f"{positions} cannot be 0 dimensional"
+                                 f" on input object\n\n{array}")
+            else:
+                self.position_dims = array.meta[positions].dims
 
         array_dims = array.dims
         self.ndim = len(array_dims)
@@ -229,9 +233,9 @@ class SciPlot:
         self.axes = {}
         for i, dim in enumerate(array_dims[::-1]):
             if positions is not None:
-                if (dim == positions) or (dim
-                                          == array.meta[positions].dims[-1]):
-                    key = "x"
+                if (dim == positions) or (dim in array.meta[positions].dims):
+                    key = "xyz"[("x" in self.axes) + ("y" in self.axes) +
+                                ("z" in self.axes)]
                 else:
                     key = i - ("x" in self.axes)
             else:

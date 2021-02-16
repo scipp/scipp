@@ -391,9 +391,9 @@ TEST_F(TransformBinaryTest, events_size_fail) {
   auto a = make_bins(indicesA, Dim::Event, table);
   auto b = make_bins(indicesB, Dim::Event, table);
   ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, b, op),
-                       except::BucketError);
+                       except::BinnedDataError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
-               except::BucketError);
+               except::BinnedDataError);
 }
 
 TEST_F(TransformBinaryTest, in_place_unit_change) {
@@ -535,13 +535,13 @@ TEST_F(TransformTest_events_binary_values_variances_size_fail, baseline) {
 TEST_F(TransformTest_events_binary_values_variances_size_fail, a_size_bad) {
   a = b;
   ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, val_var, op),
-                       except::BucketError);
+                       except::BinnedDataError);
   ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, val, op),
-                       except::BucketError);
+                       except::BinnedDataError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
-               except::BucketError);
+               except::BinnedDataError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
-               except::BucketError);
+               except::BinnedDataError);
 }
 
 class TransformBucketsBinaryTest : public TransformBinaryTest {
@@ -712,7 +712,7 @@ protected:
 TEST_F(TransformInPlaceBucketsDryRunTest, events_length_fail) {
   const auto original(a);
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               except::BucketError);
+               except::BinnedDataError);
   EXPECT_EQ(a, original);
 }
 

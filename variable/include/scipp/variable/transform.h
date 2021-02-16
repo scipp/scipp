@@ -32,6 +32,7 @@
 
 #include <algorithm>
 #include <cassert>
+#include <string_view>
 
 #include "scipp/common/overloaded.h"
 
@@ -615,18 +616,21 @@ template <bool dry_run> struct in_place {
   }
 
   template <class... Ts, class Op, class Var, class... Other>
-  static void transform_data(std::tuple<Ts...> &&, Op op, Var &&var,
+  static void transform_data(std::tuple<Ts...> &&, Op op,
+                             const std::string_view &name, Var &&var,
                              Other &&... other) {
     using namespace detail;
     try {
       visit<Ts...>::apply(makeTransformInPlace(op), var, other...);
     } catch (const std::bad_variant_access &) {
-      throw except::TypeError("Cannot apply operation to item dtypes ", var,
-                              other...);
+      throw except::TypeError("Cannot apply " + std::string(name) +
+                                  " to item dtypes ",
+                              var, other...);
     }
   }
   template <class... Ts, class Op, class Var, class... Other>
-  static void transform(Op op, Var &&var, const Other &... other) {
+  static void transform(Op op, const std::string_view &name, Var &&var,
+                        const Other &... other) {
     using namespace detail;
     (scipp::expect::contains(var.dims(), other.dims()), ...);
     auto unit = variableFactory().elem_unit(var);
@@ -634,7 +638,7 @@ template <bool dry_run> struct in_place {
     // Stop early in bad cases of changing units (if `var` is a slice):
     variableFactory().expect_can_set_elem_unit(var, unit);
     // Wrapped implementation to convert multiple tuples into a parameter pack.
-    transform_data(type_tuples<Ts...>(op), op, std::forward<Var>(var),
+    transform_data(type_tuples<Ts...>(op), op, name, std::forward<Var>(var),
                    other...);
     if constexpr (dry_run)
       return;
@@ -649,8 +653,9 @@ template <bool dry_run> struct in_place {
 /// equivalent to std::transform with a single input range and an output range
 /// identical to the input range, but avoids potentially costly element copies.
 template <class... Ts, class Var, class Op>
-void transform_in_place(Var &&var, Op op) {
-  in_place<false>::transform<Ts...>(op, std::forward<Var>(var));
+void transform_in_place(Var &&var, Op op,
+                        const std::string_view &name = "operation") {
+  in_place<false>::transform<Ts...>(op, name, std::forward<Var>(var));
 }
 
 /// Transform the data elements of a variable in-place.
@@ -659,25 +664,29 @@ void transform_in_place(Var &&var, Op op) {
 /// output range identical to the secound input range, but avoids potentially
 /// costly element copies.
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstView &other, Op op) {
-  in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), other);
+void transform_in_place(Var &&var, const VariableConstView &other, Op op,
+                        const std::string_view &name = "operation") {
+  in_place<false>::transform<TypePairs...>(op, name, std::forward<Var>(var),
+                                           other);
 }
 
 /// Transform the data elements of a variable in-place.
 template <class... TypePairs, class Var, class Op>
 void transform_in_place(Var &&var, const VariableConstView &var1,
-                        const VariableConstView &var2, Op op) {
-  in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), var1,
-                                           var2);
+                        const VariableConstView &var2, Op op,
+                        const std::string_view &name = "operation") {
+  in_place<false>::transform<TypePairs...>(op, name, std::forward<Var>(var),
+                                           var1, var2);
 }
 
 /// Transform the data elements of a variable in-place.
 template <class... TypePairs, class Var, class Op>
 void transform_in_place(Var &&var, const VariableConstView &var1,
                         const VariableConstView &var2,
-                        const VariableConstView &var3, Op op) {
-  in_place<false>::transform<TypePairs...>(op, std::forward<Var>(var), var1,
-                                           var2, var3);
+                        const VariableConstView &var3, Op op,
+                        const std::string_view &name = "operation") {
+  in_place<false>::transform<TypePairs...>(op, name, std::forward<Var>(var),
+                                           var1, var2, var3);
 }
 
 /// Accumulate data elements of a variable in-place.
@@ -692,52 +701,60 @@ void transform_in_place(Var &&var, const VariableConstView &var1,
 /// the unit, since it would be hard to track, e.g., in multiplication
 /// operations.
 template <class... TypePairs, class Var, class Other, class Op>
-void accumulate_in_place(Var &&var, Other &&other, Op op) {
+void accumulate_in_place(Var &&var, Other &&other, Op op,
+                         const std::string_view &name = "operation") {
   scipp::expect::contains(other.dims(), var.dims());
   // Wrapped implementation to convert multiple tuples into a parameter pack.
-  in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
+  in_place<false>::transform_data(type_tuples<TypePairs...>(op), op, name,
                                   std::forward<Var>(var), other);
 }
 
 template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const VariableConstView &var1,
-                         const VariableConstView &var2, Op op) {
+                         const VariableConstView &var2, Op op,
+                         const std::string_view &name = "operation") {
   scipp::expect::contains(var1.dims(), var.dims());
   scipp::expect::contains(var2.dims(), var.dims());
-  in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
+  in_place<false>::transform_data(type_tuples<TypePairs...>(op), op, name,
                                   std::forward<Var>(var), var1, var2);
 }
 
 template <class... TypePairs, class Var, class Op>
 void accumulate_in_place(Var &&var, const VariableView &var1,
                          const VariableConstView &var2,
-                         const VariableConstView &var3, Op op) {
+                         const VariableConstView &var3, Op op,
+                         const std::string_view &name = "operation") {
   scipp::expect::contains(var1.dims(), var.dims());
   scipp::expect::contains(var2.dims(), var.dims());
   scipp::expect::contains(var3.dims(), var.dims());
-  in_place<false>::transform_data(type_tuples<TypePairs...>(op), op,
+  in_place<false>::transform_data(type_tuples<TypePairs...>(op), op, name,
                                   std::forward<Var>(var), var1, var2, var3);
 }
 
 namespace dry_run {
 template <class... Ts, class Var, class Op>
-void transform_in_place(Var &&var, Op op) {
-  in_place<true>::transform<Ts...>(op, std::forward<Var>(var));
+void transform_in_place(Var &&var, Op op,
+                        const std::string_view &name = "operation") {
+  in_place<true>::transform<Ts...>(op, name, std::forward<Var>(var));
 }
 template <class... TypePairs, class Var, class Op>
-void transform_in_place(Var &&var, const VariableConstView &other, Op op) {
-  in_place<true>::transform<TypePairs...>(op, std::forward<Var>(var), other);
+void transform_in_place(Var &&var, const VariableConstView &other, Op op,
+                        const std::string_view &name = "operation") {
+  in_place<true>::transform<TypePairs...>(op, name, std::forward<Var>(var),
+                                          other);
 }
 } // namespace dry_run
 
 namespace detail {
 template <class... Ts, class Op, class... Vars>
-Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
+Variable transform(std::tuple<Ts...> &&, Op op, const std::string_view &name,
+                   const Vars &... vars) {
   using namespace detail;
   try {
     return visit<Ts...>::apply(Transform{wrap_eigen{op}}, vars...);
   } catch (const std::bad_variant_access &) {
-    throw except::TypeError("Cannot apply operation to item dtypes ", vars...);
+    throw except::TypeError(
+        "Cannot apply " + std::string(name) + " to item dtypes ", vars...);
   }
 }
 } // namespace detail
@@ -748,8 +765,9 @@ Variable transform(std::tuple<Ts...> &&, Op op, const Vars &... vars) {
 /// avoids the need to manually create a new variable for the output and the
 /// need for, e.g., std::back_inserter.
 template <class... Ts, class Op>
-[[nodiscard]] Variable transform(const VariableConstView &var, Op op) {
-  return detail::transform(type_tuples<Ts...>(op), op, var);
+[[nodiscard]] Variable transform(const VariableConstView &var, Op op,
+                                 const std::string_view &name = "operation") {
+  return detail::transform(type_tuples<Ts...>(op), op, name, var);
 }
 
 /// Transform the data elements of two variables and return a new Variable.
@@ -759,24 +777,28 @@ template <class... Ts, class Op>
 /// need for, e.g., std::back_inserter.
 template <class... Ts, class Op>
 [[nodiscard]] Variable transform(const VariableConstView &var1,
-                                 const VariableConstView &var2, Op op) {
-  return detail::transform(type_tuples<Ts...>(op), op, var1, var2);
+                                 const VariableConstView &var2, Op op,
+                                 const std::string_view &name = "operation") {
+  return detail::transform(type_tuples<Ts...>(op), op, name, var1, var2);
 }
 
 /// Transform the data elements of three variables and return a new Variable.
 template <class... Ts, class Op>
 [[nodiscard]] Variable transform(const VariableConstView &var1,
                                  const VariableConstView &var2,
-                                 const VariableConstView &var3, Op op) {
-  return detail::transform(type_tuples<Ts...>(op), op, var1, var2, var3);
+                                 const VariableConstView &var3, Op op,
+                                 const std::string_view &name = "operation") {
+  return detail::transform(type_tuples<Ts...>(op), op, name, var1, var2, var3);
 }
 
 /// Transform the data elements of four variables and return a new Variable.
 template <class... Ts, class Op>
 [[nodiscard]] Variable
 transform(const VariableConstView &var1, const VariableConstView &var2,
-          const VariableConstView &var3, const VariableConstView &var4, Op op) {
-  return detail::transform(type_tuples<Ts...>(op), op, var1, var2, var3, var4);
+          const VariableConstView &var3, const VariableConstView &var4, Op op,
+          const std::string_view &name = "operation") {
+  return detail::transform(type_tuples<Ts...>(op), op, name, var1, var2, var3,
+                           var4);
 }
 
 } // namespace scipp::variable

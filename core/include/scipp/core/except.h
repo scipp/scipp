@@ -67,7 +67,7 @@ struct SCIPP_CORE_EXPORT EventsDimensionError : public DimensionError {
       : DimensionError("Unsupported operation for events dimensions.") {}
 };
 
-struct SCIPP_CORE_EXPORT BucketError : public std::runtime_error {
+struct SCIPP_CORE_EXPORT BinnedDataError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
@@ -88,18 +88,6 @@ struct SCIPP_CORE_EXPORT BinEdgeError : public std::runtime_error {
 };
 
 struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
-
-struct SCIPP_CORE_EXPORT UnalignedError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
-
-struct SCIPP_CORE_EXPORT RealignedDataError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
-
-struct SCIPP_CORE_EXPORT EventDataError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
