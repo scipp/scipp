@@ -52,9 +52,10 @@ if ipy is not None:
         # call to plot() would lead to devicePixelRatio being None.
         ipy.run_cell_magic(
             "js", "", "var kernel = IPython.notebook.kernel; "
+            "if (kernel) {"
             "var value = window.devicePixelRatio; "
             "var command = 'devicePixelRatio = ' + value; "
-            "kernel.execute(command);")
+            "kernel.execute(command);}")
 
 # Note: due to some strange behaviour when importing matplotlib and pyplot in
 # different order, we need to import pyplot after switching to the ipympl
