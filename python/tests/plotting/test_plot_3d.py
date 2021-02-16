@@ -6,7 +6,7 @@
 import numpy as np
 import scipp as sc
 from plot_helper import make_dense_dataset
-from scipp.plot import plot
+from scipp import plot
 
 
 def make_data_with_position_vectors():

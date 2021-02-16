@@ -4,7 +4,7 @@
 # @author Owen Arnold
 
 import scipp as sc
-from scipp.plot import plot
+from scipp import plot
 import pytest
 
 
