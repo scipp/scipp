@@ -17,9 +17,7 @@ void init_dtype(py::module &m) {
       .def("__repr__", [](const DType self) { return to_string(self); });
   auto dtype = m.def_submodule("dtype");
   for (const auto &[key, name] : core::dtypeNameRegistry()) {
-    if (name != "datetime64") {
-      dtype.attr(name.c_str()) = key;
-    }
+    dtype.attr(name.c_str()) = key;
   }
 }
 
