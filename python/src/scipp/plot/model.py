@@ -95,7 +95,7 @@ class PlotModel:
                                   dim_label_map):
         """
         Get dimensions from requested axis.
-        Also retun axes tick formatters and locators.
+        Also return axes tick formatters and locators.
         """
 
         # Create some default axis tick formatter, depending on linear or log
@@ -105,6 +105,7 @@ class PlotModel:
         coord = None
         contains_strings = False
         contains_vectors = False
+        contains_datetime = False
 
         has_no_coord = dim not in data_array.meta
         if not has_no_coord:
@@ -112,9 +113,11 @@ class PlotModel:
                 contains_vectors = True
             elif data_array.meta[dim].dtype == sc.dtype.string:
                 contains_strings = True
+            elif data_array.meta[dim].dtype == sc.dtype.datetime64:
+                contains_datetime = True
 
         # Get the coordinate from the DataArray or generate a fake one
-        if has_no_coord or contains_vectors or contains_strings:
+        if has_no_coord or contains_vectors or contains_strings or contains_datetime:
             coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
             if not has_no_coord:
                 coord.unit = data_array.meta[dim].unit
@@ -126,7 +129,6 @@ class PlotModel:
 
         # Set up tick formatters
         if dim in dim_label_map:
-
             if data_array.meta[
                     dim_label_map[dim]].dtype == sc.dtype.vector_3_float64:
                 # If the non-dimension coordinate contains vectors
@@ -137,6 +139,12 @@ class PlotModel:
             elif data_array.meta[dim_label_map[dim]].dtype == sc.dtype.string:
                 # If the non-dimension coordinate contains strings
                 form = self._string_tick_formatter(
+                    data_array.meta[dim_label_map[dim]].values,
+                    dim_to_shape[dim])
+                formatter.update({"custom_locator": True})
+            elif data_array.meta[dim_label_map[dim]].dtype == sc.dtype.datetime64:
+                # If the non-dimension coordinate contains datetimes
+                form = self._datetime_tick_formatter(
                     data_array.meta[dim_label_map[dim]].values,
                     dim_to_shape[dim])
                 formatter.update({"custom_locator": True})
@@ -177,6 +185,14 @@ class PlotModel:
                     "log": form,
                     "custom_locator": True
                 })
+            elif contains_datetime:
+                form = self._datetime_tick_formatter(data_array.meta[dim].values,
+                                                     dim_to_shape[dim])
+                formatter.update({
+                    "linear": form,
+                    "log": form,
+                    "custom_locator": True
+                })
 
             coord_label = name_with_unit(var=coord)
             coord_unit = name_with_unit(var=coord, name="")
@@ -197,6 +213,13 @@ class PlotModel:
         Format string ticks: find closest string in coordinate array.
         """
         return lambda val, pos: array_values[int(val)] if (int(
+            val) >= 0 and int(val) < size) else ""
+
+    def _datetime_tick_formatter(self, array_values, size):
+        """
+        Format datetime ticks: find closest string in coordinate array.
+        """
+        return lambda val, pos: str(array_values[int(val)]) if (int(
             val) >= 0 and int(val) < size) else ""
 
     def _make_masks(self, array, mask_info, transpose=False):
