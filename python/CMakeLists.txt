@@ -22,12 +22,14 @@ pybind11_add_module(
   groupby.cpp
   histogram.cpp
   neutron.cpp
+  numpy.cpp
   operations.cpp
   py_object.cpp
   scipp.cpp
   reduction.cpp
   trigonometry.cpp
   unary.cpp
+  unit.cpp
   units_neutron.cpp
   variable.cpp
   variable_instantiate_py_object.cpp
