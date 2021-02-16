@@ -39,6 +39,8 @@ public:
 class SCIPP_VARIABLE_EXPORT VariableConcept {
 public:
   VariableConcept(const Dimensions &dimensions);
+  VariableConcept(const VariableConcept &) = delete;            // for MSVC
+  VariableConcept &operator=(const VariableConcept &) = delete; // for MSVC
   virtual ~VariableConcept() = default;
 
   virtual VariableConceptHandle clone() const = 0;
