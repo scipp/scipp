@@ -49,7 +49,7 @@ template <class T>
 auto cast_to_array_like(const py::object &obj, const units::Unit unit) {
   using TM = ElementTypeMap<T>;
   using PyType = typename TM::PyType;
-    TM::check_assignable(obj, unit);
+  TM::check_assignable(obj, unit);
   if constexpr (std::is_same_v<T, core::time_point>) {
     // pbj.cast<py::array_t<PyType> does not always work because
     // numpy.datetime64.__int__ delegates to datetime.datetime if the unit is
