@@ -69,7 +69,8 @@ constexpr auto is_sorted_common = overloaded{
     core::element::arg_list<
         std::tuple<bool, double, double>, std::tuple<bool, float, float>,
         std::tuple<bool, int64_t, int64_t>, std::tuple<bool, int32_t, int32_t>,
-        std::tuple<bool, std::string, std::string>>,
+        std::tuple<bool, std::string, std::string>,
+        std::tuple<bool, time_point, time_point>>,
     transform_flags::expect_no_variance_arg<1>,
     [](units::Unit &out, const units::Unit &left, const units::Unit &right) {
       core::expect::equals(left, right);
