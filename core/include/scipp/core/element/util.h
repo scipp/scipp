@@ -9,6 +9,7 @@
 #include "scipp/common/span.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
+#include "scipp/core/time_point.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/except.h"
@@ -44,14 +45,14 @@ template <class T> void zero(const core::ValueAndVariance<span<T>> &data) {
   zero(data.variance);
 }
 
-constexpr auto values =
-    overloaded{transform_flags::no_out_variance,
-               core::element::arg_list<double, float>, [](const auto &x) {
-                 if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-                   return x.value;
-                 else
-                   return x;
-               }};
+constexpr auto values = overloaded{
+    transform_flags::no_out_variance,
+    core::element::arg_list<double, float, time_point>, [](const auto &x) {
+      if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+        return x.value;
+      else
+        return x;
+    }};
 
 constexpr auto variances = overloaded{
     transform_flags::no_out_variance, core::element::arg_list<double, float>,
