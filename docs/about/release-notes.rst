@@ -24,6 +24,8 @@ Features
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
+* The ``plot`` module has been renamed to ``plotting``, and plotting is now achieved via ``sc.plot(data)``. Wrapper functions ``superplot``, ``image``, and ``scatter3d`` have been dropped [#1696](https://github.com/scipp/scipp/pull/1696).
+
 Contributors
 ~~~~~~~~~~~~
 
