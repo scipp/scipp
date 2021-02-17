@@ -3,6 +3,7 @@
 # @author Neil Vaytet
 
 from .. import config
+from .._operations import midpoint
 from .._utils import name_with_unit
 from .._scipp import core as sc
 import numpy as np
@@ -22,7 +23,7 @@ def to_bin_centers(x, dim):
     """
     Convert array edges to centers
     """
-    return 0.5 * (x[dim, 1:] + x[dim, :-1])
+    return midpoint(x[dim, :-1], x[dim, 1:])
 
 
 def to_bin_edges(x, dim):
@@ -188,18 +189,3 @@ def fix_empty_range(lims, replacement=None):
             dx = 0.5 * abs(lims[0])
         return [lims[0] - dx, lims[1] + dx]
     return lims
-
-
-def nonemin(a, b):
-    """
-    Returns min(a, b) if neither arguments are None.
-    Otherwise return the argument that is not None.
-    :raises ValueError: If both a and b are None.
-    """
-    if a is None:
-        if b is None:
-            raise ValueError("One argument must not be None")
-        return b
-    if b is None:
-        return a
-    return min(a, b)

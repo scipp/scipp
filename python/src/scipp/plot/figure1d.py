@@ -5,6 +5,7 @@
 from .figure import PlotFigure
 from .toolbar import PlotToolbar1d
 from .tools import get_line_param
+from .._operations import midpoint
 import numpy as np
 import copy as cp
 import warnings
@@ -192,7 +193,7 @@ class PlotFigure1d(PlotFigure):
         """
         x = vals["values"]["x"]
         y = vals["values"]["y"]
-        centers = 0.5 * (x[1:] + x[:-1])
+        centers = midpoint(x[:-1], x[1:])
         if not self._xparams["hist"][name]:
             vals["values"]["x"] = centers
         else:
