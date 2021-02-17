@@ -188,3 +188,32 @@ def fix_empty_range(lims, replacement=None):
         else:
             dx = 0.5 * abs(lims[0])
     return [lims[0] - dx, lims[1] + dx]
+
+def nonemin(a, b):
+    """
+    Returns min(a, b) if neither arguments are None.
+    Otherwise return the argument that is not None.
+    :raises ValueError: If both a and b are None.
+    """
+    if a is None:
+        if b is None:
+            raise ValueError("One argument must not be None")
+        return b
+    if b is None:
+        return a
+    return min(a, b)
+
+
+def nonemax(a, b):
+    """
+    Return max(a, b) if neither arguments are None.
+    Otherwise return the argument that is not None.
+    :raises ValueError: If both a and b are None.
+    """
+    if a is None:
+        if b is None:
+            raise ValueError("One argument must not be None")
+        return b
+    if b is None:
+        return a
+    return max(a, b)
