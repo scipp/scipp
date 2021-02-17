@@ -2,7 +2,8 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import find_limits, fix_empty_range, nonemin, nonemax
+from .tools import find_limits, fix_empty_range
+from .._reduction import nonemax, nonemin
 from .._utils import value_to_string
 from .._scipp import core as sc
 import numpy as np
