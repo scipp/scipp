@@ -201,7 +201,8 @@ Variable Variable::construct(const DType &type, Args &&... args) {
   for (auto &var : vars)
     if (var)
       return std::move(var);
-  throw except::TypeError("Unsupported dtype.");
+  throw except::TypeError("Unsupported dtype for constructing a Variable: " +
+                          to_string(type));
 }
 
 template <class... Ts>
