@@ -2,7 +2,7 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
-from .tools import find_limits, fix_empty_range
+from .tools import find_limits, fix_empty_range, nonemin, nonemax
 from .._utils import value_to_string
 from .._scipp import core as sc
 import numpy as np
@@ -474,12 +474,12 @@ class PlotController:
         axparams = {}
         for ax in self._get_xyz_axes():
             dim = self.axes[ax]
-            xmin = np.Inf
-            xmax = np.NINF
+            xmin = None
+            xmax = None
             for name in self.xlims:
                 xlims = self.xlims[name][dim][self.scale[dim]].values
-                xmin = min(xmin, xlims[0])
-                xmax = max(xmax, xlims[1])
+                xmin = nonemin(xmin, xlims[0])
+                xmax = nonemax(xmax, xlims[1])
             axparams[ax] = {
                 "lims": np.array([xmin, xmax]),
                 "scale": self.scale[dim],
