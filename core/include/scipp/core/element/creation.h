@@ -17,7 +17,7 @@ namespace scipp::core::element {
 
 constexpr auto special_like =
     overloaded{arg_list<double, float, int64_t, int32_t, bool, SubbinSizes,
-                        Eigen::Vector3d>,
+                        time_point, Eigen::Vector3d>,
                [](const units::Unit &u) { return u; }};
 
 constexpr auto zeros_not_bool_like =
@@ -35,6 +35,9 @@ constexpr auto values_like =
 
 template <class T> struct underlying { using type = T; };
 template <class T> struct underlying<ValueAndVariance<T>> { using type = T; };
+template <> struct underlying<time_point> {
+  using type = decltype(std::declval<time_point>().time_since_epoch());
+};
 template <class T> using underlying_t = typename underlying<T>::type;
 
 constexpr auto numeric_limits_max_like =
