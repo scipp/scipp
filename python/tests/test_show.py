@@ -3,7 +3,6 @@
 # @file
 # @author Simon Heybrock
 import scipp as sc
-from scipp import Dim
 import pytest
 
 
@@ -14,7 +13,7 @@ def test_large_variable():
 
 
 def test_too_many_variable_dimensions():
-    var = sc.Variable(['x', 'y', 'z', Dim.Time], shape=(1, 1, 1, 1))
+    var = sc.Variable(['x', 'y', 'z', 'time'], shape=(1, 1, 1, 1))
     with pytest.raises(RuntimeError):
         sc.make_svg(var)
 
@@ -22,7 +21,7 @@ def test_too_many_variable_dimensions():
 def test_too_many_dataset_dimensions():
     d = sc.Dataset({
         'xy': sc.Variable(['x', 'y'], shape=(1, 1)),
-        'zt': sc.Variable(['z', Dim.Time], shape=(1, 1))
+        'zt': sc.Variable(['z', 'time'], shape=(1, 1))
     })
     with pytest.raises(RuntimeError):
         sc.make_svg(d)

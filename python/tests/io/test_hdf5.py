@@ -30,6 +30,10 @@ eigen_1d = sc.Variable(dims=['x'],
                        dtype=sc.dtype.vector_3_float64,
                        values=np.random.rand(4, 3))
 
+eigen_2d = sc.Variable(dims=['x'],
+                       dtype=sc.dtype.matrix_3_float64,
+                       values=np.random.rand(4, 3, 3))
+
 array_1d = sc.DataArray(data=x,
                         coords={
                             'x': x,
@@ -70,6 +74,8 @@ def test_variable_2d():
 def test_variable_eigen():
     check_roundtrip(eigen_1d)
     check_roundtrip(eigen_1d['x', 0])
+    check_roundtrip(eigen_2d)
+    check_roundtrip(eigen_2d['x', 0])
 
 
 def test_variable_binned_variable():
@@ -112,7 +118,10 @@ def test_data_array_1d_no_coords():
 
 
 def test_data_array_all_units_supported():
-    for unit in sc.units.supported_units():
+    for unit in [
+            sc.units.one, sc.units.us, sc.units.angstrom, sc.units.counts,
+            sc.units.counts / sc.units.us, sc.units.meV
+    ]:
         a = sc.DataArray(data=1.0 * unit)
         check_roundtrip(a)
 

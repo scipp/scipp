@@ -146,7 +146,7 @@ TEST_P(BinTest, group) {
 
 TEST_P(BinTest, no_edges_or_groups) {
   const auto table = GetParam();
-  EXPECT_THROW(bin(table, {}), except::BucketError);
+  EXPECT_THROW(bin(table, {}), except::BinnedDataError);
 }
 
 TEST_P(BinTest, edges_too_short) {

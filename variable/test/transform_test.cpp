@@ -391,9 +391,9 @@ TEST_F(TransformBinaryTest, events_size_fail) {
   auto a = make_bins(indicesA, Dim::Event, table);
   auto b = make_bins(indicesB, Dim::Event, table);
   ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, b, op),
-                       except::BucketError);
+                       except::BinnedDataError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, b, op_in_place),
-               except::BucketError);
+               except::BinnedDataError);
 }
 
 TEST_F(TransformBinaryTest, in_place_unit_change) {
@@ -535,13 +535,13 @@ TEST_F(TransformTest_events_binary_values_variances_size_fail, baseline) {
 TEST_F(TransformTest_events_binary_values_variances_size_fail, a_size_bad) {
   a = b;
   ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, val_var, op),
-                       except::BucketError);
+                       except::BinnedDataError);
   ASSERT_THROW_DISCARD(transform<pair_self_t<double>>(a, val, op),
-                       except::BucketError);
+                       except::BinnedDataError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val_var, op_in_place),
-               except::BucketError);
+               except::BinnedDataError);
   ASSERT_THROW(transform_in_place<pair_self_t<double>>(a, val, op_in_place),
-               except::BucketError);
+               except::BinnedDataError);
 }
 
 class TransformBucketsBinaryTest : public TransformBinaryTest {
@@ -646,14 +646,15 @@ protected:
 // without dry-run, transform_in_place should not touch the data if there is a
 // failure. Maybe this should be a parametrized test?
 TEST_F(TransformInPlaceDryRunTest, unit_fail) {
-  auto a =
-      makeVariable<double>(Dims(), Shape(), units::Unit(units::m * units::m));
+  auto a = makeVariable<double>(Dims(), Shape(), units::m);
   const auto original(a);
 
-  EXPECT_THROW(dry_run::transform_in_place<double>(a, unary),
-               std::runtime_error);
+  EXPECT_THROW(
+      dry_run::transform_in_place<double>(a, [](auto &x) { x += x * x; }),
+      std::runtime_error);
   EXPECT_EQ(a, original);
-  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, a, binary),
+  EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(
+                   a, a * a, [](auto &x, const auto &y) { x += y; }),
                std::runtime_error);
   EXPECT_EQ(a, original);
 }
@@ -711,7 +712,7 @@ protected:
 TEST_F(TransformInPlaceBucketsDryRunTest, events_length_fail) {
   const auto original(a);
   EXPECT_THROW(dry_run::transform_in_place<pair_self_t<double>>(a, b, binary),
-               except::BucketError);
+               except::BinnedDataError);
   EXPECT_EQ(a, original);
 }
 
@@ -907,6 +908,20 @@ TEST(TransformFlagsTest, expect_all_or_none_have_variance_in_place) {
       var_no_variance, var_no_variance, op_has_flags));
   EXPECT_NO_THROW(transform_in_place<std::tuple<double>>(
       var_with_variance, var_with_variance, op_has_flags));
+}
+
+TEST(TransformFlagsTest, expect_no_in_variance_if_out_cannot_have_variance) {
+  auto var_with_variance = makeVariable<double>(Values{1}, Variances{1});
+  auto var_no_variance = makeVariable<double>(Values{1});
+  auto unary_op = [](const auto) { return false; };
+  auto op_has_flags = scipp::overloaded{
+      element::arg_list<double>,
+      transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
+      unary_op, [](const units::Unit &) { return units::one; }};
+  Variable out;
+  EXPECT_THROW(out = transform(var_with_variance, op_has_flags),
+               except::VariancesError);
+  EXPECT_NO_THROW(out = transform(var_no_variance, op_has_flags));
 }
 
 TEST(TransformEigenTest, is_eigen_type_test) {

@@ -43,6 +43,13 @@ def test_create_with_numpy_dtype():
     assert var.dtype == sc.dtype.float32
 
 
+def test_create_with_unit_as_string():
+    var = sc.Variable(dims=['x'], unit='meV', values=np.arange(2))
+    assert var.unit == sc.units.meV
+    var.unit = 'm/s'
+    assert var.unit == sc.units.m / sc.units.s
+
+
 def test_create_with_variances():
     assert sc.Variable(dims=['x'], shape=[2]).variances is None
     assert sc.Variable(dims=['x'], shape=[2],
@@ -154,16 +161,6 @@ def test_create_1D_vector_3_float64():
     assert var.dims == ['x']
     assert var.dtype == sc.dtype.vector_3_float64
     assert var.unit == sc.units.m
-
-
-def test_create_datetime64():
-    var = sc.Variable(dims=['x'],
-                      unit=sc.units.ns,
-                      shape=[2],
-                      dtype=sc.dtype.datetime64)
-    assert var.dims == ['x']
-    assert var.dtype == sc.dtype.datetime64
-    assert var.unit == sc.units.ns
 
 
 def test_create_2D_inner_size_3():

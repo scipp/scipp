@@ -29,9 +29,9 @@ static constexpr auto maybe_subspan = [](VariableConstView &var,
 } // namespace transform_subspan_detail
 
 template <class... Types, class Op, class... Var>
-[[nodiscard]] Variable transform_subspan_impl(const DType type, const Dim dim,
-                                              const scipp::index size, Op op,
-                                              Var... var) {
+[[nodiscard]] Variable
+transform_subspan_impl(const DType type, const Dim dim, const scipp::index size,
+                       Op op, const std::string_view &name, Var... var) {
   using namespace transform_subspan_detail;
 
   auto dims =
@@ -47,7 +47,7 @@ template <class... Types, class Op, class... Var>
 
   const auto keep_subspan_vars_alive = std::array{maybe_subspan(var, dim)...};
 
-  in_place<false>::transform_data(type_tuples<Types...>(op), op,
+  in_place<false>::transform_data(type_tuples<Types...>(op), op, name,
                                   subspan_view(out, dim), var...);
   return out;
 }
@@ -78,19 +78,21 @@ template <class... Types, class Op, class... Var>
 /// 5. Use the flag transform_flags::expect_variance_arg<0> to control whether
 ///    the output should have variances or not.
 template <class... Types, class Op>
-[[nodiscard]] Variable transform_subspan(const DType type, const Dim dim,
-                                         const scipp::index size,
-                                         const VariableConstView &var1,
-                                         const VariableConstView &var2, Op op) {
-  return transform_subspan_impl<Types...>(type, dim, size, op, var1, var2);
+[[nodiscard]] Variable
+transform_subspan(const DType type, const Dim dim, const scipp::index size,
+                  const VariableConstView &var1, const VariableConstView &var2,
+                  Op op, const std::string_view &name = "operation") {
+  return transform_subspan_impl<Types...>(type, dim, size, op, name, var1,
+                                          var2);
 }
 
 template <class... Types, class Op>
 [[nodiscard]] Variable
 transform_subspan(const DType type, const Dim dim, const scipp::index size,
                   const VariableConstView &var1, const VariableConstView &var2,
-                  const VariableConstView &var3, Op op) {
-  return transform_subspan_impl<Types...>(type, dim, size, op, var1, var2,
+                  const VariableConstView &var3, Op op,
+                  const std::string_view &name = "operation") {
+  return transform_subspan_impl<Types...>(type, dim, size, op, name, var1, var2,
                                           var3);
 }
 

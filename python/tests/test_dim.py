@@ -4,11 +4,6 @@
 from scipp import Dim
 
 
-def test_dim():
-    assert Dim.X == 'x'
-    assert Dim.X != 'y'
-
-
 def test_dim_from_string():
     a = Dim('a')
     b = Dim('b')

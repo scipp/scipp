@@ -6,9 +6,7 @@
 
 #include <tuple>
 
-#include <boost/units/systems/si/codata/electromagnetic_constants.hpp>
-#include <boost/units/systems/si/codata/neutron_constants.hpp>
-#include <boost/units/systems/si/codata/universal_constants.hpp>
+#include <units/units.hpp>
 
 #include "scipp/common/constants.h"
 
@@ -20,29 +18,27 @@
 
 namespace scipp::neutron::constants {
 
-constexpr auto tof_to_s = boost::units::quantity<boost::units::si::time>(
-                              1.0 * units::boost_units::us) /
-                          units::boost_units::us;
+constexpr auto tof_to_s =
+    1e-6 * llnl::units::precise::second /
+    (llnl::units::precise::micro * llnl::units::precise::second);
 constexpr auto J_to_meV =
-    units::boost_units::meV / boost::units::quantity<boost::units::si::energy>(
-                                  1.0 * units::boost_units::meV);
-constexpr auto m_to_angstrom = units::boost_units::angstrom /
-                               boost::units::quantity<boost::units::si::length>(
-                                   1.0 * units::boost_units::angstrom);
+    1e3 / llnl::units::constants::e.value() * llnl::units::precise::milli *
+    llnl::units::precise::energy::eV / llnl::units::precise::J;
+constexpr auto m_to_angstrom = 1e10 * llnl::units::precise::distance::angstrom /
+                               llnl::units::precise::meter;
 
 // In tof-to-energy conversions we *divide* by time-of-flight (squared), so the
 // tof_to_s factor is in the denominator.
 constexpr auto tof_to_energy_physical_constants =
-    0.5 * boost::units::si::constants::codata::m_n * J_to_meV /
-    (tof_to_s * tof_to_s);
+    0.5 * llnl::units::constants::mn * J_to_meV / (tof_to_s * tof_to_s);
 
 constexpr auto tof_to_dspacing_physical_constants =
-    2.0 * boost::units::si::constants::codata::m_n /
-    boost::units::si::constants::codata::h / (m_to_angstrom * tof_to_s);
+    2.0 * llnl::units::constants::mn / llnl::units::constants::h /
+    (m_to_angstrom * tof_to_s);
 
 constexpr auto tof_to_wavelength_physical_constants =
-    tof_to_s * m_to_angstrom * boost::units::si::constants::codata::h /
-    boost::units::si::constants::codata::m_n;
+    tof_to_s * m_to_angstrom * llnl::units::constants::h /
+    llnl::units::constants::mn;
 
 template <class T> auto tof_to_dspacing(const T &d) {
   const auto &sourcePos = source_position(d);

@@ -2,10 +2,13 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include <units/units.hpp>
+
 #include "scipp/variable/variable.h"
 
 #include "scipp/core/dtype.h"
 #include "scipp/core/except.h"
+#include "scipp/variable/arithmetic.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/variable_concept.h"
@@ -32,6 +35,9 @@ Variable::Variable(const VariableConstView &parent, VariableConceptHandle data)
     : m_unit(parent.unit()), m_object(std::move(data)) {}
 
 Variable::Variable(VariableConceptHandle data) : m_object(std::move(data)) {}
+
+Variable::Variable(const llnl::units::precise_measurement &m)
+    : Variable(m.value() * units::Unit(m.units())) {}
 
 VariableConstView::VariableConstView(const Variable &variable,
                                      const Dimensions &dims)

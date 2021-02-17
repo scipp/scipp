@@ -3,6 +3,8 @@
 #include <gtest/gtest.h>
 #include <vector>
 
+#include <units/units.hpp>
+
 #include "test_macros.h"
 
 #include "scipp/core/except.h"
@@ -27,13 +29,12 @@ TEST(Variable, construct) {
   EXPECT_EQ(data.size(), 2);
 }
 
-TEST(Variable, construct_boost_units_quantity) {
-  using boost::units::quantity;
-  EXPECT_EQ(Variable(quantity{1.2 * boost::units::si::meter}),
+TEST(Variable, construct_llnl_units_quantity) {
+  EXPECT_EQ(Variable(1.2 * llnl::units::precise::meter),
             makeVariable<double>(Values{1.2}, units::m));
-  EXPECT_EQ(Variable(quantity<boost::units::si::length, float>{
-                1.2 * boost::units::si::meter}),
-            makeVariable<float>(Values{1.2}, units::m));
+  // llnl measurement is always double
+  EXPECT_EQ(Variable(1.0f * llnl::units::precise::meter),
+            makeVariable<double>(Values{1.0}, units::m));
 }
 
 TEST(Variable, construct_fail) {

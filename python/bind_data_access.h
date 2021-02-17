@@ -12,9 +12,11 @@
 #include "scipp/dataset/except.h"
 #include "scipp/variable/variable.h"
 
+#include "dtype.h"
 #include "numpy.h"
 #include "py_object.h"
 #include "pybind11.h"
+#include "unit.h"
 
 namespace py = pybind11;
 using namespace scipp;
@@ -37,11 +39,10 @@ template <class T> void init_variances(T &obj) {
 
 /// Add element size as factor to strides.
 template <class T>
-std::vector<scipp::index> numpy_strides(const std::vector<scipp::index> &s) {
-  std::vector<scipp::index> strides(s.size());
-  scipp::index elemSize = sizeof(T);
+std::vector<ssize_t> numpy_strides(const std::vector<scipp::index> &s) {
+  std::vector<ssize_t> strides(s.size());
   for (size_t i = 0; i < strides.size(); ++i) {
-    strides[i] = elemSize * s[i];
+    strides[i] = sizeof(T) * s[i];
   }
   return strides;
 }
@@ -64,6 +65,7 @@ template <class T> struct MakePyBufferInfoT {
 
 inline py::buffer_info make_py_buffer_info(VariableView &view) {
   return core::CallDType<double, float, int64_t, int32_t,
+                         scipp::core::time_point,
                          bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
 }
 
@@ -74,18 +76,27 @@ class DataAccessHelper {
 
   template <class Getter, class T, class Var>
   static py::object as_py_array_t_impl(py::object &obj, Var &view) {
-    std::vector<scipp::index> strides;
-    if constexpr (std::is_same_v<Var, DataArray> ||
-                  std::is_same_v<Var, DataArrayView>) {
-      strides = VariableView(view.data()).strides();
-    } else {
-      strides = VariableView(view).strides();
-    }
+    const auto get_strides = [&]() {
+      if constexpr (std::is_same_v<Var, DataArray> ||
+                    std::is_same_v<Var, DataArrayView>) {
+        return numpy_strides<T>(VariableView(view.data()).strides());
+      } else {
+        return numpy_strides<T>(VariableView(view).strides());
+      }
+    };
+    const auto get_dtype = [&view]() {
+      if constexpr (std::is_same_v<T, scipp::core::time_point>) {
+        // Need a custom implementation because py::dtype::of only works with
+        // types supported by the buffer protocol.
+        return py::dtype("datetime64[" + to_string_ascii_time(view.unit()) +
+                         ']');
+      } else {
+        return py::dtype::of<T>();
+      }
+    };
     const auto &dims = view.dims();
-    using py_T = std::conditional_t<std::is_same_v<T, bool>, bool, T>;
-    return py::array_t<py_T>{
-        dims.shape(), numpy_strides<T>(strides),
-        reinterpret_cast<py_T *>(Getter::template get<T>(view).data()), obj};
+    return py::array{get_dtype(), dims.shape(), get_strides(),
+                     Getter::template get<T>(view).data(), obj};
   }
 
   struct get_values {
@@ -157,28 +168,13 @@ template <class... Ts> class as_ElementArrayViewImpl {
   }
 
   template <class View>
-  static void set(const Dimensions &dims, const View &view,
-                  const py::object &obj) {
+  static void set(const Dimensions &dims, const units::Unit unit,
+                  const View &view, const py::object &obj) {
     std::visit(
-        [&dims, &obj](const auto &view_) {
+        [&dims, &unit, &obj](const auto &view_) {
           using T =
               typename std::remove_reference_t<decltype(view_)>::value_type;
-          if constexpr (std::is_trivial_v<T>) {
-            auto &data = obj.cast<const py::array_t<T>>();
-            const auto &shape = dims.shape();
-            if (!std::equal(shape.begin(), shape.end(), data.shape(),
-                            data.shape() + data.ndim()))
-              throw except::DimensionError("The shape of the provided data "
-                                           "does not match the existing "
-                                           "object.");
-            copy_flattened<T>(data, view_);
-          } else {
-            const auto &data = obj.cast<const std::vector<T>>();
-            // TODO Related to #290, we should properly support
-            // multi-dimensional input, and ignore bad shapes.
-            core::expect::sizeMatches(view_, data);
-            std::copy(data.begin(), data.end(), view_.begin());
-          }
+          copy_array_into_view(cast_to_array_like<T>(obj, unit), view_, dims);
         },
         view);
   }
@@ -197,6 +193,10 @@ template <class... Ts> class as_ElementArrayViewImpl {
       return DataAccessHelper::as_py_array_t_impl<Getter, int32_t>(obj, view);
     if (type == dtype<bool>)
       return DataAccessHelper::as_py_array_t_impl<Getter, bool>(obj, view);
+    if (type == dtype<scipp::core::time_point>)
+      return DataAccessHelper::as_py_array_t_impl<Getter,
+                                                  scipp::core::time_point>(
+          obj, view);
     return std::visit(
         [&view, &obj](const auto &data) {
           const auto &dims = view.dims();
@@ -257,7 +257,7 @@ public:
 
   template <class Var>
   static void set_values(Var &view, const py::object &obj) {
-    set(view.dims(), get<get_values>(view), obj);
+    set(view.dims(), view.unit(), get<get_values>(view), obj);
   }
 
   template <class Var>
@@ -266,9 +266,60 @@ public:
       return remove_variances(view);
     if (!view.hasVariances())
       init_variances(view);
-    set(view.dims(), get<get_variances>(view), obj);
+    set(view.dims(), view.unit(), get<get_variances>(view), obj);
   }
 
+private:
+  // Helper function object to get a scalar value or variance.
+  template <class View> struct GetScalarVisitor {
+    py::object &self; // The object we're getting the value / variance from.
+    std::remove_reference_t<View> &view; // self as a view.
+
+    template <class Data> auto operator()(const Data &&data) const {
+      if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
+                                   scipp::python::PyObject>) {
+        return data[0].to_pybind();
+      } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
+        auto ret = py::cast(data[0], py::return_value_policy::move);
+        pybind11::detail::keep_alive_impl(ret, self);
+        return ret;
+      } else if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
+                                          core::time_point>) {
+        static const auto np_datetime64 =
+            py::module::import("numpy").attr("datetime64");
+        return np_datetime64(data[0].time_since_epoch(),
+                             to_string_ascii_time(view.unit()));
+      } else {
+        // Passing `obj` as parent so py::keep_alive works.
+        return py::cast(data[0], py::return_value_policy::reference_internal,
+                        self);
+      }
+    }
+  };
+
+  // Helper function object to set a scalar value or variance.
+  template <class View> struct SetScalarVisitor {
+    const py::object &rhs;               // The object we are assigning.
+    std::remove_reference_t<View> &view; // View of self.
+
+    template <class Data> auto operator()(Data &&data) const {
+      using T = typename std::decay_t<decltype(data)>::value_type;
+      if constexpr (std::is_same_v<T, scipp::python::PyObject>)
+        data[0] = rhs;
+      else if constexpr (std::is_same_v<T, scipp::core::time_point>) {
+        // TODO support int
+        if (view.unit() != parse_datetime_dtype(rhs)) {
+          // TODO implement
+          throw std::invalid_argument(
+              "Conversion of time units is not implemented.");
+        }
+        data[0] = make_time_point(rhs.template cast<py::buffer>());
+      } else
+        data[0] = rhs.cast<T>();
+    }
+  };
+
+public:
   // Return a scalar value from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object value(py::object &obj) {
@@ -276,22 +327,8 @@ public:
       return py::none();
     auto &view = obj.cast<Var &>();
     core::expect::equals(Dimensions(), view.dims());
-    return std::visit(
-        [&obj](const auto &data) {
-          if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                       scipp::python::PyObject>) {
-            return data[0].to_pybind();
-          } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
-            auto ret = py::cast(data[0], py::return_value_policy::move);
-            pybind11::detail::keep_alive_impl(ret, obj);
-            return ret;
-          } else {
-            // Passing `obj` as parent so py::keep_alive works.
-            return py::cast(data[0],
-                            py::return_value_policy::reference_internal, obj);
-          }
-        },
-        get<get_values>(view));
+    return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
+                      get<get_values>(view));
   }
   // Return a scalar variance from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
@@ -300,56 +337,28 @@ public:
       return py::none();
     auto &view = obj.cast<Var &>();
     core::expect::equals(Dimensions(), view.dims());
-    return std::visit(
-        [&obj](const auto &data) {
-          if constexpr (std::is_same_v<std::decay_t<decltype(data[0])>,
-                                       scipp::python::PyObject>) {
-            return data[0].to_pybind();
-          } else if constexpr (is_view_v<std::decay_t<decltype(data[0])>>) {
-            auto ret = py::cast(data[0], py::return_value_policy::move);
-            pybind11::detail::keep_alive_impl(ret, obj);
-            return ret;
-          } else {
-            // Passing `obj` as parent so py::keep_alive works.
-            return py::cast(data[0],
-                            py::return_value_policy::reference_internal, obj);
-          }
-        },
-        get<get_variances>(view));
+    return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
+                      get<get_variances>(view));
   }
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
-  template <class Var> static void set_value(Var &view, const py::object &o) {
+  template <class Var> static void set_value(Var &view, const py::object &obj) {
     core::expect::equals(Dimensions(), view.dims());
-    std::visit(
-        [&o](const auto &data) {
-          using T = typename std::decay_t<decltype(data)>::value_type;
-          if constexpr (std::is_same_v<T, scipp::python::PyObject>)
-            data[0] = o;
-          else
-            data[0] = o.cast<T>();
-        },
-        get<get_values>(view));
+    std::visit(SetScalarVisitor<decltype(view)>{obj, view},
+               get<get_values>(view));
   }
   // Set a scalar variance in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var>
-  static void set_variance(Var &view, const py::object &o) {
+  static void set_variance(Var &view, const py::object &obj) {
     core::expect::equals(Dimensions(), view.dims());
-    if (o.is_none())
+    if (obj.is_none())
       return remove_variances(view);
     if (!view.hasVariances())
       init_variances(view);
 
-    std::visit(
-        [&o](const auto &data) {
-          using T = typename std::decay_t<decltype(data)>::value_type;
-          if constexpr (std::is_same_v<T, scipp::python::PyObject>)
-            data[0] = o;
-          else
-            data[0] = o.cast<T>();
-        },
-        get<get_variances>(view));
+    std::visit(SetScalarVisitor<decltype(view)>{obj, view},
+               get<get_variances>(view));
   }
 };
 
@@ -382,11 +391,9 @@ void bind_data_properties(pybind11::class_<T, Ignored...> &c) {
         return std::vector<int64_t>(dims.shape().begin(), dims.shape().end());
       },
       "Shape of the data (read-only).", py::return_value_policy::move);
-
   c.def_property(
       "unit", [](const T &self) { return self.unit(); }, &T::setUnit,
       "Physical unit of the data.");
-
   c.def_property("values", &as_ElementArrayView::values<T>,
                  &as_ElementArrayView::set_values<T>,
                  "Array of values of the data.");

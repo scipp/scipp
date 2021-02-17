@@ -5,11 +5,12 @@
 #include "scipp/core/dtype.h"
 #include "scipp/core/tag_util.h"
 #include "scipp/units/unit.h"
-#include "scipp/variable/operations.h"
 #include "scipp/variable/variable.h"
 
 #include "dtype.h"
+#include "numpy.h"
 #include "pybind11.h"
+#include "unit.h"
 
 using namespace scipp;
 namespace py = pybind11;
@@ -17,31 +18,41 @@ namespace py = pybind11;
 namespace {
 template <class T> struct MultScalarUnit {
   static Variable apply(const py::object &scalar, const units::Unit &unit) {
-    return py::cast<T>(scalar) * unit;
+    if constexpr (std::is_same_v<T, core::time_point>) {
+      const auto &buffer = scalar.cast<py::buffer>();
+      const auto [actual_unit, scale] = get_time_unit(buffer, py::none{}, unit);
+      return make_time_point(buffer, scale) * actual_unit;
+    } else {
+      return py::cast<T>(scalar) * unit;
+    }
   }
 };
 
 Variable doMultScalarUnit(const units::Unit &unit, const py::object &scalar,
                           const py::dtype &type) {
-  return scipp::core::CallDType<double, float, int64_t, int32_t>::apply<
-      MultScalarUnit>(scipp_dtype(type), scalar, unit);
+  return scipp::core::CallDType<
+      double, float, int64_t, int32_t,
+      core::time_point>::apply<MultScalarUnit>(scipp_dtype(type), scalar, unit);
 }
 
 template <class T> struct DivScalarUnit {
   static Variable apply(const py::object &scalar, const units::Unit &unit) {
-    return py::cast<T>(scalar) / unit;
+    if constexpr (std::is_same_v<T, core::time_point>) {
+      const auto &buffer = scalar.cast<py::buffer>();
+      const auto [actual_unit, scale] =
+          get_time_unit(buffer, py::none{}, units::one / unit);
+      return make_time_point(buffer, scale) * actual_unit;
+    } else {
+      return py::cast<T>(scalar) / unit;
+    }
   }
 };
 
 Variable doDivScalarUnit(const units::Unit &unit, const py::object &scalar,
                          const py::dtype &type) {
-  return scipp::core::CallDType<double, float, int64_t, int32_t>::apply<
-      DivScalarUnit>(scipp_dtype(type), scalar, unit);
-}
-
-template <class... Ts>
-auto supported_units_runtime_list(const std::tuple<Ts...> &) {
-  return std::vector{units::Unit(Ts{})...};
+  return scipp::core::CallDType<
+      double, float, int64_t, int32_t,
+      core::time_point>::apply<DivScalarUnit>(scipp_dtype(type), scalar, unit);
 }
 } // namespace
 
@@ -51,61 +62,12 @@ void init_units_neutron(py::module &m) {
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def(hash(py::self))
-      .def("__repr__", [](const Dim &dim) { return dim.name(); })
-      // Pre-defined labels are temporarily useful for refactoring and may be
-      // removed later.
-      .def_property_readonly_static(
-          "Detector", [](const py::object &) { return Dim(Dim::Detector); })
-      .def_property_readonly_static(
-          "DSpacing", [](const py::object &) { return Dim(Dim::DSpacing); })
-      .def_property_readonly_static(
-          "Energy", [](const py::object &) { return Dim(Dim::Energy); })
-      .def_property_readonly_static(
-          "EnergyTransfer",
-          [](const py::object &) { return Dim(Dim::EnergyTransfer); })
-      .def_property_readonly_static(
-          "Group", [](const py::object &) { return Dim(Dim::Group); })
-      .def_property_readonly_static(
-          "Invalid", [](const py::object &) { return Dim(Dim::Invalid); })
-      .def_property_readonly_static(
-          "Position", [](const py::object &) { return Dim(Dim::Position); })
-      .def_property_readonly_static(
-          "Q", [](const py::object &) { return Dim(Dim::Q); })
-      .def_property_readonly_static(
-          "Qx", [](const py::object &) { return Dim(Dim::Qx); })
-      .def_property_readonly_static(
-          "Qy", [](const py::object &) { return Dim(Dim::Qy); })
-      .def_property_readonly_static(
-          "Qz", [](const py::object &) { return Dim(Dim::Qz); })
-      .def_property_readonly_static(
-          "QSquared", [](const py::object &) { return Dim(Dim::QSquared); })
-      .def_property_readonly_static(
-          "Row", [](const py::object &) { return Dim(Dim::Row); })
-      .def_property_readonly_static(
-          "ScatteringAngle",
-          [](const py::object &) { return Dim(Dim::ScatteringAngle); })
-      .def_property_readonly_static(
-          "Spectrum", [](const py::object &) { return Dim(Dim::Spectrum); })
-      .def_property_readonly_static(
-          "Temperature",
-          [](const py::object &) { return Dim(Dim::Temperature); })
-      .def_property_readonly_static(
-          "Time", [](const py::object &) { return Dim(Dim::Time); })
-      .def_property_readonly_static(
-          "Tof", [](const py::object &) { return Dim(Dim::Tof); })
-      .def_property_readonly_static(
-          "Wavelength", [](const py::object &) { return Dim(Dim::Wavelength); })
-      .def_property_readonly_static(
-          "X", [](const py::object &) { return Dim(Dim::X); })
-      .def_property_readonly_static(
-          "Y", [](const py::object &) { return Dim(Dim::Y); })
-      .def_property_readonly_static(
-          "Z", [](const py::object &) { return Dim(Dim::Z); });
+      .def("__repr__", [](const Dim &dim) { return dim.name(); });
 
   py::class_<units::Unit>(m, "Unit", "A physical unit.")
       .def(py::init())
-      .def("__repr__",
-           [](const units::Unit &u) -> std::string { return u.name(); })
+      .def(py::init<const std::string &>())
+      .def("__repr__", [](const units::Unit &u) { return u.name(); })
       .def_property_readonly("name", &units::Unit::name,
                              "A read-only string describing the "
                              "type of unit.")
@@ -113,27 +75,8 @@ void init_units_neutron(py::module &m) {
       .def(py::self - py::self)
       .def(py::self * py::self)
       .def(py::self / py::self)
-      .def("__pow__",
-           [](const units::Unit &self, int power) -> units::Unit {
-             switch (power) {
-             case 0:
-               return units::one;
-             case 1:
-               return self;
-             case 2:
-               return self * self;
-             case 3:
-               return self * self * self;
-             case -1:
-               return units::Unit() / (self);
-             case -2:
-               return units::Unit() / (self * self);
-             case -3:
-               return units::Unit() / (self * self * self);
-             default:
-               throw std::runtime_error("Unsupported power of unit.");
-             }
-           })
+      .def("__pow__", [](const units::Unit &self,
+                         const int64_t power) { return pow(self, power); })
       .def(py::self == py::self)
       .def(py::self != py::self)
       .def("__rmul",
@@ -146,6 +89,10 @@ void init_units_neutron(py::module &m) {
       .def("__rtruediv", [](const units::Unit &self,
                             int64_t scalar) { return scalar / self; })
       .def("__rtruediv", &doDivScalarUnit);
+
+  m.def("sqrt", [](const units::Unit &u) { return sqrt(u); });
+
+  py::implicitly_convertible<std::string, units::Unit>();
 
   auto units = m.def_submodule("units");
   units.attr("angstrom") = units::angstrom;
@@ -162,9 +109,4 @@ void init_units_neutron(py::module &m) {
   units.attr("us") = units::us;
   units.attr("ns") = units::ns;
   units.attr("mm") = units::mm;
-
-  units.def(
-      "supported_units",
-      []() { return supported_units_runtime_list(units::supported_units_t{}); },
-      "Return a list of all supported units and unit combinations.");
 }

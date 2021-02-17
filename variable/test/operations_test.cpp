@@ -125,27 +125,25 @@ TEST(Variable, operator_plus_equal_non_arithmetic_type) {
 }
 
 TEST(Variable, operator_plus_equal_time_type) {
-  auto now = 0;
-  auto a = makeVariable<scipp::core::time_point>(
-      Shape{1}, units::Unit{units::ns}, Values{now});
-  const auto copy(a);
+  using time_point = scipp::core::time_point;
+  auto a = makeVariable<time_point>(Shape{1}, units::Unit{units::ns},
+                                    Values{time_point{2}});
   EXPECT_THROW(a += static_cast<float>(1.0) * units::ns, except::TypeError);
   EXPECT_NO_THROW(a += static_cast<int64_t>(1) * units::ns);
-  EXPECT_NE(a, copy);
-  EXPECT_NO_THROW(a += static_cast<int32_t>(1) * units::ns);
-  EXPECT_NE(a, copy);
+  EXPECT_NO_THROW(a += static_cast<int32_t>(2) * units::ns);
+  EXPECT_EQ(a, makeVariable<time_point>(Shape{1}, units::Unit{units::ns},
+                                        Values{time_point{5}}));
 }
 
 TEST(Variable, operator_minus_equal_time_type) {
-  auto now = 0;
-  auto a = makeVariable<scipp::core::time_point>(
-      Shape{1}, units::Unit{units::ns}, Values{now});
-  const auto copy(a);
+  using time_point = scipp::core::time_point;
+  auto a = makeVariable<time_point>(Shape{1}, units::Unit{units::ns},
+                                    Values{time_point{10}});
   EXPECT_THROW(a -= static_cast<float>(1.0) * units::ns, except::TypeError);
   EXPECT_NO_THROW(a -= static_cast<int64_t>(1) * units::ns);
-  EXPECT_NE(a, copy);
-  EXPECT_NO_THROW(a -= static_cast<int32_t>(1) * units::ns);
-  EXPECT_NE(a, copy);
+  EXPECT_NO_THROW(a -= static_cast<int32_t>(2) * units::ns);
+  EXPECT_EQ(a, makeVariable<time_point>(Shape{1}, units::Unit{units::ns},
+                                        Values{time_point{7}}));
 }
 
 TEST(Variable, operator_plus_equal_different_variables_different_element_type) {
@@ -184,9 +182,9 @@ TEST(Variable, operator_plus_unit_fail) {
   auto b = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0},
                                 Variances{3.0, 4.0});
   b.setUnit(units::s);
-  ASSERT_ANY_THROW(a + b);
+  ASSERT_ANY_THROW_DISCARD(a + b);
   b.setUnit(units::m);
-  ASSERT_NO_THROW(a + b);
+  ASSERT_NO_THROW_DISCARD(a + b);
 }
 
 TEST(Variable, operator_plus_eigen_type) {
@@ -223,14 +221,13 @@ TEST(Variable, operator_times_equal_scalar) {
   EXPECT_EQ(a.unit(), units::m);
 }
 
-TEST(Variable, operator_times_equal_unit_fail_integrity) {
+TEST(Variable, operator_plus_equal_unit_fail_integrity) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{2},
                            units::Unit(units::m * units::m), Values{2.0, 3.0});
   const auto expected(a);
 
-  // This test relies on m^4 being an unsupported unit.
-  ASSERT_THROW(a *= a, std::runtime_error);
+  ASSERT_THROW(a += a * a, std::runtime_error);
   EXPECT_EQ(a, expected);
 }
 
@@ -974,4 +971,37 @@ TEST(VariableTest, rotate) {
       Dims{Dim::X}, Shape{2}, units::m,
       Values{rot1.toRotationMatrix() * vec1, rot2.toRotationMatrix() * vec2});
   EXPECT_EQ(vec_new, rotated);
+}
+
+TEST(VariableTest, mul_vector) {
+  Eigen::Vector3d vec1(1, 2, 3);
+  Eigen::Vector3d vec2(2, 4, 6);
+  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
+                                           Values{vec1});
+  auto expected_vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1},
+                                                    units::m, Values{vec2});
+  auto scale = makeVariable<double>(Dims{}, Shape{1}, units::one, Values{2.0});
+  auto scale_with_variance = makeVariable<double>(Dims{}, Shape{1}, units::one,
+                                                  Values{2.0}, Variances{1.0});
+
+  auto left_scaled_vec = scale * vec;
+  auto right_scaled_vec = vec * scale;
+
+  EXPECT_THROW_DISCARD(vec * scale_with_variance, except::VariancesError);
+  EXPECT_EQ(left_scaled_vec, expected_vec);
+  EXPECT_EQ(right_scaled_vec, expected_vec);
+}
+
+TEST(VariableTest, divide_vector) {
+  Eigen::Vector3d vec1(1, 2, 3);
+  Eigen::Vector3d vec2(2, 4, 6);
+  auto vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1}, units::m,
+                                           Values{vec2});
+  auto expected_vec = makeVariable<Eigen::Vector3d>(Dims{Dim::X}, Shape{1},
+                                                    units::m, Values{vec1});
+  auto scale = makeVariable<double>(Dims{}, Shape{1}, units::one, Values{2.0});
+
+  auto scaled_vec = vec / scale;
+
+  EXPECT_EQ(scaled_vec, expected_vec);
 }

@@ -4,13 +4,6 @@
 # @author Simon Heybrock
 
 
-def _unit_lut():
-    from .._scipp.core import units as u
-    units = u.supported_units()
-    names = [str(unit) for unit in units]
-    return dict(zip(names, units))
-
-
 def _dtype_lut():
     from .._scipp.core import dtype as d
     # For types understood by numpy we do not actually need this special
@@ -19,7 +12,7 @@ def _dtype_lut():
     dtypes = [
         d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.Variable,
         d.DataArray, d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView,
-        d.vector_3_float64
+        d.vector_3_float64, d.matrix_3_float64
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
@@ -45,8 +38,7 @@ class EigenDataIO():
     @staticmethod
     def write(group, data):
         import numpy as np
-        dset = group.create_dataset('values', data=np.asarray(data.values))
-        return dset
+        return group.create_dataset('values', data=np.asarray(data.values))
 
     @staticmethod
     def read(group, data):
@@ -161,14 +153,13 @@ def _data_handler_lut():
         handler[str(dtype)] = ScippDataIO
     for dtype in [d.string]:
         handler[str(dtype)] = StringDataIO
-    for dtype in [d.vector_3_float64]:
+    for dtype in [d.vector_3_float64, d.matrix_3_float64]:
         handler[str(dtype)] = EigenDataIO
     return handler
 
 
 class VariableIO:
     _dtypes = _dtype_lut()
-    _units = _unit_lut()
     _data_handlers = _data_handler_lut()
 
     @classmethod
@@ -202,7 +193,7 @@ class VariableIO:
         values = group['values']
         contents = {key: values.attrs[key] for key in ['dims', 'shape']}
         contents['dtype'] = cls._dtypes[values.attrs['dtype']]
-        contents['unit'] = cls._units[values.attrs['unit']]
+        contents['unit'] = sc.Unit(values.attrs['unit'])
         contents['variances'] = 'variances' in group
         if contents['dtype'] in [
                 d.VariableView, d.DataArrayView, d.DatasetView

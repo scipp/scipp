@@ -6,7 +6,7 @@
 import numpy as np
 import scipp as sc
 from plot_helper import make_dense_dataset
-from scipp.plot import plot
+from scipp import plot
 
 
 def make_data_with_position_vectors():
@@ -98,3 +98,27 @@ def test_plot_customized_axes():
          xlabel="MyXlabel",
          ylabel="MyYlabel",
          zlabel="MyZlabel")
+
+
+def test_plot_3d_with_2d_position_coordinate():
+    nx = 50
+    ny = 40
+    ntof = 10
+
+    xx, yy = np.meshgrid(
+        np.arange(nx).astype(np.float),
+        np.arange(ny).astype(np.float))
+    da = sc.DataArray(
+        data=sc.Variable(['x', 'y', 'tof'],
+                         values=np.arange(nx * ny *
+                                          ntof).reshape(nx, ny, ntof)))
+    da.coords['pos'] = sc.reshape(sc.Variable(
+        ['xyz'],
+        values=np.array([xx, yy, np.zeros_like(xx)]).T.reshape(nx * ny, 3),
+        dtype=sc.dtype.vector_3_float64),
+                                  dims=['x', 'y'],
+                                  shape=(nx, ny))
+    da.coords['tof'] = sc.Variable(['tof'],
+                                   values=np.arange(ntof + 1).astype(np.float))
+
+    plot(da, projection="3d", positions="pos")

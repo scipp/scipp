@@ -6,6 +6,7 @@
 
 #include <limits>
 
+#include "scipp/common/initialization.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
@@ -15,7 +16,8 @@
 namespace scipp::core::element {
 
 constexpr auto special_like =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool, SubbinSizes>,
+    overloaded{arg_list<double, float, int64_t, int32_t, bool, SubbinSizes,
+                        Eigen::Vector3d>,
                [](const units::Unit &u) { return u; }};
 
 constexpr auto zeros_not_bool_like =
@@ -24,7 +26,7 @@ constexpr auto zeros_not_bool_like =
                  if constexpr (std::is_same_v<T, bool>)
                    return int64_t{0};
                  else
-                   return T{0};
+                   return zero_init<T>::value();
                }};
 
 template <class T, T Value>

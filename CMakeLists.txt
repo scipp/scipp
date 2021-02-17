@@ -60,6 +60,7 @@ add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-MP>)
 
 include(GTest)
 include(boost)
+include(LLNL-units)
 include(Eigen)
 include(pybind11)
 include(GoogleBenchmark)

@@ -67,7 +67,7 @@ struct SCIPP_CORE_EXPORT EventsDimensionError : public DimensionError {
       : DimensionError("Unsupported operation for events dimensions.") {}
 };
 
-struct SCIPP_CORE_EXPORT BucketError : public std::runtime_error {
+struct SCIPP_CORE_EXPORT BinnedDataError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
@@ -88,18 +88,6 @@ struct SCIPP_CORE_EXPORT BinEdgeError : public std::runtime_error {
 };
 
 struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
-
-struct SCIPP_CORE_EXPORT UnalignedError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
-
-struct SCIPP_CORE_EXPORT RealignedDataError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
-};
-
-struct SCIPP_CORE_EXPORT EventDataError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
@@ -124,17 +112,6 @@ template <class A, class B>
 void equals_any_of(const A &a, const std::initializer_list<B> possible) {
   if (std::find(possible.begin(), possible.end(), a) == possible.end())
     throw scipp::except::MismatchError(a, possible);
-}
-
-template <class A, class Dim, class System, class Enable>
-void equals(const A &a, const boost::units::unit<Dim, System, Enable> &unit) {
-  const auto expectedUnit = units::Unit(unit);
-  if (a != expectedUnit)
-    throw scipp::except::MismatchError(a, expectedUnit);
-}
-template <class A, class Dim, class System, class Enable>
-void equals(const boost::units::unit<Dim, System, Enable> &unit, const A &a) {
-  equals(a, unit);
 }
 
 SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,

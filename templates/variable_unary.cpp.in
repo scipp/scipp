@@ -8,15 +8,19 @@
 
 using namespace scipp::core;
 
+#cmakedefine GENERATE_OUT
+
 namespace scipp::variable {
 
 Variable @NAME@(const VariableConstView &var) {
-  return transform(var, element::@OPNAME@);
+  return transform(var, element::@OPNAME@, std::string_view("OPNAME"));
 }
 
+#ifdef GENERATE_OUT
 VariableView @NAME@(const VariableConstView &var, const VariableView &out) {
-  transform_in_place(out, var, assign_unary{element::@OPNAME@});
+  transform_in_place(out, var, assign_unary{element::@OPNAME@}, std::string_view("OPNAME"));
   return out;
 }
+#endif
 
 } // namespace scipp::variable

@@ -4,12 +4,10 @@
 # @author Simon Heybrock
 
 # flake8: noqa
-print("init 1")
 from . import runtime_config
 user_configuration_filename = runtime_config.config_filename
 config = runtime_config.load()
 del runtime_config
-print("init 2")
 
 from ._scipp.core import *
 from ._scipp import __version__
@@ -17,9 +15,7 @@ from . import detail
 from . import neutron
 from .show import show, make_svg
 from .table import table
-print("init 3")
-from . import plot
-print("init 4")
+from .plotting import plot
 from .extend_units import *
 from .table_html import to_html, make_html
 from .object_list import _repr_html_
@@ -78,9 +74,9 @@ from ._bins import _groupby_bins
 setattr(GroupByDataArray, 'bins', property(_groupby_bins))
 setattr(GroupByDataset, 'bins', property(_groupby_bins))
 
-setattr(Variable, 'plot', plot.plot)
-setattr(VariableConstView, 'plot', plot.plot)
-setattr(DataArray, 'plot', plot.plot)
-setattr(DataArrayConstView, 'plot', plot.plot)
-setattr(Dataset, 'plot', plot.plot)
-setattr(DatasetConstView, 'plot', plot.plot)
+setattr(Variable, 'plot', plot)
+setattr(VariableConstView, 'plot', plot)
+setattr(DataArray, 'plot', plot)
+setattr(DataArrayConstView, 'plot', plot)
+setattr(Dataset, 'plot', plot)
+setattr(DatasetConstView, 'plot', plot)

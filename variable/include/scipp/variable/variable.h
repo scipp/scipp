@@ -27,6 +27,10 @@
 #include "scipp/variable/variable_concept.h"
 #include "scipp/variable/variable_keyword_arg_constructor.h"
 
+namespace llnl::units {
+class precise_measurement;
+}
+
 namespace scipp::dataset {
 class DataArrayConstView;
 template <class T> typename T::view_type makeViewItem(T &);
@@ -72,9 +76,7 @@ public:
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            std::optional<T> variances);
-  template <class T, class U>
-  explicit Variable(const boost::units::quantity<T, U> &quantity)
-      : Variable(quantity.value() * units::Unit(T{})) {}
+  explicit Variable(const llnl::units::precise_measurement &m);
 
   /// Keyword-argument constructor.
   ///

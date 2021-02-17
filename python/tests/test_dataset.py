@@ -669,10 +669,10 @@ def test_masks_delitem():
 
 
 def test_replace():
-    v1 = sc.Variable([sc.Dim.X], values=np.array([1, 2, 3]))
+    v1 = sc.Variable(['x'], values=np.array([1, 2, 3]))
     d = sc.Dataset({'a': v1})
     d['a'].data == v1
-    v2 = sc.Variable([sc.Dim.X], values=np.array([4, 5, 6]))
+    v2 = sc.Variable(['x'], values=np.array([4, 5, 6]))
     d['a'].data == v2
 
 

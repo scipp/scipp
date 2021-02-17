@@ -17,7 +17,7 @@ See [the Conda documentation](https://docs.conda.io/projects/conda-build/en/late
 
 ## Development builds
 
-Commits to the `master` branch trigger a build and deploy of the Conda packages.
+Commits to the `main` branch trigger a build and deploy of the Conda packages.
 These are published under the [`dev` label](https://anaconda.org/scipp/repo/files?type=all&label=dev).
 
 ## Release builds
