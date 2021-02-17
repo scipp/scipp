@@ -218,8 +218,8 @@ void init_buckets(py::module &m) {
       [](const DataArrayConstView &array,
          const std::vector<VariableConstView> &edges,
          const std::vector<VariableConstView> &groups,
-         const std::vector<Dim> &clear) {
-        return dataset::bin(array, edges, groups, clear);
+         const std::vector<Dim> &erase) {
+        return dataset::bin(array, edges, groups, erase);
       },
       py::call_guard<py::gil_scoped_release>());
   m.def("bin_with_coords", [](const VariableConstView &data,

@@ -12,13 +12,13 @@ SCIPP_DATASET_EXPORT DataArray
 bin(const DataArrayConstView &array,
     const std::vector<VariableConstView> &edges,
     const std::vector<VariableConstView> &groups = {},
-    const std::vector<Dim> &clear = {});
+    const std::vector<Dim> &erase = {});
 
 template <class Coords, class Masks, class Attrs>
 SCIPP_DATASET_EXPORT DataArray
 bin(const VariableConstView &data, const Coords &coords, const Masks &masks,
     const Attrs &attrs, const std::vector<VariableConstView> &edges,
     const std::vector<VariableConstView> &groups = {},
-    const std::vector<Dim> &clear = {});
+    const std::vector<Dim> &erase = {});
 
 } // namespace scipp::dataset

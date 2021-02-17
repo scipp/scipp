@@ -367,7 +367,7 @@ TEST_P(BinTest, rebin_various_edges_1d) {
       bin(bin(table, {e0}), {e1});
 }
 
-TEST_P(BinTest, clear_binning_and_bin_along_different_dimension) {
+TEST_P(BinTest, erase_binning_and_bin_along_different_dimension) {
   const auto table = GetParam();
   const auto binned_along_x = bin(table, {edges_x});
   const auto binned_along_y = bin(table, {edges_y});
@@ -380,12 +380,12 @@ TEST_P(BinTest, clear_binning_and_bin_along_different_dimension) {
   expect_near(test_output, binned_along_y);
 }
 
-TEST_P(BinTest, error_if_clear_binning_and_try_rebin_along_same_dimension) {
+TEST_P(BinTest, error_if_erase_binning_and_try_rebin_along_same_dimension) {
   const auto table = GetParam();
   const auto binned_along_x = bin(table, {edges_x_coarse});
 
   // Trying to rebin in X but also clear binning from X
-  const std::vector<Dim> clear_binning_from_dimension = {Dim::X};
-  EXPECT_THROW(bin(binned_along_x, {edges_x}, {}, clear_binning_from_dimension),
+  const std::vector<Dim> erase_binning_from_dimension = {Dim::X};
+  EXPECT_THROW(bin(binned_along_x, {edges_x}, {}, erase_binning_from_dimension),
                except::DimensionError);
 }
