@@ -179,7 +179,6 @@ def fix_empty_range(lims, replacement=None):
     """
     Range correction in case xmin == xmax
     """
-    dx = 0.0
     if lims[0] == lims[1]:
         if replacement is not None:
             dx = 0.5 * replacement
@@ -187,7 +186,9 @@ def fix_empty_range(lims, replacement=None):
             dx = 0.5
         else:
             dx = 0.5 * abs(lims[0])
-    return [lims[0] - dx, lims[1] + dx]
+        return [lims[0] - dx, lims[1] + dx]
+    return lims
+
 
 def nonemin(a, b):
     """
