@@ -39,14 +39,14 @@ template <class T> using underlying_t = typename underlying<T>::type;
 
 constexpr auto numeric_limits_max_like =
     overloaded{special_like, [](const auto &x) {
-                 return std::numeric_limits<
-                     underlying_t<std::decay_t<decltype(x)>>>::max();
+                 using T = std::decay_t<decltype(x)>;
+                 return T{std::numeric_limits<underlying_t<T>>::max()};
                }};
 
 constexpr auto numeric_limits_lowest_like =
     overloaded{special_like, [](const auto &x) {
-                 return std::numeric_limits<
-                     underlying_t<std::decay_t<decltype(x)>>>::lowest();
+                 using T = std::decay_t<decltype(x)>;
+                 return T{std::numeric_limits<underlying_t<T>>::lowest()};
                }};
 
 } // namespace scipp::core::element
