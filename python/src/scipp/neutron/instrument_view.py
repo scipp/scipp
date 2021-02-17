@@ -23,7 +23,7 @@ def instrument_view(scipp_obj=None,
     be changed to automatic scaling using `aspect="equal"`.
     """
 
-    from ..plot import plot
+    from .. import plot
 
     if pixel_size is None:
         pos_array = scipp_obj.meta[positions].values
