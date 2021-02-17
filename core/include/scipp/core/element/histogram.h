@@ -32,15 +32,25 @@ namespace histogram_detail {
 template <class Out, class Coord, class Weight, class Edge>
 using args = std::tuple<span<Out>, span<const Coord>, span<const Weight>,
                         span<const Edge>>;
+
+template <typename T> constexpr auto get_value(const T &x) noexcept {
+  if constexpr (std::is_same_v<std::remove_reference_t<T>, time_point>) {
+    return x.time_since_epoch();
+  } else {
+    return x;
+  }
 }
+} // namespace histogram_detail
 
 static constexpr auto histogram = overloaded{
-    element::arg_list<histogram_detail::args<float, double, float, double>,
-                      histogram_detail::args<float, int64_t, float, double>,
-                      histogram_detail::args<double, double, double, double>,
-                      histogram_detail::args<double, float, double, double>,
-                      histogram_detail::args<double, float, double, float>,
-                      histogram_detail::args<double, double, float, double>>,
+    element::arg_list<
+        histogram_detail::args<float, double, float, double>,
+        histogram_detail::args<float, int64_t, float, double>,
+        histogram_detail::args<double, double, double, double>,
+        histogram_detail::args<double, float, double, double>,
+        histogram_detail::args<double, float, double, float>,
+        histogram_detail::args<double, double, float, double>,
+        histogram_detail::args<double, time_point, double, double>>,
     [](const auto &data, const auto &events, const auto &weights,
        const auto &edges) {
       zero(data);
@@ -49,15 +59,15 @@ static constexpr auto histogram = overloaded{
       if (scipp::numeric::is_linspace(edges)) {
         const auto [offset, nbin, scale] = core::linear_edge_params(edges);
         for (scipp::index i = 0; i < scipp::size(events); ++i) {
-          const auto x = events[i];
-          const double bin = (x - offset) * scale;
+          const auto x = histogram_detail::get_value(events[i]);
+          const double bin = (x - histogram_detail::get_value(offset)) * scale;
           if (bin >= 0.0 && bin < nbin)
             iadd(data, static_cast<scipp::index>(bin), weights, i);
         }
       } else {
         core::expect::histogram::sorted_edges(edges);
         for (scipp::index i = 0; i < scipp::size(events); ++i) {
-          const auto x = events[i];
+          const auto x = histogram_detail::get_value(events[i]);
           auto it = std::upper_bound(edges.begin(), edges.end(), x);
           if (it != edges.end() && it != edges.begin())
             iadd(data, --it - edges.begin(), weights, i);
