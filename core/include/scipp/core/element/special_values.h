@@ -14,7 +14,8 @@
 
 namespace scipp::core::element {
 
-constexpr auto special_value_args = arg_list<int32_t, int64_t, double, float>;
+constexpr auto special_value_args =
+    arg_list<int32_t, int64_t, double, float, time_point>;
 
 constexpr auto special_value_args_finite =
     arg_list<int32_t, int64_t, double, float, Eigen::Vector3d>;
@@ -67,6 +68,7 @@ constexpr auto isposinf =
                  using detail::isposinf;
                  return isposinf(x);
                },
+               [](const time_point) { return false; },
                [](const units::Unit &) { return units::dimensionless; }};
 
 constexpr auto isneginf =
@@ -75,6 +77,7 @@ constexpr auto isneginf =
                  using detail::isneginf;
                  return isneginf(x);
                },
+               [](const time_point) { return false; },
                [](const units::Unit &) { return units::dimensionless; }};
 
 constexpr auto replace_special = overloaded{
