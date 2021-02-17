@@ -12,6 +12,7 @@ struct CustomType {
   CustomType(const int &) {}
   bool operator==(const CustomType &) const { return true; }
 };
+template <> constexpr DType core::dtype<CustomType>{123456789};
 
 // Instantiate Variable type. Test template instantiation with custom type
 // argument.
