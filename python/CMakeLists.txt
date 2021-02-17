@@ -48,9 +48,18 @@ target_link_libraries(_scipp_neutron LINK_PRIVATE scipp-neutron)
 # Set symbol visibility to hidden to reduce binary size, as recommended in
 # pybind11 FAQ.
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
-set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 set_target_properties(_scipp_neutron PROPERTIES CXX_VISIBILITY_PRESET hidden)
-set_target_properties(_scipp_neutron PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
+if(UNIX AND NOT APPLE)
+  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
+  set_target_properties(
+    _scipp_neutron PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib"
+  )
+elseif(APPLE)
+  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "@loader_path/../lib")
+  set_target_properties(
+    _scipp_neutron PROPERTIES INSTALL_RPATH "@loader_path/../lib"
+  )
+endif()
 
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(_scipp PRIVATE pybind11.h)
