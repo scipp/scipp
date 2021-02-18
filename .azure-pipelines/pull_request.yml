@@ -223,7 +223,7 @@ stages:
               bin/Release/scipp-core-test.exe
               bin/Release/scipp-variable-test.exe
               bin/Release/scipp-dataset-test.exe
-              bin/test/Release/scipp-neutron-test.exe
+              bin/Release/scipp-neutron-test.exe
             displayName: 'Run C++ unit tests'
           - bash: |
               set -ex
