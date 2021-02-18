@@ -609,12 +609,11 @@ DataArray bin(const VariableConstView &data, const Coords &coords,
                       erase);
 }
 
-template DataArray bin(const VariableConstView &,
-                       const std::map<Dim, VariableConstView> &,
-                       const std::map<std::string, VariableConstView> &,
-                       const std::map<Dim, VariableConstView> &,
-                       const std::vector<VariableConstView> &,
-                       const std::vector<VariableConstView> &,
-                       const std::vector<Dim> &);
+template SCIPP_DATASET_EXPORT DataArray
+bin(const VariableConstView &, const std::map<Dim, VariableConstView> &,
+    const std::map<std::string, VariableConstView> &,
+    const std::map<Dim, VariableConstView> &,
+    const std::vector<VariableConstView> &,
+    const std::vector<VariableConstView> &, const std::vector<Dim> &);
 
 } // namespace scipp::dataset
