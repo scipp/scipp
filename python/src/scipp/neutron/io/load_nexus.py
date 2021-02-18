@@ -1,7 +1,5 @@
 from ..._scipp import core as sc
-from scipp.detail import move_to_data_array
-from ._event_data_loader import EventDataLoader, BadSource
-from ...compat._unit_map import lookup_units
+from ._event_data_loader import load_event_group, BadSource
 
 import h5py
 import numpy as np
@@ -86,8 +84,30 @@ def _all_equal(iterator):
     return all(first == rest for rest in iterator)
 
 
-def _check_all_event_groups_use_same_units():
-    pass
+def _load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
+    event_data = []
+    for group in event_data_groups:
+        try:
+            new_event_data = load_event_group(group)
+            event_data.append(new_event_data)
+        except BadSource as e:
+            print(f"Skipped loading {group.name} due to:\n{e}")
+
+    if not event_data:
+        raise RuntimeError("No valid event data found in file")
+    else:
+        # TODO concatenate the loaded data in order of ids of the bank
+        #  they came from to create single large dataarray
+        def getADetectorId(event_batch):
+            # TODO this is wrong
+            return event_batch.data.coords['detector-id'].values[0]
+
+        event_data.sort(key=getADetectorId)
+        events = event_data.pop(0)
+        while event_data:
+            events = sc.concatenate(events, event_data.pop(0))
+
+    return events
 
 
 def _load_nexus(data_file: Union[str, h5py.File],
@@ -104,86 +124,7 @@ def _load_nexus(data_file: Union[str, h5py.File],
         nx_event_data = "NXevent_data"
         groups = _find_by_nx_class((nx_event_data, ), nexus_file[root])
 
-        print("Finding event data in file", flush=True)
-        event_sources = []
-        for group in groups[nx_event_data]:
-            try:
-                event_sources.append(EventDataLoader(group))
-            except BadSource:
-                # Reason for error is printed as warning
-                pass
-
-        if not event_sources:
-            raise RuntimeError("No valid event data found in file")
-
-        # TODO complain if there are multiple event data groups and
-        #  they use different units or dtype
-        #   complain if we don't recognise the units
-        #   complain if units don't make sense for the data they correspond to?
-        _check_all_event_groups_use_same_units()
-
-        tof_units = lookup_units[event_sources[0].tof_units]
-        pulse_time_units = lookup_units[event_sources[0].pulse_time_units]
-
-        print("Preallocating scipp variable for event data")
-        total_number_of_events = int(
-            sum([loader.number_of_events for loader in event_sources]))
-        tof_data = sc.Variable(dims=['event'],
-                               shape=[total_number_of_events],
-                               unit=tof_units,
-                               dtype=event_sources[0].tof_dtype)
-        id_data = sc.Variable(dims=['event'],
-                              shape=[total_number_of_events],
-                              unit=sc.units.one,
-                              dtype=np.int32)
-        pulse_time_data = sc.Variable(
-            dims=['event'],
-            unit=pulse_time_units,
-            values=np.ones(total_number_of_events,
-                           dtype=event_sources[0].pulse_time_dtype))
-        weight_data = sc.Variable(dims=['event'],
-                                  unit=sc.units.one,
-                                  values=np.ones(total_number_of_events,
-                                                 dtype=np.float32),
-                                  variances=np.ones(total_number_of_events,
-                                                    dtype=np.float32))
-        proto_events = {
-            'data': weight_data,
-            'coords': {
-                'Tof': tof_data,
-                'id': id_data,
-                'pulse_time': pulse_time_data
-            }
-        }
-        event_data = move_to_data_array(**proto_events)
-
-        # populate event_data with events for each source
-        print("Populating scipp variable with event data from file")
-        populated_to_event = 0
-        for event_source in event_sources:
-            n_pulses = 0
-            # iterate through the event data in source, one pulse at a time
-            for tof_array, ids_array, pulse_time in \
-                    event_source.get_data():
-                # TODO temporary debugging
-                if n_pulses == 2000:
-                    print("done bank", flush=True)
-                    break
-                event_data.coords['Tof'][
-                    'event', populated_to_event:populated_to_event +
-                    tof_array.size] = tof_array
-                event_data.coords['id']['event',
-                                        populated_to_event:populated_to_event +
-                                        ids_array.size] = ids_array
-                # TODO Not allowed to assign a scalar to a slice like one can
-                #  with numpy
-                event_data.coords['pulse_time'][
-                    'event', populated_to_event:populated_to_event + tof_array.
-                    size] = pulse_time * event_data.coords['pulse_time'][
-                        'event',
-                        populated_to_event:populated_to_event + tof_array.size]
-                populated_to_event += tof_array.size
-                n_pulses += 1
+        event_data = _load_event_data(groups[nx_event_data])
 
     # Load positions?
     # start = timer()

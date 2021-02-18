@@ -26,7 +26,7 @@ dependencies:
   - pyyaml
   - tbb
   - traitlets=4.3.3 # see https://github.com/jupyter-widgets/pythreejs/issues/334
-  - h5py>=3.0.0 # Require at least 3.0 for dataset.iter_chunks
+  - h5py>=3.0.0
 
   # Test
   - beautifulsoup4
