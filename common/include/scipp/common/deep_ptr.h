@@ -21,7 +21,7 @@ public:
   deep_ptr<T> &operator=(const deep_ptr<T> &other) {
     if (&other != this && other) {
       if constexpr (std::is_abstract<T>())
-        m_data = other->clone();
+        *this = other->clone();
       else
         m_data = std::make_unique<T>(*other);
     }
