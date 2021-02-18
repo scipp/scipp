@@ -10,6 +10,7 @@ set(INC_FILES
 )
 
 add_library(${TARGET_NAME} INTERFACE)
+set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME common)
 
 # Include tcb/span as system header to avoid compiler warnings.
 target_include_directories(

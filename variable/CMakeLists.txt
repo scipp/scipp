@@ -98,6 +98,7 @@ target_include_directories(
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME variable)
 
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(
