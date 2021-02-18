@@ -4,6 +4,8 @@
 # ~~~
 cmake_minimum_required(VERSION 3.16)
 project(scipp)
+set(version 0.5.0)
+
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif(NOT DEFINED CMAKE_CXX_STANDARD)
@@ -188,6 +190,8 @@ else()
   set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
+set(EXPORT_NAME ScippTargets)
+
 # Generate files for free scipp API functions
 include(scipp-functions)
 
@@ -200,3 +204,25 @@ add_subdirectory(dataset)
 add_subdirectory(neutron)
 add_subdirectory(python)
 add_subdirectory(test)
+
+if(DYNAMIC_LIB)
+  install(
+    EXPORT ${EXPORT_NAME}
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/scipp"
+    NAMESPACE scipp::
+  )
+  include(CMakePackageConfigHelpers)
+  configure_package_config_file(
+    CMake/ScippConfig.cmake.in "${CMAKE_CURRENT_BINARY_DIR}/ScippConfig.cmake"
+    INSTALL_DESTINATION lib/cmake/scipp
+  )
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/ScippConfigVersion.cmake"
+    VERSION "${version}"
+    COMPATIBILITY AnyNewerVersion
+  )
+  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ScippConfig.cmake"
+                "${CMAKE_CURRENT_BINARY_DIR}/ScippConfigVersion.cmake"
+          DESTINATION lib/cmake/scipp
+  )
+endif(DYNAMIC_LIB)

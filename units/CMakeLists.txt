@@ -25,7 +25,7 @@ target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-         ${CMAKE_CURRENT_BINARY_DIR}
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
@@ -37,6 +37,19 @@ endif()
 add_subdirectory(test)
 
 if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${LIBDIR})
+  install(TARGETS compile_flags_target EXPORT ${EXPORT_NAME})
+  install(TARGETS units-static EXPORT ${EXPORT_NAME})
+  install(
+    TARGETS ${TARGET_NAME}
+    EXPORT ${EXPORT_NAME}
+    DESTINATION ${LIBDIR}
+  )
   install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
+  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}_export.h
+          DESTINATION ${INCLUDEDIR}
+  )
+  install(FILES ${PROJECT_BINARY_DIR}/llnl-units-src/units/unit_definitions.hpp
+                ${PROJECT_BINARY_DIR}/llnl-units-src/units/units_decl.hpp
+          DESTINATION ${INCLUDEDIR}/units
+  )
 endif(DYNAMIC_LIB)

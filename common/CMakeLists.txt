@@ -22,12 +22,15 @@ target_include_directories(
   ${TARGET_NAME}
   INTERFACE $<INSTALL_INTERFACE:include>
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-            ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 add_subdirectory(test)
 
 if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${LIBDIR})
+  install(
+    TARGETS ${TARGET_NAME}
+    EXPORT ${EXPORT_NAME}
+    DESTINATION ${LIBDIR}
+  )
   install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
 endif(DYNAMIC_LIB)
