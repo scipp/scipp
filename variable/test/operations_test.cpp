@@ -8,6 +8,7 @@
 
 #include "scipp/core/element/math.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/variable.h"
 
@@ -1006,4 +1007,17 @@ TEST(VariableTest, divide_vector) {
   auto scaled_vec = vec / scale;
 
   EXPECT_EQ(scaled_vec, expected_vec);
+}
+
+TEST(VariableTest, masked_to_zero) {
+  auto var =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 1, 1});
+  auto mask = makeVariable<bool>(Dims{Dim::X}, Shape{3}, units::one,
+                                 Values{true, false, true});
+  auto expected_var =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{0, 1, 0});
+
+  auto masked_var = masked_to_zero(var, mask);
+
+  EXPECT_EQ(masked_var, expected_var);
 }

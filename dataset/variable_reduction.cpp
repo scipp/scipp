@@ -5,8 +5,8 @@
 #include "scipp/dataset/map_view.h"
 
 #include "../variable/operations_common.h"
-#include "scipp/core/element/util.h"
 #include "scipp/variable/arithmetic.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
@@ -16,8 +16,7 @@
 namespace scipp::dataset {
 namespace {
 Variable applyMask(const VariableConstView &var, const Variable &masks) {
-  return scipp::variable::transform(var, masks,
-                                    scipp::core::element::convertMaskedToZero);
+  return scipp::variable::masked_to_zero(var, masks);
 }
 
 } // namespace

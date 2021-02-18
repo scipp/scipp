@@ -15,12 +15,12 @@
 #include "scipp/variable/bins.h"
 #include "scipp/variable/bucket_model.h"
 #include "scipp/variable/cumulative.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/transform_subspan.h"
-#include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bin.h"
@@ -397,8 +397,7 @@ Variable applyMask(const DataArrayConstView &buffer,
                    const VariableConstView &indices, const Dim dim,
                    const Variable &masks) {
   auto indices_copy = Variable(indices);
-  auto masked_data = scipp::variable::transform(
-      buffer.data(), masks, scipp::core::element::convertMaskedToZero);
+  auto masked_data = scipp::variable::masked_to_zero(buffer.data(), masks);
   return make_bins(std::move(indices_copy), dim, std::move(masked_data));
 }
 
