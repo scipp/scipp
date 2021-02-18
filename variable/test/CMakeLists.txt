@@ -44,6 +44,10 @@ target_link_libraries(
   ${GTEST_LIBRARIES}
   ${GMOCK_LIBRARIES}
 )
+# SCIPP_EXPORT is used in macros defined in variable/
+target_compile_definitions(
+  ${TARGET_NAME} PRIVATE SCIPP_EXPORT=SCIPP_VARIABLE_EXPORT
+)
 
 if(WIN32)
   target_compile_options(${TARGET_NAME} PRIVATE "/bigobj")

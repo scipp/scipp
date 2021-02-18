@@ -45,6 +45,9 @@ target_include_directories(
 target_link_libraries(_scipp LINK_PRIVATE scipp-dataset)
 target_link_libraries(_scipp_neutron LINK_PRIVATE scipp-neutron)
 
+# SCIPP_EXPORT is used in macros defined in variable/
+target_compile_definitions(_scipp PRIVATE SCIPP_EXPORT=)
+
 # Set symbol visibility to hidden to reduce binary size, as recommended in
 # pybind11 FAQ.
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)

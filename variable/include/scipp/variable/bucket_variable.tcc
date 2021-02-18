@@ -170,20 +170,20 @@ public:
 /// bucket dtype in Variable.
 #define INSTANTIATE_BUCKET_VARIABLE(name, ...)                                 \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
-  template SCIPP_VARIABLE_EXPORT std::tuple<                                   \
-      VariableConstView, Dim, typename __VA_ARGS__::const_element_type>        \
+  template SCIPP_EXPORT std::tuple<VariableConstView, Dim,                     \
+                                   typename __VA_ARGS__::const_element_type>   \
   Variable::constituents<__VA_ARGS__>() const;                                 \
-  template SCIPP_VARIABLE_EXPORT std::tuple<                                   \
-      bin_indices_t<__VA_ARGS__>, Dim, typename __VA_ARGS__::element_type>     \
+  template SCIPP_EXPORT std::tuple<bin_indices_t<__VA_ARGS__>, Dim,            \
+                                   typename __VA_ARGS__::element_type>         \
   Variable::constituents<__VA_ARGS__>();                                       \
-  template SCIPP_VARIABLE_EXPORT                                               \
+  template SCIPP_EXPORT                                                        \
       std::tuple<Variable, Dim, typename __VA_ARGS__::buffer_type>             \
       Variable::to_constituents<__VA_ARGS__>();                                \
-  template SCIPP_VARIABLE_EXPORT std::tuple<                                   \
-      bin_indices_t<__VA_ARGS__>, Dim, typename __VA_ARGS__::element_type>     \
+  template SCIPP_EXPORT std::tuple<bin_indices_t<__VA_ARGS__>, Dim,            \
+                                   typename __VA_ARGS__::element_type>         \
   VariableView::constituents<__VA_ARGS__>() const;                             \
-  template SCIPP_VARIABLE_EXPORT std::tuple<                                   \
-      VariableConstView, Dim, typename __VA_ARGS__::const_element_type>        \
+  template SCIPP_EXPORT std::tuple<VariableConstView, Dim,                     \
+                                   typename __VA_ARGS__::const_element_type>   \
   VariableConstView::constituents<__VA_ARGS__>() const;
 
 } // namespace scipp::variable

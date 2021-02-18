@@ -76,6 +76,11 @@ endif(DYNAMIC_LIB)
 
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
+# SCIPP_EXPORT is used in macros defined in this module, but for use also in
+# other modules
+target_compile_definitions(
+  ${TARGET_NAME} PRIVATE SCIPP_EXPORT=SCIPP_VARIABLE_EXPORT
+)
 target_link_libraries(${TARGET_NAME} PUBLIC scipp-core Boost::boost)
 if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
