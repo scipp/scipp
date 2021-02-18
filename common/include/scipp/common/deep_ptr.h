@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 #include <memory>
+#include <type_traits>
 
 namespace scipp {
 
@@ -18,8 +19,12 @@ public:
   deep_ptr(deep_ptr<T> &&) = default;
   constexpr deep_ptr(std::nullptr_t){};
   deep_ptr<T> &operator=(const deep_ptr<T> &other) {
-    if (&other != this && other)
-      m_data = std::make_unique<T>(*other);
+    if (&other != this && other) {
+      if constexpr (std::is_abstract<T>())
+        m_data = other->clone();
+      else
+        m_data = std::make_unique<T>(*other);
+    }
     return *this;
   }
   deep_ptr<T> &operator=(deep_ptr<T> &&) = default;
