@@ -14,8 +14,16 @@ public:
   using element_type = typename std::unique_ptr<T>::element_type;
   deep_ptr() = default;
   deep_ptr(std::unique_ptr<T> &&other) : m_data(std::move(other)) {}
-  deep_ptr(const deep_ptr<T> &other)
-      : m_data(other ? std::make_unique<T>(*other) : nullptr) {}
+  deep_ptr(const deep_ptr<T> &other) {
+    if (other) {
+      if constexpr (std::is_abstract<T>())
+        *this = other->clone();
+      else
+        m_data = std::make_unique<T>(*other);
+    } else {
+      m_data = nullptr;
+    }
+  }
   deep_ptr(deep_ptr<T> &&) = default;
   constexpr deep_ptr(std::nullptr_t){};
   deep_ptr<T> &operator=(const deep_ptr<T> &other) {
