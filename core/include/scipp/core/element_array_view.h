@@ -98,8 +98,7 @@ protected:
 
 /// A view into multi-dimensional data, supporting slicing, index reordering,
 /// and broadcasting.
-template <class T>
-class SCIPP_CORE_EXPORT ElementArrayView : public ElementArrayViewParams {
+template <class T> class ElementArrayView : public ElementArrayViewParams {
 public:
   using element_type = T;
   using value_type = std::remove_cv_t<T>;

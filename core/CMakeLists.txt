@@ -93,5 +93,6 @@ endif()
 add_subdirectory(test)
 
 if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(TARGETS ${TARGET_NAME} DESTINATION ${LIBDIR})
+  install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
 endif(DYNAMIC_LIB)

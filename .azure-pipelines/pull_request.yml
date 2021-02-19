@@ -76,12 +76,12 @@ stages:
           - bash: |
               set -ex
               cd "$(build_dir)"
-              ./common/test/scipp-common-test
-              ./units/test/scipp-units-test
-              ./core/test/scipp-core-test
-              ./variable/test/scipp-variable-test
-              ./dataset/test/scipp-dataset-test
-              ./neutron/test/scipp-neutron-test
+              ./bin/scipp-common-test
+              ./bin/scipp-units-test
+              ./bin/scipp-core-test
+              ./bin/scipp-variable-test
+              ./bin/scipp-dataset-test
+              ./bin/scipp-neutron-test
             displayName: 'Run C++ unit tests'
           - bash: |
               set -ex
@@ -155,16 +155,16 @@ stages:
               set -ex
               cd "$(build_dir)"
               cmake --build . --target all-tests
-            displayName: 'Cuild C++ unit tests'
+            displayName: 'Build C++ unit tests'
           - bash: |
               set -ex
               cd "$(build_dir)"
-              ./common/test/scipp-common-test
-              ./units/test/scipp-units-test
-              ./core/test/scipp-core-test
-              ./variable/test/scipp-variable-test
-              ./dataset/test/scipp-dataset-test
-              ./neutron/test/scipp-neutron-test
+              ./bin/scipp-common-test
+              ./bin/scipp-units-test
+              ./bin/scipp-core-test
+              ./bin/scipp-variable-test
+              ./bin/scipp-dataset-test
+              ./bin/scipp-neutron-test
             displayName: 'Run C++ unit tests'
           - bash: |
               set -ex
@@ -218,12 +218,12 @@ stages:
               set -ex
               cd "$(build_dir)"
               source activate scipp-developer
-              common/test/Release/scipp-common-test.exe
-              units/test/Release/scipp-units-test.exe
-              core/test/Release/scipp-core-test.exe
-              variable/test/Release/scipp-variable-test.exe
-              dataset/test/Release/scipp-dataset-test.exe
-              neutron/test/Release/scipp-neutron-test.exe
+              bin/Release/scipp-common-test.exe
+              bin/Release/scipp-units-test.exe
+              bin/Release/scipp-core-test.exe
+              bin/Release/scipp-variable-test.exe
+              bin/Release/scipp-dataset-test.exe
+              bin/Release/scipp-neutron-test.exe
             displayName: 'Run C++ unit tests'
           - bash: |
               set -ex

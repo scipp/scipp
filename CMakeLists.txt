@@ -53,6 +53,9 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
                       "${CMAKE_SOURCE_DIR}/CMake/sanitizers-cmake/cmake"
 )
 
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+
 find_package(Sanitizers REQUIRED)
 
 # MP : Parallel compile, add before any targets so all use it
@@ -105,7 +108,7 @@ if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
 endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
-option(DYNAMIC_LIB "Build shared libraries" OFF)
+option(DYNAMIC_LIB "Build shared libraries" ON)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include(IPO)
@@ -154,9 +157,13 @@ endif(NOT WIN32)
 # permissive- : Std compliant parsing, warnings (W3) set by CMake defaults
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-permissive->)
 
-option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" ON)
+# Setting this to ON seems to interfere with ccache, causing full recompilation,
+# defaulting to OFF for now.
+option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" OFF)
 
 enable_testing()
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
@@ -170,6 +177,16 @@ endif()
 
 configure_file(CMake/docs_build.bat.in docs_build.bat)
 configure_file(CMake/docs_build.sh.in docs_build.sh)
+
+if(WIN32)
+  set(PYTHONDIR scipp)
+  set(LIBDIR ${PYTHONDIR})
+  set(INCLUDEDIR include)
+else()
+  set(PYTHONDIR scipp)
+  set(LIBDIR ${CMAKE_INSTALL_LIBDIR})
+  set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
 
 # Generate files for free scipp API functions
 include(scipp-functions)

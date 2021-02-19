@@ -33,7 +33,7 @@ auto get_slice_dim(const T &param, const Ts &... params) {
   return param ? param.dim : get_slice_dim(params...);
 }
 
-template <scipp::index N> class SCIPP_CORE_EXPORT MultiIndex {
+template <scipp::index N> class MultiIndex {
 public:
   template <class... DataDims>
   MultiIndex(const Dimensions &iterDims, DataDims &... dataDims) {
