@@ -71,9 +71,16 @@ template <class T> class ElementArithmeticDivisionTest : public testing::Test {
 public:
   using Dividend = std::tuple_element_t<0, T>;
   using Divisor = std::tuple_element_t<1, T>;
+  // The result is always double if both inputs are integers.
+  using Quotient =
+      std::conditional_t<std::is_integral_v<Dividend> &&
+                             std::is_integral_v<Divisor>,
+                         double, std::common_type_t<Dividend, Divisor>>;
 
-  constexpr Dividend dividend() { return Dividend{}; }
-  constexpr Dividend divisor() { return Divisor{}; }
+  // Helpers to convert values to the correct types.
+  constexpr Dividend dividend(Dividend x = Dividend{}) { return x; }
+  constexpr Divisor divisor(Divisor x = Divisor{}) { return x; }
+  constexpr Quotient quotient(Quotient x = Quotient{}) { return x; }
 };
 
 template <class Tuple, size_t... Indices>
@@ -93,8 +100,17 @@ TYPED_TEST(ElementArithmeticDivisionTest, true_divide) {
     // Division of integers always returns double regardless of input precision.
     EXPECT_TRUE(
         (std::is_same_v<decltype(divide(this->dividend(), this->divisor())),
-                        double>));
+                        typename TestFixture::Quotient>));
   }
+
+  EXPECT_DOUBLE_EQ(divide(this->dividend(2), this->divisor(1)),
+                   this->quotient(2));
+  EXPECT_DOUBLE_EQ(divide(this->dividend(1), this->divisor(2)),
+                   this->quotient(0.5));
+  EXPECT_DOUBLE_EQ(divide(this->dividend(-5), this->divisor(3)),
+                   this->quotient(-1.6666666666666667));
+  EXPECT_DOUBLE_EQ(divide(this->dividend(3), this->divisor(-4)),
+                   this->quotient(-0.75));
 }
 
 TEST(ElementArithmeticDivisionTest, units) {
