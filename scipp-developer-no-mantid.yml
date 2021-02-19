@@ -21,10 +21,10 @@ dependencies:
   - numpy >=1.15.3
   - python
   - python-configuration
-  - pythreejs
+  - pythreejs>=2.2.1
   - pyyaml
   - tbb
-  - traitlets=4.3.3 # see https://github.com/jupyter-widgets/pythreejs/issues/334
+  - traitlets
 
   # Test
   - beautifulsoup4
