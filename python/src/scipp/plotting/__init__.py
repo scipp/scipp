@@ -10,8 +10,10 @@ is_doc_build = False
 
 try:
     import matplotlib as mpl
+    import matplotlib.pyplot as plt
 except ImportError:
     mpl = None
+    plt = None
 
 try:
     from IPython import get_ipython
@@ -57,14 +59,6 @@ if ipy is not None:
             "var command = 'devicePixelRatio = ' + value; "
             "kernel.execute(command);}")
 
-# Note: due to some strange behaviour when importing matplotlib and pyplot in
-# different order, we need to import pyplot after switching to the ipympl
-# backend (see https://github.com/matplotlib/matplotlib/issues/19032).
-try:
-    import matplotlib.pyplot as plt
-except ImportError:
-    plt = None
-
 if is_doc_build and plt is not None:
     plt.rcParams.update({
         "figure.max_open_warning": 0,
@@ -72,10 +66,6 @@ if is_doc_build and plt is not None:
         "figure.figsize": [6.4, 4.8],
         "figure.dpi": 96
     })
-
-print("is_doc_build", is_doc_build)
-print(plt.rcParams["interactive"], plt.rcParams["figure.figsize"],
-      plt.rcParams["figure.dpi"])
 
 
 def plot(*args, **kwargs):
