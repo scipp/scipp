@@ -72,6 +72,10 @@ template <class... Ts> auto no_int_as_first_arg(const std::tuple<Ts...> &) {
   return !(int_as_first_arg<Ts>::value || ...);
 }
 
+TEST(ElementArithmeticDivisionTest, inplace_truediv_not_supported) {
+  EXPECT_TRUE(no_int_as_first_arg(decltype(divide_equals)::types{}));
+}
+
 template <class T> class ElementArithmeticDivisionTest : public testing::Test {
 public:
   using Dividend = std::tuple_element_t<0, T>;
@@ -157,43 +161,14 @@ TEST(ElementArithmeticDivisionTest, true_divide_variance) {
   const ValueAndVariance<double> a(4.2, 0.1);
   const ValueAndVariance<double> b(2.0, 1.2);
   const auto res = divide(a, b);
-  EXPECT_DOUBLE_EQ(res.value, 1.1);
-  EXPECT_DOUBLE_EQ(res.variance, 1.2609916732476865);
+  EXPECT_DOUBLE_EQ(res.value, 2.1);
+  EXPECT_DOUBLE_EQ(res.variance, 1.3479999999999999);
 }
 
 TEST(ElementArithmeticDivisionTest, units) {
   EXPECT_EQ(divide(units::m, units::s), units::m / units::s);
   EXPECT_EQ(floor_divide(units::m, units::s), units::m / units::s);
   EXPECT_EQ(mod(units::m, units::s), units::m / units::s);
-}
-
-TEST(ElementArithmeticIntegerDivisionTest, inplace_truediv_not_supported) {
-  EXPECT_TRUE(no_int_as_first_arg(decltype(divide_equals)::types{}));
-}
-
-TEST(ElementArithmeticIntegerDivisionTest, mod) {
-  // x mod 0 is not really defined, but numpy returns 0 and prints a warning
-  EXPECT_EQ(mod(0, 0), 0);
-  EXPECT_EQ(mod(1, 0), 0);
-  EXPECT_EQ(mod(-1, 0), 0);
-
-  EXPECT_EQ(mod(0, -2), 0);
-  EXPECT_EQ(mod(1, -2), -1);
-  EXPECT_EQ(mod(2, -2), 0);
-  EXPECT_EQ(mod(3, -2), -1);
-  EXPECT_EQ(mod(-1, -2), -1);
-  EXPECT_EQ(mod(-2, -2), 0);
-  EXPECT_EQ(mod(-3, -2), -1);
-
-  EXPECT_EQ(mod(-4, 3), 2);
-  EXPECT_EQ(mod(-3, 3), 0);
-  EXPECT_EQ(mod(-2, 3), 1);
-  EXPECT_EQ(mod(-1, 3), 2);
-  EXPECT_EQ(mod(0, 3), 0);
-  EXPECT_EQ(mod(1, 3), 1);
-  EXPECT_EQ(mod(2, 3), 2);
-  EXPECT_EQ(mod(3, 3), 0);
-  EXPECT_EQ(mod(4, 3), 1);
 }
 
 TEST(ElementArithmeticIntegerDivisionTest, mod_equals) {
