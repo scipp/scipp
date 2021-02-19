@@ -210,14 +210,14 @@ add_subdirectory(test)
 if(DYNAMIC_LIB)
   install(
     EXPORT ${EXPORT_NAME}
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/scipp"
+    DESTINATION "${LIBDIR}/cmake/scipp"
     NAMESPACE scipp::
   )
   include(CMakePackageConfigHelpers)
   configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/CMake/ScippConfig.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/ScippConfig.cmake" INSTALL_DESTINATION
-    lib/cmake/scipp
+    "${CMAKE_CURRENT_BINARY_DIR}/ScippConfig.cmake"
+    INSTALL_DESTINATION lib/cmake/scipp
   )
   write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/ScippConfigVersion.cmake"
