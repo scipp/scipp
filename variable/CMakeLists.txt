@@ -94,10 +94,11 @@ target_include_directories(
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-         ${CMAKE_CURRENT_BINARY_DIR}
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME variable)
 
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(
@@ -108,7 +109,4 @@ endif()
 
 add_subdirectory(test)
 
-if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${LIBDIR})
-  install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
-endif(DYNAMIC_LIB)
+scipp_install_component(TARGET ${TARGET_NAME} INSTALL_GENERATED)
