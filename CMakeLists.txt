@@ -190,7 +190,7 @@ else()
   set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
 endif()
 
-set(EXPORT_NAME ScippTargets)
+set(EXPORT_NAME ${PROJECT_NAME}-targets)
 
 if(NOT APPLE)
   set(CMAKE_INSTALL_RPATH $ORIGIN)
@@ -221,17 +221,18 @@ if(DYNAMIC_LIB)
   )
   include(CMakePackageConfigHelpers)
   configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/CMake/ScippConfig.cmake.in
-    "${CMAKE_CURRENT_BINARY_DIR}/ScippConfig.cmake" INSTALL_DESTINATION
-    lib/cmake/scipp
+    ${CMAKE_CURRENT_SOURCE_DIR}/CMake/${PROJECT_NAME}-config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+    INSTALL_DESTINATION lib/cmake/scipp
   )
   write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/ScippConfigVersion.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
     VERSION "${version}"
     COMPATIBILITY AnyNewerVersion
   )
-  install(FILES "${CMAKE_CURRENT_BINARY_DIR}/ScippConfig.cmake"
-                "${CMAKE_CURRENT_BINARY_DIR}/ScippConfigVersion.cmake"
-          DESTINATION lib/cmake/scipp
+  install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+          "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
+    DESTINATION lib/cmake/scipp
   )
 endif(DYNAMIC_LIB)

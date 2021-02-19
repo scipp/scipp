@@ -4,9 +4,9 @@
 # ~~~
 @PACKAGE_INIT@
 
-include("${CMAKE_CURRENT_LIST_DIR}/ScippTargets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/scipp-targets.cmake")
 
-check_required_components(ScippTargets)
+check_required_components(scipp-targets)
 
 include(CMakeFindDependencyMacro)
 find_dependency(Boost 1.67)
