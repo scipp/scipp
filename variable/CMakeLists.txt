@@ -76,8 +76,11 @@ endif(DYNAMIC_LIB)
 
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
-# SCIPP_EXPORT is used in macros defined in this module, but for use also in
-# other modules
+# Macros such as INSTANTIATE_VARIABLE are used for several targets (in
+# particular also from dataset/ and python/). Therefore, it cannot use
+# SCIPP_VARIABLE_EXPORT but has to point to the export macro of the current
+# target. It therefore uses SCIPP_EXPORT, which can be pointed to the current
+# applicable export macro, as in the following:
 target_compile_definitions(
   ${TARGET_NAME} PRIVATE SCIPP_EXPORT=SCIPP_VARIABLE_EXPORT
 )

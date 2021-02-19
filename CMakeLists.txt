@@ -157,6 +157,8 @@ endif(NOT WIN32)
 # permissive- : Std compliant parsing, warnings (W3) set by CMake defaults
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-permissive->)
 
+# Setting this to ON seems to interfere with ccache, causing full recompilation,
+# defaulting to OFF for now.
 option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" OFF)
 
 enable_testing()
