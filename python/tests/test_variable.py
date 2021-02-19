@@ -85,12 +85,28 @@ def test_create_with_variances_from_numpy_1d():
     np.testing.assert_array_equal(var.variances, np.arange(4, 8))
 
 
-def test_create_scalar():
-    var = sc.Variable(1.2)
-    assert var.value == 1.2
+@pytest.mark.parametrize(
+    "value",
+    [1.2, np.float64(1.2), sc.Variable(1.2).value])
+def test_create_scalar(value):
+    var = sc.Variable(value)
+    assert var.value == value
     assert var.dims == []
     assert var.dtype == sc.dtype.float64
     assert var.unit == sc.units.dimensionless
+
+
+@pytest.mark.parametrize(
+    "unit",
+    [sc.units.m,
+     sc.Unit('m'), 'm',
+     sc.Variable(1.2, unit=sc.units.m).unit])
+def test_create_scalar_with_dtype(unit):
+    var = sc.Variable(1.2, unit=unit)
+    assert var.value == 1.2
+    assert var.dims == []
+    assert var.dtype == sc.dtype.float64
+    assert var.unit == sc.units.m
 
 
 def test_create_scalar_Variable():

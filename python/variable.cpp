@@ -69,7 +69,7 @@ void bind_init_0D_native_python_types(py::class_<Variable> &c) {
                                                         dtype);
           }
         }),
-        py::arg("value"), py::arg("variance") = std::nullopt,
+        py::arg("value").noconvert(), py::arg("variance") = std::nullopt,
         py::arg("unit") = units::one, py::arg("dtype") = py::none());
 }
 
