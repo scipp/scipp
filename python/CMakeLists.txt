@@ -35,14 +35,7 @@ pybind11_add_module(
   element_array_view.cpp
   shape.cpp
 )
-pybind11_add_module(
-  _scipp_neutron
-  SHARED
-  SYSTEM
-  ${python_SRC_FILES}
-  neutron.cpp
-  scipp_neutron.cpp
-)
+pybind11_add_module(_scipp_neutron SHARED SYSTEM neutron.cpp scipp_neutron.cpp)
 target_include_directories(
   _scipp PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR}
 )
@@ -58,9 +51,18 @@ target_compile_definitions(_scipp PRIVATE SCIPP_EXPORT=)
 # Set symbol visibility to hidden to reduce binary size, as recommended in
 # pybind11 FAQ.
 set_target_properties(_scipp PROPERTIES CXX_VISIBILITY_PRESET hidden)
-set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
 set_target_properties(_scipp_neutron PROPERTIES CXX_VISIBILITY_PRESET hidden)
-set_target_properties(_scipp_neutron PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
+if(UNIX AND NOT APPLE)
+  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib")
+  set_target_properties(
+    _scipp_neutron PROPERTIES INSTALL_RPATH "\$ORIGIN/../lib"
+  )
+elseif(APPLE)
+  set_target_properties(_scipp PROPERTIES INSTALL_RPATH "@loader_path/../lib")
+  set_target_properties(
+    _scipp_neutron PROPERTIES INSTALL_RPATH "@loader_path/../lib"
+  )
+endif()
 
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(_scipp PRIVATE pybind11.h)
