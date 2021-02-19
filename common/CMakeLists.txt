@@ -10,6 +10,7 @@ set(INC_FILES
 )
 
 add_library(${TARGET_NAME} INTERFACE)
+set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME common)
 
 # Include tcb/span as system header to avoid compiler warnings.
 target_include_directories(
@@ -22,12 +23,8 @@ target_include_directories(
   ${TARGET_NAME}
   INTERFACE $<INSTALL_INTERFACE:include>
             $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-            ${CMAKE_CURRENT_BINARY_DIR}
 )
 
 add_subdirectory(test)
 
-if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${LIBDIR})
-  install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
-endif(DYNAMIC_LIB)
+scipp_install_component(TARGET ${TARGET_NAME} NO_EXPORT_HEADER)
