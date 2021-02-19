@@ -101,7 +101,7 @@ def test_create_scalar(value):
     [sc.units.m,
      sc.Unit('m'), 'm',
      sc.Variable(1.2, unit=sc.units.m).unit])
-def test_create_scalar_with_dtype(unit):
+def test_create_scalar_with_unit(unit):
     var = sc.Variable(1.2, unit=unit)
     assert var.value == 1.2
     assert var.dims == []
