@@ -113,6 +113,14 @@ TYPED_TEST(ElementArithmeticDivisionTest, true_divide) {
                    this->quotient(-0.75));
 }
 
+TEST(ElementArithmeticDivisionTest, true_divide_variance) {
+  const ValueAndVariance<double> a(4.2, 0.1);
+  const ValueAndVariance<double> b(2.0, 1.2);
+  const auto res = divide(a, b);
+  EXPECT_DOUBLE_EQ(res.value, 1.1);
+  EXPECT_DOUBLE_EQ(res.variance, 1.2609916732476865);
+}
+
 TEST(ElementArithmeticDivisionTest, units) {
   EXPECT_EQ(divide(units::m, units::s), units::m / units::s);
   EXPECT_EQ(floor_divide(units::m, units::s), units::m / units::s);
