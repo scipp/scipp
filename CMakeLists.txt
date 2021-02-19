@@ -176,6 +176,16 @@ endif()
 configure_file(CMake/docs_build.bat.in docs_build.bat)
 configure_file(CMake/docs_build.sh.in docs_build.sh)
 
+if(WIN32)
+  set(PYTHONDIR scipp)
+  set(LIBDIR ${PYTHONDIR})
+  set(INCLUDEDIR include)
+else()
+  set(PYTHONDIR scipp)
+  set(LIBDIR ${CMAKE_INSTALL_LIBDIR})
+  set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
+
 # Generate files for free scipp API functions
 include(scipp-functions)
 

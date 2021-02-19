@@ -28,6 +28,6 @@ target_include_directories(
 add_subdirectory(test)
 
 if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_LIBDIR})
-  install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+  install(TARGETS ${TARGET_NAME} DESTINATION ${LIBDIR})
+  install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
 endif(DYNAMIC_LIB)
