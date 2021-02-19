@@ -42,8 +42,10 @@ scipp_install_component(TARGET ${TARGET_NAME})
 if(DYNAMIC_LIB)
   install(TARGETS compile_flags_target EXPORT ${EXPORT_NAME})
   install(TARGETS units-static EXPORT ${EXPORT_NAME})
-  install(FILES ${PROJECT_BINARY_DIR}/llnl-units-src/units/unit_definitions.hpp
-                ${PROJECT_BINARY_DIR}/llnl-units-src/units/units_decl.hpp
-          DESTINATION ${INCLUDEDIR}/units
+  install(
+    FILES ${PROJECT_BINARY_DIR}/llnl-units-src/units/unit_definitions.hpp
+          ${PROJECT_BINARY_DIR}/llnl-units-src/units/units_decl.hpp
+          ${PROJECT_BINARY_DIR}/llnl-units-src/units/units.hpp
+    DESTINATION ${INCLUDEDIR}/units
   )
 endif(DYNAMIC_LIB)
