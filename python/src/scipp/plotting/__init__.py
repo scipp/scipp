@@ -73,6 +73,10 @@ if is_doc_build and plt is not None:
         "figure.dpi": 96
     })
 
+print("is_doc_build", is_doc_build)
+print(plt.rcParams["interactive"], plt.rcParams["figure.figsize"],
+      plt.rcParams["figure.dpi"])
+
 
 def plot(*args, **kwargs):
     """
