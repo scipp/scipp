@@ -14,17 +14,11 @@
 #include "dataset_operations_common.h"
 
 namespace scipp::dataset {
-namespace {
-Variable applyMask(const VariableConstView &var, const Variable &masks) {
-  return scipp::variable::masked_to_zero(var, masks);
-}
-
-} // namespace
 
 Variable sum(const VariableConstView &var, const Dim dim,
              const MasksConstView &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
-    return sum(applyMask(var, mask_union), dim);
+    return sum(masked_to_zero(var, mask_union), dim);
   }
   return sum(var, dim);
 }
@@ -32,7 +26,7 @@ Variable sum(const VariableConstView &var, const Dim dim,
 VariableView sum(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks, const VariableView &out) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
-    return sum(applyMask(var, mask_union), dim, out);
+    return sum(masked_to_zero(var, mask_union), dim, out);
   }
   return sum(var, dim, out);
 }
@@ -40,7 +34,7 @@ VariableView sum(const VariableConstView &var, const Dim dim,
 Variable nansum(const VariableConstView &var, const Dim dim,
                 const MasksConstView &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
-    return nansum(applyMask(var, mask_union), dim);
+    return nansum(masked_to_zero(var, mask_union), dim);
   }
   return nansum(var, dim);
 }
@@ -48,7 +42,7 @@ Variable nansum(const VariableConstView &var, const Dim dim,
 VariableView nansum(const VariableConstView &var, const Dim dim,
                     const MasksConstView &masks, const VariableView &out) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
-    return nansum(applyMask(var, mask_union), dim, out);
+    return nansum(masked_to_zero(var, mask_union), dim, out);
   }
   return nansum(var, dim, out);
 }
@@ -56,7 +50,8 @@ VariableView nansum(const VariableConstView &var, const Dim dim,
 Variable mean(const VariableConstView &var, const Dim dim,
               const MasksConstView &masks) {
   if (const auto mask_union = irreducible_mask(masks, dim)) {
-    return mean_impl(applyMask(var, mask_union), dim, sum(~mask_union, dim));
+    return mean_impl(masked_to_zero(var, mask_union), dim,
+                     sum(~mask_union, dim));
   }
   return mean(var, dim);
 }
@@ -65,8 +60,8 @@ Variable nanmean(const VariableConstView &var, const Dim dim,
                  const MasksConstView &masks) {
   using variable::isfinite;
   if (const auto mask_union = irreducible_mask(masks, dim)) {
-    const auto count = sum(applyMask(isfinite(var), mask_union), dim);
-    return nanmean_impl(applyMask(var, mask_union), dim, count);
+    const auto count = sum(masked_to_zero(isfinite(var), mask_union), dim);
+    return nanmean_impl(masked_to_zero(var, mask_union), dim, count);
   }
   return nanmean(var, dim);
 }
