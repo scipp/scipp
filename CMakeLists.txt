@@ -192,6 +192,12 @@ endif()
 
 set(EXPORT_NAME ScippTargets)
 
+if(NOT APPLE)
+  set(CMAKE_INSTALL_RPATH $ORIGIN)
+else()
+  set(CMAKE_INSTALL_RPATH @loader_path)
+endif()
+
 # Generate files for free scipp API functions
 include(scipp-functions)
 
