@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "scipp/core/element/arithmetic.h"
+#include "scipp/core/transform_common.h"
 #include "scipp/units/unit.h"
 
 using namespace scipp;
@@ -44,12 +45,6 @@ TEST_F(ElementArithmeticTest, non_in_place) {
 
 TEST_F(ElementArithmeticTest, unary_minus) { EXPECT_EQ(unary_minus(a), -a); }
 
-TEST(ElementArithmeticIntegerDivisionTest, truediv) {
-  // 32 bit ints gives double not float, consistent with numpy
-  EXPECT_TRUE((std::is_same_v<decltype(divide(int32_t{}, int32_t{})), double>));
-  EXPECT_TRUE((std::is_same_v<decltype(divide(int64_t{}, int64_t{})), double>));
-}
-
 TEST(ElementArithmeticIntegerDivisionTest, truediv_32bit) {
   const int32_t a = 2;
   const int32_t b = 3;
@@ -72,13 +67,47 @@ template <class... Ts> auto no_int_as_first_arg(const std::tuple<Ts...> &) {
   return !(int_as_first_arg<Ts>::value || ...);
 }
 
+template <class T> class ElementArithmeticDivisionTest : public testing::Test {
+public:
+  using Dividend = std::tuple_element_t<0, T>;
+  using Divisor = std::tuple_element_t<1, T>;
+
+  constexpr Dividend dividend() { return Dividend{}; }
+  constexpr Dividend divisor() { return Divisor{}; }
+};
+
+template <class Tuple, size_t... Indices>
+auto DivisionTestTypes_impl(std::index_sequence<Indices...>)
+    -> ::testing::Types<std::tuple_element_t<Indices, Tuple>...>;
+
+using DivisionTestTypes =
+    decltype(DivisionTestTypes_impl<scipp::core::arithmetic_type_pairs>(
+        std::make_index_sequence<
+            std::tuple_size_v<scipp::core::arithmetic_type_pairs>>()));
+
+TYPED_TEST_SUITE(ElementArithmeticDivisionTest, DivisionTestTypes);
+
+TYPED_TEST(ElementArithmeticDivisionTest, true_divide) {
+  if constexpr (std::is_integral_v<typename TestFixture::Dividend> &&
+                std::is_integral_v<typename TestFixture::Divisor>) {
+    // Division of integers always returns double regardless of input precision.
+    EXPECT_TRUE(
+        (std::is_same_v<decltype(divide(this->dividend(), this->divisor())),
+                        double>));
+  }
+}
+
+TEST(ElementArithmeticDivisionTest, units) {
+  EXPECT_EQ(divide(units::m, units::s), units::m / units::s);
+  EXPECT_EQ(floor_divide(units::m, units::s), units::m / units::s);
+  EXPECT_EQ(mod(units::m, units::s), units::m / units::s);
+}
+
 TEST(ElementArithmeticIntegerDivisionTest, inplace_truediv_not_supported) {
   EXPECT_TRUE(no_int_as_first_arg(decltype(divide_equals)::types{}));
 }
 
 TEST(ElementArithmeticIntegerDivisionTest, mod) {
-  EXPECT_EQ(mod(units::m, units::s), units::m / units::s);
-
   // x mod 0 is not really defined, but numpy returns 0 and prints a warning
   EXPECT_EQ(mod(0, 0), 0);
   EXPECT_EQ(mod(1, 0), 0);
