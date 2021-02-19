@@ -1,10 +1,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+#include <array>
+#include <vector>
+
 #include <gtest/gtest.h>
 
 #include "scipp/core/element/arithmetic.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/units/unit.h"
+
+#include "arithmetic_parameters.h"
 
 using namespace scipp;
 using namespace scipp::core::element;
@@ -72,15 +77,60 @@ public:
   using Dividend = std::tuple_element_t<0, T>;
   using Divisor = std::tuple_element_t<1, T>;
   // The result is always double if both inputs are integers.
-  using Quotient =
+  using TrueQuotient =
       std::conditional_t<std::is_integral_v<Dividend> &&
                              std::is_integral_v<Divisor>,
                          double, std::common_type_t<Dividend, Divisor>>;
+  // floor_divide and mod produce integers if both inputs are integers and
+  // a float / double otherwise.
+  using FloorQuotient = std::common_type_t<Dividend, Divisor>;
 
   // Helpers to convert values to the correct types.
   constexpr Dividend dividend(Dividend x = Dividend{}) { return x; }
   constexpr Divisor divisor(Divisor x = Divisor{}) { return x; }
-  constexpr Quotient quotient(Quotient x = Quotient{}) { return x; }
+  constexpr TrueQuotient true_quotient(TrueQuotient x = TrueQuotient{}) {
+    return x;
+  }
+  constexpr FloorQuotient floor_quotient(FloorQuotient x = FloorQuotient{}) {
+    return x;
+  }
+
+  struct Params {
+    Dividend dividend;
+    Divisor divisor;
+    TrueQuotient true_quotient;
+    FloorQuotient floor_quotient;
+    FloorQuotient remainder;
+  };
+
+  auto params() const {
+    std::vector<Params> p;
+    const auto int_int = division_params_int_int<Params>();
+    std::copy(begin(int_int), end(int_int), std::back_inserter(p));
+
+    if constexpr (std::is_floating_point_v<Dividend>
+                  && std::is_floating_point_v<Divisor>) {
+      const auto float_float = division_params_int_int<Params>();
+      std::copy(begin(float_float), end(float_float), std::back_inserter(p));
+    }
+
+    return p;
+  }
+
+  template <class Actual, class Expected>
+  void expect_eq(const Actual actual, const Expected expected) const {
+    if constexpr (std::is_integral_v<Dividend> && std::is_integral_v<Divisor>) {
+      // The result had better be exact.
+      EXPECT_EQ(actual, expected);
+    }
+    else if constexpr (std::is_same_v<Dividend, float> || std::is_same_v<Divisor, float>) {
+      // Cannot expect more than single precision.
+      EXPECT_FLOAT_EQ(actual, expected);
+    }
+    else {
+      EXPECT_DOUBLE_EQ(actual, expected);
+    }
+  }
 };
 
 template <class Tuple, size_t... Indices>
@@ -95,22 +145,12 @@ using DivisionTestTypes =
 TYPED_TEST_SUITE(ElementArithmeticDivisionTest, DivisionTestTypes);
 
 TYPED_TEST(ElementArithmeticDivisionTest, true_divide) {
-  if constexpr (std::is_integral_v<typename TestFixture::Dividend> &&
-                std::is_integral_v<typename TestFixture::Divisor>) {
-    // Division of integers always returns double regardless of input precision.
-    EXPECT_TRUE(
-        (std::is_same_v<decltype(divide(this->dividend(), this->divisor())),
-                        typename TestFixture::Quotient>));
+  EXPECT_TRUE(
+      (std::is_same_v<decltype(divide(this->dividend(), this->divisor())),
+                      typename TestFixture::TrueQuotient>));
+  for (const auto p : this->params()) {
+    this->expect_eq(divide(p.dividend, p.divisor), p.true_quotient);
   }
-
-  EXPECT_DOUBLE_EQ(divide(this->dividend(2), this->divisor(1)),
-                   this->quotient(2));
-  EXPECT_DOUBLE_EQ(divide(this->dividend(1), this->divisor(2)),
-                   this->quotient(0.5));
-  EXPECT_DOUBLE_EQ(divide(this->dividend(-5), this->divisor(3)),
-                   this->quotient(-1.6666666666666667));
-  EXPECT_DOUBLE_EQ(divide(this->dividend(3), this->divisor(-4)),
-                   this->quotient(-0.75));
 }
 
 TEST(ElementArithmeticDivisionTest, true_divide_variance) {
