@@ -87,21 +87,10 @@ endif()
 
 add_subdirectory(test)
 
+scipp_install_component(TARGET ${TARGET_NAME} INSTALL_GENERATED)
+
 if(DYNAMIC_LIB)
-  install(
-    TARGETS ${TARGET_NAME}
-    EXPORT ${EXPORT_NAME}
-    DESTINATION ${LIBDIR}
-  )
-  install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
-  # Generated files
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
-          DESTINATION ${INCLUDEDIR}
-  )
   install(DIRECTORY ${PROJECT_BINARY_DIR}/Eigen-src/Eigen
-          DESTINATION ${INCLUDEDIR}
-  )
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}_export.h
           DESTINATION ${INCLUDEDIR}
   )
 endif(DYNAMIC_LIB)

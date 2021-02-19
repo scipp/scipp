@@ -83,18 +83,4 @@ set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME dataset)
 add_subdirectory(test)
 
-if(DYNAMIC_LIB)
-  install(
-    TARGETS ${TARGET_NAME}
-    EXPORT ${EXPORT_NAME}
-    DESTINATION ${LIBDIR}
-  )
-  install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
-  # Generated files
-  install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
-          DESTINATION ${INCLUDEDIR}
-  )
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}_export.h
-          DESTINATION ${INCLUDEDIR}
-  )
-endif(DYNAMIC_LIB)
+scipp_install_component(TARGET ${TARGET_NAME} INSTALL_GENERATED)

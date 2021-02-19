@@ -37,18 +37,11 @@ endif()
 
 add_subdirectory(test)
 
+scipp_install_component(TARGET ${TARGET_NAME})
+
 if(DYNAMIC_LIB)
   install(TARGETS compile_flags_target EXPORT ${EXPORT_NAME})
   install(TARGETS units-static EXPORT ${EXPORT_NAME})
-  install(
-    TARGETS ${TARGET_NAME}
-    EXPORT ${EXPORT_NAME}
-    DESTINATION ${LIBDIR}
-  )
-  install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
-  install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${TARGET_NAME}_export.h
-          DESTINATION ${INCLUDEDIR}
-  )
   install(FILES ${PROJECT_BINARY_DIR}/llnl-units-src/units/unit_definitions.hpp
                 ${PROJECT_BINARY_DIR}/llnl-units-src/units/units_decl.hpp
           DESTINATION ${INCLUDEDIR}/units

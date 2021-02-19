@@ -27,11 +27,4 @@ target_include_directories(
 
 add_subdirectory(test)
 
-if(DYNAMIC_LIB)
-  install(
-    TARGETS ${TARGET_NAME}
-    EXPORT ${EXPORT_NAME}
-    DESTINATION ${LIBDIR}
-  )
-  install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
-endif(DYNAMIC_LIB)
+scipp_install_component(TARGET ${TARGET_NAME} NO_EXPORT_HEADER)
