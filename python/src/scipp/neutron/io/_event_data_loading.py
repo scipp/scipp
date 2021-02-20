@@ -1,12 +1,9 @@
 import h5py
-from typing import Optional, Union
+from typing import Optional, List
 import numpy as np
+from ._loading_common import ensure_str, BadSource
 from ..._scipp import core as sc
 from datetime import datetime
-
-
-class BadSource(Exception):
-    pass
 
 
 def _get_units(dataset: h5py.Dataset) -> Optional[str]:
@@ -14,15 +11,7 @@ def _get_units(dataset: h5py.Dataset) -> Optional[str]:
         units = dataset.attrs["units"]
     except AttributeError:
         return None
-    return _ensure_str(units)
-
-
-def _ensure_str(str_or_bytes: Union[str, bytes]) -> str:
-    try:
-        str_or_bytes = str(str_or_bytes, encoding="utf8")  # type: ignore
-    except TypeError:
-        pass
-    return str_or_bytes
+    return ensure_str(units)
 
 
 def _get_pulse_time_offset(pulse_time_dataset: h5py.Dataset) -> Optional[str]:
@@ -30,7 +19,7 @@ def _get_pulse_time_offset(pulse_time_dataset: h5py.Dataset) -> Optional[str]:
         pulse_offset_iso8601 = pulse_time_dataset.attrs["offset"]
     except KeyError:
         return None
-    return _ensure_str(pulse_offset_iso8601)
+    return ensure_str(pulse_offset_iso8601)
 
 
 def _check_for_missing_fields(group: h5py.Group) -> Optional[str]:
@@ -59,7 +48,7 @@ def _iso8601_to_datetime(iso8601: str) -> Optional[datetime]:
         return None
 
 
-def load_event_group(group: h5py.Group) -> sc.Variable:
+def _load_event_group(group: h5py.Group) -> sc.Variable:
     error_msg = _check_for_missing_fields(group)
     if error_msg is not None:
         raise BadSource(error_msg)
@@ -95,7 +84,6 @@ def load_event_group(group: h5py.Group) -> sc.Variable:
     if pulse_time_offset is not None and pulse_time_offset != unix_epoch:
         # TODO correct for time offset, convert to relative to unix epoch
         #   or do we want to cast pulse times to datetime objects anyway?
-        #   (is microsecond precision sufficient?)
         NotImplementedError(
             "Found offset for pulse times but dealing with this "
             "is not implemented yet")
@@ -144,5 +132,30 @@ def load_event_group(group: h5py.Group) -> sc.Variable:
 
     print(f"Loaded event data from {group.name} containing "
           f"{number_of_events} events")
+
+    return events
+
+
+def load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
+    event_data = []
+    for group in event_data_groups:
+        try:
+            new_event_data = _load_event_group(group)
+            event_data.append(new_event_data)
+        except BadSource as e:
+            print(f"Skipped loading {group.name} due to:\n{e}")
+
+    if not event_data:
+        raise RuntimeError("No valid event data found in file")
+    else:
+        # TODO concatenate the loaded data in order of ids of the bank
+        #  they came from to create single large dataarray
+        def getADetectorId(event_batch):
+            return event_batch.data.coords['detector-id'].values[0]
+
+        event_data.sort(key=getADetectorId)
+        events = event_data.pop(0)
+        while event_data:
+            events = sc.concatenate(events, event_data.pop(0))
 
     return events

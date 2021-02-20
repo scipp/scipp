@@ -1,5 +1,7 @@
 from ..._scipp import core as sc
-from ._event_data_loader import load_event_group, BadSource
+from ._event_data_loading import load_event_data
+from ._log_data_loading import load_log_data_from_group
+from ... import detail
 
 import h5py
 import numpy as np
@@ -75,41 +77,6 @@ def load_nexus(data_file: str,
     return _load_nexus(data_file, root, instrument_file)
 
 
-def _all_equal(iterator):
-    iterator = iter(iterator)
-    try:
-        first = next(iterator)
-    except StopIteration:
-        return True
-    return all(first == rest for rest in iterator)
-
-
-def _load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
-    event_data = []
-    for group in event_data_groups:
-        try:
-            new_event_data = load_event_group(group)
-            event_data.append(new_event_data)
-        except BadSource as e:
-            print(f"Skipped loading {group.name} due to:\n{e}")
-
-    if not event_data:
-        raise RuntimeError("No valid event data found in file")
-    else:
-        # TODO concatenate the loaded data in order of ids of the bank
-        #  they came from to create single large dataarray
-        def getADetectorId(event_batch):
-            # TODO this is wrong
-            return event_batch.data.coords['detector-id'].values[0]
-
-        event_data.sort(key=getADetectorId)
-        events = event_data.pop(0)
-        while event_data:
-            events = sc.concatenate(events, event_data.pop(0))
-
-    return events
-
-
 def _load_nexus(data_file: Union[str, h5py.File],
                 root: str = "/",
                 instrument_file: Union[str, h5py.File, None] = None):
@@ -122,9 +89,16 @@ def _load_nexus(data_file: Union[str, h5py.File],
 
     with _open_if_path(data_file) as nexus_file:
         nx_event_data = "NXevent_data"
-        groups = _find_by_nx_class((nx_event_data, ), nexus_file[root])
+        nx_log = "NXlog"
+        groups = _find_by_nx_class((nx_event_data, nx_log), nexus_file[root])
 
-        event_data = _load_event_data(groups[nx_event_data])
+        loaded_data = load_event_data(groups[nx_event_data])
+
+        for group in groups[nx_log]:
+            log_data_name, log_data = load_log_data_from_group(group)
+            loaded_data.attrs[log_data_name] = detail.move(log_data)
+
+        # TODO instrument name, sample info...
 
     # Load positions?
     # start = timer()
@@ -134,7 +108,7 @@ def _load_nexus(data_file: Union[str, h5py.File],
     # print("Loading positions:", timer() - start)
 
     print("Total time:", timer() - total_time)
-    return event_data
+    return loaded_data
 
 
 def load_positions(instrument_file: str, entry='/', dim='position'):
