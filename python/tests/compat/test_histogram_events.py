@@ -1,4 +1,4 @@
-from comparison import MantidScippComparison
+from mantid_scipp_comparison import MantidScippComparison
 from mantid_data_helper import mantid_is_available
 import pytest
 import mantid.simpleapi as sapi
