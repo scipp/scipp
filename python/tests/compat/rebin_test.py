@@ -7,9 +7,9 @@ import scipp as sc
 import numpy as np
 
 
-class RebinTest(Comparison):
+class HistogramEventsTest(Comparison):
     def __init__(self):
-        super(RebinTest, self).__init__('rebin_test')
+        super(HistogramEventsTest, self).__init__('histogram_events_test')
 
     @property
     def _filenames(self):
@@ -18,6 +18,7 @@ class RebinTest(Comparison):
         }
 
     def _run_mantid(self, **kwargs):
+        # Note Mantid rebin inclusive of last bin boundary
         out = sapi.Rebin(kwargs['workspace'],
                          Params=[0, 10, 1000],
                          PreserveEvents=False,
@@ -35,6 +36,6 @@ class RebinTest(Comparison):
 
 @pytest.mark.skipif(not mantid_is_available(),
                     reason='Mantid framework is unavailable')
-def test_rebin():
-    rebin = RebinTest()
+def test_histogram_events():
+    rebin = HistogramEventsTest()
     print(rebin.run(allow_failure=True))
