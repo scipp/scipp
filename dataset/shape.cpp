@@ -233,6 +233,17 @@ Variable maybe_broadcast_and_reshape(const VariableConstView &v,
   }
 }
 
+Variable slice_and_stack(const VariableConstView &v, const Dim from_dim,
+                const Dimensions &to_dims) {
+  auto view = VariableView(v);
+  for (const auto dim : to_dims.labels()) {
+  	view = slice(view, from_dim, 0, )
+
+  }
+
+
+}
+
 } // end anonymous namespace
 
 /// dim ['x': 6] -> ['y': 2, 'z': 3]
@@ -250,7 +261,10 @@ DataArray stack(const DataArrayConstView &a, const Dim from_dim,
       DataArray(reshape(a.data(), stack_dims(old_dims, from_dim, to_dims)));
 
   for (auto &&[name, coord] : a.coords())
-    reshaped.coords().set(
+  	if is_bin_edges(coord, old_dims, from_dim)
+
+  	else
+      reshaped.coords().set(
         name, reshape(coord, stack_dims(coord.dims(), from_dim, to_dims)));
 
   for (auto &&[name, attr] : a.attrs())
