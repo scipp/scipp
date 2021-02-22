@@ -3,6 +3,7 @@
 #include <array>
 #include <vector>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "scipp/core/element/arithmetic.h"
@@ -131,18 +132,18 @@ public:
     return p;
   }
 
-  template <class Actual, class Expected>
-  void expect_eq(const Actual actual, const Expected expected) const {
-    if constexpr (std::is_integral_v<Dividend> && std::is_integral_v<Divisor>) {
+  template <class Result>
+  void expect_eq(const Result actual, const Result expected) {
+    if constexpr (std::is_integral_v<Result>) {
       // The result had better be exact.
       EXPECT_EQ(actual, expected);
-    }
-    else if constexpr (std::is_same_v<Dividend, float> || std::is_same_v<Divisor, float>) {
-      // Cannot expect more than single precision.
-      EXPECT_FLOAT_EQ(actual, expected);
-    }
-    else {
-      EXPECT_DOUBLE_EQ(actual, expected);
+    } else if constexpr (std::is_same_v<Dividend, float> ||
+                         std::is_same_v<Divisor, float>) {
+      EXPECT_THAT(static_cast<float>(actual),
+                  ::testing::NanSensitiveFloatNear(expected, 1e-5f));
+    } else {
+      EXPECT_THAT(static_cast<double>(actual),
+                  ::testing::NanSensitiveDoubleEq(expected));
     }
   }
 };
