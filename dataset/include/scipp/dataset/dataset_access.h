@@ -18,7 +18,7 @@ namespace scipp::dataset {
 class DataArray;
 class Dataset;
 
-class CoordAccess {
+class SCIPP_DATASET_EXPORT CoordAccess {
 public:
   CoordAccess(Dataset *parent, const std::string *name = nullptr,
               const bool isItem = true)
@@ -34,7 +34,7 @@ private:
   bool m_isItem;
 };
 
-class MaskAccess {
+class SCIPP_DATASET_EXPORT MaskAccess {
 public:
   MaskAccess(Dataset *parent, const std::string *name)
       : m_parent(parent), m_name(name) {}

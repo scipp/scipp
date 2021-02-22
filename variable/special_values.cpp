@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include "scipp/core/element/special_values.h"
-#include "scipp/variable/misc_operations.h"
+#include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
 
 using namespace scipp::core;

@@ -71,7 +71,20 @@ constexpr auto mod_equals = overloaded{
 
 struct add_types_t {
   constexpr void operator()() const noexcept;
-  using types = arithmetic_and_matrix_type_pairs;
+  using types = decltype(std::tuple_cat(
+      std::declval<arithmetic_and_matrix_type_pairs>(),
+      std::tuple<
+          std::tuple<time_point, int64_t>, std::tuple<time_point, int32_t>,
+          std::tuple<int64_t, time_point>, std::tuple<int32_t, time_point>>{}));
+};
+
+struct minus_types_t {
+  constexpr void operator()() const noexcept;
+  using types = decltype(
+      std::tuple_cat(std::declval<arithmetic_and_matrix_type_pairs>(),
+                     std::tuple<std::tuple<time_point, int64_t>,
+                                std::tuple<time_point, int32_t>,
+                                std::tuple<time_point, time_point>>{}));
 };
 
 struct times_types_t {
@@ -102,8 +115,8 @@ struct divide_types_t {
 
 constexpr auto plus =
     overloaded{add_types_t{}, [](const auto a, const auto b) { return a + b; }};
-constexpr auto minus =
-    overloaded{add_types_t{}, [](const auto a, const auto b) { return a - b; }};
+constexpr auto minus = overloaded{
+    minus_types_t{}, [](const auto a, const auto b) { return a - b; }};
 constexpr auto times = overloaded{
     times_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,

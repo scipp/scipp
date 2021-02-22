@@ -110,6 +110,9 @@ private:
   }
 
 public:
+  VariableFactory() = default;
+  VariableFactory(const VariableFactory &) = delete;
+  VariableFactory &operator=(const VariableFactory &) = delete;
   void emplace(const DType key, std::unique_ptr<AbstractVariableMaker> makes);
   bool contains(const DType key) const noexcept;
   bool is_bins(const VariableConstView &var) const;

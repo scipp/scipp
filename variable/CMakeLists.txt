@@ -76,6 +76,14 @@ endif(DYNAMIC_LIB)
 
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
+# Macros such as INSTANTIATE_VARIABLE are used for several targets (in
+# particular also from dataset/ and python/). Therefore, it cannot use
+# SCIPP_VARIABLE_EXPORT but has to point to the export macro of the current
+# target. It therefore uses SCIPP_EXPORT, which can be pointed to the current
+# applicable export macro, as in the following:
+target_compile_definitions(
+  ${TARGET_NAME} PRIVATE SCIPP_EXPORT=SCIPP_VARIABLE_EXPORT
+)
 target_link_libraries(${TARGET_NAME} PUBLIC scipp-core Boost::boost)
 if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
@@ -86,10 +94,11 @@ target_include_directories(
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-         ${CMAKE_CURRENT_BINARY_DIR}
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME variable)
 
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(
@@ -100,6 +109,4 @@ endif()
 
 add_subdirectory(test)
 
-if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-endif(DYNAMIC_LIB)
+scipp_install_component(TARGET ${TARGET_NAME} INSTALL_GENERATED)

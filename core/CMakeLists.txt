@@ -64,23 +64,18 @@ endif()
 
 # Include tcb/span as system header to avoid compiler warnings.
 target_include_directories(
-  ${TARGET_NAME} SYSTEM
-  PUBLIC
-    $<INSTALL_INTERFACE:include/scipp/core/span/include>
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include/scipp/core/span/include>
-)
-target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-         ${CMAKE_CURRENT_BINARY_DIR}
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 target_include_directories(
-  ${TARGET_NAME} SYSTEM PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src
+  ${TARGET_NAME} SYSTEM PUBLIC $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/Eigen-src>
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME core)
 
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(
@@ -92,6 +87,10 @@ endif()
 
 add_subdirectory(test)
 
+scipp_install_component(TARGET ${TARGET_NAME} INSTALL_GENERATED)
+
 if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(DIRECTORY ${PROJECT_BINARY_DIR}/Eigen-src/Eigen
+          DESTINATION ${INCLUDEDIR}
+  )
 endif(DYNAMIC_LIB)

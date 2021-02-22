@@ -100,3 +100,31 @@ def test_load_events_bins():
     assert events.shape == event_index.shape
     assert sc.is_equal(events['pulse', 0].value.coords['detector-id'],
                        data.coords['detector-id']['event', 0:3])
+
+
+def test_bins_sum_with_masked_buffer():
+    N = 5
+    values = np.ones(N)
+    data = sc.DataArray(
+        data=sc.Variable(dims=['position'],
+                         unit=sc.units.counts,
+                         values=values,
+                         variances=values),
+        coords={
+            'position':
+            sc.Variable(dims=['position'],
+                        values=['site-{}'.format(i) for i in range(N)]),
+            'x':
+            sc.Variable(dims=['position'], unit=sc.units.m, values=[0.2] * 5),
+            'y':
+            sc.Variable(dims=['position'], unit=sc.units.m, values=[0.2] * 5)
+        },
+        masks={
+            'test-mask':
+            sc.Variable(dims=['position'],
+                        unit=sc.units.one,
+                        values=[True, False, True, False, True])
+        })
+    xbins = sc.Variable(dims=['x'], unit=sc.units.m, values=[0.1, 0.5, 0.9])
+    binned = sc.bin(data, [xbins])
+    assert binned.bins.sum().values[0] == 2
