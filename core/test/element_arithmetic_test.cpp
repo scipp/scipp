@@ -181,7 +181,6 @@ TYPED_TEST(ElementArithmeticDivisionTest, remainder) {
                               typename TestFixture::FloorQuotient>));
 
   for (const auto p : this->params()) {
-    std::cout << p.dividend << " % " << p.divisor << std::endl;
     this->expect_eq(mod(p.dividend, p.divisor), p.remainder);
   }
 }
@@ -190,36 +189,6 @@ TEST(ElementArithmeticDivisionTest, units) {
   EXPECT_EQ(divide(units::m, units::s), units::m / units::s);
   EXPECT_EQ(floor_divide(units::m, units::s), units::m / units::s);
   EXPECT_EQ(mod(units::m, units::s), units::m / units::s);
-}
-
-TEST(ElementArithmeticIntegerDivisionTest, mod_equals) {
-  constexpr auto check_mod = [](auto a, auto b, auto expected) {
-    mod_equals(a, b);
-    EXPECT_EQ(a, expected);
-  };
-  check_mod(units::m, units::s, units::m / units::s);
-
-  check_mod(0, 0, 0);
-  check_mod(1, 0, 0);
-  check_mod(-1, 0, 0);
-
-  check_mod(0, -2, 0);
-  check_mod(1, -2, -1);
-  check_mod(2, -2, 0);
-  check_mod(3, -2, -1);
-  check_mod(-1, -2, -1);
-  check_mod(-2, -2, 0);
-  check_mod(-3, -2, -1);
-
-  check_mod(-4, 3, 2);
-  check_mod(-3, 3, 0);
-  check_mod(-2, 3, 1);
-  check_mod(-1, 3, 2);
-  check_mod(0, 3, 0);
-  check_mod(1, 3, 1);
-  check_mod(2, 3, 2);
-  check_mod(3, 3, 0);
-  check_mod(4, 3, 1);
 }
 
 class ElementNanArithmeticTest : public ::testing::Test {
