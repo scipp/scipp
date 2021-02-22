@@ -15,7 +15,16 @@ class Comparison:
         stop = time.time()
         return result, (stop - start) * sc.Unit('s')
 
-    def run(self):
+    def _assert(self, a, b, allow_failure):
+        try:
+            assert sc.is_equal(a, b)
+        except AssertionError as ae:
+            if allow_failure:
+                print(ae)
+            else:
+                raise (ae)
+
+    def run(self, allow_failure=False):
         results = sc.Dataset()
         for name, (hash, algorithm) in self._filenames.items():
             file = MantidDataHelper.find_file(hash, algorithm)
@@ -27,7 +36,8 @@ class Comparison:
                 sc.dtype.float64)  # Converters set weights float32
             out_scipp_da, time_scipp = self._execute_with_timing(
                 self._run_scipp, data_array=in_da)
-            assert sc.is_equal(out_mantid_da, out_scipp_da)
+
+            self._assert(out_scipp_da, out_mantid_da, allow_failure)
 
             result = sc.DataArray(sc.equal(out_mantid_da, out_scipp_da).data,
                                   coords={
