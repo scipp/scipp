@@ -1,7 +1,6 @@
 from mantid_data_helper import MantidDataHelper
-import mantid.simpleapi as sapi
-import scipp.compat.mantid as mantid
 import scipp as sc
+import scipp.compat.mantid as mantid
 import time
 
 
@@ -25,6 +24,7 @@ class Comparison:
                 raise (ae)
 
     def run(self, allow_failure=False):
+        import mantid.simpleapi as sapi
         results = sc.Dataset()
         for name, (hash, algorithm) in self._filenames.items():
             file = MantidDataHelper.find_file(hash, algorithm)
