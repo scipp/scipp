@@ -156,7 +156,8 @@ constexpr auto floor_divide = overloaded{
 
 // remainder defined as in Python
 constexpr auto mod =
-    overloaded{remainder_types_t{},
+    overloaded{remainder_types_t{}, transform_flags::expect_no_variance_arg<0>,
+               transform_flags::expect_no_variance_arg<1>,
                [](const units::Unit &a, const units::Unit &b) { return a % b; },
                [](const auto a, const auto b) {
                  if constexpr (std::is_floating_point_v<decltype(a)> ||
