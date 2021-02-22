@@ -26,19 +26,22 @@ std::ostream &operator<<(std::ostream &os, const Variable &variable) {
   return os << VariableConstView(variable);
 }
 
+namespace {
 constexpr const char *tab = "  ";
 
 std::string make_dims_labels(const VariableConstView &variable,
-                             const Dimensions &datasetDims) {
+                             const std::optional<Dimensions> datasetDims) {
   const auto &dims = variable.dims();
   if (dims.empty())
     return "()";
   std::string diminfo = "(";
   for (const auto dim : dims.labels()) {
     diminfo += to_string(dim);
-    if ((datasetDims.contains(dim) && (datasetDims[dim] + 1 == dims[dim])) ||
-        (datasetDims.empty() && dims[dim] == 2))
-      diminfo += " [bin-edge]";
+    if (datasetDims) {
+      if ((datasetDims->contains(dim) ? (*datasetDims)[dim] : 1) + 1 ==
+          dims[dim])
+        diminfo += " [bin-edge]";
+    }
     diminfo += ", ";
   }
   diminfo.resize(diminfo.size() - 2);
@@ -74,10 +77,11 @@ auto apply(const DType dtype, Args &&... args) {
                  bucket<VariableView>, scipp::index_pair>{},
       dtype, std::forward<Args>(args)...);
 }
+} // namespace
 
 std::string format_variable(const std::string &key,
                             const VariableConstView &variable,
-                            const Dimensions &datasetDims) {
+                            const std::optional<Dimensions> datasetDims) {
   if (!variable)
     return std::string(tab) + "invalid variable\n";
   std::stringstream s;
