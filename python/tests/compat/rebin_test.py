@@ -8,17 +8,21 @@ import numpy as np
 
 
 class RebinTest(Comparison):
+    def __init__(self):
+        super(RebinTest, self).__init__('rebin_test')
+
     @property
     def _filenames(self):
-        return {"5ba401e489260a44374b5be12b780911": "MD5"}
+        return {
+            "CNCS_51936_event.nxs": ("5ba401e489260a44374b5be12b780911", "MD5")
+        }
 
     def _run_mantid(self, **kwargs):
         out = sapi.Rebin(kwargs['workspace'],
                          Params=[0, 10, 1000],
                          PreserveEvents=False,
                          StoreInADS=False)
-        out_da = mantid.from_mantid(out)
-        return out_da
+        return mantid.from_mantid(out)
 
     def _run_scipp(self, **kwargs):
         return sc.bin(kwargs['data_array'],
@@ -34,4 +38,4 @@ class RebinTest(Comparison):
                     reason='Mantid framework is unavailable')
 def test_rebin():
     rebin = RebinTest()
-    rebin.run()
+    print(rebin.run())

@@ -6,16 +6,20 @@ import time
 
 
 class Comparison:
+    def __init__(self, test_description=None):
+        self._test_description = test_description
+
     def _execute_with_timing(self, op, **kwargs):
         start = time.time()
         result = op(**kwargs)
         stop = time.time()
-        return result, stop - start
+        return result, (stop - start) * sc.Unit('s')
 
     def run(self):
-        results = []
-        for hash, algorithm in self._filenames.items():
+        results = sc.Dataset()
+        for i, (name, (hash, algorithm)) in enumerate(self._filenames.items()):
             file = MantidDataHelper.find_file(hash, algorithm)
+            print('Loading', name)
             in_ws = sapi.Load(Filename=file, StoreInADS=False)
             out_mantid_da, time_mantid = self._execute_with_timing(
                 self._run_mantid, workspace=in_ws)
@@ -24,7 +28,23 @@ class Comparison:
             out_scipp_da, time_scipp = self._execute_with_timing(
                 self._run_scipp, data_array=in_da)
             assert sc.is_equal(out_mantid_da, out_scipp_da)
-            results.append((out_scipp_da, out_mantid_da))
+
+            result = sc.DataArray(sc.equal(out_mantid_da, out_scipp_da).data,
+                                  coords={
+                                      'diff':
+                                      out_mantid_da.data - out_scipp_da.data,
+                                      'is_approx':
+                                      sc.is_approx(out_mantid_da.data,
+                                                   out_scipp_da.data,
+                                                   1e-9 * sc.Unit('counts')),
+                                      'duration_scipp':
+                                      time_scipp,
+                                      'duration_mantid':
+                                      time_mantid
+                                  })
+
+            results[f'{i}' if self._test_description is None else
+                    f'{self._test_description}_{i}'] = result
         return results
 
     @property
