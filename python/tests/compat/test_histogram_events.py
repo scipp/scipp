@@ -1,7 +1,6 @@
 from mantid_scipp_comparison import MantidScippComparison
 from mantid_data_helper import mantid_is_available
 import pytest
-import mantid.simpleapi as sapi
 import scipp.compat.mantid as mantid
 import scipp as sc
 import numpy as np
@@ -18,6 +17,7 @@ class HistogramEventsTest(MantidScippComparison):
         }
 
     def _run_mantid(self, **kwargs):
+        import mantid.simpleapi as sapi
         # Note Mantid rebin inclusive of last bin boundary
         out = sapi.Rebin(kwargs['workspace'],
                          Params=[0, 10, 1000],
