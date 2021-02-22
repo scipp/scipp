@@ -1,6 +1,7 @@
 from ..._scipp import core as sc
 from ._event_data_loading import load_event_data
 from ._log_data_loading import load_log_data_from_group
+from ._loading_common import BadSource
 from ... import detail
 
 import h5py
@@ -9,6 +10,7 @@ from os.path import join
 from timeit import default_timer as timer
 from typing import Union, Tuple, Dict, Optional, List
 from contextlib import contextmanager
+from warnings import warn
 
 
 def _get_attr_as_str(h5_object, attribute_name: str):
@@ -77,6 +79,25 @@ def load_nexus(data_file: str,
     return _load_nexus(data_file, root, instrument_file)
 
 
+def _add_log_to_data(log_data_name: str, log_data: sc.Variable,
+                     group_path: str, data: sc.Variable):
+    group_path = group_path.split('/')
+    path_position = -2
+    name_changed = False
+    unique_name_found = False
+    while not unique_name_found:
+        if log_data_name not in data.attrs.keys():
+            data.attrs[log_data_name] = detail.move(log_data)
+            unique_name_found = True
+        else:
+            name_changed = True
+            log_data_name += f"_{group_path[path_position]}"
+            path_position -= 1
+    if name_changed:
+        warn(f"Name of log group at {group_path} is not unique: "
+             f"{log_data_name} used as attribute name.")
+
+
 def _load_nexus(data_file: Union[str, h5py.File],
                 root: str = "/",
                 instrument_file: Union[str, h5py.File, None] = None):
@@ -95,8 +116,12 @@ def _load_nexus(data_file: Union[str, h5py.File],
         loaded_data = load_event_data(groups[nx_event_data])
 
         for group in groups[nx_log]:
-            log_data_name, log_data = load_log_data_from_group(group)
-            loaded_data.attrs[log_data_name] = detail.move(log_data)
+            try:
+                log_data_name, log_data = load_log_data_from_group(group)
+                _add_log_to_data(log_data_name, log_data, group.name,
+                                 loaded_data)
+            except BadSource as e:
+                warn(f"Skipped loading {group.name} due to:\n{e}")
 
         # TODO instrument name, sample info...
 

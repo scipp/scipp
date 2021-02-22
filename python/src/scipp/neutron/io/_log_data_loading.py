@@ -7,25 +7,26 @@ from ._loading_common import ensure_str, BadSource
 
 def load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
     property_name = group.name.split("/")[-1]
-    if property_name == "value_log":
-        property_name = group.parent.name.split("/")[-1]
+    value_dataset_name = "value"
+    time_dataset_name = "time"
 
     try:
-        values = group["value"][...]
+        values = group[value_dataset_name][...]
     except KeyError:
         raise BadSource(f"NXlog at {group.name} has no value dataset, "
                         f"skipping loading")
 
     try:
-        unit = ensure_str(group["values"].attrs["units"])
+        unit = ensure_str(group[value_dataset_name].attrs["units"])
     except KeyError:
         raise BadSource(f"value dataset of NXlog at {group.name} has no "
                         f"unit attrs, skipping loading")
 
     try:
-        times = group["time"][...]
+        times = group[time_dataset_name][...]
         dimension_label = "time"
         is_time_series = True
+        time_unit = ensure_str(group[time_dataset_name].attrs["units"])
         # TODO convert them to datetime?
         #  should have a units attribute to check,
         #  they are float32 in seconds relative to start attribute
@@ -36,11 +37,14 @@ def load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
         is_time_series = False
 
     if np.isscalar(values):
-        property_data = sc.Variable(value=values, unit=unit)
+        property_data = sc.Variable(value=values,
+                                    unit=unit,
+                                    dtype=group[value_dataset_name].dtype.type)
     else:
         property_data = sc.Variable(values=values,
                                     unit=unit,
-                                    dims=[dimension_label])
+                                    dims=[dimension_label],
+                                    dtype=group[value_dataset_name].dtype.type)
 
     if is_time_series:
         # If property has timestamps, create a DataArray
@@ -50,13 +54,12 @@ def load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
                                       sc.Variable([dimension_label],
                                                   values=times,
                                                   dtype=sc.dtype.int64,
-                                                  unit=sc.units.ns)
+                                                  unit=time_unit)
                                   })
-        yield property_name, sc.Variable(value=data_array)
+        return property_name, sc.Variable(value=data_array)
     elif not np.isscalar(values):
         # If property is multi-valued, create a wrapper single
         # value variable. This prevents interference with
         # global dimensions for for output Dataset.
-        yield property_name, sc.Variable(value=property_data)
-    else:
-        yield property_name, property_data
+        return property_name, sc.Variable(value=property_data)
+    return property_name, property_data

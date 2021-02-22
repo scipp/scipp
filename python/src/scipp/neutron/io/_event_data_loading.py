@@ -1,5 +1,5 @@
 import h5py
-from typing import Optional, List
+from typing import Optional, List, Tuple
 import numpy as np
 from ._loading_common import ensure_str, BadSource
 from ..._scipp import core as sc
@@ -50,7 +50,7 @@ def _iso8601_to_datetime(iso8601: str) -> Optional[datetime]:
         return None
 
 
-def _load_event_group(group: h5py.Group) -> sc.Variable:
+def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, int]:
     error_msg = _check_for_missing_fields(group)
     if error_msg is not None:
         raise BadSource(error_msg)
@@ -116,27 +116,18 @@ def _load_event_group(group: h5py.Group) -> sc.Variable:
     #     raise BadSource("Unexpected values for event indices in "
     #                     "event_index dataset")
 
+    # event_index may be large, so we try the maximum detector
+    # id from a detector_numbers dataset file
     if "detector_numbers" in group:
-        detector_numbers = sc.Variable(
-            dims=['detector-id'],
-            values=group['detector_numbers'][...].flatten(),
-            dtype=np.int32)
+        detector_numbers = group['detector_numbers'][...]
+        max_detector_id = detector_numbers.max()
     else:
-        # No detector_numbers dataset so we'll have to find what range of
-        # detectors numbers are in the dataset
-        detector_numbers = sc.Variable(dims=['detector-id'],
-                                       values=np.arange(event_index.min(),
-                                                        event_index.max() + 1,
-                                                        dtype=np.int32))
-    # Events in the NeXus file are effectively binned by pulse
-    # (because they are recorded chronologically)
-    # but for reduction it is more useful to bin by detector id
-    events = bin(data, groups=[detector_numbers])
+        max_detector_id = event_index.max()
 
     print(f"Loaded event data from {group.name} containing "
           f"{number_of_events} events")
 
-    return events
+    return data, max_detector_id
 
 
 def load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
@@ -153,12 +144,25 @@ def load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
     else:
         # TODO concatenate the loaded data in order of ids of the bank
         #  they came from to create single large dataarray
-        def getADetectorId(event_batch):
-            return event_batch.coords['detector-id'].values[0]
+        def getMaxDetectorId(events_and_max_det_id):
+            return events_and_max_det_id[1]
 
-        event_data.sort(key=getADetectorId)
-        events = event_data.pop(0)
+        event_data.sort(key=getMaxDetectorId)
+
+        max_detector_id = event_data[-1][1]
+        detector_ids = sc.Variable(dims=['detector-id'],
+                                   values=np.arange(0,
+                                                    max_detector_id + 1,
+                                                    dtype=np.int32))
+
+        events, _ = event_data.pop(0)
         while event_data:
-            events = sc.concatenate(events, event_data.pop(0))
+            new_events, _ = event_data.pop(0)
+            events = sc.concatenate(events, new_events, dim="event")
+
+        # Events in the NeXus file are effectively binned by pulse
+        # (because they are recorded chronologically)
+        # but for reduction it is more useful to bin by detector id
+        events = bin(events, groups=[detector_ids])
 
     return events
