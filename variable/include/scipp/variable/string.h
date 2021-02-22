@@ -30,10 +30,9 @@ to_string(const std::pair<Dim, VariableConstView> &coord);
 SCIPP_VARIABLE_EXPORT std::string
 to_string(const std::pair<std::string, VariableConstView> &attr);
 
-SCIPP_VARIABLE_EXPORT std::string format_variable(
-    const std::string &key, const VariableConstView &variable,
-    std::optional<std::reference_wrapper<const Dimensions>> datasetDims =
-        std::nullopt);
+SCIPP_VARIABLE_EXPORT std::string
+format_variable(const std::string &key, const VariableConstView &variable,
+                std::optional<Dimensions> datasetDims = std::nullopt);
 
 /// Abstract base class for formatters for variables with element types not in
 /// scipp-variable module.

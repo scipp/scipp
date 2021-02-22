@@ -29,9 +29,8 @@ std::ostream &operator<<(std::ostream &os, const Variable &variable) {
 namespace {
 constexpr const char *tab = "  ";
 
-std::string make_dims_labels(
-    const VariableConstView &variable,
-    const std::optional<std::reference_wrapper<const Dimensions>> datasetDims) {
+std::string make_dims_labels(const VariableConstView &variable,
+                             const std::optional<Dimensions> datasetDims) {
   const auto &dims = variable.dims();
   if (dims.empty())
     return "()";
@@ -39,9 +38,9 @@ std::string make_dims_labels(
   for (const auto dim : dims.labels()) {
     diminfo += to_string(dim);
     if (datasetDims) {
-      if ((datasetDims->get().contains(dim) &&
-           (datasetDims->get()[dim] + 1 == dims[dim])) ||
-          (datasetDims->get().empty() && dims[dim] == 2))
+      if ((datasetDims->contains(dim) &&
+           ((*datasetDims)[dim] + 1 == dims[dim])) ||
+          (datasetDims->empty() && dims[dim] == 2))
         diminfo += " [bin-edge]";
     }
     diminfo += ", ";
@@ -81,9 +80,9 @@ auto apply(const DType dtype, Args &&... args) {
 }
 } // namespace
 
-std::string format_variable(
-    const std::string &key, const VariableConstView &variable,
-    const std::optional<std::reference_wrapper<const Dimensions>> datasetDims) {
+std::string format_variable(const std::string &key,
+                            const VariableConstView &variable,
+                            const std::optional<Dimensions> datasetDims) {
   if (!variable)
     return std::string(tab) + "invalid variable\n";
   std::stringstream s;
