@@ -219,7 +219,7 @@ if(DYNAMIC_LIB)
   write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
     VERSION "${version}"
-    COMPATIBILITY AnyNewerVersion
+    COMPATIBILITY SameMinorVersion # switch to SameMajorVersion after 1.0 release
   )
   install(
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
