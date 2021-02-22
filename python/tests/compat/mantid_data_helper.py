@@ -7,6 +7,14 @@ import hashlib
 import subprocess as sp
 
 
+def mantid_is_available():
+    try:
+        import mantid  # noqa: F401
+        return True
+    except ImportError:
+        return False
+
+
 def download_file(source, destination):
     command = "wget -O {} {}".format(destination, source)
     status = sp.run(command, shell=True).returncode
