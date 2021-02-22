@@ -214,7 +214,7 @@ if(DYNAMIC_LIB)
   configure_package_config_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-config.cmake.in
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
-    INSTALL_DESTINATION lib/cmake/scipp
+    INSTALL_DESTINATION ${LIBDIR}/cmake/scipp
   )
   write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
@@ -224,6 +224,6 @@ if(DYNAMIC_LIB)
   install(
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
           "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
-    DESTINATION lib/cmake/scipp
+    DESTINATION ${LIBDIR}/cmake/scipp
   )
 endif(DYNAMIC_LIB)
