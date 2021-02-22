@@ -63,12 +63,6 @@ constexpr auto times_equals =
 constexpr auto divide_equals =
     overloaded{div_inplace_types, [](auto &&a, const auto &b) { a /= b; }};
 
-// mod defined as in Python
-constexpr auto mod_equals = overloaded{
-    arg_list<int64_t, int32_t, std::tuple<int64_t, int32_t>>,
-    [](units::Unit &a, const units::Unit &b) { a %= b; },
-    [](auto &&a, const auto &b) { a = b == 0 ? b : ((a % b) + b) % b; }};
-
 struct add_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(std::tuple_cat(
@@ -172,6 +166,11 @@ constexpr auto mod =
                    return b == 0 ? 0 : a - floor_divide(a, b) * b;
                  }
                }};
+
+constexpr auto mod_equals = overloaded{
+    arg_list<int64_t, int32_t, std::tuple<int64_t, int32_t>>,
+    [](units::Unit &a, const units::Unit &b) { a %= b; },
+    [](auto &&a, const auto &b) { a = mod(a, b); }};
 
 constexpr auto unary_minus =
     overloaded{arg_list<double, float, int64_t, int32_t, Eigen::Vector3d>,
