@@ -162,7 +162,8 @@ class VariableDrawer:
                 y_pos = dy + view_height - self._margin - 0.5 * extent
                 return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
                     fill="dim-color" style="font-size:#smaller-font" \
-                    transform="rotate(-90, {x_pos}, {y_pos})">{escape(dim)}</text>'
+                    transform="rotate(-90, {x_pos}, {y_pos})">\
+                        {escape(dim)}</text>'
 
             if axis == 0:
                 x_pos = dx + self._margin + 0.3 * 0.5 * extent - \
@@ -171,7 +172,8 @@ class VariableDrawer:
                 )[-2] - 0.3 * 0.5 * extent - 0.2 * _smaller_font
                 return f'<text x="{x_pos}" y="{y_pos}" text-anchor="middle" \
                     fill="dim-color" style="font-size:#smaller-font" \
-                    transform="rotate(-45, {x_pos}, {y_pos})">{escape(dim)}</text>'
+                    transform="rotate(-45, {x_pos}, {y_pos})">\
+                        {escape(dim)}</text>'
 
         extents = self._extents()
         for dim in self._variable.dims:

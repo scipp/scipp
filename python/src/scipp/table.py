@@ -71,7 +71,8 @@ def _make_value_rows(dict_of_variables, is_bin_centers, index, base_style,
                     base_style, escape(su.value_to_string(val.values[index]))))
                 if val.variances is not None:
                     html.append("<td rowspan='2' {}>{}</td>".format(
-                        base_style, escape(su.value_to_string(val.variances[index]))))
+                        base_style,
+                        escape(su.value_to_string(val.variances[index]))))
 
     return "".join(html)
 
@@ -88,7 +89,8 @@ def _make_trailing_cells(dict_of_variables, is_bin_centers, index, size,
                         html.append("<td {}></td>".format(edge_style))
                 else:
                     html.append("<td rowspan='2' {}>{}</td>".format(
-                        base_style, escape(su.value_to_string(val.values[index]))))
+                        base_style,
+                        escape(su.value_to_string(val.values[index]))))
                     if val.variances is not None:
                         html.append("<td rowspan='2' {}>{}</td>".format(
                             base_style,
@@ -148,8 +150,8 @@ def _table_from_dict_of_variables(dict_of_variables,
         html += "<tr {}>".format(hover_style)
         for key, section in dict_of_variables.items():
             for name, val in section.items():
-                html += "<td {}>{}</td>".format(base_style,
-                                                escape(su.value_to_string(val.value)))
+                html += "<td {}>{}</td>".format(
+                    base_style, escape(su.value_to_string(val.value)))
                 if val.variances is not None:
                     html += "<td {}>{}</td>".format(
                         base_style, escape(su.value_to_string(val.variance)))
