@@ -50,6 +50,7 @@ set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake"
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 find_package(Sanitizers REQUIRED)
 
@@ -156,8 +157,6 @@ add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-permissive->)
 option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" OFF)
 
 enable_testing()
-
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
