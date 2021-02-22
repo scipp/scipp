@@ -134,12 +134,18 @@ constexpr auto divide = overloaded{
         return a / b;
     }};
 
-// mod defined as in Python
-constexpr auto mod = overloaded{
-    arg_list<int64_t, int32_t, std::tuple<int32_t, int64_t>,
-             std::tuple<int64_t, int32_t>>,
-    [](const units::Unit &a, const units::Unit &b) { return a % b; },
-    [](const auto a, const auto b) { return b == 0 ? 0 : ((a % b) + b) % b; }};
+// remainder defined as in Python
+constexpr auto mod =
+    overloaded{remainder_types_t{},
+               [](const units::Unit &a, const units::Unit &b) { return a % b; },
+               [](const auto a, const auto b) {
+                 if constexpr (std::is_floating_point_v<decltype(a)> ||
+                               std::is_floating_point_v<decltype(b)>) {
+                   return b == 0 ? NAN : a - floor_divide(a, b) * b;
+                 } else {
+                   return b == 0 ? 0 : a - floor_divide(a, b) * b;
+                 }
+               }};
 
 constexpr auto unary_minus =
     overloaded{arg_list<double, float, int64_t, int32_t, Eigen::Vector3d>,
