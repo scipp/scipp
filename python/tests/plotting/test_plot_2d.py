@@ -6,7 +6,7 @@
 import numpy as np
 import scipp as sc
 from plot_helper import make_dense_dataset, make_binned_data_array
-from scipp.plot import plot
+from scipp import plot
 
 
 def test_plot_2d_image():
@@ -244,14 +244,14 @@ def test_plot_2d_binned_data():
 def test_plot_3d_binned_data_where_outer_dimension_has_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data + data, 'run')
-    plot_obj = sc.plot.plot(data)
+    plot_obj = plot(data)
     plot_obj.widgets.slider[0].value = 1
 
 
 def test_plot_3d_binned_data_where_inner_dimension_nas_no_event_coord():
     data = make_binned_data_array(ndim=2)
     data = sc.concatenate(data, data + data, 'run')
-    sc.plot.plot(data, axes={'x': 'run', 'y': 'tof'})
+    plot(data, axes={'x': 'run', 'y': 'tof'})
 
 
 def test_plot_2d_binned_data_with_variances():

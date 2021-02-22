@@ -21,4 +21,7 @@ MismatchError(const units::Unit &, const T &) -> MismatchError<units::Unit>;
 template <class T>
 MismatchError(const units::Dim &, const T &) -> MismatchError<units::Dim>;
 
+template struct SCIPP_UNITS_EXPORT Error<units::Unit>;
+template struct SCIPP_UNITS_EXPORT MismatchError<units::Unit>;
+
 } // namespace scipp::except

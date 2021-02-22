@@ -91,6 +91,9 @@ struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
+template struct SCIPP_CORE_EXPORT MismatchError<core::Dimensions>;
+template struct SCIPP_CORE_EXPORT MismatchError<core::DType>;
+
 } // namespace scipp::except
 
 namespace scipp::expect {

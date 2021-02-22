@@ -29,7 +29,7 @@ test:
     - beautifulsoup4
     - h5py
     - ipywidgets
-    - matplotlib
+    - matplotlib-base
     - psutil
     - pytest
     - pythreejs
