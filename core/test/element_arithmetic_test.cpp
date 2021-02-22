@@ -149,6 +149,14 @@ using DivisionTestTypes =
 
 TYPED_TEST_SUITE(ElementArithmeticDivisionTest, DivisionTestTypes);
 
+TEST(ElementArithmeticDivisionTest, true_divide_variance) {
+  const ValueAndVariance<double> a(4.2, 0.1);
+  const ValueAndVariance<double> b(2.0, 1.2);
+  const auto res = divide(a, b);
+  EXPECT_DOUBLE_EQ(res.value, 2.1);
+  EXPECT_DOUBLE_EQ(res.variance, 1.3479999999999999);
+}
+
 TYPED_TEST(ElementArithmeticDivisionTest, true_divide) {
   EXPECT_TRUE(
       (std::is_same_v<decltype(divide(this->dividend(), this->divisor())),
@@ -158,12 +166,24 @@ TYPED_TEST(ElementArithmeticDivisionTest, true_divide) {
   }
 }
 
-TEST(ElementArithmeticDivisionTest, true_divide_variance) {
-  const ValueAndVariance<double> a(4.2, 0.1);
-  const ValueAndVariance<double> b(2.0, 1.2);
-  const auto res = divide(a, b);
-  EXPECT_DOUBLE_EQ(res.value, 2.1);
-  EXPECT_DOUBLE_EQ(res.variance, 1.3479999999999999);
+TYPED_TEST(ElementArithmeticDivisionTest, floor_divide) {
+  EXPECT_TRUE(
+      (std::is_same_v<decltype(floor_divide(this->dividend(), this->divisor())),
+                      typename TestFixture::FloorQuotient>));
+
+  for (const auto p : this->params()) {
+    this->expect_eq(floor_divide(p.dividend, p.divisor), p.floor_quotient);
+  }
+}
+
+TYPED_TEST(ElementArithmeticDivisionTest, remainder) {
+  EXPECT_TRUE((std::is_same_v<decltype(mod(this->dividend(), this->divisor())),
+                              typename TestFixture::FloorQuotient>));
+
+  for (const auto p : this->params()) {
+    std::cout << p.dividend << " % " << p.divisor << std::endl;
+    this->expect_eq(mod(p.dividend, p.divisor), p.remainder);
+  }
 }
 
 TEST(ElementArithmeticDivisionTest, units) {
