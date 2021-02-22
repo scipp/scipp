@@ -158,7 +158,7 @@ def histogram(x, bins):
     return _call_cpp_func(_cpp.histogram, x, bins)
 
 
-def bin(x, edges=[], groups=[], erase=[]):
+def bin(x, edges=None, groups=None, erase=None):
     """Create binned data by binning data along all dimensions given by edges.
     Can specify dimensions with existing binning to erase.
 
@@ -170,6 +170,12 @@ def bin(x, edges=[], groups=[], erase=[]):
               :py:func:`scipp.bins` for creating binned data based on
               explicitly given index ranges.
     """
+    if erase is None:
+        erase = []
+    if groups is None:
+        groups = []
+    if edges is None:
+        edges = []
     return _call_cpp_func(_cpp.bin, x, edges, groups, erase)
 
 
