@@ -3,7 +3,9 @@ from typing import Optional, List
 import numpy as np
 from ._loading_common import ensure_str, BadSource
 from ..._scipp import core as sc
+from ..._bins import bin
 from datetime import datetime
+from warnings import warn
 
 
 def _get_units(dataset: h5py.Dataset) -> Optional[str]:
@@ -71,13 +73,14 @@ def _load_event_group(group: h5py.Group) -> sc.Variable:
     event_time_offset = sc.Variable(
         ['event'],
         values=group["event_time_offset"][...],
-        dtype=group["event_time_offset"].dtype.type)
+        dtype=group["event_time_offset"].dtype.type,
+        unit=_get_units(group["event_time_offset"]))
     event_id = sc.Variable(
         ['event'], values=group["event_id"][...],
         dtype=np.int32)  # assume int32 is safe for detector ids
-    event_time_zero = sc.Variable(['pulse'],
-                                  values=group["event_time_zero"][...],
-                                  dtype=group["event_time_zero"].dtype.type)
+    # event_time_zero = sc.Variable(['pulse'],
+    #                               values=group["event_time_zero"][...],
+    #                               dtype=group["event_time_zero"].dtype.type)
     pulse_time_offset = _get_pulse_time_offset(group["event_time_zero"])
 
     unix_epoch = datetime(1970, 1, 1)
@@ -89,8 +92,8 @@ def _load_event_group(group: h5py.Group) -> sc.Variable:
             "is not implemented yet")
 
     # The end index for a pulse is the start index of the next pulse
-    begin_indices = sc.Variable(['pulse'], values=event_index[:-1])
-    end_indices = sc.Variable(['pulse'], values=event_index[1:])
+    # begin_indices = sc.Variable(['pulse'], values=event_index[:-1])
+    # end_indices = sc.Variable(['pulse'], values=event_index[1:])
 
     # Weights are not stored in NeXus, so use 1s
     weights = sc.Variable(['event'],
@@ -101,17 +104,17 @@ def _load_event_group(group: h5py.Group) -> sc.Variable:
                             'tof': event_time_offset,
                             'detector-id': event_id
                         })
-    try:
-        events = sc.DataArray(data=sc.bins(begin=begin_indices,
-                                           end=end_indices,
-                                           dim='event',
-                                           data=data),
-                              coords={'pulse-time': event_time_zero})
-    except IndexError:
-        # For example found max uint64 at end of some event_index
-        # datasets in SNS files
-        raise BadSource("Unexpected values for event indices in "
-                        "event_index dataset")
+    # try:
+    #     events = sc.DataArray(data=sc.bins(begin=begin_indices,
+    #                                        end=end_indices,
+    #                                        dim='event',
+    #                                        data=data),
+    #                           coords={'pulse-time': event_time_zero})
+    # except IndexError:
+    #     # For example found max uint64 at end of some event_index
+    #     # datasets in SNS files
+    #     raise BadSource("Unexpected values for event indices in "
+    #                     "event_index dataset")
 
     if "detector_numbers" in group:
         detector_numbers = sc.Variable(
@@ -128,7 +131,7 @@ def _load_event_group(group: h5py.Group) -> sc.Variable:
     # Events in the NeXus file are effectively binned by pulse
     # (because they are recorded chronologically)
     # but for reduction it is more useful to bin by detector id
-    events = sc.bin(events, groups=[detector_numbers], erase=['pulse'])
+    events = bin(data, groups=[detector_numbers])
 
     print(f"Loaded event data from {group.name} containing "
           f"{number_of_events} events")
@@ -143,7 +146,7 @@ def load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
             new_event_data = _load_event_group(group)
             event_data.append(new_event_data)
         except BadSource as e:
-            print(f"Skipped loading {group.name} due to:\n{e}")
+            warn(f"Skipped loading {group.name} due to:\n{e}")
 
     if not event_data:
         raise RuntimeError("No valid event data found in file")
@@ -151,7 +154,7 @@ def load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
         # TODO concatenate the loaded data in order of ids of the bank
         #  they came from to create single large dataarray
         def getADetectorId(event_batch):
-            return event_batch.data.coords['detector-id'].values[0]
+            return event_batch.coords['detector-id'].values[0]
 
         event_data.sort(key=getADetectorId)
         events = event_data.pop(0)
