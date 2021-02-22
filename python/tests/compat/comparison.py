@@ -17,7 +17,7 @@ class Comparison:
 
     def run(self):
         results = sc.Dataset()
-        for i, (name, (hash, algorithm)) in enumerate(self._filenames.items()):
+        for name, (hash, algorithm) in self._filenames.items():
             file = MantidDataHelper.find_file(hash, algorithm)
             print('Loading', name)
             in_ws = sapi.Load(Filename=file, StoreInADS=False)
@@ -43,8 +43,8 @@ class Comparison:
                                       time_mantid
                                   })
 
-            results[f'{i}' if self._test_description is None else
-                    f'{self._test_description}_{i}'] = result
+            results[f'with_{name}' if self._test_description is None else
+                    f'{self._test_description}_with_{name}'] = result
         return results
 
     @property
