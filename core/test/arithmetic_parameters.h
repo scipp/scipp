@@ -28,26 +28,22 @@ with open(sys.argv[1], 'w') as outf:
     outf.write('namespace {\n')
 
     outf.write('template <class Params>\n')
-    outf.write('auto division_params_int_int() {\n')
-    outf.write('return std::array{\n')
+    outf.write('constexpr inline auto division_params_int_int = std::array{\n')
     for a in range(2, -3, -1):
         for b in range(4, -5, -1):
             if b == 0:
                 continue
             outf.write(build_param(a, b) + ',\n')
     outf.write('};\n')
-    outf.write('}\n')
 
     outf.write('template <class Params>\n')
-    outf.write('auto division_params_float_float() {\n')
-    outf.write('return std::array{\n')
+    outf.write('constexpr inline auto division_params_float_float = std::array{\n')
     dividends, divisors = np.random.uniform(-4, 4, (2, 40))
     while np.any(divisors == 0):
         divisors = np.random.uniform(-4, 4, 40)
     for a, b in zip(*(dividends, divisors)):
         outf.write(build_param(a, b) + ',\n')
     outf.write('};\n')
-    outf.write('}\n')
 
     outf.write('} // namespace\n')
     outf.write('// clang-format on\n')
@@ -57,8 +53,7 @@ with open(sys.argv[1], 'w') as outf:
 
 namespace {
 template <class Params>
-auto division_params_int_int() {
-return std::array{
+constexpr inline auto division_params_int_int = std::array{
 Params{2, 4, 0.5, 0, 2},
 Params{2, 3, 0.6666666666666666, 0, 2},
 Params{2, 2, 1.0, 1, 0},
@@ -100,10 +95,8 @@ Params{-2, -2, 1.0, 1, 0},
 Params{-2, -3, 0.6666666666666666, 0, -2},
 Params{-2, -4, 0.5, 0, -2},
 };
-}
 template <class Params>
-auto division_params_float_float() {
-return std::array{
+constexpr inline auto division_params_float_float = std::array{
 Params{2.036063356701181, 3.4833025322291125, 0.58452096476335, 0.0, 2.036063356701181},
 Params{3.6016315516446227, -0.9253845587745246, -3.892037658823937, -4.0, -0.09990668345347586},
 Params{2.2141557922000628, 0.15971374240318958, 13.863276627821632, 13.0, 0.13787714095859815},
@@ -145,6 +138,5 @@ Params{1.034374655171237, 3.994465157960298, 0.2589519783668414, 0.0, 1.03437465
 Params{-3.7636846234352452, 0.11346385156105132, -33.17078145730074, -34.0, 0.09408632964049968},
 Params{3.4604881346236107, -0.8325787104292601, -4.156349533414631, -5.0, -0.7024054175226899},
 };
-}
 } // namespace
 // clang-format on
