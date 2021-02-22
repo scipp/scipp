@@ -8,7 +8,7 @@ import h5py
 import numpy as np
 from os.path import join
 from timeit import default_timer as timer
-from typing import Union, Tuple, Dict, Optional, List
+from typing import Union, Tuple, Dict, List
 from contextlib import contextmanager
 from warnings import warn
 
@@ -60,25 +60,6 @@ def _open_if_path(file_in: Union[str, h5py.File]):
         yield file_in
 
 
-def load_nexus(data_file: str,
-               root: str = "/",
-               instrument_file: Optional[str] = None):
-    """
-    Load a NeXus file and return required information.
-
-    :param data_file: path of NeXus file containing data to load
-    :param root: path of group in file, only load data from the subtree of
-      this group
-    :param instrument_file: path of separate NeXus file containing
-      detector positions, load_nexus will look in the data file for
-      this information if instrument_file is not provided
-
-    Usage example:
-      data = sc.neutron.load_nexus('PG3_4844_event.nxs')
-    """
-    return _load_nexus(data_file, root, instrument_file)
-
-
 def _add_log_to_data(log_data_name: str, log_data: sc.Variable,
                      group_path: str, data: sc.Variable):
     group_path = group_path.split('/')
@@ -98,14 +79,22 @@ def _add_log_to_data(log_data_name: str, log_data: sc.Variable,
              f"{log_data_name} used as attribute name.")
 
 
-def _load_nexus(data_file: Union[str, h5py.File],
-                root: str = "/",
-                instrument_file: Union[str, h5py.File, None] = None):
+def load_nexus(data_file: Union[str, h5py.File],
+               root: str = "/",
+               instrument_file: Union[str, h5py.File, None] = None):
     """
-    Allows h5py.File objects to be passed in place of
-    file path strings in tests
+    Load a NeXus file and return required information.
+
+    :param data_file: path of NeXus file containing data to load
+    :param root: path of group in file, only load data from the subtree of
+      this group
+    :param instrument_file: path of separate NeXus file containing
+      detector positions, load_nexus will look in the data file for
+      this information if instrument_file is not provided
+
+    Usage example:
+      data = sc.neutron.load_nexus('PG3_4844_event.nxs')
     """
-    print("Load NeXus")
     total_time = timer()
 
     with _open_if_path(data_file) as nexus_file:
@@ -136,21 +125,13 @@ def _load_nexus(data_file: Union[str, h5py.File],
     return loaded_data
 
 
-def load_positions(instrument_file: str, entry='/', dim='position'):
+def load_positions(instrument_file: Union[str, h5py.File],
+                   entry='/',
+                   dim='position'):
     """
     Usage:
       d = sc.Dataset()
       d.coords['position'] = sc.neutron.load_positions('LOKI_Definition.hdf5')
-    """
-    return _load_positions(instrument_file, entry, dim)
-
-
-def _load_positions(instrument_file: Union[str, h5py.File],
-                    entry='/',
-                    dim='position'):
-    """
-    Allows h5py.File objects to be passed in place of
-    file path string in tests
     """
 
     # TODO: We need to think about how to link the correct position to the

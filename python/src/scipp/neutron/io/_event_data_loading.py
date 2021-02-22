@@ -1,5 +1,5 @@
 import h5py
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any
 import numpy as np
 from ._loading_common import ensure_str, BadSource
 from ..._scipp import core as sc
@@ -24,8 +24,8 @@ def _get_pulse_time_offset(pulse_time_dataset: h5py.Dataset) -> Optional[str]:
     return ensure_str(pulse_offset_iso8601)
 
 
-def _check_for_missing_fields(group: h5py.Group) -> Optional[str]:
-    error_message = None
+def _check_for_missing_fields(group: h5py.Group) -> str:
+    error_message = ""
     required_fields = (
         "event_time_zero",
         "event_index",
@@ -50,9 +50,22 @@ def _iso8601_to_datetime(iso8601: str) -> Optional[datetime]:
         return None
 
 
+unsigned_to_signed = {
+    np.uint32: np.int32,
+    np.uint64: np.int64,
+}
+
+
+def _ensure_no_unsigned_type(dataset_type: Any):
+    try:
+        return unsigned_to_signed[dataset_type]
+    except KeyError:
+        return dataset_type
+
+
 def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, int]:
     error_msg = _check_for_missing_fields(group)
-    if error_msg is not None:
+    if error_msg:
         raise BadSource(error_msg)
 
     # There is some variation in the last recorded event_index in files
@@ -73,7 +86,7 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, int]:
     event_time_offset = sc.Variable(
         ['event'],
         values=group["event_time_offset"][...],
-        dtype=group["event_time_offset"].dtype.type,
+        dtype=_ensure_no_unsigned_type(group["event_time_offset"].dtype.type),
         unit=_get_units(group["event_time_offset"]))
     event_id = sc.Variable(
         ['event'], values=group["event_id"][...],
@@ -122,7 +135,7 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, int]:
         detector_numbers = group['detector_numbers'][...]
         max_detector_id = detector_numbers.max()
     else:
-        max_detector_id = event_index.max()
+        max_detector_id = event_id.max()
 
     print(f"Loaded event data from {group.name} containing "
           f"{number_of_events} events")

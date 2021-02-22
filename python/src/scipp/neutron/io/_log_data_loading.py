@@ -13,14 +13,12 @@ def load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
     try:
         values = group[value_dataset_name][...]
     except KeyError:
-        raise BadSource(f"NXlog at {group.name} has no value dataset, "
-                        f"skipping loading")
+        raise BadSource(f"NXlog at {group.name} has no value dataset")
 
     try:
         unit = ensure_str(group[value_dataset_name].attrs["units"])
     except KeyError:
-        raise BadSource(f"value dataset of NXlog at {group.name} has no "
-                        f"unit attrs, skipping loading")
+        unit = ""
 
     try:
         times = group[time_dataset_name][...]
@@ -36,7 +34,12 @@ def load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
         dimension_label = property_name
         is_time_series = False
 
-    if np.isscalar(values):
+    values = np.squeeze(values)
+    if np.ndim(values) > 1:
+        raise BadSource(f"NXlog at {group.name} has {value_dataset_name} "
+                        f"dataset with more than 1 dimension")
+
+    if np.ndim(values) == 0:
         property_data = sc.Variable(value=values,
                                     unit=unit,
                                     dtype=group[value_dataset_name].dtype.type)
