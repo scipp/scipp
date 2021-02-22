@@ -250,6 +250,7 @@ stages:
           - bash: |
               set -ex
               cd package/scipp-package-test
+              source activate scipp-developer
               mkdir -p build && cd build
               cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
               cmake --build .
