@@ -103,7 +103,7 @@ struct times_types_t {
                      std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
 };
 
-struct divide_types_t {
+struct true_divide_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(
       std::tuple_cat(std::declval<arithmetic_type_pairs>(),
@@ -111,6 +111,16 @@ struct divide_types_t {
                      std::tuple<std::tuple<Eigen::Vector3d, float>>(),
                      std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
                      std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
+};
+
+struct floor_divide_types_t {
+  constexpr void operator()() const noexcept;
+  using types = arithmetic_type_pairs;
+};
+
+struct remainder_types_t {
+  constexpr void operator()() const noexcept;
+  using types = arithmetic_type_pairs;
 };
 
 constexpr auto plus =
@@ -122,17 +132,33 @@ constexpr auto times = overloaded{
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
     [](const auto a, const auto b) { return a * b; }};
 
+// truediv defined as in Python.
 constexpr auto divide = overloaded{
-    divide_types_t{},
+    true_divide_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
     [](const auto a, const auto b) {
-      // Integer division is truediv, as in Python 3 and numpy
       if constexpr (std::is_integral_v<decltype(a)> &&
                     std::is_integral_v<decltype(b)>)
-        return static_cast<double>(a) / b;
+        return static_cast<double>(a) / static_cast<double>(b);
       else
         return a / b;
     }};
+
+// floordiv defined as in Python. Complementary to mod.
+constexpr auto floor_divide = overloaded{
+    floor_divide_types_t{}, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](const auto a,
+       const auto b) -> std::common_type_t<decltype(a), decltype(b)> {
+      using std::floor;
+      if constexpr (std::is_integral_v<decltype(a)> &&
+                    std::is_integral_v<decltype(b)>)
+        return b == 0 ? 0
+                      : floor(static_cast<double>(a) / static_cast<double>(b));
+      else
+        return floor(a / b);
+    },
+    [](const units::Unit &a, const units::Unit &b) { return a / b; }};
 
 // remainder defined as in Python
 constexpr auto mod =
