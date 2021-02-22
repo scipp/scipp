@@ -147,4 +147,5 @@ If you build and installed scipp from source use, e.g.,:
 
   cmake -DCMAKE_PREFIX_PATH=<your_scipp_install_dir>
 
-Or set the ``Scipp_DIR`` or ``CMAKE_PREFIX_PATH`` (environment) variables.
+where ``<your_scipp_install_dir>`` should point to the ``CMAKE_INSTALL_PREFIX`` that was used when building ``scipp``.
+Alternative set the ``Scipp_DIR`` or ``CMAKE_PREFIX_PATH`` (environment) variables to this path.
