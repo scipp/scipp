@@ -95,6 +95,14 @@ stages:
             displayName: 'Build Python library'
           - bash: |
               set -ex
+              cd package/scipp-package-test
+              mkdir -p build && cd build
+              cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
+              cmake --build .
+              ./test
+            displayName: 'Check packaging'
+          - bash: |
+              set -ex
               PYTHONPATH="$PYTHONPATH:$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'
           - bash: |
@@ -173,6 +181,14 @@ stages:
             displayName: 'Build Python library'
           - bash: |
               set -ex
+              cd package/scipp-package-test
+              mkdir -p build && cd build
+              cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
+              cmake --build .
+              ./test
+            displayName: 'Check packaging'
+          - bash: |
+              set -ex
               PYTHONPATH="$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'
 
@@ -231,6 +247,14 @@ stages:
               source activate scipp-developer
               cmake --build . --target install --config Release
             displayName: 'Build Python library'
+          - bash: |
+              set -ex
+              cd package/scipp-package-test
+              mkdir -p build && cd build
+              cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
+              cmake --build .
+              ./test
+            displayName: 'Check packaging'
           - bash: |
               set -ex
               source activate scipp-developer
