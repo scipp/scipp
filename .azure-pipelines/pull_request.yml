@@ -253,7 +253,7 @@ stages:
               source activate scipp-developer
               mkdir -p build && cd build
               cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
-              cmake --build .
+              cmake --build . --config Release
               ./test
             displayName: 'Check packaging'
           - bash: |
