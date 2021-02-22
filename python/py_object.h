@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include "scipp/core/dtype.h"
+
 #include "pybind11.h"
 
 namespace py = pybind11;
@@ -37,3 +39,7 @@ private:
 };
 
 } // namespace scipp::python
+
+namespace scipp::core {
+template <> constexpr DType dtype<python::PyObject>{3000};
+} // namespace scipp::core

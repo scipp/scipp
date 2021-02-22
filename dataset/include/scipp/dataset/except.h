@@ -45,6 +45,13 @@ template <class T>
 MismatchError(const std::pair<std::string, VariableConstView> &, const T &)
     -> MismatchError<std::pair<std::string, VariableConstView>>;
 
+template struct SCIPP_DATASET_EXPORT Error<dataset::DataArray>;
+template struct SCIPP_DATASET_EXPORT Error<dataset::Dataset>;
+template struct SCIPP_DATASET_EXPORT MismatchError<dataset::DataArray>;
+template struct SCIPP_DATASET_EXPORT MismatchError<dataset::Dataset>;
+template struct SCIPP_DATASET_EXPORT
+    MismatchError<std::pair<Dim, VariableConstView>>;
+
 } // namespace scipp::except
 
 namespace scipp::dataset::expect {

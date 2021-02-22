@@ -1,3 +1,7 @@
+# ~~~
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# ~~~
 function(scipp_function template category function_name)
   set(options SKIP_VARIABLE NO_OUT)
   set(oneValueArgs OP)

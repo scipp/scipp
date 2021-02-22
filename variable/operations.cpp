@@ -4,6 +4,7 @@
 /// @author Simon Heybrock
 #include "scipp/core/element/geometric_operations.h"
 #include "scipp/core/element/special_values.h"
+#include "scipp/core/element/util.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/transform.h"
 
@@ -60,6 +61,11 @@ Variable copy(const VariableConstView &var) { return Variable(var); }
 VariableView copy(const VariableConstView &var, const VariableView &out) {
   var.underlying().data().copy(var, out);
   return out;
+}
+
+Variable masked_to_zero(const VariableConstView &var,
+                        const VariableConstView &mask) {
+  return transform(var, mask, element::convertMaskedToZero);
 }
 
 namespace geometry {

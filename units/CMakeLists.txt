@@ -25,10 +25,11 @@ target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-         ${CMAKE_CURRENT_BINARY_DIR}
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME units)
 
 if(PRECOMPILED_HEADERS)
   target_precompile_headers(${TARGET_NAME} PUBLIC ${INC_FILES})
@@ -36,6 +37,15 @@ endif()
 
 add_subdirectory(test)
 
+scipp_install_component(TARGET ${TARGET_NAME})
+
 if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(TARGETS compile_flags_target EXPORT ${EXPORT_NAME})
+  install(TARGETS units-static EXPORT ${EXPORT_NAME})
+  install(
+    FILES ${PROJECT_BINARY_DIR}/llnl-units-src/units/unit_definitions.hpp
+          ${PROJECT_BINARY_DIR}/llnl-units-src/units/units_decl.hpp
+          ${PROJECT_BINARY_DIR}/llnl-units-src/units/units.hpp
+    DESTINATION ${INCLUDEDIR}/units
+  )
 endif(DYNAMIC_LIB)

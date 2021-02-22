@@ -18,6 +18,9 @@ split(const Variable &var, const Dim dim,
 SCIPP_VARIABLE_EXPORT Variable filter(const Variable &var,
                                       const Variable &filter);
 
+SCIPP_VARIABLE_EXPORT Variable masked_to_zero(const VariableConstView &var,
+                                              const VariableConstView &mask);
+
 namespace geometry {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 position(const VariableConstView &x, const VariableConstView &y,

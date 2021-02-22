@@ -4,6 +4,8 @@
 # ~~~
 cmake_minimum_required(VERSION 3.16)
 project(scipp)
+set(version 0.5.0)
+
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
 endif(NOT DEFINED CMAKE_CXX_STANDARD)
@@ -52,6 +54,9 @@ endif(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
                       "${CMAKE_SOURCE_DIR}/CMake/sanitizers-cmake/cmake"
 )
+
+set(CMAKE_CXX_VISIBILITY_PRESET hidden)
+set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
 
 find_package(Sanitizers REQUIRED)
 
@@ -105,7 +110,7 @@ if("${PYTHON_VERSION_MAJOR}.${PYTHON_VERSION_MINOR}" VERSION_LESS "3.5")
 endif()
 
 option(WITH_CTEST "Enable ctest integration of tests" ON)
-option(DYNAMIC_LIB "Build shared libraries" OFF)
+option(DYNAMIC_LIB "Build shared libraries" ON)
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
 
 include(IPO)
@@ -154,9 +159,13 @@ endif(NOT WIN32)
 # permissive- : Std compliant parsing, warnings (W3) set by CMake defaults
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-permissive->)
 
-option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" ON)
+# Setting this to ON seems to interfere with ccache, causing full recompilation,
+# defaulting to OFF for now.
+option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" OFF)
 
 enable_testing()
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
@@ -171,8 +180,28 @@ endif()
 configure_file(CMake/docs_build.bat.in docs_build.bat)
 configure_file(CMake/docs_build.sh.in docs_build.sh)
 
+if(WIN32)
+  set(PYTHONDIR scipp)
+  set(LIBDIR ${PYTHONDIR})
+  set(INCLUDEDIR include)
+else()
+  set(PYTHONDIR scipp)
+  set(LIBDIR ${CMAKE_INSTALL_LIBDIR})
+  set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
+endif()
+
+set(EXPORT_NAME ${PROJECT_NAME}-targets)
+
+if(NOT APPLE)
+  set(CMAKE_INSTALL_RPATH $ORIGIN)
+else()
+  set(CMAKE_INSTALL_RPATH @loader_path)
+endif()
+
 # Generate files for free scipp API functions
 include(scipp-functions)
+
+include(scipp-install)
 
 add_subdirectory(common)
 add_subdirectory(benchmark)
@@ -183,3 +212,27 @@ add_subdirectory(dataset)
 add_subdirectory(neutron)
 add_subdirectory(python)
 add_subdirectory(test)
+
+if(DYNAMIC_LIB)
+  install(
+    EXPORT ${EXPORT_NAME}
+    DESTINATION "${LIBDIR}/cmake/scipp"
+    NAMESPACE scipp::
+  )
+  include(CMakePackageConfigHelpers)
+  configure_package_config_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/CMake/${PROJECT_NAME}-config.cmake.in
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+    INSTALL_DESTINATION lib/cmake/scipp
+  )
+  write_basic_package_version_file(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
+    VERSION "${version}"
+    COMPATIBILITY AnyNewerVersion
+  )
+  install(
+    FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
+          "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
+    DESTINATION lib/cmake/scipp
+  )
+endif(DYNAMIC_LIB)

@@ -15,6 +15,8 @@
 #include "scipp/variable/special_values.h"
 #include "scipp/variable/transform.h"
 
+#include "operations_common.h"
+
 using namespace scipp::core;
 using scipp::common::reduce_all_dims;
 
