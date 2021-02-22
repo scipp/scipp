@@ -10,3 +10,4 @@ check_required_components(scipp-targets)
 
 include(CMakeFindDependencyMacro)
 find_dependency(TBB)
+find_dependency(Boost 1.67)
