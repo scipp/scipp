@@ -108,28 +108,18 @@ public:
     FloorQuotient remainder;
   };
 
-  auto params() const {
-    std::vector<Params> p;
-    const auto &int_int = division_params_int_int<Params>;
-    std::copy(begin(int_int), end(int_int), std::back_inserter(p));
-
-    if constexpr (std::is_floating_point_v<Dividend>) {
-      const auto &float_int = division_params_float_int<Params>;
-      std::copy(begin(float_int), end(float_int), std::back_inserter(p));
+  const auto &params() const {
+    if constexpr (std::is_integral_v<Dividend> && std::is_integral_v<Divisor>) {
+      return division_params_int_int<Params>;
+    } else if constexpr (std::is_floating_point_v<Dividend> &&
+                         std::is_integral_v<Divisor>) {
+      return division_params_float_int<Params>;
+    } else if constexpr (std::is_integral_v<Dividend> &&
+                         std::is_floating_point_v<Divisor>) {
+      return division_params_int_float<Params>;
+    } else {
+      return division_params_float_float<Params>;
     }
-
-    if constexpr (std::is_floating_point_v<Divisor>) {
-      const auto &int_float = division_params_int_float<Params>;
-      std::copy(begin(int_float), end(int_float), std::back_inserter(p));
-    }
-
-    if constexpr (std::is_floating_point_v<Dividend>
-                  && std::is_floating_point_v<Divisor>) {
-      const auto &float_float = division_params_float_float<Params>;
-      std::copy(begin(float_float), end(float_float), std::back_inserter(p));
-    }
-
-    return p;
   }
 
   template <class Result>
