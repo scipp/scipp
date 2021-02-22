@@ -30,9 +30,10 @@ set(UNITS_NAMESPACE
     "llnl::units"
     CACHE STRING "" FORCE
 )
+set(UNITS_BUILD_SHARED_LIBRARY ON)
 add_subdirectory(
   ${CMAKE_BINARY_DIR}/llnl-units-src ${CMAKE_BINARY_DIR}/llnl-units-build
   EXCLUDE_FROM_ALL
 )
 
-set_target_properties(units-static PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(units-shared PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
