@@ -1,4 +1,4 @@
-from comparison import Comparison
+from comparison import MantidScippComparison
 from mantid_data_helper import mantid_is_available
 import pytest
 import mantid.simpleapi as sapi
@@ -7,7 +7,7 @@ import scipp as sc
 import numpy as np
 
 
-class HistogramEventsTest(Comparison):
+class HistogramEventsTest(MantidScippComparison):
     def __init__(self):
         super(HistogramEventsTest, self).__init__('histogram_events_test')
 

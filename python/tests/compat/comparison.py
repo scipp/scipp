@@ -4,7 +4,7 @@ import scipp.compat.mantid as mantid
 import time
 
 
-class Comparison:
+class MantidScippComparison:
     def __init__(self, test_description=None):
         self._test_description = test_description
 
@@ -44,9 +44,11 @@ class Comparison:
                                       'diff':
                                       out_mantid_da.data - out_scipp_da.data,
                                       'is_approx':
-                                      sc.is_approx(out_mantid_da.data,
-                                                   out_scipp_da.data,
-                                                   1e-9 * sc.Unit('counts')),
+                                      sc.is_approx(
+                                          out_mantid_da.data,
+                                          out_scipp_da.data,
+                                          1e-9 * sc.Unit('counts') +
+                                          1e-9 * sc.abs(out_mantid_da.data)),
                                       'duration_scipp':
                                       time_scipp,
                                       'duration_mantid':
