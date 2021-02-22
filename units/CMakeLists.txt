@@ -46,6 +46,7 @@ if(DYNAMIC_LIB)
     FILES ${PROJECT_BINARY_DIR}/llnl-units-src/units/unit_definitions.hpp
           ${PROJECT_BINARY_DIR}/llnl-units-src/units/units_decl.hpp
           ${PROJECT_BINARY_DIR}/llnl-units-src/units/units.hpp
+          ${PROJECT_BINARY_DIR}/llnl-units-build/units/units_export.h
     DESTINATION ${INCLUDEDIR}/units
   )
 endif(DYNAMIC_LIB)
