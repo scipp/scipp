@@ -23,17 +23,10 @@ if(MSVC)
       CACHE PATH "Path to installed clcache executable directory"
   )
   if(EXISTS ${CLCACHE_PATH})
-    if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-      set(CMAKE_VS_GLOBALS "CLToolExe=clcache.exe" "CLToolPath=${CLCACHE_PATH}"
-                           "TrackFileAccess=false"
-      )
-      message(STATUS "Will attempt to use clcache")
-    else(NOT CMAKE_VERSION VERSION_LESS 3.13)
-      message(
-        WARNING
-          "CMake version ${CMAKE_VERSION} too low to support CLCACHE. Not enabled."
-      )
-    endif(NOT CMAKE_VERSION VERSION_LESS 3.13)
+    set(CMAKE_VS_GLOBALS "CLToolExe=clcache.exe" "CLToolPath=${CLCACHE_PATH}"
+                         "TrackFileAccess=false"
+    )
+    message(STATUS "Will attempt to use clcache")
   else(EXISTS ${CLCACHE_PATH})
     message(STATUS "CLCACHE_PATH not specified. Not enabled.")
     unset(CMAKE_VS_GLOBALS) # Clear all vs globals
