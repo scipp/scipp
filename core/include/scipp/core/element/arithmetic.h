@@ -168,10 +168,10 @@ constexpr auto mod =
                  }
                }};
 
-constexpr auto mod_equals = overloaded{
-    arg_list<int64_t, int32_t, std::tuple<int64_t, int32_t>>,
-    [](units::Unit &a, const units::Unit &b) { a %= b; },
-    [](auto &&a, const auto &b) { a = mod(a, b); }};
+constexpr auto mod_equals =
+    overloaded{arg_list<int64_t, int32_t, std::tuple<int64_t, int32_t>>,
+               [](units::Unit &a, const units::Unit &b) { a %= b; },
+               [](auto &&a, const auto &b) { a = mod(a, b); }};
 
 constexpr auto unary_minus =
     overloaded{arg_list<double, float, int64_t, int32_t, Eigen::Vector3d>,
