@@ -25,13 +25,12 @@ class RebinTest(Comparison):
         return mantid.from_mantid(out)
 
     def _run_scipp(self, **kwargs):
-        return sc.bin(kwargs['data_array'],
-                      edges=[
-                          sc.Variable(dims=['tof'],
-                                      values=np.arange(0, 1010, 10),
-                                      dtype=sc.dtype.float64,
-                                      unit=sc.units.us)
-                      ]).bins.sum()
+        return sc.histogram(
+            kwargs['data_array'],
+            sc.Variable(dims=['tof'],
+                        values=np.arange(0, 1010, 10),
+                        dtype=sc.dtype.float64,
+                        unit=sc.units.us))
 
 
 @pytest.mark.skipif(not mantid_is_available(),
