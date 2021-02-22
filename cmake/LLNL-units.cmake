@@ -6,7 +6,7 @@ set(llnl_units_force_shared_crt
 
 # Download and unpack llnl-units at configure time
 configure_file(
-  ${CMAKE_SOURCE_DIR}/CMake/LLNL-units.in
+  ${CMAKE_SOURCE_DIR}/cmake/LLNL-units.in
   ${CMAKE_BINARY_DIR}/llnl-units-download/CMakeLists.txt
 )
 execute_process(
