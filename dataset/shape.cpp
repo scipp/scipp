@@ -143,24 +143,24 @@ Dataset resize(const DatasetConstView &d, const Dim dim,
 
 namespace {
 
-bool all_dims_unchanged(const Dimensions &item_dims,
-                        const Dimensions &new_dims) {
-  for (const auto dim : item_dims.labels()) {
-    if (!new_dims.contains(dim))
-      return false;
-    if (new_dims[dim] != item_dims[dim])
-      return false;
-  }
-  return true;
-}
+// bool all_dims_unchanged(const Dimensions &item_dims,
+//                         const Dimensions &new_dims) {
+//   for (const auto dim : item_dims.labels()) {
+//     if (!new_dims.contains(dim))
+//       return false;
+//     if (new_dims[dim] != item_dims[dim])
+//       return false;
+//   }
+//   return true;
+// }
 
-bool contains_all_dim_labels(const Dimensions &item_dims,
-                             const Dimensions &old_dims) {
-  for (const auto dim : item_dims.labels())
-    if (!old_dims.contains(dim))
-      return false;
-  return true;
-}
+// bool contains_all_dim_labels(const Dimensions &item_dims,
+//                              const Dimensions &old_dims) {
+//   for (const auto dim : item_dims.labels())
+//     if (!old_dims.contains(dim))
+//       return false;
+//   return true;
+// }
 
 // Variable reshape_(const VariableConstView &var,
 //                   scipp::span<const scipp::index> &new_shape,
@@ -169,148 +169,128 @@ bool contains_all_dim_labels(const Dimensions &item_dims,
 
 // }
 
+// Go through the old dims and:
+// - if the dim does not equal the dim that is being stacked, copy dim/shape
+// - if the dim equals the dim to be stacked, replace by stack of new dims
+Dimensions stack_dims(const Dimensions &old_dims, const Dim from_dim,
+                      const Dimensions &to_dims) {
+  Dimensions new_dims;
+  for (const auto dim : old_dims.labels())
+    if (dim != from_dim)
+      new_dims.addInner(dim, old_dims[dim]);
+    else
+      for (const auto lab : to_dims.labels())
+        new_dims.addInner(lab, to_dims[lab]);
+  return new_dims;
+}
+
+//
+Dimensions unstack_dims(const Dimensions &old_dims, const Dimensions &from_dims,
+                        const Dim to_dim) {
+  // Dimensions stacked_dims;
+  // for (const auto dim : from_dims)
+  //   stacked_dims.addInner(dim, old_dims[dim]);
+
+  Dimensions new_dims;
+  for (const auto dim : old_dims.labels())
+    if (from_dims.contains(dim)) {
+      if (!new_dims.contains(to_dim))
+        new_dims.addInner(to_dim, from_dims.volume());
+    } else {
+      new_dims.addInner(dim, old_dims[dim]);
+    }
+  return new_dims;
+}
+
+Variable maybe_broadcast_and_reshape(const VariableConstView &v,
+                                     const Dimensions &from_dims,
+                                     const Dim to_dim) {
+  // 1. If all the variable's dims are contained in stacked dims, no broadcast
+  // 2. If at least one of the variable's dims is contained, broadcast
+  // 3. If none of the variables's dimensions are contained, no broadcast
+
+  const auto &var_dims = v.dims();
+  const auto new_dims = unstack_dims(var_dims, from_dims, to_dim);
+
+  bool need_broadcast = false;
+  for (const auto dim : var_dims.labels())
+    if (from_dims.contains(dim))
+      need_broadcast = true;
+
+  if (need_broadcast && !var_dims.contains(from_dims)) {
+    Dimensions broadcast_dims;
+    for (const auto dim : var_dims.labels())
+      if (!from_dims.contains(dim))
+        broadcast_dims.addInner(dim, var_dims[dim]);
+      else
+        for (const auto lab : from_dims.labels())
+          broadcast_dims.addInner(lab, from_dims[lab]);
+    return reshape(broadcast(v, broadcast_dims), new_dims);
+  } else {
+    return reshape(v, new_dims);
+  }
+}
+
 } // end anonymous namespace
 
-DataArray reshape(const DataArrayConstView &a, const Dimensions &dims) {
-  // const auto &old_shape = a.data().shape();
-  // constexpr auto reshp = [&dims, &old_shape](const auto &var) {
-  //   return reshape_(var, dims.shape(), old_shape);
-  // };
-  // return transform(a, reshp);
+/// dim ['x': 6] -> ['y': 2, 'z': 3]
+DataArray stack(const DataArrayConstView &a, const Dim from_dim,
+                const Dimensions &to_dims) {
+  // Make sure that new dims do not already exist in data dimensions, apart
+  // apart from the old dim (i.e. old dim can be re-used)
+  auto old_dims = a.dims();
+  for (const auto dim : to_dims.labels())
+    if (old_dims.contains(dim) && dim != from_dim)
+      throw except::DimensionError("New dimensions cannot contain labels that "
+                                   "already exist in the DataArray.");
 
-  // ndim_new < ndim_old
-  //     : broadcast coords to original data shape and then reshape them all -
-  //       ndim_new ==
-  //     ndim_old : if shapes are the same,
-  //     then keep coords but rename labels,
-  //     if not drop coords
+  auto reshaped =
+      DataArray(reshape(a.data(), stack_dims(old_dims, from_dim, to_dims)));
 
-  auto reshaped = DataArray(reshape(a.data(), dims));
+  for (auto &&[name, coord] : a.coords())
+    reshaped.coords().set(
+        name, reshape(coord, stack_dims(coord.dims(), from_dim, to_dims)));
 
-  if (a.data().dims().labels().size() > dims.labels().size()) {
-    auto &new_shape = dims.shape();
-    for (auto &&[name, coord] : a.coords()) {
-      auto &coord_shape = coord.dims().shape();
-      // auto &coord_labels = coord.dims().labels();
-      Dimensions to_broadcast;
-      for (int32_t i = new_shape.size() - 1; i >= 0; --i) {
-        if (new_shape[i] == coord_shape[i])
-          to_broadcast.add(coord.dims()[i]);
-        else
-          break;
-      }
-    }
+  for (auto &&[name, attr] : a.attrs())
+    reshaped.attrs().set(
+        name, reshape(attr, stack_dims(attr.dims(), from_dim, to_dims)));
 
-    reshaped.coords().set(name,
-                          reshape(broadcast(coord, a.data().dims()), dims));
-  }
-  // for (auto &&[name, attr] : a.attrs()) {
-  //   reshaped.attrs().set(name,
-  //                        reshape(broadcast(attr, a.data().dims()), dims));
-  // }
-  // for (auto &&[name, mask] : a.masks()) {
-  //   reshaped.masks().set(name,
-  //                        reshape(broadcast(mask, a.data().dims()), dims));
-  // }
-} // else if (a.data().dims().labels().size() == dims.labels().size()) {
-//   for (auto &&[name, coord] : a.coords()) {
-//     reshaped.coords().set(name,
-//                           reshape(broadcast(coord, a.data().dims()),
-//                           dims));
-//   }
-//   for (auto &&[name, attr] : a.attrs()) {
-//     reshaped.attrs().set(name,
-//                          reshape(broadcast(attr, a.data().dims()), dims));
-//   }
-//   for (auto &&[name, mask] : a.masks()) {
-//     reshaped.masks().set(name,
-//                          reshape(broadcast(mask, a.data().dims()), dims));
-//   }
-// }
+  for (auto &&[name, mask] : a.masks())
+    reshaped.masks().set(
+        name, reshape(mask, stack_dims(mask.dims(), from_dim, to_dims)));
 
-// // build a map
+  return reshaped;
+}
 
-// for (auto &&[name, coord] : a.coords()) {
-//   auto shp = std::partial_sum(v.begin(), v.end(), v.begin(),
-//                               std::multiplies<int>());
-//   const auto product = std::accumulate(coord.shape().rbegin(), v.end(), 1,
-//                                        std::multiplies<scipp::index>());
-// for (const auto &vol : pro
+/// ['y', 'z'] -> ['x']
+DataArray unstack(const DataArrayConstView &a,
+                  const std::vector<Dim> &from_dims, const Dim to_dim) {
+  auto old_dims = a.dims();
+  for (const auto dim : from_dims)
+    if (!old_dims.contains(dim))
+      throw except::DimensionError("Dimension to be unstacked not found in "
+                                   "DataArray.");
 
-// for (auto it = coord.shape().rbegin(); it != my_vector.rend(); ++it) {
-// }
+  Dimensions stacked_dims;
+  for (const auto dim : from_dims)
+    stacked_dims.addInner(dim, old_dims[dim]);
 
-// if (all_dims_unchanged(coord.dims(), dims))
-//   reshaped.coords().set(name, coord);
-// else if (coord.dims() == a.data().dims())
-//   reshaped.coords().set(name, reshape(coord, dims));
-// }
+  auto reshaped = DataArray(
+      reshape(a.data(), unstack_dims(old_dims, stacked_dims, to_dim)));
 
-// for (auto &&[name, attr] : a.attrs()) {
-//   if (all_dims_unchanged(attr.dims(), dims))
-//     reshaped.attrs().set(name, attr);
-//   else if (attr.dims() == a.data().dims())
-//     reshaped.attrs().set(name, reshape(attr, dims));
-// }
-// for (auto &&[name, mask] : a.masks()) {
-//   if (all_dims_unchanged(mask.dims(), dims))
-//     reshaped.masks().set(name, mask);
-//   else if (mask.dims() == a.data().dims())
-//     reshaped.masks().set(name, reshape(mask, dims));
-//   else if (contains_all_dim_labels(mask.dims(), a.data().dims()))
-//     reshaped.masks().set(name,
-//                          reshape(broadcast(mask, a.data().dims()), dims));
-// }
-return reshaped;
-} // namespace scipp::dataset
+  for (auto &&[name, coord] : a.coords())
+    reshaped.coords().set(
+        name, maybe_broadcast_and_reshape(coord, stacked_dims, to_dim));
 
-// DataArray reshape(const DataArrayConstView &a, const Dimensions &dims) {
-//   // The rules are the following:
-//   //  - if a coordinate, attribute or mask has all its dimensions unchanged
-//   by
-//   //    the reshape operation, just copy over to the new DataArray.
-//   //  - if a coordinate, attribute or mask has the same dimensions as the
-//   data,
-//   //    reshape that coordinate, attribute or mask.
-//   //  - if a mask has all its dimensions contained in the data dimensions,
-//   we
-//   //    first broadcast the mask to the data dimensions before reshaping
-//   it.
-//   //  - if a coordinate, attribute or mask satisfies none of these
-//   requirements,
-//   //    it is dropped during the reshape operation.
-//   auto reshaped = DataArray(reshape(a.data(), dims));
-//   for (auto &&[name, coord] : a.coords()) {
-//     if (all_dims_unchanged(coord.dims(), dims))
-//       reshaped.coords().set(name, coord);
-//     else if (coord.dims() == a.data().dims())
-//       reshaped.coords().set(name, reshape(coord, dims));
-//   }
-//   for (auto &&[name, attr] : a.attrs()) {
-//     if (all_dims_unchanged(attr.dims(), dims))
-//       reshaped.attrs().set(name, attr);
-//     else if (attr.dims() == a.data().dims())
-//       reshaped.attrs().set(name, reshape(attr, dims));
-//   }
-//   for (auto &&[name, mask] : a.masks()) {
-//     if (all_dims_unchanged(mask.dims(), dims))
-//       reshaped.masks().set(name, mask);
-//     else if (mask.dims() == a.data().dims())
-//       reshaped.masks().set(name, reshape(mask, dims));
-//     else if (contains_all_dim_labels(mask.dims(), a.data().dims()))
-//       reshaped.masks().set(name,
-//                            reshape(broadcast(mask, a.data().dims()),
-//                            dims));
-//   }
-//   return reshaped;
-// }
+  for (auto &&[name, attr] : a.attrs())
+    reshaped.attrs().set(
+        name, maybe_broadcast_and_reshape(attr, stacked_dims, to_dim));
 
-// Dataset reshape(const DatasetConstView &d, const Dimensions &dims) {
-//   // Note that we are paying for the coordinate reshaping multiple times
-//   here.
-//   // It is a trade-off between code simplicity and performance.
-//   return apply_to_items(
-//       d, [](auto &&... _) { return reshape(_...); }, dims);
-// }
+  for (auto &&[name, mask] : a.masks())
+    reshaped.masks().set(
+        name, maybe_broadcast_and_reshape(mask, stacked_dims, to_dim));
+
+  return reshaped;
+}
 
 } // namespace scipp::dataset

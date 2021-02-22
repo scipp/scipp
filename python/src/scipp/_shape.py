@@ -81,3 +81,37 @@ def transpose(x, dims: Sequence[str]):
     :return: The absolute values of the input.
     """
     return _call_cpp_func(_cpp.transpose, x, dims)
+
+
+def stack(x, dim, to_dims):
+    """Reshape a variable, data array or dataset.
+
+    :param x: Container to reshape.
+    :param dims: List of new dimensions.
+    :param shape: New extents in each dimension.
+    :type x: Dataset, DataArray or Variable
+    :type dims: list[str]
+    :type shape: list[int]
+    :raises: If the volume of the old shape is not equal to the
+             volume of the new shape.
+    :return: New Dataset, DataArray or Variable with requested dimension labels
+             and shape.
+    """
+    return _call_cpp_func(_cpp.stack, x, dim, to_dims)
+
+
+def unstack(x, dims, to_dim):
+    """Reshape a variable, data array or dataset.
+
+    :param x: Container to reshape.
+    :param dims: List of new dimensions.
+    :param shape: New extents in each dimension.
+    :type x: Dataset, DataArray or Variable
+    :type dims: list[str]
+    :type shape: list[int]
+    :raises: If the volume of the old shape is not equal to the
+             volume of the new shape.
+    :return: New Dataset, DataArray or Variable with requested dimension labels
+             and shape.
+    """
+    return _call_cpp_func(_cpp.unstack, x, dims, to_dim)
