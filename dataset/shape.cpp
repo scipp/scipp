@@ -209,6 +209,8 @@ Variable maybe_broadcast_and_reshape(const VariableConstView &v,
   // 2. If at least one of the variable's dims is contained, broadcast
   // 3. If none of the variables's dimensions are contained, no broadcast
 
+  // TODO: do we need a std::move?
+
   const auto &var_dims = v.dims();
   const auto new_dims = unstack_dims(var_dims, from_dims, to_dim);
 
