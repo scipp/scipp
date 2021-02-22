@@ -254,7 +254,7 @@ stages:
               mkdir -p build && cd build
               cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
               cmake --build . --config Release
-              ./test
+              ./Release/test.exe
             displayName: 'Check packaging'
           - bash: |
               set -ex
