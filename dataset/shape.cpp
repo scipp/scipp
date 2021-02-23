@@ -173,8 +173,8 @@ namespace {
 // Go through the old dims and:
 // - if the dim does not equal the dim that is being stacked, copy dim/shape
 // - if the dim equals the dim to be stacked, replace by stack of new dims
-Dimensions stack_dims(const Dimensions &old_dims, const Dim from_dim,
-                      const Dimensions &to_dims) {
+const Dimensions stack_dims(const Dimensions &old_dims, const Dim from_dim,
+                            const Dimensions &to_dims) {
   Dimensions new_dims;
   for (const auto dim : old_dims.labels())
     if (dim != from_dim)
@@ -186,8 +186,8 @@ Dimensions stack_dims(const Dimensions &old_dims, const Dim from_dim,
 }
 
 //
-Dimensions unstack_dims(const Dimensions &old_dims, const Dimensions &from_dims,
-                        const Dim to_dim) {
+const Dimensions unstack_dims(const Dimensions &old_dims,
+                              const Dimensions &from_dims, const Dim to_dim) {
   // Dimensions stacked_dims;
   // for (const auto dim : from_dims)
   //   stacked_dims.addInner(dim, old_dims[dim]);
@@ -203,7 +203,7 @@ Dimensions unstack_dims(const Dimensions &old_dims, const Dimensions &from_dims,
   return new_dims;
 }
 
-Variable maybe_broadcast(const VariableConstView &v,
+Variable maybe_broadcast(const VariableConstView &var,
                          const Dimensions &from_dims, const Dim to_dim) {
   // 1. If all stacked dims are contained in the variable's dims, no broadcast
   // 2. If at least one (but not all) of the stacked dims is contained in the
@@ -212,15 +212,23 @@ Variable maybe_broadcast(const VariableConstView &v,
 
   // TODO: do we need a std::move?
 
-  const auto &var_dims = v.dims();
+  const auto &var_dims = var.dims();
   // const auto new_dims = unstack_dims(var_dims, from_dims, to_dim);
 
-  bool need_broadcast = false;
+  bool contains_one_dim = false;
+  bool contains_all_dims = true;
   for (const auto dim : var_dims.labels())
     if (from_dims.contains(dim))
-      need_broadcast = true;
+      contains_one_dim = true;
+    else
+      contains_all_dims = false;
+  std::cout << "maybe_broadcast 1 " << contains_one_dim << " "
+            << contains_one_dim << std::endl;
+  std::cout << var_dims << " " << from_dims << std::endl;
 
-  if (need_broadcast && !var_dims.contains(from_dims)) {
+  // if (need_broadcast && !var_dims.contains(from_dims)) {
+  if (contains_one_dim && !contains_all_dims) {
+    std::cout << "maybe_broadcast 2 " << std::endl;
     Dimensions broadcast_dims;
     for (const auto dim : var_dims.labels())
       if (!from_dims.contains(dim))
@@ -234,9 +242,9 @@ Variable maybe_broadcast(const VariableConstView &v,
           else
             broadcast_dims.addInner(lab, from_dims[lab]);
     std::cout << "broadcasting to: " << broadcast_dims << std::endl;
-    return broadcast(v, broadcast_dims);
+    return broadcast(var, broadcast_dims);
   } else {
-    return Variable(std::move(v)); // reshape(v, new_dims);
+    return Variable(std::move(var)); // reshape(v, new_dims);
   }
 }
 
@@ -251,13 +259,13 @@ Variable maybe_broadcast(const VariableConstView &v,
 /// In the case of bin edges, we perform a series of slices and concatenations
 /// to carry out the reshape. This is not the most efficient for large data,
 /// but it makes the code simple.
-Variable slice_and_stack(const VariableConstView &v, const Dim from_dim,
+Variable slice_and_stack(const VariableConstView &var, const Dim from_dim,
                          const Dimensions &to_dims) {
   const auto labels = to_dims.labels();
 
   scipp::index step;
   Variable reshaped;
-  auto buf = Variable(v);
+  auto buf = Variable(var);
   for (int32_t l = 0; l < labels.size() - 1; ++l) {
     step = buf.dims()[from_dim] / to_dims.shape()[l];
     reshaped = Variable(buf.slice({from_dim, 0, step + 1}));
@@ -273,29 +281,42 @@ Variable slice_and_stack(const VariableConstView &v, const Dim from_dim,
   return reshaped;
 }
 
-Variable slice_and_unstack(const VariableConstView &v,
+Variable slice_and_unstack(const VariableConstView &var,
                            const Dimensions &from_dims, const Dim to_dim) {
   std::cout << "slice_and_unstack 1" << std::endl;
   const auto labels = from_dims.labels();
   // const auto to_lab = labels[labels.size() - 1];
   // scipp::index step;
   Variable reshaped;
-  auto buf = Variable(v);
+  auto buf = Variable(var);
   for (int32_t l = 0; l < labels.size() - 1; ++l) {
-    // step = buf.dims()[from_dim] / to_dims.shape()[l];
-    reshaped = Variable(buf.slice({labels[l], 0}));
-    std::cout << "slicing along " << labels[l] << std::endl;
-    std::cout << reshaped << std::endl;
-    for (int32_t i = 1; i < from_dims.shape()[l]; ++i)
-      reshaped =
-          concatenate(reshaped, buf.slice({labels[l], i}), labels.back());
-    // Copy to update buffer
-    buf = reshaped;
+    if (buf.dims().contains(labels[l])) {
+      // step = buf.dims()[from_dim] / to_dims.shape()[l];
+      reshaped = Variable(buf.slice({labels[l], 0}));
+      std::cout << "slicing along " << labels[l] << std::endl;
+      std::cout << reshaped << std::endl;
+      for (int32_t i = 1; i < from_dims.shape()[l]; ++i)
+        reshaped = join_edges(VariableView(reshaped), buf.slice({labels[l], i}),
+                              labels.back());
+      // concatenate(reshaped, buf.slice({labels[l], i}), labels.back());
+      // Copy to update buffer
+      buf = reshaped;
+    }
   }
 
-  reshaped.rename(labels.back(), to_dim);
+  buf.rename(labels.back(), to_dim);
   std::cout << "slice_and_unstack 2" << std::endl;
-  return reshaped;
+  std::cout << buf << std::endl;
+  return buf;
+}
+
+const bool has_bin_edges(const VariableConstView &var,
+                         const Dimensions &array_dims) {
+  // bool has_edges = false;
+  for (const auto dim : var.dims().labels())
+    if (is_bin_edges(var, array_dims, dim))
+      return true;
+  return false;
 }
 
 } // end anonymous namespace
@@ -349,35 +370,44 @@ DataArray reshape(const DataArrayConstView &a,
       throw except::DimensionError(
           "Reshape: dimension to be reshaped not found in DataArray.");
 
+  std::cout << "reshape 1" << std::endl;
   Dimensions stacked_dims;
   for (const auto dim : from_dims)
     stacked_dims.addInner(dim, old_dims[dim]);
+  std::cout << "reshape 2" << std::endl;
 
   auto reshaped = DataArray(
       reshape(a.data(), unstack_dims(old_dims, stacked_dims, to_dim)));
+  std::cout << "reshape 3" << std::endl;
 
   for (auto &&[name, coord] : a.coords()) {
-    bool has_bin_edges = false;
-    for (const auto dim : coord.dims().labels()) {
-      if (is_bin_edges(coord, old_dims, dim)) {
-        has_bin_edges = true;
-        break;
-      }
-    }
-    std::cout << "has_bin_edges: " << has_bin_edges << std::endl;
-    if (has_bin_edges) {
+    std::cout << "reshape 4" << std::endl;
+    // bool has_bin_edges = false;
+    // for (const auto dim : coord.dims().labels()) {
+    //   if (is_bin_edges(coord, old_dims, dim)) {
+    //     has_bin_edges = true;
+    //     break;
+    //   }
+    // }
+    // std::cout << "has_bin_edges: " << has_bin_edges << std::endl;
+    if (has_bin_edges(coord, old_dims)) {
+      std::cout << "reshape 5" << std::endl;
       // const auto var = maybe_broadcast(coord, stacked_dims, to_dim);
       // try {
       reshaped.coords().set(
           name, slice_and_unstack(maybe_broadcast(coord, stacked_dims, to_dim),
                                   stacked_dims, to_dim));
+      std::cout << "reshape 6" << std::endl;
       // } catch (const std::exception&) { /* */ }
     } else {
+      std::cout << "reshape 7" << std::endl;
       reshaped.coords().set(
           name, reshape(maybe_broadcast(coord, stacked_dims, to_dim),
                         unstack_dims(coord.dims(), stacked_dims, to_dim)));
+      std::cout << "reshape 8" << std::endl;
     }
   }
+  std::cout << "reshape 9" << std::endl;
 
   // for (auto &&[name, attr] : a.attrs())
   //   reshaped.attrs().set(
