@@ -32,7 +32,7 @@ to_string(const std::pair<std::string, VariableConstView> &attr);
 
 SCIPP_VARIABLE_EXPORT std::string
 format_variable(const std::string &key, const VariableConstView &variable,
-                const Dimensions &datasetDims = Dimensions());
+                std::optional<Dimensions> datasetDims = std::nullopt);
 
 /// Abstract base class for formatters for variables with element types not in
 /// scipp-variable module.
@@ -56,6 +56,9 @@ template <class T> class Formatter : public AbstractFormatter {
 /// register a formatter.
 class SCIPP_VARIABLE_EXPORT FormatterRegistry {
 public:
+  FormatterRegistry() = default;
+  FormatterRegistry(const FormatterRegistry &) = delete;
+  FormatterRegistry &operator=(const FormatterRegistry &) = delete;
   void emplace(const DType key, std::unique_ptr<AbstractFormatter> formatter);
   bool contains(const DType key) const noexcept;
   std::string format(const VariableConstView &var) const;

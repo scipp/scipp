@@ -39,7 +39,7 @@ template <class T> typename T::view_type makeViewItem(T &);
 namespace scipp::variable {
 
 namespace detail {
-void expect0D(const Dimensions &dims);
+SCIPP_VARIABLE_EXPORT void expect0D(const Dimensions &dims);
 } // namespace detail
 
 class VariableConstView;
@@ -366,6 +366,18 @@ SCIPP_VARIABLE_EXPORT VariableView copy(const VariableConstView &dataset,
                                         const VariableView &out);
 
 } // namespace scipp::variable
+
+namespace scipp::core {
+template <> constexpr DType dtype<variable::Variable>{1000};
+template <>
+constexpr DType dtype<variable::VariableView>{
+    1001}; // hack for python bindings using
+           // dtype<ElementArrayView<bucket<Variable>>::value_type>
+           // is setting same dtype ID correct?
+template <> constexpr DType dtype<bucket<variable::Variable>>{1001};
+template <> constexpr DType dtype<bucket<variable::VariableConstView>>{1002};
+template <> constexpr DType dtype<bucket<variable::VariableView>>{1003};
+} // namespace scipp::core
 
 namespace scipp {
 using variable::Dims;

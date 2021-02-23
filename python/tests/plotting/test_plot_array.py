@@ -3,7 +3,7 @@
 # @file
 
 import scipp as sc
-from scipp.plot.helpers import PlotArray
+from scipp.plotting.helpers import PlotArray
 from plot_helper import make_dense_dataset
 
 

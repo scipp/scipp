@@ -1,3 +1,7 @@
+# ~~~
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+# ~~~
 include(scipp-util)
 
 scipp_unary(math abs)
@@ -39,6 +43,7 @@ scipp_function("binary" arithmetic operator+ OP plus)
 scipp_function("binary" arithmetic operator- OP minus)
 scipp_function("binary" arithmetic operator* OP times)
 scipp_function("binary" arithmetic operator/ OP divide)
+scipp_function("binary" arithmetic floor_divide)
 scipp_function("binary" arithmetic operator% OP mod)
 scipp_function("inplace" arithmetic operator+= OP plus_equals)
 scipp_function("inplace" arithmetic operator-= OP minus_equals)

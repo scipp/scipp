@@ -2,6 +2,8 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from html import escape
+
 from .._utils import value_to_string
 import ipywidgets as ipw
 
@@ -156,7 +158,7 @@ class PlotWidgets:
                 for key in masks[name]["names"]:
                     self.mask_checkboxes[name][key] = ipw.Checkbox(
                         value=masks[name]["names"][key],
-                        description="{}:{}".format(name, key),
+                        description="{}:{}".format(escape(name), escape(key)),
                         indent=False,
                         layout={"width": "initial"})
                     setattr(self.mask_checkboxes[name][key], "mask_group",

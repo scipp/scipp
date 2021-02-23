@@ -13,6 +13,8 @@ Features
 * Add more functions for data arrays that were previously available only for variables [#1638](https://github.com/scipp/scipp/pull/1638) [#1660](https://github.com/scipp/scipp/pull/1660).
 * Add named versions of operators such as ``logical_and`` [#1660](https://github.com/scipp/scipp/pull/1660).
 * Add modulo operations [#1660](https://github.com/scipp/scipp/pull/1660).
+* Add scaling operations for Variables of type ``vector_3_float64``.
+* ``sum`` and ``mean`` implemented for Variables of type ``vector_3_float64``. 
 * ``scipp.neutron``
 
   * Support unit conversion to energy transfer, for inelastic TOF experiments [#1635](https://github.com/scipp/scipp/pull/1635).
@@ -21,6 +23,8 @@ Features
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
+
+* The ``plot`` module has been renamed to ``plotting``, and plotting is now achieved via ``sc.plot(data)``. Wrapper functions ``superplot``, ``image``, and ``scatter3d`` have been dropped [#1696](https://github.com/scipp/scipp/pull/1696).
 
 Contributors
 ~~~~~~~~~~~~

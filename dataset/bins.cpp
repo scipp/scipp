@@ -15,12 +15,12 @@
 #include "scipp/variable/bins.h"
 #include "scipp/variable/bucket_model.h"
 #include "scipp/variable/cumulative.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/transform_subspan.h"
-#include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bin.h"
@@ -392,6 +392,17 @@ void scale(const DataArrayView &array, const DataArrayConstView &histogram,
   }
 }
 
+namespace {
+Variable applyMask(const DataArrayConstView &buffer,
+                   const VariableConstView &indices, const Dim dim,
+                   const Variable &masks) {
+  auto indices_copy = Variable(indices);
+  auto masked_data = scipp::variable::masked_to_zero(buffer.data(), masks);
+  return make_bins(std::move(indices_copy), dim, std::move(masked_data));
+}
+
+} // namespace
+
 Variable sum(const VariableConstView &data) {
   auto type = variable::variableFactory().elem_dtype(data);
   type = type == dtype<bool> ? dtype<int64_t> : type;
@@ -401,7 +412,19 @@ Variable sum(const VariableConstView &data) {
     summed = Variable(type, data.dims(), unit, Values{}, Variances{});
   else
     summed = Variable(type, data.dims(), unit, Values{});
-  variable::sum_impl(summed, data);
+
+  if (data.dtype() == dtype<bucket<DataArray>>) {
+    const auto &&[indices, dim, buffer] =
+        data.constituents<bucket<DataArray>>();
+    if (const auto mask_union = irreducible_mask(buffer.masks(), dim)) {
+      variable::sum_impl(summed, applyMask(buffer, indices, dim, mask_union));
+    } else {
+      variable::sum_impl(summed, data);
+    }
+  } else {
+    variable::sum_impl(summed, data);
+  }
+
   return summed;
 }
 
