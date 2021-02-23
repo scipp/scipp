@@ -273,11 +273,11 @@ def summarize_variable(name,
     as a standalone variable (when a single variable or data array is
     displayed) or as part of a dataset.
     """
-    dims_str = escape("({})".format(
+    dims_str = "({})".format(
         _make_dim_str(
             var,
             find_bin_edges(var, embedded_in)
-            if embedded_in is not None else None, add_dim_size)))
+            if embedded_in is not None else None, add_dim_size))
     unit = '' if var.unit == sc.units.dimensionless else repr(var.unit)
 
     disabled, attrs_ul = _make_inline_attributes(var, has_attrs, embedded_in)
@@ -295,8 +295,8 @@ def summarize_variable(name,
 
     if name is None:
         html = [
-            f"<div class='sc-var-name'><span{cssclass_idx}>{dims_str}</span>"
-            "</div>"
+            f"<div class='sc-var-name'><span{cssclass_idx}>"
+            f"{escape(dims_str)}</span></div>"
         ]
     else:
         html = [
