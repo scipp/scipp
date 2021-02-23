@@ -9,11 +9,7 @@ function(scipp_install_component)
     PARSE_ARGV 0 SCIPP_INSTALL_COMPONENT "${options}" "${oneValueArgs}" ""
   )
   if(DYNAMIC_LIB)
-    install(
-      TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET}
-      EXPORT ${EXPORT_NAME}
-      DESTINATION ${LIBDIR}
-    )
+    install(TARGETS ${SCIPP_INSTALL_COMPONENT_TARGET} EXPORT ${EXPORT_NAME})
     install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
     if(${SCIPP_INSTALL_COMPONENT_INSTALL_GENERATED})
       install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include/
