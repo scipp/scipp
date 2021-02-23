@@ -14,14 +14,14 @@ requirements:
     - git
     - ninja
     - python {{ python }}
-    - tbb-devel [not win]
+    - tbb-devel
   run:
     - appdirs
     - numpy >=1.15.3
     - python {{ python }}
     - python-configuration
     - pyyaml
-    - tbb [not win]
+    - tbb
 
 test:
   import:
