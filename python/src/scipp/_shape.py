@@ -51,7 +51,7 @@ def concatenate(x, y, dim):
     return _call_cpp_func(_cpp.concatenate, x, y, dim)
 
 
-def reshape(x, dims, shape):
+def reshape(x, dims, to_dims=None):
     """Reshape a variable, data array or dataset.
 
     :param x: Container to reshape.
@@ -65,7 +65,10 @@ def reshape(x, dims, shape):
     :return: New Dataset, DataArray or Variable with requested dimension labels
              and shape.
     """
-    return _call_cpp_func(_cpp.reshape, x, dims, shape)
+    if to_dims is not None:
+        return _call_cpp_func(_cpp.reshape, x, dims, to_dims)
+    else:
+        return _call_cpp_func(_cpp.reshape, x, dims)
 
 
 def transpose(x, dims: Sequence[str]):
@@ -83,35 +86,34 @@ def transpose(x, dims: Sequence[str]):
     return _call_cpp_func(_cpp.transpose, x, dims)
 
 
-def stack(x, dim, to_dims):
-    """Reshape a variable, data array or dataset.
+# def stack(x, dim, to_dims):
+#     """Reshape a variable, data array or dataset.
 
-    :param x: Container to reshape.
-    :param dims: List of new dimensions.
-    :param shape: New extents in each dimension.
-    :type x: Dataset, DataArray or Variable
-    :type dims: list[str]
-    :type shape: list[int]
-    :raises: If the volume of the old shape is not equal to the
-             volume of the new shape.
-    :return: New Dataset, DataArray or Variable with requested dimension labels
-             and shape.
-    """
-    return _call_cpp_func(_cpp.stack, x, dim, to_dims)
+#     :param x: Container to reshape.
+#     :param dims: List of new dimensions.
+#     :param shape: New extents in each dimension.
+#     :type x: Dataset, DataArray or Variable
+#     :type dims: list[str]
+#     :type shape: list[int]
+#     :raises: If the volume of the old shape is not equal to the
+#              volume of the new shape.
+#     :return: New Dataset, DataArray or Variable with requested dimension labels
+#              and shape.
+#     """
+#     return _call_cpp_func(_cpp.stack, x, dim, to_dims)
 
+# def unstack(x, dims, to_dim):
+#     """Reshape a variable, data array or dataset.
 
-def unstack(x, dims, to_dim):
-    """Reshape a variable, data array or dataset.
-
-    :param x: Container to reshape.
-    :param dims: List of new dimensions.
-    :param shape: New extents in each dimension.
-    :type x: Dataset, DataArray or Variable
-    :type dims: list[str]
-    :type shape: list[int]
-    :raises: If the volume of the old shape is not equal to the
-             volume of the new shape.
-    :return: New Dataset, DataArray or Variable with requested dimension labels
-             and shape.
-    """
-    return _call_cpp_func(_cpp.unstack, x, dims, to_dim)
+#     :param x: Container to reshape.
+#     :param dims: List of new dimensions.
+#     :param shape: New extents in each dimension.
+#     :type x: Dataset, DataArray or Variable
+#     :type dims: list[str]
+#     :type shape: list[int]
+#     :raises: If the volume of the old shape is not equal to the
+#              volume of the new shape.
+#     :return: New Dataset, DataArray or Variable with requested dimension labels
+#              and shape.
+#     """
+#     return _call_cpp_func(_cpp.unstack, x, dims, to_dim)

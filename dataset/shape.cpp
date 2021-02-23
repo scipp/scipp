@@ -264,15 +264,16 @@ Variable slice_and_stack(const VariableConstView &v, const Dim from_dim,
 } // end anonymous namespace
 
 /// dim ['x': 6] -> ['y': 2, 'z': 3]
-DataArray stack(const DataArrayConstView &a, const Dim from_dim,
-                const Dimensions &to_dims) {
+DataArray reshape(const DataArrayConstView &a, const Dim from_dim,
+                  const Dimensions &to_dims) {
   // Make sure that new dims do not already exist in data dimensions, apart
   // apart from the old dim (i.e. old dim can be re-used)
   auto old_dims = a.dims();
   for (const auto dim : to_dims.labels())
     if (old_dims.contains(dim) && dim != from_dim)
-      throw except::DimensionError("New dimensions cannot contain labels that "
-                                   "already exist in the DataArray.");
+      throw except::DimensionError(
+          "Reshape: new dimensions cannot contain labels that "
+          "already exist in the DataArray.");
 
   auto reshaped =
       DataArray(reshape(a.data(), stack_dims(old_dims, from_dim, to_dims)));
@@ -285,27 +286,28 @@ DataArray stack(const DataArrayConstView &a, const Dim from_dim,
           name, reshape(coord, stack_dims(coord.dims(), from_dim, to_dims)));
   }
 
-  // for (auto &&[name, attr] : a.attrs())
-  //   reshaped.attrs().set(
-  //       name, reshape(attr, stack_dims(attr.dims(), from_dim,
-  //       to_dims)));
+  for (auto &&[name, attr] : a.attrs())
+    if (is_bin_edges(coord, old_dims, from_dim))
+      reshaped.attrs().set(name, slice_and_stack(attr, from_dim, to_dims));
+    else
+      reshaped.attrs().set(
+          name, reshape(attr, stack_dims(attr.dims(), from_dim, to_dims)));
 
-  // for (auto &&[name, mask] : a.masks())
-  //   reshaped.masks().set(
-  //       name, reshape(mask, stack_dims(mask.dims(), from_dim,
-  //       to_dims)));
+  for (auto &&[name, mask] : a.masks())
+    reshaped.masks().set(
+        name, reshape(mask, stack_dims(mask.dims(), from_dim, to_dims)));
 
   return reshaped;
 }
 
 /// ['y', 'z'] -> ['x']
-DataArray unstack(const DataArrayConstView &a,
+DataArray reshape(const DataArrayConstView &a,
                   const std::vector<Dim> &from_dims, const Dim to_dim) {
   auto old_dims = a.dims();
   for (const auto dim : from_dims)
     if (!old_dims.contains(dim))
-      throw except::DimensionError("Dimension to be unstacked not found in "
-                                   "DataArray.");
+      throw except::DimensionError(
+          "Reshape: dimension to be reshaped not found in DataArray.");
 
   Dimensions stacked_dims;
   for (const auto dim : from_dims)
