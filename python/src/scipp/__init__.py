@@ -13,7 +13,6 @@ del runtime_config
 from ._scipp.core import *
 from ._scipp import __version__
 from . import detail
-from . import neutron
 from .show import show, make_svg
 from .table import table
 from .plotting import plot
