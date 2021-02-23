@@ -16,22 +16,21 @@ class HistogramEventsTest(MantidScippComparison):
             "CNCS_51936_event.nxs": ("5ba401e489260a44374b5be12b780911", "MD5")
         }
 
-    def _run_mantid(self, **kwargs):
+    def _run_mantid(self, input):
         import mantid.simpleapi as sapi
         # Note Mantid rebin inclusive of last bin boundary
-        out = sapi.Rebin(kwargs['workspace'],
+        out = sapi.Rebin(InputWorkspace=input,
                          Params=[0, 10, 1000],
                          PreserveEvents=False,
                          StoreInADS=False)
         return mantid.from_mantid(out)
 
-    def _run_scipp(self, **kwargs):
-        return sc.histogram(
-            kwargs['data_array'],
-            sc.Variable(dims=['tof'],
-                        values=np.arange(0, 1010, 10),
-                        dtype=sc.dtype.float64,
-                        unit=sc.units.us))
+    def _run_scipp(self, input):
+        return sc.histogram(x=input,
+                            bins=sc.Variable(dims=['tof'],
+                                             values=np.arange(0, 1010, 10),
+                                             dtype=sc.dtype.float64,
+                                             unit=sc.units.us))
 
 
 @pytest.mark.skipif(not mantid_is_available(),
