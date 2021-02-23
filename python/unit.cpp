@@ -27,16 +27,17 @@ get_time_unit(const std::optional<scipp::units::Unit> value_unit,
     throw std::invalid_argument("Invalid unit for dtype=datetime64: " +
                                 to_string(sc_unit));
   }
-  if (dtype_unit && (sc_unit != units::one && *dtype_unit != sc_unit)) {
+  if (dtype_unit.value_or(units::one) != units::one &&
+      (sc_unit != units::one && *dtype_unit != sc_unit)) {
     throw std::invalid_argument(
-        "dtype (" + to_string(*dtype_unit) +
-        ") has a different time unit from 'unit' argument (" +
+        "dtype (datetime64[" + to_string(*dtype_unit) +
+        "]) has a different time unit from 'unit' argument (" +
         to_string(sc_unit) + ")");
   }
   units::Unit actual_unit;
   if (sc_unit != units::one)
     actual_unit = sc_unit;
-  else if (dtype_unit.has_value())
+  else if (dtype_unit.value_or(units::one) != units::one)
     actual_unit = *dtype_unit;
   else if (value_unit.has_value())
     actual_unit = *value_unit;

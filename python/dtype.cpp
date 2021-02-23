@@ -82,6 +82,10 @@ parse_datetime_dtype(const std::string_view dtype_name) {
       throw std::invalid_argument(
           std::string("Unsupported unit in datetime: ") + dtype_name[11] + "s");
     }
+  } else if (length == 10) {
+    if (dtype_name == "datetime64") {
+      return scipp::units::dimensionless;
+    }
   }
 
   throw std::invalid_argument(
