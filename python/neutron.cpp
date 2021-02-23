@@ -145,7 +145,7 @@ void bind_diffraction(py::module &m) {
 }
 
 void init_neutron(py::module &m) {
-  auto neutron = m.def_submodule("neutron");
+  auto neutron = m;
 
   bind_convert<dataset::DataArray>(neutron);
   bind_convert<dataset::Dataset>(neutron);

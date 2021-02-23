@@ -6,6 +6,7 @@
 
 #include "scipp/core/tag_util.h"
 #include "scipp/core/transform_common.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable.h"
 

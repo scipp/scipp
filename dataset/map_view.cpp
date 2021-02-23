@@ -93,9 +93,11 @@ MutableView<Base, Access>::extract(const typename Base::key_type &key) const {
   return m_access.extract(key);
 }
 
-template class ConstView<ViewId::Coords, Dim, variable::Variable>;
-template class MutableView<CoordsConstView, CoordAccess>;
-template class ConstView<ViewId::Masks, std::string, variable::Variable>;
-template class MutableView<MasksConstView, MaskAccess>;
+template class SCIPP_DATASET_EXPORT
+    ConstView<ViewId::Coords, Dim, variable::Variable>;
+template class SCIPP_DATASET_EXPORT MutableView<CoordsConstView, CoordAccess>;
+template class SCIPP_DATASET_EXPORT
+    ConstView<ViewId::Masks, std::string, variable::Variable>;
+template class SCIPP_DATASET_EXPORT MutableView<MasksConstView, MaskAccess>;
 
 } // namespace scipp::dataset

@@ -3,8 +3,9 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 set(TARGET_NAME "scipp-neutron")
-set(INC_FILES include/scipp/neutron/convert.h)
-set(INC_FILES include/scipp/neutron/diffraction/convert_with_calibration.h)
+set(INC_FILES include/scipp/neutron/convert.h include/scipp/neutron/beamline.h
+              include/scipp/neutron/diffraction/convert_with_calibration.h
+)
 
 set(SRC_FILES beamline.cpp convert.cpp diffraction/convert_with_calibration.cpp)
 
@@ -20,7 +21,7 @@ target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-         ${CMAKE_CURRENT_BINARY_DIR}
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 target_include_directories(
   ${TARGET_NAME} SYSTEM PUBLIC ${CMAKE_BINARY_DIR}/Eigen-src
@@ -31,5 +32,6 @@ set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 add_subdirectory(test)
 
 if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+  install(TARGETS ${TARGET_NAME})
+  install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
 endif(DYNAMIC_LIB)

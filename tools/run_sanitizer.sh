@@ -22,7 +22,7 @@ cmake -DWITH_CTEST=Off -DSANITIZE_${SANITIZER}=On -DCMAKE_INSTALL_PREFIX=${INSTA
 make -j
 make -j all-tests
 make install
-export ASan_WRAPPER=${SOURCE}/CMake/sanitizers-cmake/cmake/asan-wrapper
+export ASan_WRAPPER=${SOURCE}/cmake/sanitizers-cmake/cmake/asan-wrapper
 ${ASan_WRAPPER} ${BUILD}/common/test/scipp-common-test || { exit 1; }
 ${ASan_WRAPPER} ${BUILD}/units/test/scipp-units-test || { exit 1; }
 ${ASan_WRAPPER} ${BUILD}/core/test/scipp-core-test || { exit 1; }

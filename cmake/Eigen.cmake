@@ -1,6 +1,6 @@
 # Download and unpack Eigen at configure time
 configure_file(
-  ${CMAKE_SOURCE_DIR}/CMake/Eigen.in
+  ${CMAKE_SOURCE_DIR}/cmake/Eigen.in
   ${CMAKE_BINARY_DIR}/Eigen-download/CMakeLists.txt
 )
 

@@ -53,7 +53,8 @@ Variances(std::initializer_list<T>) -> Variances<std::initializer_list<T>>;
 
 namespace detail {
 
-void throw_keyword_arg_constructor_bad_dtype(const DType dtype);
+SCIPP_VARIABLE_EXPORT void
+throw_keyword_arg_constructor_bad_dtype(const DType dtype);
 
 /// Convert "keyword" args to tuple that can be used to construct Variable
 ///

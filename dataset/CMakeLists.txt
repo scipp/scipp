@@ -61,6 +61,10 @@ endif(DYNAMIC_LIB)
 
 add_library(${TARGET_NAME} ${LINK_TYPE} ${INC_FILES} ${SRC_FILES})
 generate_export_header(${TARGET_NAME})
+# SCIPP_EXPORT is used in macros defined in variable/
+target_compile_definitions(
+  ${TARGET_NAME} PRIVATE SCIPP_EXPORT=SCIPP_DATASET_EXPORT
+)
 target_link_libraries(${TARGET_NAME} PUBLIC scipp-variable Boost::boost)
 if(TBB_FOUND AND NOT DISABLE_MULTI_THREADING)
   target_link_libraries(${TARGET_NAME} PUBLIC TBB::tbb)
@@ -70,14 +74,13 @@ target_include_directories(
   ${TARGET_NAME}
   PUBLIC $<INSTALL_INTERFACE:include>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
          $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/include>
-         ${CMAKE_CURRENT_SOURCE_DIR}
-         ${CMAKE_CURRENT_BINARY_DIR}
+         $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
 )
 
 set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
+set_target_properties(${TARGET_NAME} PROPERTIES EXPORT_NAME dataset)
 add_subdirectory(test)
 
-if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-endif(DYNAMIC_LIB)
+scipp_install_component(TARGET ${TARGET_NAME} INSTALL_GENERATED)

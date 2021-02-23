@@ -61,13 +61,16 @@ template <class T> void VariableView::replace_model(T model) const {
   auto register_dtype_name_##name(                                             \
       (core::dtypeNameRegistry().emplace(dtype<__VA_ARGS__>, #name), 0));      \
   }                                                                            \
-  template ElementArrayView<const __VA_ARGS__> Variable::values() const;       \
-  template ElementArrayView<__VA_ARGS__> Variable::values();                   \
-  template ElementArrayView<const __VA_ARGS__> VariableConstView::values()     \
+  template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__> Variable::values() \
       const;                                                                   \
-  template ElementArrayView<__VA_ARGS__> VariableView::values() const;         \
-  template void VariableView::replace_model<DataModel<__VA_ARGS__>>(           \
-      DataModel<__VA_ARGS__>) const;
+  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::values();      \
+  template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
+  VariableConstView::values() const;                                           \
+  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> VariableView::values()   \
+      const;                                                                   \
+  template SCIPP_EXPORT void                                                   \
+      VariableView::replace_model<DataModel<__VA_ARGS__>>(                     \
+          DataModel<__VA_ARGS__>) const;
 
 /// Macro for instantiating classes and functions required for support a new
 /// dtype in Variable.
@@ -79,13 +82,15 @@ template <class T> void VariableView::replace_model(T model) const {
           dtype<__VA_ARGS__>, std::make_unique<VariableMaker<__VA_ARGS__>>()), \
       0));                                                                     \
   }                                                                            \
-  template Variable::Variable(const units::Unit, const Dimensions &,           \
-                              element_array<__VA_ARGS__>,                      \
-                              std::optional<element_array<__VA_ARGS__>>);      \
-  template ElementArrayView<const __VA_ARGS__> Variable::variances() const;    \
-  template ElementArrayView<__VA_ARGS__> Variable::variances();                \
-  template ElementArrayView<const __VA_ARGS__> VariableConstView::variances()  \
-      const;                                                                   \
-  template ElementArrayView<__VA_ARGS__> VariableView::variances() const;
+  template SCIPP_EXPORT Variable::Variable(                                    \
+      const units::Unit, const Dimensions &, element_array<__VA_ARGS__>,       \
+      std::optional<element_array<__VA_ARGS__>>);                              \
+  template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
+  Variable::variances() const;                                                 \
+  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__> Variable::variances();   \
+  template SCIPP_EXPORT ElementArrayView<const __VA_ARGS__>                    \
+  VariableConstView::variances() const;                                        \
+  template SCIPP_EXPORT ElementArrayView<__VA_ARGS__>                          \
+  VariableView::variances() const;
 
 } // namespace scipp::variable
