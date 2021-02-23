@@ -77,7 +77,6 @@ void init_element_array_view(py::module &m) {
   declare_span<Dataset>(m, "Dataset");
   declare_span<Eigen::Vector3d>(m, "Eigen_Vector3d");
   declare_span<Eigen::Matrix3d>(m, "Eigen_Matrix3d");
-
   declare_ElementArrayView<double>(m, "double");
   declare_ElementArrayView<float>(m, "float");
   declare_ElementArrayView<int64_t>(m, "int64");

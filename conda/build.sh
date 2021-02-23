@@ -30,12 +30,12 @@ cmake -B . -S .. -LA
 ninja -v all-benchmarks all-tests install
 
 # Run C++ tests
-./common/test/scipp-common-test
-./units/test/scipp-units-test
-./core/test/scipp-core-test
-./variable/test/scipp-variable-test
-./dataset/test/scipp-dataset-test
-./neutron/test/scipp-neutron-test
+./bin/scipp-common-test
+./bin/scipp-units-test
+./bin/scipp-core-test
+./bin/scipp-variable-test
+./bin/scipp-dataset-test
+./bin/scipp-neutron-test
 
 # Move scipp Python library to site packages location
 mv "$CONDA_PREFIX/scipp" "$CONDA_PREFIX"/lib/python*/

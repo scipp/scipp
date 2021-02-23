@@ -52,9 +52,10 @@ if ipy is not None:
         # call to plot() would lead to devicePixelRatio being None.
         ipy.run_cell_magic(
             "js", "", "var kernel = IPython.notebook.kernel; "
+            "if (kernel) {"
             "var value = window.devicePixelRatio; "
             "var command = 'devicePixelRatio = ' + value; "
-            "kernel.execute(command);")
+            "kernel.execute(command);}")
 
 # Note: due to some strange behaviour when importing matplotlib and pyplot in
 # different order, we need to import pyplot after switching to the ipympl
@@ -65,7 +66,12 @@ except ImportError:
     plt = None
 
 if is_doc_build and plt is not None:
-    plt.rcParams.update({'figure.max_open_warning': 0})
+    plt.rcParams.update({
+        "figure.max_open_warning": 0,
+        "interactive": False,
+        "figure.figsize": [6.4, 4.8],
+        "figure.dpi": 96
+    })
 
 
 def plot(*args, **kwargs):
@@ -216,25 +222,3 @@ def plot(*args, **kwargs):
         plt.ion()
 
     return output
-
-
-def superplot(*args, **kwargs):
-    """
-    Plot a Scipp object with a 1d projection that offers the possibility to
-    keep individual profiles as coloured lines.
-    """
-    return plot(*args, projection="1d", **kwargs)
-
-
-def image(*args, **kwargs):
-    """
-    Plot a Scipp object as a 2d image.
-    """
-    return plot(*args, projection="2d", **kwargs)
-
-
-def scatter3d(*args, **kwargs):
-    """
-    Plot a Scipp object as a 3d scatter plot.
-    """
-    return plot(*args, projection="3d", **kwargs)

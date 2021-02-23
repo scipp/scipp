@@ -20,7 +20,6 @@ void init_exceptions(py::module &);
 void init_groupby(py::module &);
 void init_geometry(py::module &);
 void init_histogram(py::module &);
-void init_neutron(py::module &);
 void init_operations(py::module &);
 void init_shape(py::module &);
 void init_reduction(py::module &);
@@ -76,6 +75,5 @@ PYBIND11_MODULE(_scipp, m) {
   m.attr("__version__") = py::str("unknown version");
 #endif
   init_core(m);
-  init_neutron(m);
   init_detail(m);
 }

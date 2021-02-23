@@ -56,6 +56,9 @@ template <class T> class Formatter : public AbstractFormatter {
 /// register a formatter.
 class SCIPP_VARIABLE_EXPORT FormatterRegistry {
 public:
+  FormatterRegistry() = default;
+  FormatterRegistry(const FormatterRegistry &) = delete;
+  FormatterRegistry &operator=(const FormatterRegistry &) = delete;
   void emplace(const DType key, std::unique_ptr<AbstractFormatter> formatter);
   bool contains(const DType key) const noexcept;
   std::string format(const VariableConstView &var) const;

@@ -87,3 +87,7 @@ def array(*,
                     variances=variances,
                     unit=unit,
                     dtype=dtype)
+
+
+# Wrapper to make dateime usable without importing numpy manually.
+datetime64 = numpy.datetime64
