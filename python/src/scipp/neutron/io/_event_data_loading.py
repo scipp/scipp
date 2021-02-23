@@ -98,8 +98,8 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, int]:
 
     unix_epoch = datetime(1970, 1, 1)
     if pulse_time_offset is not None and pulse_time_offset != unix_epoch:
-        # TODO correct for time offset, convert to relative to unix epoch
-        #   or do we want to cast pulse times to datetime objects anyway?
+        # TODO correct for time offset:
+        #  make times relative to run start or unix epoch?
         NotImplementedError(
             "Found offset for pulse times but dealing with this "
             "is not implemented yet")
@@ -135,7 +135,7 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, int]:
         detector_numbers = group['detector_numbers'][...]
         max_detector_id = detector_numbers.max()
     else:
-        max_detector_id = event_id.max()
+        max_detector_id = sc.max(event_id).value
 
     print(f"Loaded event data from {group.name} containing "
           f"{number_of_events} events")
@@ -155,8 +155,7 @@ def load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
     if not event_data:
         raise RuntimeError("No valid event data found in file")
     else:
-        # TODO concatenate the loaded data in order of ids of the bank
-        #  they came from to create single large dataarray
+
         def getMaxDetectorId(events_and_max_det_id):
             return events_and_max_det_id[1]
 
