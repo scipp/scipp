@@ -9,6 +9,7 @@
 
 #include "../variable/operations_common.h"
 #include "dataset_operations_common.h"
+#include <iostream>
 
 namespace scipp::dataset {
 
@@ -232,6 +233,7 @@ Variable maybe_broadcast(const VariableConstView &v,
             broadcast_dims.addInner(lab, var_dims[lab]);
           else
             broadcast_dims.addInner(lab, from_dims[lab]);
+    std::cout << "broadcasting to: " << broadcast_dims << std::endl;
     return broadcast(v, broadcast_dims);
   } else {
     return Variable(std::move(v)); // reshape(v, new_dims);
@@ -267,30 +269,33 @@ Variable slice_and_stack(const VariableConstView &v, const Dim from_dim,
     buf = reshaped;
   }
 
-  reshaped.rename(from_dim, labels[labels.size() - 1]);
+  reshaped.rename(from_dim, labels.back());
   return reshaped;
 }
 
 Variable slice_and_unstack(const VariableConstView &v,
                            const Dimensions &from_dims, const Dim to_dim) {
-  // const auto labels = to_dims.labels();
+  std::cout << "slice_and_unstack 1" << std::endl;
+  const auto labels = from_dims.labels();
+  // const auto to_lab = labels[labels.size() - 1];
+  // scipp::index step;
+  Variable reshaped;
+  auto buf = Variable(v);
+  for (int32_t l = 0; l < labels.size() - 1; ++l) {
+    // step = buf.dims()[from_dim] / to_dims.shape()[l];
+    reshaped = Variable(buf.slice({labels[l], 0}));
+    std::cout << "slicing along " << labels[l] << std::endl;
+    std::cout << reshaped << std::endl;
+    for (int32_t i = 1; i < from_dims.shape()[l]; ++i)
+      reshaped =
+          concatenate(reshaped, buf.slice({labels[l], i}), labels.back());
+    // Copy to update buffer
+    buf = reshaped;
+  }
 
-  // auto step = v.dims()[from_dim] / to_dims.shape()[0];
-  // auto reshaped = Variable(v.slice({from_dim, 0, step + 1}));
-
-  // for (int32_t l = 0; l < labels.size() - 1; ++l) {
-  //   step = v.dims()[from_dim] / to_dims.shape()[l];
-  //   for (int32_t i = 0 + static_cast<int32_t>(l == 0); i <
-  //   to_dims[labels[l]];
-  //        ++i)
-  //     reshaped = concatenate(reshaped,
-  //                            v.slice({from_dim, i * step, (i + 1) * step +
-  //                            1}), labels[l]);
-  // }
-
-  // reshaped.rename(from_dim, labels[labels.size() - 1]);
-  // return reshaped;
-  return Variable(v);
+  reshaped.rename(labels.back(), to_dim);
+  std::cout << "slice_and_unstack 2" << std::endl;
+  return reshaped;
 }
 
 } // end anonymous namespace
@@ -352,19 +357,26 @@ DataArray reshape(const DataArrayConstView &a,
       reshape(a.data(), unstack_dims(old_dims, stacked_dims, to_dim)));
 
   for (auto &&[name, coord] : a.coords()) {
-    // if (is_bin_edges(coord, old_dims, from_dim)) {
-    //   // const auto var = maybe_broadcast(coord, stacked_dims, to_dim);
-    //   // try {
-    //   reshaped.coords().set(
-    //       name, slice_and_unstack(maybe_broadcast(coord, stacked_dims,
-    //       to_dim),
-    //                               stacked_dims, to_dim));
-    //   // } catch (const std::exception&) { /* */ }
-    // } else {
-    reshaped.coords().set(
-        name, reshape(maybe_broadcast(coord, stacked_dims, to_dim),
-                      unstack_dims(coord.dims(), stacked_dims, to_dim)));
-    // }
+    bool has_bin_edges = false;
+    for (const auto dim : coord.dims().labels()) {
+      if (is_bin_edges(coord, old_dims, dim)) {
+        has_bin_edges = true;
+        break;
+      }
+    }
+    std::cout << "has_bin_edges: " << has_bin_edges << std::endl;
+    if (has_bin_edges) {
+      // const auto var = maybe_broadcast(coord, stacked_dims, to_dim);
+      // try {
+      reshaped.coords().set(
+          name, slice_and_unstack(maybe_broadcast(coord, stacked_dims, to_dim),
+                                  stacked_dims, to_dim));
+      // } catch (const std::exception&) { /* */ }
+    } else {
+      reshaped.coords().set(
+          name, reshape(maybe_broadcast(coord, stacked_dims, to_dim),
+                        unstack_dims(coord.dims(), stacked_dims, to_dim)));
+    }
   }
 
   // for (auto &&[name, attr] : a.attrs())
