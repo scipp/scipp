@@ -29,8 +29,6 @@ Creation functions
 Free functions
 ==============
 
-See also :ref:`scipp-neutron` for functions specific to handling neutron-scattering data.
-
 General
 ~~~~~~~
 
