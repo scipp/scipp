@@ -51,7 +51,7 @@ stages:
           - bash: |
               set -ex
               conda --version
-              conda env create -f scipp-developer.yml
+              conda env create -f scipp-developer-no-mantid.yml
               # TODO: source activate does not work (see https://github.com/conda/conda/issues/9566)
               echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
               mkdir -p  "$(build_dir)" "$(install_dir)" "$(docs_build_dir)"
@@ -81,7 +81,6 @@ stages:
               ./bin/scipp-core-test
               ./bin/scipp-variable-test
               ./bin/scipp-dataset-test
-              ./bin/scipp-neutron-test
             displayName: 'Run C++ unit tests'
           - bash: |
               set -ex
@@ -108,9 +107,6 @@ stages:
           - bash: |
               set -ex
               cd docs
-              python data/fetch_neutron_data.py
-              mkdir -p  "$HOME/.mantid"
-              echo -e "usagereports.enabled=0\ndatasearch.directories=$(pwd)/data" > "$HOME/.mantid/Mantid.user.properties"
               # Build documentation, redirecting doctrees to avoid size bloat in build documentation
               PYTHONPATH="$PYTHONPATH:$(install_dir)" sphinx-build -d $(mktemp -d) . "$(docs_build_dir)"
               # Remove Juptyer notebooks used for documentation build, they are not accessible and create size bloat
@@ -172,7 +168,6 @@ stages:
               ./bin/scipp-core-test
               ./bin/scipp-variable-test
               ./bin/scipp-dataset-test
-              ./bin/scipp-neutron-test
             displayName: 'Run C++ unit tests'
           - bash: |
               set -ex
@@ -239,7 +234,6 @@ stages:
               bin/Release/scipp-core-test.exe
               bin/Release/scipp-variable-test.exe
               bin/Release/scipp-dataset-test.exe
-              bin/Release/scipp-neutron-test.exe
             displayName: 'Run C++ unit tests'
           - bash: |
               set -ex

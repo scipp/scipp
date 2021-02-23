@@ -35,7 +35,6 @@ ninja -v all-benchmarks all-tests install
 ./bin/scipp-core-test
 ./bin/scipp-variable-test
 ./bin/scipp-dataset-test
-./bin/scipp-neutron-test
 
 # Move scipp Python library to site packages location
 mv "$CONDA_PREFIX/scipp" "$CONDA_PREFIX"/lib/python*/
