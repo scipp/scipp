@@ -120,6 +120,15 @@ class DataAccessHelper {
   };
 };
 
+inline void expect_scalar(const Dimensions &dims, const std::string_view name) {
+  if (dims != Dimensions{}) {
+    std::ostringstream oss;
+    oss << "The '" << name << "' property cannot be used with non-scalar "
+        << "Variables. Got dimensions " << to_string(dims);
+    throw py::type_error(oss.str());
+  }
+}
+
 template <class... Ts> class as_ElementArrayViewImpl {
   using get_values = DataAccessHelper::get_values;
   using get_variances = DataAccessHelper::get_variances;
@@ -326,7 +335,7 @@ public:
     if (!get_values::valid<Var>(obj))
       return py::none();
     auto &view = obj.cast<Var &>();
-    core::expect::equals(Dimensions(), view.dims());
+    expect_scalar(view.dims(), "value");
     return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
                       get<get_values>(view));
   }
@@ -336,14 +345,14 @@ public:
     if (!get_variances::valid<Var>(obj))
       return py::none();
     auto &view = obj.cast<Var &>();
-    core::expect::equals(Dimensions(), view.dims());
+    expect_scalar(view.dims(), "variance");
     return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
                       get<get_variances>(view));
   }
   // Set a scalar value in a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static void set_value(Var &view, const py::object &obj) {
-    core::expect::equals(Dimensions(), view.dims());
+    expect_scalar(view.dims(), "value");
     std::visit(SetScalarVisitor<decltype(view)>{obj, view},
                get<get_values>(view));
   }
@@ -351,7 +360,7 @@ public:
   // variable is 0-dimensional and thus has only a single item.
   template <class Var>
   static void set_variance(Var &view, const py::object &obj) {
-    core::expect::equals(Dimensions(), view.dims());
+    expect_scalar(view.dims(), "variance");
     if (obj.is_none())
       return remove_variances(view);
     if (!view.hasVariances())
