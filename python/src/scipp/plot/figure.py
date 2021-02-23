@@ -5,7 +5,6 @@
 from .. import config
 import ipywidgets as ipw
 import matplotlib.pyplot as plt
-import matplotlib.ticker as ticker
 import io
 
 
@@ -115,19 +114,13 @@ class PlotFigure:
         """
         for dim in axformatters:
             self.axformatter[dim] = {}
-            for key in ["linear", "log"]:
-                if axformatters[dim][key] is None:
-                    self.axformatter[dim][key] = ticker.ScalarFormatter()
-                else:
-                    self.axformatter[dim][key] = ticker.FuncFormatter(
-                        axformatters[dim][key])
             self.axlocator[dim] = {
-                "linear": ticker.AutoLocator(),
-                "log": ticker.LogLocator()
+                "linear": axformatters[dim]["locator"].make(),
+                "log": axformatters[dim]["locator"].make(),
             }
-            if axformatters[dim]["custom_locator"]:
-                self.axlocator[dim]["linear"] = ticker.MaxNLocator(
-                    integer=True)
+
+            for key in ["linear", "log"]:
+                self.axformatter[dim][key] = axformatters[dim][key].make(locator=self.axlocator[dim][key])
 
     def connect(self, callbacks):
         """
