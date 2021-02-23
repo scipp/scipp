@@ -208,7 +208,7 @@ stages:
           - bash: |
               set -ex
               conda --version
-              conda env create -f scipp-developer-no-mantid.yml
+              conda env create -f scipp-developer-minimal.yml
               mkdir -p  "$(build_dir)" "$(install_dir)"
             displayName: 'Configure build environment'
           - bash: |
@@ -254,11 +254,12 @@ stages:
               mkdir -p build && cd build
               cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
               cmake --build . --config Release
-              export PATH="$(install_dir)":$PATH
+              PATH="$(install_dir)/bin":$PATH
               ./Release/test.exe
             displayName: 'Check packaging'
           - bash: |
               set -ex
               source activate scipp-developer
+              PATH="$(install_dir)/bin":$PATH
               PYTHONPATH="$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'

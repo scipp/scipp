@@ -1,0 +1,34 @@
+# This is used for incremental CI builds. This file is identical
+# to scipp-developer.yml but does not include Mantid, doc build
+# dependencies, or formatting and static analysis dependencies. See
+# https://scipp.github.io/developer/dependencies.html
+
+name: scipp-developer
+
+channels:
+  - conda-forge
+
+dependencies:
+  # Build
+  - boost-cpp
+  - ninja
+  - tbb-devel
+
+  # Run
+  - appdirs
+  - ipympl
+  - ipywidgets
+  - matplotlib-base=3.2.2 # version 3.3.3 causes issues with nodejs in JupyterLab
+  - numpy >=1.15.3
+  - python
+  - python-configuration
+  - pythreejs
+  - pyyaml
+  - tbb
+  - traitlets=4.3.3 # see https://github.com/jupyter-widgets/pythreejs/issues/334
+
+  # Test
+  - beautifulsoup4
+  - h5py
+  - psutil
+  - pytest
