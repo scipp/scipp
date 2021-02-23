@@ -77,12 +77,12 @@ endmacro()
 function(setup_scipp_category category)
   set(include_list ${variable_${category}_includes})
   configure_file(
-    CMake/generated.h.in
+    cmake/generated.h.in
     variable/include/scipp/variable/generated_${category}.h
   )
   set(include_list ${dataset_${category}_includes})
   configure_file(
-    CMake/generated.h.in dataset/include/scipp/dataset/generated_${category}.h
+    cmake/generated.h.in dataset/include/scipp/dataset/generated_${category}.h
   )
   string(REPLACE "ENDL" ";" init_list_forward ${python_${category}_binders_fwd})
   string(REPLACE "ENDL" ";" init_list ${python_${category}_binders})

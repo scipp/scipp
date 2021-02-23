@@ -95,6 +95,14 @@ stages:
             displayName: 'Build Python library'
           - bash: |
               set -ex
+              cd package/scipp-package-test
+              mkdir -p build && cd build
+              cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
+              cmake --build .
+              ./test
+            displayName: 'Check packaging'
+          - bash: |
+              set -ex
               PYTHONPATH="$PYTHONPATH:$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'
           - bash: |
@@ -173,6 +181,14 @@ stages:
             displayName: 'Build Python library'
           - bash: |
               set -ex
+              cd package/scipp-package-test
+              mkdir -p build && cd build
+              cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
+              cmake --build .
+              ./test
+            displayName: 'Check packaging'
+          - bash: |
+              set -ex
               PYTHONPATH="$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'
 
@@ -192,7 +208,7 @@ stages:
           - bash: |
               set -ex
               conda --version
-              conda env create -f scipp-developer-no-mantid.yml
+              conda env create -f scipp-developer-minimal.yml
               mkdir -p  "$(build_dir)" "$(install_dir)"
             displayName: 'Configure build environment'
           - bash: |
@@ -233,6 +249,17 @@ stages:
             displayName: 'Build Python library'
           - bash: |
               set -ex
+              cd package/scipp-package-test
               source activate scipp-developer
+              mkdir -p build && cd build
+              cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
+              cmake --build . --config Release
+              PATH="$(install_dir)/bin":$PATH
+              ./Release/test.exe
+            displayName: 'Check packaging'
+          - bash: |
+              set -ex
+              source activate scipp-developer
+              PATH="$(install_dir)/bin":$PATH
               PYTHONPATH="$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'

@@ -1,6 +1,6 @@
 # Download and unpack pybind11 at configure time
 configure_file(
-  ${CMAKE_SOURCE_DIR}/CMake/pybind11.in
+  ${CMAKE_SOURCE_DIR}/cmake/pybind11.in
   ${CMAKE_BINARY_DIR}/pybind11-download/CMakeLists.txt
 )
 
