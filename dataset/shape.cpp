@@ -233,15 +233,32 @@ Variable maybe_broadcast_and_reshape(const VariableConstView &v,
   }
 }
 
-Variable slice_and_stack(const VariableConstView &v, const Dim from_dim,
-                const Dimensions &to_dims) {
-  auto view = VariableView(v);
-  for (const auto dim : to_dims.labels()) {
-  	view = slice(view, from_dim, 0, )
+// Variable slice_and_stack(const VariableConstView &v, const Dim from_dim,
+//                          const Dimensions &to_dims) {
+//   auto view = VariableView(v);
+//   for (const auto dim : to_dims.labels()) {
+//     view = slice(view, from_dim, 0, )
+//   }
+// }
 
+Variable slice_and_stack(const VariableConstView &v, const Dim from_dim,
+                         const Dimensions &to_dims) {
+  const auto labels = to_dims.labels();
+
+  auto step = v.dims()[from_dim] / to_dims.shape()[0];
+  auto reshaped = Variable(v.slice({from_dim, 0, step + 1}));
+
+  for (int32_t l = 0; l < labels.size() - 1; ++l) {
+    step = v.dims()[from_dim] / to_dims.shape()[l];
+    for (int32_t i = 0 + static_cast<int32_t>(l == 0); i < to_dims[labels[l]];
+         ++i)
+      reshaped = concatenate(reshaped,
+                             v.slice({from_dim, i * step, (i + 1) * step + 1}),
+                             labels[l]);
   }
 
-
+  reshaped.rename(from_dim, labels[labels.size() - 1]);
+  return reshaped;
 }
 
 } // end anonymous namespace
@@ -260,20 +277,23 @@ DataArray stack(const DataArrayConstView &a, const Dim from_dim,
   auto reshaped =
       DataArray(reshape(a.data(), stack_dims(old_dims, from_dim, to_dims)));
 
-  for (auto &&[name, coord] : a.coords())
-  	if is_bin_edges(coord, old_dims, from_dim)
-
-  	else
+  for (auto &&[name, coord] : a.coords()) {
+    if (is_bin_edges(coord, old_dims, from_dim))
+      reshaped.coords().set(name, slice_and_stack(coord, from_dim, to_dims));
+    else
       reshaped.coords().set(
-        name, reshape(coord, stack_dims(coord.dims(), from_dim, to_dims)));
+          name, reshape(coord, stack_dims(coord.dims(), from_dim, to_dims)));
+  }
 
-  for (auto &&[name, attr] : a.attrs())
-    reshaped.attrs().set(
-        name, reshape(attr, stack_dims(attr.dims(), from_dim, to_dims)));
+  // for (auto &&[name, attr] : a.attrs())
+  //   reshaped.attrs().set(
+  //       name, reshape(attr, stack_dims(attr.dims(), from_dim,
+  //       to_dims)));
 
-  for (auto &&[name, mask] : a.masks())
-    reshaped.masks().set(
-        name, reshape(mask, stack_dims(mask.dims(), from_dim, to_dims)));
+  // for (auto &&[name, mask] : a.masks())
+  //   reshaped.masks().set(
+  //       name, reshape(mask, stack_dims(mask.dims(), from_dim,
+  //       to_dims)));
 
   return reshaped;
 }
