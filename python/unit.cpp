@@ -34,15 +34,13 @@ get_time_unit(const std::optional<scipp::units::Unit> value_unit,
         "]) has a different time unit from 'unit' argument (" +
         to_string(sc_unit) + ")");
   }
-  units::Unit actual_unit;
+  units::Unit actual_unit = units::one;
   if (sc_unit != units::one)
     actual_unit = sc_unit;
   else if (dtype_unit.value_or(units::one) != units::one)
     actual_unit = *dtype_unit;
   else if (value_unit.has_value())
     actual_unit = *value_unit;
-  else
-    throw std::invalid_argument("Unable to infer time unit from any argument.");
 
   // TODO implement
   if (value_unit && value_unit != actual_unit) {
