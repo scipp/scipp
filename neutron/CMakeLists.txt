@@ -32,6 +32,6 @@ set_target_properties(${TARGET_NAME} PROPERTIES POSITION_INDEPENDENT_CODE TRUE)
 add_subdirectory(test)
 
 if(DYNAMIC_LIB)
-  install(TARGETS ${TARGET_NAME} DESTINATION ${LIBDIR})
+  install(TARGETS ${TARGET_NAME})
   install(DIRECTORY include/ DESTINATION ${INCLUDEDIR})
 endif(DYNAMIC_LIB)

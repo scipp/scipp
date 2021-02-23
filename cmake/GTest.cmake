@@ -6,7 +6,7 @@ set(gtest_force_shared_crt
 
 # Download and unpack googletest at configure time
 configure_file(
-  ${CMAKE_SOURCE_DIR}/CMake/GTest.in
+  ${CMAKE_SOURCE_DIR}/cmake/GTest.in
   ${CMAKE_BINARY_DIR}/googletest-download/CMakeLists.txt
 )
 execute_process(

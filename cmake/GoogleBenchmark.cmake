@@ -6,7 +6,7 @@ set(BENCHMARK_ENABLE_TESTING
 )
 
 configure_file(
-  ${CMAKE_SOURCE_DIR}/CMake/GoogleBenchmark.in
+  ${CMAKE_SOURCE_DIR}/cmake/GoogleBenchmark.in
   ${CMAKE_BINARY_DIR}/googlebenchmark-download/CMakeLists.txt
 )
 
