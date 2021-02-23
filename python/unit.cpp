@@ -57,9 +57,8 @@ std::tuple<units::Unit, int64_t> get_time_unit(const py::buffer &value,
                                                const units::Unit unit) {
   return get_time_unit(value.is_none() ? std::optional<units::Unit>{}
                                        : parse_datetime_dtype(value),
-                       dtype.is_none()
-                           ? std::optional<units::Unit>{}
-                           : parse_datetime_dtype(py::dtype::from_args(dtype)),
+                       dtype.is_none() ? std::optional<units::Unit>{}
+                                       : parse_datetime_dtype(dtype),
                        unit);
 }
 
