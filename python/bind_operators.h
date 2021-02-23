@@ -160,6 +160,10 @@ template <class RHSSetup> struct OpBinder {
                     std::is_same_v<Other, Dataset> ||
                     std::is_same_v<Other, DatasetView>)) {
       c.def(
+          "__floordiv__",
+          [](T &a, Other &b) { return floor_divide(a, RHSSetup{}(b)); },
+          py::is_operator(), py::call_guard<py::gil_scoped_release>());
+      c.def(
           "__mod__", [](T &a, Other &b) { return a % RHSSetup{}(b); },
           py::is_operator(), py::call_guard<py::gil_scoped_release>());
     }
