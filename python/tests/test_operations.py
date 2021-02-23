@@ -29,6 +29,8 @@ def test_midpoint_mixed():
     a = np.arange(9) + 1
     with pytest.raises(TypeError):
         sc.midpoint(v, a)
+    with pytest.raises(TypeError):
+        sc.midpoint(a, v)
 
 
 def test_midpoint_array_datetime():
@@ -46,4 +48,4 @@ def test_midpoint_variable_datetime():
     low = v['x', :-1]
     high = v['x', 1:]
     m = sc.midpoint(low, high)
-    assert sc.is_equal(m, low + 1*sc.units.s)
+    assert sc.is_equal(m, low + 1 * sc.units.s)

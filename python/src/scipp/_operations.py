@@ -4,7 +4,6 @@
 
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ._scipp import core as _cpp
-from . import Variable
 from ._utils import is_variable
 
 
@@ -32,18 +31,20 @@ def midpoint(low, high):
     :param high: Upper end of the interval.
     :return: The equivalent of (low + high) / 2.
     """
+    if is_variable(low) ^ is_variable(high):
+        raise TypeError('Either no or both operands must be Variables.')
     if low.dtype != high.dtype:
-        raise TypeError(f'The arguments of midpoint must have the same dtype, got {low.dtype}, {high.dtype}')
+        raise TypeError('The arguments of midpoint must have the same dtype, '
+                        f'got {low.dtype}, {high.dtype}')
 
-    if is_variable(low):
-        if not is_variable(high):
-            raise TypeError('Either no or both operands must be Variables.')
-        if low.dtype == _cpp.dtype.datetime64:
-            diff = (high - low).values.astype(int, copy=False)
-            return low + Variable(dims=low.dims, unit=low.unit, values=diff // 2)
-    else:
-        if low.dtype.name.startswith('datetime'):
-            return low + (high - low) // 2
+    def is_datetime(dtype):
+        try:
+            return dtype == _cpp.dtype.datetime64
+        except TypeError:
+            return dtype.name.startswith('datetime')
 
-    # If dtype != datetime, we don't need to know the type of low and high.
+    if is_datetime(low.dtype):
+        # Can handle datetime but less precise and susceptible to underlow.
+        return low + (high - low) // 2
+    # More precise but susceptible to overflow.
     return 0.5 * (low + high)
