@@ -43,7 +43,7 @@ Neil Vaytet,
 and Jan-Lukas Wynen
 
 v0.5.0 (January 2021)
--------------------
+---------------------
 
 Features
 ~~~~~~~~
