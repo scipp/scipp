@@ -1,10 +1,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-#include "scipp/dataset/shape.h"
-
+#include "test_util.h"
 #include <gtest/gtest.h>
 
+#include "scipp/dataset/shape.h"
+#include "scipp/variable/arithmetic.h"
+#include "scipp/variable/shape.h"
+
 using namespace scipp;
+using namespace scipp::core;
 using namespace scipp::dataset;
 
 TEST(ResizeTest, data_array_1d) {
@@ -42,36 +46,78 @@ TEST(ResizeTest, data_array_2d) {
   EXPECT_EQ(resize(d, Dim::Y, 1), expected_d);
 }
 
-DataArray make_2d_data_array(const bool with_attrs=false, const bool with_masks=false, const bool with_binedges=false) {
-  const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{6, 4},
-                                        Values{1,  2,  3,  4,  5,  6,  7,  8,
-                                               9,  10, 11, 12, 13, 14, 15, 16,
-                                               17, 18, 19, 20, 21, 22, 23, 24});
+// DataArray make_1d_data_array(bool with_binedges = false) {
+//   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{24},
+//                                         Values{1,  2,  3,  4,  5,  6,  7,  8,
+//                                                9,  10, 11, 12, 13, 14, 15,
+//                                                16, 17, 18, 19, 20, 21, 22,
+//                                                23, 24});
+//   DataArray a(var);
+//   if (with_binedges) {
+//     a.coords().set(Dim::X,
+//                    makeVariable<double>(
+//                        Dims{Dim::X}, Shape{25},
+//                        Values{1.1,  2.1,  3.1,  4.1,  5.1,  6.1,  7.1,  8.1,
+//                               9.1,  10.1, 11.1, 12.1, 13.1, 14.1, 15.1, 16.1,
+//                               17.1, 18.1, 19.1, 20.1, 21.1, 22.1, 23.1, 24.1}));
+//     a.coords().set(Dim::Y,
+//                    makeVariable<double>(Dims{Dim::Y}, Shape{5},
+//                                         Values{1.2, 2.2, 3.2, 4.2, 5.2}));
+//   } else {
+//     a.coords().set(Dim::X,
+//                    makeVariable<double>(Dims{Dim::X}, Shape{6},
+//                                         Values{1.1, 2.1, 3.1, 4.1, 5.1, 6.1}));
+//     a.coords().set(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{4},
+//                                                 Values{1.2, 2.2, 3.2, 4.2}));
+//   }
+
+//   if (with_attrs) {
+//     a.attrs().set(Dim::Qx,
+//                   makeVariable<double>(Dims{Dim::X}, Shape{6},
+//                                        Values{1.3, 2.3, 3.3, 4.3, 5.3, 6.3}));
+//     a.attrs().set(Dim::Qy, makeVariable<double>(Dims{Dim::Y}, Shape{4},
+//                                                 Values{1.4, 2.4, 3.4, 4.4}));
+//   }
+//   // a.masks().set("mask_x", makeVariable<bool>(
+//   //                             Dims{Dim::X}, Shape{6},
+//   //                             Values{true, true, true, false, false,
+//   //                             false}));
+//   // a.masks().set("mask_y", makeVariable<bool>(Dims{Dim::Y}, Shape{4},
+//   //                                            Values{true, true, false,
+//   //                                            true}));
+//   // a.masks().set(
+//   //     "mask2d",
+//   //     makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{6, 4},
+//   //                        Values{true,  true,  true,  true,  true,  true,
+//   //                               false, false, false, false, false, false,
+//   //                               true,  false, true,  false, true,  false,
+//   //                               true,  true,  true,  false, false,
+//   false})); return a;
+// }
+
+DataArray make_2d_data_array(bool with_attrs = false, bool with_masks = false,
+                             bool with_binedges = false) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   if (with_binedges) {
-    a.coords().set(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{7},
-                                              Values{1.1, 2.1, 3.1, 4.1, 5.1, 6.1, 7.1}));
-    a.coords().set(
-      Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{5}, Values{1.2, 2.2, 3.2, 4.2, 5.2}));
+    a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
+    a.coords().set(Dim::Y, arange(Dim::Y, 5) + 0.2 * units::one);
   } else {
-    a.coords().set(Dim::X, makeVariable<double>(Dims{Dim::X}, Shape{6},
-                                              Values{1.1, 2.1, 3.1, 4.1, 5.1, 6.1}));
-    a.coords().set(
-      Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{4}, Values{1.2, 2.2, 3.2, 4.2}));
+    a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+    a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
   }
 
-
-  // a.coords().set(Dim::Z, var);
-  // a.attrs().set(Dim::Qx,
-  //               makeVariable<double>(Dims{Dim::X}, Shape{6},
-  //                                    Values{1.1, 2.1, 3.1, 4.1, 5.1, 6.1}));
-  // a.attrs().set(Dim::Qy, makeVariable<double>(Dims{Dim::Y}, Shape{4},
-  //                                             Values{1.2, 2.2, 3.2, 4.2}));
+  if (with_attrs) {
+    a.attrs().set(Dim::Qx, arange(Dim::X, 6) + 0.3 * units::one);
+    a.attrs().set(Dim::Qy, arange(Dim::Y, 4) + 0.4 * units::one);
+  }
   // a.masks().set("mask_x", makeVariable<bool>(
   //                             Dims{Dim::X}, Shape{6},
-  //                             Values{true, true, true, false, false, false}));
+  //                             Values{true, true, true, false, false,
+  //                             false}));
   // a.masks().set("mask_y", makeVariable<bool>(Dims{Dim::Y}, Shape{4},
-  //                                            Values{true, true, false, true}));
+  //                                            Values{true, true, false,
+  //                                            true}));
   // a.masks().set(
   //     "mask2d",
   //     makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{6, 4},
@@ -82,7 +128,6 @@ DataArray make_2d_data_array(const bool with_attrs=false, const bool with_masks=
   return a;
 }
 
-
 TEST(ReshapeTest, reshape_split_x) {
   auto a = make_2d_data_array();
   const auto rshp = makeVariable<double>(
@@ -90,14 +135,45 @@ TEST(ReshapeTest, reshape_split_x) {
       Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
              13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
   DataArray expected(rshp);
-  expected.coords().set(Dim::X, makeVariable<double>(
-      Dims{Dim::Row, Dim::Tof}, Shape{2, 3},
-      Values{1.1,  2.1,  3.1,  4.1,  5.1,  6.1}));
+  expected.coords().set(
+      Dim::X, makeVariable<double>(Dims{Dim::Row, Dim::Tof}, Shape{2, 3},
+                                   Values{1.1, 2.1, 3.1, 4.1, 5.1, 6.1}));
   expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
+  auto reshaped = reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
 
-  EXPECT_EQ(reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
+  EXPECT_EQ(reshaped, expected);
 }
 
+TEST(ReshapeTest, reshape_split_y) {
+  auto a = make_2d_data_array();
+  const auto rshp = makeVariable<double>(
+      Dims{Dim::X, Dim::Row, Dim::Tof}, Shape{6, 2, 2},
+      Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
+             13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
+  DataArray expected(rshp);
+  expected.coords().set(
+      Dim::Y, makeVariable<double>(Dims{Dim::Row, Dim::Tof}, Shape{2, 2},
+                                   Values{1.2, 2.2, 3.2, 4.2}));
+  expected.coords().set(Dim::X, a.coords()[Dim::X]);
+
+  EXPECT_EQ(reshape(a, Dim::Y, {{Dim::Row, 2}, {Dim::Tof, 2}}), expected);
+}
+
+// TEST(ReshapeTest, reshape_into_3_dims) {
+//   auto a = make_2d_data_array();
+//   const auto rshp = makeVariable<double>(
+//       Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{2, 3, 4},
+//       Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
+//              13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
+//   DataArray expected(rshp);
+//   expected.coords().set(
+//       Dim::X, makeVariable<double>(Dims{Dim::Row, Dim::Tof}, Shape{2, 3},
+//                                    Values{1.1, 2.1, 3.1, 4.1, 5.1, 6.1}));
+//   expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
+//   auto reshaped = reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
+
+//   EXPECT_EQ(reshaped, expected);
+// }
 
 // TEST(ReshapeTest, reshape_split_outer) {
 //   auto a = make_2d_data_array();
@@ -125,7 +201,8 @@ TEST(ReshapeTest, reshape_split_x) {
 //                                 false, false, false, false, false, false,
 //                                 false, false, false, false, false, false}));
 
-//   EXPECT_EQ(reshape(a, {{Dim::Row, 3}, {Dim::Tof, 2}, {Dim::Y, 4}}), expected);
+//   EXPECT_EQ(reshape(a, {{Dim::Row, 3}, {Dim::Tof, 2}, {Dim::Y, 4}}),
+//   expected);
 // }
 
 // TEST(ReshapeTest, reshape_split_inner) {
@@ -152,9 +229,11 @@ TEST(ReshapeTest, reshape_split_x) {
 //                     Dims{Dim::X, Dim::Row, Dim::Tof}, Shape{6, 2, 2},
 //                     Values{true, true, false, true, true, true, false, true,
 //                            true, true, false, true, true, true, false, true,
-//                            true, true, false, true, true, true, false, true}));
+//                            true, true, false, true, true, true, false,
+//                            true}));
 
-//   EXPECT_EQ(reshape(a, {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Tof, 2}}), expected);
+//   EXPECT_EQ(reshape(a, {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Tof, 2}}),
+//   expected);
 // }
 
 // TEST(ReshapeTest, reshape_merge_dims) {
@@ -178,7 +257,8 @@ TEST(ReshapeTest, reshape_split_x) {
 //                     Dims{Dim::Row}, Shape{24},
 //                     Values{true, true, false, true, true, true, false, true,
 //                            true, true, false, true, true, true, false, true,
-//                            true, true, false, true, true, true, false, true}));
+//                            true, true, false, true, true, true, false,
+//                            true}));
 //   expected.masks().set(
 //       "mask2d",
 //       makeVariable<bool>(Dims{Dim::Row}, Shape{24},
@@ -223,5 +303,6 @@ TEST(ReshapeTest, reshape_split_x) {
 
 //   Dataset expected{{{"a", a_reshaped}, {"b", b_reshaped}}};
 
-//   EXPECT_EQ(reshape(d, {{Dim::Row, 3}, {Dim::Tof, 2}, {Dim::Y, 4}}), expected);
+//   EXPECT_EQ(reshape(d, {{Dim::Row, 3}, {Dim::Tof, 2}, {Dim::Y, 4}}),
+//   expected);
 // }
