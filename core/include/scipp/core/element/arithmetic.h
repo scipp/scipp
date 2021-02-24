@@ -137,16 +137,7 @@ constexpr auto divide = overloaded{
 constexpr auto floor_divide = overloaded{
     floor_divide_types_t{}, transform_flags::expect_no_variance_arg<0>,
     transform_flags::expect_no_variance_arg<1>,
-    [](const auto a,
-       const auto b) -> std::common_type_t<decltype(a), decltype(b)> {
-      using std::floor;
-      if constexpr (std::is_integral_v<decltype(a)> &&
-                    std::is_integral_v<decltype(b)>)
-        return b == 0 ? 0
-                      : floor(static_cast<double>(a) / static_cast<double>(b));
-      else
-        return floor(a / b);
-    },
+    [](const auto a, const auto b) { numeric::floor_divide(a, b); },
     [](const units::Unit &a, const units::Unit &b) { return a / b; }};
 
 // remainder defined as in Python
