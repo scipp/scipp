@@ -63,8 +63,6 @@ scipp::core::DType scipp_dtype(const py::object &type) {
   }
 }
 
-// Awful handwritten parser. But std::regex does not support string_view and
-// you have to go through c-strings in order to extract the unit scale.
 [[nodiscard]] scipp::units::Unit
 parse_datetime_dtype(const std::string &dtype_name) {
   static std::regex datetime_regex{R"(datetime64(\[(\w+)\])?)"};
