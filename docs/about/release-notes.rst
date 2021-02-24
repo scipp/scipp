@@ -26,6 +26,7 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * The ``plot`` module has been renamed to ``plotting``, and plotting is now achieved via ``sc.plot(data)``. Wrapper functions ``superplot``, ``image``, and ``scatter3d`` have been dropped [#1696](https://github.com/scipp/scipp/pull/1696).
+* The syntax for reshaping a Variable has changed from ``sc.reshape(var, ['x', 'y'], (2, 3))`` to ``sc.reshape(var, {'x': 2, 'y': 3})``.
 
 Contributors
 ~~~~~~~~~~~~

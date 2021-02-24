@@ -52,18 +52,38 @@ def concatenate(x, y, dim):
 
 
 def reshape(x, dims, to_dims=None):
-    """Reshape a variable, data array or dataset.
+    """Reshape a variable or a data array.
+
+    For reshaping a variable, the syntax is the following:
+      a = sc.array(dims=['x'], values=[1, 2, 3, 4, 5, 6])
+      sc.reshape(var, {'y': 2, 'z': 3})
+
+    Reshaping a data array is limited to:
+      - splitting one of the dimensions into multiple dims
+      - flattening multiple dimensions into a single one
+    The syntax for splitting is:
+      sc.reshape(da, 'x', {'y': 2, 'z': 3})
+    The syntax for flattening is:
+      sc.reshape(da, ['x', 'y'], 'z')
+    When reshaping a data array, we attempt to keep coordinates as much as
+    possible, but some coordinates with bin edges are sometimes dropped during
+    a flattening operation when the bin edges cannot be stitched together.
 
     :param x: Container to reshape.
-    :param dims: List of new dimensions.
-    :param shape: New extents in each dimension.
-    :type x: Dataset, DataArray or Variable
-    :type dims: list[str]
-    :type shape: list[int]
+    :param dims: In the case of reshaping a Variable, a dict mapping new dims
+                 to new shapes. In the case of a DataArray, either a single dim
+                 label in the case of splitting a dimension, or a list of dim
+                 labels for flattening a dim.
+    :param to_dims: Unused for Variable reshape. In the case of a DataArray,
+                    either a dict mapping new dims to new shapes in the case of
+                    splitting a dimension, or a single dim label for flattening
+                    a dim.
+    :type x: Dataset or DataArray
+    :type dims: dict, or str, or list[str]
+    :type to_dims: dict or str
     :raises: If the volume of the old shape is not equal to the
              volume of the new shape.
-    :return: New Dataset, DataArray or Variable with requested dimension labels
-             and shape.
+    :return: Variable or DataArray with requested dimension labels and shape.
     """
     if to_dims is not None:
         return _call_cpp_func(_cpp.reshape, x, dims, to_dims)
@@ -84,36 +104,3 @@ def transpose(x, dims: Sequence[str]):
     :return: The absolute values of the input.
     """
     return _call_cpp_func(_cpp.transpose, x, dims)
-
-
-# def stack(x, dim, to_dims):
-#     """Reshape a variable, data array or dataset.
-
-#     :param x: Container to reshape.
-#     :param dims: List of new dimensions.
-#     :param shape: New extents in each dimension.
-#     :type x: Dataset, DataArray or Variable
-#     :type dims: list[str]
-#     :type shape: list[int]
-#     :raises: If the volume of the old shape is not equal to the
-#              volume of the new shape.
-#     :return: New Dataset, DataArray or Variable with requested dimension labels
-#              and shape.
-#     """
-#     return _call_cpp_func(_cpp.stack, x, dim, to_dims)
-
-# def unstack(x, dims, to_dim):
-#     """Reshape a variable, data array or dataset.
-
-#     :param x: Container to reshape.
-#     :param dims: List of new dimensions.
-#     :param shape: New extents in each dimension.
-#     :type x: Dataset, DataArray or Variable
-#     :type dims: list[str]
-#     :type shape: list[int]
-#     :raises: If the volume of the old shape is not equal to the
-#              volume of the new shape.
-#     :return: New Dataset, DataArray or Variable with requested dimension labels
-#              and shape.
-#     """
-#     return _call_cpp_func(_cpp.unstack, x, dims, to_dim)
