@@ -124,7 +124,8 @@ inline void expect_scalar(const Dimensions &dims, const std::string_view name) {
   if (dims != Dimensions{}) {
     std::ostringstream oss;
     oss << "The '" << name << "' property cannot be used with non-scalar "
-        << "Variables. Got dimensions " << to_string(dims);
+        << "Variables. Got dimensions " << to_string(dims) << ". Did you mean '"
+        << name << "s'?";
     throw except::DimensionError(oss.str());
   }
 }
