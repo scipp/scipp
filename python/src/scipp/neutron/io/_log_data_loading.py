@@ -2,7 +2,7 @@ import numpy as np
 from typing import Tuple
 from ..._scipp import core as sc
 import h5py
-from ._loading_common import ensure_str, BadSource
+from ._loading_common import ensure_str, BadSource, ensure_no_unsigned_type
 
 
 def load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
@@ -24,7 +24,10 @@ def load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
         times = group[time_dataset_name][...]
         dimension_label = "time"
         is_time_series = True
-        time_unit = ensure_str(group[time_dataset_name].attrs["units"])
+        try:
+            time_unit = ensure_str(group[time_dataset_name].attrs["units"])
+        except KeyError:
+            time_unit = ""
         # TODO convert them to datetime?
         #  should have a units attribute to check,
         #  they are float32 in seconds relative to start attribute
@@ -51,14 +54,16 @@ def load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
 
     if is_time_series:
         # If property has timestamps, create a DataArray
-        data_array = sc.DataArray(data=property_data,
-                                  coords={
-                                      dimension_label:
-                                      sc.Variable([dimension_label],
-                                                  values=times,
-                                                  dtype=sc.dtype.int64,
-                                                  unit=time_unit)
-                                  })
+        data_array = sc.DataArray(
+            data=property_data,
+            coords={
+                dimension_label:
+                sc.Variable([dimension_label],
+                            values=times,
+                            dtype=ensure_no_unsigned_type(
+                                group[time_dataset_name].dtype.type),
+                            unit=time_unit)
+            })
         return property_name, sc.Variable(value=data_array)
     elif not np.isscalar(values):
         # If property is multi-valued, create a wrapper single

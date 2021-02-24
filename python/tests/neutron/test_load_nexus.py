@@ -2,6 +2,7 @@ from nexus_helpers import (
     InMemoryNexusFileBuilder,
     EventData,
     Detector,
+    Log,
     in_memory_hdf5_file_with_two_nxentry,
 )
 import scipp as sc
@@ -112,3 +113,56 @@ def test_load_nexus_loads_data_from_multiple_nxevent_data_groups():
     expected_detector_ids = np.concatenate((detector_1_ids, detector_2_ids))
     assert np.allclose(loaded_data.coords['detector-id'].values,
                        expected_detector_ids)
+
+
+def test_load_nexus_loads_data_from_single_nxlog_group_with_no_units():
+    values = np.array([1, 2, 3])
+    times = np.array([4, 5, 6])
+    name = "test_log"
+    builder = InMemoryNexusFileBuilder()
+    builder.add_log(Log(name, values, times))
+
+    with builder.file() as nexus_file:
+        loaded_data = sc.neutron.load_nexus(nexus_file)
+
+    # Expect a sc.Dataset with log names as keys
+    assert np.allclose(loaded_data[name].data.values.values, values)
+    assert np.allclose(loaded_data[name].data.values.coords['time'], times)
+
+
+def test_load_nexus_loads_data_from_single_nxlog_group_with_units():
+    values = np.array([1.1, 2.2, 3.3])
+    times = np.array([4.4, 5.5, 6.6])
+    name = "test_log"
+    builder = InMemoryNexusFileBuilder()
+    builder.add_log(Log(name, values, times, value_units="m", time_units="s"))
+
+    with builder.file() as nexus_file:
+        loaded_data = sc.neutron.load_nexus(nexus_file)
+
+    # Expect a sc.Dataset with log names as keys
+    assert np.allclose(loaded_data[name].data.values.values, values)
+    assert np.allclose(loaded_data[name].data.values.coords['time'], times)
+    assert loaded_data[name].data.values.unit == sc.units.m
+    assert loaded_data[name].data.values.coords['time'].unit == sc.units.s
+
+
+def test_load_nexus_loads_data_from_multiple_nxlog_groups():
+    builder = InMemoryNexusFileBuilder()
+    log_1 = Log("test_log", np.array([1.1, 2.2, 3.3]),
+                np.array([4.4, 5.5, 6.6]))
+    log_2 = Log("test_log_2", np.array([123, 253, 756]),
+                np.array([246, 1235, 2369]))
+    builder.add_log(log_1)
+    builder.add_log(log_2)
+
+    with builder.file() as nexus_file:
+        loaded_data = sc.neutron.load_nexus(nexus_file)
+
+    # Expect a sc.Dataset with log names as keys
+    assert np.allclose(loaded_data[log_1.name].data.values.values, log_1.value)
+    assert np.allclose(loaded_data[log_1.name].data.values.coords['time'],
+                       log_1.time)
+    assert np.allclose(loaded_data[log_2.name].data.values.values, log_2.value)
+    assert np.allclose(loaded_data[log_2.name].data.values.coords['time'],
+                       log_2.time)

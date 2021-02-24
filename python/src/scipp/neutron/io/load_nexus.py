@@ -64,13 +64,18 @@ def _open_if_path(file_in: Union[str, h5py.File]):
 
 def _add_log_to_data(log_data_name: str, log_data: sc.Variable,
                      group_path: str, data: sc.Variable):
+    try:
+        data = data.attrs
+    except AttributeError:
+        pass
+
     group_path = group_path.split('/')
     path_position = -2
     name_changed = False
     unique_name_found = False
     while not unique_name_found:
-        if log_data_name not in data.attrs.keys():
-            data.attrs[log_data_name] = detail.move(log_data)
+        if log_data_name not in data.keys():
+            data[log_data_name] = detail.move(log_data)
             unique_name_found = True
         else:
             name_changed = True
@@ -115,6 +120,8 @@ def load_nexus(data_file: Union[str, h5py.File],
                 "to specify which to load data from")
 
         loaded_data = load_event_data(groups[nx_event_data])
+        if loaded_data is None and len(groups[nx_log]) > 0:
+            loaded_data = sc.Dataset({})
 
         for group in groups[nx_log]:
             try:

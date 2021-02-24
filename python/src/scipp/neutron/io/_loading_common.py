@@ -1,4 +1,6 @@
-from typing import Union
+from typing import Union, Any
+
+import numpy as np
 
 
 def ensure_str(str_or_bytes: Union[str, bytes]) -> str:
@@ -11,3 +13,16 @@ def ensure_str(str_or_bytes: Union[str, bytes]) -> str:
 
 class BadSource(Exception):
     pass
+
+
+unsigned_to_signed = {
+    np.uint32: np.int32,
+    np.uint64: np.int64,
+}
+
+
+def ensure_no_unsigned_type(dataset_type: Any):
+    try:
+        return unsigned_to_signed[dataset_type]
+    except KeyError:
+        return dataset_type
