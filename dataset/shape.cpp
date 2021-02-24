@@ -163,7 +163,8 @@ const Dimensions stack_dims(const Dimensions &old_dims, const Dim from_dim,
 /// Unstack/flatten dims for reshaping multiple dims into one
 ///
 /// Go through the old dims and:
-/// - if the dim is contained in the list of dims to be flattened, add the new dim once
+/// - if the dim is contained in the list of dims to be flattened, add the new
+///   dim once
 /// - if not, copy the dim/shape
 const Dimensions unstack_dims(const Dimensions &old_dims,
                               const Dimensions &from_dims, const Dim to_dim) {
@@ -178,7 +179,7 @@ const Dimensions unstack_dims(const Dimensions &old_dims,
   return new_dims;
 }
 
-/// Either broadcast variable to from_dims before a reshape or not, depending on:
+/// Either broadcast variable to from_dims before a reshape or not:
 ///
 /// 1. If all from_dims are contained in the variable's dims, no broadcast
 /// 2. If at least one (but not all) of the from_dims is contained in the
@@ -248,12 +249,12 @@ Variable slice_and_unstack(const VariableConstView &var,
   const auto labels = from_dims.labels();
   Variable reshaped;
   auto copy = Variable(var);
-  for (uint64_t  l = 0; l < labels.size() - 1; ++l) {
+  for (uint64_t l = 0; l < labels.size() - 1; ++l) {
     if (copy.dims().contains(labels[l])) {
       reshaped = Variable(copy.slice({labels[l], 0}));
       for (int32_t i = 1; i < from_dims.shape()[l]; ++i)
-        reshaped = join_edges(VariableView(reshaped), copy.slice({labels[l], i}),
-                              labels.back());
+        reshaped = join_edges(VariableView(reshaped),
+                              copy.slice({labels[l], i}), labels.back());
       // Update copy
       copy = reshaped;
     }
@@ -263,8 +264,7 @@ Variable slice_and_unstack(const VariableConstView &var,
 }
 
 /// Check if at keast one of the variable's dimensions is bin edges
-bool has_bin_edges(const VariableConstView &var,
-                         const Dimensions &array_dims) {
+bool has_bin_edges(const VariableConstView &var, const Dimensions &array_dims) {
   for (const auto dim : var.dims().labels())
     if (is_bin_edges(var, array_dims, dim))
       return true;
@@ -335,9 +335,10 @@ DataArray reshape(const DataArrayConstView &a,
       // concatenation fails
       try {
         reshaped.coords().set(
-          name, slice_and_unstack(maybe_broadcast(coord, stacked_dims),
-                                  stacked_dims, to_dim));
-      } catch (except::VariableMismatchError &) { }
+            name, slice_and_unstack(maybe_broadcast(coord, stacked_dims),
+                                    stacked_dims, to_dim));
+      } catch (except::VariableMismatchError &) {
+      }
     } else {
       reshaped.coords().set(
           name, reshape(maybe_broadcast(coord, stacked_dims),
@@ -349,9 +350,10 @@ DataArray reshape(const DataArrayConstView &a,
     if (has_bin_edges(attr, old_dims)) {
       try {
         reshaped.attrs().set(
-          name, slice_and_unstack(maybe_broadcast(attr, stacked_dims),
-                                  stacked_dims, to_dim));
-      } catch (except::VariableMismatchError &) { }
+            name, slice_and_unstack(maybe_broadcast(attr, stacked_dims),
+                                    stacked_dims, to_dim));
+      } catch (except::VariableMismatchError &) {
+      }
     } else {
       reshaped.attrs().set(
           name, reshape(maybe_broadcast(attr, stacked_dims),
@@ -362,7 +364,7 @@ DataArray reshape(const DataArrayConstView &a,
   for (auto &&[name, mask] : a.masks())
     reshaped.masks().set(
         name, reshape(maybe_broadcast(mask, stacked_dims),
-        	unstack_dims(mask.dims(), stacked_dims, to_dim)));
+                      unstack_dims(mask.dims(), stacked_dims, to_dim)));
 
   return reshaped;
 }
