@@ -50,13 +50,13 @@ def test_construct_0d_datetime(unit):
                             value=value), sc.Variable(unit=unit, value=value),
                 sc.Variable(dtype=dtype,
                             value=value), sc.Variable(value=value)):
-        assert str(var.dtype) == 'datetime64'
+        assert var.dtype == sc.dtype.datetime64
         assert var.unit == unit
         assert var.value.dtype == dtype
         assert var.value == value
     # default init
     for var in (sc.Variable(dtype=dtype, unit=unit), sc.Variable(dtype=dtype)):
-        assert str(var.dtype) == 'datetime64'
+        assert var.dtype == sc.dtype.datetime64
         assert var.unit == unit
         assert var.value.dtype == dtype
 
@@ -70,6 +70,23 @@ def test_construct_0d_datetime_mismatch(unit1, unit2):
                     dtype=f'datetime64[{unit2}]')
     with pytest.raises(RuntimeError):
         sc.Variable(value=np.datetime64('now', unit1), unit=unit2)
+
+
+def test_construct_0d_datetime_nounit():
+    # Can make a datetime variable without unit but cannot do anything
+    # with it except set its unit.
+    var = sc.Variable(dtype=sc.dtype.datetime64)
+    assert var.dtype == sc.dtype.datetime64
+    assert var.unit == sc.units.one
+    with pytest.raises(sc.UnitError):
+        str(var)
+    with pytest.raises(TypeError):
+        var.value
+
+    var.unit = sc.units.s
+    value = np.datetime64(123, 's')
+    var.value = value
+    assert sc.is_equal(var, sc.Variable(value=value))
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
@@ -122,6 +139,23 @@ def test_construct_datetime_mismatch(unit1, unit2):
         sc.Variable(dims=['x'], values=values, dtype=f'datetime64[{unit2}]')
     with pytest.raises(RuntimeError):
         sc.Variable(dims=['x'], values=values, unit=unit2)
+
+
+def test_construct_datetime_nounit():
+    # Can make a datetime variable without unit but cannot do anything
+    # with it except set its unit.
+    var = sc.Variable(dims=['x'], shape=[2], dtype=sc.dtype.datetime64)
+    assert var.dtype == sc.dtype.datetime64
+    assert var.unit == sc.units.one
+    with pytest.raises(sc.UnitError):
+        str(var)
+    with pytest.raises(TypeError):
+        var.values
+
+    var.unit = sc.units.s
+    values = np.array([np.datetime64(123, 's'), np.datetime64(456, 's')])
+    var.values = values
+    assert sc.is_equal(var, sc.Variable(dims=['x'], values=values))
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
