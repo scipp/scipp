@@ -6,10 +6,7 @@
 #include "scipp/core/element/util.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/comparison.h"
-#include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
-#include "scipp/variable/reduction.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 
