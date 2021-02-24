@@ -4,17 +4,34 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <cstddef>
+
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/common/span.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
+#include "scipp/core/time_point.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 
-#include <stddef.h>
+namespace scipp::numeric {
+template <> inline bool is_linspace(const span<const core::time_point> &range) {
+  if (scipp::size(range) < 2)
+    return false;
+  if (range.back() <= range.front())
+    return false;
+
+  const auto delta = (range.back() - range.front()) / (scipp::size(range) - 1);
+
+  return std::adjacent_find(range.begin(), range.end(),
+                            [delta](const auto &a, const auto &b) {
+                              return std::abs(b - a) != delta;
+                            }) == range.end();
+}
+} // namespace scipp::numeric
 
 namespace scipp::core::element {
 
@@ -86,11 +103,11 @@ constexpr auto is_sorted_nonascending = overloaded{
       out = out && (left >= right);
     }};
 
-constexpr auto is_linspace =
-    overloaded{arg_list<span<const double>, span<const float>>,
-               transform_flags::expect_no_variance_arg<0>,
-               [](const units::Unit &) { return units::one; },
-               [](const auto &range) { return numeric::is_linspace(range); }};
+constexpr auto is_linspace = overloaded{
+    arg_list<span<const double>, span<const float>, span<const time_point>>,
+    transform_flags::expect_no_variance_arg<0>,
+    [](const units::Unit &) { return units::one; },
+    [](const auto &range) { return numeric::is_linspace(range); }};
 
 constexpr auto zip = overloaded{
     arg_list<int64_t, int32_t>, transform_flags::expect_no_variance_arg<0>,
