@@ -63,7 +63,7 @@ def _ensure_no_unsigned_type(dataset_type: Any):
         return dataset_type
 
 
-def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, int]:
+def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, np.ndarray]:
     error_msg = _check_for_missing_fields(group)
     if error_msg:
         raise BadSource(error_msg)
@@ -132,15 +132,15 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, int]:
     # event_index may be large, so we try the maximum detector
     # id from a detector_numbers dataset file
     if "detector_numbers" in group:
-        detector_numbers = group['detector_numbers'][...]
-        max_detector_id = detector_numbers.max()
+        detector_ids = group['detector_numbers'][...]
     else:
-        max_detector_id = sc.max(event_id).value
+        detector_ids = np.arange(sc.min(event_id).value,
+                                 stop=sc.max(event_id).value + 1)
 
     print(f"Loaded event data from {group.name} containing "
           f"{number_of_events} events")
 
-    return data, max_detector_id
+    return data, detector_ids
 
 
 def load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
@@ -156,16 +156,15 @@ def load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
         raise RuntimeError("No valid event data found in file")
     else:
 
-        def getMaxDetectorId(events_and_max_det_id):
-            return events_and_max_det_id[1]
+        def getDetectorId(events_and_max_det_id):
+            return events_and_max_det_id[1][0]
 
-        event_data.sort(key=getMaxDetectorId)
+        event_data.sort(key=getDetectorId)
 
-        max_detector_id = event_data[-1][1]
         detector_ids = sc.Variable(dims=['detector-id'],
-                                   values=np.arange(0,
-                                                    max_detector_id + 1,
-                                                    dtype=np.int32))
+                                   values=np.concatenate(
+                                       [data[1] for data in event_data]),
+                                   dtype=np.int32)
 
         events, _ = event_data.pop(0)
         while event_data:
