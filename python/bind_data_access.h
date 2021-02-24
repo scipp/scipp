@@ -343,10 +343,10 @@ public:
   // Return a scalar variance from a variable, implicitly requiring that the
   // variable is 0-dimensional and thus has only a single item.
   template <class Var> static py::object variance(py::object &obj) {
-    if (!get_variances::valid<Var>(obj))
-      return py::none();
     auto &view = obj.cast<Var &>();
     expect_scalar(view.dims(), "variance");
+    if (!get_variances::valid<Var>(obj))
+      return py::none();
     return std::visit(GetScalarVisitor<decltype(view)>{obj, view},
                       get<get_variances>(view));
   }
