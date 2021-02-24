@@ -62,17 +62,8 @@ public:
     return m_duration >= time.time_since_epoch();
   }
 
-  using value_type = int64_t;
-
 private:
-  value_type m_duration = 0;
+  int64_t m_duration = 0;
 };
-
-inline auto cast_to_underlying(const time_point *tp) noexcept {
-  using value_type = time_point::value_type;
-  static_assert(sizeof(value_type) == sizeof(time_point));
-  static_assert(alignof(value_type) == alignof(time_point));
-  return reinterpret_cast<const value_type *>(tp);
-}
 
 } // namespace scipp::core
