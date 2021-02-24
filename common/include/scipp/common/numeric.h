@@ -41,13 +41,21 @@ template <class T, class U> auto true_divide(const T a, const U b) {
 
 // Division like Python's __floordiv__
 template <class T, class U>
-std::common_type_t<decltype(a), decltype(b)>(const T a, const U b) {
+std::common_type_t<T, U> floor_divide(const T a, const U b) {
   using std::floor;
-  if constexpr (std::is_integral_v<decltype(a)> &&
-                std::is_integral_v<decltype(b)>)
+  if constexpr (std::is_integral_v<T> && std::is_integral_v<U>)
     return b == 0 ? 0 : floor(static_cast<double>(a) / static_cast<double>(b));
   else
     return floor(a / b);
+}
+
+// Remainder like Python's __mod__, complementary to floor_divide.
+template <class T, class U> auto remainder(const T a, const U b) {
+  if constexpr (std::is_floating_point_v<T> || std::is_floating_point_v<U>) {
+    return b == 0 ? NAN : a - floor_divide(a, b) * b;
+  } else {
+    return b == 0 ? 0 : a - floor_divide(a, b) * b;
+  }
 }
 
 template <typename T> bool isnan([[maybe_unused]] T x) {
