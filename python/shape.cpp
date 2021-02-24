@@ -37,17 +37,6 @@ template <class T> void bind_concatenate(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
-// template <class T> void bind_reshape(pybind11::module &mod) {
-//   mod.def(
-//       "reshape",
-//       [](const T &self, const std::vector<Dim> &labels,
-//          const py::tuple &shape) {
-//         Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-//         return reshape(self, dims);
-//       },
-//       py::arg("x"), py::arg("dims"), py::arg("shape"));
-// }
-
 template <class T> void bind_reshape(pybind11::module &mod) {
   mod.def(
       "reshape",
@@ -56,27 +45,10 @@ template <class T> void bind_reshape(pybind11::module &mod) {
         for (const auto &item : dims)
           new_dims.addInner(item.first.cast<Dim>(),
                             item.second.cast<scipp::index>());
-        // Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
         return reshape(self, new_dims);
       },
       py::arg("x"), py::arg("dims"));
 }
-
-// template <class T> void bind_stack(pybind11::module &mod) {
-//   mod.def(
-//       "stack",
-//       [](const T &self, const Dim &dim,
-//          const std::vector<std::pair<Dim, scipp::index>> &to_dims) {
-//         std::vector<Dim> labels;
-//         std::vector<scipp::index> shape;
-//         for (const auto &item : to_dims) {
-//           labels.push_back(item.first);
-//           shape.push_back(item.second);
-//         }
-//         return stack(self, dim, {labels, shape});
-//       },
-//       py::arg("x"), py::arg("dim"), py::arg("to_dims"));
-// }
 
 template <class T> void bind_reshape_data_array(pybind11::module &mod) {
   mod.def(
@@ -116,8 +88,6 @@ void init_shape(py::module &m) {
   bind_reshape<VariableView>(m);
   bind_reshape_data_array<DataArray>(m);
   bind_reshape_data_array<DataArrayView>(m);
-  // bind_reshape<Dataset>(m);
-  // bind_reshape<DatasetView>(m);
   bind_transpose<Variable>(m);
   bind_transpose<VariableView>(m);
 }

@@ -46,263 +46,397 @@ TEST(ResizeTest, data_array_2d) {
   EXPECT_EQ(resize(d, Dim::Y, 1), expected_d);
 }
 
-// DataArray make_1d_data_array(bool with_binedges = false) {
-//   const auto var = makeVariable<double>(Dims{Dim::X}, Shape{24},
-//                                         Values{1,  2,  3,  4,  5,  6,  7,  8,
-//                                                9,  10, 11, 12, 13, 14, 15,
-//                                                16, 17, 18, 19, 20, 21, 22,
-//                                                23, 24});
-//   DataArray a(var);
-//   if (with_binedges) {
-//     a.coords().set(Dim::X,
-//                    makeVariable<double>(
-//                        Dims{Dim::X}, Shape{25},
-//                        Values{1.1,  2.1,  3.1,  4.1,  5.1,  6.1,  7.1,  8.1,
-//                               9.1,  10.1, 11.1, 12.1, 13.1, 14.1, 15.1, 16.1,
-//                               17.1, 18.1, 19.1, 20.1, 21.1, 22.1, 23.1, 24.1}));
-//     a.coords().set(Dim::Y,
-//                    makeVariable<double>(Dims{Dim::Y}, Shape{5},
-//                                         Values{1.2, 2.2, 3.2, 4.2, 5.2}));
-//   } else {
-//     a.coords().set(Dim::X,
-//                    makeVariable<double>(Dims{Dim::X}, Shape{6},
-//                                         Values{1.1, 2.1, 3.1, 4.1, 5.1, 6.1}));
-//     a.coords().set(Dim::Y, makeVariable<double>(Dims{Dim::Y}, Shape{4},
-//                                                 Values{1.2, 2.2, 3.2, 4.2}));
-//   }
-
-//   if (with_attrs) {
-//     a.attrs().set(Dim::Qx,
-//                   makeVariable<double>(Dims{Dim::X}, Shape{6},
-//                                        Values{1.3, 2.3, 3.3, 4.3, 5.3, 6.3}));
-//     a.attrs().set(Dim::Qy, makeVariable<double>(Dims{Dim::Y}, Shape{4},
-//                                                 Values{1.4, 2.4, 3.4, 4.4}));
-//   }
-//   // a.masks().set("mask_x", makeVariable<bool>(
-//   //                             Dims{Dim::X}, Shape{6},
-//   //                             Values{true, true, true, false, false,
-//   //                             false}));
-//   // a.masks().set("mask_y", makeVariable<bool>(Dims{Dim::Y}, Shape{4},
-//   //                                            Values{true, true, false,
-//   //                                            true}));
-//   // a.masks().set(
-//   //     "mask2d",
-//   //     makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{6, 4},
-//   //                        Values{true,  true,  true,  true,  true,  true,
-//   //                               false, false, false, false, false, false,
-//   //                               true,  false, true,  false, true,  false,
-//   //                               true,  true,  true,  false, false,
-//   false})); return a;
-// }
-
-DataArray make_2d_data_array(bool with_attrs = false, bool with_masks = false,
-                             bool with_binedges = false) {
+TEST(ReshapeTest, split_x) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
-  if (with_binedges) {
-    a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
-    a.coords().set(Dim::Y, arange(Dim::Y, 5) + 0.2 * units::one);
-  } else {
-    a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
-    a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
-  }
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-  if (with_attrs) {
-    a.attrs().set(Dim::Qx, arange(Dim::X, 6) + 0.3 * units::one);
-    a.attrs().set(Dim::Qy, arange(Dim::Y, 4) + 0.4 * units::one);
-  }
-  // a.masks().set("mask_x", makeVariable<bool>(
-  //                             Dims{Dim::X}, Shape{6},
-  //                             Values{true, true, true, false, false,
-  //                             false}));
-  // a.masks().set("mask_y", makeVariable<bool>(Dims{Dim::Y}, Shape{4},
-  //                                            Values{true, true, false,
-  //                                            true}));
-  // a.masks().set(
-  //     "mask2d",
-  //     makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{6, 4},
-  //                        Values{true,  true,  true,  true,  true,  true,
-  //                               false, false, false, false, false, false,
-  //                               true,  false, true,  false, true,  false,
-  //                               true,  true,  true,  false, false, false}));
-  return a;
-}
-
-TEST(ReshapeTest, reshape_split_x) {
-  auto a = make_2d_data_array();
-  const auto rshp = makeVariable<double>(
-      Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{2, 3, 4},
-      Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
-             13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
+  const auto rshp =
+      reshape(arange(Dim::X, 24), {{Dim::Row, 2}, {Dim::Tof, 3}, {Dim::Y, 4}});
   DataArray expected(rshp);
   expected.coords().set(
-      Dim::X, makeVariable<double>(Dims{Dim::Row, Dim::Tof}, Shape{2, 3},
-                                   Values{1.1, 2.1, 3.1, 4.1, 5.1, 6.1}));
+      Dim::X, reshape(arange(Dim::X, 6), {{Dim::Row, 2}, {Dim::Tof, 3}}) +
+                  0.1 * units::one);
   expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
-  auto reshaped = reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
 
-  EXPECT_EQ(reshaped, expected);
+  EXPECT_EQ(reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
 }
 
-TEST(ReshapeTest, reshape_split_y) {
-  auto a = make_2d_data_array();
-  const auto rshp = makeVariable<double>(
-      Dims{Dim::X, Dim::Row, Dim::Tof}, Shape{6, 2, 2},
-      Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
-             13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
+TEST(ReshapeTest, split_y) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+
+  const auto rshp =
+      reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Tof, 2}});
   DataArray expected(rshp);
   expected.coords().set(
-      Dim::Y, makeVariable<double>(Dims{Dim::Row, Dim::Tof}, Shape{2, 2},
-                                   Values{1.2, 2.2, 3.2, 4.2}));
+      Dim::Y, reshape(arange(Dim::Y, 4), {{Dim::Row, 2}, {Dim::Tof, 2}}) +
+                  0.2 * units::one);
   expected.coords().set(Dim::X, a.coords()[Dim::X]);
 
   EXPECT_EQ(reshape(a, Dim::Y, {{Dim::Row, 2}, {Dim::Tof, 2}}), expected);
 }
 
-// TEST(ReshapeTest, reshape_into_3_dims) {
-//   auto a = make_2d_data_array();
-//   const auto rshp = makeVariable<double>(
-//       Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{2, 3, 4},
-//       Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
-//              13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
-//   DataArray expected(rshp);
-//   expected.coords().set(
-//       Dim::X, makeVariable<double>(Dims{Dim::Row, Dim::Tof}, Shape{2, 3},
-//                                    Values{1.1, 2.1, 3.1, 4.1, 5.1, 6.1}));
-//   expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
-//   auto reshaped = reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
+TEST(ReshapeTest, split_into_3_dims) {
+  const auto var = arange(Dim::X, 24);
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 24) + 0.1 * units::one);
 
-//   EXPECT_EQ(reshaped, expected);
-// }
+  const auto rshp =
+      reshape(arange(Dim::X, 24), {{Dim::Tof, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
+  DataArray expected(rshp);
+  expected.coords().set(Dim::X, rshp + 0.1 * units::one);
 
-// TEST(ReshapeTest, reshape_split_outer) {
-//   auto a = make_2d_data_array();
-//   const auto rshp = makeVariable<double>(
-//       Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{3, 2, 4},
-//       Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
-//              13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
-//   DataArray expected(rshp);
-//   expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
-//   expected.attrs().set(Dim::Qy, a.attrs()[Dim::Qy]);
-//   expected.masks().set("mask_y", a.masks()["mask_y"]);
-//   expected.coords().set(Dim::Z, rshp);
-//   expected.masks().set(
-//       "mask2d",
-//       makeVariable<bool>(Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{3, 2, 4},
-//                          Values{true,  true,  true,  true,  true,  true,
-//                                 false, false, false, false, false, false,
-//                                 true,  false, true,  false, true,  false,
-//                                 true,  true,  true,  false, false, false}));
-//   expected.masks().set(
-//       "mask_x",
-//       makeVariable<bool>(Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{3, 2, 4},
-//                          Values{true,  true,  true,  true,  true,  true,
-//                                 true,  true,  true,  true,  true,  true,
-//                                 false, false, false, false, false, false,
-//                                 false, false, false, false, false, false}));
+  EXPECT_EQ(reshape(a, Dim::X, {{Dim::Tof, 2}, {Dim::Y, 3}, {Dim::Z, 4}}),
+            expected);
+}
 
-//   EXPECT_EQ(reshape(a, {{Dim::Row, 3}, {Dim::Tof, 2}, {Dim::Y, 4}}),
-//   expected);
-// }
+TEST(ReshapeTest, flatten) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-// TEST(ReshapeTest, reshape_split_inner) {
-//   auto a = make_2d_data_array();
+  const auto rshp = arange(Dim::Z, 24);
+  DataArray expected(rshp);
+  expected.coords().set(
+      Dim::X,
+      makeVariable<double>(Dims{Dim::Z}, Shape{24},
+                           Values{0.1, 0.1, 0.1, 0.1, 1.1, 1.1, 1.1, 1.1,
+                                  2.1, 2.1, 2.1, 2.1, 3.1, 3.1, 3.1, 3.1,
+                                  4.1, 4.1, 4.1, 4.1, 5.1, 5.1, 5.1, 5.1}));
+  expected.coords().set(
+      Dim::Y,
+      makeVariable<double>(Dims{Dim::Z}, Shape{24},
+                           Values{0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
+                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
+                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
 
-//   const auto rshp = makeVariable<double>(
-//       Dims{Dim::X, Dim::Row, Dim::Tof}, Shape{6, 2, 2},
-//       Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
-//              13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
-//   DataArray expected(rshp);
-//   expected.coords().set(Dim::X, a.coords()[Dim::X]);
-//   expected.attrs().set(Dim::Qx, a.attrs()[Dim::Qx]);
-//   expected.masks().set("mask_x", a.masks()["mask_x"]);
-//   expected.coords().set(Dim::Z, rshp);
-//   expected.masks().set(
-//       "mask2d",
-//       makeVariable<bool>(Dims{Dim::X, Dim::Row, Dim::Tof}, Shape{6, 2, 2},
-//                          Values{true,  true,  true,  true,  true,  true,
-//                                 false, false, false, false, false, false,
-//                                 true,  false, true,  false, true,  false,
-//                                 true,  true,  true,  false, false, false}));
-//   expected.masks().set(
-//       "mask_y", makeVariable<bool>(
-//                     Dims{Dim::X, Dim::Row, Dim::Tof}, Shape{6, 2, 2},
-//                     Values{true, true, false, true, true, true, false, true,
-//                            true, true, false, true, true, true, false, true,
-//                            true, true, false, true, true, true, false,
-//                            true}));
+  EXPECT_EQ(reshape(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+}
 
-//   EXPECT_EQ(reshape(a, {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Tof, 2}}),
-//   expected);
-// }
+TEST(ReshapeTest, round_trip) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-// TEST(ReshapeTest, reshape_merge_dims) {
-//   auto a = make_2d_data_array();
+  auto reshaped = reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
+  EXPECT_EQ(reshape(reshaped, {Dim::Row, Dim::Tof}, Dim::X), a);
+}
 
-//   const auto rshp = makeVariable<double>(
-//       Dims{Dim::Row}, Shape{24},
-//       Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
-//              13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
-//   DataArray expected(rshp);
-//   expected.coords().set(Dim::Z, rshp);
-//   expected.masks().set(
-//       "mask_x",
-//       makeVariable<bool>(Dims{Dim::Row}, Shape{24},
-//                          Values{true,  true,  true,  true,  true,  true,
-//                                 true,  true,  true,  true,  true,  true,
-//                                 false, false, false, false, false, false,
-//                                 false, false, false, false, false, false}));
-//   expected.masks().set(
-//       "mask_y", makeVariable<bool>(
-//                     Dims{Dim::Row}, Shape{24},
-//                     Values{true, true, false, true, true, true, false, true,
-//                            true, true, false, true, true, true, false, true,
-//                            true, true, false, true, true, true, false,
-//                            true}));
-//   expected.masks().set(
-//       "mask2d",
-//       makeVariable<bool>(Dims{Dim::Row}, Shape{24},
-//                          Values{true,  true,  true,  true,  true,  true,
-//                                 false, false, false, false, false, false,
-//                                 true,  false, true,  false, true,  false,
-//                                 true,  true,  true,  false, false, false}));
+TEST(ReshapeTest, split_x_binedges_x) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-//   EXPECT_EQ(reshape(a, {{Dim::Row, 24}}), expected);
-// }
+  const auto rshp =
+      reshape(arange(Dim::X, 24), {{Dim::Row, 2}, {Dim::Tof, 3}, {Dim::Y, 4}});
+  DataArray expected(rshp);
+  expected.coords().set(
+      Dim::X,
+      makeVariable<double>(Dims{Dim::Row, Dim::Tof}, Shape{2, 4},
+                           Values{0.1, 1.1, 2.1, 3.1, 3.1, 4.1, 5.1, 6.1}));
+  expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
 
-// TEST(ReshapeTest, reshape_dataset) {
-//   auto a = make_2d_data_array();
-//   auto b = make_2d_data_array();
-//   b.masks().erase("mask_y");
-//   Dataset d{{{"a", a}, {"b", b}}};
-//   const auto rshp = makeVariable<double>(
-//       Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{3, 2, 4},
-//       Values{1,  2,  3,  4,  5,  6,  7,  8,  9,  10, 11, 12,
-//              13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24});
-//   DataArray a_reshaped(rshp);
-//   a_reshaped.coords().set(Dim::Y, a.coords()[Dim::Y]);
-//   a_reshaped.attrs().set(Dim::Qy, a.attrs()[Dim::Qy]);
-//   a_reshaped.coords().set(Dim::Z, rshp);
-//   a_reshaped.masks().set(
-//       "mask2d",
-//       makeVariable<bool>(Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{3, 2, 4},
-//                          Values{true,  true,  true,  true,  true,  true,
-//                                 false, false, false, false, false, false,
-//                                 true,  false, true,  false, true,  false,
-//                                 true,  true,  true,  false, false, false}));
-//   a_reshaped.masks().set(
-//       "mask_x",
-//       makeVariable<bool>(Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{3, 2, 4},
-//                          Values{true,  true,  true,  true,  true,  true,
-//                                 true,  true,  true,  true,  true,  true,
-//                                 false, false, false, false, false, false,
-//                                 false, false, false, false, false, false}));
+  EXPECT_EQ(reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
+}
 
-//   DataArray b_reshaped(a_reshaped);
-//   a_reshaped.masks().set("mask_y", a.masks()["mask_y"]);
+TEST(ReshapeTest, split_y_binedges_y) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 5) + 0.2 * units::one);
 
-//   Dataset expected{{{"a", a_reshaped}, {"b", b_reshaped}}};
+  const auto rshp =
+      reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Tof, 2}});
+  DataArray expected(rshp);
+  expected.coords().set(Dim::X, a.coords()[Dim::X]);
+  expected.coords().set(
+      Dim::Y, makeVariable<double>(Dims{Dim::Row, Dim::Tof}, Shape{2, 3},
+                                   Values{0.2, 1.2, 2.2, 2.2, 3.2, 4.2}));
 
-//   EXPECT_EQ(reshape(d, {{Dim::Row, 3}, {Dim::Tof, 2}, {Dim::Y, 4}}),
-//   expected);
-// }
+  EXPECT_EQ(reshape(a, Dim::Y, {{Dim::Row, 2}, {Dim::Tof, 2}}), expected);
+}
+
+TEST(ReshapeTest, flatten_binedges_x) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+
+  const auto rshp = arange(Dim::Z, 24);
+  DataArray expected(rshp);
+  // Note: x coord is dropped because od mismatching bin edges during
+  // concatenate.
+  expected.coords().set(
+      Dim::Y,
+      makeVariable<double>(Dims{Dim::Z}, Shape{24},
+                           Values{0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
+                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
+                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
+
+  EXPECT_EQ(reshape(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+}
+
+TEST(ReshapeTest, flatten_binedges_y) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 5) + 0.2 * units::one);
+
+  const auto rshp = arange(Dim::Z, 24);
+  DataArray expected(rshp);
+  expected.coords().set(
+      Dim::X,
+      makeVariable<double>(Dims{Dim::Z}, Shape{24},
+                           Values{0.1, 0.1, 0.1, 0.1, 1.1, 1.1, 1.1, 1.1,
+                                  2.1, 2.1, 2.1, 2.1, 3.1, 3.1, 3.1, 3.1,
+                                  4.1, 4.1, 4.1, 4.1, 5.1, 5.1, 5.1, 5.1}));
+  // Note: y coord is dropped because od mismatching bin edges during
+  // concatenate.
+
+  EXPECT_EQ(reshape(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+}
+
+TEST(ReshapeTest, round_trip_binedges) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+
+  auto reshaped = reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
+  EXPECT_EQ(reshape(reshaped, {Dim::Row, Dim::Tof}, Dim::X), a);
+}
+
+TEST(ReshapeTest, split_x_with_attrs) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+  a.attrs().set(Dim::Qx, arange(Dim::X, 6) + 0.3 * units::one);
+  a.attrs().set(Dim::Qy, arange(Dim::Y, 4) + 0.4 * units::one);
+
+  const auto rshp =
+      reshape(arange(Dim::X, 24), {{Dim::Row, 2}, {Dim::Tof, 3}, {Dim::Y, 4}});
+  DataArray expected(rshp);
+  expected.coords().set(
+      Dim::X, reshape(arange(Dim::X, 6), {{Dim::Row, 2}, {Dim::Tof, 3}}) +
+                  0.1 * units::one);
+  expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
+  expected.attrs().set(
+      Dim::Qx, reshape(arange(Dim::X, 6), {{Dim::Row, 2}, {Dim::Tof, 3}}) +
+                   0.3 * units::one);
+  expected.attrs().set(Dim::Qy, a.attrs()[Dim::Qy]);
+
+  EXPECT_EQ(reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
+}
+
+TEST(ReshapeTest, flatten_with_attrs) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+  a.attrs().set(Dim::Qx, arange(Dim::X, 6) + 0.3 * units::one);
+  a.attrs().set(Dim::Qy, arange(Dim::Y, 4) + 0.4 * units::one);
+
+  const auto rshp = arange(Dim::Z, 24);
+  DataArray expected(rshp);
+  expected.coords().set(
+      Dim::X,
+      makeVariable<double>(Dims{Dim::Z}, Shape{24},
+                           Values{0.1, 0.1, 0.1, 0.1, 1.1, 1.1, 1.1, 1.1,
+                                  2.1, 2.1, 2.1, 2.1, 3.1, 3.1, 3.1, 3.1,
+                                  4.1, 4.1, 4.1, 4.1, 5.1, 5.1, 5.1, 5.1}));
+  expected.coords().set(
+      Dim::Y,
+      makeVariable<double>(Dims{Dim::Z}, Shape{24},
+                           Values{0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
+                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
+                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
+  expected.attrs().set(
+      Dim::Qx,
+      makeVariable<double>(Dims{Dim::Z}, Shape{24},
+                           Values{0.3, 0.3, 0.3, 0.3, 1.3, 1.3, 1.3, 1.3,
+                                  2.3, 2.3, 2.3, 2.3, 3.3, 3.3, 3.3, 3.3,
+                                  4.3, 4.3, 4.3, 4.3, 5.3, 5.3, 5.3, 5.3}));
+  expected.attrs().set(
+      Dim::Qy,
+      makeVariable<double>(Dims{Dim::Z}, Shape{24},
+                           Values{0.4, 1.4, 2.4, 3.4, 0.4, 1.4, 2.4, 3.4,
+                                  0.4, 1.4, 2.4, 3.4, 0.4, 1.4, 2.4, 3.4,
+                                  0.4, 1.4, 2.4, 3.4, 0.4, 1.4, 2.4, 3.4}));
+
+  EXPECT_EQ(reshape(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+}
+
+TEST(ReshapeTest, split_x_with_2d_coord) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X,
+                 reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}}) +
+                     0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+
+  const auto rshp =
+      reshape(arange(Dim::X, 24), {{Dim::Row, 2}, {Dim::Tof, 3}, {Dim::Y, 4}});
+  DataArray expected(rshp);
+  expected.coords().set(
+      Dim::X,
+      reshape(arange(Dim::X, 24), {{Dim::Row, 2}, {Dim::Tof, 3}, {Dim::Y, 4}}) +
+          0.1 * units::one);
+  expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
+
+  EXPECT_EQ(reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
+}
+
+TEST(ReshapeTest, flatten_with_2d_coord) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X,
+                 reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}}) +
+                     0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+
+  const auto rshp = arange(Dim::Z, 24);
+  DataArray expected(rshp);
+  expected.coords().set(Dim::X, arange(Dim::Z, 24) + 0.1 * units::one);
+  expected.coords().set(
+      Dim::Y,
+      makeVariable<double>(Dims{Dim::Z}, Shape{24},
+                           Values{0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
+                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
+                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
+
+  EXPECT_EQ(reshape(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+}
+
+TEST(ReshapeTest, split_x_with_masks) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+  a.masks().set("mask_x", makeVariable<bool>(
+                              Dims{Dim::X}, Shape{6},
+                              Values{true, true, true, false, false, false}));
+  a.masks().set("mask_y", makeVariable<bool>(Dims{Dim::Y}, Shape{4},
+                                             Values{true, true, false, true}));
+  a.masks().set(
+      "mask2d",
+      makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{6, 4},
+                         Values{true,  true,  true,  true,  true,  true,
+                                false, false, false, false, false, false,
+                                true,  false, true,  false, true,  false,
+                                true,  true,  true,  false, false, false}));
+
+  const auto rshp =
+      reshape(arange(Dim::X, 24), {{Dim::Row, 2}, {Dim::Tof, 3}, {Dim::Y, 4}});
+  DataArray expected(rshp);
+  expected.coords().set(
+      Dim::X, reshape(arange(Dim::X, 6), {{Dim::Row, 2}, {Dim::Tof, 3}}) +
+                  0.1 * units::one);
+  expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
+  expected.masks().set(
+      "mask_x",
+      makeVariable<bool>(Dims{Dim::Row, Dim::Tof}, Shape{2, 3},
+                         Values{true, true, true, false, false, false}));
+  expected.masks().set("mask_y",
+                       makeVariable<bool>(Dims{Dim::Y}, Shape{4},
+                                          Values{true, true, false, true}));
+  expected.masks().set(
+      "mask2d",
+      makeVariable<bool>(Dims{Dim::Row, Dim::Tof, Dim::Y}, Shape{2, 3, 4},
+                         Values{true,  true,  true,  true,  true,  true,
+                                false, false, false, false, false, false,
+                                true,  false, true,  false, true,  false,
+                                true,  true,  true,  false, false, false}));
+
+  EXPECT_EQ(reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
+}
+
+TEST(ReshapeTest, flatten_with_masks) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+  a.masks().set("mask_x", makeVariable<bool>(
+                              Dims{Dim::X}, Shape{6},
+                              Values{true, true, true, false, false, false}));
+  a.masks().set("mask_y", makeVariable<bool>(Dims{Dim::Y}, Shape{4},
+                                             Values{true, true, false, true}));
+  a.masks().set(
+      "mask2d",
+      makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{6, 4},
+                         Values{true,  true,  true,  true,  true,  true,
+                                false, false, false, false, false, false,
+                                true,  false, true,  false, true,  false,
+                                true,  true,  true,  false, false, false}));
+
+  const auto rshp = arange(Dim::Z, 24);
+  DataArray expected(rshp);
+  expected.coords().set(
+      Dim::X,
+      makeVariable<double>(Dims{Dim::Z}, Shape{24},
+                           Values{0.1, 0.1, 0.1, 0.1, 1.1, 1.1, 1.1, 1.1,
+                                  2.1, 2.1, 2.1, 2.1, 3.1, 3.1, 3.1, 3.1,
+                                  4.1, 4.1, 4.1, 4.1, 5.1, 5.1, 5.1, 5.1}));
+  expected.coords().set(
+      Dim::Y,
+      makeVariable<double>(Dims{Dim::Z}, Shape{24},
+                           Values{0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
+                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
+                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
+
+  expected.masks().set(
+      "mask_x",
+      makeVariable<bool>(Dims{Dim::Z}, Shape{24},
+                         Values{true,  true,  true,  true,  true,  true,
+                                true,  true,  true,  true,  true,  true,
+                                false, false, false, false, false, false,
+                                false, false, false, false, false, false}));
+  expected.masks().set(
+      "mask_y", makeVariable<bool>(
+                    Dims{Dim::Z}, Shape{24},
+                    Values{true, true, false, true, true, true, false, true,
+                           true, true, false, true, true, true, false, true,
+                           true, true, false, true, true, true, false, true}));
+  expected.masks().set(
+      "mask2d",
+      makeVariable<bool>(Dims{Dim::Z}, Shape{24},
+                         Values{true,  true,  true,  true,  true,  true,
+                                false, false, false, false, false, false,
+                                true,  false, true,  false, true,  false,
+                                true,  true,  true,  false, false, false}));
+
+  EXPECT_EQ(reshape(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+}
+
+TEST(ReshapeTest, round_trip_with_all) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+  a.coords().set(Dim::Z,
+                 reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}}) +
+                     0.5 * units::one);
+  a.attrs().set(Dim::Qx, arange(Dim::X, 6) + 0.3 * units::one);
+  a.attrs().set(Dim::Qy, arange(Dim::Y, 4) + 0.4 * units::one);
+  a.masks().set("mask_x", makeVariable<bool>(
+                              Dims{Dim::X}, Shape{6},
+                              Values{true, true, true, false, false, false}));
+  a.masks().set("mask_y", makeVariable<bool>(Dims{Dim::Y}, Shape{4},
+                                             Values{true, true, false, true}));
+  a.masks().set(
+      "mask2d",
+      makeVariable<bool>(Dims{Dim::X, Dim::Y}, Shape{6, 4},
+                         Values{true,  true,  true,  true,  true,  true,
+                                false, false, false, false, false, false,
+                                true,  false, true,  false, true,  false,
+                                true,  true,  true,  false, false, false}));
+  auto reshaped = reshape(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
+  EXPECT_EQ(reshape(reshaped, {Dim::Row, Dim::Tof}, Dim::X), a);
+}
