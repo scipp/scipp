@@ -130,7 +130,7 @@ constexpr auto times = overloaded{
 constexpr auto divide = overloaded{
     true_divide_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
-    [](const auto a, const auto b) { return numeric::true_divide(a, b); },
+    [](const auto &a, const auto &b) { return numeric::true_divide(a, b); },
     [](const units::Unit &a, const units::Unit &b) { return a / b; }};
 
 // floordiv defined as in Python. Complementary to mod.
