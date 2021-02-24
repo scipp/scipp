@@ -130,9 +130,10 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, np.ndarray]:
     #                     "event_index dataset")
 
     # event_index may be large, so we try the maximum detector
-    # id from a detector_numbers dataset file
-    if "detector_numbers" in group:
-        detector_ids = group['detector_numbers'][...]
+    # id from a detector_number dataset file
+    detector_number = "detector_number"
+    if detector_number in group.parent:
+        detector_ids = group.parent[detector_number][...]
     else:
         detector_ids = np.arange(sc.min(event_id).value,
                                  stop=sc.max(event_id).value + 1)
@@ -143,7 +144,8 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, np.ndarray]:
     return data, detector_ids
 
 
-def load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
+def load_event_data(
+        event_data_groups: List[h5py.Group]) -> Optional[sc.DataArray]:
     event_data = []
     for group in event_data_groups:
         try:
@@ -153,7 +155,7 @@ def load_event_data(event_data_groups: List[h5py.Group]) -> sc.DataArray:
             warn(f"Skipped loading {group.name} due to:\n{e}")
 
     if not event_data:
-        raise RuntimeError("No valid event data found in file")
+        return
     else:
 
         def getDetectorId(events_and_max_det_id):

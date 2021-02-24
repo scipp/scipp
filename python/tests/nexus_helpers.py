@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Union, Iterator
+from typing import List, Union, Iterator, Optional, Tuple, Dict
 import h5py
 import numpy as np
 from contextlib import contextmanager
@@ -7,32 +7,39 @@ from contextlib import contextmanager
 h5root = Union[h5py.File, h5py.Group]
 
 
-def find_by_nx_class(nx_class_name: str, root: h5root) -> List[h5py.Group]:
-    """
-    Find groups in the HDF5 file or group which have the
-    requested NX_class attribute
-    Recursively searches all subgroups of the provided file or group
+def _get_attr_as_str(h5_object, attribute_name: str):
+    try:
+        return h5_object.attrs[attribute_name].decode("utf8")
+    except AttributeError:
+        return h5_object.attrs[attribute_name]
 
-    :param nx_class_name: Name of the NX class, one of
-      https://manual.nexusformat.org/classes/base_classes
-    :param root: HDF5 file or group to search
-    :return: List of groups matching requested NX_class
-    """
-    groups_with_requested_nx_class = []
 
-    def _match_nx_class(name, object):
-        if isinstance(object, h5py.Group):
+def find_by_nx_class(
+        nx_class_names: Tuple[str, ...],
+        root: Union[h5py.File, h5py.Group]) -> Dict[str, List[h5py.Group]]:
+    """
+    Finds groups with requested NX_class in the subtree of root
+
+    Returns a dictionary with NX_class name as the key and list of matching
+    groups as the value
+    """
+    groups_with_requested_nx_class: Dict[str, List[h5py.Group]] = {
+        class_name: []
+        for class_name in nx_class_names
+    }
+
+    def _match_nx_class(_, h5_object):
+        if isinstance(h5_object, h5py.Group):
             try:
-                try:
-                    nx_class = object.attrs["NX_class"].decode("utf8")
-                except AttributeError:
-                    nx_class = object.attrs["NX_class"]
-                if nx_class == nx_class_name:
-                    groups_with_requested_nx_class.append(object)
-            except AttributeError:
+                nx_class = _get_attr_as_str(h5_object, "NX_class")
+                if nx_class in nx_class_names:
+                    groups_with_requested_nx_class[nx_class].append(h5_object)
+            except KeyError:
                 pass
 
     root.visititems(_match_nx_class)
+    # We should also check if root itself is an NX_class
+    _match_nx_class(None, root)
     return groups_with_requested_nx_class
 
 
@@ -72,16 +79,14 @@ def in_memory_nexus_file_with_event_data() -> Iterator[h5py.File]:
 
 
 @contextmanager
-def in_memory_hdf5_file_with_no_nxentry() -> Iterator[h5py.File]:
-    """
-    No NXentry group in the file so this is not a valid NeXus file!
-    """
+def in_memory_hdf5_file_with_two_nxentry() -> Iterator[h5py.File]:
     nexus_file = h5py.File('in_memory_events.nxs',
                            mode='w',
                            driver="core",
                            backing_store=False)
     try:
-        nexus_file.create_group("not_an_nxentry")
+        _create_nx_class("entry_1", "NXentry", nexus_file)
+        _create_nx_class("entry_2", "NXentry", nexus_file)
         yield nexus_file
     finally:
         nexus_file.close()
@@ -93,6 +98,12 @@ class EventData:
     event_time_offset: np.ndarray
     event_time_zero: np.ndarray
     event_index: np.ndarray
+
+
+@dataclass
+class Detector:
+    detector_numbers: np.ndarray
+    event_data: Optional[EventData] = None
 
 
 def _add_event_data_group_to_file(data: EventData, parent_group: h5py.Group,
@@ -108,12 +119,24 @@ def _add_event_data_group_to_file(data: EventData, parent_group: h5py.Group,
     event_group.create_dataset("event_index", data=data.event_index)
 
 
+def _add_detector_group_to_file(detector: Detector, parent_group: h5py.Group,
+                                group_name: str) -> h5py.Group:
+    detector_group = _create_nx_class(group_name, "NXdetector", parent_group)
+    detector_group.create_dataset("detector_number",
+                                  data=detector.detector_numbers)
+    return detector_group
+
+
 class InMemoryNexusFileBuilder:
     """
     Allows building an in-memory NeXus file for use in tests
     """
     def __init__(self):
         self._event_data: List[EventData] = []
+        self._detectors: List[Detector] = []
+
+    def add_detector(self, detector: Detector):
+        self._detectors.append(detector)
 
     def add_event_data(self, event_data: EventData):
         self._event_data.append(event_data)
@@ -132,6 +155,12 @@ class InMemoryNexusFileBuilder:
             for event_data_index, event_data in enumerate(self._event_data):
                 _add_event_data_group_to_file(event_data, entry_group,
                                               f"events_{event_data_index}")
+            for detector_index, detector in enumerate(self._detectors):
+                detector_group = _add_detector_group_to_file(
+                    detector, entry_group, f"detector_{detector_index}")
+                if detector.event_data is not None:
+                    _add_event_data_group_to_file(detector.event_data,
+                                                  detector_group, "events")
             yield nexus_file
         finally:
             nexus_file.close()

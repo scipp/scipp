@@ -44,6 +44,8 @@ def _find_by_nx_class(
                 pass
 
     root.visititems(_match_nx_class)
+    # We should also check if root itself is an NX_class
+    _match_nx_class(None, root)
     return groups_with_requested_nx_class
 
 
@@ -104,9 +106,13 @@ def load_nexus(data_file: Union[str, h5py.File],
         groups = _find_by_nx_class((nx_event_data, nx_log, nx_entry),
                                    nexus_file[root])
 
-        if not groups[nx_entry]:
+        if len(groups[nx_entry]) > 1:
+            # We can't sensibly load multiple NXentry, for example each
+            # could could contain a description of the same detector bank
+            # and lead to problems with clashing detector-ids etc
             raise RuntimeError(
-                "No NXentry group in file, this is not a valid NeXus file")
+                "More than one NXentry group in file, use 'root' argument "
+                "to specify which to load data from")
 
         loaded_data = load_event_data(groups[nx_event_data])
 
