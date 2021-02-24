@@ -45,7 +45,8 @@ Variable linspace(const VariableConstView &start, const VariableConstView &stop,
 }
 
 Variable is_linspace(const VariableConstView &var, const Dim dim) {
-  return transform(subspan_view(var, dim), core::element::is_linspace);
+  return transform(subspan_view(var, dim), core::element::is_linspace,
+                   "is_linspace");
 }
 
 Variable values(const VariableConstView &x) {
