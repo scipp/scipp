@@ -3,6 +3,9 @@
 /// @file
 /// @author Simon Heybrock
 #include "dtype.h"
+
+#include <regex>
+
 #include "pybind11.h"
 #include "scipp/core/string.h"
 
@@ -63,34 +66,31 @@ scipp::core::DType scipp_dtype(const py::object &type) {
 // Awful handwritten parser. But std::regex does not support string_view and
 // you have to go through c-strings in order to extract the unit scale.
 [[nodiscard]] scipp::units::Unit
-parse_datetime_dtype(const std::string_view dtype_name) {
-  if (const auto length = std::size(dtype_name); length == 13 || length == 14) {
-    if (dtype_name.substr(0, 11) == "datetime64[" &&
-        dtype_name[length - 2] == 's' && dtype_name.back() == ']') {
-      if (length == 13) {
-        // no scale given
-        return scipp::units::s;
-      }
-      if (dtype_name[11] == 'n') {
-        return scipp::units::ns;
-      } else if (dtype_name[11] == 'u') {
-        return scipp::units::us;
-      } else if (dtype_name[11] == 'm') {
-        static const auto ms = units::Unit("ms");
-        return ms;
-      }
-      throw std::invalid_argument(
-          std::string("Unsupported unit in datetime: ") + dtype_name[11] + "s");
-    }
-  } else if (length == 10) {
-    if (dtype_name == "datetime64") {
-      return scipp::units::dimensionless;
-    }
+parse_datetime_dtype(const std::string &dtype_name) {
+  static std::regex datetime_regex{R"(datetime64(\[(\w+)\])?)"};
+  constexpr size_t unit_idx = 2;
+  std::smatch match;
+  if (!std::regex_match(dtype_name, match, datetime_regex) ||
+      match.size() != 3) {
+    throw std::invalid_argument("Invalid dtype, expected datetime64, got" +
+                                dtype_name);
   }
 
-  throw std::invalid_argument(
-      std::string("Invalid dtype, expected datetime64, got ")
-          .append(dtype_name));
+  if (match.length(unit_idx) == 0) {
+    return scipp::units::dimensionless;
+  } else if (match[unit_idx] == "s") {
+    return scipp::units::s;
+  } else if (match[unit_idx] == "ms") {
+    static const auto ms = units::Unit("ms");
+    return ms;
+  } else if (match[unit_idx] == "us") {
+    return scipp::units::us;
+  } else if (match[unit_idx] == "ns") {
+    return scipp::units::ns;
+  }
+
+  throw std::invalid_argument(std::string("Unsupported unit in datetime: ") +
+                              dtype_name[11] + "s");
 }
 
 [[nodiscard]] scipp::units::Unit
@@ -98,8 +98,8 @@ parse_datetime_dtype(const pybind11::object &dtype) {
   if (py::hasattr(dtype, "dtype")) {
     return parse_datetime_dtype(dtype.attr("dtype"));
   } else if (py::hasattr(dtype, "name")) {
-    return parse_datetime_dtype(dtype.attr("name").cast<std::string_view>());
+    return parse_datetime_dtype(dtype.attr("name").cast<std::string>());
   } else {
-    return parse_datetime_dtype(py::str(dtype).cast<std::string_view>());
+    return parse_datetime_dtype(py::str(dtype).cast<std::string>());
   }
 }
