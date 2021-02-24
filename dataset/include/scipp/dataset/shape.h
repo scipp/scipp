@@ -34,6 +34,4 @@ SCIPP_DATASET_EXPORT DataArray reshape(const DataArrayConstView &a,
                                        const std::vector<Dim> &from_dims,
                                        const Dim to_dim);
 
-// SCIPP_DATASET_EXPORT Dataset reshape(const DatasetConstView &a,
-//                                      const Dimensions &dims);
 } // namespace scipp::dataset
