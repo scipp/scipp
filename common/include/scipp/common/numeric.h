@@ -58,28 +58,28 @@ template <class T, class U> auto remainder(const T a, const U b) {
   }
 }
 
-template <typename T> bool isnan([[maybe_unused]] T x) {
+template <class T> bool isnan([[maybe_unused]] T x) {
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::isnan(x);
   else
     return false;
 }
 
-template <typename T> bool isinf([[maybe_unused]] T x) {
+template <class T> bool isinf([[maybe_unused]] T x) {
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::isinf(x);
   else
     return false;
 }
 
-template <typename T> bool isfinite([[maybe_unused]] T x) {
+template <class T> bool isfinite([[maybe_unused]] T x) {
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::isfinite(x);
   else
     return true;
 }
 
-template <typename T> bool signbit([[maybe_unused]] T x) {
+template <class T> bool signbit([[maybe_unused]] T x) {
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::signbit(x);
   else
