@@ -10,6 +10,7 @@ requirements:
   build:
     - boost-cpp
     - cmake
+    - gxx_linux-64 9.3.* [linux64]
     - git
     - ninja
     - python {{ python }}
