@@ -31,6 +31,14 @@ template <class Range> bool is_linspace(const Range &range) {
                             }) == range.end();
 }
 
+// Division like Python's __truediv__
+template <class T, class U> auto true_divide(const T a, const U b) {
+  if constexpr (std::is_integral_v<T> && std::is_integral_v<U>)
+    return static_cast<double>(a) / static_cast<double>(b);
+  else
+    return a / b;
+}
+
 template <typename T> bool isnan([[maybe_unused]] T x) {
   if constexpr (std::is_floating_point_v<std::decay_t<T>>)
     return std::isnan(x);
