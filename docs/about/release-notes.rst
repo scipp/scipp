@@ -15,7 +15,7 @@ Features
 * Add modulo operations [#1660](https://github.com/scipp/scipp/pull/1660).
 * Add scaling operations for Variables of type ``vector_3_float64``.
 * ``sum`` and ``mean`` implemented for Variables of type ``vector_3_float64``.
-* Add reshape for DataArray and Dataset [#1676](https://github.com/scipp/scipp/pull/1676)
+* Add reshape for DataArray [#1676](https://github.com/scipp/scipp/pull/1676)
 * ``scipp.neutron``
 
   * Support unit conversion to energy transfer, for inelastic TOF experiments [#1635](https://github.com/scipp/scipp/pull/1635).

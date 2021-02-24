@@ -12,7 +12,3 @@ def test_reshape_variable():
 
 def test_reshape_data_array():
     assert_export(sc.reshape, sc.DataArray(data=sc.scalar(1.0)))
-
-
-# def test_reshape_dataset():
-#     assert_export(sc.reshape, sc.Dataset())
