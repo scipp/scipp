@@ -71,6 +71,22 @@ def in_memory_nexus_file_with_event_data() -> Iterator[h5py.File]:
         nexus_file.close()
 
 
+@contextmanager
+def in_memory_hdf5_file_with_no_nxentry() -> Iterator[h5py.File]:
+    """
+    No NXentry group in the file so this is not a valid NeXus file!
+    """
+    nexus_file = h5py.File('in_memory_events.nxs',
+                           mode='w',
+                           driver="core",
+                           backing_store=False)
+    try:
+        nexus_file.create_group("not_an_nxentry")
+        yield nexus_file
+    finally:
+        nexus_file.close()
+
+
 @dataclass
 class EventData:
     event_id: np.ndarray

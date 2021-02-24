@@ -1,6 +1,14 @@
-from nexus_helpers import InMemoryNexusFileBuilder, EventData
+from nexus_helpers import (InMemoryNexusFileBuilder, EventData,
+                           in_memory_hdf5_file_with_no_nxentry)
 import scipp as sc
 import numpy as np
+import pytest
+
+
+def test_load_nexus_raises_exception_if_no_NXentry_in_file():
+    with in_memory_hdf5_file_with_no_nxentry() as nexus_file:
+        with pytest.raises(RuntimeError):
+            sc.neutron.load_nexus(nexus_file)
 
 
 def test_load_nexus_loads_data_from_single_nxevent_data_group():

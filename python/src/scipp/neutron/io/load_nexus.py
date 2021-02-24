@@ -37,10 +37,10 @@ def _find_by_nx_class(
     def _match_nx_class(_, h5_object):
         if isinstance(h5_object, h5py.Group):
             try:
-                if _get_attr_as_str(h5_object, "NX_class") in nx_class_names:
-                    groups_with_requested_nx_class[_get_attr_as_str(
-                        h5_object, "NX_class")].append(h5_object)
-            except AttributeError:
+                nx_class = _get_attr_as_str(h5_object, "NX_class")
+                if nx_class in nx_class_names:
+                    groups_with_requested_nx_class[nx_class].append(h5_object)
+            except KeyError:
                 pass
 
     root.visititems(_match_nx_class)
@@ -100,7 +100,13 @@ def load_nexus(data_file: Union[str, h5py.File],
     with _open_if_path(data_file) as nexus_file:
         nx_event_data = "NXevent_data"
         nx_log = "NXlog"
-        groups = _find_by_nx_class((nx_event_data, nx_log), nexus_file[root])
+        nx_entry = "NXentry"
+        groups = _find_by_nx_class((nx_event_data, nx_log, nx_entry),
+                                   nexus_file[root])
+
+        if not groups[nx_entry]:
+            raise RuntimeError(
+                "No NXentry group in file, this is not a valid NeXus file")
 
         loaded_data = load_event_data(groups[nx_event_data])
 
