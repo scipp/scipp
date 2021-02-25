@@ -35,7 +35,6 @@ To build and install the library:
 
   # Create Conda environment with dependencies and development tools
   conda env create -f ../scipp-developer.yml            # For Linux
-  conda env create -f ../scipp-developer-no-mantid.yml  # For other platforms
   conda activate scipp-developer
 
 To build a debug version of the library:

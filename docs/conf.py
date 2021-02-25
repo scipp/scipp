@@ -25,7 +25,7 @@
 import os
 
 html_show_sourcelink = True
-nbsphinx_prolog = """`Download this Jupyter notebook <https://raw.githubusercontent.com/scipp/scipp/master/docs/{{ env.doc2path(env.docname, base=None) }}>`_
+nbsphinx_prolog = """`Download this Jupyter notebook <https://raw.githubusercontent.com/scipp/scipp/main/docs/{{ env.doc2path(env.docname, base=None) }}>`_
 
 ----
 """  # noqa: E501

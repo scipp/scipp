@@ -15,7 +15,8 @@ Features
 * Add modulo operations [#1660](https://github.com/scipp/scipp/pull/1660).
 * Add scaling operations for Variables of type ``vector_3_float64``.
 * ``sum`` and ``mean`` implemented for Variables of type ``vector_3_float64``. 
-* ``scipp.neutron``
+* ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
+* ``scipp.neutron`` (now ``scippneutron``)
 
   * Support unit conversion to energy transfer, for inelastic TOF experiments [#1635](https://github.com/scipp/scipp/pull/1635).
   * Support loading/converting Mantid ``WorkspaceGroup``, this will produce a ``dict`` of data arrays [#1654](https://github.com/scipp/scipp/pull/1654).
@@ -25,6 +26,10 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * The ``plot`` module has been renamed to ``plotting``, and plotting is now achieved via ``sc.plot(data)``. Wrapper functions ``superplot``, ``image``, and ``scatter3d`` have been dropped [#1696](https://github.com/scipp/scipp/pull/1696).
+* ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
+* ``scipp.neutron`` (now ``scippneutron``)
+
+  * Removed support for facility-specific ``convert_with_calibration`` and ``load_calibration``
 
 Contributors
 ~~~~~~~~~~~~
@@ -38,7 +43,7 @@ Neil Vaytet,
 and Jan-Lukas Wynen
 
 v0.5.0 (January 2021)
--------------------
+---------------------
 
 Features
 ~~~~~~~~
