@@ -22,12 +22,15 @@ using update_indices_by_binning_arg =
     std::tuple<Index, T, scipp::span<const T>>;
 
 static constexpr auto update_indices_by_binning = overloaded{
-    element::arg_list<update_indices_by_binning_arg<int64_t, double>,
-                      update_indices_by_binning_arg<int64_t, float>,
-                      std::tuple<int64_t, int64_t, scipp::span<const double>>,
-                      update_indices_by_binning_arg<int32_t, double>,
-                      update_indices_by_binning_arg<int32_t, float>,
-                      std::tuple<int32_t, int64_t, scipp::span<const double>>>,
+    element::arg_list<
+        update_indices_by_binning_arg<int64_t, double>,
+        update_indices_by_binning_arg<int64_t, float>,
+        std::tuple<int64_t, int64_t, scipp::span<const double>>,
+        std::tuple<int64_t, time_point, scipp::span<const time_point>>,
+        update_indices_by_binning_arg<int32_t, double>,
+        update_indices_by_binning_arg<int32_t, float>,
+        std::tuple<int32_t, int64_t, scipp::span<const double>>,
+        std::tuple<int32_t, time_point, scipp::span<const time_point>>>,
     [](units::Unit &indices, const units::Unit &coord,
        const units::Unit &groups) {
       expect::equals(coord, groups);
