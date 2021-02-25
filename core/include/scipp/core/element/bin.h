@@ -13,6 +13,7 @@
 #include "scipp/core/element/util.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/subbin_sizes.h"
+#include "scipp/core/time_point.h"
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core::element {
@@ -138,7 +139,8 @@ static constexpr auto bin = overloaded{
         bin_arg<int32_t, int64_t>, bin_arg<int32_t, int32_t>,
         bin_arg<bool, int64_t>, bin_arg<bool, int32_t>,
         bin_arg<Eigen::Vector3d, int64_t>, bin_arg<Eigen::Vector3d, int32_t>,
-        bin_arg<std::string, int64_t>, bin_arg<std::string, int32_t>>,
+        bin_arg<std::string, int64_t>, bin_arg<std::string, int32_t>,
+        bin_arg<time_point, int64_t>, bin_arg<time_point, int32_t>>,
     transform_flags::expect_in_variance_if_out_variance,
     [](units::Unit &binned, const units::Unit &, const units::Unit &data,
        const units::Unit &) { binned = data; },
