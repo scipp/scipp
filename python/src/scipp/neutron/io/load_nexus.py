@@ -1,8 +1,6 @@
 from ..._scipp import core as sc
 from ._event_data_loading import load_event_data
-from ._log_data_loading import load_log_data_from_group
-from ._loading_common import BadSource
-from ... import detail
+from ._log_data_loading import load_logs
 
 import h5py
 import numpy as np
@@ -10,7 +8,6 @@ from os.path import join
 from timeit import default_timer as timer
 from typing import Union, Tuple, Dict, List
 from contextlib import contextmanager
-from warnings import warn
 
 
 def _get_attr_as_str(h5_object, attribute_name: str):
@@ -60,30 +57,6 @@ def _open_if_path(file_in: Union[str, h5py.File]):
             yield nexus_file
     else:
         yield file_in
-
-
-def _add_log_to_data(log_data_name: str, log_data: sc.Variable,
-                     group_path: str, data: sc.Variable):
-    try:
-        data = data.attrs
-    except AttributeError:
-        pass
-
-    group_path = group_path.split('/')
-    path_position = -2
-    name_changed = False
-    unique_name_found = False
-    while not unique_name_found:
-        if log_data_name not in data.keys():
-            data[log_data_name] = detail.move(log_data)
-            unique_name_found = True
-        else:
-            name_changed = True
-            log_data_name += f"_{group_path[path_position]}"
-            path_position -= 1
-    if name_changed:
-        warn(f"Name of log group at {group_path} is not unique: "
-             f"{log_data_name} used as attribute name.")
 
 
 def _add_instrument_name(instrument_group: h5py.Group, data: sc.Variable):
@@ -141,13 +114,7 @@ def load_nexus(data_file: Union[str, h5py.File],
         else:
             no_event_data = False
 
-        for group in groups[nx_log]:
-            try:
-                log_data_name, log_data = load_log_data_from_group(group)
-                _add_log_to_data(log_data_name, log_data, group.name,
-                                 loaded_data)
-            except BadSource as e:
-                warn(f"Skipped loading {group.name} due to:\n{e}")
+        load_logs(loaded_data, groups[nx_log])
 
         if groups[nx_instrument]:
             _add_instrument_name(groups[nx_instrument][0], loaded_data)

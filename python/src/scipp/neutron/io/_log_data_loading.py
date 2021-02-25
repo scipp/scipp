@@ -3,9 +3,44 @@ from typing import Tuple
 from ..._scipp import core as sc
 import h5py
 from ._loading_common import ensure_str, BadSource, ensure_no_unsigned_type
+from warnings import warn
+from ... import detail
 
 
-def load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
+def load_logs(loaded_data, log_groups):
+    for group in log_groups:
+        try:
+            log_data_name, log_data = _load_log_data_from_group(group)
+            _add_log_to_data(log_data_name, log_data, group.name, loaded_data)
+        except BadSource as e:
+            warn(f"Skipped loading {group.name} due to:\n{e}")
+
+
+def _add_log_to_data(log_data_name: str, log_data: sc.Variable,
+                     group_path: str, data: sc.Variable):
+    try:
+        data = data.attrs
+    except AttributeError:
+        pass
+
+    group_path = group_path.split('/')
+    path_position = -2
+    name_changed = False
+    unique_name_found = False
+    while not unique_name_found:
+        if log_data_name not in data.keys():
+            data[log_data_name] = detail.move(log_data)
+            unique_name_found = True
+        else:
+            name_changed = True
+            log_data_name += f"_{group_path[path_position]}"
+            path_position -= 1
+    if name_changed:
+        warn(f"Name of log group at {group_path} is not unique: "
+             f"{log_data_name} used as attribute name.")
+
+
+def _load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
     property_name = group.name.split("/")[-1]
     value_dataset_name = "value"
     time_dataset_name = "time"

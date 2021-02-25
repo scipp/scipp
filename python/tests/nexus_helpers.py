@@ -145,6 +145,7 @@ class InMemoryNexusFileBuilder:
         self._detectors: List[Detector] = []
         self._logs: List[Log] = []
         self._instrument_name = None
+        self._sample_position = None
 
     def add_detector(self, detector: Detector):
         self._detectors.append(detector)
@@ -157,6 +158,9 @@ class InMemoryNexusFileBuilder:
 
     def add_instrument(self, name: str):
         self._instrument_name = name
+
+    def add_sample(self, position: Optional[np.ndarray] = None):
+        self._sample_position = position
 
     @contextmanager
     def file(self) -> Iterator[h5py.File]:
@@ -171,6 +175,7 @@ class InMemoryNexusFileBuilder:
             entry_group = _create_nx_class("entry", "NXentry", nexus_file)
             self._write_event_data(entry_group)
             self._write_logs(entry_group)
+            self._write_sample(entry_group)
             if self._instrument_name is None:
                 parent_group = entry_group
             else:
@@ -179,6 +184,9 @@ class InMemoryNexusFileBuilder:
             yield nexus_file
         finally:
             nexus_file.close()
+
+    def _write_sample(self, parent_group: h5py.Group):
+        _create_nx_class("sample", "NXsample", parent_group)
 
     def _write_instrument(self, parent_group: h5py.Group) -> h5py.Group:
         instrument_group = _create_nx_class("instrument", "NXinstrument",

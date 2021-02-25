@@ -206,6 +206,16 @@ def test_load_instrument_name():
     assert loaded_data['instrument-name'].values == name
 
 
+def test_sample_with_no_explicit_position_is_at_origin():
+    builder = InMemoryNexusFileBuilder()
+    builder.add_sample()
+
+    with builder.file() as nexus_file:
+        loaded_data = sc.neutron.load_nexus(nexus_file)
+
+    assert loaded_data['sample-position'].values == np.array([0., 0., 0.])
+
+
 # TODO test
 #  - pixel positions
 #  - sample and source position
