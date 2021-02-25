@@ -101,18 +101,19 @@ class EventData:
 
 
 @dataclass
-class Detector:
-    detector_numbers: np.ndarray
-    event_data: Optional[EventData] = None
-
-
-@dataclass
 class Log:
     name: str
     value: np.ndarray
     time: Optional[np.ndarray] = None
     value_units: Optional[str] = None
     time_units: Optional[str] = None
+
+
+@dataclass
+class Detector:
+    detector_numbers: np.ndarray
+    event_data: Optional[EventData] = None
+    log: Optional[Log] = None
 
 
 def _add_event_data_group_to_file(data: EventData, parent_group: h5py.Group,
@@ -134,6 +135,17 @@ def _add_detector_group_to_file(detector: Detector, parent_group: h5py.Group,
     detector_group.create_dataset("detector_number",
                                   data=detector.detector_numbers)
     return detector_group
+
+
+def _add_log_group_to_file(log, parent_group):
+    log_group = _create_nx_class(log.name, "NXlog", parent_group)
+    value_ds = log_group.create_dataset("value", data=log.value)
+    if log.value_units is not None:
+        value_ds.attrs.create("units", data=log.value_units)
+    if log.time is not None:
+        time_ds = log_group.create_dataset("time", data=log.time)
+        if log.time_units is not None:
+            time_ds.attrs.create("units", data=log.time_units)
 
 
 class InMemoryNexusFileBuilder:
@@ -201,6 +213,8 @@ class InMemoryNexusFileBuilder:
             if detector.event_data is not None:
                 _add_event_data_group_to_file(detector.event_data,
                                               detector_group, "events")
+            if detector.log is not None:
+                _add_log_group_to_file(detector.log, detector_group)
 
     def _write_event_data(self, parent_group: h5py.Group):
         for event_data_index, event_data in enumerate(self._event_data):
@@ -209,11 +223,4 @@ class InMemoryNexusFileBuilder:
 
     def _write_logs(self, parent_group: h5py.Group):
         for log in self._logs:
-            log_group = _create_nx_class(log.name, "NXlog", parent_group)
-            value_ds = log_group.create_dataset("value", data=log.value)
-            if log.value_units is not None:
-                value_ds.attrs.create("units", data=log.value_units)
-            if log.time is not None:
-                time_ds = log_group.create_dataset("time", data=log.time)
-                if log.time_units is not None:
-                    time_ds.attrs.create("units", data=log.time_units)
+            _add_log_group_to_file(log, parent_group)

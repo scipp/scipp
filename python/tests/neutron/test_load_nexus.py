@@ -195,6 +195,36 @@ def test_load_nexus_loads_data_from_non_timeseries_log():
     assert np.allclose(loaded_data[name].data.values.values, values)
 
 
+def test_load_nexus_loads_data_from_multiple_logs_with_same_name():
+    values_1 = np.array([1.1, 2.2, 3.3])
+    values_2 = np.array([4, 5, 6])
+    name = "test_log"
+
+    # Add one log to NXentry and the other to an NXdetector,
+    # both have the same group name
+    builder = InMemoryNexusFileBuilder()
+    builder.add_log(Log(name, values_1))
+    builder.add_detector(Detector(np.array([1, 2, 3]), log=Log(name,
+                                                               values_2)))
+
+    with builder.file() as nexus_file:
+        loaded_data = sc.neutron.load_nexus(nexus_file)
+
+    # Expect two logs
+    # The log group name for one of them should have been prefixed with
+    # its the parent group name to avoid duplicate log names
+    if np.allclose(loaded_data[name].data.values.values, values_1):
+        # Then the other log should be
+        assert np.allclose(
+            loaded_data[f"detector_1-{name}"].data.values.values, values_2)
+    elif np.allclose(loaded_data[name].data.values.values, values_2):
+        # Then the other log should be
+        assert np.allclose(loaded_data[f"entry-{name}"].data.values.values,
+                           values_1)
+    else:
+        assert False
+
+
 def test_load_instrument_name():
     name = "INSTR"
     builder = InMemoryNexusFileBuilder()
@@ -206,20 +236,9 @@ def test_load_instrument_name():
     assert loaded_data['instrument-name'].values == name
 
 
-def test_sample_with_no_explicit_position_is_at_origin():
-    builder = InMemoryNexusFileBuilder()
-    builder.add_sample()
-
-    with builder.file() as nexus_file:
-        loaded_data = sc.neutron.load_nexus(nexus_file)
-
-    assert loaded_data['sample-position'].values == np.array([0., 0., 0.])
-
-
 # TODO test
 #  - pixel positions
-#  - sample and source position
-#  - duplicate log name (parent name prefixing)
 #  - log data and event data in single file (everything)
-#  - other sample info?
 #  Remove and make tickets for any remaining todos (time offsets)
+#  - transformations (depends_on) chains
+#  - sample and source position

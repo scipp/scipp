@@ -33,7 +33,7 @@ def _add_log_to_data(log_data_name: str, log_data: sc.Variable,
             unique_name_found = True
         else:
             name_changed = True
-            log_data_name += f"_{group_path[path_position]}"
+            log_data_name = f"{group_path[path_position]}-{log_data_name}"
             path_position -= 1
     if name_changed:
         warn(f"Name of log group at {group_path} is not unique: "
