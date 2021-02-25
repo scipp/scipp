@@ -58,7 +58,7 @@ def test_load_nexus_loads_data_from_single_event_data_group():
 
     counts_on_detectors = loaded_data.bins.sum()
     # No detector_number dataset in file so expect detector-id to be
-    # binned from the min to the max detector-id recorded in event_id
+    # binned according to whatever detector-ids are present in event_id
     # dataset: 2 on det 1, 1 on det 2, 2 on det 3
     expected_counts = np.array([2, 1, 2])
     assert np.allclose(counts_on_detectors.data.values, expected_counts)
@@ -236,9 +236,64 @@ def test_load_instrument_name():
     assert loaded_data['instrument-name'].values == name
 
 
+def test_load_nexus_loads_event_and_log_data_from_single_file():
+    event_time_offsets = np.array([456, 743, 347, 345, 632])
+    event_data = EventData(
+        event_id=np.array([1, 2, 3, 1, 3]),
+        event_time_offset=event_time_offsets,
+        event_time_zero=np.array([
+            1600766730000000000, 1600766731000000000, 1600766732000000000,
+            1600766733000000000
+        ]),
+        event_index=np.array([0, 3, 3, 5]),
+    )
+
+    log_1 = Log("test_log", np.array([1.1, 2.2, 3.3]),
+                np.array([4.4, 5.5, 6.6]))
+    log_2 = Log("test_log_2", np.array([123, 253, 756]),
+                np.array([246, 1235, 2369]))
+
+    builder = InMemoryNexusFileBuilder()
+    builder.add_event_data(event_data)
+    builder.add_log(log_1)
+    builder.add_log(log_2)
+
+    with builder.file() as nexus_file:
+        loaded_data = sc.neutron.load_nexus(nexus_file)
+
+    # Expect time of flight to match the values in the
+    # event_time_offset dataset
+    # May be reordered due to binning (hence np.sort)
+    assert np.allclose(
+        np.sort(
+            loaded_data.bins.concatenate(
+                'detector-id').values.coords['tof'].values),
+        np.sort(event_time_offsets))
+
+    counts_on_detectors = loaded_data.bins.sum()
+    # No detector_number dataset in file so expect detector-id to be
+    # binned from the min to the max detector-id recorded in event_id
+    # dataset: 2 on det 1, 1 on det 2, 2 on det 3
+    expected_counts = np.array([2, 1, 2])
+    assert np.allclose(counts_on_detectors.data.values, expected_counts)
+    expected_detector_ids = np.array([1, 2, 3])
+    assert np.allclose(loaded_data.coords['detector-id'].values,
+                       expected_detector_ids)
+
+    # Logs should have been added to the DataArray as attributes
+    assert np.allclose(loaded_data.attrs[log_1.name].values.values,
+                       log_1.value)
+    assert np.allclose(loaded_data.attrs[log_1.name].values.coords['time'],
+                       log_1.time)
+    assert np.allclose(loaded_data.attrs[log_2.name].values.values,
+                       log_2.value)
+    assert np.allclose(loaded_data.attrs[log_2.name].values.coords['time'],
+                       log_2.time)
+
+
 # TODO test
 #  - pixel positions
-#  - log data and event data in single file (everything)
-#  Remove and make tickets for any remaining todos (time offsets)
+#  Remove and make tickets for any remaining todos
+#  - time offsets
 #  - transformations (depends_on) chains
 #  - sample and source position

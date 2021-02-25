@@ -16,14 +16,6 @@ def _get_units(dataset: h5py.Dataset) -> Optional[str]:
     return ensure_str(units)
 
 
-def _get_pulse_time_offset(pulse_time_dataset: h5py.Dataset) -> Optional[str]:
-    try:
-        pulse_offset_iso8601 = pulse_time_dataset.attrs["offset"]
-    except KeyError:
-        return None
-    return ensure_str(pulse_offset_iso8601)
-
-
 def _check_for_missing_fields(group: h5py.Group) -> str:
     error_message = ""
     required_fields = (
@@ -78,22 +70,6 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, np.ndarray]:
     event_id = sc.Variable(
         ['event'], values=group["event_id"][...],
         dtype=np.int32)  # assume int32 is safe for detector ids
-    # event_time_zero = sc.Variable(['pulse'],
-    #                               values=group["event_time_zero"][...],
-    #                               dtype=group["event_time_zero"].dtype.type)
-    pulse_time_offset = _get_pulse_time_offset(group["event_time_zero"])
-
-    unix_epoch = datetime(1970, 1, 1)
-    if pulse_time_offset is not None and pulse_time_offset != unix_epoch:
-        # TODO correct for time offset:
-        #  make times relative to run start or unix epoch?
-        NotImplementedError(
-            "Found offset for pulse times but dealing with this "
-            "is not implemented yet")
-
-    # The end index for a pulse is the start index of the next pulse
-    # begin_indices = sc.Variable(['pulse'], values=event_index[:-1])
-    # end_indices = sc.Variable(['pulse'], values=event_index[1:])
 
     # Weights are not stored in NeXus, so use 1s
     weights = sc.Variable(['event'],
@@ -104,7 +80,32 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, np.ndarray]:
                             'tof': event_time_offset,
                             'detector-id': event_id
                         })
+
+    # def _get_pulse_time_offset(pulse_time_dataset: h5py.Dataset)
+    # -> Optional[str]:
+    #     try:
+    #         pulse_offset_iso8601 = pulse_time_dataset.attrs["offset"]
+    #     except KeyError:
+    #         return None
+    #     return ensure_str(pulse_offset_iso8601)
+    #
+    # event_time_zero = sc.Variable(['pulse'],
+    #                               values=group["event_time_zero"][...],
+    #                               dtype=group["event_time_zero"].dtype.type)
+    # pulse_time_offset = _get_pulse_time_offset(group["event_time_zero"])
+    #
+    # unix_epoch = datetime(1970, 1, 1)
+    # if pulse_time_offset is not None and pulse_time_offset != unix_epoch:
+    #     # Correct for time offset:
+    #     #  make times relative to run start or unix epoch?
+    #     NotImplementedError(
+    #         "Found offset for pulse times but dealing with this "
+    #         "is not implemented yet")
+    #
     # try:
+    #     # The end index for a pulse is the start index of the next pulse
+    #     begin_indices = sc.Variable(['pulse'], values=event_index[:-1])
+    #     end_indices = sc.Variable(['pulse'], values=event_index[1:])
     #     events = sc.DataArray(data=sc.bins(begin=begin_indices,
     #                                        end=end_indices,
     #                                        dim='event',
@@ -116,14 +117,15 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, np.ndarray]:
     #     raise BadSource("Unexpected values for event indices in "
     #                     "event_index dataset")
 
-    # event_index may be large, so we try the maximum detector
-    # id from a detector_number dataset file
     detector_number = "detector_number"
     if detector_number in group.parent:
+        # Hopefully the detector ids are recorded in the file
         detector_ids = group.parent[detector_number][...]
     else:
-        detector_ids = np.arange(sc.min(event_id).value,
-                                 stop=sc.max(event_id).value + 1)
+        # Otherwise we'll just have to bin according to whatever
+        # ids we have a events for (pixels with no recorded events
+        # will not have a bin)
+        detector_ids = np.unique(event_id.values)
 
     print(f"Loaded event data from {group.name} containing "
           f"{number_of_events} events")
