@@ -86,6 +86,20 @@ def _add_log_to_data(log_data_name: str, log_data: sc.Variable,
              f"{log_data_name} used as attribute name.")
 
 
+def _add_instrument_name(instrument_group: h5py.Group, data: sc.Variable):
+    try:
+        data = data.attrs
+    except AttributeError:
+        pass
+
+    try:
+        data["instrument-name"] = sc.Variable(
+            value=instrument_group["name"].asstr()[...].item())
+    except KeyError:
+        # No instrument name found to add
+        pass
+
+
 def load_nexus(data_file: Union[str, h5py.File],
                root: str = "/",
                instrument_file: Union[str, h5py.File, None] = None):
@@ -108,8 +122,9 @@ def load_nexus(data_file: Union[str, h5py.File],
         nx_event_data = "NXevent_data"
         nx_log = "NXlog"
         nx_entry = "NXentry"
-        groups = _find_by_nx_class((nx_event_data, nx_log, nx_entry),
-                                   nexus_file[root])
+        nx_instrument = "NXinstrument"
+        groups = _find_by_nx_class(
+            (nx_event_data, nx_log, nx_entry, nx_instrument), nexus_file[root])
 
         if len(groups[nx_entry]) > 1:
             # We can't sensibly load multiple NXentry, for example each
@@ -120,8 +135,11 @@ def load_nexus(data_file: Union[str, h5py.File],
                 "to specify which to load data from")
 
         loaded_data = load_event_data(groups[nx_event_data])
-        if loaded_data is None and len(groups[nx_log]) > 0:
+        if loaded_data is None:
+            no_event_data = True
             loaded_data = sc.Dataset({})
+        else:
+            no_event_data = False
 
         for group in groups[nx_log]:
             try:
@@ -131,7 +149,8 @@ def load_nexus(data_file: Union[str, h5py.File],
             except BadSource as e:
                 warn(f"Skipped loading {group.name} due to:\n{e}")
 
-        # TODO instrument name, sample info...
+        if groups[nx_instrument]:
+            _add_instrument_name(groups[nx_instrument][0], loaded_data)
 
     # Load positions?
     # start = timer()
@@ -139,6 +158,10 @@ def load_nexus(data_file: Union[str, h5py.File],
     #     instrument_file = data_file
     # da.coords['position'] = load_positions(instrument_file, dim='spectrum')
     # print("Loading positions:", timer() - start)
+
+    # Return None if we have an empty dataset at this point
+    if no_event_data and not loaded_data.keys():
+        loaded_data = None
 
     print("Total time:", timer() - total_time)
     return loaded_data

@@ -180,8 +180,7 @@ def test_load_nexus_skips_multidimensional_log():
     with builder.file() as nexus_file:
         loaded_data = sc.neutron.load_nexus(nexus_file)
 
-    with pytest.raises(RuntimeError):
-        _ = loaded_data[name]
+    assert loaded_data is None
 
 
 def test_load_nexus_loads_data_from_non_timeseries_log():
@@ -204,13 +203,13 @@ def test_load_instrument_name():
     with builder.file() as nexus_file:
         loaded_data = sc.neutron.load_nexus(nexus_file)
 
-    assert np.allclose(loaded_data['instrument-name'].values, name)
+    assert loaded_data['instrument-name'].values == name
 
 
 # TODO test
 #  - pixel positions
-#  - instrument name
 #  - sample and source position
 #  - duplicate log name (parent name prefixing)
 #  - log data and event data in single file (everything)
+#  - other sample info?
 #  Remove and make tickets for any remaining todos (time offsets)
