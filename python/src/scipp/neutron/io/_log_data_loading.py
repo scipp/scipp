@@ -40,7 +40,8 @@ def load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
     values = np.squeeze(values)
     if np.ndim(values) > 1:
         raise BadSource(f"NXlog at {group.name} has {value_dataset_name} "
-                        f"dataset with more than 1 dimension")
+                        f"dataset with more than 1 dimension, handling "
+                        f"this is not yet implemented")
 
     if np.ndim(values) == 0:
         property_data = sc.Variable(value=values,

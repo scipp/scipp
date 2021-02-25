@@ -29,7 +29,7 @@ def test_load_nexus_no_exception_if_single_NXentry_found_below_root():
         assert sc.neutron.load_nexus(nexus_file, root='/entry_1') is None
 
 
-def test_load_nexus_loads_data_from_single_nxevent_data_group():
+def test_load_nexus_loads_data_from_single_event_data_group():
     event_time_offsets = np.array([456, 743, 347, 345, 632])
     event_data = EventData(
         event_id=np.array([1, 2, 3, 1, 3]),
@@ -67,7 +67,7 @@ def test_load_nexus_loads_data_from_single_nxevent_data_group():
                        expected_detector_ids)
 
 
-def test_load_nexus_loads_data_from_multiple_nxevent_data_groups():
+def test_load_nexus_loads_data_from_multiple_event_data_groups():
     pulse_times = np.array([
         1600766730000000000, 1600766731000000000, 1600766732000000000,
         1600766733000000000
@@ -115,7 +115,7 @@ def test_load_nexus_loads_data_from_multiple_nxevent_data_groups():
                        expected_detector_ids)
 
 
-def test_load_nexus_loads_data_from_single_nxlog_group_with_no_units():
+def test_load_nexus_loads_data_from_single_log_with_no_units():
     values = np.array([1, 2, 3])
     times = np.array([4, 5, 6])
     name = "test_log"
@@ -130,7 +130,7 @@ def test_load_nexus_loads_data_from_single_nxlog_group_with_no_units():
     assert np.allclose(loaded_data[name].data.values.coords['time'], times)
 
 
-def test_load_nexus_loads_data_from_single_nxlog_group_with_units():
+def test_load_nexus_loads_data_from_single_log_with_units():
     values = np.array([1.1, 2.2, 3.3])
     times = np.array([4.4, 5.5, 6.6])
     name = "test_log"
@@ -147,7 +147,7 @@ def test_load_nexus_loads_data_from_single_nxlog_group_with_units():
     assert loaded_data[name].data.values.coords['time'].unit == sc.units.s
 
 
-def test_load_nexus_loads_data_from_multiple_nxlog_groups():
+def test_load_nexus_loads_data_from_multiple_logs():
     builder = InMemoryNexusFileBuilder()
     log_1 = Log("test_log", np.array([1.1, 2.2, 3.3]),
                 np.array([4.4, 5.5, 6.6]))
@@ -166,3 +166,51 @@ def test_load_nexus_loads_data_from_multiple_nxlog_groups():
     assert np.allclose(loaded_data[log_2.name].data.values.values, log_2.value)
     assert np.allclose(loaded_data[log_2.name].data.values.coords['time'],
                        log_2.time)
+
+
+def test_load_nexus_skips_multidimensional_log():
+    # Loading NXlogs with more than 1 dimension is not yet implemented
+    # We need to come up with a sensible approach to labelling the dimensions
+
+    multidim_values = np.array([[1, 2, 3], [1, 2, 3]])
+    name = "test_log"
+    builder = InMemoryNexusFileBuilder()
+    builder.add_log(Log(name, multidim_values, np.array([4, 5, 6])))
+
+    with builder.file() as nexus_file:
+        loaded_data = sc.neutron.load_nexus(nexus_file)
+
+    with pytest.raises(RuntimeError):
+        _ = loaded_data[name]
+
+
+def test_load_nexus_loads_data_from_non_timeseries_log():
+    values = np.array([1.1, 2.2, 3.3])
+    name = "test_log"
+    builder = InMemoryNexusFileBuilder()
+    builder.add_log(Log(name, values))
+
+    with builder.file() as nexus_file:
+        loaded_data = sc.neutron.load_nexus(nexus_file)
+
+    assert np.allclose(loaded_data[name].data.values.values, values)
+
+
+def test_load_instrument_name():
+    name = "INSTR"
+    builder = InMemoryNexusFileBuilder()
+    builder.add_instrument(name)
+
+    with builder.file() as nexus_file:
+        loaded_data = sc.neutron.load_nexus(nexus_file)
+
+    assert np.allclose(loaded_data['instrument-name'].values, name)
+
+
+# TODO test
+#  - pixel positions
+#  - instrument name
+#  - sample and source position
+#  - duplicate log name (parent name prefixing)
+#  - log data and event data in single file (everything)
+#  Remove and make tickets for any remaining todos (time offsets)

@@ -110,7 +110,7 @@ class Detector:
 class Log:
     name: str
     value: np.ndarray
-    time: np.ndarray
+    time: Optional[np.ndarray] = None
     value_units: Optional[str] = None
     time_units: Optional[str] = None
 
@@ -144,6 +144,7 @@ class InMemoryNexusFileBuilder:
         self._event_data: List[EventData] = []
         self._detectors: List[Detector] = []
         self._logs: List[Log] = []
+        self._instrument_name = None
 
     def add_detector(self, detector: Detector):
         self._detectors.append(detector)
@@ -153,6 +154,9 @@ class InMemoryNexusFileBuilder:
 
     def add_log(self, log: Log):
         self._logs.append(log)
+
+    def add_instrument(self, name: str):
+        self._instrument_name = name
 
     @contextmanager
     def file(self) -> Iterator[h5py.File]:
@@ -166,13 +170,23 @@ class InMemoryNexusFileBuilder:
         try:
             entry_group = _create_nx_class("entry", "NXentry", nexus_file)
             self._write_event_data(entry_group)
-            self._write_detectors(entry_group)
             self._write_logs(entry_group)
+            if self._instrument_name is None:
+                parent_group = entry_group
+            else:
+                parent_group = self._write_instrument(entry_group)
+            self._write_detectors(parent_group)
             yield nexus_file
         finally:
             nexus_file.close()
 
-    def _write_detectors(self, parent_group):
+    def _write_instrument(self, parent_group: h5py.Group) -> h5py.Group:
+        instrument_group = _create_nx_class("instrument", "NXinstrument",
+                                            parent_group)
+        instrument_group.create_dataset("name", data=self._instrument_name)
+        return instrument_group
+
+    def _write_detectors(self, parent_group: h5py.Group):
         for detector_index, detector in enumerate(self._detectors):
             detector_group = _add_detector_group_to_file(
                 detector, parent_group, f"detector_{detector_index}")
@@ -180,17 +194,18 @@ class InMemoryNexusFileBuilder:
                 _add_event_data_group_to_file(detector.event_data,
                                               detector_group, "events")
 
-    def _write_event_data(self, parent_group):
+    def _write_event_data(self, parent_group: h5py.Group):
         for event_data_index, event_data in enumerate(self._event_data):
             _add_event_data_group_to_file(event_data, parent_group,
                                           f"events_{event_data_index}")
 
-    def _write_logs(self, parent_group):
+    def _write_logs(self, parent_group: h5py.Group):
         for log in self._logs:
             log_group = _create_nx_class(log.name, "NXlog", parent_group)
             value_ds = log_group.create_dataset("value", data=log.value)
             if log.value_units is not None:
                 value_ds.attrs.create("units", data=log.value_units)
-            time_ds = log_group.create_dataset("time", data=log.time)
-            if log.time_units is not None:
-                time_ds.attrs.create("units", data=log.time_units)
+            if log.time is not None:
+                time_ds = log_group.create_dataset("time", data=log.time)
+                if log.time_units is not None:
+                    time_ds.attrs.create("units", data=log.time_units)
