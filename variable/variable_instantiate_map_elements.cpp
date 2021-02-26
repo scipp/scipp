@@ -42,6 +42,11 @@ INSTANTIATE_VARIABLE(unordered_map_string_to_int64_t,
 INSTANTIATE_VARIABLE(unordered_map_string_to_int32_t,
                      std::unordered_map<std::string, int32_t>)
 
+INSTANTIATE_VARIABLE(unordered_map_datetime64_to_int64_t,
+                     std::unordered_map<core::time_point, int64_t>)
+INSTANTIATE_VARIABLE(unordered_map_datetime64_to_int32_t,
+                     std::unordered_map<core::time_point, int32_t>)
+
 INSTANTIATE_VARIABLE(SubbinSizes, core::SubbinSizes)
 
 } // namespace scipp::variable
