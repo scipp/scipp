@@ -1,5 +1,5 @@
 parameters:
-  python: ["3.7"]
+  python: ["3.6", "3.7"]
   platforms: ['ubuntu-20.04', 'macOS-10.14']
 
 variables:
