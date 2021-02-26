@@ -1,22 +1,16 @@
 parameters:
-  images: [ 'ubuntu-20.04', 'macOS-10.14' ]
-  python: [ '3.7' ]
-
-
-# - name: python
-#   displayName: Python version
-#   type: string
-#   default: '3.7'
-#   values:
-#   - '3.6'
-#   - '3.7'
-# - name: platform
-#   displayName: Platform
-#   type: string
-#   default: 'ubuntu-20.04'
-#   values:
-#   - 'ubuntu-20.04'
-#   - 'macOS-10.14'
+- name: python
+  displayName: Python version
+  type: string
+  values:
+  - '3.6'
+  - '3.7'
+- name: platform
+  displayName: Platform
+  type: string
+  values:
+  - 'ubuntu-20.04'
+  - 'macOS-10.14'
 
 variables:
   - template: variables.yml
@@ -27,36 +21,38 @@ stages:
   - stage: 'build_and_test'
     displayName: 'Build and Test'
 
-jobs:
-  - ${{ each image in parameters.images }}:
-    - ${{ each py in parameters.python }}:
-      - job:
-        displayName: ${{ format('{0}-{1}', image, py) }}
-        pool:
-          vmImage: ${{ image }}
-        steps:
-          - checkout: self
-            submodules: true
+    jobs:
+      - ${{ each os in parameters.platform }}:
+        - ${{ each py in parameters.python }}:
+          - job:
+            displayName: ${{ format('{0}-{1}', os, py) }}
+            pool:
+              vmImage: ${{ os }}
+            variables:
+              PYTHON_VERSION: ${{ py }}
+            steps:
+              - checkout: self
+                submodules: true
 
-          # - template: ccache.yml
-          #   condition: eq($(vm_image), 'ubuntu-20.04')
+              # - template: ccache.yml
+              #   condition: eq($(vm_image), 'ubuntu-20.04')
 
-          - bash: |
-              echo "##vso[task.prependpath]$CONDA/bin"
-              echo "##vso[task.setvariable variable=conda_dir]$CONDA"
-              sudo chown -R $USER $CONDA
-            displayName: 'Configure Conda'
-          - bash: |
-              set -ex
-              conda --version
-              conda install --yes anaconda-client conda-build
-              conda config --set always_yes yes --set changeps1 no
-            displayName: 'Install Conda'
-          - bash: |
-              conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev --python="$PYTHON_VERSION" ./conda
-            env:
-              ANACONDA_TOKEN: $(anaconda_token_secret)
-            displayName: 'Package build'
+              - bash: |
+                  echo "##vso[task.prependpath]$CONDA/bin"
+                  echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+                  sudo chown -R $USER $CONDA
+                displayName: 'Configure Conda'
+              - bash: |
+                  set -ex
+                  conda --version
+                  conda install --yes anaconda-client conda-build
+                  conda config --set always_yes yes --set changeps1 no
+                displayName: 'Install Conda'
+              - bash: |
+                  conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev --python="$PYTHON_VERSION" ./conda
+                env:
+                  ANACONDA_TOKEN: $(anaconda_token_secret)
+                displayName: 'Package build'
 
 
 
