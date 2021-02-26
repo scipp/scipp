@@ -10,10 +10,8 @@ jobs:
       vmImage: ${{ variables.vm_linux }}
     variables:
       ccache_dir: '$(Pipeline.Workspace)/ccache'
+    variables:
       - group: tokens
-      # build_dir: '$(Build.StagingDirectory)/build'
-      # install_dir: '$(Build.StagingDirectory)/install'
-      # docs_build_dir: '$(Build.StagingDirectory)/docs_build'
     steps:
       - checkout: self
         submodules: true
