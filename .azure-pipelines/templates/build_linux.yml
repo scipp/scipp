@@ -1,0 +1,52 @@
+template: parameters.yml
+
+job: 'linux'
+displayName: 'Linux'
+  timeoutInMinutes: 90
+  strategy:
+    matrix:
+      Python37:
+        PYTHON_VERSION: '3.7'
+  pool:
+    vmImage: ${{ parameters.vm_linux }}
+  variables:
+    ccache_dir: '$(Pipeline.Workspace)/ccache'
+    - group: tokens
+    # build_dir: '$(Build.StagingDirectory)/build'
+    # install_dir: '$(Build.StagingDirectory)/install'
+    # docs_build_dir: '$(Build.StagingDirectory)/docs_build'
+  steps:
+    - checkout: self
+      submodules: true
+    - bash: |
+        set -ex
+        sudo apt-get install -y ccache
+        echo "##vso[task.prependpath]/usr/lib/ccache"
+        # Set cache dir
+        ccache --set-config=cache_dir="$(ccache_dir)"
+      displayName: 'Install and configure ccache'
+    - task: Cache@2
+      inputs:
+        key: 'ccache | "$(Agent.OS)" | "$(Build.SourceVersion)"'
+        restoreKeys: |
+          ccache | "$(Agent.OS)" | "$(Build.SourceVersion)"
+          ccache | "$(Agent.OS)"
+        path: "$(CCACHE_DIR)"
+      displayName: 'Process ccache'
+    - bash: ccache --show-stats
+      displayName: 'Report ccache statistics'
+    - bash: |
+        echo "##vso[task.prependpath]$CONDA/bin"
+        echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+      displayName: 'Configure Conda directories'
+    - bash: |
+        set -ex
+        conda --version
+        conda install --yes anaconda-client conda-build
+        conda config --set always_yes yes --set changeps1 no
+      displayName: 'Conda configuration'
+    - bash: |
+        conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev --python="$PYTHON_VERSION" ./conda
+      env:
+        ANACONDA_TOKEN: $(anaconda_token_secret)
+      displayName: 'Package build'

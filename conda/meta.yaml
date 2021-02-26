@@ -34,7 +34,6 @@ test:
     - psutil
     - pytest
     - pythreejs
-    - Pillow
   source_files:
     - python/tests
   commands:

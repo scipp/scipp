@@ -1,0 +1,4 @@
+parameters:
+  - name: vm_linux
+    type: string
+    default: 'ubuntu-20.04'
