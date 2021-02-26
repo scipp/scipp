@@ -69,7 +69,8 @@ template <class Index>
 static constexpr auto groups_to_map = overloaded{
     element::arg_list<span<const double>, span<const float>,
                       span<const int64_t>, span<const int32_t>,
-                      span<const bool>, span<const std::string>>,
+                      span<const bool>, span<const std::string>,
+                      span<const time_point>>,
     transform_flags::expect_no_variance_arg<0>,
     [](const units::Unit &u) { return u; },
     [](const auto &groups) {

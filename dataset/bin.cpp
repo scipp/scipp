@@ -75,7 +75,8 @@ void update_indices_by_binning(const VariableView &indices,
 template <class Index>
 Variable groups_to_map(const VariableConstView &var, const Dim dim) {
   return variable::transform(subspan_view(var, dim),
-                             core::element::groups_to_map<Index>);
+                             core::element::groups_to_map<Index>,
+                             "groups_to_map");
 }
 
 void update_indices_by_grouping(const VariableView &indices,
