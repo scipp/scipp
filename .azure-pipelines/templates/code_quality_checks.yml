@@ -1,3 +1,7 @@
+parameters:
+- name: platform
+  default: ''
+
 stages:
   - stage: 'code_quality'
     displayName: 'Code Quality Checks'
@@ -5,10 +9,8 @@ stages:
     jobs:
       - job: 'code_quality_checks'
         displayName: 'Code Quality Checks'
-        variables:
-          - template: variables.yml
         pool:
-          vmImage: ${{ variables.vm_linux }}
+          vmImage: ${{ parameters.platform }}
         steps:
 
           - task: UsePythonVersion@0

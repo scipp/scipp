@@ -13,6 +13,8 @@ variables:
 
 stages:
   - template: code_quality_checks.yml
+    parameters:
+      platform: ${{ parameters.platform[0] }}
 
   - stage: 'build_and_test'
     displayName: 'Build and Test'
@@ -21,7 +23,8 @@ stages:
       - ${{ each os in parameters.platform }}:
         - ${{ each py in parameters.python }}:
           - job:
-            displayName: ${{ format('{0}-{1}', os, py) }}
+            timeoutInMinutes: 120
+            displayName: ${{ format('{0}-py{1}', os, py) }}
             pool:
               vmImage: ${{ os }}
             variables:
