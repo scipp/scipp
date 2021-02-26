@@ -6,12 +6,12 @@ jobs:
       matrix:
         Python37:
           PYTHON_VERSION: '3.7'
-    pool:
-      vmImage: ${{ variables.vm_linux }}
     variables:
       - template: variables.yml
       - name: ccache_dir
         value: '$(Pipeline.Workspace)/ccache'
+    pool:
+      vmImage: ${{ variables.vm_linux }}
     steps:
       - checkout: self
         submodules: true

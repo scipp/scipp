@@ -3,11 +3,14 @@ stages:
     displayName: 'Code Quality Checks'
 
     jobs:
-      - job: 'cpp_checks'
-        displayName: 'C++ Checks'
+      - job: 'code_quality_checks'
+        displayName: 'Code Quality Checks'
+        variables:
+          - template: variables.yml
         pool:
-          vmImage: 'ubuntu-18.04'
+          vmImage: ${{ variables.vm_linux }}
         steps:
+
           - bash: |
               set -ex
               wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
@@ -15,6 +18,7 @@ stages:
               sudo apt-get update
               sudo apt-get install --yes clang-format-10
             displayName: 'Install tooling'
+
           - bash: |
               set -ex
               clang-format-10 --version
@@ -25,23 +29,19 @@ stages:
               # Run quiet diff to fail the job if any formatting was done (see man git-diff)
               git diff --quiet
             displayName: 'Run clang-format'
+
           - bash: |
               set -ex
               #docker build ./tools -f ./tools/cppcheck.Dockerfile -t scipp_cppcheck
               #docker run --rm -v "$PWD":/data scipp_cppcheck
             displayName: 'Run cppcheck'
 
-      - job: 'cmake_checks'
-        displayName: 'CMake Checks'
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
           - task: UsePythonVersion@0
             inputs:
               versionSpec: '3.x'
               addToPath: true
               architecture: 'x64'
-          - bash: pip install cmake_format==0.6.9
+          - bash: pip install cmake_format==0.6.9 flake8 yapf==0.30.0
             displayName: 'Install tooling'
           - bash: |
               set -ex
@@ -50,11 +50,6 @@ stages:
               find . -type f -name CMakeLists.txt -or -name '*.cmake' | xargs cmake-format --check
             displayName: 'Run cmake-format'
 
-      - job: 'copyright_year'
-        displayName: 'Copyright Year'
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
           - bash: |
               set -ex
               # Find all occurances of "YYYY Scipp contributors" and replace YYYY with the current year
@@ -65,24 +60,13 @@ stages:
               git diff --quiet
             displayName: 'Check Copyright years are up to date'
 
-      - job: 'python_checks'
-        displayName: 'Python Checks'
-        pool:
-          vmImage: 'ubuntu-latest'
-        steps:
-          - task: UsePythonVersion@0
-            inputs:
-              versionSpec: '3.x'
-              addToPath: true
-              architecture: 'x64'
-          - bash: pip install flake8 yapf==0.30.0
-            displayName: 'Install tooling'
           - bash: |
               set -ex
               flake8 --version
               # Perform format checking on all Python files
               find . -type f -name '*.py' | xargs flake8
             displayName: 'Run flake8'
+
           - bash: |
               set -ex
               yapf --version
