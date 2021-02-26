@@ -7,7 +7,7 @@ jobs:
           Python37:
             PYTHON_VERSION: '3.7'
       pool:
-        vmImage: ${{ parameters.vm_linux }}
+        vmImage: ${{ variables.vm_linux }}
       variables:
         ccache_dir: '$(Pipeline.Workspace)/ccache'
         - group: tokens

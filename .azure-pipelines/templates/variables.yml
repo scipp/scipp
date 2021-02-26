@@ -1,0 +1,2 @@
+variables:
+  vm_linux: 'ubuntu-20.04'

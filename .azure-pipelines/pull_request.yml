@@ -9,8 +9,8 @@ pr:
     include:
       - '*'
 
-extends:
-  template: templates/parameters.yml
+variables:
+- template: templates/parameters.yml
 
 stages:
   - template: templates/code_quality_checks.yml
