@@ -11,12 +11,16 @@ stages:
           vmImage: ${{ variables.vm_linux }}
         steps:
 
+          - task: UsePythonVersion@0
+            inputs:
+              versionSpec: '3.x'
+              addToPath: true
+              architecture: 'x64'
+
           - bash: |
               set -ex
-              wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-              sudo add-apt-repository --yes 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
-              sudo apt-get update
               sudo apt-get install --yes clang-format-10
+              pip install cmake_format==0.6.9 flake8 yapf==0.30.0
             displayName: 'Install tooling'
 
           - bash: |
@@ -36,13 +40,6 @@ stages:
               #docker run --rm -v "$PWD":/data scipp_cppcheck
             displayName: 'Run cppcheck'
 
-          - task: UsePythonVersion@0
-            inputs:
-              versionSpec: '3.x'
-              addToPath: true
-              architecture: 'x64'
-          - bash: pip install cmake_format==0.6.9 flake8 yapf==0.30.0
-            displayName: 'Install tooling'
           - bash: |
               set -ex
               cmake-format --version
