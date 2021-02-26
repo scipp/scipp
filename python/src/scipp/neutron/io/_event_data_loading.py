@@ -81,42 +81,6 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, np.ndarray]:
                             'detector-id': event_id
                         })
 
-    # def _get_pulse_time_offset(pulse_time_dataset: h5py.Dataset)
-    # -> Optional[str]:
-    #     try:
-    #         pulse_offset_iso8601 = pulse_time_dataset.attrs["offset"]
-    #     except KeyError:
-    #         return None
-    #     return ensure_str(pulse_offset_iso8601)
-    #
-    # event_time_zero = sc.Variable(['pulse'],
-    #                               values=group["event_time_zero"][...],
-    #                               dtype=group["event_time_zero"].dtype.type)
-    # pulse_time_offset = _get_pulse_time_offset(group["event_time_zero"])
-    #
-    # unix_epoch = datetime(1970, 1, 1)
-    # if pulse_time_offset is not None and pulse_time_offset != unix_epoch:
-    #     # Correct for time offset:
-    #     #  make times relative to run start or unix epoch?
-    #     NotImplementedError(
-    #         "Found offset for pulse times but dealing with this "
-    #         "is not implemented yet")
-    #
-    # try:
-    #     # The end index for a pulse is the start index of the next pulse
-    #     begin_indices = sc.Variable(['pulse'], values=event_index[:-1])
-    #     end_indices = sc.Variable(['pulse'], values=event_index[1:])
-    #     events = sc.DataArray(data=sc.bins(begin=begin_indices,
-    #                                        end=end_indices,
-    #                                        dim='event',
-    #                                        data=data),
-    #                           coords={'pulse-time': event_time_zero})
-    # except IndexError:
-    #     # For example found max uint64 at end of some event_index
-    #     # datasets in SNS files
-    #     raise BadSource("Unexpected values for event indices in "
-    #                     "event_index dataset")
-
     detector_number = "detector_number"
     if detector_number in group.parent:
         # Hopefully the detector ids are recorded in the file
