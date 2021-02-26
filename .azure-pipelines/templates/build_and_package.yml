@@ -1,6 +1,18 @@
 parameters:
-  python: ["3.6", "3.7"]
-  platforms: ['ubuntu-20.04', 'macOS-10.14']
+- name: python
+  displayName: Python version
+  type: string
+  default: 3.7
+  values:
+  - 3.6
+  - 3.7
+- name: platform
+  displayName: Platform
+  type: string
+  default: ubuntu-20.04
+  values:
+  - ubuntu-20.04
+  - macOS-10.14
 
 variables:
   - template: variables.yml
