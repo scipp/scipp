@@ -101,7 +101,9 @@ static constexpr auto update_indices_by_grouping = overloaded{
                       update_indices_by_grouping_arg<int64_t, bool>,
                       update_indices_by_grouping_arg<int32_t, bool>,
                       update_indices_by_grouping_arg<int64_t, std::string>,
-                      update_indices_by_grouping_arg<int32_t, std::string>>,
+                      update_indices_by_grouping_arg<int32_t, std::string>,
+                      update_indices_by_grouping_arg<int32_t, time_point>,
+                      update_indices_by_grouping_arg<int64_t, time_point>>,
     [](units::Unit &indices, const units::Unit &coord,
        const units::Unit &groups) {
       expect::equals(coord, groups);

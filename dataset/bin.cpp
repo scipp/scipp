@@ -87,7 +87,8 @@ void update_indices_by_grouping(const VariableView &indices,
                        ? groups_to_map<int64_t>(groups, dim)
                        : groups_to_map<int32_t>(groups, dim);
   variable::transform_in_place(indices, key, map,
-                               core::element::update_indices_by_grouping);
+                               core::element::update_indices_by_grouping,
+                               "update_indices_by_grouping");
 }
 
 void update_indices_from_existing(const VariableView &indices, const Dim dim) {
