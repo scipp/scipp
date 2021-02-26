@@ -1,6 +1,3 @@
-variables:
-- template: variables.yml
-
 jobs:
   - job: 'linux'
     displayName: 'Linux'
@@ -12,7 +9,9 @@ jobs:
     pool:
       vmImage: ${{ variables.vm_linux }}
     variables:
-      ccache_dir: '$(Pipeline.Workspace)/ccache'
+      - template: variables.yml
+      - name: ccache_dir
+        value: '$(Pipeline.Workspace)/ccache'
     steps:
       - checkout: self
         submodules: true
