@@ -10,8 +10,6 @@ jobs:
       vmImage: ${{ variables.vm_linux }}
     variables:
       ccache_dir: '$(Pipeline.Workspace)/ccache'
-    variables:
-      - group: tokens
     steps:
       - checkout: self
         submodules: true

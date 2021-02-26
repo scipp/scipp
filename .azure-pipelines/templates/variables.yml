@@ -1,2 +1,4 @@
 variables:
-  vm_linux: 'ubuntu-20.04'
+  - group: tokens
+  - name: vm_linux
+    value: 'ubuntu-20.04'
