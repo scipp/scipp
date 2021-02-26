@@ -1,16 +1,12 @@
 parameters:
 - name: python
   displayName: Python version
-  type: string
-  values:
-  - '3.6'
-  - '3.7'
+  type: object
+  default: ['3.6', '3.7']
 - name: platform
   displayName: Platform
-  type: string
-  values:
-  - 'ubuntu-20.04'
-  - 'macOS-10.14'
+  type: object
+  default: ['ubuntu-20.04', 'macOS-10.14']
 
 variables:
   - template: variables.yml
