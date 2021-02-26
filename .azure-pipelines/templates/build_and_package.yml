@@ -1,12 +1,10 @@
 parameters:
-- name: python
-  displayName: Python version
+- name: 'ubuntu-20.04'
   type: object
   default: ['3.6', '3.7']
-- name: platform
-  displayName: Platform
+- name: 'macOS-10.14'
   type: object
-  default: ['ubuntu-20.04', 'macOS-10.14']
+  default: ['3.7']
 
 variables:
   - template: variables.yml
@@ -14,27 +12,27 @@ variables:
 stages:
   - template: code_quality_checks.yml
     parameters:
-      platform: ${{ parameters.platform[0] }}
+      platform: ${{ parameters[0] }}
 
   - stage: 'build_and_test'
     displayName: 'Build and Test'
 
     jobs:
-      - ${{ each os in parameters.platform }}:
-        - ${{ each py in parameters.python }}:
+      - ${{ each os in parameters }}:
+        - ${{ each py in os.Value }}:
           - job:
             timeoutInMinutes: 120
-            displayName: ${{ format('{0}-py{1}', os, py) }}
+            displayName: ${{ format('{0}-py{1}', os.Key, py) }}
             pool:
-              vmImage: ${{ os }}
+              vmImage: ${{ os.Key }}
             variables:
               PYTHON_VERSION: ${{ py }}
             steps:
               - checkout: self
                 submodules: true
 
-              # - template: ccache.yml
-              #   condition: eq($(vm_image), 'ubuntu-20.04')
+              - template: ccache.yml
+                condition: eq('${{ os.Key }}', 'ubuntu-20.04')
 
               - bash: |
                   echo "##vso[task.prependpath]$CONDA/bin"
@@ -52,18 +50,3 @@ stages:
                 env:
                   ANACONDA_TOKEN: $(anaconda_token_secret)
                 displayName: 'Package build'
-
-
-
-        # pool:
-    # jobs:
-    #   - job: 'builder'
-    #     timeoutInMinutes: 120
-    #     strategy:
-    #       matrix:
-    #         ${{ each py in parameters.python }}:
-    #           ${{ each os in parameters.platforms }}:
-    #             vm_image: ${{ os }}
-    #             PYTHON_VERSION: ${{ py }}
-    #     # variables:
-    #     #   ccache_dir: '$(Pipeline.Workspace)/ccache'
