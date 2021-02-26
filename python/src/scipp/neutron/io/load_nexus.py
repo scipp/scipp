@@ -1,5 +1,5 @@
 from ..._scipp import core as sc
-from ._event_data_loading import load_event_data
+from ._detector_data_loading import load_detector_data
 from ._log_data_loading import load_logs
 
 import h5py
@@ -73,18 +73,13 @@ def _add_instrument_name(instrument_group: h5py.Group, data: sc.Variable):
         pass
 
 
-def load_nexus(data_file: Union[str, h5py.File],
-               root: str = "/",
-               instrument_file: Union[str, h5py.File, None] = None):
+def load_nexus(data_file: Union[str, h5py.File], root: str = "/"):
     """
     Load a NeXus file and return required information.
 
     :param data_file: path of NeXus file containing data to load
     :param root: path of group in file, only load data from the subtree of
       this group
-    :param instrument_file: path of separate NeXus file containing
-      detector positions, load_nexus will look in the data file for
-      this information if instrument_file is not provided
 
     Usage example:
       data = sc.neutron.load_nexus('PG3_4844_event.nxs')
@@ -100,14 +95,15 @@ def load_nexus(data_file: Union[str, h5py.File],
             (nx_event_data, nx_log, nx_entry, nx_instrument), nexus_file[root])
 
         if len(groups[nx_entry]) > 1:
-            # We can't sensibly load multiple NXentry, for example each
+            # We can't sensibly load from multiple NXentry, for example each
             # could could contain a description of the same detector bank
             # and lead to problems with clashing detector-ids etc
             raise RuntimeError(
                 "More than one NXentry group in file, use 'root' argument "
-                "to specify which to load data from")
+                "to specify which to load data from, for example"
+                f"{__name__}('my_file.nxs', '/entry_2')")
 
-        loaded_data = load_event_data(groups[nx_event_data])
+        loaded_data = load_detector_data(groups[nx_event_data])
         if loaded_data is None:
             no_event_data = True
             loaded_data = sc.Dataset({})

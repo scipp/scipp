@@ -2,7 +2,7 @@ import numpy as np
 from typing import Tuple
 from ..._scipp import core as sc
 import h5py
-from ._loading_common import ensure_str, BadSource, ensure_no_unsigned_type
+from ._loading_common import ensure_str, BadSource, ensure_not_unsigned
 from warnings import warn
 from ... import detail
 
@@ -96,7 +96,7 @@ def _load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
                 dimension_label:
                 sc.Variable([dimension_label],
                             values=times,
-                            dtype=ensure_no_unsigned_type(
+                            dtype=ensure_not_unsigned(
                                 group[time_dataset_name].dtype.type),
                             unit=time_unit)
             })

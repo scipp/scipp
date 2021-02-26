@@ -114,6 +114,9 @@ class Detector:
     detector_numbers: np.ndarray
     event_data: Optional[EventData] = None
     log: Optional[Log] = None
+    x_offsets: Optional[np.ndarray] = None
+    y_offsets: Optional[np.ndarray] = None
+    z_offsets: Optional[np.ndarray] = None
 
 
 def _add_event_data_group_to_file(data: EventData, parent_group: h5py.Group,
@@ -134,6 +137,15 @@ def _add_detector_group_to_file(detector: Detector, parent_group: h5py.Group,
     detector_group = _create_nx_class(group_name, "NXdetector", parent_group)
     detector_group.create_dataset("detector_number",
                                   data=detector.detector_numbers)
+    if detector.x_offsets is not None:
+        detector_group.create_dataset("x_pixel_offset",
+                                      data=detector.x_offsets)
+    if detector.y_offsets is not None:
+        detector_group.create_dataset("y_pixel_offset",
+                                      data=detector.y_offsets)
+    if detector.z_offsets is not None:
+        detector_group.create_dataset("z_pixel_offset",
+                                      data=detector.z_offsets)
     return detector_group
 
 

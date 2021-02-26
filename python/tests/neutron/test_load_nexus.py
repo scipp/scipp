@@ -291,9 +291,60 @@ def test_load_nexus_loads_event_and_log_data_from_single_file():
                        log_2.time)
 
 
+def test_load_nexus_loads_pixel_positions_with_event_data():
+    pulse_times = np.array([
+        1600766730000000000, 1600766731000000000, 1600766732000000000,
+        1600766733000000000
+    ])
+    event_time_offsets_1 = np.array([456, 743, 347, 345, 632])
+    event_data_1 = EventData(
+        event_id=np.array([1, 2, 3, 1, 3]),
+        event_time_offset=event_time_offsets_1,
+        event_time_zero=pulse_times,
+        event_index=np.array([0, 3, 3, 5]),
+    )
+    detector_1_ids = np.array([0, 1, 2, 3])
+    x_pixel_offset_1 = np.array([0.1, 0.2, 0.1, 0.2])
+    y_pixel_offset_1 = np.array([0.1, 0.1, 0.2, 0.2])
+    z_pixel_offset_1 = np.array([0.1, 0.2, 0.3, 0.4])
+
+    event_time_offsets_2 = np.array([682, 237, 941, 162, 52])
+    event_data_2 = EventData(
+        event_id=np.array([4, 5, 6, 4, 6]),
+        event_time_offset=event_time_offsets_2,
+        event_time_zero=pulse_times,
+        event_index=np.array([0, 3, 3, 5]),
+    )
+    detector_2_ids = np.array([4, 5, 6, 7])
+    x_pixel_offset_2 = np.array([1.1, 1.2, 1.1, 1.2])
+    y_pixel_offset_2 = np.array([0.1, 0.1, 0.2, 0.2])
+
+    builder = InMemoryNexusFileBuilder()
+    builder.add_detector(
+        Detector(detector_1_ids,
+                 event_data_1,
+                 x_offsets=x_pixel_offset_1,
+                 y_offsets=y_pixel_offset_1,
+                 z_offsets=z_pixel_offset_1))
+    builder.add_detector(
+        Detector(detector_2_ids,
+                 event_data_2,
+                 x_offsets=x_pixel_offset_2,
+                 y_offsets=y_pixel_offset_2))
+
+    with builder.file() as nexus_file:
+        sc.neutron.load_nexus(nexus_file)
+
+    # TODO if there is a depends_on in the NXdetector then warn
+    #  the user that transformations are not being processed
+
+    # TODO test zeros if no z_pixel_offset
+
+
 # TODO test
 #  - pixel positions
 #  Remove and make tickets for any remaining todos
 #  - time offsets
 #  - transformations (depends_on) chains
 #  - sample and source position
+#  - pulse times

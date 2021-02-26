@@ -21,7 +21,7 @@ unsigned_to_signed = {
 }
 
 
-def ensure_no_unsigned_type(dataset_type: Any):
+def ensure_not_unsigned(dataset_type: Any):
     try:
         return unsigned_to_signed[dataset_type]
     except KeyError:

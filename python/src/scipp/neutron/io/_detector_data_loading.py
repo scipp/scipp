@@ -1,7 +1,7 @@
 import h5py
 from typing import Optional, List, Tuple
 import numpy as np
-from ._loading_common import ensure_str, BadSource, ensure_no_unsigned_type
+from ._loading_common import ensure_str, BadSource, ensure_not_unsigned
 from ..._scipp import core as sc
 from ..._bins import bin
 from datetime import datetime
@@ -65,7 +65,7 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, np.ndarray]:
     event_time_offset = sc.Variable(
         ['event'],
         values=group["event_time_offset"][...],
-        dtype=ensure_no_unsigned_type(group["event_time_offset"].dtype.type),
+        dtype=ensure_not_unsigned(group["event_time_offset"].dtype.type),
         unit=_get_units(group["event_time_offset"]))
     event_id = sc.Variable(
         ['event'], values=group["event_id"][...],
@@ -97,7 +97,7 @@ def _load_event_group(group: h5py.Group) -> Tuple[sc.Variable, np.ndarray]:
     return data, detector_ids
 
 
-def load_event_data(
+def load_detector_data(
         event_data_groups: List[h5py.Group]) -> Optional[sc.DataArray]:
     event_data = []
     for group in event_data_groups:
