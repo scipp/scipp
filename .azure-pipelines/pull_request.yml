@@ -9,8 +9,8 @@ pr:
     include:
       - '*'
 
-stages:
-  - template: templates/build_and_package.yml
+extends:
+  template: templates/build_and_package.yml
 
 
 
