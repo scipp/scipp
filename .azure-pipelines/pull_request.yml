@@ -10,7 +10,7 @@ pr:
       - '*'
 
 variables:
-- template: templates/parameters.yml
+- template: templates/variables.yml
 
 stages:
   - template: templates/code_quality_checks.yml
