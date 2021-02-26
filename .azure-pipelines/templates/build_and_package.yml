@@ -1,0 +1,49 @@
+parameters:
+  python_versions: ["3.7"],
+  operating_systems: ['ubuntu-20.04', 'macOS-10.14']
+
+variables:
+  - template: variables.yml
+
+stages:
+  - template: code_quality_checks.yml
+
+  - stage: 'build_and_test'
+    displayName: 'Build and Test'
+
+    jobs:
+      - job: 'builder'
+        timeoutInMinutes: 120
+        strategy:
+          matrix:
+            ${{ each py in parameters.python_versions }}:
+              ${{ each os in parameters.operating_systems }}:
+                vm_image: ${{ os }}
+                PYTHON_VERSION: ${{ py }}
+        # variables:
+        #   ccache_dir: '$(Pipeline.Workspace)/ccache'
+        pool:
+          vmImage: $(vm_image)
+        steps:
+          - checkout: self
+            submodules: true
+
+          # - template: ccache.yml
+          #   condition: eq($(vm_image), 'ubuntu-20.04')
+
+          - bash: |
+              echo "##vso[task.prependpath]$CONDA/bin"
+              echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+              sudo chown -R $USER $CONDA
+            displayName: 'Configure Conda'
+          - bash: |
+              set -ex
+              conda --version
+              conda install --yes anaconda-client conda-build
+              conda config --set always_yes yes --set changeps1 no
+            displayName: 'Install Conda'
+          - bash: |
+              conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev --python="$PYTHON_VERSION" ./conda
+            env:
+              ANACONDA_TOKEN: $(anaconda_token_secret)
+            displayName: 'Package build'
