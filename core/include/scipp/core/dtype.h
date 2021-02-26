@@ -74,6 +74,10 @@ template <>
 constexpr DType dtype<std::unordered_map<std::string, int64_t>>{312};
 template <>
 constexpr DType dtype<std::unordered_map<std::string, int32_t>>{313};
+template <>
+constexpr DType dtype<std::unordered_map<core::time_point, int64_t>>{314};
+template <>
+constexpr DType dtype<std::unordered_map<core::time_point, int32_t>>{315};
 // scipp::variable types start at 1000
 // scipp::dataset types start at 2000
 // scipp::python types start at 3000
