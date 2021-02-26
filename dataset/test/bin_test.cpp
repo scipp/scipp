@@ -26,13 +26,14 @@ protected:
                                Values{static_cast<Coord>(vals)...});
   }
 
-  Variable data = makeVariable<double>(
-      Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 3, 2, 4});
+  Variable data =
+      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4},
+                           Variances{1, 3, 2, 4}, units::m);
   Variable x = make_coord<0>(Dim::Event, 3, 2, 4, 1);
   Variable y = make_coord<1>(Dim::Event, 1, 2, 1, 2);
   Variable mask = makeVariable<bool>(Dims{Dim::Event}, Shape{4},
                                      Values{true, false, false, false});
-  Variable scalar = makeVariable<double>(Values{1.1});
+  Variable scalar = makeVariable<double>(Values{1.1}, units::kg);
   DataArray table =
       DataArray(data, {{Dim::X, x}, {Dim("scalar"), scalar}}, {{"mask", mask}});
   Variable edges_x = make_coord<0>(Dim::X, 0, 2, 4);
@@ -48,8 +49,9 @@ using DataArrayBinTestTypes =
 TYPED_TEST_SUITE(DataArrayBinTest, DataArrayBinTestTypes);
 
 TYPED_TEST(DataArrayBinTest, 1d) {
-  Variable sorted_data = makeVariable<double>(
-      Dims{Dim::Event}, Shape{3}, Values{4, 1, 2}, Variances{4, 1, 3});
+  Variable sorted_data =
+      makeVariable<double>(Dims{Dim::Event}, Shape{3}, Values{4, 1, 2},
+                           Variances{4, 1, 3}, units::m);
   Variable sorted_x = this->template make_coord<0>(Dim::Event, 1, 3, 2);
   Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{3},
                                             Values{false, true, false});
@@ -69,8 +71,9 @@ TYPED_TEST(DataArrayBinTest, 1d) {
 
 TYPED_TEST(DataArrayBinTest, 2d) {
   this->table.coords().set(Dim::Y, this->y);
-  Variable sorted_data = makeVariable<double>(
-      Dims{Dim::Event}, Shape{3}, Values{4, 1, 2}, Variances{4, 1, 3});
+  Variable sorted_data =
+      makeVariable<double>(Dims{Dim::Event}, Shape{3}, Values{4, 1, 2},
+                           Variances{4, 1, 3}, units::m);
   Variable sorted_x = this->template make_coord<0>(Dim::Event, 1, 3, 2);
   Variable sorted_y = this->template make_coord<1>(Dim::Event, 2, 1, 2);
   Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{3},
