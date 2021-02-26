@@ -10,6 +10,7 @@
 #include "scipp/dataset/histogram.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/comparison.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/util.h"
 
@@ -17,76 +18,82 @@ using namespace scipp;
 using namespace scipp::dataset;
 using testdata::make_table;
 
-class DataArrayBinTest : public ::testing::Test {
+template <class Coords> class DataArrayBinTest : public ::testing::Test {
 protected:
+  template <size_t I, class... Vals> auto make_coord(Dim dim, Vals &&... vals) {
+    using Coord = std::tuple_element_t<I, Coords>;
+    return makeVariable<Coord>(Dims{dim}, Shape{sizeof...(vals)},
+                               Values{static_cast<Coord>(vals)...});
+  }
+
   Variable data = makeVariable<double>(
       Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4}, Variances{1, 3, 2, 4});
-  Variable x =
-      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{3, 2, 4, 1});
+  Variable x = make_coord<0>(Dim::Event, 3, 2, 4, 1);
+  Variable y = make_coord<1>(Dim::Event, 1, 2, 1, 2);
   Variable mask = makeVariable<bool>(Dims{Dim::Event}, Shape{4},
                                      Values{true, false, false, false});
   Variable scalar = makeVariable<double>(Values{1.1});
   DataArray table =
       DataArray(data, {{Dim::X, x}, {Dim("scalar"), scalar}}, {{"mask", mask}});
-  Variable edges_x =
-      makeVariable<double>(Dims{Dim::X}, Shape{3}, Values{0, 2, 4});
+  Variable edges_x = make_coord<0>(Dim::X, 0, 2, 4);
+  Variable edges_y = make_coord<1>(Dim::Y, 0, 1, 3);
 };
 
-TEST_F(DataArrayBinTest, 1d) {
+// dtypes of the coordinates
+using DataArrayBinTestTypes =
+    ::testing::Types<std::tuple<double, double>, std::tuple<float, float>,
+                     std::tuple<core::time_point, double>,
+                     std::tuple<double, core::time_point>>;
+
+TYPED_TEST_SUITE(DataArrayBinTest, DataArrayBinTestTypes);
+
+TYPED_TEST(DataArrayBinTest, 1d) {
   Variable sorted_data = makeVariable<double>(
       Dims{Dim::Event}, Shape{3}, Values{4, 1, 2}, Variances{4, 1, 3});
-  Variable sorted_x =
-      makeVariable<double>(Dims{Dim::Event}, Shape{3}, Values{1, 3, 2});
+  Variable sorted_x = this->template make_coord<0>(Dim::Event, 1, 3, 2);
   Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{3},
                                             Values{false, true, false});
   DataArray sorted_table =
       DataArray(sorted_data, {{Dim::X, sorted_x}}, {{"mask", sorted_mask}});
 
-  const auto bucketed = bin(table, {edges_x});
+  const auto binned = bin(this->table, {this->edges_x});
 
-  EXPECT_EQ(bucketed.dims(), Dimensions(Dim::X, 2));
-  EXPECT_EQ(bucketed.coords()[Dim::X], edges_x);
-  EXPECT_EQ(bucketed.coords()[Dim("scalar")], scalar);
-  EXPECT_EQ(bucketed.values<bucket<DataArray>>()[0],
+  EXPECT_EQ(binned.dims(), Dimensions(Dim::X, 2));
+  EXPECT_EQ(binned.coords()[Dim::X], this->edges_x);
+  EXPECT_EQ(binned.coords()[Dim("scalar")], this->scalar);
+  EXPECT_EQ(binned.template values<bucket<DataArray>>()[0],
             sorted_table.slice({Dim::Event, 0, 1}));
-  EXPECT_EQ(bucketed.values<bucket<DataArray>>()[1],
+  EXPECT_EQ(binned.template values<bucket<DataArray>>()[1],
             sorted_table.slice({Dim::Event, 1, 3}));
 }
 
-TEST_F(DataArrayBinTest, 2d) {
-  Variable edges_y =
-      makeVariable<double>(Dims{Dim::Y}, Shape{3}, Values{0, 1, 3});
-  Variable y =
-      makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 1, 2});
-  table.coords().set(Dim::Y, y);
-
+TYPED_TEST(DataArrayBinTest, 2d) {
+  this->table.coords().set(Dim::Y, this->y);
   Variable sorted_data = makeVariable<double>(
       Dims{Dim::Event}, Shape{3}, Values{4, 1, 2}, Variances{4, 1, 3});
-  Variable sorted_x =
-      makeVariable<double>(Dims{Dim::Event}, Shape{3}, Values{1, 3, 2});
-  Variable sorted_y =
-      makeVariable<double>(Dims{Dim::Event}, Shape{3}, Values{2, 1, 2});
+  Variable sorted_x = this->template make_coord<0>(Dim::Event, 1, 3, 2);
+  Variable sorted_y = this->template make_coord<1>(Dim::Event, 2, 1, 2);
   Variable sorted_mask = makeVariable<bool>(Dims{Dim::Event}, Shape{3},
                                             Values{false, true, false});
   DataArray sorted_table =
       DataArray(sorted_data, {{Dim::X, sorted_x}, {Dim::Y, sorted_y}},
                 {{"mask", sorted_mask}});
 
-  const auto bucketed = bin(table, {edges_x, edges_y});
+  const auto binned = bin(this->table, {this->edges_x, this->edges_y});
 
-  EXPECT_EQ(bucketed.dims(), Dimensions({Dim::X, Dim::Y}, {2, 2}));
-  EXPECT_EQ(bucketed.coords()[Dim::X], edges_x);
-  EXPECT_EQ(bucketed.coords()[Dim::Y], edges_y);
-  EXPECT_EQ(bucketed.coords()[Dim("scalar")], scalar);
-  const auto empty_bucket = sorted_table.slice({Dim::Event, 0, 0});
-  EXPECT_EQ(bucketed.values<bucket<DataArray>>()[0], empty_bucket);
-  EXPECT_EQ(bucketed.values<bucket<DataArray>>()[1],
+  EXPECT_EQ(binned.dims(), Dimensions({Dim::X, Dim::Y}, {2, 2}));
+  EXPECT_EQ(binned.coords()[Dim::X], this->edges_x);
+  EXPECT_EQ(binned.coords()[Dim::Y], this->edges_y);
+  EXPECT_EQ(binned.coords()[Dim("scalar")], this->scalar);
+  const auto empty_bin = sorted_table.slice({Dim::Event, 0, 0});
+  EXPECT_EQ(binned.template values<bucket<DataArray>>()[0], empty_bin);
+  EXPECT_EQ(binned.template values<bucket<DataArray>>()[1],
             sorted_table.slice({Dim::Event, 0, 1}));
-  EXPECT_EQ(bucketed.values<bucket<DataArray>>()[2], empty_bucket);
-  EXPECT_EQ(bucketed.values<bucket<DataArray>>()[3],
+  EXPECT_EQ(binned.template values<bucket<DataArray>>()[2], empty_bin);
+  EXPECT_EQ(binned.template values<bucket<DataArray>>()[3],
             sorted_table.slice({Dim::Event, 1, 3}));
 
-  EXPECT_EQ(bin(bin(table, {edges_x}), {edges_y}), bucketed);
+  EXPECT_EQ(bin(bin(this->table, {this->edges_x}), {this->edges_y}), binned);
 }
 
 TEST(BinGroupTest, 1d) {
