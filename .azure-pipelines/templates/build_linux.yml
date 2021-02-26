@@ -1,3 +1,6 @@
+variables:
+- template: variables.yml
+
 jobs:
   - job: 'linux'
     displayName: 'Linux'
