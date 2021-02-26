@@ -1,6 +1,6 @@
 parameters:
-  python_versions: ["3.7"],
-  operating_systems: ['ubuntu-20.04', 'macOS-10.14']
+  python: ["3.7"]
+  platforms: ['ubuntu-20.04', 'macOS-10.14']
 
 variables:
   - template: variables.yml
@@ -16,8 +16,8 @@ stages:
         timeoutInMinutes: 120
         strategy:
           matrix:
-            ${{ each py in parameters.python_versions }}:
-              ${{ each os in parameters.operating_systems }}:
+            ${{ each py in parameters.python }}:
+              ${{ each os in parameters.platforms }}:
                 vm_image: ${{ os }}
                 PYTHON_VERSION: ${{ py }}
         # variables:
