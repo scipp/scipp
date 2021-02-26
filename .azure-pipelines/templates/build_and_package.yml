@@ -1,18 +1,22 @@
 parameters:
-- name: python
-  displayName: Python version
-  type: string
-  default: '3.7'
-  values:
-  - '3.6'
-  - '3.7'
-- name: platform
-  displayName: Platform
-  type: string
-  default: 'ubuntu-20.04'
-  values:
-  - 'ubuntu-20.04'
-  - 'macOS-10.14'
+  images: [ 'ubuntu-20.04', 'macOS-10.14' ]
+  python: [ '3.7' ]
+
+
+# - name: python
+#   displayName: Python version
+#   type: string
+#   default: '3.7'
+#   values:
+#   - '3.6'
+#   - '3.7'
+# - name: platform
+#   displayName: Platform
+#   type: string
+#   default: 'ubuntu-20.04'
+#   values:
+#   - 'ubuntu-20.04'
+#   - 'macOS-10.14'
 
 variables:
   - template: variables.yml
@@ -23,19 +27,13 @@ stages:
   - stage: 'build_and_test'
     displayName: 'Build and Test'
 
-    jobs:
-      - job: 'builder'
-        timeoutInMinutes: 120
-        strategy:
-          matrix:
-            ${{ each py in parameters.python }}:
-              ${{ each os in parameters.platforms }}:
-                vm_image: ${{ os }}
-                PYTHON_VERSION: ${{ py }}
-        # variables:
-        #   ccache_dir: '$(Pipeline.Workspace)/ccache'
+jobs:
+  - ${{ each image in parameters.images }}:
+    - ${{ each py in parameters.python }}:
+      - job:
+        displayName: ${{ format('{0}-{1}', image, py) }}
         pool:
-          vmImage: $(vm_image)
+          vmImage: ${{ image }}
         steps:
           - checkout: self
             submodules: true
@@ -59,3 +57,18 @@ stages:
             env:
               ANACONDA_TOKEN: $(anaconda_token_secret)
             displayName: 'Package build'
+
+
+
+        # pool:
+    # jobs:
+    #   - job: 'builder'
+    #     timeoutInMinutes: 120
+    #     strategy:
+    #       matrix:
+    #         ${{ each py in parameters.python }}:
+    #           ${{ each os in parameters.platforms }}:
+    #             vm_image: ${{ os }}
+    #             PYTHON_VERSION: ${{ py }}
+    #     # variables:
+    #     #   ccache_dir: '$(Pipeline.Workspace)/ccache'
