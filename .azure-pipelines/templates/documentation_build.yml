@@ -1,8 +1,12 @@
+parameters:
+- name: image
+  default: ''
+
 jobs:
   - job: 'documentation'
     displayName: 'Documentation'
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: ${{ parameters.image }}
     variables:
       packages_dir: '$(Build.StagingDirectory)/packages'
       docs_build_dir: '$(Build.StagingDirectory)/docs_build'

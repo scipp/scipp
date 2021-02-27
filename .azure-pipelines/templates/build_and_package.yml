@@ -14,10 +14,6 @@ parameters:
     params:
       OSX_VERSION: '10.15'
 
-# parameters:
-#   - template: parameters.yml
-
-
 variables:
   - template: variables.yml
 
@@ -28,7 +24,6 @@ stages:
 
   - stage: 'build_and_test'
     displayName: 'Build and Test'
-
     jobs:
       - ${{ each os in parameters }}:
         - ${{ each py in os.Value.py_version }}:
@@ -39,37 +34,9 @@ stages:
               ${{ each param in os.Value.params }}:
                 ${{ param.Key }}: ${{ param.Value }}
 
-
-      # - template: build_linux.yml
-      # - template: build_osx.yml
-
-          # - job:
-          #   timeoutInMinutes: 120
-          #   displayName: ${{ format('{0}-py{1}', os.Value.image, py) }}
-          #   pool:
-          #     vmImage: ${{ os.Value.image }}
-          #   variables:
-          #     PYTHON_VERSION: ${{ py }}
-          #   steps:
-          #     - checkout: self
-          #       submodules: true
-
-          #     # - template: ccache.yml
-          #     #   condition: eq('${{ os.Key }}', 'ubuntu-20.04')
-
-          #     - bash: |
-          #         echo "##vso[task.prependpath]$CONDA/bin"
-          #         echo "##vso[task.setvariable variable=conda_dir]$CONDA"
-          #         sudo chown -R $USER $CONDA
-          #       displayName: 'Configure Conda'
-          #     - bash: |
-          #         set -ex
-          #         conda --version
-          #         conda install --yes anaconda-client conda-build
-          #         conda config --set always_yes yes --set changeps1 no
-          #       displayName: 'Install Conda'
-          #     - bash: |
-          #         conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev --python="$PYTHON_VERSION" ./conda
-          #       env:
-          #         ANACONDA_TOKEN: $(anaconda_token_secret)
-          #       displayName: 'Package build'
+  - stage: 'documentation_build'
+      displayName: 'Build documentation'
+      jobs:
+        - template: templates/documentation_build.yml
+          parameters:
+            image: ${{ parameters.linux.image }}
