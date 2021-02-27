@@ -3,8 +3,6 @@ from ._detector_data_loading import load_detector_data
 from ._log_data_loading import load_logs
 
 import h5py
-import numpy as np
-from os.path import join
 from timeit import default_timer as timer
 from typing import Union, Tuple, Dict, List
 from contextlib import contextmanager
@@ -97,7 +95,7 @@ def load_nexus(data_file: Union[str, h5py.File], root: str = "/"):
         if len(groups[nx_entry]) > 1:
             # We can't sensibly load from multiple NXentry, for example each
             # could could contain a description of the same detector bank
-            # and lead to problems with clashing detector-ids etc
+            # and lead to problems with clashing detector ids etc
             raise RuntimeError(
                 "More than one NXentry group in file, use 'root' argument "
                 "to specify which to load data from, for example"
@@ -115,66 +113,9 @@ def load_nexus(data_file: Union[str, h5py.File], root: str = "/"):
         if groups[nx_instrument]:
             _add_instrument_name(groups[nx_instrument][0], loaded_data)
 
-    # Load positions?
-    # start = timer()
-    # if instrument_file is None:
-    #     instrument_file = data_file
-    # da.coords['position'] = load_positions(instrument_file, dim='spectrum')
-    # print("Loading positions:", timer() - start)
-
     # Return None if we have an empty dataset at this point
     if no_event_data and not loaded_data.keys():
         loaded_data = None
 
     print("Total time:", timer() - total_time)
     return loaded_data
-
-
-def load_positions(instrument_file: Union[str, h5py.File],
-                   entry='/',
-                   dim='position'):
-    """
-    Usage:
-      d = sc.Dataset()
-      d.coords['position'] = sc.neutron.load_positions('LOKI_Definition.hdf5')
-    """
-
-    # TODO: We need to think about how to link the correct position to the
-    # correct pixel/spectrum, as currently the order is just the order in
-    # which the banks are written to the file.
-
-    pattern = 'transformations/location'
-
-    xyz = "xyz"
-    positions = {x: [] for x in xyz}
-
-    with _open_if_path(instrument_file) as f:
-        contents = []
-        f[entry].visit(contents.append)
-
-        for item in contents:
-
-            if item.endswith(pattern) and (item.count('detector') > 0):
-                print(item)
-                root = item.replace(pattern, '')
-                pos = f[item][()] * np.array(f[item].attrs['vector'])
-                offsets = {x: None for x in xyz}
-                size = None
-                for i, x in enumerate(xyz):
-                    entry = join(root, '{}_pixel_offset'.format(x))
-                    if entry in f:
-                        offsets[x] = f[entry][()].astype(
-                            np.float64).ravel() + pos[i]
-                        size = len(offsets[x])
-                for i, x in enumerate(xyz):
-                    if offsets[x] is not None:
-                        positions[x].append(offsets[x])
-                    else:
-                        positions[x].append(np.zeros(size))
-
-    array = np.array([
-        np.concatenate(positions['x']),
-        np.concatenate(positions['y']),
-        np.concatenate(positions['z'])
-    ]).T
-    return sc.Variable([dim], values=array, dtype=sc.dtype.vector_3_float64)

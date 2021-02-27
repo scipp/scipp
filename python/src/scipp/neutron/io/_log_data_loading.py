@@ -63,11 +63,6 @@ def _load_log_data_from_group(group: h5py.Group) -> Tuple[str, sc.Variable]:
             time_unit = ensure_str(group[time_dataset_name].attrs["units"])
         except KeyError:
             time_unit = ""
-        # TODO convert them to datetime?
-        #  should have a units attribute to check,
-        #  they are float32 in seconds relative to start attribute
-        #  in SNS and ISIS files
-        #  uint64 in nanoseconds relative to unix epoch in ESS files
     except KeyError:
         dimension_label = property_name
         is_time_series = False

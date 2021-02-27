@@ -8,4 +8,4 @@ from .._scipp_neutron import *
 from . import diffraction
 from .instrument_view import instrument_view
 from ..compat.mantid import from_mantid, to_mantid, load, fit
-from .io import load_nexus, load_positions
+from .io import load_nexus

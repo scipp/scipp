@@ -279,6 +279,9 @@ def test_load_nexus_loads_event_and_log_data_from_single_file():
     expected_detector_ids = np.array([1, 2, 3])
     assert np.allclose(loaded_data.coords['detector-id'].values,
                        expected_detector_ids)
+    assert "position" not in loaded_data.coords.keys(
+    ), "The NXdetectors had no pixel position datasets so we " \
+       "should not find 'position' coord"
 
     # Logs should have been added to the DataArray as attributes
     assert np.allclose(loaded_data.attrs[log_1.name].values.values,
@@ -315,9 +318,9 @@ def test_load_nexus_loads_pixel_positions_with_event_data():
         event_time_zero=pulse_times,
         event_index=np.array([0, 3, 3, 5]),
     )
-    detector_2_ids = np.array([4, 5, 6, 7])
-    x_pixel_offset_2 = np.array([1.1, 1.2, 1.1, 1.2])
-    y_pixel_offset_2 = np.array([0.1, 0.1, 0.2, 0.2])
+    detector_2_ids = np.array([[4, 5], [6, 7]])
+    x_pixel_offset_2 = np.array([[1.1, 1.2], [1.1, 1.2]])
+    y_pixel_offset_2 = np.array([[0.1, 0.1], [0.2, 0.2]])
 
     builder = InMemoryNexusFileBuilder()
     builder.add_detector(
@@ -333,18 +336,30 @@ def test_load_nexus_loads_pixel_positions_with_event_data():
                  y_offsets=y_pixel_offset_2))
 
     with builder.file() as nexus_file:
-        sc.neutron.load_nexus(nexus_file)
+        loaded_data = sc.neutron.load_nexus(nexus_file)
+
+    # If z offsets are missing they should be zero
+    z_pixel_offset_2 = np.array([[0., 0.], [0., 0.]])
+    expected_pixel_positions = np.array([
+        np.concatenate((x_pixel_offset_1, x_pixel_offset_2.flatten())),
+        np.concatenate((y_pixel_offset_1, y_pixel_offset_2.flatten())),
+        np.concatenate((z_pixel_offset_1, z_pixel_offset_2.flatten()))
+    ]).T
+    assert np.allclose(loaded_data.coords['position'].values,
+                       expected_pixel_positions)
 
     # TODO if there is a depends_on in the NXdetector then warn
     #  the user that transformations are not being processed
 
-    # TODO test zeros if no z_pixel_offset
+    # TODO test what happens if X_pixel_offset datasets are not
+    #  all same shape as detector-ids
 
 
 # TODO test
 #  - pixel positions
-#  Remove and make tickets for any remaining todos
+#  Make tickets for any remaining todos
 #  - time offsets
 #  - transformations (depends_on) chains
 #  - sample and source position
 #  - pulse times
+#  - multidimensional logs (how to label dimensions?)

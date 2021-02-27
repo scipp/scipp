@@ -4,4 +4,4 @@
 
 # flake8: noqa
 
-from .load_nexus import load_nexus, load_positions
+from .load_nexus import load_nexus
