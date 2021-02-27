@@ -61,7 +61,7 @@ jobs:
             conda build --channel conda-forge --python=${{ parameters.py_version }} ./conda
           displayName: 'Package build'
       - task: PublishBuildArtifacts@1
-          inputs:
-            PathtoPublish: "$(conda_dir)/conda-bld/${{ parameters.publish }}"
-            ArtifactName: ${{ parameters.publish }}
-          displayName: 'Publish Conda package artifacts'
+        inputs:
+          PathtoPublish: "$(conda_dir)/conda-bld/${{ parameters.publish }}"
+          ArtifactName: ${{ parameters.publish }}
+        displayName: 'Publish Conda package artifacts'
