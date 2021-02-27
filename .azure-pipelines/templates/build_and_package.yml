@@ -10,24 +10,27 @@
 #     image: 'macOS-10.14'
 #     python: ['3.7']
 
-parameters:
-  - template: parameters.yml
+# parameters:
+#   - template: parameters.yml
 
 
-variables:
-  - template: variables.yml
+# variables:
+#   - template: variables.yml
 
-stages:
-  - template: code_quality_checks.yml
-    parameters:
-      image: ${{ parameters.linux.image }}
+extends:
+  template: parameters.yml
 
-  - stage: 'build_and_test'
-    displayName: 'Build and Test'
+  stages:
+    - template: code_quality_checks.yml
+      parameters:
+        image: ${{ parameters.linux.image }}
 
-    jobs:
-      - template: build_linux.yml
-      - template: build_osx.yml
+    - stage: 'build_and_test'
+      displayName: 'Build and Test'
+
+      jobs:
+        - template: build_linux.yml
+        - template: build_osx.yml
 
 
 
