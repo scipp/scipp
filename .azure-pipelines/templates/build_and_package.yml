@@ -5,7 +5,7 @@ parameters:
     image: 'ubuntu-20.04'
     py_version: ['3.6', '3.7']
     params:
-      ccache: true
+      ccache: false
 - name: 'osx'
   type: object
   default:
