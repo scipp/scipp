@@ -10,7 +10,7 @@ parameters:
 
 stages:
   - stage: 'documentation'
-      displayName: 'Documentation'
+    displayName: 'Documentation'
 
     jobs:
       - job: 'documentation_build'

@@ -40,9 +40,8 @@ stages:
               ${{ each param in os.Value.params }}:
                 ${{ param.Key }}: ${{ param.Value }}
 
-  - stage: 'documentation_build'
-    - template: documentation_build.yml
-      parameters:
-        image: ${{ parameters.platforms.linux.image }}
-        publish: ${{ parameters.publish }}
-        release: ${{ parameters.release }}
+  - template: documentation_build.yml
+    parameters:
+      image: ${{ parameters.platforms.linux.image }}
+      publish: ${{ parameters.publish }}
+      release: ${{ parameters.release }}
