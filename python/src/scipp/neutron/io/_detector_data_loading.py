@@ -7,9 +7,15 @@ from ..._scipp import core as sc
 from ..._bins import bin
 from datetime import datetime
 from warnings import warn
+from itertools import groupby
 
 _detector_dimension = "detector-id"
 _event_dimension = "event"
+
+
+def _all_equal(iterable):
+    g = groupby(iterable)
+    return next(g, True) and not next(g, False)
 
 
 def _get_units(dataset: h5py.Dataset) -> Optional[str]:
@@ -46,7 +52,8 @@ def _iso8601_to_datetime(iso8601: str) -> Optional[datetime]:
         return None
 
 
-def _load_positions(detector_group: h5py.Group) -> Optional[sc.Variable]:
+def _load_positions(detector_group: h5py.Group,
+                    detector_ids_size: int) -> Optional[sc.Variable]:
     try:
         x_positions = detector_group["x_pixel_offset"][...].flatten()
         y_positions = detector_group["y_pixel_offset"][...].flatten()
@@ -56,6 +63,18 @@ def _load_positions(detector_group: h5py.Group) -> Optional[sc.Variable]:
         z_positions = detector_group["z_pixel_offset"][...].flatten()
     except KeyError:
         z_positions = np.zeros_like(x_positions)
+
+    if not _all_equal((x_positions.size, y_positions.size, z_positions.size,
+                       detector_ids_size)):
+        warn(f"Skipped loading pixel positions as pixel offset and id "
+             f"dataset sizes do not match in {detector_group.name}")
+        return None
+
+    if "depends_on" in detector_group:
+        warn(f"Loaded pixel positions for "
+             f"{detector_group.name.split('/')[-1]} are relative to the "
+             f"detector, not sample position, as parsing transformations "
+             f"is not yet implemented")
 
     array = np.array([x_positions, y_positions, z_positions]).T
     return sc.Variable([_detector_dimension],
@@ -124,7 +143,7 @@ def _load_event_group(group: h5py.Group) -> DetectorData:
     detector_group = group.parent
     pixel_positions = None
     if "x_pixel_offset" in detector_group:
-        pixel_positions = _load_positions(detector_group)
+        pixel_positions = _load_positions(detector_group, detector_ids.size)
 
     print(f"Loaded event data from {group.name} containing "
           f"{number_of_events} events")

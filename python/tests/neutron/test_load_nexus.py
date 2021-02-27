@@ -318,6 +318,8 @@ def test_load_nexus_loads_pixel_positions_with_event_data():
         event_time_zero=pulse_times,
         event_index=np.array([0, 3, 3, 5]),
     )
+    # Multidimensional is fine as long as the shape of
+    # the ids and the pixel offsets match
     detector_2_ids = np.array([[4, 5], [6, 7]])
     x_pixel_offset_2 = np.array([[1.1, 1.2], [1.1, 1.2]])
     y_pixel_offset_2 = np.array([[0.1, 0.1], [0.2, 0.2]])
@@ -348,15 +350,61 @@ def test_load_nexus_loads_pixel_positions_with_event_data():
     assert np.allclose(loaded_data.coords['position'].values,
                        expected_pixel_positions)
 
-    # TODO if there is a depends_on in the NXdetector then warn
-    #  the user that transformations are not being processed
 
-    # TODO test what happens if X_pixel_offset datasets are not
-    #  all same shape as detector-ids
+def test_load_nexus_does_not_load_pixel_positions_with_non_matching_shape():
+    pulse_times = np.array([
+        1600766730000000000, 1600766731000000000, 1600766732000000000,
+        1600766733000000000
+    ])
+    event_time_offsets_1 = np.array([456, 743, 347, 345, 632])
+    event_data_1 = EventData(
+        event_id=np.array([1, 2, 3, 1, 3]),
+        event_time_offset=event_time_offsets_1,
+        event_time_zero=pulse_times,
+        event_index=np.array([0, 3, 3, 5]),
+    )
+    detector_1_ids = np.array([0, 1, 2, 3])
+    x_pixel_offset_1 = np.array([0.1, 0.2, 0.1, 0.2])
+    y_pixel_offset_1 = np.array([0.1, 0.1, 0.2, 0.2])
+    z_pixel_offset_1 = np.array([0.1, 0.2, 0.3, 0.4])
+
+    event_time_offsets_2 = np.array([682, 237, 941, 162, 52])
+    event_data_2 = EventData(
+        event_id=np.array([4, 5, 6, 4, 6]),
+        event_time_offset=event_time_offsets_2,
+        event_time_zero=pulse_times,
+        event_index=np.array([0, 3, 3, 5]),
+    )
+    # The size of the ids and the pixel offsets do not match
+    detector_2_ids = np.array([[4, 5, 6, 7, 8]])
+    x_pixel_offset_2 = np.array([1.1, 1.2, 1.1, 1.2])
+    y_pixel_offset_2 = np.array([0.1, 0.1, 0.2, 0.2])
+
+    builder = InMemoryNexusFileBuilder()
+    builder.add_detector(
+        Detector(detector_1_ids,
+                 event_data_1,
+                 x_offsets=x_pixel_offset_1,
+                 y_offsets=y_pixel_offset_1,
+                 z_offsets=z_pixel_offset_1))
+    builder.add_detector(
+        Detector(detector_2_ids,
+                 event_data_2,
+                 x_offsets=x_pixel_offset_2,
+                 y_offsets=y_pixel_offset_2))
+
+    with builder.file() as nexus_file:
+        loaded_data = sc.neutron.load_nexus(nexus_file)
+
+    assert "position" not in loaded_data.coords.keys(
+    ), "One of the NXdetectors pixel positions arrays did not match the " \
+       "size of its detector ids so we should not find 'position' coord"
+    # Even though detector_1's offsets and ids are loaded, we do not
+    # load them as the "position" coord would not have positions for all
+    # the detector ids (loading event data from all detectors is prioritised)
 
 
 # TODO test
-#  - pixel positions
 #  Make tickets for any remaining todos
 #  - time offsets
 #  - transformations (depends_on) chains
