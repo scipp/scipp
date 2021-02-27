@@ -1,5 +1,5 @@
 parameters:
-- name: platform
+- name: image
   default: ''
 
 stages:
@@ -10,7 +10,7 @@ stages:
       - job: 'code_quality_checks'
         displayName: 'Code Quality Checks'
         pool:
-          vmImage: ${{ parameters.platform }}
+          vmImage: ${{ parameters.image }}
         steps:
 
           - task: UsePythonVersion@0

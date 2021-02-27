@@ -1,10 +1,14 @@
 parameters:
-- name: 'ubuntu-20.04'
+- name: 'linux'
   type: object
-  default: ['3.6', '3.7']
-- name: 'macOS-10.14'
+  default:
+    image: 'ubuntu-20.04'
+    python: ['3.6', '3.7']
+- name: 'osx'
   type: object
-  default: ['3.7']
+  default:
+    image: 'macOS-10.14'
+    python: ['3.7']
 
 variables:
   - template: variables.yml
@@ -12,19 +16,19 @@ variables:
 stages:
   - template: code_quality_checks.yml
     parameters:
-      platform: 'ubuntu-20.04'
+      image: ${{ parameters.linux.image }}
 
   - stage: 'build_and_test'
     displayName: 'Build and Test'
 
     jobs:
       - ${{ each os in parameters }}:
-        - ${{ each py in os.Value }}:
+        - ${{ each py in os.Value.python }}:
           - job:
             timeoutInMinutes: 120
-            displayName: ${{ format('{0}-py{1}', os.Key, py) }}
+            displayName: ${{ format('{0}-py{1}', os.Value.image, py) }}
             pool:
-              vmImage: ${{ os.Key }}
+              vmImage: ${{ os.Value.image }}
             variables:
               PYTHON_VERSION: ${{ py }}
             steps:
