@@ -37,7 +37,7 @@ stages:
               py_version: ${{ py }}
               image: ${{ os.Value.image }}
               ${{ each param in os.Value.params }}:
-                ${{ each param.Key }}: ${{ each param.Value }}
+                ${{ param.Key }}: ${{ param.Value }}
 
 
       # - template: build_linux.yml
