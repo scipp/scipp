@@ -11,7 +11,12 @@ parameters:
   - name: OSX_VERSION
     type: string
     default: ''
-
+  - name: label
+    type: string
+    default: 'dev'
+  - name: publish
+    type: boolean
+    default: false
 
 jobs:
   - job:
@@ -25,6 +30,8 @@ jobs:
         value: ${{ parameters.py_version }}
       - name: OSX_VERSION
         value: ${{ parameters.OSX_VERSION }}
+      - name: LABEL
+        value: ${{ parameters.label }}
 
     steps:
       - checkout: self
@@ -44,8 +51,13 @@ jobs:
           conda install --yes anaconda-client conda-build
           conda config --set always_yes yes --set changeps1 no
         displayName: 'Install Conda'
-      - bash: |
-          conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev --python="$PYTHON_VERSION" ./conda
-        env:
-          ANACONDA_TOKEN: $(anaconda_token_secret)
-        displayName: 'Package build'
+      - ${{ if eq(parameters.publish, true) }}:
+        - bash: |
+            conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label $LABEL --python="$PYTHON_VERSION" ./conda
+          env:
+            ANACONDA_TOKEN: $(anaconda_token_secret)
+          displayName: 'Package build and deploy'
+      - ${{ if not(eq(parameters.publish, true)) }}:
+        - bash: |
+            conda build --channel conda-forge --python="$PYTHON_VERSION" ./conda
+          displayName: 'Package build'

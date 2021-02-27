@@ -1,18 +1,23 @@
 parameters:
-- name: 'linux'
+- name: 'platforms'
   type: object
   default:
-    image: 'ubuntu-20.04'
-    py_version: ['3.6', '3.7']
-    params:
-      ccache: false
-- name: 'osx'
-  type: object
-  default:
-    image: 'macOS-10.14'
-    py_version: ['3.7']
-    params:
-      OSX_VERSION: '10.15'
+    linux:
+      image: 'ubuntu-20.04'
+      py_version: ['3.6', '3.7']
+      params:
+        ccache: false
+    osx:
+      image: 'macOS-10.14'
+      py_version: ['3.7']
+      params:
+        OSX_VERSION: '10.15'
+- name: 'publish'
+  type: boolean
+  default: false
+- name: release
+  type: boolean
+  default: false
 
 variables:
   - template: variables.yml
@@ -20,23 +25,24 @@ variables:
 stages:
   - template: code_quality_checks.yml
     parameters:
-      image: ${{ parameters.linux.image }}
+      image: ${{ parameters.platforms.linux.image }}
 
   - stage: 'build_and_test'
     displayName: 'Build and Test'
     jobs:
-      - ${{ each os in parameters }}:
+      - ${{ each os in parameters.platforms }}:
         - ${{ each py in os.Value.py_version }}:
           - template: conda_build.yml
             parameters:
+              publish: ${{ parameters.publish }}
               py_version: ${{ py }}
               image: ${{ os.Value.image }}
               ${{ each param in os.Value.params }}:
                 ${{ param.Key }}: ${{ param.Value }}
 
   - stage: 'documentation_build'
-    displayName: 'Build documentation'
-    jobs:
-      - template: documentation_build.yml
-        parameters:
-          image: ${{ parameters.linux.image }}
+    - template: documentation_build.yml
+      parameters:
+        image: ${{ parameters.platforms.linux.image }}
+        publish: ${{ parameters.publish }}
+        release: ${{ parameters.release }}
