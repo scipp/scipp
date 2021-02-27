@@ -1,45 +1,47 @@
-# parameters:
-# - name: 'linux'
-#   type: object
-#   default:
-#     image: 'ubuntu-20.04'
-#     python: ['3.6', '3.7']
-# - name: 'osx'
-#   type: object
-#   default:
-#     image: 'macOS-10.14'
-#     python: ['3.7']
+parameters:
+- name: 'linux'
+  type: object
+  default:
+    image: 'ubuntu-20.04'
+    py_version: ['3.6', '3.7']
+    params:
+      ccache: true
+- name: 'osx'
+  type: object
+  default:
+    image: 'macOS-10.14'
+    py_version: ['3.7']
+    params:
+      OSX_VERSION: '10.15'
 
 # parameters:
 #   - template: parameters.yml
 
 
-# variables:
-#   - template: variables.yml
+variables:
+  - template: variables.yml
 
-extends:
-  template: parameters.yml
+stages:
+  - template: code_quality_checks.yml
+    parameters:
+      image: ${{ parameters.linux.image }}
 
-  stages:
-    - template: code_quality_checks.yml
-      parameters:
-        image: ${{ parameters.linux.image }}
+  - stage: 'build_and_test'
+    displayName: 'Build and Test'
 
-    - stage: 'build_and_test'
-      displayName: 'Build and Test'
-
-      jobs:
-        - template: build_linux.yml
-        - template: build_osx.yml
-
-
-
-      # - ${{ each os in parameters }}:
-      #   - ${{ each py in os.Value.python }}:
-      #     - template: conda_build.yml
-      #       parameters:
+    jobs:
+      - ${{ each os in parameters }}:
+        - ${{ each py in os.Value.py_version }}:
+          - template: conda_build.yml
+            parameters:
+              py_version: ${{ py }}
+              image: ${{ os.Value.image }}
+              - ${{ each param in os.Value.params }}:
+                ${{ each param.Key }}: ${{ each param.Value }}
 
 
+      # - template: build_linux.yml
+      # - template: build_osx.yml
 
           # - job:
           #   timeoutInMinutes: 120
