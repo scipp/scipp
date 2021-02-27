@@ -36,7 +36,7 @@ stages:
             parameters:
               py_version: ${{ py }}
               image: ${{ os.Value.image }}
-              - ${{ each param in os.Value.params }}:
+              ${{ each param in os.Value.params }}:
                 ${{ each param.Key }}: ${{ each param.Value }}
 
 
