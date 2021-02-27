@@ -5,14 +5,16 @@ parameters:
     linux:
       image: 'ubuntu-20.04'
       py_version: ['3.6', '3.7']
+      publish: 'linux-64'
       params:
         ccache: false
     osx:
       image: 'macOS-10.14'
       py_version: ['3.7']
+      publish: 'osx-64'
       params:
         OSX_VERSION: '10.15'
-- name: 'publish'
+- name: 'deploy'
   type: boolean
   default: false
 - name: release
@@ -34,14 +36,15 @@ stages:
         - ${{ each py in os.Value.py_version }}:
           - template: conda_build.yml
             parameters:
-              publish: ${{ parameters.publish }}
+              deploy: ${{ parameters.deploy }}
               py_version: ${{ py }}
               image: ${{ os.Value.image }}
+              publish: ${{ os.Value.publish }}
               ${{ each param in os.Value.params }}:
                 ${{ param.Key }}: ${{ param.Value }}
 
   - template: documentation_build.yml
     parameters:
       image: ${{ parameters.platforms.linux.image }}
-      publish: ${{ parameters.publish }}
+      deploy: ${{ parameters.deploy }}
       release: ${{ parameters.release }}

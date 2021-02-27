@@ -4,7 +4,7 @@ parameters:
 - name: release
   type: boolean
   default: false
-- name: publish
+- name: deploy
   type: boolean
   default: false
 
@@ -60,7 +60,7 @@ stages:
               ArtifactName: 'documentation'
             displayName: 'Publish documentation artifacts'
 
-          - ${{ if eq(parameters.publish, true) }}:
+          - ${{ if eq(parameters.deploy, true) }}:
             - template: documentation_deploy.yml
               parameters:
                 release: ${{ parameters.release }}

@@ -14,9 +14,12 @@ parameters:
   - name: label
     type: string
     default: 'dev'
-  - name: publish
+  - name: deploy
     type: boolean
     default: false
+  - name: publish
+    type: string
+    default: ''
 
 jobs:
   - job:
@@ -26,12 +29,8 @@ jobs:
       vmImage: ${{ parameters.image }}
     variables:
       - template: variables.yml
-      - name: PYTHON_VERSION
-        value: ${{ parameters.py_version }}
       - name: OSX_VERSION
         value: ${{ parameters.OSX_VERSION }}
-      - name: LABEL
-        value: ${{ parameters.label }}
 
     steps:
       - checkout: self
@@ -51,13 +50,18 @@ jobs:
           conda install --yes anaconda-client conda-build
           conda config --set always_yes yes --set changeps1 no
         displayName: 'Install Conda'
-      - ${{ if eq(parameters.publish, true) }}:
+      - ${{ if eq(parameters.deploy, true) }}:
         - bash: |
-            conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label $LABEL --python="$PYTHON_VERSION" ./conda
+            conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label ${{ parameters.label }} --python=${{ parameters.py_version }} ./conda
           env:
             ANACONDA_TOKEN: $(anaconda_token_secret)
           displayName: 'Package build and deploy'
-      - ${{ if not(eq(parameters.publish, true)) }}:
+      - ${{ if not(eq(parameters.deploy, true)) }}:
         - bash: |
-            conda build --channel conda-forge --python="$PYTHON_VERSION" ./conda
+            conda build --channel conda-forge --python=${{ parameters.py_version }} ./conda
           displayName: 'Package build'
+      - task: PublishBuildArtifacts@1
+          inputs:
+            PathtoPublish: "$(conda_dir)/conda-bld/${{ parameters.publish }}"
+            ArtifactName: ${{ parameters.publish }}
+          displayName: 'Publish Conda package artifacts'
