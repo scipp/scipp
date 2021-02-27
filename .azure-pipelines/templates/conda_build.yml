@@ -1,0 +1,51 @@
+parameters:
+  - name: py_version
+    type: string
+    default: ''
+  - name: image
+    type: string
+    default: ''
+  - name: ccache
+    type: boolean
+    default: false
+  - name: OSX_VERSION
+    type: string
+    default: ''
+
+
+jobs:
+  - job:
+    timeoutInMinutes: 120
+    displayName: ${{ format('{0}-py{1}', parameters.image, parameters.py_version) }}
+    pool:
+      vmImage: ${{ parameters.image }}
+    variables:
+      - template: variables.yml
+      - name: PYTHON_VERSION
+        value: ${{ parameters.py_version }}
+      - name: OSX_VERSION
+        value: ${{ parameters.OSX_VERSION }}
+
+    steps:
+      - checkout: self
+        submodules: true
+
+      - ${{ if eq(parameters.ccache, true) }}:
+        - template: ccache.yml
+
+      - bash: |
+          echo "##vso[task.prependpath]$CONDA/bin"
+          echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+          sudo chown -R $USER $CONDA
+        displayName: 'Configure Conda'
+      - bash: |
+          set -ex
+          conda --version
+          conda install --yes anaconda-client conda-build
+          conda config --set always_yes yes --set changeps1 no
+        displayName: 'Install Conda'
+      - bash: |
+          conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label dev --python="$PYTHON_VERSION" ./conda
+        env:
+          ANACONDA_TOKEN: $(anaconda_token_secret)
+        displayName: 'Package build'

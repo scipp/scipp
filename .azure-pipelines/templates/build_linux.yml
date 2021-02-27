@@ -1,0 +1,10 @@
+parameters:
+  - template: parameters.yml
+
+jobs:
+  - ${{ each py in parameters.linux.py_version }}:
+    - template: conda_build.yml
+      parameters:
+        py_version: ${{ py }}
+        image: ${{ parameters.linux.image }}
+        ccache: true
