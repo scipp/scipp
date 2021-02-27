@@ -15,4 +15,4 @@ steps:
       path: "$(CCACHE_DIR)"
     displayName: 'Process ccache'
   - bash: ccache --show-stats
-      displayName: 'Report ccache statistics'
+    displayName: 'Report ccache statistics'
