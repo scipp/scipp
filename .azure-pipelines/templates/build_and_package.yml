@@ -4,6 +4,7 @@ parameters:
   default:
     linux: ['3.7']
     osx: ['3.7']
+    windows: ['3.7']
 - name: 'settings'
   type: object
   default:
@@ -17,6 +18,9 @@ parameters:
       publish: 'osx-64'
       params:
         OSX_VERSION: '10.15'
+    windows:
+      image: 'windows-latest'
+      publish: 'win-64'
 - name: 'deploy'
   type: boolean
   default: false
