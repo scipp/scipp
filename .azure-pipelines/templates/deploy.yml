@@ -93,7 +93,6 @@ stages:
           - bash: |
               echo "##vso[task.prependpath]$CONDA/bin"
               echo "##vso[task.setvariable variable=conda_dir]$CONDA"
-              sudo chown -R $USER $CONDA
             displayName: 'Configure Conda'
           - bash: |
               set -ex
@@ -111,5 +110,5 @@ stages:
                 downloadPath: '$(Build.StagingDirectory)/packages'
               displayName: 'Retrieve built conda package'
             - bash: |
-                anaconda upload -t ${{ variables.anaconda_token_secret }} '$(Build.StagingDirectory)/packages/${{ package.Key }}/'scipp-*.tar.bz2
+                anaconda upload -t '$(anaconda_token_secret)' '$(Build.StagingDirectory)/packages/${{ package.Key }}/'scipp-*.tar.bz2
               displayName: 'Deploy ${{ package.Key }}'
