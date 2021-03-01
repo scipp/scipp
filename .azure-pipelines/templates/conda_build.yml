@@ -59,7 +59,7 @@ jobs:
           conda config --set always_yes yes --set changeps1 no
         displayName: 'Install Conda'
       - bash: |
-          conda build --user scipp --channel conda-forge --label ${{ parameters.label }} --python=${{ parameters.py_version }} ./conda
+          conda build --user scipp --channel conda-forge --label ${{ parameters.label }} --python=${{ parameters.py_version }} --no-anaconda-upload ./conda
         displayName: 'Build package'
       - task: PublishBuildArtifacts@1
         inputs:
