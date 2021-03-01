@@ -114,7 +114,9 @@ class SciPlot:
             self.params["masks"][name] = parse_params(params=masks,
                                                       defaults={
                                                           "cmap": "gray",
-                                                          "cbar": False
+                                                          "cbar": False,
+                                                          "under_color": None,
+                                                          "over_color": None
                                                       },
                                                       globs=masks_globs)
 
