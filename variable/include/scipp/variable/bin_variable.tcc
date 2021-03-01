@@ -167,8 +167,8 @@ public:
 };
 
 /// Macro for instantiating classes and functions required for support a new
-/// bucket dtype in Variable.
-#define INSTANTIATE_BUCKET_VARIABLE(name, ...)                                 \
+/// bin dtype in Variable.
+#define INSTANTIATE_BIN_VARIABLE(name, ...)                                    \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
   template SCIPP_EXPORT std::tuple<VariableConstView, Dim,                     \
                                    typename __VA_ARGS__::const_element_type>   \

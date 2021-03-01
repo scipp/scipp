@@ -100,13 +100,13 @@ SCIPP_VARIABLE_EXPORT bool is_bins(const VariableConstView &var);
 /// `transform`.
 class SCIPP_VARIABLE_EXPORT VariableFactory {
 private:
-  auto bucket_dtype() const noexcept { return dtype<void>; }
-  template <class T> auto bucket_dtype(const T &var) const noexcept {
+  auto bin_dtype() const noexcept { return dtype<void>; }
+  template <class T> auto bin_dtype(const T &var) const noexcept {
     return is_bins(var) ? var.dtype() : dtype<void>;
   }
   template <class T, class... Ts>
-  auto bucket_dtype(const T &var, const Ts &... vars) const noexcept {
-    return is_bins(var) ? var.dtype() : bucket_dtype(vars...);
+  auto bin_dtype(const T &var, const Ts &... vars) const noexcept {
+    return is_bins(var) ? var.dtype() : bin_dtype(vars...);
   }
 
 public:
@@ -120,7 +120,7 @@ public:
   Variable create(const DType elem_dtype, const Dimensions &dims,
                   const units::Unit &unit, const bool with_variances,
                   const Parents &... parents) const {
-    const auto key = bucket_dtype(parents...);
+    const auto key = bin_dtype(parents...);
     return m_makers.at(key == dtype<void> ? elem_dtype : key)
         ->create(elem_dtype, dims, unit, with_variances,
                  std::vector<VariableConstView>{parents...});
