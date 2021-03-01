@@ -26,4 +26,4 @@ stages:
           vmImage: ${{ parameters.image }}
         steps:
           - ${{ each param in parameters.package_list }}:
-            - script: echo ${{ param }}
+            - script: echo ${{ param.Key }}

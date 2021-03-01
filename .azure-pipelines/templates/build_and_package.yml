@@ -47,7 +47,7 @@ stages:
     parameters:
       image: ${{ parameters.platforms.linux.image }}
       release: ${{ parameters.release }}
-      package_name: ${{ parameters.platforms.linux.publish }}-py${{ parameters.platforms.linux.py_version }}[0]
+      package_name: ${{ parameters.platforms.linux.publish }}-py${{ parameters.platforms.linux.py_version[0] }}
 
   - ${{ if eq(parameters.deploy, true) }}:
     - template: deploy.yml
@@ -57,7 +57,7 @@ stages:
         package_list:
           ${{ each os in parameters.platforms }}:
             ${{ each py in os.Value.py_version }}:
-              - '${{ os.Value.publish }}-py${{ py }}'
+              ${{ os.Value.publish }}-py${{ py }}: true
 
   - ${{ if not(eq(parameters.deploy, true)) }}:
     - template: test_params.yml
@@ -67,4 +67,4 @@ stages:
         package_list:
           ${{ each os in parameters.platforms }}:
             ${{ each py in os.Value.py_version }}:
-              - '${{ os.Value.publish }}-py${{ py }}'
+              ${{ os.Value.publish }}-py${{ py }}: true
