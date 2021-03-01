@@ -15,3 +15,4 @@ extends:
     py_versions:
       linux: ['3.6', '3.7']
       osx: ['3.7']
+    deploy: true
