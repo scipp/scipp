@@ -27,7 +27,7 @@ parameters:
 stages:
   - template: code_quality_checks.yml
     parameters:
-      image: ${{ parameters.platforms.linux.image }}
+      image: ${{ parameters.settings.linux.image }}
 
   - stage: 'build_and_test'
     displayName: 'Build and Test'
