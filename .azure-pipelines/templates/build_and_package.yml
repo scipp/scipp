@@ -4,7 +4,7 @@ parameters:
   default:
     linux:
       image: 'ubuntu-20.04'
-      py_version: ['3.7', '3.6']
+      py_version: ['3.7']
       publish: 'linux-64'
       params:
         ccache: false
@@ -21,9 +21,6 @@ parameters:
   type: boolean
   default: false
 
-variables:
-  - template: variables.yml
-
 stages:
   - template: code_quality_checks.yml
     parameters:
@@ -36,7 +33,6 @@ stages:
         - ${{ each py in os.Value.py_version }}:
           - template: conda_build.yml
             parameters:
-              deploy: ${{ parameters.deploy }}
               py_version: ${{ py }}
               image: ${{ os.Value.image }}
               publish: ${{ os.Value.publish }}
@@ -47,20 +43,10 @@ stages:
     parameters:
       image: ${{ parameters.platforms.linux.image }}
       release: ${{ parameters.release }}
-      package_name: ${{ parameters.platforms.linux.publish }}-py${{ parameters.platforms.linux.py_version[0] }}
+      package_name: ${{ parameters.platforms.linux.publish }}-py3.7
 
   - ${{ if eq(parameters.deploy, true) }}:
     - template: deploy.yml
-      parameters:
-        image: ${{ parameters.platforms.linux.image }}
-        release: ${{ parameters.release }}
-        package_list:
-          ${{ each os in parameters.platforms }}:
-            ${{ each py in os.Value.py_version }}:
-              ${{ os.Value.publish }}-py${{ py }}: true
-
-  - ${{ if not(eq(parameters.deploy, true)) }}:
-    - template: test_params.yml
       parameters:
         image: ${{ parameters.platforms.linux.image }}
         release: ${{ parameters.release }}

@@ -13,10 +13,7 @@ parameters:
     default: ''
   - name: label
     type: string
-    default: 'dev'
-  - name: deploy
-    type: boolean
-    default: false
+    default: 'test'
   - name: publish
     type: string
     default: ''
@@ -28,7 +25,7 @@ jobs:
     pool:
       vmImage: ${{ parameters.image }}
     variables:
-      - template: variables.yml
+      # - template: variables.yml
       - name: OSX_VERSION
         value: ${{ parameters.OSX_VERSION }}
 

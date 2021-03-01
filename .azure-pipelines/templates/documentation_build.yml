@@ -33,7 +33,7 @@ stages:
               downloadType: 'single'
               artifactName: ${{ parameters.package_name }}
               downloadPath: '$(packages_dir)'
-            displayName: 'Download previously build Conda package'
+            displayName: 'Download previously built Conda package'
           - bash: |
               echo "##vso[task.prependpath]$CONDA/bin"
             displayName: Add Conda to PATH
@@ -59,8 +59,3 @@ stages:
               PathtoPublish: '$(docs_build_dir)'
               ArtifactName: 'documentation'
             displayName: 'Publish documentation artifacts'
-
-          # - ${{ if eq(parameters.deploy, true) }}:
-          #   - template: documentation_deploy.yml
-          #     parameters:
-          #       release: ${{ parameters.release }}

@@ -7,4 +7,3 @@ extends:
   template: templates/build_and_package.yml
   parameters:
     deploy: true
-

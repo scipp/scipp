@@ -11,12 +11,7 @@ pr:
 
 extends:
   template: templates/build_and_package.yml
+  parameters:
+    platforms:
+      py_version: ['3.6', '3.7']
 
-
-
-  # - stage: 'post_build_checks'
-  #   displayName: 'Post Build Checks'
-
-  #   jobs:
-  #     - template: templates/documentation_build.yml
-  #     - template: templates/test_can_install_and_import.yml
