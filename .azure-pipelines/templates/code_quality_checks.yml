@@ -1,5 +1,6 @@
 parameters:
 - name: image
+  type: string
   default: ''
 
 stages:

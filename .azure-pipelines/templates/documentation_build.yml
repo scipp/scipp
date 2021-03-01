@@ -4,9 +4,9 @@ parameters:
 - name: release
   type: boolean
   default: false
-- name: deploy
-  type: boolean
-  default: false
+- name: package_name
+  type: string
+  default: ''
 
 stages:
   - stage: 'documentation'
@@ -31,7 +31,7 @@ stages:
               buildType: 'current'
               specificBuildWithTriggering: true
               downloadType: 'single'
-              artifactName: 'linux-64'
+              artifactName: ${{ parameters.package_name }}
               downloadPath: '$(packages_dir)'
             displayName: 'Download previously build Conda package'
           - bash: |
@@ -43,7 +43,7 @@ stages:
           - bash: |
               set -ex
               source activate scipp-developer
-              conda install "$(packages_dir)/linux-64/"scipp-*-py37_*.tar.bz2
+              conda install "$(packages_dir)/${{ parameters.package_name }}/"scipp-*.tar.bz2
             displayName: 'Install Scipp package'
           - bash: |
               set -ex
@@ -60,7 +60,7 @@ stages:
               ArtifactName: 'documentation'
             displayName: 'Publish documentation artifacts'
 
-          - ${{ if eq(parameters.deploy, true) }}:
-            - template: documentation_deploy.yml
-              parameters:
-                release: ${{ parameters.release }}
+          # - ${{ if eq(parameters.deploy, true) }}:
+          #   - template: documentation_deploy.yml
+          #     parameters:
+          #       release: ${{ parameters.release }}

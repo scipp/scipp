@@ -50,18 +50,11 @@ jobs:
           conda install --yes anaconda-client conda-build
           conda config --set always_yes yes --set changeps1 no
         displayName: 'Install Conda'
-      - ${{ if eq(parameters.deploy, true) }}:
-        - bash: |
-            conda build --user scipp --token "$ANACONDA_TOKEN" --channel conda-forge --label ${{ parameters.label }} --python=${{ parameters.py_version }} ./conda
-          env:
-            ANACONDA_TOKEN: $(anaconda_token_secret)
-          displayName: 'Package build and deploy'
-      - ${{ if not(eq(parameters.deploy, true)) }}:
-        - bash: |
-            conda build --channel conda-forge --python=${{ parameters.py_version }} ./conda
-          displayName: 'Package build'
+      - bash: |
+          conda build --user scipp --channel conda-forge --label ${{ parameters.label }} --python=${{ parameters.py_version }} ./conda
+        displayName: 'Build package'
       - task: PublishBuildArtifacts@1
         inputs:
           PathtoPublish: "$(conda_dir)/conda-bld/${{ parameters.publish }}"
-          ArtifactName: ${{ parameters.publish }}
+          ArtifactName: "${{ parameters.publish }}-py${{ parameters.py_version }}"
         displayName: 'Publish Conda package artifacts'

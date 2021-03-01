@@ -1,0 +1,29 @@
+parameters:
+- name: release
+  type: boolean
+  default: False
+- name: documentation_artefact_path
+  type: string
+  default: '$(Build.StagingDirectory)/documentation'
+- name: documentation_repo_path
+  type: string
+  default: '$(Build.StagingDirectory)/git'
+- name: image
+  type: string
+  default: ''
+- name: package_list
+  type: object
+  default: []
+
+stages:
+  - stage: 'deploy'
+    displayName: 'Deploy'
+
+    jobs:
+      - job: 'deploy_docs_and_packages'
+        displayName: 'Deploy docs and packages'
+        pool:
+          vmImage: ${{ parameters.image }}
+        steps:
+          - ${{ each param in parameters.package_list }}:
+            - script: echo ${{ param }}

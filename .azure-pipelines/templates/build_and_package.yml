@@ -4,7 +4,7 @@ parameters:
   default:
     linux:
       image: 'ubuntu-20.04'
-      py_version: ['3.6', '3.7']
+      py_version: ['3.7', '3.6']
       publish: 'linux-64'
       params:
         ccache: false
@@ -46,5 +46,25 @@ stages:
   - template: documentation_build.yml
     parameters:
       image: ${{ parameters.platforms.linux.image }}
-      deploy: ${{ parameters.deploy }}
       release: ${{ parameters.release }}
+      package_name: ${{ parameters.platforms.linux.publish }}-py${{ parameters.platforms.linux.py_version }}[0]
+
+  - ${{ if eq(parameters.deploy, true) }}:
+    - template: deploy.yml
+      parameters:
+        image: ${{ parameters.platforms.linux.image }}
+        release: ${{ parameters.release }}
+        package_list:
+          ${{ each os in parameters.platforms }}:
+            ${{ each py in os.Value.py_version }}:
+              - '${{ os.Value.publish }}-py${{ py }}'
+
+  - ${{ if not(eq(parameters.deploy, true)) }}:
+    - template: test_params.yml
+      parameters:
+        image: ${{ parameters.platforms.linux.image }}
+        release: ${{ parameters.release }}
+        package_list:
+          ${{ each os in parameters.platforms }}:
+            ${{ each py in os.Value.py_version }}:
+              - '${{ os.Value.publish }}-py${{ py }}'
