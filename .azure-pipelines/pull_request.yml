@@ -12,6 +12,4 @@ pr:
 extends:
   template: templates/build_and_package.yml
   parameters:
-    platforms:
-      py_version: ['3.6', '3.7']
-
+    platforms.linux.py_version: ['3.6', '3.7']
