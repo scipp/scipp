@@ -5,11 +5,11 @@ parameters:
 
 stages:
   - stage: 'code_quality'
-    displayName: 'Code Quality Checks'
+    displayName: 'Code Quality'
 
     jobs:
       - job: 'code_quality_checks'
-        displayName: 'Code Quality Checks'
+        displayName: 'Code Quality'
         pool:
           vmImage: ${{ parameters.image }}
         steps:

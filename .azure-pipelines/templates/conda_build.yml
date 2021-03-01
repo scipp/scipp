@@ -55,7 +55,7 @@ jobs:
       - bash: |
           set -ex
           conda --version
-          conda install --yes conda-build
+          conda install --yes anaconda-client conda-build
           conda config --set always_yes yes --set changeps1 no
         displayName: 'Install Conda'
       - bash: |
