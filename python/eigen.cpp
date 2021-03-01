@@ -2,6 +2,7 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Neil Vaytet
+#include <Eigen/Geometry>
 
 #include "numpy.h"
 #include "pybind11.h"
