@@ -25,7 +25,6 @@ jobs:
     pool:
       vmImage: ${{ parameters.image }}
     variables:
-      # - template: variables.yml
       - name: OSX_VERSION
         value: ${{ parameters.OSX_VERSION }}
 

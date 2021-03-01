@@ -6,4 +6,7 @@ pr: none
 extends:
   template: templates/build_and_package.yml
   parameters:
+    py_versions:
+      linux: ['3.6', '3.7']
+      osx: ['3.6', '3.7']
     deploy: true
