@@ -49,7 +49,7 @@ set(SRC_FILES
     slice.cpp
     sort.cpp
     string.cpp
-    variable_instantiate_bucket_elements.cpp
+    variable_instantiate_bin_elements.cpp
     variable_instantiate_dataset.cpp
     variable_reduction.cpp
 )
