@@ -4,6 +4,7 @@
 
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
+#include "scipp/dataset/string.h"
 #include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
 
@@ -19,7 +20,6 @@ protected:
   Variable expected = makeVariable<double>(Dims{Dim::Event}, Shape{5}, units::m,
                                            Values{1, 2, 6, 8, 10});
   DataArray array = DataArray(var, {{Dim::X, var + var}});
-  DataArray expected_array = DataArray(expected, {{Dim::X, var + var}});
 };
 
 TEST_F(BinnedArithmeticTest, fail_modify_slice_inplace_var) {
@@ -45,5 +45,32 @@ TEST_F(BinnedArithmeticTest, modify_slice_inplace_var) {
 TEST_F(BinnedArithmeticTest, modify_slice_inplace_array) {
   Variable binned = make_bins(indices, Dim::Event, array);
   binned.slice({Dim::X, 1}) *= 2.0 * units::one;
+  DataArray expected_array = DataArray(expected, {{Dim::X, var + var}});
   EXPECT_EQ(binned, make_bins(indices, Dim::Event, expected_array));
+}
+
+TEST_F(BinnedArithmeticTest, var_and_var) {
+  Variable binned = make_bins(indices, Dim::Event, var);
+  EXPECT_EQ(binned + binned, make_bins(indices, Dim::Event, var + var));
+}
+
+TEST_F(BinnedArithmeticTest, fail_array_and_array) {
+  const auto binned = make_bins(indices, Dim::Event, array);
+  // In principle the operation could be allowed in this case since the coords
+  // match, but at this point our implementation is no sophisticated enough to
+  // support coord, mask, and attr handling for binned data in such binary
+  // operations.
+  EXPECT_THROW(binned + binned, except::BinnedDataError);
+}
+
+TEST_F(BinnedArithmeticTest, var_and_array) {
+  const auto expected_array = DataArray(var + var, {{Dim::X, var + var}});
+  Variable binned_var = make_bins(indices, Dim::Event, var);
+  Variable binned_arr = make_bins(indices, Dim::Event, array);
+  const auto var_arr = binned_var + binned_arr;
+  const auto arr_var = binned_arr + binned_var;
+  EXPECT_EQ(var_arr.dtype(), binned_arr.dtype());
+  EXPECT_EQ(arr_var.dtype(), binned_arr.dtype());
+  EXPECT_EQ(var_arr, make_bins(indices, Dim::Event, expected_array));
+  EXPECT_EQ(arr_var, make_bins(indices, Dim::Event, expected_array));
 }
