@@ -7,6 +7,9 @@
 
 #include "dataset_test_common.h"
 
+using namespace scipp;
+using namespace scipp::dataset;
+
 std::vector<bool> make_bools(const scipp::index size,
                              std::initializer_list<bool> pattern) {
   std::vector<bool> result(size);
@@ -120,7 +123,7 @@ Dataset DatasetFactory3D::make(const bool randomMasks) {
 Dataset make_empty() { return Dataset(); }
 
 Dataset make_1d_masked() {
-  Random random;
+  scipp::testing::Random random;
   Dataset ds;
   ds.setData("data_x",
              makeVariable<double>(Dimensions{Dim::X, 10}, Values(random(10))));
@@ -151,7 +154,7 @@ DataArray make_table(const scipp::index size, const bool with_variances,
                                       core::DType, core::DType>
                          dtypes,
                      const std::optional<uint32_t> seed) {
-  Random rand;
+  scipp::testing::Random rand;
   if (seed.has_value()) {
     rand.seed(*seed);
   }

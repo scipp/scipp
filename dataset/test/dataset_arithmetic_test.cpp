@@ -57,7 +57,7 @@ std::tuple<Dataset, Dataset> generateBinaryOpTestCase() {
   constexpr auto lx = 5;
   constexpr auto ly = 5;
 
-  Random rand;
+  scipp::testing::Random rand;
 
   const auto coordX = rand(lx);
   const auto coordY = rand(ly);

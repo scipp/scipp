@@ -24,7 +24,7 @@ auto make_2d_events(const scipp::index size, const scipp::index count) {
   }
   auto weights =
       makeVariable<double>(Dims{Dim::Event}, Shape{row}, Values{}, Variances{});
-  Random rand(0.0, 1000.0);
+  testing::Random rand(0.0, 1000.0);
   auto y = makeVariable<double>(Dims{Dim::Event}, Shape{row},
                                 Values(rand(size * count)));
   DataArray buf(weights, {{Dim::Y, y}});

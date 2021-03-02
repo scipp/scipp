@@ -16,7 +16,7 @@ using namespace scipp;
 auto make_2d_events_coord(const scipp::index size, const scipp::index count) {
   auto var = makeVariable<event_list<double>>(Dims{Dim::X}, Shape{size});
   auto vals = var.values<event_list<double>>();
-  Random rand(0.0, 1000.0);
+  testing::Random rand(0.0, 1000.0);
   for (scipp::index i = 0; i < size; ++i) {
     auto data = rand(count);
     vals[i].assign(data.begin(), data.end());

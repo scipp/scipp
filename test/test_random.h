@@ -11,6 +11,7 @@
 #include "scipp/common/traits.h"
 #include "scipp/variable/variable.h"
 
+namespace scipp::testing {
 namespace detail {
 template <class T> struct identity {
   constexpr auto operator()(const T &x) const { return x; }
@@ -84,3 +85,4 @@ public:
 
 scipp::Variable makeRandom(const scipp::Dimensions &dims, double min = -2.0,
                            double max = 2.0);
+} // namespace scipp::testing

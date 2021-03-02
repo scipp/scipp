@@ -14,6 +14,7 @@
 
 using namespace scipp;
 using namespace scipp::dataset;
+using namespace scipp::testing;
 
 TEST(SliceTest, test_construction) {
   Slice point(Dim::X, 0);
