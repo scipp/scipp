@@ -20,4 +20,6 @@ struct index_in_tuple<T, std::tuple<U, Types...>> {
       1 + index_in_tuple<T, std::tuple<Types...>>::value;
 };
 
+template <class T> constexpr bool always_false = false;
+
 } // namespace scipp::common
