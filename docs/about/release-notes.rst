@@ -15,6 +15,7 @@ Features
 * Add modulo operations [#1660](https://github.com/scipp/scipp/pull/1660).
 * Add scaling operations for Variables of type ``vector_3_float64``.
 * ``sum`` and ``mean`` implemented for Variables of type ``vector_3_float64``. 
+* Add ``ones`` and ``empty`` creation functions, similar to what is known from numpy `#1732 <https://github.com/scipp/scipp/pull/1732>`_.
 * ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
 * ``scipp.neutron`` (now ``scippneutron``)
 
