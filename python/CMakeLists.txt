@@ -11,6 +11,7 @@ pybind11_add_module(
   choose.cpp
   comparison.cpp
   counts.cpp
+  creation.cpp
   cumulative.cpp
   dataset.cpp
   detail.cpp
