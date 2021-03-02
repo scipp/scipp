@@ -14,9 +14,15 @@ namespace scipp::core {
 
 struct SCIPP_CORE_EXPORT DType {
   int32_t index;
-  bool operator==(const DType &t) const noexcept { return index == t.index; }
-  bool operator!=(const DType &t) const noexcept { return index != t.index; }
-  bool operator<(const DType &t) const noexcept { return index < t.index; }
+  constexpr bool operator==(const DType &t) const noexcept {
+    return index == t.index;
+  }
+  constexpr bool operator!=(const DType &t) const noexcept {
+    return index != t.index;
+  }
+  constexpr bool operator<(const DType &t) const noexcept {
+    return index < t.index;
+  }
 };
 
 // Note that previously we where using std::type_info to obtain a unique ID,
