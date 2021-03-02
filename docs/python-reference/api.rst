@@ -25,6 +25,8 @@ Creation functions
    array
    scalar
    zeros
+   ones
+   empty
 
 Free functions
 ==============

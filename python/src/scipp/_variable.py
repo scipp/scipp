@@ -2,16 +2,20 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Matthew Andrew
 from . import units, Unit, dtype, Variable
+from ._scipp import core as _cpp
 from typing import Any, Sequence, Union
 import numpy
 
 
 def scalar(value: Any,
            variance: Any = None,
-           unit: Unit = units.dimensionless,
+           unit: Union[Unit, str] = units.dimensionless,
            dtype: type(dtype.float64) = None) -> Variable:
     """Constructs a zero dimensional :class:`Variable` with a unit and optional
     variance.
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
+              :py:func:`scipp.empty` :py:func:`scipp.array`
 
     :param value: Initial value.
     :param variance: Optional, initial variance, Default=None
@@ -40,13 +44,16 @@ def scalar(value: Any,
 def zeros(*,
           dims: Sequence[str],
           shape: Sequence[int],
-          unit: Unit = units.dimensionless,
+          unit: Union[Unit, str] = units.dimensionless,
           dtype: type(dtype.float64) = dtype.float64,
           variances: bool = False) -> Variable:
     """Constructs a :class:`Variable` with default initialised values with
     given dimension labels and shape.
     Optionally can add default initialised variances.
     Only keyword arguments accepted.
+
+    :seealso: :py:func:`scipp.ones` :py:func:`scipp.empty`
+              :py:func:`scipp.scalar` :py:func:`scipp.array`
 
     :param dims: Dimension labels.
     :param shape: Dimension sizes.
@@ -64,15 +71,64 @@ def zeros(*,
                     variances=variances)
 
 
+def ones(*,
+         dims: Sequence[str],
+         shape: Sequence[int],
+         unit: Union[Unit, str] = units.dimensionless,
+         dtype: type(dtype.float64) = dtype.float64,
+         variances: bool = False) -> Variable:
+    """Constructs a :class:`Variable` with values initialized to 1 with
+    given dimension labels and shape.
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.empty`
+              :py:func:`scipp.scalar` :py:func:`scipp.array`
+
+    :param dims: Dimension labels.
+    :param shape: Dimension sizes.
+    :param unit: Optional, unit of contents. Default=dimensionless
+    :param dtype: Optional, type of underlying data. Default=float64
+    :param variances: Optional, boolean flag, if True includes variances
+                      initialised to 1. Default=False
+    """
+    return _cpp.ones(dims, shape, unit, dtype, variances)
+
+
+def empty(*,
+          dims: Sequence[str],
+          shape: Sequence[int],
+          unit: Union[Unit, str] = units.dimensionless,
+          dtype: type(dtype.float64) = dtype.float64,
+          variances: bool = False) -> Variable:
+    """Constructs a :class:`Variable` with uninitialized values with given
+    dimension labels and shape. USE WITH CARE! Uninitialized means that values
+    have undetermined values. Consider using :py:func:`scipp.zeros` unless you
+    know what you are doing and require maximum performance.
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
+              :py:func:`scipp.scalar` :py:func:`scipp.array`
+
+    :param dims: Dimension labels.
+    :param shape: Dimension sizes.
+    :param unit: Optional, unit of contents. Default=dimensionless
+    :param dtype: Optional, type of underlying data. Default=float64
+    :param variances: Optional, boolean flag, if True includes uninitialized
+                      variances. Default=False
+    """
+    return _cpp.empty(dims, shape, unit, dtype, variances)
+
+
 def array(*,
           dims: Sequence[str],
           values: Union[numpy.ndarray, list],
           variances: Union[numpy.ndarray, list] = None,
-          unit: Unit = units.dimensionless,
+          unit: Union[Unit, str] = units.dimensionless,
           dtype: type(dtype.float64) = None) -> Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
     values and optional variances. Dimension and value shape must match.
     Only keyword arguments accepted.
+
+    :seealso: :py:func:`scipp.zeros` :py:func:`scipp.ones`
+              :py:func:`scipp.empty` :py:func:`scipp.scalar`
 
     :param dims: Dimension labels.
     :param values: Initial values.

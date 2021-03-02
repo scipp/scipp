@@ -4,10 +4,24 @@
 /// @author Simon Heybrock
 #include "scipp/core/element/creation.h"
 #include "scipp/variable/creation.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/variable_factory.h"
 
 namespace scipp::variable {
+
+Variable empty(const Dimensions &dims, const units::Unit &unit,
+               const DType type, const bool variances) {
+  return variableFactory().create(type, dims, unit, variances);
+}
+
+Variable ones(const Dimensions &dims, const units::Unit &unit, const DType type,
+              const bool variances) {
+  const auto prototype =
+      variances ? Variable{type, Dimensions{}, unit, Values{1}, Variances{1}}
+                : Variable{type, Dimensions{}, unit, Values{1}};
+  return broadcast(prototype, dims);
+}
 
 /// Create empty (uninitialized) variable with same parameters as prototype.
 ///
