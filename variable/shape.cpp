@@ -21,7 +21,7 @@ void expect_same_volume(const Dimensions &old_dims,
 }
 
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
-  Variable result(var, dims);
+  auto result = variableFactory().empty_like(var, dims);
   result.data().copy(var, result);
   return result;
 }
