@@ -9,14 +9,11 @@ set(INC_FILES test_macros.h test_matchers.h test_operations.h test_random.h)
 set(SRC_FILES test_matchers.cpp test_random.cpp)
 
 add_library(${TARGET_NAME} STATIC ${INC_FILES} ${SRC_FILES})
-target_link_libraries(
-  ${TARGET_NAME} PUBLIC scipp-common scipp-core scipp-variable scipp-units
-)
-
-target_link_libraries(
-  ${TARGET_NAME} INTERFACE ${GTEST_LIBRARIES} ${GMOCK_LIBRARIES}
-)
 
 target_include_directories(
-  ${TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+    ${TARGET_NAME} PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+)
+
+target_link_libraries(
+  ${TARGET_NAME} PUBLIC scipp-common scipp-core scipp-variable scipp-dataset scipp-units ${GTEST_LIBRARIES} ${GMOCK_LIBRARIES}
 )
