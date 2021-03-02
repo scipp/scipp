@@ -9,7 +9,7 @@ import numpy
 
 def scalar(value: Any,
            variance: Any = None,
-           unit: Unit = units.dimensionless,
+           unit: Union[Unit, str] = units.dimensionless,
            dtype: type(dtype.float64) = None) -> Variable:
     """Constructs a zero dimensional :class:`Variable` with a unit and optional
     variance.
@@ -44,7 +44,7 @@ def scalar(value: Any,
 def zeros(*,
           dims: Sequence[str],
           shape: Sequence[int],
-          unit: Unit = units.dimensionless,
+          unit: Union[Unit, str] = units.dimensionless,
           dtype: type(dtype.float64) = dtype.float64,
           variances: bool = False) -> Variable:
     """Constructs a :class:`Variable` with default initialised values with
@@ -74,7 +74,7 @@ def zeros(*,
 def ones(*,
          dims: Sequence[str],
          shape: Sequence[int],
-         unit: Unit = units.dimensionless,
+         unit: Union[Unit, str] = units.dimensionless,
          dtype: type(dtype.float64) = dtype.float64,
          variances: bool = False) -> Variable:
     """Constructs a :class:`Variable` with values initialized to 1 with
@@ -96,7 +96,7 @@ def ones(*,
 def empty(*,
           dims: Sequence[str],
           shape: Sequence[int],
-          unit: Unit = units.dimensionless,
+          unit: Union[Unit, str] = units.dimensionless,
           dtype: type(dtype.float64) = dtype.float64,
           variances: bool = False) -> Variable:
     """Constructs a :class:`Variable` with uninitialized values with given
@@ -121,7 +121,7 @@ def array(*,
           dims: Sequence[str],
           values: Union[numpy.ndarray, list],
           variances: Union[numpy.ndarray, list] = None,
-          unit: Unit = units.dimensionless,
+          unit: Union[Unit, str] = units.dimensionless,
           dtype: type(dtype.float64) = None) -> Variable:
     """Constructs a :class:`Variable` with given dimensions, containing given
     values and optional variances. Dimension and value shape must match.
