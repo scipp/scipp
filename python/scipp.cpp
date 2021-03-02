@@ -74,6 +74,11 @@ PYBIND11_MODULE(_scipp, m) {
 #else
   m.attr("__version__") = py::str("unknown version");
 #endif
+#ifdef NDEBUG
+  m.attr("_debug_") = py::cast(false);
+#else
+  m.attr("_debug_") = py::cast(true);
+#endif
   init_core(m);
   init_detail(m);
 }
