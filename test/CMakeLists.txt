@@ -6,7 +6,7 @@
 set(TARGET_NAME "scipp_test_helpers")
 set(INC_FILES test_macros.h test_matchers.h test_operations.h test_random.h)
 
-set(SRC_FILES test_random.cpp)
+set(SRC_FILES test_matchers.cpp test_random.cpp)
 
 add_library(${TARGET_NAME} STATIC ${INC_FILES} ${SRC_FILES})
 target_link_libraries(
