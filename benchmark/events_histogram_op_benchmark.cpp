@@ -5,7 +5,7 @@
 
 #include <benchmark/benchmark.h>
 
-#include "random.h"
+#include "test_random.h"
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/operations.h"

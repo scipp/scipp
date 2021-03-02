@@ -2,8 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #pragma once
 
-#include "random.h"
 #include "test_macros.h"
+#include "test_random.h"
 #include <gtest/gtest.h>
 
 #include "scipp/core/dimensions.h"

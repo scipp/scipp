@@ -10,7 +10,7 @@
 #include "scipp/variable/bins.h"
 #include "scipp/variable/operations.h"
 
-#include "../test/random.h"
+#include "../test/test_random.h"
 
 using namespace scipp;
 
