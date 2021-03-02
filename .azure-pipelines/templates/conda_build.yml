@@ -1,22 +1,19 @@
 parameters:
-  - name: py_version
-    type: string
-    default: ''
-  - name: image
-    type: string
-    default: ''
-  - name: ccache
-    type: boolean
-    default: false
-  - name: OSX_VERSION
-    type: string
-    default: ''
-  - name: label
-    type: string
-    default: 'test'
-  - name: publish
-    type: string
-    default: ''
+- name: py_version
+  type: string
+  default: ''
+- name: image
+  type: string
+  default: ''
+- name: ccache
+  type: boolean
+  default: false
+- name: OSX_VERSION
+  type: string
+  default: ''
+- name: publish
+  type: string
+  default: ''
 
 jobs:
   - job:
@@ -55,11 +52,11 @@ jobs:
       - bash: |
           set -ex
           conda --version
-          conda install --yes anaconda-client conda-build
+          conda install --yes conda-build
           conda config --set always_yes yes --set changeps1 no
         displayName: 'Install Conda'
       - bash: |
-          conda build --user scipp --channel conda-forge --label ${{ parameters.label }} --python=${{ parameters.py_version }} --no-anaconda-upload ./conda
+          conda build --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload ./conda
         displayName: 'Build package'
       - task: PublishBuildArtifacts@1
         inputs:
