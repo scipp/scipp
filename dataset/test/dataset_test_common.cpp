@@ -146,21 +146,29 @@ Dataset make_dataset_x() {
   return d;
 }
 
-DataArray make_table(const scipp::index size) {
+DataArray make_table(const scipp::index size, const bool with_variances,
+                     const std::tuple<core::DType, core::DType, core::DType,
+                                      core::DType, core::DType>
+                         dtypes,
+                     const std::optional<uint32_t> seed) {
   Random rand;
-  rand.seed(0);
+  if (seed.has_value()) {
+    rand.seed(*seed);
+  }
   const Dimensions dims(Dim::Row, size);
-  const auto data = makeVariable<double>(dims, Values(rand(dims.volume())),
-                                         Variances(rand(dims.volume())));
-  const auto x = makeVariable<double>(dims, Values(rand(dims.volume())));
-  const auto y = makeVariable<double>(dims, Values(rand(dims.volume())));
-  const auto group = astype(
-      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
-  const auto group2 = astype(
-      makeVariable<double>(dims, Values(rand(dims.volume()))), dtype<int64_t>);
+  const auto data =
+      rand.make_variable(dims, std::get<0>(dtypes), units::one, with_variances);
+  const auto x =
+      rand.make_variable(dims, std::get<1>(dtypes), units::one, false);
+  const auto y =
+      rand.make_variable(dims, std::get<2>(dtypes), units::one, false);
+  const auto group1 =
+      rand.make_variable(dims, std::get<3>(dtypes), units::one, false);
+  const auto group2 =
+      rand.make_variable(dims, std::get<4>(dtypes), units::one, false);
   return DataArray(data, {{Dim::X, x},
                           {Dim::Y, y},
-                          {Dim("group"), group},
+                          {Dim("group1"), group1},
                           {Dim("group2"), group2}});
 }
 

@@ -86,5 +86,12 @@ Dataset make_1d_masked();
 
 namespace scipp::testdata {
 Dataset make_dataset_x();
-DataArray make_table(const scipp::index size);
+
+DataArray make_table(
+    scipp::index size, bool with_variances = true,
+    std::tuple<core::DType, core::DType, core::DType, core::DType, core::DType>
+        dtypes = std::tuple{core::dtype<double>, core::dtype<double>,
+                            core::dtype<double>, core::dtype<int64_t>,
+                            core::dtype<int64_t>},
+    std::optional<uint32_t> seed = std::nullopt);
 } // namespace scipp::testdata
