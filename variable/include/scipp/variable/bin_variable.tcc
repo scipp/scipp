@@ -117,7 +117,9 @@ private:
     if (!std::is_same_v<T, Variable> && count > 1)
       throw except::BinnedDataError(
           "Binary operations such as '+' with binned data are only supported "
-          "with dtype=VariableView, got dtype=DataArrayView or similar. See "
+          "with dtype=VariableView, got dtype=" +
+          to_string(dtype<bucket<T>>) +
+          ". See "
           "https://scipp.github.io/user-guide/binned-data/"
           "computation.html#Event-centric-arithmetic for equivalent operations "
           "for binned (event) data.");
