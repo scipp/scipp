@@ -57,7 +57,7 @@ TEST_F(BinnedArithmeticTest, var_and_var) {
 TEST_F(BinnedArithmeticTest, fail_array_and_array) {
   const auto binned = make_bins(indices, Dim::Event, array);
   // In principle the operation could be allowed in this case since the coords
-  // match, but at this point our implementation is no sophisticated enough to
+  // match, but at this point our implementation is not sophisticated enough to
   // support coord, mask, and attr handling for binned data in such binary
   // operations.
   EXPECT_THROW(binned + binned, except::BinnedDataError);
