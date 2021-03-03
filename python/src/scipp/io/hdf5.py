@@ -18,7 +18,7 @@ def _dtype_lut():
     return dict(zip(names, dtypes))
 
 
-class NumpyDataIO():
+class NumpyDataIO:
     @staticmethod
     def write(group, data):
         dset = group.create_dataset('values', data=data.values)
@@ -34,7 +34,7 @@ class NumpyDataIO():
             group['variances'].read_direct(data.variances)
 
 
-class EigenDataIO():
+class EigenDataIO:
     @staticmethod
     def write(group, data):
         import numpy as np
@@ -51,7 +51,7 @@ class EigenDataIO():
             data.values = np.asarray(group['values'])
 
 
-class BinDataIO():
+class BinDataIO:
     @staticmethod
     def write(group, data):
         from .. import sum as sc_sum
@@ -83,7 +83,7 @@ class BinDataIO():
         return sc.bins(begin=begin, end=end, dim=dim, data=data)
 
 
-class ScippDataIO():
+class ScippDataIO:
     @staticmethod
     def write(group, data):
         values = group.create_group('values')
@@ -104,7 +104,7 @@ class ScippDataIO():
                 data.values[i] = HDF5IO.read(values[f'value-{i}'])
 
 
-class StringDataIO():
+class StringDataIO:
     @staticmethod
     def write(group, data):
         import h5py
@@ -137,7 +137,7 @@ def _check_scipp_header(group, what):
     if 'scipp-version' not in group.attrs:
         raise RuntimeError(
             "This does not look like an HDF5 file/group written by scipp.")
-    if (group.attrs['scipp-type'] != what):
+    if group.attrs['scipp-type'] != what:
         raise RuntimeError(
             f"Attempt to read {what}, found {group.attrs['scipp-type']}.")
 

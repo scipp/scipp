@@ -65,7 +65,6 @@ class PlotController3d(PlotController):
         the axes limits, as well as the extent of the positions which will be
         use to show an outline/box around the points in space.
         """
-        axparams = {}
         if self.positions is not None:
             extents = self.model.get_positions_extents(self.pixel_size)
             axparams = {
