@@ -3,7 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <unordered_map>
 
 #include "scipp-core_export.h"

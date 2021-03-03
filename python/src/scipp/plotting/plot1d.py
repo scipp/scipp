@@ -41,7 +41,7 @@ class SciPlot1d(SciPlot):
                  scipp_obj_dict=None,
                  axes=None,
                  errorbars=None,
-                 masks={"color": "k"},
+                 masks=None,
                  ax=None,
                  pax=None,
                  figsize=None,
@@ -55,6 +55,8 @@ class SciPlot1d(SciPlot):
                  xlabel=None,
                  ylabel=None):
 
+        if masks is None:
+            masks = {"color": "k"}
         view_ndims = 1
 
         super().__init__(scipp_obj_dict=scipp_obj_dict,

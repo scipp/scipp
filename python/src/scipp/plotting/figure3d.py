@@ -302,7 +302,7 @@ void main() {
         for axis, x in enumerate('xyz'):
             ticks = ticker_.tick_values(lims[x][0], lims[x][1])
             for tick in ticks:
-                if tick >= lims[x][0] and tick <= lims[x][1]:
+                if lims[x][0] <= tick <= lims[x][1]:
                     tick_pos = iden[axis] * tick * axparams[x][
                         "scaling"] + offsets[x]
                     ticks_and_labels.add(

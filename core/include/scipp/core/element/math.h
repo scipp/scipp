@@ -6,7 +6,7 @@
 
 #include <cmath>
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"

@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 
 #include "scipp-variable_export.h"
 #include "scipp/common/index.h"

@@ -194,7 +194,6 @@ add_subdirectory(units)
 add_subdirectory(core)
 add_subdirectory(variable)
 add_subdirectory(dataset)
-add_subdirectory(neutron)
 add_subdirectory(python)
 add_subdirectory(test)
 
