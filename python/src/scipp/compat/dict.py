@@ -112,7 +112,7 @@ def from_dict(dict_obj):
     :rtype: Variable, DataArray, or Dataset
     """
     keys_as_set = set(dict_obj.keys())
-    if ({"coords", "data"}.issubset(keys_as_set)):
+    if {"coords", "data"}.issubset(keys_as_set):
         # Case of a DataArray-like dict (most-likely)
         return _dict_to_data_array(dict_obj)
     elif (keys_as_set.issubset(
@@ -160,7 +160,7 @@ def _dict_to_data_array(d):
     Convert a python dict to a scipp DataArray.
     """
     d = dict(d)
-    if ("data" not in d):
+    if "data" not in d:
         raise KeyError("To create a DataArray, the supplied dict must contain "
                        "'data'. Got {}.".format(d.keys()))
     out = {"coords": {}, "masks": {}, "attrs": {}}
