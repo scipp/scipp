@@ -11,7 +11,7 @@ namespace scipp::units {
 
 std::unordered_map<std::string, Dim::Id> Dim::builtin_ids{
     {"detector", Dim::Detector},
-    {"d-spacing", Dim::DSpacing},
+    {"dspacing", Dim::DSpacing},
     {"energy", Dim::Energy},
     {"energy_transfer", Dim::EnergyTransfer},
     {"event", Dim::Event},
