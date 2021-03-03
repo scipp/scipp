@@ -69,6 +69,7 @@ TEST_F(BinnedArithmeticTest, var_and_array) {
   Variable binned_arr = make_bins(indices, Dim::Event, array);
   const auto var_arr = binned_var + binned_arr;
   const auto arr_var = binned_arr + binned_var;
+  // Summing variables and data arrays must return data arrays
   EXPECT_EQ(var_arr.dtype(), binned_arr.dtype());
   EXPECT_EQ(arr_var.dtype(), binned_arr.dtype());
   EXPECT_EQ(var_arr, make_bins(indices, Dim::Event, expected_array));
