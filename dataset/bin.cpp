@@ -76,7 +76,7 @@ template <class Index>
 Variable groups_to_map(const VariableConstView &var, const Dim dim) {
   return variable::transform(subspan_view(var, dim),
                              core::element::groups_to_map<Index>,
-                             "groups_to_map");
+                             "scipp.bin.groups_to_map");
 }
 
 void update_indices_by_grouping(const VariableView &indices,
@@ -88,7 +88,7 @@ void update_indices_by_grouping(const VariableView &indices,
                        : groups_to_map<int32_t>(groups, dim);
   variable::transform_in_place(indices, key, map,
                                core::element::update_indices_by_grouping,
-                               "update_indices_by_grouping");
+                               "scipp.bin.update_indices_by_grouping");
 }
 
 void update_indices_from_existing(const VariableView &indices, const Dim dim) {
