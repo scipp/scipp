@@ -189,3 +189,13 @@ def fix_empty_range(lims, replacement=None):
             dx = 0.5 * abs(lims[0])
         return [lims[0] - dx, lims[1] + dx]
     return lims
+
+
+def as_ax_lims(x):
+    """
+    Return an array with type conversions applied to be usable as axis limits.
+    """
+    if x.dtype.kind == 'M':
+        # datetime64 cannot be converted to float directly
+        return x.astype(np.int64, copy=False).astype(float)
+    return x.astype(float, copy=False)
