@@ -306,9 +306,10 @@ GroupBy<typename T::value_type> call_groupby(const T &array,
 template <class T>
 GroupBy<typename T::value_type>
 call_groupby(const T &array, const VariableConstView &key, const Dim &dim) {
-  return {array, core::CallDType<double, float, int64_t, int32_t, bool,
-                                 std::string>::apply<MakeGroups>(key.dtype(),
-                                                                 key, dim)};
+  return {array,
+          core::CallDType<double, float, int64_t, int32_t, bool, std::string,
+                          core::time_point>::apply<MakeGroups>(key.dtype(), key,
+                                                               dim)};
 }
 
 /// Create GroupBy<DataArray> object as part of "split-apply-combine" mechanism.

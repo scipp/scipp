@@ -3,7 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #pragma once
-#include <Eigen/Dense>
+#include <Eigen/Core>
 #include <unordered_map>
 
 #include "scipp-core_export.h"
@@ -14,9 +14,15 @@ namespace scipp::core {
 
 struct SCIPP_CORE_EXPORT DType {
   int32_t index;
-  bool operator==(const DType &t) const noexcept { return index == t.index; }
-  bool operator!=(const DType &t) const noexcept { return index != t.index; }
-  bool operator<(const DType &t) const noexcept { return index < t.index; }
+  constexpr bool operator==(const DType &t) const noexcept {
+    return index == t.index;
+  }
+  constexpr bool operator!=(const DType &t) const noexcept {
+    return index != t.index;
+  }
+  constexpr bool operator<(const DType &t) const noexcept {
+    return index < t.index;
+  }
 };
 
 // Note that previously we where using std::type_info to obtain a unique ID,
@@ -74,6 +80,10 @@ template <>
 constexpr DType dtype<std::unordered_map<std::string, int64_t>>{312};
 template <>
 constexpr DType dtype<std::unordered_map<std::string, int32_t>>{313};
+template <>
+constexpr DType dtype<std::unordered_map<core::time_point, int64_t>>{314};
+template <>
+constexpr DType dtype<std::unordered_map<core::time_point, int32_t>>{315};
 // scipp::variable types start at 1000
 // scipp::dataset types start at 2000
 // scipp::python types start at 3000

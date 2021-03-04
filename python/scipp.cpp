@@ -10,6 +10,7 @@ void init_buckets(py::module &);
 void init_choose(py::module &);
 void init_comparison(py::module &);
 void init_counts(py::module &);
+void init_creation(py::module &);
 void init_cumulative(py::module &);
 void init_dataset(py::module &);
 void init_detail(py::module &);
@@ -46,6 +47,7 @@ void init_core(py::module &m) {
   init_buckets(core);
   init_choose(core);
   init_counts(core);
+  init_creation(core);
   init_cumulative(core);
   init_dataset(core);
   init_groupby(core);
@@ -73,6 +75,11 @@ PYBIND11_MODULE(_scipp, m) {
   m.attr("__version__") = py::str(SCIPP_VERSION);
 #else
   m.attr("__version__") = py::str("unknown version");
+#endif
+#ifdef NDEBUG
+  m.attr("_debug_") = py::cast(false);
+#else
+  m.attr("_debug_") = py::cast(true);
 #endif
   init_core(m);
   init_detail(m);

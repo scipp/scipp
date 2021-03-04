@@ -3,7 +3,8 @@
 /// @file
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
+#include <functional>
 #include <string>
 
 namespace scipp::core {
@@ -67,3 +68,12 @@ private:
 };
 
 } // namespace scipp::core
+
+namespace std {
+template <> struct hash<scipp::core::time_point> {
+  size_t operator()(const scipp::core::time_point &tp) const noexcept {
+    const auto time = tp.time_since_epoch();
+    return std::hash<std::decay_t<decltype(time)>>{}(time);
+  }
+};
+} // namespace std

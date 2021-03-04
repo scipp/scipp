@@ -16,7 +16,6 @@ bin\Release\scipp-common-test.exe || echo ERROR && exit /b
 bin\Release\scipp-core-test.exe || echo ERROR && exit /b
 bin\Release\scipp-variable-test.exe || echo ERROR && exit /b
 bin\Release\scipp-dataset-test.exe || echo ERROR && exit /b
-bin\Release\scipp-neutron-test.exe || echo ERROR && exit /b
 bin\Release\scipp-units-test.exe || echo ERROR && exit /b
 
 ::  Build, install and move scipp Python library to site packages location

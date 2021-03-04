@@ -6,17 +6,17 @@
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/dataset/string.h"
+#include "scipp/variable/bin_variable.tcc"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/bucket_variable.tcc"
 #include "scipp/variable/string.h"
 
 namespace scipp::variable {
 
-INSTANTIATE_BUCKET_VARIABLE(DatasetView, bucket<Dataset>)
-INSTANTIATE_BUCKET_VARIABLE(DataArrayView, bucket<DataArray>)
-INSTANTIATE_BUCKET_VARIABLE(DataArrayView_observer, bucket<DataArrayView>)
-INSTANTIATE_BUCKET_VARIABLE(DataArrayConstView_observer,
-                            bucket<DataArrayConstView>)
+INSTANTIATE_BIN_VARIABLE(DatasetView, bucket<Dataset>)
+INSTANTIATE_BIN_VARIABLE(DataArrayView, bucket<DataArray>)
+INSTANTIATE_BIN_VARIABLE(DataArrayView_observer, bucket<DataArrayView>)
+INSTANTIATE_BIN_VARIABLE(DataArrayConstView_observer,
+                         bucket<DataArrayConstView>)
 
 } // namespace scipp::variable
 

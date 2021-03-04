@@ -108,7 +108,6 @@ class PlotModel:
             "locator": Locator(Locator.Kind.DEFAULT)
         }
 
-        coord = None
         contains_strings = False
         contains_vectors = False
         contains_datetime = False

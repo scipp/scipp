@@ -87,8 +87,14 @@ def parse_params(params=None,
     else:
         parsed["cmap"] = copy(cm.get_cmap(parsed["cmap"]))
 
-    parsed["cmap"].set_under(parsed["under_color"])
-    parsed["cmap"].set_over(parsed["over_color"])
+    if parsed["under_color"] is None:
+        parsed["cmap"].set_under(parsed["cmap"](0.0))
+    else:
+        parsed["cmap"].set_under(parsed["under_color"])
+    if parsed["over_color"] is None:
+        parsed["cmap"].set_over(parsed["cmap"](1.0))
+    else:
+        parsed["cmap"].set_over(parsed["over_color"])
 
     if variable is not None:
         parsed["unit"] = name_with_unit(var=variable, name="")

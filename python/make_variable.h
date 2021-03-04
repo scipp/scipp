@@ -153,11 +153,11 @@ Variable makeVariableDefaultInit(const std::vector<Dim> &labels,
     if (variances) {
       throw except::VariancesError("datetimes cannot have variances.");
     }
-    const auto [actual_unit, value_factor] = get_time_unit(
-        std::nullopt,
-        dtype.is_none() ? std::optional<units::Unit>{}
-                        : parse_datetime_dtype(py::dtype::from_args(dtype)),
-        unit);
+    const auto [actual_unit, value_factor] =
+        get_time_unit(std::nullopt,
+                      dtype.is_none() ? std::optional<units::Unit>{}
+                                      : parse_datetime_dtype(dtype),
+                      unit);
     if (value_factor != 1) {
       throw std::invalid_argument(
           "Scaling datetimes is not supported. The units of the datetime64 "

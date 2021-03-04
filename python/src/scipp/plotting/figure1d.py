@@ -30,7 +30,7 @@ class PlotFigure1d(PlotFigure):
                  masks=None,
                  figsize=None,
                  picker=False,
-                 legend={"show": True},
+                 legend=None,
                  padding=None,
                  xlabel=None,
                  ylabel=None):
@@ -43,6 +43,8 @@ class PlotFigure1d(PlotFigure):
                          ylabel=ylabel,
                          toolbar=PlotToolbar1d)
 
+        if legend is None:
+            legend = {"show": True}
         # Matplotlib line containers
         self.data_lines = {}
         self.mask_lines = {}

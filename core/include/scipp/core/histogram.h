@@ -15,7 +15,7 @@ namespace scipp::core {
 constexpr static auto linear_edge_params = [](const auto &edges) {
   auto len = scipp::size(edges) - 1;
   const auto offset = edges.front();
-  const auto nbin = static_cast<decltype(offset)>(len);
+  const auto nbin = len;
   const auto scale = static_cast<double>(nbin) / (edges.back() - edges.front());
   return std::tuple{offset, nbin, scale};
 };
