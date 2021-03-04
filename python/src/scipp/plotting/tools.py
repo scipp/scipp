@@ -2,12 +2,15 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Neil Vaytet
 
+from copy import copy
+
+import numpy as np
+from matplotlib.dates import date2num
+
 from .. import config
 from .._operations import midpoint
 from .._utils import name_with_unit
 from .._scipp import core as sc
-import numpy as np
-from copy import copy
 
 
 def get_line_param(name=None, index=None):
@@ -203,7 +206,7 @@ def as_ax_lims(x):
     """
     if x.dtype.kind == 'M':
         # datetime64 cannot be converted to float directly
-        return x.astype(np.int64, copy=False).astype(float)
+        return date2num(x)
     return x.astype(float, copy=False)
 
 
