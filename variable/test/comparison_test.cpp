@@ -16,24 +16,42 @@ TYPED_TEST_SUITE(IsApproxTest, TestTypes);
 
 TYPED_TEST(IsApproxTest, atol_when_variable_equal) {
   const auto a = makeVariable<TypeParam>(Values{1});
-  EXPECT_EQ(is_approx(a, a, makeVariable<TypeParam>(Values{0}),
-                      makeVariable<TypeParam>(Values{1})),
-            true * units::one);
+  const auto rtol = makeVariable<TypeParam>(Values{0});
+  const auto atol = makeVariable<TypeParam>(Values{1});
+  EXPECT_EQ(is_approx(a, a, rtol, atol), true * units::one);
 }
 
 TYPED_TEST(IsApproxTest, atol_when_variables_within_tolerance) {
   const auto a = makeVariable<TypeParam>(Values{0});
   const auto b = makeVariable<TypeParam>(Values{1});
-  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{0}),
-                      makeVariable<TypeParam>(Values{1})),
-            true * units::one);
+  const auto rtol = makeVariable<TypeParam>(Values{0});
+  const auto atol = makeVariable<TypeParam>(Values{1});
+  EXPECT_EQ(is_approx(a, b, rtol, atol), true * units::one);
 }
+
 TYPED_TEST(IsApproxTest, atol_when_variables_outside_tolerance) {
   const auto a = makeVariable<TypeParam>(Values{0});
   const auto b = makeVariable<TypeParam>(Values{2});
-  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{0}),
-                      makeVariable<TypeParam>(Values{1})),
-            false * units::one);
+  const auto rtol = makeVariable<TypeParam>(Values{0});
+  const auto atol = makeVariable<TypeParam>(Values{1});
+  EXPECT_EQ(is_approx(a, b, rtol, atol), false * units::one);
+}
+
+TYPED_TEST(IsApproxTest, rtol_when_variables_within_tolerance) {
+  const auto a = makeVariable<TypeParam>(Values{8});
+  const auto b = makeVariable<TypeParam>(Values{9});
+  // tol = atol + rtol * b = 1
+  const auto rtol = makeVariable<double>(Values{1.0 / 9});
+  const auto atol = makeVariable<TypeParam>(Values{0});
+  EXPECT_EQ(is_approx(a, b, rtol, atol), true * units::one);
+}
+TYPED_TEST(IsApproxTest, rtol_when_variables_outside_tolerance) {
+  const auto a = makeVariable<TypeParam>(Values{7});
+  const auto b = makeVariable<TypeParam>(Values{9});
+  // tol = atol + rtol * b = 1
+  const auto rtol = makeVariable<double>(Values{1.0 / 9});
+  const auto atol = makeVariable<TypeParam>(Values{0});
+  EXPECT_EQ(is_approx(a, b, rtol, atol), false * units::one);
 }
 
 TEST(IsApproxTest, atol_variances_ignored) {

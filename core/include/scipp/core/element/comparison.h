@@ -15,13 +15,15 @@
 /// operations for Variable.
 namespace scipp::core::element {
 
-using is_approx_types_t = arg_list_t<double, float, int64_t, int32_t,
-                                     std::tuple<double, double, float>,
-                                     std::tuple<int64_t, int32_t, int32_t>,
-                                     std::tuple<int64_t, int64_t, int32_t>,
-                                     std::tuple<int64_t, int32_t, int64_t>,
-                                     std::tuple<int32_t, int32_t, int64_t>,
-                                     std::tuple<int32_t, int64_t, int64_t>>;
+using is_approx_types_t = arg_list_t<
+    double, float, int64_t, int32_t, std::tuple<double, double, float>,
+    std::tuple<float, float, double>, std::tuple<int64_t, int64_t, double>,
+    std::tuple<int32_t, int32_t, double>, std::tuple<int32_t, int64_t, double>,
+    std::tuple<int64_t, int32_t, double>, std::tuple<int64_t, int32_t, int32_t>,
+    std::tuple<int64_t, int64_t, int32_t>,
+    std::tuple<int64_t, int32_t, int64_t>,
+    std::tuple<int32_t, int32_t, int64_t>,
+    std::tuple<int32_t, int64_t, int64_t>>;
 
 constexpr auto is_approx_units = [](const units::Unit &x, const units::Unit &y,
                                     const units::Unit &t) {
