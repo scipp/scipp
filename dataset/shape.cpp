@@ -10,6 +10,8 @@
 #include "../variable/operations_common.h"
 #include "dataset_operations_common.h"
 
+#include <iostream>
+
 namespace scipp::dataset {
 
 /// Return one of the inputs if they are the same, throw otherwise.
@@ -242,31 +244,61 @@ Variable slice_and_stack(const VariableConstView &var, const Dim from_dim,
   // }
   // reshaped.rename(from_dim, labels.back());
   // return reshaped;
-  auto reshaped = reshape(coord.slice(from_dim, 0, coord.dims()[from_dim] - 1),
-                          stack_dims(coord.dims(), from_dim, to_dims));
 
-  const auto &coord_dims = coord.dims();
+  std::cout << "slice_and_stack 1" << std::endl;
+  auto slice = var.slice({from_dim, 0, var.dims()[from_dim] - 1});
+  auto reshaped = reshape(slice,
+                          stack_dims(slice.dims(), from_dim, to_dims));
+
+  std::cout << "slice_and_stack 2" << std::endl;
+
+
+  const auto &var_dims = var.dims();
 
   // Slice along the inner dimension of the from dims
-  auto append = reshaped.slice(to_dims.inner(), 0);
+  // auto edge = Variable(reshaped.slice({to_dims.inner(), 0}));
+  const auto &edge = reshaped.slice({to_dims.inner(), 0});
+  const auto &edge_dims = edge.dims();
+  std::cout << "slice_and_stack 3" << std::endl;
 
-  // Compare the dimensions of append and the original coord.
+  Variable duplicate_edges;
+  // Compare the dimensions of edge and the original coord.
   // We want to flatten any dimension which is not in the original coord.
-  if (append.dims().ndim() > coord_dims.ndim()) {
+  if (edge_dims.ndim() > var_dims.ndim()) {
     Dimensions flat_dims;
-    scipp::index vol = 1;
-    for (const auto dim : append.dims().labels()) {
-      if (to_dims.contains(dim))
-        vol *= to_dims[dim];
-      else
+    scipp::index volume = edge_dims.volume();
+    for (const auto dim : edge_dims.labels()) {
+      if (!to_dims.contains(dim)) {
+        volume /= edge_dims[dim];
+        if (!flat_dims.contains(from_dim))
+          flat_dims.addInner(from_dim, 1);
+      } else {
+        flat_dims.addInner(dim, edge_dims[dim]);
+      }
+    }
+    // Update the flat_dims shape now that the volume has been fully
+    // decomposed
+    flat_dims.resize(from_dim, volume);
+    // Now reshape the edge to the flattened dims
+    duplicate_edges = reshape(edge, flat_dims);
+  } else {
+    duplicate_edges = Variable(edge);
+  }
+  std::cout << "slice_and_stack 4" << std::endl;
 
-        for (const auto dim : coord_dims.labels()) {
-          if (append.dims().contains(dim))
-            flat_dims.addInner(dim, append.dims()[dim]);
-          else
-            flat_dims.addInner(dim, 1); // This is the from_dim
-        }
-      flat_dims[from_dim] =
+  // Now concatenate the edge (minus its first element) and the last slice
+  // of coord
+  auto outer_dim = duplicate_edges.dims().labels()[0];
+  auto end_cap = concatenate(duplicate_edges.slice({outer_dim, 1,
+    duplicate_edges.dims()[outer_dim]}),
+                             var.slice({from_dim, var.dims()[from_dim] - 1}),
+                             outer_dim);
+  std::cout << "slice_and_stack 5" << std::endl;
+  // Reshape the end cap to original coord slice dims.
+  // This is basically just a quick way of renaming the dims.
+  // end_cap = reshape(end_cap, edge_dims);
+  return concatenate(reshaped, reshape(end_cap, edge_dims), to_dims.inner());
+
 
       //       for (scipp::index l = 0;
       //            l < append.dims().ndim() - append.dims().ndim(); ++l) {
