@@ -14,45 +14,34 @@ using TestTypes = ::testing::Types<double, float, int64_t, int32_t>;
 
 TYPED_TEST_SUITE(IsApproxTest, TestTypes);
 
-TYPED_TEST(IsApproxTest, when_variable_equal) {
+TYPED_TEST(IsApproxTest, atol_when_variable_equal) {
   const auto a = makeVariable<TypeParam>(Values{1});
-  EXPECT_EQ(is_approx(a, a, makeVariable<TypeParam>(Values{1})),
+  EXPECT_EQ(is_approx(a, a, makeVariable<TypeParam>(Values{0}),
+                      makeVariable<TypeParam>(Values{1})),
             true * units::one);
 }
 
-TYPED_TEST(IsApproxTest, when_variables_within_tolerance) {
+TYPED_TEST(IsApproxTest, atol_when_variables_within_tolerance) {
   const auto a = makeVariable<TypeParam>(Values{0});
   const auto b = makeVariable<TypeParam>(Values{1});
-  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{1})),
+  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{0}),
+                      makeVariable<TypeParam>(Values{1})),
             true * units::one);
 }
-TYPED_TEST(IsApproxTest, when_variables_outside_tolerance) {
+TYPED_TEST(IsApproxTest, atol_when_variables_outside_tolerance) {
   const auto a = makeVariable<TypeParam>(Values{0});
   const auto b = makeVariable<TypeParam>(Values{2});
-  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{1})),
+  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{0}),
+                      makeVariable<TypeParam>(Values{1})),
             false * units::one);
 }
 
-TEST(IsApproxTest, variances_ignored) {
+TEST(IsApproxTest, atol_variances_ignored) {
   const auto a = makeVariable<double>(Values{10.0}, Variances{1.0});
   EXPECT_TRUE(a.hasVariances());
-  auto out = is_approx(a, a, makeVariable<double>(Values{1}));
+  auto out = is_approx(a, a, makeVariable<double>(Values{0}),
+                       makeVariable<double>(Values{1}));
   EXPECT_FALSE(out.hasVariances());
-}
-
-TEST(IsApproxTest, variable_units_not_same) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
-  a.setUnit(units::dimensionless);
-  auto b = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
-  b.setUnit(units::m);
-  auto t = makeVariable<double>(Values{0.1});
-  t.setUnit(a.unit());
-  // second and first argument have different units
-  EXPECT_THROW(is_approx(a, b, t), except::MismatchError<scipp::units::Unit>);
-  b.setUnit(a.unit());
-  t.setUnit(units::m);
-  // tolerance has difference units
-  EXPECT_THROW(is_approx(a, b, t), except::MismatchError<scipp::units::Unit>);
 }
 
 TEST(ComparisonTest, variances_test) {
