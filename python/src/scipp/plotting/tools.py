@@ -210,10 +210,20 @@ def as_ax_lims(x):
     return x.astype(float, copy=False)
 
 
+def as_logical_ax_lims(x, dtype):
+    """
+    Convert a number to the dtype used for internal calculations
+    with axis limits identified by ``dtype``.
+    """
+    if dtype.kind == 'M':
+        return num2date(x)
+    return x
+
+
 def num2date(x):
     """
     Convert a number to a numpy.datetime64 object.
-    The timezoe is determined by matplotlib.
+    The timezone is determined by matplotlib.
     """
     return np.vectorize(lambda val: np.datetime64(mpldates.num2date(val)))(x)
 
