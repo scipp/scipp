@@ -5,6 +5,7 @@
 from .. import config
 from .figure import PlotFigure
 from .toolbar import PlotToolbar2d
+from .tools import as_ax_lims
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.colors import Normalize, LogNorm
@@ -119,8 +120,8 @@ class PlotFigure2d(PlotFigure):
                 self.axlocator[param["dim"]][param["scale"]])
 
         # Set axes limits and ticks
-        extent_array = np.array([axparams["x"]["lims"],
-                                 axparams["y"]["lims"]]).flatten()
+        extent_array = np.array([as_ax_lims(axparams["x"]["lims"]),
+                                 as_ax_lims(axparams["y"]["lims"])]).flatten()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             self.image_colors.set_extent(extent_array)
