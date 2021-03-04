@@ -6,7 +6,7 @@
 import numpy as np
 from .._scipp import core as sc
 from .helpers import PlotArray
-from .tools import to_bin_centers
+from .tools import to_bin_centers, linspace
 
 
 class ResamplingModel():
@@ -71,7 +71,7 @@ class ResamplingModel():
             edges.append(
                 sc.Variable(dims=[dim],
                             unit=unit,
-                            values=np.linspace(low, high, num=res + 1)))
+                            values=linspace(low, high, num=res + 1)))
             # The order of edges matters. We need to put the length 1 edges
             # first to rebin these dims first and effectively slice them out,
             # otherwise we will rebin N-D variables on high resolution.
