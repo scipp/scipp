@@ -144,6 +144,39 @@ TEST(IsApproxTest, value) {
   EXPECT_FALSE(is_approx(a, b, 1.0));
 }
 
+TEST(IsApproxTest, value_not_equal_nans) {
+  EXPECT_FALSE(is_approx(double(NAN), double(NAN), 1.e9));
+  EXPECT_FALSE(is_approx(double(NAN), double(1.0), 1.e9));
+  EXPECT_FALSE(is_approx(double(1.0), double(NAN), 1.e9));
+  EXPECT_FALSE(is_approx(double(INFINITY), double(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx(double(1.0), double(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx(double(INFINITY), double(1.0), 1.e9));
+  EXPECT_FALSE(is_approx(-double(INFINITY), -double(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx(-double(1.0), -double(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx(-double(INFINITY), -double(1.0), 1.e9));
+}
+
+TEST(IsApproxTest, value_equal_nans) {
+  EXPECT_TRUE(is_approx_equal_nan(double(NAN), double(NAN), 1.e9));
+  EXPECT_FALSE(is_approx_equal_nan(double(NAN), double(1.0), 1.e9));
+  EXPECT_FALSE(is_approx_equal_nan(double(1.0), double(NAN), 1.e9));
+}
+TEST(IsApproxTest, value_equal_pos_infs) {
+  EXPECT_TRUE(is_approx_equal_nan(double(INFINITY), double(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx_equal_nan(double(1.0), double(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx_equal_nan(double(INFINITY), double(1.0), 1.e9));
+}
+TEST(IsApproxTest, value_equal_neg_infs) {
+  EXPECT_TRUE(is_approx_equal_nan(-double(INFINITY), -double(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx_equal_nan(-double(1.0), -double(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx_equal_nan(-double(INFINITY), -double(1.0), 1.e9));
+}
+
+TEST(IsApproxTest, value_equal_infs_signbit) {
+  EXPECT_FALSE(is_approx_equal_nan(-double(INFINITY), double(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx_equal_nan(double(INFINITY), -double(INFINITY), 1.e9));
+}
+
 TEST(IsApproxTest, value_and_variance) {
   ValueAndVariance<double> a = {1.0, 0.0};
   ValueAndVariance<double> b = {1.0, 1.1};

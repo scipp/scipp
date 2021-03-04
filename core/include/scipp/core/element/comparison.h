@@ -15,21 +15,39 @@
 /// operations for Variable.
 namespace scipp::core::element {
 
+using is_approx_types_t = arg_list_t<double, float, int64_t, int32_t,
+                                     std::tuple<double, double, float>,
+                                     std::tuple<int64_t, int32_t, int32_t>,
+                                     std::tuple<int64_t, int64_t, int32_t>,
+                                     std::tuple<int64_t, int32_t, int64_t>,
+                                     std::tuple<int32_t, int32_t, int64_t>,
+                                     std::tuple<int32_t, int64_t, int64_t>>;
+
+constexpr auto is_approx_units = [](const units::Unit &x, const units::Unit &y,
+                                    const units::Unit &t) {
+  expect::equals(x, y);
+  expect::equals(x, t);
+  return units::dimensionless;
+};
+
 constexpr auto is_approx = overloaded{
-    transform_flags::no_out_variance,
-    arg_list<double, float, int64_t, int32_t, std::tuple<double, double, float>,
-             std::tuple<int64_t, int32_t, int32_t>,
-             std::tuple<int64_t, int64_t, int32_t>,
-             std::tuple<int64_t, int32_t, int64_t>,
-             std::tuple<int32_t, int32_t, int64_t>,
-             std::tuple<int32_t, int64_t, int64_t>>,
-    [](const units::Unit &x, const units::Unit &y, const units::Unit &t) {
-      expect::equals(x, y);
-      expect::equals(x, t);
-      return units::dimensionless;
-    },
+    transform_flags::no_out_variance, is_approx_types_t{}, is_approx_units,
     [](const auto &x, const auto &y, const auto &t) {
       using std::abs;
+      return abs(x - y) <= t;
+    }};
+
+constexpr auto is_approx_equal_nan = overloaded{
+    transform_flags::no_out_variance, is_approx_types_t{}, is_approx_units,
+    [](const auto &x, const auto &y, const auto &t) {
+      using std::abs;
+      using numeric::isnan;
+      using numeric::isinf;
+      using numeric::signbit;
+      if (isnan(x) && isnan(y))
+        return true;
+      if (isinf(x) && isinf(y) && signbit(x) == signbit(y))
+        return true;
       return abs(x - y) <= t;
     }};
 
