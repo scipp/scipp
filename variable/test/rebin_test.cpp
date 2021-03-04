@@ -2,12 +2,19 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include <random>
+
 #include "scipp/variable/bins.h"
+#include "scipp/variable/comparison.h"
 #include "scipp/variable/misc_operations.h"
 #include "scipp/variable/rebin.h"
+#include "scipp/variable/reduction.h"
 #include "scipp/variable/variable.h"
 
+#include "scipp/variable/string.h"
+
 using namespace scipp;
+using namespace scipp::variable;
 
 TEST(RebinTest, inner) {
   const auto base = makeVariable<double>(Dims{Dim::X}, Shape{2}, units::counts,
@@ -21,6 +28,45 @@ TEST(RebinTest, inner) {
     EXPECT_EQ(rebin(var, Dim::X, oldEdge, newEdge),
               makeVariable<double>(Dims{Dim::X}, Shape{1}, units::counts,
                                    Values{3.0}));
+  }
+}
+
+TEST(RebinTest, inner_preserves_norm) {
+  std::mt19937 rng(4233485);
+  std::uniform_int_distribution<scipp::index> size_dist(1, 100);
+  auto rand = [&](const auto size, const double min, const double max,
+                  const bool sorted) mutable {
+    std::uniform_real_distribution<double> dist(min, max);
+    std::vector<double> res(size);
+    std::generate(begin(res), end(res), [&]() mutable { return dist(rng); });
+    if (sorted) {
+      std::sort(begin(res), end(res));
+    }
+    return res;
+  };
+
+  for (int rep = 0; rep < 5; ++rep) {
+    const auto old_size = size_dist(rng);
+    const auto new_size = size_dist(rng);
+    const auto base =
+        makeVariable<double>(Dims{Dim::X}, Shape{old_size}, units::counts,
+                             Values(rand(old_size, -5.0, 5.0, false)));
+    auto new_edges =
+        makeVariable<double>(Dims{Dim::X}, Shape{new_size + 1},
+                             Values(rand(new_size + 1, -5.0, 5.0, true)));
+    // Make old edges s.t. they envelop the new edges to ensure that nothing
+    // gets dropped.
+    const auto old_edges = makeVariable<double>(
+        Dims{Dim::X}, Shape{old_size + 1},
+        Values(rand(old_size + 1, min(new_edges).value<double>(),
+                    max(new_edges).value<double>(), true)));
+    for (const auto &var :
+         {base, astype(base, dtype<int64_t>), astype(base, dtype<int32_t>)}) {
+      EXPECT_TRUE(is_approx(sum(rebin(var, Dim::X, old_edges, new_edges)),
+                            astype(sum(var), dtype<double>),
+                            1e-14 * units::counts)
+                      .value<bool>());
+    }
   }
 }
 
