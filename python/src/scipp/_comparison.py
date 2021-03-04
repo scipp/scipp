@@ -112,15 +112,23 @@ def is_equal(x, y):
     return _call_cpp_func(_cpp.is_equal, x, y)
 
 
-def is_approx(x, y, tol):
-    """Compares values (x, y) element by element against tolerance (tol).
+def is_approx(x, y, rtol=1e-5, atol=1e-8, equal_nan=False):
+    """Compares values (x, y) element by element against tolerance absolute
+    and relative tolerances (non-symmetric).
+
+    abs(x - y) <= atol + rtol * y
+
     Variances are not accounted for.
 
     :param x: Left input.
     :param y: Right input.
-    :param tol: Tolerance value.
+    :param rtol: Tolerance value relative (to y).
+    :param atol: Tolerance value absolute.
+    :param equal_nan: if true, non-finite values at the same index in (x, y)
+           are treated as equal.
+           Signbit must match for infs.
     :return: Variable same size as input.
-             Element True if absolute diff of value <= input tolerance,
+             Element True if absolute diff of value <= atol + rtol * y,
              otherwise False.
     """
-    return _call_cpp_func(_cpp.is_approx, x, y, tol)
+    return _call_cpp_func(_cpp.is_approx, x, y, atol, atol, equal_nan)

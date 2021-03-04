@@ -19,11 +19,14 @@ template <class T> void bind_is_approx(py::module &m) {
       "is_approx",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y,
-         const typename T::const_view_type &tol) {
-        return is_approx(x, y, tol);
+         const typename T::const_view_type &atol,
+         const typename T::const_view_type &rtol, const bool equal_nan) {
+        return is_approx(x, y, atol, rtol,
+                         equal_nan ? NanComparisons::Equal
+                                   : NanComparisons::NotEqual);
       },
-      py::arg("x"), py::arg("y"), py::arg("tol"),
-      py::call_guard<py::gil_scoped_release>());
+      py::arg("x"), py::arg("y"), py::arg("rtol"), py::arg("rtol"),
+      py::arg("equal_nan"), py::call_guard<py::gil_scoped_release>());
 }
 
 template <typename T> void bind_is_equal(py::module &m) {
