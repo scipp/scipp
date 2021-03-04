@@ -5,7 +5,7 @@
 from copy import copy
 
 import numpy as np
-from matplotlib.dates import date2num
+import matplotlib.dates as mpldates
 
 from .. import config
 from .._operations import midpoint
@@ -206,8 +206,16 @@ def as_ax_lims(x):
     """
     if x.dtype.kind == 'M':
         # datetime64 cannot be converted to float directly
-        return date2num(x)
+        return mpldates.date2num(x)
     return x.astype(float, copy=False)
+
+
+def num2date(x):
+    """
+    Convert a number to a numpy.datetime64 object.
+    The timezoe is determined by matplotlib.
+    """
+    return np.vectorize(lambda val: np.datetime64(mpldates.num2date(val)))(x)
 
 
 def linspace(start, stop, num, *args, **kwargs):
