@@ -6,6 +6,7 @@
 #include "scipp/units/unit.h"
 
 #include "fix_typed_test_suite_warnings.h"
+#include "test_macros.h"
 
 using namespace scipp;
 using namespace scipp::core::element;
@@ -133,4 +134,32 @@ TYPED_TEST(ElementNanMaxTest, value_nan) {
   T x = NAN;
   nanmax_equals(y, x);
   EXPECT_EQ(y, 1);
+}
+
+TEST(IsApproxTest, value) {
+  double a = 1.0;
+  double b = 2.1;
+  EXPECT_TRUE(is_approx(a, b, 1.2));
+  EXPECT_TRUE(is_approx(a, b, 1.1));
+  EXPECT_FALSE(is_approx(a, b, 1.0));
+}
+
+TEST(IsApproxTest, value_and_variance) {
+  ValueAndVariance<double> a = {1.0, 0.0};
+  ValueAndVariance<double> b = {1.0, 1.1};
+  EXPECT_TRUE(is_approx(a, b, 1.2));
+  EXPECT_TRUE(is_approx(a, b, 1.1));
+  EXPECT_TRUE(is_approx(
+      a, b,
+      1.0)); // Characterisation test. Pending behaviours should give FALSE
+}
+
+TEST(IsApproxTest, units) {
+  EXPECT_EQ(units::dimensionless, is_approx(units::m, units::m, units::m));
+  EXPECT_THROW_DISCARD(is_approx(units::m, units::m, units::s),
+                       except::UnitMismatchError);
+  EXPECT_THROW_DISCARD(is_approx(units::m, units::s, units::m),
+                       except::UnitMismatchError);
+  EXPECT_THROW_DISCARD(is_approx(units::s, units::m, units::m),
+                       except::UnitMismatchError);
 }
