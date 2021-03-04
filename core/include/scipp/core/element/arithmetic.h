@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"

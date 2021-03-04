@@ -121,8 +121,10 @@ class VariableDrawer:
         height += 0.3 * depth
         return [width, height]
 
-    def _draw_array(self, color, offset=[0, 0]):
+    def _draw_array(self, color, offset=None):
         """Draw the array of boxes"""
+        if offset is None:
+            offset = [0, 0]
         dx = offset[0]
         dy = offset[1] + 0.3  # extra offset for top face of top row of cubes
         svg = ''

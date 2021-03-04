@@ -9,24 +9,25 @@ Since v0.5
 Features
 ~~~~~~~~
 
-* Add ``sizes`` properties, an ordered ``dict`` to lookup the size of a specific dimension [#1636](https://github.com/scipp/scipp/pull/1636).
-* Add more functions for data arrays that were previously available only for variables [#1638](https://github.com/scipp/scipp/pull/1638) [#1660](https://github.com/scipp/scipp/pull/1660).
-* Add named versions of operators such as ``logical_and`` [#1660](https://github.com/scipp/scipp/pull/1660).
-* Add modulo operations [#1660](https://github.com/scipp/scipp/pull/1660).
+* Add ``sizes`` properties, an ordered ``dict`` to lookup the size of a specific dimension `#1636 <https://github.com/scipp/scipp/pull/1636>`_.
+* Add more functions for data arrays that were previously available only for variables `#1638 <https://github.com/scipp/scipp/pull/1638>`_ `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
+* Add named versions of operators such as ``logical_and`` `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
+* Add modulo operations `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
 * Add scaling operations for Variables of type ``vector_3_float64``.
 * ``sum`` and ``mean`` implemented for Variables of type ``vector_3_float64``.
 * Add reshape for DataArray [#1676](https://github.com/scipp/scipp/pull/1676)
+* Add ``ones`` and ``empty`` creation functions, similar to what is known from numpy `#1732 <https://github.com/scipp/scipp/pull/1732>`_.
 * ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
 * ``scipp.neutron`` (now ``scippneutron``)
 
-  * Support unit conversion to energy transfer, for inelastic TOF experiments [#1635](https://github.com/scipp/scipp/pull/1635).
-  * Support loading/converting Mantid ``WorkspaceGroup``, this will produce a ``dict`` of data arrays [#1654](https://github.com/scipp/scipp/pull/1654).
-  * Fixes to support loading/converting ``McStasNexus`` files [#1659](https://github.com/scipp/scipp/pull/1659).
+  * Support unit conversion to energy transfer, for inelastic TOF experiments `#1635 <https://github.com/scipp/scipp/pull/1635>`_.
+  * Support loading/converting Mantid ``WorkspaceGroup``, this will produce a ``dict`` of data arrays `#1654 <https://github.com/scipp/scipp/pull/1654>`_.
+  * Fixes to support loading/converting ``McStasNexus`` files `#1659 <https://github.com/scipp/scipp/pull/1659>`_.
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
-* The ``plot`` module has been renamed to ``plotting``, and plotting is now achieved via ``sc.plot(data)``. Wrapper functions ``superplot``, ``image``, and ``scatter3d`` have been dropped [#1696](https://github.com/scipp/scipp/pull/1696).
+* The ``plot`` module has been renamed to ``plotting``, and plotting is now achieved via ``sc.plot(data)``. Wrapper functions ``superplot``, ``image``, and ``scatter3d`` have been dropped `#1696 <https://github.com/scipp/scipp/pull/1696>`_.
 * The syntax for reshaping a Variable has changed from ``sc.reshape(var, ['x', 'y'], (2, 3))`` to ``sc.reshape(var, {'x': 2, 'y': 3})``.
 * ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
 * ``scipp.neutron`` (now ``scippneutron``)

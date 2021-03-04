@@ -8,7 +8,7 @@
 #include <optional>
 #include <string>
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 
 #include "scipp/units/unit.h"
 

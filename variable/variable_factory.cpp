@@ -6,6 +6,30 @@
 
 namespace scipp::variable {
 
+DType VariableFactory::bin_dtype(
+    const std::vector<VariableConstView> &vars) const noexcept {
+  // First pass: Find, e.g., bucket<DataArray>, since if we have such an input
+  // we need to keep metadata in the output. Note that we would also like to
+  // prioritize bucket<Dataset> higher than bucket<DataArray>, but the former
+  // is not supported in binary operations, so this is not relevant right now.
+  if (const auto it = std::find_if(vars.begin(), vars.end(),
+                                   [](const auto &v) {
+                                     return variable::is_bins(v) &&
+                                            v.dtype() !=
+                                                dtype<bucket<Variable>>;
+                                   });
+      it != vars.end())
+    return it->dtype();
+  // Second pass: Find bucket<Variable> (or other)
+  if (const auto it =
+          std::find_if(vars.begin(), vars.end(),
+                       [](const auto &v) { return variable::is_bins(v); });
+      it != vars.end())
+    return it->dtype();
+  // Not binned data
+  return dtype<void>;
+}
+
 void VariableFactory::emplace(const DType key,
                               std::unique_ptr<AbstractVariableMaker> maker) {
   m_makers.emplace(key, std::move(maker));
