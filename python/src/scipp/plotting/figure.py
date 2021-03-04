@@ -120,7 +120,8 @@ class PlotFigure:
             }
 
             for key in ["linear", "log"]:
-                self.axformatter[dim][key] = axformatters[dim][key].make(locator=self.axlocator[dim][key])
+                self.axformatter[dim][key] = axformatters[dim][key].make(
+                    locator=self.axlocator[dim][key])
 
     def connect(self, callbacks):
         """

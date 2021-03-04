@@ -120,8 +120,10 @@ class PlotFigure2d(PlotFigure):
                 self.axlocator[param["dim"]][param["scale"]])
 
         # Set axes limits and ticks
-        extent_array = np.array([as_ax_lims(axparams["x"]["lims"]),
-                                 as_ax_lims(axparams["y"]["lims"])]).flatten()
+        extent_array = np.array([
+            as_ax_lims(axparams["x"]["lims"]),
+            as_ax_lims(axparams["y"]["lims"])
+        ]).flatten()
         with warnings.catch_warnings():
             warnings.filterwarnings("ignore", category=UserWarning)
             self.image_colors.set_extent(extent_array)

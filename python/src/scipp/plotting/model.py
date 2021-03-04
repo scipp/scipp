@@ -5,7 +5,8 @@
 import numpy as np
 
 from .helpers import PlotArray
-from .labeling import Formatter, Locator, vector_tick_formatter, string_tick_formatter
+from .labeling import Formatter, Locator, vector_tick_formatter, \
+    string_tick_formatter
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
     vars_to_err, find_limits
 from .._utils import name_with_unit, value_to_string
@@ -185,21 +186,15 @@ class PlotModel:
                                  func=vector_tick_formatter(
                                      data_array.meta[dim].values,
                                      dim_to_shape[dim]))
-                formatter.update({
-                    "linear": form,
-                    "log": form,
-                    "locator": Locator(Locator.Kind.MAX_N, integer=True)
-                })
+                loc = Locator(Locator.Kind.MAX_N, integer=True)
+                formatter.update({"linear": form, "log": form, "locator": loc})
             elif contains_strings:
                 form = Formatter(Formatter.Kind.FUNC,
                                  func=string_tick_formatter(
                                      data_array.meta[dim].values,
                                      dim_to_shape[dim]))
-                formatter.update({
-                    "linear": form,
-                    "log": form,
-                    "locator": Locator(Locator.Kind.MAX_N, integer=True)
-                })
+                loc = Locator(Locator.Kind.MAX_N, integer=True)
+                formatter.update({"linear": form, "log": form, "locator": loc})
             elif contains_datetime:
                 form = Formatter(Formatter.Kind.DATETIME)
                 formatter.update({

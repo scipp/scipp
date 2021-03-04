@@ -231,12 +231,15 @@ def num2date(x):
 def linspace(start, stop, num, *args, **kwargs):
     """
     Like numpy.linspace but with support for extra dtype.
-    Note that when called with numpy.datetime64 as start and stop, the result is only a true linspace
-    if all points come out as integers.
+    Note that when called with numpy.datetime64 as start and stop,
+    the result is only a true linspace if all points come out as integers.
     """
     if isinstance(start, np.datetime64) or isinstance(stop, np.datetime64):
         if start.dtype != stop.dtype:
-            raise ValueError("start and stop must have the same dtype when using datetime64")
-        ls_float = np.linspace(start.astype(int), stop.astype(int), num, *args, **kwargs)
+            raise ValueError(
+                "start and stop must have the same dtype when using datetime64"
+            )
+        ls_float = np.linspace(start.astype(int), stop.astype(int), num, *args,
+                               **kwargs)
         return ls_float.astype(int).astype(start.dtype)
     return np.linspace(start, stop, num, *args, **kwargs)
