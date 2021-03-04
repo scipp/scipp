@@ -136,45 +136,55 @@ TYPED_TEST(ElementNanMaxTest, value_nan) {
   EXPECT_EQ(y, 1);
 }
 
-TEST(IsApproxTest, value) {
-  double a = 1.0;
-  double b = 2.1;
+template <typename T> class IsApproxTest : public ::testing::Test {};
+using IsApproxTestTypes = ::testing::Types<double, ValueAndVariance<double>>;
+TYPED_TEST_SUITE(IsApproxTest, IsApproxTestTypes);
+
+TYPED_TEST(IsApproxTest, value) {
+  TypeParam a = 1.0;
+  TypeParam b = 2.1;
   EXPECT_TRUE(is_approx(a, b, 1.2));
   EXPECT_TRUE(is_approx(a, b, 1.1));
   EXPECT_FALSE(is_approx(a, b, 1.0));
 }
 
-TEST(IsApproxTest, value_not_equal_nans) {
-  EXPECT_FALSE(is_approx(double(NAN), double(NAN), 1.e9));
-  EXPECT_FALSE(is_approx(double(NAN), double(1.0), 1.e9));
-  EXPECT_FALSE(is_approx(double(1.0), double(NAN), 1.e9));
-  EXPECT_FALSE(is_approx(double(INFINITY), double(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx(double(1.0), double(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx(double(INFINITY), double(1.0), 1.e9));
-  EXPECT_FALSE(is_approx(-double(INFINITY), -double(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx(-double(1.0), -double(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx(-double(INFINITY), -double(1.0), 1.e9));
+TYPED_TEST(IsApproxTest, value_not_equal_nans) {
+  EXPECT_FALSE(is_approx(TypeParam(NAN), TypeParam(NAN), 1.e9));
+  EXPECT_FALSE(is_approx(TypeParam(NAN), TypeParam(1.0), 1.e9));
+  EXPECT_FALSE(is_approx(TypeParam(1.0), TypeParam(NAN), 1.e9));
+  EXPECT_FALSE(is_approx(TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx(TypeParam(1.0), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx(TypeParam(INFINITY), TypeParam(1.0), 1.e9));
+  EXPECT_FALSE(is_approx(-TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx(-TypeParam(1.0), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx(-TypeParam(INFINITY), -TypeParam(1.0), 1.e9));
 }
 
-TEST(IsApproxTest, value_equal_nans) {
-  EXPECT_TRUE(is_approx_equal_nan(double(NAN), double(NAN), 1.e9));
-  EXPECT_FALSE(is_approx_equal_nan(double(NAN), double(1.0), 1.e9));
-  EXPECT_FALSE(is_approx_equal_nan(double(1.0), double(NAN), 1.e9));
+TYPED_TEST(IsApproxTest, value_equal_nans) {
+  EXPECT_TRUE(is_approx_equal_nan(TypeParam(NAN), TypeParam(NAN), 1.e9));
+  EXPECT_FALSE(is_approx_equal_nan(TypeParam(NAN), TypeParam(1.0), 1.e9));
+  EXPECT_FALSE(is_approx_equal_nan(TypeParam(1.0), TypeParam(NAN), 1.e9));
 }
-TEST(IsApproxTest, value_equal_pos_infs) {
-  EXPECT_TRUE(is_approx_equal_nan(double(INFINITY), double(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx_equal_nan(double(1.0), double(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx_equal_nan(double(INFINITY), double(1.0), 1.e9));
+TYPED_TEST(IsApproxTest, value_equal_pos_infs) {
+  EXPECT_TRUE(
+      is_approx_equal_nan(TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx_equal_nan(TypeParam(1.0), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_approx_equal_nan(TypeParam(INFINITY), TypeParam(1.0), 1.e9));
 }
-TEST(IsApproxTest, value_equal_neg_infs) {
-  EXPECT_TRUE(is_approx_equal_nan(-double(INFINITY), -double(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx_equal_nan(-double(1.0), -double(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx_equal_nan(-double(INFINITY), -double(1.0), 1.e9));
+TYPED_TEST(IsApproxTest, value_equal_neg_infs) {
+  EXPECT_TRUE(
+      is_approx_equal_nan(-TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(
+      is_approx_equal_nan(-TypeParam(1.0), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(
+      is_approx_equal_nan(-TypeParam(INFINITY), -TypeParam(1.0), 1.e9));
 }
 
-TEST(IsApproxTest, value_equal_infs_signbit) {
-  EXPECT_FALSE(is_approx_equal_nan(-double(INFINITY), double(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx_equal_nan(double(INFINITY), -double(INFINITY), 1.e9));
+TYPED_TEST(IsApproxTest, value_equal_infs_signbit) {
+  EXPECT_FALSE(
+      is_approx_equal_nan(-TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(
+      is_approx_equal_nan(TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
 }
 
 TEST(IsApproxTest, value_and_variance) {
@@ -187,12 +197,17 @@ TEST(IsApproxTest, value_and_variance) {
       1.0)); // Characterisation test. Pending behaviours should give FALSE
 }
 
+template <class Op> void do_is_approx_units_test(Op op) {
+  EXPECT_EQ(units::dimensionless, op(units::m, units::m, units::m));
+  EXPECT_THROW_DISCARD(op(units::m, units::m, units::s),
+                       except::UnitMismatchError);
+  EXPECT_THROW_DISCARD(op(units::m, units::s, units::m),
+                       except::UnitMismatchError);
+  EXPECT_THROW_DISCARD(op(units::s, units::m, units::m),
+                       except::UnitMismatchError);
+}
+
 TEST(IsApproxTest, units) {
-  EXPECT_EQ(units::dimensionless, is_approx(units::m, units::m, units::m));
-  EXPECT_THROW_DISCARD(is_approx(units::m, units::m, units::s),
-                       except::UnitMismatchError);
-  EXPECT_THROW_DISCARD(is_approx(units::m, units::s, units::m),
-                       except::UnitMismatchError);
-  EXPECT_THROW_DISCARD(is_approx(units::s, units::m, units::m),
-                       except::UnitMismatchError);
+  do_is_approx_units_test(is_approx);
+  do_is_approx_units_test(is_approx_equal_nan);
 }
