@@ -4,6 +4,7 @@
 
 from .figure2d import PlotFigure2d
 from .view import PlotView
+from .tools import as_logical_ax_lims
 from .._utils import make_random_color
 import numpy as np
 from matplotlib.collections import PathCollection
@@ -67,10 +68,16 @@ class PlotView2d(PlotView):
 
         # Make sure we don't overrun the original array bounds
         xylims = {
-            "x": np.clip(self.figure.ax.get_xlim(),
-                         *sorted(self.global_lims["x"])),
-            "y": np.clip(self.figure.ax.get_ylim(),
-                         *sorted(self.global_lims["y"]))
+            "x":
+            np.clip(
+                as_logical_ax_lims(self.figure.ax.get_xlim(),
+                                   self.global_lims["x"].dtype),
+                *sorted(self.global_lims["x"])),
+            "y":
+            np.clip(
+                as_logical_ax_lims(self.figure.ax.get_ylim(),
+                                   self.global_lims['y'].dtype),
+                *sorted(self.global_lims["y"]))
         }
 
         dx = np.abs(self.current_lims["x"][1] - self.current_lims["x"][0])
