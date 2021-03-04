@@ -51,44 +51,60 @@ def concatenate(x, y, dim):
     return _call_cpp_func(_cpp.concatenate, x, y, dim)
 
 
-def reshape(x, dims, to_dims=None):
-    """Reshape a variable or a data array.
+def reshape(x, dims):
+    """Reshape a variable.
 
-    For reshaping a variable, the syntax is the following:
+    Example:
       a = sc.array(dims=['x'], values=[1, 2, 3, 4, 5, 6])
       sc.reshape(var, {'y': 2, 'z': 3})
 
-    Reshaping a data array is limited to:
-      - splitting one of the dimensions into multiple dims
-      - flattening multiple dimensions into a single one
-    The syntax for splitting is:
-      sc.reshape(da, 'x', {'y': 2, 'z': 3})
-    The syntax for flattening is:
-      sc.reshape(da, ['x', 'y'], 'z')
-    When reshaping a data array, we attempt to keep coordinates as much as
-    possible, but some coordinates with bin edges are sometimes dropped during
-    a flattening operation when the bin edges cannot be stitched together.
-
-    :param x: Container to reshape.
-    :param dims: In the case of reshaping a Variable, a dict mapping new dims
-                 to new shapes. In the case of a DataArray, either a single dim
-                 label in the case of splitting a dimension, or a list of dim
-                 labels for flattening a dim.
-    :param to_dims: Unused for Variable reshape. In the case of a DataArray,
-                    either a dict mapping new dims to new shapes in the case of
-                    splitting a dimension, or a single dim label for flattening
-                    a dim.
-    :type x: Dataset or DataArray
-    :type dims: dict, or str, or list[str]
-    :type to_dims: dict or str
+    :param x: Variable to reshape.
+    :param dims: A dict mapping new dims to new shapes.
+    :type x: Variable
+    :type dims: dict
     :raises: If the volume of the old shape is not equal to the
              volume of the new shape.
-    :return: Variable or DataArray with requested dimension labels and shape.
+    :return: Variable with requested dimension labels and shape.
     """
-    if to_dims is not None:
-        return _call_cpp_func(_cpp.reshape, x, dims, to_dims)
-    else:
-        return _call_cpp_func(_cpp.reshape, x, dims)
+    return _call_cpp_func(_cpp.reshape, x, dims)
+
+
+def stack(x, dim, to_dims):
+    """Stack a single dimension of a data array into multiple dims.
+
+    Example:
+      sc.reshape(da, 'x', {'y': 2, 'z': 3})
+
+    :param x: DataArray to stack.
+    :param dim: A single dim label that will be split into more dims.
+    :param to_dims: A dict mapping new dims to new shapes.
+    :type x: DataArray
+    :type dim: str
+    :type to_dims: dict
+    :raises: If the volume of the old shape is not equal to the
+             volume of the new shape.
+    :return: DataArray with requested dimension labels and shape.
+    """
+    return _call_cpp_func(_cpp.stack, x, dim, to_dims)
+
+
+def unstack(x, dims, to_dim):
+    """Unstack or flatten mutliple dimensions of a data array into a single
+    dimension.
+
+    Example:
+      sc.reshape(da, ['x', 'y'], 'z')
+
+    :param x: DataArray to unstack.
+    :param dims: A list of dim labels that will be flattened.
+    :param to_dim: A single dim label for the resulting flattened dim.
+    :type x: DataArray
+    :type dims: list[str]
+    :type to_dim: str
+    :raises: If the bin edge corodinates cannot be stiched back together.
+    :return: DataArray with requested dimension labels and shape.
+    """
+    return _call_cpp_func(_cpp.unstack, x, dims, to_dim)
 
 
 def transpose(x, dims: Sequence[str]):

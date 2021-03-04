@@ -50,21 +50,21 @@ template <class T> void bind_reshape(pybind11::module &mod) {
       py::arg("x"), py::arg("dims"));
 }
 
-template <class T> void bind_reshape_data_array(pybind11::module &mod) {
+template <class T> void bind_stacking(pybind11::module &mod) {
   mod.def(
-      "reshape",
+      "stack",
       [](const T &self, const Dim dim, const py::dict &to_dims) {
         Dimensions new_dims;
         for (const auto &item : to_dims)
           new_dims.addInner(item.first.cast<Dim>(),
                             item.second.cast<scipp::index>());
-        return reshape(self, dim, new_dims);
+        return stack(self, dim, new_dims);
       },
       py::arg("x"), py::arg("dim"), py::arg("to_dims"));
   mod.def(
-      "reshape",
+      "unstack",
       [](const T &self, const py::list &from_dims, const Dim &to_dim) {
-        return reshape(self, from_dims.cast<std::vector<Dim>>(), to_dim);
+        return unstack(self, from_dims.cast<std::vector<Dim>>(), to_dim);
       },
       py::arg("x"), py::arg("dims"), py::arg("to_dim"));
 }
@@ -86,8 +86,8 @@ void init_shape(py::module &m) {
   bind_concatenate<Dataset>(m);
   bind_reshape<Variable>(m);
   bind_reshape<VariableView>(m);
-  bind_reshape_data_array<DataArray>(m);
-  bind_reshape_data_array<DataArrayView>(m);
+  bind_stacking<DataArray>(m);
+  bind_stacking<DataArrayView>(m);
   bind_transpose<Variable>(m);
   bind_transpose<VariableView>(m);
 }
