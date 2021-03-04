@@ -24,7 +24,7 @@ template <> inline bool is_linspace(const span<const core::time_point> &range) {
   if (range.back() <= range.front())
     return false;
 
-  const auto delta = range.size() < 2 ? 0 : range[1] - range[0];
+  const auto delta = range[1] - range[0];
 
   return std::adjacent_find(range.begin(), range.end(),
                             [delta](const auto &a, const auto &b) {
