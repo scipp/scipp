@@ -26,56 +26,59 @@ bool isBinEdge(const Dim dim, Dimensions edges, const Dimensions &toMatch) {
 // Workaround VS C7526 (undefined inline variable) with dtype<> in template.
 bool is_dtype_bool(const Variable &var) { return var.dtype() == dtype<bool>; }
 
-template <typename T, class Less>
-void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
-                     Variable &newT, const VariableConstView &oldCoordT,
-                     const VariableConstView &newCoordT) {
-  constexpr Less less;
-  const auto oldSize = oldT.dims()[dim];
-  const auto newSize = newT.dims()[dim];
+template <class Comp> struct RebinNonInner {
+  template <class T> struct Impl {
+    static void apply(const Dim dim, const VariableConstView &oldT,
+                      Variable &newT, const VariableConstView &oldCoordT,
+                      const VariableConstView &newCoordT) {
+      constexpr Comp comp;
+      const auto oldSize = oldT.dims()[dim];
+      const auto newSize = newT.dims()[dim];
 
-  const auto *xold = oldCoordT.values<T>().data();
-  const auto *xnew = newCoordT.values<T>().data();
+      const auto *xold = oldCoordT.values<T>().data();
+      const auto *xnew = newCoordT.values<T>().data();
 
-  auto add_from_bin = [&](const auto &slice, const auto xn_low,
-                          const auto xn_high, const scipp::index iold) {
-    auto xo_low = xold[iold];
-    auto xo_high = xold[iold + 1];
-    // delta is the overlap of the bins on the x axis
-    const auto delta = std::abs(std::min<double>(xn_high, xo_high, less) -
-                                std::max<double>(xn_low, xo_low, less));
-    const auto owidth = std::abs(xo_high - xo_low);
-    slice += oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
-  };
-  auto accumulate_bin = [&](const auto &slice, const auto xn_low,
-                            const auto xn_high) {
-    scipp::index begin =
-        std::upper_bound(xold, xold + oldSize + 1, xn_low, less) - xold;
-    scipp::index end =
-        std::upper_bound(xold, xold + oldSize + 1, xn_high, less) - xold;
-    if (begin == oldSize + 1 || end == 0)
-      return;
-    begin = std::max(scipp::index(0), begin - 1);
-    if (is_dtype_bool(newT)) {
-      slice |= any(oldT.slice({dim, begin, std::min(end, oldSize)}), dim);
-    } else {
-      add_from_bin(slice, xn_low, xn_high, begin);
-      if (begin + 1 < end - 1)
-        sum(oldT.slice({dim, begin + 1, end - 1}), dim, slice);
-      if (begin != end - 1 && end < oldSize + 1)
-        add_from_bin(slice, xn_low, xn_high, end - 1);
+      auto add_from_bin = [&](const auto &slice, const auto xn_low,
+                              const auto xn_high, const scipp::index iold) {
+        auto xo_low = xold[iold];
+        auto xo_high = xold[iold + 1];
+        // delta is the overlap of the bins on the x axis
+        const auto delta = std::abs(std::min<T>(xn_high, xo_high, comp) -
+                                    std::max<T>(xn_low, xo_low, comp));
+        const auto owidth = std::abs(xo_high - xo_low);
+        slice += oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
+      };
+      auto accumulate_bin = [&](const auto &slice, const auto xn_low,
+                                const auto xn_high) {
+        scipp::index begin =
+            std::upper_bound(xold, xold + oldSize + 1, xn_low, comp) - xold;
+        scipp::index end =
+            std::upper_bound(xold, xold + oldSize + 1, xn_high, comp) - xold;
+        if (begin == oldSize + 1 || end == 0)
+          return;
+        begin = std::max(scipp::index(0), begin - 1);
+        if (is_dtype_bool(newT)) {
+          slice |= any(oldT.slice({dim, begin, std::min(end, oldSize)}), dim);
+        } else {
+          add_from_bin(slice, xn_low, xn_high, begin);
+          if (begin + 1 < end - 1)
+            sum(oldT.slice({dim, begin + 1, end - 1}), dim, slice);
+          if (begin != end - 1 && end < oldSize + 1)
+            add_from_bin(slice, xn_low, xn_high, end - 1);
+        }
+      };
+      auto accumulate_bins = [&](const auto &range) {
+        for (scipp::index inew = range.begin(); inew < range.end(); ++inew) {
+          auto xn_low = xnew[inew];
+          auto xn_high = xnew[inew + 1];
+          accumulate_bin(newT.slice({dim, inew}), xn_low, xn_high);
+        }
+      };
+      core::parallel::parallel_for(core::parallel::blocked_range(0, newSize),
+                                   accumulate_bins);
     }
   };
-  auto accumulate_bins = [&](const auto &range) {
-    for (scipp::index inew = range.begin(); inew < range.end(); ++inew) {
-      auto xn_low = xnew[inew];
-      auto xn_high = xnew[inew + 1];
-      accumulate_bin(newT.slice({dim, inew}), xn_low, xn_high);
-    }
-  };
-  core::parallel::parallel_for(core::parallel::blocked_range(0, newSize),
-                               accumulate_bins);
-}
+};
 
 namespace {
 template <class Out, class OutEdge, class In, class InEdge>
@@ -100,9 +103,9 @@ struct Less {
 Variable rebin(const VariableConstView &var, const Dim dim,
                const VariableConstView &oldCoord,
                const VariableConstView &newCoord) {
-  // Rebin could also implemented for count-densities. However, it may be better
-  // to avoid this since it increases complexity. Instead, densities could
-  // always be computed on-the-fly for visualization, if required.
+  // Rebin could also be implemented for count-densities. However, it may be
+  // better to avoid this since it increases complexity. Instead, densities
+  // could always be computed on-the-fly for visualization, if required.
   core::expect::unit_any_of(var, {units::counts, units::one});
   if (!isBinEdge(dim, oldCoord.dims(), var.dims()))
     throw except::BinEdgeError(
@@ -144,20 +147,14 @@ Variable rebin(const VariableConstView &var, const Dim dim,
     if (newCoord.dims().ndim() > 1)
       throw std::runtime_error(
           "Not inner rebin works only for 1d coordinates for now.");
-    if (oldCoord.dtype() == dtype<double>) {
-      if (ascending)
-        rebin_non_inner<double, Less>(dim, var, rebinned, oldCoord, newCoord);
-      else
-        rebin_non_inner<double, Greater>(dim, var, rebinned, oldCoord,
-                                         newCoord);
-    } else if (oldCoord.dtype() == dtype<float>) {
-      if (ascending)
-        rebin_non_inner<float, Less>(dim, var, rebinned, oldCoord, newCoord);
-      else
-        rebin_non_inner<float, Greater>(dim, var, rebinned, oldCoord, newCoord);
+    if (ascending) {
+      core::CallDType<double, float, core::time_point>::apply<
+          RebinNonInner<Less>::Impl>(oldCoord.dtype(), dim, var, rebinned,
+                                     oldCoord, newCoord);
     } else {
-      throw except::TypeError("Rebinning is possible only for coords of types "
-                              "`float64` or `float32`.");
+      core::CallDType<double, float, core::time_point>::apply<
+          RebinNonInner<Greater>::Impl>(oldCoord.dtype(), dim, var, rebinned,
+                                        oldCoord, newCoord);
     }
     return rebinned;
   }
