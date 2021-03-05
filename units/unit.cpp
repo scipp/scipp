@@ -7,6 +7,7 @@
 #include <stdexcept>
 
 #include <units/units.hpp>
+#include <units/units_util.hpp>
 
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
@@ -63,19 +64,17 @@ Unit operator-(const Unit &a, const Unit &b) {
 }
 
 Unit operator*(const Unit &a, const Unit &b) {
-  auto out = Unit{a.underlying() * b.underlying()};
-  if (out == llnl::units::precise::error)
+  if (llnl::units::times_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of multiplication: (" +
                             a.name() + ") * (" + b.name() + ')');
-  return out;
+  return {a.underlying() * b.underlying()};
 }
 
 Unit operator/(const Unit &a, const Unit &b) {
-  auto out = Unit{a.underlying() / b.underlying()};
-  if (out == llnl::units::precise::error)
+  if (llnl::units::divides_overflows(a.underlying(), b.underlying()))
     throw except::UnitError("Unsupported unit as result of division: (" +
                             a.name() + ") / (" + b.name() + ')');
-  return out;
+  return {a.underlying() / b.underlying()};
 }
 
 Unit operator%(const Unit &a, const Unit &b) { return a / b; }
@@ -85,19 +84,17 @@ Unit operator-(const Unit &a) { return a; }
 Unit abs(const Unit &a) { return a; }
 
 Unit sqrt(const Unit &a) {
-  auto out = Unit{sqrt(a.underlying())};
-  if (out == llnl::units::precise::error)
+  if (llnl::units::is_error(sqrt(a.underlying())))
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
                             a.name() + ").");
-  return out;
+  return {sqrt(a.underlying())};
 }
 
 Unit pow(const Unit &a, const int64_t power) {
-  auto out = Unit{a.underlying().pow(power)};
-  if (out == llnl::units::precise::error)
+  if (llnl::units::pow_overflows(a.underlying(), power))
     throw except::UnitError("Unsupported unit as result of pow: pow(" +
                             a.name() + ", " + std::to_string(power) + ").");
-  return out;
+  return {a.underlying().pow(power)};
 }
 
 Unit trigonometric(const Unit &a) {

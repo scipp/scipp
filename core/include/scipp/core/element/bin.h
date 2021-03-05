@@ -13,6 +13,7 @@
 #include "scipp/core/element/util.h"
 #include "scipp/core/histogram.h"
 #include "scipp/core/subbin_sizes.h"
+#include "scipp/core/time_point.h"
 #include "scipp/core/transform_common.h"
 
 namespace scipp::core::element {
@@ -22,12 +23,15 @@ using update_indices_by_binning_arg =
     std::tuple<Index, T, scipp::span<const T>>;
 
 static constexpr auto update_indices_by_binning = overloaded{
-    element::arg_list<update_indices_by_binning_arg<int64_t, double>,
-                      update_indices_by_binning_arg<int64_t, float>,
-                      std::tuple<int64_t, int64_t, scipp::span<const double>>,
-                      update_indices_by_binning_arg<int32_t, double>,
-                      update_indices_by_binning_arg<int32_t, float>,
-                      std::tuple<int32_t, int64_t, scipp::span<const double>>>,
+    element::arg_list<
+        update_indices_by_binning_arg<int64_t, double>,
+        update_indices_by_binning_arg<int64_t, float>,
+        std::tuple<int64_t, int64_t, scipp::span<const double>>,
+        std::tuple<int64_t, time_point, scipp::span<const time_point>>,
+        update_indices_by_binning_arg<int32_t, double>,
+        update_indices_by_binning_arg<int32_t, float>,
+        std::tuple<int32_t, int64_t, scipp::span<const double>>,
+        std::tuple<int32_t, time_point, scipp::span<const time_point>>>,
     [](units::Unit &indices, const units::Unit &coord,
        const units::Unit &groups) {
       expect::equals(coord, groups);
@@ -65,7 +69,8 @@ template <class Index>
 static constexpr auto groups_to_map = overloaded{
     element::arg_list<span<const double>, span<const float>,
                       span<const int64_t>, span<const int32_t>,
-                      span<const bool>, span<const std::string>>,
+                      span<const bool>, span<const std::string>,
+                      span<const time_point>>,
     transform_flags::expect_no_variance_arg<0>,
     [](const units::Unit &u) { return u; },
     [](const auto &groups) {
@@ -96,7 +101,9 @@ static constexpr auto update_indices_by_grouping = overloaded{
                       update_indices_by_grouping_arg<int64_t, bool>,
                       update_indices_by_grouping_arg<int32_t, bool>,
                       update_indices_by_grouping_arg<int64_t, std::string>,
-                      update_indices_by_grouping_arg<int32_t, std::string>>,
+                      update_indices_by_grouping_arg<int32_t, std::string>,
+                      update_indices_by_grouping_arg<int32_t, time_point>,
+                      update_indices_by_grouping_arg<int64_t, time_point>>,
     [](units::Unit &indices, const units::Unit &coord,
        const units::Unit &groups) {
       expect::equals(coord, groups);
@@ -135,7 +142,8 @@ static constexpr auto bin = overloaded{
         bin_arg<int32_t, int64_t>, bin_arg<int32_t, int32_t>,
         bin_arg<bool, int64_t>, bin_arg<bool, int32_t>,
         bin_arg<Eigen::Vector3d, int64_t>, bin_arg<Eigen::Vector3d, int32_t>,
-        bin_arg<std::string, int64_t>, bin_arg<std::string, int32_t>>,
+        bin_arg<std::string, int64_t>, bin_arg<std::string, int32_t>,
+        bin_arg<time_point, int64_t>, bin_arg<time_point, int32_t>>,
     transform_flags::expect_in_variance_if_out_variance,
     [](units::Unit &binned, const units::Unit &, const units::Unit &data,
        const units::Unit &) { binned = data; },
