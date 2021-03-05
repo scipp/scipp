@@ -46,7 +46,7 @@ TEST(ResizeTest, data_array_2d) {
   EXPECT_EQ(resize(d, Dim::Y, 1), expected_d);
 }
 
-TEST(StackingTest, split_x) {
+TEST(ReshapeTest, split_x) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -60,10 +60,10 @@ TEST(StackingTest, split_x) {
                   0.1 * units::one);
   expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
 
-  EXPECT_EQ(stack(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
+  EXPECT_EQ(split(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
 }
 
-TEST(StackingTest, split_y) {
+TEST(ReshapeTest, split_y) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -77,10 +77,10 @@ TEST(StackingTest, split_y) {
                   0.2 * units::one);
   expected.coords().set(Dim::X, a.coords()[Dim::X]);
 
-  EXPECT_EQ(stack(a, Dim::Y, {{Dim::Row, 2}, {Dim::Tof, 2}}), expected);
+  EXPECT_EQ(split(a, Dim::Y, {{Dim::Row, 2}, {Dim::Tof, 2}}), expected);
 }
 
-TEST(StackingTest, split_into_3_dims) {
+TEST(ReshapeTest, split_into_3_dims) {
   const auto var = arange(Dim::X, 24);
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 24) + 0.1 * units::one);
@@ -90,11 +90,11 @@ TEST(StackingTest, split_into_3_dims) {
   DataArray expected(rshp);
   expected.coords().set(Dim::X, rshp + 0.1 * units::one);
 
-  EXPECT_EQ(stack(a, Dim::X, {{Dim::Tof, 2}, {Dim::Y, 3}, {Dim::Z, 4}}),
+  EXPECT_EQ(split(a, Dim::X, {{Dim::Tof, 2}, {Dim::Y, 3}, {Dim::Z, 4}}),
             expected);
 }
 
-TEST(StackingTest, flatten) {
+TEST(ReshapeTest, flatten) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -115,20 +115,20 @@ TEST(StackingTest, flatten) {
                                   0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
                                   0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
 
-  EXPECT_EQ(unstack(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+  EXPECT_EQ(flatten(a, {Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
-TEST(StackingTest, round_trip) {
+TEST(ReshapeTest, round_trip) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-  auto reshaped = stack(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
-  EXPECT_EQ(unstack(reshaped, {Dim::Row, Dim::Tof}, Dim::X), a);
+  auto reshaped = split(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
+  EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Tof}, Dim::X), a);
 }
 
-TEST(StackingTest, split_x_binedges_x) {
+TEST(ReshapeTest, split_x_binedges_x) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
@@ -143,10 +143,10 @@ TEST(StackingTest, split_x_binedges_x) {
                            Values{0.1, 1.1, 2.1, 3.1, 3.1, 4.1, 5.1, 6.1}));
   expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
 
-  EXPECT_EQ(stack(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
+  EXPECT_EQ(split(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
 }
 
-TEST(StackingTest, split_y_binedges_y) {
+TEST(ReshapeTest, split_y_binedges_y) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -160,60 +160,40 @@ TEST(StackingTest, split_y_binedges_y) {
       Dim::Y, makeVariable<double>(Dims{Dim::Row, Dim::Tof}, Shape{2, 3},
                                    Values{0.2, 1.2, 2.2, 2.2, 3.2, 4.2}));
 
-  EXPECT_EQ(stack(a, Dim::Y, {{Dim::Row, 2}, {Dim::Tof, 2}}), expected);
+  EXPECT_EQ(split(a, Dim::Y, {{Dim::Row, 2}, {Dim::Tof, 2}}), expected);
 }
 
-TEST(StackingTest, flatten_binedges_x) {
+TEST(ReshapeTest, flatten_binedges_x_fails) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-  const auto rshp = arange(Dim::Z, 24);
-  DataArray expected(rshp);
-  // Note: x coord is dropped because od mismatching bin edges during
-  // concatenate.
-  expected.coords().set(
-      Dim::Y,
-      makeVariable<double>(Dims{Dim::Z}, Shape{24},
-                           Values{0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
-                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
-                                  0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
-
-  EXPECT_EQ(unstack(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+  // Throws because x coord has mismatching bin edges.
+  EXPECT_THROW(flatten(a, {Dim::X, Dim::Y}, Dim::Z), except::BinEdgeError);
 }
 
-TEST(StackingTest, flatten_binedges_y) {
+TEST(ReshapeTest, flatten_binedges_y_fails) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 5) + 0.2 * units::one);
 
-  const auto rshp = arange(Dim::Z, 24);
-  DataArray expected(rshp);
-  expected.coords().set(
-      Dim::X,
-      makeVariable<double>(Dims{Dim::Z}, Shape{24},
-                           Values{0.1, 0.1, 0.1, 0.1, 1.1, 1.1, 1.1, 1.1,
-                                  2.1, 2.1, 2.1, 2.1, 3.1, 3.1, 3.1, 3.1,
-                                  4.1, 4.1, 4.1, 4.1, 5.1, 5.1, 5.1, 5.1}));
-  // Note: y coord is dropped because od mismatching bin edges during
-  // concatenate.
-
-  EXPECT_EQ(unstack(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+  // Throws because y coord has mismatching bin edges.
+  EXPECT_THROW(flatten(a, {Dim::X, Dim::Y}, Dim::Z), except::BinEdgeError);
 }
 
-TEST(StackingTest, round_trip_binedges) {
+TEST(ReshapeTest, round_trip_binedges) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-  auto reshaped = stack(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
-  EXPECT_EQ(unstack(reshaped, {Dim::Row, Dim::Tof}, Dim::X), a);
+  auto reshaped = split(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
+  EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Tof}, Dim::X), a);
 }
 
-TEST(StackingTest, split_x_with_attrs) {
+TEST(ReshapeTest, split_x_with_attrs) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -233,10 +213,10 @@ TEST(StackingTest, split_x_with_attrs) {
                    0.3 * units::one);
   expected.attrs().set(Dim::Qy, a.attrs()[Dim::Qy]);
 
-  EXPECT_EQ(stack(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
+  EXPECT_EQ(split(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
 }
 
-TEST(StackingTest, flatten_with_attrs) {
+TEST(ReshapeTest, flatten_with_attrs) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -271,10 +251,10 @@ TEST(StackingTest, flatten_with_attrs) {
                                   0.4, 1.4, 2.4, 3.4, 0.4, 1.4, 2.4, 3.4,
                                   0.4, 1.4, 2.4, 3.4, 0.4, 1.4, 2.4, 3.4}));
 
-  EXPECT_EQ(unstack(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+  EXPECT_EQ(flatten(a, {Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
-TEST(StackingTest, split_x_with_2d_coord) {
+TEST(ReshapeTest, split_x_with_2d_coord) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X,
@@ -291,10 +271,10 @@ TEST(StackingTest, split_x_with_2d_coord) {
           0.1 * units::one);
   expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
 
-  EXPECT_EQ(stack(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
+  EXPECT_EQ(split(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
 }
 
-TEST(StackingTest, flatten_with_2d_coord) {
+TEST(ReshapeTest, flatten_with_2d_coord) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X,
@@ -312,10 +292,10 @@ TEST(StackingTest, flatten_with_2d_coord) {
                                   0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
                                   0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
 
-  EXPECT_EQ(unstack(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+  EXPECT_EQ(flatten(a, {Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
-TEST(StackingTest, split_x_with_masks) {
+TEST(ReshapeTest, split_x_with_masks) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -355,10 +335,10 @@ TEST(StackingTest, split_x_with_masks) {
                                 true,  false, true,  false, true,  false,
                                 true,  true,  true,  false, false, false}));
 
-  EXPECT_EQ(stack(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
+  EXPECT_EQ(split(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}}), expected);
 }
 
-TEST(StackingTest, flatten_with_masks) {
+TEST(ReshapeTest, flatten_with_masks) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -412,10 +392,10 @@ TEST(StackingTest, flatten_with_masks) {
                                 true,  false, true,  false, true,  false,
                                 true,  true,  true,  false, false, false}));
 
-  EXPECT_EQ(unstack(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+  EXPECT_EQ(flatten(a, {Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
-TEST(StackingTest, round_trip_with_all) {
+TEST(ReshapeTest, round_trip_with_all) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
@@ -437,6 +417,6 @@ TEST(StackingTest, round_trip_with_all) {
                                 false, false, false, false, false, false,
                                 true,  false, true,  false, true,  false,
                                 true,  true,  true,  false, false, false}));
-  auto reshaped = stack(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
-  EXPECT_EQ(unstack(reshaped, {Dim::Row, Dim::Tof}, Dim::X), a);
+  auto reshaped = split(a, Dim::X, {{Dim::Row, 2}, {Dim::Tof, 3}});
+  EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Tof}, Dim::X), a);
 }
