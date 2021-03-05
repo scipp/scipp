@@ -38,7 +38,7 @@ template <typename T> struct Generate3D {
 template <typename T> struct Generate4D {
   auto operator()(int length) {
     return std::make_tuple(
-        makeVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx},
+        makeVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Time},
                         Shape{length, length, length, length}),
         sizeof(T) * std::pow(length, 4));
   }
@@ -47,7 +47,7 @@ template <typename T> struct Generate4D {
 template <typename T> struct Generate5D {
   auto operator()(int length) {
     return std::make_tuple(
-        makeVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx, Dim::Qy},
+        makeVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Time, Dim::Row},
                         Shape{length, length, length, length, length}),
         sizeof(T) * std::pow(length, 5));
   }
@@ -56,8 +56,9 @@ template <typename T> struct Generate5D {
 template <typename T> struct Generate6D {
   auto operator()(int length) {
     return std::make_tuple(
-        makeVariable<T>(Dims{Dim::X, Dim::Y, Dim::Z, Dim::Qx, Dim::Qy, Dim::Qz},
-                        Shape{length, length, length, length, length, length}),
+        makeVariable<T>(
+            Dims{Dim::X, Dim::Y, Dim::Z, Dim::Time, Dim::Row, Dim::Group},
+            Shape{length, length, length, length, length, length}),
         sizeof(T) * std::pow(length, 6));
   }
 };
