@@ -6,10 +6,7 @@
 #include "scipp/core/element/util.h"
 #include "scipp/core/except.h"
 #include "scipp/variable/arithmetic.h"
-#include "scipp/variable/comparison.h"
-#include "scipp/variable/except.h"
 #include "scipp/variable/misc_operations.h"
-#include "scipp/variable/reduction.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 
@@ -45,7 +42,8 @@ Variable linspace(const VariableConstView &start, const VariableConstView &stop,
 }
 
 Variable is_linspace(const VariableConstView &var, const Dim dim) {
-  return transform(subspan_view(var, dim), core::element::is_linspace);
+  return transform(subspan_view(var, dim), core::element::is_linspace,
+                   "is_linspace");
 }
 
 Variable values(const VariableConstView &x) {
