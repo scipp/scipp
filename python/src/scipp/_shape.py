@@ -66,7 +66,7 @@ def reshape(x, sizes=None, dims=None, shape=None):
     :type x: Variable
     :type sizes: dict
     :type dims: list[str]
-    :type shape: list[int
+    :type shape: list[int]
     :raises: If the volume of the old shape is not equal to the
              volume of the new shape.
     :return: Variable with requested dimension labels and shape.
