@@ -4,7 +4,7 @@
 #pragma once
 
 #include <functional>
-#include <mutex>
+#include <shared_mutex>
 #include <unordered_map>
 
 #include "scipp-units_export.h"
@@ -91,7 +91,7 @@ private:
   Id m_id;
   static std::unordered_map<std::string, Id> builtin_ids;
   static std::unordered_map<std::string, Id> custom_ids;
-  static std::mutex mutex;
+  static std::shared_mutex mutex;
 };
 
 SCIPP_UNITS_EXPORT std::string to_string(const Dim dim);

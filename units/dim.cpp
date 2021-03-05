@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include <limits>
+#include <mutex>
 
 #include "scipp/common/index.h"
 #include "scipp/units/dim.h"
@@ -38,14 +39,14 @@ std::unordered_map<std::string, Dim::Id> Dim::builtin_ids{
     {"z", Dim::Z}};
 
 std::unordered_map<std::string, Dim::Id> Dim::custom_ids;
-std::mutex Dim::mutex;
+std::shared_mutex Dim::mutex;
 
 Dim::Dim(const std::string &label) {
   if (const auto it = builtin_ids.find(label); it != builtin_ids.end()) {
     m_id = it->second;
     return;
   }
-  const std::lock_guard lock(mutex);
+  std::shared_lock read_lock(mutex);
   if (const auto it = custom_ids.find(label); it != custom_ids.end()) {
     m_id = it->second;
     return;
@@ -55,6 +56,8 @@ Dim::Dim(const std::string &label) {
     throw std::runtime_error(
         "Exceeded maximum number of different dimension labels.");
   m_id = static_cast<Id>(id);
+  read_lock.unlock();
+  const std::unique_lock write_lock(mutex);
   custom_ids[label] = m_id;
 }
 
@@ -63,7 +66,7 @@ std::string Dim::name() const {
     for (const auto &item : builtin_ids)
       if (item.second == m_id)
         return item.first;
-  const std::lock_guard lock(mutex);
+  const std::shared_lock read_lock(mutex);
   for (const auto &item : custom_ids)
     if (item.second == m_id)
       return item.first;
