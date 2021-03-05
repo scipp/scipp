@@ -84,11 +84,10 @@ Unit operator-(const Unit &a) { return a; }
 Unit abs(const Unit &a) { return a; }
 
 Unit sqrt(const Unit &a) {
-  auto out = Unit{sqrt(a.underlying())};
-  if (out == llnl::units::precise::error)
+  if (llnl::units::is_error(sqrt(a.underlying())))
     throw except::UnitError("Unsupported unit as result of sqrt: sqrt(" +
                             a.name() + ").");
-  return out;
+  return {sqrt(a.underlying())};
 }
 
 Unit pow(const Unit &a, const int64_t power) {

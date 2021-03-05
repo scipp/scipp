@@ -146,6 +146,10 @@ TEST(UnitFunctionsTest, sqrt) {
   EXPECT_EQ(sqrt(units::one), units::one);
   EXPECT_THROW_MSG(sqrt(units::m), except::UnitError,
                    "Unsupported unit as result of sqrt: sqrt(m).");
+  EXPECT_THROW_MSG(sqrt(units::Unit("J")), except::UnitError,
+                   "Unsupported unit as result of sqrt: sqrt(J).");
+  EXPECT_THROW_MSG(sqrt(units::Unit("eV")), except::UnitError,
+                   "Unsupported unit as result of sqrt: sqrt(eV).");
 }
 
 TEST(UnitFunctionsTest, sin) {
