@@ -105,6 +105,13 @@ TEST(UnitTest, divide_counts) {
   EXPECT_EQ(counts / counts, units::dimensionless);
 }
 
+TEST(UnitTest, pow) {
+  EXPECT_EQ(pow(units::m, 0), units::one);
+  EXPECT_EQ(pow(units::m, 1), units::m);
+  EXPECT_EQ(pow(units::m, 2), units::m * units::m);
+  EXPECT_EQ(pow(units::m, -1), units::one / units::m);
+}
+
 TEST(UnitTest, neutron_units) {
   Unit c(units::c);
   EXPECT_EQ(c * units::m, Unit(units::c * units::m));
