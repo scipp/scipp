@@ -42,9 +42,9 @@ template <int NameLen> struct Generate6D {
     d.setCoord(Dim::X, makeCoordData({Dim::X, axisLength}));
     d.setCoord(Dim::Y, makeCoordData({Dim::Y, axisLength}));
     d.setCoord(Dim::Z, makeCoordData({Dim::Z, axisLength}));
-    d.setCoord(Dim::Qx, makeCoordData({Dim::Qx, axisLength}));
-    d.setCoord(Dim::Qy, makeCoordData({Dim::Qy, axisLength}));
-    d.setCoord(Dim::Qz, makeCoordData({Dim::Qz, axisLength}));
+    d.setCoord(Dim::Time, makeCoordData({Dim::Time, axisLength}));
+    d.setCoord(Dim::Row, makeCoordData({Dim::Row, axisLength}));
+    d.setCoord(Dim::Group, makeCoordData({Dim::Group, axisLength}));
     d.setCoord(Dim(std::string(NameLen, 'a')),
                makeCoordData({Dim::X, axisLength}));
     d.setCoord(Dim(std::string(NameLen, 'b')),
@@ -52,11 +52,11 @@ template <int NameLen> struct Generate6D {
     d.setCoord(Dim(std::string(NameLen, 'c')),
                makeCoordData({Dim::Z, axisLength}));
     d.setCoord(Dim(std::string(NameLen, 'd')),
-               makeCoordData({Dim::Qx, axisLength}));
+               makeCoordData({Dim::Time, axisLength}));
     d.setCoord(Dim(std::string(NameLen, 'e')),
-               makeCoordData({Dim::Qy, axisLength}));
+               makeCoordData({Dim::Row, axisLength}));
     d.setCoord(Dim(std::string(NameLen, 'f')),
-               makeCoordData({Dim::Qz, axisLength}));
+               makeCoordData({Dim::Group, axisLength}));
     return d;
   }
 };
@@ -95,7 +95,7 @@ struct SliceXYQz {
   auto operator()(const Dataset &d) {
     return d.slice({Dim::X, 20, 90})
         .slice({Dim::Y, 30, 60})
-        .slice({Dim::Qz, 30, 90});
+        .slice({Dim::Group, 30, 90});
   }
 };
 
