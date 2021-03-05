@@ -53,7 +53,7 @@ TYPED_TEST(IsApproxTest, rtol_when_variables_outside_tolerance) {
   const auto atol = makeVariable<TypeParam>(Values{0});
   EXPECT_EQ(is_approx(a, b, rtol, atol), false * units::one);
 }
-ø TEST(IsApproxTest, atol_variances_ignored) {
+TEST(IsApproxTest, atol_variances_ignored) {
   const auto a = makeVariable<double>(Values{10.0}, Variances{1.0});
   EXPECT_TRUE(a.hasVariances());
   auto out = is_approx(a, a, makeVariable<double>(Values{0}),

@@ -10,6 +10,7 @@
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/transform_common.h"
+#include "scipp/core/values_and_variances.h"
 
 /// Operators to be used with transform and transform_in_place to implement
 /// operations for Variable.
@@ -32,26 +33,41 @@ constexpr auto is_approx_units = [](const units::Unit &x, const units::Unit &y,
   return units::dimensionless;
 };
 
+struct is_close_flags_t
+    : public transform_flags::expect_all_or_none_have_variance_t,
+      public transform_flags::no_out_variance_t {
+  void operator()() const {}
+};
+
 constexpr auto is_approx = overloaded{
-    transform_flags::no_out_variance, is_approx_types_t{}, is_approx_units,
+    is_close_flags_t{}, is_approx_types_t{}, is_approx_units,
     [](const auto &x, const auto &y, const auto &t) {
       using std::abs;
-      return abs(x - y) <= t;
+      // Note flags enforce that if x has variances, so must y and t
+      if constexpr (!is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+        return abs(x - y) <= t;
+      else if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>> &&
+                         is_ValueAndVariance_v<std::decay_t<decltype(t)>>)
+        return abs(x - y) <= t && (std::abs(x.variance - y.variance) <=
+                                   std::sqrt(2.0) * (t.value / y.variance));
+      else
+        return abs(x - y) <= t && (std::abs(x.variance - y.variance) <=
+                                   std::sqrt(2.0) * (t / y.variance));
     }};
 
-constexpr auto is_approx_equal_nan = overloaded{
-    transform_flags::no_out_variance, is_approx_types_t{}, is_approx_units,
-    [](const auto &x, const auto &y, const auto &t) {
-      using std::abs;
-      using numeric::isnan;
-      using numeric::isinf;
-      using numeric::signbit;
-      if (isnan(x) && isnan(y))
-        return true;
-      if (isinf(x) && isinf(y) && signbit(x) == signbit(y))
-        return true;
-      return abs(x - y) <= t;
-    }};
+constexpr auto is_approx_equal_nan =
+    overloaded{is_close_flags_t{}, is_approx_types_t{}, is_approx_units,
+               [](const auto &x, const auto &y, const auto &t) {
+                 using std::abs;
+                 using numeric::isnan;
+                 using numeric::isinf;
+                 using numeric::signbit;
+                 if (isnan(x) && isnan(y))
+                   return true;
+                 if (isinf(x) && isinf(y) && signbit(x) == signbit(y))
+                   return true;
+                 return abs(x - y) <= t;
+               }};
 
 struct comparison_types_t {
   constexpr void operator()() const noexcept;
