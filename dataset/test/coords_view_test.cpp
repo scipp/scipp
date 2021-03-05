@@ -89,10 +89,10 @@ TYPED_TEST(CoordsViewTest, find_and_contains) {
   auto dataset = factory.make();
   const auto coords = TestFixture::access(dataset).coords();
 
-  EXPECT_EQ(coords.find(Dim::Q), coords.end());
+  EXPECT_EQ(coords.find(Dim::Row), coords.end());
   EXPECT_EQ(coords.find(Dim::Time)->first, Dim::Time);
   EXPECT_EQ(coords.find(Dim::Time)->second, coords[Dim::Time]);
-  EXPECT_FALSE(coords.contains(Dim::Q));
+  EXPECT_FALSE(coords.contains(Dim::Row));
   EXPECT_TRUE(coords.contains(Dim::Time));
 
   EXPECT_EQ(coords.find(Dim::X)->first, Dim::X);
