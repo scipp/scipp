@@ -69,7 +69,7 @@ def reshape(x, dims):
     return _call_cpp_func(_cpp.reshape, x, dims)
 
 
-def stack(x, dim, to_dims):
+def split(x, dim, sizes):
     """Stack a single dimension of a data array into multiple dims.
 
     Example:
@@ -85,10 +85,10 @@ def stack(x, dim, to_dims):
              volume of the new shape.
     :return: DataArray with requested dimension labels and shape.
     """
-    return _call_cpp_func(_cpp.stack, x, dim, to_dims)
+    return _call_cpp_func(_cpp.split, x, dim, sizes)
 
 
-def unstack(x, dims, to_dim):
+def flatten(x, dims, dim):
     """Unstack or flatten mutliple dimensions of a data array into a single
     dimension.
 
@@ -104,7 +104,7 @@ def unstack(x, dims, to_dim):
     :raises: If the bin edge corodinates cannot be stiched back together.
     :return: DataArray with requested dimension labels and shape.
     """
-    return _call_cpp_func(_cpp.unstack, x, dims, to_dim)
+    return _call_cpp_func(_cpp.flatten, x, dims, dim)
 
 
 def transpose(x, dims: Sequence[str]):

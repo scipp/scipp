@@ -26,12 +26,12 @@ SCIPP_DATASET_EXPORT DataArray resize(const DataArrayConstView &a,
 SCIPP_DATASET_EXPORT Dataset resize(const DatasetConstView &d, const Dim dim,
                                     const DatasetConstView &shape);
 
-SCIPP_DATASET_EXPORT DataArray stack(const DataArrayConstView &a,
+SCIPP_DATASET_EXPORT DataArray split(const DataArrayConstView &a,
                                      const Dim from_dim,
                                      const Dimensions &to_dims);
 
-SCIPP_DATASET_EXPORT DataArray unstack(const DataArrayConstView &a,
-                                       const std::vector<Dim> &from_dims,
+SCIPP_DATASET_EXPORT DataArray flatten(const DataArrayConstView &a,
+                                       const std::vector<Dim> &from_labels,
                                        const Dim to_dim);
 
 } // namespace scipp::dataset
