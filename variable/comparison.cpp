@@ -13,9 +13,9 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
-Variable is_approx(const VariableConstView &a, const VariableConstView &b,
-                   const VariableConstView rtol, const VariableConstView atol,
-                   const NanComparisons equal_nans) {
+Variable is_close(const VariableConstView &a, const VariableConstView &b,
+                  const VariableConstView rtol, const VariableConstView atol,
+                  const NanComparisons equal_nans) {
   const auto tol = atol + rtol * abs(b);
   if (equal_nans == NanComparisons::Equal)
     return variable::transform(a, b, tol, element::is_approx_equal_nan);

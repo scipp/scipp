@@ -14,16 +14,16 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
-template <class T> void bind_is_approx(py::module &m) {
+template <class T> void bind_is_close(py::module &m) {
   m.def(
       "is_close",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y,
          const typename T::const_view_type &atol,
          const typename T::const_view_type &rtol, const bool equal_nan) {
-        return is_approx(x, y, atol, rtol,
-                         equal_nan ? NanComparisons::Equal
-                                   : NanComparisons::NotEqual);
+        return is_close(x, y, atol, rtol,
+                        equal_nan ? NanComparisons::Equal
+                                  : NanComparisons::NotEqual);
       },
       py::arg("x"), py::arg("y"), py::arg("rtol"), py::arg("rtol"),
       py::arg("equal_nan"), py::call_guard<py::gil_scoped_release>());
@@ -38,7 +38,7 @@ template <typename T> void bind_is_equal(py::module &m) {
 }
 
 void init_comparison(py::module &m) {
-  bind_is_approx<Variable>(m);
+  bind_is_close<Variable>(m);
   bind_is_equal<Variable>(m);
   bind_is_equal<Dataset>(m);
   bind_is_equal<DataArray>(m);
