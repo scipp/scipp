@@ -37,13 +37,13 @@ Dim::Dim(const std::string &label) {
     m_id = it->second;
     return;
   }
+  read_lock.unlock();
+  const std::unique_lock write_lock(mutex);
   const auto id = scipp::size(custom_ids) + 1000;
   if (id > std::numeric_limits<std::underlying_type<Id>::type>::max())
     throw std::runtime_error(
         "Exceeded maximum number of different dimension labels.");
   m_id = static_cast<Id>(id);
-  read_lock.unlock();
-  const std::unique_lock write_lock(mutex);
   custom_ids[label] = m_id;
 }
 
