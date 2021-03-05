@@ -137,7 +137,7 @@ def is_approx(x, y, rtol, atol, equal_nan=False):
     raise RuntimeError("is_approx is deprecated. Use isclose")
 
 
-def is_close(x, y, rtol, atol, equal_nan=False):
+def is_close(x, y, rtol=None, atol=None, equal_nan=False):
     """Compares values (x, y) element by element against tolerance absolute
     and relative tolerances (non-symmetric).
 
@@ -148,12 +148,23 @@ def is_close(x, y, rtol, atol, equal_nan=False):
     :param x: Left input.
     :param y: Right input.
     :param rtol: Tolerance value relative (to y).
-    :param atol: Tolerance value absolute.
+                 Can be a scalar or non-scalar.
+                 Defaults to scalar 1e-5 if unset.
+    :param atol: Tolerance value absolute. Can be a scalar or non-scalar.
+                 Defaults to scalar 1e-8 if unset and takes units from y arg.
     :param equal_nan: if true, non-finite values at the same index in (x, y)
-           are treated as equal.
-           Signbit must match for infs.
+                      are treated as equal.
+                      Signbit must match for infs.
     :return: Variable same size as input.
              Element True if absolute diff of value <= atol + rtol * y,
              otherwise False.
     """
+    if rtol is None:
+        rtol = 1e-5
+    if atol is None:
+        atol = 1e-8
+    if not hasattr(rtol, 'unit'):
+        rtol = rtol * _cpp.units.one
+    if not hasattr(atol, 'unit'):
+        atol = atol * y.unit
     return _call_cpp_func(_cpp.is_close, x, y, rtol, atol, equal_nan)
