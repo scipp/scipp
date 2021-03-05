@@ -112,7 +112,7 @@ def is_equal(x, y):
     return _call_cpp_func(_cpp.is_equal, x, y)
 
 
-def is_approx(x, y, rtol=1e-5, atol=1e-8, equal_nan=False):
+def is_approx(x, y, rtol, atol, equal_nan=False):
     """Compares values (x, y) element by element against tolerance absolute
     and relative tolerances (non-symmetric).
 
@@ -131,4 +131,4 @@ def is_approx(x, y, rtol=1e-5, atol=1e-8, equal_nan=False):
              Element True if absolute diff of value <= atol + rtol * y,
              otherwise False.
     """
-    return _call_cpp_func(_cpp.is_approx, x, y, atol, atol, equal_nan)
+    return _call_cpp_func(_cpp.is_approx, x, y, rtol, atol, equal_nan)
