@@ -113,6 +113,31 @@ def is_equal(x, y):
 
 
 def is_approx(x, y, rtol, atol, equal_nan=False):
+    """
+    Deprecated, use isclose
+
+    Compares values (x, y) element by element against tolerance absolute
+    and relative tolerances (non-symmetric).
+
+    abs(x - y) <= atol + rtol * y
+
+    Variances are not accounted for.
+
+    :param x: Left input.
+    :param y: Right input.
+    :param rtol: Tolerance value relative (to y).
+    :param atol: Tolerance value absolute.
+    :param equal_nan: if true, non-finite values at the same index in (x, y)
+           are treated as equal.
+           Signbit must match for infs.
+    :return: Variable same size as input.
+             Element True if absolute diff of value <= atol + rtol * y,
+             otherwise False.
+    """
+    raise RuntimeError("is_approx is deprecated. Use isclose")
+
+
+def is_close(x, y, rtol, atol, equal_nan=False):
     """Compares values (x, y) element by element against tolerance absolute
     and relative tolerances (non-symmetric).
 
@@ -131,4 +156,4 @@ def is_approx(x, y, rtol, atol, equal_nan=False):
              Element True if absolute diff of value <= atol + rtol * y,
              otherwise False.
     """
-    return _call_cpp_func(_cpp.is_approx, x, y, rtol, atol, equal_nan)
+    return _call_cpp_func(_cpp.is_close, x, y, rtol, atol, equal_nan)

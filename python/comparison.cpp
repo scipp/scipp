@@ -16,7 +16,7 @@ namespace py = pybind11;
 
 template <class T> void bind_is_approx(py::module &m) {
   m.def(
-      "is_approx",
+      "is_close",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y,
          const typename T::const_view_type &atol,
