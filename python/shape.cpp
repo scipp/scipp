@@ -40,14 +40,14 @@ template <class T> void bind_concatenate(py::module &m) {
 template <class T> void bind_reshape(pybind11::module &mod) {
   mod.def(
       "reshape",
-      [](const T &self, const py::dict &dims) {
+      [](const T &self, const py::dict &sizes) {
         Dimensions new_dims;
-        for (const auto &item : dims)
+        for (const auto &item : sizes)
           new_dims.addInner(item.first.cast<Dim>(),
                             item.second.cast<scipp::index>());
         return reshape(self, new_dims);
       },
-      py::arg("x"), py::arg("dims"));
+      py::arg("x"), py::arg("sizes"));
 }
 
 template <class T> void bind_split(pybind11::module &mod) {

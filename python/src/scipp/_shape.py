@@ -72,7 +72,7 @@ def reshape(x, sizes=None, dims=None, shape=None):
     :return: Variable with requested dimension labels and shape.
     """
     if dims is None:
-        return _call_cpp_func(_cpp.reshape, x, dims)
+        return _call_cpp_func(_cpp.reshape, x, sizes)
     else:
         return _call_cpp_func(_cpp.reshape, x, dict(zip(dims, shape)))
 

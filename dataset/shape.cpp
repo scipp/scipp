@@ -225,7 +225,7 @@ Variable split_bin_edge(const VariableConstView &var, const Dim from_dim,
 
   // Slice along the inner dimension of the to dims
   const auto edge = reshaped.slice({to_dims.inner(), 0});
-  const auto edge_dims = edge.dims();
+  const auto &edge_dims = edge.dims();
 
   Variable duplicate_edges;
   // Compare the dimensions of edge and the original coord.
@@ -274,10 +274,10 @@ Variable flatten_bin_edge(const VariableConstView &var,
                           const Dim bin_edge_dim) {
   const auto data_shape = var.dims()[bin_edge_dim] - 1;
   // Make sure that the bin edges match
-  const auto &front = var.slice({bin_edge_dim, 0});
-  const auto &back = var.slice({bin_edge_dim, data_shape});
-  const auto &front_flat = reshape(front, {{to_dim, front.dims().volume()}});
-  const auto &back_flat = reshape(back, {{to_dim, back.dims().volume()}});
+  const auto front = var.slice({bin_edge_dim, 0});
+  const auto back = var.slice({bin_edge_dim, data_shape});
+  const auto front_flat = reshape(front, {{to_dim, front.dims().volume()}});
+  const auto back_flat = reshape(back, {{to_dim, back.dims().volume()}});
   // Check that bin edges can be joined together
   if (front_flat.slice({to_dim, 1, front.dims().volume()}) !=
       back_flat.slice({to_dim, 0, back.dims().volume() - 1}))
@@ -308,7 +308,7 @@ DataArray split(const DataArrayConstView &a, const Dim from_dim,
                 const Dimensions &to_dims) {
   // Make sure that new dims do not already exist in data dimensions,
   // apart apart from the old dim (i.e. old dim can be re-used)
-  auto old_dims = a.dims();
+  const auto &old_dims = a.dims();
   for (const auto dim : to_dims.labels())
     if (old_dims.contains(dim) && dim != from_dim)
       throw except::DimensionError(
@@ -345,7 +345,7 @@ DataArray split(const DataArrayConstView &a, const Dim from_dim,
 /// ['y', 'z'] -> ['x']
 DataArray flatten(const DataArrayConstView &a,
                   const std::vector<Dim> &from_labels, const Dim to_dim) {
-  auto old_dims = a.dims();
+  const auto &old_dims = a.dims();
   for (const auto dim : from_labels)
     if (!old_dims.contains(dim))
       throw except::DimensionError(
