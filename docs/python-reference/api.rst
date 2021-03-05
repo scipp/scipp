@@ -45,6 +45,7 @@ General
    dot
    exp
    filter
+   flatten
    histogram
    log
    log10
@@ -55,6 +56,7 @@ General
    reshape
    slices
    sort
+   split
    sqrt
    transpose
    values
