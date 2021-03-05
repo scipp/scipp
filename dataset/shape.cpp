@@ -187,41 +187,27 @@ const Dimensions flatten_dims(const Dimensions &old_dims,
 /// 3. If none of the variables's dimensions are contained, no broadcast
 Variable maybe_broadcast(const VariableConstView &var,
                          const Dimensions &from_dims) {
-  // TODO: do we need a std::move?
-
   const auto &var_dims = var.dims();
 
-  bool vardim_found_in_fromdims = false;
+  Dimensions broadcast_dims;
   for (const auto dim : var_dims.labels())
-    if (from_dims.contains(dim))
-      vardim_found_in_fromdims = true;
-
-  bool vardims_contains_all_fromdims = true;
-  for (const auto dim : from_dims.labels())
-    if (!var_dims.contains(dim))
-      vardims_contains_all_fromdims = false;
-
-  // if (need_broadcast && !var_dims.contains(from_dims)) {
-  if (vardim_found_in_fromdims && !vardims_contains_all_fromdims) {
-    Dimensions broadcast_dims;
-    for (const auto dim : var_dims.labels())
-      if (!from_dims.contains(dim))
-        broadcast_dims.addInner(dim, var_dims[dim]);
-      else
-        for (const auto lab : from_dims.labels())
+    if (!from_dims.contains(dim))
+      broadcast_dims.addInner(dim, var_dims[dim]);
+    else
+      for (const auto lab : from_dims.labels())
+        if (!broadcast_dims.contains(lab)) {
           // Need to check if the variable contains that dim, and use the
           // variable shape in case we have a bin edge.
           if (var_dims.contains(lab))
             broadcast_dims.addInner(lab, var_dims[lab]);
           else
             broadcast_dims.addInner(lab, from_dims[lab]);
-    return broadcast(var, broadcast_dims);
-  } else {
-    return Variable(std::move(var));
-  }
+        }
+  return broadcast(var, broadcast_dims);
 }
 
 /// Special handling for splitting coord along a dim that contains bin edges.
+///
 /// The procedure is the following:
 /// - reshape the coord, excluding the last bin-edge slice
 /// - slice the first element along the inner dimension of the reshaped var
@@ -277,6 +263,7 @@ Variable split_bin_edge(const VariableConstView &var, const Dim from_dim,
 }
 
 /// Special handling for flattening coord along a dim that contains bin edges.
+///
 /// The procedure is the following:
 /// - check that the front slice along the bin edge dim matches the back slice,
 ///   after offseting the values by 1
@@ -291,7 +278,6 @@ Variable flatten_bin_edge(const VariableConstView &var,
   const auto &back = var.slice({bin_edge_dim, data_shape});
   const auto &front_flat = reshape(front, {{to_dim, front.dims().volume()}});
   const auto &back_flat = reshape(back, {{to_dim, back.dims().volume()}});
-
   // Check that bin edges can be joined together
   if (front_flat.slice({to_dim, 1, front.dims().volume()}) !=
       back_flat.slice({to_dim, 0, back.dims().volume() - 1}))
@@ -369,10 +355,18 @@ DataArray flatten(const DataArrayConstView &a,
   for (const auto dim : from_labels)
     from_dims.addInner(dim, old_dims[dim]);
 
-  // // Only allow reshaping contiguous dimensions
-  // if (!from_dims.isContiguousIn(old_dims))
-  //   throw except::DimensionError(
-  //       "Flatten: can only flatten a contiguous set of dimensions.");
+  // Only allow reshaping contiguous dimensions.
+  // Note that isContiguousIn only allows for inner contiguous blocks,
+  // and contains(dimensions) ignores dimension order.
+  const auto offset = old_dims.index(from_labels[0]);
+  for (scipp::index i = 0; i < from_dims.ndim(); ++i) {
+    if (old_dims.label(i + offset) != from_dims.label(i) ||
+        old_dims.size(i + offset) != from_dims.size(i))
+      throw except::DimensionError(
+          "Flatten: can only flatten a contiguous set of dimensions. "
+          "The order of the dimensions to flatten must also match the order of "
+          "dimensions in the DataArray.");
+  }
 
   auto reshaped =
       DataArray(reshape(a.data(), flatten_dims(old_dims, from_dims, to_dim)));

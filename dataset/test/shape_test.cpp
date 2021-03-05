@@ -118,6 +118,15 @@ TEST(ReshapeTest, flatten) {
   EXPECT_EQ(flatten(a, {Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
+TEST(ReshapeTest, flatten_bad_dim_order) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  DataArray a(var);
+  a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
+  a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
+
+  EXPECT_THROW(flatten(a, {Dim::Y, Dim::Z}, Dim::Z), except::DimensionError);
+}
+
 TEST(ReshapeTest, round_trip) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
