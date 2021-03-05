@@ -15,7 +15,8 @@ Features
 * Add modulo operations `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
 * Add scaling operations for Variables of type ``vector_3_float64``.
 * ``sum`` and ``mean`` implemented for Variables of type ``vector_3_float64``.
-* Add reshape for DataArray [#1676](https://github.com/scipp/scipp/pull/1676)
+* Add ``split`` and ``flatten`` which allow to reshape dimensions of a DataArray [#1676](https://github.com/scipp/scipp/pull/1676)
+* It is now possible to reshape a Variable also with ``sc.reshape(var, {'x': 2, 'y': 3})``, in addition to ``sc.reshape(var, dims=['x', 'y'], shape=(2, 3))``.
 * Add ``ones`` and ``empty`` creation functions, similar to what is known from numpy `#1732 <https://github.com/scipp/scipp/pull/1732>`_.
 * ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
 * ``scipp.neutron`` (now ``scippneutron``)
@@ -28,7 +29,6 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * The ``plot`` module has been renamed to ``plotting``, and plotting is now achieved via ``sc.plot(data)``. Wrapper functions ``superplot``, ``image``, and ``scatter3d`` have been dropped `#1696 <https://github.com/scipp/scipp/pull/1696>`_.
-* The syntax for reshaping a Variable has changed from ``sc.reshape(var, ['x', 'y'], (2, 3))`` to ``sc.reshape(var, {'x': 2, 'y': 3})``.
 * ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
 * ``scipp.neutron`` (now ``scippneutron``)
 
