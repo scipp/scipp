@@ -100,7 +100,7 @@ stages:
           - bash: |
               set -ex
               conda --version
-              conda install --yes anaconda-client
+              conda install --yes anaconda-client=1.5.5
               conda config --set always_yes yes --set changeps1 no
             displayName: 'Install anaconda-client'
           - ${{ each package in parameters.package_list }}:
@@ -113,7 +113,6 @@ stages:
                 downloadPath: '$(Build.StagingDirectory)/packages'
               displayName: 'Retrieve built conda package'
             - bash: |
-                set -ex
                 anaconda -t '$ANACONDA_TOKEN' upload --user scipp --label ${{ parameters.label }} '$(Build.StagingDirectory)/packages/${{ package.Key }}/'scipp-*.tar.bz2
               env:
                 ANACONDA_TOKEN: $(anaconda_token_secret)
