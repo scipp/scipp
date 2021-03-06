@@ -100,7 +100,7 @@ stages:
           - bash: |
               set -ex
               conda --version
-              conda install -c conda-forge --yes anaconda-client=1.5.5
+              conda install -c conda-forge --yes anaconda-client=1.5.1
               conda config --set always_yes yes --set changeps1 no
             displayName: 'Install anaconda-client'
           - ${{ each package in parameters.package_list }}:
