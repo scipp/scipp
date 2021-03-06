@@ -113,6 +113,7 @@ stages:
                 downloadPath: '$(Build.StagingDirectory)/packages'
               displayName: 'Retrieve built conda package'
             - bash: |
+                set -ex
                 anaconda -t '$ANACONDA_TOKEN' upload --user scipp --label ${{ parameters.label }} '$(Build.StagingDirectory)/packages/${{ package.Key }}/'scipp-*.tar.bz2
               env:
                 ANACONDA_TOKEN: $(anaconda_token_secret)
