@@ -143,48 +143,46 @@ TYPED_TEST_SUITE(IsApproxTest, IsApproxTestTypes);
 TYPED_TEST(IsApproxTest, value) {
   TypeParam a = 1.0;
   TypeParam b = 2.1;
-  EXPECT_TRUE(is_approx(a, b, 1.2));
-  EXPECT_TRUE(is_approx(a, b, 1.1));
-  EXPECT_FALSE(is_approx(a, b, 1.0));
+  EXPECT_TRUE(is_close(a, b, 1.2));
+  EXPECT_TRUE(is_close(a, b, 1.1));
+  EXPECT_FALSE(is_close(a, b, 1.0));
 }
 
 TYPED_TEST(IsApproxTest, value_not_equal_nans) {
-  EXPECT_FALSE(is_approx(TypeParam(NAN), TypeParam(NAN), 1.e9));
-  EXPECT_FALSE(is_approx(TypeParam(NAN), TypeParam(1.0), 1.e9));
-  EXPECT_FALSE(is_approx(TypeParam(1.0), TypeParam(NAN), 1.e9));
-  EXPECT_FALSE(is_approx(TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx(TypeParam(1.0), TypeParam(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx(TypeParam(INFINITY), TypeParam(1.0), 1.e9));
-  EXPECT_FALSE(is_approx(-TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx(-TypeParam(1.0), -TypeParam(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx(-TypeParam(INFINITY), -TypeParam(1.0), 1.e9));
+  EXPECT_FALSE(is_close(TypeParam(NAN), TypeParam(NAN), 1.e9));
+  EXPECT_FALSE(is_close(TypeParam(NAN), TypeParam(1.0), 1.e9));
+  EXPECT_FALSE(is_close(TypeParam(1.0), TypeParam(NAN), 1.e9));
+  EXPECT_FALSE(is_close(TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_close(TypeParam(1.0), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_close(TypeParam(INFINITY), TypeParam(1.0), 1.e9));
+  EXPECT_FALSE(is_close(-TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_close(-TypeParam(1.0), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_close(-TypeParam(INFINITY), -TypeParam(1.0), 1.e9));
 }
 
 TYPED_TEST(IsApproxTest, value_equal_nans) {
-  EXPECT_TRUE(is_approx_equal_nan(TypeParam(NAN), TypeParam(NAN), 1.e9));
-  EXPECT_FALSE(is_approx_equal_nan(TypeParam(NAN), TypeParam(1.0), 1.e9));
-  EXPECT_FALSE(is_approx_equal_nan(TypeParam(1.0), TypeParam(NAN), 1.e9));
+  EXPECT_TRUE(is_close_equal_nan(TypeParam(NAN), TypeParam(NAN), 1.e9));
+  EXPECT_FALSE(is_close_equal_nan(TypeParam(NAN), TypeParam(1.0), 1.e9));
+  EXPECT_FALSE(is_close_equal_nan(TypeParam(1.0), TypeParam(NAN), 1.e9));
 }
 TYPED_TEST(IsApproxTest, value_equal_pos_infs) {
   EXPECT_TRUE(
-      is_approx_equal_nan(TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx_equal_nan(TypeParam(1.0), TypeParam(INFINITY), 1.e9));
-  EXPECT_FALSE(is_approx_equal_nan(TypeParam(INFINITY), TypeParam(1.0), 1.e9));
+      is_close_equal_nan(TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_close_equal_nan(TypeParam(1.0), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_close_equal_nan(TypeParam(INFINITY), TypeParam(1.0), 1.e9));
 }
 TYPED_TEST(IsApproxTest, value_equal_neg_infs) {
   EXPECT_TRUE(
-      is_approx_equal_nan(-TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
-  EXPECT_FALSE(
-      is_approx_equal_nan(-TypeParam(1.0), -TypeParam(INFINITY), 1.e9));
-  EXPECT_FALSE(
-      is_approx_equal_nan(-TypeParam(INFINITY), -TypeParam(1.0), 1.e9));
+      is_close_equal_nan(-TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_close_equal_nan(-TypeParam(1.0), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(is_close_equal_nan(-TypeParam(INFINITY), -TypeParam(1.0), 1.e9));
 }
 
 TYPED_TEST(IsApproxTest, value_equal_infs_signbit) {
   EXPECT_FALSE(
-      is_approx_equal_nan(-TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
+      is_close_equal_nan(-TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
   EXPECT_FALSE(
-      is_approx_equal_nan(TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
+      is_close_equal_nan(TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
 }
 
 /*
@@ -214,6 +212,6 @@ template <class Op> void do_is_approx_units_test(Op op) {
 }
 
 TEST(IsApproxTest, units) {
-  do_is_approx_units_test(is_approx);
-  do_is_approx_units_test(is_approx_equal_nan);
+  do_is_approx_units_test(is_close);
+  do_is_approx_units_test(is_close_equal_nan);
 }
