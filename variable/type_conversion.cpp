@@ -19,7 +19,7 @@ struct MakeVariableWithType {
       constexpr auto expect_input_variances =
           conditional_flag<!core::canHaveVariances<T>()>(
               expect_no_variance_arg<0>);
-      return transform<double, float, int64_t, int32_t, bool>(
+      return transform<double, float, int64_t, int32_t, bool, core::time_point>(
           parent,
           overloaded{
               expect_input_variances, [](const units::Unit &x) { return x; },
@@ -27,6 +27,9 @@ struct MakeVariableWithType {
                 if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
                   return ValueAndVariance<T>{static_cast<T>(x.value),
                                              static_cast<T>(x.variance)};
+                else if constexpr (std::is_same_v<std::decay_t<decltype(x)>,
+                                                  core::time_point>)
+                  return static_cast<T>(x.time_since_epoch());
                 else
                   return static_cast<T>(x);
               }});
