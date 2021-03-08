@@ -43,6 +43,36 @@ class _Bins:
         return self
 
     @property
+    def coords(self):
+        """Coords of the bins"""
+        return _cpp.bins_view(self._data()).coords
+
+    @property
+    def meta(self):
+        """Coords and attrs of the bins"""
+        return _cpp.bins_view(self._data()).meta
+
+    @property
+    def attrs(self):
+        """Coords of the bins"""
+        return _cpp.bins_view(self._data()).attrs
+
+    @property
+    def masks(self):
+        """Masks of the bins"""
+        return _cpp.bins_view(self._data()).masks
+
+    @property
+    def data(self):
+        """Data of the bins"""
+        return _cpp.bins_view(self._data()).data
+
+    @data.setter
+    def data(self, data):
+        """Set data of the bins"""
+        _cpp.bins_view(self._data()).data = data
+
+    @property
     def begin(self):
         """Begin index of bins as view of internal data buffer"""
         return _cpp.bins_begin_end(self._data())[0]
@@ -58,7 +88,7 @@ class _Bins:
         return _cpp.bins_dim(self._data())
 
     @property
-    def data(self):
+    def buffer(self):
         """Internal data buffer holding data of all bins"""
         return _cpp.bins_data(self._data())
 

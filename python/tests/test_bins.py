@@ -48,26 +48,38 @@ def test_bins():
 def test_bins_view():
     col = sc.Variable(dims=['event'], values=[1, 2, 3, 4])
     table = sc.DataArray(data=col,
-                         coords={'time': col},
-                         attrs={'attr': col},
+                         coords={'time': col * 2.2},
+                         attrs={'attr': col * 3.3},
                          masks={'mask': col == col})
     begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.dtype.int64)
     end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.dtype.int64)
     var = sc.bins(begin=begin, end=end, dim='event', data=table)
-    bins = sc.bins_view(var)
-    assert 'time' in bins.coords
-    assert 'time' in bins.meta
-    assert 'attr' in bins.meta
-    assert 'attr' in bins.attrs
-    assert 'mask' in bins.masks
+    assert 'time' in var.bins.coords
+    assert 'time' in var.bins.meta
+    assert 'attr' in var.bins.meta
+    assert 'attr' in var.bins.attrs
+    assert 'mask' in var.bins.masks
     with pytest.raises(RuntimeError):
-        bins.coords['time2'] = col  # col is not binned
-    bins.coords['time'] = bins.data
-    bins.coords['time'] = bins.data * 2.0
-    bins.coords['time2'] = bins.data
-    bins.coords['time3'] = bins.data * 2.0
-    bins.data = bins.coords['time']
-    bins.data = bins.data * 2.0
+        var.bins.coords['time2'] = col  # col is not binned
+
+    def check(a, b):
+        # sc.is_equal does not work for us here since we have owning and
+        # non-owning views which currently never compare equal.
+        assert sc.all(a == b).bins.sum().value
+
+    var.bins.coords['time'] = var.bins.data
+    assert sc.is_equal(var.bins.coords['time'], var.bins.data)
+    var.bins.coords['time'] = var.bins.data * 2.0
+    check(var.bins.coords['time'], var.bins.data * 2.0)
+    var.bins.coords['time2'] = var.bins.data
+    assert sc.is_equal(var.bins.coords['time2'], var.bins.data)
+    var.bins.coords['time3'] = var.bins.data * 2.0
+    check(var.bins.coords['time3'], var.bins.data * 2.0)
+    var.bins.data = var.bins.coords['time']
+    assert sc.is_equal(var.bins.data, var.bins.coords['time'])
+    var.bins.data = var.bins.data * 2.0
+    del var.bins.coords['time3']
+    assert 'time3' not in var.bins.coords
 
 
 def test_bins_arithmetic():
@@ -79,7 +91,7 @@ def test_bins_arithmetic():
         coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])})
     binned.bins *= sc.lookup(func=hist, dim='x')
     assert sc.is_equal(
-        binned.bins.data.data,
+        binned.bins.buffer.data,
         sc.Variable(dims=['event'], values=[1.0, 2.0, 6.0, 8.0]))
 
 
