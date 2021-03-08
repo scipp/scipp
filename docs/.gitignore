@@ -4,3 +4,6 @@ generated/
 
 # Data files
 *.hdf5
+
+# Plots
+visualization/*.pdf
