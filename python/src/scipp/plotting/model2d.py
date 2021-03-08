@@ -18,7 +18,8 @@ def _check_if_dtypes_supported(scipp_obj_dict, *_args, **_kwargs):
         for coord_name, coord in array.coords.items():
             if is_discrete(coord):
                 raise NotImplementedError(
-                    "Plotting 2D data with discrete coordinates (e.g. int) is not supported. "
+                    "Plotting 2D data with discrete coordinates "
+                    "(e.g. int) is not supported. "
                     f"Got dtype {coord.dtype} in coordinate '{coord_name}'" +
                     (f" of array '{array_name}'." if array_name else "."))
 
