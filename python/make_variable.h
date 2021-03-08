@@ -146,6 +146,7 @@ Variable doMakeVariable(const std::vector<Dim> &labels, py::array &values,
       throw except::VariancesError("datetimes cannot have variances.");
     }
     const auto [actual_unit, value_factor] = get_time_unit(values, dtype, unit);
+
     if (value_factor != 1) {
       throw std::invalid_argument(
           "Scaling datetimes is not supported. The units of the datetime64 "
