@@ -65,8 +65,8 @@ Shape
    broadcast
    concatenate
    flatten
+   fold
    reshape
-   split
    transpose
 
 Comparison

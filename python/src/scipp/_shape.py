@@ -86,15 +86,15 @@ def reshape(x, sizes=None, dims=None, shape=None):
         return _call_cpp_func(_cpp.reshape, x, dict(zip(dims, shape)))
 
 
-def split(x, dim, sizes=None, dims=None, shape=None):
-    """Split a single dimension of a variable or data array into multiple dims.
+def fold(x, dim, sizes=None, dims=None, shape=None):
+    """Fold a single dimension of a variable or data array into multiple dims.
 
     Examples:
-      sc.split(a, 'x', {'y': 2, 'z': 3})
-      sc.split(a, 'x', dims=['y', 'x'], shape=[2, 3])
+      sc.fold(a, 'x', {'y': 2, 'z': 3})
+      sc.fold(a, 'x', dims=['y', 'x'], shape=[2, 3])
 
-    :param x: Variable or DataArray to split.
-    :param dim: A single dim label that will be split into more dims.
+    :param x: Variable or DataArray to fold.
+    :param dim: A single dim label that will be folded into more dims.
     :param sizes: A dict mapping new dims to new shapes.
     :param dims: A list of new dims labels.
     :param shape: A list of new dim shapes.
@@ -110,16 +110,15 @@ def split(x, dim, sizes=None, dims=None, shape=None):
     if sizes is not None:
         if (dims is not None) or (shape is not None):
             raise RuntimeError(
-                "If sizes is defined, dims and shape must be None in split.")
+                "If sizes is defined, dims and shape must be None in fold.")
     else:
         if (dims is None) or (shape is None):
-            raise RuntimeError(
-                "Both dims and shape must be defined for split.")
+            raise RuntimeError("Both dims and shape must be defined in fold.")
 
     if dims is None:
-        return _call_cpp_func(_cpp.split, x, dim, sizes)
+        return _call_cpp_func(_cpp.fold, x, dim, sizes)
     else:
-        return _call_cpp_func(_cpp.split, x, dim, dict(zip(dims, shape)))
+        return _call_cpp_func(_cpp.fold, x, dim, dict(zip(dims, shape)))
 
 
 def flatten(x, dims=None, to=None):

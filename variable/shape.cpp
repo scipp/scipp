@@ -159,16 +159,16 @@ Variable reshape(const VariableConstView &view, const Dimensions &dims) {
   return reshaped;
 }
 
-void validate_split_dims(const Dimensions &old_dims, const Dim from_dim,
-                         const Dimensions &to_dims) {
+void validate_fold_dims(const Dimensions &old_dims, const Dim from_dim,
+                        const Dimensions &to_dims) {
   if (!old_dims.contains(from_dim))
-    throw except::DimensionError("Dimension to split not found.");
+    throw except::DimensionError("Dimension to fold not found.");
   // Make sure that new dims do not already exist in data dimensions,
   // apart from the old dim (i.e. old dim can be re-used)
   for (const auto dim : to_dims.labels())
     if (old_dims.contains(dim) && dim != from_dim)
       throw except::DimensionError(
-          "Split: new dimensions cannot contain labels that already exist.");
+          "Fold: new dimensions cannot contain labels that already exist.");
 }
 
 void validate_flatten_dims(const Dimensions &old_dims,
@@ -196,13 +196,13 @@ void validate_flatten_dims(const Dimensions &old_dims,
   }
 }
 
-/// Split dims for reshaping one dim into multiple dims
+/// Fold dims for folding one dim into multiple dims
 ///
 /// Go through the old dims and:
 /// - if the dim does not equal the dim that is being stacked, copy dim/shape
 /// - if the dim equals the dim to be stacked, replace by stack of new dims
-Dimensions split_dims(const Dimensions &old_dims, const Dim from_dim,
-                      const Dimensions &to_dims) {
+Dimensions fold_dims(const Dimensions &old_dims, const Dim from_dim,
+                     const Dimensions &to_dims) {
   Dimensions new_dims;
   for (const auto dim : old_dims.labels())
     if (dim != from_dim)
@@ -232,10 +232,10 @@ Dimensions flatten_dims(const Dimensions &old_dims, const Dimensions &from_dims,
   return new_dims;
 }
 
-Variable split(const VariableConstView &view, const Dim from_dim,
-               const Dimensions &to_dims) {
-  validate_split_dims(view.dims(), from_dim, to_dims);
-  return reshape(view, split_dims(view.dims(), from_dim, to_dims));
+Variable fold(const VariableConstView &view, const Dim from_dim,
+              const Dimensions &to_dims) {
+  validate_fold_dims(view.dims(), from_dim, to_dims);
+  return reshape(view, fold_dims(view.dims(), from_dim, to_dims));
 }
 
 Variable flatten(const VariableConstView &view,

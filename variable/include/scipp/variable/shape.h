@@ -27,9 +27,9 @@ SCIPP_VARIABLE_EXPORT VariableView reshape(Variable &var,
 SCIPP_VARIABLE_EXPORT Variable reshape(Variable &&var, const Dimensions &dims);
 SCIPP_VARIABLE_EXPORT Variable reshape(const VariableConstView &view,
                                        const Dimensions &dims);
-SCIPP_VARIABLE_EXPORT Variable split(const VariableConstView &view,
-                                     const Dim from_dim,
-                                     const Dimensions &to_dims);
+SCIPP_VARIABLE_EXPORT Variable fold(const VariableConstView &view,
+                                    const Dim from_dim,
+                                    const Dimensions &to_dims);
 SCIPP_VARIABLE_EXPORT Variable flatten(const VariableConstView &view,
                                        const std::vector<Dim> &from_labels,
                                        const Dim to_dim);
@@ -47,15 +47,15 @@ SCIPP_VARIABLE_EXPORT void squeeze(Variable &var, const std::vector<Dim> &dims);
 SCIPP_VARIABLE_EXPORT void expect_same_volume(const Dimensions &old_dims,
                                               const Dimensions &new_dims);
 
-SCIPP_VARIABLE_EXPORT void validate_split_dims(const Dimensions &old_dims,
-                                               const Dim from_dim,
-                                               const Dimensions &to_dims);
+SCIPP_VARIABLE_EXPORT void validate_fold_dims(const Dimensions &old_dims,
+                                              const Dim from_dim,
+                                              const Dimensions &to_dims);
 SCIPP_VARIABLE_EXPORT
 void validate_flatten_dims(const Dimensions &old_dims,
                            const Dimensions &from_dims, const Dim to_dim);
-SCIPP_VARIABLE_EXPORT Dimensions split_dims(const Dimensions &old_dims,
-                                            const Dim from_dim,
-                                            const Dimensions &to_dims);
+SCIPP_VARIABLE_EXPORT Dimensions fold_dims(const Dimensions &old_dims,
+                                           const Dim from_dim,
+                                           const Dimensions &to_dims);
 SCIPP_VARIABLE_EXPORT Dimensions flatten_dims(const Dimensions &old_dims,
                                               const Dimensions &from_dims,
                                               const Dim to_dim);

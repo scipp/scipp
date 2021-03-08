@@ -173,18 +173,18 @@ Variable maybe_broadcast(const VariableConstView &var,
   return broadcast(var, broadcast_dims);
 }
 
-/// Special handling for splitting coord along a dim that contains bin edges.
+/// Special handling for folding coord along a dim that contains bin edges.
 ///
 /// The procedure is the following:
-/// - create output of correct size (use split_dims and resize to_dims.inner()
+/// - create output of correct size (use fold_dims and resize to_dims.inner()
 ///   to L+1).
 /// - copy(reshape(coord.slice({from_dim, 0, size-1}), to_dims),
 ///   out_coord.slice({to_dims.inner(), 0, Ninner})
 /// - copy(reshape(coord.slice({from_dim, 1, size}),
 ///   to_dims).slice({to_dims.inner(), Ninner-1}),
 ///   out_coord.slice({to_dims.inner(), Ninner})
-Variable split_bin_edge(const VariableConstView &var, const Dim from_dim,
-                        const Dimensions &to_dims) {
+Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
+                       const Dimensions &to_dims) {
   // The size of the bin edge dim
   const auto bin_edge_size = var.dims()[from_dim];
   // inner_size is the size of the inner dimensions in to_dims
@@ -192,7 +192,7 @@ Variable split_bin_edge(const VariableConstView &var, const Dim from_dim,
   // Make the bulk slice of the coord, leaving out the last bin edge
   const auto slice = var.slice({from_dim, 0, bin_edge_size - 1});
   // The new_dims are the reshaped dims, as if the variable was not bin edges
-  const auto new_dims = split_dims(slice.dims(), from_dim, to_dims);
+  const auto new_dims = fold_dims(slice.dims(), from_dim, to_dims);
   auto out_dims = Dimensions(new_dims);
   // To make the container of the right size, we increase the inner dim by 1
   out_dims.resize(to_dims.inner(), inner_size + 1);
@@ -248,35 +248,35 @@ Dim bin_edge_in_from_dims(const VariableConstView &var,
 
 } // end anonymous namespace
 
-/// Split a single dimension into multiple dimensions:
+/// Fold a single dimension into multiple dimensions:
 /// ['x': 6] -> ['y': 2, 'z': 3]
-DataArray split(const DataArrayConstView &a, const Dim from_dim,
-                const Dimensions &to_dims) {
+DataArray fold(const DataArrayConstView &a, const Dim from_dim,
+               const Dimensions &to_dims) {
   const auto &old_dims = a.dims();
-  validate_split_dims(old_dims, from_dim, to_dims);
+  validate_fold_dims(old_dims, from_dim, to_dims);
 
   auto reshaped =
-      DataArray(reshape(a.data(), split_dims(old_dims, from_dim, to_dims)));
+      DataArray(reshape(a.data(), fold_dims(old_dims, from_dim, to_dims)));
 
   for (auto &&[name, coord] : a.coords()) {
     if (is_bin_edges(coord, old_dims, from_dim))
-      reshaped.coords().set(name, split_bin_edge(coord, from_dim, to_dims));
+      reshaped.coords().set(name, fold_bin_edge(coord, from_dim, to_dims));
     else
       reshaped.coords().set(
-          name, reshape(coord, split_dims(coord.dims(), from_dim, to_dims)));
+          name, reshape(coord, fold_dims(coord.dims(), from_dim, to_dims)));
   }
 
   for (auto &&[name, attr] : a.attrs())
     if (is_bin_edges(attr, old_dims, from_dim))
-      reshaped.attrs().set(name, split_bin_edge(attr, from_dim, to_dims));
+      reshaped.attrs().set(name, fold_bin_edge(attr, from_dim, to_dims));
     else
       reshaped.attrs().set(
-          name, reshape(attr, split_dims(attr.dims(), from_dim, to_dims)));
+          name, reshape(attr, fold_dims(attr.dims(), from_dim, to_dims)));
 
   // Note that we assume bin-edge masks do not exist
   for (auto &&[name, mask] : a.masks())
     reshaped.masks().set(
-        name, reshape(mask, split_dims(mask.dims(), from_dim, to_dims)));
+        name, reshape(mask, fold_dims(mask.dims(), from_dim, to_dims)));
 
   return reshaped;
 }

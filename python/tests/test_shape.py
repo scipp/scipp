@@ -7,20 +7,25 @@ import scipp as sc
 from .common import assert_export
 
 
-def test_reshape_variable():
+def test_reshape():
     x = sc.array(dims=['x'], values=np.arange(6.0))
     assert_export(sc.reshape, x=x, sizes={'x': 2, 'y': 3})
     assert_export(sc.reshape, x=x, dims=['x', 'y'], shape=[2, 3])
 
 
-def test_split_data_array():
-    x = sc.DataArray(sc.array(dims=['x'], values=np.arange(6.0)))
-    assert_export(sc.split, x=x, sizes={'x': 2, 'y': 3})
-    assert_export(sc.split, x=x, dims=['x', 'y'], shape=[2, 3])
+def test_fold():
+    x = sc.array(dims=['x'], values=np.arange(6.0))
+    da = sc.DataArray(x)
+    assert_export(sc.fold, x=x, sizes={'x': 2, 'y': 3})
+    assert_export(sc.fold, x=x, dims=['x', 'y'], shape=[2, 3])
+    assert_export(sc.fold, x=da, sizes={'x': 2, 'y': 3})
+    assert_export(sc.fold, x=da, dims=['x', 'y'], shape=[2, 3])
 
 
-def test_flatten_data_array():
-    x = sc.DataArray(
-        sc.array(dims=['x', 'y'], values=np.arange(6.0).reshape(2, 3)))
+def test_flatten():
+    x = sc.array(dims=['x', 'y'], values=np.arange(6.0).reshape(2, 3))
+    da = sc.DataArray(x)
     assert_export(sc.flatten, x=x, dims=['x', 'y'], dim='z')
     assert_export(sc.flatten, x=x, dim='z')
+    assert_export(sc.flatten, x=da, dims=['x', 'y'], dim='z')
+    assert_export(sc.flatten, x=da, dim='z')

@@ -57,11 +57,11 @@ template <class T> void bind_reshape(pybind11::module &mod) {
       },
       py::arg("x"), py::arg("sizes"));
   mod.def(
-      "split",
+      "fold",
       [](const T &self, const Dim dim, const py::dict &sizes) {
         const auto new_dims = dict_to_dims(sizes);
         py::gil_scoped_release release; // release only *after* using py::cast
-        return split(self, dim, new_dims);
+        return fold(self, dim, new_dims);
       },
       py::arg("x"), py::arg("dim"), py::arg("sizes"));
   mod.def(
@@ -73,13 +73,13 @@ template <class T> void bind_reshape(pybind11::module &mod) {
       py::call_guard<py::gil_scoped_release>());
 }
 
-template <class T> void bind_split(pybind11::module &mod) {
+template <class T> void bind_fold(pybind11::module &mod) {
   mod.def(
-      "split",
+      "fold",
       [](const T &self, const Dim dim, const py::dict &sizes) {
         const auto new_dims = dict_to_dims(sizes);
         py::gil_scoped_release release; // release only *after* using py::cast
-        return split(self, dim, new_dims);
+        return fold(self, dim, new_dims);
       },
       py::arg("x"), py::arg("dim"), py::arg("sizes"));
 }
@@ -111,8 +111,8 @@ void init_shape(py::module &m) {
   bind_concatenate<Dataset>(m);
   bind_reshape<Variable>(m);
   bind_reshape<VariableView>(m);
-  bind_split<DataArray>(m);
-  bind_split<DataArrayView>(m);
+  bind_fold<DataArray>(m);
+  bind_fold<DataArrayView>(m);
   bind_flatten<DataArray>(m);
   bind_flatten<DataArrayView>(m);
   bind_transpose<Variable>(m);
