@@ -21,13 +21,12 @@ Variable is_close(const VariableConstView &a, const VariableConstView &b,
     const auto error_tol = atol + rtol * abs(variances(b));
     if (equal_nans == NanComparisons::Equal)
       return variable::transform(a, b, tol, element::is_close_equal_nan) &
-             variable::transform(variances(a), variances(b),
-                                 error_tol * error_tol,
-                                 element::is_close_equal_nan);
+             variable::transform(sqrt(variances(a)), sqrt(variances(b)),
+                                 error_tol, element::is_close_equal_nan);
     else
       return variable::transform(a, b, tol, element::is_close) &
-             variable::transform(variances(a), variances(b),
-                                 error_tol * error_tol, element::is_close);
+             variable::transform(sqrt(variances(a)), sqrt(variances(b)),
+                                 error_tol, element::is_close);
   } else {
     if (equal_nans == NanComparisons::Equal)
       return variable::transform(a, b, tol, element::is_close_equal_nan);
