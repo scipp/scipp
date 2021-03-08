@@ -9,8 +9,8 @@
 using namespace scipp;
 
 inline Variable arange(const Dim dim, const scipp::index shape) {
-  std::vector<double> values;
+  std::vector<double> values(shape);
   for (scipp::index i = 0; i < shape; ++i)
-    values.push_back(i);
+    values[i] = i;
   return makeVariable<double>(Dims{dim}, Shape{shape}, Values(values));
 }
