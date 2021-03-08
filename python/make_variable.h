@@ -56,19 +56,35 @@ template <class ST> struct MakeODFromNativePythonTypes {
   template <class T> struct Maker {
     static Variable apply(const units::Unit unit, const ST &value,
                           const std::optional<ST> &variance) {
-      auto var = variance ? makeVariable<T>(Values{T(value)},
-                                            Variances{T(variance.value())})
-                          : makeVariable<T>(Values{T(value)});
-      var.setUnit(unit);
-      return var;
+      if constexpr (std::is_same_v<T, core::time_point>) {
+        if constexpr (std::is_integral_v<ST>) {
+          if (variance.has_value()) {
+            throw except::VariancesError("datetimes cannot have variances.");
+          }
+          return makeVariable<core::time_point>(Values{core::time_point{value}},
+                                                unit);
+        } else {
+          throw except::TypeError(
+              "Unsupported dtype for constructing datetime64: " +
+              to_string(core::dtype<ST>));
+        }
+      } else {
+        auto var = variance ? makeVariable<T>(Values{T(value)},
+                                              Variances{T(variance.value())})
+                            : makeVariable<T>(Values{T(value)});
+        var.setUnit(unit);
+        return var;
+      }
     }
   };
 
   static Variable make(const units::Unit unit, const ST &value,
                        const std::optional<ST> &variance,
                        const py::object &dtype) {
-    return core::CallDType<double, float, int64_t, int32_t, bool>::apply<Maker>(
-        scipp_dtype(dtype), unit, value, variance);
+    return core::CallDType<double, float, int64_t, int32_t, bool,
+                           core::time_point>::apply<Maker>(scipp_dtype(dtype),
+                                                           unit, value,
+                                                           variance);
   }
 };
 
