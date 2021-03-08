@@ -525,8 +525,18 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
 }
 
 namespace {
-void validate_bin_args(const std::vector<VariableConstView> &edges,
+void validate_bin_args(const DataArrayConstView &array,
+                       const std::vector<VariableConstView> &edges,
                        const std::vector<VariableConstView> &groups) {
+  if ((is_bins(array) &&
+       std::get<2>(array.data().constituents<bucket<DataArray>>())
+               .dims()
+               .ndim() > 1) ||
+      (!is_bins(array) && array.dims().ndim() > 1)) {
+    throw except::BinnedDataError(
+        "Binning is only implemented for 1-dimensional data. Consider using "
+        "groupby, it might be able to do what you need.");
+  }
   if (edges.empty() && groups.empty())
     throw except::BinnedDataError(
         "Arguments 'edges' and 'groups' of scipp.bin are "
@@ -547,7 +557,7 @@ DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &edges,
               const std::vector<VariableConstView> &groups,
               const std::vector<Dim> &erase) {
-  validate_bin_args(edges, groups);
+  validate_bin_args(array, edges, groups);
   const auto &data = array.data();
   const auto &coords = array.coords();
   const auto &masks = array.masks();
