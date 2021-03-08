@@ -59,6 +59,9 @@ General
 Shape
 ~~~~~
 
+.. autosummary::
+   :toctree: ../generated
+
    broadcast
    concatenate
    flatten
