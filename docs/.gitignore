@@ -1,3 +1,6 @@
 # Doxygen build directory
 doxygen/
 generated/
+
+# Data files
+*.hdf5
