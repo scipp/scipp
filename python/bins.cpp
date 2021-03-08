@@ -127,7 +127,7 @@ template <class T> void bind_bins_view(py::module &m) {
   bind_bins_map_view<decltype(dataset::bins_view<T>(VariableView{}).masks())>(
       m, "_BinsMasks");
   bind_data_array_properties(c);
-  m.def("bins_view",
+  m.def("_bins_view",
         [](const VariableView &var) { return dataset::bins_view<T>(var); });
 }
 

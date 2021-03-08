@@ -45,32 +45,32 @@ class _Bins:
     @property
     def coords(self):
         """Coords of the bins"""
-        return _cpp.bins_view(self._data()).coords
+        return _cpp._bins_view(self._data()).coords
 
     @property
     def meta(self):
         """Coords and attrs of the bins"""
-        return _cpp.bins_view(self._data()).meta
+        return _cpp._bins_view(self._data()).meta
 
     @property
     def attrs(self):
         """Coords of the bins"""
-        return _cpp.bins_view(self._data()).attrs
+        return _cpp._bins_view(self._data()).attrs
 
     @property
     def masks(self):
         """Masks of the bins"""
-        return _cpp.bins_view(self._data()).masks
+        return _cpp._bins_view(self._data()).masks
 
     @property
     def data(self):
         """Data of the bins"""
-        return _cpp.bins_view(self._data()).data
+        return _cpp._bins_view(self._data()).data
 
     @data.setter
     def data(self, data):
         """Set data of the bins"""
-        _cpp.bins_view(self._data()).data = data
+        _cpp._bins_view(self._data()).data = data
 
     @property
     def begin(self):
