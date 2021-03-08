@@ -39,24 +39,25 @@ struct is_close_flags_t
   void operator()() const {}
 };
 
-constexpr auto is_approx = overloaded{
-    is_close_flags_t{}, is_approx_types_t{}, is_approx_units,
-    [](const auto &x, const auto &y, const auto &t) {
-      using std::abs;
-      // Note flags enforce that if x has variances, so must y and t
-      return abs(x - y) <= t;
-      /*
-      if constexpr (!is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
-        return abs(x - y) <= t;
-      else if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>> &&
-                         is_ValueAndVariance_v<std::decay_t<decltype(t)>>)
-        return abs(x - y) <= t && (std::abs(x.variance - y.variance) <=
-                                   std::sqrt(2.0) * (t.value / y.variance));
-      else
-        return abs(x - y) <= t && (std::abs(x.variance - y.variance) <=
-                                   std::sqrt(2.0) * (t / y.variance));
-                                   */
-    }};
+constexpr auto is_approx =
+    overloaded{is_close_flags_t{}, is_approx_types_t{}, is_approx_units,
+               [](const auto &x, const auto &y, const auto &t) {
+                 using std::abs;
+                 // Note flags enforce that if x has variances, so must y and t
+                 return abs(x - y) <= t;
+                 /*
+                 if constexpr
+                 (!is_ValueAndVariance_v<std::decay_t<decltype(x)>>) return
+                 abs(x - y) <= t; else if constexpr
+                 (is_ValueAndVariance_v<std::decay_t<decltype(x)>> &&
+                                    is_ValueAndVariance_v<std::decay_t<decltype(t)>>)
+                   return abs(x - y) <= t && (std::abs(x.variance - y.variance)
+                 <= std::sqrt(2.0) * (t.value / y.variance)); else return abs(x
+                 - y) <= t && (std::abs(x.variance - y.variance) <=
+                                              std::sqrt(2.0) * (t /
+                 y.variance));
+                                              */
+               }};
 
 constexpr auto is_approx_equal_nan =
     overloaded{is_close_flags_t{}, is_approx_types_t{}, is_approx_units,
