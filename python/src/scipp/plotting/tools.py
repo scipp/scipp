@@ -135,7 +135,8 @@ def find_log_limits(x):
     volume = np.product(x.shape)
     pixel = sc.reshape(sc.values(x), dims=['pixel'], shape=(volume, ))
     weights = sc.Variable(dims=['pixel'], values=np.ones(volume))
-    hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
+    hist = sc.histogram(sc.DataArray(
+        data=weights, coords={'order': pixel.astype(sc.dtype.float64)}),
                         bins=sc.Variable(dims=['order'],
                                          values=np.geomspace(1e-30,
                                                              1e30,
