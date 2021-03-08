@@ -185,22 +185,6 @@ TYPED_TEST(IsApproxTest, value_equal_infs_signbit) {
       is_close_equal_nan(TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
 }
 
-/*
-TEST(IsApproxTest, value_and_variance) {
-  ValueAndVariance<double> a = {0.0, 0.0};
-  // tol for variances = sqrt(2) * t / y
-  EXPECT_TRUE(is_approx(a, a, 1e-8)); // value and variance within tolerance
-  ValueAndVariance<double> b = {1.0, 1.0};
-  EXPECT_FALSE(is_approx(a, b, 0)); // value and variance outside tolerance
-  ValueAndVariance<double> c = {1.01, 0.0};
-  EXPECT_FALSE(is_approx(a, c, 1.0)); // value outside tolerance variance within
-  ValueAndVariance<double> d = {0.0, 1.0};
-  EXPECT_FALSE(is_approx(a, d,
-                         1.0 / std::sqrt(2) -
-                             1e-8)); // value outside tolerance variance within
-}
-*/
-
 template <class Op> void do_is_approx_units_test(Op op) {
   EXPECT_EQ(units::dimensionless, op(units::m, units::m, units::m));
   EXPECT_THROW_DISCARD(op(units::m, units::m, units::s),
