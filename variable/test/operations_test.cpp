@@ -314,19 +314,19 @@ TEST(Variable, operator_allowed_types) {
 }
 
 TEST(Variable, concatenate) {
-  Dimensions dims(Dim::Tof, 1);
+  Dimensions dims(Dim::X, 1);
   auto a = makeVariable<double>(Dimensions(dims), Values{1.0});
   auto b = makeVariable<double>(Dimensions(dims), Values{2.0});
   a.setUnit(units::m);
   b.setUnit(units::m);
-  auto ab = concatenate(a, b, Dim::Tof);
+  auto ab = concatenate(a, b, Dim::X);
   ASSERT_EQ(ab.dims().volume(), 2);
   EXPECT_EQ(ab.unit(), units::m);
   const auto &data = ab.values<double>();
   EXPECT_EQ(data[0], 1.0);
   EXPECT_EQ(data[1], 2.0);
-  auto ba = concatenate(b, a, Dim::Tof);
-  const auto abba = concatenate(ab, ba, Dim::Q);
+  auto ba = concatenate(b, a, Dim::X);
+  const auto abba = concatenate(ab, ba, Dim::Y);
   ASSERT_EQ(abba.dims().volume(), 4);
   EXPECT_EQ(abba.dims().shape().size(), 2);
   const auto &data2 = abba.values<double>();
@@ -334,7 +334,7 @@ TEST(Variable, concatenate) {
   EXPECT_EQ(data2[1], 2.0);
   EXPECT_EQ(data2[2], 2.0);
   EXPECT_EQ(data2[3], 1.0);
-  const auto ababbaba = concatenate(abba, abba, Dim::Tof);
+  const auto ababbaba = concatenate(abba, abba, Dim::X);
   ASSERT_EQ(ababbaba.dims().volume(), 8);
   const auto &data3 = ababbaba.values<double>();
   EXPECT_EQ(data3[0], 1.0);
@@ -345,7 +345,7 @@ TEST(Variable, concatenate) {
   EXPECT_EQ(data3[5], 1.0);
   EXPECT_EQ(data3[6], 2.0);
   EXPECT_EQ(data3[7], 1.0);
-  const auto abbaabba = concatenate(abba, abba, Dim::Q);
+  const auto abbaabba = concatenate(abba, abba, Dim::Y);
   ASSERT_EQ(abbaabba.dims().volume(), 8);
   const auto &data4 = abbaabba.values<double>();
   EXPECT_EQ(data4[0], 1.0);
@@ -371,15 +371,15 @@ TEST(Variable, concatenate_slice_with_volume) {
 }
 
 TEST(Variable, concatenate_fail) {
-  Dimensions dims(Dim::Tof, 1);
+  Dimensions dims(Dim::X, 1);
   auto a = makeVariable<double>(Dimensions(dims), Values{1.0});
   auto b = makeVariable<double>(Dimensions(dims), Values{2.0});
   auto c = makeVariable<float>(Dimensions(dims), Values{2.0});
-  EXPECT_THROW_MSG(concatenate(a, c, Dim::Tof), std::runtime_error,
+  EXPECT_THROW_MSG(concatenate(a, c, Dim::X), std::runtime_error,
                    "Cannot concatenate Variables: Data types do not match.");
-  auto aa = concatenate(a, a, Dim::Tof);
+  auto aa = concatenate(a, a, Dim::X);
   EXPECT_THROW_MSG(
-      concatenate(a, aa, Dim::Q), std::runtime_error,
+      concatenate(a, aa, Dim::Y), std::runtime_error,
       "Cannot concatenate Variables: Dimension extents do not match.");
 }
 
