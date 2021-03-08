@@ -87,21 +87,25 @@ def reshape(x, sizes=None, dims=None, shape=None):
 
 
 def split(x, dim, sizes=None, dims=None, shape=None):
-    """Split a single dimension of a data array into multiple dims.
+    """Split a single dimension of a variable or data array into multiple dims.
 
     Examples:
-      sc.split(da, 'x', {'y': 2, 'z': 3})
-      sc.split(da, 'x', dims=['y', 'x'], shape=[2, 3])
+      sc.split(a, 'x', {'y': 2, 'z': 3})
+      sc.split(a, 'x', dims=['y', 'x'], shape=[2, 3])
 
-    :param x: DataArray to split.
+    :param x: Variable or DataArray to split.
     :param dim: A single dim label that will be split into more dims.
-    :param to_dims: A dict mapping new dims to new shapes.
-    :type x: DataArray
+    :param sizes: A dict mapping new dims to new shapes.
+    :param dims: A list of new dims labels.
+    :param shape: A list of new dim shapes.
+    :type x: Variable or DataArray
     :type dim: str
-    :type to_dims: dict
+    :type sizes: dict
+    :type dims: list[str]
+    :type shape: list[int]
     :raises: If the volume of the old shape is not equal to the
              volume of the new shape.
-    :return: DataArray with requested dimension labels and shape.
+    :return: Variable or DataArray with requested dimension labels and shape.
     """
     if sizes is not None:
         if (dims is not None) or (shape is not None):
@@ -119,22 +123,22 @@ def split(x, dim, sizes=None, dims=None, shape=None):
 
 
 def flatten(x, dims=None, to=None):
-    """Flatten multiple dimensions of a data array into a single
+    """Flatten multiple dimensions of a variable or data array into a single
     dimension. If dims is omitted, then we flatten all of the inputs dimensions
     into a single dim.
 
     Examples:
-      sc.flatten(da, dims=['x', 'y'], to='z')
-      sc.flatten(da, to='z')
+      sc.flatten(a, dims=['x', 'y'], to='z')
+      sc.flatten(a, to='z')
 
-    :param x: DataArray to flatten.
+    :param x: Variable or DataArray to flatten.
     :param dims: A list of dim labels that will be flattened.
     :param to: A single dim label for the resulting flattened dim.
-    :type x: DataArray
+    :type x: Variable or DataArray
     :type dims: list[str]
     :type to: str
     :raises: If the bin edge coordinates cannot be stitched back together.
-    :return: DataArray with requested dimension labels and shape.
+    :return: Variable or DataArray with requested dimension labels and shape.
     """
     if to is None:
         # Note that this is a result of the fact that we want to support
