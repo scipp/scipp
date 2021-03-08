@@ -46,7 +46,7 @@ TEST(ResizeTest, data_array_2d) {
   EXPECT_EQ(resize(d, Dim::Y, 1), expected_d);
 }
 
-TEST(ReshapeTest, split_x) {
+TEST(ReshapeTest, fold_x) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -60,10 +60,10 @@ TEST(ReshapeTest, split_x) {
                   0.1 * units::one);
   expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
 
-  EXPECT_EQ(split(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
+  EXPECT_EQ(fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
 }
 
-TEST(ReshapeTest, split_y) {
+TEST(ReshapeTest, fold_y) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -77,10 +77,10 @@ TEST(ReshapeTest, split_y) {
                   0.2 * units::one);
   expected.coords().set(Dim::X, a.coords()[Dim::X]);
 
-  EXPECT_EQ(split(a, Dim::Y, {{Dim::Row, 2}, {Dim::Time, 2}}), expected);
+  EXPECT_EQ(fold(a, Dim::Y, {{Dim::Row, 2}, {Dim::Time, 2}}), expected);
 }
 
-TEST(ReshapeTest, split_into_3_dims) {
+TEST(ReshapeTest, fold_into_3_dims) {
   const auto var = arange(Dim::X, 24);
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 24) + 0.1 * units::one);
@@ -90,7 +90,7 @@ TEST(ReshapeTest, split_into_3_dims) {
   DataArray expected(rshp);
   expected.coords().set(Dim::X, rshp + 0.1 * units::one);
 
-  EXPECT_EQ(split(a, Dim::X, {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}}),
+  EXPECT_EQ(fold(a, Dim::X, {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}}),
             expected);
 }
 
@@ -133,11 +133,11 @@ TEST(ReshapeTest, round_trip) {
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-  auto reshaped = split(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
+  auto reshaped = fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
   EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Time}, Dim::X), a);
 }
 
-TEST(ReshapeTest, split_x_binedges_x) {
+TEST(ReshapeTest, fold_x_binedges_x) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
@@ -152,10 +152,10 @@ TEST(ReshapeTest, split_x_binedges_x) {
                            Values{0.1, 1.1, 2.1, 3.1, 3.1, 4.1, 5.1, 6.1}));
   expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
 
-  EXPECT_EQ(split(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
+  EXPECT_EQ(fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
 }
 
-TEST(ReshapeTest, split_y_binedges_y) {
+TEST(ReshapeTest, fold_y_binedges_y) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -169,7 +169,7 @@ TEST(ReshapeTest, split_y_binedges_y) {
       Dim::Y, makeVariable<double>(Dims{Dim::Row, Dim::Time}, Shape{2, 3},
                                    Values{0.2, 1.2, 2.2, 2.2, 3.2, 4.2}));
 
-  EXPECT_EQ(split(a, Dim::Y, {{Dim::Row, 2}, {Dim::Time, 2}}), expected);
+  EXPECT_EQ(fold(a, Dim::Y, {{Dim::Row, 2}, {Dim::Time, 2}}), expected);
 }
 
 TEST(ReshapeTest, flatten_binedges_x_fails) {
@@ -198,11 +198,11 @@ TEST(ReshapeTest, round_trip_binedges) {
   a.coords().set(Dim::X, arange(Dim::X, 7) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-  auto reshaped = split(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
+  auto reshaped = fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
   EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Time}, Dim::X), a);
 }
 
-TEST(ReshapeTest, split_x_with_attrs) {
+TEST(ReshapeTest, fold_x_with_attrs) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -222,7 +222,7 @@ TEST(ReshapeTest, split_x_with_attrs) {
                                           0.3 * units::one);
   expected.attrs().set(Dim("attr_y"), a.attrs()[Dim("attr_y")]);
 
-  EXPECT_EQ(split(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
+  EXPECT_EQ(fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
 }
 
 TEST(ReshapeTest, flatten_with_attrs) {
@@ -263,7 +263,7 @@ TEST(ReshapeTest, flatten_with_attrs) {
   EXPECT_EQ(flatten(a, {Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
-TEST(ReshapeTest, split_x_with_2d_coord) {
+TEST(ReshapeTest, fold_x_with_2d_coord) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X,
@@ -280,7 +280,7 @@ TEST(ReshapeTest, split_x_with_2d_coord) {
                             0.1 * units::one);
   expected.coords().set(Dim::Y, a.coords()[Dim::Y]);
 
-  EXPECT_EQ(split(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
+  EXPECT_EQ(fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
 }
 
 TEST(ReshapeTest, flatten_with_2d_coord) {
@@ -304,7 +304,7 @@ TEST(ReshapeTest, flatten_with_2d_coord) {
   EXPECT_EQ(flatten(a, {Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
-TEST(ReshapeTest, split_x_with_masks) {
+TEST(ReshapeTest, fold_x_with_masks) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   DataArray a(var);
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
@@ -344,7 +344,7 @@ TEST(ReshapeTest, split_x_with_masks) {
                                 true,  false, true,  false, true,  false,
                                 true,  true,  true,  false, false, false}));
 
-  EXPECT_EQ(split(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
+  EXPECT_EQ(fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
 }
 
 TEST(ReshapeTest, flatten_with_masks) {
@@ -426,6 +426,6 @@ TEST(ReshapeTest, round_trip_with_all) {
                                 false, false, false, false, false, false,
                                 true,  false, true,  false, true,  false,
                                 true,  true,  true,  false, false, false}));
-  auto reshaped = split(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
+  auto reshaped = fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
   EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Time}, Dim::X), a);
 }

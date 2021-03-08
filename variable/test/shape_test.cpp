@@ -157,25 +157,25 @@ TEST(ShapeTest, reshape_mutable) {
   ASSERT_EQ(var, modified_original);
 }
 
-TEST(ShapeTest, split_x) {
+TEST(ShapeTest, fold_x) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   const auto expected =
       reshape(arange(Dim::X, 24), {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}});
-  EXPECT_EQ(split(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
+  EXPECT_EQ(fold(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
 }
 
-TEST(ShapeTest, split_y) {
+TEST(ShapeTest, fold_y) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   const auto expected =
       reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Time, 2}});
-  EXPECT_EQ(split(var, Dim::Y, {{Dim::Row, 2}, {Dim::Time, 2}}), expected);
+  EXPECT_EQ(fold(var, Dim::Y, {{Dim::Row, 2}, {Dim::Time, 2}}), expected);
 }
 
-TEST(ShapeTest, split_into_3_dims) {
+TEST(ShapeTest, fold_into_3_dims) {
   const auto var = arange(Dim::X, 24);
   const auto expected =
       reshape(arange(Dim::X, 24), {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
-  EXPECT_EQ(split(var, Dim::X, {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}}),
+  EXPECT_EQ(fold(var, Dim::X, {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}}),
             expected);
 }
 
@@ -199,6 +199,6 @@ TEST(ShapeTest, flatten_bad_dim_order) {
 
 TEST(ShapeTest, round_trip) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
-  const auto reshaped = split(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
+  const auto reshaped = fold(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
   EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Time}, Dim::X), var);
 }
