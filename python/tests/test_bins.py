@@ -45,6 +45,31 @@ def test_bins():
     assert sc.is_equal(var['y', 1].value, data['x', 2:4])
 
 
+def test_bins_view():
+    col = sc.Variable(dims=['event'], values=[1, 2, 3, 4])
+    table = sc.DataArray(data=col,
+                         coords={'time': col},
+                         attrs={'attr': col},
+                         masks={'mask': col == col})
+    begin = sc.Variable(dims=['y'], values=[0, 2], dtype=sc.dtype.int64)
+    end = sc.Variable(dims=['y'], values=[2, 4], dtype=sc.dtype.int64)
+    var = sc.bins(begin=begin, end=end, dim='event', data=table)
+    bins = sc.bins_view(var)
+    assert 'time' in bins.coords
+    assert 'time' in bins.meta
+    assert 'attr' in bins.meta
+    assert 'attr' in bins.attrs
+    assert 'mask' in bins.masks
+    with pytest.raises(RuntimeError):
+        bins.coords['time2'] = col  # col is not binned
+    bins.coords['time'] = bins.data
+    bins.coords['time'] = bins.data * 2.0
+    bins.coords['time2'] = bins.data
+    bins.coords['time3'] = bins.data * 2.0
+    bins.data = bins.coords['time']
+    bins.data = bins.data * 2.0
+
+
 def test_bins_arithmetic():
     var = sc.Variable(dims=['event'], values=[1.0, 2.0, 3.0, 4.0])
     table = sc.DataArray(var, {'x': var})

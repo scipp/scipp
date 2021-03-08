@@ -3,10 +3,9 @@
 /// @file
 /// @author Simon Hezbrock
 #include "scipp/dataset/bins.h"
-#include "detail.h"
-#include "pybind11.h"
 #include "scipp/core/except.h"
 #include "scipp/dataset/bin.h"
+#include "scipp/dataset/bins_view.h"
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/cumulative.h"
@@ -15,6 +14,10 @@
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable.h"
 #include "scipp/variable/variable_factory.h"
+
+#include "bind_data_array.h"
+#include "detail.h"
+#include "pybind11.h"
 
 using namespace scipp;
 
@@ -108,6 +111,24 @@ template <class T> auto get_buffer(py::object &obj) {
       py::cast(typename T::view_type(buffer), py::return_value_policy::move);
   pybind11::detail::keep_alive_impl(ret, obj);
   return ret;
+}
+
+template <class T>
+void bind_bins_map_view(py::module &m, const std::string &name) {
+  py::class_<T> c(m, name.c_str());
+  bind_common_mutable_view_operators<T>(c);
+}
+
+template <class T> void bind_bins_view(py::module &m) {
+  py::class_<decltype(dataset::bins_view<T>(VariableView{}))> c(
+      m, "_BinsViewDataArray");
+  bind_bins_map_view<decltype(dataset::bins_view<T>(VariableView{}).coords())>(
+      m, "_BinsCoords");
+  bind_bins_map_view<decltype(dataset::bins_view<T>(VariableView{}).masks())>(
+      m, "_BinsMasks");
+  bind_data_array_properties(c);
+  m.def("bins_view",
+        [](const VariableView &var) { return dataset::bins_view<T>(var); });
 }
 
 } // namespace
@@ -234,4 +255,6 @@ void init_buckets(py::module &m) {
     return dataset::bin(data, c, std::map<std::string, VariableConstView>{},
                         std::map<Dim, VariableConstView>{}, edges, groups);
   });
+
+  bind_bins_view<DataArray>(m);
 }

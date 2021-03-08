@@ -13,6 +13,7 @@
 #include "scipp/variable/logical.h"
 
 namespace py = pybind11;
+using namespace scipp;
 
 template <class T, class... Ignored>
 void bind_common_operators(pybind11::class_<T, Ignored...> &c) {

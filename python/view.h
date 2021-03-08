@@ -6,6 +6,8 @@
 
 #include "scipp/dataset/dataset.h"
 
+using namespace scipp;
+
 /// Helper to provide equivalent of the `items()` method of a Python dict.
 template <class T> class items_view {
 public:
