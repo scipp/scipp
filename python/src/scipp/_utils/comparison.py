@@ -30,10 +30,7 @@ def is_near(a,
     :return True if near:
     """
     same_data = sc.all(
-        sc.is_close(a.data,
-                    b.data,
-                    rtol=float(rtol),
-                    atol=float(atol),
+        sc.is_close(a.data, b.data, rtol=rtol, atol=atol,
                     equal_nan=equal_nan)).value if include_data else True
     same_len = len(a.meta) == len(b.meta) if include_attrs else len(
         a.coords) == len(b.coords)
@@ -47,14 +44,13 @@ def is_near(a,
             raise RuntimeError(f'For meta {key} have different'
                                f' shapes {x.shape}, {y.shape}')
         if val.dtype in [sc.dtype.float64, sc.dtype.float32]:
-            if sc.sum(~sc.isfinite(x)).value > 0 or sc.sum(
-                    ~sc.isfinite(y)).value > 0:
-                raise RuntimeError(f'For meta {key} have non-finite entries')
+            if not sc.sum(~sc.isfinite(x)).value == sc.sum(
+                    ~sc.isfinite(y)).value:
+                raise RuntimeError(
+                    f'For meta {key} different numbers of non-finite entries')
             if not sc.all(
-                    sc.is_close(x,
-                                y,
-                                rtol=float(rtol),
-                                atol=float(atol),
-                                equal_nan=equal_nan)).value:
+                    sc.is_close(
+                        x, y, rtol=rtol, atol=atol,
+                        equal_nan=equal_nan)).value:
                 return False
     return same_data
