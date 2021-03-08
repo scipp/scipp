@@ -38,14 +38,11 @@ General
    :toctree: ../generated
 
    abs
-   broadcast
    choose
    collapse
-   concatenate
    dot
    exp
    filter
-   flatten
    histogram
    log
    log10
@@ -53,14 +50,21 @@ General
    norm
    rebin
    reciprocal
-   reshape
    slices
    sort
-   split
    sqrt
-   transpose
    values
    variances
+
+Shape
+~~~~~
+
+   broadcast
+   concatenate
+   flatten
+   reshape
+   split
+   transpose
 
 Comparison
 ~~~~~~~~~~

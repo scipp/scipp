@@ -295,10 +295,8 @@ DataArray flatten(const DataArrayConstView &a,
   auto reshaped =
       DataArray(reshape(a.data(), flatten_dims(old_dims, from_dims, to_dim)));
 
-  Dim bin_edge_dim;
-
   for (auto &&[name, coord] : a.coords()) {
-    bin_edge_dim = bin_edge_in_from_dims(coord, old_dims, from_dims);
+    const auto bin_edge_dim = bin_edge_in_from_dims(coord, old_dims, from_dims);
     if (bin_edge_dim != Dim::Invalid) {
       reshaped.coords().set(name,
                             flatten_bin_edge(maybe_broadcast(coord, from_dims),
@@ -311,7 +309,7 @@ DataArray flatten(const DataArrayConstView &a,
   }
 
   for (auto &&[name, attr] : a.attrs()) {
-    bin_edge_dim = bin_edge_in_from_dims(attr, old_dims, from_dims);
+    const auto bin_edge_dim = bin_edge_in_from_dims(attr, old_dims, from_dims);
     if (bin_edge_dim != Dim::Invalid) {
       reshaped.attrs().set(name,
                            flatten_bin_edge(maybe_broadcast(attr, from_dims),

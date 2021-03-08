@@ -164,7 +164,7 @@ void validate_split_dims(const Dimensions &old_dims, const Dim from_dim,
   if (!old_dims.contains(from_dim))
     throw except::DimensionError("Dimension to split not found.");
   // Make sure that new dims do not already exist in data dimensions,
-  // apart apart from the old dim (i.e. old dim can be re-used)
+  // apart from the old dim (i.e. old dim can be re-used)
   for (const auto dim : to_dims.labels())
     if (old_dims.contains(dim) && dim != from_dim)
       throw except::DimensionError(
@@ -178,7 +178,7 @@ void validate_flatten_dims(const Dimensions &old_dims,
       throw except::DimensionError(
           "Flatten: dimension to be flattened not found.");
   // Make sure that new dim does not already exist in data dimensions,
-  // apart apart from one of the from_dims (i.e. an old dim can be re-used)
+  // apart from one of the from_dims (i.e. an old dim can be re-used)
   if (old_dims.contains(to_dim) && !from_dims.contains(to_dim))
     throw except::DimensionError(
         "Flatten: final flattened dimension already exists.");
