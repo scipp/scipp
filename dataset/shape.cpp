@@ -3,6 +3,7 @@
 /// @file
 /// @author Simon Heybrock
 #include "scipp/variable/shape.h"
+#include "scipp/variable/creation.h"
 
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/shape.h"
@@ -209,57 +210,37 @@ Variable maybe_broadcast(const VariableConstView &var,
 /// Special handling for splitting coord along a dim that contains bin edges.
 ///
 /// The procedure is the following:
-/// - reshape the coord, excluding the last bin-edge slice
-/// - slice the first element along the inner dimension of the reshaped var
-/// - reshape it so it has the same number of dims as the original coord
-/// - slice out the first element along the from_dim
-/// - concatenate the last bin-edge slice of the original coord
-/// - reshape this into the dimensions of the original edge slice
-/// - concatenate this to the reshaped coord that excluded the last bin edge
+/// - create output of correct size (use split_dims and resize to_dims.inner()
+///   to L+1).
+/// - copy(reshape(coord.slice({from_dim, 0, size-1}), to_dims),
+///   out_coord.slice({to_dims.inner(), 0, Ninner})
+/// - copy(reshape(coord.slice({from_dim, 1, size}),
+///   to_dims).slice({to_dims.inner(), Ninner-1}),
+///   out_coord.slice({to_dims.inner(), Ninner})
 Variable split_bin_edge(const VariableConstView &var, const Dim from_dim,
                         const Dimensions &to_dims) {
-  const auto slice = var.slice({from_dim, 0, var.dims()[from_dim] - 1});
-  const auto reshaped =
-      reshape(slice, split_dims(slice.dims(), from_dim, to_dims));
-  const auto var_dims = var.dims();
-
-  // Slice along the inner dimension of the to dims
-  const auto edge = reshaped.slice({to_dims.inner(), 0});
-  const auto &edge_dims = edge.dims();
-
-  Variable duplicate_edges;
-  // Compare the dimensions of edge and the original coord.
-  // We want to flatten any dimension which is not in the original coord.
-  if (edge_dims.ndim() > var_dims.ndim()) {
-    Dimensions flat_dims;
-    scipp::index volume = edge_dims.volume();
-    for (const auto dim : edge_dims.labels()) {
-      if (!to_dims.contains(dim)) {
-        volume /= edge_dims[dim];
-        if (!flat_dims.contains(from_dim))
-          flat_dims.addInner(from_dim, 1);
-      } else {
-        flat_dims.addInner(dim, edge_dims[dim]);
-      }
-    }
-    // Update the flat_dims shape now that the volume has been fully
-    // decomposed
-    flat_dims.resize(from_dim, volume);
-    // Now reshape the edge to the flattened dims
-    duplicate_edges = reshape(edge, flat_dims);
-  } else {
-    duplicate_edges = Variable(edge);
-  }
-
-  // Now concatenate the edge (minus its first element) and the last slice
-  // of coord
-  const auto outer_dim = duplicate_edges.dims().labels()[0];
-  const auto end_cap = concatenate(
-      duplicate_edges.slice({outer_dim, 1, duplicate_edges.dims()[outer_dim]}),
-      var.slice({from_dim, var.dims()[from_dim] - 1}), outer_dim);
-  // Reshape the end cap to original coord slice dims.
-  // This is basically just a quick way of renaming the dims.
-  return concatenate(reshaped, reshape(end_cap, edge_dims), to_dims.inner());
+  // The size of the bin edge dim
+  const auto bin_edge_size = var.dims()[from_dim];
+  // inner_size is the size of the inner dimensions in to_dims
+  const auto inner_size = to_dims[to_dims.inner()];
+  // Make the bulk slice of the coord, leaving out the last bin edge
+  const auto slice = var.slice({from_dim, 0, bin_edge_size - 1});
+  // The new_dims are the reshaped dims, as if the variable was not bin edges
+  const auto new_dims = split_dims(slice.dims(), from_dim, to_dims);
+  auto out_dims = Dimensions(new_dims);
+  // To make the container of the right size, we increase the inner dim by 1
+  out_dims.resize(to_dims.inner(), inner_size + 1);
+  // Create output container
+  auto out = scipp::variable::empty(out_dims, var.unit(), var.dtype(),
+                                    var.hasVariances());
+  // Copy the bulk of the variable into the output, omitting the last bin edge
+  copy(reshape(slice, new_dims), out.slice({to_dims.inner(), 0, inner_size}));
+  // Copy the 'end-cap' or final bin edge into the out container, by offsetting
+  // the slicing indices by 1
+  copy(reshape(var.slice({from_dim, 1, bin_edge_size}), new_dims)
+           .slice({to_dims.inner(), inner_size - 1}),
+       out.slice({to_dims.inner(), inner_size}));
+  return out;
 }
 
 /// Special handling for flattening coord along a dim that contains bin edges.
