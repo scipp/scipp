@@ -15,6 +15,13 @@ namespace py = pybind11;
 
 namespace {
 
+Dimensions dict_to_dims(const py::dict &map) {
+  Dimensions dims;
+  for (const auto &item : map)
+    dims.addInner(item.first.cast<Dim>(), item.second.cast<scipp::index>());
+  return dims;
+}
+
 template <class T> void bind_broadcast(py::module &m) {
   m.def(
       "broadcast",
@@ -45,31 +52,46 @@ template <class T> void bind_reshape(pybind11::module &mod) {
         for (const auto &item : sizes)
           new_dims.addInner(item.first.cast<Dim>(),
                             item.second.cast<scipp::index>());
+        py::gil_scoped_release release; // release only *after* using py::cast
         return reshape(self, new_dims);
       },
       py::arg("x"), py::arg("sizes"));
+  mod.def(
+      "split",
+      [](const T &self, const Dim dim, const py::dict &sizes) {
+        const auto new_dims = dict_to_dims(sizes);
+        py::gil_scoped_release release; // release only *after* using py::cast
+        return split(self, dim, new_dims);
+      },
+      py::arg("x"), py::arg("dim"), py::arg("sizes"));
+  mod.def(
+      "flatten",
+      [](const T &self, const std::vector<Dim> &dims, const Dim &to) {
+        return flatten(self, dims, to);
+      },
+      py::arg("x"), py::arg("dims"), py::arg("to"),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_split(pybind11::module &mod) {
   mod.def(
       "split",
-      [](const T &self, const Dim dim, const py::dict &to_dims) {
-        Dimensions new_dims;
-        for (const auto &item : to_dims)
-          new_dims.addInner(item.first.cast<Dim>(),
-                            item.second.cast<scipp::index>());
+      [](const T &self, const Dim dim, const py::dict &sizes) {
+        const auto new_dims = dict_to_dims(sizes);
+        py::gil_scoped_release release; // release only *after* using py::cast
         return split(self, dim, new_dims);
       },
-      py::arg("x"), py::arg("dim"), py::arg("to_dims"));
+      py::arg("x"), py::arg("dim"), py::arg("sizes"));
 }
 
 template <class T> void bind_flatten(pybind11::module &mod) {
   mod.def(
       "flatten",
-      [](const T &self, const py::list &from_dims, const Dim &to_dim) {
-        return flatten(self, from_dims.cast<std::vector<Dim>>(), to_dim);
+      [](const T &self, const std::vector<Dim> &dims, const Dim &to) {
+        return flatten(self, dims, to);
       },
-      py::arg("x"), py::arg("dims"), py::arg("to_dim"));
+      py::arg("x"), py::arg("dims"), py::arg("to"),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_transpose(pybind11::module &mod) {

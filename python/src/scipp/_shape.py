@@ -71,6 +71,15 @@ def reshape(x, sizes=None, dims=None, shape=None):
              volume of the new shape.
     :return: Variable with requested dimension labels and shape.
     """
+    if sizes is not None:
+        if (dims is not None) or (shape is not None):
+            raise RuntimeError(
+                "If sizes is defined, dims and shape must be None in reshape.")
+    else:
+        if (dims is None) or (shape is None):
+            raise RuntimeError(
+                "Both dims and shape must be defined for reshape.")
+
     if dims is None:
         return _call_cpp_func(_cpp.reshape, x, sizes)
     else:
@@ -94,33 +103,48 @@ def split(x, dim, sizes=None, dims=None, shape=None):
              volume of the new shape.
     :return: DataArray with requested dimension labels and shape.
     """
+    if sizes is not None:
+        if (dims is not None) or (shape is not None):
+            raise RuntimeError(
+                "If sizes is defined, dims and shape must be None in split.")
+    else:
+        if (dims is None) or (shape is None):
+            raise RuntimeError(
+                "Both dims and shape must be defined for split.")
+
     if dims is None:
         return _call_cpp_func(_cpp.split, x, dim, sizes)
     else:
         return _call_cpp_func(_cpp.split, x, dim, dict(zip(dims, shape)))
 
 
-def flatten(x, dims=None, dim=None):
-    """Flatten or flatten multiple dimensions of a data array into a single
+def flatten(x, dims=None, to=None):
+    """Flatten multiple dimensions of a data array into a single
     dimension. If dims is omitted, then we flatten all of the inputs dimensions
     into a single dim.
 
     Examples:
-      sc.flatten(da, dims=['x', 'y'], dim='z')
-      sc.flatten(da, dim='z')
+      sc.flatten(da, dims=['x', 'y'], to='z')
+      sc.flatten(da, to='z')
 
     :param x: DataArray to flatten.
     :param dims: A list of dim labels that will be flattened.
-    :param dim: A single dim label for the resulting flattened dim.
+    :param to: A single dim label for the resulting flattened dim.
     :type x: DataArray
     :type dims: list[str]
-    :type dim: str
+    :type to: str
     :raises: If the bin edge coordinates cannot be stitched back together.
     :return: DataArray with requested dimension labels and shape.
     """
+    if to is None:
+        # Note that this is a result of the fact that we want to support
+        # calling flatten without kwargs, and that in this case it semantically
+        # makes more sense for the dims that we want to flatten to come first
+        # in the argument list.
+        raise RuntimeError("The final flattened dimension is required.")
     if dims is None:
         dims = x.dims
-    return _call_cpp_func(_cpp.flatten, x, dims, dim)
+    return _call_cpp_func(_cpp.flatten, x, dims, to)
 
 
 def transpose(x, dims: Sequence[str]):

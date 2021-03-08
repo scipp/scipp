@@ -11,6 +11,8 @@
 #include "../variable/operations_common.h"
 #include "dataset_operations_common.h"
 
+using namespace scipp::variable;
+
 namespace scipp::dataset {
 
 /// Return one of the inputs if they are the same, throw otherwise.
@@ -144,42 +146,6 @@ Dataset resize(const DatasetConstView &d, const Dim dim,
 
 namespace {
 
-/// Split dims for reshaping one dim into multiple dims
-///
-/// Go through the old dims and:
-/// - if the dim does not equal the dim that is being stacked, copy dim/shape
-/// - if the dim equals the dim to be stacked, replace by stack of new dims
-const Dimensions split_dims(const Dimensions &old_dims, const Dim from_dim,
-                            const Dimensions &to_dims) {
-  Dimensions new_dims;
-  for (const auto dim : old_dims.labels())
-    if (dim != from_dim)
-      new_dims.addInner(dim, old_dims[dim]);
-    else
-      for (const auto lab : to_dims.labels())
-        new_dims.addInner(lab, to_dims[lab]);
-  return new_dims;
-}
-
-/// Flatten dims for reshaping multiple dims into one
-///
-/// Go through the old dims and:
-/// - if the dim is contained in the list of dims to be flattened, add the new
-///   dim once
-/// - if not, copy the dim/shape
-const Dimensions flatten_dims(const Dimensions &old_dims,
-                              const Dimensions &from_dims, const Dim to_dim) {
-  Dimensions new_dims;
-  for (const auto dim : old_dims.labels())
-    if (from_dims.contains(dim)) {
-      if (!new_dims.contains(to_dim))
-        new_dims.addInner(to_dim, from_dims.volume());
-    } else {
-      new_dims.addInner(dim, old_dims[dim]);
-    }
-  return new_dims;
-}
-
 /// Either broadcast variable to from_dims before a reshape or not:
 ///
 /// 1. If all from_dims are contained in the variable's dims, no broadcast
@@ -231,8 +197,7 @@ Variable split_bin_edge(const VariableConstView &var, const Dim from_dim,
   // To make the container of the right size, we increase the inner dim by 1
   out_dims.resize(to_dims.inner(), inner_size + 1);
   // Create output container
-  auto out = scipp::variable::empty(out_dims, var.unit(), var.dtype(),
-                                    var.hasVariances());
+  auto out = empty(out_dims, var.unit(), var.dtype(), var.hasVariances());
   // Copy the bulk of the variable into the output, omitting the last bin edge
   copy(reshape(slice, new_dims), out.slice({to_dims.inner(), 0, inner_size}));
   // Copy the 'end-cap' or final bin edge into the out container, by offsetting
@@ -287,14 +252,8 @@ Dim bin_edge_in_from_dims(const VariableConstView &var,
 /// ['x': 6] -> ['y': 2, 'z': 3]
 DataArray split(const DataArrayConstView &a, const Dim from_dim,
                 const Dimensions &to_dims) {
-  // Make sure that new dims do not already exist in data dimensions,
-  // apart apart from the old dim (i.e. old dim can be re-used)
   const auto &old_dims = a.dims();
-  for (const auto dim : to_dims.labels())
-    if (old_dims.contains(dim) && dim != from_dim)
-      throw except::DimensionError(
-          "Split: new dimensions cannot contain labels that "
-          "already exist in the DataArray.");
+  validate_split_dims(old_dims, from_dim, to_dims);
 
   auto reshaped =
       DataArray(reshape(a.data(), split_dims(old_dims, from_dim, to_dims)));
@@ -327,27 +286,11 @@ DataArray split(const DataArrayConstView &a, const Dim from_dim,
 DataArray flatten(const DataArrayConstView &a,
                   const std::vector<Dim> &from_labels, const Dim to_dim) {
   const auto &old_dims = a.dims();
-  for (const auto dim : from_labels)
-    if (!old_dims.contains(dim))
-      throw except::DimensionError(
-          "Flatten: dimension to be flattened not found in DataArray.");
-
   Dimensions from_dims;
   for (const auto dim : from_labels)
     from_dims.addInner(dim, old_dims[dim]);
 
-  // Only allow reshaping contiguous dimensions.
-  // Note that isContiguousIn only allows for inner contiguous blocks,
-  // and contains(dimensions) ignores dimension order.
-  const auto offset = old_dims.index(from_labels[0]);
-  for (scipp::index i = 0; i < from_dims.ndim(); ++i) {
-    if (old_dims.label(i + offset) != from_dims.label(i) ||
-        old_dims.size(i + offset) != from_dims.size(i))
-      throw except::DimensionError(
-          "Flatten: can only flatten a contiguous set of dimensions. "
-          "The order of the dimensions to flatten must also match the order of "
-          "dimensions in the DataArray.");
-  }
+  validate_flatten_dims(old_dims, from_dims, to_dim);
 
   auto reshaped =
       DataArray(reshape(a.data(), flatten_dims(old_dims, from_dims, to_dim)));

@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "test_macros.h"
+#include "test_util.h"
 
 #include "scipp/core/except.h"
 #include "scipp/variable/reduction.h"
@@ -154,4 +155,50 @@ TEST(ShapeTest, reshape_mutable) {
 
   ASSERT_EQ(view, reference);
   ASSERT_EQ(var, modified_original);
+}
+
+TEST(ShapeTest, split_x) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto expected =
+      reshape(arange(Dim::X, 24), {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}});
+  EXPECT_EQ(split(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
+}
+
+TEST(ShapeTest, split_y) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto expected =
+      reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Time, 2}});
+  EXPECT_EQ(split(var, Dim::Y, {{Dim::Row, 2}, {Dim::Time, 2}}), expected);
+}
+
+TEST(ShapeTest, split_into_3_dims) {
+  const auto var = arange(Dim::X, 24);
+  const auto expected =
+      reshape(arange(Dim::X, 24), {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
+  EXPECT_EQ(split(var, Dim::X, {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}}),
+            expected);
+}
+
+TEST(ShapeTest, flatten) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto expected = arange(Dim::Z, 24);
+  EXPECT_EQ(flatten(var, {Dim::X, Dim::Y}, Dim::Z), expected);
+}
+
+TEST(ShapeTest, flatten_only_2_dims) {
+  const auto var =
+      reshape(arange(Dim::X, 24), {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
+  const auto expected = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Z, 4}});
+  EXPECT_EQ(flatten(var, {Dim::X, Dim::Y}, Dim::X), expected);
+}
+
+TEST(ShapeTest, flatten_bad_dim_order) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  EXPECT_THROW(flatten(var, {Dim::Y, Dim::Z}, Dim::Z), except::DimensionError);
+}
+
+TEST(ShapeTest, round_trip) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto reshaped = split(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
+  EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Time}, Dim::X), var);
 }
