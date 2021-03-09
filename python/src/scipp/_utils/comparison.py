@@ -44,10 +44,6 @@ def is_near(a,
             raise RuntimeError(f'For meta {key} have different'
                                f' shapes {x.shape}, {y.shape}')
         if val.dtype in [sc.dtype.float64, sc.dtype.float32]:
-            if not sc.sum(~sc.isfinite(x)).value == sc.sum(
-                    ~sc.isfinite(y)).value:
-                raise RuntimeError(
-                    f'For meta {key} different numbers of non-finite entries')
             if not sc.all(
                     sc.is_close(
                         x, y, rtol=rtol, atol=atol,
