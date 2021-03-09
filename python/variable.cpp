@@ -98,7 +98,6 @@ void bind_init_0D_numpy_types(py::class_<Variable> &c) {
                 unit);
           } else if ((info.ndim == 1) &&
                      py::isinstance(b.get_type(), np_datetime64_type)) {
-            // TODO allow construction from int
             if (v.has_value()) {
               throw except::VariancesError("datetimes cannot have variances.");
             }

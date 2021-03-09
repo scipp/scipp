@@ -70,7 +70,7 @@ parse_datetime_dtype(const std::string &dtype_name) {
   std::smatch match;
   if (!std::regex_match(dtype_name, match, datetime_regex) ||
       match.size() != 3) {
-    throw std::invalid_argument("Invalid dtype, expected datetime64, got" +
+    throw std::invalid_argument("Invalid dtype, expected datetime64, got " +
                                 dtype_name);
   }
 
