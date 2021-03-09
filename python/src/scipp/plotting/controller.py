@@ -3,7 +3,7 @@
 # @author Neil Vaytet
 
 from .tools import find_limits, fix_empty_range
-from .._reduction import nonemax, nonemin
+from .._utils.reduction import nonemax, nonemin
 from .._utils import value_to_string
 from .._scipp import core as sc
 import numpy as np

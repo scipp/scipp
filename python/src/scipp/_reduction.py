@@ -196,39 +196,3 @@ def any(x, dim=None, out=None):
         return _call_cpp_func(_cpp.any, x, out=out)
     else:
         return _call_cpp_func(_cpp.any, x, dim=dim, out=out)
-
-
-def nonemin(a, b):
-    """min which respects None.
-
-    :param a: Operand 1.
-    :param b: Operand 2.
-    :returns: min(a, b) if neither arguments are None.
-              Otherwise, the argument that is not None.
-    :raises ValueError: If both a and b are None.
-    """
-    if a is None:
-        if b is None:
-            raise ValueError("One argument must not be None")
-        return b
-    if b is None:
-        return a
-    return min(a, b)
-
-
-def nonemax(a, b):
-    """max which respects None.
-
-    :param a: Operand 1.
-    :param b: Operand 2.
-    :returns: max(a, b) if neither arguments are None.
-              Otherwise, the argument that is not None.
-    :raises ValueError: If both a and b are None.
-    """
-    if a is None:
-        if b is None:
-            raise ValueError("One argument must not be None")
-        return b
-    if b is None:
-        return a
-    return max(a, b)
