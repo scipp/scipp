@@ -13,34 +13,35 @@ using namespace scipp::core;
 
 namespace scipp::variable {
 
+namespace {
+Variable _values(Variable &&in) { return in.hasVariances() ? values(in) : in; }
+} // namespace
+
 Variable isclose(const VariableConstView &a, const VariableConstView &b,
                  const VariableConstView rtol, const VariableConstView atol,
                  const NanComparisons equal_nans) {
-  const auto tol = atol + rtol * abs(b);
+  auto tol = atol + rtol * abs(b);
   if (a.hasVariances() && b.hasVariances()) {
-    const auto error_tol = atol + rtol * abs(variances(b));
+    auto error_tol = atol + rtol * abs(variances(b));
     if (equal_nans == NanComparisons::Equal)
-      return variable::transform(
-                 a, b, error_tol.hasVariances() ? values(error_tol) : error_tol,
-                 element::isclose_equal_nan) &
+      return variable::transform(a, b, _values(std::move(error_tol)),
+                                 element::isclose_equal_nan) &
              variable::transform(sqrt(variances(a)), sqrt(variances(b)),
-                                 error_tol.hasVariances() ? values(error_tol)
-                                                          : error_tol,
+                                 _values(std::move(error_tol)),
                                  element::isclose_equal_nan);
     else
       return variable::transform(
                  a, b, error_tol.hasVariances() ? values(error_tol) : error_tol,
                  element::isclose) &
              variable::transform(sqrt(variances(a)), sqrt(variances(b)),
-                                 error_tol.hasVariances() ? values(error_tol)
-                                                          : error_tol,
+                                 _values(std::move(error_tol)),
                                  element::isclose);
   } else {
     if (equal_nans == NanComparisons::Equal)
-      return variable::transform(a, b, tol.hasVariances() ? values(tol) : tol,
+      return variable::transform(a, b, _values(std::move(tol)),
                                  element::isclose_equal_nan);
     else
-      return variable::transform(a, b, tol.hasVariances() ? values(tol) : tol,
+      return variable::transform(a, b, _values(std::move(tol)),
                                  element::isclose);
   }
 }
