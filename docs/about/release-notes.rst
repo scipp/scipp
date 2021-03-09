@@ -25,7 +25,7 @@ Features
 
 * Support for datetime
 
-  * ``sc.dtype.datetime64`` with copy-less casting between numpy and and scipp where possible. `#1639 <https://github.com/scipp/scipp/pull/1639>`_
+  * ``sc.dtype.datetime64`` with copy-less casting between numpy and scipp where possible. `#1639 <https://github.com/scipp/scipp/pull/1639>`_
   * Binning with datetime edges `#1739 <https://github.com/scipp/scipp/pull/1739>`_
 
 Breaking changes
