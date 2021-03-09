@@ -40,8 +40,7 @@ def is_discrete(obj):
     """
     Return True if the input object is a type that has a discrete domain.
     """
-    return isinstance(obj, (int, np.datetime64)) or (
-        isinstance(obj, np.ndarray)
-        and obj.dtype in (np.int32, np.int64, np.dtype(np.datetime64))) or (
-            is_variable(obj) and obj.dtype
-            in (sc.dtype.int32, sc.dtype.int64, sc.dtype.datetime64))
+    return isinstance(obj, (int, np.datetime64)) or (isinstance(
+        obj, np.ndarray) and obj.dtype not in (np.float32, np.float64)) or (
+            is_variable(obj)
+            and obj.dtype not in (sc.dtype.float32, sc.dtype.float64))
