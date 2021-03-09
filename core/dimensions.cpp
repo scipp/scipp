@@ -259,7 +259,7 @@ Dimensions fold(const Dimensions &old_dims, const Dim from_dim,
 ///   dim once
 /// - if not, copy the dim/shape
 Dimensions flatten(const Dimensions &old_dims,
-                   const std::vector<Dim> from_labels, const Dim to_dim) {
+                   const scipp::span<const Dim> from_labels, const Dim to_dim) {
   Dimensions from_dims;
   for (const auto dim : from_labels)
     if (old_dims.contains(dim))

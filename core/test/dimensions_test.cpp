@@ -314,17 +314,17 @@ TEST(DimensionsTest, fold_into_3) {
 TEST(DimensionsTest, flatten) {
   Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
   Dimensions expected = {{Dim::Time, 24}};
-  EXPECT_EQ(flatten(xy, {Dim::X, Dim::Y}, Dim::Time), expected);
+  EXPECT_EQ(flatten(xy, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Time), expected);
 }
 
 TEST(DimensionsTest, flatten_non_contiguous) {
   Dimensions xy = {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}};
-  EXPECT_THROW(flatten(xy, {Dim::X, Dim::Z}, Dim::Time),
+  EXPECT_THROW(flatten(xy, std::vector<Dim>{Dim::X, Dim::Z}, Dim::Time),
                except::DimensionError);
 }
 
 TEST(DimensionsTest, round_trip) {
   Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
   Dimensions folded = fold(xy, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
-  EXPECT_EQ(flatten(folded, {Dim::Row, Dim::Time}, Dim::X), xy);
+  EXPECT_EQ(flatten(folded, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X), xy);
 }

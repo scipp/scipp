@@ -156,7 +156,7 @@ SCIPP_CORE_EXPORT Dimensions fold(const Dimensions &old_dims,
                                   const Dimensions &to_dims);
 
 SCIPP_CORE_EXPORT Dimensions flatten(const Dimensions &old_dims,
-                                     const std::vector<Dim> from_labels,
+                                     const scipp::span<const Dim> from_labels,
                                      const Dim to_dim);
 
 } // namespace scipp::core

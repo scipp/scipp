@@ -29,8 +29,8 @@ SCIPP_DATASET_EXPORT Dataset resize(const DatasetConstView &d, const Dim dim,
 SCIPP_DATASET_EXPORT DataArray fold(const DataArrayConstView &a,
                                     const Dim from_dim,
                                     const Dimensions &to_dims);
-SCIPP_DATASET_EXPORT DataArray flatten(const DataArrayConstView &a,
-                                       const std::vector<Dim> &from_labels,
-                                       const Dim to_dim);
+SCIPP_DATASET_EXPORT DataArray
+flatten(const DataArrayConstView &a, const scipp::span<const Dim> &from_labels,
+        const Dim to_dim);
 
 } // namespace scipp::dataset

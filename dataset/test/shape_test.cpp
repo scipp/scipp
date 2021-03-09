@@ -115,7 +115,7 @@ TEST(ReshapeTest, flatten) {
                                   0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
                                   0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
 
-  EXPECT_EQ(flatten(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+  EXPECT_EQ(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
 TEST(ReshapeTest, flatten_bad_dim_order) {
@@ -124,7 +124,8 @@ TEST(ReshapeTest, flatten_bad_dim_order) {
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-  EXPECT_THROW(flatten(a, {Dim::Y, Dim::X}, Dim::Z), except::DimensionError);
+  EXPECT_THROW(flatten(a, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
+               except::DimensionError);
 }
 
 TEST(ReshapeTest, round_trip) {
@@ -134,7 +135,8 @@ TEST(ReshapeTest, round_trip) {
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
   auto reshaped = fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
-  EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Time}, Dim::X), a);
+  EXPECT_EQ(flatten(reshaped, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X),
+            a);
 }
 
 TEST(ReshapeTest, fold_x_binedges_x) {
@@ -179,7 +181,8 @@ TEST(ReshapeTest, flatten_binedges_x_fails) {
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
   // Throws because x coord has mismatching bin edges.
-  EXPECT_THROW(flatten(a, {Dim::X, Dim::Y}, Dim::Z), except::BinEdgeError);
+  EXPECT_THROW(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z),
+               except::BinEdgeError);
 }
 
 TEST(ReshapeTest, flatten_binedges_y_fails) {
@@ -189,7 +192,8 @@ TEST(ReshapeTest, flatten_binedges_y_fails) {
   a.coords().set(Dim::Y, arange(Dim::Y, 5) + 0.2 * units::one);
 
   // Throws because y coord has mismatching bin edges.
-  EXPECT_THROW(flatten(a, {Dim::X, Dim::Y}, Dim::Z), except::BinEdgeError);
+  EXPECT_THROW(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z),
+               except::BinEdgeError);
 }
 
 TEST(ReshapeTest, round_trip_binedges) {
@@ -199,7 +203,8 @@ TEST(ReshapeTest, round_trip_binedges) {
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
   auto reshaped = fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
-  EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Time}, Dim::X), a);
+  EXPECT_EQ(flatten(reshaped, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X),
+            a);
 }
 
 TEST(ReshapeTest, fold_x_with_attrs) {
@@ -260,7 +265,7 @@ TEST(ReshapeTest, flatten_with_attrs) {
                                   0.4, 1.4, 2.4, 3.4, 0.4, 1.4, 2.4, 3.4,
                                   0.4, 1.4, 2.4, 3.4, 0.4, 1.4, 2.4, 3.4}));
 
-  EXPECT_EQ(flatten(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+  EXPECT_EQ(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
 TEST(ReshapeTest, fold_x_with_2d_coord) {
@@ -301,7 +306,7 @@ TEST(ReshapeTest, flatten_with_2d_coord) {
                                   0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2,
                                   0.2, 1.2, 2.2, 3.2, 0.2, 1.2, 2.2, 3.2}));
 
-  EXPECT_EQ(flatten(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+  EXPECT_EQ(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
 TEST(ReshapeTest, fold_x_with_masks) {
@@ -401,7 +406,7 @@ TEST(ReshapeTest, flatten_with_masks) {
                                 true,  false, true,  false, true,  false,
                                 true,  true,  true,  false, false, false}));
 
-  EXPECT_EQ(flatten(a, {Dim::X, Dim::Y}, Dim::Z), expected);
+  EXPECT_EQ(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
 TEST(ReshapeTest, round_trip_with_all) {
@@ -427,5 +432,6 @@ TEST(ReshapeTest, round_trip_with_all) {
                                 true,  false, true,  false, true,  false,
                                 true,  true,  true,  false, false, false}));
   auto reshaped = fold(a, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
-  EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Time}, Dim::X), a);
+  EXPECT_EQ(flatten(reshaped, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X),
+            a);
 }

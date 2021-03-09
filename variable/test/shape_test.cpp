@@ -182,23 +182,25 @@ TEST(ShapeTest, fold_into_3_dims) {
 TEST(ShapeTest, flatten) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   const auto expected = arange(Dim::Z, 24);
-  EXPECT_EQ(flatten(var, {Dim::X, Dim::Y}, Dim::Z), expected);
+  EXPECT_EQ(flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z), expected);
 }
 
 TEST(ShapeTest, flatten_only_2_dims) {
   const auto var =
       reshape(arange(Dim::X, 24), {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
   const auto expected = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Z, 4}});
-  EXPECT_EQ(flatten(var, {Dim::X, Dim::Y}, Dim::X), expected);
+  EXPECT_EQ(flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::X), expected);
 }
 
 TEST(ShapeTest, flatten_bad_dim_order) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
-  EXPECT_THROW(flatten(var, {Dim::Y, Dim::X}, Dim::Z), except::DimensionError);
+  EXPECT_THROW(flatten(var, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
+               except::DimensionError);
 }
 
 TEST(ShapeTest, round_trip) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
   const auto reshaped = fold(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
-  EXPECT_EQ(flatten(reshaped, {Dim::Row, Dim::Time}, Dim::X), var);
+  EXPECT_EQ(flatten(reshaped, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X),
+            var);
 }

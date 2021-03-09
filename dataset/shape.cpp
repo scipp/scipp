@@ -153,7 +153,7 @@ namespace {
 ///    variable's dims, broadcast
 /// 3. If none of the variables's dimensions are contained, no broadcast
 Variable maybe_broadcast(const VariableConstView &var,
-                         const std::vector<Dim> &from_labels,
+                         const scipp::span<const Dim> &from_labels,
                          const Dimensions &data_dims) {
   const auto &var_dims = var.dims();
   Dimensions broadcast_dims;
@@ -217,16 +217,15 @@ Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
 /// - reshape the variable, excluding the last bin edge
 /// - concatenate the very last bin edge to the result
 Variable flatten_bin_edge(const VariableConstView &var,
-                          const std::vector<Dim> &from_labels, const Dim to_dim,
-                          const Dim bin_edge_dim) {
+                          const scipp::span<const Dim> &from_labels,
+                          const Dim to_dim, const Dim bin_edge_dim) {
   const auto data_shape = var.dims()[bin_edge_dim] - 1;
 
   // Make sure that the bin edges can be joined together
   const auto front = var.slice({bin_edge_dim, 0});
   const auto back = var.slice({bin_edge_dim, data_shape});
-
-  const auto front_flat = reshape(front, {{to_dim, front.dims().volume()}});
-  const auto back_flat = reshape(back, {{to_dim, back.dims().volume()}});
+  const auto front_flat = flatten(front, front.dims().labels(), to_dim);
+  const auto back_flat = flatten(back, back.dims().labels(), to_dim);
 
   if (front_flat.slice({to_dim, 1, front.dims().volume()}) !=
       back_flat.slice({to_dim, 0, back.dims().volume() - 1}))
@@ -242,7 +241,7 @@ Variable flatten_bin_edge(const VariableConstView &var,
 /// Check if one of the from_labels is a bin edge
 Dim bin_edge_in_from_labels(const VariableConstView &var,
                             const Dimensions &array_dims,
-                            const std::vector<Dim> &from_labels) {
+                            const scipp::span<const Dim> &from_labels) {
   for (const auto dim : from_labels)
     if (is_bin_edges(var, array_dims, dim))
       return dim;
@@ -280,7 +279,7 @@ DataArray fold(const DataArrayConstView &a, const Dim from_dim,
 /// Flatten multiple dimensions into a single dimension:
 /// ['y', 'z'] -> ['x']
 DataArray flatten(const DataArrayConstView &a,
-                  const std::vector<Dim> &from_labels, const Dim to_dim) {
+                  const scipp::span<const Dim> &from_labels, const Dim to_dim) {
   auto flattened = DataArray(flatten(a.data(), from_labels, to_dim));
 
   for (auto &&[name, coord] : a.coords()) {
