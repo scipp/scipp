@@ -61,6 +61,16 @@ def test_construct_0d_datetime(unit):
         assert var.value.dtype == dtype
 
 
+@pytest.mark.parametrize("unit", _UNIT_STRINGS)
+def test_construct_0d_datetime_from_int(unit):
+    value = np.random.randint(0, 1000)
+    var = sc.Variable(dtype=sc.dtype.datetime64, unit=unit, value=value)
+    assert var.dtype == sc.dtype.datetime64
+    assert var.unit == unit
+    assert var.value.dtype == f'datetime64[{unit}]'
+    assert var.value == np.datetime64(value, unit)
+
+
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
 def test_construct_0d_datetime_mismatch(unit1, unit2):
     with pytest.raises(ValueError):
@@ -128,6 +138,20 @@ def test_construct_datetime(unit):
         assert str(var.dtype) == 'datetime64'
         assert var.unit == unit
         assert var.values.dtype == dtype
+
+
+@pytest.mark.parametrize("unit", _UNIT_STRINGS)
+def test_construct_datetime_from_int(unit):
+    values = np.random.randint(0, 1000, np.random.randint(5, 100))
+    var = sc.Variable(dims=['x'],
+                      dtype=sc.dtype.datetime64,
+                      unit=unit,
+                      values=values)
+    dtype_str = f'datetime64[{unit}]'
+    assert var.dtype == sc.dtype.datetime64
+    assert var.unit == unit
+    assert var.values.dtype == dtype_str
+    np.testing.assert_array_equal(var.values, values.astype(dtype_str))
 
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
