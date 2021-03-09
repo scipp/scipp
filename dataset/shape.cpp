@@ -175,15 +175,6 @@ Variable maybe_broadcast(const VariableConstView &var,
 }
 
 /// Special handling for folding coord along a dim that contains bin edges.
-///
-/// The procedure is the following:
-/// - create output of correct size (use fold and resize to_dims.inner()
-///   to L+1).
-/// - copy(reshape(coord.slice({from_dim, 0, size-1}), to_dims),
-///   out_coord.slice({to_dims.inner(), 0, Ninner})
-/// - copy(reshape(coord.slice({from_dim, 1, size}),
-///   to_dims).slice({to_dims.inner(), Ninner-1}),
-///   out_coord.slice({to_dims.inner(), Ninner})
 Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
                        const Dimensions &to_dims) {
   // The size of the bin edge dim
@@ -191,16 +182,16 @@ Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
   // inner_size is the size of the inner dimensions in to_dims
   const auto inner_size = to_dims[to_dims.inner()];
   // Make the bulk slice of the coord, leaving out the last bin edge
-  const auto slice = var.slice({from_dim, 0, bin_edge_size - 1});
+  const auto base = var.slice({from_dim, 0, bin_edge_size - 1});
   // The new_dims are the reshaped dims, as if the variable was not bin edges
-  const auto new_dims = core::fold(slice.dims(), from_dim, to_dims);
+  const auto new_dims = core::fold(base.dims(), from_dim, to_dims);
   auto out_dims = Dimensions(new_dims);
   // To make the container of the right size, we increase the inner dim by 1
   out_dims.resize(to_dims.inner(), inner_size + 1);
   // Create output container
   auto out = empty(out_dims, var.unit(), var.dtype(), var.hasVariances());
   // Copy the bulk of the variable into the output, omitting the last bin edge
-  copy(reshape(slice, new_dims), out.slice({to_dims.inner(), 0, inner_size}));
+  copy(reshape(base, new_dims), out.slice({to_dims.inner(), 0, inner_size}));
   // Copy the 'end-cap' or final bin edge into the out container, by offsetting
   // the slicing indices by 1
   copy(reshape(var.slice({from_dim, 1, bin_edge_size}), new_dims)
@@ -210,12 +201,6 @@ Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
 }
 
 /// Special handling for flattening coord along a dim that contains bin edges.
-///
-/// The procedure is the following:
-/// - check that the front slice along the bin edge dim matches the back slice,
-///   after offseting the values by 1
-/// - reshape the variable, excluding the last bin edge
-/// - concatenate the very last bin edge to the result
 Variable flatten_bin_edge(const VariableConstView &var,
                           const scipp::span<const Dim> &from_labels,
                           const Dim to_dim, const Dim bin_edge_dim) {
@@ -226,16 +211,26 @@ Variable flatten_bin_edge(const VariableConstView &var,
   const auto back = var.slice({bin_edge_dim, data_shape});
   const auto front_flat = flatten(front, front.dims().labels(), to_dim);
   const auto back_flat = flatten(back, back.dims().labels(), to_dim);
-
   if (front_flat.slice({to_dim, 1, front.dims().volume()}) !=
       back_flat.slice({to_dim, 0, back.dims().volume() - 1}))
     throw except::BinEdgeError(
         "Flatten: the bin edges cannot be joined together.");
 
+  // Make the bulk slice of the coord, leaving out the last bin edge
   const auto base = var.slice({bin_edge_dim, 0, data_shape});
-  return concatenate(
-      reshape(base, core::flatten(base.dims(), from_labels, to_dim)),
-      back_flat.slice({to_dim, back.dims().volume() - 1}), to_dim);
+  // The new_dims are the reshaped dims, as if the variable was not bin edges
+  const auto new_dims = core::flatten(base.dims(), from_labels, to_dim);
+  auto out_dims = Dimensions(new_dims);
+  // To make the container of the right size, we increase to_dim by 1
+  out_dims.resize(to_dim, new_dims[to_dim] + 1);
+  // Create output container
+  auto out = empty(out_dims, var.unit(), var.dtype(), var.hasVariances());
+  // Copy the bulk of the variable into the output, omitting the last bin edge
+  copy(reshape(base, new_dims), out.slice({to_dim, 0, new_dims[to_dim]}));
+  // Copy the back slice (or final bin edge) into the out container
+  copy(back_flat.slice({to_dim, back.dims().volume() - 1}),
+       out.slice({to_dim, new_dims[to_dim]}));
+  return out;
 }
 
 /// Check if one of the from_labels is a bin edge
