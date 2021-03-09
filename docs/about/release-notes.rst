@@ -23,6 +23,11 @@ Features
   * Support loading/converting Mantid ``WorkspaceGroup``, this will produce a ``dict`` of data arrays `#1654 <https://github.com/scipp/scipp/pull/1654>`_.
   * Fixes to support loading/converting ``McStasNexus`` files `#1659 <https://github.com/scipp/scipp/pull/1659>`_.
 
+* Support for datetime
+
+  * ``sc.dtype.datetime64`` with copy-less casting between numpy and and scipp where possible. `#1639 <https://github.com/scipp/scipp/pull/1639>`_
+  * Binning with datetime edges `#1739 <https://github.com/scipp/scipp/pull/1739>`_
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
