@@ -2,10 +2,12 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/variable/shape.h"
+#include "scipp/core/dimensions.h"
+
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
@@ -159,92 +161,14 @@ Variable reshape(const VariableConstView &view, const Dimensions &dims) {
   return reshaped;
 }
 
-void validate_fold_dims(const Dimensions &old_dims, const Dim from_dim,
-                        const Dimensions &to_dims) {
-  if (!old_dims.contains(from_dim))
-    throw except::DimensionError("Dimension to fold not found.");
-  // Make sure that new dims do not already exist in data dimensions,
-  // apart from the old dim (i.e. old dim can be re-used)
-  for (const auto dim : to_dims.labels())
-    if (old_dims.contains(dim) && dim != from_dim)
-      throw except::DimensionError(
-          "Fold: new dimensions cannot contain labels that already exist.");
-}
-
-void validate_flatten_dims(const Dimensions &old_dims,
-                           const Dimensions &from_dims, const Dim to_dim) {
-  for (const auto dim : from_dims.labels())
-    if (!old_dims.contains(dim))
-      throw except::DimensionError(
-          "Flatten: dimension to be flattened not found.");
-  // Make sure that new dim does not already exist in data dimensions,
-  // apart from one of the from_dims (i.e. an old dim can be re-used)
-  if (old_dims.contains(to_dim) && !from_dims.contains(to_dim))
-    throw except::DimensionError(
-        "Flatten: final flattened dimension already exists.");
-  // Only allow reshaping contiguous dimensions.
-  // Note that isContiguousIn only allows for inner contiguous blocks,
-  // and contains(dimensions) ignores dimension order.
-  const auto offset = old_dims.index(from_dims.labels()[0]);
-  for (scipp::index i = 0; i < from_dims.ndim(); ++i) {
-    if (old_dims.label(i + offset) != from_dims.label(i) ||
-        old_dims.size(i + offset) != from_dims.size(i))
-      throw except::DimensionError(
-          "Flatten: can only flatten a contiguous set of dimensions. "
-          "The order of the dimensions to flatten must also match the order of "
-          "dimensions in the original Variable or DataArray.");
-  }
-}
-
-/// Fold dims for folding one dim into multiple dims
-///
-/// Go through the old dims and:
-/// - if the dim does not equal the dim that is being stacked, copy dim/shape
-/// - if the dim equals the dim to be stacked, replace by stack of new dims
-Dimensions fold_dims(const Dimensions &old_dims, const Dim from_dim,
-                     const Dimensions &to_dims) {
-  Dimensions new_dims;
-  for (const auto dim : old_dims.labels())
-    if (dim != from_dim)
-      new_dims.addInner(dim, old_dims[dim]);
-    else
-      for (const auto lab : to_dims.labels())
-        new_dims.addInner(lab, to_dims[lab]);
-  return new_dims;
-}
-
-/// Flatten dims for reshaping multiple dims into one
-///
-/// Go through the old dims and:
-/// - if the dim is contained in the list of dims to be flattened, add the new
-///   dim once
-/// - if not, copy the dim/shape
-Dimensions flatten_dims(const Dimensions &old_dims, const Dimensions &from_dims,
-                        const Dim to_dim) {
-  Dimensions new_dims;
-  for (const auto dim : old_dims.labels())
-    if (from_dims.contains(dim)) {
-      if (!new_dims.contains(to_dim))
-        new_dims.addInner(to_dim, from_dims.volume());
-    } else {
-      new_dims.addInner(dim, old_dims[dim]);
-    }
-  return new_dims;
-}
-
 Variable fold(const VariableConstView &view, const Dim from_dim,
               const Dimensions &to_dims) {
-  validate_fold_dims(view.dims(), from_dim, to_dims);
-  return reshape(view, fold_dims(view.dims(), from_dim, to_dims));
+  return reshape(view, fold(view.dims(), from_dim, to_dims));
 }
 
 Variable flatten(const VariableConstView &view,
                  const std::vector<Dim> &from_labels, const Dim to_dim) {
-  const auto &view_dims = view.dims();
-  Dimensions from_dims;
-  for (const auto dim : from_labels)
-    from_dims.addInner(dim, view_dims[dim]);
-  return reshape(view, flatten_dims(view_dims, from_dims, to_dim));
+  return reshape(view, flatten(view.dims(), from_labels, to_dim));
 }
 
 VariableView transpose(Variable &var, const std::vector<Dim> &dims) {

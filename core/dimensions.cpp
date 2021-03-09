@@ -206,6 +206,17 @@ Dimensions merge(const Dimensions &a, const Dimensions &b) {
   return out;
 }
 
+/// Return the dimensions contained in both a and b
+Dimensions intersection(const Dimensions &a, const Dimensions &b) {
+  Dimensions out;
+  Dimensions m = merge(a, b);
+  for (const auto dim : m.labels()) {
+    if (a.contains(dim) && b.contains(dim))
+      out.addInner(dim, m[dim]);
+  }
+  return out;
+}
+
 Dimensions transpose(const Dimensions &dims, std::vector<Dim> labels) {
   if (labels.empty())
     labels.insert(labels.end(), dims.labels().rbegin(), dims.labels().rend());
@@ -217,5 +228,66 @@ Dimensions transpose(const Dimensions &dims, std::vector<Dim> labels) {
                  [&dims](auto &dim) { return dims[dim]; });
   return {labels, shape};
 }
+
+/// Fold one dim into multiple dims
+///
+/// Go through the old dims and:
+/// - if the dim does not equal the dim that is being stacked, copy dim/shape
+/// - if the dim equals the dim to be stacked, replace by stack of new dims
+///
+/// Note that addInner will protect against inserting new dims that already
+/// exist in the old dims.
+/// If from_dim is not found in old_dims, the new dims are identical to the
+/// old_dims (this occurs when folding a DataArray whose coordinates do not all
+/// necessarily contain from_dim).
+Dimensions fold(const Dimensions &old_dims, const Dim from_dim,
+                const Dimensions &to_dims) {
+  Dimensions new_dims;
+  for (const auto dim : old_dims.labels())
+    if (dim != from_dim)
+      new_dims.addInner(dim, old_dims[dim]);
+    else
+      for (const auto lab : to_dims.labels())
+        new_dims.addInner(lab, to_dims[lab]);
+  return new_dims;
+}
+
+/// Flatten multiple dims into one
+///
+/// Go through the old dims and:
+/// - if the dim is contained in the list of dims to be flattened, add the new
+///   dim once
+/// - if not, copy the dim/shape
+Dimensions flatten(const Dimensions &old_dims,
+                   const std::vector<Dim> from_labels, const Dim to_dim) {
+  Dimensions from_dims;
+  for (const auto dim : from_labels)
+    if (old_dims.contains(dim))
+      from_dims.addInner(dim, old_dims[dim]);
+
+  // Only allow reshaping contiguous dimensions.
+  // Note that isContiguousIn only allows for inner contiguous blocks,
+  // and contains(dimensions) ignores dimension order.
+  Dimensions intersect = intersection(old_dims, from_dims);
+  for (scipp::index i = 0; i < intersect.ndim() - 1; ++i)
+    if (old_dims.index(intersect.label(i + 1)) !=
+            old_dims.index(intersect.label(i)) + 1 ||
+        from_dims.index(intersect.label(i + 1)) !=
+            from_dims.index(intersect.label(i)) + 1)
+      throw except::DimensionError(
+          "Flatten: can only flatten a contiguous set of dimensions. "
+          "The order of the dimensions to flatten must also match the order of "
+          "the old dimensions.");
+
+  Dimensions new_dims;
+  for (const auto dim : old_dims.labels())
+    if (from_dims.contains(dim)) {
+      if (!new_dims.contains(to_dim))
+        new_dims.addInner(to_dim, from_dims.volume());
+    } else {
+      new_dims.addInner(dim, old_dims[dim]);
+    }
+  return new_dims;
+} // namespace scipp::core
 
 } // namespace scipp::core

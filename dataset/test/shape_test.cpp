@@ -124,7 +124,7 @@ TEST(ReshapeTest, flatten_bad_dim_order) {
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-  EXPECT_THROW(flatten(a, {Dim::Y, Dim::Z}, Dim::Z), except::DimensionError);
+  EXPECT_THROW(flatten(a, {Dim::Y, Dim::X}, Dim::Z), except::DimensionError);
 }
 
 TEST(ReshapeTest, round_trip) {

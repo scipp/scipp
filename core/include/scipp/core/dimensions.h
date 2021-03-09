@@ -145,8 +145,19 @@ Dimensions merge(const Dimensions &a, const Dimensions &b,
   return merge(merge(a, b), other...);
 }
 
+SCIPP_CORE_EXPORT Dimensions intersection(const Dimensions &a,
+                                          const Dimensions &b);
+
 SCIPP_CORE_EXPORT Dimensions transpose(const Dimensions &dims,
                                        std::vector<Dim> labels = {});
+
+SCIPP_CORE_EXPORT Dimensions fold(const Dimensions &old_dims,
+                                  const Dim from_dim,
+                                  const Dimensions &to_dims);
+
+SCIPP_CORE_EXPORT Dimensions flatten(const Dimensions &old_dims,
+                                     const std::vector<Dim> from_labels,
+                                     const Dim to_dim);
 
 } // namespace scipp::core
 

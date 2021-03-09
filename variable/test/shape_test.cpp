@@ -194,7 +194,7 @@ TEST(ShapeTest, flatten_only_2_dims) {
 
 TEST(ShapeTest, flatten_bad_dim_order) {
   const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
-  EXPECT_THROW(flatten(var, {Dim::Y, Dim::Z}, Dim::Z), except::DimensionError);
+  EXPECT_THROW(flatten(var, {Dim::Y, Dim::X}, Dim::Z), except::DimensionError);
 }
 
 TEST(ShapeTest, round_trip) {

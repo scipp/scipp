@@ -56,21 +56,6 @@ template <class T> void bind_reshape(pybind11::module &mod) {
         return reshape(self, new_dims);
       },
       py::arg("x"), py::arg("sizes"));
-  mod.def(
-      "fold",
-      [](const T &self, const Dim dim, const py::dict &sizes) {
-        const auto new_dims = dict_to_dims(sizes);
-        py::gil_scoped_release release; // release only *after* using py::cast
-        return fold(self, dim, new_dims);
-      },
-      py::arg("x"), py::arg("dim"), py::arg("sizes"));
-  mod.def(
-      "flatten",
-      [](const T &self, const std::vector<Dim> &dims, const Dim &to) {
-        return flatten(self, dims, to);
-      },
-      py::arg("x"), py::arg("dims"), py::arg("to"),
-      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_fold(pybind11::module &mod) {
@@ -111,8 +96,12 @@ void init_shape(py::module &m) {
   bind_concatenate<Dataset>(m);
   bind_reshape<Variable>(m);
   bind_reshape<VariableView>(m);
+  bind_fold<Variable>(m);
+  bind_fold<VariableView>(m);
   bind_fold<DataArray>(m);
   bind_fold<DataArrayView>(m);
+  bind_flatten<Variable>(m);
+  bind_flatten<VariableView>(m);
   bind_flatten<DataArray>(m);
   bind_flatten<DataArrayView>(m);
   bind_transpose<Variable>(m);

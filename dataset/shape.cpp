@@ -153,22 +153,23 @@ namespace {
 ///    variable's dims, broadcast
 /// 3. If none of the variables's dimensions are contained, no broadcast
 Variable maybe_broadcast(const VariableConstView &var,
-                         const Dimensions &from_dims) {
+                         const std::vector<Dim> &from_labels,
+                         const Dimensions &data_dims) {
   const auto &var_dims = var.dims();
-
   Dimensions broadcast_dims;
   for (const auto dim : var_dims.labels())
-    if (!from_dims.contains(dim))
+    if (std::find(from_labels.begin(), from_labels.end(), dim) ==
+        from_labels.end())
       broadcast_dims.addInner(dim, var_dims[dim]);
     else
-      for (const auto lab : from_dims.labels())
+      for (const auto lab : from_labels)
         if (!broadcast_dims.contains(lab)) {
           // Need to check if the variable contains that dim, and use the
           // variable shape in case we have a bin edge.
           if (var_dims.contains(lab))
             broadcast_dims.addInner(lab, var_dims[lab]);
           else
-            broadcast_dims.addInner(lab, from_dims[lab]);
+            broadcast_dims.addInner(lab, data_dims[lab]);
         }
   return broadcast(var, broadcast_dims);
 }
@@ -176,7 +177,7 @@ Variable maybe_broadcast(const VariableConstView &var,
 /// Special handling for folding coord along a dim that contains bin edges.
 ///
 /// The procedure is the following:
-/// - create output of correct size (use fold_dims and resize to_dims.inner()
+/// - create output of correct size (use fold and resize to_dims.inner()
 ///   to L+1).
 /// - copy(reshape(coord.slice({from_dim, 0, size-1}), to_dims),
 ///   out_coord.slice({to_dims.inner(), 0, Ninner})
@@ -192,7 +193,7 @@ Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
   // Make the bulk slice of the coord, leaving out the last bin edge
   const auto slice = var.slice({from_dim, 0, bin_edge_size - 1});
   // The new_dims are the reshaped dims, as if the variable was not bin edges
-  const auto new_dims = fold_dims(slice.dims(), from_dim, to_dims);
+  const auto new_dims = core::fold(slice.dims(), from_dim, to_dims);
   auto out_dims = Dimensions(new_dims);
   // To make the container of the right size, we increase the inner dim by 1
   out_dims.resize(to_dims.inner(), inner_size + 1);
@@ -216,15 +217,17 @@ Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
 /// - reshape the variable, excluding the last bin edge
 /// - concatenate the very last bin edge to the result
 Variable flatten_bin_edge(const VariableConstView &var,
-                          const Dimensions &from_dims, const Dim to_dim,
+                          const std::vector<Dim> &from_labels, const Dim to_dim,
                           const Dim bin_edge_dim) {
   const auto data_shape = var.dims()[bin_edge_dim] - 1;
-  // Make sure that the bin edges match
+
+  // Make sure that the bin edges can be joined together
   const auto front = var.slice({bin_edge_dim, 0});
   const auto back = var.slice({bin_edge_dim, data_shape});
+
   const auto front_flat = reshape(front, {{to_dim, front.dims().volume()}});
   const auto back_flat = reshape(back, {{to_dim, back.dims().volume()}});
-  // Check that bin edges can be joined together
+
   if (front_flat.slice({to_dim, 1, front.dims().volume()}) !=
       back_flat.slice({to_dim, 0, back.dims().volume() - 1}))
     throw except::BinEdgeError(
@@ -232,15 +235,15 @@ Variable flatten_bin_edge(const VariableConstView &var,
 
   const auto base = var.slice({bin_edge_dim, 0, data_shape});
   return concatenate(
-      reshape(base, flatten_dims(base.dims(), from_dims, to_dim)),
+      reshape(base, core::flatten(base.dims(), from_labels, to_dim)),
       back_flat.slice({to_dim, back.dims().volume() - 1}), to_dim);
 }
 
-/// Check if one of the from_dims is a bin edge
-Dim bin_edge_in_from_dims(const VariableConstView &var,
-                          const Dimensions &array_dims,
-                          const Dimensions &from_dims) {
-  for (const auto dim : from_dims.labels())
+/// Check if one of the from_labels is a bin edge
+Dim bin_edge_in_from_labels(const VariableConstView &var,
+                            const Dimensions &array_dims,
+                            const std::vector<Dim> &from_labels) {
+  for (const auto dim : from_labels)
     if (is_bin_edges(var, array_dims, dim))
       return dim;
   return Dim::Invalid;
@@ -252,82 +255,64 @@ Dim bin_edge_in_from_dims(const VariableConstView &var,
 /// ['x': 6] -> ['y': 2, 'z': 3]
 DataArray fold(const DataArrayConstView &a, const Dim from_dim,
                const Dimensions &to_dims) {
-  const auto &old_dims = a.dims();
-  validate_fold_dims(old_dims, from_dim, to_dims);
-
-  auto reshaped =
-      DataArray(reshape(a.data(), fold_dims(old_dims, from_dim, to_dims)));
+  auto folded = DataArray(fold(a.data(), from_dim, to_dims));
 
   for (auto &&[name, coord] : a.coords()) {
-    if (is_bin_edges(coord, old_dims, from_dim))
-      reshaped.coords().set(name, fold_bin_edge(coord, from_dim, to_dims));
+    if (is_bin_edges(coord, a.dims(), from_dim))
+      folded.coords().set(name, fold_bin_edge(coord, from_dim, to_dims));
     else
-      reshaped.coords().set(
-          name, reshape(coord, fold_dims(coord.dims(), from_dim, to_dims)));
+      folded.coords().set(name, fold(coord, from_dim, to_dims));
   }
 
   for (auto &&[name, attr] : a.attrs())
-    if (is_bin_edges(attr, old_dims, from_dim))
-      reshaped.attrs().set(name, fold_bin_edge(attr, from_dim, to_dims));
+    if (is_bin_edges(attr, a.dims(), from_dim))
+      folded.attrs().set(name, fold_bin_edge(attr, from_dim, to_dims));
     else
-      reshaped.attrs().set(
-          name, reshape(attr, fold_dims(attr.dims(), from_dim, to_dims)));
+      folded.attrs().set(name, fold(attr, from_dim, to_dims));
 
   // Note that we assume bin-edge masks do not exist
   for (auto &&[name, mask] : a.masks())
-    reshaped.masks().set(
-        name, reshape(mask, fold_dims(mask.dims(), from_dim, to_dims)));
+    folded.masks().set(name, fold(mask, from_dim, to_dims));
 
-  return reshaped;
+  return folded;
 }
 
 /// Flatten multiple dimensions into a single dimension:
 /// ['y', 'z'] -> ['x']
 DataArray flatten(const DataArrayConstView &a,
                   const std::vector<Dim> &from_labels, const Dim to_dim) {
-  const auto &old_dims = a.dims();
-  Dimensions from_dims;
-  for (const auto dim : from_labels)
-    from_dims.addInner(dim, old_dims[dim]);
-
-  validate_flatten_dims(old_dims, from_dims, to_dim);
-
-  auto reshaped =
-      DataArray(reshape(a.data(), flatten_dims(old_dims, from_dims, to_dim)));
+  auto flattened = DataArray(flatten(a.data(), from_labels, to_dim));
 
   for (auto &&[name, coord] : a.coords()) {
-    const auto bin_edge_dim = bin_edge_in_from_dims(coord, old_dims, from_dims);
+    const auto bin_edge_dim =
+        bin_edge_in_from_labels(coord, a.dims(), from_labels);
+    const auto var = maybe_broadcast(coord, from_labels, a.dims());
     if (bin_edge_dim != Dim::Invalid) {
-      reshaped.coords().set(name,
-                            flatten_bin_edge(maybe_broadcast(coord, from_dims),
-                                             from_dims, to_dim, bin_edge_dim));
+      flattened.coords().set(
+          name, flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim));
     } else {
-      reshaped.coords().set(
-          name, reshape(maybe_broadcast(coord, from_dims),
-                        flatten_dims(coord.dims(), from_dims, to_dim)));
+      flattened.coords().set(name, flatten(var, from_labels, to_dim));
     }
   }
 
   for (auto &&[name, attr] : a.attrs()) {
-    const auto bin_edge_dim = bin_edge_in_from_dims(attr, old_dims, from_dims);
+    const auto bin_edge_dim =
+        bin_edge_in_from_labels(attr, a.dims(), from_labels);
+    const auto var = maybe_broadcast(attr, from_labels, a.dims());
     if (bin_edge_dim != Dim::Invalid) {
-      reshaped.attrs().set(name,
-                           flatten_bin_edge(maybe_broadcast(attr, from_dims),
-                                            from_dims, to_dim, bin_edge_dim));
-
+      flattened.attrs().set(
+          name, flatten_bin_edge(var, from_labels, to_dim, bin_edge_dim));
     } else {
-      reshaped.attrs().set(
-          name, reshape(maybe_broadcast(attr, from_dims),
-                        flatten_dims(attr.dims(), from_dims, to_dim)));
+      flattened.attrs().set(name, flatten(var, from_labels, to_dim));
     }
   }
 
   for (auto &&[name, mask] : a.masks())
-    reshaped.masks().set(name,
-                         reshape(maybe_broadcast(mask, from_dims),
-                                 flatten_dims(mask.dims(), from_dims, to_dim)));
+    flattened.masks().set(name,
+                          flatten(maybe_broadcast(mask, from_labels, a.dims()),
+                                  from_labels, to_dim));
 
-  return reshaped;
+  return flattened;
 }
 
 } // namespace scipp::dataset
