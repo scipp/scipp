@@ -288,6 +288,6 @@ Dimensions flatten(const Dimensions &old_dims,
       new_dims.addInner(dim, old_dims[dim]);
     }
   return new_dims;
-} // namespace scipp::core
+}
 
 } // namespace scipp::core
