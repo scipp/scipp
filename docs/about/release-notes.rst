@@ -10,6 +10,7 @@ Features
 ~~~~~~~~
 
 * Add ``sizes`` properties, an ordered ``dict`` to lookup the size of a specific dimension `#1636 <https://github.com/scipp/scipp/pull/1636>`_.
+* Add access to data, coords, attrs, and masks of bins via the ``bins`` property, e.g., ``obj.bins.coords['x']`` `#1752 <https://github.com/scipp/scipp/pull/1752>`_.
 * Add more functions for data arrays that were previously available only for variables `#1638 <https://github.com/scipp/scipp/pull/1638>`_ `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
 * Add named versions of operators such as ``logical_and`` `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
 * Add modulo operations `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
@@ -27,6 +28,7 @@ Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * The ``plot`` module has been renamed to ``plotting``, and plotting is now achieved via ``sc.plot(data)``. Wrapper functions ``superplot``, ``image``, and ``scatter3d`` have been dropped `#1696 <https://github.com/scipp/scipp/pull/1696>`_.
+* Properties ``dim``, ``begin``, ``end``, and ``data`` of the ``bins`` property of and object are now accessible as a dict via ``obj.bins.constituents``.
 * ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
 * ``scipp.neutron`` (now ``scippneutron``)
 
