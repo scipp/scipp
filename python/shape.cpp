@@ -48,10 +48,7 @@ template <class T> void bind_reshape(pybind11::module &mod) {
   mod.def(
       "reshape",
       [](const T &self, const py::dict &sizes) {
-        Dimensions new_dims;
-        for (const auto &item : sizes)
-          new_dims.addInner(item.first.cast<Dim>(),
-                            item.second.cast<scipp::index>());
+        const auto new_dims = dict_to_dims(sizes);
         py::gil_scoped_release release; // release only *after* using py::cast
         return reshape(self, new_dims);
       },
