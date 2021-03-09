@@ -26,28 +26,28 @@ using is_approx_types_t = arg_list_t<
     std::tuple<int32_t, int32_t, int64_t>,
     std::tuple<int32_t, int64_t, int64_t>>;
 
-constexpr auto is_approx_units = [](const units::Unit &x, const units::Unit &y,
-                                    const units::Unit &t) {
+constexpr auto isclose_units = [](const units::Unit &x, const units::Unit &y,
+                                  const units::Unit &t) {
   expect::equals(x, y);
   expect::equals(x, t);
   return units::dimensionless;
 };
 
-struct is_close_flags_t
+struct isclose_flags_t
     : public transform_flags::expect_all_or_none_have_variance_t,
       public transform_flags::no_out_variance_t {
   void operator()() const {}
 };
 
-constexpr auto is_close =
-    overloaded{is_close_flags_t{}, is_approx_types_t{}, is_approx_units,
+constexpr auto isclose =
+    overloaded{isclose_flags_t{}, is_approx_types_t{}, isclose_units,
                [](const auto &x, const auto &y, const auto &t) {
                  using std::abs;
                  return abs(x - y) <= t;
                }};
 
-constexpr auto is_close_equal_nan =
-    overloaded{is_close_flags_t{}, is_approx_types_t{}, is_approx_units,
+constexpr auto isclose_equal_nan =
+    overloaded{isclose_flags_t{}, is_approx_types_t{}, isclose_units,
                [](const auto &x, const auto &y, const auto &t) {
                  using std::abs;
                  using numeric::isnan;

@@ -34,8 +34,8 @@ def isnear(x,
     :return True if near:
     """
     same_data = sc.all(
-        sc.is_close(x.data, y.data, rtol=rtol, atol=atol,
-                    equal_nan=equal_nan)).value if include_data else True
+        sc.isclose(x.data, y.data, rtol=rtol, atol=atol,
+                   equal_nan=equal_nan)).value if include_data else True
     same_len = len(x.meta) == len(y.meta) if include_attrs else len(
         x.coords) == len(y.coords)
     if not same_len:
@@ -51,8 +51,7 @@ def isnear(x,
             )
         if val.dtype in [sc.dtype.float64, sc.dtype.float32]:
             if not sc.all(
-                    sc.is_close(
-                        a, b, rtol=rtol, atol=atol,
-                        equal_nan=equal_nan)).value:
+                    sc.isclose(a, b, rtol=rtol, atol=atol,
+                               equal_nan=equal_nan)).value:
                 return False
     return same_data

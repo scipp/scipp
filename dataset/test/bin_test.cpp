@@ -135,9 +135,9 @@ protected:
   void expect_near(const DataArrayConstView &a, const DataArrayConstView &b) {
     const auto tolerance =
         values(max(buckets::sum(a.data())) * (1e-14 * units::one));
-    EXPECT_TRUE(all(is_close(values(buckets::sum(a.data())),
-                             values(buckets::sum(b.data())), 0.0 * units::one,
-                             tolerance))
+    EXPECT_TRUE(all(isclose(values(buckets::sum(a.data())),
+                            values(buckets::sum(b.data())), 0.0 * units::one,
+                            tolerance))
                     .value<bool>());
     EXPECT_EQ(a.masks(), b.masks());
     EXPECT_EQ(a.coords(), b.coords());

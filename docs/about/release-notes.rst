@@ -22,7 +22,7 @@ Features
   * Support unit conversion to energy transfer, for inelastic TOF experiments `#1635 <https://github.com/scipp/scipp/pull/1635>`_.
   * Support loading/converting Mantid ``WorkspaceGroup``, this will produce a ``dict`` of data arrays `#1654 <https://github.com/scipp/scipp/pull/1654>`_.
   * Fixes to support loading/converting ``McStasNexus`` files `#1659 <https://github.com/scipp/scipp/pull/1659>`_.
-* `is_close` added (`is_approx` deprecated). Fuzzy data comparison is_close is an analogue to numpy's `isclose` 
+* `isclose` added (`is_approx` removed). Fuzzy data comparison isclose is an analogue to numpy's `isclose` 
 
 Breaking changes
 ~~~~~~~~~~~~~~~~

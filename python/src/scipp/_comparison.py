@@ -137,7 +137,7 @@ def is_approx(x, y, rtol, atol, equal_nan=False):
     raise RuntimeError("is_approx is deprecated. Use isclose")
 
 
-def is_close(x, y, rtol=None, atol=None, equal_nan=False):
+def isclose(x, y, rtol=None, atol=None, equal_nan=False):
     """Compares values (x, y) element by element against tolerance absolute
     and relative tolerances (non-symmetric).
 
@@ -167,4 +167,4 @@ def is_close(x, y, rtol=None, atol=None, equal_nan=False):
         rtol = rtol * _cpp.units.one
     if not hasattr(atol, 'unit'):
         atol = atol * y.unit
-    return _call_cpp_func(_cpp.is_close, x, y, rtol, atol, equal_nan)
+    return _call_cpp_func(_cpp.isclose, x, y, rtol, atol, equal_nan)

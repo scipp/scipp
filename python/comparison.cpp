@@ -14,9 +14,9 @@ using namespace scipp::dataset;
 
 namespace py = pybind11;
 
-template <class T> void bind_is_close(py::module &m) {
+template <class T> void bind_isclose(py::module &m) {
   m.def(
-      "is_close",
+      "isclose",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y,
          const typename T::const_view_type &rtol,
@@ -38,7 +38,7 @@ template <typename T> void bind_is_equal(py::module &m) {
 }
 
 void init_comparison(py::module &m) {
-  bind_is_close<Variable>(m);
+  bind_isclose<Variable>(m);
   bind_is_equal<Variable>(m);
   bind_is_equal<Dataset>(m);
   bind_is_equal<DataArray>(m);
