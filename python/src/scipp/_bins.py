@@ -11,9 +11,12 @@ class lookup:
         self.dim = dim
 
 
-class _Bins:
+class Bins:
     """
-    Proxy for operations on bins of a variable
+    Proxy for access to bin contents and operations on bins of a variable.
+
+    This class is returned from the `bins` property of variables and should
+    generally not be created directly.
     """
     def __init__(self, obj):
         self._obj = obj
@@ -150,16 +153,16 @@ class GroupbyBins:
 
 def _bins(obj):
     """
-    Returns binning object allowing bin-wise operations
-    to be performed.
+    Returns helper :py:class:`scipp.Bins` allowing bin-wise operations
+    to be performed or `None` if not binned data.
     """
     if _cpp.is_bins(obj):
-        return _Bins(obj)
+        return Bins(obj)
     else:
         return None
 
 
-def _set_bins(obj, bins: _Bins):
+def _set_bins(obj, bins: Bins):
     # Should only be used by __iadd__ and friends
     assert obj is bins._obj
 
