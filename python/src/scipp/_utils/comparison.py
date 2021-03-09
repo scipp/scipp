@@ -1,52 +1,58 @@
 import scipp as sc
 
 
-def is_near(a,
-            b,
-            rtol=None,
-            atol=None,
-            include_attrs=True,
-            include_data=True,
-            equal_nan=True):
+def isnear(x,
+           y,
+           rtol=None,
+           atol=None,
+           include_attrs=True,
+           include_data=True,
+           equal_nan=True):
     """
-    Similar to scipp is_close, but intended to compare whole DataArrays.
-    Coordinates compared element by element with abs(a - b) <= atol + rtol * b
+    Similar to scipp isclose, but intended to compare whole DataArrays.
+    Coordinates compared element by element
+    with abs(x - y) <= atol + rtol * abs(y)
 
-    :param a: lhs input
-    :param b: rhs input
-    :param rtol: relative tolerance (to b)
+    Compared coord and attr pairs are only considered equal if all
+    element-wise comparisons are True.
+
+    :param x: lhs input
+    :param y: rhs input
+    :param rtol: relative tolerance (to y)
     :param atol: absolute tolerance
-    :param include_data: Compare that data is within tolerance
-    :param include_attrs: Compare all meta (coords and attrs) between a and b,
+    :param include_data: Compare data element-wise between x, and y
+    :param include_attrs: Compare all meta (coords and attrs) between x and y,
            otherwise only compare coordinates from meta
     :param equal_nan: If True, consider Nans or Infs to be equal
                        providing that they match in location and, for infs,
                        have the same sign
-    :type a: DataArray
-    :type b: DataArray
+    :type x: DataArray
+    :type y: DataArray
     :type tol :
-    :raises: If a, b are not going to be logically comparable
+    :raises: If x, y are not going to be logically comparable
              for reasons relating to shape, item naming or non-finite elements.
     :return True if near:
     """
     same_data = sc.all(
-        sc.is_close(a.data, b.data, rtol=rtol, atol=atol,
+        sc.is_close(x.data, y.data, rtol=rtol, atol=atol,
                     equal_nan=equal_nan)).value if include_data else True
-    same_len = len(a.meta) == len(b.meta) if include_attrs else len(
-        a.coords) == len(b.coords)
+    same_len = len(x.meta) == len(y.meta) if include_attrs else len(
+        x.coords) == len(y.coords)
     if not same_len:
         raise RuntimeError('Different number of items'
-                           f'in meta {len(a.meta)} {len(b.meta)}')
-    for key, val in a.meta.items() if include_attrs else a.coords.items():
-        x = a.meta[key] if include_attrs else a.coords[key]
-        y = b.meta[key] if include_attrs else b.coords[key]
+                           f'in meta {len(x.meta)} {len(y.meta)}')
+    for key, val in x.meta.items() if include_attrs else x.coords.items():
+        a = x.meta[key] if include_attrs else x.coords[key]
+        b = y.meta[key] if include_attrs else y.coords[key]
         if x.shape != y.shape:
-            raise RuntimeError(f'For meta {key} have different'
-                               f' shapes {x.shape}, {y.shape}')
+            raise RuntimeError(
+                f'Coord (or attr) with key {key} have different'
+                f' shapes. For x, shape is {a.shape}. For y, shape = {b.shape}'
+            )
         if val.dtype in [sc.dtype.float64, sc.dtype.float32]:
             if not sc.all(
                     sc.is_close(
-                        x, y, rtol=rtol, atol=atol,
+                        a, b, rtol=rtol, atol=atol,
                         equal_nan=equal_nan)).value:
                 return False
     return same_data
