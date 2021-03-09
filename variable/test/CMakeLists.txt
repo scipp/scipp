@@ -22,6 +22,7 @@ add_executable(
   subspan_view_test.cpp
   sum_test.cpp
   test_variables.cpp
+  to_unit_test.cpp
   transform_test.cpp
   trigonometry_test.cpp
   util_test.cpp
