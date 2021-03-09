@@ -33,9 +33,8 @@ constexpr auto isclose_units = [](const units::Unit &x, const units::Unit &y,
   return units::dimensionless;
 };
 
-struct isclose_flags_t
-    : public transform_flags::expect_all_or_none_have_variance_t,
-      public transform_flags::no_out_variance_t {
+struct isclose_flags_t : public transform_flags::expect_no_variance_arg_t<2>,
+                         public transform_flags::expect_no_variance_arg_t<3> {
   void operator()() const {}
 };
 

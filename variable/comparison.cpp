@@ -20,18 +20,28 @@ Variable isclose(const VariableConstView &a, const VariableConstView &b,
   if (a.hasVariances() && b.hasVariances()) {
     const auto error_tol = atol + rtol * abs(variances(b));
     if (equal_nans == NanComparisons::Equal)
-      return variable::transform(a, b, tol, element::isclose_equal_nan) &
+      return variable::transform(
+                 a, b, error_tol.hasVariances() ? values(error_tol) : error_tol,
+                 element::isclose_equal_nan) &
              variable::transform(sqrt(variances(a)), sqrt(variances(b)),
-                                 error_tol, element::isclose_equal_nan);
+                                 error_tol.hasVariances() ? values(error_tol)
+                                                          : error_tol,
+                                 element::isclose_equal_nan);
     else
-      return variable::transform(a, b, tol, element::isclose) &
+      return variable::transform(
+                 a, b, error_tol.hasVariances() ? values(error_tol) : error_tol,
+                 element::isclose) &
              variable::transform(sqrt(variances(a)), sqrt(variances(b)),
-                                 error_tol, element::isclose);
+                                 error_tol.hasVariances() ? values(error_tol)
+                                                          : error_tol,
+                                 element::isclose);
   } else {
     if (equal_nans == NanComparisons::Equal)
-      return variable::transform(a, b, tol, element::isclose_equal_nan);
+      return variable::transform(a, b, tol.hasVariances() ? values(tol) : tol,
+                                 element::isclose_equal_nan);
     else
-      return variable::transform(a, b, tol, element::isclose);
+      return variable::transform(a, b, tol.hasVariances() ? values(tol) : tol,
+                                 element::isclose);
   }
 }
 
