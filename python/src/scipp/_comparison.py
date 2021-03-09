@@ -170,11 +170,7 @@ def isclose(x, y, rtol=None, atol=None, equal_nan=False):
              otherwise False.
     """
     if rtol is None:
-        rtol = 1e-5
+        rtol = 1e-5 * _cpp.units.one
     if atol is None:
-        atol = 1e-8
-    if not hasattr(rtol, 'unit'):
-        rtol = rtol * _cpp.units.one
-    if not hasattr(atol, 'unit'):
-        atol = atol * y.unit
+        atol = 1e-8 * y.unit
     return _call_cpp_func(_cpp.isclose, x, y, rtol, atol, equal_nan)

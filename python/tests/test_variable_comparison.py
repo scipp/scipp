@@ -28,23 +28,16 @@ def test_isclose():
     assert sc.all(sc.isclose(a, a, 0 * unit, 0 * unit)).value
 
 
-def test_isclose_rtol_as_number():
-    unit = sc.units.one
-    a = sc.Variable(['x'], values=np.array([1, 2, 3]), unit=unit)
-    # rtol as number (checks internal conversion to scipp scalar)
-    assert sc.all(sc.isclose(a, a, 0, 0 * unit)).value
-
-
 def test_isclose_atol_defaults():
     unit = sc.units.one
     a = sc.Variable(['x'], values=np.array([1, 2, 3]), unit=unit)
-    assert sc.all(sc.isclose(a, a, rtol=0)).value
+    assert sc.all(sc.isclose(a, a, rtol=0 * unit)).value
 
 
 def test_isclose_rtol_defaults():
     unit = sc.units.one
     a = sc.Variable(['x'], values=np.array([1, 2, 3]), unit=unit)
-    assert sc.all(sc.isclose(a, a, atol=0)).value
+    assert sc.all(sc.isclose(a, a, atol=0 * unit)).value
 
 
 def test_is_equal():
