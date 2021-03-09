@@ -13,7 +13,6 @@
 #include "scipp/variable/logical.h"
 
 namespace py = pybind11;
-using namespace scipp;
 
 template <class T, class... Ignored>
 void bind_common_operators(pybind11::class_<T, Ignored...> &c) {
@@ -40,7 +39,7 @@ template <class T, class... Ignored>
 void bind_astype(py::class_<T, Ignored...> &c) {
   c.def(
       "astype",
-      [](const T &self, const DType type) { return astype(self, type); },
+      [](const T &self, const scipp::DType type) { return astype(self, type); },
       py::call_guard<py::gil_scoped_release>(),
       R"(
         Converts a Variable or DataArray to a different type.
@@ -88,14 +87,15 @@ struct Identity {
   }
 };
 struct ScalarToVariable {
-  template <class T> Variable operator()(const T &x) const noexcept {
-    return x * units::one;
+  template <class T> scipp::Variable operator()(const T &x) const noexcept {
+    return x * scipp::units::one;
   }
 };
 
 template <class RHSSetup> struct OpBinder {
   template <class Other, class T, class... Ignored>
   static void in_place_binary(pybind11::class_<T, Ignored...> &c) {
+    using namespace scipp;
     // In-place operators return py::object due to the way in-place operators
     // work in Python (assigning return value to this). This avoids extra
     // copies, and additionally ensures that all references to the object keep
@@ -144,6 +144,7 @@ template <class RHSSetup> struct OpBinder {
 
   template <class Other, class T, class... Ignored>
   static void binary(pybind11::class_<T, Ignored...> &c) {
+    using namespace scipp;
     c.def(
         "__add__", [](T &a, Other &b) { return a + RHSSetup{}(b); },
         py::is_operator(), py::call_guard<py::gil_scoped_release>());
