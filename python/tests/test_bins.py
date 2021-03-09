@@ -63,9 +63,9 @@ def test_bins_view():
         var.bins.coords['time2'] = col  # col is not binned
 
     def check(a, b):
-        # sc.is_equal does not work for us here since we have owning and
+        # sc.is_equal does not work for us directly since we have owning and
         # non-owning views which currently never compare equal.
-        assert sc.all(a == b).bins.sum().value
+        assert sc.is_equal(1 * a, 1 * b)
 
     var.bins.coords['time'] = var.bins.data
     assert sc.is_equal(var.bins.coords['time'], var.bins.data)
