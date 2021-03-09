@@ -3,7 +3,9 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <cstdint>
 #include <functional>
+#include <string>
 
 #include "scipp-units_export.h"
 
