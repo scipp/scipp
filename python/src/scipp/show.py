@@ -380,14 +380,19 @@ class DatasetDrawer:
         for what, items in categories:
             for name, var in items.items():
                 item = DrawerItem(name, var, config.colors[what])
-                if len(var.dims) == 0:
-                    area_0d.append(item)
-                elif var.dims[-1] == dims[-1]:
-                    area_x.append(item)
-                elif var.dims[-1] == dims[-2]:
-                    area_y.append(item)
-                else:
-                    area_z.append(item)
+                try:
+                    if len(var.dims) == 0:
+                        area_0d.append(item)
+                    elif var.dims[-1] == dims[-1]:
+                        area_x.append(item)
+                    elif var.dims[-1] == dims[-2]:
+                        area_y.append(item)
+                    elif var.dims[-1] == dims[-3]:
+                        area_z.append(item)
+                except IndexError:
+                    # Happens whe var.dims[-1] does not match any of dims and
+                    # the DataArray has < 3 dimensions.
+                    pass
 
         def draw_area(area, layout_direction, reverse=False, truncate=False):
             number_of_items = len(area)
