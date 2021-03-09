@@ -55,8 +55,8 @@ class BinDataIO:
     @staticmethod
     def write(group, data):
         from .. import sum as sc_sum
-        buffer_len = dict(zip(data.bins.data.dims,
-                              data.bins.data.shape))[str(data.bins.dim)]
+        bins = data.bins.constituents
+        buffer_len = bins['data'].sizes[bins['dim']]
         # Crude mechanism to avoid writing large buffers, e.g., from
         # overallocation or when writing a slice of a larger variable. The
         # copy causes some overhead, but so would the (much mor complicated)
@@ -64,12 +64,13 @@ class BinDataIO:
         # need to be revisited in the future.
         if buffer_len > 1.5 * sc_sum(data.bins.size()).value:
             data = data.copy()
+            bins = data.bins.constituents
         values = group.create_group('values')
-        VariableIO.write(values.create_group('begin'), var=data.bins.begin)
-        VariableIO.write(values.create_group('end'), var=data.bins.end)
+        VariableIO.write(values.create_group('begin'), var=bins['begin'])
+        VariableIO.write(values.create_group('end'), var=bins['end'])
         data_group = values.create_group('data')
-        data_group.attrs['dim'] = str(data.bins.dim)
-        HDF5IO.write(data_group, data.bins.data)
+        data_group.attrs['dim'] = bins['dim']
+        HDF5IO.write(data_group, bins['data'])
         return values
 
     @staticmethod

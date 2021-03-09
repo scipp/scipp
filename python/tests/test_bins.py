@@ -91,7 +91,7 @@ def test_bins_arithmetic():
         coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])})
     binned.bins *= sc.lookup(func=hist, dim='x')
     assert sc.is_equal(
-        binned.bins.buffer.data,
+        binned.bins.constituents['data'].data,
         sc.Variable(dims=['event'], values=[1.0, 2.0, 6.0, 8.0]))
 
 

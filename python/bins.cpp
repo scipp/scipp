@@ -99,7 +99,7 @@ template <class T> auto bin_dim(const VariableConstView &var) {
   auto &&[indices, dim, buffer] = var.constituents<bucket<T>>();
   static_cast<void>(buffer);
   static_cast<void>(indices);
-  return py::cast(dim);
+  return py::cast(std::string(dim.name()));
 }
 
 template <class T> auto get_buffer(py::object &obj) {

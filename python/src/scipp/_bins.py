@@ -73,24 +73,15 @@ class _Bins:
         _cpp._bins_view(self._data()).data = data
 
     @property
-    def begin(self):
-        """Begin index of bins as view of internal data buffer"""
-        return _cpp.bins_begin_end(self._data())[0]
-
-    @property
-    def end(self):
-        """End index of bins as view of internal data buffer"""
-        return _cpp.bins_begin_end(self._data())[1]
-
-    @property
-    def dim(self):
-        """Dimension of internal data buffer used for slicing into bins"""
-        return _cpp.bins_dim(self._data())
-
-    @property
-    def buffer(self):
-        """Internal data buffer holding data of all bins"""
-        return _cpp.bins_data(self._data())
+    def constituents(self):
+        """Constituents of binned data, as supported by :py:func:`sc.bins`."""
+        begin_end = _cpp.bins_begin_end(self._data())
+        return {
+            'begin': begin_end[0],
+            'end': begin_end[1],
+            'dim': _cpp.bins_dim(self._data()),
+            'data': _cpp.bins_data(self._data())
+        }
 
     def sum(self):
         """Sum of each bin.
