@@ -22,8 +22,8 @@ template <class T> void bind_isclose(py::module &m) {
          const typename T::const_view_type &rtol,
          const typename T::const_view_type &atol, const bool equal_nan) {
         return isclose(x, y, rtol, atol,
-                        equal_nan ? NanComparisons::Equal
-                                  : NanComparisons::NotEqual);
+                       equal_nan ? NanComparisons::Equal
+                                 : NanComparisons::NotEqual);
       },
       py::arg("x"), py::arg("y"), py::arg("rtol"), py::arg("atol"),
       py::arg("equal_nan"), py::call_guard<py::gil_scoped_release>());
