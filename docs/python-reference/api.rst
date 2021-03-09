@@ -56,6 +56,7 @@ General
    slices
    sort
    sqrt
+   to_unit
    transpose
    values
    variances
