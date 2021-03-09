@@ -5,7 +5,7 @@
 from .figure import PlotFigure
 from .toolbar import PlotToolbar1d
 from .tools import get_line_param
-from .._operations import midpoint
+from .._utils.operations import midpoint
 import numpy as np
 import copy as cp
 import warnings

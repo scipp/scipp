@@ -5,13 +5,14 @@
 import numpy as np
 import pytest
 import scipp as sc
+from scipp._utils.operations import midpoint
 
 
 def test_midpoint_numpy():
     a = np.arange(10)
     low = a[:-1]
     high = a[1:]
-    m = sc.midpoint(low, high)
+    m = midpoint(low, high)
     np.testing.assert_allclose(m, (low + high) / 2)
 
 
@@ -19,7 +20,7 @@ def test_midpoint_variable():
     v = sc.Variable(dims=['x'], values=np.arange(10), unit=sc.units.m)
     low = v['x', :-1]
     high = v['x', 1:]
-    m = sc.midpoint(low, high)
+    m = midpoint(low, high)
     np.testing.assert_allclose(m.values, (low.values + high.values) / 2)
     assert m.unit == v.unit
 
@@ -28,16 +29,16 @@ def test_midpoint_mixed():
     v = sc.Variable(dims=['x'], values=np.arange(9), unit=sc.units.m)
     a = np.arange(9) + 1
     with pytest.raises(TypeError):
-        sc.midpoint(v, a)
+        midpoint(v, a)
     with pytest.raises(TypeError):
-        sc.midpoint(a, v)
+        midpoint(a, v)
 
 
 def test_midpoint_array_datetime():
     a = np.array([np.datetime64(i, 's') for i in range(0, 10, 2)])
     low = a[:-1]
     high = a[1:]
-    m = sc.midpoint(low, high)
+    m = midpoint(low, high)
     np.testing.assert_array_equal(m, low + np.timedelta64(1, 's'))
     assert m.dtype == a.dtype
 
@@ -47,5 +48,6 @@ def test_midpoint_variable_datetime():
     v = sc.Variable(dims=['x'], values=a, unit=sc.units.s)
     low = v['x', :-1]
     high = v['x', 1:]
-    m = sc.midpoint(low, high)
+    m = midpoint(low, high)
     assert sc.is_equal(m, low + 1 * sc.units.s)
+ 

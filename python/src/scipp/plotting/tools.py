@@ -8,7 +8,7 @@ import numpy as np
 import matplotlib.dates as mpldates
 
 from .. import config
-from .._operations import midpoint
+from .._utils.operations import midpoint
 from .._utils import name_with_unit
 from .._scipp import core as sc
 
