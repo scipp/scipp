@@ -6,6 +6,7 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/operations.h"
+#include "scipp/variable/to_unit.h"
 
 using namespace scipp;
 using namespace scipp::variable;
@@ -64,4 +65,6 @@ template <typename T> void bind_nan_to_num(py::module &m) {
 void init_unary(py::module &m) {
   bind_norm<Variable>(m);
   bind_nan_to_num<Variable>(m);
+  m.def("to_unit", variable::to_unit, py::arg("x"), py::arg("unit"),
+        py::call_guard<py::gil_scoped_release>());
 }
