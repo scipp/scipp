@@ -19,13 +19,13 @@ template <class T> void bind_is_close(py::module &m) {
       "is_close",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y,
-         const typename T::const_view_type &atol,
-         const typename T::const_view_type &rtol, const bool equal_nan) {
-        return is_close(x, y, atol, rtol,
+         const typename T::const_view_type &rtol,
+         const typename T::const_view_type &atol, const bool equal_nan) {
+        return is_close(x, y, rtol, atol,
                         equal_nan ? NanComparisons::Equal
                                   : NanComparisons::NotEqual);
       },
-      py::arg("x"), py::arg("y"), py::arg("rtol"), py::arg("rtol"),
+      py::arg("x"), py::arg("y"), py::arg("rtol"), py::arg("atol"),
       py::arg("equal_nan"), py::call_guard<py::gil_scoped_release>());
 }
 
