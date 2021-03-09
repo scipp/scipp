@@ -16,6 +16,9 @@ def isnear(x,
     Compared coord and attr pairs are only considered equal if all
     element-wise comparisons are True.
 
+    See scipp isclose for more details on how the comparions on each
+    item will be conducted.
+
     :param x: lhs input
     :param y: rhs input
     :param rtol: relative tolerance (to y)

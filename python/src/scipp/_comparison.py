@@ -141,22 +141,32 @@ def isclose(x, y, rtol=None, atol=None, equal_nan=False):
     """Compares values (x, y) element by element against tolerance absolute
     and relative tolerances (non-symmetric).
 
-    abs(x - y) <= atol + rtol * y
+    abs(x - y) <= atol + rtol * abs(y)
 
-    Variances are not accounted for.
+    If both x and y have variances, the variances are also compared
+    between elements. In this case, both values and variances must
+    be within the computed tolerance limits. That is:
+
+    abs(x.value - y.value) <= atol + rtol * abs(y.value) and abs(
+        sqrt(x.variance) - sqrt(y.variance)) \
+            <= atol + rtol * abs(sqrt(y.variance))
 
     :param x: Left input.
     :param y: Right input.
     :param rtol: Tolerance value relative (to y).
                  Can be a scalar or non-scalar.
                  Defaults to scalar 1e-5 if unset.
+                 rtol may be a scalar or an array variable.
+                 rtol argument cannot have variances.
     :param atol: Tolerance value absolute. Can be a scalar or non-scalar.
                  Defaults to scalar 1e-8 if unset and takes units from y arg.
+                 atol may be a scalar or an array variable.
+                 atol argument cannot have variances.
     :param equal_nan: if true, non-finite values at the same index in (x, y)
                       are treated as equal.
                       Signbit must match for infs.
     :return: Variable same size as input.
-             Element True if absolute diff of value <= atol + rtol * y,
+             Element True if absolute diff of value <= atol + rtol * abs(y),
              otherwise False.
     """
     if rtol is None:
