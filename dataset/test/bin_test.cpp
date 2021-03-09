@@ -401,3 +401,19 @@ TEST_P(BinTest, error_if_erase_binning_and_try_rebin_along_same_dimension) {
   EXPECT_THROW(bin(binned_along_x, {edges_x}, {}, erase_binning_from_dimension),
                except::DimensionError);
 }
+
+TEST(BinTest, twod_not_supported) {
+  const Dimensions dims({{Dim::X, 2}, {Dim::Y, 2}});
+  const auto data = makeVariable<double>(dims, Values{0, 1, 2, 3});
+  const auto x = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0.1, 0.2});
+  const auto y = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.1, 1.2});
+  const DataArray table(data, {{Dim::X, x}, {Dim::Y, y}});
+
+  const auto edges_x =
+      makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{0, 2});
+  const auto edges_y =
+      makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1, 2});
+
+  EXPECT_THROW(bin(table, {edges_x}), except::BinnedDataError);
+  EXPECT_THROW(bin(table, {edges_y}), except::BinnedDataError);
+}
