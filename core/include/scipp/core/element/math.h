@@ -14,10 +14,11 @@
 
 namespace scipp::core::element {
 
-constexpr auto abs = overloaded{arg_list<double, float>, [](const auto x) {
-                                  using std::abs;
-                                  return abs(x);
-                                }};
+constexpr auto abs =
+    overloaded{arg_list<double, float, int64_t, int32_t>, [](const auto x) {
+                 using std::abs;
+                 return abs(x);
+               }};
 
 constexpr auto norm = overloaded{arg_list<Eigen::Vector3d>,
                                  [](const auto &x) { return x.norm(); },
