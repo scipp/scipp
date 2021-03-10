@@ -179,6 +179,9 @@ int32_t Dimensions::index(const Dim dim) const {
 /// Return the direct sum, i.e., the combination of dimensions in a and b.
 ///
 /// Throws if there is a mismatching dimension extent.
+/// The implementation "favors" the order of the first argument if both
+/// inputs have the same number of dimension. Transposing is avoided where
+/// possible, which is crucial for accumulate performance.
 Dimensions merge(const Dimensions &a, const Dimensions &b) {
   Dimensions out;
   auto it = b.labels().begin();
@@ -206,7 +209,10 @@ Dimensions merge(const Dimensions &a, const Dimensions &b) {
   return out;
 }
 
-/// Return the dimensions contained in both a and b
+/// Return the dimensions contained in both a and b (dimension order is not
+/// checked).
+/// The convention is the same as for merge: we favor the dimension order in a
+/// for dimensions found both in a and b.
 Dimensions intersection(const Dimensions &a, const Dimensions &b) {
   Dimensions out;
   Dimensions m = merge(a, b);
@@ -258,6 +264,9 @@ Dimensions fold(const Dimensions &old_dims, const Dim from_dim,
 /// - if the dim is contained in the list of dims to be flattened, add the new
 ///   dim once
 /// - if not, copy the dim/shape
+///
+/// Note that from_dims are not necessarily present in old_dims, which allows
+/// to silently skip flattening variables that do not depend on from_labels.
 Dimensions flatten(const Dimensions &old_dims,
                    const scipp::span<const Dim> from_labels, const Dim to_dim) {
   Dimensions from_dims;
@@ -266,18 +275,16 @@ Dimensions flatten(const Dimensions &old_dims,
       from_dims.addInner(dim, old_dims[dim]);
 
   // Only allow reshaping contiguous dimensions.
-  // Note that isContiguousIn only allows for inner contiguous blocks,
-  // and contains(dimensions) ignores dimension order.
+  // We check that the intersection of old_dims and from_dims is found as a
+  // contiguous block with the correct order inside both old_dims and from_dims.
   Dimensions intersect = intersection(old_dims, from_dims);
   for (scipp::index i = 0; i < intersect.ndim() - 1; ++i)
     if (old_dims.index(intersect.label(i + 1)) !=
             old_dims.index(intersect.label(i)) + 1 ||
         from_dims.index(intersect.label(i + 1)) !=
             from_dims.index(intersect.label(i)) + 1)
-      throw except::DimensionError(
-          "Flatten: can only flatten a contiguous set of dimensions. "
-          "The order of the dimensions to flatten must also match the order of "
-          "the old dimensions.");
+      throw except::DimensionError("Can only flatten a contiguous set of "
+                                   "dimensions in the correct order");
 
   Dimensions new_dims;
   for (const auto dim : old_dims.labels())

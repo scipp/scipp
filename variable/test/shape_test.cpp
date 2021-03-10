@@ -110,11 +110,12 @@ TEST(ShapeTest, reshape_temporary) {
 TEST(ShapeTest, reshape_fail) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                   Values{1, 2, 3, 4, 5, 6});
-  EXPECT_THROW_MSG(reshape(var, {Dim::Row, 5}), std::runtime_error,
-                   "Cannot reshape to dimensions with different volume");
-  EXPECT_THROW_MSG(reshape(var.slice({Dim::X, 1}), {Dim::Row, 5}),
-                   std::runtime_error,
-                   "Cannot reshape to dimensions with different volume");
+  EXPECT_THROW_MSG_DISCARD(
+      reshape(var, {Dim::Row, 5}), std::runtime_error,
+      "Cannot reshape to dimensions with different volume");
+  EXPECT_THROW_MSG_DISCARD(
+      reshape(var.slice({Dim::X, 1}), {Dim::Row, 5}), std::runtime_error,
+      "Cannot reshape to dimensions with different volume");
 }
 
 TEST(ShapeTest, reshape_and_slice) {

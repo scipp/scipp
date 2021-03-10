@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
-#include "test_util.h"
 #include <gtest/gtest.h>
+
+#include "test_macros.h"
+#include "test_util.h"
 
 #include "scipp/dataset/shape.h"
 #include "scipp/variable/arithmetic.h"
@@ -124,8 +126,10 @@ TEST(ReshapeTest, flatten_bad_dim_order) {
   a.coords().set(Dim::X, arange(Dim::X, 6) + 0.1 * units::one);
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
-  EXPECT_THROW(flatten(a, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
-               except::DimensionError);
+  EXPECT_THROW_MSG_DISCARD(
+      flatten(a, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
+      except::DimensionError,
+      "Can only flatten a contiguous set of dimensions in the correct order");
 }
 
 TEST(ReshapeTest, round_trip) {
@@ -181,8 +185,8 @@ TEST(ReshapeTest, flatten_binedges_x_fails) {
   a.coords().set(Dim::Y, arange(Dim::Y, 4) + 0.2 * units::one);
 
   // Throws because x coord has mismatching bin edges.
-  EXPECT_THROW(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z),
-               except::BinEdgeError);
+  EXPECT_THROW_DISCARD(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z),
+                       except::BinEdgeError);
 }
 
 TEST(ReshapeTest, flatten_binedges_y_fails) {
@@ -192,8 +196,8 @@ TEST(ReshapeTest, flatten_binedges_y_fails) {
   a.coords().set(Dim::Y, arange(Dim::Y, 5) + 0.2 * units::one);
 
   // Throws because y coord has mismatching bin edges.
-  EXPECT_THROW(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z),
-               except::BinEdgeError);
+  EXPECT_THROW_DISCARD(flatten(a, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z),
+                       except::BinEdgeError);
 }
 
 TEST(ReshapeTest, round_trip_binedges) {
