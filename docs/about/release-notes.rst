@@ -35,8 +35,11 @@ Breaking changes
 * Properties ``dim``, ``begin``, ``end``, and ``data`` of the ``bins`` property of and object are now accessible as a dict via ``obj.bins.constituents``.
 * ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
 * ``scipp.neutron`` (now ``scippneutron``)
-
-  * Removed support for facility-specific ``convert_with_calibration`` and ``load_calibration``
+* ``is_equal`` renamed ``isequal``
+* ``is_linspace`` renamed ``islinspace``
+* ``is_sorted`` renamed ``issorted``
+* ``is_approx`` superseded by ``isclose``. ``is_approx`` removed.
+* Removed support for facility-specific ``convert_with_calibration`` and ``load_calibration``
 
 Contributors
 ~~~~~~~~~~~~
