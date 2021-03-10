@@ -20,18 +20,20 @@ DimensionError::DimensionError(scipp::index expectedDim, scipp::index userDim)
                      std::to_string(std::abs(expectedDim)) +
                      " Requested size: " + std::to_string(userDim)) {}
 
-DimensionNotFoundError::DimensionNotFoundError(const core::Dimensions &expected,
-                                               const Dim actual)
-    : DimensionError("Expected dimension to be in " + to_string(expected) +
-                     ", got " + to_string(actual) + ".") {}
+DimensionError dimension_not_found_error(const core::Dimensions &expected,
+                                         const Dim actual) {
+  return DimensionError{"Expected dimension to be in " + to_string(expected) +
+                        ", got " + to_string(actual) + "."};
+}
 
-DimensionLengthError::DimensionLengthError(const core::Dimensions &expected,
-                                           const Dim actual,
-                                           const scipp::index length)
-    : DimensionError("Expected dimension to be in " + to_string(expected) +
-                     ", got " + to_string(actual) +
-                     " with mismatching length " + std::to_string(length) +
-                     ".") {}
+DimensionError dimension_length_error(const core::Dimensions &expected,
+                                      const Dim actual,
+                                      const scipp::index length) {
+  return DimensionError{"Expected dimension to be in " + to_string(expected) +
+                        ", got " + to_string(actual) +
+                        " with mismatching length " + std::to_string(length) +
+                        "."};
+}
 
 } // namespace scipp::except
 
@@ -39,7 +41,7 @@ namespace scipp::core::expect {
 void dimensionMatches(const Dimensions &dims, const Dim dim,
                       const scipp::index length) {
   if (dims[dim] != length)
-    throw except::DimensionLengthError(dims, dim, length);
+    throw except::dimension_length_error(dims, dim, length);
 }
 
 void validSlice(const Dimensions &dims, const Slice &slice) {

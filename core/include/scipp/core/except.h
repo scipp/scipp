@@ -53,19 +53,11 @@ struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
   DimensionError(scipp::index expectedDim, scipp::index userDim);
 };
 
-struct SCIPP_CORE_EXPORT DimensionNotFoundError : public DimensionError {
-  DimensionNotFoundError(const core::Dimensions &expected, const Dim actual);
-};
+SCIPP_CORE_EXPORT DimensionError
+dimension_not_found_error(const core::Dimensions &expected, Dim actual);
 
-struct SCIPP_CORE_EXPORT DimensionLengthError : public DimensionError {
-  DimensionLengthError(const core::Dimensions &expected, const Dim actual,
-                       const scipp::index length);
-};
-
-struct SCIPP_CORE_EXPORT EventsDimensionError : public DimensionError {
-  EventsDimensionError()
-      : DimensionError("Unsupported operation for events dimensions.") {}
-};
+SCIPP_CORE_EXPORT DimensionError dimension_length_error(
+    const core::Dimensions &expected, Dim actual, scipp::index length);
 
 struct SCIPP_CORE_EXPORT BinnedDataError : public std::runtime_error {
   using std::runtime_error::runtime_error;

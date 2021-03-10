@@ -3,19 +3,18 @@
 /// @file
 /// @author Simon Heybrock
 
-#include "pybind11.h"
 #include "scipp/core/except.h"
+#include "pybind11.h"
 #include "scipp/dataset/except.h"
-#include "scipp/variable/except.h"
 #include "scipp/units/except.h"
+#include "scipp/variable/except.h"
 
 namespace py = pybind11;
 
 void init_exceptions(py::module &m) {
   using namespace scipp;
   py::register_exception<except::UnitError>(m, "UnitError", PyExc_RuntimeError);
-  py::register_exception<except::TypeError>(m, "DTypeError",
-                                            PyExc_TypeError);
+  py::register_exception<except::TypeError>(m, "DTypeError", PyExc_TypeError);
   py::register_exception<except::DimensionError>(m, "DimensionError",
                                                  PyExc_RuntimeError);
   py::register_exception<except::BinnedDataError>(m, "BinnedDataError",
