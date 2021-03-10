@@ -88,6 +88,11 @@ bool Variable::operator!=(const VariableConstView &other) const {
   return !(*this == other);
 }
 
+Variable &Variable::assign(const VariableConstView &other) {
+  VariableView(*this).assign(other);
+  return *this;
+}
+
 template <class T> VariableView VariableView::assign(const T &other) const {
   if (*this == VariableConstView(other))
     return *this; // Self-assignment, return early.

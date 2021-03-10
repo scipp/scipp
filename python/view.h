@@ -25,13 +25,13 @@ public:
   values_view(T &obj) : m_obj(&obj) {}
   auto size() const noexcept { return m_obj->size(); }
   auto begin() const {
-    if constexpr (std::is_same_v<typename T::mapped_type, DataArray>)
+    if constexpr (std::is_same_v<typename T::mapped_type, scipp::DataArray>)
       return m_obj->begin();
     else
       return m_obj->values_begin();
   }
   auto end() const {
-    if constexpr (std::is_same_v<typename T::mapped_type, DataArray>)
+    if constexpr (std::is_same_v<typename T::mapped_type, scipp::DataArray>)
       return m_obj->end();
     else
       return m_obj->values_end();

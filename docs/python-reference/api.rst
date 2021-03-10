@@ -15,6 +15,7 @@ Classes
    DatasetView
    GroupByDataArray
    GroupByDataset
+   Bins
 
 Creation functions
 ==================
