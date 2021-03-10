@@ -122,24 +122,28 @@ def isclose(x, y, rtol=None, atol=None, equal_nan=False):
     between elements. In this case, both values and variances must
     be within the computed tolerance limits. That is:
 
-    abs(x.value - y.value) <= atol + rtol * abs(y.value) and abs(
-        sqrt(x.variance) - sqrt(y.variance)) \
-            <= atol + rtol * abs(sqrt(y.variance))
+    .. code-block:: python
+        abs(x.value - y.value) <= atol + rtol * abs(y.value) and abs(
+            sqrt(x.variance) - sqrt(y.variance)) \
+                <= atol + rtol * abs(sqrt(y.variance))
 
     :param x: Left input.
     :param y: Right input.
     :param rtol: Tolerance value relative (to y).
                  Can be a scalar or non-scalar.
                  Defaults to scalar 1e-5 if unset.
-                 rtol may be a scalar or an array variable.
-                 rtol argument cannot have variances.
     :param atol: Tolerance value absolute. Can be a scalar or non-scalar.
                  Defaults to scalar 1e-8 if unset and takes units from y arg.
-                 atol may be a scalar or an array variable.
-                 atol argument cannot have variances.
     :param equal_nan: if true, non-finite values at the same index in (x, y)
                       are treated as equal.
                       Signbit must match for infs.
+    :type x: Variable
+    :type y: Variable
+    :type rtol: Variable. May be a scalar or an array variable.
+                Cannot have variances.
+    :type atol: Variable. May be a scalar or an array variable.
+                Cannot have variances.
+    :type equal_nan: bool
     :return: Variable same size as input.
              Element True if absolute diff of value <= atol + rtol * abs(y),
              otherwise False.
