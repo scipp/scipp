@@ -17,11 +17,9 @@
 namespace scipp::core::element {
 
 using is_approx_types_t = arg_list_t<
-    double, float, int64_t, int32_t, std::tuple<double, double, float>,
-    std::tuple<float, float, double>, std::tuple<int64_t, int64_t, double>,
-    std::tuple<int32_t, int32_t, double>, std::tuple<int32_t, int64_t, double>,
-    std::tuple<int64_t, int32_t, double>, std::tuple<int64_t, int32_t, int32_t>,
-    std::tuple<int64_t, int64_t, int32_t>,
+    double, float, int64_t, int32_t, std::tuple<float, float, double>,
+    std::tuple<int64_t, int64_t, double>, std::tuple<int32_t, int32_t, double>,
+    std::tuple<int32_t, int64_t, double>, std::tuple<int64_t, int32_t, double>,
     std::tuple<int64_t, int32_t, int64_t>,
     std::tuple<int32_t, int32_t, int64_t>,
     std::tuple<int32_t, int64_t, int64_t>>;
