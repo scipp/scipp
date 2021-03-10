@@ -389,10 +389,16 @@ class DatasetDrawer:
                         area_y.append(item)
                     elif var.dims[-1] == dims[-3]:
                         area_z.append(item)
+                    else:
+                        # dirty hack to trigger error handling below
+                        raise IndexError()
                 except IndexError:
-                    # Happens whe var.dims[-1] does not match any of dims and
+                    # Happens when var.dims[-1] does not match any of dims and
                     # the DataArray has < 3 dimensions.
-                    pass
+                    raise sc.DimensionError(
+                        "Cannot show DataArray, it contains a coordinate with"
+                        f" a dimension label ('{var.dims[-1]}') that is not "
+                        "contained in the data") from None
 
         def draw_area(area, layout_direction, reverse=False, truncate=False):
             number_of_items = len(area)
