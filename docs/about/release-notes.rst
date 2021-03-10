@@ -12,6 +12,7 @@ Features
 * Add ``sizes`` properties, an ordered ``dict`` to lookup the size of a specific dimension `#1636 <https://github.com/scipp/scipp/pull/1636>`_.
 * Add more functions for data arrays that were previously available only for variables `#1638 <https://github.com/scipp/scipp/pull/1638>`_ `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
 * Add named versions of operators such as ``logical_and`` `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
+* Add ``to_unit`` to converter variables, e.g., between ``m`` and ``mm`` `#1756 <https://github.com/scipp/scipp/pull/1756>`_.
 * Add modulo operations `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
 * Add scaling operations for Variables of type ``vector_3_float64``.
 * ``sum`` and ``mean`` implemented for Variables of type ``vector_3_float64``. 
