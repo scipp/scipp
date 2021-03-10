@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "test_macros.h"
+#include "test_util.h"
 
 #include "scipp/core/except.h"
 #include "scipp/variable/reduction.h"
@@ -67,7 +68,7 @@ TEST_F(SqueezeTest, both) {
   EXPECT_EQ(var, sum(sum(original, Dim::Z), Dim::X));
 }
 
-TEST(VariableTest, reshape) {
+TEST(ShapeTest, reshape) {
   const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                         units::m, Values{1, 2, 3, 4, 5, 6});
 
@@ -79,7 +80,7 @@ TEST(VariableTest, reshape) {
                                  Values{1, 2, 3, 4, 5, 6}));
 }
 
-TEST(VariableTest, reshape_with_variance) {
+TEST(ShapeTest, reshape_with_variance) {
   const auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                         Values{1, 2, 3, 4, 5, 6},
                                         Variances{7, 8, 9, 10, 11, 12});
@@ -94,7 +95,7 @@ TEST(VariableTest, reshape_with_variance) {
                                  Variances{7, 8, 9, 10, 11, 12}));
 }
 
-TEST(VariableTest, reshape_temporary) {
+TEST(ShapeTest, reshape_temporary) {
   const auto var = makeVariable<double>(
       Dims{Dim::X, Dim::Row}, Shape{2, 4}, units::m,
       Values{1, 2, 3, 4, 5, 6, 7, 8}, Variances{9, 10, 11, 12, 13, 14, 15, 16});
@@ -106,17 +107,18 @@ TEST(VariableTest, reshape_temporary) {
   EXPECT_EQ(typeid(decltype(reshape(std::move(var), {}))), typeid(Variable));
 }
 
-TEST(VariableTest, reshape_fail) {
+TEST(ShapeTest, reshape_fail) {
   auto var = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 3},
                                   Values{1, 2, 3, 4, 5, 6});
-  EXPECT_THROW_MSG(reshape(var, {Dim::Row, 5}), std::runtime_error,
-                   "Cannot reshape to dimensions with different volume");
-  EXPECT_THROW_MSG(reshape(var.slice({Dim::X, 1}), {Dim::Row, 5}),
-                   std::runtime_error,
-                   "Cannot reshape to dimensions with different volume");
+  EXPECT_THROW_MSG_DISCARD(
+      reshape(var, {Dim::Row, 5}), std::runtime_error,
+      "Cannot reshape to dimensions with different volume");
+  EXPECT_THROW_MSG_DISCARD(
+      reshape(var.slice({Dim::X, 1}), {Dim::Row, 5}), std::runtime_error,
+      "Cannot reshape to dimensions with different volume");
 }
 
-TEST(VariableTest, reshape_and_slice) {
+TEST(ShapeTest, reshape_and_slice) {
   auto var = makeVariable<double>(
       Dims{Dim::Z}, Shape{16},
       Values{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16},
@@ -140,7 +142,7 @@ TEST(VariableTest, reshape_and_slice) {
                                  Variances{22, 23, 26, 27}));
 }
 
-TEST(VariableTest, reshape_mutable) {
+TEST(ShapeTest, reshape_mutable) {
   auto modified_original = makeVariable<double>(
       Dims{Dim::X, Dim::Y}, Shape{2, 3}, Values{1, 2, 3, 0, 5, 6});
   auto reference =
@@ -154,4 +156,52 @@ TEST(VariableTest, reshape_mutable) {
 
   ASSERT_EQ(view, reference);
   ASSERT_EQ(var, modified_original);
+}
+
+TEST(ShapeTest, fold_x) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto expected =
+      reshape(arange(Dim::X, 24), {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}});
+  EXPECT_EQ(fold(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
+}
+
+TEST(ShapeTest, fold_y) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto expected =
+      reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Row, 2}, {Dim::Time, 2}});
+  EXPECT_EQ(fold(var, Dim::Y, {{Dim::Row, 2}, {Dim::Time, 2}}), expected);
+}
+
+TEST(ShapeTest, fold_into_3_dims) {
+  const auto var = arange(Dim::X, 24);
+  const auto expected =
+      reshape(arange(Dim::X, 24), {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
+  EXPECT_EQ(fold(var, Dim::X, {{Dim::Time, 2}, {Dim::Y, 3}, {Dim::Z, 4}}),
+            expected);
+}
+
+TEST(ShapeTest, flatten) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto expected = arange(Dim::Z, 24);
+  EXPECT_EQ(flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Z), expected);
+}
+
+TEST(ShapeTest, flatten_only_2_dims) {
+  const auto var =
+      reshape(arange(Dim::X, 24), {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}});
+  const auto expected = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Z, 4}});
+  EXPECT_EQ(flatten(var, std::vector<Dim>{Dim::X, Dim::Y}, Dim::X), expected);
+}
+
+TEST(ShapeTest, flatten_bad_dim_order) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  EXPECT_THROW(flatten(var, std::vector<Dim>{Dim::Y, Dim::X}, Dim::Z),
+               except::DimensionError);
+}
+
+TEST(ShapeTest, round_trip) {
+  const auto var = reshape(arange(Dim::X, 24), {{Dim::X, 6}, {Dim::Y, 4}});
+  const auto reshaped = fold(var, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
+  EXPECT_EQ(flatten(reshaped, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X),
+            var);
 }

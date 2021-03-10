@@ -39,10 +39,8 @@ General
    :toctree: ../generated
 
    abs
-   broadcast
    choose
    collapse
-   concatenate
    dot
    exp
    filter
@@ -53,14 +51,25 @@ General
    norm
    rebin
    reciprocal
-   reshape
    slices
    sort
    sqrt
    to_unit
-   transpose
    values
    variances
+
+Shape
+~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   broadcast
+   concatenate
+   flatten
+   fold
+   reshape
+   transpose
 
 Comparison
 ~~~~~~~~~~
