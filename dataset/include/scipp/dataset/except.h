@@ -25,19 +25,24 @@ class DataArray;
 
 namespace scipp::except {
 
-using DataArrayError = Error<dataset::DataArray>;
-using DatasetError = Error<dataset::Dataset>;
+struct SCIPP_DATASET_EXPORT DataArrayError : public Error<dataset::DataArray> {
+  explicit DataArrayError(const std::string &msg);
+};
 
-using DataArrayMismatchError = MismatchError<dataset::DataArray>;
-using DatasetMismatchError = MismatchError<dataset::Dataset>;
+SCIPP_DATASET_EXPORT DataArrayError
+mismatch_error(const dataset::DataArrayConstView &expected,
+               const dataset::DataArrayConstView &actual);
+
+struct SCIPP_DATASET_EXPORT DatasetError : public Error<dataset::Dataset> {
+  explicit DatasetError(const std::string &msg);
+};
+
+SCIPP_DATASET_EXPORT DatasetError
+mismatch_error(const dataset::DatasetConstView &expected,
+               const dataset::DatasetConstView &actual);
+
 using CoordMismatchError = MismatchError<std::pair<Dim, VariableConstView>>;
 
-template <class T>
-MismatchError(const dataset::DatasetConstView &, const T &)
-    -> MismatchError<dataset::Dataset>;
-template <class T>
-MismatchError(const dataset::DataArrayConstView &, const T &)
-    -> MismatchError<dataset::DataArray>;
 template <class T>
 MismatchError(const std::pair<Dim, VariableConstView> &, const T &)
     -> MismatchError<std::pair<Dim, VariableConstView>>;
@@ -45,10 +50,6 @@ template <class T>
 MismatchError(const std::pair<std::string, VariableConstView> &, const T &)
     -> MismatchError<std::pair<std::string, VariableConstView>>;
 
-template struct SCIPP_DATASET_EXPORT Error<dataset::DataArray>;
-template struct SCIPP_DATASET_EXPORT Error<dataset::Dataset>;
-template struct SCIPP_DATASET_EXPORT MismatchError<dataset::DataArray>;
-template struct SCIPP_DATASET_EXPORT MismatchError<dataset::Dataset>;
 template struct SCIPP_DATASET_EXPORT
     MismatchError<std::pair<Dim, VariableConstView>>;
 

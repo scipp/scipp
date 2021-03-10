@@ -5,6 +5,26 @@
 #include "scipp/dataset/except.h"
 #include "scipp/dataset/dataset.h"
 
+namespace scipp::except {
+
+DataArrayError::DataArrayError(const std::string &msg) : Error{msg} {}
+
+DataArrayError mismatch_error(const dataset::DataArrayConstView &expected,
+                              const dataset::DataArrayConstView &actual) {
+  return DataArrayError("Expected DataArray " + to_string(expected) + ", got " +
+                        to_string(actual) + '.');
+}
+
+DatasetError::DatasetError(const std::string &msg) : Error{msg} {}
+
+DatasetError mismatch_error(const dataset::DatasetConstView &expected,
+                            const dataset::DatasetConstView &actual) {
+  return DatasetError("Expected Dataset " + to_string(expected) + ", got " +
+                      to_string(actual) + '.');
+}
+
+} // namespace scipp::except
+
 namespace scipp::dataset::expect {
 
 void coordsAreSuperset(const DataArrayConstView &a,
