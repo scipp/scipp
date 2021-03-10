@@ -3,9 +3,11 @@
 /// @file
 /// @author Simon Heybrock
 
-#include "scipp/core/except.h"
 #include "pybind11.h"
+#include "scipp/core/except.h"
 #include "scipp/dataset/except.h"
+#include "scipp/variable/except.h"
+#include "scipp/units/except.h"
 
 namespace py = pybind11;
 
@@ -20,4 +22,6 @@ void init_exceptions(py::module &m) {
                                                   PyExc_RuntimeError);
   py::register_exception<except::CoordMismatchError>(m, "CoordError",
                                                      PyExc_RuntimeError);
+  py::register_exception<except::VariableError>(m, "VariableError",
+                                                PyExc_RuntimeError);
 }
