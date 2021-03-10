@@ -11,17 +11,18 @@
 
 namespace scipp::except {
 
-using UnitError = Error<units::Unit>;
-using UnitMismatchError = MismatchError<units::Unit>;
+struct SCIPP_UNITS_EXPORT UnitError : public Error<units::Unit> {
+  explicit UnitError(const std::string &msg);
+};
 
-// We need deduction guides such that, e.g., the exception for a Variable
-// mismatch and VariableView mismatch are the same type.
-template <class T>
-MismatchError(const units::Unit &, const T &) -> MismatchError<units::Unit>;
-template <class T>
-MismatchError(const units::Dim &, const T &) -> MismatchError<units::Dim>;
+SCIPP_UNITS_EXPORT UnitError mismatch_error(const units::Unit &expected,
+                                            const units::Unit &actual);
 
-template struct SCIPP_UNITS_EXPORT Error<units::Unit>;
-template struct SCIPP_UNITS_EXPORT MismatchError<units::Unit>;
+//// We need deduction guides such that, e.g., the exception for a Variable
+//// mismatch and VariableView mismatch are the same type.
+// template <class T>
+// MismatchError(const units::Unit &, const T &) -> MismatchError<units::Unit>;
+// template <class T>
+// MismatchError(const units::Dim &, const T &) -> MismatchError<units::Dim>;
 
 } // namespace scipp::except

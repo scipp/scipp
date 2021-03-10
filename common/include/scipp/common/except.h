@@ -26,8 +26,4 @@ template <class T> struct MismatchError : public Error<T> {
       : Error<T>(a, " expected to be equal to one of " + to_string(b)) {}
 };
 
-template <class A, class B> auto mismatch_error(const A &a, const B &b) {
-  return Error<std::decay_t<A>>{a, " expected to be equal to " + to_string(b)};
-}
-
 } // namespace scipp::except

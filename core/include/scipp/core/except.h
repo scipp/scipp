@@ -42,7 +42,7 @@ struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
   DimensionError(scipp::index expectedDim, scipp::index userDim);
 };
 
-SCIPP_CORE_EXPORT DimensionError dimension_mismatch_error(
+SCIPP_CORE_EXPORT DimensionError mismatch_error(
     const core::Dimensions &expected, const core::Dimensions &actual);
 
 SCIPP_CORE_EXPORT DimensionError

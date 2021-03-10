@@ -16,7 +16,7 @@ TypeError::TypeError(const std::string &msg) : Error{msg} {}
 
 TypeError mismatch_error(const core::DType &expected,
                          const core::DType &actual) {
-  return TypeError("Expected dtype" + to_string(expected) + ", got " +
+  return TypeError("Expected dtype " + to_string(expected) + ", got " +
                    to_string(actual) + '.');
 }
 
@@ -37,8 +37,8 @@ std::string format_dims(const core::Dimensions &dims) {
 }
 } // namespace
 
-DimensionError dimension_mismatch_error(const core::Dimensions &expected,
-                                        const core::Dimensions &actual) {
+DimensionError mismatch_error(const core::Dimensions &expected,
+                              const core::Dimensions &actual) {
   return DimensionError("Expected " + format_dims(expected) + ", got " +
                         format_dims(actual) + '.');
 }
