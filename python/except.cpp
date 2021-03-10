@@ -13,7 +13,7 @@ void init_exceptions(py::module &m) {
   using namespace scipp;
   py::register_exception<except::UnitError>(m, "UnitError", PyExc_RuntimeError);
   py::register_exception<except::TypeError>(m, "DTypeError",
-                                            PyExc_RuntimeError);
+                                            PyExc_TypeError);
   py::register_exception<except::DimensionError>(m, "DimensionError",
                                                  PyExc_RuntimeError);
   py::register_exception<except::BinnedDataError>(m, "BinnedDataError",
