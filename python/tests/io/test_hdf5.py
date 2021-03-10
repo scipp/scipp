@@ -94,11 +94,11 @@ def test_variable_binned_variable_slice():
     # change in the future, so this test should be adapted. This test does not
     # documented a strict requirement.
     result = check_roundtrip(binned['y', 0])
-    assert result.bins.data.shape[0] == 4
+    assert result.bins.constituents['data'].shape[0] == 4
     result = check_roundtrip(binned['y', 1])
-    assert result.bins.data.shape[0] == 1
+    assert result.bins.constituents['data'].shape[0] == 1
     result = check_roundtrip(binned['y', 1:2])
-    assert result.bins.data.shape[0] == 1
+    assert result.bins.constituents['data'].shape[0] == 1
 
 
 def test_variable_binned_data_array():

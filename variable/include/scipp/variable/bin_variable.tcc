@@ -114,7 +114,8 @@ private:
     const auto count = std::count_if(parents.begin(), parents.end(), is_bins);
     if (count == 0)
       throw except::BinnedDataError("Bin cannot have zero parents");
-    if (!std::is_same_v<T, Variable> && count > 1)
+    if (!(std::is_same_v<T, Variable> ||
+          std::is_base_of_v<VariableConstView, T>)&&(count > 1))
       throw except::BinnedDataError(
           "Binary operations such as '+' with binned data are only supported "
           "with dtype=VariableView, got dtype=" +
