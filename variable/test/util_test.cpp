@@ -15,7 +15,7 @@ TEST(LinspaceTest, dim_mismatch) {
       linspace(1.0 * units::one,
                makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::one), Dim::X,
                4),
-      except::DimensionMismatchError);
+      except::DimensionError);
 }
 
 TEST(LinspaceTest, unit_mismatch) {

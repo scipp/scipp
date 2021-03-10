@@ -111,7 +111,7 @@ TEST_F(DataArrayBinsTest, concatenate_with_broadcast) {
   EXPECT_EQ(result, make_bins(out_indices, Dim::X, out_buffer));
 
   // Broadcast not possible for in-place append
-  EXPECT_THROW(buckets::append(var, var2), except::DimensionMismatchError);
+  EXPECT_THROW(buckets::append(var, var2), except::DimensionError);
 }
 
 TEST_F(DataArrayBinsTest, histogram) {

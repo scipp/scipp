@@ -20,10 +20,25 @@ DimensionError::DimensionError(scipp::index expectedDim, scipp::index userDim)
                      std::to_string(std::abs(expectedDim)) +
                      " Requested size: " + std::to_string(userDim)) {}
 
+namespace {
+std::string format_dims(const core::Dimensions &dims) {
+  if (dims.empty()) {
+    return "a scalar";
+  }
+  return "dimensions " + to_string(dims);
+}
+} // namespace
+
+DimensionError dimension_mismatch_error(const core::Dimensions &expected,
+                                        const core::Dimensions &actual) {
+  return DimensionError("Expected " + format_dims(expected) + ", got " +
+                        format_dims(actual) + '.');
+}
+
 DimensionError dimension_not_found_error(const core::Dimensions &expected,
                                          const Dim actual) {
   return DimensionError{"Expected dimension to be in " + to_string(expected) +
-                        ", got " + to_string(actual) + "."};
+                        ", got " + to_string(actual) + '.'};
 }
 
 DimensionError dimension_length_error(const core::Dimensions &expected,
@@ -32,7 +47,7 @@ DimensionError dimension_length_error(const core::Dimensions &expected,
   return DimensionError{"Expected dimension to be in " + to_string(expected) +
                         ", got " + to_string(actual) +
                         " with mismatching length " + std::to_string(length) +
-                        "."};
+                        '.'};
 }
 
 } // namespace scipp::except

@@ -37,21 +37,18 @@ struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
       : std::runtime_error(msg + ((to_string(vars.dtype()) + ' ') + ...)) {}
 };
 
-using DimensionMismatchError = MismatchError<core::Dimensions>;
-
-template <class T>
-MismatchError(const core::Dimensions &, const T &)
-    -> MismatchError<core::Dimensions>;
-
 using TypeMismatchError = MismatchError<core::DType>;
 
 template <class T>
 MismatchError(const core::DType &, const T &) -> MismatchError<core::DType>;
 
 struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
-  DimensionError(const std::string &msg);
+  explicit DimensionError(const std::string &msg);
   DimensionError(scipp::index expectedDim, scipp::index userDim);
 };
+
+SCIPP_CORE_EXPORT DimensionError dimension_mismatch_error(
+    const core::Dimensions &expected, const core::Dimensions &actual);
 
 SCIPP_CORE_EXPORT DimensionError
 dimension_not_found_error(const core::Dimensions &expected, Dim actual);
@@ -83,9 +80,7 @@ struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
 
-template struct SCIPP_CORE_EXPORT MismatchError<core::Dimensions>;
 template struct SCIPP_CORE_EXPORT MismatchError<core::DType>;
-
 } // namespace scipp::except
 
 namespace scipp::expect {
@@ -100,7 +95,7 @@ template <class A, class B> void contains(const A &a, const B &b) {
 namespace scipp::core::expect {
 template <class A, class B> void equals(const A &a, const B &b) {
   if (a != b)
-    throw scipp::except::MismatchError(a, b);
+    throw scipp::except::mismatch_error(a, b);
 }
 
 template <class A, class B>
