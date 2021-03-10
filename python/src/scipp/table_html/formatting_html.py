@@ -77,9 +77,9 @@ def _get_events(var, variances, ellipsis_after, summary=False):
     ]) > 1000
 
     data = retrieve(var, variances=variances)
-    dim = var.bins.dim
-    bin_dim = dict(zip(var.bins.data.dims,
-                       range(len(var.bins.data.dims))))[str(dim)]
+    dim = var.bins.constituents['dim']
+    dims = var.bins.constituents['data'].dims
+    bin_dim = dict(zip(dims, range(len(dims))))[dim]
     while i < size:
         if i == ellipsis_after and do_ellide and size > 2 * ellipsis_after + 1:
             s.append("...")
