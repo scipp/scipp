@@ -16,7 +16,7 @@
 /// operations for Variable.
 namespace scipp::core::element {
 
-using is_approx_types_t = arg_list_t<
+using isclose_types_t = arg_list_t<
     double, float, int64_t, int32_t, std::tuple<float, float, double>,
     std::tuple<int64_t, int64_t, double>, std::tuple<int32_t, int32_t, double>,
     std::tuple<int32_t, int64_t, double>, std::tuple<int64_t, int32_t, double>,
@@ -31,31 +31,26 @@ constexpr auto isclose_units = [](const units::Unit &x, const units::Unit &y,
   return units::dimensionless;
 };
 
-struct isclose_flags_t : public transform_flags::expect_no_variance_arg_t<2>,
-                         public transform_flags::expect_no_variance_arg_t<3> {
-  void operator()() const {}
-};
+constexpr auto isclose = overloaded{
+    transform_flags::expect_no_variance_arg_t<2>{}, isclose_types_t{},
+    isclose_units, [](const auto &x, const auto &y, const auto &t) {
+      using std::abs;
+      return abs(x - y) <= t;
+    }};
 
-constexpr auto isclose =
-    overloaded{isclose_flags_t{}, is_approx_types_t{}, isclose_units,
-               [](const auto &x, const auto &y, const auto &t) {
-                 using std::abs;
-                 return abs(x - y) <= t;
-               }};
-
-constexpr auto isclose_equal_nan =
-    overloaded{isclose_flags_t{}, is_approx_types_t{}, isclose_units,
-               [](const auto &x, const auto &y, const auto &t) {
-                 using std::abs;
-                 using numeric::isnan;
-                 using numeric::isinf;
-                 using numeric::signbit;
-                 if (isnan(x) && isnan(y))
-                   return true;
-                 if (isinf(x) && isinf(y) && signbit(x) == signbit(y))
-                   return true;
-                 return abs(x - y) <= t;
-               }};
+constexpr auto isclose_equal_nan = overloaded{
+    transform_flags::expect_no_variance_arg_t<2>{}, isclose_types_t{},
+    isclose_units, [](const auto &x, const auto &y, const auto &t) {
+      using std::abs;
+      using numeric::isnan;
+      using numeric::isinf;
+      using numeric::signbit;
+      if (isnan(x) && isnan(y))
+        return true;
+      if (isinf(x) && isinf(y) && signbit(x) == signbit(y))
+        return true;
+      return abs(x - y) <= t;
+    }};
 
 struct comparison_types_t {
   constexpr void operator()() const noexcept;
