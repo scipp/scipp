@@ -57,8 +57,8 @@ Variable variances(const VariableConstView &x) {
 ///
 /// If `order` is SortOrder::Ascending, checks if values are non-decreasing.
 /// If `order` is SortOrder::Descending, checks if values are non-increasing.
-bool is_sorted(const VariableConstView &x, const Dim dim,
-               const SortOrder order) {
+bool issorted(const VariableConstView &x, const Dim dim,
+              const SortOrder order) {
   const auto size = x.dims()[dim];
   if (size < 2)
     return true;
@@ -66,11 +66,11 @@ bool is_sorted(const VariableConstView &x, const Dim dim,
   if (order == SortOrder::Ascending)
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
-                        core::element::is_sorted_nondescending);
+                        core::element::issorted_nondescending);
   else
     accumulate_in_place(out, x.slice({dim, 0, size - 1}),
                         x.slice({dim, 1, size}),
-                        core::element::is_sorted_nonascending);
+                        core::element::issorted_nonascending);
   return out.value<bool>();
 }
 

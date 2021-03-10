@@ -23,8 +23,8 @@ variances(const VariableConstView &x);
 enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT bool
-is_sorted(const VariableConstView &x, const Dim dim,
-          const SortOrder order = SortOrder::Ascending);
+issorted(const VariableConstView &x, const Dim dim,
+         const SortOrder order = SortOrder::Ascending);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 zip(const VariableConstView &first, const VariableConstView &second);

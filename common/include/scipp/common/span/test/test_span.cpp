@@ -605,7 +605,7 @@ TEST_CASE("span iterator support")
         std::vector<int> vec;
         span<int> s{vec};
         std::sort(s.begin(), s.end());
-        REQUIRE(std::is_sorted(vec.cbegin(), vec.cend()));
+        REQUIRE(std::issorted(vec.cbegin(), vec.cend()));
     }
 
     {

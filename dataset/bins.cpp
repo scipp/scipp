@@ -361,7 +361,7 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
     return variable::transform(coord, subspan_view(edges, dim), weights,
                                core::element::event::map_linspace);
   } else {
-    if (!is_sorted(edges, dim))
+    if (!issorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
     return variable::transform(coord, subspan_view(edges, dim), weights,
                                core::element::event::map_sorted_edges);
@@ -385,7 +385,7 @@ void scale(const DataArrayView &array, const DataArrayConstView &histogram,
     transform_in_place(data, coord, subspan_view(edges, dim), weights,
                        core::element::event::map_and_mul_linspace);
   } else {
-    if (!is_sorted(edges, dim))
+    if (!issorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
     transform_in_place(data, coord, subspan_view(edges, dim), weights,
                        core::element::event::map_and_mul_sorted_edges);

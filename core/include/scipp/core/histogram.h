@@ -22,7 +22,7 @@ constexpr static auto linear_edge_params = [](const auto &edges) {
 
 namespace expect::histogram {
 template <class T> void sorted_edges(const T &edges) {
-  if (!std::is_sorted(edges.begin(), edges.end()))
+  if (!std::issorted(edges.begin(), edges.end()))
     throw except::BinEdgeError("Bin edges of histogram must be sorted.");
 }
 } // namespace expect::histogram

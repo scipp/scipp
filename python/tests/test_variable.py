@@ -1071,4 +1071,4 @@ def test_rtruediv_int():
 def test_sort():
     var = sc.Variable()
     assert_export(sc.sort, x=var, dim='x', order='ascending')
-    assert_export(sc.is_sorted, x=var, dim='x', order='ascending')
+    assert_export(sc.issorted, x=var, dim='x', order='ascending')

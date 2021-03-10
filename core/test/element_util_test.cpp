@@ -75,7 +75,7 @@ TEST(ElementUtilTest, values_variances) {
 }
 
 namespace {
-constexpr auto test_is_sorted = [](const auto sorted, const bool order) {
+constexpr auto test_issorted = [](const auto sorted, const bool order) {
   const auto expect_sorted_eq = [&sorted](const auto a, const auto b,
                                           const auto expected) {
     bool out = true;
@@ -96,9 +96,9 @@ constexpr auto test_is_sorted = [](const auto sorted, const bool order) {
 };
 }
 
-TEST(ElementUtilTest, is_sorted) {
-  test_is_sorted(is_sorted_nondescending, true);
-  test_is_sorted(is_sorted_nonascending, false);
+TEST(ElementUtilTest, issorted) {
+  test_issorted(issorted_nondescending, true);
+  test_issorted(issorted_nonascending, false);
 }
 
 TEST(ElementUtilTest, islinspace_time_point) {
