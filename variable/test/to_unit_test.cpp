@@ -3,19 +3,20 @@
 #include <gtest/gtest.h>
 
 #include "scipp/variable/to_unit.h"
+#include "test_macros.h"
 
 using namespace scipp;
 
 TEST(ToUnitTest, int_not_supported) {
   const Dimensions dims(Dim::X, 2);
   const auto var = makeVariable<int32_t>(dims, units::Unit("m"), Values{1, 2});
-  EXPECT_THROW(to_unit(var, units::Unit("mm")), except::TypeError);
+  EXPECT_THROW_DISCARD(to_unit(var, units::Unit("mm")), except::TypeError);
 }
 
 TEST(ToUnitTest, not_compatible) {
   const Dimensions dims(Dim::X, 2);
   const auto var = makeVariable<float>(dims, units::Unit("m"), Values{1, 2});
-  EXPECT_THROW(to_unit(var, units::Unit("s")), except::UnitError);
+  EXPECT_THROW_DISCARD(to_unit(var, units::Unit("s")), except::UnitError);
 }
 
 TEST(ToUnitTest, same) {
