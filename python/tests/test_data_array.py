@@ -25,7 +25,7 @@ def test_slice_init():
         data=sc.Variable(['x'], values=np.arange(2.0)),
         coords={'x': sc.Variable(['x'], values=np.arange(3.0))})
     a = orig['x', :].copy()
-    assert sc.is_equal(a, orig)
+    assert sc.isequal(a, orig)
     b = orig['x', 1:].copy()
     assert b.data.values[0] == orig.data.values[1:]
 
@@ -65,7 +65,7 @@ def test_init_from_variable_views():
                      coords={'x': a.coords['x']},
                      attrs={'meta': a.attrs['meta']},
                      masks={'mask1': a.masks['mask1']})
-    assert sc.is_equal(a, b)
+    assert sc.isequal(a, b)
 
     # Ensure mix of Variables and Variable views work
     c = sc.DataArray(data=a.data,
@@ -73,7 +73,7 @@ def test_init_from_variable_views():
                      attrs={'meta': a.attrs['meta']},
                      masks={'mask1': a.masks['mask1']})
 
-    assert sc.is_equal(a, c)
+    assert sc.isequal(a, c)
 
 
 def test_coords():
@@ -105,17 +105,17 @@ def test_name():
 
 def test_eq():
     da = make_dataarray()
-    assert sc.is_equal(da['x', :], da)
-    assert sc.is_equal(da['y', :], da)
-    assert sc.is_equal(da['y', :]['x', :], da)
-    assert not sc.is_equal(da['y', 1:], da)
-    assert not sc.is_equal(da['x', 1:], da)
-    assert not sc.is_equal(da['y', 1:]['x', :], da)
-    assert not sc.is_equal(da['y', :]['x', 1:], da)
+    assert sc.isequal(da['x', :], da)
+    assert sc.isequal(da['y', :], da)
+    assert sc.isequal(da['y', :]['x', :], da)
+    assert not sc.isequal(da['y', 1:], da)
+    assert not sc.isequal(da['x', 1:], da)
+    assert not sc.isequal(da['y', 1:]['x', :], da)
+    assert not sc.isequal(da['y', :]['x', 1:], da)
 
 
 def _is_deep_copy_of(orig, copy):
-    assert sc.is_equal(orig, copy)
+    assert sc.isequal(orig, copy)
     assert not id(orig) == id(copy)
 
 
@@ -136,7 +136,7 @@ def test_in_place_binary_with_variable():
     a *= 2.0 * sc.units.m
     a -= 4.0 * sc.units.m
     a /= 2.0 * sc.units.m
-    assert sc.is_equal(a, copy)
+    assert sc.isequal(a, copy)
 
 
 def test_in_place_binary_with_dataarray():
@@ -148,7 +148,7 @@ def test_in_place_binary_with_dataarray():
     da -= orig
     da *= orig
     da /= orig
-    assert sc.is_equal(da, orig)
+    assert sc.isequal(da, orig)
 
 
 def test_in_place_binary_with_scalar():
@@ -160,7 +160,7 @@ def test_in_place_binary_with_scalar():
     a *= 2
     a -= 4
     a /= 2
-    assert sc.is_equal(a, copy)
+    assert sc.isequal(a, copy)
 
 
 def test_binary_with_broadcast():
@@ -174,7 +174,7 @@ def test_binary_with_broadcast():
                       })
     d2 = da - da['x', 0]
     da -= da['x', 0]
-    assert sc.is_equal(da, d2)
+    assert sc.isequal(da, d2)
 
 
 def test_view_in_place_binary_with_scalar():
@@ -186,15 +186,15 @@ def test_view_in_place_binary_with_scalar():
     d['x', :] *= 2
     d['x', :] -= 4
     d['x', :] /= 2
-    assert sc.is_equal(d, copy)
+    assert sc.isequal(d, copy)
 
 
 def test_rename_dims():
     d = make_dataarray('x', 'y', seed=0)
     d.rename_dims({'y': 'z'})
-    assert sc.is_equal(d, make_dataarray('x', 'z', seed=0))
+    assert sc.isequal(d, make_dataarray('x', 'z', seed=0))
     d.rename_dims(dims_dict={'x': 'y', 'z': 'x'})
-    assert sc.is_equal(d, make_dataarray('y', 'x', seed=0))
+    assert sc.isequal(d, make_dataarray('y', 'x', seed=0))
 
 
 def test_setitem_works_for_view_and_array():
