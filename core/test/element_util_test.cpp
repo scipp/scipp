@@ -101,27 +101,27 @@ TEST(ElementUtilTest, is_sorted) {
   test_is_sorted(is_sorted_nonascending, false);
 }
 
-TEST(ElementUtilTest, is_linspace_time_point) {
-  const auto is_linspace_wrapper = [](std::initializer_list<int64_t> ints) {
+TEST(ElementUtilTest, islinspace_time_point) {
+  const auto islinspace_wrapper = [](std::initializer_list<int64_t> ints) {
     std::vector<core::time_point> vec;
     vec.reserve(ints.size());
     for (auto x : ints) {
       vec.emplace_back(x);
     }
 
-    return core::element::is_linspace(span<const core::time_point>(vec));
+    return core::element::islinspace(span<const core::time_point>(vec));
   };
 
-  EXPECT_FALSE(is_linspace_wrapper({}));
-  EXPECT_FALSE(is_linspace_wrapper({0}));
-  EXPECT_FALSE(is_linspace_wrapper({0, 1, 1}));
-  EXPECT_FALSE(is_linspace_wrapper({0, 0, 1}));
-  EXPECT_FALSE(is_linspace_wrapper({1, 1, 1}));
-  EXPECT_FALSE(is_linspace_wrapper({0, 1, 3}));
+  EXPECT_FALSE(islinspace_wrapper({}));
+  EXPECT_FALSE(islinspace_wrapper({0}));
+  EXPECT_FALSE(islinspace_wrapper({0, 1, 1}));
+  EXPECT_FALSE(islinspace_wrapper({0, 0, 1}));
+  EXPECT_FALSE(islinspace_wrapper({1, 1, 1}));
+  EXPECT_FALSE(islinspace_wrapper({0, 1, 3}));
 
-  EXPECT_TRUE(is_linspace_wrapper({0, 1}));
-  EXPECT_TRUE(is_linspace_wrapper({0, 1, 2}));
-  EXPECT_TRUE(is_linspace_wrapper({0, 2, 4, 6}));
+  EXPECT_TRUE(islinspace_wrapper({0, 1}));
+  EXPECT_TRUE(islinspace_wrapper({0, 1, 2}));
+  EXPECT_TRUE(islinspace_wrapper({0, 2, 4, 6}));
 }
 
 TEST(ElementUtilTest, zip) {

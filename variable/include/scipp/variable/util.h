@@ -14,7 +14,7 @@ linspace(const VariableConstView &start, const VariableConstView &stop,
          const Dim dim, const scipp::index num);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-is_linspace(const VariableConstView &var, const Dim dim);
+islinspace(const VariableConstView &var, const Dim dim);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable values(const VariableConstView &x);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable

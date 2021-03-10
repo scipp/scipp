@@ -87,7 +87,7 @@ Comparison operators compare element-wise and *ignore variances*.
    not_equal
    isclose
    isequal
-   is_linspace
+   islinspace
    is_sorted
 
 `inf` and `nan` handling

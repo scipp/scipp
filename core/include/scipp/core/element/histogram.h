@@ -46,7 +46,7 @@ static constexpr auto histogram = overloaded{
       zero(data);
       // Special implementation for linear bins. Gives a 1x to 20x speedup
       // for few and many events per histogram, respectively.
-      if (scipp::numeric::is_linspace(edges)) {
+      if (scipp::numeric::islinspace(edges)) {
         const auto [offset, nbin, scale] = core::linear_edge_params(edges);
         for (scipp::index i = 0; i < scipp::size(events); ++i) {
           const auto x = events[i];

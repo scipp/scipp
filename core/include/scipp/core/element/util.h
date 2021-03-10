@@ -18,7 +18,7 @@
 #include "scipp/units/unit.h"
 
 namespace scipp::numeric {
-template <> inline bool is_linspace(const span<const core::time_point> &range) {
+template <> inline bool islinspace(const span<const core::time_point> &range) {
   if (scipp::size(range) < 2)
     return false;
   if (range.back() <= range.front())
@@ -103,11 +103,11 @@ constexpr auto is_sorted_nonascending = overloaded{
       out = out && (left >= right);
     }};
 
-constexpr auto is_linspace = overloaded{
+constexpr auto islinspace = overloaded{
     arg_list<span<const double>, span<const float>, span<const time_point>>,
     transform_flags::expect_no_variance_arg<0>,
     [](const units::Unit &) { return units::one; },
-    [](const auto &range) { return numeric::is_linspace(range); }};
+    [](const auto &range) { return numeric::islinspace(range); }};
 
 constexpr auto zip = overloaded{
     arg_list<int64_t, int32_t>, transform_flags::expect_no_variance_arg<0>,

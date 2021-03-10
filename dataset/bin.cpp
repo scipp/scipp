@@ -257,7 +257,7 @@ public:
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
       else if (action == AxisAction::Bin) {
-        const auto linspace = all(is_linspace(key, dim)).template value<bool>();
+        const auto linspace = all(islinspace(key, dim)).template value<bool>();
         // When binning along an existing dim with a coord (may be edges or
         // not), not all input bins can map to all output bins. The array of
         // subbin sizes that is normally created thus contains mainly zero

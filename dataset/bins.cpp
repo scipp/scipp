@@ -357,7 +357,7 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
   const auto &coord = bins_view<DataArray>(x).meta()[dim];
   const auto &edges = function.meta()[dim];
   const auto weights = subspan_view(masker.data(), dim);
-  if (all(is_linspace(edges, dim)).value<bool>()) {
+  if (all(islinspace(edges, dim)).value<bool>()) {
     return variable::transform(coord, subspan_view(edges, dim), weights,
                                core::element::event::map_linspace);
   } else {
@@ -381,7 +381,7 @@ void scale(const DataArrayView &array, const DataArrayConstView &histogram,
   const auto &coord = bins_view<DataArray>(array.data()).meta()[dim];
   const auto &edges = histogram.meta()[dim];
   const auto weights = subspan_view(masker.data(), dim);
-  if (all(is_linspace(edges, dim)).value<bool>()) {
+  if (all(islinspace(edges, dim)).value<bool>()) {
     transform_in_place(data, coord, subspan_view(edges, dim), weights,
                        core::element::event::map_and_mul_linspace);
   } else {
