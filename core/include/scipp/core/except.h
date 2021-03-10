@@ -26,21 +26,16 @@ class Slice;
 
 namespace scipp::except {
 
-struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
+struct SCIPP_CORE_EXPORT TypeError : public Error<core::DType> {
+  explicit TypeError(const std::string &msg);
 
   template <class... Vars>
-  TypeError(const std::string &msg) : std::runtime_error(msg) {}
-
-  template <class... Vars>
-  TypeError(const std::string &msg, Vars &&... vars)
-      : std::runtime_error(msg + ((to_string(vars.dtype()) + ' ') + ...)) {}
+  explicit TypeError(const std::string &msg, Vars &&... vars)
+      : TypeError{msg + ((to_string(vars.dtype()) + ' ') + ...)} {}
 };
 
-using TypeMismatchError = MismatchError<core::DType>;
-
-template <class T>
-MismatchError(const core::DType &, const T &) -> MismatchError<core::DType>;
+SCIPP_CORE_EXPORT TypeError mismatch_error(const core::DType &expected,
+                                           const core::DType &actual);
 
 struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
   explicit DimensionError(const std::string &msg);
@@ -79,8 +74,6 @@ struct SCIPP_CORE_EXPORT BinEdgeError : public std::runtime_error {
 struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
-
-template struct SCIPP_CORE_EXPORT MismatchError<core::DType>;
 } // namespace scipp::except
 
 namespace scipp::expect {

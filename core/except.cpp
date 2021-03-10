@@ -12,6 +12,14 @@
 
 namespace scipp::except {
 
+TypeError::TypeError(const std::string &msg) : Error{msg} {}
+
+TypeError mismatch_error(const core::DType &expected,
+                         const core::DType &actual) {
+  return TypeError("Expected dtype" + to_string(expected) + ", got " +
+                   to_string(actual) + '.');
+}
+
 DimensionError::DimensionError(const std::string &msg)
     : Error<core::Dimensions>(msg) {}
 

@@ -25,7 +25,7 @@ TEST(LinspaceTest, unit_mismatch) {
 
 TEST(LinspaceTest, dtype_mismatch) {
   EXPECT_THROW_DISCARD(linspace(1.0 * units::one, 4.0f * units::one, Dim::X, 4),
-                       except::TypeMismatchError);
+                       except::TypeError);
 }
 
 TEST(LinspaceTest, non_float_fail) {
