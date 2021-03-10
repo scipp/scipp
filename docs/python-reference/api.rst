@@ -15,6 +15,7 @@ Classes
    DatasetView
    GroupByDataArray
    GroupByDataset
+   Bins
 
 Creation functions
 ==================
@@ -53,6 +54,7 @@ General
    slices
    sort
    sqrt
+   to_unit
    values
    variances
 

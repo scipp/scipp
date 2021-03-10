@@ -78,6 +78,8 @@ public:
            std::optional<T> variances);
   explicit Variable(const llnl::units::precise_measurement &m);
 
+  Variable &assign(const VariableConstView &other);
+
   /// Keyword-argument constructor.
   ///
   /// This is equivalent to `makeVariable`, except that the dtype is passed at
