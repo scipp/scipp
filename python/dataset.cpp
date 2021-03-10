@@ -287,7 +287,7 @@ void init_dataset(py::module &m) {
             return DataArray{Variable{data}, coords, masks, unaligned_coords,
                              name};
           }),
-          py::arg("data") = Variable{},
+          py::arg("data"),
           py::arg("coords") = std::map<Dim, VariableConstView>{},
           py::arg("masks") = std::map<std::string, VariableConstView>{},
           py::arg("attrs") = std::map<Dim, VariableConstView>{},
