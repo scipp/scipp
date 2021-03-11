@@ -25,7 +25,7 @@ def midpoint(low, high):
             return dtype.name.startswith('datetime')
 
     if is_datetime(low.dtype):
-        # Can handle datetime but less precise and susceptible to underlow.
+        # Can handle datetime but less precise and susceptible to underflow.
         return low + (high - low) // 2
     # More precise but susceptible to overflow.
     return 0.5 * (low + high)
