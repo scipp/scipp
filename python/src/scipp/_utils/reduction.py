@@ -12,7 +12,7 @@ def nonemin(a, b):
     """
     if a is None:
         if b is None:
-            raise ValueError("One argument must not be None")
+            raise ValueError('Both arguments cannot be None in nonemin')
         return b
     if b is None:
         return a
@@ -30,7 +30,7 @@ def nonemax(a, b):
     """
     if a is None:
         if b is None:
-            raise ValueError("One argument must not be None")
+            raise ValueError('Both arguments cannot be None in nonemax')
         return b
     if b is None:
         return a
