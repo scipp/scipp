@@ -12,9 +12,9 @@
 
 namespace scipp::core {
 
-/// Replacement for C++20 std::make_unique_default_init
-template <class T> auto make_unique_default_init(const scipp::index size) {
-  return std::unique_ptr<T>(new std::remove_extent_t<T>[size]);
+/// Replacement for C++20 std::make_shared_for_overwrite
+template <class T> auto make_shared_for_overwrite(const scipp::index size) {
+  return std::shared_ptr<T>(new std::remove_extent_t<T>[size]);
 }
 
 /// Tag for requesting default-initialization in methods of class element_array.
@@ -81,8 +81,7 @@ public:
     other.m_size = -1;
   }
 
-  element_array(const element_array &other)
-      : element_array(from_other(other)) {}
+  element_array(const element_array &) = default;
 
   element_array &operator=(element_array &&other) noexcept {
     m_data = std::move(other.m_data);
@@ -91,8 +90,24 @@ public:
     return *this;
   }
 
-  element_array &operator=(const element_array &other) {
-    return *this = element_array(other.begin(), other.end());
+  element_array &operator=(const element_array &) = default;
+
+  element_array deepcopy() const {
+    if (size() == -1) {
+      return element_array();
+    } else if (size() == 0) {
+      return element_array(0);
+    } else {
+      return element_array(begin(), end());
+    }
+  }
+
+  bool operator==(const element_array &other) const noexcept {
+    return (size() == -1 && other.size() == -1) ||
+           std::equal(begin(), end(), other.begin(), other.end());
+  }
+  bool operator!=(const element_array &other) const noexcept {
+    return !operator==(other);
   }
 
   explicit operator bool() const noexcept { return m_size != -1; }
@@ -124,23 +139,14 @@ public:
       m_data.reset();
       m_size = 0;
     } else if (new_size != size()) {
-      m_data = make_unique_default_init<T[]>(new_size);
+      m_data = make_shared_for_overwrite<T[]>(new_size);
       m_size = new_size;
     }
   }
 
 private:
-  element_array from_other(const element_array &other) {
-    if (other.size() == -1) {
-      return element_array();
-    } else if (other.size() == 0) {
-      return element_array(0);
-    } else {
-      return element_array(other.begin(), other.end());
-    }
-  }
   scipp::index m_size{-1};
-  std::unique_ptr<T[]> m_data;
+  std::shared_ptr<T[]> m_data;
 };
 
 } // namespace scipp::core
