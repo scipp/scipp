@@ -4,7 +4,6 @@
 
 from ._cpp_wrapper_util import call_func as _call_cpp_func
 from ._scipp import core as _cpp
-from ._utils import is_variable
 
 
 def sort(x, key, order='ascending'):
