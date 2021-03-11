@@ -54,6 +54,13 @@ TYPED_TEST(IsCloseTest, rtol_when_variables_outside_tolerance) {
   EXPECT_EQ(isclose(a, b, rtol, atol), false * units::one);
 }
 
+TEST(IsCloseTest, works_for_counts) {
+  const auto a = makeVariable<double>(Values{1}, Variances{1}, units::counts);
+  const auto rtol = 1e-5 * units::one;
+  const auto atol = 0.0 * units::counts;
+  EXPECT_NO_THROW_DISCARD(isclose(a, a, rtol, atol));
+}
+
 TEST(IsCloseTest, compare_variances_only) {
   // Tests setup so that value comparison does not affect output (a, b value
   // same)

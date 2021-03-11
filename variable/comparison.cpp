@@ -23,8 +23,7 @@ Variable isclose(const VariableConstView &a, const VariableConstView &b,
   auto tol = atol + rtol * abs(b);
   if (a.hasVariances() && b.hasVariances()) {
     return isclose(values(a), values(b), rtol, atol, equal_nans) &
-           isclose(sqrt(variances(a)), sqrt(variances(b)), rtol, atol,
-                   equal_nans);
+           isclose(stddevs(a), stddevs(b), rtol, atol, equal_nans);
   } else {
     if (equal_nans == NanComparisons::Equal)
       return variable::transform(a, b, _values(std::move(tol)),
