@@ -180,3 +180,22 @@ TEST(ElementArrayTest, resize_default_init) {
   x.resize(0, default_init_elements);
   check_empty_element_array(x);
 }
+
+TEST(ElementArrayTest, deepcopy_null) {
+  const auto orig = element_array<double>();
+  auto x = element_array<double>();
+  auto y = x.deepcopy();
+  EXPECT_FALSE(x);
+  EXPECT_FALSE(y);
+}
+
+TEST(ElementArrayTest, deepcopy) {
+  const auto orig = make_element_array();
+  auto x = make_element_array();
+  auto y = x.deepcopy();
+  EXPECT_EQ(x, orig);
+  EXPECT_EQ(y, orig);
+  y.data()[0] += 1.0;
+  EXPECT_EQ(x, orig);
+  EXPECT_NE(y, orig);
+}
