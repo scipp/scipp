@@ -5,7 +5,7 @@ from . import is_variable
 from .is_type import is_datetime
 
 
-def midpoint(low, high):
+def midpoint(*, low, high):
     """Compute the point in the middle of an interval.
 
     :param low: Lower end of the interval.

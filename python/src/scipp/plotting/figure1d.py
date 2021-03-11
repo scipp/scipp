@@ -195,7 +195,7 @@ class PlotFigure1d(PlotFigure):
         """
         x = vals["values"]["x"]
         y = vals["values"]["y"]
-        centers = midpoint(x[:-1], x[1:])
+        centers = midpoint(low=x[:-1], high=x[1:])
         if not self._xparams["hist"][name]:
             vals["values"]["x"] = centers
         else:

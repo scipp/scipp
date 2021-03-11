@@ -26,7 +26,7 @@ def to_bin_centers(x, dim):
     """
     Convert array edges to centers
     """
-    return midpoint(x[dim, :-1], x[dim, 1:])
+    return midpoint(low=x[dim, :-1], high=x[dim, 1:])
 
 
 def to_bin_edges(x, dim):
