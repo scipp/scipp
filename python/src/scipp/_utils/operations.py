@@ -1,8 +1,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 
-from .._scipp import core as _cpp
 from . import is_variable
+from .is_type import is_datetime
 
 
 def midpoint(low, high):
@@ -18,15 +18,8 @@ def midpoint(low, high):
         raise TypeError('The arguments of midpoint must have the same dtype, '
                         f'got {low.dtype}, {high.dtype}')
 
-    def is_datetime(dtype):
-        try:
-            return dtype == _cpp.dtype.datetime64
-        except TypeError:
-            return dtype.name.startswith('datetime')
-
     if is_datetime(low.dtype):
         # Can handle datetime but less precise and susceptible to underflow.
         return low + (high - low) // 2
     # More precise but susceptible to overflow.
     return 0.5 * (low + high)
- 

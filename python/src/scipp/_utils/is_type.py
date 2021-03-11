@@ -44,3 +44,13 @@ def is_discrete(obj):
         obj, np.ndarray) and obj.dtype not in (np.float32, np.float64)) or (
             is_variable(obj)
             and obj.dtype not in (sc.dtype.float32, sc.dtype.float64))
+
+
+def is_datetime(dtype):
+    """
+    Return True if the input is a datetime64 dtype (scipp or numpy).
+    """
+    try:
+        return dtype == sc.dtype.datetime64
+    except TypeError:
+        return dtype.name.startswith('datetime')
