@@ -4,10 +4,12 @@
 
 from .helpers import PlotArray
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
-                   vars_to_err, find_limits, date2num
+                   vars_to_err, find_limits
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
+from matplotlib import dates as mpldates
+import matplotlib.ticker as ticker
 
 
 class PlotModel:
@@ -100,7 +102,7 @@ class PlotModel:
 
         # Create some default axis tick formatter, depending on linear or log
         # scaling.
-        formatter = {"linear": None, "log": None, "custom_locator": False}
+        formatter = {"linear": None, "log": None, "locator": None}
 
         contains_strings = False
         contains_vectors = False
@@ -123,7 +125,8 @@ class PlotModel:
         elif contains_datetime:
             coord = sc.Variable(dims=data_array.meta[dim].dims,
                                 unit=data_array.meta[dim].unit,
-                                values=date2num(data_array.meta[dim].values),
+                                values=mpldates.date2num(
+                                    data_array.meta[dim].values),
                                 dtype=sc.dtype.float64)
         else:
             coord = data_array.meta[dim]
@@ -140,13 +143,15 @@ class PlotModel:
                 form = self._vector_tick_formatter(
                     data_array.meta[dim_label_map[dim]].values,
                     dim_to_shape[dim])
-                formatter.update({"custom_locator": True})
+                # formatter.update({"custom_locator": True})
+                formatter["locator"] = ticker.MaxNLocator(integer=True)
             elif data_array.meta[dim_label_map[dim]].dtype == sc.dtype.string:
                 # If the non-dimension coordinate contains strings
                 form = self._string_tick_formatter(
                     data_array.meta[dim_label_map[dim]].values,
                     dim_to_shape[dim])
-                formatter.update({"custom_locator": True})
+                # formatter.update({"custom_locator": True})
+                formatter["locator"] = ticker.MaxNLocator(integer=True)
             else:
                 coord_values = coord.values
                 if has_no_coord:
@@ -174,7 +179,7 @@ class PlotModel:
                 formatter.update({
                     "linear": form,
                     "log": form,
-                    "custom_locator": True
+                    "locator": ticker.MaxNLocator(integer=True)
                 })
             elif contains_strings:
                 form = self._string_tick_formatter(data_array.meta[dim].values,
@@ -182,7 +187,16 @@ class PlotModel:
                 formatter.update({
                     "linear": form,
                     "log": form,
-                    "custom_locator": True
+                    "locator": ticker.MaxNLocator(integer=True)
+                })
+            elif contains_datetime:
+                # locator = mpldates.AutoDateLocator()
+                # form = mpldates.AutoDateFormatter(locator)
+                form = lambda val, pos: mpldates.num2date(val)
+                formatter.update({
+                    "linear": form,
+                    "log": form,
+                    # "locator": locator
                 })
 
             coord_label = name_with_unit(var=coord)

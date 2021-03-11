@@ -121,13 +121,19 @@ class PlotFigure:
                 else:
                     self.axformatter[dim][key] = ticker.FuncFormatter(
                         axformatters[dim][key])
-            self.axlocator[dim] = {
-                "linear": ticker.AutoLocator(),
-                "log": ticker.LogLocator()
-            }
-            if axformatters[dim]["custom_locator"]:
-                self.axlocator[dim]["linear"] = ticker.MaxNLocator(
-                    integer=True)
+            if axformatters[dim]["locator"] is None:
+                self.axlocator[dim] = {
+                    "linear": ticker.AutoLocator(),
+                    "log": ticker.LogLocator()
+                }
+            else:
+                self.axlocator[dim] = {
+                    "linear": axformatters[dim]["locator"],
+                    "log": axformatters[dim]["locator"]
+                }
+            # if axformatters[dim]["custom_locator"]:
+            #     self.axlocator[dim]["linear"] = ticker.MaxNLocator(
+            #         integer=True)
 
     def connect(self, callbacks):
         """
