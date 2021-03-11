@@ -81,6 +81,12 @@ class VariableDrawer:
             str(origin_x)).replace("origin_y",
                                    str(origin_y)).replace("xlen", str(xlen))
 
+    def _draw_dots(self, x0, y0):
+        dots = ""
+        for x, y in 0.1 + 0.8 * np.random.rand(7, 2) + np.array([x0, y0]):
+            dots += f'<circle cx="{x}" cy="{y}" r="0.07"/>'
+        return dots
+
     def _variance_offset(self):
         shape = self._extents()
         depth = shape[-3] + 1
@@ -121,7 +127,7 @@ class VariableDrawer:
         height += 0.3 * depth
         return [width, height]
 
-    def _draw_array(self, color, offset=None):
+    def _draw_array(self, color, offset=None, events=False):
         """Draw the array of boxes"""
         if offset is None:
             offset = [0, 0]
@@ -134,15 +140,16 @@ class VariableDrawer:
             for y in reversed(range(ly)):
                 true_lx = lx
                 x_scale = 1
-                events = False
                 for x in range(true_lx):
                     # Do not draw hidden boxes
-                    if not events:
-                        if z != lz - 1 and y != 0 and x != lx - 1:
-                            continue
-                    svg += self._draw_box(
-                        dx + x * x_scale + self._margin + 0.3 * (lz - z - 1),
-                        dy + y + 2 * self._margin + 0.3 * z, color, x_scale)
+                    if z != lz - 1 and y != 0 and x != lx - 1:
+                        continue
+                    origin_x = dx + x * x_scale + self._margin + 0.3 * (lz -
+                                                                        z - 1)
+                    origin_y = dy + y + 2 * self._margin + 0.3 * z
+                    svg += self._draw_box(origin_x, origin_y, color, x_scale)
+                    if events:
+                        svg += self._draw_dots(origin_x, origin_y)
         return svg
 
     def _draw_labels(self, offset):
@@ -225,7 +232,8 @@ class VariableDrawer:
                 color=color,
                 offset=offset +
                 np.array([(len(items) - i - 1) * self._variance_offset(),
-                          i * self._variance_offset()]))
+                          i * self._variance_offset()]),
+                events=self._variable.bins is not None)
             svg += '</g>'
             svg += self._draw_labels(offset=offset)
         svg += '</g>'
