@@ -14,6 +14,7 @@ setup_scipp_category(math)
 
 scipp_unary(util values NO_OUT)
 scipp_unary(util variances NO_OUT)
+scipp_unary(util stddevs NO_OUT)
 setup_scipp_category(util)
 
 scipp_unary(trigonometry sin SKIP_VARIABLE)

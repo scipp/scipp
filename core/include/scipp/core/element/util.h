@@ -81,6 +81,18 @@ constexpr auto variances = overloaded{
     },
     [](const units::Unit &u) { return u * u; }};
 
+constexpr auto stddevs = overloaded{
+    transform_flags::no_out_variance, core::element::arg_list<double, float>,
+    transform_flags::expect_variance_arg<0>,
+    [](const auto &x) {
+      using std::sqrt;
+      if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+        return sqrt(x.variance);
+      else
+        return sqrt(x); // unreachable but required for instantiation
+    },
+    [](const units::Unit &u) { return u; }};
+
 constexpr auto is_sorted_common = overloaded{
     core::element::arg_list<
         std::tuple<bool, double, double>, std::tuple<bool, float, float>,
