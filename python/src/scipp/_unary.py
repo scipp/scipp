@@ -46,8 +46,9 @@ def to_unit(x: _cpp.Variable, unit: Union[_cpp.Unit, str]) -> _cpp.Variable:
     Convert the variable to a different unit.
 
     Example:
-    .. highlight:: python
+
     .. code-block:: python
+
         var = 1.2 * sc.Unit('m')
         var_in_mm = sc.to_unit(var, unit='mm')
 
