@@ -236,9 +236,15 @@ def linspace(start, stop, num, *args, **kwargs):
     the result is only a true linspace if all points come out as integers.
     """
     if isinstance(start, np.datetime64) or isinstance(stop, np.datetime64):
-        if start.dtype != stop.dtype:
-            raise ValueError(
+        if not (isinstance(start, np.datetime64)
+                and isinstance(stop, np.datetime64)):
+            raise TypeError(
                 "start and stop must have the same dtype when using datetime64"
+            )
+        if not start.dtype == stop.dtype:
+            raise TypeError(
+                "start and stop must have the same dtype when using"
+                " datetime64, including the unit"
             )
         ls_float = np.linspace(start.astype(int), stop.astype(int), num, *args,
                                **kwargs)
