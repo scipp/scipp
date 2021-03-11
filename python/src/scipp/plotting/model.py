@@ -5,8 +5,7 @@
 import numpy as np
 
 from .helpers import PlotArray
-from .labeling import Formatter, Locator, vector_tick_formatter, \
-    string_tick_formatter
+from .labeling import Formatter, labeling_factory
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
     vars_to_err, find_limits
 from .._utils import name_with_unit, value_to_string
@@ -101,33 +100,16 @@ class PlotModel:
         Also return axes tick formatters and locators.
         """
 
-        # Create some default axis tick formatter, depending on linear or log
-        # scaling.
-        formatter = {
-            "linear": Formatter(Formatter.Kind.DEFAULT),
-            "log": Formatter(Formatter.Kind.DEFAULT),
-            "locator": Locator(Locator.Kind.DEFAULT)
-        }
-
-        contains_strings = False
-        contains_vectors = False
-        contains_datetime = False
-
         has_no_coord = dim not in data_array.meta
-        if not has_no_coord:
-            if data_array.meta[dim].dtype == sc.dtype.vector_3_float64:
-                contains_vectors = True
-            elif data_array.meta[dim].dtype == sc.dtype.string:
-                contains_strings = True
-            elif data_array.meta[dim].dtype == sc.dtype.datetime64:
-                contains_datetime = True
 
         # Get the coordinate from the DataArray or generate a fake one
-        if has_no_coord or contains_vectors or contains_strings:
+        if has_no_coord \
+                or data_array.meta[dim].dtype == sc.dtype.vector_3_float64 \
+                or data_array.meta[dim].dtype == sc.dtype.string:
             coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
             if not has_no_coord:
                 coord.unit = data_array.meta[dim].unit
-        elif contains_datetime:
+        elif data_array.meta[dim].dtype == sc.dtype.datetime64:
             coord = data_array.meta[dim]
         else:
             coord = data_array.meta[dim]
@@ -137,28 +119,9 @@ class PlotModel:
 
         # Set up tick formatters
         if dim in dim_label_map:
-            if data_array.meta[
-                    dim_label_map[dim]].dtype == sc.dtype.vector_3_float64:
-                # If the non-dimension coordinate contains vectors
-                form = Formatter(
-                    Formatter.Kind.FUNC,
-                    func=vector_tick_formatter(
-                        data_array.meta[dim_label_map[dim]].values,
-                        dim_to_shape[dim]))
-                formatter["locator"] = Locator(Locator.Kind.MAX_N)
-            elif data_array.meta[dim_label_map[dim]].dtype == sc.dtype.string:
-                # If the non-dimension coordinate contains strings
-                form = Formatter(
-                    Formatter.Kind.FUNC,
-                    func=string_tick_formatter(
-                        data_array.meta[dim_label_map[dim]].values,
-                        dim_to_shape[dim]))
-                formatter["locator"] = Locator(Locator.Kind.MAX_N)
-            elif data_array.meta[
-                    dim_label_map[dim]].dtype == sc.dtype.datetime64:
-                form = Formatter(Formatter.Kind.DATETIME)
-                formatter["locator"] = Locator(Locator.Kind.DATETIME)
-            else:
+            formatter = labeling_factory(dim_label_map[dim], data_array,
+                                         dim_to_shape[dim])
+            if formatter['linear'].Kind == Formatter.Kind.DEFAULT:
                 coord_values = coord.values
                 if has_no_coord:
                     # In this case we always have a bin-edge coord
@@ -171,8 +134,7 @@ class PlotModel:
                     func=lambda val, pos: value_to_string(  # noqa: E731
                         data_array.meta[dim_label_map[dim]].values[np.abs(
                             coord_values - val).argmin()]))
-
-            formatter.update({"linear": form, "log": form})
+                formatter.update({"linear": form, "log": form})
 
             coord_label = name_with_unit(
                 var=data_array.meta[dim_label_map[dim]],
@@ -181,28 +143,7 @@ class PlotModel:
                 var=data_array.meta[dim_label_map[dim]], name="")
 
         else:
-            if contains_vectors:
-                form = Formatter(Formatter.Kind.FUNC,
-                                 func=vector_tick_formatter(
-                                     data_array.meta[dim].values,
-                                     dim_to_shape[dim]))
-                loc = Locator(Locator.Kind.MAX_N, integer=True)
-                formatter.update({"linear": form, "log": form, "locator": loc})
-            elif contains_strings:
-                form = Formatter(Formatter.Kind.FUNC,
-                                 func=string_tick_formatter(
-                                     data_array.meta[dim].values,
-                                     dim_to_shape[dim]))
-                loc = Locator(Locator.Kind.MAX_N, integer=True)
-                formatter.update({"linear": form, "log": form, "locator": loc})
-            elif contains_datetime:
-                form = Formatter(Formatter.Kind.DATETIME)
-                formatter.update({
-                    "linear": form,
-                    "log": form,
-                    "locator": Locator(Locator.Kind.DATETIME)
-                })
-
+            formatter = labeling_factory(dim, data_array, dim_to_shape[dim])
             coord_label = name_with_unit(var=coord)
             coord_unit = name_with_unit(var=coord, name="")
 
