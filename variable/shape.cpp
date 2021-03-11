@@ -2,10 +2,12 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/variable/shape.h"
+#include "scipp/core/dimensions.h"
+
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
@@ -157,6 +159,16 @@ Variable reshape(const VariableConstView &view, const Dimensions &dims) {
   Variable reshaped(view);
   reshaped.setDims(dims);
   return reshaped;
+}
+
+Variable fold(const VariableConstView &view, const Dim from_dim,
+              const Dimensions &to_dims) {
+  return reshape(view, fold(view.dims(), from_dim, to_dims));
+}
+
+Variable flatten(const VariableConstView &view,
+                 const scipp::span<const Dim> &from_labels, const Dim to_dim) {
+  return reshape(view, flatten(view.dims(), from_labels, to_dim));
 }
 
 VariableView transpose(Variable &var, const std::vector<Dim> &dims) {

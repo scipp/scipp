@@ -18,7 +18,7 @@ TEST(TransformCommonTest, assign_unary_types) {
   auto aop_abs = assign_unary{core::element::abs};
   static_assert(std::is_same_v<decltype(aop_abs)::types,
                                decltype(core::element::abs)::types>);
-  auto aop_sqrt = assign_unary{core::element::abs};
+  auto aop_sqrt = assign_unary{core::element::sqrt};
   static_assert(std::is_same_v<decltype(aop_sqrt)::types,
                                decltype(core::element::sqrt)::types>);
 }

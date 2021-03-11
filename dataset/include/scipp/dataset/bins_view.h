@@ -8,6 +8,7 @@
 
 #include "scipp/dataset/dataset.h"
 #include "scipp/variable/bins.h"
+#include "scipp/variable/except.h"
 
 namespace scipp::dataset {
 
@@ -22,6 +23,14 @@ public:
 protected:
   auto make(const View &view) const {
     return make_non_owning_bins(this->indices(), this->dim(), view);
+  }
+  auto check_and_get_buf(const VariableConstView &var) const {
+    const auto &[i, d, buf] = var.dtype() == dtype<bucket<VariableView>>
+                                  ? var.constituents<bucket<VariableView>>()
+                                  : var.constituents<bucket<Variable>>();
+    core::expect::equals(i, this->indices());
+    core::expect::equals(d, this->dim());
+    return buf;
   }
 
 private:
@@ -46,8 +55,13 @@ public:
   using mapped_type = typename MapView::mapped_type;
   BinsMapView(const BinsCommon<T, View> base, MapView mapView)
       : BinsCommon<T, View>(base), m_mapView(std::move(mapView)) {}
+  scipp::index size() const noexcept { return m_mapView.size(); }
   auto operator[](const key_type &key) const {
     return this->make(m_mapView[key]);
+  }
+  void erase(const key_type &key) const { return m_mapView.erase(key); }
+  void set(const key_type &key, const VariableConstView &var) const {
+    m_mapView.set(key, this->check_and_get_buf(var));
   }
   auto begin() const noexcept {
     return boost::make_transform_iterator(m_mapView.begin(), make_item{this});
@@ -70,6 +84,9 @@ template <class T, class View> class Bins : public BinsCommon<T, View> {
 public:
   using BinsCommon<T, View>::BinsCommon;
   auto data() const { return this->make(this->buffer().data()); }
+  void setData(const VariableConstView &var) {
+    this->buffer().setData(Variable(this->check_and_get_buf(var)));
+  }
   auto meta() const { return BinsMapView(*this, this->buffer().meta()); }
   auto coords() const { return BinsMapView(*this, this->buffer().coords()); }
   auto attrs() const { return BinsMapView(*this, this->buffer().attrs()); }

@@ -15,6 +15,7 @@ Classes
    DatasetView
    GroupByDataArray
    GroupByDataset
+   Bins
 
 Creation functions
 ==================
@@ -38,10 +39,8 @@ General
    :toctree: ../generated
 
    abs
-   broadcast
    choose
    collapse
-   concatenate
    dot
    exp
    filter
@@ -52,13 +51,26 @@ General
    norm
    rebin
    reciprocal
-   reshape
    slices
    sort
    sqrt
-   transpose
+   stddevs
+   to_unit
    values
    variances
+
+Shape
+~~~~~
+
+.. autosummary::
+   :toctree: ../generated
+
+   broadcast
+   concatenate
+   flatten
+   fold
+   reshape
+   transpose
 
 Comparison
 ~~~~~~~~~~
@@ -74,7 +86,7 @@ Comparison operators compare element-wise and *ignore variances*.
    greater_equal
    equal
    not_equal
-   is_approx
+   isclose
    is_equal
    is_linspace
    is_sorted

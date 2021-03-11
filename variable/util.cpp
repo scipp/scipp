@@ -46,13 +46,6 @@ Variable is_linspace(const VariableConstView &var, const Dim dim) {
                    "is_linspace");
 }
 
-Variable values(const VariableConstView &x) {
-  return transform(x, element::values);
-}
-Variable variances(const VariableConstView &x) {
-  return transform(x, element::variances);
-}
-
 /// Return true if variable values are sorted along given dim.
 ///
 /// If `order` is SortOrder::Ascending, checks if values are non-decreasing.

@@ -30,6 +30,11 @@ def test_slice_init():
     assert b.data.values[0] == orig.data.values[1:]
 
 
+def test_no_default_init():
+    with pytest.raises(TypeError):
+        sc.DataArray()
+
+
 def test_init():
     d = sc.DataArray(
         data=sc.Variable(dims=['x'], values=np.arange(3)),
