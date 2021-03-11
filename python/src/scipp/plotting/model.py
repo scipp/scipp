@@ -4,7 +4,7 @@
 
 from .helpers import PlotArray
 from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
-                   vars_to_err, find_limits
+                   vars_to_err, find_limits, date2num
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
@@ -104,6 +104,7 @@ class PlotModel:
 
         contains_strings = False
         contains_vectors = False
+        contains_datetime = False
 
         has_no_coord = dim not in data_array.meta
         if not has_no_coord:
@@ -111,12 +112,19 @@ class PlotModel:
                 contains_vectors = True
             elif data_array.meta[dim].dtype == sc.dtype.string:
                 contains_strings = True
+            elif data_array.meta[dim].dtype == sc.dtype.datetime64:
+                contains_datetime = True
 
         # Get the coordinate from the DataArray or generate a fake one
         if has_no_coord or contains_vectors or contains_strings:
             coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
             if not has_no_coord:
                 coord.unit = data_array.meta[dim].unit
+        elif contains_datetime:
+            coord = sc.Variable(dims=data_array.meta[dim].dims,
+                                unit=data_array.meta[dim].unit,
+                                values=date2num(data_array.meta[dim].values),
+                                dtype=sc.dtype.float64)
         else:
             coord = data_array.meta[dim]
             if (coord.dtype != sc.dtype.float32) and (coord.dtype !=

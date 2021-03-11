@@ -194,3 +194,21 @@ def fix_empty_range(lims, replacement=None):
         else:
             dx = 0.5 * abs(lims[0])
     return [lims[0] - dx, lims[1] + dx]
+
+
+def num2date(x):
+    """
+    Convert a number to a numpy.datetime64 object.
+    The timezone is determined by matplotlib.
+    """
+    from matplotlib import dates as mpldates
+    return np.vectorize(lambda val: np.datetime64(mpldates.num2date(val)))(x)
+
+
+def date2num(x):
+    """
+    Convert a number to a numpy.datetime64 object.
+    The timezone is determined by matplotlib.
+    """
+    from matplotlib import dates as mpldates
+    return np.vectorize(lambda val: np.float64(mpldates.date2num(val)))(x)
