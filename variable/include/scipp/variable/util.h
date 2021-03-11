@@ -5,6 +5,7 @@
 #pragma once
 
 #include "scipp-variable_export.h"
+#include "scipp/variable/generated_util.h"
 #include "scipp/variable/variable.h"
 
 namespace scipp::variable {
@@ -15,10 +16,6 @@ linspace(const VariableConstView &start, const VariableConstView &stop,
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 is_linspace(const VariableConstView &var, const Dim dim);
-
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable values(const VariableConstView &x);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-variances(const VariableConstView &x);
 
 enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
 

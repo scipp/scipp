@@ -12,8 +12,8 @@ scipp_unary(math reciprocal)
 scipp_unary(math sqrt)
 setup_scipp_category(math)
 
-scipp_unary(util values SKIP_VARIABLE NO_OUT)
-scipp_unary(util variances SKIP_VARIABLE NO_OUT)
+scipp_unary(util values NO_OUT)
+scipp_unary(util variances NO_OUT)
 setup_scipp_category(util)
 
 scipp_unary(trigonometry sin SKIP_VARIABLE)
