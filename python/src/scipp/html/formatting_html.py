@@ -140,7 +140,7 @@ def format_dims(dims, sizes, coords):
         return ""
 
     dim_css_map = {
-        dim: " class='xr-has-index'" if dim in coords else ""
+        dim: " class='sc-has-index'" if dim in coords else ""
         for dim in dims
     }
 
@@ -149,7 +149,7 @@ def format_dims(dims, sizes, coords):
                       f"{size if size is not None else 'Events' }</li>"
                       for dim, size in zip(dims, sizes))
 
-    return f"<ul class='xr-dim-list'>{dims_li}</ul>"
+    return f"<ul class='sc-dim-list'>{dims_li}</ul>"
 
 
 def summarize_attrs_simple(attrs):
@@ -157,12 +157,12 @@ def summarize_attrs_simple(attrs):
                        f"<dd>{values}</dd>"
                        for name, values in _ordered_dict(attrs).items())
 
-    return f"<dl class='xr-attrs'>{attrs_dl}</dl>"
+    return f"<dl class='sc-attrs'>{attrs_dl}</dl>"
 
 
 def _icon(icon_name):
     # icon_name is defined in icon-svg-inline.html
-    return ("<svg class='icon xr-{0}'>"
+    return ("<svg class='icon sc-{0}'>"
             "<use xlink:href='#{0}'>"
             "</use>"
             "</svg>".format(icon_name))
@@ -195,30 +195,30 @@ def find_bin_edges(var, ds):
 
 
 def summarize_coords(coords, ds=None):
-    vars_li = "".join("<li class='xr-var-item'>"
+    vars_li = "".join("<li class='sc-var-item'>"
                       f"{summarize_coord(dim, var, ds)}"
                       "</span></li>"
                       for dim, var in _ordered_dict(coords).items())
-    return f"<ul class='xr-var-list'>{vars_li}</ul>"
+    return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
 def summarize_masks(masks, ds=None):
-    vars_li = "".join("<li class='xr-var-item'>"
+    vars_li = "".join("<li class='sc-var-item'>"
                       f"{summarize_mask(dim, var, ds)}"
                       "</span></li>"
                       for dim, var in _ordered_dict(masks).items())
-    return f"<ul class='xr-var-list'>{vars_li}</ul>"
+    return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
 def summarize_attrs(attrs, embedded_in=None):
-    attrs_li = "".join("<li class='xr-var-item'>{}</li>".format(
+    attrs_li = "".join("<li class='sc-var-item'>{}</li>".format(
         summarize_variable(name,
                            var,
                            has_attrs=False,
                            embedded_in=embedded_in,
                            is_index=name in var.dims))
                        for name, var in _ordered_dict(attrs).items())
-    return f"<ul class='xr-var-list'>{attrs_li}</ul>"
+    return f"<ul class='sc-var-list'>{attrs_li}</ul>"
 
 
 def _make_inline_attributes(var, has_attrs, embedded_in):
@@ -238,10 +238,10 @@ def _make_inline_attributes(var, has_attrs, embedded_in):
 
     if len(attrs_sections) > 0:
         attrs_sections = "".join(
-            f"<li class='xr-section-item sc-subsection'>{s}</li>"
+            f"<li class='sc-section-item sc-subsection'>{s}</li>"
             for s in attrs_sections)
-        attrs_ul = "<div class='xr-wrap'>"\
-            f"<ul class='xr-sections'>{attrs_sections}</ul>"\
+        attrs_ul = "<div class='sc-wrap'>"\
+            f"<ul class='sc-sections'>{attrs_sections}</ul>"\
             "</div>"
 
     return disabled, attrs_ul
@@ -266,7 +266,7 @@ def _make_dim_str(var, bin_edges, add_dim_size=False):
 
 
 def _format_common(is_index):
-    cssclass_idx = " class='xr-has-index'" if is_index else ""
+    cssclass_idx = " class='sc-has-index'" if is_index else ""
 
     # "unique" ids required to expand/collapse subsections
     attrs_id = "attrs-" + str(uuid.uuid4())
@@ -315,40 +315,40 @@ def summarize_variable(name,
         ]
     else:
         html = [
-            f"<div class='xr-var-name'><span{cssclass_idx}>{escape(str(name))}"
+            f"<div class='sc-var-name'><span{cssclass_idx}>{escape(str(name))}"
             "</span></div>",
-            f"<div class='xr-var-dims'>{escape(dims_str)}</div>"
+            f"<div class='sc-var-dims'>{escape(dims_str)}</div>"
         ]
     html += [
-        f"<div class='xr-var-dtype'>{escape(repr(var.dtype))}</div>",
-        f"<div class='xr-var-unit'>{escape(unit)}</div>",
-        f"<div class='xr-value-preview xr-preview'><span>{preview}</span>",
+        f"<div class='sc-var-dtype'>{escape(repr(var.dtype))}</div>",
+        f"<div class='sc-var-unit'>{escape(unit)}</div>",
+        f"<div class='sc-value-preview sc-preview'><span>{preview}</span>",
         "{}</div>".format(f'<span>{variances_preview}</span>'
                           if variances_preview is not None else ''),
-        f"<input id='{attrs_id}' class='xr-var-attrs-in' ",
+        f"<input id='{attrs_id}' class='sc-var-attrs-in' ",
         f"type='checkbox' {disabled}>",
         f"<label for='{attrs_id}' "
-        f"class='{'' if has_attrs else 'xr-hide-icon'}'"
+        f"class='{'' if has_attrs else 'sc-hide-icon'}'"
         " title='Show/Hide attributes'>",
         f"{attrs_icon}</label>",
-        f"<input id='{data_id}' class='xr-var-data-in' type='checkbox'>",
+        f"<input id='{data_id}' class='sc-var-data-in' type='checkbox'>",
         f"<label for='{data_id}' title='Show/Hide data repr'>",
         f"{data_icon}</label>",
-        f"<div class='xr-var-attrs'>{attrs_ul}</div>" if attrs_ul else "",
-        f"<pre class='xr-var-data'>{data_repr}</pre>",
+        f"<div class='sc-var-attrs'>{attrs_ul}</div>" if attrs_ul else "",
+        f"<pre class='sc-var-data'>{data_repr}</pre>",
     ]
     return "".join(html)
 
 
 def summarize_data(dataset):
     has_attrs = is_dataset(dataset)
-    vars_li = "".join("<li class='xr-var-item'>{}</li>".format(
+    vars_li = "".join("<li class='sc-var-item'>{}</li>".format(
         summarize_variable(name,
                            var,
                            has_attrs=has_attrs,
                            embedded_in=dataset if has_attrs else None))
                       for name, var in _ordered_dict(dataset).items())
-    return f"<ul class='xr-var-list'>{vars_li}</ul>"
+    return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
 def collapsible_section(name,
@@ -366,12 +366,12 @@ def collapsible_section(name,
     collapsed = "" if collapsed or not has_items else "checked"
     tip = " title='Expand/collapse section'" if enabled else ""
 
-    return (f"<input id='{data_id}' class='xr-section-summary-in' "
+    return (f"<input id='{data_id}' class='sc-section-summary-in' "
             f"type='checkbox' {enabled} {collapsed}>"
-            f"<label for='{data_id}' class='xr-section-summary' {tip}>"
+            f"<label for='{data_id}' class='sc-section-summary' {tip}>"
             f"{name}:{n_items_span}</label>"
-            f"<div class='xr-section-inline-details'>{inline_details}</div>"
-            f"<div class='xr-section-details'>{details}</div>")
+            f"<div class='sc-section-inline-details'>{inline_details}</div>"
+            f"<div class='sc-section-details'>{details}</div>")
 
 
 def _mapping_section(mapping,
@@ -404,9 +404,9 @@ def dim_section(dataset):
 
 def summarize_array(var, is_variable=False):
     vars_li = "".join(
-        "<li class='xr-var-item'>"
+        "<li class='sc-var-item'>"
         f"{summarize_variable(None, var, add_dim_size=is_variable)}</li>")
-    return f"<ul class='xr-var-list'>{vars_li}</ul>"
+    return f"<ul class='sc-var-list'>{vars_li}</ul>"
 
 
 def variable_section(var):
@@ -441,16 +441,16 @@ attr_section = partial(
 
 
 def _obj_repr(header_components, sections):
-    header = f"<div class='xr-header'>"\
+    header = f"<div class='sc-header'>"\
         f"{''.join(h for h in header_components)}</div>"
-    sections = "".join(f"<li class='xr-section-item'>{s}</li>"
+    sections = "".join(f"<li class='sc-section-item'>{s}</li>"
                        for s in sections)
 
     return ("<div>"
             f"{ICONS_SVG}<style>{CSS_STYLE}</style>"
-            "<div class='xr-wrap'>"
+            "<div class='sc-wrap'>"
             f"{header}"
-            f"<ul class='xr-sections'>{sections}</ul>"
+            f"<ul class='sc-sections'>{sections}</ul>"
             "</div>"
             "</div>")
 
@@ -458,7 +458,7 @@ def _obj_repr(header_components, sections):
 def dataset_repr(ds):
     obj_type = "scipp.{}".format(type(ds).__name__)
     header_components = [
-        f"<div class='xr-obj-type'>{escape(obj_type)}"
+        f"<div class='sc-obj-type'>{escape(obj_type)}"
         f" ({human_readable_size(sys.getsizeof(ds))})</div>"
     ]
 
@@ -482,7 +482,7 @@ def variable_repr(var):
     obj_type = "scipp.{}".format(type(var).__name__)
 
     header_components = [
-        f"<div class='xr-obj-type'>{escape(obj_type)}"
+        f"<div class='sc-obj-type'>{escape(obj_type)}"
         f" ({human_readable_size(sys.getsizeof(var))})</div>"
     ]
 
