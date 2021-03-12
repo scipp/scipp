@@ -10,7 +10,7 @@ from html import escape
 import sys
 
 from .._scipp import core as sc
-from .._utils import is_dataset
+from .._utils import is_data_array, is_dataset
 
 CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
 with open(CSS_FILE_PATH, 'r') as f:
@@ -36,7 +36,14 @@ def _format_array(data, size, ellipsis_after, do_ellide=True):
         if hasattr(elem, "__round__"):
             if not hasattr(data, "dtype") or data.dtype != bool:
                 elem = round(elem, 2)
-        s.append(str(elem))
+        if is_data_array(elem):
+            dims = ', '.join(f'{dim}: {s}' for dim, s in elem.sizes.items())
+            unit = f'{elem.unit}'.replace('dimensionless', 'one')
+            coords = ', '.join(elem.coords)
+            s.append(
+                f'DataArray(dims=[{dims}], unit={unit}, coords=[{coords}])')
+        else:
+            s.append(str(elem))
         i += 1
     return escape(", ".join(s))
 
