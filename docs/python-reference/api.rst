@@ -86,7 +86,7 @@ Comparison operators compare element-wise and *ignore variances*.
    equal
    not_equal
    isclose
-   isequal
+   identical
    islinspace
    issorted
 

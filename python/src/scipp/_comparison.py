@@ -101,7 +101,7 @@ def not_equal(x, y):
     return _call_cpp_func(_cpp.not_equal, x, y)
 
 
-def isequal(x, y):
+def identical(x, y):
     """Full comparison of x and y.
 
     :param x: Left input.
@@ -109,7 +109,7 @@ def isequal(x, y):
     :return: True if x and y have identical values, variances, dtypes, units,
              dims, shapes, coords, and masks. Else False.
     """
-    return _call_cpp_func(_cpp.isequal, x, y)
+    return _call_cpp_func(_cpp.identical, x, y)
 
 
 def isclose(x, y, rtol=None, atol=None, equal_nan=False):

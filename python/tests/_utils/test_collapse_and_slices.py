@@ -31,10 +31,10 @@ def make_dataset():
 def test_collapse_data_array():
     d = make_dataset()
     collapsed = sc.collapse(d['sample'], keep='tof')
-    assert sc.isequal(collapsed['y:0-x:0'], d['sample']['y', 0]['x', 0])
-    assert sc.isequal(collapsed['y:1-x:0'], d['sample']['y', 1]['x', 0])
-    assert sc.isequal(collapsed['y:0-x:1'], d['sample']['y', 0]['x', 1])
-    assert sc.isequal(collapsed['y:1-x:1'], d['sample']['y', 1]['x', 1])
+    assert sc.identical(collapsed['y:0-x:0'], d['sample']['y', 0]['x', 0])
+    assert sc.identical(collapsed['y:1-x:0'], d['sample']['y', 1]['x', 0])
+    assert sc.identical(collapsed['y:0-x:1'], d['sample']['y', 0]['x', 1])
+    assert sc.identical(collapsed['y:1-x:1'], d['sample']['y', 1]['x', 1])
 
 
 def test_collapse_dataset():
@@ -48,25 +48,25 @@ def test_collapse_dataset():
     else:
         dim1 = 'y'
         dim2 = 'x'
-    assert sc.isequal(collapsed['{}:0-{}:0'.format(dim1, dim2)], d[dim2,
-                                                                   0][dim1, 0])
-    assert sc.isequal(collapsed['{}:0-{}:1'.format(dim1, dim2)], d[dim2,
-                                                                   1][dim1, 0])
-    assert sc.isequal(collapsed['{}:1-{}:0'.format(dim1, dim2)], d[dim2,
-                                                                   0][dim1, 1])
-    assert sc.isequal(collapsed['{}:1-{}:1'.format(dim1, dim2)], d[dim2,
-                                                                   1][dim1, 1])
+    assert sc.identical(collapsed['{}:0-{}:0'.format(dim1, dim2)],
+                        d[dim2, 0][dim1, 0])
+    assert sc.identical(collapsed['{}:0-{}:1'.format(dim1, dim2)],
+                        d[dim2, 1][dim1, 0])
+    assert sc.identical(collapsed['{}:1-{}:0'.format(dim1, dim2)],
+                        d[dim2, 0][dim1, 1])
+    assert sc.identical(collapsed['{}:1-{}:1'.format(dim1, dim2)],
+                        d[dim2, 1][dim1, 1])
 
 
 def test_slices_data_array():
     d = make_dataset()
     collapsed = sc.slices(d['sample'], dim='x')
-    assert sc.isequal(collapsed['x:0'], d['sample']['x', 0])
-    assert sc.isequal(collapsed['x:1'], d['sample']['x', 1])
+    assert sc.identical(collapsed['x:0'], d['sample']['x', 0])
+    assert sc.identical(collapsed['x:1'], d['sample']['x', 1])
 
 
 def test_slices_dataset():
     d = make_dataset()
     collapsed = sc.slices(d, dim='x')
-    assert sc.isequal(collapsed['x:0'], d['x', 0])
-    assert sc.isequal(collapsed['x:1'], d['x', 1])
+    assert sc.identical(collapsed['x:0'], d['x', 0])
+    assert sc.identical(collapsed['x:1'], d['x', 1])

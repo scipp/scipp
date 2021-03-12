@@ -14,7 +14,7 @@ def test_bins_default_begin_end():
     assert var.dims == data.dims
     assert var.shape == data.shape
     for i in range(4):
-        assert sc.isequal(var['x', i].value, data['x', i:i + 1])
+        assert sc.identical(var['x', i].value, data['x', i:i + 1])
 
 
 def test_bins_default_end():
@@ -23,8 +23,8 @@ def test_bins_default_end():
     var = sc.bins(begin=begin, dim='x', data=data)
     assert var.dims == begin.dims
     assert var.shape == begin.shape
-    assert sc.isequal(var['y', 0].value, data['x', 1:3])
-    assert sc.isequal(var['y', 1].value, data['x', 3:4])
+    assert sc.identical(var['y', 0].value, data['x', 1:3])
+    assert sc.identical(var['y', 1].value, data['x', 3:4])
 
 
 def test_bins_fail_only_end():
@@ -41,8 +41,8 @@ def test_bins():
     var = sc.bins(begin=begin, end=end, dim='x', data=data)
     assert var.dims == begin.dims
     assert var.shape == begin.shape
-    assert sc.isequal(var['y', 0].value, data['x', 0:2])
-    assert sc.isequal(var['y', 1].value, data['x', 2:4])
+    assert sc.identical(var['y', 0].value, data['x', 0:2])
+    assert sc.identical(var['y', 1].value, data['x', 2:4])
 
 
 def test_bins_view():
@@ -63,20 +63,20 @@ def test_bins_view():
         var.bins.coords['time2'] = col  # col is not binned
 
     def check(a, b):
-        # sc.isequal does not work for us directly since we have owning and
+        # sc.identical does not work for us directly since we have owning and
         # non-owning views which currently never compare equal.
-        assert sc.isequal(1 * a, 1 * b)
+        assert sc.identical(1 * a, 1 * b)
 
     var.bins.coords['time'] = var.bins.data
-    assert sc.isequal(var.bins.coords['time'], var.bins.data)
+    assert sc.identical(var.bins.coords['time'], var.bins.data)
     var.bins.coords['time'] = var.bins.data * 2.0
     check(var.bins.coords['time'], var.bins.data * 2.0)
     var.bins.coords['time2'] = var.bins.data
-    assert sc.isequal(var.bins.coords['time2'], var.bins.data)
+    assert sc.identical(var.bins.coords['time2'], var.bins.data)
     var.bins.coords['time3'] = var.bins.data * 2.0
     check(var.bins.coords['time3'], var.bins.data * 2.0)
     var.bins.data = var.bins.coords['time']
-    assert sc.isequal(var.bins.data, var.bins.coords['time'])
+    assert sc.identical(var.bins.data, var.bins.coords['time'])
     var.bins.data = var.bins.data * 2.0
     del var.bins.coords['time3']
     assert 'time3' not in var.bins.coords
@@ -90,8 +90,9 @@ def test_bins_arithmetic():
         data=sc.Variable(dims=['x'], values=[1.0, 2.0]),
         coords={'x': sc.Variable(dims=['x'], values=[1.0, 3.0, 5.0])})
     binned.bins *= sc.lookup(func=hist, dim='x')
-    assert sc.isequal(binned.bins.constituents['data'].data,
-                      sc.Variable(dims=['event'], values=[1.0, 2.0, 6.0, 8.0]))
+    assert sc.identical(
+        binned.bins.constituents['data'].data,
+        sc.Variable(dims=['event'], values=[1.0, 2.0, 6.0, 8.0]))
 
 
 def test_load_events_bins():
@@ -134,8 +135,8 @@ def test_load_events_bins():
 
     assert events.dims == event_index.dims
     assert events.shape == event_index.shape
-    assert sc.isequal(events['pulse', 0].value.coords['detector-id'],
-                      data.coords['detector-id']['event', 0:3])
+    assert sc.identical(events['pulse', 0].value.coords['detector-id'],
+                        data.coords['detector-id']['event', 0:3])
 
 
 def test_bins_sum_with_masked_buffer():

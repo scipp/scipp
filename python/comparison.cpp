@@ -29,9 +29,9 @@ template <class T> void bind_isclose(py::module &m) {
       py::arg("equal_nan"), py::call_guard<py::gil_scoped_release>());
 }
 
-template <typename T> void bind_isequal(py::module &m) {
+template <typename T> void bind_identical(py::module &m) {
   m.def(
-      "isequal",
+      "identical",
       [](const typename T::const_view_type &x,
          const typename T::const_view_type &y) { return x == y; },
       py::arg("x"), py::arg("y"), py::call_guard<py::gil_scoped_release>());
@@ -39,7 +39,7 @@ template <typename T> void bind_isequal(py::module &m) {
 
 void init_comparison(py::module &m) {
   bind_isclose<Variable>(m);
-  bind_isequal<Variable>(m);
-  bind_isequal<Dataset>(m);
-  bind_isequal<DataArray>(m);
+  bind_identical<Variable>(m);
+  bind_identical<Dataset>(m);
+  bind_identical<DataArray>(m);
 }

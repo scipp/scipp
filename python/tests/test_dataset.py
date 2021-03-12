@@ -40,10 +40,10 @@ def test_create():
     xy = sc.Variable(dims=['x', 'y'], values=np.arange(12).reshape(3, 4))
     d = sc.Dataset({'xy': xy, 'x': x}, coords={'x': x, 'y': y})
     assert len(d) == 2
-    assert sc.isequal(d.coords['x'], x)
-    assert sc.isequal(d.coords['y'], y)
-    assert sc.isequal(d['xy'].data, xy)
-    assert sc.isequal(d['x'].data, x)
+    assert sc.identical(d.coords['x'], x)
+    assert sc.identical(d.coords['y'], y)
+    assert sc.identical(d['xy'].data, xy)
+    assert sc.identical(d['x'].data, x)
     assert set(d.dims) == set(['y', 'x'])
 
 
@@ -51,7 +51,7 @@ def test_create_from_data_array():
     var = sc.Variable(dims=['x'], values=np.arange(4))
     da = sc.DataArray(var, coords={'x': var, 'aux': var})
     d = sc.Dataset({da.name: da})
-    assert sc.isequal(d[''], da)
+    assert sc.identical(d[''], da)
 
 
 def test_create_from_data_arrays():
@@ -62,7 +62,7 @@ def test_create_from_data_arrays():
     d = sc.Dataset()
     d['a'] = da1
     d['b'] = da2
-    assert sc.isequal(
+    assert sc.identical(
         d,
         sc.Dataset(data={
             'a': var1,
@@ -79,8 +79,8 @@ def test_create_from_data_array_and_variable_mix():
     var_2 = sc.Variable(dims=['x'], values=np.arange(4))
     da = sc.DataArray(data=var_1, coords={'x': var_1, 'aux': var_1})
     d = sc.Dataset({'array': da, 'variable': var_2})
-    assert sc.isequal(d['array'], da)
-    assert sc.isequal(d['variable'].data, var_2)
+    assert sc.identical(d['array'], da)
+    assert sc.identical(d['variable'].data, var_2)
 
 
 def test_create_with_data_array_and_additional_coords():
@@ -89,10 +89,10 @@ def test_create_with_data_array_and_additional_coords():
     da = sc.DataArray(data=var, coords={'x': var, 'aux': var})
     d = sc.Dataset(data={'array': da}, coords={'y': coord})
     da.coords['y'] = coord
-    assert sc.isequal(d['array'], da)
-    assert sc.isequal(d.coords['y'], coord)
-    assert sc.isequal(d.coords['x'], var)
-    assert sc.isequal(d.coords['aux'], var)
+    assert sc.identical(d['array'], da)
+    assert sc.identical(d.coords['y'], coord)
+    assert sc.identical(d.coords['x'], var)
+    assert sc.identical(d.coords['aux'], var)
 
 
 def test_clear():
@@ -107,7 +107,7 @@ def test_setitem():
     d = sc.Dataset()
     d['a'] = sc.Variable(1.0)
     assert len(d) == 1
-    assert sc.isequal(d['a'].data, sc.Variable(1.0))
+    assert sc.identical(d['a'].data, sc.Variable(1.0))
     assert len(d.coords) == 0
 
 
@@ -133,7 +133,7 @@ def test_coord_setitem():
     d.coords['y'] = sc.Variable(1.0)
     assert len(d) == 1
     assert len(d.coords) == 2
-    assert sc.isequal(d.coords['y'], sc.Variable(1.0))
+    assert sc.identical(d.coords['y'], sc.Variable(1.0))
 
 
 def test_contains_coord():
@@ -154,10 +154,10 @@ def test_slice_item():
     d = sc.Dataset(
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
-    assert sc.isequal(d['a']['x', 2:4].data,
-                      sc.Variable(dims=['x'], values=np.arange(2, 4)))
-    assert sc.isequal(d['a']['x', 2:4].coords['x'],
-                      sc.Variable(dims=['x'], values=np.arange(6, 8)))
+    assert sc.identical(d['a']['x', 2:4].data,
+                        sc.Variable(dims=['x'], values=np.arange(2, 4)))
+    assert sc.identical(d['a']['x', 2:4].coords['x'],
+                        sc.Variable(dims=['x'], values=np.arange(6, 8)))
 
 
 def test_set_item_slice_from_numpy():
@@ -165,8 +165,8 @@ def test_set_item_slice_from_numpy():
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
     d['a']['x', 2:4] = np.arange(2)
-    assert sc.isequal(d['a'].data,
-                      sc.Variable(dims=['x'], values=np.array([0, 1, 0, 1])))
+    assert sc.identical(d['a'].data,
+                        sc.Variable(dims=['x'], values=np.array([0, 1, 0, 1])))
 
 
 def test_set_item_slice_with_variances_from_numpy():
@@ -186,8 +186,8 @@ def test_iadd_slice():
         coords={'x': sc.Variable(dims=['x'], values=np.arange(4, 8))})
     d['a'] = sc.Variable(dims=['x'], values=np.arange(4))
     d['a']['x', 1] += d['a']['x', 2]
-    assert sc.isequal(d['a'].data,
-                      sc.Variable(dims=['x'], values=np.array([0, 3, 2, 3])))
+    assert sc.identical(d['a'].data,
+                        sc.Variable(dims=['x'], values=np.array([0, 3, 2, 3])))
 
 
 def test_iadd_range():
@@ -197,8 +197,8 @@ def test_iadd_range():
     with pytest.raises(RuntimeError):
         d['a']['x', 2:4] += d['a']['x', 1:3]
     d['a']['x', 2:4] += d['a']['x', 2:4]
-    assert sc.isequal(d['a'].data,
-                      sc.Variable(dims=['x'], values=np.array([0, 1, 4, 6])))
+    assert sc.identical(d['a'].data,
+                        sc.Variable(dims=['x'], values=np.array([0, 1, 4, 6])))
 
 
 def test_contains():
@@ -224,7 +224,7 @@ def test_slice():
         sc.DataArray(1.0 * sc.units.one, attrs={'x': 1.0 * sc.units.one})
     })
 
-    assert sc.isequal(d['x', 1], expected)
+    assert sc.identical(d['x', 1], expected)
     assert 'a' in d['x', 1]
     assert 'b' not in d['x', 1]
 
@@ -258,7 +258,7 @@ def test_chained_slicing():
     expected['a'].attrs['z'] = z['z', 5:7]
     expected['b'].attrs['z'] = z['z', 5:7]
 
-    assert sc.isequal(d['x', 1]['z', 5], expected)
+    assert sc.identical(d['x', 1]['z', 5], expected)
 
 
 def test_coords_view_comparison_operators():
@@ -309,7 +309,7 @@ def test_sum_mean():
             'l2': sc.Variable(dims=['x'], values=np.arange(2, dtype=np.int64))
         })
 
-    assert sc.isequal(sc.sum(d, 'y'), d_ref)
+    assert sc.identical(sc.sum(d, 'y'), d_ref)
     assert (sc.mean(d, 'y')['a'].values == [1.0, 4.0]).all()
     assert sc.mean(d, 'y')['b'].value == 1.0
 
@@ -327,15 +327,15 @@ def test_sum_masked():
     d_ref = sc.Dataset({'a': sc.Variable(np.int64(6))})
 
     result = sc.sum(d, 'x')['a']
-    assert sc.isequal(result, d_ref['a'])
+    assert sc.identical(result, d_ref['a'])
 
 
 def test_sum_all():
     da = sc.DataArray(sc.Variable(['x', 'y'], values=np.ones(10).reshape(5,
                                                                          2)))
     ds = sc.Dataset({'a': da})
-    assert sc.isequal(sc.sum(da).data, sc.Variable(value=10.0))
-    assert sc.isequal(sc.sum(da), sc.sum(ds)['a'])
+    assert sc.identical(sc.sum(da).data, sc.Variable(value=10.0))
+    assert sc.identical(sc.sum(da), sc.sum(ds)['a'])
 
 
 def test_nansum_masked():
@@ -352,7 +352,7 @@ def test_nansum_masked():
     d_ref = sc.Dataset({'a': sc.Variable(np.float64(2))})
 
     result = sc.nansum(d, 'x')['a']
-    assert sc.isequal(result, d_ref['a'])
+    assert sc.identical(result, d_ref['a'])
 
 
 def test_nansum_all():
@@ -361,8 +361,8 @@ def test_nansum_all():
     da.data.values[0, 0] = np.nan
     ds = sc.Dataset({'a': da})
     assert np.isnan(sc.sum(da).data.value)  # sanity check
-    assert sc.isequal(sc.nansum(da).data, sc.Variable(value=9.0))
-    assert sc.isequal(sc.nansum(da), sc.nansum(ds)['a'])
+    assert sc.identical(sc.nansum(da).data, sc.Variable(value=9.0))
+    assert sc.identical(sc.nansum(da), sc.nansum(ds)['a'])
 
 
 def test_mean_masked():
@@ -376,8 +376,8 @@ def test_mean_masked():
                                      values=np.array(
                                          [False, True, False, True, False]))
     d_ref = sc.Dataset({'a': sc.Variable(2.0)})
-    assert sc.isequal(sc.mean(d, 'x')['a'], d_ref['a'])
-    assert sc.isequal(sc.nanmean(d, 'x')['a'], d_ref['a'])
+    assert sc.identical(sc.mean(d, 'x')['a'], d_ref['a'])
+    assert sc.identical(sc.nanmean(d, 'x')['a'], d_ref['a'])
 
 
 def test_mean_all():
@@ -403,8 +403,8 @@ def test_dataset_merge():
     a = sc.Dataset({'d1': sc.Variable(dims=['x'], values=np.array([1, 2, 3]))})
     b = sc.Dataset({'d2': sc.Variable(dims=['x'], values=np.array([4, 5, 6]))})
     c = sc.merge(a, b)
-    assert sc.isequal(a['d1'], c['d1'])
-    assert sc.isequal(b['d2'], c['d2'])
+    assert sc.identical(a['d1'], c['d1'])
+    assert sc.identical(b['d2'], c['d2'])
 
 
 def test_dataset_concatenate():
@@ -454,12 +454,12 @@ def test_dataset_set_data():
 
     d3 = sc.Dataset()
     d3['b'] = d1['a']
-    assert sc.isequal(d3['b'].data, d1['a'].data)
+    assert sc.identical(d3['b'].data, d1['a'].data)
     assert d3['b'].coords == d1['a'].coords
     d1['a'] = d2['a']
     d1['c'] = d2['a']
-    assert sc.isequal(d2['a'].data, d1['a'].data)
-    assert sc.isequal(d2['a'].data, d1['c'].data)
+    assert sc.identical(d2['a'].data, d1['a'].data)
+    assert sc.identical(d2['a'].data, d1['c'].data)
 
     d = sc.Dataset()
     d.coords['row'] = sc.Variable(dims=['row'], values=np.arange(10.0))
@@ -476,7 +476,7 @@ def test_dataset_set_data():
                                 values=np.arange(1.0),
                                 variances=np.arange(1.0))
     expected['b'] = sc.Variable(dims=['row'], values=np.arange(10.0, 11.0))
-    assert sc.isequal(d2, expected)
+    assert sc.identical(d2, expected)
 
 
 def test_binary_with_broadcast():
@@ -486,7 +486,7 @@ def test_binary_with_broadcast():
 
     d2 = d - d['x', 0]
     d -= d['x', 0]
-    assert sc.isequal(d, d2)
+    assert sc.identical(d, d2)
 
 
 def test_binary__with_dataarray():
@@ -499,7 +499,7 @@ def test_binary__with_dataarray():
     ds -= da
     ds *= da
     ds /= da
-    assert sc.isequal(ds, orig)
+    assert sc.identical(ds, orig)
 
 
 def test_binary_of_item_with_variable():
@@ -512,7 +512,7 @@ def test_binary_of_item_with_variable():
     d['data'] *= 2.0 * sc.units.m
     d['data'] -= 4.0 * sc.units.m
     d['data'] /= 2.0 * sc.units.m
-    assert sc.isequal(d, copy)
+    assert sc.identical(d, copy)
 
 
 def test_in_place_binary_with_scalar():
@@ -524,7 +524,7 @@ def test_in_place_binary_with_scalar():
     d *= 2
     d -= 4
     d /= 2
-    assert sc.isequal(d, copy)
+    assert sc.identical(d, copy)
 
 
 def test_view_in_place_binary_with_scalar():
@@ -536,7 +536,7 @@ def test_view_in_place_binary_with_scalar():
     d['data'] *= 2
     d['data'] -= 4
     d['data'] /= 2
-    assert sc.isequal(d, copy)
+    assert sc.identical(d, copy)
 
 
 def test_add_sum_of_columns():
@@ -546,7 +546,7 @@ def test_add_sum_of_columns():
     })
     d['sum'] = d['a'] + d['b']
     d['a'] += d['b']
-    assert sc.isequal(d['sum'], d['a'])
+    assert sc.identical(d['sum'], d['a'])
 
 
 def test_name():
@@ -625,15 +625,15 @@ def test_sort():
                              unit=sc.units.m),
             'aux': sc.Variable(dims=['x'], values=[1.0, 0.0])
         })
-    assert sc.isequal(sc.sort(d, d['b'].data), expected)
+    assert sc.identical(sc.sort(d, d['b'].data), expected)
 
 
 def test_rename_dims():
     d = make_simple_dataset('x', 'y', seed=0)
     d.rename_dims({'y': 'z'})
-    assert sc.isequal(d, make_simple_dataset('x', 'z', seed=0))
+    assert sc.identical(d, make_simple_dataset('x', 'z', seed=0))
     d.rename_dims(dims_dict={'x': 'y', 'z': 'x'})
-    assert sc.isequal(d, make_simple_dataset('y', 'x', seed=0))
+    assert sc.identical(d, make_simple_dataset('y', 'x', seed=0))
 
 
 def test_coord_delitem():
@@ -643,7 +643,7 @@ def test_coord_delitem():
     d.coords['y'] = sc.Variable(1.0)
     assert dref != d
     del d.coords['y']
-    assert sc.isequal(dref, d)
+    assert sc.identical(dref, d)
 
 
 def test_coords_delitem():
@@ -651,11 +651,11 @@ def test_coords_delitem():
     d = sc.Dataset({'a': var}, coords={'x': var})
     dref = d.copy()
     dref.coords['x'] = sc.Variable(dims=['x'], values=np.arange(1, 5))
-    assert not sc.isequal(d, dref)
+    assert not sc.identical(d, dref)
     del dref.coords['x']
-    assert not sc.isequal(d, dref)
+    assert not sc.identical(d, dref)
     dref.coords['x'] = d.coords['x']
-    assert sc.isequal(d, dref)
+    assert sc.identical(d, dref)
 
 
 def test_masks_delitem():
@@ -663,9 +663,9 @@ def test_masks_delitem():
     d = sc.Dataset({'a': var}, coords={'x': var})
     dref = d.copy()
     d['a'].masks['masks'] = var
-    assert not sc.isequal(d, dref)
+    assert not sc.identical(d, dref)
     del d['a'].masks['masks']
-    assert sc.isequal(d, dref)
+    assert sc.identical(d, dref)
 
 
 def test_replace():
@@ -690,7 +690,7 @@ def test_rebin():
 
 
 def _is_deep_copy_of(orig, copy):
-    assert sc.isequal(orig, copy)
+    assert sc.identical(orig, copy)
     assert not id(orig) == id(copy)
 
 
