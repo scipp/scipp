@@ -1,90 +1,90 @@
-/* CSS stylesheet for displaying xarray objects in jupyterlab.
+/* CSS stylesheet for displaying scipp objects in jupyterlab.
 * Original source from
 * https://github.com/jsignell/xarray/blob/1d960933ab252e0f79f7e050e6c9261d55568057/xarray/static/css/style.css
 */
 
-.xr-wrap {
+.sc-wrap {
   font-size: 14px;
   min-width: 300px;
   max-width: 800px;
 }
 
 /* The CSS styling for the inline attributes table */
-.xr-var-attrs .xr-wrap{
+.sc-var-attrs .sc-wrap{
   padding-left: 3em;
 }
 
-.xr-header {
+.sc-header {
   padding-top: 6px;
   padding-bottom: 6px;
   margin-bottom: 4px;
   border-bottom: solid 1px #ddd;
 }
 
-.xr-header > div,
-.xr-header > ul {
+.sc-header > div,
+.sc-header > ul {
   display: inline;
   margin-top: 0;
   margin-bottom: 0;
 }
 
-.xr-obj-type,
-.xr-array-name {
+.sc-obj-type,
+.sc-array-name {
   margin-left: 2px;
   margin-right: 10px;
 }
 
-.xr-obj-type {
+.sc-obj-type {
   color: #555;
 }
 
-.xr-array-name {
+.sc-array-name {
   color: #000;
 }
 
-.xr-sections {
+.sc-sections {
   padding-left: 0 !important;
   display: grid;
   grid-template-columns: 150px auto auto auto 1fr 20px 20px;
 }
 
-.xr-section-item {
+.sc-section-item {
   display: contents;
 }
 
-.xr-section-item input {
+.sc-section-item input {
   display: none;
 }
 
-.xr-section-item input + label {
+.sc-section-item input + label {
   color: #ccc;
 }
 
-.xr-section-item input:enabled + label {
+.sc-section-item input:enabled + label {
   cursor: pointer;
   color: #555;
 }
 
-.xr-section-item input:enabled + label:hover {
+.sc-section-item input:enabled + label:hover {
   color: #000;
 }
 
-.xr-section-summary {
+.sc-section-summary {
   grid-column: 1 ;
   color: #555;
   font-weight: 500;
 }
 
-.xr-section-summary > span {
+.sc-section-summary > span {
   display: inline-block;
   padding-left: 0.5em;
 }
 
-.xr-section-summary-in:disabled + label {
+.sc-section-summary-in:disabled + label {
   color: #555;
 }
 
-.xr-section-summary-in + label:before {
+.sc-section-summary-in + label:before {
   display: inline-block;
   content: '►';
   font-size: 11px;
@@ -92,221 +92,221 @@
   text-align: center;
 }
 
-.xr-section-summary-in:disabled + label:before {
+.sc-section-summary-in:disabled + label:before {
   color: #ccc;
 }
 
-.xr-section-summary-in:checked + label:before {
+.sc-section-summary-in:checked + label:before {
   content: '▼';
 }
 
-.xr-section-summary-in:checked + label > span {
+.sc-section-summary-in:checked + label > span {
   display: none;
 }
 
-.xr-section-summary,
-.xr-section-inline-details {
+.sc-section-summary,
+.sc-section-inline-details {
   padding-top: 4px;
   padding-bottom: 4px;
 }
 
-.xr-section-inline-details {
+.sc-section-inline-details {
   grid-column: 2 / 5;
 }
 
-.xr-section-details {
+.sc-section-details {
   display: none;
   grid-column: 1 / -1;
   margin-bottom: 5px;
 }
 
-.xr-section-summary-in:checked ~ .xr-section-details {
+.sc-section-summary-in:checked ~ .sc-section-details {
   display: contents;
 }
 
-.xr-array-wrap {
+.sc-array-wrap {
   grid-column: 1 / -1;
   display: grid;
   grid-template-columns: 20px auto;
 }
 
-.xr-array-wrap > label {
+.sc-array-wrap > label {
   grid-column: 1;
   vertical-align: top;
 }
 
-.xr-preview {
+.sc-preview {
   color: #888;
 }
 
-.xr-array-preview,
-.xr-array-data {
+.sc-array-preview,
+.sc-array-data {
   padding: 0 5px !important;
   grid-column: 2;
 }
 
-.xr-array-data,
-.xr-array-in:checked ~ .xr-array-preview {
+.sc-array-data,
+.sc-array-in:checked ~ .sc-array-preview {
   display: none;
 }
 
-.xr-array-in:checked ~ .xr-array-data,
-.xr-array-preview {
+.sc-array-in:checked ~ .sc-array-data,
+.sc-array-preview {
   display: inline-block;
 }
 
-.xr-dim-list {
+.sc-dim-list {
   display: inline-block !important;
   list-style: none;
   padding: 0 !important;
   margin: 0;
 }
 
-.xr-dim-list li {
+.sc-dim-list li {
   display: inline-block;
   padding: 0;
   margin: 0!important;
 }
 
-.xr-dim-list:before {
+.sc-dim-list:before {
   content: '(';
 }
 
-.xr-dim-list:after {
+.sc-dim-list:after {
   content: ')';
 }
 
-.xr-dim-list li:not(:last-child):after {
+.sc-dim-list li:not(:last-child):after {
   content: ',';
   padding-right: 5px;
 }
 
-.xr-has-index {
+.sc-has-index {
   font-weight: bold;
 }
 
-.xr-var-list,
-.xr-var-item {
+.sc-var-list,
+.sc-var-item {
   display: contents;
 }
 
-.xr-var-item > div,
-.xr-var-item label,
-.xr-var-item > .xr-var-name span {
+.sc-var-item > div,
+.sc-var-item label,
+.sc-var-item > .sc-var-name span {
   background-color: #fcfcfc;
   margin-bottom: 0;
 }
 
-.xr-var-item > .xr-var-name:hover span {
+.sc-var-item > .sc-var-name:hover span {
   padding-right: 5px;
 }
 
-.xr-var-list > li:nth-child(odd) > div,
-.xr-var-list > li:nth-child(odd) > label,
-.xr-var-list > li:nth-child(odd) > .xr-var-name span {
+.sc-var-list > li:nth-child(odd) > div,
+.sc-var-list > li:nth-child(odd) > label,
+.sc-var-list > li:nth-child(odd) > .sc-var-name span {
   background-color: #efefef;
 }
 
-.xr-var-name {
+.sc-var-name {
   grid-column: 1;
 }
 
-.xr-var-dims {
+.sc-var-dims {
   grid-column: 2;
 }
 
-.xr-var-dtype {
+.sc-var-dtype {
   grid-column: 3;
   text-align: right;
   color: #555;
 }
-.xr-var-unit{
+.sc-var-unit{
   grid-column: 4;
   text-align: left;
   color: #222;
 }
-.xr-value-preview {
+.sc-value-preview {
   grid-column: 5;
 }
-.xr-var-preview-variances{
+.sc-var-preview-variances{
   text-align:right;
 }
 
-.xr-sections .xr-section-item .xr-section-summary,
-.xr-sections .xr-section-item .xr-section-inline-details,
-.xr-section-item .xr-var-list .xr-var-item > div,
-.xr-section-item .xr-var-list .xr-var-item > label,
-.xr-section-details .xr-var-list .xr-var-item > div,
-.xr-section-details .xr-var-list .xr-var-item > label {
+.sc-sections .sc-section-item .sc-section-summary,
+.sc-sections .sc-section-item .sc-section-inline-details,
+.sc-section-item .sc-var-list .sc-var-item > div,
+.sc-section-item .sc-var-list .sc-var-item > label,
+.sc-section-details .sc-var-list .sc-var-item > div,
+.sc-section-details .sc-var-list .sc-var-item > label {
   margin-top: 0;
   margin-bottom: 0;
 }
 
-.xr-var-name,
-.xr-var-dims,
-.xr-var-dtype,
-.xr-var-unit,
-.xr-preview,
-.xr-attrs dt {
+.sc-var-name,
+.sc-var-dims,
+.sc-var-dtype,
+.sc-var-unit,
+.sc-preview,
+.sc-attrs dt {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   padding-right: 10px;
 }
 
-.xr-var-name:hover,
-.xr-var-dims:hover,
-.xr-var-dtype:hover,
-.xr-var-unit:hover,
-.xr-attrs dt:hover {
+.sc-var-name:hover,
+.sc-var-dims:hover,
+.sc-var-dtype:hover,
+.sc-var-unit:hover,
+.sc-attrs dt:hover {
   overflow: visible;
   width: auto;
   z-index: 1;
 }
 
-.xr-var-attrs {
+.sc-var-attrs {
   display: block;
 }
-.xr-var-data {
+.sc-var-data {
   display: none;
 }
-.xr-var-attrs,
-.xr-var-data {
+.sc-var-attrs,
+.sc-var-data {
   background-color: #fff !important;
   padding-bottom: 5px !important;
 }
 
-.xr-var-attrs-in:checked ~ .xr-var-attrs {
+.sc-var-attrs-in:checked ~ .sc-var-attrs {
   display: none;
 }
-.xr-var-data-in:checked ~ .xr-var-data {
+.sc-var-data-in:checked ~ .sc-var-data {
   display: block;
 }
 
-.xr-var-data > table {
+.sc-var-data > table {
   float: right;
 }
 
-.xr-var-name span,
-.xr-var-data,
-.xr-attrs {
+.sc-var-name span,
+.sc-var-data,
+.sc-attrs {
   padding-left: 25px !important;
 }
 
-.xr-attrs,
-.xr-var-attrs,
-.xr-var-data {
+.sc-attrs,
+.sc-var-attrs,
+.sc-var-data {
   grid-column: 1 / -1;
 }
 
-dl.xr-attrs {
+dl.sc-attrs {
   padding: 0;
   margin: 0;
   display: grid;
   grid-template-columns: 125px auto;
 }
 
-.xr-attrs dt, dd {
+.sc-attrs dt, dd {
   padding: 0;
   margin: 0;
   float: left;
@@ -314,25 +314,25 @@ dl.xr-attrs {
   width: auto;
 }
 
-.xr-attrs dt {
+.sc-attrs dt {
   font-weight: normal;
   grid-column: 1;
 }
 
-.xr-attrs dt:hover span {
+.sc-attrs dt:hover span {
   display: inline-block;
   background: #fff;
   padding-right: 10px;
 }
 
-.xr-attrs dd {
+.sc-attrs dd {
   grid-column: 2;
   white-space: pre-wrap;
   word-break: break-all;
 }
 
-.xr-icon-database,
-.xr-icon-file-text2 {
+.sc-icon-database,
+.sc-icon-file-text2 {
   display: inline-block;
   vertical-align: middle;
   width: 1em;
@@ -342,11 +342,7 @@ dl.xr-attrs {
   fill: currentColor;
 }
 
-/*
-Classes below are added for scipp. Where possible
-the prefix is changed to "sc" to make it easier to distinguish.
-*/
-label.xr-hide-icon svg{
+label.sc-hide-icon svg{
   opacity: 0;
 }
 
