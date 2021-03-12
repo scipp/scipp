@@ -56,10 +56,7 @@ def _format_non_events(var, has_variances):
     # ravel avoids displaying square brackets in the output
     if hasattr(data, 'ravel'):
         data = data.ravel()
-    if data is None:
-        s = "data not histogrammed yet"
-    else:
-        s = _format_array(data, size, ellipsis_after=2)
+    s = _format_array(data, size, ellipsis_after=2)
     if has_variances:
         s = f'{VARIANCE_PREFIX}{s}'
     return _make_row(s)
