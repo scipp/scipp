@@ -219,11 +219,10 @@ of variances.)");
       .def("__sizeof__",
            py::overload_cast<const VariableConstView &>(&size_of));
 
-  py::class_<VariableView, VariableConstView> variableView(
-      m, "VariableView", py::buffer_protocol(), R"(
+  py::class_<VariableView, VariableConstView> variableView(m, "VariableView",
+                                                           R"(
 View for Variable, representing a sliced or transposed view onto a variable;
 Mostly equivalent to Variable, see there for details.)");
-  variableView.def_buffer(&make_py_buffer_info);
   variableView.def(py::init<Variable &>())
       .def(
           "__radd__",
