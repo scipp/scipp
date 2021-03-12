@@ -174,16 +174,22 @@ class PlotModel:
 
         else:
             if contains_vectors:
-                form = self._vector_tick_formatter(data_array.meta[dim].values,
-                                                   dim_to_shape[dim])
+                # form = self._vector_tick_formatter(data_array.meta[dim].values,
+                #                                    dim_to_shape[dim])
+                form = ticker.FuncFormatter(
+                    self._vector_tick_formatter(data_array.meta[dim].values,
+                                                dim_to_shape[dim]))
                 formatter.update({
                     "linear": form,
                     "log": form,
                     "locator": ticker.MaxNLocator(integer=True)
                 })
             elif contains_strings:
-                form = self._string_tick_formatter(data_array.meta[dim].values,
-                                                   dim_to_shape[dim])
+                # form = self._string_tick_formatter(data_array.meta[dim].values,
+                #                                    dim_to_shape[dim])
+                form = ticker.FuncFormatter(
+                    self._string_tick_formatter(data_array.meta[dim].values,
+                                                dim_to_shape[dim]))
                 formatter.update({
                     "linear": form,
                     "log": form,
@@ -191,9 +197,17 @@ class PlotModel:
                 })
             elif contains_datetime:
                 locator = mpldates.AutoDateLocator()
+                # locator = ticker.AutoLocator()
                 # form = mpldates.AutoDateFormatter(locator)
-                # form = lambda val, pos: mpldates.num2date(val)
-                form = self._date_tick_formatter(locator)
+                form = lambda val, pos: "" if val > 2.0e6 else mpldates.num2date(
+                    val)
+                # # locator = mpldates.AutoDateLocator()
+                # # form = mpldates.AutoDateFormatter(locator)
+                # # # from matplotlib.ticker import FuncFormatter
+                # # form.scaled[1 / (24. * 60.)] = ticker.FuncFormatter(
+                # #     self._date_tick_formatter)
+
+                # form = self._date_tick_formatter(locator)
                 formatter.update({
                     "linear": form,
                     "log": form,
@@ -227,7 +241,19 @@ class PlotModel:
         Format string ticks: find closest string in coordinate array.
         """
         formatter = mpldates.AutoDateFormatter(locator)
-        return lambda val, pos: "" if val > 2.0e6 else formatter(val, pos)
+        # return lambda val, pos: "" if val > 2.0e6 else formatter(val, pos)
+        return lambda val, pos: formatter(val, pos)
+
+    def _date_tick_formatter(self, x, pos=None):
+        x = mpldates.num2date(x)
+        if pos == 0:
+            fmt = '%D %H:%M:%S.%f'
+        else:
+            fmt = '%H:%M:%S.%f'
+        label = x.strftime(fmt)
+        label = label.rstrip("0")
+        label = label.rstrip(".")
+        return label
 
     def _make_masks(self, array, mask_info, transpose=False):
         if not mask_info:

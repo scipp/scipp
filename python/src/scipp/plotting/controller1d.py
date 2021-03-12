@@ -55,15 +55,18 @@ class PlotController1d(PlotController):
         plots) to the minimum and maximum value inside the currently displayed
         data slice.
         """
-        vmin = None
-        vmax = None
+        # vmin = None
+        # vmax = None
 
-        # If the limits were requested by the user: if the rescale button is
-        # pressed by the user, it means we forcibly update the self.vmin/vmax.
-        # If no button is pressed, we use the global limits instead of the
-        # min and max values found by the model.
-        if button is None:
-            vmin = self.vmin
-            vmax = self.vmax
+        # # If the limits were requested by the user: if the rescale button is
+        # # pressed by the user, it means we forcibly update the self.vmin/vmax.
+        # # If no button is pressed, we use the global limits instead of the
+        # # min and max values found by the model.
+        # if button is None:
+        #     vmin = self.vmin
+        #     vmax = self.vmax
 
-        self.view.rescale_to_data(vmin, vmax)
+        # self.view.rescale_to_data(vmin, vmax)
+        vmin, vmax = self.find_vmin_vmax(button=button)
+        delta = 0.05 * (vmax - vmin)
+        self.view.rescale_to_data(vmin - delta, vmax + delta)
