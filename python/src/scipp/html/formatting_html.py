@@ -160,14 +160,6 @@ def summarize_attrs_simple(attrs):
     return f"<dl class='xr-attrs'>{attrs_dl}</dl>"
 
 
-def summarize_attrs(attrs, embedded_in=None):
-    attrs_li = "".join("<li class='xr-var-item'>{}</li>".format(
-        summarize_variable(
-            name, values, has_attrs=False, embedded_in=embedded_in))
-                       for name, values in _ordered_dict(attrs).items())
-    return f"<ul class='xr-var-list'>{attrs_li}</ul>"
-
-
 def _icon(icon_name):
     # icon_name is defined in icon-svg-inline.html
     return ("<svg class='icon xr-{0}'>"
@@ -179,6 +171,10 @@ def _icon(icon_name):
 def summarize_coord(dim, var, ds=None):
     is_index = dim in var.dims
     return summarize_variable(str(dim), var, is_index, embedded_in=ds)
+
+
+def summarize_mask(dim, var, ds=None):
+    return summarize_variable(str(dim), var, is_index=False, embedded_in=ds)
 
 
 def find_bin_edges(var, ds):
@@ -204,6 +200,25 @@ def summarize_coords(coords, ds=None):
                       "</span></li>"
                       for dim, var in _ordered_dict(coords).items())
     return f"<ul class='xr-var-list'>{vars_li}</ul>"
+
+
+def summarize_masks(masks, ds=None):
+    vars_li = "".join("<li class='xr-var-item'>"
+                      f"{summarize_mask(dim, var, ds)}"
+                      "</span></li>"
+                      for dim, var in _ordered_dict(masks).items())
+    return f"<ul class='xr-var-list'>{vars_li}</ul>"
+
+
+def summarize_attrs(attrs, embedded_in=None):
+    attrs_li = "".join("<li class='xr-var-item'>{}</li>".format(
+        summarize_variable(name,
+                           var,
+                           has_attrs=False,
+                           embedded_in=embedded_in,
+                           is_index=name in var.dims))
+                       for name, var in _ordered_dict(attrs).items())
+    return f"<ul class='xr-var-list'>{attrs_li}</ul>"
 
 
 def _make_inline_attributes(var, has_attrs, embedded_in):
@@ -407,7 +422,7 @@ coord_section = partial(
 
 mask_section = partial(_mapping_section,
                        name="Masks",
-                       details_func=summarize_coords,
+                       details_func=summarize_masks,
                        max_items_collapse=10)
 
 data_section = partial(
