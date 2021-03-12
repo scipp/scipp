@@ -190,14 +190,16 @@ class PlotModel:
                     "locator": ticker.MaxNLocator(integer=True)
                 })
             elif contains_datetime:
-                # locator = mpldates.AutoDateLocator()
+                locator = mpldates.AutoDateLocator()
                 # form = mpldates.AutoDateFormatter(locator)
-                form = lambda val, pos: mpldates.num2date(val)
+                # form = lambda val, pos: mpldates.num2date(val)
+                form = self._date_tick_formatter(locator)
                 formatter.update({
                     "linear": form,
                     "log": form,
-                    # "locator": locator
+                    "locator": locator
                 })
+                # self._date_tick_formatter(ticker.AutoLocator())
 
             coord_label = name_with_unit(var=coord)
             coord_unit = name_with_unit(var=coord, name="")
@@ -219,6 +221,13 @@ class PlotModel:
         """
         return lambda val, pos: array_values[int(val)] if (int(
             val) >= 0 and int(val) < size) else ""
+
+    def _date_tick_formatter(self, locator):
+        """
+        Format string ticks: find closest string in coordinate array.
+        """
+        formatter = mpldates.AutoDateFormatter(locator)
+        return lambda val, pos: "" if val > 2.0e6 else formatter(val, pos)
 
     def _make_masks(self, array, mask_info, transpose=False):
         if not mask_info:
