@@ -350,23 +350,11 @@ label.xr-hide-icon svg{
   opacity: 0;
 }
 
-.sc-section-header{
-  color:#555;
-  margin: auto 0;
-}
-
-.sc-section-header-text{
-  display:inline-block;
-  vertical-align: middle;
-  /* matches the margin from  xr-section-item */
-  margin-bottom: 5px;
-}
-
-.sc-var-name{
+.sc-standalone-var-name{
   grid-column: 1/3;
 }
 
-.sc-var-name span{
+.sc-standalone-var-name span{
   padding-left: 25px;
   padding-right:10px;
 }

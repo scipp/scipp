@@ -310,7 +310,7 @@ def summarize_variable(name,
 
     if name is None:
         html = [
-            f"<div class='sc-var-name'><span{cssclass_idx}>"
+            f"<div class='sc-standalone-var-name'><span{cssclass_idx}>"
             f"{escape(dims_str)}</span></div>"
         ]
     else:
