@@ -24,7 +24,7 @@ template <class T, class C> auto &requireT(C &varconcept) {
 }
 
 template <class T> struct is_span : std::false_type {};
-template <class T> struct is_span<scipp::span<T>> : std::true_type {};
+template <class T> struct is_span<std::span<T>> : std::true_type {};
 template <class T> inline constexpr bool is_span_v = is_span<T>::value;
 
 template <class T1, class T2>

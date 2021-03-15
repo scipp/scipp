@@ -16,27 +16,27 @@ using namespace scipp::core;
 namespace py = pybind11;
 
 template <class T> struct mutable_span_methods {
-  static void add(py::class_<scipp::span<T>> &span) {
-    span.def("__setitem__", [](scipp::span<T> &self, const scipp::index i,
+  static void add(py::class_<std::span<T>> &span) {
+    span.def("__setitem__", [](std::span<T> &self, const scipp::index i,
                                const T value) { self[i] = value; });
   }
 };
 template <class T> struct mutable_span_methods<const T> {
-  static void add(py::class_<scipp::span<const T>> &) {}
+  static void add(py::class_<std::span<const T>> &) {}
 };
 
 template <class T> void declare_span(py::module &m, const std::string &suffix) {
-  py::class_<scipp::span<T>> span(m, (std::string("span_") + suffix).c_str());
-  span.def("__getitem__", &scipp::span<T>::operator[],
+  py::class_<std::span<T>> span(m, (std::string("span_") + suffix).c_str());
+  span.def("__getitem__", &std::span<T>::operator[],
            py::return_value_policy::reference)
-      .def("size", &scipp::span<T>::size)
-      .def("__len__", &scipp::span<T>::size)
+      .def("size", &std::span<T>::size)
+      .def("__len__", &std::span<T>::size)
       .def("__iter__",
-           [](const scipp::span<T> &self) {
+           [](const std::span<T> &self) {
              return py::make_iterator(self.begin(), self.end());
            })
       .def("__repr__",
-           [](const scipp::span<T> &self) { return array_to_string(self); });
+           [](const std::span<T> &self) { return array_to_string(self); });
   mutable_span_methods<T>::add(span);
 }
 

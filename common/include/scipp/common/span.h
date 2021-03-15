@@ -4,5 +4,4 @@
 /// @author Simon Heybrock
 #pragma once
 
-#define TCB_SPAN_NAMESPACE_NAME scipp
-#include "tcb/span.hpp"
+#include <span>
