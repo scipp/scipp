@@ -225,6 +225,9 @@ class PlotController:
         self.view.connect(view_callbacks=view_callbacks,
                           figure_callbacks=figure_callbacks)
 
+    def connect_model(self):
+        self.model.connect({"get_viewport_bounds": self.get_viewport_bounds})
+
     def connect_panel(self):
         """
         Dummy connect for `PlotPanel`.
