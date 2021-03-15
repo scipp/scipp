@@ -54,11 +54,15 @@ jobs:
           conda --version
           conda install --yes conda-build
           conda config --set always_yes yes --set changeps1 no
-        displayName: 'Install Conda'
-      - bash: |
-          set -ex
-          echo $OSX_VERSION $CONDA $CONDA_PREFIX $PYTHONPATH
-        displayName: 'Print variables'
+          conda env create -f scipp-developer.yml
+          # TODO: source activate does not work (see https://github.com/conda/conda/issues/9566)
+          echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
+          echo $CONDA_PREFIX
+        displayName: 'Setup Conda'
+      # - bash: |
+      #     set -ex
+      #     echo $OSX_VERSION $CONDA $CONDA_PREFIX $PYTHONPATH
+      #   displayName: 'Print variables'
       - bash: ./tools/make_and_install.sh
         env:
           CONDA_PREFIX: $CONDA_PREFIX
