@@ -119,9 +119,9 @@ class PlotFigure:
                 if axformatters[dim][key] is None:
                     self.axformatter[dim][key] = ticker.ScalarFormatter()
                 else:
-                    # self.axformatter[dim][key] = ticker.FuncFormatter(
-                    #     axformatters[dim][key])
-                    self.axformatter[dim][key] = axformatters[dim][key]
+                    self.axformatter[dim][key] = ticker.FuncFormatter(
+                        axformatters[dim][key])
+                    # self.axformatter[dim][key] = axformatters[dim][key]
             if axformatters[dim]["locator"] is None:
                 self.axlocator[dim] = {
                     "linear": ticker.AutoLocator(),
