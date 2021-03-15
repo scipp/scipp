@@ -22,6 +22,7 @@ add_executable(
   element_trigonometry_test.cpp
   element_util_test.cpp
   multi_index_test.cpp
+  prototype.cpp
   string_test.cpp
   subbin_sizes_test.cpp
   time_point_test.cpp
