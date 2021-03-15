@@ -135,6 +135,8 @@ public:
 
   bool operator==(const VariableConstView &other) const;
   bool operator!=(const VariableConstView &other) const;
+  bool operator==(const Variable &other) const;
+  bool operator!=(const Variable &other) const;
   Variable operator-() const;
 
   const VariableConcept &data() const && = delete;
