@@ -56,6 +56,8 @@ jobs:
           conda config --set always_yes yes --set changeps1 no
         displayName: 'Install Conda'
       - bash: ./tools/make_and_install.sh
+        env:
+          CONDA_PREFIX: $CONDA_PREFIX
         displayName: 'Make and Install'
       - bash: |
           conda build --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload ./conda
