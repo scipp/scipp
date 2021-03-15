@@ -18,7 +18,7 @@ def _dtype_lut():
     return dict(zip(names, dtypes))
 
 
-class NumpyDataIO():
+class NumpyDataIO:
     @staticmethod
     def write(group, data):
         dset = group.create_dataset('values', data=data.values)
@@ -34,7 +34,7 @@ class NumpyDataIO():
             group['variances'].read_direct(data.variances)
 
 
-class EigenDataIO():
+class EigenDataIO:
     @staticmethod
     def write(group, data):
         import numpy as np
@@ -51,12 +51,12 @@ class EigenDataIO():
             data.values = np.asarray(group['values'])
 
 
-class BinDataIO():
+class BinDataIO:
     @staticmethod
     def write(group, data):
         from .. import sum as sc_sum
-        buffer_len = dict(zip(data.bins.data.dims,
-                              data.bins.data.shape))[str(data.bins.dim)]
+        bins = data.bins.constituents
+        buffer_len = bins['data'].sizes[bins['dim']]
         # Crude mechanism to avoid writing large buffers, e.g., from
         # overallocation or when writing a slice of a larger variable. The
         # copy causes some overhead, but so would the (much mor complicated)
@@ -64,12 +64,13 @@ class BinDataIO():
         # need to be revisited in the future.
         if buffer_len > 1.5 * sc_sum(data.bins.size()).value:
             data = data.copy()
+            bins = data.bins.constituents
         values = group.create_group('values')
-        VariableIO.write(values.create_group('begin'), var=data.bins.begin)
-        VariableIO.write(values.create_group('end'), var=data.bins.end)
+        VariableIO.write(values.create_group('begin'), var=bins['begin'])
+        VariableIO.write(values.create_group('end'), var=bins['end'])
         data_group = values.create_group('data')
-        data_group.attrs['dim'] = str(data.bins.dim)
-        HDF5IO.write(data_group, data.bins.data)
+        data_group.attrs['dim'] = bins['dim']
+        HDF5IO.write(data_group, bins['data'])
         return values
 
     @staticmethod
@@ -83,7 +84,7 @@ class BinDataIO():
         return sc.bins(begin=begin, end=end, dim=dim, data=data)
 
 
-class ScippDataIO():
+class ScippDataIO:
     @staticmethod
     def write(group, data):
         values = group.create_group('values')
@@ -104,7 +105,7 @@ class ScippDataIO():
                 data.values[i] = HDF5IO.read(values[f'value-{i}'])
 
 
-class StringDataIO():
+class StringDataIO:
     @staticmethod
     def write(group, data):
         import h5py
@@ -137,7 +138,7 @@ def _check_scipp_header(group, what):
     if 'scipp-version' not in group.attrs:
         raise RuntimeError(
             "This does not look like an HDF5 file/group written by scipp.")
-    if (group.attrs['scipp-type'] != what):
+    if group.attrs['scipp-type'] != what:
         raise RuntimeError(
             f"Attempt to read {what}, found {group.attrs['scipp-type']}.")
 

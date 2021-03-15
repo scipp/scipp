@@ -40,9 +40,8 @@ auto get_1d_coord(const VariableConstView &coord) {
 
 auto get_coord(VariableConstView coord, const Dim dim) {
   coord = get_1d_coord(coord);
-  const bool ascending = is_sorted(coord, dim, variable::SortOrder::Ascending);
-  const bool descending =
-      is_sorted(coord, dim, variable::SortOrder::Descending);
+  const bool ascending = issorted(coord, dim, variable::SortOrder::Ascending);
+  const bool descending = issorted(coord, dim, variable::SortOrder::Descending);
   if (!(ascending ^ descending))
     throw std::runtime_error("Coordinate must be monotonically increasing or "
                              "decreasing for label-based indexing.");

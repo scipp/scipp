@@ -64,13 +64,14 @@ class PlotView2d(PlotView):
         """
         self.xlim_updated = False
         self.ylim_updated = False
-        xylims = {}
 
         # Make sure we don't overrun the original array bounds
-        xylims["x"] = np.clip(self.figure.ax.get_xlim(),
-                              *sorted(self.global_lims["x"]))
-        xylims["y"] = np.clip(self.figure.ax.get_ylim(),
-                              *sorted(self.global_lims["y"]))
+        xylims = {
+            "x": np.clip(self.figure.ax.get_xlim(),
+                         *sorted(self.global_lims["x"])),
+            "y": np.clip(self.figure.ax.get_ylim(),
+                         *sorted(self.global_lims["y"]))
+        }
 
         dx = np.abs(self.current_lims["x"][1] - self.current_lims["x"][0])
         dy = np.abs(self.current_lims["y"][1] - self.current_lims["y"][0])

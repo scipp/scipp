@@ -108,11 +108,23 @@ template <class T> class BinVariableMaker : public BinVariableMakerCommon<T> {
 private:
   const VariableConstView
   bin_parent(const scipp::span<const VariableConstView> &parents) const {
-    if (parents.empty())
+    constexpr auto is_bins = [](auto &x) {
+      return x.dtype() == dtype<bucket<T>>;
+    };
+    const auto count = std::count_if(parents.begin(), parents.end(), is_bins);
+    if (count == 0)
       throw except::BinnedDataError("Bin cannot have zero parents");
-    return parents.front().dtype() == dtype<bucket<T>>
-               ? parents.front()
-               : bin_parent(parents.subspan(1));
+    if (!(std::is_same_v<T, Variable> ||
+          std::is_base_of_v<VariableConstView, T>)&&(count > 1))
+      throw except::BinnedDataError(
+          "Binary operations such as '+' with binned data are only supported "
+          "with dtype=VariableView, got dtype=" +
+          to_string(dtype<bucket<T>>) +
+          ". See "
+          "https://scipp.github.io/user-guide/binned-data/"
+          "computation.html#Event-centric-arithmetic for equivalent operations "
+          "for binned (event) data.");
+    return *std::find_if(parents.begin(), parents.end(), is_bins);
   }
   virtual Variable call_make_bins(const VariableConstView &parent,
                                   const VariableConstView &indices,
@@ -167,8 +179,8 @@ public:
 };
 
 /// Macro for instantiating classes and functions required for support a new
-/// bucket dtype in Variable.
-#define INSTANTIATE_BUCKET_VARIABLE(name, ...)                                 \
+/// bin dtype in Variable.
+#define INSTANTIATE_BIN_VARIABLE(name, ...)                                    \
   INSTANTIATE_VARIABLE_BASE(name, __VA_ARGS__)                                 \
   template SCIPP_EXPORT std::tuple<VariableConstView, Dim,                     \
                                    typename __VA_ARGS__::const_element_type>   \

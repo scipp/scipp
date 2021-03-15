@@ -31,6 +31,18 @@ TEST(UnitTest, construct_bad_string) {
   EXPECT_THROW(Unit("abcde"), except::UnitError);
 }
 
+TEST(UnitTest, overflows) {
+  // These would run out of bits in llnl/units and wrap, ensure that scipp
+  // prevents this and throws instead.
+  Unit m4{units::m * units::m * units::m * units::m};
+  Unit inv_m8{units::one / m4 / m4};
+  EXPECT_THROW(m4 * m4, except::UnitError);
+  EXPECT_THROW(units::one / inv_m8, except::UnitError);
+  EXPECT_THROW(inv_m8 / units::m, except::UnitError);
+  EXPECT_THROW(inv_m8 % units::m, except::UnitError);
+  EXPECT_THROW(pow(units::m, 8), except::UnitError);
+}
+
 TEST(UnitTest, compare) {
   Unit u1{units::dimensionless};
   Unit u2{units::m};
@@ -93,6 +105,13 @@ TEST(UnitTest, divide_counts) {
   EXPECT_EQ(counts / counts, units::dimensionless);
 }
 
+TEST(UnitTest, pow) {
+  EXPECT_EQ(pow(units::m, 0), units::one);
+  EXPECT_EQ(pow(units::m, 1), units::m);
+  EXPECT_EQ(pow(units::m, 2), units::m * units::m);
+  EXPECT_EQ(pow(units::m, -1), units::one / units::m);
+}
+
 TEST(UnitTest, neutron_units) {
   Unit c(units::c);
   EXPECT_EQ(c * units::m, Unit(units::c * units::m));
@@ -127,6 +146,10 @@ TEST(UnitFunctionsTest, sqrt) {
   EXPECT_EQ(sqrt(units::one), units::one);
   EXPECT_THROW_MSG(sqrt(units::m), except::UnitError,
                    "Unsupported unit as result of sqrt: sqrt(m).");
+  EXPECT_THROW_MSG(sqrt(units::Unit("J")), except::UnitError,
+                   "Unsupported unit as result of sqrt: sqrt(J).");
+  EXPECT_THROW_MSG(sqrt(units::Unit("eV")), except::UnitError,
+                   "Unsupported unit as result of sqrt: sqrt(eV).");
 }
 
 TEST(UnitFunctionsTest, sin) {

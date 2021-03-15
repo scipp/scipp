@@ -46,6 +46,13 @@ Generic functionality of scipp is provided in the **scipp** Python module.
 In addition, more specific functionality is made available in other modules.
 Currently the only example for this is `scippneutron <https://scipp.github.io/scippneutron>`_ for handling data from neutron-scattering experiments.
 
+News
+----
+
+- Scipp is moving from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
+- Looking for ``scipp.neutron``?
+  This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
+
 Where can I get help?
 ---------------------
 

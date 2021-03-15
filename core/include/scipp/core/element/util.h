@@ -4,17 +4,34 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <cstddef>
+
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
 #include "scipp/common/span.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
+#include "scipp/core/time_point.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/core/value_and_variance.h"
 #include "scipp/units/except.h"
 #include "scipp/units/unit.h"
 
-#include <stddef.h>
+namespace scipp::numeric {
+template <> inline bool islinspace(const span<const core::time_point> &range) {
+  if (scipp::size(range) < 2)
+    return false;
+  if (range.back() <= range.front())
+    return false;
+
+  const auto delta = range[1] - range[0];
+
+  return std::adjacent_find(range.begin(), range.end(),
+                            [delta](const auto &a, const auto &b) {
+                              return std::abs(b - a) != delta;
+                            }) == range.end();
+}
+} // namespace scipp::numeric
 
 namespace scipp::core::element {
 
@@ -64,32 +81,45 @@ constexpr auto variances = overloaded{
     },
     [](const units::Unit &u) { return u * u; }};
 
-constexpr auto is_sorted_common = overloaded{
+constexpr auto stddevs = overloaded{
+    transform_flags::no_out_variance, core::element::arg_list<double, float>,
+    transform_flags::expect_variance_arg<0>,
+    [](const auto &x) {
+      using std::sqrt;
+      if constexpr (is_ValueAndVariance_v<std::decay_t<decltype(x)>>)
+        return sqrt(x.variance);
+      else
+        return sqrt(x); // unreachable but required for instantiation
+    },
+    [](const units::Unit &u) { return u; }};
+
+constexpr auto issorted_common = overloaded{
     core::element::arg_list<
         std::tuple<bool, double, double>, std::tuple<bool, float, float>,
         std::tuple<bool, int64_t, int64_t>, std::tuple<bool, int32_t, int32_t>,
-        std::tuple<bool, std::string, std::string>>,
+        std::tuple<bool, std::string, std::string>,
+        std::tuple<bool, time_point, time_point>>,
     transform_flags::expect_no_variance_arg<1>,
     [](units::Unit &out, const units::Unit &left, const units::Unit &right) {
       core::expect::equals(left, right);
       out = units::dimensionless;
     }};
 
-constexpr auto is_sorted_nondescending = overloaded{
-    is_sorted_common, [](bool &out, const auto &left, const auto &right) {
+constexpr auto issorted_nondescending = overloaded{
+    issorted_common, [](bool &out, const auto &left, const auto &right) {
       out = out && (left <= right);
     }};
 
-constexpr auto is_sorted_nonascending = overloaded{
-    is_sorted_common, [](bool &out, const auto &left, const auto &right) {
+constexpr auto issorted_nonascending = overloaded{
+    issorted_common, [](bool &out, const auto &left, const auto &right) {
       out = out && (left >= right);
     }};
 
-constexpr auto is_linspace =
-    overloaded{arg_list<span<const double>, span<const float>>,
-               transform_flags::expect_no_variance_arg<0>,
-               [](const units::Unit &) { return units::one; },
-               [](const auto &range) { return numeric::is_linspace(range); }};
+constexpr auto islinspace = overloaded{
+    arg_list<span<const double>, span<const float>, span<const time_point>>,
+    transform_flags::expect_no_variance_arg<0>,
+    [](const units::Unit &) { return units::one; },
+    [](const auto &range) { return numeric::islinspace(range); }};
 
 constexpr auto zip = overloaded{
     arg_list<int64_t, int32_t>, transform_flags::expect_no_variance_arg<0>,

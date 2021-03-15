@@ -15,6 +15,13 @@ namespace py = pybind11;
 
 namespace {
 
+Dimensions dict_to_dims(const py::dict &map) {
+  Dimensions dims;
+  for (const auto &item : map)
+    dims.addInner(item.first.cast<Dim>(), item.second.cast<scipp::index>());
+  return dims;
+}
+
 template <class T> void bind_broadcast(py::module &m) {
   m.def(
       "broadcast",
@@ -40,12 +47,33 @@ template <class T> void bind_concatenate(py::module &m) {
 template <class T> void bind_reshape(pybind11::module &mod) {
   mod.def(
       "reshape",
-      [](const T &self, const std::vector<Dim> &labels,
-         const py::tuple &shape) {
-        Dimensions dims(labels, shape.cast<std::vector<scipp::index>>());
-        return reshape(self, dims);
+      [](const T &self, const py::dict &sizes) {
+        const auto new_dims = dict_to_dims(sizes);
+        py::gil_scoped_release release; // release only *after* using py::cast
+        return reshape(self, new_dims);
       },
-      py::arg("x"), py::arg("dims"), py::arg("shape"));
+      py::arg("x"), py::arg("sizes"));
+}
+
+template <class T> void bind_fold(pybind11::module &mod) {
+  mod.def(
+      "fold",
+      [](const T &self, const Dim dim, const py::dict &sizes) {
+        const auto new_dims = dict_to_dims(sizes);
+        py::gil_scoped_release release; // release only *after* using py::cast
+        return fold(self, dim, new_dims);
+      },
+      py::arg("x"), py::arg("dim"), py::arg("sizes"));
+}
+
+template <class T> void bind_flatten(pybind11::module &mod) {
+  mod.def(
+      "flatten",
+      [](const T &self, const std::vector<Dim> &dims, const Dim &to) {
+        return flatten(self, dims, to);
+      },
+      py::arg("x"), py::arg("dims"), py::arg("to"),
+      py::call_guard<py::gil_scoped_release>());
 }
 
 template <class T> void bind_transpose(pybind11::module &mod) {
@@ -65,6 +93,14 @@ void init_shape(py::module &m) {
   bind_concatenate<Dataset>(m);
   bind_reshape<Variable>(m);
   bind_reshape<VariableView>(m);
+  bind_fold<Variable>(m);
+  bind_fold<VariableView>(m);
+  bind_fold<DataArray>(m);
+  bind_fold<DataArrayView>(m);
+  bind_flatten<Variable>(m);
+  bind_flatten<VariableView>(m);
+  bind_flatten<DataArray>(m);
+  bind_flatten<DataArrayView>(m);
   bind_transpose<Variable>(m);
   bind_transpose<VariableView>(m);
 }

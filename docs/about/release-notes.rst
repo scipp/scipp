@@ -10,11 +10,15 @@ Features
 ~~~~~~~~
 
 * Add ``sizes`` properties, an ordered ``dict`` to lookup the size of a specific dimension `#1636 <https://github.com/scipp/scipp/pull/1636>`_.
+* Add access to data, coords, attrs, and masks of bins via the ``bins`` property, e.g., ``obj.bins.coords['x']`` `#1752 <https://github.com/scipp/scipp/pull/1752>`_.
 * Add more functions for data arrays that were previously available only for variables `#1638 <https://github.com/scipp/scipp/pull/1638>`_ `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
 * Add named versions of operators such as ``logical_and`` `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
+* Add ``to_unit`` to converter variables, e.g., between ``m`` and ``mm`` `#1756 <https://github.com/scipp/scipp/pull/1756>`_.
 * Add modulo operations `#1660 <https://github.com/scipp/scipp/pull/1660>`_.
 * Add scaling operations for Variables of type ``vector_3_float64``.
-* ``sum`` and ``mean`` implemented for Variables of type ``vector_3_float64``. 
+* ``sum`` and ``mean`` implemented for Variables of type ``vector_3_float64``.
+* Add ``fold`` and ``flatten`` which allow to reshape dimensions of a Variable or DataArray `#1676 <https://github.com/scipp/scipp/pull/1676>`_.
+* It is now possible to reshape a Variable also with ``sc.reshape(var, sizes={'x': 2, 'y': 3})``, in addition to ``sc.reshape(var, dims=['x', 'y'], shape=(2, 3))``.
 * Add ``ones`` and ``empty`` creation functions, similar to what is known from numpy `#1732 <https://github.com/scipp/scipp/pull/1732>`_.
 * ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
 * ``scipp.neutron`` (now ``scippneutron``)
@@ -22,15 +26,26 @@ Features
   * Support unit conversion to energy transfer, for inelastic TOF experiments `#1635 <https://github.com/scipp/scipp/pull/1635>`_.
   * Support loading/converting Mantid ``WorkspaceGroup``, this will produce a ``dict`` of data arrays `#1654 <https://github.com/scipp/scipp/pull/1654>`_.
   * Fixes to support loading/converting ``McStasNexus`` files `#1659 <https://github.com/scipp/scipp/pull/1659>`_.
+* ``isclose`` added (``is_approx`` removed). Fuzzy data comparison ``isclose`` is an analogue to numpy's ``isclose``
+* ``stddevs`` added `#1762 <https://github.com/scipp/scipp/pull/1762>`_.
+
+* Support for datetime
+
+  * ``sc.dtype.datetime64`` with copy-less casting between numpy and scipp where possible. `#1639 <https://github.com/scipp/scipp/pull/1639>`_
+  * Binning with datetime edges `#1739 <https://github.com/scipp/scipp/pull/1739>`_
 
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
 * The ``plot`` module has been renamed to ``plotting``, and plotting is now achieved via ``sc.plot(data)``. Wrapper functions ``superplot``, ``image``, and ``scatter3d`` have been dropped `#1696 <https://github.com/scipp/scipp/pull/1696>`_.
+* Properties ``dim``, ``begin``, ``end``, and ``data`` of the ``bins`` property of and object are now accessible as a dict via ``obj.bins.constituents``.
 * ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
 * ``scipp.neutron`` (now ``scippneutron``)
-
-  * Removed support for facility-specific ``convert_with_calibration`` and ``load_calibration``
+* ``is_equal`` renamed ``identical``
+* ``is_linspace`` renamed ``islinspace``
+* ``is_sorted`` renamed ``issorted``
+* ``is_approx`` superseded by ``isclose``. ``is_approx`` removed.
+* Removed support for facility-specific ``convert_with_calibration`` and ``load_calibration``
 
 Contributors
 ~~~~~~~~~~~~

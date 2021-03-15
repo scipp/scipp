@@ -79,9 +79,9 @@ class SciPlot:
         if (self.ndim > view_ndims) or ((vmin is not None) and
                                         (vmax is not None)):
             self.extend_cmap = "both"
-        elif (vmin is not None):
+        elif vmin is not None:
             self.extend_cmap = "min"
-        elif (vmax is not None):
+        elif vmax is not None:
             self.extend_cmap = "max"
 
         # Scan the input data and collect information

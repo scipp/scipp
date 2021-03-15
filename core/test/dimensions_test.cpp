@@ -4,6 +4,8 @@
 
 #include <type_traits>
 
+#include "test_macros.h"
+
 #include "scipp/core/dimensions.h"
 #include "scipp/core/except.h"
 
@@ -29,27 +31,27 @@ TEST(DimensionsTest, count_and_volume) {
   Dimensions dims;
   EXPECT_EQ(dims.shape().size(), 0);
   EXPECT_EQ(dims.volume(), 1);
-  dims.add(Dim::Tof, 3);
+  dims.add(Dim::X, 3);
   EXPECT_EQ(dims.shape().size(), 1);
   EXPECT_EQ(dims.volume(), 3);
-  dims.add(Dim::Q, 2);
+  dims.add(Dim::Y, 2);
   EXPECT_EQ(dims.shape().size(), 2);
   EXPECT_EQ(dims.volume(), 6);
 }
 
 TEST(DimensionsTest, offset_from_list_init) {
   // Leftmost is outer dimension, rightmost is inner dimension.
-  Dimensions dims{{Dim::Q, 2}, {Dim::Tof, 3}};
-  EXPECT_EQ(dims.offset(Dim::Tof), 1);
-  EXPECT_EQ(dims.offset(Dim::Q), 3);
+  Dimensions dims{{Dim::Y, 2}, {Dim::X, 3}};
+  EXPECT_EQ(dims.offset(Dim::X), 1);
+  EXPECT_EQ(dims.offset(Dim::Y), 3);
 }
 
 TEST(DimensionsTest, offset) {
   Dimensions dims;
-  dims.add(Dim::Tof, 3);
-  dims.add(Dim::Q, 2);
-  EXPECT_EQ(dims.offset(Dim::Tof), 1);
-  EXPECT_EQ(dims.offset(Dim::Q), 3);
+  dims.add(Dim::X, 3);
+  dims.add(Dim::Y, 2);
+  EXPECT_EQ(dims.offset(Dim::X), 1);
+  EXPECT_EQ(dims.offset(Dim::Y), 3);
 }
 
 TEST(DimensionsTest, erase) {
@@ -80,17 +82,17 @@ TEST(DimensionsTest, erase_inner) {
 
 TEST(DimensionsTest, contains_other) {
   Dimensions a;
-  a.add(Dim::Tof, 3);
-  a.add(Dim::Q, 2);
+  a.add(Dim::X, 3);
+  a.add(Dim::Y, 2);
 
   EXPECT_TRUE(a.contains(Dimensions{}));
   EXPECT_TRUE(a.contains(a));
-  EXPECT_TRUE(a.contains(Dimensions(Dim::Q, 2)));
-  EXPECT_FALSE(a.contains(Dimensions(Dim::Q, 3)));
+  EXPECT_TRUE(a.contains(Dimensions(Dim::Y, 2)));
+  EXPECT_FALSE(a.contains(Dimensions(Dim::Y, 3)));
 
   Dimensions b;
-  b.add(Dim::Q, 2);
-  b.add(Dim::Tof, 3);
+  b.add(Dim::Y, 2);
+  b.add(Dim::X, 3);
   // Order does not matter.
   EXPECT_TRUE(a.contains(b));
 }
@@ -212,11 +214,12 @@ TEST(DimensionsTest, merge_overlapping) {
 
 TEST(DimensionsTest, merge_different_order) {
   // The implementation "favors" the order of the first argument if both
-  // inputs have the same number of dimension. Tranposing is avoided where
+  // inputs have the same number of dimension. Transposing is avoided where
   // possible, which is crucial for accumulate performance.
   Dimensions x(Dim::X, 2);
   Dimensions yx({Dim::Y, Dim::X}, {3, 2});
   Dimensions xy({Dim::X, Dim::Y}, {2, 3});
+  Dimensions xz({Dim::X, Dim::Z}, {2, 1});
   Dimensions xyz({Dim::X, Dim::Y, Dim::Z}, {2, 3, 1});
   Dimensions xzy({Dim::X, Dim::Z, Dim::Y}, {2, 1, 3});
   Dimensions zxy({Dim::Z, Dim::X, Dim::Y}, {1, 2, 3});
@@ -226,12 +229,30 @@ TEST(DimensionsTest, merge_different_order) {
   EXPECT_EQ(merge(xy, xyz), xyz);
   EXPECT_EQ(merge(xy, xzy), xzy); // no y-z transpose
   EXPECT_EQ(merge(xy, zxy), zxy);
+  EXPECT_EQ(merge(xz, xyz), xyz);
 }
 
 TEST(DimensionsTest, merge_size_fail) {
   Dimensions a(Dim::X, 2);
   Dimensions b({Dim::Y, Dim::X}, {3, 4});
-  EXPECT_THROW(merge(a, b), except::DimensionError);
+  EXPECT_THROW_DISCARD(merge(a, b), except::DimensionError);
+}
+
+TEST(DimensionsTest, intersection) {
+  Dimensions x(Dim::X, 2);
+  Dimensions y(Dim::Y, 3);
+  Dimensions yx({Dim::Y, Dim::X}, {3, 2});
+  Dimensions xy({Dim::X, Dim::Y}, {2, 3});
+  Dimensions yz({Dim::Y, Dim::Z}, {3, 1});
+  Dimensions xyz({Dim::X, Dim::Y, Dim::Z}, {2, 3, 1});
+  Dimensions xzy({Dim::X, Dim::Z, Dim::Y}, {2, 1, 3});
+  Dimensions zxy({Dim::Z, Dim::X, Dim::Y}, {1, 2, 3});
+  EXPECT_EQ(intersection(x, xy), x);
+  EXPECT_EQ(intersection(yx, xy), yx);
+  EXPECT_EQ(intersection(xy, xyz), xy);
+  EXPECT_EQ(intersection(yz, xyz), yz);
+  EXPECT_EQ(intersection(yx, xzy), yx);
+  EXPECT_EQ(intersection(x, y), Dimensions{});
 }
 
 TEST(DimensionsTest, index) {
@@ -245,15 +266,16 @@ TEST(DimensionsTest, index) {
 TEST(DimensionsTest, transpose_0d) {
   Dimensions dims;
   EXPECT_EQ(transpose(dims), dims);
-  EXPECT_THROW(transpose(dims, {Dim::X}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(dims, {Dim::X}), except::DimensionError);
 }
 
 TEST(DimensionsTest, transpose_1d) {
   Dimensions dims(Dim::X, 2);
   EXPECT_EQ(transpose(dims), dims);
   EXPECT_EQ(transpose(dims, {Dim::X}), dims);
-  EXPECT_THROW(transpose(dims, {Dim::Y}), except::DimensionError);
-  EXPECT_THROW(transpose(dims, {Dim::X, Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(dims, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(dims, {Dim::X, Dim::Y}),
+                       except::DimensionError);
 }
 
 TEST(DimensionsTest, transpose_2d) {
@@ -262,10 +284,11 @@ TEST(DimensionsTest, transpose_2d) {
   EXPECT_EQ(transpose(dims), expected);
   EXPECT_EQ(transpose(dims, {Dim::X, Dim::Y}), dims); // no change
   EXPECT_EQ(transpose(dims, {Dim::Y, Dim::X}), expected);
-  EXPECT_THROW(transpose(dims, {Dim::X}), except::DimensionError);
-  EXPECT_THROW(transpose(dims, {Dim::X, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(transpose(dims, {Dim::X, Dim::Y, Dim::Z}),
-               except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(dims, {Dim::X}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(dims, {Dim::X, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(dims, {Dim::X, Dim::Y, Dim::Z}),
+                       except::DimensionError);
 }
 
 TEST(DimensionsTest, transpose_3d) {
@@ -276,5 +299,39 @@ TEST(DimensionsTest, transpose_3d) {
   EXPECT_EQ(transpose(xyz, {Dim::X, Dim::Y, Dim::Z}), xyz); // no change
   EXPECT_EQ(transpose(xyz, {Dim::Z, Dim::Y, Dim::X}), zyx);
   EXPECT_EQ(transpose(xyz, {Dim::Z, Dim::X, Dim::Y}), zxy);
-  EXPECT_THROW(transpose(xyz, {Dim::X, Dim::Z}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(xyz, {Dim::X, Dim::Z}),
+                       except::DimensionError);
+}
+
+TEST(DimensionsTest, fold) {
+  Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
+  Dimensions expected = {{Dim::Row, 2}, {Dim::Time, 3}, {Dim::Y, 4}};
+  EXPECT_EQ(fold(xy, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}}), expected);
+  EXPECT_EQ(fold(xy, Dim::Z, {{Dim::Row, 2}, {Dim::Time, 3}}), xy);
+}
+
+TEST(DimensionsTest, fold_into_3) {
+  Dimensions x = {{Dim::X, 24}};
+  Dimensions expected = {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}};
+  EXPECT_EQ(fold(x, Dim::X, expected), expected);
+}
+
+TEST(DimensionsTest, flatten) {
+  Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
+  Dimensions expected = {{Dim::Time, 24}};
+  EXPECT_EQ(flatten(xy, std::vector<Dim>{Dim::X, Dim::Y}, Dim::Time), expected);
+}
+
+TEST(DimensionsTest, flatten_non_contiguous) {
+  Dimensions xy = {{Dim::X, 2}, {Dim::Y, 3}, {Dim::Z, 4}};
+  EXPECT_THROW_MSG_DISCARD(
+      flatten(xy, std::vector<Dim>{Dim::X, Dim::Z}, Dim::Time),
+      except::DimensionError,
+      "Can only flatten a contiguous set of dimensions in the correct order");
+}
+
+TEST(DimensionsTest, round_trip) {
+  Dimensions xy = {{Dim::X, 6}, {Dim::Y, 4}};
+  Dimensions folded = fold(xy, Dim::X, {{Dim::Row, 2}, {Dim::Time, 3}});
+  EXPECT_EQ(flatten(folded, std::vector<Dim>{Dim::Row, Dim::Time}, Dim::X), xy);
 }
