@@ -201,3 +201,6 @@ class PlotFigure:
 
     def save_view(self, *args, **kwargs):
         self.toolbar.save_view()
+
+    def get_ax_attr(self, name, *args, **kwargs):
+        return getattr(self.ax, name)(*args, **kwargs)

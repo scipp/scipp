@@ -37,11 +37,13 @@ class PlotModel:
                  dim_to_shape=None,
                  dim_label_map=None):
 
+        self.interface = {}
+
         # The main container of DataArrays
         self.data_arrays = {}
         self.coord_info = {}
         self.dim_to_shape = dim_to_shape
-        self.offset = 0.
+        self.coord_offset = {}
 
         self.axformatter = {}
 
@@ -53,15 +55,18 @@ class PlotModel:
             # Store axis tick formatters
             self.axformatter[name] = {}
             self.coord_info[name] = {}
+            self.coord_offset[name] = {}
             coord_list = {}
 
             # Iterate through axes and collect coordinates
             for dim in axes_dims:
-                coord, formatter, label, unit = self._axis_coord_and_formatter(
+
+                coord, formatter, label, unit, offset = self._axis_coord_and_formatter(
                     dim, array, self.dim_to_shape[name], dim_label_map)
 
                 self.axformatter[name][dim] = formatter
                 self.coord_info[name][dim] = {"label": label, "unit": unit}
+                self.coord_offset[name][dim] = offset
 
                 is_histogram = False
                 for i, d in enumerate(coord.dims):
@@ -109,7 +114,7 @@ class PlotModel:
         contains_strings = False
         contains_vectors = False
         contains_datetime = False
-        # offset = 0.0
+        offset = 0.0
 
         has_no_coord = dim not in data_array.meta
         if not has_no_coord:
@@ -213,7 +218,7 @@ class PlotModel:
                 # # form.scaled[1 / (24. * 60.)] = ticker.FuncFormatter(
                 # #     self._date_tick_formatter)
 
-                form = self._date_tick_formatter(offset)
+                form = self._date_tick_formatter(offset, dim)
                 # form = None
                 formatter.update({
                     "linear": form,
@@ -225,7 +230,7 @@ class PlotModel:
             coord_label = name_with_unit(var=coord)
             coord_unit = name_with_unit(var=coord, name="")
 
-        return coord, formatter, coord_label, coord_unit
+        return coord, formatter, coord_label, coord_unit, offset
 
     def _vector_tick_formatter(self, array_values, size):
         """
@@ -243,11 +248,12 @@ class PlotModel:
         return lambda val, pos: array_values[int(val)] if (int(
             val) >= 0 and int(val) < size) else ""
 
-    def _date_tick_formatter(self, offset):
-        # def _date_tick_formatter(self, val, pos):
+    # def _date_tick_formatter(self, offset):
+    def _date_tick_formatter(self, offset, dim):
         """
         Format string ticks: find closest string in coordinate array.
         """
+
         # formatter = mpldates.AutoDateFormatter(locator)
         # return lambda val, pos: "" if val > 2.0e6 else formatter(val, pos)
         # return lambda val, pos: str(np.datetime64(val, 'ns'))
@@ -263,8 +269,20 @@ class PlotModel:
         # return str(np.datetime64(int(val) + int(self.offset), 'ns'))
         # # return lambda val, pos: str(int(val) + offset)
         # # return lambda val, pos: int(val)
-        return lambda val, pos: str(np.datetime64(
-            int(val) + int(offset), 'ns'))
+        def date_form(val, pos):
+            dt = np.datetime64(int(val) + int(offset), 'ns')
+            bounds = self.interface["get_view_bounds"](dim)
+            diff = bounds[1] - bounds[0]
+            if diff < 1e3:
+                return np.datetime_as_string(dt, unit='ns')[23:]
+            elif diff < 1e6:
+                return np.datetime_as_string(dt, unit='us')[20:]
+            elif diff < 1e9:
+                return np.datetime_as_string(dt, unit='ms')[17:]
+            elif diff < 86400*1e9:
+                return np.datetime_as_string(dt, unit='s')[11:]
+
+        return date_form
         # print()
         # return
 
@@ -375,3 +393,7 @@ class PlotModel:
 
     def update_profile_model(self, *args, **kwargs):
         return
+
+    def connect(self, callbacks):
+        for name, func in callbacks.items():
+            self.interface[name] = func

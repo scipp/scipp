@@ -131,3 +131,6 @@ class PlotView:
         Forward norm button update to the `figure`.
         """
         self.figure.update_norm_button(*args, **kwargs)
+
+    def get_ax_attr(self, name, *args, **kwargs):
+        return self.figure.get_ax_attr(name, *args, **kwargs)

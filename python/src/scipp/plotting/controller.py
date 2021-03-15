@@ -120,6 +120,7 @@ class PlotController:
 
         self.connect_widgets()
         self.connect_view()
+        self.connect_model()
         if self.panel is not None:
             self.connect_panel()
 
@@ -226,7 +227,7 @@ class PlotController:
                           figure_callbacks=figure_callbacks)
 
     def connect_model(self):
-        self.model.connect({"get_viewport_bounds": self.get_viewport_bounds})
+        self.model.connect({"get_view_bounds": self.get_view_bounds})
 
     def connect_panel(self):
         """
@@ -266,6 +267,11 @@ class PlotController:
 
     def save_view(self, button=None):
         self.view.save_view()
+
+    def get_view_bounds(self, dim):
+        bounds_map = {self.axes[key]: self.view.get_ax_attr("get_{}lim".format(key))
+                for key in self._get_xyz_axes()}
+        return bounds_map[dim]
 
     def find_vmin_vmax(self, button=None):
         """
@@ -642,3 +648,9 @@ class PlotController:
         in the widgets.
         """
         self.profile.toggle_hover_visibility(value)
+
+    def _dim_to_axis(self):
+        """
+        Make a map from dim to axis
+        """
+        return {self.axes[key]: key for key in self._get_xyz_axes()}
