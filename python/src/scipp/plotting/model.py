@@ -10,6 +10,7 @@ from .._scipp import core as sc
 import numpy as np
 from matplotlib import dates as mpldates
 import matplotlib.ticker as ticker
+import os
 
 
 class PlotModel:
@@ -40,6 +41,7 @@ class PlotModel:
         self.data_arrays = {}
         self.coord_info = {}
         self.dim_to_shape = dim_to_shape
+        self.offset = 0.
 
         self.axformatter = {}
 
@@ -107,7 +109,7 @@ class PlotModel:
         contains_strings = False
         contains_vectors = False
         contains_datetime = False
-        offset = 0.0
+        # offset = 0.0
 
         has_no_coord = dim not in data_array.meta
         if not has_no_coord:
@@ -242,18 +244,29 @@ class PlotModel:
             val) >= 0 and int(val) < size) else ""
 
     def _date_tick_formatter(self, offset):
+        # def _date_tick_formatter(self, val, pos):
         """
         Format string ticks: find closest string in coordinate array.
         """
         # formatter = mpldates.AutoDateFormatter(locator)
         # return lambda val, pos: "" if val > 2.0e6 else formatter(val, pos)
         # return lambda val, pos: str(np.datetime64(val, 'ns'))
-        print(offset)
-        print(np.datetime64(int(offset), 'ns'))
-        # return lambda val, pos: str(np.datetime64(int(val), 'ns'))
-        # return lambda val, pos: str(int(val) + offset)
-        # return lambda val, pos: int(val)
-        return lambda val, pos: str(np.datetime64(int(val) + offset, 'ns'))
+        # os.write(1, ('got to here 1\n').encode())
+        # os.write(1, (str(self.offset) + '\n').encode())
+        # os.write(1, ('got to here 2\n').encode())
+        # os.write(1,
+        #          (str(np.datetime64(int(self.offset), 'ns')) + '\n').encode())
+        # os.write(1, ('got to here 3\n').encode())
+        # os.write(1, (str(np.datetime64(int(val) + int(self.offset), 'ns')) +
+        #              '\n').encode())
+        # os.write(1, ('got to here 4\n').encode())
+        # return str(np.datetime64(int(val) + int(self.offset), 'ns'))
+        # # return lambda val, pos: str(int(val) + offset)
+        # # return lambda val, pos: int(val)
+        return lambda val, pos: str(np.datetime64(
+            int(val) + int(offset), 'ns'))
+        # print()
+        # return
 
     # def _date_tick_formatter(self, x, pos=None):
     #     x = mpldates.num2date(x)
