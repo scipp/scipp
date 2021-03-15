@@ -30,6 +30,31 @@ stages:
         variables:
           - group: tokens
         steps:
+          - bash: |
+              echo "##vso[task.prependpath]$CONDA/bin"
+              echo "##vso[task.setvariable variable=conda_dir]$CONDA"
+            displayName: 'Configure Conda'
+          - bash: |
+              set -ex
+              conda --version
+              conda install -c conda-forge --yes anaconda-client=1.5.5
+              conda config --set always_yes yes --set changeps1 no
+            displayName: 'Install anaconda-client'
+          - ${{ each package in parameters.package_list }}:
+            - task: DownloadBuildArtifacts@0
+              inputs:
+                buildType: 'current'
+                specificBuildWithTriggering: true
+                downloadType: 'single'
+                artifactName: ${{ package.Key }}
+                downloadPath: '$(Build.StagingDirectory)/packages'
+              displayName: 'Retrieve built conda package'
+            - bash: |
+                anaconda -t '$ANACONDA_TOKEN' upload --user scipp --label ${{ parameters.label }} '$(Build.StagingDirectory)/packages/${{ package.Key }}/'scipp-*.tar.bz2
+              env:
+                ANACONDA_TOKEN: $(anaconda_token_secret)
+              displayName: 'Deploy ${{ package.Key }}'
+
           # - task: DownloadBuildArtifacts@0
           #   inputs:
           #     buildType: 'current'
@@ -93,28 +118,5 @@ stages:
           #     git push --force-with-lease
           #     git status
           #   displayName: 'Push to GitHub Pages'
-          - bash: |
-              echo "##vso[task.prependpath]$CONDA/bin"
-              echo "##vso[task.setvariable variable=conda_dir]$CONDA"
-            displayName: 'Configure Conda'
-          - bash: |
-              set -ex
-              conda --version
-              conda install -c conda-forge --yes anaconda-client=1.5.5
-              conda config --set always_yes yes --set changeps1 no
-            displayName: 'Install anaconda-client'
-          - ${{ each package in parameters.package_list }}:
-            - task: DownloadBuildArtifacts@0
-              inputs:
-                buildType: 'current'
-                specificBuildWithTriggering: true
-                downloadType: 'single'
-                artifactName: ${{ package.Key }}
-                downloadPath: '$(Build.StagingDirectory)/packages'
-              displayName: 'Retrieve built conda package'
-            - bash: |
-                anaconda -t '$ANACONDA_TOKEN' upload --user scipp --label ${{ parameters.label }} '$(Build.StagingDirectory)/packages/${{ package.Key }}/'scipp-*.tar.bz2
-              env:
-                ANACONDA_TOKEN: $(anaconda_token_secret)
-              displayName: 'Deploy ${{ package.Key }}'
+          
 
