@@ -37,7 +37,7 @@ stages:
           - bash: |
               set -ex
               conda --version
-              conda install -c conda-forge --yes anaconda-client=1.5.5
+              conda install -c conda-forge --yes anaconda-client
               conda config --set always_yes yes --set changeps1 no
             displayName: 'Install anaconda-client'
           - ${{ each package in parameters.package_list }}:
@@ -118,5 +118,3 @@ stages:
           #     git push --force-with-lease
           #     git status
           #   displayName: 'Push to GitHub Pages'
-          
-
