@@ -36,7 +36,7 @@ jobs:
         - powershell: |
             Write-Host "##vso[task.prependpath]$env:CONDA\Scripts"
             Write-Host "##vso[task.setvariable variable=conda_dir]$env:CONDA"
-          displayName: 'Configure Conda directories'
+          displayName: 'Configure Conda'
 
       - ${{ if not(contains(parameters.image, 'windows')) }}:
         - bash: |
@@ -55,9 +55,13 @@ jobs:
           conda install --yes conda-build
           conda config --set always_yes yes --set changeps1 no
         displayName: 'Install Conda'
+      - bash: |
+          set -ex
+          echo $OSX_VERSION $CONDA $CONDA_PREFIX $PYTHONPATH
+        displayName: 'Print variables'
       - bash: ./tools/make_and_install.sh
         env:
-          CONDA_PREFIX: $(CONDA_PREFIX)
+          CONDA_PREFIX: $CONDA_PREFIX
         displayName: 'Make and Install'
       - bash: |
           conda build --channel conda-forge --python=${{ parameters.py_version }} --no-anaconda-upload ./conda
