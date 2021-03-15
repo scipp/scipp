@@ -94,7 +94,7 @@ class PlotController:
 
                 # The limits for each dimension
                 self.xlims[key][dim] = find_limits(coord,
-                                                   flip=sc.is_sorted(
+                                                   flip=sc.issorted(
                                                        coord,
                                                        dim,
                                                        order='descending'))

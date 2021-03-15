@@ -66,11 +66,11 @@ template <typename T> void bind_sort_dim(py::module &m) {
       py::call_guard<py::gil_scoped_release>());
 }
 
-void bind_is_sorted(py::module &m) {
+void bind_issorted(py::module &m) {
   m.def(
-      "is_sorted",
+      "issorted",
       [](const VariableConstView &x, const Dim dim, const std::string &order) {
-        return is_sorted(x, dim, get_sort_order(order));
+        return issorted(x, dim, get_sort_order(order));
       },
       py::arg("x"), py::arg("dim"), py::arg("order") = "ascending",
       py::call_guard<py::gil_scoped_release>(),
@@ -113,7 +113,7 @@ void init_operations(py::module &m) {
   bind_sort_dim<Dataset>(m);
 
   bind_sort_variable<Variable>(m);
-  bind_is_sorted(m);
+  bind_issorted(m);
 
   m.def("get_slice_params",
         [](const VariableConstView &var, const VariableConstView &coord,

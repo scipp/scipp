@@ -15,13 +15,13 @@ linspace(const VariableConstView &start, const VariableConstView &stop,
          const Dim dim, const scipp::index num);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-is_linspace(const VariableConstView &var, const Dim dim);
+islinspace(const VariableConstView &var, const Dim dim);
 
 enum class SCIPP_VARIABLE_EXPORT SortOrder { Ascending, Descending };
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT bool
-is_sorted(const VariableConstView &x, const Dim dim,
-          const SortOrder order = SortOrder::Ascending);
+issorted(const VariableConstView &x, const Dim dim,
+         const SortOrder order = SortOrder::Ascending);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 zip(const VariableConstView &first, const VariableConstView &second);
