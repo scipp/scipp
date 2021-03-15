@@ -48,7 +48,7 @@ jobs:
     displayName: 'Can Install and Import - Mac OS'
     timeoutInMinutes: 10
     pool:
-      vmImage: 'macOS-10.14'
+      vmImage: 'macOS-10.15'
     variables:
       packages_dir: '$(Build.StagingDirectory)/packages'
     steps:
