@@ -123,6 +123,7 @@ def isclose(x, y, rtol=None, atol=None, equal_nan=False):
     be within the computed tolerance limits. That is:
 
     .. code-block:: python
+
         abs(x.value - y.value) <= atol + rtol * abs(y.value) and abs(
             sqrt(x.variance) - sqrt(y.variance)) \
                 <= atol + rtol * abs(sqrt(y.variance))

@@ -54,6 +54,7 @@ General
    slices
    sort
    sqrt
+   stddevs
    to_unit
    values
    variances

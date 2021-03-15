@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # @author Simon Heybrock
+import pytest
 import numpy as np
 import scipp as sc
 
@@ -67,3 +68,23 @@ def test_numpy_self_assign_shift_2d_flip_second():
     var['y', 1:3]['x', 1:3].values = np.flip(var['y', 0:2]['x', 0:2].values,
                                              axis=1)
     assert sc.identical(var, expected)
+
+
+a = np.arange(2)
+var = sc.Variable(dims=['x'], values=a)
+arr = sc.DataArray(var)
+ds = sc.Dataset({'a': arr})
+
+
+@pytest.mark.parametrize("obj",
+                         [var, var['x', :], arr, arr['x', :], ds, ds['x', :]])
+def test__array_ufunc___disabled(obj):
+    with pytest.raises(TypeError, match="does not support ufuncs"):
+        obj + a
+    with pytest.raises(TypeError, match="unsupported operand type"):
+        a * obj
+    with pytest.raises(TypeError, match="does not support ufuncs"):
+        obj += a
+    with pytest.raises(TypeError, match="does not support ufuncs"):
+        b = np.arange(2)
+        b += obj

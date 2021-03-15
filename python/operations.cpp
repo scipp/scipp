@@ -115,20 +115,6 @@ void init_operations(py::module &m) {
   bind_sort_variable<Variable>(m);
   bind_issorted(m);
 
-  m.def("values", variable::values,
-        Docstring()
-            .description("Return the variable without variances.")
-            .seealso(":py:func:`scipp.variances`")
-            .c_str(),
-        py::call_guard<py::gil_scoped_release>());
-  m.def("variances", variable::variances,
-        Docstring()
-            .description("Return variable containing the variances of the "
-                         "input as values.")
-            .seealso(":py:func:`scipp.values`")
-            .c_str(),
-        py::call_guard<py::gil_scoped_release>());
-
   m.def("get_slice_params",
         [](const VariableConstView &var, const VariableConstView &coord,
            const VariableConstView &begin, const VariableConstView &end) {

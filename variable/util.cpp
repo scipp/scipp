@@ -46,13 +46,6 @@ Variable islinspace(const VariableConstView &var, const Dim dim) {
                    "islinspace");
 }
 
-Variable values(const VariableConstView &x) {
-  return transform(x, element::values);
-}
-Variable variances(const VariableConstView &x) {
-  return transform(x, element::variances);
-}
-
 /// Return true if variable values are sorted along given dim.
 ///
 /// If `order` is SortOrder::Ascending, checks if values are non-decreasing.

@@ -47,28 +47,6 @@ std::vector<ssize_t> numpy_strides(const std::vector<scipp::index> &s) {
   return strides;
 }
 
-template <class T> struct MakePyBufferInfoT {
-  static py::buffer_info apply(VariableView &view) {
-    const auto &dims = view.dims();
-    return py::buffer_info(
-        view.template values<T>().data(), /* Pointer to buffer */
-        sizeof(T),                        /* Size of one scalar */
-        py::format_descriptor<
-            std::conditional_t<std::is_same_v<T, bool>, bool, T>>::
-            format(),              /* Python struct-style format descriptor */
-        scipp::size(dims.shape()), /* Number of dimensions */
-        dims.shape(),              /* Buffer dimensions */
-        numpy_strides<T>(view.strides()) /* Strides (in bytes) for each index */
-    );
-  }
-};
-
-inline py::buffer_info make_py_buffer_info(VariableView &view) {
-  return core::CallDType<double, float, int64_t, int32_t,
-                         scipp::core::time_point,
-                         bool>::apply<MakePyBufferInfoT>(view.dtype(), view);
-}
-
 template <class... Ts> class as_ElementArrayViewImpl;
 
 class DataAccessHelper {
