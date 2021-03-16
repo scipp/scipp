@@ -9,52 +9,100 @@ using namespace scipp;
 using namespace scipp::variable;
 using namespace scipp::units;
 
-template <typename T> class IsApproxTest : public ::testing::Test {};
+template <typename T> class IsCloseTest : public ::testing::Test {};
 using TestTypes = ::testing::Types<double, float, int64_t, int32_t>;
 
-TYPED_TEST_SUITE(IsApproxTest, TestTypes);
+TYPED_TEST_SUITE(IsCloseTest, TestTypes);
 
-TYPED_TEST(IsApproxTest, when_variable_equal) {
+TYPED_TEST(IsCloseTest, atol_when_variable_equal) {
   const auto a = makeVariable<TypeParam>(Values{1});
-  EXPECT_EQ(is_approx(a, a, makeVariable<TypeParam>(Values{1})),
-            true * units::one);
+  const auto rtol = makeVariable<TypeParam>(Values{0});
+  const auto atol = makeVariable<TypeParam>(Values{1});
+  EXPECT_EQ(isclose(a, a, rtol, atol), true * units::one);
 }
 
-TYPED_TEST(IsApproxTest, when_variables_within_tolerance) {
+TYPED_TEST(IsCloseTest, atol_when_variables_within_tolerance) {
   const auto a = makeVariable<TypeParam>(Values{0});
   const auto b = makeVariable<TypeParam>(Values{1});
-  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{1})),
-            true * units::one);
+  const auto rtol = makeVariable<TypeParam>(Values{0});
+  const auto atol = makeVariable<TypeParam>(Values{1});
+  EXPECT_EQ(isclose(a, b, rtol, atol), true * units::one);
 }
-TYPED_TEST(IsApproxTest, when_variables_outside_tolerance) {
+
+TYPED_TEST(IsCloseTest, atol_when_variables_outside_tolerance) {
   const auto a = makeVariable<TypeParam>(Values{0});
   const auto b = makeVariable<TypeParam>(Values{2});
-  EXPECT_EQ(is_approx(a, b, makeVariable<TypeParam>(Values{1})),
+  const auto rtol = makeVariable<TypeParam>(Values{0});
+  const auto atol = makeVariable<TypeParam>(Values{1});
+  EXPECT_EQ(isclose(a, b, rtol, atol), false * units::one);
+}
+
+TYPED_TEST(IsCloseTest, rtol_when_variables_within_tolerance) {
+  const auto a = makeVariable<TypeParam>(Values{8});
+  const auto b = makeVariable<TypeParam>(Values{9});
+  // tol = atol + rtol * b = 1
+  const auto rtol = makeVariable<double>(Values{1.0 / 9});
+  const auto atol = makeVariable<TypeParam>(Values{0});
+  EXPECT_EQ(isclose(a, b, rtol, atol), true * units::one);
+}
+TYPED_TEST(IsCloseTest, rtol_when_variables_outside_tolerance) {
+  const auto a = makeVariable<TypeParam>(Values{7});
+  const auto b = makeVariable<TypeParam>(Values{9});
+  // tol = atol + rtol * b = 1
+  const auto rtol = makeVariable<double>(Values{1.0 / 9});
+  const auto atol = makeVariable<TypeParam>(Values{0});
+  EXPECT_EQ(isclose(a, b, rtol, atol), false * units::one);
+}
+
+TEST(IsCloseTest, works_for_counts) {
+  const auto a = makeVariable<double>(Values{1}, Variances{1}, units::counts);
+  const auto rtol = 1e-5 * units::one;
+  const auto atol = 0.0 * units::counts;
+  EXPECT_NO_THROW_DISCARD(isclose(a, a, rtol, atol));
+}
+
+TEST(IsCloseTest, compare_variances_only) {
+  // Tests setup so that value comparison does not affect output (a, b value
+  // same)
+  const auto a = makeVariable<double>(Values{10.0}, Variances{0.0});
+  const auto b = makeVariable<double>(Values{10.0}, Variances{1.0});
+  EXPECT_EQ(isclose(a, b, makeVariable<double>(Values{0.0}),
+                    makeVariable<double>(Values{1.0})),
+            true * units::one);
+  EXPECT_EQ(isclose(a, b, makeVariable<double>(Values{0.0}),
+                    makeVariable<double>(Values{0.9})),
             false * units::one);
 }
 
-TEST(IsApproxTest, variances_ignored) {
-  const auto a = makeVariable<double>(Values{10.0}, Variances{1.0});
-  EXPECT_TRUE(a.hasVariances());
-  auto out = is_approx(a, a, makeVariable<double>(Values{1}));
-  EXPECT_FALSE(out.hasVariances());
-}
+TEST(IsCloseTest, compare_values_and_variances) {
+  // Tests setup so that value comparison does not affect output (a, b value
+  // same)
+  const auto w = makeVariable<double>(Values{10.0}, Variances{0.0});
+  const auto x = makeVariable<double>(Values{9.0}, Variances{0.0});
+  const auto y = makeVariable<double>(Values{10.0}, Variances{1.0});
+  const auto z = makeVariable<double>(Values{9.0}, Variances{1.0});
+  // sanity check no mismatch
+  EXPECT_EQ(isclose(w, w, makeVariable<double>(Values{0.0}),
+                    makeVariable<double>(Values{0.9})),
+            true * units::one);
+  // mismatch value only
+  EXPECT_EQ(isclose(w, x, makeVariable<double>(Values{0.0}),
+                    makeVariable<double>(Values{0.9})),
+            false * units::one);
+  // mismatch variance only
+  EXPECT_EQ(isclose(w, y, makeVariable<double>(Values{0.0}),
+                    makeVariable<double>(Values{0.9})),
+            false * units::one);
+  // mismatch value and variance
+  EXPECT_EQ(isclose(w, z, makeVariable<double>(Values{0.0}),
+                    makeVariable<double>(Values{0.9})),
+            false * units::one);
 
-TEST(IsApproxTest, variable_units_not_same) {
-  auto a = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
-  a.setUnit(units::dimensionless);
-  auto b = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.0, 2.0});
-  b.setUnit(units::m);
-  auto t = makeVariable<double>(Values{0.1});
-  t.setUnit(a.unit());
-  // second and first argument have different units
-  EXPECT_THROW(is_approx(a, b, t), except::MismatchError<scipp::units::Unit>);
-  b.setUnit(a.unit());
-  t.setUnit(units::m);
-  // tolerance has difference units
-  EXPECT_THROW(is_approx(a, b, t), except::MismatchError<scipp::units::Unit>);
+  // same as above but looser tolerance
+  EXPECT_EQ(isclose(w, z, makeVariable<double>(Values{0.0}),
+                    makeVariable<double>(Values{1.0})),
+            true * units::one);
 }
-
 TEST(ComparisonTest, variances_test) {
   const auto a = makeVariable<float>(Values{1.0}, Variances{1.0});
   const auto b = makeVariable<float>(Values{2.0}, Variances{2.0});

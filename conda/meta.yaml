@@ -27,7 +27,6 @@ test:
   import:
     - scipp
   requires:
-    - beautifulsoup4
     - h5py
     - ipywidgets
     - matplotlib-base

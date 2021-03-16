@@ -11,6 +11,7 @@
 #include "scipp/units/unit.h"
 
 #include "arithmetic_parameters.h"
+#include "fix_typed_test_suite_warnings.h"
 
 using namespace scipp;
 using namespace scipp::core::element;

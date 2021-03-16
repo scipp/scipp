@@ -919,10 +919,12 @@ TEST(TransposeTest, make_transposed_2d) {
   EXPECT_EQ(transpose(var, {Dim::Y, Dim::X}), ref);
   EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::X}), ref);
 
-  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(transpose(constVar, {Dim::Y}), except::DimensionError);
-  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(transpose(var, {Dim::Z}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
 }
 
 TEST(TransposeTest, make_transposed_multiple_d) {
@@ -938,10 +940,12 @@ TEST(TransposeTest, make_transposed_multiple_d) {
   EXPECT_EQ(transpose(var, {Dim::Y, Dim::Z, Dim::X}), ref);
   EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::Z, Dim::X}), ref);
 
-  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(transpose(constVar, {Dim::Y}), except::DimensionError);
-  EXPECT_THROW(transpose(var, {Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(transpose(var, {Dim::Z}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
 }
 
 TEST(TransposeTest, reverse) {

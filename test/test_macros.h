@@ -60,3 +60,5 @@ bool equals(const T1 &a, const T2 &b, const Tol tolerance) {
 #define EXPECT_NO_THROW_DISCARD(expr) EXPECT_NO_THROW(static_cast<void>(expr))
 #define EXPECT_THROW_DISCARD(expr, type)                                       \
   EXPECT_THROW(static_cast<void>(expr), type)
+#define EXPECT_THROW_MSG_DISCARD(expr, type, msg)                              \
+  EXPECT_THROW_MSG(static_cast<void>(expr), type, msg)

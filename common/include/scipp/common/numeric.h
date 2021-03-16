@@ -12,7 +12,7 @@
 
 namespace scipp::numeric {
 
-template <class Range> bool is_linspace(const Range &range) {
+template <class Range> bool islinspace(const Range &range) {
   if (scipp::size(range) < 2)
     return false;
   if (range.back() <= range.front())

@@ -6,6 +6,7 @@
 #include "scipp/units/unit.h"
 
 #include "fix_typed_test_suite_warnings.h"
+#include "test_macros.h"
 
 using namespace scipp;
 using namespace scipp::core::element;
@@ -133,4 +134,68 @@ TYPED_TEST(ElementNanMaxTest, value_nan) {
   T x = NAN;
   nanmax_equals(y, x);
   EXPECT_EQ(y, 1);
+}
+
+template <typename T> class IsCloseTest : public ::testing::Test {};
+using IsCloseTestTypes = ::testing::Types<double, ValueAndVariance<double>>;
+TYPED_TEST_SUITE(IsCloseTest, IsCloseTestTypes);
+
+TYPED_TEST(IsCloseTest, value) {
+  TypeParam a = 1.0;
+  TypeParam b = 2.1;
+  EXPECT_TRUE(isclose(a, b, 1.2));
+  EXPECT_TRUE(isclose(a, b, 1.1));
+  EXPECT_FALSE(isclose(a, b, 1.0));
+}
+
+TYPED_TEST(IsCloseTest, value_not_equal_nans) {
+  EXPECT_FALSE(isclose(TypeParam(NAN), TypeParam(NAN), 1.e9));
+  EXPECT_FALSE(isclose(TypeParam(NAN), TypeParam(1.0), 1.e9));
+  EXPECT_FALSE(isclose(TypeParam(1.0), TypeParam(NAN), 1.e9));
+  EXPECT_FALSE(isclose(TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(isclose(TypeParam(1.0), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(isclose(TypeParam(INFINITY), TypeParam(1.0), 1.e9));
+  EXPECT_FALSE(isclose(-TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(isclose(-TypeParam(1.0), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(isclose(-TypeParam(INFINITY), -TypeParam(1.0), 1.e9));
+}
+
+TYPED_TEST(IsCloseTest, value_equal_nans) {
+  EXPECT_TRUE(isclose_equal_nan(TypeParam(NAN), TypeParam(NAN), 1.e9));
+  EXPECT_FALSE(isclose_equal_nan(TypeParam(NAN), TypeParam(1.0), 1.e9));
+  EXPECT_FALSE(isclose_equal_nan(TypeParam(1.0), TypeParam(NAN), 1.e9));
+}
+TYPED_TEST(IsCloseTest, value_equal_pos_infs) {
+  EXPECT_TRUE(
+      isclose_equal_nan(TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(isclose_equal_nan(TypeParam(1.0), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(isclose_equal_nan(TypeParam(INFINITY), TypeParam(1.0), 1.e9));
+}
+TYPED_TEST(IsCloseTest, value_equal_neg_infs) {
+  EXPECT_TRUE(
+      isclose_equal_nan(-TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(isclose_equal_nan(-TypeParam(1.0), -TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(isclose_equal_nan(-TypeParam(INFINITY), -TypeParam(1.0), 1.e9));
+}
+
+TYPED_TEST(IsCloseTest, value_equal_infs_signbit) {
+  EXPECT_FALSE(
+      isclose_equal_nan(-TypeParam(INFINITY), TypeParam(INFINITY), 1.e9));
+  EXPECT_FALSE(
+      isclose_equal_nan(TypeParam(INFINITY), -TypeParam(INFINITY), 1.e9));
+}
+
+template <class Op> void do_isclose_units_test(Op op) {
+  EXPECT_EQ(units::dimensionless, op(units::m, units::m, units::m));
+  EXPECT_THROW_DISCARD(op(units::m, units::m, units::s),
+                       except::UnitMismatchError);
+  EXPECT_THROW_DISCARD(op(units::m, units::s, units::m),
+                       except::UnitMismatchError);
+  EXPECT_THROW_DISCARD(op(units::s, units::m, units::m),
+                       except::UnitMismatchError);
+}
+
+TEST(IsCloseTest, units) {
+  do_isclose_units_test(isclose);
+  do_isclose_units_test(isclose_equal_nan);
 }

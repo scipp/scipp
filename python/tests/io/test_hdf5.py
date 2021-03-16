@@ -16,7 +16,7 @@ def roundtrip(obj):
 
 def check_roundtrip(obj):
     result = roundtrip(obj)
-    assert sc.is_equal(result, obj)
+    assert sc.identical(result, obj)
     return result  # for optional addition tests
 
 
@@ -162,13 +162,13 @@ def test_data_array_unsupported_PyObject_coord():
     obj = sc.Variable(value=dict())
     a = sc.DataArray(data=x, coords={'obj': obj})
     b = roundtrip(a)
-    assert not sc.is_equal(a, b)
+    assert not sc.identical(a, b)
     del a.coords['obj']
-    assert sc.is_equal(a, b)
+    assert sc.identical(a, b)
     a.attrs['obj'] = obj
-    assert not sc.is_equal(a, b)
+    assert not sc.identical(a, b)
     del a.attrs['obj']
-    assert sc.is_equal(a, b)
+    assert sc.identical(a, b)
 
 
 def test_dataset():
