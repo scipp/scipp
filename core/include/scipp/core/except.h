@@ -34,22 +34,26 @@ struct SCIPP_CORE_EXPORT TypeError : public Error<core::DType> {
       : TypeError{msg + ((to_string(vars.dtype()) + ' ') + ...)} {}
 };
 
-SCIPP_CORE_EXPORT TypeError mismatch_error(const core::DType &expected,
-                                           const core::DType &actual);
+template <>
+[[noreturn]] SCIPP_CORE_EXPORT void
+throw_mismatch_error(const core::DType &expected, const core::DType &actual);
 
 struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
   explicit DimensionError(const std::string &msg);
   DimensionError(scipp::index expectedDim, scipp::index userDim);
 };
 
-SCIPP_CORE_EXPORT DimensionError mismatch_error(
-    const core::Dimensions &expected, const core::Dimensions &actual);
+template <>
+[[noreturn]] SCIPP_CORE_EXPORT void
+throw_mismatch_error(const core::Dimensions &expected,
+                     const core::Dimensions &actual);
 
-SCIPP_CORE_EXPORT DimensionError
-dimension_not_found_error(const core::Dimensions &expected, Dim actual);
+[[noreturn]] SCIPP_CORE_EXPORT void
+throw_dimension_not_found_error(const core::Dimensions &expected, Dim actual);
 
-SCIPP_CORE_EXPORT DimensionError dimension_length_error(
-    const core::Dimensions &expected, Dim actual, scipp::index length);
+[[noreturn]] SCIPP_CORE_EXPORT void
+throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
+                             scipp::index length);
 
 struct SCIPP_CORE_EXPORT BinnedDataError : public std::runtime_error {
   using std::runtime_error::runtime_error;
@@ -88,13 +92,13 @@ template <class A, class B> void contains(const A &a, const B &b) {
 namespace scipp::core::expect {
 template <class A, class B> void equals(const A &a, const B &b) {
   if (a != b)
-    throw scipp::except::mismatch_error(a, b);
+    scipp::except::throw_mismatch_error(a, b);
 }
 
 template <class A, class B>
 void equals_any_of(const A &a, const std::initializer_list<B> possible) {
   if (std::find(possible.begin(), possible.end(), a) == possible.end())
-    throw scipp::except::MismatchError(a, possible);
+    scipp::except::throw_mismatch_error(a, possible);
 }
 
 SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,

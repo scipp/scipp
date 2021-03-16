@@ -7,9 +7,10 @@
 namespace scipp::except {
 UnitError::UnitError(const std::string &msg) : Error{msg} {}
 
-UnitError mismatch_error(const units::Unit &expected,
-                         const units::Unit &actual) {
-  return UnitError("Expected unit " + to_string(expected) + ", got " +
-                   to_string(actual) + '.');
+template <>
+void throw_mismatch_error(const units::Unit &expected,
+                          const units::Unit &actual) {
+  throw UnitError("Expected unit " + to_string(expected) + ", got " +
+                  to_string(actual) + '.');
 }
 } // namespace scipp::except

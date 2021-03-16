@@ -15,14 +15,8 @@ struct SCIPP_UNITS_EXPORT UnitError : public Error<units::Unit> {
   explicit UnitError(const std::string &msg);
 };
 
-SCIPP_UNITS_EXPORT UnitError mismatch_error(const units::Unit &expected,
-                                            const units::Unit &actual);
-
-//// We need deduction guides such that, e.g., the exception for a Variable
-//// mismatch and VariableView mismatch are the same type.
-// template <class T>
-// MismatchError(const units::Unit &, const T &) -> MismatchError<units::Unit>;
-// template <class T>
-// MismatchError(const units::Dim &, const T &) -> MismatchError<units::Dim>;
+template <>
+[[noreturn]] SCIPP_UNITS_EXPORT void
+throw_mismatch_error(const units::Unit &expected, const units::Unit &actual);
 
 } // namespace scipp::except

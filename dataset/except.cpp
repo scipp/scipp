@@ -9,18 +9,32 @@ namespace scipp::except {
 
 DataArrayError::DataArrayError(const std::string &msg) : Error{msg} {}
 
-DataArrayError mismatch_error(const dataset::DataArrayConstView &expected,
-                              const dataset::DataArrayConstView &actual) {
-  return DataArrayError("Expected DataArray " + to_string(expected) + ", got " +
-                        to_string(actual) + '.');
+template <>
+void throw_mismatch_error(const dataset::DataArrayConstView &expected,
+                          const dataset::DataArrayConstView &actual) {
+  throw DataArrayError("Expected DataArray " + to_string(expected) + ", got " +
+                       to_string(actual) + '.');
 }
 
 DatasetError::DatasetError(const std::string &msg) : Error{msg} {}
 
-DatasetError mismatch_error(const dataset::DatasetConstView &expected,
-                            const dataset::DatasetConstView &actual) {
-  return DatasetError("Expected Dataset " + to_string(expected) + ", got " +
-                      to_string(actual) + '.');
+template <>
+void throw_mismatch_error(const dataset::DatasetConstView &expected,
+                          const dataset::DatasetConstView &actual) {
+  throw DatasetError("Expected Dataset " + to_string(expected) + ", got " +
+                     to_string(actual) + '.');
+}
+
+CoordMismatchError::CoordMismatchError(
+    const std::pair<Dim, VariableConstView> &expected,
+    const std::pair<Dim, VariableConstView> &actual)
+    : DatasetError{"Mismatch in coordinate, expected " + to_string(expected) +
+                   ", got " + to_string(actual)} {}
+
+template <>
+void throw_mismatch_error(const std::pair<Dim, VariableConstView> &expected,
+                          const std::pair<Dim, VariableConstView> &actual) {
+  throw CoordMismatchError(expected, actual);
 }
 
 } // namespace scipp::except

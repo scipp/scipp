@@ -7,9 +7,10 @@
 namespace scipp::except {
 VariableError::VariableError(const std::string &msg) : Error{msg} {}
 
-VariableError mismatch_error(const variable::Variable &expected,
-                             const variable::Variable &actual) {
-  return VariableError("Expected Variable " + to_string(expected) + ", got " +
-                       to_string(actual) + '.');
+template <>
+void throw_mismatch_error(const variable::VariableConstView &expected,
+                          const variable::VariableConstView &actual) {
+  throw VariableError("Expected Variable " + to_string(expected) + ", got " +
+                      to_string(actual) + '.');
 }
 } // namespace scipp::except

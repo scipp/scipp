@@ -43,7 +43,7 @@ scipp::index Dimensions::at(const Dim dim) const {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
-  throw except::dimension_not_found_error(*this, dim);
+  except::throw_dimension_not_found_error(*this, dim);
 }
 
 /// Return a mutable reference to the extent of `dim`. Throws if the space
@@ -52,7 +52,7 @@ scipp::index &Dimensions::at(const Dim dim) {
   for (int32_t i = 0; i < m_ndim; ++i)
     if (m_dims[i] == dim)
       return m_shape[i];
-  throw except::dimension_not_found_error(*this, dim);
+  except::throw_dimension_not_found_error(*this, dim);
 }
 
 /// Return true if all dimensions of other contained in *this, ignoring order.
@@ -111,7 +111,7 @@ scipp::index Dimensions::offset(const Dim label) const {
       return offset;
     offset *= m_shape[i];
   }
-  throw except::dimension_not_found_error(*this, label);
+  except::throw_dimension_not_found_error(*this, label);
 }
 
 void Dimensions::resize(const Dim label, const scipp::index size) {
@@ -173,7 +173,7 @@ int32_t Dimensions::index(const Dim dim) const {
   for (int32_t i = 0; i < NDIM_MAX; ++i)
     if (m_dims[i] == dim)
       return i;
-  throw except::dimension_not_found_error(*this, dim);
+  except::throw_dimension_not_found_error(*this, dim);
 }
 
 /// Return the direct sum, i.e., the combination of dimensions in a and b.

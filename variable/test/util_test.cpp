@@ -20,7 +20,7 @@ TEST(LinspaceTest, dim_mismatch) {
 
 TEST(LinspaceTest, unit_mismatch) {
   EXPECT_THROW_DISCARD(linspace(1.0 * units::one, 4.0 * units::m, Dim::X, 4),
-                       except::UnitMismatchError);
+                       except::UnitError);
 }
 
 TEST(LinspaceTest, dtype_mismatch) {
