@@ -43,7 +43,7 @@ def isnear(x,
         x.coords) == len(y.coords)
     if not same_len:
         raise RuntimeError('Different number of items'
-                           f'in meta {len(x.meta)} {len(y.meta)}')
+                           f' in meta {len(x.meta)} {len(y.meta)}')
     for key, val in x.meta.items() if include_attrs else x.coords.items():
         a = x.meta[key] if include_attrs else x.coords[key]
         b = y.meta[key] if include_attrs else y.coords[key]
