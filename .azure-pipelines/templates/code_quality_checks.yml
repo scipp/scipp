@@ -6,13 +6,10 @@ stages:
       - job: 'cpp_checks'
         displayName: 'C++ Checks'
         pool:
-          vmImage: 'ubuntu-18.04'
+          vmImage: 'ubuntu-20.04'
         steps:
           - bash: |
               set -ex
-              wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-              sudo add-apt-repository --yes 'deb http://apt.llvm.org/bionic/ llvm-toolchain-bionic-10 main'
-              sudo apt-get update
               sudo apt-get install --yes clang-format-10
             displayName: 'Install tooling'
           - bash: |
@@ -27,8 +24,8 @@ stages:
             displayName: 'Run clang-format'
           - bash: |
               set -ex
-              #docker build ./tools -f ./tools/cppcheck.Dockerfile -t scipp_cppcheck
-              #docker run --rm -v "$PWD":/data scipp_cppcheck
+              docker build ./tools -f ./tools/cppcheck.Dockerfile -t scipp_cppcheck
+              docker run --rm -v "$PWD":/data scipp_cppcheck
             displayName: 'Run cppcheck'
 
       - job: 'cmake_checks'

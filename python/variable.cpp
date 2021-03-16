@@ -219,11 +219,10 @@ of variances.)");
       .def("__sizeof__",
            py::overload_cast<const VariableConstView &>(&size_of));
 
-  py::class_<VariableView, VariableConstView> variableView(
-      m, "VariableView", py::buffer_protocol(), R"(
+  py::class_<VariableView, VariableConstView> variableView(m, "VariableView",
+                                                           R"(
 View for Variable, representing a sliced or transposed view onto a variable;
 Mostly equivalent to Variable, see there for details.)");
-  variableView.def_buffer(&make_py_buffer_info);
   variableView.def(py::init<Variable &>())
       .def(
           "__radd__",
@@ -310,13 +309,13 @@ Mostly equivalent to Variable, see there for details.)");
         "Split a Variable along a given Dimension.");
 
   m.def(
-      "is_linspace",
+      "islinspace",
       [](const VariableConstView &x) {
         if (x.dims().ndim() != 1)
           throw scipp::except::VariableError(
-              "is_linspace can only be called on a 1D Variable.");
+              "islinspace can only be called on a 1D Variable.");
         else
-          return scipp::numeric::is_linspace(x.template values<double>());
+          return scipp::numeric::islinspace(x.template values<double>());
       },
       py::call_guard<py::gil_scoped_release>(),
       Docstring()

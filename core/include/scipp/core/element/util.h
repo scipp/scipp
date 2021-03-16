@@ -18,7 +18,7 @@
 #include "scipp/units/unit.h"
 
 namespace scipp::numeric {
-template <> inline bool is_linspace(const span<const core::time_point> &range) {
+template <> inline bool islinspace(const span<const core::time_point> &range) {
   if (scipp::size(range) < 2)
     return false;
   if (range.back() <= range.front())
@@ -93,7 +93,7 @@ constexpr auto stddevs = overloaded{
     },
     [](const units::Unit &u) { return u; }};
 
-constexpr auto is_sorted_common = overloaded{
+constexpr auto issorted_common = overloaded{
     core::element::arg_list<
         std::tuple<bool, double, double>, std::tuple<bool, float, float>,
         std::tuple<bool, int64_t, int64_t>, std::tuple<bool, int32_t, int32_t>,
@@ -105,21 +105,21 @@ constexpr auto is_sorted_common = overloaded{
       out = units::dimensionless;
     }};
 
-constexpr auto is_sorted_nondescending = overloaded{
-    is_sorted_common, [](bool &out, const auto &left, const auto &right) {
+constexpr auto issorted_nondescending = overloaded{
+    issorted_common, [](bool &out, const auto &left, const auto &right) {
       out = out && (left <= right);
     }};
 
-constexpr auto is_sorted_nonascending = overloaded{
-    is_sorted_common, [](bool &out, const auto &left, const auto &right) {
+constexpr auto issorted_nonascending = overloaded{
+    issorted_common, [](bool &out, const auto &left, const auto &right) {
       out = out && (left >= right);
     }};
 
-constexpr auto is_linspace = overloaded{
+constexpr auto islinspace = overloaded{
     arg_list<span<const double>, span<const float>, span<const time_point>>,
     transform_flags::expect_no_variance_arg<0>,
     [](const units::Unit &) { return units::one; },
-    [](const auto &range) { return numeric::is_linspace(range); }};
+    [](const auto &range) { return numeric::islinspace(range); }};
 
 constexpr auto zip = overloaded{
     arg_list<int64_t, int32_t>, transform_flags::expect_no_variance_arg<0>,

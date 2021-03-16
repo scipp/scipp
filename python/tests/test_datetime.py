@@ -96,7 +96,7 @@ def test_construct_0d_datetime_nounit():
     var.unit = sc.units.s
     value = np.datetime64(123, 's')
     var.value = value
-    assert sc.is_equal(var, sc.Variable(value=value))
+    assert sc.identical(var, sc.Variable(value=value))
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
@@ -104,7 +104,7 @@ def test_0d_datetime_setter(unit):
     initial, replacement = _make_datetimes(unit, 2)
     var = sc.Variable(value=initial)
     var.value = replacement
-    assert sc.is_equal(var, sc.Variable(value=replacement))
+    assert sc.identical(var, sc.Variable(value=replacement))
 
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
@@ -179,7 +179,7 @@ def test_construct_datetime_nounit():
     var.unit = sc.units.s
     values = np.array([np.datetime64(123, 's'), np.datetime64(456, 's')])
     var.values = values
-    assert sc.is_equal(var, sc.Variable(dims=['x'], values=values))
+    assert sc.identical(var, sc.Variable(dims=['x'], values=values))
 
 
 @pytest.mark.parametrize("unit", _UNIT_STRINGS)
@@ -188,7 +188,7 @@ def test_datetime_setter(unit):
     var = sc.Variable(dims=['x'], values=initial)
     var.values = replacement
     np.testing.assert_array_equal(var.values, replacement)
-    assert sc.is_equal(var, sc.Variable(dims=['x'], values=replacement))
+    assert sc.identical(var, sc.Variable(dims=['x'], values=replacement))
 
 
 @pytest.mark.parametrize("unit1,unit2", _mismatch_pairs(_UNIT_STRINGS))
@@ -204,19 +204,19 @@ def test_datetime_slicing(unit):
     values1, values2 = _make_arrays(unit, 2, minsize=4)
     var = sc.Variable(dims=['x'], values=values1)
     for i in range(len(values1)):
-        assert sc.is_equal(var['x', i], sc.Variable(value=values1[i]))
+        assert sc.identical(var['x', i], sc.Variable(value=values1[i]))
     for i in range(len(values1) - 2):
         for j in range(i + 1, len(values1)):
-            assert sc.is_equal(var['x', i:j],
-                               sc.Variable(dims=['x'], values=values1[i:j]))
+            assert sc.identical(var['x', i:j],
+                                sc.Variable(dims=['x'], values=values1[i:j]))
 
     for i in range(len(values1)):
         var['x', i] = values2[i] * sc.Unit(unit)
-    assert sc.is_equal(var, sc.Variable(dims=['x'], values=values2))
+    assert sc.identical(var, sc.Variable(dims=['x'], values=values2))
 
     var['x', 1:4] = sc.Variable(dims=['x'], values=values1[1:4])
     values2[1:4] = values1[1:4]
-    assert sc.is_equal(var, sc.Variable(dims=['x'], values=values2))
+    assert sc.identical(var, sc.Variable(dims=['x'], values=values2))
 
 
 def test_datetime_operations():

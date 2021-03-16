@@ -40,10 +40,10 @@ def test_isclose_rtol_defaults():
     assert sc.all(sc.isclose(a, a, atol=0 * unit)).value
 
 
-def test_is_equal():
+def test_identical():
     var = sc.Variable(['x'], values=np.array([1]))
-    assert_export(sc.is_equal, var, var)
-    assert_export(sc.is_equal, var['x', :], var['x', :])
+    assert_export(sc.identical, var, var)
+    assert_export(sc.identical, var['x', :], var['x', :])
 
     ds = sc.Dataset(data={'a': var})
-    assert_export(sc.is_equal, ds['x', :], ds['x', :])
+    assert_export(sc.identical, ds['x', :], ds['x', :])

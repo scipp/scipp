@@ -29,6 +29,11 @@ Features
 * ``isclose`` added (``is_approx`` removed). Fuzzy data comparison ``isclose`` is an analogue to numpy's ``isclose``
 * ``stddevs`` added `#1762 <https://github.com/scipp/scipp/pull/1762>`_.
 
+* Support for datetime
+
+  * ``sc.dtype.datetime64`` with copy-less casting between numpy and scipp where possible. `#1639 <https://github.com/scipp/scipp/pull/1639>`_
+  * Binning with datetime edges `#1739 <https://github.com/scipp/scipp/pull/1739>`_
+
 Breaking changes
 ~~~~~~~~~~~~~~~~
 
@@ -36,8 +41,11 @@ Breaking changes
 * Properties ``dim``, ``begin``, ``end``, and ``data`` of the ``bins`` property of and object are now accessible as a dict via ``obj.bins.constituents``.
 * ``scipp.neutron`` has been removed and is replaced by `scippneutron <https://scipp.github.io/scippneutron>`_
 * ``scipp.neutron`` (now ``scippneutron``)
-
-  * Removed support for facility-specific ``convert_with_calibration`` and ``load_calibration``
+* ``is_equal`` renamed ``identical``
+* ``is_linspace`` renamed ``islinspace``
+* ``is_sorted`` renamed ``issorted``
+* ``is_approx`` superseded by ``isclose``. ``is_approx`` removed.
+* Removed support for facility-specific ``convert_with_calibration`` and ``load_calibration``
 
 Contributors
 ~~~~~~~~~~~~

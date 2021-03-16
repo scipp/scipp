@@ -92,3 +92,12 @@ setattr(DataArray, 'plot', plot)
 setattr(DataArrayConstView, 'plot', plot)
 setattr(Dataset, 'plot', plot)
 setattr(DatasetConstView, 'plot', plot)
+
+# Prevent unwanted conversion to numpy arrays by operations. Properly defining
+# __array_ufunc__ should be possible by converting non-scipp arguments to
+# variables. The most difficult part is probably mapping the ufunc to scipp
+# functions.
+for obj in [
+        Variable, VariableView, DataArray, DataArrayView, Dataset, DatasetView
+]:
+    setattr(obj, '__array_ufunc__', None)
