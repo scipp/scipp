@@ -227,8 +227,8 @@ class VariableDrawer:
         svg += f'<line x1={x0} y1={y0+1} x2={x0+2} y2={y0+2} {style}/>'
         svg += '<g transform="translate({},{}) scale(0.5)">{}</g>'.format(
             self.size()[0] + 1, 0,
-            make_svg(
-                self._variable.bins.constituents['data'])[35:-6])  # drop <svg>
+            make_svg(self._variable.bins.constituents['data'],
+                     content_only=True))
         return svg
 
     def draw(self, color, offset=np.zeros(2), title=None):
@@ -264,12 +264,13 @@ class VariableDrawer:
         dim_color = '#444444'
         return svg.replace('dim-color', dim_color)
 
-    def make_svg(self):
-        return self._set_colors(
-            '<svg width={}em viewBox="0 0 {} {}">{}</svg>'.format(
-                _svg_width, max(_cubes_in_full_width,
-                                self.size()[0]),
-                self.size()[1], self.draw(color=config.colors['data'])))
+    def make_svg(self, content_only=False):
+        if content_only:
+            return self._set_colors(self.draw(color=config.colors['data']))
+        return '<svg width={}em viewBox="0 0 {} {}">{}</svg>'.format(
+            _svg_width, max(_cubes_in_full_width,
+                            self.size()[0]),
+            self.size()[1], self.make_svg(content_only=True))
 
 
 class DrawerItem:
@@ -340,7 +341,7 @@ class DatasetDrawer:
             raise RuntimeError("Cannot visualize {}-D data".format(len(dims)))
         return dims
 
-    def make_svg(self):
+    def make_svg(self, content_only=False):
         content = ''
         width = 0
         height = 0
@@ -458,12 +459,14 @@ class DatasetDrawer:
         content += '<g transform="translate(0,{})">{}</g>'.format(height, c_x)
         height += max(h_x, h_0d)
 
+        if content_only:
+            return content
         return '<svg width={}em viewBox="{} {} {} {}">{}</svg>'.format(
             _svg_width, left, top, max(_cubes_in_full_width, width), height,
             content)
 
 
-def make_svg(container):
+def make_svg(container, content_only=False):
     """
     Return a svg representation of a variable or dataset.
     """
@@ -472,7 +475,7 @@ def make_svg(container):
         draw = VariableDrawer(container)
     else:
         draw = DatasetDrawer(container)
-    return draw.make_svg()
+    return draw.make_svg(content_only=content_only)
 
 
 def show(container):
