@@ -72,6 +72,7 @@ class PlotFigure1d(PlotFigure):
         Wipe the figure and start over when the dimension to be displayed along
         the horizontal axis is changed.
         """
+        super().update_axes()
         xparams = axparams["x"]
         self._xparams = xparams
 

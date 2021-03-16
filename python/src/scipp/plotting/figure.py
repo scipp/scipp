@@ -219,3 +219,7 @@ class PlotFigure:
 
     def set_axis_label(self, axis, string):
         getattr(self.ax, "set_{}label".format(axis))(string)
+
+    def update_axes(self):
+        for text in self.axis_offsets.values():
+            text.set_text("")
