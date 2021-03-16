@@ -167,7 +167,7 @@ Variable fold(const VariableConstView &view, const Dim from_dim,
 }
 
 Variable flatten(const VariableConstView &view,
-                 const std::span<const Dim> &from_labels, const Dim to_dim) {
+                 const scipp::span<const Dim> &from_labels, const Dim to_dim) {
   return reshape(view, flatten(view.dims(), from_labels, to_dim));
 }
 

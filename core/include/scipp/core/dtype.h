@@ -4,10 +4,10 @@
 /// @author Simon Heybrock
 #pragma once
 #include <Eigen/Core>
-#include <span>
 #include <unordered_map>
 
 #include "scipp-core_export.h"
+#include "scipp/common/span.h"
 #include "scipp/core/time_point.h"
 
 namespace scipp::core {
@@ -45,24 +45,24 @@ template <> inline constexpr DType dtype<Eigen::Vector3d>{8};
 template <> inline constexpr DType dtype<Eigen::Matrix3d>{9};
 class SubbinSizes;
 template <> inline constexpr DType dtype<SubbinSizes>{10};
-// std::span<T> start at 100
-template <> inline constexpr DType dtype<std::span<const double>>{100};
-template <> inline constexpr DType dtype<std::span<const float>>{101};
-template <> inline constexpr DType dtype<std::span<const int64_t>>{102};
-template <> inline constexpr DType dtype<std::span<const int32_t>>{103};
-template <> inline constexpr DType dtype<std::span<const bool>>{104};
-template <> inline constexpr DType dtype<std::span<const std::string>>{105};
-template <> inline constexpr DType dtype<std::span<const time_point>>{106};
-template <> inline constexpr DType dtype<std::span<const Eigen::Vector3d>>{107};
-// std::span<inline const T> start at 200
-template <> inline constexpr DType dtype<std::span<double>>{200};
-template <> inline constexpr DType dtype<std::span<float>>{201};
-template <> inline constexpr DType dtype<std::span<int64_t>>{202};
-template <> inline constexpr DType dtype<std::span<int32_t>>{203};
-template <> inline constexpr DType dtype<std::span<bool>>{204};
-template <> inline constexpr DType dtype<std::span<std::string>>{205};
-template <> inline constexpr DType dtype<std::span<time_point>>{206};
-template <> inline constexpr DType dtype<std::span<Eigen::Vector3d>>{207};
+// span<T> start at 100
+template <> inline constexpr DType dtype<span<const double>>{100};
+template <> inline constexpr DType dtype<span<const float>>{101};
+template <> inline constexpr DType dtype<span<const int64_t>>{102};
+template <> inline constexpr DType dtype<span<const int32_t>>{103};
+template <> inline constexpr DType dtype<span<const bool>>{104};
+template <> inline constexpr DType dtype<span<const std::string>>{105};
+template <> inline constexpr DType dtype<span<const time_point>>{106};
+template <> inline constexpr DType dtype<span<const Eigen::Vector3d>>{107};
+// span<inline const T> start at 200
+template <> inline constexpr DType dtype<span<double>>{200};
+template <> inline constexpr DType dtype<span<float>>{201};
+template <> inline constexpr DType dtype<span<int64_t>>{202};
+template <> inline constexpr DType dtype<span<int32_t>>{203};
+template <> inline constexpr DType dtype<span<bool>>{204};
+template <> inline constexpr DType dtype<span<std::string>>{205};
+template <> inline constexpr DType dtype<span<time_point>>{206};
+template <> inline constexpr DType dtype<span<Eigen::Vector3d>>{207};
 // std containers start at 300
 template <> inline constexpr DType dtype<std::pair<int32_t, int32_t>>{300};
 template <> inline constexpr DType dtype<std::pair<int64_t, int64_t>>{301};
@@ -107,10 +107,9 @@ SCIPP_CORE_EXPORT bool is_span(DType tp);
 template <class T> constexpr bool canHaveVariances() noexcept {
   using U = std::remove_const_t<T>;
   return std::is_same_v<U, double> || std::is_same_v<U, float> ||
-         std::is_same_v<U, std::span<const double>> ||
-         std::is_same_v<U, std::span<const float>> ||
-         std::is_same_v<U, std::span<double>> ||
-         std::is_same_v<U, std::span<float>>;
+         std::is_same_v<U, span<const double>> ||
+         std::is_same_v<U, span<const float>> ||
+         std::is_same_v<U, span<double>> || std::is_same_v<U, span<float>>;
 }
 
 SCIPP_CORE_EXPORT std::ostream &operator<<(std::ostream &os,

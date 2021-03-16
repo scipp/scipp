@@ -27,8 +27,8 @@ TEST_F(SubspanViewTest, values) {
   auto view = subspan_view(var, Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
   EXPECT_EQ(view.unit(), units::m);
-  EXPECT_TRUE(equals(view.values<std::span<double>>()[0], {1, 2, 3}));
-  EXPECT_TRUE(equals(view.values<std::span<double>>()[1], {4, 5, 6}));
+  EXPECT_TRUE(equals(view.values<span<double>>()[0], {1, 2, 3}));
+  EXPECT_TRUE(equals(view.values<span<double>>()[1], {4, 5, 6}));
   EXPECT_FALSE(view.hasVariances());
 }
 
@@ -36,8 +36,8 @@ TEST_F(SubspanViewTest, values_length_0) {
   auto view = subspan_view(var.slice({Dim::X, 0, 0}), Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
   EXPECT_EQ(view.unit(), units::m);
-  EXPECT_TRUE(view.values<std::span<double>>()[0].empty());
-  EXPECT_TRUE(view.values<std::span<double>>()[1].empty());
+  EXPECT_TRUE(view.values<span<double>>()[0].empty());
+  EXPECT_TRUE(view.values<span<double>>()[1].empty());
   EXPECT_FALSE(view.hasVariances());
 }
 
@@ -45,24 +45,24 @@ TEST_F(SubspanViewTest, values_and_errors) {
   auto view = subspan_view(var_with_errors, Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
   EXPECT_EQ(view.unit(), units::m);
-  EXPECT_TRUE(equals(view.values<std::span<double>>()[0], {1, 2, 3}));
-  EXPECT_TRUE(equals(view.values<std::span<double>>()[1], {4, 5, 6}));
-  EXPECT_TRUE(equals(view.variances<std::span<double>>()[0], {7, 8, 9}));
-  EXPECT_TRUE(equals(view.variances<std::span<double>>()[1], {10, 11, 12}));
+  EXPECT_TRUE(equals(view.values<span<double>>()[0], {1, 2, 3}));
+  EXPECT_TRUE(equals(view.values<span<double>>()[1], {4, 5, 6}));
+  EXPECT_TRUE(equals(view.variances<span<double>>()[0], {7, 8, 9}));
+  EXPECT_TRUE(equals(view.variances<span<double>>()[1], {10, 11, 12}));
 }
 
 TEST_F(SubspanViewTest, values_and_errors_length_0) {
   auto view = subspan_view(var_with_errors.slice({Dim::X, 0, 0}), Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
   EXPECT_EQ(view.unit(), units::m);
-  EXPECT_TRUE(view.values<std::span<double>>()[0].empty());
-  EXPECT_TRUE(view.values<std::span<double>>()[1].empty());
-  EXPECT_TRUE(view.variances<std::span<double>>()[0].empty());
-  EXPECT_TRUE(view.variances<std::span<double>>()[1].empty());
+  EXPECT_TRUE(view.values<span<double>>()[0].empty());
+  EXPECT_TRUE(view.values<span<double>>()[1].empty());
+  EXPECT_TRUE(view.variances<span<double>>()[0].empty());
+  EXPECT_TRUE(view.variances<span<double>>()[1].empty());
 }
 
 TEST_F(SubspanViewTest, view_of_const) {
   const auto &const_var = var;
   auto view = subspan_view(const_var, Dim::X);
-  EXPECT_NO_THROW(view.values<std::span<const double>>());
+  EXPECT_NO_THROW(view.values<span<const double>>());
 }

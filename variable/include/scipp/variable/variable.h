@@ -5,7 +5,6 @@
 #pragma once
 
 #include <optional>
-#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -14,6 +13,7 @@
 
 #include "scipp-variable_export.h"
 #include "scipp/common/index.h"
+#include "scipp/common/span.h"
 #include "scipp/units/unit.h"
 
 #include "scipp/core/dimensions.h"
@@ -135,8 +135,6 @@ public:
 
   bool operator==(const VariableConstView &other) const;
   bool operator!=(const VariableConstView &other) const;
-  bool operator==(const Variable &other) const;
-  bool operator!=(const Variable &other) const;
   Variable operator-() const;
 
   const VariableConcept &data() const && = delete;

@@ -11,9 +11,9 @@ bool isInt(DType tp) { return tp == dtype<int32_t> || tp == dtype<int64_t>; }
 
 namespace {
 template <class... Ts> bool is_span_impl(DType tp) {
-  return (
-      ((tp == dtype<std::span<Ts>>) || (tp == dtype<std::span<const Ts>>)) ||
-      ...);
+  return (((tp == dtype<scipp::span<Ts>>) ||
+           (tp == dtype<scipp::span<const Ts>>)) ||
+          ...);
 }
 } // namespace
 

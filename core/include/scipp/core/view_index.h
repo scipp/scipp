@@ -4,8 +4,6 @@
 /// @author Neil Vaytet
 #pragma once
 
-#include <array>
-
 #include "scipp-core_export.h"
 #include "scipp/core/dimensions.h"
 

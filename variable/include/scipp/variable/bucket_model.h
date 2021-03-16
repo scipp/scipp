@@ -132,8 +132,8 @@ private:
     } else {
       Variable copy(indices);
       const auto vals =
-          std::span(copy.values<range_type>().data(),
-                    copy.values<range_type>().data() + copy.dims().volume());
+          scipp::span(copy.values<range_type>().data(),
+                      copy.values<range_type>().data() + copy.dims().volume());
       std::sort(vals.begin(), vals.end());
       if ((!vals.empty() && (vals.begin()->first < 0)) ||
           (!vals.empty() && ((vals.end() - 1)->second > buffer.dims()[dim])))

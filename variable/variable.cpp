@@ -88,14 +88,6 @@ bool Variable::operator!=(const VariableConstView &other) const {
   return !(*this == other);
 }
 
-bool Variable::operator==(const Variable &other) const {
-  return operator==(VariableConstView(other));
-}
-
-bool Variable::operator!=(const Variable &other) const {
-  return operator!=(VariableConstView(other));
-}
-
 Variable &Variable::assign(const VariableConstView &other) {
   VariableView(*this).assign(other);
   return *this;

@@ -112,7 +112,7 @@ TEST(ElementUtilTest, islinspace_time_point) {
       vec.emplace_back(x);
     }
 
-    return core::element::islinspace(std::span<const core::time_point>(vec));
+    return core::element::islinspace(span<const core::time_point>(vec));
   };
 
   EXPECT_FALSE(islinspace_wrapper({}));

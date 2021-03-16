@@ -6,13 +6,13 @@
 
 #include <limits>
 #include <memory>
-#include <span>
 #include <unordered_map>
 #include <utility>
 #include <vector>
 
 #include "scipp-core_export.h"
 #include "scipp/common/index.h"
+#include "scipp/common/span.h"
 #include "scipp/units/dim.h"
 
 namespace scipp::core {
@@ -64,18 +64,18 @@ public:
     return volume;
   }
 
-  std::span<const scipp::index> shape() const && = delete;
+  scipp::span<const scipp::index> shape() const && = delete;
   /// Return the shape of the space defined by *this.
-  constexpr std::span<const scipp::index> shape() const &noexcept {
+  constexpr scipp::span<const scipp::index> shape() const &noexcept {
     return {m_shape, m_shape + m_ndim};
   }
 
   /// Return number of dims
   constexpr uint16_t ndim() const noexcept { return m_ndim; }
 
-  std::span<const Dim> labels() const && = delete;
+  scipp::span<const Dim> labels() const && = delete;
   /// Return the labels of the space defined by *this.
-  constexpr std::span<const Dim> labels() const &noexcept {
+  constexpr scipp::span<const Dim> labels() const &noexcept {
     return {m_dims, m_dims + m_ndim};
   }
 
@@ -160,7 +160,7 @@ transpose(const Dimensions &dims, std::vector<Dim> labels = {});
                                                 const Dimensions &to_dims);
 
 [[nodiscard]] SCIPP_CORE_EXPORT Dimensions
-flatten(const Dimensions &old_dims, const std::span<const Dim> from_labels,
+flatten(const Dimensions &old_dims, const scipp::span<const Dim> from_labels,
         const Dim to_dim);
 
 } // namespace scipp::core

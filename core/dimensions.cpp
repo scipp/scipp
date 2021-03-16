@@ -268,7 +268,7 @@ Dimensions fold(const Dimensions &old_dims, const Dim from_dim,
 /// Note that from_dims are not necessarily present in old_dims, which allows
 /// to silently skip flattening variables that do not depend on from_labels.
 Dimensions flatten(const Dimensions &old_dims,
-                   const std::span<const Dim> from_labels, const Dim to_dim) {
+                   const scipp::span<const Dim> from_labels, const Dim to_dim) {
   Dimensions from_dims;
   for (const auto dim : from_labels)
     if (old_dims.contains(dim))

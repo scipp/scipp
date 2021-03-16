@@ -153,7 +153,7 @@ namespace {
 ///    variable's dims, broadcast
 /// 3. If none of the variables's dimensions are contained, no broadcast
 Variable maybe_broadcast(const VariableConstView &var,
-                         const std::span<const Dim> &from_labels,
+                         const scipp::span<const Dim> &from_labels,
                          const Dimensions &data_dims) {
   const auto &var_dims = var.dims();
   Dimensions broadcast_dims;
@@ -202,7 +202,7 @@ Variable fold_bin_edge(const VariableConstView &var, const Dim from_dim,
 
 /// Special handling for flattening coord along a dim that contains bin edges.
 Variable flatten_bin_edge(const VariableConstView &var,
-                          const std::span<const Dim> &from_labels,
+                          const scipp::span<const Dim> &from_labels,
                           const Dim to_dim, const Dim bin_edge_dim) {
   const auto data_shape = var.dims()[bin_edge_dim] - 1;
 
@@ -236,7 +236,7 @@ Variable flatten_bin_edge(const VariableConstView &var,
 /// Check if one of the from_labels is a bin edge
 Dim bin_edge_in_from_labels(const VariableConstView &var,
                             const Dimensions &array_dims,
-                            const std::span<const Dim> &from_labels) {
+                            const scipp::span<const Dim> &from_labels) {
   for (const auto dim : from_labels)
     if (is_bin_edges(var, array_dims, dim))
       return dim;
@@ -274,7 +274,7 @@ DataArray fold(const DataArrayConstView &a, const Dim from_dim,
 /// Flatten multiple dimensions into a single dimension:
 /// ['y', 'z'] -> ['x']
 DataArray flatten(const DataArrayConstView &a,
-                  const std::span<const Dim> &from_labels, const Dim to_dim) {
+                  const scipp::span<const Dim> &from_labels, const Dim to_dim) {
   auto flattened = DataArray(flatten(a.data(), from_labels, to_dim));
 
   for (auto &&[name, coord] : a.coords()) {

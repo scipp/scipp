@@ -107,7 +107,7 @@ public:
 template <class T> class BinVariableMaker : public BinVariableMakerCommon<T> {
 private:
   const VariableConstView
-  bin_parent(const std::span<const VariableConstView> &parents) const {
+  bin_parent(const scipp::span<const VariableConstView> &parents) const {
     constexpr auto is_bins = [](auto &x) {
       return x.dtype() == dtype<bucket<T>>;
     };

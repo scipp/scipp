@@ -5,10 +5,10 @@
 #pragma once
 
 #include <cstddef>
-#include <span>
 
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
+#include "scipp/common/span.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
 #include "scipp/core/time_point.h"
@@ -18,8 +18,7 @@
 #include "scipp/units/unit.h"
 
 namespace scipp::numeric {
-template <>
-inline bool islinspace(const std::span<const core::time_point> &range) {
+template <> inline bool islinspace(const span<const core::time_point> &range) {
   if (scipp::size(range) < 2)
     return false;
   if (range.back() <= range.front())
@@ -51,13 +50,13 @@ constexpr auto convertMaskedToZero = overloaded{
     }};
 
 /// Set the elements referenced by a span to 0
-template <class T> void zero(const std::span<T> &data) {
+template <class T> void zero(const scipp::span<T> &data) {
   for (auto &x : data)
     x = 0.0;
 }
 
 /// Set the elements references by the spans for values and variances to 0
-template <class T> void zero(const core::ValueAndVariance<std::span<T>> &data) {
+template <class T> void zero(const core::ValueAndVariance<span<T>> &data) {
   zero(data.value);
   zero(data.variance);
 }
@@ -116,12 +115,11 @@ constexpr auto issorted_nonascending = overloaded{
       out = out && (left >= right);
     }};
 
-constexpr auto islinspace =
-    overloaded{arg_list<std::span<const double>, std::span<const float>,
-                        std::span<const time_point>>,
-               transform_flags::expect_no_variance_arg<0>,
-               [](const units::Unit &) { return units::one; },
-               [](const auto &range) { return numeric::islinspace(range); }};
+constexpr auto islinspace = overloaded{
+    arg_list<span<const double>, span<const float>, span<const time_point>>,
+    transform_flags::expect_no_variance_arg<0>,
+    [](const units::Unit &) { return units::one; },
+    [](const auto &range) { return numeric::islinspace(range); }};
 
 constexpr auto zip = overloaded{
     arg_list<int64_t, int32_t>, transform_flags::expect_no_variance_arg<0>,
