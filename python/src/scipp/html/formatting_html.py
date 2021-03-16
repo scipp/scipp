@@ -38,10 +38,12 @@ def _format_array(data, size, ellipsis_after, do_ellide=True):
                 elem = round(elem, 2)
         if is_data_array(elem):
             dims = ', '.join(f'{dim}: {s}' for dim, s in elem.sizes.items())
-            unit = f'{elem.unit}'.replace('dimensionless', 'one')
             coords = ', '.join(elem.coords)
-            s.append(
-                f'DataArray(dims=[{dims}], unit={unit}, coords=[{coords}])')
+            if elem.unit == sc.units.one:
+                s.append(f'{{dims=[{dims}], coords=[{coords}]}}')
+            else:
+                s.append(
+                    f'{{dims=[{dims}], unit={elem.unit}, coords=[{coords}]}}')
         else:
             s.append(str(elem))
         i += 1
