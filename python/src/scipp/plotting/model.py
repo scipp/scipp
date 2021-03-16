@@ -58,8 +58,9 @@ class PlotModel:
             # Iterate through axes and collect coordinates
             for dim in axes_dims:
 
-                coord, formatter, label, unit, offset = self._axis_coord_and_formatter(
-                    dim, array, self.dim_to_shape[name], dim_label_map)
+                coord, formatter, label, unit, offset = \
+                    self._axis_coord_and_formatter(
+                        dim, array, self.dim_to_shape[name], dim_label_map)
 
                 self.axformatter[name][dim] = formatter
                 self.coord_info[name][dim] = {"label": label, "unit": unit}
@@ -152,15 +153,13 @@ class PlotModel:
 
         if data_array.meta[key].dtype == sc.dtype.vector_3_float64:
             # If the non-dimension coordinate contains vectors
-            form = self._vector_tick_formatter(
-                data_array.meta[key].values,
-                dim_to_shape[dim])
+            form = self._vector_tick_formatter(data_array.meta[key].values,
+                                               dim_to_shape[dim])
             formatter["custom_locator"] = True
         elif data_array.meta[key].dtype == sc.dtype.string:
             # If the non-dimension coordinate contains strings
-            form = self._string_tick_formatter(
-                data_array.meta[key].values,
-                dim_to_shape[dim])
+            form = self._string_tick_formatter(data_array.meta[key].values,
+                                               dim_to_shape[dim])
             formatter["custom_locator"] = True
         elif data_array.meta[key].dtype == sc.dtype.datetime64:
             form = self._date_tick_formatter(offset, key)
