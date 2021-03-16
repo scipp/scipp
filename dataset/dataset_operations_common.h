@@ -40,7 +40,7 @@ template <class Map> auto intersection(const Map &a, const Map &b) {
 /// Return a copy of map-like objects such as CoordView.
 template <class T> auto copy_map(const T &map) {
   std::map<typename T::key_type, typename T::mapped_type> out;
-  for (const auto &[key, item] : map)
+  for (const auto [key, item] : map)
     out.emplace(key, item);
   return out;
 }
@@ -157,7 +157,7 @@ Dataset apply_to_items(const DatasetConstView &d, Func func, Args &&... args) {
 
 /// Copy all map items from `a` and insert them into `b`.
 template <class A, class B> auto copy_items(const A &a, const B &b) {
-  for (const auto &[key, item] : a)
+  for (const auto [key, item] : a)
     b.set(key, item);
 }
 

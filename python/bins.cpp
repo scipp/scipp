@@ -248,7 +248,7 @@ void init_buckets(py::module &m) {
                               const std::vector<VariableConstView> &edges,
                               const std::vector<VariableConstView> &groups) {
     std::map<Dim, VariableConstView> c;
-    for (const auto &[name, coord] : coords)
+    for (const auto [name, coord] : coords)
       c.emplace(Dim(py::cast<std::string>(name)),
                 py::cast<VariableConstView>(coord));
     py::gil_scoped_release release; // release only *after* using py::cast
