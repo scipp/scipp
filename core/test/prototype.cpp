@@ -15,7 +15,7 @@ class Variable {
 private:
   Dimensions m_dims;
   scipp::index m_offset{0};
-  units::Unit m_unit;
+  units::Unit m_unit; // TODO must share this somehow
   element_array<double> m_values;
   bool is_slice() const noexcept {
     return m_offset != 0 || m_dims.volume() != m_values.size();
@@ -38,6 +38,7 @@ public:
   auto begin() const { return m_values.begin() + m_offset; }
   auto end() const { return m_values.begin() + m_offset + m_dims.volume(); }
 
+  // for Python, should return element_array by value, sharing ownership
   scipp::span<const double> values() const { return {begin(), end()}; }
   scipp::span<double> values() { return {begin(), end()}; }
 
@@ -47,6 +48,9 @@ public:
   }
   bool operator!=(const Variable &other) const { return !operator==(other); }
 
+  // Returns Variable by value, sharing ownership
+  // ... want to share unit, but not dims??
+  // data dims vs slice dims?
   Variable slice(const Dim dim, const scipp::index offset) const {
     Variable out(*this);
     auto out_dims = dims();
@@ -78,60 +82,144 @@ public:
 // ds['a'].attrs['x'] = x # should NOT fail
 // ds['a'].masks['x'] = x # should NOT fail
 //
+//
+//
 
-class Coords {
+// Sibling of class Dimensions, but unordered
+class Sizes {
 public:
-  Coords() = default;
-  Coords(std::initializer_list<std::pair<const Dim, Variable>> items_)
-      : items(std::move(items_)) {}
-  Coords(std::unordered_map<Dim, Variable> items_) : items(std::move(items_)) {}
-  const auto &operator[](const Dim dim) const { return items.at(dim); }
-  void setitem(const Dim dim, Variable coord) { items[dim] = coord; }
-  bool contains(const Dim dim) const { return items.count(dim) == 1; }
-  auto begin() const { return items.begin(); }
-  auto end() const { return items.end(); }
-  auto begin() { return items.begin(); }
-  auto end() { return items.end(); }
+  Sizes() = default;
+  Sizes(const Dimensions &dims) {
+    for (const auto dim : dims.labels())
+      m_sizes[dim] = dims[dim];
+  }
+  Sizes(const std::unordered_map<Dim, scipp::index> &sizes) : m_sizes(sizes) {}
+
+  bool contains(const Dim dim) const noexcept {
+    return m_sizes.count(dim) != 0;
+  }
+
+  scipp::index operator[](const Dim dim) const {
+    if (!contains(dim))
+      throw std::runtime_error("dim not found");
+    return m_sizes.at(dim);
+  }
+
+  bool contains(const Dimensions &dims) {
+    for (const auto &dim : dims.labels())
+      if (m_sizes.count(dim) == 0 || m_sizes.at(dim) != dims[dim])
+        return false;
+    return true;
+  }
 
 private:
-  std::unordered_map<Dim, Variable> items;
+  std::unordered_map<Dim, scipp::index> m_sizes;
 };
 
+// Dataset: dims can be extended
+// Coords: cannot extend, except for special case bin edges
+// slice of coords: drop items, slice items
+template <class Key, class Value> class Dict {
+public:
+  using map_type = std::unordered_map<Key, Value>;
+  Dict() = default;
+  Dict(const Sizes &sizes,
+       std::initializer_list<std::pair<const Key, Value>> items)
+      : Dict(sizes, std::unordered_map<Key, Value>(items)) {}
+  Dict(const Sizes &sizes, const std::unordered_map<Key, Value> &items)
+      : m_sizes(sizes) {
+    for (const auto &[key, value] : items)
+      setitem(key, value);
+  }
+  auto operator[](const Key &key) const { return m_items->at(key); }
+  void setitem(const Key &key, Value coord) {
+    if (!m_sizes.contains(coord.dims()))
+      throw std::runtime_error("cannot add coord exceeding DataArray dims");
+    m_items->operator[](key) = coord;
+  }
+  bool contains(const Key &key) const { return m_items->count(key) == 1; }
+  auto begin() const { return m_items->begin(); }
+  auto end() const { return m_items->end(); }
+  auto begin() { return m_items->begin(); }
+  auto end() { return m_items->end(); }
+
+private:
+  // std::unordered_map<Dim, Variable> items;
+  std::shared_ptr<map_type> m_items = std::make_shared<map_type>();
+  Sizes m_sizes;
+  // TODO
+  // how to handle name clash with attrs?
+  // => must use an acces-time check
+};
+
+using Coords = Dict<Dim, Variable>;
+
+// DataArray slice converts coords to attrs => slice contains new attrs dict =>
+// cannot add attr via slice (works but does notthing)
+
+// Requires:
+// Variable: dims and shape do not change
+// Coords: sizes dict does not change
 class DataArray {
 public:
   DataArray() = default;
-  DataArray(Variable data, Coords coords)
-      : m_data(std::move(data)), m_coords(std::move(coords)) {}
-  const auto &data() const { return m_data; }
-  const auto &coords() const { return m_coords; }
-  auto &coords() { return m_coords; }
+  DataArray(Variable data, const std::unordered_map<Dim, Variable> &coords)
+      : m_data(std::move(data)), m_coords(m_data.dims(), coords) {}
+  // should share whole var, not just values?
+  // ... or include unit in shared part?
+  // da.data.unit = 'm' ok, DataArray does not care
+  // da.data.rename_dims(...) shoud NOT affect da?! since dims is invariant
+  // => rename_dims should return *new* variable
+  // required by DataArray
+  auto data() const {
+    return m_data;
+  } // should never return mutable reference since this could break
+    // invariants... see current impl which returns VariableView, preventing bad
+    // changes
+  // auto shared_data() { return m_data; } // bind to da.data
+  auto coords() const { return m_coords; }
+  auto coords() { return m_coords; }
+  // da.coords['x'] = x # must check dims... should Coords store data dims?
+  // auto shared_coords() { return m_coords; } // bind to da.coords
 
 private:
   Variable m_data;
   Coords m_coords;
 };
 
-struct Dataset {
-  const auto &operator[](const std::string &name) const {
-    return items.at(name);
+// Requires:
+// DataArray: dims and shape do not change, coords aligned + do not change
+class Dataset {
+public:
+  auto coords() const { return m_coords; }
+  // in python, returning an item should share ownership *of the item*, NOT of
+  // the item contents => need to wrap item in shared_ptr?
+  auto operator[](const std::string &name) const {
+    const auto &item = m_items.at(name);
+    Sizes sizes(item.data().dims());
+    typename Coords::map_type coords;
+    for (const auto &[dim, coord] : m_coords)
+      if (sizes.contains(coord.dims()))
+        coords[dim] = coord;
+    return DataArray(item.data(), std::move(coords));
   }
-  void setitem(const std::string &name, DataArray item) {
+  void setitem(const std::string &name, const DataArray &item) {
+    // TODO properly check compatible dims and grow
+    m_coords =
+        Coords(Sizes(item.data().dims()), {m_coords.begin(), m_coords.end()});
     for (auto &&[dim, coord] : item.coords())
       setcoord(dim, coord);
-    items[name] = std::move(item);
+    m_items[name] = DataArray(item.data(), {}); // no coords
   }
-  // Note that we cannot set coords on
   void setcoord(const Dim dim, const Variable &coord) {
-    if (coords.contains(dim) && coords[dim] != coord)
+    if (m_coords.contains(dim) && m_coords[dim] != coord)
       throw std::runtime_error("Coords not aligned");
-    coords.setitem(dim, coord);
-    for (auto &existing : items)
-      if (existing.second.data().dims().contains(dim))
-        existing.second.coords().setitem(dim, coord);
+    m_coords.setitem(dim, coord);
   }
 
-  Coords coords;
-  std::unordered_map<std::string, DataArray> items;
+private:
+  Coords m_coords; // can we use this here? would need to extend sizes
+  std::unordered_map<std::string, DataArray> m_items;
 };
 
 Variable copy(const Variable &var) { return var.deepcopy(); }
@@ -164,7 +252,7 @@ TEST_F(PrototypeTest, variable_slice) {
 
 TEST_F(PrototypeTest, data_array) {
   const auto var = Variable(dimsX, units::m, {1, 2, 3});
-  auto da = DataArray(var, Coords{});
+  auto da = DataArray(var, {});
   EXPECT_EQ(da.data().values().data(), var.values().data()); // shallow copy
   da.coords().setitem(Dim::X, var);
   EXPECT_EQ(da.coords()[Dim::X].values().data(),
@@ -181,7 +269,7 @@ TEST_F(PrototypeTest, data_array_coord) {
   const auto var = Variable(dimsX, units::m, {1, 2, 3});
   auto da = DataArray(var, {{Dim::X, Variable(dimsX, units::m, {2, 4, 8})}});
   const auto coord = da.coords()[Dim::X];
-  da = DataArray(var, Coords{});
+  da = DataArray(var, {});
   EXPECT_TRUE(equals(
       coord.values(),
       Variable(dimsX, units::m, {2, 4, 8}).values())); // coord is sole owner
@@ -196,7 +284,7 @@ TEST_F(PrototypeTest, dataset) {
   for (const auto ds2 : {Dataset(ds), copy(ds)}) {
     // shallow copy of items and coords
     EXPECT_EQ(ds2["a"].data().values().data(), ds["a"].data().values().data());
-    EXPECT_EQ(ds2.coords[Dim::X].values().data(),
-              ds.coords[Dim::X].values().data());
+    EXPECT_EQ(ds2.coords()[Dim::X].values().data(),
+              ds.coords()[Dim::X].values().data());
   }
 }
