@@ -14,16 +14,16 @@ template <class T>
 auto make_subspans(const ElementArrayView<T> &first,
                    const ElementArrayView<T> &last) {
   const auto len = first.size();
-  std::vector<span<T>> spans;
+  std::vector<std::span<T>> spans;
   spans.reserve(len);
   for (scipp::index i = 0; i < len; ++i)
-    spans.emplace_back(scipp::span(&first[i], &last[i] + 1));
+    spans.emplace_back(std::span(&first[i], &last[i] + 1));
   return spans;
 }
 
 template <class T>
 auto make_empty_subspans(const ElementArrayView<T> &, const Dimensions &dims) {
-  return std::vector<span<T>>(dims.volume());
+  return std::vector<std::span<T>>(dims.volume());
 }
 
 template <class T>
@@ -31,11 +31,11 @@ auto make_subspans(T *base, const VariableConstView &indices,
                    const scipp::index stride) {
   const auto &offset = indices.values<core::bucket_base::range_type>();
   const auto len = offset.size();
-  std::vector<span<T>> spans;
+  std::vector<std::span<T>> spans;
   spans.reserve(len);
   for (scipp::index i = 0; i < len; ++i)
-    spans.emplace_back(scipp::span(base + stride * offset[i].first,
-                                   base + stride * offset[i].second));
+    spans.emplace_back(std::span(base + stride * offset[i].first,
+                                 base + stride * offset[i].second));
   return spans;
 }
 
@@ -51,12 +51,12 @@ Variable make_subspan_view(Var &var, const Dimensions &dims,
   auto valuesView = make_values(var_ref);
   if (var.hasVariances()) {
     auto variancesView = make_variances(var_ref);
-    return makeVariable<span<MaybeConstT>>(
+    return makeVariable<std::span<MaybeConstT>>(
         Dimensions{dims}, var.unit(),
         Values(valuesView.begin(), valuesView.end()),
         Variances(variancesView.begin(), variancesView.end()));
   } else
-    return makeVariable<span<MaybeConstT>>(
+    return makeVariable<std::span<MaybeConstT>>(
         Dimensions{dims}, var.unit(),
         Values(valuesView.begin(), valuesView.end()));
 }

@@ -49,7 +49,7 @@ stages:
         displayName: 'Mac OS'
         timeoutInMinutes: 80
         pool:
-          vmImage: 'macOS-10.14'
+          vmImage: 'macOS-10.15'
         variables:
           - group: tokens
           - name: OSX_VERSION

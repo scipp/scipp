@@ -32,8 +32,8 @@ reshape(const VariableConstView &view, const Dimensions &dims);
                                                   const Dim from_dim,
                                                   const Dimensions &to_dims);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
-flatten(const VariableConstView &view,
-        const scipp::span<const Dim> &from_labels, const Dim to_dim);
+flatten(const VariableConstView &view, const std::span<const Dim> &from_labels,
+        const Dim to_dim);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT VariableView
 transpose(Variable &var, const std::vector<Dim> &dims = {});
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
