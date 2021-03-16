@@ -270,7 +270,7 @@ class PlotModel:
         # # return lambda val, pos: str(int(val) + offset)
         # # return lambda val, pos: int(val)
         def date_form(val, pos):
-            dt = np.datetime64(int(val) + int(offset), 'ns')
+            dt = str(np.datetime64(int(val) + int(offset), 'ns'))
             bounds = self.interface["get_view_bounds"](dim)
             diff = bounds[1] - bounds[0]
             if diff < 1e3:
@@ -279,8 +279,13 @@ class PlotModel:
                 return np.datetime_as_string(dt, unit='us')[20:]
             elif diff < 1e9:
                 return np.datetime_as_string(dt, unit='ms')[17:]
-            elif diff < 86400*1e9:
+            elif diff < 3600*1e9:
                 return np.datetime_as_string(dt, unit='s')[11:]
+            elif diff < 86400*1e9:
+                return np.datetime_as_string(dt, unit='m')[11:]
+            elif diff < 86400*1e9*2:
+                s = np.datetime_as_string(dt, unit='h')
+                return 
 
         return date_form
         # print()
