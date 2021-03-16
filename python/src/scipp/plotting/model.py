@@ -8,9 +8,6 @@ from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
-from matplotlib import dates as mpldates
-import matplotlib.ticker as ticker
-import os
 
 
 class PlotModel:
@@ -109,13 +106,14 @@ class PlotModel:
 
         # Create some default axis tick formatter, depending on linear or log
         # scaling.
-        formatter = {"linear": None, "log": None, "locator": None}
+        formatter = {"linear": None, "log": None, "custom_locator": None}
 
         contains_strings = False
         contains_vectors = False
         contains_datetime = False
         offset = 0.0
         coord_label = None
+        form = None
 
         has_no_coord = dim not in data_array.meta
         if not has_no_coord:
@@ -148,88 +146,46 @@ class PlotModel:
 
         # Set up tick formatters
         if dim in dim_label_map:
+            key = dim_label_map[dim]
+        else:
+            key = dim
 
-            if data_array.meta[
-                    dim_label_map[dim]].dtype == sc.dtype.vector_3_float64:
-                # If the non-dimension coordinate contains vectors
-                form = self._vector_tick_formatter(
-                    data_array.meta[dim_label_map[dim]].values,
-                    dim_to_shape[dim])
-                # formatter.update({"custom_locator": True})
-                formatter["locator"] = ticker.MaxNLocator(integer=True)
-            elif data_array.meta[dim_label_map[dim]].dtype == sc.dtype.string:
-                # If the non-dimension coordinate contains strings
-                form = self._string_tick_formatter(
-                    data_array.meta[dim_label_map[dim]].values,
-                    dim_to_shape[dim])
-                # formatter.update({"custom_locator": True})
-                formatter["locator"] = ticker.MaxNLocator(integer=True)
+        if data_array.meta[key].dtype == sc.dtype.vector_3_float64:
+            # If the non-dimension coordinate contains vectors
+            form = self._vector_tick_formatter(
+                data_array.meta[key].values,
+                dim_to_shape[dim])
+            formatter["custom_locator"] = True
+        elif data_array.meta[key].dtype == sc.dtype.string:
+            # If the non-dimension coordinate contains strings
+            form = self._string_tick_formatter(
+                data_array.meta[key].values,
+                dim_to_shape[dim])
+            formatter["custom_locator"] = True
+        elif data_array.meta[key].dtype == sc.dtype.datetime64:
+            form = self._date_tick_formatter(offset, key)
+        elif dim in dim_label_map:
+            coord_values = coord.values
+            if has_no_coord:
+                # In this case we always have a bin-edge coord
+                coord_values = to_bin_centers(coord, dim).values
             else:
-                coord_values = coord.values
-                if has_no_coord:
-                    # In this case we always have a bin-edge coord
+                if data_array.meta[dim].shape[-1] == dim_to_shape[dim]:
                     coord_values = to_bin_centers(coord, dim).values
-                else:
-                    if data_array.meta[dim].shape[-1] == dim_to_shape[dim]:
-                        coord_values = to_bin_centers(coord, dim).values
-                form = lambda val, pos: value_to_string(  # noqa: E731
-                    data_array.meta[dim_label_map[dim]].values[np.abs(
-                        coord_values - val).argmin()])
+            form = lambda val, pos: value_to_string(  # noqa: E731
+                data_array.meta[dim_label_map[dim]].values[np.abs(
+                    coord_values - val).argmin()])
 
+        if form is not None:
             formatter.update({"linear": form, "log": form})
 
+        if dim in dim_label_map:
             coord_label = name_with_unit(
                 var=data_array.meta[dim_label_map[dim]],
                 name=dim_label_map[dim])
             coord_unit = name_with_unit(
                 var=data_array.meta[dim_label_map[dim]], name="")
-
         else:
-            if contains_vectors:
-                form = self._vector_tick_formatter(data_array.meta[dim].values,
-                                                   dim_to_shape[dim])
-                # form = ticker.FuncFormatter(
-                #     self._vector_tick_formatter(data_array.meta[dim].values,
-                #                                 dim_to_shape[dim]))
-                formatter.update({
-                    "linear": form,
-                    "log": form,
-                    "locator": ticker.MaxNLocator(integer=True)
-                })
-            elif contains_strings:
-                form = self._string_tick_formatter(data_array.meta[dim].values,
-                                                   dim_to_shape[dim])
-                # form = ticker.FuncFormatter(
-                #     self._string_tick_formatter(data_array.meta[dim].values,
-                #                                 dim_to_shape[dim]))
-                formatter.update({
-                    "linear": form,
-                    "log": form,
-                    "locator": ticker.MaxNLocator(integer=True)
-                })
-            elif contains_datetime:
-                # locator = mpldates.AutoDateLocator()
-                # locator = ticker.AutoLocator()
-                # form = mpldates.AutoDateFormatter(locator)
-                # form = lambda val, pos: "" if val > 2.0e6 else mpldates.num2date(
-                #     val)
-                # # locator = mpldates.AutoDateLocator()
-                # # form = mpldates.AutoDateFormatter(locator)
-                # # # from matplotlib.ticker import FuncFormatter
-                # # form.scaled[1 / (24. * 60.)] = ticker.FuncFormatter(
-                # #     self._date_tick_formatter)
-
-                form = self._date_tick_formatter(offset, dim)
-                # form = None
-                formatter.update({
-                    "linear": form,
-                    "log": form
-                    # "locator": locator
-                })
-                # coord_label = dim
-                # self._date_tick_formatter(ticker.AutoLocator())
-
-            # if coord_label is None:
             coord_label = name_with_unit(var=coord)
             coord_unit = name_with_unit(var=coord, name="")
 
@@ -251,82 +207,56 @@ class PlotModel:
         return lambda val, pos: array_values[int(val)] if (int(
             val) >= 0 and int(val) < size) else ""
 
-    # def _date_tick_formatter(self, offset):
     def _date_tick_formatter(self, offset, dim):
         """
-        Format string ticks: find closest string in coordinate array.
+        Format datetime ticks: adjust the time precision and update
+        offset according to the currently displayed range.
         """
-
-        # formatter = mpldates.AutoDateFormatter(locator)
-        # return lambda val, pos: "" if val > 2.0e6 else formatter(val, pos)
-        # return lambda val, pos: str(np.datetime64(val, 'ns'))
-        # os.write(1, ('got to here 1\n').encode())
-        # os.write(1, (str(self.offset) + '\n').encode())
-        # os.write(1, ('got to here 2\n').encode())
-        # os.write(1,
-        #          (str(np.datetime64(int(self.offset), 'ns')) + '\n').encode())
-        # os.write(1, ('got to here 3\n').encode())
-        # os.write(1, (str(np.datetime64(int(val) + int(self.offset), 'ns')) +
-        #              '\n').encode())
-        # os.write(1, ('got to here 4\n').encode())
-        # return str(np.datetime64(int(val) + int(self.offset), 'ns'))
-        # # return lambda val, pos: str(int(val) + offset)
-        # # return lambda val, pos: int(val)
-        def date_form(val, pos):
+        def formatter(val, pos):
             dt = str(np.datetime64(int(val) + int(offset), 'ns'))
             start = 0
             end = len(dt)
             u = ""
-            # dt = np.datetime64(int(val) + int(offset), 'ns')
+            suffix = ""
             bounds = self.interface["get_view_axis_bounds"](dim)
             diff = bounds[1] - bounds[0]
-            if diff < 2e3:
+            if diff < 2e3:  # offset: 2017-01-13T12:15:45.123456, tick: 789 ns
                 start = 26
                 u = "ns"
-            elif diff < 2e6:
+            elif diff < 2e6:  # offset: 2017-01-13T12:15:45.123, tick: 456 us
                 start = 23
                 end = 26
                 u = "us"
-            elif diff < 2e9:
+            elif diff < 2e9:  # offset: 2017-01-13T12:15, tick: 45.123 s
                 start = 17
                 end = 23
                 u = "s"
-            elif diff < 60 * 2e9:
+            elif diff < 60 * 2e9:  # offset: 2017-01-13, tick: 12:15:45
                 start = 11
                 end = 19
-            elif diff < 3600 * 2e9:
+            elif diff < 3600 * 2e9:  # offset: 2017-01-13, tick: 12:15
                 start = 11
                 end = 16
-            elif diff < 86400 * 2e9:
+            elif diff < 86400 * 2e9:  # offset: 2017-01, tick: 13 12h
                 start = 8
-                end = 11
-            elif diff < 86400 * 2e9 * 30:
+                end = 13
+                suffix = "h"
+            elif diff < 86400 * 6e9 * 30:  # tick: 2017-01-13
+                end = 10
+            else:  # tick: 2017-01
                 end = 7
 
             if pos == 0:
                 self.interface["set_view_axis_offset"](
-                    dim, dt[:start].strip('T').strip(':'))
+                    dim, dt[:start].strip('T').strip(':').strip('-'))
                 label = dim
                 if len(u) > 0:
                     label += " [{}]".format(u)
                 self.interface["set_view_axis_label"](dim, label)
 
-            return dt[start:end]
+            return (dt[start:end] + suffix).replace("T", " ")
 
-        return date_form
-        # print()
-        # return
-
-    # def _date_tick_formatter(self, x, pos=None):
-    #     x = mpldates.num2date(x)
-    #     if pos == 0:
-    #         fmt = '%D %H:%M:%S.%f'
-    #     else:
-    #         fmt = '%H:%M:%S.%f'
-    #     label = x.strftime(fmt)
-    #     label = label.rstrip("0")
-    #     label = label.rstrip(".")
-    #     return label
+        return formatter
 
     def _make_masks(self, array, mask_info, transpose=False):
         if not mask_info:

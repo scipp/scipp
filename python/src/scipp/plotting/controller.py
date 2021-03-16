@@ -273,12 +273,6 @@ class PlotController:
         self.view.save_view()
 
     def get_view_axis_bounds(self, dim):
-        # bounds_map = {
-        #     self.axes[key]: self.view.get_ax_attr("get_{}lim".format(key))
-        #     for key in self._get_xyz_axes()
-        # }
-        # _dim_to_axis
-        # self.view.get_ax_attr("get_{}lim".format(self._dim_to_axis()[dim]))
         return self.view.get_axis_bounds(self._dim_to_axis()[dim])
 
     def set_view_axis_offset(self, dim, string):
@@ -389,7 +383,6 @@ class PlotController:
         self.update_log_axes_buttons()
         # Update the slider readout here because the widgets do not have access
         # to the model, which holds the coordinates.
-        # ranges = {}
         lower, upper = self.model.get_slice_coord_bounds(
             self.name, new_dim, [0, 1])
         self.widgets.update_slider_readout(index, lower, upper, [0, 1],

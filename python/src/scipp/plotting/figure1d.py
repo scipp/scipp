@@ -77,14 +77,14 @@ class PlotFigure1d(PlotFigure):
 
         if self.own_axes:
             title = self.ax.get_title()
-            # self.ax.clear()
-            # Due to some strange behaviour when using ax.clear() in
-            # combination with a datetime axis, we manually clear the figure
-            # elements instead
-            self.ax.lines = []
-            leg = self.ax.get_legend()
-            if leg is not None:
-                leg.remove()
+            self.ax.clear()
+            # # Due to some strange behaviour when using ax.clear() in
+            # # combination with a datetime axis, we manually clear the figure
+            # # elements instead
+            # self.ax.lines = []
+            # leg = self.ax.get_legend()
+            # if leg is not None:
+            #     leg.remove()
             self.ax.set_title(title)
 
         if self.mpl_line_params is None:
@@ -104,9 +104,9 @@ class PlotFigure1d(PlotFigure):
                 self.mpl_line_params["linewidth"][name] = get_line_param(
                     "linewidth", i)
 
-        if self.ax.get_xscale() != xparams["scale"]:
-            # print("setting the scale!")
-            self.ax.set_xscale(xparams["scale"])
+        # if self.ax.get_xscale() != xparams["scale"]:
+        #     # print("setting the scale!")
+        self.ax.set_xscale(xparams["scale"])
         self.ax.set_yscale("log" if self.norm == "log" else "linear")
         self.ax.set_ylabel(self.unit if self.ylabel is None else self.ylabel)
 
@@ -353,19 +353,8 @@ class PlotFigure1d(PlotFigure):
 
     def rescale_to_data(self, vmin=None, vmax=None):
         """
-        Automatically rescale x and y axes to the contents of the plot.
+        Rescale y axis to the contents of the plot.
         """
-        # return
-        # print("rescale_to_data 1")
-        # if vmin is None and vmax is None:
-        #     print("rescale_to_data 2")
-        #     self.ax.autoscale(True)
-        #     self.ax.relim()
-        #     self.ax.autoscale_view()
-        # else:
-        #     print("rescale_to_data 3")
-        #     self.ax.set_ylim(vmin, vmax)
-        # print("rescale_to_data 4")
         self.ax.set_ylim(vmin, vmax)
         self.draw()
 

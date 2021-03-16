@@ -63,7 +63,7 @@ class PlotFigure:
                          transform=self.ax.transAxes),
             "y":
             self.ax.text(0.0,
-                         0.91,
+                         1.0,
                          "",
                          ha='left',
                          va='bottom',
@@ -137,20 +137,11 @@ class PlotFigure:
                 else:
                     self.axformatter[dim][key] = ticker.FuncFormatter(
                         axformatters[dim][key])
-                    # self.axformatter[dim][key] = axformatters[dim][key]
-            if axformatters[dim]["locator"] is None:
-                self.axlocator[dim] = {
-                    "linear": ticker.AutoLocator(),
-                    "log": ticker.LogLocator()
-                }
-            else:
-                self.axlocator[dim] = {
-                    "linear": axformatters[dim]["locator"],
-                    "log": axformatters[dim]["locator"]
-                }
-            # # if axformatters[dim]["custom_locator"]:
-            # #     self.axlocator[dim]["linear"] = ticker.MaxNLocator(
-            # #         integer=True)
+            self.axlocator[dim] = {
+                "linear": ticker.MaxNLocator(
+                    integer=True) if axformatters[dim]["custom_locator"] else ticker.AutoLocator(),
+                "log": ticker.LogLocator()
+            }
 
     def connect(self, callbacks):
         """
