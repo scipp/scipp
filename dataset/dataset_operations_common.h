@@ -15,10 +15,10 @@ namespace scipp::dataset {
 template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
 
-  for (const auto &[key, item] : a)
+  for (const auto [key, item] : a)
     out.emplace(key, item);
 
-  for (const auto &item : b) {
+  for (const auto item : b) {
     if (const auto it = a.find(item.first); it != a.end()) {
       core::expect::equals(item, *it);
     } else
@@ -31,7 +31,7 @@ template <class T1, class T2> auto union_(const T1 &a, const T2 &b) {
 /// have matching content.
 template <class Map> auto intersection(const Map &a, const Map &b) {
   std::map<typename Map::key_type, Variable> out;
-  for (const auto &[key, item] : a)
+  for (const auto [key, item] : a)
     if (const auto it = b.find(key); it != b.end() && it->second == item)
       out.emplace(key, item);
   return out;
