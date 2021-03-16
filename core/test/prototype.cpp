@@ -153,6 +153,7 @@ private:
 };
 
 using Coords = Dict<Dim, Variable>;
+using Masks = Dict<std::string, Variable>;
 
 // DataArray slice converts coords to attrs => slice contains new attrs dict =>
 // cannot add attr via slice (works but does notthing)
@@ -164,7 +165,8 @@ class DataArray {
 public:
   DataArray() = default;
   DataArray(Variable data, const std::unordered_map<Dim, Variable> &coords)
-      : m_data(std::move(data)), m_coords(m_data.dims(), coords) {}
+      : m_data(std::move(data)), m_coords(m_data.dims(), coords),
+        m_masks(m_data.dims(), {}) {}
   // should share whole var, not just values?
   // ... or include unit in shared part?
   // da.data.unit = 'm' ok, DataArray does not care
@@ -178,13 +180,15 @@ public:
     // changes
   // auto shared_data() { return m_data; } // bind to da.data
   auto coords() const { return m_coords; }
-  auto coords() { return m_coords; }
+  auto masks() const { return m_masks; }
+  void reset_coords() { m_coords = Coords(m_data.dims(), {}); }
   // da.coords['x'] = x # must check dims... should Coords store data dims?
   // auto shared_coords() { return m_coords; } // bind to da.coords
 
 private:
   Variable m_data;
   Coords m_coords;
+  Masks m_masks;
 };
 
 // Requires:
@@ -195,13 +199,12 @@ public:
   // in python, returning an item should share ownership *of the item*, NOT of
   // the item contents => need to wrap item in shared_ptr?
   auto operator[](const std::string &name) const {
-    const auto &item = m_items.at(name);
-    Sizes sizes(item.data().dims());
-    typename Coords::map_type coords;
+    auto item = m_items.at(name);
+    item.reset_coords();
     for (const auto &[dim, coord] : m_coords)
-      if (sizes.contains(coord.dims()))
-        coords[dim] = coord;
-    return DataArray(item.data(), std::move(coords));
+      if (item.data().dims().contains(coord.dims()))
+        item.coords().setitem(dim, coord);
+    return item;
   }
   void setitem(const std::string &name, const DataArray &item) {
     // TODO properly check compatible dims and grow
@@ -287,4 +290,17 @@ TEST_F(PrototypeTest, dataset) {
     EXPECT_EQ(ds2.coords()[Dim::X].values().data(),
               ds.coords()[Dim::X].values().data());
   }
+
+  ds.coords().setitem(Dim("coord1"), Variable(dimsX, units::m, {1, 2, 3}));
+  EXPECT_TRUE(ds["a"].coords().contains(Dim("coord1")));
+  EXPECT_TRUE(ds.coords().contains(Dim("coord1")));
+
+  // ds["a"] returns DataArray with new coords dict
+  ds["a"].coords().setitem(Dim("coord2"), Variable(dimsX, units::m, {1, 2, 3}));
+  EXPECT_FALSE(ds["a"].coords().contains(Dim("coord2")));
+  EXPECT_FALSE(ds.coords().contains(Dim("coord2")));
+
+  // ds["a"] returns DataArray referencing existing masks dict
+  ds["a"].masks().setitem("mask", Variable(dimsX, units::m, {1, 2, 3}));
+  EXPECT_TRUE(ds["a"].masks().contains("mask"));
 }
