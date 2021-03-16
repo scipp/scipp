@@ -53,6 +53,22 @@ class PlotFigure:
         self.axlocator = {}
         self.xlabel = xlabel
         self.ylabel = ylabel
+        self.axis_offsets = {
+            "x":
+            self.ax.text(0.70,
+                         -0.07,
+                         "",
+                         ha='left',
+                         va='top',
+                         transform=self.ax.transAxes),
+            "y":
+            self.ax.text(0.0,
+                         0.91,
+                         "",
+                         ha='left',
+                         va='bottom',
+                         transform=self.ax.transAxes)
+        }
 
     def is_widget(self):
         """
@@ -202,5 +218,11 @@ class PlotFigure:
     def save_view(self, *args, **kwargs):
         self.toolbar.save_view()
 
-    def get_ax_attr(self, name, *args, **kwargs):
-        return getattr(self.ax, name)(*args, **kwargs)
+    def get_axis_bounds(self, axis):
+        return getattr(self.ax, "get_{}lim".format(axis))()
+
+    def set_axis_offset(self, axis, string):
+        self.axis_offsets[axis].set_text(string)
+
+    def set_axis_label(self, axis, string):
+        getattr(self.ax, "set_{}label".format(axis))(string)

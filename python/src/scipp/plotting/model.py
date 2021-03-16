@@ -115,6 +115,7 @@ class PlotModel:
         contains_vectors = False
         contains_datetime = False
         offset = 0.0
+        coord_label = None
 
         has_no_coord = dim not in data_array.meta
         if not has_no_coord:
@@ -225,8 +226,10 @@ class PlotModel:
                     "log": form
                     # "locator": locator
                 })
+                # coord_label = dim
                 # self._date_tick_formatter(ticker.AutoLocator())
 
+            # if coord_label is None:
             coord_label = name_with_unit(var=coord)
             coord_unit = name_with_unit(var=coord, name="")
 
@@ -271,21 +274,44 @@ class PlotModel:
         # # return lambda val, pos: int(val)
         def date_form(val, pos):
             dt = str(np.datetime64(int(val) + int(offset), 'ns'))
-            bounds = self.interface["get_view_bounds"](dim)
+            start = 0
+            end = len(dt)
+            u = ""
+            # dt = np.datetime64(int(val) + int(offset), 'ns')
+            bounds = self.interface["get_view_axis_bounds"](dim)
             diff = bounds[1] - bounds[0]
-            if diff < 1e3:
-                return np.datetime_as_string(dt, unit='ns')[23:]
-            elif diff < 1e6:
-                return np.datetime_as_string(dt, unit='us')[20:]
-            elif diff < 1e9:
-                return np.datetime_as_string(dt, unit='ms')[17:]
-            elif diff < 3600*1e9:
-                return np.datetime_as_string(dt, unit='s')[11:]
-            elif diff < 86400*1e9:
-                return np.datetime_as_string(dt, unit='m')[11:]
-            elif diff < 86400*1e9*2:
-                s = np.datetime_as_string(dt, unit='h')
-                return 
+            if diff < 2e3:
+                start = 26
+                u = "ns"
+            elif diff < 2e6:
+                start = 23
+                end = 26
+                u = "us"
+            elif diff < 2e9:
+                start = 17
+                end = 23
+                u = "s"
+            elif diff < 60 * 2e9:
+                start = 11
+                end = 19
+            elif diff < 3600 * 2e9:
+                start = 11
+                end = 16
+            elif diff < 86400 * 2e9:
+                start = 8
+                end = 11
+            elif diff < 86400 * 2e9 * 30:
+                end = 7
+
+            if pos == 0:
+                self.interface["set_view_axis_offset"](
+                    dim, dt[:start].strip('T').strip(':'))
+                label = dim
+                if len(u) > 0:
+                    label += " [{}]".format(u)
+                self.interface["set_view_axis_label"](dim, label)
+
+            return dt[start:end]
 
         return date_form
         # print()

@@ -227,7 +227,11 @@ class PlotController:
                           figure_callbacks=figure_callbacks)
 
     def connect_model(self):
-        self.model.connect({"get_view_bounds": self.get_view_bounds})
+        self.model.connect({
+            "get_view_axis_bounds": self.get_view_axis_bounds,
+            "set_view_axis_offset": self.set_view_axis_offset,
+            "set_view_axis_label": self.set_view_axis_label
+        })
 
     def connect_panel(self):
         """
@@ -268,10 +272,20 @@ class PlotController:
     def save_view(self, button=None):
         self.view.save_view()
 
-    def get_view_bounds(self, dim):
-        bounds_map = {self.axes[key]: self.view.get_ax_attr("get_{}lim".format(key))
-                for key in self._get_xyz_axes()}
-        return bounds_map[dim]
+    def get_view_axis_bounds(self, dim):
+        # bounds_map = {
+        #     self.axes[key]: self.view.get_ax_attr("get_{}lim".format(key))
+        #     for key in self._get_xyz_axes()
+        # }
+        # _dim_to_axis
+        # self.view.get_ax_attr("get_{}lim".format(self._dim_to_axis()[dim]))
+        return self.view.get_axis_bounds(self._dim_to_axis()[dim])
+
+    def set_view_axis_offset(self, dim, string):
+        return self.view.set_axis_offset(self._dim_to_axis()[dim], string)
+
+    def set_view_axis_label(self, dim, string):
+        return self.view.set_axis_label(self._dim_to_axis()[dim], string)
 
     def find_vmin_vmax(self, button=None):
         """

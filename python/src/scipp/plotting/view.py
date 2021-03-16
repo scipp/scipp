@@ -132,5 +132,11 @@ class PlotView:
         """
         self.figure.update_norm_button(*args, **kwargs)
 
-    def get_ax_attr(self, name, *args, **kwargs):
-        return self.figure.get_ax_attr(name, *args, **kwargs)
+    def get_axis_bounds(self, *args, **kwargs):
+        return self.figure.get_axis_bounds(*args, **kwargs)
+
+    def set_axis_offset(self, *args, **kwargs):
+        return self.figure.set_axis_offset(*args, **kwargs)
+
+    def set_axis_label(self, *args, **kwargs):
+        return self.figure.set_axis_label(*args, **kwargs)
