@@ -47,8 +47,8 @@ def isnear(x,
     for key, val in x.meta.items() if include_attrs else x.coords.items():
         a = x.meta[key] if include_attrs else x.coords[key]
         b = y.meta[key] if include_attrs else y.coords[key]
-        if x.shape != y.shape:
-            raise RuntimeError(
+        if a.shape != b.shape:
+            raise sc.CoordError(
                 f'Coord (or attr) with key {key} have different'
                 f' shapes. For x, shape is {a.shape}. For y, shape = {b.shape}'
             )
