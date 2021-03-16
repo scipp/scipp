@@ -227,3 +227,13 @@ def test_plot_1d_datetime():
                                     values=np.random.rand(time.sizes['time'])),
                       coords={'time': time})
     da.plot()
+
+
+def test_plot_1d_datetime_with_labels():
+    time = sc.array(dims=['time'],
+                    values=np.arange(np.datetime64('2017-01-01T12:00:00'),
+                                     np.datetime64('2017-01-01T13:00:00')))
+    da = sc.DataArray(data=sc.array(dims=['time'],
+                                    values=np.random.rand(time.sizes['time'])),
+                      coords={'time2': time})
+    da.plot()
