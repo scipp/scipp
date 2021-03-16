@@ -78,13 +78,6 @@ class PlotFigure1d(PlotFigure):
         if self.own_axes:
             title = self.ax.get_title()
             self.ax.clear()
-            # # Due to some strange behaviour when using ax.clear() in
-            # # combination with a datetime axis, we manually clear the figure
-            # # elements instead
-            # self.ax.lines = []
-            # leg = self.ax.get_legend()
-            # if leg is not None:
-            #     leg.remove()
             self.ax.set_title(title)
 
         if self.mpl_line_params is None:
@@ -104,8 +97,6 @@ class PlotFigure1d(PlotFigure):
                 self.mpl_line_params["linewidth"][name] = get_line_param(
                     "linewidth", i)
 
-        # if self.ax.get_xscale() != xparams["scale"]:
-        #     # print("setting the scale!")
         self.ax.set_xscale(xparams["scale"])
         self.ax.set_yscale("log" if self.norm == "log" else "linear")
         self.ax.set_ylabel(self.unit if self.ylabel is None else self.ylabel)
@@ -122,8 +113,6 @@ class PlotFigure1d(PlotFigure):
         self.ax.set_xlabel(
             xparams["label"] if self.xlabel is None else self.xlabel)
 
-        print(self.axlocator)
-        print(self.axlocator[xparams["dim"]][xparams["scale"]])
         self.ax.xaxis.set_major_locator(
             self.axlocator[xparams["dim"]][xparams["scale"]])
         self.ax.xaxis.set_major_formatter(

@@ -40,8 +40,6 @@ class PlotModel:
         self.data_arrays = {}
         self.coord_info = {}
         self.dim_to_shape = dim_to_shape
-        self.coord_offset = {}
-
         self.axformatter = {}
 
         axes_dims = list(axes.values())
@@ -52,7 +50,6 @@ class PlotModel:
             # Store axis tick formatters
             self.axformatter[name] = {}
             self.coord_info[name] = {}
-            self.coord_offset[name] = {}
             coord_list = {}
 
             # Iterate through axes and collect coordinates
@@ -64,7 +61,6 @@ class PlotModel:
 
                 self.axformatter[name][dim] = formatter
                 self.coord_info[name][dim] = {"label": label, "unit": unit}
-                self.coord_offset[name][dim] = offset
 
                 is_histogram = False
                 for i, d in enumerate(coord.dims):
@@ -107,7 +103,7 @@ class PlotModel:
 
         # Create some default axis tick formatter, depending on linear or log
         # scaling.
-        formatter = {"linear": None, "log": None, "custom_locator": None}
+        formatter = {"linear": None, "log": None, "custom_locator": False}
 
         contains_strings = False
         contains_vectors = False
