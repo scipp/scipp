@@ -188,11 +188,11 @@ TYPED_TEST(IsCloseTest, value_equal_infs_signbit) {
 template <class Op> void do_isclose_units_test(Op op) {
   EXPECT_EQ(units::dimensionless, op(units::m, units::m, units::m));
   EXPECT_THROW_DISCARD(op(units::m, units::m, units::s),
-                       except::UnitMismatchError);
+                       except::UnitError);
   EXPECT_THROW_DISCARD(op(units::m, units::s, units::m),
-                       except::UnitMismatchError);
+                       except::UnitError);
   EXPECT_THROW_DISCARD(op(units::s, units::m, units::m),
-                       except::UnitMismatchError);
+                       except::UnitError);
 }
 
 TEST(IsCloseTest, units) {
