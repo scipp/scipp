@@ -329,6 +329,17 @@ TEST_F(VariableContractTest, shallow_copy_unit_can_be_set) {
   EXPECT_EQ(var.unit(), units::s);
 }
 
+TEST_F(VariableContractTest, slice_values_can_be_set) {
+  auto slice = var.slice(Dim::X, 1);
+  slice.values()[0] = 17;
+  EXPECT_EQ(var.values()[1], 17);
+}
+
+TEST_F(VariableContractTest, slice_unit_cannot_be_changed) {
+  auto slice = var.slice(Dim::X, 1);
+  EXPECT_ANY_THROW(slice.setunit(units::s));
+}
+
 class DataArrayContractTest : public ::testing::Test {
 protected:
   Dimensions dimsX = Dimensions(Dim::X, 3);
