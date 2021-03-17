@@ -8,6 +8,7 @@ from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
+import os
 
 
 class PlotModel:
@@ -163,7 +164,7 @@ class PlotModel:
         elif data_array.meta[key].dtype == sc.dtype.datetime64:
             # Note that the explicit conversion to int is required here because
             # a numpy.int64 fails to convert to datetime.
-            form = self._date_tick_formatter(int(offset), key)
+            form = self._date_tick_formatter(offset, key)
         elif dim in dim_label_map:
             coord_values = coord.values
             if has_no_coord:
@@ -219,31 +220,38 @@ class PlotModel:
             offset: 2017-01-13T12:15:45
             tick: 123 ms
             """
-            dt = str(np.datetime64(int(val) + int(offset), 'ns'))
+            # os.write(1, (str(val) + '\n').encode())
+            # return "ab"
+            # dt = str(offset + int(val))
+            dt = str((offset + (int(val) * offset.unit)).value)
+            os.write(1, (dt + '\n').encode())
+            # dt = str(np.datetime64(int(val) + int(offset), 'ns'))
             start = 0
             end = len(dt)
             u = ""
             suffix = ""
             bounds = self.interface["get_view_axis_bounds"](dim)
-            diff = bounds[1] - bounds[0]
-            if diff < 2e3:  # offset: 2017-01-13T12:15:45.123456, tick: 789 ns
+            diff = (bounds[1] - bounds[0]) * offset.unit
+            os.write(1, (str(bounds) + '\n').encode())
+            if diff < 2 * sc.units.ns:  # offset: 2017-01-13T12:15:45.123456, tick: 789 ns
                 start = 26
                 u = "ns"
-            elif diff < 2e6:  # offset: 2017-01-13T12:15:45.123, tick: 456 us
+            elif diff < 2 * sc.units.us:  # offset: 2017-01-13T12:15:45.123, tick: 456 us
                 start = 23
                 end = 26
                 u = "$\mu$s"
-            elif diff < 2e9:  # offset: 2017-01-13T12:15, tick: 45.123 s
+            elif diff < 2 * sc.units.s:  # offset: 2017-01-13T12:15, tick: 45.123 s
                 start = 17
                 end = 23
                 u = "s"
-            elif diff < 60 * 2e9:  # offset: 2017-01-13, tick: 12:15:45
+            elif diff < 2 * sc.Unit(
+                    'min'):  # offset: 2017-01-13, tick: 12:15:45
                 start = 11
                 end = 19
-            elif diff < 3600 * 2e9:  # offset: 2017-01-13, tick: 12:15
+            elif diff < 2 * sc.Unit('h'):  # offset: 2017-01-13, tick: 12:15
                 start = 11
                 end = 16
-            elif diff < 86400 * 2e9:  # offset: 2017-01, tick: 13 12h
+            elif diff < 2 * sc.Unit('d'):  # offset: 2017-01, tick: 13 12h
                 start = 8
                 end = 13
                 suffix = "h"
