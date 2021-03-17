@@ -10,6 +10,7 @@
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
+#include "scipp/core/time_point.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/units/unit.h"
 
@@ -17,7 +18,7 @@ namespace scipp::core::element {
 
 constexpr auto special_like =
     overloaded{arg_list<double, float, int64_t, int32_t, bool, SubbinSizes,
-                        Eigen::Vector3d>,
+                        Eigen::Vector3d, core::time_point>,
                [](const units::Unit &u) { return u; }};
 
 constexpr auto zeros_not_bool_like =
@@ -38,15 +39,23 @@ template <class T> struct underlying<ValueAndVariance<T>> { using type = T; };
 template <class T> using underlying_t = typename underlying<T>::type;
 
 constexpr auto numeric_limits_max_like =
-    overloaded{special_like, [](const auto &x) {
+    overloaded{special_like,
+               [](const auto &x) {
                  return std::numeric_limits<
                      underlying_t<std::decay_t<decltype(x)>>>::max();
+               },
+               [](const core::time_point &) {
+                 return core::time_point(std::numeric_limits<int64_t>::max());
                }};
 
-constexpr auto numeric_limits_lowest_like =
-    overloaded{special_like, [](const auto &x) {
-                 return std::numeric_limits<
-                     underlying_t<std::decay_t<decltype(x)>>>::lowest();
-               }};
+constexpr auto numeric_limits_lowest_like = overloaded{
+    special_like,
+    [](const auto &x) {
+      return std::numeric_limits<
+          underlying_t<std::decay_t<decltype(x)>>>::lowest();
+    },
+    [](const core::time_point &) {
+      return core::time_point(std::numeric_limits<int64_t>::min());
+    }};
 
 } // namespace scipp::core::element
