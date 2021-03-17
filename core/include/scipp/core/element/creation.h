@@ -10,7 +10,6 @@
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/subbin_sizes.h"
-#include "scipp/core/time_point.h"
 #include "scipp/core/transform_common.h"
 #include "scipp/units/unit.h"
 
@@ -18,7 +17,7 @@ namespace scipp::core::element {
 
 constexpr auto special_like =
     overloaded{arg_list<double, float, int64_t, int32_t, bool, SubbinSizes,
-                        Eigen::Vector3d, core::time_point>,
+                        time_point, Eigen::Vector3d>,
                [](const units::Unit &u) { return u; }};
 
 constexpr auto zeros_not_bool_like =
@@ -36,24 +35,21 @@ constexpr auto values_like =
 
 template <class T> struct underlying { using type = T; };
 template <class T> struct underlying<ValueAndVariance<T>> { using type = T; };
+template <> struct underlying<time_point> {
+  using type = decltype(std::declval<time_point>().time_since_epoch());
+};
 template <class T> using underlying_t = typename underlying<T>::type;
 
 constexpr auto numeric_limits_max_like =
     overloaded{special_like, [](const auto &x) {
-                 using T = underlying_t<std::decay_t<decltype(x)>>;
-                 if constexpr (std::is_same_v<T, core::time_point>)
-                   return core::time_point(std::numeric_limits<int64_t>::max());
-                 else
-                   return std::numeric_limits<T>::max();
+                 using T = std::decay_t<decltype(x)>;
+                 return T{std::numeric_limits<underlying_t<T>>::max()};
                }};
 
-constexpr auto numeric_limits_lowest_like = overloaded{
-    special_like, [](const auto &x) {
-      using T = underlying_t<std::decay_t<decltype(x)>>;
-      if constexpr (std::is_same_v<T, core::time_point>)
-        return core::time_point(std::numeric_limits<int64_t>::lowest());
-      else
-        return std::numeric_limits<T>::lowest();
-    }};
+constexpr auto numeric_limits_lowest_like =
+    overloaded{special_like, [](const auto &x) {
+                 using T = std::decay_t<decltype(x)>;
+                 return T{std::numeric_limits<underlying_t<T>>::lowest()};
+               }};
 
 } // namespace scipp::core::element
