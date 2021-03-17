@@ -144,12 +144,10 @@ public:
   auto end() { return m_items->end(); }
 
 private:
-  // std::unordered_map<Dim, Variable> items;
+  // Note: We have no way of preventing name clashes of coords with attrs, this
+  // would need to be handled dynamically on *access*
   std::shared_ptr<map_type> m_items = std::make_shared<map_type>();
   Sizes m_sizes;
-  // TODO
-  // how to handle name clash with attrs?
-  // => must use an acces-time check
 };
 
 using Coords = Dict<Dim, Variable>;
@@ -212,7 +210,8 @@ public:
         Coords(Sizes(item.data().dims()), {m_coords.begin(), m_coords.end()});
     for (auto &&[dim, coord] : item.coords())
       setcoord(dim, coord);
-    m_items[name] = DataArray(item.data(), {}); // no coords
+    m_items[name] = DataArray(
+        item.data(), {}); // no coords, gets set dynamically in operator[]
   }
   void setcoord(const Dim dim, const Variable &coord) {
     if (m_coords.contains(dim) && m_coords[dim] != coord)
@@ -221,7 +220,7 @@ public:
   }
 
 private:
-  Coords m_coords; // can we use this here? would need to extend sizes
+  Coords m_coords;
   std::unordered_map<std::string, DataArray> m_items;
 };
 
@@ -232,10 +231,10 @@ Dataset copy(const Dataset &ds) { return ds; }
 class PrototypeTest : public ::testing::Test {
 protected:
   Dimensions dimsX = Dimensions(Dim::X, 3);
+  Variable var{dimsX, units::m, {1, 2, 3}};
 };
 
 TEST_F(PrototypeTest, variable) {
-  const auto var = Variable(dimsX, units::m, {1, 2, 3});
   EXPECT_EQ(Variable(var).values().data(), var.values().data()); // shallow copy
   EXPECT_NE(copy(var).values().data(), var.values().data());     // deep copy
   auto shared = var;
@@ -244,7 +243,6 @@ TEST_F(PrototypeTest, variable) {
 }
 
 TEST_F(PrototypeTest, variable_slice) {
-  const auto var = Variable(dimsX, units::m, {1, 2, 3});
   auto slice = var.slice(Dim::X, 1);
   EXPECT_EQ(slice, Variable(Dimensions(), units::m, {2}));
   EXPECT_ANY_THROW(slice.setunit(units::s));
@@ -254,7 +252,6 @@ TEST_F(PrototypeTest, variable_slice) {
 }
 
 TEST_F(PrototypeTest, data_array) {
-  const auto var = Variable(dimsX, units::m, {1, 2, 3});
   auto da = DataArray(var, {});
   EXPECT_EQ(da.data().values().data(), var.values().data()); // shallow copy
   da.coords().setitem(Dim::X, var);
@@ -269,7 +266,6 @@ TEST_F(PrototypeTest, data_array) {
 }
 
 TEST_F(PrototypeTest, data_array_coord) {
-  const auto var = Variable(dimsX, units::m, {1, 2, 3});
   auto da = DataArray(var, {{Dim::X, Variable(dimsX, units::m, {2, 4, 8})}});
   const auto coord = da.coords()[Dim::X];
   da = DataArray(var, {});
@@ -303,4 +299,66 @@ TEST_F(PrototypeTest, dataset) {
   // ds["a"] returns DataArray referencing existing masks dict
   ds["a"].masks().setitem("mask", Variable(dimsX, units::m, {1, 2, 3}));
   EXPECT_TRUE(ds["a"].masks().contains("mask"));
+}
+
+class VariableContractTest : public ::testing::Test {
+protected:
+  Dimensions dimsX = Dimensions(Dim::X, 3);
+  Variable var{dimsX, units::m, {1, 2, 3}};
+};
+
+TEST_F(VariableContractTest, values_can_be_set) {
+  var.values()[0] = 17;
+  EXPECT_EQ(var.values()[0], 17);
+}
+
+TEST_F(VariableContractTest, unit_can_be_set) {
+  var.setunit(units::s);
+  EXPECT_EQ(var.unit(), units::s);
+}
+
+TEST_F(VariableContractTest, shallow_copy_values_can_be_set) {
+  auto shallow = var;
+  shallow.values()[0] = 17;
+  EXPECT_EQ(var.values()[0], 17);
+}
+
+TEST_F(VariableContractTest, shallow_copy_unit_can_be_set) {
+  auto shallow = var;
+  shallow.setunit(units::s);
+  EXPECT_EQ(var.unit(), units::s);
+}
+
+class DataArrayContractTest : public ::testing::Test {
+protected:
+  Dimensions dimsX = Dimensions(Dim::X, 3);
+  Variable var{dimsX, units::m, {1, 2, 3}};
+  DataArray da{var, {}};
+};
+
+TEST_F(DataArrayContractTest, data_values_can_be_set) {
+  da.data().values()[0] = 17;
+  EXPECT_EQ(da.data().values()[0], 17);
+}
+
+TEST_F(DataArrayContractTest, data_unit_can_be_set) {
+  da.data().setunit(units::s);
+  EXPECT_EQ(da.data().unit(), units::s);
+}
+
+TEST_F(DataArrayContractTest, coords_can_be_added) {
+  da.coords().setitem(Dim("new"), var);
+  EXPECT_TRUE(da.coords().contains(Dim("new")));
+}
+
+TEST_F(DataArrayContractTest, coord_values_can_be_set) {
+  da.coords().setitem(Dim::X, var);
+  da.coords()[Dim::X].values()[0] = 17;
+  EXPECT_EQ(da.coords()[Dim::X].values()[0], 17);
+}
+
+TEST_F(DataArrayContractTest, coord_unit_can_be_set) {
+  da.coords().setitem(Dim::X, var);
+  da.coords()[Dim::X].setunit(units::s);
+  EXPECT_EQ(da.coords()[Dim::X].unit(), units::s);
 }
