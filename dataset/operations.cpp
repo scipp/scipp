@@ -53,7 +53,7 @@ void copy_item(const DataArrayConstView &from, const DataArrayView &to,
   for (const auto &[name, mask] : from.masks())
     to.masks()[name].assign(mask);
   if (attrPolicy == AttrPolicy::Keep)
-    for (const auto &[dim, attr] : from.attrs())
+    for (const auto [dim, attr] : from.attrs())
       to.attrs()[dim].assign(attr);
   to.data().assign(from.data());
 }
@@ -62,7 +62,7 @@ void copy_item(const DataArrayConstView &from, const DataArrayView &to,
 /// Copy data array to output data array
 DataArrayView copy(const DataArrayConstView &array, const DataArrayView &out,
                    const AttrPolicy attrPolicy) {
-  for (const auto &[dim, coord] : array.coords())
+  for (const auto [dim, coord] : array.coords())
     out.coords()[dim].assign(coord);
   copy_item(array, out, attrPolicy);
   return out;
@@ -71,7 +71,7 @@ DataArrayView copy(const DataArrayConstView &array, const DataArrayView &out,
 /// Copy dataset to output dataset
 DatasetView copy(const DatasetConstView &dataset, const DatasetView &out,
                  const AttrPolicy attrPolicy) {
-  for (const auto &[dim, coord] : dataset.coords())
+  for (const auto [dim, coord] : dataset.coords())
     out.coords()[dim].assign(coord);
   for (const auto &array : dataset)
     copy_item(array, out[array.name()], attrPolicy);

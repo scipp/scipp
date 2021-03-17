@@ -43,7 +43,7 @@ template <class T1, class T2, class DimT>
 auto concat(const T1 &a, const T2 &b, const Dim dim, const DimT &dimsA,
             const DimT &dimsB) {
   std::map<typename T1::key_type, typename T1::mapped_type> out;
-  for (const auto &[key, a_] : a) {
+  for (const auto [key, a_] : a) {
     if (dim_of_coord(a_, key) == dim) {
       if (is_bin_edges(a_, dimsA, dim) != is_bin_edges(b[key], dimsB, dim)) {
         throw except::BinEdgeError(
@@ -157,12 +157,12 @@ Variable maybe_broadcast(const VariableConstView &var,
                          const Dimensions &data_dims) {
   const auto &var_dims = var.dims();
   Dimensions broadcast_dims;
-  for (const auto dim : var_dims.labels())
+  for (const auto &dim : var_dims.labels())
     if (std::find(from_labels.begin(), from_labels.end(), dim) ==
         from_labels.end())
       broadcast_dims.addInner(dim, var_dims[dim]);
     else
-      for (const auto lab : from_labels)
+      for (const auto &lab : from_labels)
         if (!broadcast_dims.contains(lab)) {
           // Need to check if the variable contains that dim, and use the
           // variable shape in case we have a bin edge.
@@ -237,7 +237,7 @@ Variable flatten_bin_edge(const VariableConstView &var,
 Dim bin_edge_in_from_labels(const VariableConstView &var,
                             const Dimensions &array_dims,
                             const scipp::span<const Dim> &from_labels) {
-  for (const auto dim : from_labels)
+  for (const auto &dim : from_labels)
     if (is_bin_edges(var, array_dims, dim))
       return dim;
   return Dim::Invalid;

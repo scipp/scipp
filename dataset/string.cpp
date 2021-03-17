@@ -43,7 +43,7 @@ std::string do_to_string(const D &dataset, const std::string &id,
 template <class T> auto sorted(const T &map) {
   using core::to_string;
   std::vector<std::pair<std::string, VariableConstView>> elems;
-  for (const auto &[dim, var] : map)
+  for (const auto [dim, var] : map)
     elems.emplace_back(to_string(dim), var);
   std::sort(elems.begin(), elems.end(),
             [](const auto &a, const auto &b) { return a.first < b.first; });

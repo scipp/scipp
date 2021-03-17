@@ -31,7 +31,7 @@ auto makeViewItems(const Dims &dims, T1 &coords) {
   // We preserve only items that are part of the space spanned by the
   // provided parent dimensions.
   auto contained = [&dims](const auto &coord) {
-    for (const Dim dim : coord.second.dims().labels())
+    for (const Dim &dim : coord.second.dims().labels())
       if (dims.count(dim) == 0)
         return false;
     return true;
@@ -155,7 +155,7 @@ void setExtent(std::unordered_map<Dim, scipp::index> &dims, const Dim dim,
 /// be "resized" in this way.
 void Dataset::setDims(const Dimensions &dims, const Dim coordDim) {
   auto tmp = m_dims;
-  for (const auto dim : dims.labels())
+  for (const auto &dim : dims.labels())
     extents::setExtent(tmp, dim, dims[dim], dim == coordDim);
   m_dims = tmp;
 }

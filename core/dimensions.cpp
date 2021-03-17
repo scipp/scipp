@@ -59,7 +59,7 @@ scipp::index &Dimensions::at(const Dim dim) {
 bool Dimensions::contains(const Dimensions &other) const noexcept {
   if (*this == other)
     return true;
-  for (const auto dim : other.labels())
+  for (const auto &dim : other.labels())
     if (!contains(dim) || other[dim] != operator[](dim))
       return false;
   return true;
@@ -186,7 +186,7 @@ Dimensions merge(const Dimensions &a, const Dimensions &b) {
   Dimensions out;
   auto it = b.labels().begin();
   auto end = b.labels().end();
-  for (const auto dim : a.labels()) {
+  for (const auto &dim : a.labels()) {
     // add any labels appearing *before* dim
     if (b.contains(dim)) {
       if (a[dim] != b[dim])
@@ -216,7 +216,7 @@ Dimensions merge(const Dimensions &a, const Dimensions &b) {
 Dimensions intersection(const Dimensions &a, const Dimensions &b) {
   Dimensions out;
   Dimensions m = merge(a, b);
-  for (const auto dim : m.labels()) {
+  for (const auto &dim : m.labels()) {
     if (a.contains(dim) && b.contains(dim))
       out.addInner(dim, m[dim]);
   }
@@ -249,11 +249,11 @@ Dimensions transpose(const Dimensions &dims, std::vector<Dim> labels) {
 Dimensions fold(const Dimensions &old_dims, const Dim from_dim,
                 const Dimensions &to_dims) {
   Dimensions new_dims;
-  for (const auto dim : old_dims.labels())
+  for (const auto &dim : old_dims.labels())
     if (dim != from_dim)
       new_dims.addInner(dim, old_dims[dim]);
     else
-      for (const auto lab : to_dims.labels())
+      for (const auto &lab : to_dims.labels())
         new_dims.addInner(lab, to_dims[lab]);
   return new_dims;
 }
@@ -270,7 +270,7 @@ Dimensions fold(const Dimensions &old_dims, const Dim from_dim,
 Dimensions flatten(const Dimensions &old_dims,
                    const scipp::span<const Dim> from_labels, const Dim to_dim) {
   Dimensions from_dims;
-  for (const auto dim : from_labels)
+  for (const auto &dim : from_labels)
     if (old_dims.contains(dim))
       from_dims.addInner(dim, old_dims[dim]);
 
@@ -287,7 +287,7 @@ Dimensions flatten(const Dimensions &old_dims,
                                    "dimensions in the correct order");
 
   Dimensions new_dims;
-  for (const auto dim : old_dims.labels())
+  for (const auto &dim : old_dims.labels())
     if (from_dims.contains(dim)) {
       if (!new_dims.contains(to_dim))
         new_dims.addInner(to_dim, from_dims.volume());

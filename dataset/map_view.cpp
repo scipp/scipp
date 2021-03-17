@@ -16,7 +16,7 @@ template <class Id, class Key, class Value>
 bool ConstView<Id, Key, Value>::operator==(const ConstView &other) const {
   if (size() != other.size())
     return false;
-  for (const auto &[name, data] : *this) {
+  for (const auto [name, data] : *this) {
     try {
       if (data != other[name])
         return false;

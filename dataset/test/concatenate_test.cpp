@@ -2,6 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "test_macros.h"
+
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/except.h"
@@ -154,7 +156,8 @@ TEST(ConcatenateTest, fail_when_histograms_have_non_overlapping_bins) {
   b.setData("data_1",
             makeVariable<int>(Dims{Dim::X}, Shape{2}, Values{13, 14}));
 
-  EXPECT_THROW(concatenate(a, b, Dim::X), except::VariableMismatchError);
+  EXPECT_THROW_DISCARD(concatenate(a, b, Dim::X),
+                       except::VariableMismatchError);
 }
 
 TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
@@ -166,7 +169,8 @@ TEST(ConcatenateTest, fail_mixing_point_data_and_histogram) {
   histogram.setCoord(Dim::X, makeVariable<int>(Dims{Dim::X}, Shape{3}));
   histogram.setData("data_1", makeVariable<int>(Dims{Dim::X}, Shape{2}));
 
-  EXPECT_THROW(concatenate(pointData, histogram, Dim::X), except::BinEdgeError);
+  EXPECT_THROW_DISCARD(concatenate(pointData, histogram, Dim::X),
+                       except::BinEdgeError);
 }
 
 TEST(ConcatenateTest, identical_non_dependant_data_is_copied) {
@@ -321,10 +325,10 @@ TEST_F(ConcatenateBinnedTest, mismatching_buffer) {
         DataArray(data, {{Dim::Y, data + data}, {Dim::X, data + data}}),
         DataArray(data, {})}) {
     auto var2 = make_bins(indices, Dim::Event, buffer2);
-    EXPECT_THROW(concatenate(var, var2, Dim::X), std::runtime_error);
-    EXPECT_THROW(concatenate(var, var2, Dim::Y), std::runtime_error);
-    EXPECT_THROW(concatenate(var2, var, Dim::X), std::runtime_error);
-    EXPECT_THROW(concatenate(var2, var, Dim::Y), std::runtime_error);
+    EXPECT_THROW_DISCARD(concatenate(var, var2, Dim::X), std::runtime_error);
+    EXPECT_THROW_DISCARD(concatenate(var, var2, Dim::Y), std::runtime_error);
+    EXPECT_THROW_DISCARD(concatenate(var2, var, Dim::X), std::runtime_error);
+    EXPECT_THROW_DISCARD(concatenate(var2, var, Dim::Y), std::runtime_error);
   }
 }
 

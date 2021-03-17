@@ -35,7 +35,7 @@ std::string make_dims_labels(const VariableConstView &variable,
   if (dims.empty())
     return "()";
   std::string diminfo = "(";
-  for (const auto dim : dims.labels()) {
+  for (const auto &dim : dims.labels()) {
     diminfo += to_string(dim);
     if (datasetDims) {
       if ((datasetDims->contains(dim) ? (*datasetDims)[dim] : 1) + 1 ==

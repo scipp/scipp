@@ -2,6 +2,8 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "test_macros.h"
+
 #include "scipp/dataset/bins.h"
 #include "scipp/dataset/dataset.h"
 #include "scipp/dataset/string.h"
@@ -60,7 +62,7 @@ TEST_F(BinnedArithmeticTest, fail_array_and_array) {
   // match, but at this point our implementation is not sophisticated enough to
   // support coord, mask, and attr handling for binned data in such binary
   // operations.
-  EXPECT_THROW(binned + binned, except::BinnedDataError);
+  EXPECT_THROW_DISCARD(binned + binned, except::BinnedDataError);
 }
 
 TEST_F(BinnedArithmeticTest, var_and_array) {
