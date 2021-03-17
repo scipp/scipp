@@ -91,44 +91,44 @@ constexpr auto equal = overloaded{
 constexpr auto not_equal =
     overloaded{comparison, [](const auto &x, const auto &y) { return x != y; }};
 
-constexpr auto max_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
-               transform_flags::expect_in_variance_if_out_variance,
-               [](auto &&a, const auto &b) {
-                 using std::max;
-                 a = max(a, b);
-               }};
+constexpr auto max_equals = overloaded{
+    arg_list<double, float, int64_t, int32_t, bool, core::time_point>,
+    transform_flags::expect_in_variance_if_out_variance,
+    [](auto &&a, const auto &b) {
+      using std::max;
+      a = max(a, b);
+    }};
 
-constexpr auto nanmax_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
-               transform_flags::expect_in_variance_if_out_variance,
-               [](auto &&a, const auto &b) {
-                 using numeric::isnan;
-                 using std::max;
-                 if (isnan(a))
-                   a = b;
-                 if (!isnan(b))
-                   a = max(a, b);
-               }};
+constexpr auto nanmax_equals = overloaded{
+    arg_list<double, float, int64_t, int32_t, bool, core::time_point>,
+    transform_flags::expect_in_variance_if_out_variance,
+    [](auto &&a, const auto &b) {
+      using numeric::isnan;
+      using std::max;
+      if (isnan(a))
+        a = b;
+      if (!isnan(b))
+        a = max(a, b);
+    }};
 
-constexpr auto min_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
-               transform_flags::expect_in_variance_if_out_variance,
-               [](auto &&a, const auto &b) {
-                 using std::min;
-                 a = min(a, b);
-               }};
+constexpr auto min_equals = overloaded{
+    arg_list<double, float, int64_t, int32_t, bool, core::time_point>,
+    transform_flags::expect_in_variance_if_out_variance,
+    [](auto &&a, const auto &b) {
+      using std::min;
+      a = min(a, b);
+    }};
 
-constexpr auto nanmin_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
-               transform_flags::expect_in_variance_if_out_variance,
-               [](auto &&a, const auto &b) {
-                 using numeric::isnan;
-                 using std::min;
-                 if (isnan(a))
-                   a = b;
-                 if (!isnan(b))
-                   a = min(a, b);
-               }};
+constexpr auto nanmin_equals = overloaded{
+    arg_list<double, float, int64_t, int32_t, bool, core::time_point>,
+    transform_flags::expect_in_variance_if_out_variance,
+    [](auto &&a, const auto &b) {
+      using numeric::isnan;
+      using std::min;
+      if (isnan(a))
+        a = b;
+      if (!isnan(b))
+        a = min(a, b);
+    }};
 
 } // namespace scipp::core::element
