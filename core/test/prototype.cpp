@@ -71,17 +71,6 @@ public:
   }
 };
 
-// coord must prevent length change (but switch to edges ok?)
-// data array data or dataset item data must prevent length change
-// coords of dataset item may no be added?
-// masks and attrs of dataset item CAN be added
-// ds['a'].coords['x'] = x # should fail
-// ds['a'].attrs['x'] = x # should NOT fail
-// ds['a'].masks['x'] = x # should NOT fail
-//
-//
-//
-
 // Sibling of class Dimensions, but unordered
 class Sizes {
 public:
@@ -109,7 +98,11 @@ public:
     return true;
   }
 
-  void erase(const Dim dim) { m_sizes.erase(dim); }
+  Sizes slice(const Dim dim, const scipp::index) const {
+    auto sizes = m_sizes;
+    sizes.erase(dim);
+    return {sizes};
+  }
 
 private:
   std::unordered_map<Dim, scipp::index> m_sizes;
@@ -143,8 +136,6 @@ public:
   auto end() { return m_items->end(); }
 
   auto slice(const Dim dim, const scipp::index offset) const {
-    auto sizes = m_sizes;
-    sizes.erase(dim);
     map_type items;
     for (const auto &[key, value] : *this) {
       if (value.dims().contains(dim))
@@ -152,7 +143,7 @@ public:
       else
         items[key] = value;
     }
-    return Dict(sizes, std::move(items));
+    return Dict(m_sizes.slice(dim, offset), std::move(items));
   }
 
 private:
