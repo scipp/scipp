@@ -127,14 +127,17 @@ class PlotModel:
             if not has_no_coord:
                 coord.unit = data_array.meta[dim].unit
         elif contains_datetime:
-            nanoseconds = data_array.meta[dim].values.astype(
-                'datetime64[ns]').astype(np.int64)
-            offset = np.amin(nanoseconds)
-            nanoseconds -= offset
-            coord = sc.Variable(dims=data_array.meta[dim].dims,
-                                unit=data_array.meta[dim].unit,
-                                values=nanoseconds,
-                                dtype=sc.dtype.int64)
+            coord = data_array.meta[dim]
+            offset = sc.min(coord)
+            coord = coord - offset
+            # nanoseconds = data_array.meta[dim].values.astype(
+            #     'datetime64[ns]').astype(np.int64)
+            # offset = np.amin(nanoseconds)
+            # nanoseconds -= offset
+            # coord = sc.Variable(dims=data_array.meta[dim].dims,
+            #                     unit=data_array.meta[dim].unit,
+            #                     values=nanoseconds,
+            #                     dtype=sc.dtype.int64)
         else:
             coord = data_array.meta[dim]
             if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
@@ -158,7 +161,9 @@ class PlotModel:
                                                dim_to_shape[dim])
             formatter["custom_locator"] = True
         elif data_array.meta[key].dtype == sc.dtype.datetime64:
-            form = self._date_tick_formatter(offset, key)
+            # Note that the explicit conversion to int is required here because
+            # a numpy.int64 fails to convert to datetime.
+            form = self._date_tick_formatter(int(offset), key)
         elif dim in dim_label_map:
             coord_values = coord.values
             if has_no_coord:

@@ -54,6 +54,7 @@ class PlotController1d(PlotController):
         Automatically rescale the y axis (1D plot) or the colorbar (2D+3D
         plots) to the minimum and maximum value inside the currently displayed
         data slice.
+        A small delta is used to add padding around the plotted points.
         """
         vmin, vmax = self.find_vmin_vmax(button=button)
         delta = 0.05 * (vmax - vmin)
