@@ -44,7 +44,7 @@ namespace scipp::dataset::expect {
 void coordsAreSuperset(const DataArrayConstView &a,
                        const DataArrayConstView &b) {
   const auto &a_coords = a.coords();
-  for (const auto &b_coord : b.coords())
+  for (const auto b_coord : b.coords())
     if (a_coords[b_coord.first] != b_coord.second)
       throw except::CoordMismatchError(*a_coords.find(b_coord.first), b_coord);
 }

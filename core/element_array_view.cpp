@@ -12,7 +12,7 @@ void expectCanBroadcastFromTo(const Dimensions &source,
                               const Dimensions &target) {
   if (source == target)
     return;
-  for (const auto dim : target.labels())
+  for (const auto &dim : target.labels())
     if (source.contains(dim) && (source[dim] < target[dim]))
       throw except::DimensionError("Cannot broadcast/slice dimension since "
                                    "data has mismatching but smaller "
@@ -51,7 +51,7 @@ ElementArrayViewParams::ElementArrayViewParams(
       m_dataDims(other.m_dataDims), m_bucketParams(other.m_bucketParams) {
   expectCanBroadcastFromTo(other.m_iterDims, m_iterDims);
   // See implementation of ViewIndex regarding this relabeling.
-  for (const auto label : m_dataDims.labels())
+  for (const auto &label : m_dataDims.labels())
     if (label != Dim::Invalid && !other.m_iterDims.contains(label))
       m_dataDims.relabel(m_dataDims.index(label), Dim::Invalid);
 }

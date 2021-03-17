@@ -196,3 +196,33 @@ TEST(IsCloseTest, units) {
   do_isclose_units_test(isclose);
   do_isclose_units_test(isclose_equal_nan);
 }
+
+constexpr auto check_inplace = [](auto op, auto a, auto b, auto expected) {
+  op(a, b);
+  EXPECT_EQ(a, expected);
+};
+
+TEST(ComparisonTest, min_max_support_time_point) {
+  std::get<core::time_point>(decltype(max_equals)::types{});
+  std::get<core::time_point>(decltype(min_equals)::types{});
+  std::get<core::time_point>(decltype(nanmax_equals)::types{});
+  std::get<core::time_point>(decltype(nanmin_equals)::types{});
+}
+
+TEST(ComparisonTest, max_equals) {
+  check_inplace(max_equals, 1, 2, 2);
+  check_inplace(max_equals, 2, 1, 2);
+  check_inplace(max_equals, 1.2, 1.3, 1.3);
+  check_inplace(max_equals, 1.3, 1.2, 1.3);
+  check_inplace(max_equals, core::time_point(23), core::time_point(13),
+                core::time_point(23));
+}
+
+TEST(ComparisonTest, min_equals) {
+  check_inplace(min_equals, 1, 2, 1);
+  check_inplace(min_equals, 2, 1, 1);
+  check_inplace(min_equals, 1.2, 1.3, 1.2);
+  check_inplace(min_equals, 1.3, 1.2, 1.2);
+  check_inplace(min_equals, core::time_point(23), core::time_point(13),
+                core::time_point(13));
+}
