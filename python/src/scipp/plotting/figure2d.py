@@ -78,6 +78,7 @@ class PlotFigure2d(PlotFigure):
         if self.cax is None:
             self.cbar.ax.yaxis.set_label_coords(-1.1, 0.5)
         self.mask_image = {}
+        self.create_axis_offsets()
 
     def rescale_to_data(self, vmin, vmax):
         """
@@ -104,7 +105,7 @@ class PlotFigure2d(PlotFigure):
         Update axes labels, scales, tick locations and labels, as well as axes
         limits.
         """
-        super().update_axes()
+        self.reset_axis_offsets()
         self.ax.set_xlabel(
             axparams["x"]["label"] if self.xlabel is None else self.xlabel)
         self.ax.set_ylabel(

@@ -208,6 +208,12 @@ class PlotModel:
         offset according to the currently displayed range.
         """
         def formatter(val, pos):
+            """
+            Note that there is not 'ms' between 's' and 'us' because it is
+            clearer for the user to see a tick as '45.123 s' instead of
+            offset: 2017-01-13T12:15:45
+            tick: 123 ms
+            """
             dt = str(np.datetime64(int(val) + int(offset), 'ns'))
             start = 0
             end = len(dt)
@@ -221,7 +227,7 @@ class PlotModel:
             elif diff < 2e6:  # offset: 2017-01-13T12:15:45.123, tick: 456 us
                 start = 23
                 end = 26
-                u = "us"
+                u = "$\mu$s"
             elif diff < 2e9:  # offset: 2017-01-13T12:15, tick: 45.123 s
                 start = 17
                 end = 23
@@ -243,13 +249,14 @@ class PlotModel:
 
             if pos == 0:
                 self.interface["set_view_axis_offset"](
-                    dim, dt[:start].strip('T').strip(':').strip('-'))
+                    dim, dt[:start].rstrip('T').rstrip(':').rstrip('-'))
                 label = dim
                 if len(u) > 0:
                     label += " [{}]".format(u)
                 self.interface["set_view_axis_label"](dim, label)
 
-            return (dt[start:end] + suffix).replace("T", " ")
+            string = (dt[start:end] + suffix).replace("T", " ").lstrip("0")
+            return "0" if len(string) == 0 else string
 
         return formatter
 

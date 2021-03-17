@@ -72,7 +72,6 @@ class PlotFigure1d(PlotFigure):
         Wipe the figure and start over when the dimension to be displayed along
         the horizontal axis is changed.
         """
-        super().update_axes()
         xparams = axparams["x"]
         self._xparams = xparams
 
@@ -80,6 +79,10 @@ class PlotFigure1d(PlotFigure):
             title = self.ax.get_title()
             self.ax.clear()
             self.ax.set_title(title)
+
+        # Note: the axis_offsets text objects need to be created before setting
+        # the axis formatters
+        self.create_axis_offsets()
 
         if self.mpl_line_params is None:
             self.mpl_line_params = {

@@ -53,22 +53,7 @@ class PlotFigure:
         self.axlocator = {}
         self.xlabel = xlabel
         self.ylabel = ylabel
-        self.axis_offsets = {
-            "x":
-            self.ax.text(0.70,
-                         -0.07,
-                         "",
-                         ha='left',
-                         va='top',
-                         transform=self.ax.transAxes),
-            "y":
-            self.ax.text(0.0,
-                         1.0,
-                         "",
-                         ha='left',
-                         va='bottom',
-                         transform=self.ax.transAxes)
-        }
+        self.axis_offsets = {}
 
     def is_widget(self):
         """
@@ -220,6 +205,29 @@ class PlotFigure:
     def set_axis_label(self, axis, string):
         getattr(self.ax, "set_{}label".format(axis))(string)
 
-    def update_axes(self):
+    def create_axis_offsets(self):
+        """
+        The hard-coded numbers represent x/y locations of the text, in
+        normalized axis coordinates (i.e. the lower and upper figure axes are
+        drawn at 0 and 1, respectively).
+        """
+        self.axis_offsets.update({
+            "x":
+            self.ax.text(0.70,
+                         -0.07,
+                         "",
+                         ha='left',
+                         va='top',
+                         transform=self.ax.transAxes),
+            "y":
+            self.ax.text(0.0,
+                         1.0,
+                         "",
+                         ha='left',
+                         va='bottom',
+                         transform=self.ax.transAxes)
+        })
+
+    def reset_axis_offsets(self):
         for text in self.axis_offsets.values():
             text.set_text("")
