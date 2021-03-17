@@ -125,3 +125,22 @@ TEST(CreationTest, special_like_bool) {
                                Values{std::numeric_limits<bool>::lowest(),
                                       std::numeric_limits<bool>::lowest()}));
 }
+
+TEST(CreationTest, special_like_time_point) {
+  using core::time_point;
+  const auto var = makeVariable<time_point>(units::ns, Values{time_point(1)});
+  EXPECT_EQ(special_like(var, variable::FillValue::ZeroNotBool),
+            makeVariable<time_point>(units::ns, Values{time_point(0)}));
+  EXPECT_EQ(special_like(var, variable::FillValue::True),
+            makeVariable<bool>(units::ns, Values{true}));
+  EXPECT_EQ(special_like(var, variable::FillValue::False),
+            makeVariable<bool>(units::ns, Values{false}));
+  EXPECT_EQ(
+      special_like(var, variable::FillValue::Max),
+      makeVariable<time_point>(
+          units::ns, Values{time_point(std::numeric_limits<int64_t>::max())}));
+  EXPECT_EQ(special_like(var, variable::FillValue::Lowest),
+            makeVariable<time_point>(
+                units::ns,
+                Values{time_point(std::numeric_limits<int64_t>::lowest())}));
+}

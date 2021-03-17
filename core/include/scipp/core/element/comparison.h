@@ -92,7 +92,7 @@ constexpr auto not_equal =
     overloaded{comparison, [](const auto &x, const auto &y) { return x != y; }};
 
 constexpr auto max_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
+    overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,
                transform_flags::expect_in_variance_if_out_variance,
                [](auto &&a, const auto &b) {
                  using std::max;
@@ -100,7 +100,7 @@ constexpr auto max_equals =
                }};
 
 constexpr auto nanmax_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
+    overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,
                transform_flags::expect_in_variance_if_out_variance,
                [](auto &&a, const auto &b) {
                  using numeric::isnan;
@@ -112,7 +112,7 @@ constexpr auto nanmax_equals =
                }};
 
 constexpr auto min_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
+    overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,
                transform_flags::expect_in_variance_if_out_variance,
                [](auto &&a, const auto &b) {
                  using std::min;
@@ -120,7 +120,7 @@ constexpr auto min_equals =
                }};
 
 constexpr auto nanmin_equals =
-    overloaded{arg_list<double, float, int64_t, int32_t, bool>,
+    overloaded{arg_list<double, float, int64_t, int32_t, bool, time_point>,
                transform_flags::expect_in_variance_if_out_variance,
                [](auto &&a, const auto &b) {
                  using numeric::isnan;
