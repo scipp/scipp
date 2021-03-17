@@ -108,6 +108,18 @@ private:
   std::unordered_map<Dim, scipp::index> m_sizes;
 };
 
+template <class T>
+auto slice_map(const T &map, const Dim dim, const scipp::index offset) {
+  T out;
+  for (const auto &[key, value] : map) {
+    if (value.dims().contains(dim))
+      out[key] = value.slice(dim, offset);
+    else
+      out[key] = value;
+  }
+  return out;
+}
+
 // Dataset: dims can be extended
 // Coords: cannot extend, except for special case bin edges
 // slice of coords: drop items, slice items
@@ -123,33 +135,26 @@ public:
     for (const auto &[key, value] : items)
       setitem(key, value);
   }
-  auto operator[](const Key &key) const { return m_items->at(key); }
+  auto operator[](const Key &key) const { return m_items.at(key); }
   void setitem(const Key &key, Value coord) {
     if (!m_sizes.contains(coord.dims()))
       throw std::runtime_error("cannot add coord exceeding DataArray dims");
-    m_items->operator[](key) = coord;
+    m_items.operator[](key) = coord;
   }
-  bool contains(const Key &key) const { return m_items->count(key) == 1; }
-  auto begin() const { return m_items->begin(); }
-  auto end() const { return m_items->end(); }
-  auto begin() { return m_items->begin(); }
-  auto end() { return m_items->end(); }
+  bool contains(const Key &key) const { return m_items.count(key) == 1; }
+  auto begin() const { return m_items.begin(); }
+  auto end() const { return m_items.end(); }
+  auto begin() { return m_items.begin(); }
+  auto end() { return m_items.end(); }
 
   auto slice(const Dim dim, const scipp::index offset) const {
-    map_type items;
-    for (const auto &[key, value] : *this) {
-      if (value.dims().contains(dim))
-        items[key] = value.slice(dim, offset);
-      else
-        items[key] = value;
-    }
-    return Dict(m_sizes.slice(dim, offset), std::move(items));
+    return Dict(m_sizes.slice(dim, offset), slice_map(m_items, dim, offset));
   }
 
 private:
   // Note: We have no way of preventing name clashes of coords with attrs, this
   // would need to be handled dynamically on *access*
-  std::shared_ptr<map_type> m_items = std::make_shared<map_type>();
+  map_type m_items;
   Sizes m_sizes;
 };
 
@@ -172,6 +177,8 @@ public:
       : m_data(data), m_coords(coords), m_masks(masks) {
     // TODO verify sizes of coords and masks
   }
+
+  const auto &dims() const { return m_data.dims(); }
   // should share whole var, not just values?
   // ... or include unit in shared part?
   // da.data.unit = 'm' ok, DataArray does not care
@@ -185,8 +192,12 @@ public:
     // changes
   // auto shared_data() { return m_data; } // bind to da.data
   void setdata(const Variable &var) { m_data = var; }
-  auto coords() const { return m_coords; }
-  auto masks() const { return m_masks; }
+  // metadata dicts return by reference, in Python bindings we need to use
+  // keep_alive on the owning DataArray
+  const auto &coords() const { return m_coords; }
+  auto &coords() { return m_coords; }
+  const auto &masks() const { return m_masks; }
+  auto &masks() { return m_masks; }
   void reset_coords() { m_coords = Coords(m_data.dims(), {}); }
   // da.coords['x'] = x # must check dims... should Coords store data dims?
   // auto shared_coords() { return m_coords; } // bind to da.coords
@@ -206,7 +217,8 @@ private:
 // DataArray: dims and shape do not change, coords aligned + do not change
 class Dataset {
 public:
-  auto coords() const { return m_coords; }
+  const auto &coords() const { return m_coords; }
+  auto &coords() { return m_coords; }
   // in python, returning an item should share ownership *of the item*, NOT of
   // the item contents => need to wrap item in shared_ptr?
   auto operator[](const std::string &name) const {
@@ -230,6 +242,13 @@ public:
     if (m_coords.contains(dim) && m_coords[dim] != coord)
       throw std::runtime_error("Coords not aligned");
     m_coords.setitem(dim, coord);
+  }
+
+  Dataset slice(const Dim dim, const scipp::index offset) const {
+    Dataset out;
+    out.m_coords = m_coords.slice(dim, offset);
+    out.m_items = slice_map(m_items, dim, offset);
+    return out;
   }
 
 private:
@@ -424,10 +443,11 @@ TEST_F(DataArrayContractTest, shallow_copy_data_unit_can_be_set) {
   EXPECT_EQ(da.data().unit(), units::s);
 }
 
-TEST_F(DataArrayContractTest, shallow_copy_coords_can_be_added) {
+TEST_F(DataArrayContractTest, shallow_copy_coords_cannot_be_added) {
   auto shallow = da;
   shallow.coords().setitem(Dim("new"), var);
-  EXPECT_TRUE(da.coords().contains(Dim("new")));
+  EXPECT_TRUE(shallow.coords().contains(Dim("new")));
+  EXPECT_FALSE(da.coords().contains(Dim("new")));
 }
 
 TEST_F(DataArrayContractTest, shallow_copy_coord_values_can_be_set) {
@@ -444,10 +464,11 @@ TEST_F(DataArrayContractTest, shallow_copy_coord_unit_can_be_set) {
   EXPECT_EQ(da.coords()[Dim::X].unit(), units::s);
 }
 
-TEST_F(DataArrayContractTest, shallow_copy_masks_can_be_added) {
+TEST_F(DataArrayContractTest, shallow_copy_masks_cannot_be_added) {
   auto shallow = da;
   shallow.masks().setitem("mask", var);
-  EXPECT_TRUE(da.masks().contains("mask"));
+  EXPECT_TRUE(shallow.masks().contains("mask"));
+  EXPECT_FALSE(da.masks().contains("mask"));
 }
 
 TEST_F(DataArrayContractTest, shallow_copy_mask_values_can_be_set) {
@@ -478,6 +499,7 @@ TEST_F(DataArrayContractTest, slice_data_unit_cannot_be_set) {
 TEST_F(DataArrayContractTest, slice_coords_cannot_be_added) {
   auto slice = da.slice(Dim::X, 1);
   slice.coords().setitem(Dim("new"), var.slice(Dim::X, 1));
+  EXPECT_TRUE(slice.coords().contains(Dim("new")));
   EXPECT_FALSE(da.coords().contains(Dim("new")));
 }
 
@@ -497,6 +519,7 @@ TEST_F(DataArrayContractTest, slice_coord_unit_cannot_be_set) {
 TEST_F(DataArrayContractTest, slice_masks_cannot_be_added) {
   auto slice = da.slice(Dim::X, 1);
   slice.masks().setitem("mask", var.slice(Dim::X, 1));
+  EXPECT_TRUE(slice.masks().contains("mask"));
   EXPECT_FALSE(da.masks().contains("mask"));
 }
 
