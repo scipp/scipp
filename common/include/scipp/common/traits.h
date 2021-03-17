@@ -4,6 +4,8 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <tuple>
+
 namespace scipp::common {
 
 // https://stackoverflow.com/a/18063608
