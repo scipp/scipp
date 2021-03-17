@@ -69,6 +69,7 @@ class DataAccessHelper {
         return py::dtype("datetime64[" + to_string_ascii_time(view.unit()) +
                          ']');
       } else {
+        static_cast<void>(view);
         return py::dtype::of<T>();
       }
     };

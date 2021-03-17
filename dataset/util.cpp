@@ -43,14 +43,14 @@ scipp::index size_of(const DataArrayConstView &dataarray,
                      bool include_aligned_coords) {
   scipp::index size = 0;
   size += size_of(dataarray.data());
-  for (const auto &coord : dataarray.attrs()) {
+  for (const auto coord : dataarray.attrs()) {
     size += size_of(coord.second);
   }
-  for (const auto &mask : dataarray.masks()) {
+  for (const auto mask : dataarray.masks()) {
     size += size_of(mask.second);
   }
   if (include_aligned_coords) {
-    for (const auto &coord : dataarray.coords()) {
+    for (const auto coord : dataarray.coords()) {
       size += size_of(coord.second);
     }
   }
@@ -62,7 +62,7 @@ scipp::index size_of(const DatasetConstView &dataset) {
   for (const auto &data : dataset) {
     size += size_of(data, false);
   }
-  for (const auto &coord : dataset.coords()) {
+  for (const auto coord : dataset.coords()) {
     size += size_of(coord.second);
   }
   return size;

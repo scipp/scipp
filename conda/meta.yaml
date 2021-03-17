@@ -30,10 +30,8 @@ test:
     - h5py
     - ipywidgets
     - matplotlib-base
-    - psutil
     - pytest
     - pythreejs
-    - Pillow
   source_files:
     - python/tests
   commands:

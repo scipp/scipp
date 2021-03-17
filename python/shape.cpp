@@ -17,7 +17,7 @@ namespace {
 
 Dimensions dict_to_dims(const py::dict &map) {
   Dimensions dims;
-  for (const auto &item : map)
+  for (const auto item : map)
     dims.addInner(item.first.cast<Dim>(), item.second.cast<scipp::index>());
   return dims;
 }

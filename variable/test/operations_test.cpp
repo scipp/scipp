@@ -361,13 +361,13 @@ TEST(Variable, concatenate) {
 TEST(Variable, concatenate_volume_with_slice) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   auto aa = concatenate(a, a, Dim::X);
-  EXPECT_NO_THROW(concatenate(aa, a, Dim::X));
+  EXPECT_NO_THROW_DISCARD(concatenate(aa, a, Dim::X));
 }
 
 TEST(Variable, concatenate_slice_with_volume) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   auto aa = concatenate(a, a, Dim::X);
-  EXPECT_NO_THROW(concatenate(a, aa, Dim::X));
+  EXPECT_NO_THROW_DISCARD(concatenate(a, aa, Dim::X));
 }
 
 TEST(Variable, concatenate_fail) {
@@ -388,12 +388,12 @@ TEST(Variable, concatenate_unit_fail) {
   Dimensions dims(Dim::X, 1);
   auto a = makeVariable<double>(Dimensions(dims), Values{1.0});
   auto b(a);
-  EXPECT_NO_THROW(concatenate(a, b, Dim::X));
+  EXPECT_NO_THROW_DISCARD(concatenate(a, b, Dim::X));
   a.setUnit(units::m);
   EXPECT_THROW_MSG_DISCARD(concatenate(a, b, Dim::X), std::runtime_error,
                            "Cannot concatenate Variables: Units do not match.");
   b.setUnit(units::m);
-  EXPECT_NO_THROW(concatenate(a, b, Dim::X));
+  EXPECT_NO_THROW_DISCARD(concatenate(a, b, Dim::X));
 }
 
 TEST(Variable, concatenate_from_slices_with_broadcast) {

@@ -44,7 +44,7 @@ template <class Id, class Key, class Value>
 std::string to_string(const ConstView<Id, Key, Value> &view) {
   std::stringstream ss;
   ss << "<scipp.ConstView>\n";
-  for (const auto &[key, item] : view) {
+  for (const auto [key, item] : view) {
     ss << "  " << key << ":" << to_string(item);
   }
   return ss.str();
@@ -54,7 +54,7 @@ template <class T, class U>
 std::string to_string(const MutableView<T, U> &mutableView) {
   std::stringstream ss;
   ss << "<scipp.MutableView>\n";
-  for (const auto &[key, item] : mutableView) {
+  for (const auto [key, item] : mutableView) {
     ss << "  " << key << ":" << to_string(item);
   }
   return ss.str();
