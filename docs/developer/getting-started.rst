@@ -4,6 +4,12 @@ Getting Started
 Prerequisites
 ~~~~~~~~~~~~~
 
+The only non-optional pre-dependency for building scipp is ``boost``.
+We recommend using the provided ``scipp-developer.yml`` for installing this and other dependencies in a ``conda`` environment (see below).
+Alternatively you can refer to this file for a full list of dependencies.
+
+Other dependencies such as ``pybind11`` are downloaded automatically when running ``cmake``.
+
 See `Tooling <tooling.html>`_ for compilers and other required tools.
 
 Getting the code, building, and installing
