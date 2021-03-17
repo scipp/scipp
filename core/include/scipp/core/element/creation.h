@@ -39,8 +39,7 @@ template <class T> struct underlying<ValueAndVariance<T>> { using type = T; };
 template <class T> using underlying_t = typename underlying<T>::type;
 
 constexpr auto numeric_limits_max_like =
-    overloaded{special_like,
-               [](const auto &x) {
+    overloaded{special_like, [](const auto &x) {
                  using T = underlying_t<std::decay_t<decltype(x)>>;
                  if constexpr (std::is_same_v<T, core::time_point>)
                    return core::time_point(std::numeric_limits<int64_t>::max());
@@ -49,8 +48,7 @@ constexpr auto numeric_limits_max_like =
                }};
 
 constexpr auto numeric_limits_lowest_like = overloaded{
-    special_like,
-    [](const auto &x) {
+    special_like, [](const auto &x) {
       using T = underlying_t<std::decay_t<decltype(x)>>;
       if constexpr (std::is_same_v<T, core::time_point>)
         return core::time_point(std::numeric_limits<int64_t>::lowest());
