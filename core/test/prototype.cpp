@@ -48,9 +48,6 @@ public:
   }
   bool operator!=(const Variable &other) const { return !operator==(other); }
 
-  // Returns Variable by value, sharing ownership
-  // ... want to share unit, but not dims??
-  // data dims vs slice dims?
   Variable slice(const Dim dim, const scipp::index offset) const {
     Variable out(*this);
     auto out_dims = dims();
@@ -112,6 +109,8 @@ public:
     return true;
   }
 
+  void erase(const Dim dim) { m_sizes.erase(dim); }
+
 private:
   std::unordered_map<Dim, scipp::index> m_sizes;
 };
@@ -143,6 +142,19 @@ public:
   auto begin() { return m_items->begin(); }
   auto end() { return m_items->end(); }
 
+  auto slice(const Dim dim, const scipp::index offset) const {
+    auto sizes = m_sizes;
+    sizes.erase(dim);
+    map_type items;
+    for (const auto &[key, value] : *this) {
+      if (value.dims().contains(dim))
+        items[key] = value.slice(dim, offset);
+      else
+        items[key] = value;
+    }
+    return Dict(sizes, std::move(items));
+  }
+
 private:
   // Note: We have no way of preventing name clashes of coords with attrs, this
   // would need to be handled dynamically on *access*
@@ -165,6 +177,10 @@ public:
   DataArray(Variable data, const std::unordered_map<Dim, Variable> &coords)
       : m_data(std::move(data)), m_coords(m_data.dims(), coords),
         m_masks(m_data.dims(), {}) {}
+  DataArray(Variable data, Coords coords, Masks masks)
+      : m_data(data), m_coords(coords), m_masks(masks) {
+    // TODO verify sizes of coords and masks
+  }
   // should share whole var, not just values?
   // ... or include unit in shared part?
   // da.data.unit = 'm' ok, DataArray does not care
@@ -177,11 +193,17 @@ public:
     // invariants... see current impl which returns VariableView, preventing bad
     // changes
   // auto shared_data() { return m_data; } // bind to da.data
+  void setdata(const Variable &var) { m_data = var; }
   auto coords() const { return m_coords; }
   auto masks() const { return m_masks; }
   void reset_coords() { m_coords = Coords(m_data.dims(), {}); }
   // da.coords['x'] = x # must check dims... should Coords store data dims?
   // auto shared_coords() { return m_coords; } // bind to da.coords
+
+  DataArray slice(const Dim dim, const scipp::index offset) const {
+    return {m_data.slice(dim, offset), m_coords.slice(dim, offset),
+            m_masks.slice(dim, offset)};
+  }
 
 private:
   Variable m_data;
@@ -347,6 +369,14 @@ protected:
   DataArray da{var, {}};
 };
 
+TEST_F(DataArrayContractTest, data_can_be_set) {
+  const Variable data{dimsX, units::s, {2, 4, 8}};
+  // Note that unlike Python we cannot use da.data() = data,
+  // The property setter for `data` has to be bound to setdata
+  da.setdata(data);
+  EXPECT_EQ(da.data(), data);
+}
+
 TEST_F(DataArrayContractTest, data_values_can_be_set) {
   da.data().values()[0] = 17;
   EXPECT_EQ(da.data().values()[0], 17);
@@ -372,4 +402,122 @@ TEST_F(DataArrayContractTest, coord_unit_can_be_set) {
   da.coords().setitem(Dim::X, var);
   da.coords()[Dim::X].setunit(units::s);
   EXPECT_EQ(da.coords()[Dim::X].unit(), units::s);
+}
+
+TEST_F(DataArrayContractTest, masks_can_be_added) {
+  da.masks().setitem("mask", var);
+  EXPECT_TRUE(da.masks().contains("mask"));
+}
+
+TEST_F(DataArrayContractTest, mask_values_can_be_set) {
+  da.masks().setitem("mask", var);
+  da.masks()["mask"].values()[0] = 17;
+  EXPECT_EQ(da.masks()["mask"].values()[0], 17);
+}
+
+TEST_F(DataArrayContractTest, mask_unit_can_be_set) {
+  da.masks().setitem("mask", var);
+  da.masks()["mask"].setunit(units::s);
+  EXPECT_EQ(da.masks()["mask"].unit(), units::s);
+}
+
+TEST_F(DataArrayContractTest, shallow_copy_data_values_can_be_set) {
+  auto shallow = da;
+  da.data().values()[0] = 17;
+  EXPECT_EQ(da.data().values()[0], 17);
+}
+
+TEST_F(DataArrayContractTest, shallow_copy_data_unit_can_be_set) {
+  auto shallow = da;
+  shallow.data().setunit(units::s);
+  EXPECT_EQ(da.data().unit(), units::s);
+}
+
+TEST_F(DataArrayContractTest, shallow_copy_coords_can_be_added) {
+  auto shallow = da;
+  shallow.coords().setitem(Dim("new"), var);
+  EXPECT_TRUE(da.coords().contains(Dim("new")));
+}
+
+TEST_F(DataArrayContractTest, shallow_copy_coord_values_can_be_set) {
+  da.coords().setitem(Dim::X, var);
+  auto shallow = da;
+  shallow.coords()[Dim::X].values()[0] = 17;
+  EXPECT_EQ(da.coords()[Dim::X].values()[0], 17);
+}
+
+TEST_F(DataArrayContractTest, shallow_copy_coord_unit_can_be_set) {
+  da.coords().setitem(Dim::X, var);
+  auto shallow = da;
+  shallow.coords()[Dim::X].setunit(units::s);
+  EXPECT_EQ(da.coords()[Dim::X].unit(), units::s);
+}
+
+TEST_F(DataArrayContractTest, shallow_copy_masks_can_be_added) {
+  auto shallow = da;
+  shallow.masks().setitem("mask", var);
+  EXPECT_TRUE(da.masks().contains("mask"));
+}
+
+TEST_F(DataArrayContractTest, shallow_copy_mask_values_can_be_set) {
+  da.masks().setitem("mask", var);
+  auto shallow = da;
+  shallow.masks()["mask"].values()[0] = 17;
+  EXPECT_EQ(da.masks()["mask"].values()[0], 17);
+}
+
+TEST_F(DataArrayContractTest, shallow_copy_mask_unit_can_be_set) {
+  da.masks().setitem("mask", var);
+  auto shallow = da;
+  shallow.masks()["mask"].setunit(units::s);
+  EXPECT_EQ(da.masks()["mask"].unit(), units::s);
+}
+
+TEST_F(DataArrayContractTest, slice_data_values_can_be_set) {
+  auto slice = da.slice(Dim::X, 1);
+  da.data().values()[0] = 17;
+  EXPECT_EQ(da.data().values()[0], 17);
+}
+
+TEST_F(DataArrayContractTest, slice_data_unit_cannot_be_set) {
+  auto slice = da.slice(Dim::X, 1);
+  EXPECT_ANY_THROW(slice.data().setunit(units::s));
+}
+
+TEST_F(DataArrayContractTest, slice_coords_cannot_be_added) {
+  auto slice = da.slice(Dim::X, 1);
+  slice.coords().setitem(Dim("new"), var.slice(Dim::X, 1));
+  EXPECT_FALSE(da.coords().contains(Dim("new")));
+}
+
+TEST_F(DataArrayContractTest, slice_coord_values_can_be_set) {
+  da.coords().setitem(Dim::X, var);
+  auto slice = da.slice(Dim::X, 1);
+  slice.coords()[Dim::X].values()[0] = 17;
+  EXPECT_EQ(da.coords()[Dim::X].values()[1], 17);
+}
+
+TEST_F(DataArrayContractTest, slice_coord_unit_cannot_be_set) {
+  da.coords().setitem(Dim::X, var);
+  auto slice = da.slice(Dim::X, 1);
+  EXPECT_ANY_THROW(slice.coords()[Dim::X].setunit(units::s));
+}
+
+TEST_F(DataArrayContractTest, slice_masks_cannot_be_added) {
+  auto slice = da.slice(Dim::X, 1);
+  slice.masks().setitem("mask", var.slice(Dim::X, 1));
+  EXPECT_FALSE(da.masks().contains("mask"));
+}
+
+TEST_F(DataArrayContractTest, slice_mask_values_can_be_set) {
+  da.masks().setitem("mask", var);
+  auto slice = da.slice(Dim::X, 1);
+  slice.masks()["mask"].values()[0] = 17;
+  EXPECT_EQ(da.masks()["mask"].values()[1], 17);
+}
+
+TEST_F(DataArrayContractTest, slice_mask_unit_cannot_be_set) {
+  da.masks().setitem("mask", var);
+  auto slice = da.slice(Dim::X, 1);
+  EXPECT_ANY_THROW(slice.masks()["mask"].setunit(units::s));
 }
