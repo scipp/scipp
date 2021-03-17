@@ -55,7 +55,8 @@ constexpr auto numeric_limits_lowest_like =
                      underlying_t<std::decay_t<decltype(x)>>>::lowest();
                },
                [](const core::time_point &) {
-                 return core::time_point(std::numeric_limits<int64_t>::min());
+                 return core::time_point(
+                     std::numeric_limits<int64_t>::lowest());
                }};
 
 } // namespace scipp::core::element
