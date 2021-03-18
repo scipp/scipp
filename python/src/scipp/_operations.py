@@ -20,3 +20,32 @@ def sort(x, key, order='ascending'):
     :return: The sorted equivalent of the input.
     """
     return _call_cpp_func(_cpp.sort, x, key, order)
+
+
+def values(x):
+    """Return the object without variances.
+
+    :param x: Variable or DataArray
+    :seealso: :py:func:`scipp.variances`, :py:func:`scipp.stddevs`.
+    """
+    return _call_cpp_func(_cpp.values, x)
+
+
+def variances(x):
+    """Return object containing the variances of the input as values.
+
+    :param x: Variable or DataArray
+    :seealso: :py:func:`scipp.values`, :py:func:`scipp.stddevs`.
+    """
+    return _call_cpp_func(_cpp.variances, x)
+
+
+def stddevs(x):
+    """Return object containing the stddevs of the input as values.
+
+    This is essentially `sqrt(variances(x))`
+
+    :param x: Variable or DataArray
+    :seealso: :py:func:`scipp.values`, :py:func:`scipp.stddevs`.
+    """
+    return _call_cpp_func(_cpp.stddevs, x)

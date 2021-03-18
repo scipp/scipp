@@ -12,6 +12,15 @@
 
 namespace scipp::except {
 
+TypeError::TypeError(const std::string &msg) : Error{msg} {}
+
+template <>
+void throw_mismatch_error(const core::DType &expected,
+                          const core::DType &actual) {
+  throw TypeError("Expected dtype " + to_string(expected) + ", got " +
+                  to_string(actual) + '.');
+}
+
 DimensionError::DimensionError(const std::string &msg)
     : Error<core::Dimensions>(msg) {}
 
@@ -20,18 +29,35 @@ DimensionError::DimensionError(scipp::index expectedDim, scipp::index userDim)
                      std::to_string(std::abs(expectedDim)) +
                      " Requested size: " + std::to_string(userDim)) {}
 
-DimensionNotFoundError::DimensionNotFoundError(const core::Dimensions &expected,
-                                               const Dim actual)
-    : DimensionError("Expected dimension to be in " + to_string(expected) +
-                     ", got " + to_string(actual) + ".") {}
+namespace {
+std::string format_dims(const core::Dimensions &dims) {
+  if (dims.empty()) {
+    return "a scalar";
+  }
+  return "dimensions " + to_string(dims);
+}
+} // namespace
 
-DimensionLengthError::DimensionLengthError(const core::Dimensions &expected,
-                                           const Dim actual,
-                                           const scipp::index length)
-    : DimensionError("Expected dimension to be in " + to_string(expected) +
-                     ", got " + to_string(actual) +
-                     " with mismatching length " + std::to_string(length) +
-                     ".") {}
+template <>
+void throw_mismatch_error(const core::Dimensions &expected,
+                          const core::Dimensions &actual) {
+  throw DimensionError("Expected " + format_dims(expected) + ", got " +
+                       format_dims(actual) + '.');
+}
+
+void throw_dimension_not_found_error(const core::Dimensions &expected,
+                                     Dim actual) {
+  throw DimensionError{"Expected dimension to be in " + to_string(expected) +
+                       ", got " + to_string(actual) + '.'};
+}
+
+void throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
+                                  index length) {
+  throw DimensionError{"Expected dimension to be in " + to_string(expected) +
+                       ", got " + to_string(actual) +
+                       " with mismatching length " + std::to_string(length) +
+                       '.'};
+}
 
 } // namespace scipp::except
 
@@ -39,7 +65,7 @@ namespace scipp::core::expect {
 void dimensionMatches(const Dimensions &dims, const Dim dim,
                       const scipp::index length) {
   if (dims[dim] != length)
-    throw except::DimensionLengthError(dims, dim, length);
+    except::throw_dimension_length_error(dims, dim, length);
 }
 
 void validSlice(const Dimensions &dims, const Slice &slice) {

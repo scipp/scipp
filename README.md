@@ -5,6 +5,10 @@
 [![Binder](https://mybinder.org/badge_logo.svg)](https://mybinder.org/v2/gh/scipp/scipp/main?filepath=docs%2Fgetting-started%2Fquick-start.ipynb)
 [![Questions](https://img.shields.io/github/issues/scipp/scipp/question?color=%23d876e3&label=questions)](https://github.com/scipp/scipp/issues?utf8=%E2%9C%93&q=label%3Aquestion)
 
+| Downstream Project  | Status |
+| ------------------- | ------ |
+| scippneutron        | [![Build Status](https://dev.azure.com/scipp/scippneutron/_apis/build/status/Main?branchName=main)](https://dev.azure.com/scipp/scippneutron/_build/latest?definitionId=44&branchName=main)       |
+
 # Scipp
 
 See https://scipp.github.io/ for project context and how to use and install the **scipp** Python module.

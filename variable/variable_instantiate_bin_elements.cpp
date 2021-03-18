@@ -2,17 +2,16 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
+#include "scipp/variable/bin_variable.tcc"
 #include "scipp/variable/bins.h"
-#include "scipp/variable/bucket_variable.tcc"
 
 namespace scipp::variable {
 
 INSTANTIATE_VARIABLE(pair_int64, std::pair<int64_t, int64_t>)
 INSTANTIATE_VARIABLE(pair_int32, std::pair<int32_t, int32_t>)
-INSTANTIATE_BUCKET_VARIABLE(VariableView, bucket<Variable>)
-INSTANTIATE_BUCKET_VARIABLE(VariableView_observer, bucket<VariableView>)
-INSTANTIATE_BUCKET_VARIABLE(VariableConstView_observer,
-                            bucket<VariableConstView>)
+INSTANTIATE_BIN_VARIABLE(VariableView, bucket<Variable>)
+INSTANTIATE_BIN_VARIABLE(VariableView_observer, bucket<VariableView>)
+INSTANTIATE_BIN_VARIABLE(VariableConstView_observer, bucket<VariableConstView>)
 
 template <class T> class BinVariableMakerVariable : public BinVariableMaker<T> {
 private:

@@ -7,6 +7,30 @@
 #include "test_variables.h"
 
 using namespace scipp;
+using namespace scipp::variable;
+
+TEST(CreationTest, empty) {
+  const auto dims = Dimensions(Dim::X, 2);
+  const auto var1 = variable::empty(dims, units::m, dtype<double>, true);
+  EXPECT_EQ(var1.dims(), dims);
+  EXPECT_EQ(var1.unit(), units::m);
+  EXPECT_EQ(var1.dtype(), dtype<double>);
+  EXPECT_EQ(var1.hasVariances(), true);
+  const auto var2 = variable::empty(dims, units::s, dtype<int32_t>);
+  EXPECT_EQ(var2.dims(), dims);
+  EXPECT_EQ(var2.unit(), units::s);
+  EXPECT_EQ(var2.dtype(), dtype<int32_t>);
+  EXPECT_EQ(var2.hasVariances(), false);
+}
+
+TEST(CreationTest, ones) {
+  const auto dims = Dimensions(Dim::X, 2);
+  EXPECT_EQ(
+      variable::ones(dims, units::m, dtype<double>, true),
+      makeVariable<double>(dims, units::m, Values{1, 1}, Variances{1, 1}));
+  EXPECT_EQ(variable::ones(dims, units::s, dtype<int32_t>),
+            makeVariable<int32_t>(dims, units::s, Values{1, 1}));
+}
 
 TEST_P(DenseVariablesTest, empty_like_fail_if_sizes) {
   const auto var = GetParam();
@@ -100,4 +124,23 @@ TEST(CreationTest, special_like_bool) {
             makeVariable<bool>(var.dims(), var.unit(),
                                Values{std::numeric_limits<bool>::lowest(),
                                       std::numeric_limits<bool>::lowest()}));
+}
+
+TEST(CreationTest, special_like_time_point) {
+  using core::time_point;
+  const auto var = makeVariable<time_point>(units::ns, Values{time_point(1)});
+  EXPECT_EQ(special_like(var, variable::FillValue::ZeroNotBool),
+            makeVariable<time_point>(units::ns, Values{time_point(0)}));
+  EXPECT_EQ(special_like(var, variable::FillValue::True),
+            makeVariable<bool>(units::ns, Values{true}));
+  EXPECT_EQ(special_like(var, variable::FillValue::False),
+            makeVariable<bool>(units::ns, Values{false}));
+  EXPECT_EQ(
+      special_like(var, variable::FillValue::Max),
+      makeVariable<time_point>(
+          units::ns, Values{time_point(std::numeric_limits<int64_t>::max())}));
+  EXPECT_EQ(special_like(var, variable::FillValue::Lowest),
+            makeVariable<time_point>(
+                units::ns,
+                Values{time_point(std::numeric_limits<int64_t>::lowest())}));
 }

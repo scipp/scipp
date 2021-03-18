@@ -10,18 +10,25 @@ def _dtype_lut():
     # handling, but will do as we add support for other types such as
     # variable-length strings.
     dtypes = [
-        d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.Variable,
-        d.DataArray, d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView,
-        d.vector_3_float64, d.matrix_3_float64
+        d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64, d.string,
+        d.Variable, d.DataArray, d.Dataset, d.VariableView, d.DataArrayView,
+        d.DatasetView, d.vector_3_float64, d.matrix_3_float64
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
 
 
-class NumpyDataIO():
+def _as_hdf5_type(a):
+    import numpy as np
+    if np.issubdtype(a.dtype, np.datetime64):
+        return a.view(np.int64)
+    return a
+
+
+class NumpyDataIO:
     @staticmethod
     def write(group, data):
-        dset = group.create_dataset('values', data=data.values)
+        dset = group.create_dataset('values', data=_as_hdf5_type(data.values))
         if data.variances is not None:
             variances = group.create_dataset('variances', data=data.variances)
             dset.attrs['variances'] = variances.ref
@@ -29,12 +36,12 @@ class NumpyDataIO():
 
     @staticmethod
     def read(group, data):
-        group['values'].read_direct(data.values)
+        group['values'].read_direct(_as_hdf5_type(data.values))
         if 'variances' in group:
             group['variances'].read_direct(data.variances)
 
 
-class EigenDataIO():
+class EigenDataIO:
     @staticmethod
     def write(group, data):
         import numpy as np
@@ -51,12 +58,12 @@ class EigenDataIO():
             data.values = np.asarray(group['values'])
 
 
-class BinDataIO():
+class BinDataIO:
     @staticmethod
     def write(group, data):
         from .. import sum as sc_sum
-        buffer_len = dict(zip(data.bins.data.dims,
-                              data.bins.data.shape))[str(data.bins.dim)]
+        bins = data.bins.constituents
+        buffer_len = bins['data'].sizes[bins['dim']]
         # Crude mechanism to avoid writing large buffers, e.g., from
         # overallocation or when writing a slice of a larger variable. The
         # copy causes some overhead, but so would the (much mor complicated)
@@ -64,12 +71,13 @@ class BinDataIO():
         # need to be revisited in the future.
         if buffer_len > 1.5 * sc_sum(data.bins.size()).value:
             data = data.copy()
+            bins = data.bins.constituents
         values = group.create_group('values')
-        VariableIO.write(values.create_group('begin'), var=data.bins.begin)
-        VariableIO.write(values.create_group('end'), var=data.bins.end)
+        VariableIO.write(values.create_group('begin'), var=bins['begin'])
+        VariableIO.write(values.create_group('end'), var=bins['end'])
         data_group = values.create_group('data')
-        data_group.attrs['dim'] = str(data.bins.dim)
-        HDF5IO.write(data_group, data.bins.data)
+        data_group.attrs['dim'] = bins['dim']
+        HDF5IO.write(data_group, bins['data'])
         return values
 
     @staticmethod
@@ -83,7 +91,7 @@ class BinDataIO():
         return sc.bins(begin=begin, end=end, dim=dim, data=data)
 
 
-class ScippDataIO():
+class ScippDataIO:
     @staticmethod
     def write(group, data):
         values = group.create_group('values')
@@ -104,7 +112,7 @@ class ScippDataIO():
                 data.values[i] = HDF5IO.read(values[f'value-{i}'])
 
 
-class StringDataIO():
+class StringDataIO:
     @staticmethod
     def write(group, data):
         import h5py
@@ -137,7 +145,7 @@ def _check_scipp_header(group, what):
     if 'scipp-version' not in group.attrs:
         raise RuntimeError(
             "This does not look like an HDF5 file/group written by scipp.")
-    if (group.attrs['scipp-type'] != what):
+    if group.attrs['scipp-type'] != what:
         raise RuntimeError(
             f"Attempt to read {what}, found {group.attrs['scipp-type']}.")
 
@@ -145,7 +153,9 @@ def _check_scipp_header(group, what):
 def _data_handler_lut():
     from .._scipp.core import dtype as d
     handler = {}
-    for dtype in [d.float64, d.float32, d.int64, d.int32, d.bool]:
+    for dtype in [
+            d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64
+    ]:
         handler[str(dtype)] = NumpyDataIO
     for dtype in [d.VariableView, d.DataArrayView, d.DatasetView]:
         handler[str(dtype)] = BinDataIO

@@ -19,7 +19,7 @@
 
 .. |scipp-neutron| image:: _static/title-instrument-view.png
    :width: 33%
-   :target: scipp-neutron/instrument-view.html
+   :target: https://scipp.github.io/scippneutron
 
 .. |slicing| image:: _static/title-show.png
    :width: 33%
@@ -44,7 +44,14 @@ If your use case requires one or several of the items on the following list, usi
 
 Generic functionality of scipp is provided in the **scipp** Python module.
 In addition, more specific functionality is made available in other modules.
-Currently the only example for this is **scipp.neutron** for handling data from neutron-scattering experiments.
+Currently the only example for this is `scippneutron <https://scipp.github.io/scippneutron>`_ for handling data from neutron-scattering experiments.
+
+News
+----
+
+- Scipp is moving from GPLv3 to the more permissive BSD-3 license which fits better into the Python eco system.
+- Looking for ``scipp.neutron``?
+  This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
 
 Where can I get help?
 ---------------------
@@ -103,7 +110,6 @@ Documentation
 
    tutorials/introduction
    tutorials/multi-d-datasets
-   tutorials/neutron-diffraction
 
 .. toctree::
    :caption: Reference
@@ -114,17 +120,6 @@ Documentation
    python-reference/units
    python-reference/error-propagation
    python-reference/runtime-configuration
-
-.. toctree::
-   :caption: Neutron-scattering
-   :maxdepth: 3
-
-   scipp-neutron/overview
-   scipp-neutron/unit-conversions
-   scipp-neutron/groupby
-   scipp-neutron/diffraction
-   scipp-neutron/from-mantid-to-scipp
-   scipp-neutron/instrument-view
 
 .. toctree::
    :caption: Developer Documentation

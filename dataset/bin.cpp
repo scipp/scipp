@@ -75,7 +75,8 @@ void update_indices_by_binning(const VariableView &indices,
 template <class Index>
 Variable groups_to_map(const VariableConstView &var, const Dim dim) {
   return variable::transform(subspan_view(var, dim),
-                             core::element::groups_to_map<Index>);
+                             core::element::groups_to_map<Index>,
+                             "scipp.bin.groups_to_map");
 }
 
 void update_indices_by_grouping(const VariableView &indices,
@@ -86,7 +87,8 @@ void update_indices_by_grouping(const VariableView &indices,
                        ? groups_to_map<int64_t>(groups, dim)
                        : groups_to_map<int32_t>(groups, dim);
   variable::transform_in_place(indices, key, map,
-                               core::element::update_indices_by_grouping);
+                               core::element::update_indices_by_grouping,
+                               "scipp.bin.update_indices_by_grouping");
 }
 
 void update_indices_from_existing(const VariableView &indices, const Dim dim) {
@@ -255,7 +257,7 @@ public:
       if (action == AxisAction::Group)
         update_indices_by_grouping(indices, get_coord(dim), key);
       else if (action == AxisAction::Bin) {
-        const auto linspace = all(is_linspace(key, dim)).template value<bool>();
+        const auto linspace = all(islinspace(key, dim)).template value<bool>();
         // When binning along an existing dim with a coord (may be edges or
         // not), not all input bins can map to all output bins. The array of
         // subbin sizes that is normally created thus contains mainly zero
@@ -281,7 +283,7 @@ public:
         // every input event. This is unrelated and varies independently,
         // depending on parameters of the input.
         if (bin_coords.count(dim) && m_offsets.dims().empty() &&
-            is_sorted(bin_coords.at(dim), dim)) {
+            issorted(bin_coords.at(dim), dim)) {
           const auto &bin_coord = bin_coords.at(dim);
           const bool histogram =
               bin_coord.dims()[dim] == indices.dims()[dim] + 1;
@@ -523,8 +525,18 @@ DataArray groupby_concat_bins(const DataArrayConstView &array,
 }
 
 namespace {
-void validate_bin_args(const std::vector<VariableConstView> &edges,
+void validate_bin_args(const DataArrayConstView &array,
+                       const std::vector<VariableConstView> &edges,
                        const std::vector<VariableConstView> &groups) {
+  if ((is_bins(array) &&
+       std::get<2>(array.data().constituents<bucket<DataArray>>())
+               .dims()
+               .ndim() > 1) ||
+      (!is_bins(array) && array.dims().ndim() > 1)) {
+    throw except::BinnedDataError(
+        "Binning is only implemented for 1-dimensional data. Consider using "
+        "groupby, it might be able to do what you need.");
+  }
   if (edges.empty() && groups.empty())
     throw except::BinnedDataError(
         "Arguments 'edges' and 'groups' of scipp.bin are "
@@ -534,7 +546,7 @@ void validate_bin_args(const std::vector<VariableConstView> &edges,
     if (edge.dims()[dim] < 2)
       throw except::BinEdgeError("Not enough bin edges in dim " +
                                  to_string(dim) + ". Need at least 2.");
-    if (!is_sorted(edge, dim))
+    if (!issorted(edge, dim))
       throw except::BinEdgeError("Bin edges in dim " + to_string(dim) +
                                  " must be sorted.");
   }
@@ -545,7 +557,7 @@ DataArray bin(const DataArrayConstView &array,
               const std::vector<VariableConstView> &edges,
               const std::vector<VariableConstView> &groups,
               const std::vector<Dim> &erase) {
-  validate_bin_args(edges, groups);
+  validate_bin_args(array, edges, groups);
   const auto &data = array.data();
   const auto &coords = array.coords();
   const auto &masks = array.masks();

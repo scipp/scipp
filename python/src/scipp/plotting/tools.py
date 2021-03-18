@@ -86,8 +86,14 @@ def parse_params(params=None,
     else:
         parsed["cmap"] = copy(cm.get_cmap(parsed["cmap"]))
 
-    parsed["cmap"].set_under(parsed["under_color"])
-    parsed["cmap"].set_over(parsed["over_color"])
+    if parsed["under_color"] is None:
+        parsed["cmap"].set_under(parsed["cmap"](0.0))
+    else:
+        parsed["cmap"].set_under(parsed["under_color"])
+    if parsed["over_color"] is None:
+        parsed["cmap"].set_over(parsed["cmap"](1.0))
+    else:
+        parsed["cmap"].set_over(parsed["over_color"])
 
     if variable is not None:
         parsed["unit"] = name_with_unit(var=variable, name="")
@@ -123,7 +129,7 @@ def find_log_limits(x):
     and 1.0e+30 and include only bins that are non-zero.
     """
     volume = np.product(x.shape)
-    pixel = sc.reshape(sc.values(x), dims=['pixel'], shape=(volume, ))
+    pixel = sc.reshape(sc.values(x), {'pixel': volume})
     weights = sc.Variable(dims=['pixel'], values=np.ones(volume))
     hist = sc.histogram(sc.DataArray(data=weights, coords={'order': pixel}),
                         bins=sc.Variable(dims=['order'],

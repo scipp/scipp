@@ -15,12 +15,12 @@
 #include "scipp/variable/bins.h"
 #include "scipp/variable/bucket_model.h"
 #include "scipp/variable/cumulative.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/reduction.h"
 #include "scipp/variable/shape.h"
 #include "scipp/variable/subspan_view.h"
 #include "scipp/variable/transform.h"
 #include "scipp/variable/transform_subspan.h"
-#include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
 #include "scipp/dataset/bin.h"
@@ -357,11 +357,11 @@ Variable map(const DataArrayConstView &function, const VariableConstView &x,
   const auto &coord = bins_view<DataArray>(x).meta()[dim];
   const auto &edges = function.meta()[dim];
   const auto weights = subspan_view(masker.data(), dim);
-  if (all(is_linspace(edges, dim)).value<bool>()) {
+  if (all(islinspace(edges, dim)).value<bool>()) {
     return variable::transform(coord, subspan_view(edges, dim), weights,
                                core::element::event::map_linspace);
   } else {
-    if (!is_sorted(edges, dim))
+    if (!issorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
     return variable::transform(coord, subspan_view(edges, dim), weights,
                                core::element::event::map_sorted_edges);
@@ -381,16 +381,27 @@ void scale(const DataArrayView &array, const DataArrayConstView &histogram,
   const auto &coord = bins_view<DataArray>(array.data()).meta()[dim];
   const auto &edges = histogram.meta()[dim];
   const auto weights = subspan_view(masker.data(), dim);
-  if (all(is_linspace(edges, dim)).value<bool>()) {
+  if (all(islinspace(edges, dim)).value<bool>()) {
     transform_in_place(data, coord, subspan_view(edges, dim), weights,
                        core::element::event::map_and_mul_linspace);
   } else {
-    if (!is_sorted(edges, dim))
+    if (!issorted(edges, dim))
       throw except::BinEdgeError("Bin edges of histogram must be sorted.");
     transform_in_place(data, coord, subspan_view(edges, dim), weights,
                        core::element::event::map_and_mul_sorted_edges);
   }
 }
+
+namespace {
+Variable applyMask(const DataArrayConstView &buffer,
+                   const VariableConstView &indices, const Dim dim,
+                   const Variable &masks) {
+  auto indices_copy = Variable(indices);
+  auto masked_data = scipp::variable::masked_to_zero(buffer.data(), masks);
+  return make_bins(std::move(indices_copy), dim, std::move(masked_data));
+}
+
+} // namespace
 
 Variable sum(const VariableConstView &data) {
   auto type = variable::variableFactory().elem_dtype(data);
@@ -401,7 +412,19 @@ Variable sum(const VariableConstView &data) {
     summed = Variable(type, data.dims(), unit, Values{}, Variances{});
   else
     summed = Variable(type, data.dims(), unit, Values{});
-  variable::sum_impl(summed, data);
+
+  if (data.dtype() == dtype<bucket<DataArray>>) {
+    const auto &&[indices, dim, buffer] =
+        data.constituents<bucket<DataArray>>();
+    if (const auto mask_union = irreducible_mask(buffer.masks(), dim)) {
+      variable::sum_impl(summed, applyMask(buffer, indices, dim, mask_union));
+    } else {
+      variable::sum_impl(summed, data);
+    }
+  } else {
+    variable::sum_impl(summed, data);
+  }
+
   return summed;
 }
 

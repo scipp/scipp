@@ -16,7 +16,7 @@ def roundtrip(obj):
 
 def check_roundtrip(obj):
     result = roundtrip(obj)
-    assert sc.is_equal(result, obj)
+    assert sc.identical(result, obj)
     return result  # for optional addition tests
 
 
@@ -33,6 +33,16 @@ eigen_1d = sc.Variable(dims=['x'],
 eigen_2d = sc.Variable(dims=['x'],
                        dtype=sc.dtype.matrix_3_float64,
                        values=np.random.rand(4, 3, 3))
+
+datetime64ms_1d = sc.Variable(dims=['x'],
+                              dtype=sc.dtype.datetime64,
+                              unit='ms',
+                              values=np.arange(10))
+
+datetime64us_1d = sc.Variable(dims=['x'],
+                              dtype=sc.dtype.datetime64,
+                              unit='us',
+                              values=np.arange(10))
 
 array_1d = sc.DataArray(data=x,
                         coords={
@@ -78,6 +88,13 @@ def test_variable_eigen():
     check_roundtrip(eigen_2d['x', 0])
 
 
+def test_variable_datetime64():
+    check_roundtrip(datetime64ms_1d)
+    check_roundtrip(datetime64ms_1d['x', 0])
+    check_roundtrip(datetime64us_1d)
+    check_roundtrip(datetime64us_1d['x', 0])
+
+
 def test_variable_binned_variable():
     begin = sc.Variable(dims=['y'], values=[0, 3], dtype=sc.dtype.int64)
     end = sc.Variable(dims=['y'], values=[3, 4], dtype=sc.dtype.int64)
@@ -94,11 +111,11 @@ def test_variable_binned_variable_slice():
     # change in the future, so this test should be adapted. This test does not
     # documented a strict requirement.
     result = check_roundtrip(binned['y', 0])
-    assert result.bins.data.shape[0] == 4
+    assert result.bins.constituents['data'].shape[0] == 4
     result = check_roundtrip(binned['y', 1])
-    assert result.bins.data.shape[0] == 1
+    assert result.bins.constituents['data'].shape[0] == 1
     result = check_roundtrip(binned['y', 1:2])
-    assert result.bins.data.shape[0] == 1
+    assert result.bins.constituents['data'].shape[0] == 1
 
 
 def test_variable_binned_data_array():
@@ -162,13 +179,13 @@ def test_data_array_unsupported_PyObject_coord():
     obj = sc.Variable(value=dict())
     a = sc.DataArray(data=x, coords={'obj': obj})
     b = roundtrip(a)
-    assert not sc.is_equal(a, b)
+    assert not sc.identical(a, b)
     del a.coords['obj']
-    assert sc.is_equal(a, b)
+    assert sc.identical(a, b)
     a.attrs['obj'] = obj
-    assert not sc.is_equal(a, b)
+    assert not sc.identical(a, b)
     del a.attrs['obj']
-    assert sc.is_equal(a, b)
+    assert sc.identical(a, b)
 
 
 def test_dataset():

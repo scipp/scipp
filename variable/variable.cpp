@@ -56,7 +56,7 @@ VariableConstView::VariableConstView(const VariableConstView &slice,
   else
     m_dims.resize(dim, end - begin);
   // See implementation of ViewIndex regarding this relabeling.
-  for (const auto label : m_dataDims.labels())
+  for (const auto &label : m_dataDims.labels())
     if (label != Dim::Invalid && !m_dims.contains(label))
       m_dataDims.relabel(m_dataDims.index(label), Dim::Invalid);
 }
@@ -86,6 +86,11 @@ bool Variable::operator==(const VariableConstView &other) const {
 
 bool Variable::operator!=(const VariableConstView &other) const {
   return !(*this == other);
+}
+
+Variable &Variable::assign(const VariableConstView &other) {
+  VariableView(*this).assign(other);
+  return *this;
 }
 
 template <class T> VariableView VariableView::assign(const T &other) const {

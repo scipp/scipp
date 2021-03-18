@@ -749,19 +749,20 @@ SCIPP_DATASET_EXPORT void union_or_in_place(const MasksView &currentMasks,
 } // namespace scipp::dataset
 
 namespace scipp::core {
-template <> constexpr DType dtype<dataset::DataArray>{2000};
-template <> constexpr DType dtype<dataset::Dataset>{2001};
-template <> constexpr DType dtype<bucket<dataset::DataArray>>{2002};
-template <> constexpr DType dtype<bucket<dataset::DataArrayConstView>>{2003};
-template <> constexpr DType dtype<bucket<dataset::DataArrayView>>{2004};
-template <> constexpr DType dtype<bucket<dataset::Dataset>>{2005};
+template <> inline constexpr DType dtype<dataset::DataArray>{2000};
+template <> inline constexpr DType dtype<dataset::Dataset>{2001};
+template <> inline constexpr DType dtype<bucket<dataset::DataArray>>{2002};
 template <>
-constexpr DType dtype<dataset::DataArrayView>{
+inline constexpr DType dtype<bucket<dataset::DataArrayConstView>>{2003};
+template <> inline constexpr DType dtype<bucket<dataset::DataArrayView>>{2004};
+template <> inline constexpr DType dtype<bucket<dataset::Dataset>>{2005};
+template <>
+inline constexpr DType dtype<dataset::DataArrayView>{
     2002}; // hack for python bindings using
            // dtype<ElementArrayView<bucket<DataArray>>::value_type>
            // is setting same dtype ID correct?
 template <>
-constexpr DType dtype<dataset::DatasetView>{
+inline constexpr DType dtype<dataset::DatasetView>{
     2005}; // hack for python bindings using
            // dtype<ElementArrayView<bucket<Dataset>>::value_type>
            // is setting same dtype ID correct?

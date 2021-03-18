@@ -12,7 +12,7 @@ std::array<scipp::index, NDIM_MAX> get_strides(const Dimensions &iterDims,
                                                const Dimensions &dataDims) {
   std::array<scipp::index, NDIM_MAX> strides = {};
   scipp::index d = iterDims.ndim() - 1;
-  for (const auto dim : iterDims.labels()) {
+  for (const auto &dim : iterDims.labels()) {
     if (dataDims.contains(dim))
       strides[d--] = dataDims.offset(dim);
     else

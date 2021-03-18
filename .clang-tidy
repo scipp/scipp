@@ -1,6 +1,7 @@
 ---
 Checks:            '*,
                     -android-*,
+                    -altera-struct-pack-align,
                     -bugprone-bool-pointer-implicit-conversion,
                     -bugprone-exception-escape,
                     -bugprone-infinite-loop,

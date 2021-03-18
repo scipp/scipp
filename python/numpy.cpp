@@ -10,8 +10,11 @@
 void ElementTypeMap<scipp::core::time_point>::check_assignable(
     const py::object &obj, const units::Unit unit) {
   const auto &dtype = obj.cast<py::array>().dtype();
+  if (dtype.attr("kind").cast<char>() == 'i') {
+    return; // just assume we can assign from int
+  }
   const auto np_unit =
-      parse_datetime_dtype(dtype.attr("name").cast<std::string_view>());
+      parse_datetime_dtype(dtype.attr("name").cast<std::string>());
   if (np_unit != unit) {
     std::ostringstream oss;
     oss << "Unable to assign datetime with unit " << to_string(np_unit)

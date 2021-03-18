@@ -18,7 +18,7 @@ Variable &@NAME@(Variable &lhs, const VariableConstView &rhs) {
 }
 
 VariableView @NAME@(const VariableView &lhs, const VariableConstView &rhs) {
-  transform_in_place(lhs, rhs, core::element::@OPNAME@, std::string_view("OPNAME"));
+  transform_in_place(lhs, rhs, core::element::@OPNAME@, std::string_view("@OPNAME@"));
   return lhs;
 }
 

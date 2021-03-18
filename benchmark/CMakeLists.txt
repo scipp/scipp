@@ -37,15 +37,6 @@ target_link_libraries(
   scipp_test_helpers
 )
 
-add_executable(
-  neutron_convert_benchmark EXCLUDE_FROM_ALL neutron_convert_benchmark.cpp
-)
-add_dependencies(all-benchmarks neutron_convert_benchmark)
-target_link_libraries(
-  neutron_convert_benchmark LINK_PRIVATE benchmark scipp-dataset scipp-neutron
-  scipp_test_helpers
-)
-
 add_executable(transform_benchmark EXCLUDE_FROM_ALL transform_benchmark.cpp)
 add_dependencies(all-benchmarks transform_benchmark)
 target_link_libraries(transform_benchmark LINK_PRIVATE scipp-variable benchmark)

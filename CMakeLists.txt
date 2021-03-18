@@ -3,8 +3,13 @@
 # Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 # ~~~
 cmake_minimum_required(VERSION 3.16)
-project(scipp)
-set(version 0.5.0)
+execute_process(
+  COMMAND git describe --tags --abbrev=0
+  WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+  OUTPUT_VARIABLE SCIPP_VERSION
+  OUTPUT_STRIP_TRAILING_WHITESPACE
+)
+project(scipp VERSION ${SCIPP_VERSION})
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_CXX_STANDARD 17)
@@ -23,17 +28,10 @@ if(MSVC)
       CACHE PATH "Path to installed clcache executable directory"
   )
   if(EXISTS ${CLCACHE_PATH})
-    if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-      set(CMAKE_VS_GLOBALS "CLToolExe=clcache.exe" "CLToolPath=${CLCACHE_PATH}"
-                           "TrackFileAccess=false"
-      )
-      message(STATUS "Will attempt to use clcache")
-    else(NOT CMAKE_VERSION VERSION_LESS 3.13)
-      message(
-        WARNING
-          "CMake version ${CMAKE_VERSION} too low to support CLCACHE. Not enabled."
-      )
-    endif(NOT CMAKE_VERSION VERSION_LESS 3.13)
+    set(CMAKE_VS_GLOBALS "CLToolExe=clcache.exe" "CLToolPath=${CLCACHE_PATH}"
+                         "TrackFileAccess=false"
+    )
+    message(STATUS "Will attempt to use clcache")
   else(EXISTS ${CLCACHE_PATH})
     message(STATUS "CLCACHE_PATH not specified. Not enabled.")
     unset(CMAKE_VS_GLOBALS) # Clear all vs globals
@@ -51,12 +49,13 @@ if(NOT CMAKE_BUILD_TYPE)
   )
 endif(NOT CMAKE_BUILD_TYPE)
 
-set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake"
-                      "${CMAKE_SOURCE_DIR}/CMake/sanitizers-cmake/cmake"
+set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake"
+                      "${CMAKE_SOURCE_DIR}/cmake/sanitizers-cmake/cmake"
 )
 
 set(CMAKE_CXX_VISIBILITY_PRESET hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN TRUE)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
 
 find_package(Sanitizers REQUIRED)
 
@@ -64,7 +63,6 @@ find_package(Sanitizers REQUIRED)
 add_compile_options($<$<CXX_COMPILER_ID:MSVC>:-MP>)
 
 include(GTest)
-include(boost)
 include(LLNL-units)
 include(Eigen)
 include(pybind11)
@@ -125,8 +123,7 @@ execute_process(
   COMMAND git describe --tag
   WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
   RESULT_VARIABLE HAVE_GIT_VERSION_INFO
-  OUTPUT_VARIABLE GIT_VERSION_INFO
-  OUTPUT_STRIP_TRAILING_WHITESPACE
+  OUTPUT_VARIABLE GIT_VERSION_INFO OUTPUT_STRIP_TRAILING_WHITESPACE
 )
 if(${HAVE_GIT_VERSION_INFO} EQUAL 0)
   message(STATUS "Got version from Git: ${GIT_VERSION_INFO}")
@@ -165,8 +162,6 @@ option(PRECOMPILED_HEADERS "Set whether to build with precompiled headers" OFF)
 
 enable_testing()
 
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin)
-
 # Custom target for building tests. all excludes tests by default
 add_custom_target(all-tests)
 
@@ -177,18 +172,12 @@ else()
   add_custom_target(docs COMMAND docs_build.bat)
 endif()
 
-configure_file(CMake/docs_build.bat.in docs_build.bat)
-configure_file(CMake/docs_build.sh.in docs_build.sh)
+configure_file(cmake/docs_build.bat.in docs_build.bat)
+configure_file(cmake/docs_build.sh.in docs_build.sh)
 
-if(WIN32)
-  set(PYTHONDIR scipp)
-  set(LIBDIR ${PYTHONDIR})
-  set(INCLUDEDIR include)
-else()
-  set(PYTHONDIR scipp)
-  set(LIBDIR ${CMAKE_INSTALL_LIBDIR})
-  set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
-endif()
+include(GNUInstallDirs)
+set(PYTHONDIR scipp)
+set(INCLUDEDIR ${CMAKE_INSTALL_INCLUDEDIR})
 
 set(EXPORT_NAME ${PROJECT_NAME}-targets)
 
@@ -209,26 +198,26 @@ add_subdirectory(units)
 add_subdirectory(core)
 add_subdirectory(variable)
 add_subdirectory(dataset)
-add_subdirectory(neutron)
 add_subdirectory(python)
 add_subdirectory(test)
 
 if(DYNAMIC_LIB)
   install(
     EXPORT ${EXPORT_NAME}
-    DESTINATION "${LIBDIR}/cmake/scipp"
+    DESTINATION "lib/cmake/scipp"
     NAMESPACE scipp::
   )
   include(CMakePackageConfigHelpers)
   configure_package_config_file(
-    ${CMAKE_CURRENT_SOURCE_DIR}/CMake/${PROJECT_NAME}-config.cmake.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}-config.cmake.in
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"
     INSTALL_DESTINATION lib/cmake/scipp
   )
   write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake"
-    VERSION "${version}"
-    COMPATIBILITY AnyNewerVersion
+    VERSION "${CMAKE_PROJECT_VERSION}"
+    COMPATIBILITY SameMinorVersion # switch to SameMajorVersion after 1.0
+                                   # release
   )
   install(
     FILES "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}-config.cmake"

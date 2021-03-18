@@ -10,15 +10,26 @@ user_configuration_filename = runtime_config.config_filename
 config = runtime_config.load()
 del runtime_config
 
+from ._scipp import _debug_
+if _debug_:
+    import warnings
+
+    def custom_formatwarning(msg, *args, **kwargs):
+        return str(msg) + '\n'
+
+    warnings.formatwarning = custom_formatwarning
+    warnings.warn(
+        'You are running a "Debug" build of scipp. For optimal performance use a "Release" build.'
+    )
+
 from ._scipp.core import *
 from ._scipp import __version__
 from . import detail
-from . import neutron
 from .show import show, make_svg
 from .table import table
 from .plotting import plot
 from .extend_units import *
-from .table_html import to_html, make_html
+from .html import to_html, make_html
 from .object_list import _repr_html_
 from ._utils import collapse, slices
 from ._utils.is_type import is_variable, is_dataset, is_data_array, \
@@ -81,3 +92,12 @@ setattr(DataArray, 'plot', plot)
 setattr(DataArrayConstView, 'plot', plot)
 setattr(Dataset, 'plot', plot)
 setattr(DatasetConstView, 'plot', plot)
+
+# Prevent unwanted conversion to numpy arrays by operations. Properly defining
+# __array_ufunc__ should be possible by converting non-scipp arguments to
+# variables. The most difficult part is probably mapping the ufunc to scipp
+# functions.
+for obj in [
+        Variable, VariableView, DataArray, DataArrayView, Dataset, DatasetView
+]:
+    setattr(obj, '__array_ufunc__', None)

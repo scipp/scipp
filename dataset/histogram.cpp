@@ -76,7 +76,7 @@ Dataset histogram(const DatasetConstView &dataset,
 std::set<Dim> edge_dimensions(const DataArrayConstView &a) {
   const auto coords = a.coords();
   std::set<Dim> dims;
-  for (const auto &[d, coord] : a.coords())
+  for (const auto [d, coord] : a.coords())
     if (a.dims().contains(d) && coord.dims().contains(d) &&
         coord.dims()[d] == a.dims()[d] + 1)
       dims.insert(d);

@@ -11,9 +11,12 @@ class lookup:
         self.dim = dim
 
 
-class _Bins:
+class Bins:
     """
-    Proxy for operations on bins of a variable
+    Proxy for access to bin contents and operations on bins of a variable.
+
+    This class is returned from the `bins` property of variables and should
+    generally not be created directly.
     """
     def __init__(self, obj):
         self._obj = obj
@@ -43,24 +46,45 @@ class _Bins:
         return self
 
     @property
-    def begin(self):
-        """Begin index of bins as view of internal data buffer"""
-        return _cpp.bins_begin_end(self._data())[0]
+    def coords(self):
+        """Coords of the bins"""
+        return _cpp._bins_view(self._data()).coords
 
     @property
-    def end(self):
-        """End index of bins as view of internal data buffer"""
-        return _cpp.bins_begin_end(self._data())[1]
+    def meta(self):
+        """Coords and attrs of the bins"""
+        return _cpp._bins_view(self._data()).meta
 
     @property
-    def dim(self):
-        """Dimension of internal data buffer used for slicing into bins"""
-        return _cpp.bins_dim(self._data())
+    def attrs(self):
+        """Coords of the bins"""
+        return _cpp._bins_view(self._data()).attrs
+
+    @property
+    def masks(self):
+        """Masks of the bins"""
+        return _cpp._bins_view(self._data()).masks
 
     @property
     def data(self):
-        """Internal data buffer holding data of all bins"""
-        return _cpp.bins_data(self._data())
+        """Data of the bins"""
+        return _cpp._bins_view(self._data()).data
+
+    @data.setter
+    def data(self, data):
+        """Set data of the bins"""
+        _cpp._bins_view(self._data()).data = data
+
+    @property
+    def constituents(self):
+        """Constituents of binned data, as supported by :py:func:`sc.bins`."""
+        begin_end = _cpp.bins_begin_end(self._data())
+        return {
+            'begin': begin_end[0],
+            'end': begin_end[1],
+            'dim': _cpp.bins_dim(self._data()),
+            'data': _cpp.bins_data(self._data())
+        }
 
     def sum(self):
         """Sum of each bin.
@@ -129,16 +153,16 @@ class GroupbyBins:
 
 def _bins(obj):
     """
-    Returns binning object allowing bin-wise operations
-    to be performed.
+    Returns helper :py:class:`scipp.Bins` allowing bin-wise operations
+    to be performed or `None` if not binned data.
     """
     if _cpp.is_bins(obj):
-        return _Bins(obj)
+        return Bins(obj)
     else:
         return None
 
 
-def _set_bins(obj, bins: _Bins):
+def _set_bins(obj, bins: Bins):
     # Should only be used by __iadd__ and friends
     assert obj is bins._obj
 
@@ -158,7 +182,7 @@ def histogram(x, bins):
     return _call_cpp_func(_cpp.histogram, x, bins)
 
 
-def bin(x, edges=[], groups=[], erase=[]):
+def bin(x, edges=None, groups=None, erase=None):
     """Create binned data by binning data along all dimensions given by edges.
     Can specify dimensions with existing binning to erase.
 
@@ -170,6 +194,12 @@ def bin(x, edges=[], groups=[], erase=[]):
               :py:func:`scipp.bins` for creating binned data based on
               explicitly given index ranges.
     """
+    if erase is None:
+        erase = []
+    if groups is None:
+        groups = []
+    if edges is None:
+        edges = []
     return _call_cpp_func(_cpp.bin, x, edges, groups, erase)
 
 

@@ -26,7 +26,7 @@ class TestSliceByValue:
         def test(sliceable):
             by_value = sliceable['x', 1.5 * sc.units.dimensionless]
             by_index = sliceable['x', 1]
-            assert sc.is_equal(by_value, by_index)
+            assert sc.identical(by_value, by_index)
 
         test(self._d['a'])
         test(self._d)
@@ -73,7 +73,7 @@ class TestSliceByValue:
             by_value = sliceable['x', 1.5 * sc.units.dimensionless:4.5 *
                                  sc.units.dimensionless]
             by_index = sliceable['x', 1:-1]
-            assert sc.is_equal(by_value, by_index)
+            assert sc.identical(by_value, by_index)
 
         test(self._d['a'])
         test(self._d)
@@ -130,9 +130,9 @@ class TestSliceByValue:
         assert self._d['a'].data.values.tolist() == [1.0, 3.1, 4.2, 5.3, 1.4]
 
     def test_slice_by_incorrect_unit_throws(self):
-        with pytest.raises(RuntimeError) as e_info:
+        with pytest.raises(sc.UnitError) as e_info:
             self._d['a']['x', 1.5 * sc.units.m]
-        assert str(e_info.value) == 'dimensionless expected to be equal to m'
+        assert str(e_info.value) == 'Expected unit dimensionless, got m.'
 
     def test_out_of_range_throws(self):
         with pytest.raises(IndexError):
@@ -159,17 +159,17 @@ class TestSliceByValue:
     def test_range_start_only(self):
         by_value = self._d['a']['x', 1.5 * sc.units.dimensionless:]
         by_index = self._d['a']['x', 1:]
-        assert sc.is_equal(by_value, by_index)
+        assert sc.identical(by_value, by_index)
 
         by_value = self._d['x', 1.5 * sc.units.dimensionless:]
         by_index = self._d['x', 1:]
-        assert sc.is_equal(by_value, by_index)
+        assert sc.identical(by_value, by_index)
 
     def test_range_end_only(self):
         by_value = self._d['a']['x', :2.5 * sc.units.dimensionless]
         by_index = self._d['a']['x', :2]
-        assert sc.is_equal(by_value, by_index)
+        assert sc.identical(by_value, by_index)
 
         by_value = self._d['x', :2.5 * sc.units.dimensionless]
         by_index = self._d['x', :2]
-        assert sc.is_equal(by_value, by_index)
+        assert sc.identical(by_value, by_index)

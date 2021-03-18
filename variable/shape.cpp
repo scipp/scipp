@@ -2,10 +2,12 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 /// @file
 /// @author Simon Heybrock
-#include "scipp/variable/shape.h"
+#include "scipp/core/dimensions.h"
+
 #include "scipp/variable/arithmetic.h"
 #include "scipp/variable/creation.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/shape.h"
 #include "scipp/variable/util.h"
 #include "scipp/variable/variable_factory.h"
 
@@ -21,7 +23,7 @@ void expect_same_volume(const Dimensions &old_dims,
 }
 
 Variable broadcast(const VariableConstView &var, const Dimensions &dims) {
-  Variable result(var, dims);
+  auto result = variableFactory().empty_like(var, dims);
   result.data().copy(var, result);
   return result;
 }
@@ -159,6 +161,16 @@ Variable reshape(const VariableConstView &view, const Dimensions &dims) {
   return reshaped;
 }
 
+Variable fold(const VariableConstView &view, const Dim from_dim,
+              const Dimensions &to_dims) {
+  return reshape(view, fold(view.dims(), from_dim, to_dims));
+}
+
+Variable flatten(const VariableConstView &view,
+                 const scipp::span<const Dim> &from_labels, const Dim to_dim) {
+  return reshape(view, flatten(view.dims(), from_labels, to_dim));
+}
+
 VariableView transpose(Variable &var, const std::vector<Dim> &dims) {
   return transpose(VariableView(var), dims);
 }
@@ -178,7 +190,7 @@ VariableView transpose(const VariableView &view, const std::vector<Dim> &dims) {
 
 void squeeze(Variable &var, const std::vector<Dim> &dims) {
   auto squeezed = var.dims();
-  for (const auto dim : dims) {
+  for (const auto &dim : dims) {
     if (squeezed[dim] != 1)
       throw except::DimensionError("Cannot squeeze '" + to_string(dim) +
                                    "' since it is not of length 1.");

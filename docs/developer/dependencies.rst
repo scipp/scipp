@@ -42,7 +42,6 @@ Test
 ----
 
   - all (including optional) dependecies of *Run*
-  - ``beautifulsoup4`` (MIT) (HTML parser, used for testing of HTML representation)
   - ``mantid-framework`` * (GPL-3.0-or-later) (Mantid interoperability tests are skipped if not present)
   - ``psutil`` (BSD-3-Clause) (used to determine if host has enough memory for certain unit tests)
   - ``pytest`` (MIT) (test framework)

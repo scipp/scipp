@@ -9,7 +9,7 @@
 #include <utility>
 #include <vector>
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 
 #include "scipp-variable_export.h"
 #include "scipp/common/index.h"
@@ -77,6 +77,8 @@ public:
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            std::optional<T> variances);
   explicit Variable(const llnl::units::precise_measurement &m);
+
+  Variable &assign(const VariableConstView &other);
 
   /// Keyword-argument constructor.
   ///
@@ -367,15 +369,16 @@ SCIPP_VARIABLE_EXPORT VariableView copy(const VariableConstView &dataset,
 } // namespace scipp::variable
 
 namespace scipp::core {
-template <> constexpr DType dtype<variable::Variable>{1000};
+template <> inline constexpr DType dtype<variable::Variable>{1000};
 template <>
-constexpr DType dtype<variable::VariableView>{
+inline constexpr DType dtype<variable::VariableView>{
     1001}; // hack for python bindings using
            // dtype<ElementArrayView<bucket<Variable>>::value_type>
            // is setting same dtype ID correct?
-template <> constexpr DType dtype<bucket<variable::Variable>>{1001};
-template <> constexpr DType dtype<bucket<variable::VariableConstView>>{1002};
-template <> constexpr DType dtype<bucket<variable::VariableView>>{1003};
+template <> inline constexpr DType dtype<bucket<variable::Variable>>{1001};
+template <>
+inline constexpr DType dtype<bucket<variable::VariableConstView>>{1002};
+template <> inline constexpr DType dtype<bucket<variable::VariableView>>{1003};
 } // namespace scipp::core
 
 namespace scipp {

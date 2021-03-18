@@ -41,5 +41,5 @@ private:
 } // namespace scipp::python
 
 namespace scipp::core {
-template <> constexpr DType dtype<python::PyObject>{3000};
+template <> inline constexpr DType dtype<python::PyObject>{3000};
 } // namespace scipp::core

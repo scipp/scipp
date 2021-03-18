@@ -4,6 +4,12 @@ Getting Started
 Prerequisites
 ~~~~~~~~~~~~~
 
+The only non-optional pre-dependency for building scipp is ``boost``.
+We recommend using the provided ``scipp-developer.yml`` for installing this and other dependencies in a ``conda`` environment (see below).
+Alternatively you can refer to this file for a full list of dependencies.
+
+Other dependencies such as ``pybind11`` are downloaded automatically when running ``cmake``.
+
 See `Tooling <tooling.html>`_ for compilers and other required tools.
 
 Getting the code, building, and installing
@@ -35,7 +41,6 @@ To build and install the library:
 
   # Create Conda environment with dependencies and development tools
   conda env create -f ../scipp-developer.yml            # For Linux
-  conda env create -f ../scipp-developer-no-mantid.yml  # For other platforms
   conda activate scipp-developer
 
 To build a debug version of the library:
@@ -111,14 +116,15 @@ To run the Python tests, run (in the ``python/`` directory):
   PYTHONPATH=$PYTHONPATH:./install python3 -m pytest
 
 Building Documentation
-----------------------
+~~~~~~~~~~~~~~~~~~~~~~
+
 - If Mantid is unavailable (e.g. on Windows) edit ``docs/conf.py`` and include ``nbsphinx_allow_errors = True``. Take care to not commit this change though.
 - run ``cmake --build . --target docs`` from your build directory.
 - This will build the documentation and put it on ``<build dir>/docs``.
-- If rebuuilding the documentation is slow it can be quicker to remove the docs build directory and start a fresh build.
+- If rebuilding the documentation is slow it can be quicker to remove the docs build directory and start a fresh build.
 
 Precommit Hooks
----------------
+~~~~~~~~~~~~~~~
 
 If you wish, you can install precommit hooks for flake8 and yapf. In the source directory run:
 
@@ -126,3 +132,25 @@ If you wish, you can install precommit hooks for flake8 and yapf. In the source 
 
   pre-commit install
   pre-commit run --all-files
+
+Using scipp as a C++ library
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Using Scipp as a C++ library is not recommened at this point as the API (and ABI) is not stable and documentation is sparse.
+Nonetheless, it can be used as a ``cmake`` package as follows.
+In your ``CMakeLists.txt``:
+
+.. code-block:: cmake
+
+  find_package(Scipp 0.5 REQUIRED) # replace with required version
+  target_link_libraries(mytarget PUBLIC scipp::dataset)
+
+If scipp was install using ``conda``, ``cmake`` should find it automatically.
+If you build and installed scipp from source use, e.g.,:
+
+.. code-block:: bash
+
+  cmake -DCMAKE_PREFIX_PATH=<your_scipp_install_dir>
+
+where ``<your_scipp_install_dir>`` should point to the ``CMAKE_INSTALL_PREFIX`` that was used when building ``scipp``.
+Alternative set the ``Scipp_DIR`` or ``CMAKE_PREFIX_PATH`` (environment) variables to this path.

@@ -3,7 +3,7 @@ jobs:
     displayName: 'Can Install and Import - Linux'
     timeoutInMinutes: 10
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     variables:
       packages_dir: '$(Build.StagingDirectory)/packages'
     steps:

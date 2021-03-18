@@ -4,7 +4,7 @@
 /// @author Simon Heybrock
 #pragma once
 
-#include <Eigen/Dense>
+#include <Eigen/Core>
 
 #include "scipp/common/numeric.h"
 #include "scipp/common/overloaded.h"
@@ -63,12 +63,6 @@ constexpr auto times_equals =
 constexpr auto divide_equals =
     overloaded{div_inplace_types, [](auto &&a, const auto &b) { a /= b; }};
 
-// mod defined as in Python
-constexpr auto mod_equals = overloaded{
-    arg_list<int64_t, int32_t, std::tuple<int64_t, int32_t>>,
-    [](units::Unit &a, const units::Unit &b) { a %= b; },
-    [](auto &&a, const auto &b) { a = b == 0 ? b : ((a % b) + b) % b; }};
-
 struct add_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(std::tuple_cat(
@@ -103,7 +97,7 @@ struct times_types_t {
                      std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
 };
 
-struct divide_types_t {
+struct true_divide_types_t {
   constexpr void operator()() const noexcept;
   using types = decltype(
       std::tuple_cat(std::declval<arithmetic_type_pairs>(),
@@ -111,6 +105,16 @@ struct divide_types_t {
                      std::tuple<std::tuple<Eigen::Vector3d, float>>(),
                      std::tuple<std::tuple<Eigen::Vector3d, int64_t>>(),
                      std::tuple<std::tuple<Eigen::Vector3d, int32_t>>()));
+};
+
+struct floor_divide_types_t {
+  constexpr void operator()() const noexcept;
+  using types = arithmetic_type_pairs;
+};
+
+struct remainder_types_t {
+  constexpr void operator()() const noexcept;
+  using types = arithmetic_type_pairs;
 };
 
 constexpr auto plus =
@@ -122,24 +126,31 @@ constexpr auto times = overloaded{
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
     [](const auto a, const auto b) { return a * b; }};
 
+// truediv defined as in Python.
 constexpr auto divide = overloaded{
-    divide_types_t{},
+    true_divide_types_t{},
     transform_flags::expect_no_in_variance_if_out_cannot_have_variance,
-    [](const auto a, const auto b) {
-      // Integer division is truediv, as in Python 3 and numpy
-      if constexpr (std::is_integral_v<decltype(a)> &&
-                    std::is_integral_v<decltype(b)>)
-        return static_cast<double>(a) / b;
-      else
-        return a / b;
-    }};
+    [](const auto &a, const auto &b) { return numeric::true_divide(a, b); },
+    [](const units::Unit &a, const units::Unit &b) { return a / b; }};
 
-// mod defined as in Python
+// floordiv defined as in Python. Complementary to mod.
+constexpr auto floor_divide = overloaded{
+    floor_divide_types_t{}, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](const auto a, const auto b) { return numeric::floor_divide(a, b); },
+    [](const units::Unit &a, const units::Unit &b) { return a / b; }};
+
+// remainder defined as in Python
 constexpr auto mod = overloaded{
-    arg_list<int64_t, int32_t, std::tuple<int32_t, int64_t>,
-             std::tuple<int64_t, int32_t>>,
-    [](const units::Unit &a, const units::Unit &b) { return a % b; },
-    [](const auto a, const auto b) { return b == 0 ? 0 : ((a % b) + b) % b; }};
+    remainder_types_t{}, transform_flags::expect_no_variance_arg<0>,
+    transform_flags::expect_no_variance_arg<1>,
+    [](const auto a, const auto b) { return numeric::remainder(a, b); },
+    [](const units::Unit &a, const units::Unit &b) { return a % b; }};
+
+constexpr auto mod_equals =
+    overloaded{arg_list<int64_t, int32_t, std::tuple<int64_t, int32_t>>,
+               [](units::Unit &a, const units::Unit &b) { a %= b; },
+               [](auto &&a, const auto &b) { a = mod(a, b); }};
 
 constexpr auto unary_minus =
     overloaded{arg_list<double, float, int64_t, int32_t, Eigen::Vector3d>,

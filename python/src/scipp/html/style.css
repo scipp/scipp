@@ -1,0 +1,356 @@
+/* CSS stylesheet for displaying scipp objects in jupyterlab.
+* Original source from
+* https://github.com/jsignell/xarray/blob/1d960933ab252e0f79f7e050e6c9261d55568057/xarray/static/css/style.css
+*/
+
+.sc-wrap {
+  font-size: 14px;
+  min-width: 300px;
+  max-width: 800px;
+}
+
+/* The CSS styling for the inline attributes table */
+.sc-var-attrs .sc-wrap{
+  padding-left: 3em;
+}
+
+.sc-header {
+  padding-top: 6px;
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+  border-bottom: solid 1px #ddd;
+}
+
+.sc-header > div,
+.sc-header > ul {
+  display: inline;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.sc-obj-type,
+.sc-array-name {
+  margin-left: 2px;
+  margin-right: 10px;
+}
+
+.sc-obj-type {
+  color: #555;
+}
+
+.sc-array-name {
+  color: #000;
+}
+
+.sc-sections {
+  padding-left: 0 !important;
+  display: grid;
+  grid-template-columns: 150px auto auto auto 1fr 20px 20px;
+}
+
+.sc-section-item {
+  display: contents;
+}
+
+.sc-section-item input {
+  display: none;
+}
+
+.sc-section-item input + label {
+  color: #ccc;
+}
+
+.sc-section-item input:enabled + label {
+  cursor: pointer;
+  color: #555;
+}
+
+.sc-section-item input:enabled + label:hover {
+  color: #000;
+}
+
+.sc-section-summary {
+  grid-column: 1 ;
+  color: #555;
+  font-weight: 500;
+}
+
+.sc-section-summary > span {
+  display: inline-block;
+  padding-left: 0.5em;
+}
+
+.sc-section-summary-in:disabled + label {
+  color: #555;
+}
+
+.sc-section-summary-in + label:before {
+  display: inline-block;
+  content: '►';
+  font-size: 11px;
+  width: 15px;
+  text-align: center;
+}
+
+.sc-section-summary-in:disabled + label:before {
+  color: #ccc;
+}
+
+.sc-section-summary-in:checked + label:before {
+  content: '▼';
+}
+
+.sc-section-summary-in:checked + label > span {
+  display: none;
+}
+
+.sc-section-summary,
+.sc-section-inline-details {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+
+.sc-section-inline-details {
+  grid-column: 2 / 5;
+}
+
+.sc-section-details {
+  display: none;
+  grid-column: 1 / -1;
+  margin-bottom: 5px;
+}
+
+.sc-section-summary-in:checked ~ .sc-section-details {
+  display: contents;
+}
+
+.sc-array-wrap {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: 20px auto;
+}
+
+.sc-array-wrap > label {
+  grid-column: 1;
+  vertical-align: top;
+}
+
+.sc-preview {
+  color: #888;
+}
+
+.sc-array-preview,
+.sc-array-data {
+  padding: 0 5px !important;
+  grid-column: 2;
+}
+
+.sc-array-data,
+.sc-array-in:checked ~ .sc-array-preview {
+  display: none;
+}
+
+.sc-array-in:checked ~ .sc-array-data,
+.sc-array-preview {
+  display: inline-block;
+}
+
+.sc-dim-list {
+  display: inline-block !important;
+  list-style: none;
+  padding: 0 !important;
+  margin: 0;
+}
+
+.sc-dim-list li {
+  display: inline-block;
+  padding: 0;
+  margin: 0!important;
+}
+
+.sc-dim-list:before {
+  content: '(';
+}
+
+.sc-dim-list:after {
+  content: ')';
+}
+
+.sc-dim-list li:not(:last-child):after {
+  content: ',';
+  padding-right: 5px;
+}
+
+.sc-has-index {
+  font-weight: bold;
+}
+
+.sc-var-list,
+.sc-var-item {
+  display: contents;
+}
+
+.sc-var-item > div,
+.sc-var-item label,
+.sc-var-item > .sc-var-name span {
+  background-color: #fcfcfc;
+  margin-bottom: 0;
+}
+
+.sc-var-item > .sc-var-name:hover span {
+  padding-right: 5px;
+}
+
+.sc-var-list > li:nth-child(odd) > div,
+.sc-var-list > li:nth-child(odd) > label,
+.sc-var-list > li:nth-child(odd) > .sc-var-name span {
+  background-color: #efefef;
+}
+
+.sc-var-name {
+  grid-column: 1;
+}
+
+.sc-var-dims {
+  grid-column: 2;
+}
+
+.sc-var-dtype {
+  grid-column: 3;
+  text-align: right;
+  color: #555;
+}
+.sc-var-unit{
+  grid-column: 4;
+  text-align: left;
+  color: #222;
+}
+.sc-value-preview {
+  grid-column: 5;
+}
+.sc-var-preview-variances{
+  text-align:right;
+}
+
+.sc-sections .sc-section-item .sc-section-summary,
+.sc-sections .sc-section-item .sc-section-inline-details,
+.sc-section-item .sc-var-list .sc-var-item > div,
+.sc-section-item .sc-var-list .sc-var-item > label,
+.sc-section-details .sc-var-list .sc-var-item > div,
+.sc-section-details .sc-var-list .sc-var-item > label {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.sc-var-name,
+.sc-var-dims,
+.sc-var-dtype,
+.sc-var-unit,
+.sc-preview,
+.sc-attrs dt {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 10px;
+}
+
+.sc-var-name:hover,
+.sc-var-dims:hover,
+.sc-var-dtype:hover,
+.sc-var-unit:hover,
+.sc-attrs dt:hover {
+  overflow: visible;
+  width: auto;
+  z-index: 1;
+}
+
+.sc-var-attrs {
+  display: block;
+}
+.sc-var-data {
+  display: none;
+}
+.sc-var-attrs,
+.sc-var-data {
+  background-color: #fff !important;
+  padding-bottom: 5px !important;
+}
+
+.sc-var-attrs-in:checked ~ .sc-var-attrs {
+  display: none;
+}
+.sc-var-data-in:checked ~ .sc-var-data {
+  display: block;
+}
+
+.sc-var-data > table {
+  float: right;
+}
+
+.sc-var-name span,
+.sc-var-data,
+.sc-attrs {
+  padding-left: 25px !important;
+}
+
+.sc-attrs,
+.sc-var-attrs,
+.sc-var-data {
+  grid-column: 1 / -1;
+}
+
+dl.sc-attrs {
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: 125px auto;
+}
+
+.sc-attrs dt, dd {
+  padding: 0;
+  margin: 0;
+  float: left;
+  padding-right: 10px;
+  width: auto;
+}
+
+.sc-attrs dt {
+  font-weight: normal;
+  grid-column: 1;
+}
+
+.sc-attrs dt:hover span {
+  display: inline-block;
+  background: #fff;
+  padding-right: 10px;
+}
+
+.sc-attrs dd {
+  grid-column: 2;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.sc-icon-database,
+.sc-icon-file-text2 {
+  display: inline-block;
+  vertical-align: middle;
+  width: 1em;
+  height: 1.5em !important;
+  stroke-width: 0;
+  stroke: currentColor;
+  fill: currentColor;
+}
+
+label.sc-hide-icon svg{
+  opacity: 0;
+}
+
+.sc-standalone-var-name{
+  grid-column: 1/3;
+}
+
+.sc-standalone-var-name span{
+  padding-left: 25px;
+  padding-right:10px;
+}

@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
+#include <Eigen/Geometry>
 #include <gtest/gtest.h>
 #include <vector>
 
@@ -8,6 +9,7 @@
 
 #include "scipp/core/element/math.h"
 #include "scipp/variable/except.h"
+#include "scipp/variable/misc_operations.h"
 #include "scipp/variable/operations.h"
 #include "scipp/variable/variable.h"
 
@@ -312,19 +314,19 @@ TEST(Variable, operator_allowed_types) {
 }
 
 TEST(Variable, concatenate) {
-  Dimensions dims(Dim::Tof, 1);
+  Dimensions dims(Dim::X, 1);
   auto a = makeVariable<double>(Dimensions(dims), Values{1.0});
   auto b = makeVariable<double>(Dimensions(dims), Values{2.0});
   a.setUnit(units::m);
   b.setUnit(units::m);
-  auto ab = concatenate(a, b, Dim::Tof);
+  auto ab = concatenate(a, b, Dim::X);
   ASSERT_EQ(ab.dims().volume(), 2);
   EXPECT_EQ(ab.unit(), units::m);
   const auto &data = ab.values<double>();
   EXPECT_EQ(data[0], 1.0);
   EXPECT_EQ(data[1], 2.0);
-  auto ba = concatenate(b, a, Dim::Tof);
-  const auto abba = concatenate(ab, ba, Dim::Q);
+  auto ba = concatenate(b, a, Dim::X);
+  const auto abba = concatenate(ab, ba, Dim::Y);
   ASSERT_EQ(abba.dims().volume(), 4);
   EXPECT_EQ(abba.dims().shape().size(), 2);
   const auto &data2 = abba.values<double>();
@@ -332,7 +334,7 @@ TEST(Variable, concatenate) {
   EXPECT_EQ(data2[1], 2.0);
   EXPECT_EQ(data2[2], 2.0);
   EXPECT_EQ(data2[3], 1.0);
-  const auto ababbaba = concatenate(abba, abba, Dim::Tof);
+  const auto ababbaba = concatenate(abba, abba, Dim::X);
   ASSERT_EQ(ababbaba.dims().volume(), 8);
   const auto &data3 = ababbaba.values<double>();
   EXPECT_EQ(data3[0], 1.0);
@@ -343,7 +345,7 @@ TEST(Variable, concatenate) {
   EXPECT_EQ(data3[5], 1.0);
   EXPECT_EQ(data3[6], 2.0);
   EXPECT_EQ(data3[7], 1.0);
-  const auto abbaabba = concatenate(abba, abba, Dim::Q);
+  const auto abbaabba = concatenate(abba, abba, Dim::Y);
   ASSERT_EQ(abbaabba.dims().volume(), 8);
   const auto &data4 = abbaabba.values<double>();
   EXPECT_EQ(data4[0], 1.0);
@@ -359,25 +361,26 @@ TEST(Variable, concatenate) {
 TEST(Variable, concatenate_volume_with_slice) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   auto aa = concatenate(a, a, Dim::X);
-  EXPECT_NO_THROW(concatenate(aa, a, Dim::X));
+  EXPECT_NO_THROW_DISCARD(concatenate(aa, a, Dim::X));
 }
 
 TEST(Variable, concatenate_slice_with_volume) {
   auto a = makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{1.0});
   auto aa = concatenate(a, a, Dim::X);
-  EXPECT_NO_THROW(concatenate(a, aa, Dim::X));
+  EXPECT_NO_THROW_DISCARD(concatenate(a, aa, Dim::X));
 }
 
 TEST(Variable, concatenate_fail) {
-  Dimensions dims(Dim::Tof, 1);
+  Dimensions dims(Dim::X, 1);
   auto a = makeVariable<double>(Dimensions(dims), Values{1.0});
   auto b = makeVariable<double>(Dimensions(dims), Values{2.0});
   auto c = makeVariable<float>(Dimensions(dims), Values{2.0});
-  EXPECT_THROW_MSG(concatenate(a, c, Dim::Tof), std::runtime_error,
-                   "Cannot concatenate Variables: Data types do not match.");
-  auto aa = concatenate(a, a, Dim::Tof);
-  EXPECT_THROW_MSG(
-      concatenate(a, aa, Dim::Q), std::runtime_error,
+  EXPECT_THROW_MSG_DISCARD(
+      concatenate(a, c, Dim::X), std::runtime_error,
+      "Cannot concatenate Variables: Data types do not match.");
+  auto aa = concatenate(a, a, Dim::X);
+  EXPECT_THROW_MSG_DISCARD(
+      concatenate(a, aa, Dim::Y), std::runtime_error,
       "Cannot concatenate Variables: Dimension extents do not match.");
 }
 
@@ -385,12 +388,12 @@ TEST(Variable, concatenate_unit_fail) {
   Dimensions dims(Dim::X, 1);
   auto a = makeVariable<double>(Dimensions(dims), Values{1.0});
   auto b(a);
-  EXPECT_NO_THROW(concatenate(a, b, Dim::X));
+  EXPECT_NO_THROW_DISCARD(concatenate(a, b, Dim::X));
   a.setUnit(units::m);
-  EXPECT_THROW_MSG(concatenate(a, b, Dim::X), std::runtime_error,
-                   "Cannot concatenate Variables: Units do not match.");
+  EXPECT_THROW_MSG_DISCARD(concatenate(a, b, Dim::X), std::runtime_error,
+                           "Cannot concatenate Variables: Units do not match.");
   b.setUnit(units::m);
-  EXPECT_NO_THROW(concatenate(a, b, Dim::X));
+  EXPECT_NO_THROW_DISCARD(concatenate(a, b, Dim::X));
 }
 
 TEST(Variable, concatenate_from_slices_with_broadcast) {
@@ -1004,4 +1007,17 @@ TEST(VariableTest, divide_vector) {
   auto scaled_vec = vec / scale;
 
   EXPECT_EQ(scaled_vec, expected_vec);
+}
+
+TEST(VariableTest, masked_to_zero) {
+  auto var =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{1, 1, 1});
+  auto mask = makeVariable<bool>(Dims{Dim::X}, Shape{3}, units::one,
+                                 Values{true, false, true});
+  auto expected_var =
+      makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m, Values{0, 1, 0});
+
+  auto masked_var = masked_to_zero(var, mask);
+
+  EXPECT_EQ(masked_var, expected_var);
 }

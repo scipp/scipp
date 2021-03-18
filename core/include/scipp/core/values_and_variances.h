@@ -8,7 +8,7 @@
 
 namespace scipp::core {
 
-/// A values/variances pair based on references to event listss.
+/// A values/variances pair based on references to event lists.
 ///
 /// This is a helper for implementing operations for event_list such as
 /// `clear`, and for descending into the event list itself, using a nested

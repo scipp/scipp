@@ -81,7 +81,6 @@ stages:
               ./bin/scipp-core-test
               ./bin/scipp-variable-test
               ./bin/scipp-dataset-test
-              ./bin/scipp-neutron-test
             displayName: 'Run C++ unit tests'
           - bash: |
               set -ex
@@ -95,14 +94,19 @@ stages:
             displayName: 'Build Python library'
           - bash: |
               set -ex
+              cd package/scipp-package-test
+              mkdir -p build && cd build
+              cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
+              cmake --build .
+              ./test
+            displayName: 'Check packaging'
+          - bash: |
+              set -ex
               PYTHONPATH="$PYTHONPATH:$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'
           - bash: |
               set -ex
               cd docs
-              python data/fetch_neutron_data.py
-              mkdir -p  "$HOME/.mantid"
-              echo -e "usagereports.enabled=0\ndatasearch.directories=$(pwd)/data" > "$HOME/.mantid/Mantid.user.properties"
               # Build documentation, redirecting doctrees to avoid size bloat in build documentation
               PYTHONPATH="$PYTHONPATH:$(install_dir)" sphinx-build -d $(mktemp -d) . "$(docs_build_dir)"
               # Remove Juptyer notebooks used for documentation build, they are not accessible and create size bloat
@@ -135,7 +139,7 @@ stages:
           - bash: |
               set -ex
               conda --version
-              conda env create -f scipp-developer-no-mantid.yml
+              conda env create -f scipp-developer.yml
               # TODO: source activate does not work (see https://github.com/conda/conda/issues/9566)
               echo "##vso[task.prependpath]$CONDA/envs/scipp-developer/bin"
               mkdir -p  "$(build_dir)" "$(install_dir)"
@@ -164,13 +168,20 @@ stages:
               ./bin/scipp-core-test
               ./bin/scipp-variable-test
               ./bin/scipp-dataset-test
-              ./bin/scipp-neutron-test
             displayName: 'Run C++ unit tests'
           - bash: |
               set -ex
               cd "$(build_dir)"
               cmake --build . --target install
             displayName: 'Build Python library'
+          - bash: |
+              set -ex
+              cd package/scipp-package-test
+              mkdir -p build && cd build
+              cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
+              cmake --build .
+              ./test
+            displayName: 'Check packaging'
           - bash: |
               set -ex
               PYTHONPATH="$(install_dir)" python -m pytest
@@ -192,7 +203,7 @@ stages:
           - bash: |
               set -ex
               conda --version
-              conda env create -f scipp-developer-no-mantid.yml
+              conda env create -f scipp-developer-minimal.yml
               mkdir -p  "$(build_dir)" "$(install_dir)"
             displayName: 'Configure build environment'
           - bash: |
@@ -223,7 +234,6 @@ stages:
               bin/Release/scipp-core-test.exe
               bin/Release/scipp-variable-test.exe
               bin/Release/scipp-dataset-test.exe
-              bin/Release/scipp-neutron-test.exe
             displayName: 'Run C++ unit tests'
           - bash: |
               set -ex
@@ -233,6 +243,17 @@ stages:
             displayName: 'Build Python library'
           - bash: |
               set -ex
+              cd package/scipp-package-test
               source activate scipp-developer
+              mkdir -p build && cd build
+              cmake -DCMAKE_PREFIX_PATH="$(install_dir)" ..
+              cmake --build . --config Release
+              PATH="$(install_dir)/bin":$PATH
+              ./Release/test.exe
+            displayName: 'Check packaging'
+          - bash: |
+              set -ex
+              source activate scipp-developer
+              PATH="$(install_dir)/bin":$PATH
               PYTHONPATH="$(install_dir)" python -m pytest
             displayName: 'Run Python unit tests'

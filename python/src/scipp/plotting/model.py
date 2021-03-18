@@ -102,7 +102,6 @@ class PlotModel:
         # scaling.
         formatter = {"linear": None, "log": None, "custom_locator": False}
 
-        coord = None
         contains_strings = False
         contains_vectors = False
 

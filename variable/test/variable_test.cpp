@@ -782,7 +782,7 @@ template <typename Var> void test_set_variances(Var &var) {
 
   Variable bad_dims(v);
   bad_dims.rename(Dim::X, Dim::Y);
-  EXPECT_THROW(var.setVariances(bad_dims), except::DimensionMismatchError);
+  EXPECT_THROW(var.setVariances(bad_dims), except::DimensionError);
 
   Variable bad_unit(v);
   bad_unit.setUnit(units::s);
@@ -919,10 +919,12 @@ TEST(TransposeTest, make_transposed_2d) {
   EXPECT_EQ(transpose(var, {Dim::Y, Dim::X}), ref);
   EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::X}), ref);
 
-  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(transpose(constVar, {Dim::Y}), except::DimensionError);
-  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(transpose(var, {Dim::Z}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
 }
 
 TEST(TransposeTest, make_transposed_multiple_d) {
@@ -938,10 +940,12 @@ TEST(TransposeTest, make_transposed_multiple_d) {
   EXPECT_EQ(transpose(var, {Dim::Y, Dim::Z, Dim::X}), ref);
   EXPECT_EQ(transpose(constVar, {Dim::Y, Dim::Z, Dim::X}), ref);
 
-  EXPECT_THROW(transpose(constVar, {Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(transpose(constVar, {Dim::Y}), except::DimensionError);
-  EXPECT_THROW(transpose(var, {Dim::Y, Dim::Z}), except::DimensionError);
-  EXPECT_THROW(transpose(var, {Dim::Z}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(constVar, {Dim::Y}), except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Y, Dim::Z}),
+                       except::DimensionError);
+  EXPECT_THROW_DISCARD(transpose(var, {Dim::Z}), except::DimensionError);
 }
 
 TEST(TransposeTest, reverse) {
