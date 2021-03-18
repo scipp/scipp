@@ -282,6 +282,20 @@ def test_plot_2d_image_int32():
     plot(make_dense_dataset(ndim=2, dtype=sc.dtype.int32))
 
 
+def test_plot_2d_image_int_coords():
+    N = 20
+    M = 10
+    x = np.arange(N + 1)
+    y = np.arange(M)
+    d = sc.Dataset()
+    d.coords['x'] = sc.Variable(['x'], values=x, unit=sc.units.m)
+    d.coords['y'] = sc.Variable(['y'], values=y, unit=sc.units.m)
+    d['a'] = sc.Variable(['y', 'x'],
+                         values=np.random.random([M, N]),
+                         unit=sc.units.K)
+    plot(d)
+
+
 def test_plot_2d_datetime():
     time = sc.array(dims=['time'],
                     values=np.arange(

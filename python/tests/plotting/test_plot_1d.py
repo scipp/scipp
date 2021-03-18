@@ -248,6 +248,28 @@ def test_plot_access_ax_and_fig_two_entries():
     out['tof.counts'].fig.set_dpi(120.)
 
 
+def test_plot_with_integer_coord():
+    d = sc.Dataset()
+    N = 10
+    d.coords['x'] = sc.Variable(['x'], values=np.arange(N), unit=sc.units.m)
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_with_integer_coord_binedges():
+    d = sc.Dataset()
+    N = 10
+    d.coords['x'] = sc.Variable(['x'],
+                                values=np.arange(N + 1),
+                                unit=sc.units.m)
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
+    plot(d)
+
+
 def test_plot_1d_datetime():
     time = sc.array(dims=['time'],
                     values=np.arange(np.datetime64('2017-01-01T12:00:00'),
