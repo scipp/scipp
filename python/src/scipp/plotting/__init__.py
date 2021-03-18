@@ -33,14 +33,20 @@ if ipy is not None:
         meta = meta.to_dict()
     if "scipp_docs_build" in meta:
         is_doc_build = meta["scipp_docs_build"]
+    print(("IPKernelApp" in ipy.config))
+    print(mpl is not None)
+    print("backend 1", plt.get_backend())
     if ("IPKernelApp" in ipy.config) and (mpl is not None):
         try:
             # Attempt to use ipympl backend
             from ipympl.backend_nbagg import Canvas
+            print("backend 2", plt.get_backend())
             mpl.use('module://ipympl.backend_nbagg')
+            print("backend 3", plt.get_backend())
             # Hide the figure header:
             # see https://github.com/matplotlib/ipympl/issues/229
             Canvas.header_visible.default_value = False
+            print("backend 4", plt.get_backend())
         except ImportError:
             warnings.warn(
                 "The ipympl backend, which is required for "
@@ -53,6 +59,7 @@ if ipy is not None:
         # Note that the javascript has to be run here so that the pixel_ratio
         # value is set after the initial import. Dealying this to inside the
         # call to plot() would lead to devicePixelRatio being None.
+        print("backend 5", plt.get_backend())
         ipy.run_cell_magic(
             "js", "", "var kernel = IPython.notebook.kernel; "
             "if (kernel) {"
@@ -60,6 +67,7 @@ if ipy is not None:
             "var command = 'devicePixelRatio = ' + value; "
             "kernel.execute(command);}")
 
+print("backend 6", plt.get_backend())
 print('is_doc_build', is_doc_build)
 
 if is_doc_build and plt is not None:
@@ -69,6 +77,7 @@ if is_doc_build and plt is not None:
         "figure.figsize": [6.4, 4.8],
         "figure.dpi": 96
     })
+print("backend 7", plt.get_backend())
 
 
 def plot(*args, **kwargs):
@@ -193,18 +202,22 @@ def plot(*args, **kwargs):
 
     """
 
+    print("backend 8", plt.get_backend())
     if plt is None:
         raise RuntimeError("Matplotlib not found. Matplotlib is required to "
                            "use plotting in Scipp.")
 
     # Switch auto figure display off for better control over when figures are
     # displayed.
+    print("backend 9", plt.get_backend())
     interactive_on = False
     if plt.isinteractive():
         plt.ioff()
         interactive_on = True
+    print("backend 10", plt.get_backend())
 
     output = _plot(*args, **kwargs)
+    print("backend 11", plt.get_backend())
 
     if output is not None:
         # Hide all widgets if this is the inline backend
