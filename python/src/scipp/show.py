@@ -323,20 +323,13 @@ class DatasetDrawer:
         self._dataset = dataset
 
     def _dims(self):
-        # The dimension-order in a dataset is not defined. However, here we
-        # need one for the practical purpose of drawing variables with
-        # consistent ordering. We simply use that of the item with highest
-        # dimension count.
+        dims = self._dataset.dims
         if is_data_array(self._dataset):
-            dims = self._dataset.dims
-        else:
-            dims = []
-            for item in self._dataset.values():
-                if len(item.dims) > len(dims):
-                    dims = item.dims
-            for dim in self._dataset.dims:
-                if dim not in dims:
-                    dims = [dim] + dims
+            # Handle, e.g., bin edges of a slice, where data lacks the edge dim
+            for item in self._dataset.meta.values():
+                for dim in item.dims:
+                    if dim not in dims:
+                        dims = [dim] + dims
         if len(dims) > 3:
             raise RuntimeError("Cannot visualize {}-D data".format(len(dims)))
         return dims
