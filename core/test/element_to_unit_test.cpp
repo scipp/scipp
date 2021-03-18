@@ -59,6 +59,9 @@ TEST(ElementToUnitTest, int_range_exceeded) {
   // but it is not clear whether throwing exceptions on a per-element basis
   // would be desirable?
   EXPECT_EQ(to_unit(int32_t(1), 1e10), std::numeric_limits<int32_t>::max());
+  EXPECT_EQ(to_unit(int32_t(-1), 1e10), std::numeric_limits<int32_t>::min());
+  EXPECT_EQ(to_unit(int64_t(1), 1e20), std::numeric_limits<int64_t>::max());
+  EXPECT_EQ(to_unit(int64_t(-1), 1e20), std::numeric_limits<int64_t>::min());
 }
 
 TEST(ElementToUnitTest, time_point) {

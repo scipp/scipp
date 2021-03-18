@@ -4,6 +4,9 @@
 /// @author Simon Heybrock
 #pragma once
 
+#include <cmath>
+#include <limits>
+
 #include "scipp/common/overloaded.h"
 #include "scipp/core/element/arg_list.h"
 #include "scipp/core/time_point.h"
@@ -12,10 +15,22 @@
 namespace scipp::core::element {
 
 namespace {
+
+template <class T, class U> T safe_cast(const U x) {
+  if (std::isnan(x))
+    return 0;
+  int exp;
+  std::frexp(x, &exp);
+  if (std::isfinite(x) && exp <= 8 * static_cast<int>(sizeof(T)) - 1)
+    return x;
+  return std::signbit(x) ? std::numeric_limits<T>::min()
+                         : std::numeric_limits<T>::max();
+}
+
 template <class T>
 constexpr auto round = [](const auto x) {
   if constexpr (std::is_integral_v<T>)
-    return static_cast<T>(x < 0 ? x - 0.5 : x + 0.5);
+    return safe_cast<T>(x < 0 ? x - 0.5 : x + 0.5);
   else
     return static_cast<T>(x);
 };
