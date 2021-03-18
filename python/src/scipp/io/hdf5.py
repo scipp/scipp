@@ -18,14 +18,17 @@ def _dtype_lut():
     return dict(zip(names, dtypes))
 
 
+def _as_hdf5_type(a):
+    import numpy as np
+    if np.issubdtype(a.dtype, np.datetime64):
+        return a.view(np.int64)
+    return a
+
+
 class NumpyDataIO:
     @staticmethod
     def write(group, data):
-        import numpy as np
-        values = data.values
-        if np.issubdtype(values.dtype, np.datetime64):
-            values = values.view(np.int64)
-        dset = group.create_dataset('values', data=values)
+        dset = group.create_dataset('values', data=_as_hdf5_type(data.values))
         if data.variances is not None:
             variances = group.create_dataset('variances', data=data.variances)
             dset.attrs['variances'] = variances.ref
@@ -33,11 +36,7 @@ class NumpyDataIO:
 
     @staticmethod
     def read(group, data):
-        import numpy as np
-        values = data.values
-        if np.issubdtype(values.dtype, np.datetime64):
-            values = values.view(np.int64)
-        group['values'].read_direct(values)
+        group['values'].read_direct(_as_hdf5_type(data.values))
         if 'variances' in group:
             group['variances'].read_direct(data.variances)
 
