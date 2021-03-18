@@ -193,7 +193,7 @@
 .sc-var-item > div,
 .sc-var-item label,
 .sc-var-item > .sc-var-name span {
-  background-color: #fcfcfc;
+  background-color: var(--jp-layout-color1);
   margin-bottom: 0;
 }
 
@@ -204,7 +204,7 @@
 .sc-var-list > li:nth-child(odd) > div,
 .sc-var-list > li:nth-child(odd) > label,
 .sc-var-list > li:nth-child(odd) > .sc-var-name span {
-  background-color: #efefef;
+  background-color: var(--jp-layout-color2);
 }
 
 .sc-var-name {
@@ -272,7 +272,7 @@
 }
 .sc-var-attrs,
 .sc-var-data {
-  background-color: #fff !important;
+  background-color: var(--jp-layout-color0) !important;
   padding-bottom: 5px !important;
 }
 
