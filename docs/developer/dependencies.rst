@@ -41,10 +41,26 @@ Run
 Test
 ----
 
-  - all (including optional) dependecies of *Run*
+  - all (including optional) dependencies of *Run*
   - ``mantid-framework`` * (GPL-3.0-or-later) (Mantid interoperability tests are skipped if not present)
   - ``psutil`` (BSD-3-Clause) (used to determine if host has enough memory for certain unit tests)
   - ``pytest`` (MIT) (test framework)
+
+Jupyter Lab
+-----------
+To use scipp with Jupyter Lab:
+
+- ``jupyterlab`` (BSD-3-Clause)
+- ``ipympl`` (BSD-3-Clause) (matplotlib-jupyter integration)
+- ``nodejs`` (MIT) (javascript runtime)
+
+and then run
+
+.. code-block::
+
+    jupyter labextension install @jupyter-widgets/jupyterlab-manager
+    jupyter lab build
+
 
 Documentation Build
 -------------------
