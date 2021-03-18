@@ -2,6 +2,7 @@
 // Copyright (c) 2021 Scipp contributors (https://github.com/scipp)
 #include <gtest/gtest.h>
 
+#include "scipp/common/shared_deep_ptr.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/element_array.h"
 #include "scipp/units/dim.h"
@@ -129,9 +130,8 @@ public:
   Dict() = default;
   Dict(const Sizes &sizes,
        std::initializer_list<std::pair<const Key, Value>> items)
-      : Dict(sizes, std::unordered_map<Key, Value>(items)) {}
-  Dict(const Sizes &sizes, const std::unordered_map<Key, Value> &items)
-      : m_sizes(sizes) {
+      : Dict(sizes, map_type(items)) {}
+  Dict(const Sizes &sizes, const map_type &items) : m_sizes(sizes) {
     for (const auto &[key, value] : items)
       setitem(key, value);
   }
@@ -172,9 +172,11 @@ public:
   DataArray() = default;
   DataArray(Variable data, const std::unordered_map<Dim, Variable> &coords)
       : m_data(std::move(data)), m_coords(m_data.dims(), coords),
-        m_masks(m_data.dims(), {}) {}
+        m_masks(std::make_shared<Masks>(m_data.dims(),
+                                        typename Masks::map_type{})) {}
   DataArray(Variable data, Coords coords, Masks masks)
-      : m_data(data), m_coords(coords), m_masks(masks) {
+      : m_data(data), m_coords(coords),
+        m_masks(std::make_shared<Masks>(masks)) {
     // TODO verify sizes of coords and masks
   }
 
@@ -196,21 +198,31 @@ public:
   // keep_alive on the owning DataArray
   const auto &coords() const { return m_coords; }
   auto &coords() { return m_coords; }
-  const auto &masks() const { return m_masks; }
-  auto &masks() { return m_masks; }
-  void reset_coords() { m_coords = Coords(m_data.dims(), {}); }
+  const auto &masks() const { return *m_masks; }
+  auto &masks() { return *m_masks; }
   // da.coords['x'] = x # must check dims... should Coords store data dims?
   // auto shared_coords() { return m_coords; } // bind to da.coords
 
   DataArray slice(const Dim dim, const scipp::index offset) const {
     return {m_data.slice(dim, offset), m_coords.slice(dim, offset),
-            m_masks.slice(dim, offset)};
+            m_masks->slice(dim, offset)};
+  }
+
+  DataArray view_with_coords(const Coords &coords) const {
+    DataArray out;
+    out.m_data = m_data;
+    out.m_coords = Coords(m_data.dims(), {});
+    for (const auto &[dim, coord] : coords)
+      if (m_data.dims().contains(coord.dims()))
+        out.m_coords.setitem(dim, coord);
+    out.m_masks = m_masks.owner();
+    return out;
   }
 
 private:
   Variable m_data;
   Coords m_coords;
-  Masks m_masks;
+  shared_deep_ptr<Masks> m_masks;
 };
 
 // Requires:
@@ -219,15 +231,8 @@ class Dataset {
 public:
   const auto &coords() const { return m_coords; }
   auto &coords() { return m_coords; }
-  // in python, returning an item should share ownership *of the item*, NOT of
-  // the item contents => need to wrap item in shared_ptr?
   auto operator[](const std::string &name) const {
-    auto item = m_items.at(name);
-    item.reset_coords();
-    for (const auto &[dim, coord] : m_coords)
-      if (item.data().dims().contains(coord.dims()))
-        item.coords().setitem(dim, coord);
-    return item;
+    return m_items.at(name).view_with_coords(m_coords);
   }
   void setitem(const std::string &name, const DataArray &item) {
     // TODO properly check compatible dims and grow
