@@ -170,8 +170,6 @@ class PlotModel:
                                                dim_to_shape[dim])
             formatter["custom_locator"] = True
         elif kind[key] == Kind.datetime:
-            # Note that the explicit conversion to int is required here because
-            # a numpy.int64 fails to convert to datetime.
             form = self._date_tick_formatter(offset, key)
         elif dim in dim_label_map:
             coord_values = coord.values
