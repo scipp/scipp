@@ -9,7 +9,6 @@ from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
 import enum
-import os
 
 
 class Kind(enum.Enum):
@@ -150,14 +149,6 @@ class PlotModel:
             coord = data_array.meta[dim]
             offset = sc.min(coord)
             coord = coord - offset
-            # nanoseconds = data_array.meta[dim].values.astype(
-            #     'datetime64[ns]').astype(np.int64)
-            # offset = np.amin(nanoseconds)
-            # nanoseconds -= offset
-            # coord = sc.Variable(dims=data_array.meta[dim].dims,
-            #                     unit=data_array.meta[dim].unit,
-            #                     values=nanoseconds,
-            #                     dtype=sc.dtype.int64)
         else:
             coord = data_array.meta[dim]
             if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
@@ -237,47 +228,41 @@ class PlotModel:
             offset: 2017-01-13T12:15:45
             tick: 123 ms
             """
-            # os.write(1, (str(val) + '\n').encode())
-            # return "ab"
-            # dt = str(offset + int(val))
             dt = str((offset + (int(val) * offset.unit)).value)
-            os.write(1, (dt + '\n').encode())
-            # dt = str(np.datetime64(int(val) + int(offset), 'ns'))
             start = 0
             end = len(dt)
             u = ""
             suffix = ""
             bounds = self.interface["get_view_axis_bounds"](dim)
             diff = (bounds[1] - bounds[0]) * offset.unit
-            os.write(1, (str(bounds) + '\n').encode())
-            if diff < sc.to_unit(2 * sc.units.ns, offset.unit):
+            if (diff < sc.to_unit(2 * sc.units.us, diff.unit)).value:
                 # offset: 2017-01-13T12:15:45.123456, tick: 789 ns
                 start = 26
                 u = "ns"
-            elif diff < sc.to_unit(2 * sc.units.us, offset.unit):
+            elif (diff < sc.to_unit(2 * sc.Unit('ms'), diff.unit)).value:
                 # offset: 2017-01-13T12:15:45.123, tick: 456 us
                 start = 23
                 end = 26
                 u = r"$\mu$s"
-            elif diff < sc.to_unit(2 * sc.units.s, offset.unit):
+            elif (diff < sc.to_unit(2 * sc.units.s, diff.unit)).value:
                 # offset: 2017-01-13T12:15, tick: 45.123 s
                 start = 17
                 end = 23
                 u = "s"
-            elif diff < sc.to_unit(2 * sc.Unit('min'), offset.unit):
+            elif (diff < sc.to_unit(2 * sc.Unit('min'), diff.unit)).value:
                 # offset: 2017-01-13, tick: 12:15:45
                 start = 11
                 end = 19
-            elif diff < sc.to_unit(2 * sc.Unit('h'), offset.unit):
+            elif (diff < sc.to_unit(2 * sc.Unit('h'), diff.unit)).value:
                 # offset: 2017-01-13, tick: 12:15
                 start = 11
                 end = 16
-            elif diff < sc.to_unit(2 * sc.Unit('d'), offset.unit):
+            elif (diff < sc.to_unit(2 * sc.Unit('d'), diff.unit)).value:
                 # offset: 2017-01, tick: 13 12h
                 start = 8
                 end = 13
                 suffix = "h"
-            elif diff < sc.to_unit(6 * sc.Unit('month'), offset.unit):
+            elif (diff < sc.to_unit(6 * sc.Unit('month'), diff.unit)).value:
                 # tick: 2017-01-13
                 end = 10
             else:
@@ -292,8 +277,12 @@ class PlotModel:
                     label += " [{}]".format(u)
                 self.interface["set_view_axis_label"](dim, label)
 
-            string = (dt[start:end] + suffix).replace("T", " ").lstrip("0")
-            return "0" if len(string) == 0 else string
+            string = (dt[start:end] + suffix).replace("T", " ")
+            if string.startswith("000"):
+                string = string[2:]
+            else:
+                string.lstrip("0")
+            return string
 
         return formatter
 
