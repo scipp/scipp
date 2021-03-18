@@ -205,7 +205,7 @@ def test_astype_bad_conversion():
                       values=np.array([1, 2, 3, 4], dtype=np.int64))
     assert var.dtype == sc.dtype.int64
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(sc.DTypeError):
         var.astype(sc.dtype.string)
 
 

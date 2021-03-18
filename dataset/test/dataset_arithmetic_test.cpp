@@ -740,8 +740,7 @@ TEST(DatasetSetData, dense_to_dense) {
   dense.setData("data_x_1", dense["data_x"]);
   EXPECT_EQ(dense["data_x"], dense["data_x_1"]);
 
-  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]),
-               except::VariableMismatchError);
+  EXPECT_THROW(dense.setData("data_x_2", d["data_x"]), except::VariableError);
 }
 
 TEST(DatasetSetData, dense_to_empty) {

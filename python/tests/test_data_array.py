@@ -219,7 +219,7 @@ def test_astype_bad_conversion():
                      coords={'x': sc.Variable(['x'], values=np.arange(10.0))})
     assert a.dtype == sc.dtype.int64
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(sc.DTypeError):
         a.astype(sc.dtype.string)
 
 

@@ -130,9 +130,9 @@ class TestSliceByValue:
         assert self._d['a'].data.values.tolist() == [1.0, 3.1, 4.2, 5.3, 1.4]
 
     def test_slice_by_incorrect_unit_throws(self):
-        with pytest.raises(RuntimeError) as e_info:
+        with pytest.raises(sc.UnitError) as e_info:
             self._d['a']['x', 1.5 * sc.units.m]
-        assert str(e_info.value) == 'dimensionless expected to be equal to m'
+        assert str(e_info.value) == 'Expected unit dimensionless, got m.'
 
     def test_out_of_range_throws(self):
         with pytest.raises(IndexError):

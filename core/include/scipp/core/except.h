@@ -26,46 +26,34 @@ class Slice;
 
 namespace scipp::except {
 
-struct SCIPP_CORE_EXPORT TypeError : public std::runtime_error {
-  using std::runtime_error::runtime_error;
+struct SCIPP_CORE_EXPORT TypeError : public Error<core::DType> {
+  explicit TypeError(const std::string &msg);
 
   template <class... Vars>
-  TypeError(const std::string &msg) : std::runtime_error(msg) {}
-
-  template <class... Vars>
-  TypeError(const std::string &msg, Vars &&... vars)
-      : std::runtime_error(msg + ((to_string(vars.dtype()) + ' ') + ...)) {}
+  explicit TypeError(const std::string &msg, Vars &&... vars)
+      : TypeError{msg + ((to_string(vars.dtype()) + ' ') + ...)} {}
 };
 
-using DimensionMismatchError = MismatchError<core::Dimensions>;
-
-template <class T>
-MismatchError(const core::Dimensions &, const T &)
-    -> MismatchError<core::Dimensions>;
-
-using TypeMismatchError = MismatchError<core::DType>;
-
-template <class T>
-MismatchError(const core::DType &, const T &) -> MismatchError<core::DType>;
+template <>
+[[noreturn]] SCIPP_CORE_EXPORT void
+throw_mismatch_error(const core::DType &expected, const core::DType &actual);
 
 struct SCIPP_CORE_EXPORT DimensionError : public Error<core::Dimensions> {
-  DimensionError(const std::string &msg);
+  explicit DimensionError(const std::string &msg);
   DimensionError(scipp::index expectedDim, scipp::index userDim);
 };
 
-struct SCIPP_CORE_EXPORT DimensionNotFoundError : public DimensionError {
-  DimensionNotFoundError(const core::Dimensions &expected, const Dim actual);
-};
+template <>
+[[noreturn]] SCIPP_CORE_EXPORT void
+throw_mismatch_error(const core::Dimensions &expected,
+                     const core::Dimensions &actual);
 
-struct SCIPP_CORE_EXPORT DimensionLengthError : public DimensionError {
-  DimensionLengthError(const core::Dimensions &expected, const Dim actual,
-                       const scipp::index length);
-};
+[[noreturn]] SCIPP_CORE_EXPORT void
+throw_dimension_not_found_error(const core::Dimensions &expected, Dim actual);
 
-struct SCIPP_CORE_EXPORT EventsDimensionError : public DimensionError {
-  EventsDimensionError()
-      : DimensionError("Unsupported operation for events dimensions.") {}
-};
+[[noreturn]] SCIPP_CORE_EXPORT void
+throw_dimension_length_error(const core::Dimensions &expected, Dim actual,
+                             scipp::index length);
 
 struct SCIPP_CORE_EXPORT BinnedDataError : public std::runtime_error {
   using std::runtime_error::runtime_error;
@@ -90,10 +78,6 @@ struct SCIPP_CORE_EXPORT BinEdgeError : public std::runtime_error {
 struct SCIPP_CORE_EXPORT NotFoundError : public std::runtime_error {
   using std::runtime_error::runtime_error;
 };
-
-template struct SCIPP_CORE_EXPORT MismatchError<core::Dimensions>;
-template struct SCIPP_CORE_EXPORT MismatchError<core::DType>;
-
 } // namespace scipp::except
 
 namespace scipp::expect {
@@ -108,13 +92,13 @@ template <class A, class B> void contains(const A &a, const B &b) {
 namespace scipp::core::expect {
 template <class A, class B> void equals(const A &a, const B &b) {
   if (a != b)
-    throw scipp::except::MismatchError(a, b);
+    scipp::except::throw_mismatch_error(a, b);
 }
 
 template <class A, class B>
 void equals_any_of(const A &a, const std::initializer_list<B> possible) {
   if (std::find(possible.begin(), possible.end(), a) == possible.end())
-    throw scipp::except::MismatchError(a, possible);
+    scipp::except::throw_mismatch_error(a, possible);
 }
 
 SCIPP_CORE_EXPORT void dimensionMatches(const Dimensions &dims, const Dim dim,

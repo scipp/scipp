@@ -15,17 +15,17 @@ TEST(LinspaceTest, dim_mismatch) {
       linspace(1.0 * units::one,
                makeVariable<double>(Dims{Dim::Y}, Shape{2}, units::one), Dim::X,
                4),
-      except::DimensionMismatchError);
+      except::DimensionError);
 }
 
 TEST(LinspaceTest, unit_mismatch) {
   EXPECT_THROW_DISCARD(linspace(1.0 * units::one, 4.0 * units::m, Dim::X, 4),
-                       except::UnitMismatchError);
+                       except::UnitError);
 }
 
 TEST(LinspaceTest, dtype_mismatch) {
   EXPECT_THROW_DISCARD(linspace(1.0 * units::one, 4.0f * units::one, Dim::X, 4),
-                       except::TypeMismatchError);
+                       except::TypeError);
 }
 
 TEST(LinspaceTest, non_float_fail) {
