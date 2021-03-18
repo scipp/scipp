@@ -14,30 +14,36 @@ using namespace scipp;
 
 class Variable {
 private:
+  using data_type = std::tuple<units::Unit, element_array<double>>;
   Dimensions m_dims;
   scipp::index m_offset{0};
-  units::Unit m_unit; // TODO must share this somehow
-  element_array<double> m_values;
+  std::shared_ptr<data_type> m_data;
+
+  const auto &get_unit() const { return std::get<units::Unit>(*m_data); }
+  auto &get_unit() { return std::get<units::Unit>(*m_data); }
+  const auto &get_values() const { return std::get<1>(*m_data); }
+  auto &get_values() { return std::get<1>(*m_data); }
+
   bool is_slice() const noexcept {
-    return m_offset != 0 || m_dims.volume() != m_values.size();
+    return m_offset != 0 || m_dims.volume() != get_values().size();
   }
 
 public:
   Variable() = default;
   Variable(const Dimensions &dims, const units::Unit &unit,
            const element_array<double> &values)
-      : m_dims(dims), m_unit(unit), m_values(values) {
+      : m_dims(dims), m_data(std::make_shared<data_type>(unit, values)) {
     if (dims.volume() != values.size())
       throw std::runtime_error("Dims do not match size");
   }
 
   const auto &dims() const { return m_dims; }
-  const auto &unit() const { return m_unit; }
+  const auto &unit() const { return get_unit(); }
 
-  auto begin() { return m_values.begin() + m_offset; }
-  auto end() { return m_values.begin() + m_offset + m_dims.volume(); }
-  auto begin() const { return m_values.begin() + m_offset; }
-  auto end() const { return m_values.begin() + m_offset + m_dims.volume(); }
+  auto begin() { return get_values().begin() + m_offset; }
+  auto end() { return get_values().begin() + m_offset + m_dims.volume(); }
+  auto begin() const { return get_values().begin() + m_offset; }
+  auto end() const { return get_values().begin() + m_offset + m_dims.volume(); }
 
   // for Python, should return element_array by value, sharing ownership
   scipp::span<const double> values() const { return {begin(), end()}; }
@@ -59,16 +65,15 @@ public:
   }
 
   void setunit(const units::Unit &unit) {
-    if (m_unit == unit)
+    if (get_unit() == unit)
       return;
-    if (m_dims.volume() != m_values.size())
+    if (is_slice())
       throw std::runtime_error("Cannot set unit on slice");
-    m_unit = unit;
+    get_unit() = unit;
   }
 
   Variable deepcopy() const {
-    return is_slice() ? Variable{dims(), unit(), {begin(), end()}}
-                      : Variable{dims(), unit(), m_values.deepcopy()};
+    return Variable{dims(), unit(), {begin(), end()}};
   }
 };
 
