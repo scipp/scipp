@@ -16,9 +16,10 @@ namespace scipp::core::element {
 
 namespace {
 
+// Source: https://stackoverflow.com/a/26584177/1458281
 template <class T, class U> T safe_cast(const U x) {
   if (std::isnan(x))
-    return 0;
+    return std::numeric_limits<T>::min(); // behavior as numpy
   int exp;
   std::frexp(x, &exp);
   if (std::isfinite(x) && exp <= 8 * static_cast<int>(sizeof(T)) - 1)
