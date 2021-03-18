@@ -17,7 +17,7 @@ requirements:
     - tbb-devel
   run:
     - appdirs
-    - numpy >=1.15.3
+    - numpy
     - python {{ python }}
     - python-configuration
     - pyyaml
