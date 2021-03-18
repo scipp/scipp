@@ -258,7 +258,7 @@ class PlotModel:
                 # offset: 2017-01-13T12:15:45.123, tick: 456 us
                 start = 23
                 end = 26
-                u = "$\mu$s"
+                u = r"$\mu$s"
             elif diff < sc.to_unit(2 * sc.units.s, offset.unit):
                 # offset: 2017-01-13T12:15, tick: 45.123 s
                 start = 17
