@@ -78,6 +78,7 @@ if is_doc_build and plt is not None:
         "figure.dpi": 96
     })
 print("backend 7", plt.get_backend())
+print(plt.rcParams["figure.dpi"])
 
 
 def plot(*args, **kwargs):
