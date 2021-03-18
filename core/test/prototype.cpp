@@ -126,9 +126,6 @@ auto slice_map(const T &map, const Dim dim, const scipp::index offset) {
   return out;
 }
 
-// Dataset: dims can be extended
-// Coords: cannot extend, except for special case bin edges
-// slice of coords: drop items, slice items
 template <class Key, class Value> class Dict {
 public:
   using map_type = std::unordered_map<Key, Value>;
@@ -165,9 +162,7 @@ private:
 
 using Coords = Dict<Dim, Variable>;
 using Masks = Dict<std::string, Variable>;
-
-// DataArray slice converts coords to attrs => slice contains new attrs dict =>
-// cannot add attr via slice (works but does notthing)
+// Attrs handled justs like masks, not implemented for simplicity.
 
 // Requires:
 // Variable: dims and shape do not change
@@ -186,27 +181,20 @@ public:
   }
 
   const auto &dims() const { return m_data.dims(); }
-  // should share whole var, not just values?
-  // ... or include unit in shared part?
-  // da.data.unit = 'm' ok, DataArray does not care
-  // da.data.rename_dims(...) shoud NOT affect da?! since dims is invariant
-  // => rename_dims should return *new* variable
-  // required by DataArray
   auto data() const {
     return m_data;
   } // should never return mutable reference since this could break
     // invariants... see current impl which returns VariableView, preventing bad
     // changes
-  // auto shared_data() { return m_data; } // bind to da.data
   void setdata(const Variable &var) { m_data = var; }
   // metadata dicts return by reference, in Python bindings we need to use
-  // keep_alive on the owning DataArray
+  // keep_alive on the owning DataArray. Alternative we could return a
+  // shared_ptr to the dict and implement a copy constructor that does not
+  // share. Result should be identical
   const auto &coords() const { return m_coords; }
   auto &coords() { return m_coords; }
   const auto &masks() const { return *m_masks; }
   auto &masks() { return *m_masks; }
-  // da.coords['x'] = x # must check dims... should Coords store data dims?
-  // auto shared_coords() { return m_coords; } // bind to da.coords
 
   DataArray slice(const Dim dim, const scipp::index offset) const {
     return {m_data.slice(dim, offset), m_coords.slice(dim, offset),
@@ -236,6 +224,9 @@ class Dataset {
 public:
   const auto &coords() const { return m_coords; }
   auto &coords() { return m_coords; }
+  bool contains(const std::string &key) const {
+    return m_items.count(key) == 1;
+  }
   auto operator[](const std::string &name) const {
     return m_items.at(name).view_with_coords(m_coords);
   }
@@ -554,6 +545,14 @@ protected:
   DataArray da{var, {}};
   Dataset ds;
 };
+
+TEST_F(DatasetContractTest, item_can_be_added) {
+  ds.setitem("b", da);
+  EXPECT_TRUE(ds.contains("b"));
+  ds["b"].masks().setitem("mask", var);
+  EXPECT_TRUE(ds["b"].masks().contains("mask"));
+  EXPECT_FALSE(da.masks().contains("mask")); // masks dict is copied
+}
 
 TEST_F(DatasetContractTest, coords_can_be_added) {
   ds.coords().setitem(Dim("new"), var);
