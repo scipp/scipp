@@ -13,8 +13,12 @@ namespace scipp::core::element {
 
 namespace {
 template <class T>
-constexpr auto round =
-    [](const auto x) { return static_cast<T>(x < 0 ? x - 0.5 : x + 0.5); };
+constexpr auto round = [](const auto x) {
+  if constexpr (std::is_integral_v<T>)
+    return static_cast<T>(x < 0 ? x - 0.5 : x + 0.5);
+  else
+    return static_cast<T>(x);
+};
 }
 
 constexpr auto to_unit = overloaded{
@@ -26,10 +30,8 @@ constexpr auto to_unit = overloaded{
       using T = std::decay_t<decltype(x)>;
       if constexpr (std::is_same_v<T, time_point>)
         return T{round<int64_t>(x.time_since_epoch() * scale)};
-      else if constexpr (std::is_integral_v<T>)
-        return round<T>(x * scale);
       else
-        return static_cast<T>(x * scale);
+        return round<T>(x * scale);
     }};
 
 } // namespace scipp::core::element
