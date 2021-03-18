@@ -3,6 +3,12 @@
 * https://github.com/jsignell/xarray/blob/1d960933ab252e0f79f7e050e6c9261d55568057/xarray/static/css/style.css
 */
 
+:root {
+  --sc-background-color0: var(--jp-layout-color0, #fff);
+  --sc-background-color1: var(--jp-layout-color1, #fcfcfc);
+  --sc-background-color2: var(--jp-layout-color2, #efefef);
+}
+
 .sc-wrap {
   font-size: 14px;
   min-width: 300px;
@@ -193,7 +199,7 @@
 .sc-var-item > div,
 .sc-var-item label,
 .sc-var-item > .sc-var-name span {
-  background-color: var(--jp-layout-color1);
+  background-color: var(--sc-background-color1);
   margin-bottom: 0;
 }
 
@@ -204,7 +210,7 @@
 .sc-var-list > li:nth-child(odd) > div,
 .sc-var-list > li:nth-child(odd) > label,
 .sc-var-list > li:nth-child(odd) > .sc-var-name span {
-  background-color: var(--jp-layout-color2);
+  background-color: var(--sc-background-color2);
 }
 
 .sc-var-name {
@@ -272,7 +278,7 @@
 }
 .sc-var-attrs,
 .sc-var-data {
-  background-color: var(--jp-layout-color0) !important;
+  background-color: var(--sc-background-color0) !important;
   padding-bottom: 5px !important;
 }
 
