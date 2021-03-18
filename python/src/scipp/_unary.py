@@ -55,7 +55,8 @@ def to_unit(x: _cpp.Variable, unit: Union[_cpp.Unit, str]) -> _cpp.Variable:
     Raises an error if the input unit is not compatible with the provided
     unit, e.g., `m` cannot be converted to `s`.
 
-    Currently `to_unit` only supports floating-point data.
+    If the input dtype is an integer type or datetime64, the output is rounded
+    and returned with the same dtype as the input.
 
     :param x: Input variable.
     :param unit: Desired target unit.
