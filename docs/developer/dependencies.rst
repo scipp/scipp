@@ -28,7 +28,6 @@ Run
 
   - ``appdirs`` (MIT) (system application directory helper, used in user configuration loading)
   - ``ipywidgets`` * (BSD-3-Clause) (interactive Jupyter notebook widgets)
-  - ``mantid-framework`` * (GPL-3.0-or-later) (used for Mantid interoperability)
   - ``matplotlib`` * (custom permissive) (plotting library)
   - ``numpy`` >=1.15.3 (custom permissive)
   - ``Pillow`` (HPND) (Python Imaging Library, used in plot_3d to create colorbar)
@@ -53,13 +52,7 @@ To use scipp with Jupyter Lab:
 - ``jupyterlab`` (BSD-3-Clause)
 - ``ipympl`` (BSD-3-Clause) (matplotlib-jupyter integration)
 - ``nodejs`` (MIT) (javascript runtime)
-
-and then run
-
-.. code-block::
-
-    jupyter labextension install @jupyter-widgets/jupyterlab-manager
-    jupyter lab build
+- ``jupyterlab_widgets`` (BSD-3-Clause) (jupterlab widgets extension)
 
 
 Documentation Build
