@@ -13,14 +13,13 @@
 
 namespace scipp::except {
 
-using VariableError = Error<variable::Variable>;
-using VariableMismatchError = MismatchError<variable::Variable>;
+struct SCIPP_VARIABLE_EXPORT VariableError : public Error<variable::Variable> {
+  explicit VariableError(const std::string &msg);
+};
 
-template <class T>
-MismatchError(const variable::VariableConstView &, const T &)
-    -> MismatchError<variable::Variable>;
-
-template struct SCIPP_VARIABLE_EXPORT Error<variable::Variable>;
-template struct SCIPP_VARIABLE_EXPORT MismatchError<variable::Variable>;
+template <>
+[[noreturn]] SCIPP_VARIABLE_EXPORT void
+throw_mismatch_error(const variable::VariableConstView &expected,
+                     const variable::VariableConstView &actual);
 
 } // namespace scipp::except
