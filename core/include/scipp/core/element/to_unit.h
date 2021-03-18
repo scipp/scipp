@@ -34,7 +34,7 @@ constexpr auto round = [](const auto x) {
   else
     return static_cast<T>(x);
 };
-}
+} // namespace
 
 constexpr auto to_unit = overloaded{
     arg_list<double, std::tuple<float, double>, std::tuple<int64_t, double>,
