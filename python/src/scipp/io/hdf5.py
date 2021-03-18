@@ -10,18 +10,25 @@ def _dtype_lut():
     # handling, but will do as we add support for other types such as
     # variable-length strings.
     dtypes = [
-        d.float64, d.float32, d.int64, d.int32, d.bool, d.string, d.Variable,
-        d.DataArray, d.Dataset, d.VariableView, d.DataArrayView, d.DatasetView,
-        d.vector_3_float64, d.matrix_3_float64
+        d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64, d.string,
+        d.Variable, d.DataArray, d.Dataset, d.VariableView, d.DataArrayView,
+        d.DatasetView, d.vector_3_float64, d.matrix_3_float64
     ]
     names = [str(dtype) for dtype in dtypes]
     return dict(zip(names, dtypes))
 
 
+def _as_hdf5_type(a):
+    import numpy as np
+    if np.issubdtype(a.dtype, np.datetime64):
+        return a.view(np.int64)
+    return a
+
+
 class NumpyDataIO:
     @staticmethod
     def write(group, data):
-        dset = group.create_dataset('values', data=data.values)
+        dset = group.create_dataset('values', data=_as_hdf5_type(data.values))
         if data.variances is not None:
             variances = group.create_dataset('variances', data=data.variances)
             dset.attrs['variances'] = variances.ref
@@ -29,7 +36,7 @@ class NumpyDataIO:
 
     @staticmethod
     def read(group, data):
-        group['values'].read_direct(data.values)
+        group['values'].read_direct(_as_hdf5_type(data.values))
         if 'variances' in group:
             group['variances'].read_direct(data.variances)
 
@@ -146,7 +153,9 @@ def _check_scipp_header(group, what):
 def _data_handler_lut():
     from .._scipp.core import dtype as d
     handler = {}
-    for dtype in [d.float64, d.float32, d.int64, d.int32, d.bool]:
+    for dtype in [
+            d.float64, d.float32, d.int64, d.int32, d.bool, d.datetime64
+    ]:
         handler[str(dtype)] = NumpyDataIO
     for dtype in [d.VariableView, d.DataArrayView, d.DatasetView]:
         handler[str(dtype)] = BinDataIO
