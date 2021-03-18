@@ -28,6 +28,7 @@ if ipy is not None:
     # use the default Qt/inline backend.
     cfg = ipy.config
     meta = cfg["Session"]["metadata"]
+    print(meta)
     if hasattr(meta, "to_dict"):
         meta = meta.to_dict()
     if "scipp_docs_build" in meta:
@@ -58,6 +59,8 @@ if ipy is not None:
             "var value = window.devicePixelRatio; "
             "var command = 'devicePixelRatio = ' + value; "
             "kernel.execute(command);}")
+
+print('is_doc_build', is_doc_build)
 
 if is_doc_build and plt is not None:
     plt.rcParams.update({
