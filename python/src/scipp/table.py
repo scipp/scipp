@@ -261,7 +261,10 @@ class TableViewer:
                 group = "{}D Variables".format(ndims)
                 if su.is_variable(scipp_obj):
                     self.headers = 1
-                    key = str(scipp_obj.dims[0])
+                    if su.is_scalar(scipp_obj):
+                        key = ''
+                    else:
+                        key = str(scipp_obj.dims[0])
                     var = scipp_obj
                 else:
                     self.headers = 0

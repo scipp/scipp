@@ -182,3 +182,7 @@ def test_display_when_largest_coord_non_dimensional():
                                        values=np.random.random(10),
                                        unit=sc.units.counts))
     sc.table(da)
+
+
+def test_with_scalar():
+    sc.table(sc.scalar(value=1.0))
