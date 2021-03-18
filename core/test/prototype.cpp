@@ -540,3 +540,38 @@ TEST_F(DataArrayContractTest, slice_mask_unit_cannot_be_set) {
   auto slice = da.slice(Dim::X, 1);
   EXPECT_ANY_THROW(slice.masks()["mask"].setunit(units::s));
 }
+
+class DatasetContractTest : public ::testing::Test {
+protected:
+  DatasetContractTest() { ds.setitem("a", da); }
+  Dimensions dimsX = Dimensions(Dim::X, 3);
+  Variable var{dimsX, units::m, {1, 2, 3}};
+  DataArray da{var, {}};
+  Dataset ds;
+};
+
+TEST_F(DatasetContractTest, coords_can_be_added) {
+  ds.coords().setitem(Dim("new"), var);
+  EXPECT_TRUE(ds.coords().contains(Dim("new")));
+}
+
+TEST_F(DatasetContractTest, coord_values_can_be_set) {
+  ds.coords().setitem(Dim::X, var);
+  ds.coords()[Dim::X].values()[0] = 17;
+  EXPECT_EQ(ds.coords()[Dim::X].values()[0], 17);
+}
+
+TEST_F(DatasetContractTest, item_values_can_be_set) {
+  ds["a"].data().values()[0] = 17;
+  EXPECT_EQ(ds["a"].data().values()[0], 17);
+}
+
+TEST_F(DatasetContractTest, item_coord_cannot_be_added) {
+  ds["a"].coords().setitem(Dim("ignored"), var);
+  EXPECT_FALSE(ds["a"].coords().contains(Dim("ignored")));
+}
+
+TEST_F(DatasetContractTest, item_mask_can_be_added) {
+  ds["a"].masks().setitem("mask", var);
+  EXPECT_TRUE(ds["a"].masks().contains("mask"));
+}
