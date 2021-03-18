@@ -158,12 +158,8 @@ def test_plot_data_array():
 
 def test_plot_vector_axis_labels_1d():
     d = sc.Dataset()
-    N = 10
-    vecs = []
-    for i in range(N):
-        vecs.append(np.random.random(3))
     d.coords['x'] = sc.Variable(['x'],
-                                values=vecs,
+                                values=np.random.random([10, 3]),
                                 unit=sc.units.m,
                                 dtype=sc.dtype.vector_3_float64)
     d["Sample"] = sc.Variable(['x'],
@@ -191,6 +187,34 @@ def test_plot_string_axis_labels_1d_short():
     d.coords['x'] = sc.Variable(dims=['x'],
                                 values=["a", "b", "c", "d", "e"],
                                 unit=sc.units.m)
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_with_vector_labels():
+    d = sc.Dataset()
+    d.coords['x'] = sc.Variable(['x'], values=np.arange(10.), unit=sc.units.m)
+    d.coords['labs'] = sc.Variable(['x'],
+                                   values=np.random.random([10, 3]),
+                                   unit=sc.units.m,
+                                   dtype=sc.dtype.vector_3_float64)
+    d["Sample"] = sc.Variable(['x'],
+                              values=np.random.random(N),
+                              unit=sc.units.counts)
+    plot(d)
+
+
+def test_plot_vector_axis_with_labels():
+    d = sc.Dataset()
+    d.coords['labs'] = sc.Variable(['x'],
+                                   values=np.arange(10.),
+                                   unit=sc.units.m)
+    d.coords['x'] = sc.Variable(['x'],
+                                values=np.random.random([10, 3]),
+                                unit=sc.units.m,
+                                dtype=sc.dtype.vector_3_float64)
     d["Sample"] = sc.Variable(['x'],
                               values=np.random.random(N),
                               unit=sc.units.counts)

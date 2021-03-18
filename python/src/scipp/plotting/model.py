@@ -8,7 +8,18 @@ from .tools import to_bin_edges, to_bin_centers, make_fake_coord, \
 from .._utils import name_with_unit, value_to_string
 from .._scipp import core as sc
 import numpy as np
+import enum
 import os
+
+
+class Kind(enum.Enum):
+    """
+    Small enum listing the special cases for the axis tick formatters.
+    """
+    vector = enum.auto()
+    string = enum.auto()
+    datetime = enum.auto()
+    other = enum.auto()
 
 
 class PlotModel:
@@ -106,28 +117,36 @@ class PlotModel:
         # scaling.
         formatter = {"linear": None, "log": None, "custom_locator": False}
 
-        contains_strings = False
-        contains_vectors = False
-        contains_datetime = False
+        kind = {}
         offset = 0.0
         coord_label = None
         form = None
 
         has_no_coord = dim not in data_array.meta
+        kind[dim] = Kind.other
+        keys = []
         if not has_no_coord:
-            if data_array.meta[dim].dtype == sc.dtype.vector_3_float64:
-                contains_vectors = True
-            elif data_array.meta[dim].dtype == sc.dtype.string:
-                contains_strings = True
-            elif data_array.meta[dim].dtype == sc.dtype.datetime64:
-                contains_datetime = True
+            keys.append(dim)
+        if dim in dim_label_map:
+            keys.append(dim_label_map[dim])
+
+        for key in keys:
+            if data_array.meta[key].dtype == sc.dtype.vector_3_float64:
+                kind[key] = Kind.vector
+            elif data_array.meta[key].dtype == sc.dtype.string:
+                kind[key] = Kind.string
+            elif data_array.meta[key].dtype == sc.dtype.datetime64:
+                kind[key] = Kind.datetime
+            else:
+                kind[key] = Kind.other
 
         # Get the coordinate from the DataArray or generate a fake one
-        if has_no_coord or contains_vectors or contains_strings:
+        if has_no_coord or (kind[dim] == Kind.vector) or (kind[dim]
+                                                          == Kind.string):
             coord = make_fake_coord(dim, dim_to_shape[dim] + 1)
             if not has_no_coord:
                 coord.unit = data_array.meta[dim].unit
-        elif contains_datetime:
+        elif kind[dim] == Kind.datetime:
             coord = data_array.meta[dim]
             offset = sc.min(coord)
             coord = coord - offset
@@ -151,17 +170,15 @@ class PlotModel:
         else:
             key = dim
 
-        if data_array.meta[key].dtype == sc.dtype.vector_3_float64:
-            # If the non-dimension coordinate contains vectors
+        if kind[key] == Kind.vector:
             form = self._vector_tick_formatter(data_array.meta[key].values,
                                                dim_to_shape[dim])
             formatter["custom_locator"] = True
-        elif data_array.meta[key].dtype == sc.dtype.string:
-            # If the non-dimension coordinate contains strings
+        elif kind[key] == Kind.string:
             form = self._string_tick_formatter(data_array.meta[key].values,
                                                dim_to_shape[dim])
             formatter["custom_locator"] = True
-        elif data_array.meta[key].dtype == sc.dtype.datetime64:
+        elif kind[key] == Kind.datetime:
             # Note that the explicit conversion to int is required here because
             # a numpy.int64 fails to convert to datetime.
             form = self._date_tick_formatter(offset, key)
@@ -233,31 +250,38 @@ class PlotModel:
             bounds = self.interface["get_view_axis_bounds"](dim)
             diff = (bounds[1] - bounds[0]) * offset.unit
             os.write(1, (str(bounds) + '\n').encode())
-            if diff < 2 * sc.units.ns:  # offset: 2017-01-13T12:15:45.123456, tick: 789 ns
+            if diff < sc.to_unit(2 * sc.units.ns, offset.unit):
+                # offset: 2017-01-13T12:15:45.123456, tick: 789 ns
                 start = 26
                 u = "ns"
-            elif diff < 2 * sc.units.us:  # offset: 2017-01-13T12:15:45.123, tick: 456 us
+            elif diff < sc.to_unit(2 * sc.units.us, offset.unit):
+                # offset: 2017-01-13T12:15:45.123, tick: 456 us
                 start = 23
                 end = 26
                 u = "$\mu$s"
-            elif diff < 2 * sc.units.s:  # offset: 2017-01-13T12:15, tick: 45.123 s
+            elif diff < sc.to_unit(2 * sc.units.s, offset.unit):
+                # offset: 2017-01-13T12:15, tick: 45.123 s
                 start = 17
                 end = 23
                 u = "s"
-            elif diff < 2 * sc.Unit(
-                    'min'):  # offset: 2017-01-13, tick: 12:15:45
+            elif diff < sc.to_unit(2 * sc.Unit('min'), offset.unit):
+                # offset: 2017-01-13, tick: 12:15:45
                 start = 11
                 end = 19
-            elif diff < 2 * sc.Unit('h'):  # offset: 2017-01-13, tick: 12:15
+            elif diff < sc.to_unit(2 * sc.Unit('h'), offset.unit):
+                # offset: 2017-01-13, tick: 12:15
                 start = 11
                 end = 16
-            elif diff < 2 * sc.Unit('d'):  # offset: 2017-01, tick: 13 12h
+            elif diff < sc.to_unit(2 * sc.Unit('d'), offset.unit):
+                # offset: 2017-01, tick: 13 12h
                 start = 8
                 end = 13
                 suffix = "h"
-            elif diff < 86400 * 6e9 * 30:  # tick: 2017-01-13
+            elif diff < sc.to_unit(6 * sc.Unit('month'), offset.unit):
+                # tick: 2017-01-13
                 end = 10
-            else:  # tick: 2017-01
+            else:
+                # tick: 2017-01
                 end = 7
 
             if pos == 0:
