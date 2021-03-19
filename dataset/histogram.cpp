@@ -49,7 +49,7 @@ DataArray histogram(const DataArrayConstView &events,
               events_.dtype(), dim_, binEdges_.dims()[dim_] - 1,
               subspan_view(events_.coords()[dim_], data_dim_),
               subspan_view(masker.data(), data_dim_), binEdges_,
-              element::histogram);
+              element::histogram, "histogram");
         },
         data_dim, binEdges);
   } else {
