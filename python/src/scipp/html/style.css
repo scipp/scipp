@@ -7,6 +7,10 @@
   --sc-background-color0: var(--jp-layout-color0, #fff);
   --sc-background-color1: var(--jp-layout-color1, #fcfcfc);
   --sc-background-color2: var(--jp-layout-color2, #efefef);
+  --sc-font-color0: var(--jp-content-font-color0, #000);
+  --sc-font-color1: var(--jp-content-font-color1, #555);
+  --sc-font-color2: var(--jp-content-font-color2, #888);
+  --sc-font-color3: var(--jp-content-font-color3, #ccc);
 }
 
 .sc-wrap {
@@ -41,7 +45,7 @@
 }
 
 .sc-obj-type {
-  color: #555;
+  color: var(--sc-font-color1);
 }
 
 .sc-array-name {
@@ -68,11 +72,11 @@
 
 .sc-section-item input:enabled + label {
   cursor: pointer;
-  color: #555;
+  color: var(--sc-font-color1);
 }
 
 .sc-section-item input:enabled + label:hover {
-  color: #000;
+  color: var(--sc-font-color0);
 }
 
 .sc-section-summary {
@@ -87,7 +91,7 @@
 }
 
 .sc-section-summary-in:disabled + label {
-  color: #555;
+  color: var(--sc-font-color1);
 }
 
 .sc-section-summary-in + label:before {
@@ -99,7 +103,7 @@
 }
 
 .sc-section-summary-in:disabled + label:before {
-  color: #ccc;
+  color: var(--sc-font-color3);
 }
 
 .sc-section-summary-in:checked + label:before {
@@ -142,7 +146,7 @@
 }
 
 .sc-preview {
-  color: #888;
+  color: var(--sc-font-color2);
 }
 
 .sc-array-preview,
@@ -224,12 +228,12 @@
 .sc-var-dtype {
   grid-column: 3;
   text-align: right;
-  color: #555;
+  color: var(--sc-font-color2);
 }
 .sc-var-unit{
   grid-column: 4;
   text-align: left;
-  color: #222;
+  color: var(--sc-font-color1);
 }
 .sc-value-preview {
   grid-column: 5;
