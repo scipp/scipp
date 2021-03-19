@@ -109,7 +109,7 @@ class PlotModel:
                                   dim_label_map):
         """
         Get dimensions from requested axis.
-        Also retun axes tick formatters and locators.
+        Also return axes tick formatters and locators.
         """
 
         # Create some default axis tick formatter, depending on linear or log
