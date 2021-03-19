@@ -5,15 +5,14 @@ channels:
   - scipp
 
 dependencies:
-  - scipp
+  - h5py
   - ipympl
+  - ipython
   - ipywidgets
   - jupyterlab
-  - jupyter_nbextensions_configurator
   - jupyterlab_widgets
+  - jupyter_nbextensions_configurator
   - matplotlib-base
   - nodejs
   - pythreejs
-  - traitlets=4.3.3 # see https://github.com/jupyter-widgets/pythreejs/issues/334 # is this needed?
-  - h5py
-  - ipython=7.2.0
+  - scipp
