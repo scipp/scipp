@@ -39,27 +39,6 @@ If you wish to use plotting functionality you will also need to install ``matplo
 
 To update or remove ``scipp`` use `conda update <https://docs.conda.io/projects/conda/en/latest/commands/update.html>`_ and `conda remove <https://docs.conda.io/projects/conda/en/latest/commands/remove.html>`_.
 
-If you wish to use Scipp with Mantid you may use the following command to create an environment containing both Scipp and Mantid framework.
-
-Note that Conda packages for Mantid are only available on Linux and macOS, and are currently maintained separate to the Mantid project.
-This is due to some dependencies being too old to work in the same environment as Scipp.
-
-.. code-block:: sh
-
-  $ conda create \
-      -n env_with_scipp_and_mantid \
-      -c conda-forge \
-      -c scipp \
-      python=3.7 \
-      scipp \
-      mantid-framework
-
-.. note::
-   Instaling Scipp with Mantid on Windows is possible but requires ``Windows Subsystem for Linux 1`` (WSL 1) installed and is limited to Windows 10.
-   Please follow the steps on the `Windows Subsystem for Linux Installation Guide page <https://docs.microsoft.com/en-us/windows/wsl/install-win10>`_
-   to enable Linux support.
-   Once ``WSL 1`` is installed, setting up Scipp with Mantid follows the Linux specific directions described above.
-
 From source
 -----------
 
