@@ -13,6 +13,13 @@ def is_variable(obj):
     return isinstance(obj, sc.Variable) or isinstance(obj, sc.VariableView)
 
 
+def is_scalar(obj):
+    """
+    Return True if the input is a scalar
+    """
+    return obj.dims == []
+
+
 def is_dataset(obj):
     """
     Return True if the input is of type scipp.core.Variable.
