@@ -151,9 +151,11 @@ class PlotModel:
             coord = coord - offset
         else:
             coord = data_array.meta[dim]
-            if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
-                                                      sc.dtype.float64):
-                coord = coord.astype(sc.dtype.float64)
+        # Convert the coordinate to float because rebin (used in 2d plots) does
+        # not currently support integer coordinates
+        if (coord.dtype != sc.dtype.float32) and (coord.dtype !=
+                                                  sc.dtype.float64):
+            coord = coord.astype(sc.dtype.float64)
 
         # Set up tick formatters
         if dim in dim_label_map:

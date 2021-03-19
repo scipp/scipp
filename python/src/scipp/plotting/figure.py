@@ -93,6 +93,9 @@ class PlotFigure:
             return self._to_image()
 
     def _to_image(self):
+        """
+        Convert the Matplotlib figure to a static image.
+        """
         buf = io.BytesIO()
         self.fig.savefig(buf, format='png')
         # Here we close the figure to prevent it from showing up again in
