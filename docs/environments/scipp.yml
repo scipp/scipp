@@ -1,0 +1,19 @@
+name: scipp
+
+channels:
+  - conda-forge
+  - scipp
+
+dependencies:
+  - scipp
+  - ipympl
+  - ipywidgets
+  - jupyterlab
+  - jupyter_nbextensions_configurator
+  - jupyterlab_widgets
+  - matplotlib-base
+  - nodejs
+  - pythreejs
+  - traitlets=4.3.3 # see https://github.com/jupyter-widgets/pythreejs/issues/334 # is this needed?
+  - h5py
+  - ipython=7.2.0
