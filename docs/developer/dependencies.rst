@@ -50,6 +50,7 @@ To use scipp with Jupyter Lab:
 
 - ``jupyterlab`` (BSD-3-Clause)
 - ``jupyterlab_widgets`` (BSD-3-Clause) (jupterlab widgets extension)
+- ``nodejs`` (MIT) (javascript runtime)
 
 Documentation Build
 -------------------
