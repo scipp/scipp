@@ -231,57 +231,66 @@ class PlotModel:
             dt = str((offset + (int(val) * offset.unit)).value)
             start = 0
             end = len(dt)
-            u = ""
-            suffix = ""
+            # u = ""
+            # suffix = ""
             bounds = self.interface["get_view_axis_bounds"](dim)
             diff = (bounds[1] - bounds[0]) * offset.unit
+            label = dim
             if (diff < sc.to_unit(2 * sc.units.us, diff.unit)).value:
-                # offset: 2017-01-13T12:15:45.123456, tick: 789 ns
-                start = 26
-                u = "ns"
+                # offset: 2017-01-13T12:15:45.123, tick: 456.789 ns
+                start = 23
+                label += r" [$\mu$s]"
+                string = str(float("{}.{}".format(dt[start:26], dt[26:])))
             elif (diff < sc.to_unit(2 * sc.Unit('ms'), diff.unit)).value:
                 # offset: 2017-01-13T12:15:45.123, tick: 456 us
-                start = 23
-                end = 26
-                u = r"$\mu$s"
+                # start = 20
+                # end = 26
+                start = 20
+                label += " [ms]"
+                string = str(float("{}.{}".format(dt[start:23], dt[23:26])))
             elif (diff < sc.to_unit(2 * sc.units.s, diff.unit)).value:
                 # offset: 2017-01-13T12:15, tick: 45.123 s
                 start = 17
-                end = 23
-                u = "s"
+                # end = 23
+                label += " [s]"
+                string = str(float(dt[start:23]))
             elif (diff < sc.to_unit(2 * sc.Unit('min'), diff.unit)).value:
                 # offset: 2017-01-13, tick: 12:15:45
                 start = 11
-                end = 19
+                # end = 19
+                string = dt[start:19]
             elif (diff < sc.to_unit(2 * sc.Unit('h'), diff.unit)).value:
                 # offset: 2017-01-13, tick: 12:15
                 start = 11
-                end = 16
+                string = dt[start:16]
             elif (diff < sc.to_unit(2 * sc.Unit('d'), diff.unit)).value:
                 # offset: 2017-01, tick: 13 12h
                 start = 8
-                end = 13
-                suffix = "h"
+                # end = 13
+                # suffix = "h"
+                string = "{}h".format(dt[start:13].replace('T', ' '))
             elif (diff < sc.to_unit(6 * sc.Unit('month'), diff.unit)).value:
                 # tick: 2017-01-13
-                end = 10
+                # end = 10
+                string = dt[start:10]
             else:
                 # tick: 2017-01
-                end = 7
+                # end = 7
+                string = dt[start:7]
 
             if pos == 0:
                 self.interface["set_view_axis_offset"](
-                    dim, dt[:start].rstrip('T').rstrip(':').rstrip('-'))
-                label = dim
-                if len(u) > 0:
-                    label += " [{}]".format(u)
+                    dim, dt[:start])  #.rstrip('T').rstrip(':').rstrip('-'))
+                # label = dim
+                # if len(u) > 0:
+                #     label += " [{}]".format(u)
                 self.interface["set_view_axis_label"](dim, label)
 
-            string = (dt[start:end] + suffix).replace("T", " ")
-            if string.startswith("000"):
-                string = string[2:]
-            else:
-                string.lstrip("0")
+            # string = (dt[start:end] + suffix).replace("T", " ")
+            # if string.startswith("000"):
+            #     string = string[2:]
+            # else:
+            #     string.lstrip("0")
             return string
 
         return formatter
