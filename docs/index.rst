@@ -43,7 +43,7 @@ If your use case requires one or several of the items on the following list, usi
 - Written in C++ for better performance (for certain applications), in combination with Python bindings.
 
 Generic functionality of scipp is provided in the **scipp** Python package.
-In addition, more specific functionality is made available in other packes.
+In addition, more specific functionality is made available in other packages.
 Currently the only example for this is `scippneutron <https://scipp.github.io/scippneutron>`_ for handling data from neutron-scattering experiments.
 
 News
