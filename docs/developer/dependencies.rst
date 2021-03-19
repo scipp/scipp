@@ -29,6 +29,7 @@ Run
   - ``appdirs`` (MIT) (system application directory helper, used in user configuration loading)
   - ``ipywidgets`` * (BSD-3-Clause) (interactive Jupyter notebook widgets)
   - ``matplotlib`` * (custom permissive) (plotting library)
+  - ``ipympl`` * (BSD-3-Clause) (matplotlib-jupyter integration)
   - ``numpy`` >=1.15.3 (custom permissive)
   - ``python`` (PSF-2.0)
   - ``python-configuration`` (MIT) (configuration file parser, used in user configuration loading)
@@ -48,10 +49,7 @@ Jupyter Lab
 To use scipp with Jupyter Lab:
 
 - ``jupyterlab`` (BSD-3-Clause)
-- ``ipympl`` (BSD-3-Clause) (matplotlib-jupyter integration)
-- ``nodejs`` (MIT) (javascript runtime)
 - ``jupyterlab_widgets`` (BSD-3-Clause) (jupterlab widgets extension)
-
 
 Documentation Build
 -------------------

@@ -19,7 +19,7 @@ dependencies:
   - ipympl
   - ipywidgets
   - matplotlib-base
-  - numpy
+  - numpy >=1.15.3
   - python
   - python-configuration
   - pythreejs
