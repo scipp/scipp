@@ -222,75 +222,51 @@ class PlotModel:
         offset according to the currently displayed range.
         """
         def formatter(val, pos):
-            """
-            Note that there is not 'ms' between 's' and 'us' because it is
-            clearer for the user to see a tick as '45.123 s' instead of
-            offset: 2017-01-13T12:15:45
-            tick: 123 ms
-            """
             dt = str((offset + (int(val) * offset.unit)).value)
-            start = 0
-            end = len(dt)
-            # u = ""
-            # suffix = ""
+            trim = 0
             bounds = self.interface["get_view_axis_bounds"](dim)
             diff = (bounds[1] - bounds[0]) * offset.unit
             label = dim
             if (diff < sc.to_unit(2 * sc.units.us, diff.unit)).value:
-                # offset: 2017-01-13T12:15:45.123, tick: 456.789 ns
-                start = 23
+                # offset: 2017-01-13T12:15:45.123, tick: 456.789 us
+                trim = 23
                 label += r" [$\mu$s]"
-                string = str(float("{}.{}".format(dt[start:26], dt[26:])))
+                string = str(float("{}.{}".format(dt[23:26], dt[26:])))
             elif (diff < sc.to_unit(2 * sc.Unit('ms'), diff.unit)).value:
-                # offset: 2017-01-13T12:15:45.123, tick: 456 us
-                # start = 20
-                # end = 26
-                start = 20
+                # offset: 2017-01-13T12:15:45, tick: 123.456 ms
+                trim = 19
                 label += " [ms]"
-                string = str(float("{}.{}".format(dt[start:23], dt[23:26])))
+                string = str(float("{}.{}".format(dt[20:23], dt[23:26])))
             elif (diff < sc.to_unit(2 * sc.units.s, diff.unit)).value:
                 # offset: 2017-01-13T12:15, tick: 45.123 s
-                start = 17
-                # end = 23
+                trim = 16
                 label += " [s]"
-                string = str(float(dt[start:23]))
+                string = str(float(dt[17:23]))
             elif (diff < sc.to_unit(2 * sc.Unit('min'), diff.unit)).value:
                 # offset: 2017-01-13, tick: 12:15:45
-                start = 11
-                # end = 19
-                string = dt[start:19]
+                trim = 10
+                string = dt[11:19]
             elif (diff < sc.to_unit(2 * sc.Unit('h'), diff.unit)).value:
                 # offset: 2017-01-13, tick: 12:15
-                start = 11
-                string = dt[start:16]
+                trim = 10
+                string = dt[11:16]
             elif (diff < sc.to_unit(2 * sc.Unit('d'), diff.unit)).value:
                 # offset: 2017-01, tick: 13 12h
-                start = 8
-                # end = 13
-                # suffix = "h"
-                string = "{}h".format(dt[start:13].replace('T', ' '))
+                trim = 7
+                string = "{}h".format(dt[8:13].replace('T', ' '))
             elif (diff < sc.to_unit(6 * sc.Unit('month'), diff.unit)).value:
                 # tick: 2017-01-13
-                # end = 10
-                string = dt[start:10]
+                string = dt[:10]
             else:
                 # tick: 2017-01
-                # end = 7
-                string = dt[start:7]
+                string = dt[:7]
 
             if pos == 0:
-                self.interface["set_view_axis_offset"](
-                    dim, dt[:start])  #.rstrip('T').rstrip(':').rstrip('-'))
-                # label = dim
-                # if len(u) > 0:
-                #     label += " [{}]".format(u)
+                offstring = dt[:trim]
+                if trim > 0:
+                    offstring = "+" + offstring
+                self.interface["set_view_axis_offset"](dim, offstring)
                 self.interface["set_view_axis_label"](dim, label)
-
-            # string = (dt[start:end] + suffix).replace("T", " ")
-            # if string.startswith("000"):
-            #     string = string[2:]
-            # else:
-            #     string.lstrip("0")
             return string
 
         return formatter
