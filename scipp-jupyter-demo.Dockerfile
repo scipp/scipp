@@ -43,7 +43,6 @@ RUN conda install --yes \
       ipywidgets \
       mantid-framework \
       matplotlib \
-      Pillow \
       python=3.7 \
       pythreejs \
       scipp && \

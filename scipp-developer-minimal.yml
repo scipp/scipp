@@ -29,5 +29,4 @@ dependencies:
 
   # Test
   - h5py
-  - psutil
   - pytest

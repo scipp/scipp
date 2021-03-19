@@ -30,7 +30,6 @@ Run
   - ``ipywidgets`` * (BSD-3-Clause) (interactive Jupyter notebook widgets)
   - ``matplotlib`` * (custom permissive) (plotting library)
   - ``numpy`` >=1.15.3 (custom permissive)
-  - ``Pillow`` (HPND) (Python Imaging Library, used in plot_3d to create colorbar)
   - ``python`` (PSF-2.0)
   - ``python-configuration`` (MIT) (configuration file parser, used in user configuration loading)
   - ``pythreejs`` * (BSD-3-Clause) (3D plotting library, used in plot_3d and instrument_view)
@@ -42,7 +41,6 @@ Test
 
   - all (including optional) dependencies of *Run*
   - ``mantid-framework`` * (GPL-3.0-or-later) (Mantid interoperability tests are skipped if not present)
-  - ``psutil`` (BSD-3-Clause) (used to determine if host has enough memory for certain unit tests)
   - ``pytest`` (MIT) (test framework)
 
 Jupyter Lab

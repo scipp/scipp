@@ -28,7 +28,6 @@ dependencies:
 
   # Test
   - h5py
-  - psutil
   - pytest
 
   # Formatting & static analysis
