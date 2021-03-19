@@ -10,10 +10,10 @@ is_doc_build = False
 
 try:
     import matplotlib as mpl
-    import matplotlib.pyplot as plt
+    # import matplotlib.pyplot as plt
 except ImportError:
     mpl = None
-    plt = None
+    # plt = None
 
 try:
     from IPython import get_ipython
@@ -35,18 +35,18 @@ if ipy is not None:
         is_doc_build = meta["scipp_docs_build"]
     print(("IPKernelApp" in ipy.config))
     print(mpl is not None)
-    print("backend 1", plt.get_backend())
+    # print("backend 1", plt.get_backend())
     if ("IPKernelApp" in ipy.config) and (mpl is not None):
         try:
             # Attempt to use ipympl backend
             from ipympl.backend_nbagg import Canvas
-            print("backend 2", plt.get_backend())
+            # print("backend 2", plt.get_backend())
             mpl.use('module://ipympl.backend_nbagg')
-            print("backend 3", plt.get_backend())
+            # print("backend 3", plt.get_backend())
             # Hide the figure header:
             # see https://github.com/matplotlib/ipympl/issues/229
             Canvas.header_visible.default_value = False
-            print("backend 4", plt.get_backend())
+            # print("backend 4", plt.get_backend())
         except ImportError:
             warnings.warn(
                 "The ipympl backend, which is required for "
@@ -59,7 +59,7 @@ if ipy is not None:
         # Note that the javascript has to be run here so that the pixel_ratio
         # value is set after the initial import. Dealying this to inside the
         # call to plot() would lead to devicePixelRatio being None.
-        print("backend 5", plt.get_backend())
+        # print("backend 5", plt.get_backend())
         ipy.run_cell_magic(
             "js", "", "var kernel = IPython.notebook.kernel; "
             "if (kernel) {"
@@ -67,8 +67,16 @@ if ipy is not None:
             "var command = 'devicePixelRatio = ' + value; "
             "kernel.execute(command);}")
 
-print("backend 6", plt.get_backend())
+# print("backend 6", plt.get_backend())
 print('is_doc_build', is_doc_build)
+
+# Note: due to some strange behaviour when importing matplotlib and pyplot in
+# different order, we need to import pyplot after switching to the ipympl
+# backend (see https://github.com/matplotlib/matplotlib/issues/19032).
+try:
+    import matplotlib.pyplot as plt
+except ImportError:
+    plt = None
 
 if is_doc_build and plt is not None:
     plt.rcParams.update({
