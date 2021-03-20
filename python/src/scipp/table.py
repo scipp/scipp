@@ -9,6 +9,7 @@ from html import escape
 from . import config
 from . import _utils as su
 from ._scipp import core as sc
+from .html.resources import load_style
 
 
 def _make_table_sections(dict_of_variables, base_style):
@@ -208,7 +209,6 @@ def table(scipp_obj):
 
 class TableViewer:
     def __init__(self, scipp_obj):
-
         # Delayed import
         self.widgets = __import__("ipywidgets")
 
@@ -291,8 +291,9 @@ class TableViewer:
             "scipp._scipp.core.", "").replace("'>", "")
 
         self.box = [
+            self.widgets.HTML(value=f"<style>{load_style()}</style>"),
             self.widgets.HTML(value="<span style='font-weight:bold;"
-                              "font-size:1.5em;'>{}</span>".format(title))
+                              f"font-size:1.5em;'>{title}</span>")
         ]
         self.tables = {}
         self.sliders = {}
