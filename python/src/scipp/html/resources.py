@@ -4,6 +4,16 @@
 # @author Jan-Lukas Wynen
 
 import importlib.resources as pkg_resources
+from string import Template
+
+
+def _format_style(template: str) -> str:
+    from .. import config
+    # Color patterns in the CSS template use the name in
+    # the config file plus a _color suffix.
+    return Template(template).substitute(
+        **{f'{key}_color': val
+           for key, val in config['colors'].items()})
 
 
 def load_style() -> str:
@@ -12,7 +22,8 @@ def load_style() -> str:
     The string is cached upon first call.
     """
     if load_style.style is None:
-        load_style.style = pkg_resources.read_text('scipp.html', 'style.css')
+        load_style.style = _format_style(
+            pkg_resources.read_text('scipp.html', 'style.css.template'))
     return load_style.style
 
 
