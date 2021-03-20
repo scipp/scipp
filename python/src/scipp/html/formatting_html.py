@@ -3,7 +3,6 @@
 
 import collections
 import operator
-import os
 import uuid
 from functools import partial, reduce
 from html import escape
@@ -11,14 +10,8 @@ import sys
 
 from .._scipp import core as sc
 from .._utils import is_data_array, is_dataset
+from .resources import load_icons, load_style
 
-CSS_FILE_PATH = f"{os.path.dirname(__file__)}/style.css"
-with open(CSS_FILE_PATH, 'r') as f:
-    CSS_STYLE = "".join(f.readlines())
-
-ICONS_SVG_PATH = f"{os.path.dirname(__file__)}/icons-svg-inline.html"
-with open(ICONS_SVG_PATH, 'r') as f:
-    ICONS_SVG = "".join(f.readlines())
 
 BIN_EDGE_LABEL = "[bin-edge]"
 VARIANCE_PREFIX = "σ² = "
@@ -453,7 +446,7 @@ def _obj_repr(header_components, sections):
                        for s in sections)
 
     return ("<div>"
-            f"{ICONS_SVG}<style>{CSS_STYLE}</style>"
+            f"{load_icons()}<style>{load_style()}</style>"
             "<div class='sc-wrap'>"
             f"{header}"
             f"<ul class='sc-sections'>{sections}</ul>"
