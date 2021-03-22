@@ -24,15 +24,17 @@ Variable::Variable(const VariableConstView &slice)
 ///
 /// In the case of bucket variables the buffer size is set to zero.
 Variable::Variable(const Variable &parent, const Dimensions &dims)
-    : m_object(parent.data().makeDefaultFromParent(dims)) {}
+    : m_dims(dims), m_object(parent.data().makeDefaultFromParent(dims)) {}
 
 Variable::Variable(const VariableConstView &parent, const Dimensions &dims)
-    : m_object(parent.underlying().data().makeDefaultFromParent(dims)) {}
+    : m_dims(dims),
+      m_object(parent.underlying().data().makeDefaultFromParent(dims)) {}
 
 Variable::Variable(const VariableConstView &parent, VariableConceptHandle data)
-    : m_object(std::move(data)) {}
+    : m_dims(data->dims()), m_object(std::move(data)) {}
 
-Variable::Variable(VariableConceptHandle data) : m_object(std::move(data)) {}
+Variable::Variable(VariableConceptHandle data)
+    : m_dims(data->dims()), m_object(std::move(data)) {}
 
 Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
@@ -69,17 +71,20 @@ VariableView::VariableView(const VariableView &slice, const Dim dim,
 
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == m_object->dims().volume()) {
-    if (dimensions != m_object->dims())
+    if (dimensions != m_object->dims()) {
+      m_dims = dimensions;
       data().m_dimensions = dimensions;
+    }
     return;
   }
+  m_dims = dimensions;
   m_object = m_object->makeDefaultFromParent(dimensions);
 }
 
 bool Variable::operator==(const VariableConstView &other) const {
   if (!*this || !other)
     return static_cast<bool>(*this) == static_cast<bool>(other);
-  return data().equals(*this, other);
+  return dims() == other.dims() && data().equals(*this, other);
 }
 
 bool Variable::operator!=(const VariableConstView &other) const {
@@ -110,7 +115,7 @@ bool VariableConstView::operator==(const VariableConstView &other) const {
     return static_cast<bool>(*this) == static_cast<bool>(other);
   // Always use deep comparison (pointer comparison does not make sense since we
   // may be looking at a different section).
-  return underlying().data().equals(*this, other);
+  return dims() == other.dims() && underlying().data().equals(*this, other);
 }
 
 bool VariableConstView::operator!=(const VariableConstView &other) const {
@@ -180,8 +185,10 @@ bool VariableConstView::is_trivial() const noexcept {
 }
 
 void Variable::rename(const Dim from, const Dim to) {
-  if (dims().contains(from))
-    data().m_dimensions.relabel(dims().index(from), to);
+  if (dims().contains(from)) {
+    m_dims.relabel(dims().index(from), to);
+    data().m_dimensions.relabel(data().m_dimensions.index(from), to);
+  }
 }
 
 /// Rename dims of a view. Does NOT rename dims of the underlying variable.
