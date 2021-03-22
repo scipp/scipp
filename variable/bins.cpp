@@ -69,8 +69,9 @@ Variable resize_default_init(const VariableConstView &var, const Dim dim,
 /// Each bin is represented by a VariableView. `indices` defines the array of
 /// bins as slices of `buffer` along `dim`.
 Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
-  return {std::make_unique<variable::DataModel<bucket<Variable>>>(
-      std::move(indices), dim, std::move(buffer))};
+  return {indices.dims(),
+          std::make_unique<variable::DataModel<bucket<Variable>>>(
+              std::move(indices), dim, std::move(buffer))};
 }
 
 /// Construct non-owning binned variable of a mutable buffer.
@@ -80,8 +81,9 @@ Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
 /// data. This is, it does not own any or share ownership of any data.
 Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
                               const VariableView &buffer) {
-  return {std::make_unique<variable::DataModel<bucket<VariableView>>>(
-      indices, dim, buffer)};
+  return {indices.dims(),
+          std::make_unique<variable::DataModel<bucket<VariableView>>>(
+              indices, dim, buffer)};
 }
 
 /// Construct non-owning binned variable of a const buffer.
@@ -91,8 +93,9 @@ Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
 /// data. This is, it does not own any or share ownership of any data.
 Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
                               const VariableConstView &buffer) {
-  return {std::make_unique<variable::DataModel<bucket<VariableConstView>>>(
-      indices, dim, buffer)};
+  return {indices.dims(),
+          std::make_unique<variable::DataModel<bucket<VariableConstView>>>(
+              indices, dim, buffer)};
 }
 
 } // namespace scipp::variable

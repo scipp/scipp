@@ -43,34 +43,33 @@ template <class T> class DataModel : public VariableConcept {
 public:
   using value_type = T;
 
-  DataModel(const Dimensions &dimensions, const units::Unit &unit,
+  DataModel(const scipp::index size, const units::Unit &unit,
             element_array<T> model,
             std::optional<element_array<T>> variances = std::nullopt)
-      : VariableConcept(dimensions, unit),
+      : VariableConcept(unit),
         m_values(model ? std::move(model)
-                       : element_array<T>(dimensions.volume(),
-                                          default_init<T>::value())),
+                       : element_array<T>(size, default_init<T>::value())),
         m_variances(std::move(variances)) {
     if (m_variances && !core::canHaveVariances<T>())
       throw except::VariancesError("This data type cannot have variances.");
-    if (this->dims().volume() != scipp::size(m_values))
+    if (size != scipp::size(m_values))
       throw except::DimensionError(
           "Creating Variable: data size does not match "
           "volume given by dimension extents.");
     if (m_variances && !*m_variances)
-      *m_variances =
-          element_array<T>(dimensions.volume(), default_init<T>::value());
+      *m_variances = element_array<T>(size, default_init<T>::value());
   }
 
   static DType static_dtype() noexcept { return scipp::dtype<T>; }
   DType dtype() const noexcept override { return scipp::dtype<T>; }
+  scipp::index size() const override { return m_values.size(); }
 
   VariableConceptHandle
-  makeDefaultFromParent(const Dimensions &dims) const override;
+  makeDefaultFromParent(const scipp::index size) const override;
 
   VariableConceptHandle
   makeDefaultFromParent(const VariableConstView &shape) const override {
-    return makeDefaultFromParent(shape.dims());
+    return makeDefaultFromParent(shape.dims().volume());
   }
 
   bool equals(const VariableConstView &a,
@@ -128,14 +127,12 @@ template <class T> DataModel<T> &cast(Variable &var) {
 
 template <class T>
 VariableConceptHandle
-DataModel<T>::makeDefaultFromParent(const Dimensions &dims) const {
+DataModel<T>::makeDefaultFromParent(const scipp::index size) const {
   if (hasVariances())
-    return std::make_unique<DataModel<T>>(dims, unit(),
-                                          element_array<T>(dims.volume()),
-                                          element_array<T>(dims.volume()));
+    return std::make_unique<DataModel<T>>(size, unit(), element_array<T>(size),
+                                          element_array<T>(size));
   else
-    return std::make_unique<DataModel<T>>(dims, unit(),
-                                          element_array<T>(dims.volume()));
+    return std::make_unique<DataModel<T>>(size, unit(), element_array<T>(size));
 }
 
 /// Helper for implementing Variable(View)::operator==.
@@ -184,7 +181,6 @@ template <class T> void DataModel<T>::setVariances(Variable &&variances) {
   if (variances.hasVariances())
     throw except::VariancesError(
         "Cannot set variances from variable with variances.");
-  core::expect::equals(this->dims(), variances.dims());
   m_variances.emplace(
       std::move(requireT<DataModel>(variances.data()).m_values));
 }

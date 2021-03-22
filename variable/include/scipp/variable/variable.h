@@ -71,8 +71,9 @@ public:
   explicit Variable(const VariableConstView &slice);
   Variable(const Variable &parent, const Dimensions &dims);
   Variable(const VariableConstView &parent, const Dimensions &dims);
-  Variable(const VariableConstView &parent, VariableConceptHandle data);
-  Variable(VariableConceptHandle data);
+  Variable(const VariableConstView &parent, const Dimensions &dims,
+           VariableConceptHandle data);
+  Variable(const Dimensions &dims, VariableConceptHandle data);
   template <class T>
   Variable(const units::Unit unit, const Dimensions &dimensions, T values,
            std::optional<T> variances);
