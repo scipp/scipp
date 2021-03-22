@@ -54,6 +54,8 @@ News
   This submodule has been moved into its own package, `scippneutron <https://scipp.github.io/scippneutron>`_.
 - `scipp-0.6 <https://scipp.github.io/about/release-notes.html#v0-6-0-march-2021>`_ has been released.
   The `What's new <about/whats-new/whats-new-0.6.0.html>`_ notebook provides an overview of the highlights and major changes.
+- `scipp-0.5 <https://scipp.github.io/about/release-notes.html#v0-5-0-january-2021>`_ has been released.
+  The `What's new <about/whats-new/whats-new-0.5.0.html>`_ notebook provides an overview of the highlights and major changes.
 
 Where can I get help?
 ---------------------
