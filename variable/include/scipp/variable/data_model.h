@@ -43,9 +43,10 @@ template <class T> class DataModel : public VariableConcept {
 public:
   using value_type = T;
 
-  DataModel(const Dimensions &dimensions, element_array<T> model,
+  DataModel(const Dimensions &dimensions, const units::Unit &unit,
+            element_array<T> model,
             std::optional<element_array<T>> variances = std::nullopt)
-      : VariableConcept(dimensions),
+      : VariableConcept(dimensions, unit),
         m_values(model ? std::move(model)
                        : element_array<T>(dimensions.volume(),
                                           default_init<T>::value())),
@@ -129,10 +130,11 @@ template <class T>
 VariableConceptHandle
 DataModel<T>::makeDefaultFromParent(const Dimensions &dims) const {
   if (hasVariances())
-    return std::make_unique<DataModel<T>>(dims, element_array<T>(dims.volume()),
+    return std::make_unique<DataModel<T>>(dims, unit(),
+                                          element_array<T>(dims.volume()),
                                           element_array<T>(dims.volume()));
   else
-    return std::make_unique<DataModel<T>>(dims,
+    return std::make_unique<DataModel<T>>(dims, unit(),
                                           element_array<T>(dims.volume()));
 }
 
