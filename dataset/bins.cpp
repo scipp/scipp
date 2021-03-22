@@ -144,8 +144,8 @@ Dataset resize_default_init(const DatasetConstView &parent, const Dim dim,
 
 template <class T>
 Variable make_bins_impl(Variable &&indices, const Dim dim, T &&buffer) {
-  return {std::make_unique<variable::DataModel<bucket<T>>>(
-      std::move(indices), dim, std::move(buffer))};
+  return {indices.dims(), std::make_unique<variable::DataModel<bucket<T>>>(
+                              std::move(indices), dim, std::move(buffer))};
 }
 
 /// Construct a bin-variable over a data array.
@@ -166,14 +166,16 @@ Variable make_bins(Variable indices, const Dim dim, Dataset buffer) {
 
 Variable make_non_owning_bins(const VariableView &indices, const Dim dim,
                               const DataArrayView &buffer) {
-  return {std::make_unique<variable::DataModel<bucket<DataArrayView>>>(
-      indices, dim, buffer)};
+  return {indices.dims(),
+          std::make_unique<variable::DataModel<bucket<DataArrayView>>>(
+              indices, dim, buffer)};
 }
 
 Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
                               const DataArrayConstView &buffer) {
-  return {std::make_unique<variable::DataModel<bucket<DataArrayConstView>>>(
-      indices, dim, buffer)};
+  return {indices.dims(),
+          std::make_unique<variable::DataModel<bucket<DataArrayConstView>>>(
+              indices, dim, buffer)};
 }
 
 namespace {
@@ -245,6 +247,7 @@ template <class T>
 auto concatenate_impl(const VariableConstView &var0,
                       const VariableConstView &var1) {
   return Variable{
+      merge(var0.dims(), var1.dims()),
       std::make_unique<variable::DataModel<bucket<T>>>(combine<T>(var0, var1))};
 }
 

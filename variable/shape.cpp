@@ -122,7 +122,8 @@ Variable resize(const VariableConstView &var, const Dim dim,
 /// ignored, i.e., only `shape.dims()` is used to determine the shape of the
 /// output.
 Variable resize(const VariableConstView &var, const VariableConstView &shape) {
-  return Variable(var, var.underlying().data().makeDefaultFromParent(shape));
+  return Variable(var, shape.dims(),
+                  var.underlying().data().makeDefaultFromParent(shape));
 }
 
 namespace {

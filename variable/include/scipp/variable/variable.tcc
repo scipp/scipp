@@ -16,8 +16,9 @@ namespace scipp::variable {
 template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                    T values_, std::optional<T> variances_)
-    : m_dims(dimensions), m_object(std::make_unique<DataModel<typename T::value_type>>(
-          std::move(dimensions), unit, std::move(values_),
+    : m_dims(dimensions),
+      m_object(std::make_unique<DataModel<typename T::value_type>>(
+          dimensions.volume(), unit, std::move(values_),
           std::move(variances_))) {}
 
 template <class T> ElementArrayView<const T> Variable::values() const {
@@ -51,8 +52,8 @@ template <class T> ElementArrayView<T> VariableView::variances() const {
 template <class T> void VariableView::replace_model(T model) const {
   core::expect::equals(dims(),
                        m_mutableVariable->dims()); // trivial view (no slice)
-  core::expect::equals(dims(),
-                       model.dims()); // shape change would break DataArray
+  if (dims().volume() != model.size()) // size change would break DataArray
+    throw except::DimensionError("Cannot change size when replacing model.");
   requireT<T>(m_mutableVariable->data()) = std::move(model);
 }
 
