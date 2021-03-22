@@ -230,7 +230,9 @@ class PlotController:
         self.model.connect({
             "get_view_axis_bounds": self.get_view_axis_bounds,
             "set_view_axis_offset": self.set_view_axis_offset,
-            "set_view_axis_label": self.set_view_axis_label
+            "set_view_axis_label": self.set_view_axis_label,
+            # "set_view_axis_boundary":
+            # self.set_view_axis_boundary
         })
 
     def connect_panel(self):
@@ -275,11 +277,16 @@ class PlotController:
     def get_view_axis_bounds(self, dim):
         return self.view.get_axis_bounds(self._dim_to_axis()[dim])
 
-    def set_view_axis_offset(self, dim, string):
-        return self.view.set_axis_offset(self._dim_to_axis()[dim], string)
+    def set_view_axis_offset(self, dim, string, position=None):
+        return self.view.set_axis_offset(self._dim_to_axis()[dim],
+                                         string=string,
+                                         position=position)
 
     def set_view_axis_label(self, dim, string):
         return self.view.set_axis_label(self._dim_to_axis()[dim], string)
+
+    # def set_view_axis_boundary(self, dim, boundary):
+    #     return self.view.set_axis_boundary(self._dim_to_axis()[dim], boundary)
 
     def find_vmin_vmax(self, button=None):
         """

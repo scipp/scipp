@@ -140,3 +140,6 @@ class PlotView:
 
     def set_axis_label(self, *args, **kwargs):
         return self.figure.set_axis_label(*args, **kwargs)
+
+    # def set_axis_boundary(self, *args, **kwargs):
+    #     return self.figure.set_axis_boundary(*args, **kwargs)
