@@ -12,7 +12,7 @@ from ._scipp import core as sc
 from .html.resources import load_style
 
 
-def _make_table_sections(dict_of_variables, base_style):
+def _make_table_sections(dict_of_variables):
 
     html = ["<tr>"]
     for key, section in dict_of_variables.items():
@@ -21,10 +21,8 @@ def _make_table_sections(dict_of_variables, base_style):
         for var in section.values():
             col_separators += 1 + (var.variances is not None)
         if col_separators > 0:
-            style = "{} background-color: {};text-align: center;'".format(
-                base_style, config.colors[key])
             html.append("<th {} colspan='{}'>{}</th>".format(
-                style, col_separators, heading))
+                f'class="sc-table sc-{key}"', col_separators, heading))
     html.append("</tr>")
 
     return "".join(html)
@@ -57,8 +55,8 @@ def _make_table_subsections(dict_of_variables, text_style, plural):
     return "".join(html)
 
 
-def _make_value_rows(dict_of_variables, is_bin_centers, index, base_style,
-                     edge_style, row_start):
+def _make_value_rows(dict_of_variables, is_bin_centers, index, edge_style,
+                     row_start):
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
@@ -68,18 +66,17 @@ def _make_value_rows(dict_of_variables, is_bin_centers, index, base_style,
                     if val.variances is not None:
                         html.append("<td {}></td>".format(edge_style))
             else:
-                html.append("<td rowspan='2' {}>{}</td>".format(
-                    base_style, escape(su.value_to_string(val.values[index]))))
+                html.append("<td rowspan='2'>{}</td>".format(
+                    escape(su.value_to_string(val.values[index]))))
                 if val.variances is not None:
-                    html.append("<td rowspan='2' {}>{}</td>".format(
-                        base_style,
+                    html.append("<td rowspan='2'>{}</td>".format(
                         escape(su.value_to_string(val.variances[index]))))
 
     return "".join(html)
 
 
 def _make_trailing_cells(dict_of_variables, is_bin_centers, index, size,
-                         base_style, edge_style):
+                         edge_style):
     html = []
     for key, section in dict_of_variables.items():
         for name, val in section.items():
@@ -89,24 +86,22 @@ def _make_trailing_cells(dict_of_variables, is_bin_centers, index, size,
                     if val.variances is not None:
                         html.append("<td {}></td>".format(edge_style))
                 else:
-                    html.append("<td rowspan='2' {}>{}</td>".format(
-                        base_style,
+                    html.append("<td rowspan='2'>{}</td>".format(
                         escape(su.value_to_string(val.values[index]))))
                     if val.variances is not None:
-                        html.append("<td rowspan='2' {}>{}</td>".format(
-                            base_style,
+                        html.append("<td rowspan='2'>{}</td>".format(
                             escape(su.value_to_string(val.variances[index]))))
 
     return "".join(html)
 
 
-def _make_overflow_row(dict_of_variables, base_style):
+def _make_overflow_row(dict_of_variables):
     html = ["<tr>"]
     for key, section in dict_of_variables.items():
         for name, val in section.items():
-            html.append("<td {}>...</td>".format(base_style))
+            html.append("<td>...</td>")
             if val.variances is not None:
-                html.append("<td {}>...</td>".format(base_style))
+                html.append("<td>...</td>")
 
     html.append("</tr>")
     return "".join(html)
@@ -119,10 +114,7 @@ def _table_from_dict_of_variables(dict_of_variables,
                                   row_start=0,
                                   max_rows=None,
                                   group=None):
-    base_style = ("style='border: 1px solid black; padding: 0px 5px 0px 5px; ")
-                  # "text-align: right;")
-
-    mstyle = base_style + "text-align: center;"
+    mstyle = "style='text-align: center;"
     vstyle = mstyle + "background-color: #f0f0f0;'"
     mstyle += "'"
     edge_style = ("style='border: 0px solid white;background-color: #ffffff; "
@@ -132,7 +124,7 @@ def _table_from_dict_of_variables(dict_of_variables,
     html = "<table class='sc-table' style='border-collapse: collapse;'>"
 
     if headers > 1:
-        html += _make_table_sections(dict_of_variables, base_style)
+        html += _make_table_sections(dict_of_variables)
     if headers > 0:
         html += "<tr>"
         html += _make_table_unit_headers(dict_of_variables, mstyle)
@@ -141,36 +133,33 @@ def _table_from_dict_of_variables(dict_of_variables,
                                         group == "1D Variables")
         html += "</tr>"
 
-    # the base style still does not have a closing quote, so we add it here
-    base_style += "'"
-
     if size is None:  # handle 0D variable
         html += "<tr>"
         for key, section in dict_of_variables.items():
             for name, val in section.items():
-                html += "<td {}>{}</td>".format(
-                    base_style, escape(su.value_to_string(val.value)))
+                html += "<td>{}</td>".format(
+                    escape(su.value_to_string(val.value)))
                 if val.variances is not None:
-                    html += "<td {}>{}</td>".format(
-                        base_style, escape(su.value_to_string(val.variance)))
+                    html += "<td>{}</td>".format(
+                        escape(su.value_to_string(val.variance)))
         html += "</tr>"
     else:
         row_end = min(size, row_start + max_rows)
         # If we are not starting at the first row, add overflow
         if row_start > 0:
-            html += _make_overflow_row(dict_of_variables, base_style)
+            html += _make_overflow_row(dict_of_variables)
         for i in range(row_start, row_end):
             html += "<tr>"
             html += _make_value_rows(dict_of_variables, is_bin_centers, i,
-                                     base_style, edge_style, row_start)
+                                     edge_style, row_start)
             html += "</tr><tr>"
             # If there are bin edges, we need to add trailing cells
             html += _make_trailing_cells(dict_of_variables, is_bin_centers, i,
-                                         row_end, base_style, edge_style)
+                                         row_end, edge_style)
             html += "</tr>"
         # If we are not ending at the last row, add overflow
         if row_end != size:
-            html += _make_overflow_row(dict_of_variables, base_style)
+            html += _make_overflow_row(dict_of_variables)
 
     html += "</table>"
     return html

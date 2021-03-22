@@ -371,12 +371,18 @@ label.sc-hide-icon svg{
   padding-right:10px;
 }
 
+.sc-table th, .sc-table td {
+  border: 1px solid black;
+  padding: 0 5px 0 5px;
+}
+
 .sc-table th {
   text-align: center;
 }
 
 .sc-table tr {
   background-color: var(--sc-background-color1);
+  text-align: right;
 }
 
 .sc-table tr:hover {
