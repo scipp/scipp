@@ -44,7 +44,8 @@ Variable::Variable(const llnl::units::precise_measurement &m)
 
 VariableConstView::VariableConstView(const Variable &variable,
                                      const Dimensions &dims)
-    : m_variable(&variable), m_dims(dims), m_dataDims(dims) {
+    : m_variable(&variable), m_offset(variable.array_params().offset()),
+      m_dims(dims), m_dataDims(variable.array_params().dataDims()) {
   // TODO implement reshape differently, not with a special constructor?
   expect_same_volume(m_variable->dims(), dims);
 }
@@ -88,7 +89,7 @@ void Variable::setDims(const Dimensions &dimensions) {
 bool Variable::operator==(const VariableConstView &other) const {
   if (!*this || !other)
     return static_cast<bool>(*this) == static_cast<bool>(other);
-  // Note: Not comparings strides
+  // Note: Not comparing strides
   return dims() == other.dims() &&
          data().equals(*this, other);
 }
@@ -139,12 +140,43 @@ void VariableView::expectCanSetUnit(const units::Unit &unit) const {
                             "to change the unit.");
 }
 
-VariableConstView Variable::slice(const Slice slice) const & {
-  return {*this, slice.dim(), slice.begin(), slice.end()};
+scipp::span<const scipp::index> Variable::strides() const {
+  return {m_strides.begin(), dims().ndim()};
 }
 
-Variable Variable::slice(const Slice slice) const && {
-  return Variable{this->slice(slice)};
+core::ElementArrayViewParams Variable::array_params() const noexcept {
+  // TODO Translating strides into dims, which get translated back to
+  // (slightly different) strides in MultiIndex
+  Dimensions dataDims;
+  scipp::index previous = 1;
+  bool first = true;
+  for (scipp::index i = dims().ndim() - 1; i >= 0; --i) {
+    if (first && strides()[i] != 1) {
+      dataDims.add(Dim::X, strides()[i]);
+      dataDims.relabel(0, Dim::Invalid);
+    }
+    first = false;
+    dataDims.add(dims().label(i),
+                 std::max(dims().size(i),
+                          (i == 0 ? m_object->size() : strides()[i - 1])) /
+                     std::max(scipp::index(1), strides()[i]));
+  }
+  return {m_offset, dims(), dataDims, {}};
+}
+
+Variable Variable::slice(const Slice slice) const & {
+  Variable out(*this);
+  const auto dim = slice.dim();
+  const auto begin = slice.begin();
+  const auto end = slice.end();
+  const auto index = out.m_dims.index(dim);
+  out.m_offset += begin * m_strides[index];
+  if (end == -1) {
+    out.m_strides.erase(index);
+    out.m_dims.erase(dim);
+  } else
+    out.m_dims.resize(dim, end - begin);
+  return out;
 }
 
 VariableView Variable::slice(const Slice slice) & {

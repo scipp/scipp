@@ -22,9 +22,7 @@ resize(const VariableConstView &var, const Dim dim, const scipp::index size);
 resize(const VariableConstView &var, const VariableConstView &shape);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reverse(Variable var,
                                                      const Dim dim);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT VariableView
-reshape(Variable &var, const Dimensions &dims);
-[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reshape(Variable &&var,
+[[nodiscard]] SCIPP_VARIABLE_EXPORT Variable reshape(const Variable &var,
                                                      const Dimensions &dims);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 reshape(const VariableConstView &view, const Dimensions &dims);

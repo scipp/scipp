@@ -142,13 +142,10 @@ Variable reverse(Variable var, const Dim dim) {
   return var;
 }
 
-VariableView reshape(Variable &var, const Dimensions &dims) {
-  return {var, dims};
-}
-
-Variable reshape(Variable &&var, const Dimensions &dims) {
+Variable reshape(const Variable &var, const Dimensions &dims) {
+  // TODO must extract slice if not contiguous
   expect_same_volume(var.dims(), dims);
-  Variable reshaped(std::move(var));
+  Variable reshaped(var);
   reshaped.setDims(dims);
   return reshaped;
 }
