@@ -39,18 +39,18 @@ public:
 /// data. More operations are supportd by the typed DataModel.
 class SCIPP_VARIABLE_EXPORT VariableConcept {
 public:
-  VariableConcept(const Dimensions &dimensions, const units::Unit &unit);
+  VariableConcept(const units::Unit &unit);
   virtual ~VariableConcept() = default;
 
   virtual VariableConceptHandle clone() const = 0;
   virtual VariableConceptHandle
-  makeDefaultFromParent(const Dimensions &dims) const = 0;
+  makeDefaultFromParent(const scipp::index size) const = 0;
   virtual VariableConceptHandle
   makeDefaultFromParent(const VariableConstView &shape) const = 0;
 
   virtual DType dtype() const noexcept = 0;
-  const Dimensions &dims() const { return m_dimensions; }
   const units::Unit &unit() const { return m_unit; }
+  virtual scipp::index size() const = 0;
 
   void setUnit(const units::Unit &unit) { m_unit = unit; }
 
@@ -69,7 +69,6 @@ public:
   friend class Variable;
 
 private:
-  Dimensions m_dimensions;
   units::Unit m_unit;
 };
 
