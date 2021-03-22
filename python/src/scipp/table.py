@@ -100,8 +100,8 @@ def _make_trailing_cells(dict_of_variables, is_bin_centers, index, size,
     return "".join(html)
 
 
-def _make_overflow_row(dict_of_variables, base_style, hover_style):
-    html = ["<tr {}>".format(hover_style)]
+def _make_overflow_row(dict_of_variables, base_style):
+    html = ["<tr>"]
     for key, section in dict_of_variables.items():
         for name, val in section.items():
             html.append("<td {}>...</td>".format(base_style))
@@ -119,17 +119,14 @@ def _table_from_dict_of_variables(dict_of_variables,
                                   row_start=0,
                                   max_rows=None,
                                   group=None):
-    base_style = ("style='border: 1px solid black; padding: 0px 5px 0px 5px; "
-                  "text-align: right;")
+    base_style = ("style='border: 1px solid black; padding: 0px 5px 0px 5px; ")
+                  # "text-align: right;")
 
     mstyle = base_style + "text-align: center;"
     vstyle = mstyle + "background-color: #f0f0f0;'"
     mstyle += "'"
     edge_style = ("style='border: 0px solid white;background-color: #ffffff; "
                   "height:1.2em;'")
-    hover_style = ("onMouseOver=\"this.style.backgroundColor='" +
-                   config.colors["hover"] +
-                   "'\" onMouseOut=\"this.style.backgroundColor='#ffffff'\"")
 
     # Declare table
     html = "<table class='sc-table' style='border-collapse: collapse;'>"
@@ -137,9 +134,9 @@ def _table_from_dict_of_variables(dict_of_variables,
     if headers > 1:
         html += _make_table_sections(dict_of_variables, base_style)
     if headers > 0:
-        html += "<tr {}>".format(hover_style)
+        html += "<tr>"
         html += _make_table_unit_headers(dict_of_variables, mstyle)
-        html += "</tr><tr {}>".format(hover_style)
+        html += "</tr><tr>"
         html += _make_table_subsections(dict_of_variables, vstyle,
                                         group == "1D Variables")
         html += "</tr>"
@@ -148,7 +145,7 @@ def _table_from_dict_of_variables(dict_of_variables,
     base_style += "'"
 
     if size is None:  # handle 0D variable
-        html += "<tr {}>".format(hover_style)
+        html += "<tr>"
         for key, section in dict_of_variables.items():
             for name, val in section.items():
                 html += "<td {}>{}</td>".format(
@@ -161,21 +158,19 @@ def _table_from_dict_of_variables(dict_of_variables,
         row_end = min(size, row_start + max_rows)
         # If we are not starting at the first row, add overflow
         if row_start > 0:
-            html += _make_overflow_row(dict_of_variables, base_style,
-                                       hover_style)
+            html += _make_overflow_row(dict_of_variables, base_style)
         for i in range(row_start, row_end):
-            html += "<tr {}>".format(hover_style)
+            html += "<tr>"
             html += _make_value_rows(dict_of_variables, is_bin_centers, i,
                                      base_style, edge_style, row_start)
-            html += "</tr><tr {}>".format(hover_style)
+            html += "</tr><tr>"
             # If there are bin edges, we need to add trailing cells
             html += _make_trailing_cells(dict_of_variables, is_bin_centers, i,
                                          row_end, base_style, edge_style)
             html += "</tr>"
         # If we are not ending at the last row, add overflow
         if row_end != size:
-            html += _make_overflow_row(dict_of_variables, base_style,
-                                       hover_style)
+            html += _make_overflow_row(dict_of_variables, base_style)
 
     html += "</table>"
     return html

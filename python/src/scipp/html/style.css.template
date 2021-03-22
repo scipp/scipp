@@ -11,6 +11,10 @@
   --sc-font-color1: var(--jp-content-font-color1, #555);
   --sc-font-color2: var(--jp-content-font-color2, #888);
   --sc-font-color3: var(--jp-content-font-color3, #ccc);
+  --sc-table-coords-color: $coords_color;
+  --sc-table-masks-color: $masks_color;
+  --sc-table-attrs-color: $attrs_color;
+  --sc-table-header-font-color: $header_text_color;
 }
 
 .sc-wrap {
@@ -49,7 +53,8 @@
 }
 
 .sc-array-name {
-  color: #000;
+  color: #00aa00;
+  /*color: #000;*/
 }
 
 .sc-sections {
@@ -67,7 +72,8 @@
 }
 
 .sc-section-item input + label {
-  color: #ccc;
+  /*color: #ccc;*/
+  color: #0000aa;
 }
 
 .sc-section-item input:enabled + label {
@@ -81,7 +87,8 @@
 
 .sc-section-summary {
   grid-column: 1 ;
-  color: #555;
+  color: #00aaaa;
+  /*color: #555;*/
   font-weight: 500;
 }
 
@@ -362,4 +369,31 @@ label.sc-hide-icon svg{
 .sc-standalone-var-name span{
   padding-left: 25px;
   padding-right:10px;
+}
+
+.sc-table th {
+  text-align: center;
+}
+
+.sc-table tr {
+  background-color: var(--sc-background-color1);
+}
+
+.sc-table tr:hover {
+  background-color: var(--jp-layout-color2);
+}
+
+.sc-table th.sc-coords {
+  background-color: var(--sc-table-coords-color);
+  color: var(--sc-table-header-font-color);
+}
+
+.sc-table th.sc-masks {
+  background-color: var(--sc-table-masks-color);;
+  color: var(--sc-table-header-font-color);
+}
+
+.sc-table th.sc-attrs {
+  background-color: var(--sc-table-attrs-color);
+  color: var(--sc-table-header-font-color);
 }
