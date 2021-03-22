@@ -22,6 +22,7 @@
 #include "scipp/core/element_array_view.h"
 #include "scipp/core/except.h"
 #include "scipp/core/slice.h"
+#include "scipp/core/strides.h"
 #include "scipp/core/tag_util.h"
 
 #include "scipp/variable/variable_concept.h"
@@ -101,6 +102,10 @@ public:
 
   DType dtype() const noexcept { return data().dtype(); }
 
+  scipp::span<const scipp::index> strides() const {
+    return {m_strides.begin(), m_strides.begin() + dims().ndim()};
+  }
+
   bool hasVariances() const noexcept { return data().hasVariances(); }
 
   template <class T> ElementArrayView<const T> values() const;
@@ -146,7 +151,14 @@ public:
   void setVariances(Variable v);
 
   core::ElementArrayViewParams array_params() const noexcept {
-    return {0, dims(), dims(), {}};
+    // TODO Translating strides into dims, which get translated back to
+    // (slightly different) strides in MultiIndex
+    Dimensions dataDims;
+    for (scipp::index i = dims().ndim() - 1; i >= 0; --i)
+      dataDims.add(dims().label(i),
+                   (i == 0 ? m_object->size() : strides()[i - 1]) /
+                       strides()[i]);
+    return {m_offset, dims(), dataDims, {}};
   }
 
   VariableConstView bin_indices() const;
@@ -165,6 +177,8 @@ private:
   static Variable construct(const DType &type, Args &&... args);
 
   Dimensions m_dims;
+  Strides m_strides;
+  scipp::index m_offset{0};
   VariableConceptHandle m_object;
 };
 

@@ -43,6 +43,7 @@ set(SRC_FILES
     except.cpp
     multi_index.cpp
     slice.cpp
+    strides.cpp
     string.cpp
     subbin_sizes.cpp
     view_index.cpp

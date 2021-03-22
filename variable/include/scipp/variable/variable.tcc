@@ -16,7 +16,7 @@ namespace scipp::variable {
 template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                    T values_, std::optional<T> variances_)
-    : m_dims(dimensions),
+    : m_dims(dimensions), m_strides(dimensions),
       m_object(std::make_unique<DataModel<typename T::value_type>>(
           dimensions.volume(), unit, std::move(values_),
           std::move(variances_))) {}
