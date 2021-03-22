@@ -94,8 +94,8 @@ public:
   void setUnit(const units::Unit &unit) { m_object->setUnit(unit); }
   constexpr void expectCanSetUnit(const units::Unit &) const noexcept {}
 
-  Dimensions dims() const && { return m_object->dims(); }
-  const Dimensions &dims() const & { return m_object->dims(); }
+  Dimensions dims() const && { return m_dims; }
+  const Dimensions &dims() const & { return m_dims; }
   void setDims(const Dimensions &dimensions);
 
   DType dtype() const noexcept { return data().dtype(); }
@@ -163,6 +163,7 @@ private:
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
 
+  Dimensions m_dims;
   VariableConceptHandle m_object;
 };
 
