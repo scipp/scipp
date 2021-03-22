@@ -16,9 +16,9 @@ namespace scipp::variable {
 template <class T>
 Variable::Variable(const units::Unit unit, const Dimensions &dimensions,
                    T values_, std::optional<T> variances_)
-    : m_unit{unit},
-      m_object(std::make_unique<DataModel<typename T::value_type>>(
-          std::move(dimensions), std::move(values_), std::move(variances_))) {}
+    : m_object(std::make_unique<DataModel<typename T::value_type>>(
+          std::move(dimensions), unit, std::move(values_),
+          std::move(variances_))) {}
 
 template <class T> ElementArrayView<const T> Variable::values() const {
   return cast<T>(*this).values(array_params());

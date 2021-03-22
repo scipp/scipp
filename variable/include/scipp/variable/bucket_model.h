@@ -20,7 +20,8 @@ namespace scipp::variable {
 template <class Indices> class BinModelBase : public VariableConcept {
 public:
   BinModelBase(const VariableConstView &indices, const Dim dim)
-      : VariableConcept(indices.dims()), m_indices(indices), m_dim(dim) {}
+      : VariableConcept(indices.dims(), units::one), m_indices(indices),
+        m_dim(dim) {}
 
   bool hasVariances() const noexcept override { return false; }
   void setVariances(Variable &&) override {

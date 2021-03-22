@@ -24,15 +24,13 @@ Variable::Variable(const VariableConstView &slice)
 ///
 /// In the case of bucket variables the buffer size is set to zero.
 Variable::Variable(const Variable &parent, const Dimensions &dims)
-    : m_unit(parent.unit()),
-      m_object(parent.data().makeDefaultFromParent(dims)) {}
+    : m_object(parent.data().makeDefaultFromParent(dims)) {}
 
 Variable::Variable(const VariableConstView &parent, const Dimensions &dims)
-    : m_unit(parent.unit()),
-      m_object(parent.underlying().data().makeDefaultFromParent(dims)) {}
+    : m_object(parent.underlying().data().makeDefaultFromParent(dims)) {}
 
 Variable::Variable(const VariableConstView &parent, VariableConceptHandle data)
-    : m_unit(parent.unit()), m_object(std::move(data)) {}
+    : m_object(std::move(data)) {}
 
 Variable::Variable(VariableConceptHandle data) : m_object(std::move(data)) {}
 

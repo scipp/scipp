@@ -10,6 +10,7 @@
 #include "scipp/common/span.h"
 #include "scipp/core/dimensions.h"
 #include "scipp/core/dtype.h"
+#include "scipp/units/unit.h"
 
 #include <memory>
 
@@ -38,7 +39,7 @@ public:
 /// data. More operations are supportd by the typed DataModel.
 class SCIPP_VARIABLE_EXPORT VariableConcept {
 public:
-  VariableConcept(const Dimensions &dimensions);
+  VariableConcept(const Dimensions &dimensions, const units::Unit &unit);
   virtual ~VariableConcept() = default;
 
   virtual VariableConceptHandle clone() const = 0;
@@ -49,6 +50,9 @@ public:
 
   virtual DType dtype() const noexcept = 0;
   const Dimensions &dims() const { return m_dimensions; }
+  const units::Unit &unit() const { return m_unit; }
+
+  void setUnit(const units::Unit &unit) { m_unit = unit; }
 
   virtual bool hasVariances() const noexcept = 0;
   virtual void setVariances(Variable &&variances) = 0;
@@ -66,6 +70,7 @@ public:
 
 private:
   Dimensions m_dimensions;
+  units::Unit m_unit;
 };
 
 template <class T>

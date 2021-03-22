@@ -90,8 +90,8 @@ public:
   explicit operator bool() const noexcept { return m_object.operator bool(); }
   Variable operator~() const;
 
-  units::Unit unit() const { return m_unit; }
-  void setUnit(const units::Unit &unit) { m_unit = unit; }
+  units::Unit unit() const { return m_object->unit(); }
+  void setUnit(const units::Unit &unit) { m_object->setUnit(unit); }
   constexpr void expectCanSetUnit(const units::Unit &) const noexcept {}
 
   Dimensions dims() const && { return m_object->dims(); }
@@ -163,7 +163,6 @@ private:
   template <class... Ts, class... Args>
   static Variable construct(const DType &type, Args &&... args);
 
-  units::Unit m_unit;
   VariableConceptHandle m_object;
 };
 
