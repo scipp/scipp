@@ -7,6 +7,7 @@
   --sc-background-color0: var(--jp-layout-color0, #fff);
   --sc-background-color1: var(--jp-layout-color1, #fcfcfc);
   --sc-background-color2: var(--jp-layout-color2, #efefef);
+  --sc-inverse-background-color0: var(--jp-inverse-layout-color4, #111);
   --sc-font-color0: var(--jp-content-font-color0, #000);
   --sc-font-color1: var(--jp-content-font-color1, #555);
   --sc-font-color2: var(--jp-content-font-color2, #888);
@@ -372,7 +373,7 @@ label.sc-hide-icon svg{
 }
 
 .sc-table th, .sc-table td {
-  border: 1px solid black;
+  border: 1px solid var(--sc-inverse-background-color0);
   padding: 0 5px 0 5px;
 }
 
@@ -386,7 +387,7 @@ label.sc-hide-icon svg{
 }
 
 .sc-table tr:hover {
-  background-color: var(--jp-layout-color2);
+  background-color: var(--sc-background-color2);
 }
 
 .sc-table th.sc-coords {
