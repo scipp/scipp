@@ -24,19 +24,20 @@ Variable::Variable(const VariableConstView &slice)
 ///
 /// In the case of bucket variables the buffer size is set to zero.
 Variable::Variable(const Variable &parent, const Dimensions &dims)
-    : m_dims(dims),
+    : m_dims(dims), m_strides(dims),
       m_object(parent.data().makeDefaultFromParent(dims.volume())) {}
 
 Variable::Variable(const VariableConstView &parent, const Dimensions &dims)
-    : m_dims(dims), m_object(parent.underlying().data().makeDefaultFromParent(
-                        dims.volume())) {}
+    : m_dims(dims), m_strides(dims),
+      m_object(
+          parent.underlying().data().makeDefaultFromParent(dims.volume())) {}
 
 Variable::Variable(const VariableConstView &parent, const Dimensions &dims,
                    VariableConceptHandle data)
-    : m_dims(dims), m_object(std::move(data)) {}
+    : m_dims(dims), m_strides(dims), m_object(std::move(data)) {}
 
 Variable::Variable(const Dimensions &dims, VariableConceptHandle data)
-    : m_dims(dims), m_object(std::move(data)) {}
+    : m_dims(dims), m_strides(dims), m_object(std::move(data)) {}
 
 Variable::Variable(const llnl::units::precise_measurement &m)
     : Variable(m.value() * units::Unit(m.units())) {}
@@ -73,18 +74,23 @@ VariableView::VariableView(const VariableView &slice, const Dim dim,
 
 void Variable::setDims(const Dimensions &dimensions) {
   if (dimensions.volume() == dims().volume()) {
-    if (dimensions != dims())
+    if (dimensions != dims()) {
       m_dims = dimensions;
+      m_strides = Strides(dimensions);
+    }
     return;
   }
   m_dims = dimensions;
+  m_strides = Strides(dimensions);
   m_object = m_object->makeDefaultFromParent(dimensions.volume());
 }
 
 bool Variable::operator==(const VariableConstView &other) const {
   if (!*this || !other)
     return static_cast<bool>(*this) == static_cast<bool>(other);
-  return dims() == other.dims() && data().equals(*this, other);
+  // Note: Not comparings strides
+  return dims() == other.dims() &&
+         data().equals(*this, other);
 }
 
 bool Variable::operator!=(const VariableConstView &other) const {
