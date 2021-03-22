@@ -132,7 +132,7 @@ def _table_from_dict_of_variables(dict_of_variables,
                    "'\" onMouseOut=\"this.style.backgroundColor='#ffffff'\"")
 
     # Declare table
-    html = "<table style='border-collapse: collapse;'>"
+    html = "<table class='sc-table' style='border-collapse: collapse;'>"
 
     if headers > 1:
         html += _make_table_sections(dict_of_variables, base_style)
