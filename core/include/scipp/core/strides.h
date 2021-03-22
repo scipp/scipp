@@ -22,8 +22,10 @@ public:
 
   auto begin() const { return m_strides.begin(); }
 
+  void erase(const scipp::index i);
+
 private:
-  std::array<scipp::index, NDIM_MAX> m_strides;
+  std::array<scipp::index, NDIM_MAX> m_strides{0};
 };
 
 } // namespace scipp::core
