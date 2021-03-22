@@ -14,7 +14,7 @@ VariableConceptHandle::operator=(const VariableConceptHandle &other) {
     auto &varconcept = **this;
     auto &otherConcept = *other;
     if (varconcept.dtype() == otherConcept.dtype() &&
-        varconcept.dims() == otherConcept.dims() &&
+        varconcept.size() == otherConcept.size() &&
         varconcept.hasVariances() == otherConcept.hasVariances()) {
       varconcept.assign(otherConcept);
       return *this;
@@ -23,8 +23,6 @@ VariableConceptHandle::operator=(const VariableConceptHandle &other) {
   return *this = other ? other->clone() : VariableConceptHandle();
 }
 
-VariableConcept::VariableConcept(const Dimensions &dimensions,
-                                 const units::Unit &unit)
-    : m_dimensions(dimensions), m_unit(unit) {}
+VariableConcept::VariableConcept(const units::Unit &unit) : m_unit(unit) {}
 
 } // namespace scipp::variable

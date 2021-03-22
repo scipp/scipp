@@ -20,8 +20,7 @@ namespace scipp::variable {
 template <class Indices> class BinModelBase : public VariableConcept {
 public:
   BinModelBase(const VariableConstView &indices, const Dim dim)
-      : VariableConcept(indices.dims(), units::one), m_indices(indices),
-        m_dim(dim) {}
+      : VariableConcept(units::one), m_indices(indices), m_dim(dim) {}
 
   bool hasVariances() const noexcept override { return false; }
   void setVariances(Variable &&) override {
@@ -62,7 +61,7 @@ public:
   }
 
   bool operator==(const DataModel &other) const noexcept {
-    return this->dims() == other.dims() && this->indices() == other.indices() &&
+    return this->indices() == other.indices() &&
            this->bin_dim() == other.bin_dim() && m_buffer == other.m_buffer;
   }
   bool operator!=(const DataModel &other) const noexcept {
@@ -70,9 +69,9 @@ public:
   }
 
   [[nodiscard]] VariableConceptHandle
-  makeDefaultFromParent(const Dimensions &dims) const override {
+  makeDefaultFromParent(const scipp::index size) const override {
     return std::make_unique<DataModel>(
-        makeVariable<range_type>(dims), this->bin_dim(),
+        makeVariable<range_type>(Dims{Dim::X}, Shape{size}), this->bin_dim(),
         T{m_buffer.slice({this->bin_dim(), 0, 0})});
   }
 
@@ -99,6 +98,7 @@ public:
   [[nodiscard]] DType dtype() const noexcept override {
     return scipp::dtype<bucket<T>>;
   }
+  scipp::index size() const override { return this->indices().dims().volume(); }
 
   [[nodiscard]] bool equals(const VariableConstView &a,
                             const VariableConstView &b) const override;
