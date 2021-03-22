@@ -191,6 +191,8 @@ class PlotFigure1d(PlotFigure):
         if self.show_legend():
             self.ax.legend(loc=self.legend["loc"])
 
+        self.fig.tight_layout()
+
     def _preprocess_hist(self, name, vals):
         """
         Convert 1d data to be plotted to internal format, e.g., padding

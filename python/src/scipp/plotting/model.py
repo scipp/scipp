@@ -276,31 +276,32 @@ class PlotModel:
                 # tick: 2017-01-13
                 string = dt[5:10]
                 # trim = 4
-                # os.write(1, (str(date_min) + '\n').encode())
-                # os.write(1, (str(date_max) + '\n').encode())
+                os.write(1, (str(date_min) + '\n').encode())
+                os.write(1, (str(date_max) + '\n').encode())
                 # os.write(1,
                 #          (str(date_min[:2] == date_max[:2]) + '\n').encode())
                 # inds = np.argwhere(date_min[:2] == date_max[:2]).max()
                 # os.write(1, (str(inds) + '\n').encode())
-                if date_min[0] != date_max[0]:
-                    # if pos == 0:
-                    #     string += "\n{}".format(date_min[0])
-                    # i
-                    # string += "\n{}".format(date[0])
-                    # os.write(1,
-                    #          (f'{date_max[0]}-01-01T00:00:00' + '\n').encode())
-                    transition = sc.to_unit(
-                        sc.Variable(value=np.datetime64(
-                            f'{date_max[0]}-01-01T00:00:00')), offset.unit)
-                    # os.write(1, (str(transition) + '\n').encode())
 
-                    # (int(bounds[0]) * offset.unit + offset)
-                    boundary = {
-                        "text": str(date[0]),
-                        "loc": (transition - offset).value
-                    }
-                    # os.write(1, ('got to here 45\n').encode())
-                    # os.write(1, (str(boundary) + '\n').encode())
+                if date_min[0] != date_max[0]:
+                    if pos == 1 or date[0] == date_max[0]:
+                        string += "\n{}".format(date[0])
+                    # i
+                    # string = "{}{}".format(date[0])
+                #     # os.write(1,
+                #     #          (f'{date_max[0]}-01-01T00:00:00' + '\n').encode())
+                #     transition = sc.to_unit(
+                #         sc.Variable(value=np.datetime64(
+                #             f'{date_max[0]}-01-01T00:00:00')), offset.unit)
+                #     # os.write(1, (str(transition) + '\n').encode())
+
+                #     # (int(bounds[0]) * offset.unit + offset)
+                #     boundary = {
+                #         "text": str(date[0]),
+                #         "loc": (transition - offset).value
+                #     }
+                #     # os.write(1, ('got to here 45\n').encode())
+                #     # os.write(1, (str(boundary) + '\n').encode())
                 else:
                     trim = 4
 
@@ -314,15 +315,15 @@ class PlotModel:
                 if trim > 0:
                     offstring = "+" + offstring
                 # os.write(1, ('got to here 47\n').encode())
-                if boundary is not None:
-                    # os.write(1, ('got to here 47.5\n').encode())
-                    # os.write(1, (str(self.interface) + '\n').encode())
-                    self.interface["set_view_axis_offset"](dim,
-                                                           boundary["text"],
-                                                           boundary["loc"])
-                    # os.write(1, ('got to here 48\n').encode())
-                else:
-                    self.interface["set_view_axis_offset"](dim, offstring)
+                # if boundary is not None:
+                #     # os.write(1, ('got to here 47.5\n').encode())
+                #     # os.write(1, (str(self.interface) + '\n').encode())
+                #     self.interface["set_view_axis_offset"](dim,
+                #                                            boundary["text"],
+                #                                            boundary["loc"])
+                #     # os.write(1, ('got to here 48\n').encode())
+                # else:
+                self.interface["set_view_axis_offset"](dim, offstring)
                 self.interface["set_view_axis_label"](dim, label)
             return string
 

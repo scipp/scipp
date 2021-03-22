@@ -277,10 +277,8 @@ class PlotController:
     def get_view_axis_bounds(self, dim):
         return self.view.get_axis_bounds(self._dim_to_axis()[dim])
 
-    def set_view_axis_offset(self, dim, string, position=None):
-        return self.view.set_axis_offset(self._dim_to_axis()[dim],
-                                         string=string,
-                                         position=position)
+    def set_view_axis_offset(self, dim, string):
+        return self.view.set_axis_offset(self._dim_to_axis()[dim], string)
 
     def set_view_axis_label(self, dim, string):
         return self.view.set_axis_label(self._dim_to_axis()[dim], string)
