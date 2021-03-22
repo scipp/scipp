@@ -985,3 +985,22 @@ TEST(TransposeTest, reverse) {
                                         Values{0, 0}, Variances{1, 1});
   EXPECT_NO_THROW(tvar.slice({Dim::X, 0, 1}).assign(dummy));
 }
+
+TEST(VariableTest, array_params) {
+  const auto parent =
+      makeVariable<double>(Dims{Dim::X, Dim::Y, Dim::Z}, Shape{4, 2, 3});
+
+  const Dimensions yz({Dim::Y, Dim::Z}, {8, 3});
+  const Dimensions xz({Dim::X, Dim::Z}, {4, 6});
+  Dimensions xy = parent.dims();
+  xy.relabel(2, Dim::Invalid);
+  EXPECT_EQ(parent.array_params().dataDims(), parent.dims());
+  EXPECT_EQ(parent.slice({Dim::X, 1}).array_params().dataDims(), yz);
+  EXPECT_EQ(parent.slice({Dim::Y, 1}).array_params().dataDims(), xz);
+  EXPECT_EQ(parent.slice({Dim::Z, 1}).array_params().dataDims(), xy);
+
+  const auto empty_1d = makeVariable<double>(Dims{Dim::X}, Shape{0});
+  EXPECT_EQ(empty_1d.array_params().dataDims(), empty_1d.dims());
+  const auto empty_2d = makeVariable<double>(Dims{Dim::X, Dim::Y}, Shape{2, 0});
+  EXPECT_EQ(empty_2d.array_params().dataDims(), empty_2d.dims());
+}

@@ -14,4 +14,10 @@ Strides::Strides(const Dimensions &dims) {
   }
 }
 
+void Strides::erase(const scipp::index i) {
+  for (scipp::index j = i; j < scipp::size(m_strides) - 1; ++j)
+    m_strides[j] = m_strides[j + 1];
+  m_strides.back() = 0;
+}
+
 } // namespace scipp::core
