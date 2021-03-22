@@ -102,9 +102,7 @@ public:
 
   DType dtype() const noexcept { return data().dtype(); }
 
-  scipp::span<const scipp::index> strides() const {
-    return {m_strides.begin(), m_strides.begin() + dims().ndim()};
-  }
+  scipp::span<const scipp::index> strides() const;
 
   bool hasVariances() const noexcept { return data().hasVariances(); }
 
@@ -132,8 +130,7 @@ public:
   // ATTENTION: It is really important to avoid any function returning a
   // (Const)VariableView for rvalue Variable. Otherwise the resulting slice
   // will point to free'ed memory.
-  VariableConstView slice(const Slice slice) const &;
-  Variable slice(const Slice slice) const &&;
+  Variable slice(const Slice slice) const &;
   VariableView slice(const Slice slice) &;
   Variable slice(const Slice slice) &&;
 
@@ -150,16 +147,7 @@ public:
 
   void setVariances(Variable v);
 
-  core::ElementArrayViewParams array_params() const noexcept {
-    // TODO Translating strides into dims, which get translated back to
-    // (slightly different) strides in MultiIndex
-    Dimensions dataDims;
-    for (scipp::index i = dims().ndim() - 1; i >= 0; --i)
-      dataDims.add(dims().label(i),
-                   (i == 0 ? m_object->size() : strides()[i - 1]) /
-                       strides()[i]);
-    return {m_offset, dims(), dataDims, {}};
-  }
+  core::ElementArrayViewParams array_params() const noexcept;
 
   VariableConstView bin_indices() const;
 
@@ -239,7 +227,8 @@ public:
   VariableConstView(const Variable &variable) : m_variable(&variable) {
     if (variable) {
       m_dims = variable.dims();
-      m_dataDims = variable.dims();
+      m_dataDims = variable.array_params().dataDims();
+      m_offset = variable.array_params().offset();
     }
   }
   VariableConstView(const Variable &variable, const Dimensions &dims);
