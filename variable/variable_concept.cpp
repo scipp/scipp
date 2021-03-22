@@ -23,7 +23,8 @@ VariableConceptHandle::operator=(const VariableConceptHandle &other) {
   return *this = other ? other->clone() : VariableConceptHandle();
 }
 
-VariableConcept::VariableConcept(const Dimensions &dimensions)
-    : m_dimensions(dimensions) {}
+VariableConcept::VariableConcept(const Dimensions &dimensions,
+                                 const units::Unit &unit)
+    : m_dimensions(dimensions), m_unit(unit) {}
 
 } // namespace scipp::variable
