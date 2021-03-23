@@ -12,14 +12,14 @@ namespace scipp::variable {
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable mean(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable mean(const VariableConstView &var,
                                                   const Dim dim);
-SCIPP_VARIABLE_EXPORT VariableView mean(const VariableConstView &var,
-                                        const Dim dim, const VariableView &out);
+SCIPP_VARIABLE_EXPORT Variable &mean(const VariableConstView &var,
+                                     const Dim dim, Variable &out);
 
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sum(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable sum(const VariableConstView &var,
                                                  const Dim dim);
-SCIPP_VARIABLE_EXPORT VariableView sum(const VariableConstView &var,
-                                       const Dim dim, const VariableView &out);
+SCIPP_VARIABLE_EXPORT Variable &sum(const VariableConstView &var, const Dim dim,
+                                    Variable &out);
 
 // Logical reductions
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable any(const VariableConstView &var);
@@ -49,15 +49,13 @@ nanmin(const VariableConstView &var, const Dim dim);
 nansum(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 nansum(const VariableConstView &var, const Dim dim);
-SCIPP_VARIABLE_EXPORT VariableView nansum(const VariableConstView &var,
-                                          const Dim dim,
-                                          const VariableView &out);
+SCIPP_VARIABLE_EXPORT Variable &nansum(const VariableConstView &var,
+                                       const Dim dim, Variable &out);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 nanmean(const VariableConstView &var);
 [[nodiscard]] SCIPP_VARIABLE_EXPORT Variable
 nanmean(const VariableConstView &var, const Dim dim);
-SCIPP_VARIABLE_EXPORT VariableView nanmean(const VariableConstView &var,
-                                           const Dim dim,
-                                           const VariableView &out);
+SCIPP_VARIABLE_EXPORT Variable &nanmean(const VariableConstView &var,
+                                        const Dim dim, Variable &out);
 
 } // namespace scipp::variable

@@ -33,7 +33,10 @@ TEST_F(SubspanViewTest, values) {
 }
 
 TEST_F(SubspanViewTest, values_length_0) {
-  auto view = subspan_view(var.slice({Dim::X, 0, 0}), Dim::X);
+  // TODO subspan_view does not take ownership, right now this is selecting from
+  // overload by converting to VariableConstView
+  auto slice = var.slice({Dim::X, 0, 0});
+  auto view = subspan_view(slice, Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
   EXPECT_EQ(view.unit(), units::m);
   EXPECT_TRUE(view.values<span<double>>()[0].empty());
@@ -52,7 +55,9 @@ TEST_F(SubspanViewTest, values_and_errors) {
 }
 
 TEST_F(SubspanViewTest, values_and_errors_length_0) {
-  auto view = subspan_view(var_with_errors.slice({Dim::X, 0, 0}), Dim::X);
+  // TODO see above
+  auto slice = var_with_errors.slice({Dim::X, 0, 0});
+  auto view = subspan_view(slice, Dim::X);
   EXPECT_EQ(view.dims(), Dimensions({Dim::Y, 2}));
   EXPECT_EQ(view.unit(), units::m);
   EXPECT_TRUE(view.values<span<double>>()[0].empty());

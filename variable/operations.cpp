@@ -58,7 +58,7 @@ Variable filter(const Variable &var, const Variable &filter) {
 Variable copy(const VariableConstView &var) { return Variable(var); }
 
 /// Copy variable to output variable.
-VariableView copy(const VariableConstView &var, const VariableView &out) {
+VariableView copy(const VariableConstView &var, Variable &out) {
   var.underlying().data().copy(var, out);
   return out;
 }

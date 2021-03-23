@@ -65,8 +65,8 @@ using bin_indices_t = std::conditional_t<is_view_v<typename T::buffer_type>,
 /// labels.
 class SCIPP_VARIABLE_EXPORT Variable {
 public:
-  using const_view_type = VariableConstView;
-  using view_type = VariableView;
+  using const_view_type = Variable;
+  using view_type = Variable;
 
   Variable() = default;
   explicit Variable(const VariableConstView &slice);
@@ -93,7 +93,7 @@ public:
   Variable operator~() const;
 
   units::Unit unit() const { return m_object->unit(); }
-  void setUnit(const units::Unit &unit) { m_object->setUnit(unit); }
+  void setUnit(const units::Unit &unit);
   constexpr void expectCanSetUnit(const units::Unit &) const noexcept {}
 
   Dimensions dims() const && { return m_dims; }
@@ -131,8 +131,6 @@ public:
   // (Const)VariableView for rvalue Variable. Otherwise the resulting slice
   // will point to free'ed memory.
   Variable slice(const Slice slice) const &;
-  VariableView slice(const Slice slice) &;
-  Variable slice(const Slice slice) &&;
 
   void rename(const Dim from, const Dim to);
 
@@ -355,6 +353,9 @@ public:
 
   template <class T> void replace_model(T model) const;
 
+  auto &underlying() const { return *m_mutableVariable; }
+  auto &underlying() { return *m_mutableVariable; }
+
 private:
   friend class dataset::DataArrayConstView;
   template <class T> friend typename T::view_type dataset::makeViewItem(T &);
@@ -368,7 +369,7 @@ private:
 
 SCIPP_VARIABLE_EXPORT Variable copy(const VariableConstView &var);
 SCIPP_VARIABLE_EXPORT VariableView copy(const VariableConstView &dataset,
-                                        const VariableView &out);
+                                        Variable &out);
 
 } // namespace scipp::variable
 

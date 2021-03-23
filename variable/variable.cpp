@@ -86,6 +86,14 @@ void Variable::setDims(const Dimensions &dimensions) {
   m_object = m_object->makeDefaultFromParent(dimensions.volume());
 }
 
+void Variable::setUnit(const units::Unit &unit) {
+  if ((this->unit() != unit) &&
+      (m_offset != 0 || dims().volume() != m_object->size()))
+    throw except::UnitError("Partial view on data of variable cannot be used "
+                            "to change the unit.");
+  m_object->setUnit(unit);
+}
+
 bool Variable::operator==(const VariableConstView &other) const {
   if (!*this || !other)
     return static_cast<bool>(*this) == static_cast<bool>(other);
@@ -99,14 +107,15 @@ bool Variable::operator!=(const VariableConstView &other) const {
 }
 
 Variable &Variable::assign(const VariableConstView &other) {
-  VariableView(*this).assign(other);
+  // TODO return early on self-assign
+  data().copy(other, *this);
   return *this;
 }
 
 template <class T> VariableView VariableView::assign(const T &other) const {
   if (*this == VariableConstView(other))
     return *this; // Self-assignment, return early.
-  underlying().data().copy(other, *this);
+  // underlying().data().copy(other, *this);
   return *this;
 }
 
@@ -135,7 +144,8 @@ void VariableView::setUnit(const units::Unit &unit) const {
 }
 
 void VariableView::expectCanSetUnit(const units::Unit &unit) const {
-  if ((this->unit() != unit) && (dims() != m_mutableVariable->dims()))
+  if ((this->unit() != unit) &&
+      (dims().volume() != m_mutableVariable->data().size()))
     throw except::UnitError("Partial view on data of variable cannot be used "
                             "to change the unit.");
 }
@@ -177,14 +187,6 @@ Variable Variable::slice(const Slice slice) const & {
   } else
     out.m_dims.resize(dim, end - begin);
   return out;
-}
-
-VariableView Variable::slice(const Slice slice) & {
-  return {*this, slice.dim(), slice.begin(), slice.end()};
-}
-
-Variable Variable::slice(const Slice slice) && {
-  return Variable{this->slice(slice)};
 }
 
 VariableConstView VariableConstView::slice(const Slice slice) const {
@@ -236,6 +238,10 @@ void VariableConstView::rename(const Dim from, const Dim to) {
 }
 
 void Variable::setVariances(const Variable &v) {
+  // TODO Is this condition sufficient?
+  if (m_offset != 0 || m_dims.volume() != data().size())
+    throw except::VariancesError(
+        "Cannot add variances via sliced view of Variable.");
   if (v) {
     core::expect::equals(unit(), v.unit());
     core::expect::equals(dims(), v.dims());

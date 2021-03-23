@@ -36,8 +36,8 @@ constexpr auto copy_spans = overloaded{
     }};
 } // namespace
 
-void copy_slices(const VariableConstView &src, const VariableView &dst,
-                 const Dim dim, const VariableConstView &srcIndices,
+void copy_slices(const VariableConstView &src, Variable &dst, const Dim dim,
+                 const VariableConstView &srcIndices,
                  const VariableConstView &dstIndices) {
   const auto [begin0, end0] = unzip(srcIndices);
   const auto [begin1, end1] = unzip(dstIndices);
@@ -72,30 +72,6 @@ Variable make_bins(Variable indices, const Dim dim, Variable buffer) {
   return {indices.dims(),
           std::make_unique<variable::DataModel<bucket<Variable>>>(
               std::move(indices), dim, std::move(buffer))};
-}
-
-/// Construct non-owning binned variable of a mutable buffer.
-///
-/// This is intented for internal and short-lived variables. The returned
-/// variable stores *views* onto `indices` and `buffer` rather than copying the
-/// data. This is, it does not own any or share ownership of any data.
-Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
-                              const VariableView &buffer) {
-  return {indices.dims(),
-          std::make_unique<variable::DataModel<bucket<VariableView>>>(
-              indices, dim, buffer)};
-}
-
-/// Construct non-owning binned variable of a const buffer.
-///
-/// This is intented for internal and short-lived variables. The returned
-/// variable stores *views* onto `indices` and `buffer` rather than copying the
-/// data. This is, it does not own any or share ownership of any data.
-Variable make_non_owning_bins(const VariableConstView &indices, const Dim dim,
-                              const VariableConstView &buffer) {
-  return {indices.dims(),
-          std::make_unique<variable::DataModel<bucket<VariableConstView>>>(
-              indices, dim, buffer)};
 }
 
 } // namespace scipp::variable

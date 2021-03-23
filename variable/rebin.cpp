@@ -37,8 +37,8 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
   const auto *xold = oldCoordT.values<T>().data();
   const auto *xnew = newCoordT.values<T>().data();
 
-  auto add_from_bin = [&](const auto &slice, const auto xn_low,
-                          const auto xn_high, const scipp::index iold) {
+  auto add_from_bin = [&](auto &&slice, const auto xn_low, const auto xn_high,
+                          const scipp::index iold) {
     auto xo_low = xold[iold];
     auto xo_high = xold[iold + 1];
     // delta is the overlap of the bins on the x axis
@@ -47,7 +47,7 @@ void rebin_non_inner(const Dim dim, const VariableConstView &oldT,
     const auto owidth = std::abs(xo_high - xo_low);
     slice += oldT.slice({dim, iold}) * ((delta / owidth) * units::one);
   };
-  auto accumulate_bin = [&](const auto &slice, const auto xn_low,
+  auto accumulate_bin = [&](auto &&slice, const auto xn_low,
                             const auto xn_high) {
     scipp::index begin =
         std::upper_bound(xold, xold + oldSize + 1, xn_low, less) - xold;

@@ -18,8 +18,7 @@ namespace scipp::variable::bin_detail {
 ///
 /// 0 if the coord is less than the first edge, nbin-1 if greater or equal last
 /// edge. Assumes both `edges` and `coord` are sorted.
-Variable begin_edge(const VariableConstView &coord,
-                    const VariableConstView &edges) {
+Variable begin_edge(const Variable &coord, const Variable &edges) {
   auto indices = makeVariable<scipp::index>(coord.dims());
   const auto dim = edges.dims().inner();
   if (indices.dims()[dim] == 0)
@@ -35,8 +34,7 @@ Variable begin_edge(const VariableConstView &coord,
 /// 1 if the coord is
 /// nbin if the coord is greater than the last edge. Assumes both `edges` and
 /// `coord` are sorted.
-Variable end_edge(const VariableConstView &coord,
-                  const VariableConstView &edges) {
+Variable end_edge(const Variable &coord, const Variable &edges) {
   auto indices = makeVariable<scipp::index>(coord.dims());
   const auto dim = edges.dims().inner();
   if (indices.dims()[dim] == 0)
