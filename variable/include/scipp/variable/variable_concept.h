@@ -21,6 +21,8 @@ class VariableConstView;
 class VariableView;
 class VariableConcept;
 
+using VariableConceptHandle = std::shared_ptr<VariableConcept>;
+/*
 class SCIPP_VARIABLE_EXPORT VariableConceptHandle
     : public scipp::deep_ptr<VariableConcept> {
 public:
@@ -31,6 +33,7 @@ public:
   VariableConceptHandle &operator=(VariableConceptHandle &&) = default;
   VariableConceptHandle &operator=(const VariableConceptHandle &other);
 };
+*/
 
 /// Abstract base class for any data that can be held by Variable. This is using
 /// so-called concept-based polymorphism, see talks by Sean Parent.
@@ -55,7 +58,7 @@ public:
   void setUnit(const units::Unit &unit) { m_unit = unit; }
 
   virtual bool hasVariances() const noexcept = 0;
-  virtual void setVariances(Variable &&variances) = 0;
+  virtual void setVariances(const Variable &variances) = 0;
 
   virtual bool equals(const VariableConstView &a,
                       const VariableConstView &b) const = 0;
@@ -72,9 +75,11 @@ private:
   units::Unit m_unit;
 };
 
+/*
 template <class T>
 VariableConceptHandle::VariableConceptHandle(T object)
     : VariableConceptHandle(
           std::unique_ptr<VariableConcept>(std::move(object))) {}
+          */
 
 } // namespace scipp::variable

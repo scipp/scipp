@@ -282,19 +282,19 @@ TEST(Variable, assign_slice) {
   const auto empty = makeVariable<double>(
       Dimensions{{Dim::X, 4}, {Dim::Y, 2}, {Dim::Z, 3}}, Values{}, Variances{});
 
-  auto d(empty);
+  auto d = copy(empty);
   EXPECT_NE(parent, d);
   for (const scipp::index index : {0, 1, 2, 3})
     d.slice({Dim::X, index}).assign(parent.slice({Dim::X, index}));
   EXPECT_EQ(parent, d);
 
-  d = empty;
+  d = copy(empty);
   EXPECT_NE(parent, d);
   for (const scipp::index index : {0, 1})
     d.slice({Dim::Y, index}).assign(parent.slice({Dim::Y, index}));
   EXPECT_EQ(parent, d);
 
-  d = empty;
+  d = copy(empty);
   EXPECT_NE(parent, d);
   for (const scipp::index index : {0, 1, 2})
     d.slice({Dim::Z, index}).assign(parent.slice({Dim::Z, index}));
@@ -780,11 +780,11 @@ template <typename Var> void test_set_variances(Var &var) {
   var.setVariances(v);
   ASSERT_TRUE(equals(var.template variances<double>(), {2.0, 4.0, 6.0}));
 
-  Variable bad_dims(v);
+  Variable bad_dims = copy(v);
   bad_dims.rename(Dim::X, Dim::Y);
   EXPECT_THROW(var.setVariances(bad_dims), except::DimensionError);
 
-  Variable bad_unit(v);
+  Variable bad_unit = copy(v);
   bad_unit.setUnit(units::s);
   EXPECT_THROW(var.setVariances(bad_unit), except::UnitError);
 
@@ -795,14 +795,6 @@ TEST(VariableTest, set_variances) {
   Variable var = makeVariable<double>(Dims{Dim::X}, Shape{3}, units::m,
                                       Values{1.0, 2.0, 3.0});
   test_set_variances(var);
-}
-
-TEST(VariableTest, set_variances_moves) {
-  Variable var = makeVariable<double>(Dims{Dim::X}, Shape{3});
-  Variable variances(var);
-  const auto ptr = variances.values<double>().data();
-  var.setVariances(std::move(variances));
-  EXPECT_EQ(var.variances<double>().data(), ptr);
 }
 
 TEST(VariableTest, set_variances_remove) {

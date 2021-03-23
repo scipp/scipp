@@ -78,7 +78,7 @@ public:
             const VariableView &dest) const override;
   void assign(const VariableConcept &other) override;
 
-  void setVariances(Variable &&variances) override;
+  void setVariances(const Variable &variances) override;
 
   VariableConceptHandle clone() const override {
     return std::make_unique<DataModel<T>>(*this);
@@ -173,16 +173,16 @@ template <class T> void DataModel<T>::assign(const VariableConcept &other) {
   *this = requireT<const DataModel<T>>(other);
 }
 
-template <class T> void DataModel<T>::setVariances(Variable &&variances) {
+template <class T> void DataModel<T>::setVariances(const Variable &variances) {
   if (!core::canHaveVariances<T>())
     throw except::VariancesError("This data type cannot have variances.");
   if (!variances)
     return m_variances.reset();
+  // TODO Could move if refcount is 1?
   if (variances.hasVariances())
     throw except::VariancesError(
         "Cannot set variances from variable with variances.");
-  m_variances.emplace(
-      std::move(requireT<DataModel>(variances.data()).m_values));
+  m_variances.emplace(requireT<const DataModel>(variances.data()).m_values);
 }
 
 } // namespace scipp::variable
