@@ -135,11 +135,12 @@ void swap(Variable &var, const Dim dim, const scipp::index a,
 }
 } // namespace
 
-Variable reverse(Variable var, const Dim dim) {
-  const auto size = var.dims()[dim];
+Variable reverse(const Variable &var, const Dim dim) {
+  auto out = copy(var);
+  const auto size = out.dims()[dim];
   for (scipp::index i = 0; i < size / 2; ++i)
-    swap(var, dim, i, size - i - 1);
-  return var;
+    swap(out, dim, i, size - i - 1);
+  return out;
 }
 
 Variable reshape(const Variable &var, const Dimensions &dims) {

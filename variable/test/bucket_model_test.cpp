@@ -77,7 +77,7 @@ TEST_F(BucketModelTest, comparison) {
   EXPECT_EQ(Model(indices, Dim::X, buffer), Model(indices, Dim::X, buffer));
   EXPECT_NE(Model(Variable(indices.slice({Dim::Y, 0})), Dim::X, buffer),
             Model(Variable(indices.slice({Dim::Y, 0, 1})), Dim::X, buffer));
-  auto indices2 = indices;
+  auto indices2 = copy(indices);
   indices2.values<std::pair<scipp::index, scipp::index>>()[0] = {0, 1};
   EXPECT_NE(Model(indices, Dim::X, buffer), Model(indices2, Dim::X, buffer));
   auto buffer2 = makeVariable<double>(Dims{Dim::Y, Dim::X}, Shape{2, 2},

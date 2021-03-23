@@ -110,7 +110,7 @@ TEST_F(TransformUnaryTest, dense) {
       const auto initial = make_variable_for_test<double>(shape, variances);
 
       const auto result_return = transform<double>(initial, op);
-      Variable result_in_place = initial;
+      Variable result_in_place = copy(initial);
       transform_in_place<double>(result_in_place, op_in_place);
 
       EXPECT_TRUE(equals(result_in_place.values<double>(),
@@ -140,7 +140,7 @@ TEST_F(TransformUnaryTest, slice) {
         const auto initial = initial_buffer.slice(slice);
 
         const auto result_return = transform<double>(initial, op);
-        Variable result_in_place_buffer = initial_buffer;
+        Variable result_in_place_buffer = copy(initial_buffer);
         const auto result_in_place = result_in_place_buffer.slice(slice);
         transform_in_place<double>(result_in_place, op_in_place);
 
@@ -170,7 +170,7 @@ TEST_F(TransformUnaryTest, elements_of_bins) {
           const auto buffer = make_variable_for_test<double>(shape, variances);
           const auto bin_dim_label = buffer.dims().labels()[bin_dim];
           const auto indices = make_bin_indices(shape.data[bin_dim], n_bins);
-          auto var = make_bins(indices, bin_dim_label, buffer);
+          auto var = make_bins(indices, bin_dim_label, copy(buffer));
 
           const auto result = transform<double>(var, op);
           transform_in_place<double>(var, op_in_place);
@@ -197,12 +197,12 @@ TEST_F(TransformUnaryTest, in_place_unit_change) {
   auto op_ = [](auto &&a) { a *= a; };
   Variable result;
 
-  result = var;
+  result = copy(var);
   transform_in_place<double>(result, op_);
   EXPECT_EQ(result, expected);
 
   // Unit changes but we are transforming only parts of data -> not possible.
-  result = var;
+  result = copy(var);
   EXPECT_THROW(transform_in_place<double>(result.slice({Dim::X, 1}), op_),
                except::UnitError);
 }
@@ -364,7 +364,7 @@ TEST_F(TransformBinaryTest, dense_events) {
       Dims{Dim::X}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 4}});
   const auto table =
       makeVariable<double>(Dims{Dim::Event}, Shape{4}, Values{1, 2, 3, 4});
-  auto events = make_bins(indices, Dim::Event, table);
+  auto events = make_bins(indices, Dim::Event, copy(table));
   auto dense = makeVariable<double>(Dims{Dim::X}, Shape{2}, Values{1.5, 0.5});
 
   const auto ab = transform<pair_self_t<double>>(events, dense, op);
@@ -489,7 +489,7 @@ TEST(TransformTest, mixed_precision_in_place) {
 TEST(TransformTest, combined_uncertainty_propagation) {
   auto a =
       makeVariable<double>(Dims{Dim::X}, Shape{1}, Values{2.0}, Variances{0.1});
-  auto a_2_step(a);
+  auto a_2_step = copy(a);
   const auto b = makeVariable<double>(Values{3.0}, Variances{0.2});
 
   const auto abb = transform<pair_self_t<double>>(
@@ -544,7 +544,7 @@ TEST_F(TransformTest_events_binary_values_variances_size_fail, a_size_bad) {
                except::BinnedDataError);
 }
 
-class TransformBucketsBinaryTest : public TransformBinaryTest {
+class TransformBinsBinaryTest : public TransformBinaryTest {
 protected:
   Variable indicesY = makeVariable<std::pair<scipp::index, scipp::index>>(
       Dims{Dim::Y}, Shape{2}, Values{std::pair{0, 3}, std::pair{3, 4}});
@@ -554,11 +554,11 @@ protected:
   Variable tableB = makeVariable<double>(Dims{Dim::Event}, Shape{4},
                                          Values{0.1, 0.2, 0.3, 0.4},
                                          Variances{0.5, 0.6, 0.7, 0.8});
-  Variable a = make_bins(indicesY, Dim::Event, tableA);
-  Variable b = make_bins(indicesY, Dim::Event, tableB);
+  Variable a = make_bins(indicesY, Dim::Event, copy(tableA));
+  Variable b = make_bins(indicesY, Dim::Event, copy(tableB));
 };
 
-TEST_F(TransformBucketsBinaryTest, events_val_var_with_events_val_var) {
+TEST_F(TransformBinsBinaryTest, events_val_var_with_events_val_var) {
   const auto ab = transform<pair_self_t<double>>(a, b, op);
   transform_in_place<pair_self_t<double>>(a, b, op_in_place);
   // We rely on correctness of *dense* operations (Variable multiplication is
@@ -567,7 +567,7 @@ TEST_F(TransformBucketsBinaryTest, events_val_var_with_events_val_var) {
   EXPECT_EQ(ab, a);
 }
 
-TEST_F(TransformBucketsBinaryTest, events_val_var_with_events_val) {
+TEST_F(TransformBinsBinaryTest, events_val_var_with_events_val) {
   const auto table = values(tableB);
   b = make_bins(indicesY, Dim::Event, table);
   const auto ab = transform<pair_self_t<double>>(a, b, op);
@@ -576,7 +576,7 @@ TEST_F(TransformBucketsBinaryTest, events_val_var_with_events_val) {
   EXPECT_EQ(ab, a);
 }
 
-TEST_F(TransformBucketsBinaryTest, events_val_var_with_val_var) {
+TEST_F(TransformBinsBinaryTest, events_val_var_with_val_var) {
   b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6},
                            Variances{1.7, 1.8});
 
@@ -589,7 +589,7 @@ TEST_F(TransformBucketsBinaryTest, events_val_var_with_val_var) {
   EXPECT_EQ(ab, a);
 }
 
-TEST_F(TransformBucketsBinaryTest, events_val_var_with_val) {
+TEST_F(TransformBinsBinaryTest, events_val_var_with_val) {
   b = makeVariable<double>(Dims{Dim::Y}, Shape{2}, Values{1.5, 1.6});
 
   const auto ab = transform<pair_self_t<double>>(a, b, op);
@@ -601,7 +601,7 @@ TEST_F(TransformBucketsBinaryTest, events_val_var_with_val) {
   EXPECT_EQ(ab, a);
 }
 
-TEST_F(TransformBucketsBinaryTest, broadcast_events_val_var_with_val) {
+TEST_F(TransformBinsBinaryTest, broadcast_events_val_var_with_val) {
   b = makeVariable<float>(Dims{Dim::Z}, Shape{2}, Values{1.5, 1.6});
 
   const auto ab = transform<pair_custom_t<std::tuple<double, float>>>(a, b, op);
@@ -929,17 +929,17 @@ TEST(TransformEigenTest, is_eigen_type_test) {
   EXPECT_TRUE(scipp::variable::detail::is_eigen_type_v<Eigen::Matrix3d>);
 }
 
-class TransformBucketElementsTest : public ::testing::Test {
+class TransformBinElementsTest : public ::testing::Test {
 protected:
   Dimensions dims{Dim::Y, 2};
   Variable indices = makeVariable<std::pair<scipp::index, scipp::index>>(
       dims, Values{std::pair{0, 2}, std::pair{2, 4}});
   Variable buffer =
       makeVariable<double>(Dims{Dim::X}, Shape{4}, Values{1, 2, 3, 4});
-  Variable var = make_bins(indices, Dim::X, buffer);
+  Variable var = make_bins(indices, Dim::X, copy(buffer));
 };
 
-TEST_F(TransformBucketElementsTest, single_arg_in_place) {
+TEST_F(TransformBinElementsTest, single_arg_in_place) {
   transform_in_place<double>(
       var, scipp::overloaded{transform_flags::expect_no_variance_arg<0>,
                              [](auto &x) { x *= x; }});
